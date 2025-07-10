@@ -143,6 +143,21 @@ export default function UserPopup({
             ✉️ ارسال رسالة
           </Button>
           
+          <Button
+            onClick={onAddFriend}
+            variant="ghost"
+            className="user-popup-button"
+          >
+            👥 إضافة صديق
+          </Button>
+          
+          <Button
+            onClick={onIgnore}
+            variant="ghost"
+            className="user-popup-button text-red-400"
+          >
+            🚫 تجاهل
+          </Button>
 
         </>
       )}
