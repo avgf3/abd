@@ -123,6 +123,14 @@ export function useChat() {
                 // Play notification sound for new private messages from others
                 if (message.message.senderId !== user.id) {
                   playNotificationSound();
+                  
+                  // إشعار مرئي في المتصفح
+                  if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('رسالة خاصة جديدة 📱', {
+                      body: `${message.message.sender?.username}: ${message.message.content.slice(0, 50)}...`,
+                      icon: '/favicon.ico'
+                    });
+                  }
                 }
               }
               break;

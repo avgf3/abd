@@ -137,7 +137,7 @@ export default function UserPopup({
         variant="ghost"
         className="user-popup-button"
       >
-        📩 رسالة خاصة
+        💬 ابدأ محادثة
       </Button>
       
       <Button
