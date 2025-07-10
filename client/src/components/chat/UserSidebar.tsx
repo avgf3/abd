@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import SimpleUserMenu from './SimpleUserMenu';
+import ProfileImage from './ProfileImage';
 import type { ChatUser } from '@/types/chat';
 
 interface UserSidebarProps {
@@ -73,14 +74,10 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                   className="flex items-center gap-3 p-3 rounded-xl glass-effect hover:bg-accent transition-all duration-200 cursor-pointer"
                   onClick={(e) => onUserClick(e, user)}
                 >
-              <img
-                src={user.profileImage || "/default_avatar.svg"}
-                alt="صورة المستخدم"
-                className="user-img"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/default_avatar.svg';
-                }}
+              <ProfileImage 
+                user={user} 
+                size="medium" 
+                className="transition-transform hover:scale-105"
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2">

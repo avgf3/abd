@@ -13,6 +13,7 @@ import MessagesPanel from './MessagesPanel';
 import MessageAlert from './MessageAlert';
 import ModerationPanel from './ModerationPanel';
 import OwnerAdminPanel from './OwnerAdminPanel';
+import ProfileImage from './ProfileImage';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';

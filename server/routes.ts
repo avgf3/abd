@@ -23,7 +23,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Member registration route
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { username, password, confirmPassword } = req.body;
+      const { username, password, confirmPassword, gender } = req.body;
       
       if (!username?.trim() || !password?.trim() || !confirmPassword?.trim()) {
         return res.status(400).json({ error: "جميع الحقول مطلوبة" });
@@ -47,6 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username,
         password,
         userType: "member",
+        gender: gender || "male",
         profileImage: "/default_avatar.svg",
       });
 
@@ -59,7 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/guest", async (req, res) => {
     try {
-      const { username } = req.body;
+      const { username, gender } = req.body;
       
       if (!username?.trim()) {
         return res.status(400).json({ error: "اسم المستخدم مطلوب" });
@@ -74,6 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.createUser({
         username,
         userType: "guest",
+        gender: gender || "male",
         profileImage: "/default_avatar.svg",
       });
 

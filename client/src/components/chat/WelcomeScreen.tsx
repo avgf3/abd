@@ -17,11 +17,13 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [guestName, setGuestName] = useState('');
+  const [guestGender, setGuestGender] = useState('male');
   const [memberName, setMemberName] = useState('');
   const [memberPassword, setMemberPassword] = useState('');
   const [registerName, setRegisterName] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [registerGender, setRegisterGender] = useState('male');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -39,6 +41,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
     try {
       const response = await apiRequest('POST', '/api/auth/guest', {
         username: guestName.trim(),
+        gender: guestGender,
       });
       const data = await response.json();
       onUserLogin(data.user);
@@ -111,6 +114,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
         username: registerName.trim(),
         password: registerPassword.trim(),
         confirmPassword: confirmPassword.trim(),
+        gender: registerGender,
       });
       const data = await response.json();
       toast({
@@ -201,6 +205,33 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
               className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
               onKeyPress={(e) => e.key === 'Enter' && handleGuestLogin()}
             />
+            <div className="space-y-2">
+              <label className="text-white text-sm font-medium">الجنس:</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-white cursor-pointer">
+                  <input
+                    type="radio"
+                    name="guestGender"
+                    value="male"
+                    checked={guestGender === 'male'}
+                    onChange={(e) => setGuestGender(e.target.value)}
+                    className="text-blue-500"
+                  />
+                  🧑 ذكر
+                </label>
+                <label className="flex items-center gap-2 text-white cursor-pointer">
+                  <input
+                    type="radio"
+                    name="guestGender"
+                    value="female"
+                    checked={guestGender === 'female'}
+                    onChange={(e) => setGuestGender(e.target.value)}
+                    className="text-pink-500"
+                  />
+                  👩 أنثى
+                </label>
+              </div>
+            </div>
             <Button 
               onClick={handleGuestLogin} 
               disabled={loading}
@@ -280,6 +311,33 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
               className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
               onKeyPress={(e) => e.key === 'Enter' && handleRegister()}
             />
+            <div className="space-y-2">
+              <label className="text-white text-sm font-medium">الجنس:</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-white cursor-pointer">
+                  <input
+                    type="radio"
+                    name="registerGender"
+                    value="male"
+                    checked={registerGender === 'male'}
+                    onChange={(e) => setRegisterGender(e.target.value)}
+                    className="text-blue-500"
+                  />
+                  🧑 ذكر
+                </label>
+                <label className="flex items-center gap-2 text-white cursor-pointer">
+                  <input
+                    type="radio"
+                    name="registerGender"
+                    value="female"
+                    checked={registerGender === 'female'}
+                    onChange={(e) => setRegisterGender(e.target.value)}
+                    className="text-pink-500"
+                  />
+                  👩 أنثى
+                </label>
+              </div>
+            </div>
             <Button 
               onClick={handleRegister} 
               disabled={loading}

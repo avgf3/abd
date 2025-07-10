@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import ProfileImage from './ProfileImage';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 
 interface MessageAreaProps {
@@ -102,15 +103,12 @@ export default function MessageArea({
             className={`chat-message bg-blue-50 border-r-4 ${getMessageBorderColor(message.sender?.userType)} animate-slide-up`}
           >
             <div className="flex items-start gap-3">
-              <img
-                src={message.sender?.profileImage || "/default_avatar.svg"}
-                alt="صورة المستخدم"
-                className="w-8 h-8 rounded-full"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/default_avatar.svg';
-                }}
-              />
+              {message.sender && (
+                <ProfileImage 
+                  user={message.sender} 
+                  size="small" 
+                />
+              )}
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   {message.sender ? (

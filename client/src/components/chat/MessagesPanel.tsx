@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import ProfileImage from './ProfileImage';
 import type { ChatUser, PrivateConversation } from '@/types/chat';
 
 interface MessagesPanelProps {
@@ -88,14 +89,9 @@ export default function MessagesPanel({
                     }}
                   >
                     <div className="flex items-center gap-3">
-                      <img
-                        src={user!.profileImage || "/default_avatar.svg"}
-                        alt="صورة المستخدم"
-                        className="w-12 h-12 rounded-full border-2 border-purple-200"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = '/default_avatar.svg';
-                        }}
+                      <ProfileImage 
+                        user={user!} 
+                        size="medium" 
                       />
                       
                       <div className="flex-1">
