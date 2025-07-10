@@ -182,6 +182,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Profile picture upload
+  app.post('/api/users/:id/profile-image', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { imageData } = req.body;
+      
+      if (!imageData) {
+        return res.status(400).json({ error: "صورة مطلوبة" });
+      }
+
+      const user = await storage.updateUser(userId, { profileImage: imageData });
+      if (!user) {
+        return res.status(404).json({ error: "المستخدم غير موجود" });
+      }
+
+      // Broadcast user update to all connected clients
+      broadcast({
+        type: 'userUpdated',
+        user
+      });
+
+      res.json({ user, message: "تم تحديث الصورة الشخصية بنجاح" });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   // Friend routes
   app.get("/api/friends/:userId", async (req, res) => {
     try {
