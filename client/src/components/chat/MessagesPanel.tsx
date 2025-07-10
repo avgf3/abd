@@ -153,68 +153,7 @@ export default function MessagesPanel({
               </div>
             )}
             
-            {/* قائمة المستخدمين المتصلين لبدء محادثة جديدة */}
-            <div className="mt-8 border-t border-purple-200 pt-6">
-              <h4 className="font-bold text-purple-700 text-lg mb-4">
-                ✉️ ارسال رسالة جديدة
-              </h4>
-              <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
-                {onlineUsers
-                  .filter(user => user.id !== currentUser?.id)
-                  .filter(user => !Object.keys(privateConversations).includes(user.id.toString()))
-                  .slice(0, 8)
-                  .map(user => (
-                    <Card 
-                      key={user.id}
-                      className="cursor-pointer hover:shadow-md transition-all duration-200 border border-blue-200 hover:border-blue-400 bg-gradient-to-r from-blue-50 to-purple-50"
-                      onClick={() => {
-                        onStartPrivateChat(user);
-                        onClose();
-                      }}
-                    >
-                      <CardContent className="p-3">
-                        <div className="flex items-center gap-3">
-                          <div className="relative">
-                            <img
-                              src={user.profileImage || "/default_avatar.svg"}
-                              alt="صورة المستخدم"
-                              className="w-12 h-12 rounded-full border-2 border-blue-200"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = '/default_avatar.svg';
-                              }}
-                            />
-                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full animate-pulse"></div>
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-bold text-gray-900 text-base">{user.username}</p>
-                            <p className="text-xs text-green-600 font-medium">🟢 متصل الآن</p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {user.userType === 'owner' && '👑 مالك'}
-                              {user.userType === 'admin' && '🛡️ مشرف'}
-                              {user.userType === 'member' && '👤 عضو'}
-                              {user.userType === 'guest' && '👋 زائر'}
-                            </p>
-                          </div>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-xs bg-blue-100 border-blue-300 text-blue-700 hover:bg-blue-200 font-medium"
-                          >
-                            ✉️ ارسال رسالة
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                }
-                {onlineUsers.filter(user => user.id !== currentUser?.id && !Object.keys(privateConversations).includes(user.id.toString())).length === 0 && (
-                  <div className="text-center py-6 text-gray-500">
-                    <p className="text-sm">جميع المستخدمين لديهم رسائل معك</p>
-                  </div>
-                )}
-              </div>
-            </div>
+
           </div>
         </ScrollArea>
 
