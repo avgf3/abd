@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import WelcomeScreen from '@/components/chat/WelcomeScreen';
-import ChatInterface from '@/components/chat/ChatInterface';
+import NewChatInterface from '@/components/chat/NewChatInterface';
 import { useChat } from '@/hooks/useChat';
 import type { ChatUser } from '@/types/chat';
 
@@ -23,7 +23,7 @@ export default function ChatPage() {
       {showWelcome ? (
         <WelcomeScreen onUserLogin={handleUserLogin} />
       ) : (
-        <ChatInterface chat={chat} onLogout={handleLogout} />
+        <NewChatInterface chat={chat} onLogout={handleLogout} />
       )}
     </div>
   );
