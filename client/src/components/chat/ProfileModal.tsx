@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 
 interface ProfileModalProps {
@@ -12,6 +14,7 @@ interface ProfileModalProps {
 }
 
 export default function ProfileModal({ user, onClose }: ProfileModalProps) {
+  const { toast } = useToast();
   const [profileData, setProfileData] = useState({
     name: user?.username || '',
     status: user?.status || '',
@@ -19,7 +22,7 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
     age: user?.age?.toString() || 'عدم إظهار',
     country: user?.country || 'السعودية',
     relation: user?.relation || 'عدم إظهار',
-    profileImage: user?.profileImage || '',
+    profileImage: user?.profileImage || '/default_avatar.svg',
   });
 
   const countries = [
@@ -32,15 +35,34 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
+      if (file && user) {
         const reader = new FileReader();
-        reader.onload = (event) => {
-          setProfileData(prev => ({
-            ...prev,
-            profileImage: event.target?.result as string,
-          }));
+        reader.onload = async (event) => {
+          const imageData = event.target?.result as string;
+          
+          try {
+            // Upload to server and update user's profile image
+            const response = await apiRequest('POST', `/api/users/${user.id}/profile-image`, {
+              imageData
+            });
+            const data = await response.json();
+            
+            // Update local state to show the new image immediately
+            setProfileData(prev => ({ ...prev, profileImage: imageData }));
+            
+            toast({
+              title: "تم التحديث",
+              description: data.message,
+            });
+          } catch (error) {
+            toast({
+              title: "خطأ",
+              description: "فشل في رفع الصورة",
+              variant: "destructive",
+            });
+          }
         };
         reader.readAsDataURL(file);
       }
