@@ -229,6 +229,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           onIgnore={() => handleIgnoreUser(userPopup.user!)}
           onViewProfile={() => handleViewProfile(userPopup.user!)}
           currentUser={chat.currentUser}
+          onClose={closeUserPopup}
         />
       )}
 

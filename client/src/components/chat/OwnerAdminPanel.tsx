@@ -201,10 +201,10 @@ export default function OwnerAdminPanel({
       {currentUser?.username === 'عبود' && (
         <Button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-4 right-4 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-full p-3 shadow-xl z-50"
+          className="fixed bottom-4 right-4 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-full p-4 shadow-xl z-50"
           size="lg"
         >
-          <Crown className="w-6 h-6" />
+          <Crown className="w-8 h-8" />
         </Button>
       )}
 
