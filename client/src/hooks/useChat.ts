@@ -39,6 +39,7 @@ export function useChat() {
   const [isConnected, setIsConnected] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [newMessageSender, setNewMessageSender] = useState<ChatUser | null>(null);
   
   const ws = useRef<WebSocket | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -123,6 +124,11 @@ export function useChat() {
                 // Play notification sound for new private messages from others
                 if (message.message.senderId !== user.id) {
                   playNotificationSound();
+                  
+                  // تعيين المرسل لإظهار التنبيه
+                  if (message.message.sender) {
+                    setNewMessageSender(message.message.sender);
+                  }
                   
                   // إشعار مرئي في المتصفح
                   if ('Notification' in window && Notification.permission === 'granted') {
@@ -314,6 +320,8 @@ export function useChat() {
     isConnected,
     typingUsers,
     connectionError,
+    newMessageSender,
+    setNewMessageSender,
     connect,
     disconnect,
     sendPublicMessage: sendMessage,

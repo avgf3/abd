@@ -58,14 +58,14 @@ export default function MessagesPanel({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[700px] bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-2xl">
+      <DialogContent className="max-w-md max-h-[500px] bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-2xl">
         <DialogHeader className="border-b border-blue-200 pb-4">
           <DialogTitle className="text-2xl font-bold text-center text-blue-800">
             ✉️ ارسال رسالة
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="h-[500px] w-full">
+        <ScrollArea className="h-[350px] w-full">
           <div className="space-y-4 p-4">
             {conversationUsers.length === 0 ? (
               <div className="text-center py-12 text-blue-400">

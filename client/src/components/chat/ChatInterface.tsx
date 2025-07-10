@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import UserSidebar from './UserSidebar';
 import MessageArea from './MessageArea';
 import ProfileModal from './ProfileModal';
@@ -10,6 +10,7 @@ import AdminReportsPanel from './AdminReportsPanel';
 import NotificationPanel from './NotificationPanel';
 import FriendsPanel from './FriendsPanel';
 import MessagesPanel from './MessagesPanel';
+import MessageAlert from './MessageAlert';
 import ModerationPanel from './ModerationPanel';
 import OwnerAdminPanel from './OwnerAdminPanel';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,23 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showMessages, setShowMessages] = useState(false);
   const [showModerationPanel, setShowModerationPanel] = useState(false);
   const [showOwnerPanel, setShowOwnerPanel] = useState(false);
+  const [newMessageAlert, setNewMessageAlert] = useState<{
+    show: boolean;
+    sender: ChatUser | null;
+  }>({
+    show: false,
+    sender: null,
+  });
+
+  // تفعيل التنبيه عند وصول رسالة جديدة
+  useEffect(() => {
+    if (chat.newMessageSender) {
+      setNewMessageAlert({
+        show: true,
+        sender: chat.newMessageSender,
+      });
+    }
+  }, [chat.newMessageSender]);
   const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
   const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(null);
   const [userPopup, setUserPopup] = useState<{
@@ -329,6 +347,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           onlineUsers={chat.onlineUsers}
         />
       )}
+
+      {/* تنبيه الرسائل الجديدة */}
+      <MessageAlert
+        isOpen={newMessageAlert.show}
+        sender={newMessageAlert.sender}
+        onClose={() => setNewMessageAlert({ show: false, sender: null })}
+        onOpenMessages={() => setShowMessages(true)}
+      />
     </div>
   );
 }
