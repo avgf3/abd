@@ -3,6 +3,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* تحسينات للرسائل الخاصة */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 :root {
   --background: hsl(208, 100%, 7%);
   --foreground: hsl(0, 0%, 98%);
