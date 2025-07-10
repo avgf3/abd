@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import UserContextMenu from './UserContextMenu';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 
 interface MessageAreaProps {
@@ -111,9 +112,20 @@ export default function MessageArea({
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-blue-600">
-                    {message.sender?.username || 'مستخدم'}
-                  </span>
+                  {message.sender ? (
+                    <UserContextMenu
+                      targetUser={message.sender}
+                      currentUser={currentUser}
+                      messageId={message.id}
+                      messageContent={message.content}
+                    >
+                      <span className="font-semibold text-blue-600 cursor-pointer hover:underline">
+                        {message.sender.username}
+                      </span>
+                    </UserContextMenu>
+                  ) : (
+                    <span className="font-semibold text-blue-600">مستخدم</span>
+                  )}
                   {message.sender && getUserRankBadge(message.sender.userType)}
                   <span className="text-xs text-gray-500">
                     {formatTime(message.timestamp)}

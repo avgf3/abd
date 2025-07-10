@@ -248,6 +248,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Moderation routes
+  app.post('/api/moderation/mute', async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, reason, duration } = req.body;
+      const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, duration);
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post('/api/moderation/ban', async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, reason, duration } = req.body;
+      const success = await moderationSystem.banUser(moderatorId, targetUserId, reason, duration);
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post('/api/moderation/block', async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, reason, ipAddress, deviceId } = req.body;
+      const success = await moderationSystem.blockUser(moderatorId, targetUserId, reason, ipAddress, deviceId);
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post('/api/moderation/promote', async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, role } = req.body;
+      const success = await moderationSystem.promoteUser(moderatorId, targetUserId, role);
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.get('/api/moderation/log', async (req, res) => {
+    try {
+      const log = moderationSystem.getModerationLog();
+      res.json({ log });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   // WebSocket handling
   wss.on('connection', (ws: WebSocketClient) => {
     console.log('اتصال WebSocket جديد');

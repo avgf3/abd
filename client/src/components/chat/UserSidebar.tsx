@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
+import UserContextMenu from './UserContextMenu';
 import type { ChatUser } from '@/types/chat';
 
 interface UserSidebarProps {
   users: ChatUser[];
   onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
+  currentUser?: ChatUser | null;
 }
 
-export default function UserSidebar({ users, onUserClick }: UserSidebarProps) {
+export default function UserSidebar({ users, onUserClick, currentUser }: UserSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredUsers = users.filter(user =>
@@ -62,11 +64,15 @@ export default function UserSidebar({ users, onUserClick }: UserSidebarProps) {
         
         <ul className="space-y-2">
           {filteredUsers.map((user) => (
-            <li
+            <UserContextMenu
               key={user.id}
-              className="flex items-center gap-3 p-3 rounded-xl glass-effect hover:bg-accent transition-all duration-200 cursor-pointer"
-              onClick={(e) => onUserClick(e, user)}
+              targetUser={user}
+              currentUser={currentUser}
             >
+              <li
+                className="flex items-center gap-3 p-3 rounded-xl glass-effect hover:bg-accent transition-all duration-200 cursor-pointer"
+                onClick={(e) => onUserClick(e, user)}
+              >
               <img
                 src={user.profileImage || "/default_avatar.svg"}
                 alt="صورة المستخدم"
@@ -90,7 +96,8 @@ export default function UserSidebar({ users, onUserClick }: UserSidebarProps) {
                   متصل
                 </span>
               </div>
-            </li>
+              </li>
+            </UserContextMenu>
           ))}
         </ul>
         

@@ -10,6 +10,8 @@ import AdminReportsPanel from './AdminReportsPanel';
 import NotificationPanel from './NotificationPanel';
 import FriendsPanel from './FriendsPanel';
 import ModerationPanel from './ModerationPanel';
+import OwnerAdminPanel from './OwnerAdminPanel';
+import UserContextMenu from './UserContextMenu';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -30,6 +32,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
   const [showModerationPanel, setShowModerationPanel] = useState(false);
+  const [showOwnerPanel, setShowOwnerPanel] = useState(false);
   const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
   const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(null);
   const [userPopup, setUserPopup] = useState<{
@@ -158,6 +161,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               إدارة
             </Button>
           )}
+
+          {/* زر خاص بالمالك فقط */}
+          {chat.currentUser && chat.currentUser.userType === 'owner' && (
+            <Button 
+              className="glass-effect px-4 py-2 rounded-lg hover:bg-purple-600 transition-all duration-200 flex items-center gap-2 border border-purple-400"
+              onClick={() => setShowOwnerPanel(true)}
+            >
+              <span>👑</span>
+              إدارة المالك
+            </Button>
+          )}
           
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
@@ -174,6 +188,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         <UserSidebar 
           users={chat.onlineUsers}
           onUserClick={handleUserClick}
+          currentUser={chat.currentUser}
         />
         <MessageArea 
           messages={chat.publicMessages}
@@ -275,6 +290,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         <ModerationPanel
           isOpen={showModerationPanel}
           onClose={() => setShowModerationPanel(false)}
+          currentUser={chat.currentUser}
+          onlineUsers={chat.onlineUsers}
+        />
+      )}
+
+      {showOwnerPanel && (
+        <OwnerAdminPanel 
+          isOpen={showOwnerPanel}
+          onClose={() => setShowOwnerPanel(false)}
           currentUser={chat.currentUser}
           onlineUsers={chat.onlineUsers}
         />

@@ -358,7 +358,7 @@ export class MixedStorage implements IStorage {
       .filter(f => f.friendId === userId && f.status === 'pending');
     
     return await Promise.all(incomingRequests.map(async (request) => {
-      const user = await this.getUser(request.userId);
+      const user = await this.getUser(request.userId!);
       return {
         ...request,
         user
@@ -371,7 +371,7 @@ export class MixedStorage implements IStorage {
       .filter(f => f.userId === userId && f.status === 'pending');
     
     return await Promise.all(outgoingRequests.map(async (request) => {
-      const user = await this.getUser(request.friendId);
+      const user = await this.getUser(request.friendId!);
       return {
         ...request,
         user
