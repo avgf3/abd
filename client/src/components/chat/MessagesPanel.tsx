@@ -62,10 +62,10 @@ export default function MessagesPanel({
       <DialogContent className="max-w-md max-h-[600px] bg-white border-2 border-primary/20 shadow-xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center">
-            💬 الرسائل الخاصة
+            📩 الرسائل الخاصة
           </DialogTitle>
           <DialogDescription className="text-center text-gray-600">
-            محادثاتك الخاصة مع الأصدقاء
+            محادثاتك الخاصة مع الأصدقاء والمستخدمين
           </DialogDescription>
         </DialogHeader>
 
@@ -73,9 +73,10 @@ export default function MessagesPanel({
           <div className="space-y-3 p-2">
             {conversationUsers.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                <div className="text-4xl mb-4">💬</div>
+                <div className="text-4xl mb-4">📩</div>
                 <p>لا توجد رسائل خاصة حتى الآن</p>
-                <p className="text-sm mt-2">ابدأ محادثة عن طريق النقر على اسم مستخدم</p>
+                <p className="text-sm mt-2">ابدأ محادثة عن طريق النقر على اسم مستخدم في الدردشة</p>
+                <p className="text-sm mt-1 text-blue-600">أو اختر مستخدم من القائمة أدناه</p>
               </div>
             ) : (
               conversationUsers.map(({ user, lastMessage, unreadCount }) => (
@@ -171,7 +172,7 @@ export default function MessagesPanel({
                             <p className="text-xs text-green-600">متصل الآن</p>
                           </div>
                           <Button size="sm" variant="outline" className="text-xs">
-                            💬 راسل
+                            📩 راسل
                           </Button>
                         </div>
                       </CardContent>

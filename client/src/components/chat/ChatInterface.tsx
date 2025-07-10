@@ -157,8 +157,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClick={() => setShowMessages(true)}
             title="الرسائل الخاصة"
           >
-            <span>💬</span>
-            رسائل
+            <span>📩</span>
+            رسالة خاصة
             {Object.keys(chat.privateConversations).length > 0 && (
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></span>
             )}
