@@ -156,7 +156,7 @@ export default function MessagesPanel({
             {/* قائمة المستخدمين المتصلين لبدء محادثة جديدة */}
             <div className="mt-8 border-t border-purple-200 pt-6">
               <h4 className="font-bold text-purple-700 text-lg mb-4">
-                ✉️ ارسل رسالة جديدة
+                ✉️ ارسال رسالة جديدة
               </h4>
               <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
                 {onlineUsers
@@ -201,7 +201,7 @@ export default function MessagesPanel({
                             variant="outline" 
                             className="text-xs bg-blue-100 border-blue-300 text-blue-700 hover:bg-blue-200 font-medium"
                           >
-                            ✉️ ارسل رسالة
+                            ✉️ ارسال رسالة
                           </Button>
                         </div>
                       </CardContent>

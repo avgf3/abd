@@ -57,7 +57,7 @@ export default function PrivateMessageBox({
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
           <span>✉️</span>
-          <span className="font-semibold">رسالة إلى {targetUser.username}</span>
+          <span className="font-semibold">ارسال رسالة إلى {targetUser.username}</span>
         </div>
         <Button
           onClick={onClose}
@@ -83,7 +83,7 @@ export default function PrivateMessageBox({
         ))}
         {messages.length === 0 && (
           <div className="text-center text-muted-foreground text-sm">
-            ✉️ اكتب رسالتك
+            ✉️ ارسال رسالة
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -94,7 +94,7 @@ export default function PrivateMessageBox({
           value={messageText}
           onChange={(e) => setMessageText(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="اكتب رسالتك..."
+          placeholder="ارسال رسالة..."
           className="flex-1 bg-accent border-border text-white placeholder:text-muted-foreground"
         />
         <Button
