@@ -67,7 +67,7 @@ export default function OwnerAdminPanel({
   const [moderationLog, setModerationLog] = useState<ModerationAction[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState('log');
+  const [selectedTab, setSelectedTab] = useState('staff');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -234,14 +234,20 @@ export default function OwnerAdminPanel({
           </DialogHeader>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="log" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-1">
+            <TabsTrigger 
+              value="staff" 
+              className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all"
+            >
+              <Users className="w-4 h-4" />
+              قائمة المشرفين
+            </TabsTrigger>
+            <TabsTrigger 
+              value="log" 
+              className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all"
+            >
               <Shield className="w-4 h-4" />
               سجل الإجراءات
-            </TabsTrigger>
-            <TabsTrigger value="staff" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              إدارة المشرفين
             </TabsTrigger>
           </TabsList>
 
@@ -321,96 +327,127 @@ export default function OwnerAdminPanel({
             </Card>
           </TabsContent>
 
-          <TabsContent value="staff" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  إدارة المشرفين والإداريين
-                </CardTitle>
-                <CardDescription>
-                  عرض وإدارة جميع أعضاء الإدارة - إلغاء الإشراف متاح للمالك فقط
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[400px]">
-                  {loading ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                    </div>
-                  ) : staffMembers.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      لا توجد أعضاء إدارة
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {staffMembers.map((staff) => (
-                        <div key={staff.id} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={staff.profileImage || '/default_avatar.svg'}
-                                alt={staff.username}
-                                className="w-12 h-12 rounded-full"
-                              />
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-semibold">{staff.username}</span>
-                                  {getRoleIcon(staff.userType)}
-                                  <Badge variant="outline">
-                                    {getRoleText(staff.userType)}
-                                  </Badge>
-                                  {staff.isOnline && (
-                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                  )}
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                  {staff.isOnline ? 'متصل الآن' : 
-                                   staff.lastSeen ? `آخر ظهور: ${new Date(staff.lastSeen).toLocaleDateString('ar-SA')}` : 
-                                   'غير متصل'}
-                                </div>
-                              </div>
+          <TabsContent value="staff" className="space-y-6">
+            <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-6 border border-purple-200">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-3 rounded-xl">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">قائمة المشرفين</h3>
+                  <p className="text-gray-600">إدارة أعضاء الفريق الإداري</p>
+                </div>
+              </div>
+
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mx-auto mb-4"></div>
+                  <p className="text-gray-600">جاري التحميل...</p>
+                </div>
+              ) : staffMembers.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="bg-gray-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <Users className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 text-lg">لا توجد أعضاء إدارة</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 max-h-[400px] overflow-y-auto">
+                  {staffMembers.map((staff) => (
+                    <div 
+                      key={staff.id} 
+                      className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="relative">
+                            <img
+                              src={staff.profileImage || '/default_avatar.svg'}
+                              alt={staff.username}
+                              className="w-14 h-14 rounded-full border-2 border-purple-200"
+                            />
+                            {staff.isOnline && (
+                              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                            )}
+                          </div>
+                          
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-bold text-gray-800 text-lg">{staff.username}</span>
+                              {getRoleIcon(staff.userType)}
                             </div>
                             
-                            {staff.id !== currentUser.id && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-red-600 border-red-200 hover:bg-red-50"
-                                  >
-                                    إلغاء الإشراف
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent dir="rtl">
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>تأكيد إلغاء الإشراف</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      هل أنت متأكد من إلغاء إشراف {staff.username}؟ 
-                                      سيتم تحويله إلى عضو عادي وسيفقد جميع صلاحياته الإدارية.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDemoteUser(staff)}
-                                      className="bg-red-600 hover:bg-red-700"
-                                    >
-                                      تأكيد الإلغاء
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                            <div className="flex items-center gap-2">
+                              <Badge 
+                                variant="secondary" 
+                                className={`
+                                  ${staff.userType === 'owner' ? 'bg-purple-100 text-purple-800 border-purple-200' : ''}
+                                  ${staff.userType === 'admin' ? 'bg-blue-100 text-blue-800 border-blue-200' : ''}
+                                  ${staff.userType === 'moderator' ? 'bg-green-100 text-green-800 border-green-200' : ''}
+                                `}
+                              >
+                                {getRoleText(staff.userType)}
+                              </Badge>
+                              
+                              <span className={`text-sm px-2 py-1 rounded-full ${
+                                staff.isOnline 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {staff.isOnline ? '🟢 متصل' : '⚫ غير متصل'}
+                              </span>
+                            </div>
+                            
+                            {!staff.isOnline && staff.lastSeen && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                آخر ظهور: {new Date(staff.lastSeen).toLocaleDateString('ar-SA')}
+                              </p>
                             )}
                           </div>
                         </div>
-                      ))}
+                        
+                        {staff.id !== currentUser.id && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 transition-colors"
+                              >
+                                <UserX className="w-4 h-4 mr-2" />
+                                إزالة الإشراف
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent dir="rtl" className="rounded-2xl">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="flex items-center gap-2 text-xl">
+                                  <UserX className="w-6 h-6 text-red-500" />
+                                  تأكيد إزالة الإشراف
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-gray-600 leading-relaxed">
+                                  هل أنت متأكد من إزالة إشراف <strong>{staff.username}</strong>؟ 
+                                  <br />
+                                  سيتم تحويله إلى عضو عادي وسيفقد جميع صلاحياته الإدارية.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="rounded-lg">إلغاء</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDemoteUser(staff)}
+                                  className="bg-red-600 hover:bg-red-700 rounded-lg"
+                                >
+                                  تأكيد الإزالة
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
+                  ))}
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
         </DialogContent>
