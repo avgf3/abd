@@ -79,76 +79,37 @@ export default function MessagesPanel({
                   ✉️ ارسال رسالة ({conversationUsers.length})
                 </h4>
                 {conversationUsers.map(({ user, lastMessage, unreadCount }) => (
-                  <Card 
+                  <div 
                     key={user!.id} 
-                    className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-purple-400 bg-white hover:bg-purple-50"
+                    className="cursor-pointer hover:bg-purple-50 transition-all duration-200 p-2 rounded-lg"
                     onClick={() => {
                       onStartPrivateChat(user!);
                       onClose();
                     }}
                   >
-                    <CardContent className="p-2">
-                      <div className="flex items-start gap-2">
-                        <div className="relative">
-                          <img
-                            src={user!.profileImage || "/default_avatar.svg"}
-                            alt="صورة المستخدم"
-                            className="w-10 h-10 rounded-full border-2 border-purple-200"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = '/default_avatar.svg';
-                            }}
-                          />
-                          {user!.isOnline && (
-                            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-                          )}
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <h3 className="font-bold text-gray-900 text-sm truncate">
-                              {user!.username}
-                            </h3>
-                            <div className="flex items-center gap-1">
-                              <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
-                                {formatTime(lastMessage?.timestamp)}
-                              </span>
-                              {unreadCount > 0 && (
-                                <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold min-w-[18px] text-center">
-                                  {unreadCount}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <p className="text-xs text-gray-700 mb-1 line-clamp-2">
-                            {lastMessage?.messageType === 'image' ? 
-                              <span className="text-blue-600">📷 تم إرسال صورة</span> : 
-                              formatLastMessage(lastMessage?.content || 'لا توجد رسائل')
-                            }
-                          </p>
-                          
-                          <div className="flex items-center justify-between">
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                              user!.isOnline ? 
-                                'bg-green-100 text-green-700 border border-green-200' : 
-                                'bg-gray-100 text-gray-600 border border-gray-200'
-                            }`}>
-                              {user!.isOnline ? '🟢 متصل الآن' : '⚫ غير متصل'}
-                            </span>
-                            
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="text-xs bg-purple-100 border-purple-300 text-purple-700 hover:bg-purple-200 px-2 py-1"
-                            >
-                              ✉️ ارسال رسالة
-                            </Button>
-                          </div>
-                        </div>
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={user!.profileImage || "/default_avatar.svg"}
+                        alt="صورة المستخدم"
+                        className="w-12 h-12 rounded-full border-2 border-purple-200"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/default_avatar.svg';
+                        }}
+                      />
+                      
+                      <div className="flex-1">
+                        <h3 className="font-bold text-gray-900 text-base">
+                          {user!.username}
+                        </h3>
+                        {unreadCount > 0 && (
+                          <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                            {unreadCount} رسالة جديدة
+                          </span>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
