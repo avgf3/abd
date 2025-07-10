@@ -105,8 +105,8 @@ export default function MessagesPanel({
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <h3 className="font-bold text-gray-900 text-sm truncate">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-bold text-gray-900 text-lg truncate">
                               {user!.username}
                             </h3>
                             <div className="flex items-center gap-2">
@@ -129,18 +129,18 @@ export default function MessagesPanel({
                           </p>
                           
                           <div className="flex items-center justify-between">
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            <span className={`text-xs px-3 py-1 rounded-full font-medium ${
                               user!.isOnline ? 
                                 'bg-green-100 text-green-700 border border-green-200' : 
                                 'bg-gray-100 text-gray-600 border border-gray-200'
                             }`}>
-                              {user!.isOnline ? '🟢' : '⚫'}
+                              {user!.isOnline ? '🟢 متصل الآن' : '⚫ غير متصل'}
                             </span>
                             
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              className="text-xs bg-purple-100 border-purple-300 text-purple-700 hover:bg-purple-200 px-2 py-1"
+                              className="text-xs bg-purple-100 border-purple-300 text-purple-700 hover:bg-purple-200"
                             >
                               ✉️ ارسال رسالة
                             </Button>
