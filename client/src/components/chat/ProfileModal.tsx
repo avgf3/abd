@@ -48,62 +48,16 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
     input.click();
   };
 
-  const handleSave = async () => {
-    if (!user) return;
-    
-    try {
-      // For guests, only save temporarily (in memory and localStorage)
-      if (user.userType === 'guest') {
-        // Save to localStorage for current session only
-        localStorage.setItem('guestProfile', JSON.stringify(profileData));
-        
-        // Update current user with temporary data (for this session only)
-        if ((window as any).chatUpdater) {
-          (window as any).chatUpdater(profileData);
-        }
-        
-        onClose();
-        return;
-      }
-
-      // For members and owners, save to server permanently
-      const response = await fetch(`/api/users/${user.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: profileData.name,
-          status: profileData.status,
-          profileImage: profileData.profileImage,
-          gender: profileData.gender,
-          age: profileData.age === 'عدم إظهار' ? null : parseInt(profileData.age),
-          country: profileData.country,
-          relation: profileData.relation,
-        }),
-      });
-
-      if (response.ok) {
-        // Save to localStorage for persistence
-        localStorage.setItem('userProfile', JSON.stringify(profileData));
-        onClose();
-      } else {
-        const errorText = await response.text();
-        console.error('Failed to update profile:', errorText);
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-    }
+  const handleSave = () => {
+    // Save to localStorage
+    localStorage.setItem('userProfile', JSON.stringify(profileData));
+    onClose();
   };
 
   useEffect(() => {
-    if (!user) return;
-    
-    // Load saved profile data based on user type
-    const storageKey = user.userType === 'guest' ? 'guestProfile' : 'userProfile';
-    const saved = localStorage.getItem(storageKey);
-    
-    if (saved) {
+    // Load saved profile data
+    const saved = localStorage.getItem('userProfile');
+    if (saved && user) {
       const savedData = JSON.parse(saved);
       setProfileData({
         name: savedData.name || user.username,
@@ -114,7 +68,7 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
         relation: savedData.relation || user.relation || '',
         profileImage: savedData.profileImage || user.profileImage || '/default_avatar.svg',
       });
-    } else {
+    } else if (user) {
       setProfileData({
         name: user.username,
         status: user.status || '',
