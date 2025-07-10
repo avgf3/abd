@@ -60,54 +60,47 @@ export default function PrivateMessageBox({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[450px] bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-2xl">
-        <DialogHeader className="border-b border-purple-200 pb-2">
-          <DialogTitle className="text-sm font-bold text-center text-purple-800 flex items-center justify-center gap-2">
+      <DialogContent className="max-w-sm max-h-[380px] bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-2xl">
+        <DialogHeader className="border-b border-purple-200 pb-1">
+          <DialogTitle className="text-xs font-bold text-center text-purple-800 flex items-center justify-center gap-1.5">
             <div className="relative">
               <img
                 src={user.profileImage || "/default_avatar.svg"}
                 alt="صورة المستخدم"
-                className="w-8 h-8 rounded-full border-2 border-purple-300 shadow-sm"
+                className="w-6 h-6 rounded-full border border-purple-300"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = '/default_avatar.svg';
                 }}
               />
               {user.isOnline && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border border-white rounded-full animate-pulse"></div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border border-white rounded-full"></div>
               )}
             </div>
-            <div className="text-center">
-              <p className="font-bold text-purple-800 text-sm">{user.username}</p>
-              <p className="text-xs text-purple-600 flex items-center gap-1">
-                <span>
-                  {user.userType === 'owner' && '👑'}
-                  {user.userType === 'admin' && '🛡️'}
-                  {user.userType === 'moderator' && '⚖️'}
-                  {user.userType === 'member' && '👤'}
-                  {user.userType === 'guest' && '👋'}
-                </span>
-                <span className={user.isOnline ? 'text-green-600' : 'text-gray-500'}>
-                  {user.isOnline ? '🟢' : '⚫'}
-                </span>
-              </p>
-            </div>
+            <span className="font-bold text-purple-800 text-xs">{user.username}</span>
+            <span className="text-xs">
+              {user.userType === 'owner' && '👑'}
+              {user.userType === 'admin' && '🛡️'}
+              {user.userType === 'moderator' && '⚖️'}
+              {user.userType === 'member' && '👤'}
+              {user.userType === 'guest' && '👋'}
+            </span>
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="h-[280px] w-full p-3">
-          <div className="space-y-3">
+        <ScrollArea className="h-[240px] w-full p-2">
+          <div className="space-y-2">
             {messages.map((message, index) => (
               <div 
                 key={`${message.id}-${message.senderId}-${index}`}
                 className={`flex ${message.senderId === currentUser?.id ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[80%] p-3 rounded-xl shadow-sm ${
+                <div className={`max-w-[75%] p-2 rounded-lg shadow-sm ${
                   message.senderId === currentUser?.id 
                     ? 'bg-purple-500 text-white rounded-br-sm' 
                     : 'bg-white text-gray-800 rounded-bl-sm border border-purple-200'
                 }`}>
-                  <div className="text-sm font-medium mb-1">
+                  <div className="text-xs font-medium mb-0.5">
                     {message.content}
                   </div>
                   <div className={`text-xs ${
@@ -120,35 +113,35 @@ export default function PrivateMessageBox({
             ))}
             
             {messages.length === 0 && (
-              <div className="text-center py-8 text-purple-400">
-                <div className="text-4xl mb-3">✉️</div>
-                <p className="text-lg font-medium">لا توجد رسائل</p>
-                <p className="text-sm">ابدأ محادثة جديدة!</p>
+              <div className="text-center py-6 text-purple-400">
+                <div className="text-2xl mb-2">✉️</div>
+                <p className="text-sm font-medium">لا توجد رسائل</p>
+                <p className="text-xs">ابدأ محادثة!</p>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
 
-        <div className="flex gap-2 p-3 border-t border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
+        <div className="flex gap-1.5 p-2 border-t border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
           <Input
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="✉️ ارسال رسالة..."
-            className="flex-1 bg-white border-purple-300 text-gray-800 placeholder:text-purple-400 focus:border-purple-500 text-sm"
+            placeholder="رسالة..."
+            className="flex-1 bg-white border-purple-300 text-gray-800 placeholder:text-purple-400 focus:border-purple-500 text-xs h-8"
           />
           <Button
             onClick={handleSendMessage}
             disabled={!messageText.trim()}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg font-medium text-sm"
+            className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-xs h-8"
           >
             ✉️
           </Button>
           <Button 
             onClick={onClose} 
             variant="outline" 
-            className="bg-white border-purple-300 text-purple-700 hover:bg-purple-100 font-medium px-3 text-sm"
+            className="bg-white border-purple-300 text-purple-700 hover:bg-purple-100 px-2 text-xs h-8"
           >
             ✖️
           </Button>
