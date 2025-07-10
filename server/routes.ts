@@ -248,11 +248,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // WebSocket handling
   wss.on('connection', (ws: WebSocketClient) => {
+    console.log('اتصال WebSocket جديد');
     clients.add(ws);
 
     ws.on('message', async (data) => {
       try {
         const message = JSON.parse(data.toString());
+        console.log(`رسالة WebSocket من ${ws.username || 'غير معروف'}: ${message.type}`);
         
         switch (message.type) {
           case 'auth':
