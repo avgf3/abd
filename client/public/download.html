@@ -48,15 +48,26 @@
             margin-top: 10px;
         }
     </style>
+    <script>
+        function startDownload() {
+            setTimeout(function() {
+                alert('تم بدء التحميل! ابحث عن الملف في مجلد التحميلات بجهازك');
+            }, 500);
+        }
+    </script>
 </head>
 <body>
     <div class="download-container">
         <h1>🚀 تحميل مشروع الدردشة العربي</h1>
         <p>مشروع كامل لتطبيق دردشة عربي متقدم مع جميع الميزات</p>
         
-        <a href="./arabic-chat-project.tar.gz" download="arabic-chat-project.tar.gz" class="download-btn">
+        <a href="./arabic-chat-project.tar.gz" download="arabic-chat-project.tar.gz" class="download-btn" onclick="startDownload()">
             📥 تحميل المشروع كاملاً
         </a>
+        
+        <p style="margin-top: 20px; font-size: 14px;">
+            إذا لم يبدأ التحميل تلقائياً، <a href="./arabic-chat-project.tar.gz" style="color: #ffc107;">اضغط هنا</a>
+        </p>
         
         <div class="file-size">حجم الملف: حوالي 135 كيلوبايت</div>
         
