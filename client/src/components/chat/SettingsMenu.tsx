@@ -4,9 +4,11 @@ interface SettingsMenuProps {
   onOpenProfile: () => void;
   onLogout: () => void;
   onClose: () => void;
+  onOpenReports?: () => void;
+  currentUser?: any;
 }
 
-export default function SettingsMenu({ onOpenProfile, onLogout, onClose }: SettingsMenuProps) {
+export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenReports, currentUser }: SettingsMenuProps) {
   const handleLogout = () => {
     if (confirm('🤔 هل أنت متأكد من تسجيل الخروج؟')) {
       onLogout();
@@ -39,6 +41,18 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose }: Setti
         <span className="text-primary">🌙</span>
         تبديل المظهر
       </Button>
+      
+      {/* زر إدارة التبليغات للمشرفين فقط */}
+      {currentUser?.userType === 'owner' && onOpenReports && (
+        <Button
+          onClick={onOpenReports}
+          variant="ghost"
+          className="w-full px-6 py-4 border-b border-border text-right hover:bg-accent transition-all flex items-center gap-3 justify-start"
+        >
+          <span className="text-primary">🛡️</span>
+          إدارة التبليغات
+        </Button>
+      )}
       
       <Button
         onClick={handleLogout}

@@ -83,6 +83,16 @@ export function useChat() {
           const message: WebSocketMessage = JSON.parse(event.data);
           
           switch (message.type) {
+            case 'error':
+              // عرض رسالة خطأ من نظام مكافحة السبام
+              console.error('خطأ من الخادم:', message.message);
+              break;
+              
+            case 'warning':
+              // عرض تحذير من نظام مكافحة السبام
+              console.warn('تحذير:', message.message);
+              break;
+              
             case 'onlineUsers':
               if (message.users) {
                 setOnlineUsers(message.users);

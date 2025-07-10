@@ -5,6 +5,8 @@ import ProfileModal from './ProfileModal';
 import PrivateMessageBox from './PrivateMessageBox';
 import UserPopup from './UserPopup';
 import SettingsMenu from './SettingsMenu';
+import ReportModal from './ReportModal';
+import AdminReportsPanel from './AdminReportsPanel';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -20,6 +22,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showAdminReports, setShowAdminReports] = useState(false);
+  const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
+  const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(null);
   const [userPopup, setUserPopup] = useState<{
     show: boolean;
     user: ChatUser | null;
@@ -95,6 +101,19 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     closeUserPopup();
   };
 
+  const handleReportUser = (user: ChatUser, messageContent?: string, messageId?: number) => {
+    setReportedUser(user);
+    setReportedMessage(messageContent && messageId ? { content: messageContent, id: messageId } : null);
+    setShowReportModal(true);
+    closeUserPopup();
+  };
+
+  const closeReportModal = () => {
+    setShowReportModal(false);
+    setReportedUser(null);
+    setReportedMessage(null);
+  };
+
   return (
     <div className="h-screen flex flex-col" onClick={closeUserPopup}>
       {/* Header */}
@@ -128,6 +147,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           onSendMessage={chat.sendPublicMessage}
           onTyping={chat.handleTyping}
           typingUsers={chat.typingUsers}
+          onReportMessage={handleReportUser}
         />
       </main>
 
@@ -170,6 +190,30 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           }}
           onLogout={onLogout}
           onClose={() => setShowSettings(false)}
+          onOpenReports={() => {
+            setShowAdminReports(true);
+            setShowSettings(false);
+          }}
+          currentUser={chat.currentUser}
+        />
+      )}
+
+      {showReportModal && (
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={closeReportModal}
+          reportedUser={reportedUser}
+          currentUser={chat.currentUser}
+          messageContent={reportedMessage?.content}
+          messageId={reportedMessage?.id}
+        />
+      )}
+
+      {showAdminReports && (
+        <AdminReportsPanel
+          isOpen={showAdminReports}
+          onClose={() => setShowAdminReports(false)}
+          currentUser={chat.currentUser}
         />
       )}
     </div>

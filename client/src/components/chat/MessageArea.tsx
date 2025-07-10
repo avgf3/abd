@@ -9,6 +9,7 @@ interface MessageAreaProps {
   onSendMessage: (content: string, messageType?: string) => void;
   onTyping: () => void;
   typingUsers: Set<string>;
+  onReportMessage?: (user: ChatUser, messageContent: string, messageId: number) => void;
 }
 
 export default function MessageArea({ 
@@ -16,7 +17,8 @@ export default function MessageArea({
   currentUser, 
   onSendMessage, 
   onTyping,
-  typingUsers 
+  typingUsers,
+  onReportMessage
 }: MessageAreaProps) {
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -127,6 +129,19 @@ export default function MessageArea({
                   <p className="text-gray-800">{message.content}</p>
                 )}
               </div>
+              
+              {/* زر التبليغ */}
+              {onReportMessage && message.sender && message.sender.id !== currentUser?.id && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onReportMessage(message.sender!, message.content, message.id)}
+                  className="text-gray-400 hover:text-red-500 p-1"
+                  title="إبلاغ عن هذه الرسالة"
+                >
+                  🚩
+                </Button>
+              )}
             </div>
           </div>
         ))}

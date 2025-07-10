@@ -29,7 +29,7 @@ export interface PrivateConversation {
 }
 
 export interface WebSocketMessage {
-  type: 'auth' | 'publicMessage' | 'privateMessage' | 'typing' | 'userJoined' | 'userLeft' | 'newMessage' | 'onlineUsers' | 'userUpdated';
+  type: 'auth' | 'publicMessage' | 'privateMessage' | 'typing' | 'userJoined' | 'userLeft' | 'newMessage' | 'onlineUsers' | 'userUpdated' | 'error' | 'warning';
   userId?: number;
   username?: string;
   content?: string;
@@ -39,6 +39,7 @@ export interface WebSocketMessage {
   user?: ChatUser;
   users?: ChatUser[];
   message?: ChatMessage;
+  action?: string;
 }
 
 export interface UserProfile {

@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupDownloadRoute } from "./download-route";
 import { insertUserSchema, insertMessageSchema } from "@shared/schema";
+import { spamProtection } from "./spam-protection";
 import { z } from "zod";
 
 interface WebSocketClient extends WebSocket {
@@ -278,6 +279,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           case 'publicMessage':
             if (ws.userId) {
+              // فحص الرسالة ضد السبام
+              const spamCheck = spamProtection.checkMessage(ws.userId, message.content);
+              if (!spamCheck.isAllowed) {
+                ws.send(JSON.stringify({
+                  type: 'error',
+                  message: spamCheck.reason,
+                  action: spamCheck.action
+                }));
+                
+                // إرسال تحذير إذا لزم الأمر
+                if (spamCheck.action === 'warn') {
+                  ws.send(JSON.stringify({
+                    type: 'warning',
+                    message: 'تم إعطاؤك تحذير بسبب مخالفة قوانين الدردشة'
+                  }));
+                }
+                break;
+              }
+
               const newMessage = await storage.createMessage({
                 senderId: ws.userId,
                 content: message.content,
@@ -295,6 +315,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           case 'privateMessage':
             if (ws.userId) {
+              // فحص الرسالة الخاصة ضد السبام
+              const spamCheck = spamProtection.checkMessage(ws.userId, message.content);
+              if (!spamCheck.isAllowed) {
+                ws.send(JSON.stringify({
+                  type: 'error',
+                  message: spamCheck.reason,
+                  action: spamCheck.action
+                }));
+                break;
+              }
+
               const newMessage = await storage.createMessage({
                 senderId: ws.userId,
                 receiverId: message.receiverId,
@@ -362,6 +393,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
   }
+
+  // API routes for spam protection and reporting
+  
+  // إضافة تبليغ
+  app.post("/api/reports", async (req, res) => {
+    try {
+      const { reporterId, reportedUserId, reason, content, messageId } = req.body;
+      
+      if (!reporterId || !reportedUserId || !reason || !content) {
+        return res.status(400).json({ error: "جميع الحقول مطلوبة" });
+      }
+
+      const report = spamProtection.addReport(reporterId, reportedUserId, reason, content, messageId);
+      res.json({ report, message: "تم إرسال التبليغ بنجاح" });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // الحصول على التبليغات المعلقة (للمشرفين)
+  app.get("/api/reports/pending", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      
+      // التحقق من أن المستخدم مشرف
+      const user = await storage.getUser(parseInt(userId as string));
+      if (!user || user.userType !== 'owner') {
+        return res.status(403).json({ error: "غير مسموح" });
+      }
+
+      const reports = spamProtection.getPendingReports();
+      res.json({ reports });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // مراجعة تبليغ (للمشرفين)
+  app.patch("/api/reports/:reportId", async (req, res) => {
+    try {
+      const { reportId } = req.params;
+      const { action, userId } = req.body;
+      
+      // التحقق من أن المستخدم مشرف
+      const user = await storage.getUser(userId);
+      if (!user || user.userType !== 'owner') {
+        return res.status(403).json({ error: "غير مسموح" });
+      }
+
+      const success = spamProtection.reviewReport(parseInt(reportId), action);
+      if (success) {
+        res.json({ message: "تم مراجعة التبليغ" });
+      } else {
+        res.status(404).json({ error: "التبليغ غير موجود" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // الحصول على حالة المستخدم
+  app.get("/api/users/:userId/spam-status", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const status = spamProtection.getUserStatus(userId);
+      res.json({ status });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // إعادة تعيين نقاط السبام (للمشرفين)
+  app.post("/api/users/:userId/reset-spam", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { adminId } = req.body;
+      
+      // التحقق من أن المستخدم مشرف
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.userType !== 'owner') {
+        return res.status(403).json({ error: "غير مسموح" });
+      }
+
+      spamProtection.resetUserSpamScore(parseInt(userId));
+      res.json({ message: "تم إعادة تعيين نقاط السبام" });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // إحصائيات السبام (للمشرفين)
+  app.get("/api/spam-stats", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      
+      // التحقق من أن المستخدم مشرف
+      const user = await storage.getUser(parseInt(userId as string));
+      if (!user || user.userType !== 'owner') {
+        return res.status(403).json({ error: "غير مسموح" });
+      }
+
+      const stats = spamProtection.getStats();
+      res.json({ stats });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
 
   return httpServer;
 }
