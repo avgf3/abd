@@ -68,10 +68,12 @@ export default function OwnerAdminPanel({
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('staff');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen && currentUser?.userType === 'owner') {
+      setIsModalOpen(isOpen);
       fetchModerationData();
       fetchStaffMembers();
     }
@@ -200,7 +202,7 @@ export default function OwnerAdminPanel({
       {/* أيقونة الإدارة للمالك */}
       {currentUser?.username === 'عبود' && (
         <Button
-          onClick={() => setIsOpen(true)}
+          onClick={() => setIsModalOpen(true)}
           className="fixed bottom-4 right-4 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-full p-4 shadow-xl z-50"
           size="lg"
         >
@@ -208,7 +210,7 @@ export default function OwnerAdminPanel({
         </Button>
       )}
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) onClose(); }}>
         <DialogContent className="sm:max-w-[900px] max-h-[800px]" dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
@@ -220,7 +222,7 @@ export default function OwnerAdminPanel({
                 </Badge>
               </div>
               <Button
-                onClick={() => setIsOpen(false)}
+                onClick={() => { setIsModalOpen(false); onClose(); }}
                 variant="ghost"
                 size="sm"
                 className="text-gray-500 hover:text-gray-700 text-lg"
