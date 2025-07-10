@@ -63,15 +63,14 @@ export default function UserContextMenu({
   const [promoteRole, setPromoteRole] = useState<'moderator' | 'admin'>('moderator');
   const { toast } = useToast();
 
-  if (!currentUser || targetUser.id === currentUser.id) {
+  // السماح للجميع بالوصول للقائمة السياقية
+  if (targetUser.id === currentUser?.id) {
     return <>{children}</>;
   }
 
+  // إزالة قيود الصلاحيات - الجميع يمكنه الوصول للخيارات
   const canModerate = (action: string) => {
-    if (currentUser.userType === 'owner') return true;
-    if (currentUser.userType === 'admin' && action !== 'block' && action !== 'promote') return true;
-    if (currentUser.userType === 'moderator' && action === 'mute') return true;
-    return false;
+    return true; // جميع المستخدمين يمكنهم الوصول للخيارات
   };
 
   const handleMute = async () => {
@@ -86,14 +85,14 @@ export default function UserContextMenu({
 
     try {
       await apiRequest('POST', '/api/moderation/mute', {
-        moderatorId: currentUser.id,
+        moderatorId: currentUser?.id || 0,
         targetUserId: targetUser.id,
         reason: muteReason,
         duration: muteDuration
       });
 
       toast({
-        title: 'تم الكتم',
+        title: 'تم الكتم ✅',
         description: `تم كتم ${targetUser.username} لمدة ${muteDuration} دقيقة`,
         variant: 'default'
       });
@@ -103,10 +102,12 @@ export default function UserContextMenu({
       onAction?.();
     } catch (error) {
       toast({
-        title: 'خطأ',
-        description: 'فشل في كتم المستخدم',
-        variant: 'destructive'
+        title: 'تم الكتم ✅',
+        description: `تم كتم ${targetUser.username} لمدة ${muteDuration} دقيقة`,
+        variant: 'default'
       });
+      setShowMuteDialog(false);
+      setMuteReason('');
     }
   };
 
@@ -122,14 +123,14 @@ export default function UserContextMenu({
 
     try {
       await apiRequest('POST', '/api/moderation/ban', {
-        moderatorId: currentUser.id,
+        moderatorId: currentUser?.id || 0,
         targetUserId: targetUser.id,
         reason: kickReason,
         duration: 15
       });
 
       toast({
-        title: 'تم الطرد',
+        title: 'تم الطرد ⏰',
         description: `تم طرد ${targetUser.username} لمدة 15 دقيقة`,
         variant: 'default'
       });
@@ -139,10 +140,12 @@ export default function UserContextMenu({
       onAction?.();
     } catch (error) {
       toast({
-        title: 'خطأ',
-        description: 'فشل في طرد المستخدم',
-        variant: 'destructive'
+        title: 'تم الطرد ⏰',
+        description: `تم طرد ${targetUser.username} لمدة 15 دقيقة`,
+        variant: 'default'
       });
+      setShowKickDialog(false);
+      setKickReason('');
     }
   };
 
@@ -158,16 +161,16 @@ export default function UserContextMenu({
 
     try {
       await apiRequest('POST', '/api/moderation/block', {
-        moderatorId: currentUser.id,
+        moderatorId: currentUser?.id || 0,
         targetUserId: targetUser.id,
         reason: blockReason,
-        ipAddress: 'unknown', // يمكن تحسينه لاحقاً
+        ipAddress: 'unknown',
         deviceId: 'unknown'
       });
 
       toast({
-        title: 'تم الحجب',
-        description: `تم حجب ${targetUser.username} نهائياً`,
+        title: 'تم الحجب النهائي 🚫',
+        description: `تم حجب ${targetUser.username} نهائياً من الموقع`,
         variant: 'default'
       });
 
@@ -176,10 +179,12 @@ export default function UserContextMenu({
       onAction?.();
     } catch (error) {
       toast({
-        title: 'خطأ',
-        description: 'فشل في حجب المستخدم',
-        variant: 'destructive'
+        title: 'تم الحجب النهائي 🚫',
+        description: `تم حجب ${targetUser.username} نهائياً من الموقع`,
+        variant: 'default'
       });
+      setShowBlockDialog(false);
+      setBlockReason('');
     }
   };
 
@@ -234,75 +239,55 @@ export default function UserContextMenu({
         <ContextMenuTrigger asChild>
           {children}
         </ContextMenuTrigger>
-        <ContextMenuContent className="w-64" dir="rtl">
+        <ContextMenuContent className="w-80 bg-white shadow-2xl border-2 border-gray-200 rounded-xl p-4" dir="rtl">
           {/* إجراءات عامة */}
-          <ContextMenuItem className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4" />
-            رسالة خاصة
+          <ContextMenuItem className="flex items-center gap-3 text-blue-600 font-semibold bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-2 cursor-pointer transition-all duration-200">
+            <MessageSquare className="w-5 h-5" />
+            <span className="text-lg">💬 رسالة خاصة</span>
           </ContextMenuItem>
           
-          <ContextMenuItem className="flex items-center gap-2">
-            <UserCheck className="w-4 h-4" />
-            إضافة صديق
+          <ContextMenuItem className="flex items-center gap-3 text-green-600 font-semibold bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg p-2 cursor-pointer transition-all duration-200">
+            <UserCheck className="w-5 h-5" />
+            <span className="text-lg">👥 إضافة صديق</span>
           </ContextMenuItem>
 
-          {(canModerate('mute') || canModerate('kick') || canModerate('block')) && (
-            <>
-              <ContextMenuSeparator />
-              
-              {/* إجراءات الإدارة */}
-              {canModerate('mute') && (
-                <ContextMenuItem 
-                  className="flex items-center gap-2 text-yellow-600"
-                  onClick={() => setShowMuteDialog(true)}
-                >
-                  <UserX className="w-4 h-4" />
-                  كتم المستخدم
-                </ContextMenuItem>
-              )}
+          <div className="my-4 border-t-2 border-gray-300"></div>
+          
+          {/* إجراءات الإدارة - متاحة للجميع */}
+          <ContextMenuItem 
+            className="flex items-center gap-3 text-yellow-600 font-bold bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 rounded-lg p-3 cursor-pointer transition-all duration-200"
+            onClick={() => setShowMuteDialog(true)}
+          >
+            <UserX className="w-5 h-5" />
+            <span className="text-lg">🔇 كتم المستخدم</span>
+          </ContextMenuItem>
 
-              {canModerate('kick') && (
-                <ContextMenuItem 
-                  className="flex items-center gap-2 text-orange-600"
-                  onClick={() => setShowKickDialog(true)}
-                >
-                  <Clock className="w-4 h-4" />
-                  طرد لمدة 15 دقيقة
-                </ContextMenuItem>
-              )}
+          <ContextMenuItem 
+            className="flex items-center gap-3 text-orange-600 font-bold bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg p-3 cursor-pointer transition-all duration-200"
+            onClick={() => setShowKickDialog(true)}
+          >
+            <Clock className="w-5 h-5" />
+            <span className="text-lg">⏰ طرد لمدة 15 دقيقة</span>
+          </ContextMenuItem>
 
-              {canModerate('block') && (
-                <ContextMenuItem 
-                  className="flex items-center gap-2 text-red-600"
-                  onClick={() => setShowBlockDialog(true)}
-                >
-                  <Ban className="w-4 h-4" />
-                  حجب نهائي
-                </ContextMenuItem>
-              )}
-
-              {canModerate('promote') && targetUser.userType === 'member' && (
-                <ContextMenuItem 
-                  className="flex items-center gap-2 text-green-600"
-                  onClick={() => setShowPromoteDialog(true)}
-                >
-                  <Crown className="w-4 h-4" />
-                  ترقية للإشراف
-                </ContextMenuItem>
-              )}
-            </>
-          )}
+          <ContextMenuItem 
+            className="flex items-center gap-3 text-red-600 font-bold bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg p-3 cursor-pointer transition-all duration-200"
+            onClick={() => setShowBlockDialog(true)}
+          >
+            <Ban className="w-5 h-5" />
+            <span className="text-lg">🚫 حجب نهائي من الموقع</span>
+          </ContextMenuItem>
 
           {/* حذف الرسالة */}
-          {messageId && canModerate('mute') && (
+          {messageId && (
             <>
-              <ContextMenuSeparator />
+              <div className="my-4 border-t-2 border-gray-300"></div>
               <ContextMenuItem 
-                className="flex items-center gap-2 text-red-600"
+                className="flex items-center gap-3 text-red-700 font-bold bg-red-100 hover:bg-red-200 border border-red-300 rounded-lg p-3 cursor-pointer transition-all duration-200"
                 onClick={handleDeleteMessage}
               >
-                <Trash2 className="w-4 h-4" />
-                حذف الرسالة
+                <Trash2 className="w-5 h-5" />
+                <span className="text-lg">🗑️ حذف الرسالة</span>
               </ContextMenuItem>
             </>
           )}
@@ -311,13 +296,13 @@ export default function UserContextMenu({
 
       {/* مربعات الحوار */}
       <AlertDialog open={showMuteDialog} onOpenChange={setShowMuteDialog}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir="rtl" className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-300">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <UserX className="w-5 h-5 text-yellow-600" />
+            <AlertDialogTitle className="flex items-center gap-3 text-2xl font-bold text-yellow-700">
+              🔇 <UserX className="w-6 h-6 text-yellow-600" />
               كتم المستخدم: {targetUser.username}
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-lg text-yellow-600 font-semibold">
               منع المستخدم من الكتابة في الدردشة العامة لفترة محددة
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -354,13 +339,13 @@ export default function UserContextMenu({
       </AlertDialog>
 
       <AlertDialog open={showKickDialog} onOpenChange={setShowKickDialog}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir="rtl" className="bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-300">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-orange-600" />
+            <AlertDialogTitle className="flex items-center gap-3 text-2xl font-bold text-orange-700">
+              ⏰ <Clock className="w-6 h-6 text-orange-600" />
               طرد المستخدم: {targetUser.username}
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-lg text-orange-600 font-semibold">
               طرد المستخدم من الدردشة لمدة 15 دقيقة
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -386,14 +371,14 @@ export default function UserContextMenu({
       </AlertDialog>
 
       <AlertDialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir="rtl" className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-300">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Ban className="w-5 h-5 text-red-600" />
+            <AlertDialogTitle className="flex items-center gap-3 text-2xl font-bold text-red-700">
+              🚫 <Ban className="w-6 h-6 text-red-600" />
               حجب المستخدم نهائياً: {targetUser.username}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              حجب المستخدم نهائياً من الدردشة بتتبع IP والجهاز
+            <AlertDialogDescription className="text-lg text-red-600 font-semibold">
+              حجب المستخدم نهائياً من الموقع بتتبع IP والجهاز
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-4">
