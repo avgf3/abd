@@ -208,7 +208,7 @@ export default function OwnerAdminPanel({
         </Button>
       )}
 
-      <Dialog open={isOpen} onOpenChange={(open) => !open && setIsOpen(false)}>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-[900px] max-h-[800px]" dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
@@ -251,80 +251,93 @@ export default function OwnerAdminPanel({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="log" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  سجل الإجراءات الإدارية
-                </CardTitle>
-                <CardDescription>
-                  جميع الإجراءات التي تم تنفيذها من قبل المشرفين والإداريين
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[400px]">
-                  {moderationLog.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      لا توجد إجراءات إدارية مسجلة
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {moderationLog.map((action) => (
-                        <div key={action.id} className="border rounded-lg p-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                              <Badge className={`${getActionColor(action.type)} flex items-center gap-1`}>
-                                {getActionIcon(action.type)}
-                                {action.type === 'mute' && 'كتم'}
-                                {action.type === 'ban' && 'طرد'}
-                                {action.type === 'kick' && 'طرد'}
-                                {action.type === 'block' && 'حجب'}
-                                {action.type === 'promote' && 'ترقية'}
-                                {action.type === 'demote' && 'إلغاء إشراف'}
-                              </Badge>
-                              <div className="text-sm text-gray-600">
-                                {formatDateTime(action.timestamp)}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="font-semibold">المستهدف: </span>
-                              {action.targetUsername}
-                            </div>
-                            <div>
-                              <span className="font-semibold">المنفذ: </span>
-                              {action.moderatorUsername}
-                            </div>
-                          </div>
-                          
-                          <div className="mt-2 text-sm">
-                            <span className="font-semibold">السبب: </span>
-                            {action.reason}
-                          </div>
-                          
-                          {action.duration && (
-                            <div className="mt-2 text-sm">
-                              <span className="font-semibold">المدة: </span>
-                              {action.duration} دقيقة
+          <TabsContent value="log" className="space-y-6">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-3 rounded-xl">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">سجل الإجراءات</h3>
+                  <p className="text-gray-600">تسجيل جميع الإجراءات الإدارية</p>
+                </div>
+              </div>
+
+              {moderationLog.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="bg-gray-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <Shield className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 text-lg">لا توجد إجراءات مسجلة</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {moderationLog.map((action) => (
+                    <div 
+                      key={action.id} 
+                      className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <Badge className={`${getActionColor(action.type)} flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium`}>
+                            {getActionIcon(action.type)}
+                            {action.type === 'mute' && 'كتم'}
+                            {action.type === 'ban' && 'طرد'}
+                            {action.type === 'kick' && 'طرد'}
+                            {action.type === 'block' && 'حجب'}
+                            {action.type === 'promote' && 'ترقية'}
+                            {action.type === 'demote' && 'إلغاء إشراف'}
+                          </Badge>
+                          <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">
+                            {formatDateTime(action.timestamp)}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                        <div className="bg-red-50 p-2 rounded-lg">
+                          <span className="font-semibold text-red-700">المستهدف: </span>
+                          <span className="text-red-800">{action.targetUsername}</span>
+                        </div>
+                        <div className="bg-blue-50 p-2 rounded-lg">
+                          <span className="font-semibold text-blue-700">المنفذ: </span>
+                          <span className="text-blue-800">{action.moderatorUsername}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 p-2 rounded-lg text-sm mb-2">
+                        <span className="font-semibold text-gray-700">السبب: </span>
+                        <span className="text-gray-800">{action.reason}</span>
+                      </div>
+                      
+                      {action.duration && (
+                        <div className="bg-orange-50 p-2 rounded-lg text-sm mb-2">
+                          <span className="font-semibold text-orange-700">المدة: </span>
+                          <span className="text-orange-800">{action.duration} دقيقة</span>
+                        </div>
+                      )}
+                      
+                      {(action.ipAddress || action.deviceId) && (
+                        <div className="bg-yellow-50 p-2 rounded-lg text-xs border-t pt-2">
+                          {action.ipAddress && (
+                            <div className="text-yellow-700">
+                              <span className="font-semibold">IP: </span>
+                              <span>{action.ipAddress}</span>
                             </div>
                           )}
-                          
-                          {(action.ipAddress || action.deviceId) && (
-                            <div className="mt-2 text-xs text-gray-500 border-t pt-2">
-                              {action.ipAddress && <div>IP: {action.ipAddress}</div>}
-                              {action.deviceId && <div>Device: {action.deviceId}</div>}
+                          {action.deviceId && (
+                            <div className="text-yellow-700">
+                              <span className="font-semibold">Device: </span>
+                              <span>{action.deviceId}</span>
                             </div>
                           )}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
+                  ))}
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="staff" className="space-y-6">
