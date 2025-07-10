@@ -118,9 +118,17 @@ Preferred communication style: Simple, everyday language.
 
 ### Database Management
 - **Schema**: Drizzle schema defined in shared folder
-- **Migrations**: Generated in `/migrations` folder
+- **Migrations**: Generated in `/migrations` folder  
 - **Deployment**: `db:push` command for schema deployment
 - **Connection**: Environment variable DATABASE_URL for database connection
+- **Mixed Storage**: PostgreSQL for member data persistence, in-memory for temporary guest data
+
+### Recent Changes (January 10, 2025)
+- **Database Integration**: Successfully implemented PostgreSQL database for member data persistence
+- **Mixed Storage System**: Guests stored in memory (temporary), members stored in database (persistent)
+- **Profile Picture Upload**: Fixed upload restrictions - now available for members and owners only
+- **User Registration**: Added comprehensive registration form with all required fields
+- **Data Persistence**: Member accounts now persist between sessions, guest accounts remain temporary
 
 ### Replit Integration
 - **Development**: Special Replit plugins for development environment

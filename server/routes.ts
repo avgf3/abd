@@ -198,7 +198,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "المستخدم غير موجود" });
       }
 
-      if (existingUser.userType !== 'member') {
+      // Allow members and owners to upload profile pictures (not guests)
+      if (existingUser.userType === 'guest') {
         return res.status(403).json({ error: "رفع الصور الشخصية متاح للأعضاء فقط" });
       }
 

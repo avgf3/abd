@@ -34,8 +34,8 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
   const handleImageUpload = () => {
     if (!user) return;
     
-    // Check if user is a member
-    if (user.userType !== 'member') {
+    // Check if user is a member or owner (not guest)
+    if (user.userType === 'guest') {
       toast({
         title: "غير مسموح",
         description: "رفع الصور الشخصية متاح للأعضاء فقط. سجل كعضو أولاً.",

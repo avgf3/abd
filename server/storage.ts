@@ -96,7 +96,7 @@ export class MixedStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    if (insertUser.userType === 'member') {
+    if (insertUser.userType === 'member' || insertUser.userType === 'owner') {
       // Store members in database with profile picture support
       const [dbUser] = await db
         .insert(users)
@@ -156,7 +156,7 @@ export class MixedStorage implements IStorage {
     // Check if user is in database (member)
     try {
       const [existing] = await db.select().from(users).where(eq(users.id, id));
-      if (existing && existing.userType === 'member') {
+      if (existing && (existing.userType === 'member' || existing.userType === 'owner')) {
         // Members can upload profile pictures
         const [updatedUser] = await db
           .update(users)
