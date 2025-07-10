@@ -81,7 +81,7 @@ export default function MessagesPanel({
                 {conversationUsers.map(({ user, lastMessage, unreadCount }) => (
                   <div 
                     key={user!.id} 
-                    className="cursor-pointer hover:bg-purple-50 transition-all duration-200 p-2 rounded-lg"
+                    className="cursor-pointer bg-white/60 hover:bg-purple-50 transition-all duration-200 p-3 rounded-xl border border-gray-100 shadow-sm hover:shadow-md backdrop-blur-sm"
                     onClick={() => {
                       onStartPrivateChat(user!);
                       onClose();
@@ -91,7 +91,7 @@ export default function MessagesPanel({
                       <img
                         src={user!.profileImage || "/default_avatar.svg"}
                         alt="صورة المستخدم"
-                        className="w-12 h-12 rounded-full border-2 border-purple-200"
+                        className="w-12 h-12 rounded-full border-2 border-purple-200 shadow-sm"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = '/default_avatar.svg';
@@ -103,7 +103,7 @@ export default function MessagesPanel({
                           {user!.username}
                         </h3>
                         {unreadCount > 0 && (
-                          <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                          <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold shadow-sm">
                             {unreadCount} رسالة جديدة
                           </span>
                         )}
