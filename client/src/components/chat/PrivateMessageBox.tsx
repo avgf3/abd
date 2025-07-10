@@ -60,23 +60,18 @@ export default function PrivateMessageBox({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-sm max-h-[380px] bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-2xl">
-        <DialogHeader className="border-b border-purple-200 pb-1">
-          <DialogTitle className="text-xs font-bold text-center text-purple-800 flex items-center justify-center gap-1.5">
-            <div className="relative">
-              <img
-                src={user.profileImage || "/default_avatar.svg"}
-                alt="صورة المستخدم"
-                className="w-6 h-6 rounded-full border border-purple-300"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/default_avatar.svg';
-                }}
-              />
-              {user.isOnline && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border border-white rounded-full"></div>
-              )}
-            </div>
+      <DialogContent className="max-w-xs max-h-[360px] bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-2xl">
+        <DialogHeader className="border-b border-purple-200 pb-1 px-2">
+          <DialogTitle className="text-xs font-bold text-center text-purple-800 flex items-center justify-center gap-1 py-1">
+            <img
+              src={user.profileImage || "/default_avatar.svg"}
+              alt="صورة المستخدم"
+              className="w-5 h-5 rounded-full border border-purple-300"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/default_avatar.svg';
+              }}
+            />
             <span className="font-bold text-purple-800 text-xs">{user.username}</span>
             <span className="text-xs">
               {user.userType === 'owner' && '👑'}
@@ -88,7 +83,7 @@ export default function PrivateMessageBox({
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="h-[240px] w-full p-2">
+        <ScrollArea className="h-[260px] w-full p-2">
           <div className="space-y-2">
             {messages.map((message, index) => (
               <div 
