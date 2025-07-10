@@ -106,7 +106,7 @@ export default function MessagesPanel({
                         
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-bold text-gray-900 text-lg truncate">
+                            <h3 className="font-bold text-gray-900 text-sm truncate">
                               {user!.username}
                             </h3>
                             <div className="flex items-center gap-2">
