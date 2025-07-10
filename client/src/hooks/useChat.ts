@@ -1,6 +1,32 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation } from '@/types/chat';
 
+// Audio notification function
+const playNotificationSound = () => {
+  try {
+    const audio = new Audio('/notification.mp3');
+    audio.volume = 0.3;
+    audio.play().catch(() => {
+      // Fallback: create a simple beep using Web Audio API
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    });
+  } catch (error) {
+    console.log('تعذر تشغيل صوت الإشعار');
+  }
+};
+
 export function useChat() {
   const [currentUser, setCurrentUser] = useState<ChatUser | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<ChatUser[]>([]);
@@ -40,6 +66,10 @@ export function useChat() {
         case 'newMessage':
           if (message.message && !message.message.isPrivate) {
             setPublicMessages(prev => [...prev, message.message!]);
+            // Play notification sound for new public messages from others
+            if (message.message.senderId !== user.id) {
+              playNotificationSound();
+            }
           }
           break;
           
@@ -53,6 +83,11 @@ export function useChat() {
               ...prev,
               [otherUserId]: [...(prev[otherUserId] || []), message.message!]
             }));
+            
+            // Play notification sound for new private messages from others
+            if (message.message.senderId !== user.id) {
+              playNotificationSound();
+            }
           }
           break;
           

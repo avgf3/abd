@@ -13,9 +13,13 @@ interface WelcomeScreenProps {
 export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [guestName, setGuestName] = useState('');
   const [memberName, setMemberName] = useState('');
   const [memberPassword, setMemberPassword] = useState('');
+  const [registerName, setRegisterName] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -80,6 +84,51 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
     }
   };
 
+  const handleRegister = async () => {
+    if (!registerName.trim() || !registerPassword.trim() || !confirmPassword.trim()) {
+      toast({
+        title: "خطأ",
+        description: "يرجى ملء جميع الحقول",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (registerPassword !== confirmPassword) {
+      toast({
+        title: "خطأ",
+        description: "كلمات المرور غير متطابقة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await apiRequest('POST', '/api/auth/register', {
+        username: registerName.trim(),
+        password: registerPassword.trim(),
+        confirmPassword: confirmPassword.trim(),
+      });
+      const data = await response.json();
+      toast({
+        title: "نجح التسجيل",
+        description: data.message,
+      });
+      onUserLogin(data.user);
+      setShowRegisterModal(false);
+    } catch (error: any) {
+      const errorData = await error.response?.json();
+      toast({
+        title: "خطأ",
+        description: errorData?.error || "حدث خطأ في التسجيل",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleLogin = () => {
     toast({
       title: "قريباً",
@@ -113,6 +162,14 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           >
             <span>✅</span>
             دخول كعضو
+          </Button>
+          
+          <Button 
+            className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3 transition-all duration-300"
+            onClick={() => setShowRegisterModal(true)}
+          >
+            <span>📝</span>
+            تسجيل عضوية جديدة
           </Button>
           
           <Button 
@@ -185,6 +242,49 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
             >
               <span className="ml-2">🔑</span>
               {loading ? 'جاري الدخول...' : 'دخول'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Registration Modal */}
+      <Dialog open={showRegisterModal} onOpenChange={setShowRegisterModal}>
+        <DialogContent className="glass-effect border border-border animate-fade-in">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-bold text-white flex items-center justify-center gap-2">
+              <span>📝</span>
+              تسجيل عضوية جديدة
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              value={registerName}
+              onChange={(e) => setRegisterName(e.target.value)}
+              placeholder="اسم المستخدم الجديد"
+              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+            />
+            <Input
+              type="password"
+              value={registerPassword}
+              onChange={(e) => setRegisterPassword(e.target.value)}
+              placeholder="كلمة المرور (6 أحرف على الأقل)"
+              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+            />
+            <Input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="تأكيد كلمة المرور"
+              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+              onKeyPress={(e) => e.key === 'Enter' && handleRegister()}
+            />
+            <Button 
+              onClick={handleRegister} 
+              disabled={loading}
+              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 w-full text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300"
+            >
+              <span className="ml-2">🎉</span>
+              {loading ? 'جاري التسجيل...' : 'إنشاء الحساب'}
             </Button>
           </div>
         </DialogContent>

@@ -71,6 +71,10 @@ export default function UserSidebar({ users, onUserClick }: UserSidebarProps) {
                 src={user.profileImage || "/default_avatar.svg"}
                 alt="صورة المستخدم"
                 className="user-img"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/default_avatar.svg';
+                }}
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2">

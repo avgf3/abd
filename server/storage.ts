@@ -43,7 +43,7 @@ export class MemStorage implements IStorage {
       username: "عبدالكريم",
       password: "عبدالكريم22333",
       userType: "owner",
-      profileImage: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=40&h=40",
+      profileImage: "/default_avatar.svg",
       status: "مالك الموقع",
       gender: "ذكر",
       age: 30,

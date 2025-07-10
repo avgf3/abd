@@ -102,6 +102,10 @@ export default function MessageArea({
                 src={message.sender?.profileImage || "/default_avatar.svg"}
                 alt="صورة المستخدم"
                 className="w-8 h-8 rounded-full"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/default_avatar.svg';
+                }}
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">

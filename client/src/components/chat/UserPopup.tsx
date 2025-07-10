@@ -9,6 +9,7 @@ interface UserPopupProps {
   onAddFriend: () => void;
   onIgnore: () => void;
   onViewProfile: () => void;
+  currentUser: ChatUser | null;
 }
 
 export default function UserPopup({
@@ -18,7 +19,8 @@ export default function UserPopup({
   onPrivateMessage,
   onAddFriend,
   onIgnore,
-  onViewProfile
+  onViewProfile,
+  currentUser,
 }: UserPopupProps) {
   return (
     <div

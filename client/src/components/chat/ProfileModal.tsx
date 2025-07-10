@@ -97,6 +97,10 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
             alt="صورة المستخدم"
             className="w-20 h-20 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
             onClick={handleImageUpload}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = '/default_avatar.svg';
+            }}
           />
           <div className="flex-1 space-y-2">
             <Input

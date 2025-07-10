@@ -6,6 +6,8 @@ import PrivateMessageBox from './PrivateMessageBox';
 import UserPopup from './UserPopup';
 import SettingsMenu from './SettingsMenu';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import type { useChat } from '@/hooks/useChat';
 import type { ChatUser } from '@/types/chat';
 
@@ -29,6 +31,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     x: 0,
     y: 0,
   });
+  const { toast } = useToast();
 
   const handleUserClick = (event: React.MouseEvent, user: ChatUser) => {
     event.stopPropagation();
@@ -51,6 +54,45 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   const closePrivateMessage = () => {
     setSelectedPrivateUser(null);
+  };
+
+  const handleAddFriend = async (user: ChatUser) => {
+    if (!chat.currentUser) return;
+    
+    try {
+      await apiRequest('POST', '/api/friends', {
+        userId: chat.currentUser.id,
+        friendId: user.id,
+      });
+      
+      toast({
+        title: "تمت الإضافة",
+        description: `تم إرسال طلب صداقة إلى ${user.username}`,
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "لم نتمكن من إرسال طلب الصداقة",
+        variant: "destructive",
+      });
+    }
+    closeUserPopup();
+  };
+
+  const handleIgnoreUser = (user: ChatUser) => {
+    toast({
+      title: "تم التجاهل",
+      description: `تم تجاهل المستخدم ${user.username}`,
+    });
+    closeUserPopup();
+  };
+
+  const handleViewProfile = (user: ChatUser) => {
+    toast({
+      title: "الملف الشخصي",
+      description: `عرض ملف ${user.username} الشخصي`,
+    });
+    closeUserPopup();
   };
 
   return (
@@ -113,18 +155,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           x={userPopup.x}
           y={userPopup.y}
           onPrivateMessage={() => handlePrivateMessage(userPopup.user!)}
-          onAddFriend={() => {
-            // TODO: Implement add friend
-            closeUserPopup();
-          }}
-          onIgnore={() => {
-            // TODO: Implement ignore user
-            closeUserPopup();
-          }}
-          onViewProfile={() => {
-            // TODO: Implement view user profile
-            closeUserPopup();
-          }}
+          onAddFriend={() => handleAddFriend(userPopup.user!)}
+          onIgnore={() => handleIgnoreUser(userPopup.user!)}
+          onViewProfile={() => handleViewProfile(userPopup.user!)}
+          currentUser={chat.currentUser}
         />
       )}
 

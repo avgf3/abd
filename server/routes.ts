@@ -17,6 +17,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Store connected clients
   const clients = new Set<WebSocketClient>();
 
+  // Member registration route
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { username, password, confirmPassword } = req.body;
+      
+      if (!username?.trim() || !password?.trim() || !confirmPassword?.trim()) {
+        return res.status(400).json({ error: "جميع الحقول مطلوبة" });
+      }
+
+      if (password !== confirmPassword) {
+        return res.status(400).json({ error: "كلمات المرور غير متطابقة" });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" });
+      }
+
+      // Check if username already exists
+      const existing = await storage.getUserByUsername(username);
+      if (existing) {
+        return res.status(400).json({ error: "اسم المستخدم موجود بالفعل" });
+      }
+
+      const user = await storage.createUser({
+        username,
+        password,
+        userType: "member",
+        profileImage: "/default_avatar.svg",
+      });
+
+      res.json({ user, message: "تم التسجيل بنجاح" });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   // Authentication routes
   app.post("/api/auth/guest", async (req, res) => {
     try {
@@ -35,7 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.createUser({
         username,
         userType: "guest",
-        profileImage: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=40&h=40",
+        profileImage: "/default_avatar.svg",
       });
 
       res.json({ user });
