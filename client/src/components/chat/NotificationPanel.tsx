@@ -31,42 +31,28 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { toast } = useToast();
 
-  // محاكاة إشعارات تجريبية
+  // جلب الإشعارات الحقيقية
   useEffect(() => {
     if (isOpen && currentUser) {
-      const mockNotifications: Notification[] = [
-        {
-          id: 1,
-          type: 'friend_request',
-          fromUser: {
-            id: 100,
-            username: 'أحمد',
-            userType: 'member',
-            isOnline: true,
-            profileImage: '/default_avatar.svg'
-          },
-          content: 'أرسل لك طلب صداقة',
-          timestamp: Date.now() - 3600000, // ساعة مضت
-          read: false
-        },
-        {
-          id: 2,
-          type: 'message',
-          fromUser: {
-            id: 101,
-            username: 'فاطمة',
-            userType: 'member',
-            isOnline: false,
-            profileImage: '/default_avatar.svg'
-          },
-          content: 'أرسلت لك رسالة خاصة',
-          timestamp: Date.now() - 1800000, // نصف ساعة مضت
-          read: false
-        }
-      ];
-      setNotifications(mockNotifications);
+      fetchNotifications();
     }
   }, [isOpen, currentUser]);
+
+  const fetchNotifications = async () => {
+    if (!currentUser) return;
+    
+    try {
+      // في المستقبل، يمكن استبدالها بـ API حقيقي
+      // const response = await apiRequest('GET', `/api/notifications/${currentUser.id}`);
+      // setNotifications(response.notifications || []);
+      
+      // حالياً لا توجد إشعارات حقيقية
+      setNotifications([]);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      setNotifications([]);
+    }
+  };
 
   const formatTime = (timestamp: number) => {
     const now = Date.now();

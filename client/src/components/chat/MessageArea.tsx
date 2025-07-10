@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import SimpleUserMenu from './SimpleUserMenu';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 
 interface MessageAreaProps {
@@ -11,6 +10,7 @@ interface MessageAreaProps {
   onTyping: () => void;
   typingUsers: Set<string>;
   onReportMessage?: (user: ChatUser, messageContent: string, messageId: number) => void;
+  onUserClick?: (event: React.MouseEvent, user: ChatUser) => void;
 }
 
 export default function MessageArea({ 
@@ -19,7 +19,8 @@ export default function MessageArea({
   onSendMessage, 
   onTyping,
   typingUsers,
-  onReportMessage
+  onReportMessage,
+  onUserClick
 }: MessageAreaProps) {
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -113,19 +114,16 @@ export default function MessageArea({
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   {message.sender ? (
-                    <SimpleUserMenu
-                      targetUser={message.sender}
-                      currentUser={currentUser}
-                      messageId={message.id}
+                    <span 
+                      className="font-semibold text-blue-600 cursor-pointer hover:underline"
+                      onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                     >
-                      <span className="font-semibold text-blue-600 cursor-pointer hover:underline">
-                        {message.sender.username}
-                        {/* إشارة المكتوم */}
-                        {message.sender.isMuted && (
-                          <span className="text-yellow-400 text-xs ml-1">🔇</span>
-                        )}
-                      </span>
-                    </SimpleUserMenu>
+                      {message.sender.username}
+                      {/* إشارة المكتوم */}
+                      {message.sender.isMuted && (
+                        <span className="text-yellow-400 text-xs ml-1">🔇</span>
+                      )}
+                    </span>
                   ) : (
                     <span className="font-semibold text-blue-600">مستخدم</span>
                   )}

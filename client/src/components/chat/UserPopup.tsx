@@ -52,11 +52,12 @@ export default function UserPopup({
       
       onClose?.();
     } catch (error) {
+      console.error('Mute error:', error);
       toast({
-        title: '🔇 تم الكتم',
-        description: `${user.username} مكتوم من الدردشة العامة`,
+        title: 'خطأ',
+        description: 'فشل في كتم المستخدم',
+        variant: 'destructive'
       });
-      onClose?.();
     }
   };
 
@@ -78,11 +79,12 @@ export default function UserPopup({
       
       onClose?.();
     } catch (error) {
+      console.error('Ban error:', error);
       toast({
-        title: '⏰ تم الطرد',
-        description: `${user.username} مطرود لمدة 15 دقيقة`,
+        title: 'خطأ',
+        description: 'فشل في طرد المستخدم',
+        variant: 'destructive'
       });
-      onClose?.();
     }
   };
 
@@ -105,11 +107,12 @@ export default function UserPopup({
       
       onClose?.();
     } catch (error) {
+      console.error('Block error:', error);
       toast({
-        title: '🚫 تم الحجب النهائي',
-        description: `${user.username} محجوب نهائياً`,
+        title: 'خطأ',
+        description: 'فشل في حجب المستخدم',
+        variant: 'destructive'
       });
-      onClose?.();
     }
   };
   return (
