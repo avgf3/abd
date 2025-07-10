@@ -239,7 +239,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {selectedPrivateUser && (
         <PrivateMessageBox
-          targetUser={selectedPrivateUser}
+          isOpen={!!selectedPrivateUser}
+          user={selectedPrivateUser}
           currentUser={chat.currentUser}
           messages={chat.privateConversations[selectedPrivateUser.id] || []}
           onSendMessage={(content) => chat.sendPrivateMessage(selectedPrivateUser.id, content)}
