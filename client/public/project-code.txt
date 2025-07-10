@@ -1,0 +1,55 @@
+مشروع الدردشة العربي - الكود الكامل
+==========================================
+
+هذا الملف يحتوي على جميع ملفات المشروع. انسخ كل قسم في ملف منفصل.
+
+=== package.json ===
+{
+  "name": "arabic-chat-app",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "NODE_ENV=development tsx server/index.ts",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build",
+    "build:server": "esbuild server/index.ts --bundle --platform=node --outfile=dist/server.js --external:@neondatabase/serverless --external:ws",
+    "start": "node dist/server.js",
+    "db:push": "drizzle-kit push"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.0",
+    "drizzle-orm": "^0.30.0",
+    "drizzle-zod": "^0.5.1",
+    "express": "^4.18.0",
+    "ws": "^8.16.0",
+    "zod": "^3.22.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "wouter": "^3.0.0",
+    "@tanstack/react-query": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/ws": "^8.5.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "drizzle-kit": "^0.20.0",
+    "esbuild": "^0.20.0",
+    "tailwindcss": "^3.4.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.1.0"
+  }
+}
+
+=== تعليمات التشغيل ===
+1. أنشئ مجلد جديد للمشروع
+2. انسخ محتوى package.json في ملف جديد
+3. شغل: npm install
+4. أنشئ المجلدات: client, server, shared
+5. انسخ باقي الملفات في أماكنها الصحيحة
+6. شغل: npm run dev
+
+=== قاعدة البيانات (shared/schema.ts) ===
