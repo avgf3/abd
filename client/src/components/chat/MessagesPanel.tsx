@@ -61,9 +61,9 @@ export default function MessagesPanel({
       <DialogContent className="max-w-lg max-h-[700px] bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-2xl">
         <DialogHeader className="border-b border-blue-200 pb-4">
           <DialogTitle className="text-2xl font-bold text-center text-blue-800 flex items-center justify-center gap-2">
-            📱 سجل الرسائل الخاصة
+            📱 المحادثات الخاصة
             <span className="text-sm bg-blue-100 px-2 py-1 rounded-full text-blue-600">
-              {conversationUsers.length} سجل
+              {conversationUsers.length} محادثة نشطة
             </span>
           </DialogTitle>
         </DialogHeader>
@@ -73,14 +73,14 @@ export default function MessagesPanel({
             {conversationUsers.length === 0 ? (
               <div className="text-center py-12 text-blue-400">
                 <div className="text-6xl mb-6">📱</div>
-                <h3 className="text-lg font-semibold text-blue-700 mb-2">لا يوجد سجل رسائل</h3>
-                <p className="text-sm">ابدأ محادثة بالنقر على أي مستخدم في الدردشة</p>
-                <p className="text-xs mt-2 text-gray-600">سيظهر السجل هنا عند إرسال أول رسالة</p>
+                <h3 className="text-lg font-semibold text-blue-700 mb-2">لا توجد محادثات نشطة</h3>
+                <p className="text-sm">🎯 انقر على أي مستخدم لبدء محادثة</p>
+                <p className="text-xs mt-2 text-gray-600">ستظهر المحادثات هنا تلقائياً عند الإرسال</p>
               </div>
             ) : (
               <div className="space-y-3">
                 <h4 className="font-bold text-blue-700 text-lg mb-3 border-b border-blue-200 pb-2">
-                  📝 سجل محادثاتك ({conversationUsers.length})
+                  💬 محادثاتك النشطة ({conversationUsers.length})
                 </h4>
                 {conversationUsers.map(({ user, lastMessage, unreadCount }) => (
                   <Card 

@@ -52,13 +52,21 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const handleUserClick = (event: React.MouseEvent, user: ChatUser) => {
     event.stopPropagation();
     
-    // إذا كان هناك سجل محادثة سابق، افتح المحادثة مباشرة
-    if (chat.privateConversations[user.id] && chat.privateConversations[user.id].length > 0) {
+    // 🎯 النظام الذكي: البحث عن سجل محادثة موجود
+    const hasConversationHistory = chat.privateConversations[user.id] && 
+                                  chat.privateConversations[user.id].length > 0;
+    
+    if (hasConversationHistory) {
+      // ✅ يوجد سجل ➜ افتح المحادثة مباشرة
       setSelectedPrivateUser(user);
+      toast({
+        title: `💬 فتح محادثة مع ${user.username}`,
+        description: `يوجد ${chat.privateConversations[user.id].length} رسالة سابقة`,
+      });
       return;
     }
     
-    // إذا لم يكن هناك سجل، اعرض القائمة المنبثقة
+    // ❌ لا يوجد سجل ➜ اعرض قائمة "ابدأ محادثة"
     setUserPopup({
       show: true,
       user,
@@ -163,15 +171,19 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
             onClick={() => setShowMessages(true)}
-            title="سجل الرسائل الخاصة"
+            title="المحادثات الخاصة"
           >
             <span>📱</span>
-            سجل الرسائل
-            {Object.keys(chat.privateConversations).filter(userId => chat.privateConversations[parseInt(userId)].length > 0).length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
-                {Object.keys(chat.privateConversations).filter(userId => chat.privateConversations[parseInt(userId)].length > 0).length}
-              </span>
-            )}
+            المحادثات
+            {(() => {
+              const activeConversations = Object.keys(chat.privateConversations)
+                .filter(userId => chat.privateConversations[parseInt(userId)]?.length > 0);
+              return activeConversations.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
+                  {activeConversations.length}
+                </span>
+              );
+            })()}
           </Button>
           
           {/* زر لوحة الإدارة للمشرفين */}

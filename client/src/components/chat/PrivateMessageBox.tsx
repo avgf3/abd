@@ -56,8 +56,11 @@ export default function PrivateMessageBox({
     <div className="private-message-box animate-slide-up">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
-          <span>🔒</span>
-          <span className="font-semibold">رسالة خاصة إلى {targetUser.username}</span>
+          <span>💬</span>
+          <span className="font-semibold">محادثة مع {targetUser.username}</span>
+          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+            {messages.length === 0 ? 'جديدة' : `${messages.length} رسالة`}
+          </span>
         </div>
         <Button
           onClick={onClose}
@@ -70,8 +73,8 @@ export default function PrivateMessageBox({
       </div>
       
       <div className="max-h-32 overflow-y-auto bg-accent rounded-lg p-3 mb-4 space-y-2">
-        {messages.map((message) => (
-          <div key={message.id} className="text-sm">
+        {messages.map((message, index) => (
+          <div key={`${message.id}-${message.senderId}-${index}`} className="text-sm">
             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
               <span className="font-semibold">
                 {message.senderId === currentUser?.id ? 'أنت' : targetUser.username}
@@ -83,7 +86,8 @@ export default function PrivateMessageBox({
         ))}
         {messages.length === 0 && (
           <div className="text-center text-muted-foreground text-sm">
-            لا توجد رسائل سابقة
+            🆕 بداية محادثة جديدة
+            <div className="text-xs mt-1 text-blue-400">اكتب أول رسالة لبدء المحادثة</div>
           </div>
         )}
         <div ref={messagesEndRef} />
