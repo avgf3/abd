@@ -98,6 +98,73 @@
   100% { background-position: 0% 50%; }
 }
 
+/* تحسينات الهاتف المحمول */
+@media (max-width: 768px) {
+  /* تحسين الأزرار للمس */
+  .mobile-touch-button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px;
+    font-size: 16px;
+  }
+  
+  /* تحسين النصوص */
+  .mobile-text {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  
+  /* تحسين المدخلات */
+  input, textarea {
+    font-size: 16px !important; /* منع التكبير في iOS */
+    padding: 12px;
+    border-radius: 8px;
+  }
+  
+  /* تحسين المسافات */
+  .mobile-padding {
+    padding: 16px;
+  }
+  
+  /* تحسين العرض */
+  .mobile-full-width {
+    width: 100%;
+    max-width: none;
+  }
+  
+  /* تحسين الحوارات */
+  .mobile-dialog {
+    margin: 8px;
+    max-height: calc(100vh - 32px);
+    max-width: calc(100vw - 16px);
+  }
+  
+  /* تحسين التمرير */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
+/* تحسينات الأداء */
+.performance-optimized {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* تحسينات التحميل */
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 @keyframes pulse-slow {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }

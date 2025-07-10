@@ -6,6 +6,7 @@ import { setupDownloadRoute } from "./download-route";
 import { insertUserSchema, insertMessageSchema } from "@shared/schema";
 import { spamProtection } from "./spam-protection";
 import { moderationSystem } from "./moderation";
+import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter } from "./security";
 import { z } from "zod";
 
 interface WebSocketClient extends WebSocket {
@@ -16,25 +17,39 @@ interface WebSocketClient extends WebSocket {
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // تطبيق فحص الأمان على جميع الطلبات
+  app.use(checkIPSecurity);
 
   // Store connected clients
   const clients = new Set<WebSocketClient>();
 
-  // Member registration route
+  // Member registration route - مع أمان محسن
   app.post("/api/auth/register", async (req, res) => {
     try {
       const { username, password, confirmPassword, gender } = req.body;
       
+      // فحص الأمان الأساسي
       if (!username?.trim() || !password?.trim() || !confirmPassword?.trim()) {
         return res.status(400).json({ error: "جميع الحقول مطلوبة" });
+      }
+
+      // فحص اسم المستخدم - منع الأحرف الخاصة
+      if (!/^[\u0600-\u06FFa-zA-Z0-9_]{3,20}$/.test(username.trim())) {
+        return res.status(400).json({ error: "اسم المستخدم يجب أن يكون بين 3-20 حرف ولا يحتوي على رموز خاصة" });
       }
 
       if (password !== confirmPassword) {
         return res.status(400).json({ error: "كلمات المرور غير متطابقة" });
       }
 
+      // فحص قوة كلمة المرور
       if (password.length < 6) {
         return res.status(400).json({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" });
+      }
+      
+      if (!/(?=.*[0-9])/.test(password)) {
+        return res.status(400).json({ error: "كلمة المرور يجب أن تحتوي على رقم واحد على الأقل" });
       }
 
       // Check if username already exists
@@ -58,7 +73,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Authentication routes
-  app.post("/api/auth/guest", async (req, res) => {
+  app.post("/api/auth/guest", authLimiter, async (req, res) => {
     try {
       const { username, gender } = req.body;
       
@@ -85,7 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/member", async (req, res) => {
+  app.post("/api/auth/member", authLimiter, async (req, res) => {
     try {
       const { username, password } = req.body;
       
@@ -256,6 +271,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   wss.on('connection', (ws: WebSocketClient) => {
     console.log('اتصال WebSocket جديد');
     clients.add(ws);
+    
+    // إرسال رسالة ترحيب فورية
+    ws.send(JSON.stringify({
+      type: 'connected',
+      message: 'متصل بنجاح'
+    }));
+    
+    // heartbeat للحفاظ على الاتصال
+    const heartbeat = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.ping();
+      } else {
+        clearInterval(heartbeat);
+      }
+    }, 30000);
 
     ws.on('message', async (data) => {
       try {
@@ -307,8 +337,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 break;
               }
 
+              // تنظيف المحتوى
+              const sanitizedContent = sanitizeInput(message.content);
+              
+              // فحص صحة المحتوى
+              const contentCheck = validateMessageContent(sanitizedContent);
+              if (!contentCheck.isValid) {
+                ws.send(JSON.stringify({
+                  type: 'error',
+                  message: contentCheck.reason
+                }));
+                break;
+              }
+              
               // فحص الرسالة ضد السبام
-              const spamCheck = spamProtection.checkMessage(ws.userId, message.content);
+              const spamCheck = spamProtection.checkMessage(ws.userId, sanitizedContent);
               if (!spamCheck.isAllowed) {
                 ws.send(JSON.stringify({
                   type: 'error',
@@ -328,7 +371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               const newMessage = await storage.createMessage({
                 senderId: ws.userId,
-                content: message.content,
+                content: sanitizedContent,
                 messageType: message.messageType || 'text',
                 isPrivate: false,
               });
@@ -353,8 +396,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 break;
               }
 
+              // تنظيف المحتوى
+              const sanitizedContent = sanitizeInput(message.content);
+              
+              // فحص صحة المحتوى
+              const contentCheck = validateMessageContent(sanitizedContent);
+              if (!contentCheck.isValid) {
+                ws.send(JSON.stringify({
+                  type: 'error',
+                  message: contentCheck.reason
+                }));
+                break;
+              }
+              
               // فحص الرسالة الخاصة ضد السبام
-              const spamCheck = spamProtection.checkMessage(ws.userId, message.content);
+              const spamCheck = spamProtection.checkMessage(ws.userId, sanitizedContent);
               if (!spamCheck.isAllowed) {
                 ws.send(JSON.stringify({
                   type: 'error',
@@ -367,7 +423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const newMessage = await storage.createMessage({
                 senderId: ws.userId,
                 receiverId: message.receiverId,
-                content: message.content,
+                content: sanitizedContent,
                 messageType: message.messageType || 'text',
                 isPrivate: true,
               });

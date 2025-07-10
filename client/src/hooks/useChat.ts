@@ -40,6 +40,11 @@ export function useChat() {
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [newMessageSender, setNewMessageSender] = useState<ChatUser | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // تحسين الأداء: تخزين مؤقت للرسائل
+  const messageCache = useRef<Map<string, ChatMessage[]>>(new Map());
+  const lastMessageTime = useRef<number>(0);
   
   const ws = useRef<WebSocket | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -202,21 +207,25 @@ export function useChat() {
         console.log('WebSocket مقطوع - الكود:', event.code, 'السبب:', event.reason);
         setIsConnected(false);
         
-        // إعادة الاتصال التلقائي إذا لم يكن الإغلاق متعمدًا
+        // إعادة الاتصال الذكي مع تحسين الاستقرار
         if (event.code !== 1000 && event.code !== 1001 && reconnectAttempts.current < maxReconnectAttempts) {
           reconnectAttempts.current++;
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000); // Exponential backoff
+          // تأخير تدريجي مع حد أقصى 10 ثوان
+          const delay = Math.min(2000 * reconnectAttempts.current, 10000);
           
           console.log(`محاولة إعادة الاتصال ${reconnectAttempts.current}/${maxReconnectAttempts} خلال ${delay}ms`);
-          setConnectionError(`محاولة إعادة الاتصال... (${reconnectAttempts.current}/${maxReconnectAttempts})`);
+          setConnectionError(`إعادة الاتصال... (${reconnectAttempts.current}/${maxReconnectAttempts})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
-            if (user && (!ws.current || ws.current.readyState === WebSocket.CLOSED)) {
+            // فحص حالة الشبكة قبل إعادة المحاولة
+            if (navigator.onLine && user && (!ws.current || ws.current.readyState === WebSocket.CLOSED)) {
               connect(user);
+            } else if (!navigator.onLine) {
+              setConnectionError('لا يوجد اتصال بالإنترنت');
             }
           }, delay);
         } else if (reconnectAttempts.current >= maxReconnectAttempts) {
-          setConnectionError('فشل في الاتصال. يرجى إعادة تحميل الصفحة.');
+          setConnectionError('فشل في الاتصال بالخادم. تحقق من الإنترنت وأعد المحاولة.');
         }
       };
 
@@ -324,7 +333,25 @@ export function useChat() {
     setNewMessageSender,
     connect,
     disconnect,
-    sendPublicMessage: sendMessage,
+    sendPublicMessage: useCallback((content: string, messageType: string = 'text') => {
+      if (!content.trim() || !currentUser) return false;
+      
+      const now = Date.now();
+      if (now - lastMessageTime.current < 500) return false;
+      lastMessageTime.current = now;
+      
+      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+        ws.current.send(JSON.stringify({
+          type: 'publicMessage',
+          content: content.trim(),
+          messageType,
+          userId: currentUser.id,
+          username: currentUser.username
+        }));
+        return true;
+      }
+      return false;
+    }, [currentUser]),
     sendPrivateMessage,
     handleTyping,
   };
