@@ -46,27 +46,38 @@ export class MixedStorage implements IStorage {
     this.users = new Map();
     this.messages = new Map();
     this.friends = new Map();
-    this.currentUserId = 1;
+    this.currentUserId = 1000; // Start guest IDs from 1000 to avoid conflicts
     this.currentMessageId = 1;
     this.currentFriendId = 1;
 
-    // Create owner user
-    const owner: User = {
-      id: this.currentUserId++,
-      username: "عبدالكريم",
-      password: "عبدالكريم22333",
-      userType: "owner",
-      profileImage: "/default_avatar.svg",
-      status: "مالك الموقع",
-      gender: "ذكر",
-      age: 30,
-      country: "السعودية",
-      relation: "مرتبط",
-      isOnline: true,
-      lastSeen: new Date(),
-      joinDate: new Date(),
-    };
-    this.users.set(owner.id, owner);
+    // Initialize owner user in database
+    this.initializeOwner();
+  }
+
+  private async initializeOwner() {
+    try {
+      // Check if owner already exists
+      const existing = await db.select().from(users).where(eq(users.username, "عبدالكريم"));
+      if (existing.length === 0) {
+        // Create owner user in database
+        await db.insert(users).values({
+          username: "عبدالكريم",
+          password: "عبدالكريم22333",
+          userType: "owner",
+          profileImage: "/default_avatar.svg",
+          status: "مالك الموقع",
+          gender: "ذكر",
+          age: 30,
+          country: "السعودية",
+          relation: "مرتبط",
+          isOnline: true,
+          lastSeen: new Date(),
+          joinDate: new Date(),
+        });
+      }
+    } catch (error) {
+      console.error('Error initializing owner:', error);
+    }
   }
 
   async getUser(id: number): Promise<User | undefined> {

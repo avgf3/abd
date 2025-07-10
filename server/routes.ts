@@ -200,7 +200,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Allow members and owners to upload profile pictures (not guests)
       if (existingUser.userType === 'guest') {
-        return res.status(403).json({ error: "رفع الصور الشخصية متاح للأعضاء فقط" });
+        return res.status(403).json({ 
+          error: "رفع الصور الشخصية متاح للأعضاء فقط",
+          userType: existingUser.userType,
+          userId: userId
+        });
       }
 
       const user = await storage.updateUser(userId, { profileImage: imageData });
