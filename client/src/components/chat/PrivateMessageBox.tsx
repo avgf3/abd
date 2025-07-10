@@ -56,7 +56,7 @@ export default function PrivateMessageBox({
     <div className="private-message-box animate-slide-up">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
-          <span>📮</span>
+          <span>✉️</span>
           <span className="font-semibold">رسالة إلى {targetUser.username}</span>
         </div>
         <Button
@@ -83,7 +83,7 @@ export default function PrivateMessageBox({
         ))}
         {messages.length === 0 && (
           <div className="text-center text-muted-foreground text-sm">
-            📮 اكتب رسالتك
+            ✉️ اكتب رسالتك
           </div>
         )}
         <div ref={messagesEndRef} />

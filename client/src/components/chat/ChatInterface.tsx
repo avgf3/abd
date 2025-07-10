@@ -157,7 +157,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClick={() => setShowMessages(true)}
             title="الرسائل"
           >
-            <span>📮</span>
+            <span>✉️</span>
             رسائل
           </Button>
           
