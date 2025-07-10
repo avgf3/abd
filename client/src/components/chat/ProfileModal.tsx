@@ -52,7 +52,21 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
     if (!user) return;
     
     try {
-      // Update user profile on server
+      // For guests, only save temporarily (in memory and localStorage)
+      if (user.userType === 'guest') {
+        // Save to localStorage for current session only
+        localStorage.setItem('guestProfile', JSON.stringify(profileData));
+        
+        // Update current user with temporary data (for this session only)
+        if ((window as any).chatUpdater) {
+          (window as any).chatUpdater(profileData);
+        }
+        
+        onClose();
+        return;
+      }
+
+      // For members and owners, save to server permanently
       const response = await fetch(`/api/users/${user.id}`, {
         method: 'PUT',
         headers: {
@@ -70,11 +84,12 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
       });
 
       if (response.ok) {
-        // Save to localStorage
+        // Save to localStorage for persistence
         localStorage.setItem('userProfile', JSON.stringify(profileData));
         onClose();
       } else {
-        console.error('Failed to update profile');
+        const errorText = await response.text();
+        console.error('Failed to update profile:', errorText);
       }
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -82,13 +97,35 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
   };
 
   useEffect(() => {
-    // Load saved profile data
-    const saved = localStorage.getItem('userProfile');
+    if (!user) return;
+    
+    // Load saved profile data based on user type
+    const storageKey = user.userType === 'guest' ? 'guestProfile' : 'userProfile';
+    const saved = localStorage.getItem(storageKey);
+    
     if (saved) {
       const savedData = JSON.parse(saved);
-      setProfileData(prev => ({ ...prev, ...savedData }));
+      setProfileData({
+        name: savedData.name || user.username,
+        status: savedData.status || user.status || '',
+        gender: savedData.gender || user.gender || 'ذكر',
+        age: savedData.age || user.age?.toString() || 'عدم إظهار',
+        country: savedData.country || user.country || '',
+        relation: savedData.relation || user.relation || '',
+        profileImage: savedData.profileImage || user.profileImage || '/default_avatar.svg',
+      });
+    } else {
+      setProfileData({
+        name: user.username,
+        status: user.status || '',
+        gender: user.gender || 'ذكر',
+        age: user.age?.toString() || 'عدم إظهار',
+        country: user.country || '',
+        relation: user.relation || '',
+        profileImage: user.profileImage || '/default_avatar.svg',
+      });
     }
-  }, []);
+  }, [user]);
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -102,7 +139,7 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
         {/* Profile Header */}
         <div className="flex items-center gap-4 p-4 border-b border-border">
           <img
-            src={profileData.profileImage || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80"}
+            src={profileData.profileImage || "/default_avatar.svg"}
             alt="صورة المستخدم"
             className="w-20 h-20 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
             onClick={handleImageUpload}

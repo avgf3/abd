@@ -11,6 +11,18 @@ export default function ChatPage() {
   const handleUserLogin = (user: ChatUser) => {
     chat.connect(user);
     setShowWelcome(false);
+    
+    // Add global updater for guest users
+    if (user.userType === 'guest') {
+      (window as any).chatUpdater = (profileData: any) => {
+        const updatedUser = {
+          ...user,
+          profileImage: profileData.profileImage,
+          status: profileData.status,
+        };
+        chat.updateCurrentUser(updatedUser);
+      };
+    }
   };
 
   const handleLogout = () => {

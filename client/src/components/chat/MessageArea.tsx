@@ -99,7 +99,7 @@ export default function MessageArea({
           >
             <div className="flex items-start gap-3">
               <img
-                src={message.sender?.profileImage || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=32&h=32"}
+                src={message.sender?.profileImage || "/default_avatar.svg"}
                 alt="صورة المستخدم"
                 className="w-8 h-8 rounded-full"
               />

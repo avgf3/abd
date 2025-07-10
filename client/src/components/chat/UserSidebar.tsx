@@ -68,7 +68,7 @@ export default function UserSidebar({ users, onUserClick }: UserSidebarProps) {
               onClick={(e) => onUserClick(e, user)}
             >
               <img
-                src={user.profileImage || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=40&h=40"}
+                src={user.profileImage || "/default_avatar.svg"}
                 alt="صورة المستخدم"
                 className="user-img"
               />

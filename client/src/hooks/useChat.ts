@@ -107,13 +107,18 @@ export function useChat() {
   }, []);
 
   const disconnect = useCallback(() => {
+    // Clear guest data before disconnect
+    if (currentUser && currentUser.userType === 'guest') {
+      localStorage.removeItem('guestProfile');
+    }
+    
     ws.current?.close();
     setCurrentUser(null);
     setIsConnected(false);
     setOnlineUsers([]);
     setPublicMessages([]);
     setPrivateConversations({});
-  }, []);
+  }, [currentUser]);
 
   const sendPublicMessage = useCallback((content: string, messageType: string = 'text') => {
     if (ws.current && isConnected) {
@@ -166,6 +171,10 @@ export function useChat() {
     };
   }, [disconnect]);
 
+  const updateCurrentUser = useCallback((updatedUser: ChatUser) => {
+    setCurrentUser(updatedUser);
+  }, []);
+
   return {
     currentUser,
     onlineUsers,
@@ -178,5 +187,6 @@ export function useChat() {
     sendPublicMessage,
     sendPrivateMessage,
     handleTyping,
+    updateCurrentUser,
   };
 }
