@@ -155,10 +155,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowMessages(true)}
-            title="الرسائل"
+            title="ارسال رسالة"
           >
             <span>✉️</span>
-            رسائل
+            ارسال رسالة
           </Button>
           
           {/* زر لوحة الإدارة للمشرفين */}

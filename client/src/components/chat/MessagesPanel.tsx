@@ -61,7 +61,7 @@ export default function MessagesPanel({
       <DialogContent className="max-w-lg max-h-[700px] bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-2xl">
         <DialogHeader className="border-b border-blue-200 pb-4">
           <DialogTitle className="text-2xl font-bold text-center text-blue-800">
-            ✉️ الرسائل
+            ✉️ ارسال رسالة
           </DialogTitle>
         </DialogHeader>
 
@@ -71,12 +71,12 @@ export default function MessagesPanel({
               <div className="text-center py-12 text-blue-400">
                 <div className="text-6xl mb-6">✉️</div>
                 <h3 className="text-lg font-semibold text-blue-700 mb-2">لا توجد رسائل</h3>
-                <p className="text-sm">انقر على أي مستخدم لإرسال رسالة</p>
+                <p className="text-sm">انقر على أي مستخدم لارسال رسالة</p>
               </div>
             ) : (
               <div className="space-y-3">
                 <h4 className="font-bold text-blue-700 text-lg mb-3 border-b border-blue-200 pb-2">
-                  ✉️ رسائلك ({conversationUsers.length})
+                  ✉️ ارسال رسالة ({conversationUsers.length})
                 </h4>
                 {conversationUsers.map(({ user, lastMessage, unreadCount }) => (
                   <Card 
@@ -142,7 +142,7 @@ export default function MessagesPanel({
                               variant="outline" 
                               className="text-xs bg-purple-100 border-purple-300 text-purple-700 hover:bg-purple-200"
                             >
-                              ✉️ فتح الرسائل
+                              ✉️ ارسال رسالة
                             </Button>
                           </div>
                         </div>
