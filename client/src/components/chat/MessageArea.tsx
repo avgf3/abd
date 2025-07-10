@@ -113,7 +113,7 @@ export default function MessageArea({
                 <div className="flex items-center gap-2 mb-1">
                   {message.sender ? (
                     <span 
-                      className="font-semibold text-blue-600 cursor-pointer hover:underline"
+                      className="font-medium text-sm text-blue-600 cursor-pointer hover:underline"
                       onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                     >
                       {message.sender.username}
@@ -123,7 +123,7 @@ export default function MessageArea({
                       )}
                     </span>
                   ) : (
-                    <span className="font-semibold text-blue-600">مستخدم</span>
+                    <span className="font-medium text-sm text-blue-600">مستخدم</span>
                   )}
                   {message.sender && getUserRankBadge(message.sender.userType)}
                   <span className="text-xs text-gray-500">

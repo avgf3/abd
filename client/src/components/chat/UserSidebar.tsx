@@ -76,12 +76,12 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                 >
               <ProfileImage 
                 user={user} 
-                size="medium" 
+                size="small" 
                 className="transition-transform hover:scale-105"
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="clickable-username">{user.username}</span>
+                  <span className="clickable-username text-sm font-medium">{user.username}</span>
                   {/* إشارة المكتوم */}
                   {user.isMuted && (
                     <span className="text-yellow-400 text-xs">🔇</span>

@@ -91,11 +91,11 @@ export default function MessagesPanel({
                     <div className="flex items-center gap-3">
                       <ProfileImage 
                         user={user!} 
-                        size="medium" 
+                        size="small" 
                       />
                       
                       <div className="flex-1">
-                        <h3 className="font-bold text-gray-900 text-base">
+                        <h3 className="font-medium text-gray-900 text-sm">
                           {user!.username}
                         </h3>
                         {unreadCount > 0 && (

@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import ProfileImage from './ProfileImage';
 import type { ChatUser } from '@/types/chat';
 
 interface Friend extends ChatUser {
@@ -184,17 +185,16 @@ export default function FriendsPanel({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        <img
-                          src={friend.profileImage || '/default_avatar.svg'}
-                          alt={friend.username}
-                          className="w-10 h-10 rounded-full"
+                        <ProfileImage 
+                          user={friend} 
+                          size="small" 
                         />
                         <div 
                           className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${getStatusColor(friend.status)}`}
                         />
                       </div>
                       <div>
-                        <div className="font-semibold flex items-center gap-2">
+                        <div className="font-medium text-sm flex items-center gap-2">
                           {friend.username}
                           {friend.unreadCount && friend.unreadCount > 0 && (
                             <Badge variant="destructive" className="text-xs">
