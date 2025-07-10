@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
-import UserContextMenu from './UserContextMenu';
+import SimpleUserMenu from './SimpleUserMenu';
 import type { ChatUser } from '@/types/chat';
 
 interface UserSidebarProps {
@@ -64,15 +64,15 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
         
         <ul className="space-y-2">
           {filteredUsers.map((user) => (
-            <UserContextMenu
-              key={user.id}
-              targetUser={user}
-              currentUser={currentUser}
-            >
-              <li
-                className="flex items-center gap-3 p-3 rounded-xl glass-effect hover:bg-accent transition-all duration-200 cursor-pointer"
-                onClick={(e) => onUserClick(e, user)}
+            <li key={user.id} className="relative">
+              <SimpleUserMenu
+                targetUser={user}
+                currentUser={currentUser}
               >
+                <div
+                  className="flex items-center gap-3 p-3 rounded-xl glass-effect hover:bg-accent transition-all duration-200 cursor-pointer"
+                  onClick={(e) => onUserClick(e, user)}
+                >
               <img
                 src={user.profileImage || "/default_avatar.svg"}
                 alt="صورة المستخدم"
@@ -85,6 +85,10 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="clickable-username">{user.username}</span>
+                  {/* إشارة المكتوم */}
+                  {user.isMuted && (
+                    <span className="text-yellow-400 text-xs">🔇</span>
+                  )}
                   {getUserRankBadge(user.userType)}
                 </div>
                 <div className="text-xs text-muted-foreground">
@@ -96,8 +100,9 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                   متصل
                 </span>
               </div>
-              </li>
-            </UserContextMenu>
+                </div>
+              </SimpleUserMenu>
+            </li>
           ))}
         </ul>
         

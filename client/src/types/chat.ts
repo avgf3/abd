@@ -11,6 +11,9 @@ export interface ChatUser {
   isOnline: boolean;
   lastSeen?: Date;
   joinDate?: Date;
+  isMuted?: boolean;
+  isKicked?: boolean;
+  isBlocked?: boolean;
 }
 
 export interface ChatMessage {

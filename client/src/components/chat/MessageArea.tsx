@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import UserContextMenu from './UserContextMenu';
+import SimpleUserMenu from './SimpleUserMenu';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 
 interface MessageAreaProps {
@@ -113,16 +113,19 @@ export default function MessageArea({
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   {message.sender ? (
-                    <UserContextMenu
+                    <SimpleUserMenu
                       targetUser={message.sender}
                       currentUser={currentUser}
                       messageId={message.id}
-                      messageContent={message.content}
                     >
                       <span className="font-semibold text-blue-600 cursor-pointer hover:underline">
                         {message.sender.username}
+                        {/* إشارة المكتوم */}
+                        {message.sender.isMuted && (
+                          <span className="text-yellow-400 text-xs ml-1">🔇</span>
+                        )}
                       </span>
-                    </UserContextMenu>
+                    </SimpleUserMenu>
                   ) : (
                     <span className="font-semibold text-blue-600">مستخدم</span>
                   )}
