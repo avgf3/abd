@@ -186,6 +186,19 @@ export class ModerationSystem {
     return true;
   }
 
+  // فك الطرد
+  async unbanUser(moderatorId: number, targetUserId: number): Promise<boolean> {
+    const moderator = await storage.getUser(moderatorId);
+    if (!moderator) return false;
+
+    await storage.updateUser(targetUserId, {
+      isBanned: false,
+      banExpiry: null
+    });
+
+    return true;
+  }
+
   // فك الحجب
   async unblockUser(moderatorId: number, targetUserId: number): Promise<boolean> {
     const moderator = await storage.getUser(moderatorId);

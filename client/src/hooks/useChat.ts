@@ -41,6 +41,7 @@ export function useChat() {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [newMessageSender, setNewMessageSender] = useState<ChatUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [ignoredUsers, setIgnoredUsers] = useState<Set<number>>(new Set());
   
   // تحسين الأداء: تخزين مؤقت للرسائل
   const messageCache = useRef<Map<string, ChatMessage[]>>(new Map());
@@ -107,10 +108,13 @@ export function useChat() {
               
             case 'newMessage':
               if (message.message && !message.message.isPrivate) {
-                setPublicMessages(prev => [...prev, message.message!]);
-                // Play notification sound for new public messages from others
-                if (message.message.senderId !== user.id) {
-                  playNotificationSound();
+                // فحص إذا كان المرسل مُتجاهل
+                if (!ignoredUsers.has(message.message.senderId)) {
+                  setPublicMessages(prev => [...prev, message.message!]);
+                  // Play notification sound for new public messages from others
+                  if (message.message.senderId !== user.id) {
+                    playNotificationSound();
+                  }
                 }
               }
               break;
@@ -183,6 +187,26 @@ export function useChat() {
                       return newSet;
                     });
                   }, 3000);
+                }
+              }
+              break;
+              
+            case 'moderationAction':
+              // إذا تم تطبيق إجراء إداري على المستخدم الحالي
+              if (message.targetUserId === user.id) {
+                console.log('تم تطبيق إجراء إداري:', message.message);
+                
+                // إظهار رسالة الإجراء
+                if (message.action === 'muted') {
+                  console.log('تم كتمك من الدردشة العامة');
+                } else if (message.action === 'banned') {
+                  console.log('تم طردك من الدردشة');
+                  // قطع الاتصال
+                  disconnect();
+                } else if (message.action === 'blocked') {
+                  console.log('تم حجبك نهائياً');
+                  // قطع الاتصال
+                  disconnect();
                 }
               }
               break;
@@ -321,6 +345,22 @@ export function useChat() {
     };
   }, [disconnect]);
 
+  // دالة تجاهل مستخدم
+  const ignoreUser = useCallback((userId: number) => {
+    setIgnoredUsers(prev => new Set([...prev, userId]));
+    // إزالة رسائل المستخدم المُتجاهل من الرسائل الحالية
+    setPublicMessages(prev => prev.filter(msg => msg.senderId !== userId));
+  }, []);
+
+  // دالة إلغاء تجاهل مستخدم  
+  const unignoreUser = useCallback((userId: number) => {
+    setIgnoredUsers(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(userId);
+      return newSet;
+    });
+  }, []);
+
   return {
     currentUser,
     onlineUsers,
@@ -330,9 +370,12 @@ export function useChat() {
     typingUsers,
     connectionError,
     newMessageSender,
+    ignoredUsers,
     setNewMessageSender,
     connect,
     disconnect,
+    ignoreUser,
+    unignoreUser,
     sendPublicMessage: useCallback((content: string, messageType: string = 'text') => {
       if (!content.trim() || !currentUser) return false;
       

@@ -8,9 +8,9 @@ interface ProfileImageProps {
 
 export default function ProfileImage({ user, size = 'medium', className = '' }: ProfileImageProps) {
   const sizeClasses = {
-    small: 'w-8 h-8',
-    medium: 'w-12 h-12',
-    large: 'w-16 h-16'
+    small: 'w-10 h-10',
+    medium: 'w-16 h-16',
+    large: 'w-20 h-20'
   };
 
   // تحديد لون الإطار حسب الجنس (افتراضي ذكر إذا لم يحدد)

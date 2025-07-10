@@ -296,6 +296,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case 'auth':
             ws.userId = message.userId;
             ws.username = message.username;
+            
+            // فحص حالة المستخدم قبل السماح بالاتصال
+            const authUserStatus = await moderationSystem.checkUserStatus(message.userId);
+            if (authUserStatus.isBlocked) {
+              ws.send(JSON.stringify({
+                type: 'error',
+                message: 'أنت محجوب نهائياً من الدردشة',
+                action: 'blocked'
+              }));
+              ws.close();
+              return;
+            }
+            
+            if (authUserStatus.isBanned) {
+              ws.send(JSON.stringify({
+                type: 'error',
+                message: `أنت مطرود من الدردشة لمدة ${authUserStatus.timeLeft} دقيقة`,
+                action: 'banned'
+              }));
+              ws.close();
+              return;
+            }
+            
             await storage.setUserOnlineStatus(message.userId, true);
             
             // Broadcast user joined
@@ -326,7 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           case 'publicMessage':
             if (ws.userId) {
-              // فحص حالة الكتم
+              // فحص حالة الكتم والحظر
               const userStatus = await moderationSystem.checkUserStatus(ws.userId);
               if (userStatus.isMuted) {
                 ws.send(JSON.stringify({
@@ -334,6 +357,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   message: 'أنت مكتوم من الدردشة العامة',
                   action: 'blocked'
                 }));
+                break;
+              }
+              
+              if (userStatus.isBanned) {
+                ws.send(JSON.stringify({
+                  type: 'error',
+                  message: 'أنت مطرود من الدردشة',
+                  action: 'banned'
+                }));
+                break;
+              }
+              
+              if (userStatus.isBlocked) {
+                ws.send(JSON.stringify({
+                  type: 'error',
+                  message: 'أنت محجوب نهائياً من الدردشة',
+                  action: 'blocked'
+                }));
+                // قطع الاتصال للمحجوبين
+                ws.close();
                 break;
               }
 
@@ -603,6 +646,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, duration);
       
       if (success) {
+        // إرسال إشعار للمستخدم المكتوم
+        broadcast({
+          type: 'moderationAction',
+          action: 'muted',
+          targetUserId: targetUserId,
+          message: 'تم كتمك من الدردشة العامة'
+        });
+        
         res.json({ message: "تم كتم المستخدم بنجاح" });
       } else {
         res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
@@ -621,13 +672,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (success) {
         res.json({ message: "تم طرد المستخدم بنجاح" });
         
-        // طرد المستخدم من WebSocket
+        // إرسال إشعار وطرد المستخدم من WebSocket
+        broadcast({
+          type: 'moderationAction',
+          action: 'banned',
+          targetUserId: targetUserId,
+          message: 'تم طردك من الدردشة لمدة 15 دقيقة'
+        });
+        
+        // إجبار قطع الاتصال
         clients.forEach(client => {
           if (client.userId === targetUserId) {
-            client.send(JSON.stringify({
-              type: 'error',
-              message: 'تم طردك من الدردشة لمدة 15 دقيقة'
-            }));
             client.close();
           }
         });
@@ -648,13 +703,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (success) {
         res.json({ message: "تم حجب المستخدم بنجاح" });
         
-        // حجب المستخدم من WebSocket
+        // إرسال إشعار وحجب المستخدم من WebSocket
+        broadcast({
+          type: 'moderationAction',
+          action: 'blocked',
+          targetUserId: targetUserId,
+          message: 'تم حجبك من الدردشة نهائياً'
+        });
+        
+        // إجبار قطع الاتصال
         clients.forEach(client => {
           if (client.userId === targetUserId) {
-            client.send(JSON.stringify({
-              type: 'error',
-              message: 'تم حجبك من الدردشة نهائياً'
-            }));
             client.close();
           }
         });

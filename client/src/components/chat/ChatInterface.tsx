@@ -116,9 +116,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   const handleIgnoreUser = (user: ChatUser) => {
+    chat.ignoreUser(user.id);
     toast({
       title: "تم التجاهل",
-      description: `تم تجاهل المستخدم ${user.username}`,
+      description: `تم تجاهل المستخدم ${user.username} - لن ترى رسائله بعد الآن`,
     });
     closeUserPopup();
   };
