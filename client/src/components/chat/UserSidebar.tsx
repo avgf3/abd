@@ -11,17 +11,17 @@ export default function UserSidebar({ users, onUserClick }: UserSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredUsers = users.filter(user =>
-    user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    user.isOnline && user.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getUserRankBadge = (userType: string) => {
     switch (userType) {
       case 'owner':
-        return <span className="user-rank crown">👑</span>;
+        return <span className="user-rank crown">مالك</span>;
       case 'member':
-        return <span className="user-rank star">⭐</span>;
+        return <span className="user-rank star">عضو</span>;
       default:
-        return <span className="user-rank shield">🛡️</span>;
+        return <span className="user-rank shield">زائر</span>;
     }
   };
 
@@ -53,10 +53,10 @@ export default function UserSidebar({ users, onUserClick }: UserSidebarProps) {
       
       <div className="space-y-3">
         <div className="flex items-center gap-2 font-bold text-green-400 text-lg">
-          <span className="text-xs">🟢</span>
+          <span className="text-xs">●</span>
           المتصلون الآن
           <span className="bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-semibold">
-            {users.length}
+            {users.filter(u => u.isOnline).length}
           </span>
         </div>
         
@@ -78,12 +78,12 @@ export default function UserSidebar({ users, onUserClick }: UserSidebarProps) {
                   {getUserRankBadge(user.userType)}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {user.isOnline ? 'متصل الآن' : formatLastSeen(user.lastSeen)}
+                  متصل الآن
                 </div>
               </div>
               <div className="flex flex-col items-center">
-                <span className={`text-xs ${user.isOnline ? 'text-green-400' : 'text-gray-400'}`}>
-                  🟢
+                <span className="text-xs text-green-400">
+                  متصل
                 </span>
               </div>
             </li>

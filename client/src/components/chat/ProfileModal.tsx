@@ -48,10 +48,37 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
     input.click();
   };
 
-  const handleSave = () => {
-    // Save to localStorage
-    localStorage.setItem('userProfile', JSON.stringify(profileData));
-    onClose();
+  const handleSave = async () => {
+    if (!user) return;
+    
+    try {
+      // Update user profile on server
+      const response = await fetch(`/api/users/${user.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: profileData.name,
+          status: profileData.status,
+          profileImage: profileData.profileImage,
+          gender: profileData.gender,
+          age: profileData.age === 'عدم إظهار' ? null : parseInt(profileData.age),
+          country: profileData.country,
+          relation: profileData.relation,
+        }),
+      });
+
+      if (response.ok) {
+        // Save to localStorage
+        localStorage.setItem('userProfile', JSON.stringify(profileData));
+        onClose();
+      } else {
+        console.error('Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
   };
 
   useEffect(() => {

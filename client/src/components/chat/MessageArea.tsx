@@ -70,11 +70,11 @@ export default function MessageArea({
   const getUserRankBadge = (userType?: string) => {
     switch (userType) {
       case 'owner':
-        return <span className="user-rank crown">👑</span>;
+        return <span className="user-rank crown">مالك</span>;
       case 'member':
-        return <span className="user-rank star">⭐</span>;
+        return <span className="user-rank star">عضو</span>;
       default:
-        return <span className="user-rank shield">🛡️</span>;
+        return <span className="user-rank shield">زائر</span>;
     }
   };
 
@@ -172,7 +172,7 @@ export default function MessageArea({
           onClick={handleSendMessage}
           className="btn-success text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2"
         >
-          ✈️
+          📤
           إرسال
         </Button>
       </div>

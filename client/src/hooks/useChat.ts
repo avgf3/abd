@@ -85,6 +85,17 @@ export function useChat() {
             });
           }
           break;
+          
+        case 'userUpdated':
+          if (message.user) {
+            setOnlineUsers(prev => 
+              prev.map(u => u.id === message.user!.id ? message.user! : u)
+            );
+            if (message.user.id === user.id) {
+              setCurrentUser(message.user);
+            }
+          }
+          break;
       }
     };
 

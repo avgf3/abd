@@ -102,7 +102,7 @@ export default function PrivateMessageBox({
           className="btn-success"
           size="sm"
         >
-          ✈️
+          📤
         </Button>
       </div>
     </div>

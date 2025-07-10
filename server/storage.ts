@@ -40,7 +40,7 @@ export class MemStorage implements IStorage {
     // Create owner user
     const owner: User = {
       id: this.currentUserId++,
-      username: "𝔸𝔹𝔻𝔸𝕃𝔄ℝ𝔢𝕞",
+      username: "عبدالكريم",
       password: "عبدالكريم22333",
       userType: "owner",
       profileImage: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=40&h=40",
@@ -69,8 +69,16 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
     const user: User = {
-      ...insertUser,
       id,
+      username: insertUser.username,
+      password: insertUser.password || null,
+      userType: insertUser.userType || "guest",
+      profileImage: insertUser.profileImage || null,
+      status: insertUser.status || null,
+      gender: insertUser.gender || null,
+      age: insertUser.age || null,
+      country: insertUser.country || null,
+      relation: insertUser.relation || null,
       isOnline: true,
       lastSeen: new Date(),
       joinDate: new Date(),
@@ -104,8 +112,12 @@ export class MemStorage implements IStorage {
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
     const id = this.currentMessageId++;
     const message: Message = {
-      ...insertMessage,
       id,
+      senderId: insertMessage.senderId || null,
+      receiverId: insertMessage.receiverId || null,
+      content: insertMessage.content,
+      messageType: insertMessage.messageType || "text",
+      isPrivate: insertMessage.isPrivate || false,
       timestamp: new Date(),
     };
     this.messages.set(id, message);
@@ -151,7 +163,7 @@ export class MemStorage implements IStorage {
       f.userId === userId ? f.friendId : f.userId
     );
     
-    return friendIds.map(id => this.users.get(id)).filter(Boolean) as User[];
+    return friendIds.map(id => this.users.get(id!)).filter(Boolean) as User[];
   }
 
   async updateFriendStatus(userId: number, friendId: number, status: string): Promise<void> {
@@ -170,7 +182,7 @@ export class MemStorage implements IStorage {
       .filter(f => f.userId === userId && f.status === "blocked");
     
     const blockedIds = blockedFriendships.map(f => f.friendId);
-    return blockedIds.map(id => this.users.get(id)).filter(Boolean) as User[];
+    return blockedIds.map(id => this.users.get(id!)).filter(Boolean) as User[];
   }
 }
 
