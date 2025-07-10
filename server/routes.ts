@@ -320,16 +320,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
               user: await storage.getUser(message.userId),
             }, ws);
             
-            // Send online users list
+            // Send online users list with moderation status
             const onlineUsers = await storage.getOnlineUsers();
+            const usersWithStatus = await Promise.all(
+              onlineUsers.map(async (user) => {
+                const status = await moderationSystem.checkUserStatus(user.id);
+                return {
+                  ...user,
+                  isMuted: status.isMuted,
+                  isBlocked: status.isBlocked,
+                  isBanned: status.isBanned
+                };
+              })
+            );
+            
             ws.send(JSON.stringify({
               type: 'onlineUsers',
-              users: onlineUsers,
+              users: usersWithStatus,
             }));
             break;
 
           case 'publicMessage':
             if (ws.userId) {
+              // فحص حالة الكتم
+              const userStatus = await moderationSystem.checkUserStatus(ws.userId);
+              if (userStatus.isMuted) {
+                ws.send(JSON.stringify({
+                  type: 'error',
+                  message: 'أنت مكتوم من الدردشة العامة',
+                  action: 'blocked'
+                }));
+                break;
+              }
+
               // فحص الرسالة ضد السبام
               const spamCheck = spamProtection.checkMessage(ws.userId, message.content);
               if (!spamCheck.isAllowed) {

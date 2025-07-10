@@ -196,20 +196,42 @@ export default function OwnerAdminPanel({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] max-h-[800px]" dir="rtl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3 text-xl">
-            <Crown className="w-6 h-6 text-purple-600" />
-            لوحة إدارة المالك
-            <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
-              خاص بـ {currentUser.username}
-            </Badge>
-          </DialogTitle>
-          <DialogDescription>
-            إدارة شاملة للمشرفين وسجل الإجراءات - متاح للمالك فقط
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      {/* أيقونة الإدارة للمالك */}
+      {currentUser?.username === 'عبود' && (
+        <Button
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-4 right-4 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-full p-2 shadow-xl z-50"
+          size="sm"
+        >
+          <Crown className="w-4 h-4" />
+        </Button>
+      )}
+
+      <Dialog open={isOpen} onOpenChange={(open) => !open && setIsOpen(false)}>
+        <DialogContent className="sm:max-w-[900px] max-h-[800px]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-3 text-xl">
+                <Crown className="w-6 h-6 text-purple-600" />
+                لوحة إدارة المالك
+                <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
+                  خاص بـ {currentUser.username}
+                </Badge>
+              </div>
+              <Button
+                onClick={() => setIsOpen(false)}
+                variant="ghost"
+                size="sm"
+                className="text-gray-500 hover:text-gray-700 text-lg"
+              >
+                ✕
+              </Button>
+            </DialogTitle>
+            <DialogDescription>
+              إدارة شاملة للمشرفين وسجل الإجراءات - متاح للمالك فقط
+            </DialogDescription>
+          </DialogHeader>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -391,7 +413,8 @@ export default function OwnerAdminPanel({
             </Card>
           </TabsContent>
         </Tabs>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
