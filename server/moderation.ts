@@ -211,6 +211,9 @@ export class ModerationSystem {
   async checkUserStatus(userId: number): Promise<{
     canChat: boolean;
     canJoin: boolean;
+    isMuted: boolean;
+    isBlocked: boolean;
+    isBanned: boolean;
     reason?: string;
     timeLeft?: number;
   }> {
@@ -221,7 +224,14 @@ export class ModerationSystem {
 
     // التحقق من الحجب
     if (user.isBlocked) {
-      return { canChat: false, canJoin: false, reason: 'تم حجبك من الدردشة نهائياً' };
+      return { 
+        canChat: false, 
+        canJoin: false, 
+        isMuted: false, 
+        isBlocked: true, 
+        isBanned: false, 
+        reason: 'تم حجبك من الدردشة نهائياً' 
+      };
     }
 
     // التحقق من الطرد
@@ -230,6 +240,9 @@ export class ModerationSystem {
       return { 
         canChat: false, 
         canJoin: false, 
+        isMuted: false, 
+        isBlocked: false, 
+        isBanned: true, 
         reason: `تم طردك من الدردشة`, 
         timeLeft 
       };
@@ -241,6 +254,9 @@ export class ModerationSystem {
       return { 
         canChat: false, 
         canJoin: true, 
+        isMuted: true, 
+        isBlocked: false, 
+        isBanned: false, 
         reason: `تم كتمك من الدردشة`, 
         timeLeft 
       };
@@ -255,7 +271,13 @@ export class ModerationSystem {
       await storage.updateUser(userId, { isMuted: false, muteExpiry: null });
     }
 
-    return { canChat: true, canJoin: true };
+    return { 
+      canChat: true, 
+      canJoin: true, 
+      isMuted: false, 
+      isBlocked: false, 
+      isBanned: false 
+    };
   }
 
   // التحقق من IP/الجهاز المحجوب

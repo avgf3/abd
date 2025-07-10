@@ -10,6 +10,7 @@ import AdminReportsPanel from './AdminReportsPanel';
 import NotificationPanel from './NotificationPanel';
 import FriendsPanel from './FriendsPanel';
 import ModerationPanel from './ModerationPanel';
+import SimpleUserMenu from './SimpleUserMenu';
 import OwnerAdminPanel from './OwnerAdminPanel';
 import UserContextMenu from './UserContextMenu';
 import { Button } from '@/components/ui/button';
