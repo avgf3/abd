@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -16,6 +16,13 @@ export const users = pgTable("users", {
   isOnline: boolean("is_online").default(false),
   lastSeen: timestamp("last_seen"),
   joinDate: timestamp("join_date").defaultNow(),
+  isMuted: boolean("is_muted").default(false),
+  muteExpiry: timestamp("mute_expiry"),
+  isBanned: boolean("is_banned").default(false),
+  banExpiry: timestamp("ban_expiry"),
+  isBlocked: boolean("is_blocked").default(false),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  deviceId: varchar("device_id", { length: 100 }),
 });
 
 export const messages = pgTable("messages", {
@@ -46,6 +53,15 @@ export const insertUserSchema = createInsertSchema(users).pick({
   age: true,
   country: true,
   relation: true,
+}).extend({
+  // إضافة حقول الإدارة كاختيارية
+  isMuted: z.boolean().optional(),
+  muteExpiry: z.date().optional(),
+  isBanned: z.boolean().optional(),
+  banExpiry: z.date().optional(),
+  isBlocked: z.boolean().optional(),
+  ipAddress: z.string().optional(),
+  deviceId: z.string().optional(),
 });
 
 export const insertMessageSchema = createInsertSchema(messages).pick({

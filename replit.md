@@ -142,6 +142,18 @@ Preferred communication style: Simple, everyday language.
 - **No Scoring System**: Removed automatic scoring/rating system per user request
 - **UI Enhancements**: Added notification badges, friend counters, and admin controls
 
+### Final Updates (January 10, 2025)
+- **Hierarchical Admin System**: Complete admin hierarchy with specific permissions
+  - **Moderator**: Mute users only (prevents them from sending public messages)
+  - **Admin**: Can mute + kick users for 15 minutes with countdown timer
+  - **Owner (عبود)**: Full control - can mute, kick, permanently ban by IP/device, promote users to admin, and remove any user
+- **Friend Request Management**: Full system with ignore, decline, accept, and cancel options
+- **Friend Removal Confirmation**: Added confirmation dialogs for removing friends
+- **Real-time Moderation**: Instant enforcement of mutes, kicks, and bans via WebSocket
+- **IP and Device Tracking**: Permanent bans track IP addresses and device IDs
+- **Enhanced Friend Requests Panel**: Separate panel for managing incoming/outgoing friend requests
+- **Complete Admin Controls**: Full moderation panel with all hierarchical permissions implemented
+
 ### Replit Integration
 - **Development**: Special Replit plugins for development environment
 - **Cartographer**: Replit's code mapping tool integration

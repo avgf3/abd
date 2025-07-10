@@ -31,6 +31,15 @@ export interface IStorage {
   getFriends(userId: number): Promise<User[]>;
   updateFriendStatus(userId: number, friendId: number, status: string): Promise<void>;
   getBlockedUsers(userId: number): Promise<User[]>;
+  
+  // Enhanced friend request operations
+  getIncomingFriendRequests(userId: number): Promise<any[]>;
+  getOutgoingFriendRequests(userId: number): Promise<any[]>;
+  acceptFriendRequest(requestId: number): Promise<boolean>;
+  declineFriendRequest(requestId: number): Promise<boolean>;
+  ignoreFriendRequest(requestId: number): Promise<boolean>;
+  deleteFriendRequest(requestId: number): Promise<boolean>;
+  removeFriend(userId: number, friendId: number): Promise<boolean>;
 }
 
 // Mixed storage: Database for members, Memory for guests
@@ -164,6 +173,13 @@ export class MixedStorage implements IStorage {
         isOnline: true,
         lastSeen: new Date(),
         joinDate: new Date(),
+        isMuted: false,
+        muteExpiry: null,
+        isBanned: false,
+        banExpiry: null,
+        isBlocked: false,
+        ipAddress: null,
+        deviceId: null,
       };
       
       this.users.set(id, user);
@@ -334,6 +350,79 @@ export class MixedStorage implements IStorage {
     
     const blockedIds = blockedFriendships.map(f => f.friendId);
     return blockedIds.map(id => this.users.get(id!)).filter(Boolean) as User[];
+  }
+
+  // Enhanced friend request operations
+  async getIncomingFriendRequests(userId: number): Promise<any[]> {
+    const incomingRequests = Array.from(this.friends.values())
+      .filter(f => f.friendId === userId && f.status === 'pending');
+    
+    return await Promise.all(incomingRequests.map(async (request) => {
+      const user = await this.getUser(request.userId);
+      return {
+        ...request,
+        user
+      };
+    }));
+  }
+
+  async getOutgoingFriendRequests(userId: number): Promise<any[]> {
+    const outgoingRequests = Array.from(this.friends.values())
+      .filter(f => f.userId === userId && f.status === 'pending');
+    
+    return await Promise.all(outgoingRequests.map(async (request) => {
+      const user = await this.getUser(request.friendId);
+      return {
+        ...request,
+        user
+      };
+    }));
+  }
+
+  async acceptFriendRequest(requestId: number): Promise<boolean> {
+    const request = this.friends.get(requestId);
+    if (!request || request.status !== 'pending') return false;
+    
+    request.status = 'accepted';
+    this.friends.set(requestId, request);
+    return true;
+  }
+
+  async declineFriendRequest(requestId: number): Promise<boolean> {
+    const request = this.friends.get(requestId);
+    if (!request || request.status !== 'pending') return false;
+    
+    request.status = 'declined';
+    this.friends.set(requestId, request);
+    return true;
+  }
+
+  async ignoreFriendRequest(requestId: number): Promise<boolean> {
+    const request = this.friends.get(requestId);
+    if (!request || request.status !== 'pending') return false;
+    
+    request.status = 'ignored';
+    this.friends.set(requestId, request);
+    return true;
+  }
+
+  async deleteFriendRequest(requestId: number): Promise<boolean> {
+    const request = this.friends.get(requestId);
+    if (!request) return false;
+    
+    this.friends.delete(requestId);
+    return true;
+  }
+
+  async removeFriend(userId: number, friendId: number): Promise<boolean> {
+    const friendship = Array.from(this.friends.values())
+      .find(f => (f.userId === userId && f.friendId === friendId) || 
+                 (f.userId === friendId && f.friendId === userId));
+    
+    if (!friendship) return false;
+    
+    this.friends.delete(friendship.id);
+    return true;
   }
 }
 

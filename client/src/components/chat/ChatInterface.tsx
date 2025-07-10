@@ -9,6 +9,7 @@ import ReportModal from './ReportModal';
 import AdminReportsPanel from './AdminReportsPanel';
 import NotificationPanel from './NotificationPanel';
 import FriendsPanel from './FriendsPanel';
+import ModerationPanel from './ModerationPanel';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -28,6 +29,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showAdminReports, setShowAdminReports] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
+  const [showModerationPanel, setShowModerationPanel] = useState(false);
   const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
   const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(null);
   const [userPopup, setUserPopup] = useState<{
@@ -146,6 +148,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             أصدقاء
           </Button>
           
+          {/* زر لوحة الإدارة للمشرفين */}
+          {chat.currentUser && (chat.currentUser.userType === 'owner' || chat.currentUser.userType === 'admin') && (
+            <Button 
+              className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+              onClick={() => setShowModerationPanel(true)}
+            >
+              <span>🛡️</span>
+              إدارة
+            </Button>
+          )}
+          
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowSettings(!showSettings)}
@@ -255,6 +268,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             setSelectedPrivateUser(friend);
             setShowFriends(false);
           }}
+        />
+      )}
+
+      {showModerationPanel && (
+        <ModerationPanel
+          isOpen={showModerationPanel}
+          onClose={() => setShowModerationPanel(false)}
+          currentUser={chat.currentUser}
+          onlineUsers={chat.onlineUsers}
         />
       )}
     </div>

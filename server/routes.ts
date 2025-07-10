@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { setupDownloadRoute } from "./download-route";
 import { insertUserSchema, insertMessageSchema } from "@shared/schema";
 import { spamProtection } from "./spam-protection";
+import { moderationSystem } from "./moderation";
 import { z } from "zod";
 
 interface WebSocketClient extends WebSocket {
@@ -496,6 +497,241 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const stats = spamProtection.getStats();
       res.json({ stats });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // Moderation routes
+  app.post("/api/moderation/mute", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, reason, duration } = req.body;
+      
+      const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, duration);
+      
+      if (success) {
+        res.json({ message: "تم كتم المستخدم بنجاح" });
+      } else {
+        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/moderation/ban", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, reason, duration } = req.body;
+      
+      const success = await moderationSystem.banUser(moderatorId, targetUserId, reason, duration);
+      
+      if (success) {
+        res.json({ message: "تم طرد المستخدم بنجاح" });
+        
+        // طرد المستخدم من WebSocket
+        clients.forEach(client => {
+          if (client.userId === targetUserId) {
+            client.send(JSON.stringify({
+              type: 'error',
+              message: 'تم طردك من الدردشة لمدة 15 دقيقة'
+            }));
+            client.close();
+          }
+        });
+      } else {
+        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/moderation/block", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, reason, ipAddress, deviceId } = req.body;
+      
+      const success = await moderationSystem.blockUser(moderatorId, targetUserId, reason, ipAddress, deviceId);
+      
+      if (success) {
+        res.json({ message: "تم حجب المستخدم بنجاح" });
+        
+        // حجب المستخدم من WebSocket
+        clients.forEach(client => {
+          if (client.userId === targetUserId) {
+            client.send(JSON.stringify({
+              type: 'error',
+              message: 'تم حجبك من الدردشة نهائياً'
+            }));
+            client.close();
+          }
+        });
+      } else {
+        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/moderation/promote", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, role } = req.body;
+      
+      const success = await moderationSystem.promoteUser(moderatorId, targetUserId, role);
+      
+      if (success) {
+        res.json({ message: "تم ترقية المستخدم بنجاح" });
+        
+        // تحديث المستخدم في قاعدة البيانات
+        await storage.updateUser(targetUserId, { userType: role });
+        
+        // إشعار جميع المستخدمين
+        broadcast({
+          type: 'userUpdated',
+          user: await storage.getUser(targetUserId)
+        });
+      } else {
+        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/moderation/unmute", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId } = req.body;
+      
+      const success = await moderationSystem.unmuteUser(moderatorId, targetUserId);
+      
+      if (success) {
+        res.json({ message: "تم فك الكتم بنجاح" });
+      } else {
+        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/moderation/unblock", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId } = req.body;
+      
+      const success = await moderationSystem.unblockUser(moderatorId, targetUserId);
+      
+      if (success) {
+        res.json({ message: "تم فك الحجب بنجاح" });
+      } else {
+        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.get("/api/moderation/log", async (req, res) => {
+    try {
+      const userId = parseInt(req.query.userId as string);
+      const user = await storage.getUser(userId);
+      
+      if (!user || (user.userType !== 'owner' && user.userType !== 'admin')) {
+        return res.status(403).json({ error: "غير مسموح لك بالوصول" });
+      }
+
+      const log = moderationSystem.getModerationLog();
+      res.json({ log });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // Friend requests routes
+  app.get("/api/friend-requests/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const incoming = await storage.getIncomingFriendRequests(userId);
+      const outgoing = await storage.getOutgoingFriendRequests(userId);
+      
+      res.json({ incoming, outgoing });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/friend-requests/:id/accept", async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      const success = await storage.acceptFriendRequest(requestId);
+      
+      if (success) {
+        res.json({ message: "تم قبول طلب الصداقة" });
+      } else {
+        res.status(404).json({ error: "طلب الصداقة غير موجود" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/friend-requests/:id/decline", async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      const success = await storage.declineFriendRequest(requestId);
+      
+      if (success) {
+        res.json({ message: "تم رفض طلب الصداقة" });
+      } else {
+        res.status(404).json({ error: "طلب الصداقة غير موجود" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/friend-requests/:id/ignore", async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      const success = await storage.ignoreFriendRequest(requestId);
+      
+      if (success) {
+        res.json({ message: "تم تجاهل طلب الصداقة" });
+      } else {
+        res.status(404).json({ error: "طلب الصداقة غير موجود" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.delete("/api/friend-requests/:id", async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      const success = await storage.deleteFriendRequest(requestId);
+      
+      if (success) {
+        res.json({ message: "تم إلغاء طلب الصداقة" });
+      } else {
+        res.status(404).json({ error: "طلب الصداقة غير موجود" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // Add route for removing friends with confirmation
+  app.delete("/api/friends/:userId/:friendId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const friendId = parseInt(req.params.friendId);
+      
+      const success = await storage.removeFriend(userId, friendId);
+      
+      if (success) {
+        res.json({ message: "تم حذف الصديق" });
+      } else {
+        res.status(404).json({ error: "الصداقة غير موجودة" });
+      }
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
     }
