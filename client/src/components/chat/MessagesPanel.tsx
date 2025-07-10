@@ -81,17 +81,17 @@ export default function MessagesPanel({
                 {conversationUsers.map(({ user, lastMessage, unreadCount }) => (
                   <div 
                     key={user!.id} 
-                    className="cursor-pointer bg-white/80 hover:bg-purple-50/80 transition-all duration-300 p-4 rounded-2xl border border-purple-100/50 shadow-lg hover:shadow-xl backdrop-blur-md hover:border-purple-200"
+                    className="cursor-pointer hover:bg-purple-50 transition-all duration-200 p-2 rounded-lg"
                     onClick={() => {
                       onStartPrivateChat(user!);
                       onClose();
                     }}
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       <img
                         src={user!.profileImage || "/default_avatar.svg"}
                         alt="صورة المستخدم"
-                        className="w-14 h-14 rounded-full border-3 border-white shadow-md ring-2 ring-purple-100"
+                        className="w-12 h-12 rounded-full border-2 border-purple-200"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = '/default_avatar.svg';
@@ -99,11 +99,11 @@ export default function MessagesPanel({
                       />
                       
                       <div className="flex-1">
-                        <h3 className="font-bold text-gray-800 text-lg mb-1">
+                        <h3 className="font-bold text-gray-900 text-base">
                           {user!.username}
                         </h3>
                         {unreadCount > 0 && (
-                          <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm px-3 py-1 rounded-full font-bold shadow-md">
+                          <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
                             {unreadCount} رسالة جديدة
                           </span>
                         )}
