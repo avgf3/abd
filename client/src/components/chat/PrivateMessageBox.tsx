@@ -56,11 +56,8 @@ export default function PrivateMessageBox({
     <div className="private-message-box animate-slide-up">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
-          <span>💬</span>
-          <span className="font-semibold">محادثة مع {targetUser.username}</span>
-          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-            {messages.length === 0 ? 'جديدة' : `${messages.length} رسالة`}
-          </span>
+          <span>📮</span>
+          <span className="font-semibold">رسالة إلى {targetUser.username}</span>
         </div>
         <Button
           onClick={onClose}
@@ -86,8 +83,7 @@ export default function PrivateMessageBox({
         ))}
         {messages.length === 0 && (
           <div className="text-center text-muted-foreground text-sm">
-            🆕 بداية محادثة جديدة
-            <div className="text-xs mt-1 text-blue-400">اكتب أول رسالة لبدء المحادثة</div>
+            📮 اكتب رسالتك
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -98,7 +94,7 @@ export default function PrivateMessageBox({
           value={messageText}
           onChange={(e) => setMessageText(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="اكتب رسالتك الخاصة..."
+          placeholder="اكتب رسالتك..."
           className="flex-1 bg-accent border-border text-white placeholder:text-muted-foreground"
         />
         <Button

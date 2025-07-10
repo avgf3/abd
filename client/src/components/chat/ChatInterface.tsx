@@ -51,22 +51,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   const handleUserClick = (event: React.MouseEvent, user: ChatUser) => {
     event.stopPropagation();
-    
-    // 🎯 النظام الذكي: البحث عن سجل محادثة موجود
-    const hasConversationHistory = chat.privateConversations[user.id] && 
-                                  chat.privateConversations[user.id].length > 0;
-    
-    if (hasConversationHistory) {
-      // ✅ يوجد سجل ➜ افتح المحادثة مباشرة
-      setSelectedPrivateUser(user);
-      toast({
-        title: `💬 فتح محادثة مع ${user.username}`,
-        description: `يوجد ${chat.privateConversations[user.id].length} رسالة سابقة`,
-      });
-      return;
-    }
-    
-    // ❌ لا يوجد سجل ➜ اعرض قائمة "ابدأ محادثة"
     setUserPopup({
       show: true,
       user,
@@ -169,21 +153,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
 
           <Button 
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
+            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowMessages(true)}
-            title="المحادثات الخاصة"
+            title="الرسائل"
           >
-            <span>📱</span>
-            المحادثات
-            {(() => {
-              const activeConversations = Object.keys(chat.privateConversations)
-                .filter(userId => chat.privateConversations[parseInt(userId)]?.length > 0);
-              return activeConversations.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
-                  {activeConversations.length}
-                </span>
-              );
-            })()}
+            <span>📮</span>
+            رسائل
           </Button>
           
           {/* زر لوحة الإدارة للمشرفين */}

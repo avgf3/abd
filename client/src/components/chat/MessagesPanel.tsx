@@ -60,11 +60,8 @@ export default function MessagesPanel({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[700px] bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-2xl">
         <DialogHeader className="border-b border-blue-200 pb-4">
-          <DialogTitle className="text-2xl font-bold text-center text-blue-800 flex items-center justify-center gap-2">
-            📱 المحادثات الخاصة
-            <span className="text-sm bg-blue-100 px-2 py-1 rounded-full text-blue-600">
-              {conversationUsers.length} محادثة نشطة
-            </span>
+          <DialogTitle className="text-2xl font-bold text-center text-blue-800">
+            📮 الرسائل
           </DialogTitle>
         </DialogHeader>
 
@@ -72,15 +69,14 @@ export default function MessagesPanel({
           <div className="space-y-4 p-4">
             {conversationUsers.length === 0 ? (
               <div className="text-center py-12 text-blue-400">
-                <div className="text-6xl mb-6">📱</div>
-                <h3 className="text-lg font-semibold text-blue-700 mb-2">لا توجد محادثات نشطة</h3>
-                <p className="text-sm">🎯 انقر على أي مستخدم لبدء محادثة</p>
-                <p className="text-xs mt-2 text-gray-600">ستظهر المحادثات هنا تلقائياً عند الإرسال</p>
+                <div className="text-6xl mb-6">📮</div>
+                <h3 className="text-lg font-semibold text-blue-700 mb-2">لا توجد رسائل</h3>
+                <p className="text-sm">انقر على أي مستخدم لإرسال رسالة</p>
               </div>
             ) : (
               <div className="space-y-3">
                 <h4 className="font-bold text-blue-700 text-lg mb-3 border-b border-blue-200 pb-2">
-                  💬 محادثاتك النشطة ({conversationUsers.length})
+                  📮 رسائلك ({conversationUsers.length})
                 </h4>
                 {conversationUsers.map(({ user, lastMessage, unreadCount }) => (
                   <Card 
@@ -146,7 +142,7 @@ export default function MessagesPanel({
                               variant="outline" 
                               className="text-xs bg-purple-100 border-purple-300 text-purple-700 hover:bg-purple-200"
                             >
-                              💬 فتح المحادثة
+                              📮 فتح الرسائل
                             </Button>
                           </div>
                         </div>
@@ -159,11 +155,8 @@ export default function MessagesPanel({
             
             {/* قائمة المستخدمين المتصلين لبدء محادثة جديدة */}
             <div className="mt-8 border-t border-purple-200 pt-6">
-              <h4 className="font-bold text-purple-700 text-lg mb-4 flex items-center gap-2">
-                ✨ ابدأ محادثة جديدة
-                <span className="text-sm bg-blue-100 px-2 py-1 rounded-full text-blue-600">
-                  {onlineUsers.filter(user => user.id !== currentUser?.id && !Object.keys(privateConversations).includes(user.id.toString())).length} متصل
-                </span>
+              <h4 className="font-bold text-purple-700 text-lg mb-4">
+                📮 ارسل رسالة جديدة
               </h4>
               <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
                 {onlineUsers
@@ -208,7 +201,7 @@ export default function MessagesPanel({
                             variant="outline" 
                             className="text-xs bg-blue-100 border-blue-300 text-blue-700 hover:bg-blue-200 font-medium"
                           >
-                            💬 ابدأ محادثة
+                            📮 ارسل رسالة
                           </Button>
                         </div>
                       </CardContent>
@@ -217,7 +210,7 @@ export default function MessagesPanel({
                 }
                 {onlineUsers.filter(user => user.id !== currentUser?.id && !Object.keys(privateConversations).includes(user.id.toString())).length === 0 && (
                   <div className="text-center py-6 text-gray-500">
-                    <p className="text-sm">جميع المستخدمين المتصلين لديهم محادثات معك بالفعل! 🎉</p>
+                    <p className="text-sm">جميع المستخدمين لديهم رسائل معك</p>
                   </div>
                 )}
               </div>
