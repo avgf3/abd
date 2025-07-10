@@ -9,10 +9,9 @@ import ReportModal from './ReportModal';
 import AdminReportsPanel from './AdminReportsPanel';
 import NotificationPanel from './NotificationPanel';
 import FriendsPanel from './FriendsPanel';
+import MessagesPanel from './MessagesPanel';
 import ModerationPanel from './ModerationPanel';
-import SimpleUserMenu from './SimpleUserMenu';
 import OwnerAdminPanel from './OwnerAdminPanel';
-import UserContextMenu from './UserContextMenu';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -32,6 +31,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showAdminReports, setShowAdminReports] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
   const [showModerationPanel, setShowModerationPanel] = useState(false);
   const [showOwnerPanel, setShowOwnerPanel] = useState(false);
   const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
@@ -150,6 +150,18 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           >
             <span>👥</span>
             أصدقاء
+          </Button>
+
+          <Button 
+            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
+            onClick={() => setShowMessages(true)}
+            title="الرسائل الخاصة"
+          >
+            <span>💬</span>
+            رسائل
+            {Object.keys(chat.privateConversations).length > 0 && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></span>
+            )}
           </Button>
           
           {/* زر لوحة الإدارة للمشرفين */}
@@ -285,6 +297,20 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           onStartPrivateChat={(friend) => {
             setSelectedPrivateUser(friend);
             setShowFriends(false);
+          }}
+        />
+      )}
+
+      {showMessages && (
+        <MessagesPanel
+          isOpen={showMessages}
+          onClose={() => setShowMessages(false)}
+          currentUser={chat.currentUser}
+          privateConversations={chat.privateConversations}
+          onlineUsers={chat.onlineUsers}
+          onStartPrivateChat={(user) => {
+            setSelectedPrivateUser(user);
+            setShowMessages(false);
           }}
         />
       )}
