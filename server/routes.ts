@@ -343,6 +343,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           case 'privateMessage':
             if (ws.userId) {
+              // منع إرسال رسالة للنفس
+              if (ws.userId === message.receiverId) {
+                ws.send(JSON.stringify({
+                  type: 'error',
+                  message: 'لا يمكن إرسال رسالة لنفسك',
+                  action: 'blocked'
+                }));
+                break;
+              }
+
               // فحص الرسالة الخاصة ضد السبام
               const spamCheck = spamProtection.checkMessage(ws.userId, message.content);
               if (!spamCheck.isAllowed) {
@@ -365,7 +375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const sender = await storage.getUser(ws.userId);
               const messageWithSender = { ...newMessage, sender };
               
-              // Send to receiver
+              // Send to receiver only (don't send to sender)
               const receiverClient = Array.from(clients).find(
                 client => client.userId === message.receiverId
               );
@@ -376,7 +386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }));
               }
               
-              // Send back to sender
+              // Send back to sender with confirmation
               ws.send(JSON.stringify({
                 type: 'privateMessage',
                 message: messageWithSender,

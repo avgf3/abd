@@ -132,29 +132,34 @@ export default function UserPopup({
         👤 عرض الملف الشخصي
       </Button>
       
-      <Button
-        onClick={onPrivateMessage}
-        variant="ghost"
-        className="user-popup-button"
-      >
-        ✉️ ارسال رسالة
-      </Button>
-      
-      <Button
-        onClick={onAddFriend}
-        variant="ghost"
-        className="user-popup-button"
-      >
-        👥 إضافة صديق
-      </Button>
-      
-      <Button
-        onClick={onIgnore}
-        variant="ghost"
-        className="user-popup-button text-red-400"
-      >
-        🚫 تجاهل
-      </Button>
+      {/* إخفاء خيارات الرسائل والصداقة إذا كان المستخدم نفسه */}
+      {currentUser && currentUser.id !== user.id && (
+        <>
+          <Button
+            onClick={onPrivateMessage}
+            variant="ghost"
+            className="user-popup-button"
+          >
+            ✉️ ارسال رسالة
+          </Button>
+          
+          <Button
+            onClick={onAddFriend}
+            variant="ghost"
+            className="user-popup-button"
+          >
+            👥 إضافة صديق
+          </Button>
+          
+          <Button
+            onClick={onIgnore}
+            variant="ghost"
+            className="user-popup-button text-red-400"
+          >
+            🚫 تجاهل
+          </Button>
+        </>
+      )}
       
       {/* خيارات الإدارة */}
       {canModerate && (
