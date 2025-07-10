@@ -31,8 +31,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAdminReports, setShowAdminReports] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showFriends, setShowFriends] = useState(false);
+
   const [showMessages, setShowMessages] = useState(false);
   const [showModerationPanel, setShowModerationPanel] = useState(false);
   const [showOwnerPanel, setShowOwnerPanel] = useState(false);
@@ -91,36 +90,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setSelectedPrivateUser(null);
   };
 
-  const handleAddFriend = async (user: ChatUser) => {
-    if (!chat.currentUser) return;
-    
-    try {
-      await apiRequest('POST', '/api/friends', {
-        userId: chat.currentUser.id,
-        friendId: user.id,
-      });
-      
-      toast({
-        title: "تمت الإضافة",
-        description: `تم إرسال طلب صداقة إلى ${user.username}`,
-      });
-    } catch (error) {
-      toast({
-        title: "خطأ",
-        description: "لم نتمكن من إرسال طلب الصداقة",
-        variant: "destructive",
-      });
-    }
-    closeUserPopup();
-  };
 
-  const handleIgnoreUser = (user: ChatUser) => {
-    toast({
-      title: "تم التجاهل",
-      description: `تم تجاهل المستخدم ${user.username}`,
-    });
-    closeUserPopup();
-  };
 
   const handleViewProfile = (user: ChatUser) => {
     toast({
@@ -154,22 +124,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </div>
         </div>
         <div className="flex gap-3">
-          <Button 
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
-            onClick={() => setShowNotifications(true)}
-          >
-            <span>🔔</span>
-            إشعارات
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-          </Button>
-          
-          <Button 
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
-            onClick={() => setShowFriends(true)}
-          >
-            <span>👥</span>
-            أصدقاء
-          </Button>
+
 
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
@@ -298,25 +253,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
-      {showNotifications && (
-        <NotificationPanel
-          isOpen={showNotifications}
-          onClose={() => setShowNotifications(false)}
-          currentUser={chat.currentUser}
-        />
-      )}
 
-      {showFriends && (
-        <FriendsPanel
-          isOpen={showFriends}
-          onClose={() => setShowFriends(false)}
-          currentUser={chat.currentUser}
-          onStartPrivateChat={(friend) => {
-            setSelectedPrivateUser(friend);
-            setShowFriends(false);
-          }}
-        />
-      )}
 
       {showMessages && (
         <MessagesPanel
@@ -350,13 +287,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
-      {/* تنبيه الرسائل الجديدة */}
-      <MessageAlert
-        isOpen={newMessageAlert.show}
-        sender={newMessageAlert.sender}
-        onClose={() => setNewMessageAlert({ show: false, sender: null })}
-        onOpenMessages={() => setShowMessages(true)}
-      />
+
     </div>
   );
 }
