@@ -301,15 +301,15 @@ export function useChat() {
   return {
     currentUser,
     onlineUsers,
-    publicMessages: publicMessages,
+    publicMessages,
     privateConversations,
     isConnected,
     typingUsers,
     connectionError,
     connect,
     disconnect,
-    sendMessage,
+    sendPublicMessage: sendMessage,
     sendPrivateMessage,
-    sendTyping: handleTyping,
+    handleTyping,
   };
 }

@@ -75,6 +75,26 @@ export class MixedStorage implements IStorage {
           joinDate: new Date(),
         });
       }
+
+      // Check if admin already exists
+      const existingAdmin = await db.select().from(users).where(eq(users.username, "عبود"));
+      if (existingAdmin.length === 0) {
+        // Create admin user in database
+        await db.insert(users).values({
+          username: "عبود",
+          password: "22333",
+          userType: "owner",
+          profileImage: "/default_avatar.svg",
+          status: "مشرف مؤقت",
+          gender: "ذكر",
+          age: 25,
+          country: "العراق",
+          relation: "أعزب",
+          isOnline: false,
+          lastSeen: new Date(),
+          joinDate: new Date(),
+        });
+      }
     } catch (error) {
       console.error('Error initializing owner:', error);
     }

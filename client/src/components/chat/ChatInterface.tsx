@@ -7,6 +7,8 @@ import UserPopup from './UserPopup';
 import SettingsMenu from './SettingsMenu';
 import ReportModal from './ReportModal';
 import AdminReportsPanel from './AdminReportsPanel';
+import NotificationPanel from './NotificationPanel';
+import FriendsPanel from './FriendsPanel';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -24,6 +26,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAdminReports, setShowAdminReports] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showFriends, setShowFriends] = useState(false);
   const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
   const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(null);
   const [userPopup, setUserPopup] = useState<{
@@ -126,6 +130,23 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         </div>
         <div className="flex gap-3">
           <Button 
+            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
+            onClick={() => setShowNotifications(true)}
+          >
+            <span>🔔</span>
+            إشعارات
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+          </Button>
+          
+          <Button 
+            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+            onClick={() => setShowFriends(true)}
+          >
+            <span>👥</span>
+            أصدقاء
+          </Button>
+          
+          <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowSettings(!showSettings)}
           >
@@ -214,6 +235,26 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           isOpen={showAdminReports}
           onClose={() => setShowAdminReports(false)}
           currentUser={chat.currentUser}
+        />
+      )}
+
+      {showNotifications && (
+        <NotificationPanel
+          isOpen={showNotifications}
+          onClose={() => setShowNotifications(false)}
+          currentUser={chat.currentUser}
+        />
+      )}
+
+      {showFriends && (
+        <FriendsPanel
+          isOpen={showFriends}
+          onClose={() => setShowFriends(false)}
+          currentUser={chat.currentUser}
+          onStartPrivateChat={(friend) => {
+            setSelectedPrivateUser(friend);
+            setShowFriends(false);
+          }}
         />
       )}
     </div>

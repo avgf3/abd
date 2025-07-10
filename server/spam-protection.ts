@@ -54,7 +54,7 @@ export class SpamProtection {
     this.currentReportId = 1;
   }
 
-  // فحص الرسالة قبل إرسالها
+  // فحص الرسالة قبل إرسالها (بدون نظام النقاط)
   checkMessage(userId: number, content: string): {
     isAllowed: boolean;
     reason?: string;
@@ -80,7 +80,6 @@ export class SpamProtection {
       content.toLowerCase().includes(word.toLowerCase())
     );
     if (bannedWordFound) {
-      this.addSpamScore(userId, 5);
       return {
         isAllowed: false,
         reason: 'الرسالة تحتوي على محتوى محظور',
@@ -119,7 +118,6 @@ export class SpamProtection {
     ).length;
 
     if (duplicateCount >= this.config.maxDuplicateMessages) {
-      this.addSpamScore(userId, 3);
       return {
         isAllowed: false,
         reason: 'لا يمكن إرسال نفس الرسالة عدة مرات',
@@ -185,7 +183,7 @@ export class SpamProtection {
     };
   }
 
-  // إضافة تبليغ
+  // إضافة تبليغ (بدون نقاط تلقائية)
   addReport(reporterId: number, reportedUserId: number, reason: string, content: string, messageId?: number): ReportData {
     const report: ReportData = {
       id: this.currentReportId++,
@@ -199,10 +197,6 @@ export class SpamProtection {
     };
 
     this.reports.set(report.id, report);
-    
-    // إضافة نقاط سبام تلقائياً للمستخدم المبلغ عنه
-    this.addSpamScore(reportedUserId, 2);
-
     return report;
   }
 
@@ -220,10 +214,7 @@ export class SpamProtection {
 
     report.status = action === 'approved' ? 'reviewed' : 'dismissed';
 
-    if (action === 'approved') {
-      // إضافة نقاط سبام إضافية للمستخدم المبلغ عنه
-      this.addSpamScore(report.reportedUserId, 5);
-    }
+    // مجرد تحديث الحالة بدون نقاط
 
     return true;
   }
