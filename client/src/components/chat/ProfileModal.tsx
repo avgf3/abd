@@ -32,6 +32,18 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
   ];
 
   const handleImageUpload = () => {
+    if (!user) return;
+    
+    // Check if user is a member
+    if (user.userType !== 'member') {
+      toast({
+        title: "غير مسموح",
+        description: "رفع الصور الشخصية متاح للأعضاء فقط. سجل كعضو أولاً.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
@@ -56,10 +68,11 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
               title: "تم التحديث",
               description: data.message,
             });
-          } catch (error) {
+          } catch (error: any) {
+            const errorData = await error.response?.json();
             toast({
               title: "خطأ",
-              description: "فشل في رفع الصورة",
+              description: errorData?.error || "فشل في رفع الصورة",
               variant: "destructive",
             });
           }

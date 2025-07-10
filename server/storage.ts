@@ -1,4 +1,16 @@
-import { users, messages, friends, type User, type InsertUser, type Message, type InsertMessage, type Friend, type InsertFriend } from "@shared/schema";
+import {
+  users,
+  messages,
+  friends,
+  type User,
+  type InsertUser,
+  type Message,
+  type InsertMessage,
+  type Friend,
+  type InsertFriend,
+} from "../shared/schema";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -21,7 +33,8 @@ export interface IStorage {
   getBlockedUsers(userId: number): Promise<User[]>;
 }
 
-export class MemStorage implements IStorage {
+// Mixed storage: Database for members, Memory for guests
+export class MixedStorage implements IStorage {
   private users: Map<number, User>;
   private messages: Map<number, Message>;
   private friends: Map<number, Friend>;
@@ -57,59 +70,146 @@ export class MemStorage implements IStorage {
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    // Check memory first (for guests)
+    const memUser = this.users.get(id);
+    if (memUser) return memUser;
+    
+    // Check database (for members)
+    try {
+      const [dbUser] = await db.select().from(users).where(eq(users.id, id));
+      return dbUser || undefined;
+    } catch (error) {
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
+    // Check memory first (for guests)
+    const memUser = Array.from(this.users.values()).find(
       (user) => user.username === username,
     );
+    if (memUser) return memUser;
+    
+    // Check database (for members)
+    const [dbUser] = await db.select().from(users).where(eq(users.username, username));
+    return dbUser || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = {
-      id,
-      username: insertUser.username,
-      password: insertUser.password || null,
-      userType: insertUser.userType || "guest",
-      profileImage: insertUser.profileImage || null,
-      status: insertUser.status || null,
-      gender: insertUser.gender || null,
-      age: insertUser.age || null,
-      country: insertUser.country || null,
-      relation: insertUser.relation || null,
-      isOnline: true,
-      lastSeen: new Date(),
-      joinDate: new Date(),
-    };
-    this.users.set(id, user);
-    return user;
+    if (insertUser.userType === 'member') {
+      // Store members in database with profile picture support
+      const [dbUser] = await db
+        .insert(users)
+        .values({
+          username: insertUser.username,
+          password: insertUser.password,
+          userType: insertUser.userType,
+          profileImage: insertUser.profileImage || "/default_avatar.svg",
+          status: insertUser.status,
+          gender: insertUser.gender,
+          age: insertUser.age,
+          country: insertUser.country,
+          relation: insertUser.relation,
+          isOnline: true,
+          lastSeen: new Date(),
+          joinDate: new Date(),
+        })
+        .returning();
+      return dbUser;
+    } else {
+      // Store guests in memory (temporary, no profile picture upload)
+      const id = this.currentUserId++;
+      const user: User = {
+        id,
+        username: insertUser.username,
+        password: insertUser.password || null,
+        userType: insertUser.userType || "guest",
+        profileImage: "/default_avatar.svg", // Guests always use default
+        status: insertUser.status || null,
+        gender: insertUser.gender || null,
+        age: insertUser.age || null,
+        country: insertUser.country || null,
+        relation: insertUser.relation || null,
+        isOnline: true,
+        lastSeen: new Date(),
+        joinDate: new Date(),
+      };
+      
+      this.users.set(id, user);
+      return user;
+    }
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
+    // Check if user is in memory (guest)
+    const memUser = this.users.get(id);
+    if (memUser) {
+      // Guests cannot upload profile pictures
+      if (updates.profileImage && memUser.userType === 'guest') {
+        delete updates.profileImage;
+      }
+      const updatedUser = { ...memUser, ...updates };
+      this.users.set(id, updatedUser);
+      return updatedUser;
+    }
     
-    const updatedUser = { ...user, ...updates };
-    this.users.set(id, updatedUser);
-    return updatedUser;
+    // Check if user is in database (member)
+    try {
+      const [existing] = await db.select().from(users).where(eq(users.id, id));
+      if (existing && existing.userType === 'member') {
+        // Members can upload profile pictures
+        const [updatedUser] = await db
+          .update(users)
+          .set(updates)
+          .where(eq(users.id, id))
+          .returning();
+        return updatedUser;
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
+    
+    return undefined;
   }
 
   async setUserOnlineStatus(id: number, isOnline: boolean): Promise<void> {
-    const user = this.users.get(id);
-    if (user) {
-      user.isOnline = isOnline;
-      user.lastSeen = new Date();
-      this.users.set(id, user);
+    // Check memory first (guests)
+    const memUser = this.users.get(id);
+    if (memUser) {
+      memUser.isOnline = isOnline;
+      memUser.lastSeen = new Date();
+      this.users.set(id, memUser);
+      return;
+    }
+
+    // Check database (members)
+    try {
+      await db
+        .update(users)
+        .set({ 
+          isOnline: isOnline,
+          lastSeen: new Date()
+        })
+        .where(eq(users.id, id));
+    } catch (error) {
+      console.error('Error updating user online status:', error);
     }
   }
 
   async getOnlineUsers(): Promise<User[]> {
-    return Array.from(this.users.values()).filter(user => user.isOnline);
+    const memUsers = Array.from(this.users.values()).filter(user => user.isOnline);
+    
+    // Get online members from database
+    try {
+      const dbUsers = await db.select().from(users).where(eq(users.isOnline, true));
+      return [...memUsers, ...dbUsers];
+    } catch (error) {
+      return memUsers;
+    }
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    // Always store messages in memory for performance
     const id = this.currentMessageId++;
     const message: Message = {
       id,
@@ -163,7 +263,27 @@ export class MemStorage implements IStorage {
       f.userId === userId ? f.friendId : f.userId
     );
     
-    return friendIds.map(id => this.users.get(id!)).filter(Boolean) as User[];
+    const friends: User[] = [];
+    
+    for (const friendId of friendIds) {
+      if (friendId) {
+        // Check memory first
+        const memFriend = this.users.get(friendId);
+        if (memFriend) {
+          friends.push(memFriend);
+        } else {
+          // Check database
+          try {
+            const [dbFriend] = await db.select().from(users).where(eq(users.id, friendId));
+            if (dbFriend) friends.push(dbFriend);
+          } catch (error) {
+            console.error('Error fetching friend from database:', error);
+          }
+        }
+      }
+    }
+    
+    return friends;
   }
 
   async updateFriendStatus(userId: number, friendId: number, status: string): Promise<void> {
@@ -186,4 +306,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new MixedStorage();

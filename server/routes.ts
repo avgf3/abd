@@ -182,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Profile picture upload
+  // Profile picture upload (members only)
   app.post('/api/users/:id/profile-image', async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
@@ -192,9 +192,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "صورة مطلوبة" });
       }
 
+      // Check if user is a member
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        return res.status(404).json({ error: "المستخدم غير موجود" });
+      }
+
+      if (existingUser.userType !== 'member') {
+        return res.status(403).json({ error: "رفع الصور الشخصية متاح للأعضاء فقط" });
+      }
+
       const user = await storage.updateUser(userId, { profileImage: imageData });
       if (!user) {
-        return res.status(404).json({ error: "المستخدم غير موجود" });
+        return res.status(500).json({ error: "فشل في تحديث الصورة" });
       }
 
       // Broadcast user update to all connected clients
