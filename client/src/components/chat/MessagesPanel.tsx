@@ -87,41 +87,41 @@ export default function MessagesPanel({
                       onClose();
                     }}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-4">
+                    <CardContent className="p-2">
+                      <div className="flex items-start gap-2">
                         <div className="relative">
                           <img
                             src={user!.profileImage || "/default_avatar.svg"}
                             alt="صورة المستخدم"
-                            className="w-14 h-14 rounded-full border-2 border-purple-200"
+                            className="w-10 h-10 rounded-full border-2 border-purple-200"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.src = '/default_avatar.svg';
                             }}
                           />
                           {user!.isOnline && (
-                            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
+                            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                           )}
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center justify-between mb-1">
                             <h3 className="font-bold text-gray-900 text-sm truncate">
                               {user!.username}
                             </h3>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
                                 {formatTime(lastMessage?.timestamp)}
                               </span>
                               {unreadCount > 0 && (
-                                <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold min-w-[20px] text-center">
+                                <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold min-w-[18px] text-center">
                                   {unreadCount}
                                 </span>
                               )}
                             </div>
                           </div>
                           
-                          <p className="text-sm text-gray-700 mb-2 line-clamp-2">
+                          <p className="text-xs text-gray-700 mb-1 line-clamp-2">
                             {lastMessage?.messageType === 'image' ? 
                               <span className="text-blue-600">📷 تم إرسال صورة</span> : 
                               formatLastMessage(lastMessage?.content || 'لا توجد رسائل')
@@ -129,7 +129,7 @@ export default function MessagesPanel({
                           </p>
                           
                           <div className="flex items-center justify-between">
-                            <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                               user!.isOnline ? 
                                 'bg-green-100 text-green-700 border border-green-200' : 
                                 'bg-gray-100 text-gray-600 border border-gray-200'
@@ -140,7 +140,7 @@ export default function MessagesPanel({
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              className="text-xs bg-purple-100 border-purple-300 text-purple-700 hover:bg-purple-200"
+                              className="text-xs bg-purple-100 border-purple-300 text-purple-700 hover:bg-purple-200 px-2 py-1"
                             >
                               ✉️ ارسال رسالة
                             </Button>
