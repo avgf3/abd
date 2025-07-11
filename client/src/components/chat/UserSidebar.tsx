@@ -78,7 +78,15 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                 currentUser={currentUser}
               >
                 <div
-                  className="flex items-center gap-3 p-3 rounded-xl glass-effect hover:bg-accent transition-all duration-200 cursor-pointer"
+                  className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer ${
+                    user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : 'glass-effect hover:bg-accent'
+                  }`}
+                  style={{ 
+                    ...(user.userType === 'owner' && {
+                      animation: 'golden-glow 2s ease-in-out infinite',
+                      boxShadow: '0 0 25px rgba(255, 215, 0, 0.8)'
+                    })
+                  }}
                   onClick={(e) => onUserClick(e, user)}
                 >
               <ProfileImage 
@@ -87,41 +95,29 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                 className="transition-transform hover:scale-105"
               />
               <div className="flex-1">
-                <div 
-                  className={`w-full p-3 rounded-xl transition-all duration-300 ${
-                    user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
-                  }`}
-                  style={{ 
-                    ...(user.userType === 'owner' && {
-                      animation: 'golden-glow 2s ease-in-out infinite',
-                      boxShadow: '0 0 25px rgba(255, 215, 0, 0.8)'
-                    })
-                  }}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span 
-                        className="text-sm font-medium"
-                        style={{ 
-                          color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#FFFFFF')
-                        }}
-                      >
-                        {getUserRankBadge(user.userType, user.username)} {user.username}
-                      </span>
-                      {/* إشارة المكتوم */}
-                      {user.isMuted && (
-                        <span className="text-yellow-400 text-xs">🔇</span>
-                      )}
-                    </div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
                     <span 
-                      className="text-xs font-medium"
+                      className="text-sm font-medium"
                       style={{ 
-                        color: user.userType === 'owner' ? '#000000' : '#10B981'
+                        color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#FFFFFF')
                       }}
                     >
-                      متصل
+                      {getUserRankBadge(user.userType, user.username)} {user.username}
                     </span>
+                    {/* إشارة المكتوم */}
+                    {user.isMuted && (
+                      <span className="text-yellow-400 text-xs">🔇</span>
+                    )}
                   </div>
+                  <span 
+                    className="text-xs font-medium"
+                    style={{ 
+                      color: user.userType === 'owner' ? '#000000' : '#10B981'
+                    }}
+                  >
+                    متصل
+                  </span>
                 </div>
               </div>
                 </div>

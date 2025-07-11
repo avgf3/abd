@@ -222,10 +222,10 @@ Preferred communication style: Simple, everyday language.
 ### Premium User Theme System - Adaptive Golden Gradient (January 11, 2025)
 - **Owner-Only Golden Theme**: Exclusive beautiful gradient background (yellow-400 to yellow-600) with animated glow for Owner 👑 users only
 - **Adaptive Coverage**: 
-  - UserSidebar: Full comprehensive coverage including username and "متصل" status in one themed box
+  - UserSidebar: Full comprehensive coverage for entire user box excluding profile image area
   - ProfileModal: Compact styling with smaller padding for cleaner profile appearance
   - Messages: Standard username area coverage with clean styling
-- **Enhanced UserSidebar**: Complete theme coverage for entire user entry including connection status
+- **Enhanced UserSidebar**: Complete theme coverage for entire user entry box excluding profile picture
 - **Smooth Glow Effects**: 2-second golden-glow animation with soft shadow effects without borders
 - **Professional Clean Styling**: Black text on golden background with clean appearance, no border frames
 - **Universal Application**: Golden theme appears consistently across all components with adaptive sizing
