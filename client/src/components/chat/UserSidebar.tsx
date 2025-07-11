@@ -89,14 +89,15 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <div 
-                    className={`text-sm font-medium px-3 py-2 rounded-lg transition-all duration-300 ${
+                    className={`text-sm font-medium px-4 py-3 rounded-xl w-full transition-all duration-300 ${
                       user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
                     }`}
                     style={{ 
                       color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#FFFFFF'),
                       ...(user.userType === 'owner' && {
                         animation: 'golden-glow 2s ease-in-out infinite',
-                        boxShadow: '0 0 20px rgba(255, 215, 0, 0.6)'
+                        boxShadow: '0 0 25px rgba(255, 215, 0, 0.8)',
+                        border: '2px solid rgba(255, 215, 0, 0.5)'
                       })
                     }}
                   >
