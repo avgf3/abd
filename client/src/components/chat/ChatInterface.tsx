@@ -7,7 +7,7 @@ import UserPopup from './UserPopup';
 import SettingsMenu from './SettingsMenu';
 import ReportModal from './ReportModal';
 import AdminReportsPanel from './AdminReportsPanel';
-import NotificationPanel from './NotificationPanel';
+import SmartNotificationSystem from '../notifications/SmartNotificationSystem';
 import FriendsPanel from './FriendsPanelSimple';
 import FriendRequestBadge from './FriendRequestBadge';
 import MessagesPanel from './MessagesPanel';
@@ -36,6 +36,7 @@ interface ChatInterfaceProps {
 
 export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showProfile, setShowProfile] = useState(false);
+  const [selectedProfileUser, setSelectedProfileUser] = useState<ChatUser | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -148,8 +149,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
 
   const handleViewProfile = (user: ChatUser) => {
+    setSelectedProfileUser(user);
     setShowProfile(true);
-    setSelectedPrivateUser(user);
     closeUserPopup();
   };
 
@@ -290,11 +291,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {/* Modals and Popups */}
       {showProfile && (
         <ProfileModal 
-          user={selectedPrivateUser || chat.currentUser}
+          user={selectedProfileUser || chat.currentUser}
           currentUser={chat.currentUser}
           onClose={() => {
             setShowProfile(false);
-            if (selectedPrivateUser) setSelectedPrivateUser(null);
+            setSelectedProfileUser(null);
           }}
           onIgnoreUser={(userId) => {
             chat.ignoreUser(userId);
@@ -357,7 +358,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       )}
 
       {showNotifications && (
-        <NotificationPanel
+        <SmartNotificationSystem
           isOpen={showNotifications}
           onClose={() => setShowNotifications(false)}
           currentUser={chat.currentUser}
@@ -418,14 +419,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
-      {showModerationPanel && (
-        <ModerationPanel 
-          isOpen={showModerationPanel}
-          onClose={() => setShowModerationPanel(false)}
-          currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
-        />
-      )}
+
 
       {showReportsLog && (
         <ReportsLog 

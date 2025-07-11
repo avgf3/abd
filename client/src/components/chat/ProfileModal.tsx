@@ -12,8 +12,7 @@ import type { ChatUser } from '@/types/chat';
 import { StealthModeButton } from "./StealthModeButton";
 import { UserMinus } from "lucide-react";
 import UsernameColorPicker from '../profile/UsernameColorPicker';
-import ProfileImageUpload from '../profile/ProfileImageUpload';
-import ProfileBanner from '../profile/ProfileBanner';
+import CleanProfileUpload from '../profile/CleanProfileUpload';
 import { getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 
 
@@ -489,20 +488,24 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
             {/* Upload Controls */}
             {currentUser && currentUser.id === user.id && (
               <div className="absolute top-4 right-4 flex gap-2">
-                <Button
-                  size="sm"
-                  className="bg-white/90 backdrop-blur-md hover:bg-white text-gray-700 border border-gray-200 rounded-lg shadow-md"
-                  onClick={handleBannerUpload}
-                >
-                  📸 تغيير صورة البروفايل
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-white/90 backdrop-blur-md hover:bg-white text-gray-700 border border-gray-200 rounded-lg shadow-md"
-                  onClick={handleProfileImageUpload}
-                >
-                  👤 تغيير الصورة
-                </Button>
+                <CleanProfileUpload
+                  user={user}
+                  type="banner"
+                  onUploadSuccess={(imageUrl) => {
+                    setProfileData(prev => ({ ...prev, profileBanner: imageUrl }));
+                    user.profileBanner = imageUrl;
+                  }}
+                  className="w-auto"
+                />
+                <CleanProfileUpload
+                  user={user}
+                  type="avatar"
+                  onUploadSuccess={(imageUrl) => {
+                    setProfileData(prev => ({ ...prev, profileImage: imageUrl }));
+                    user.profileImage = imageUrl;
+                  }}
+                  className="w-auto"
+                />
               </div>
             )}
           </div>
@@ -535,60 +538,18 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           )}
         </div>
 
-        {/* Profile Information Panel - للمستخدم الحالي فقط */}
-        {currentUser && currentUser.id === user.id && (
-          <div className="bg-white p-6 border border-gray-200 text-gray-800">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Personal Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold mb-3 flex items-center gap-2 text-gray-800">
-                  📋 معلوماتي
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm bg-gray-100 px-3 py-1 rounded-full text-gray-700">الجنس</span>
-                    <span className="font-medium">{user.gender || 'غير محدد'}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm bg-gray-100 px-3 py-1 rounded-full text-gray-700">العمر</span>
-                    <span className="font-medium">{user.age || 'غير محدد'}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm bg-gray-100 px-3 py-1 rounded-full text-gray-700">البلد</span>
-                    <span className="font-medium">{user.country || 'غير محدد'}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm bg-gray-100 px-3 py-1 rounded-full text-gray-700">الحالة</span>
-                    <span className="font-medium">{user.relation || 'غير محدد'}</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Profile Link */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold mb-3 flex items-center gap-2 text-gray-800">
-                  🔗 رابط الملف الشخصي
-                </h3>
-                <div className="bg-gray-50 p-4 rounded-lg border">
-                  <p className="text-sm text-center underline cursor-pointer hover:text-blue-600 transition-colors text-blue-500">
-                    https://www.arabic-chat.com/#{user.id}67540
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
 
         {currentUser && currentUser.id === user.id && (
           <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-4">
-              <TabsTrigger value="info">معلوماتي</TabsTrigger>
-              <TabsTrigger value="colors">🎨 الألوان</TabsTrigger>
-              <TabsTrigger value="options">الإعدادات</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 mb-4 bg-accent/30">
+              <TabsTrigger value="info" className="text-white">معلوماتي</TabsTrigger>
+              <TabsTrigger value="colors" className="text-white">🎨 الألوان</TabsTrigger>
+              <TabsTrigger value="options" className="text-white">الإعدادات</TabsTrigger>
             </TabsList>
 
-          <TabsContent value="info" className="space-y-4">
-            <h3 className="text-lg font-semibold text-primary">المعلومات الشخصية</h3>
+          <TabsContent value="info" className="space-y-4 bg-transparent">
+            <h3 className="text-lg font-semibold text-white">المعلومات الشخصية</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-muted-foreground">الجنس</label>
@@ -648,8 +609,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
             </div>
           </TabsContent>
 
-          <TabsContent value="colors">
-            <h3 className="text-lg font-semibold text-primary mb-4">🎨 تخصيص المظهر والألوان</h3>
+          <TabsContent value="colors" className="bg-transparent">
+            <h3 className="text-lg font-semibold text-white mb-4">🎨 تخصيص المظهر والألوان</h3>
             {user && currentUser && user.id === currentUser.id ? (
               <div className="space-y-6">
                 {/* ثيمات المستخدم */}
@@ -708,22 +669,10 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
             )}
           </TabsContent>
 
-          <TabsContent value="friends">
-            <h3 className="text-lg font-semibold text-primary mb-4">قائمة الأصدقاء</h3>
-            <div className="text-center text-muted-foreground py-8">
-              لا يوجد أصدقاء حالياً
-            </div>
-          </TabsContent>
 
-          <TabsContent value="ignore">
-            <h3 className="text-lg font-semibold text-primary mb-4">قائمة المحظورين</h3>
-            <div className="text-center text-muted-foreground py-8">
-              لا يوجد مستخدمون محظورون حالياً
-            </div>
-          </TabsContent>
 
-          <TabsContent value="options">
-            <h3 className="text-lg font-semibold text-primary mb-4">إعدادات الحساب</h3>
+          <TabsContent value="options" className="bg-transparent">
+            <h3 className="text-lg font-semibold text-white mb-4">إعدادات الحساب</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-muted-foreground">المنطقة الزمنية</label>
@@ -780,33 +729,20 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
             </div>
           </TabsContent>
 
-          <TabsContent value="more">
-            <h3 className="text-lg font-semibold text-primary mb-4">المزيد من الخيارات</h3>
-            <div className="space-y-4">
-              <Button className="w-full glass-effect rounded-lg text-right hover:bg-accent transition-all justify-start">
-                📥 تصدير بيانات الدردشة
-              </Button>
-              <Button className="w-full glass-effect rounded-lg text-right hover:bg-accent transition-all justify-start">
-                🛡️ إعدادات الخصوصية المتقدمة
-              </Button>
-              <Button className="w-full glass-effect rounded-lg text-right hover:bg-accent transition-all justify-start">
-                🎨 تخصيص المظهر
-              </Button>
-            </div>
-          </TabsContent>
+
 
             {/* Footer */}
-            <div className="flex gap-3 justify-end pt-4 border-t border-border">
+            <div className="flex gap-3 justify-end pt-4 border-t border-accent/30">
               <Button
                 onClick={onClose}
                 variant="outline"
-                className="px-6 py-3 glass-effect rounded-lg font-semibold hover:bg-accent"
+                className="px-6 py-3 bg-accent/30 text-white rounded-lg font-semibold hover:bg-accent/50 border-accent/50"
               >
                 إلغاء
               </Button>
               <Button
                 onClick={handleSave}
-                className="btn-success px-6 py-3 rounded-lg font-semibold flex items-center gap-2"
+                className="bg-primary hover:bg-primary/80 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2"
               >
                 💾 حفظ التغييرات
               </Button>
