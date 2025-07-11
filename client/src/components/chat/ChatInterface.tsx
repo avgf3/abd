@@ -20,6 +20,7 @@ import BlockNotification from '../moderation/BlockNotification';
 import PromoteUserPanel from '../moderation/PromoteUserPanel';
 import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
+import StealthModeToggle from './StealthModeToggle';
 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -214,6 +215,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 <span>🛡️</span>
                 إدارة
               </Button>
+              
+              <StealthModeToggle currentUser={chat.currentUser} />
+              
               <Button 
                 className="glass-effect px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 border border-red-400 relative"
                 onClick={() => setShowReportsLog(true)}

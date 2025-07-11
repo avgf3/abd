@@ -115,6 +115,28 @@ export function useChat() {
               }
               break;
               
+            case 'userVisibilityChanged':
+              // تحديث قائمة المتصلين عند تغيير حالة الإخفاء
+              if (message.userId && message.isHidden !== undefined) {
+                setOnlineUsers(prev => {
+                  if (message.isHidden) {
+                    // إزالة المستخدم من القائمة إذا أصبح مخفي
+                    return prev.filter(user => user.id !== message.userId);
+                  } else {
+                    // إضافة المستخدم للقائمة إذا أصبح ظاهر (إذا لم يكن موجود بالفعل)
+                    const exists = prev.some(user => user.id === message.userId);
+                    if (!exists) {
+                      // طلب تحديث قائمة المستخدمين من الخادم
+                      if (ws.current?.readyState === WebSocket.OPEN) {
+                        ws.current.send(JSON.stringify({ type: 'requestOnlineUsers' }));
+                      }
+                    }
+                    return prev;
+                  }
+                });
+              }
+              break;
+              
             case 'newMessage':
               if (message.message && !message.message.isPrivate) {
                 // فحص إذا كان المرسل مُتجاهل

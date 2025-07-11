@@ -224,6 +224,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API لتبديل وضع الإخفاء للإدمن والمالك
+  app.post("/api/users/:userId/toggle-hidden", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { isHidden } = req.body;
+      const userIdNum = parseInt(userId);
+      
+      // التحقق من وجود المستخدم
+      const user = await storage.getUser(userIdNum);
+      if (!user) {
+        return res.status(404).json({ error: "المستخدم غير موجود" });
+      }
+      
+      // التحقق من الصلاحيات - فقط للإدمن والمالك
+      if (user.userType !== 'admin' && user.userType !== 'owner') {
+        return res.status(403).json({ error: "هذه الخاصية للإدمن والمالك فقط" });
+      }
+      
+      // تحديث حالة الإخفاء
+      await storage.setUserHiddenStatus(userIdNum, isHidden);
+      
+      // إرسال إشعار WebSocket لتحديث قائمة المتصلين
+      wss.clients.forEach((client: WebSocketClient) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'userVisibilityChanged',
+            userId: userIdNum,
+            isHidden: isHidden
+          }));
+        }
+      });
+      
+      res.json({ 
+        message: isHidden ? "تم تفعيل الوضع المخفي" : "تم إلغاء الوضع المخفي",
+        isHidden: isHidden
+      });
+      
+    } catch (error) {
+      console.error('خطأ في تبديل وضع الإخفاء:', error);
+      res.status(500).json({ error: "خطأ في تبديل وضع الإخفاء" });
+    }
+  });
+
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
