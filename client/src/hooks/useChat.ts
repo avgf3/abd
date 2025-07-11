@@ -251,6 +251,16 @@ export function useChat() {
               if (message.targetUserId === user.id) {
                 if (message.action === 'muted') {
                   console.log('🔇 تم كتمك من الدردشة العامة');
+                  
+                  // إضافة إشعار إلى تبويب الإشعارات
+                  setNotifications(prev => [...prev, {
+                    id: Date.now(),
+                    type: 'system',
+                    username: 'النظام',
+                    message: 'تم كتمك من الدردشة العامة',
+                    timestamp: new Date()
+                  }]);
+                  
                   // إظهار إشعار الكتم
                   if ('Notification' in window && Notification.permission === 'granted') {
                     new Notification('تم كتمك 🔇', {
@@ -312,6 +322,41 @@ export function useChat() {
                 
                 // صوت تنبيه
                 playNotificationSound();
+                
+                // إضافة إشعار حقيقي للواجهة
+                setNotifications(prev => [...prev, {
+                  id: Date.now(),
+                  type: 'friendRequest',
+                  username: message.senderUsername,
+                  message: `${message.senderUsername} يريد إضافتك كصديق`,
+                  timestamp: new Date()
+                }]);
+              }
+              break;
+
+            case 'promotion':
+              if (message.newRole && user.id) {
+                console.log('🎉 تمت ترقيتك:', message.message);
+                
+                // إشعار مرئي
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('ترقية جديدة! 🎉', {
+                    body: message.message,
+                    icon: '/favicon.ico'
+                  });
+                }
+                
+                // صوت تنبيه
+                playNotificationSound();
+                
+                // إضافة إشعار للواجهة
+                setNotifications(prev => [...prev, {
+                  id: Date.now(),
+                  type: 'promotion',
+                  username: 'النظام',
+                  message: message.message,
+                  timestamp: new Date()
+                }]);
               }
               break;
               

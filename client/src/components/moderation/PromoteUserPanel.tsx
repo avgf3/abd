@@ -49,7 +49,7 @@ export default function PromoteUserPanel({
         body: JSON.stringify({
           moderatorId: currentUser.id,
           targetUserId: parseInt(selectedUser),
-          newRole: selectedRole
+          role: selectedRole
         })
       });
 

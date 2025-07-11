@@ -62,6 +62,16 @@ export default function ReportModal({
       return;
     }
 
+    // منع التبليغ على المشرفين والمالكين
+    if (reportedUser?.userType === 'admin' || reportedUser?.userType === 'owner') {
+      toast({
+        title: 'غير مسموح',
+        description: 'لا يمكن الإبلاغ عن المشرفين أو المالكين',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     if (!reason || !reportedUser || !currentUser) {
       toast({
         title: 'خطأ',

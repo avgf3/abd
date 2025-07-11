@@ -174,7 +174,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           >
             <span>🔔</span>
             إشعارات
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
           </Button>
           
           <Button 
@@ -212,7 +211,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               >
                 <span>⚠️</span>
                 سجل البلاغات
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
               </Button>
 
               {/* زر ترقية المستخدمين - للمالك فقط */}

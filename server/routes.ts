@@ -823,22 +823,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { moderatorId, targetUserId, role } = req.body;
       
-      const success = await moderationSystem.promoteUser(moderatorId, targetUserId, role);
-      
-      if (success) {
-        res.json({ message: "تم ترقية المستخدم بنجاح" });
-        
-        // تحديث المستخدم في قاعدة البيانات
-        await storage.updateUser(targetUserId, { userType: role });
-        
-        // إشعار جميع المستخدمين
-        broadcast({
-          type: 'userUpdated',
-          user: await storage.getUser(targetUserId)
-        });
-      } else {
-        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+      // التحقق من أن المتقدم بالطلب هو المالك فقط
+      const moderator = await storage.getUser(moderatorId);
+      if (!moderator || moderator.userType !== 'owner') {
+        return res.status(403).json({ error: "هذه الميزة للمالك فقط" });
       }
+
+      // التحقق من أن المستخدم المراد ترقيته عضو وليس زائر
+      const target = await storage.getUser(targetUserId);
+      if (!target || target.userType !== 'member') {
+        return res.status(400).json({ error: "يمكن ترقية الأعضاء فقط" });
+      }
+      
+      // تحديث المستخدم في قاعدة البيانات
+      await storage.updateUser(targetUserId, { userType: role });
+      const updatedUser = await storage.getUser(targetUserId);
+      
+      // إرسال إشعار للمستخدم المرقى
+      const targetClient = Array.from(wss.clients).find((client: any) => client.userId === targetUserId);
+      if (targetClient && targetClient.readyState === WebSocket.OPEN) {
+        targetClient.send(JSON.stringify({
+          type: 'promotion',
+          newRole: role,
+          message: `تهانينا! تمت ترقيتك إلى ${role === 'admin' ? 'مشرف' : 'مالك'}`
+        }));
+      }
+      
+      // إشعار جميع المستخدمين بالترقية
+      broadcast({
+        type: 'userUpdated',
+        user: updatedUser
+      });
+
+      // إشعار عام في الدردشة
+      broadcast({
+        type: 'systemNotification',
+        message: `🎉 تم ترقية ${target.username} إلى ${role === 'admin' ? 'مشرف' : 'مالك'}`,
+        timestamp: new Date().toISOString()
+      });
+      
+      res.json({ message: "تم ترقية المستخدم بنجاح" });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
     }
