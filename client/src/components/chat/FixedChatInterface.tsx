@@ -34,13 +34,12 @@ interface ChatInterfaceProps {
   onLogout: () => void;
 }
 
-export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
+export default function FixedChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAdminReports, setShowAdminReports] = useState(false);
-
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
@@ -50,23 +49,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showActiveActions, setShowActiveActions] = useState(false);
   const [showPromotePanel, setShowPromotePanel] = useState(false);
 
-  const [newMessageAlert, setNewMessageAlert] = useState<{
-    show: boolean;
-    sender: ChatUser | null;
-  }>({
-    show: false,
-    sender: null,
-  });
-
-  // تفعيل التنبيه عند وصول رسالة جديدة
-  useEffect(() => {
-    if (chat.newMessageSender) {
-      setNewMessageAlert({
-        show: true,
-        sender: chat.newMessageSender,
-      });
-    }
-  }, [chat.newMessageSender]);
   const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
   const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(null);
   const [userPopup, setUserPopup] = useState<{
@@ -74,26 +56,36 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     user: ChatUser | null;
     x: number;
     y: number;
-  }>({
-    show: false,
-    user: null,
-    x: 0,
-    y: 0,
-  });
+  }>({ show: false, user: null, x: 0, y: 0 });
+
   const { toast } = useToast();
 
   const handleUserClick = (event: React.MouseEvent, user: ChatUser) => {
-    event.stopPropagation();
+    if (user.id === chat.currentUser?.id) return;
+    
+    const rect = event.currentTarget.getBoundingClientRect();
     setUserPopup({
       show: true,
       user,
-      x: event.clientX,
-      y: event.clientY,
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
     });
   };
 
+  const handleReportUser = (user: ChatUser, messageContent: string, messageId: number) => {
+    setReportedUser(user);
+    setReportedMessage({ content: messageContent, id: messageId });
+    setShowReportModal(true);
+  };
+
+  const closeReportModal = () => {
+    setShowReportModal(false);
+    setReportedUser(null);
+    setReportedMessage(null);
+  };
+
   const closeUserPopup = () => {
-    setUserPopup(prev => ({ ...prev, show: false }));
+    setUserPopup({ show: false, user: null, x: 0, y: 0 });
   };
 
   const handlePrivateMessage = (user: ChatUser) => {
@@ -106,72 +98,35 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   const handleAddFriend = async (user: ChatUser) => {
-    if (!chat.currentUser) return;
-    
     try {
-      console.log('Sending friend request:', { senderId: chat.currentUser.id, receiverId: user.id });
-      
-      const response = await apiRequest('/api/friend-requests', {
+      await apiRequest(`/api/friends/request`, {
         method: 'POST',
-        body: {
-          senderId: chat.currentUser.id,
-          receiverId: user.id,
-        }
+        body: { receiverId: user.id },
       });
-      
-      console.log('Friend request response:', response);
-      
       toast({
-        title: "تمت الإضافة",
+        title: "✅ تم إرسال طلب الصداقة",
         description: `تم إرسال طلب صداقة إلى ${user.username}`,
       });
-    } catch (error) {
-      console.error('Friend request error:', error);
+    } catch (error: any) {
       toast({
         title: "خطأ",
-        description: error instanceof Error ? error.message : "لم نتمكن من إرسال طلب الصداقة",
+        description: error.message || "فشل في إرسال طلب الصداقة",
         variant: "destructive",
       });
     }
     closeUserPopup();
   };
 
-  const handleIgnoreUser = (user: ChatUser) => {
-    chat.ignoreUser(user.id);
-    toast({
-      title: "تم التجاهل",
-      description: `تم تجاهل المستخدم ${user.username} - لن ترى رسائله بعد الآن`,
-    });
-    closeUserPopup();
-  };
-
-
-
   const handleViewProfile = (user: ChatUser) => {
-    toast({
-      title: "الملف الشخصي",
-      description: `عرض ملف ${user.username} الشخصي`,
-    });
+    setSelectedPrivateUser(user);
+    setShowProfile(true);
     closeUserPopup();
-  };
-
-  const handleReportUser = (user: ChatUser, messageContent?: string, messageId?: number) => {
-    setReportedUser(user);
-    setReportedMessage(messageContent && messageId ? { content: messageContent, id: messageId } : null);
-    setShowReportModal(true);
-    closeUserPopup();
-  };
-
-  const closeReportModal = () => {
-    setShowReportModal(false);
-    setReportedUser(null);
-    setReportedMessage(null);
   };
 
   return (
-    <div className="h-screen flex flex-col" onClick={closeUserPopup}>
+    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white font-['Cairo']" dir="rtl">
       {/* Header */}
-      <header className="bg-secondary py-4 px-6 flex justify-between items-center shadow-2xl border-b border-accent">
+      <header className="glass-effect p-4 flex items-center justify-between border-b border-gray-700">
         <div className="flex items-center gap-3">
           <div className="text-2xl">💬</div>
           <div className="text-2xl font-bold text-white">
@@ -180,82 +135,69 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         </div>
         <div className="flex gap-3">
           <Button 
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
+            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowNotifications(true)}
           >
-            <span>🔔</span>
-            إشعارات
+            🔔 إشعارات
           </Button>
           
           <Button 
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
+            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowFriends(true)}
           >
-            <span>👥</span>
-            الأصدقاء
-            {/* تنبيه طلبات الصداقة */}
+            👥 الأصدقاء
             <FriendRequestBadge currentUser={chat.currentUser} />
           </Button>
 
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowMessages(true)}
-            title="الرسائل"
           >
-            <span>✉️</span>
-            الرسائل
+            ✉️ الرسائل
           </Button>
           
-          {/* زر لوحة الإدارة للمشرفين */}
           {chat.currentUser && (chat.currentUser.userType === 'owner' || chat.currentUser.userType === 'admin') && (
             <>
               <Button 
                 className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
                 onClick={() => setShowModerationPanel(true)}
               >
-                <span>🛡️</span>
-                إدارة
+                🛡️ إدارة
               </Button>
               
               <StealthModeToggle currentUser={chat.currentUser} />
               
               <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 border border-red-400 relative"
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2"
                 onClick={() => setShowReportsLog(true)}
               >
-                <span>⚠️</span>
-                سجل البلاغات
+                ⚠️ البلاغات
               </Button>
               
               <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400"
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2"
                 onClick={() => setShowActiveActions(true)}
               >
-                <span>🔒</span>
-                سجل الإجراءات النشطة
+                🔒 الإجراءات النشطة
               </Button>
 
-              {/* زر ترقية المستخدمين - للمالك فقط */}
               {chat.currentUser?.userType === 'owner' && (
                 <Button 
                   className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2"
                   onClick={() => setShowPromotePanel(true)}
                 >
-                  <span>👑</span>
-                  ترقية المستخدمين
+                  👑 ترقية المستخدمين
                 </Button>
               )}
             </>
           )}
 
-          {/* زر خاص بالمالك فقط */}
           {chat.currentUser && chat.currentUser.userType === 'owner' && (
             <Button 
-              className="glass-effect px-4 py-2 rounded-lg hover:bg-purple-600 transition-all duration-200 flex items-center gap-2 border border-purple-400"
+              className="glass-effect px-4 py-2 rounded-lg hover:bg-purple-600 transition-all duration-200 flex items-center gap-2"
               onClick={() => setShowOwnerPanel(true)}
             >
-              <span>👑</span>
-              إدارة المالك
+              👑 إدارة المالك
             </Button>
           )}
           
@@ -263,11 +205,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowSettings(!showSettings)}
           >
-            <span>⚙️</span>
-            إعدادات
+            ⚙️ إعدادات
           </Button>
-
-
         </div>
       </header>
       
@@ -278,7 +217,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           onUserClick={handleUserClick}
           currentUser={chat.currentUser}
         />
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col flex-1 min-w-0">
           <NewMessageArea
             messages={chat.publicMessages}
             onUserClick={handleUserClick}
@@ -294,7 +233,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         </div>
       </main>
 
-      {/* Modals and Popups */}
+      {/* Modals */}
       {showProfile && (
         <ProfileModal 
           user={chat.currentUser}
@@ -324,9 +263,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           y={userPopup.y}
           onPrivateMessage={() => handlePrivateMessage(userPopup.user!)}
           onAddFriend={() => handleAddFriend(userPopup.user!)}
-          onIgnore={() => {
-            // إزالة زر التجاهل من UserPopup - الآن في الملف الشخصي فقط
-          }}
+          onIgnore={() => {}}
           onViewProfile={() => handleViewProfile(userPopup.user!)}
           currentUser={chat.currentUser}
           onClose={closeUserPopup}
@@ -368,7 +305,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
-      {/* Admin Reports Panel */}
       {showAdminReports && chat.currentUser && chat.currentUser.userType === 'owner' && (
         <AdminReportsPanel
           isOpen={showAdminReports}
@@ -382,11 +318,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           isOpen={showFriends}
           onClose={() => setShowFriends(false)}
           currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
-          onStartPrivateChat={(friend) => {
-            setSelectedPrivateUser(friend);
-            setShowFriends(false);
-          }}
+          onStartConversation={setSelectedPrivateUser}
         />
       )}
 
@@ -395,12 +327,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           isOpen={showMessages}
           onClose={() => setShowMessages(false)}
           currentUser={chat.currentUser}
-          privateConversations={chat.privateConversations}
-          onlineUsers={chat.onlineUsers}
-          onStartPrivateChat={(user) => {
-            setSelectedPrivateUser(user);
-            setShowMessages(false);
-          }}
+          onStartConversation={setSelectedPrivateUser}
         />
       )}
 
@@ -409,76 +336,56 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           isOpen={showModerationPanel}
           onClose={() => setShowModerationPanel(false)}
           currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
         />
       )}
 
       {showOwnerPanel && (
-        <OwnerAdminPanel 
+        <OwnerAdminPanel
           isOpen={showOwnerPanel}
           onClose={() => setShowOwnerPanel(false)}
           currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
-        />
-      )}
-
-      {showModerationPanel && (
-        <ModerationPanel 
-          isOpen={showModerationPanel}
-          onClose={() => setShowModerationPanel(false)}
-          currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
         />
       )}
 
       {showReportsLog && (
-        <ReportsLog 
-          isVisible={showReportsLog}
+        <ReportsLog
+          isOpen={showReportsLog}
           onClose={() => setShowReportsLog(false)}
           currentUser={chat.currentUser}
         />
       )}
 
       {showActiveActions && (
-        <ActiveModerationLog 
-          isVisible={showActiveActions}
+        <ActiveModerationLog
+          isOpen={showActiveActions}
           onClose={() => setShowActiveActions(false)}
           currentUser={chat.currentUser}
         />
       )}
 
       {showPromotePanel && (
-        <PromoteUserPanel 
-          isVisible={showPromotePanel}
+        <PromoteUserPanel
+          isOpen={showPromotePanel}
           onClose={() => setShowPromotePanel(false)}
           currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
         />
       )}
 
-      {/* إشعارات الطرد والحجب */}
-      <KickNotification
-        isVisible={chat.kickNotification?.show || false}
-        durationMinutes={chat.kickNotification?.duration || 15}
-        onClose={() => {}}
-      />
-      
-      <BlockNotification
-        isVisible={chat.blockNotification?.show || false}
-        reason={chat.blockNotification?.reason || ''}
-        onClose={() => {}}
-      />
+      {chat.kickNotification?.show && (
+        <KickNotification
+          isVisible={chat.kickNotification.show}
+          duration={chat.kickNotification.duration}
+          onClose={() => {}}
+        />
+      )}
 
-      {/* تنبيه الرسائل الجديدة */}
-      <MessageAlert
-        isOpen={newMessageAlert.show}
-        sender={newMessageAlert.sender}
-        onClose={() => setNewMessageAlert({ show: false, sender: null })}
-        onOpenMessages={() => setShowMessages(true)}
-      />
-
-
-
+      {chat.blockNotification?.show && (
+        <BlockNotification
+          isVisible={chat.blockNotification.show}
+          reason={chat.blockNotification.reason}
+          onClose={() => {}}
+        />
+      )}
     </div>
   );
 }

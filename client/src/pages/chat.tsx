@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import WelcomeScreen from '@/components/chat/WelcomeScreen';
-import ChatInterface from '@/components/chat/ChatInterface';
+import FixedChatInterface from '@/components/chat/FixedChatInterface';
 import { useChat } from '@/hooks/useChat';
 import KickCountdown from '@/components/moderation/KickCountdown';
 import type { ChatUser } from '@/types/chat';
@@ -24,7 +24,7 @@ export default function ChatPage() {
       {showWelcome ? (
         <WelcomeScreen onUserLogin={handleUserLogin} />
       ) : (
-        <ChatInterface chat={chat} onLogout={handleLogout} />
+        <FixedChatInterface chat={chat} onLogout={handleLogout} />
       )}
       
       {/* عداد الطرد */}
