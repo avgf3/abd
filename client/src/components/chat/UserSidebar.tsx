@@ -51,7 +51,7 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
   };
 
   return (
-    <aside className="w-64 bg-white p-4 text-sm space-y-3 overflow-y-auto border-l border-gray-200 shadow-lg">
+    <aside className="w-72 bg-white p-4 text-sm space-y-3 overflow-y-auto border-l border-gray-200 shadow-lg">
       <div className="relative">
         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
         <Input
@@ -79,7 +79,7 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                 currentUser={currentUser}
               >
                 <div
-                  className={`flex items-center gap-2 p-3 rounded-lg transition-all duration-200 cursor-pointer ${
+                  className={`flex items-center gap-2 p-3 rounded-lg transition-all duration-200 cursor-pointer w-full ${
                     getUserThemeClasses(user)
                   }`}
                   style={{ 
