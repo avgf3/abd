@@ -494,7 +494,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                   className="bg-white/90 backdrop-blur-md hover:bg-white text-gray-700 border border-gray-200 rounded-lg shadow-md"
                   onClick={handleBannerUpload}
                 >
-                  📸 تغيير البانر
+                  📸 تغيير صورة البروفايل
                 </Button>
                 <Button
                   size="sm"

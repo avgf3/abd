@@ -8,7 +8,7 @@ import SettingsMenu from './SettingsMenu';
 import ReportModal from './ReportModal';
 import AdminReportsPanel from './AdminReportsPanel';
 import NotificationPanel from './NotificationPanel';
-import FriendsPanel from './FriendsPanel';
+import FriendsPanel from './FriendsPanelSimple';
 import FriendRequestBadge from './FriendRequestBadge';
 import MessagesPanel from './MessagesPanel';
 import MessageAlert from './MessageAlert';
@@ -147,10 +147,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
 
   const handleViewProfile = (user: ChatUser) => {
-    toast({
-      title: "الملف الشخصي",
-      description: `عرض ملف ${user.username} الشخصي`,
-    });
+    setShowProfile(true);
+    setSelectedPrivateUser(user);
     closeUserPopup();
   };
 
@@ -291,9 +289,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {/* Modals and Popups */}
       {showProfile && (
         <ProfileModal 
-          user={chat.currentUser}
+          user={selectedPrivateUser || chat.currentUser}
           currentUser={chat.currentUser}
-          onClose={() => setShowProfile(false)}
+          onClose={() => {
+            setShowProfile(false);
+            if (selectedPrivateUser) setSelectedPrivateUser(null);
+          }}
           onIgnoreUser={(userId) => {
             chat.ignoreUser(userId);
           }}

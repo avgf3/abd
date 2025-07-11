@@ -74,21 +74,19 @@ export default function FriendsPanel({
     setLoading(true);
     try {
       const response = await apiRequest(`/api/friends/${currentUser.id}`);
-      const friendsData = response.friends || [];
-      
-      // تحويل البيانات إلى تنسيق Friend
-      const formattedFriends: Friend[] = friendsData.map((friend: ChatUser) => ({
-        ...friend,
-        status: onlineUsers.find(u => u.id === friend.id) ? 'online' : 'offline',
-        lastMessage: '', // سيتم جلبها من الرسائل الخاصة
-        unreadCount: 0   // سيتم حسابها لاحقاً
-      }));
-      
-      setFriends(formattedFriends);
+      if (response && Array.isArray(response.friends)) {
+        setFriends(response.friends.map((friend: any) => ({
+          ...friend,
+          status: friend.isOnline ? 'online' : 'offline'
+        })));
+      }
     } catch (error) {
       console.error('Error fetching friends:', error);
-      // في حالة الخطأ، نعرض قائمة فارغة
-      setFriends([]);
+      toast({
+        title: "خطأ",
+        description: "فشل في جلب قائمة الأصدقاء",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -99,8 +97,8 @@ export default function FriendsPanel({
     
     try {
       const [incomingResponse, outgoingResponse] = await Promise.all([
-        apiRequest(`/api/friend-requests/incoming/${currentUser.id}`),
-        apiRequest(`/api/friend-requests/outgoing/${currentUser.id}`)
+        apiRequest(`/api/friend-requests/incoming/${currentUser.id}`).catch(() => ({ requests: [] })),
+        apiRequest(`/api/friend-requests/outgoing/${currentUser.id}`).catch(() => ({ requests: [] }))
       ]);
       
       setFriendRequests({
@@ -113,17 +111,12 @@ export default function FriendsPanel({
     }
   };
 
-  const handleAddFriend = async (friendId: number) => {
-    if (!currentUser) return;
-    
-    try {
-      await apiRequest('/api/friend-requests', {
-        method: 'POST',
-        body: {
-          senderId: currentUser.id,
-          receiverId: friendId
-        }
-      });
+  if (!isOpen) return null;
+
+  const handleStartChat = (friend: ChatUser) => {
+    onStartPrivateChat(friend);
+    onClose();
+  };
       
       toast({
         title: 'تم إرسال الطلب',
