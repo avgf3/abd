@@ -44,7 +44,7 @@ export default function MessageInputArea({
   };
 
   return (
-    <div className="border-t border-gray-600 p-4 bg-gray-800">
+    <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
       <div className="flex gap-2">
         <Input
           value={messageText}

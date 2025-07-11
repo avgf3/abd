@@ -88,17 +88,7 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <div 
-                    className={`flex-1 text-sm font-medium px-4 py-3 transition-all duration-300 ${
-                      user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black' : ''
-                    }`}
-                    style={{ 
-                      color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#FFFFFF'),
-                      ...(user.userType === 'owner' && {
-                        animation: 'golden-glow 2s ease-in-out infinite'
-                      })
-                    }}
-                  >
+                  <div className="flex-1 text-sm font-medium" style={{ color: user.usernameColor || '#FFFFFF' }}>
                     {getUserRankBadge(user.userType, user.username)} {user.username}
                   </div>
                   {/* إشارة المكتوم */}

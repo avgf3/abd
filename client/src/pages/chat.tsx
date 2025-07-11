@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import SimpleWelcomeScreen from '@/components/chat/SimpleWelcomeScreen';
-import SimpleChatInterface from '@/components/chat/SimpleChatInterface';
+import WelcomeScreen from '@/components/chat/WelcomeScreen';
+import ChatInterface from '@/components/chat/ChatInterface';
 import { useChat } from '@/hooks/useChat';
 import KickCountdown from '@/components/moderation/KickCountdown';
 import type { ChatUser } from '@/types/chat';
@@ -22,9 +22,9 @@ export default function ChatPage() {
   return (
     <div className="h-screen bg-background text-foreground font-['Cairo']" dir="rtl">
       {showWelcome ? (
-        <SimpleWelcomeScreen onUserLogin={handleUserLogin} />
+        <WelcomeScreen onUserLogin={handleUserLogin} />
       ) : (
-        <SimpleChatInterface chat={chat} onLogout={handleLogout} />
+        <ChatInterface chat={chat} onLogout={handleLogout} />
       )}
       
       {/* عداد الطرد */}

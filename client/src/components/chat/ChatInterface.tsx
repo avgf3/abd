@@ -287,7 +287,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           />
           <MessageInputArea
             onSendMessage={chat.sendPublicMessage}
-            onTyping={chat.sendTyping}
+            onTyping={chat.handleTyping}
             currentUser={chat.currentUser}
             disabled={chat.currentUser?.isMuted}
           />
