@@ -313,14 +313,31 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           
           if (response.ok) {
             const result = await response.json();
+            console.log('نتيجة رفع الصورة:', result);
+            
+            // تحديث الصورة في الواجهة فوراً
             setProfileData(prev => ({ ...prev, profileImage: result.imageUrl }));
-            if (currentUser) {
-              currentUser.profileImage = result.imageUrl;
+            
+            // تحديث بيانات المستخدم الحالي
+            if (currentUser && result.user) {
+              Object.assign(currentUser, result.user);
             }
+            
+            // إعادة تحميل الصفحة لضمان التحديث
+            window.location.reload();
+            
             toast({
               title: "تم بنجاح",
               description: "تم تحديث الصورة الشخصية",
               variant: "default"
+            });
+          } else {
+            const error = await response.json();
+            console.error('خطأ من الخادم:', error);
+            toast({
+              title: "خطأ",
+              description: error.error || "فشل في رفع الصورة",
+              variant: "destructive"
             });
           }
         } catch (error) {
@@ -356,14 +373,31 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           
           if (response.ok) {
             const result = await response.json();
+            console.log('نتيجة رفع البانر:', result);
+            
+            // تحديث البانر في الواجهة فوراً
             setProfileData(prev => ({ ...prev, profileBanner: result.bannerUrl }));
-            if (currentUser) {
-              currentUser.profileBanner = result.bannerUrl;
+            
+            // تحديث بيانات المستخدم الحالي
+            if (currentUser && result.user) {
+              Object.assign(currentUser, result.user);
             }
+            
+            // إعادة تحميل الصفحة لضمان التحديث
+            window.location.reload();
+            
             toast({
               title: "تم بنجاح",
               description: "تم تحديث صورة البانر",
               variant: "default"
+            });
+          } else {
+            const error = await response.json();
+            console.error('خطأ من الخادم:', error);
+            toast({
+              title: "خطأ",
+              description: error.error || "فشل في رفع صورة البانر",
+              variant: "destructive"
             });
           }
         } catch (error) {

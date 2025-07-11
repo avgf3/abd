@@ -54,10 +54,15 @@ const upload = multer({
   }
 });
 
+let wss: WebSocketServer;
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // رفع صور البروفايل
   app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
     try {
+      console.log('رفع صورة البروفايل - الملف:', req.file);
+      console.log('البيانات:', req.body);
+
       if (!req.file) {
         return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
       }
@@ -83,11 +88,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      await storage.updateUser(parseInt(userId), { profileImage: imageUrl });
+      // تحديث المستخدم في قاعدة البيانات
+      const updatedUser = await storage.updateUser(parseInt(userId), { profileImage: imageUrl });
+      
+      console.log('تم تحديث المستخدم:', updatedUser);
+
+      // إرسال تحديث WebSocket لجميع المستخدمين
+      if (wss) {
+        wss.clients.forEach((client: WebSocketClient) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'userUpdated',
+              user: updatedUser
+            }));
+          }
+        });
+      }
 
       res.json({
+        success: true,
         message: 'تم رفع الصورة بنجاح',
-        imageUrl: imageUrl
+        imageUrl: imageUrl,
+        user: updatedUser
       });
 
     } catch (error) {
@@ -101,6 +123,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // رفع صور البروفايل البانر
   app.post('/api/upload/profile-banner', upload.single('profileBanner'), async (req, res) => {
     try {
+      console.log('رفع صورة البانر - الملف:', req.file);
+      console.log('البيانات:', req.body);
+
       if (!req.file) {
         return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
       }
@@ -126,11 +151,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      await storage.updateUser(parseInt(userId), { profileBanner: bannerUrl });
+      // تحديث المستخدم في قاعدة البيانات
+      const updatedUser = await storage.updateUser(parseInt(userId), { profileBanner: bannerUrl });
+      
+      console.log('تم تحديث المستخدم:', updatedUser);
+
+      // إرسال تحديث WebSocket لجميع المستخدمين
+      if (wss) {
+        wss.clients.forEach((client: WebSocketClient) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'userUpdated',
+              user: updatedUser
+            }));
+          }
+        });
+      }
 
       res.json({
+        success: true,
         message: 'تم رفع صورة البروفايل بنجاح',
-        bannerUrl: bannerUrl
+        bannerUrl: bannerUrl,
+        user: updatedUser
       });
 
     } catch (error) {
@@ -434,7 +476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);

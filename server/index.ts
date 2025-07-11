@@ -1,10 +1,14 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import path from "path";
 
 const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// خدمة الملفات الثابتة للصور المرفوعة
+app.use('/uploads', express.static(path.join(process.cwd(), 'client/public/uploads')));
 
 app.use((req, res, next) => {
   const start = Date.now();
