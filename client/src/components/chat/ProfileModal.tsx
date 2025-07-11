@@ -108,7 +108,21 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
     { id: 'emerald', name: 'زمردي', emoji: '💎', gradient: 'linear-gradient(45deg, #10B981, #059669)', textColor: '#FFFFFF' },
     { id: 'fire', name: 'نار', emoji: '🔥', gradient: 'linear-gradient(45deg, #EF4444, #DC2626)', textColor: '#FFFFFF' },
     { id: 'galaxy', name: 'مجرة', emoji: '🌌', gradient: 'linear-gradient(45deg, #6366F1, #4F46E5)', textColor: '#FFFFFF' },
-    { id: 'rainbow', name: 'قوس قزح', emoji: '🌈', gradient: 'linear-gradient(45deg, #F59E0B, #EF4444, #EC4899, #8B5CF6)', textColor: '#FFFFFF' }
+    { id: 'rainbow', name: 'قوس قزح', emoji: '🌈', gradient: 'linear-gradient(45deg, #F59E0B, #EF4444, #EC4899, #8B5CF6)', textColor: '#FFFFFF' },
+    { id: 'aqua', name: 'أكوا', emoji: '💧', gradient: 'linear-gradient(45deg, #06B6D4, #0891B2)', textColor: '#FFFFFF' },
+    { id: 'crystal', name: 'كريستال', emoji: '💠', gradient: 'linear-gradient(45deg, #E5E7EB, #9CA3AF)', textColor: '#000000' },
+    { id: 'amber', name: 'عنبر', emoji: '🟨', gradient: 'linear-gradient(45deg, #F59E0B, #D97706)', textColor: '#000000' },
+    { id: 'coral', name: 'مرجاني', emoji: '🪸', gradient: 'linear-gradient(45deg, #FB7185, #F43F5E)', textColor: '#FFFFFF' },
+    { id: 'jade', name: 'يشم', emoji: '🟩', gradient: 'linear-gradient(45deg, #059669, #047857)', textColor: '#FFFFFF' },
+    { id: 'sapphire', name: 'ياقوت', emoji: '🔷', gradient: 'linear-gradient(45deg, #3B82F6, #1D4ED8)', textColor: '#FFFFFF' },
+    { id: 'bronze', name: 'برونزي', emoji: '🥉', gradient: 'linear-gradient(45deg, #CD7F32, #B8860B)', textColor: '#FFFFFF' },
+    { id: 'silver', name: 'فضي', emoji: '🥈', gradient: 'linear-gradient(45deg, #C0C0C0, #A8A8A8)', textColor: '#000000' },
+    { id: 'platinum', name: 'بلاتيني', emoji: '⚪', gradient: 'linear-gradient(45deg, #E5E4E2, #D3D3D3)', textColor: '#000000' },
+    { id: 'obsidian', name: 'سبج', emoji: '⚫', gradient: 'linear-gradient(45deg, #1F2937, #111827)', textColor: '#FFFFFF' },
+    { id: 'mystical', name: 'غامض', emoji: '🔮', gradient: 'linear-gradient(45deg, #7C3AED, #5B21B6)', textColor: '#FFFFFF' },
+    { id: 'tropical', name: 'استوائي', emoji: '🌺', gradient: 'linear-gradient(45deg, #FF6B6B, #4ECDC4)', textColor: '#FFFFFF' },
+    { id: 'aurora', name: 'شفق', emoji: '🌌', gradient: 'linear-gradient(45deg, #00C9FF, #92FE9D)', textColor: '#000000' },
+    { id: 'phoenix', name: 'عنقاء', emoji: '🔥', gradient: 'linear-gradient(45deg, #FF4E50, #F9CA24)', textColor: '#FFFFFF' }
   ];
 
   const handleImageUpload = () => {
@@ -383,11 +397,11 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                 <div className="space-y-4">
                   <h4 className="text-md font-semibold text-primary">🌟 ثيمات مميزة</h4>
                   <p className="text-sm text-muted-foreground">اختر ثيماً مميزاً لمظهرك في الدردشة:</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto">
                     {themeOptions.map((theme, index) => (
                       <button
                         key={index}
-                        className={`p-3 rounded-xl border-2 transition-all hover:scale-105 ${
+                        className={`p-2 rounded-lg border-2 transition-all hover:scale-105 ${
                           profileData.userTheme === theme.id ? 'border-primary ring-2 ring-primary/20' : 'border-gray-600'
                         }`}
                         style={{ 
@@ -398,8 +412,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                         title={theme.name}
                       >
                         <div className="text-center">
-                          <div className="text-lg mb-1">{theme.emoji}</div>
-                          <div className="text-sm font-bold">{theme.name}</div>
+                          <div className="text-sm mb-1">{theme.emoji}</div>
+                          <div className="text-xs font-bold">{theme.name}</div>
                         </div>
                       </button>
                     ))}

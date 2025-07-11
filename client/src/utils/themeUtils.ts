@@ -11,7 +11,21 @@ export const getThemeData = (themeId: string) => {
     'emerald': { gradient: 'linear-gradient(45deg, #10B981, #059669)', textColor: '#FFFFFF', hasAnimation: true },
     'fire': { gradient: 'linear-gradient(45deg, #EF4444, #DC2626)', textColor: '#FFFFFF', hasAnimation: true },
     'galaxy': { gradient: 'linear-gradient(45deg, #6366F1, #4F46E5)', textColor: '#FFFFFF', hasAnimation: true },
-    'rainbow': { gradient: 'linear-gradient(45deg, #F59E0B, #EF4444, #EC4899, #8B5CF6)', textColor: '#FFFFFF', hasAnimation: true }
+    'rainbow': { gradient: 'linear-gradient(45deg, #F59E0B, #EF4444, #EC4899, #8B5CF6)', textColor: '#FFFFFF', hasAnimation: true },
+    'aqua': { gradient: 'linear-gradient(45deg, #06B6D4, #0891B2)', textColor: '#FFFFFF', hasAnimation: true },
+    'crystal': { gradient: 'linear-gradient(45deg, #E5E7EB, #9CA3AF)', textColor: '#000000', hasAnimation: true },
+    'amber': { gradient: 'linear-gradient(45deg, #F59E0B, #D97706)', textColor: '#000000', hasAnimation: true },
+    'coral': { gradient: 'linear-gradient(45deg, #FB7185, #F43F5E)', textColor: '#FFFFFF', hasAnimation: true },
+    'jade': { gradient: 'linear-gradient(45deg, #059669, #047857)', textColor: '#FFFFFF', hasAnimation: true },
+    'sapphire': { gradient: 'linear-gradient(45deg, #3B82F6, #1D4ED8)', textColor: '#FFFFFF', hasAnimation: true },
+    'bronze': { gradient: 'linear-gradient(45deg, #CD7F32, #B8860B)', textColor: '#FFFFFF', hasAnimation: true },
+    'silver': { gradient: 'linear-gradient(45deg, #C0C0C0, #A8A8A8)', textColor: '#000000', hasAnimation: true },
+    'platinum': { gradient: 'linear-gradient(45deg, #E5E4E2, #D3D3D3)', textColor: '#000000', hasAnimation: true },
+    'obsidian': { gradient: 'linear-gradient(45deg, #1F2937, #111827)', textColor: '#FFFFFF', hasAnimation: true },
+    'mystical': { gradient: 'linear-gradient(45deg, #7C3AED, #5B21B6)', textColor: '#FFFFFF', hasAnimation: true },
+    'tropical': { gradient: 'linear-gradient(45deg, #FF6B6B, #4ECDC4)', textColor: '#FFFFFF', hasAnimation: true },
+    'aurora': { gradient: 'linear-gradient(45deg, #00C9FF, #92FE9D)', textColor: '#000000', hasAnimation: true },
+    'phoenix': { gradient: 'linear-gradient(45deg, #FF4E50, #F9CA24)', textColor: '#FFFFFF', hasAnimation: true }
   };
   return themes[themeId as keyof typeof themes] || themes.default;
 };
