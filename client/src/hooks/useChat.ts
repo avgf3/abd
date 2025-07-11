@@ -74,6 +74,9 @@ export function useChat() {
       console.log('محاولة الاتصال بـ WebSocket:', wsUrl);
       ws.current = new WebSocket(wsUrl);
       
+      // جلب قائمة المُتجاهلين عند تسجيل الدخول
+      loadIgnoredUsers(user.id);
+      
       ws.current.onopen = () => {
         console.log('WebSocket متصل بنجاح');
         setIsConnected(true);
@@ -509,6 +512,20 @@ export function useChat() {
     });
   }, []);
 
+  // جلب قائمة المُتجاهلين من الخادم
+  const loadIgnoredUsers = useCallback(async (userId: number) => {
+    try {
+      const response = await fetch(`/api/ignore/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const ignoredUserIds = data.ignoredUsers?.map((user: ChatUser) => user.id) || [];
+        setIgnoredUsers(new Set(ignoredUserIds));
+      }
+    } catch (error) {
+      console.error('فشل في جلب قائمة التجاهل:', error);
+    }
+  }, []);
+
   return {
     currentUser,
     onlineUsers,
@@ -526,6 +543,7 @@ export function useChat() {
     disconnect,
     ignoreUser,
     unignoreUser,
+    loadIgnoredUsers,
     sendPublicMessage: useCallback((content: string, messageType: string = 'text') => {
       if (!content.trim() || !currentUser) return false;
       

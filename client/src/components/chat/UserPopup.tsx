@@ -115,6 +115,32 @@ export default function UserPopup({
       });
     }
   };
+
+  const handleIgnore = async () => {
+    if (!currentUser) return;
+    
+    try {
+      await apiRequest('POST', '/api/ignore', {
+        userId: currentUser.id,
+        ignoredUserId: user.id
+      });
+
+      toast({
+        title: '🚫 تم التجاهل',
+        description: `تم إضافة ${user.username} إلى قائمة التجاهل`,
+        variant: 'default'
+      });
+      
+      onClose?.();
+    } catch (error) {
+      console.error('Ignore error:', error);
+      toast({
+        title: 'خطأ',
+        description: 'فشل في تجاهل المستخدم',
+        variant: 'destructive'
+      });
+    }
+  };
   return (
     <div
       className="user-popup"
@@ -152,7 +178,7 @@ export default function UserPopup({
           </Button>
           
           <Button
-            onClick={onIgnore}
+            onClick={handleIgnore}
             variant="ghost"
             className="user-popup-button text-red-400"
           >

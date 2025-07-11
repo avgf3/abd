@@ -785,6 +785,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============= Ignore System API Routes =============
+
+  // إضافة مستخدم إلى قائمة التجاهل
+  app.post("/api/ignore", async (req, res) => {
+    try {
+      const { userId, ignoredUserId } = req.body;
+      
+      if (!userId || !ignoredUserId) {
+        return res.status(400).json({ error: "معرف المستخدم والمستخدم المُتجاهل مطلوبين" });
+      }
+      
+      if (userId === ignoredUserId) {
+        return res.status(400).json({ error: "لا يمكنك تجاهل نفسك" });
+      }
+      
+      const ignoredRecord = await storage.addIgnoredUser(userId, ignoredUserId);
+      
+      res.json({ 
+        message: "تم إضافة المستخدم إلى قائمة التجاهل",
+        ignoredRecord 
+      });
+    } catch (error) {
+      console.error("خطأ في إضافة المستخدم للتجاهل:", error);
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // إزالة مستخدم من قائمة التجاهل
+  app.delete("/api/ignore/:userId/:ignoredUserId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const ignoredUserId = parseInt(req.params.ignoredUserId);
+      
+      const success = await storage.removeIgnoredUser(userId, ignoredUserId);
+      
+      if (success) {
+        res.json({ message: "تم إزالة المستخدم من قائمة التجاهل" });
+      } else {
+        res.status(404).json({ error: "المستخدم غير موجود في قائمة التجاهل" });
+      }
+    } catch (error) {
+      console.error("خطأ في إزالة المستخدم من التجاهل:", error);
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // الحصول على قائمة المستخدمين المُتجاهلين
+  app.get("/api/ignore/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const ignoredUsers = await storage.getIgnoredUsers(userId);
+      
+      res.json({ ignoredUsers });
+    } catch (error) {
+      console.error("خطأ في جلب قائمة التجاهل:", error);
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // فحص ما إذا كان المستخدم مُتجاهل
+  app.get("/api/ignore/check/:userId/:targetUserId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const targetUserId = parseInt(req.params.targetUserId);
+      
+      const isIgnored = await storage.isUserIgnored(userId, targetUserId);
+      
+      res.json({ isIgnored });
+    } catch (error) {
+      console.error("خطأ في فحص التجاهل:", error);
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   // API routes for spam protection and reporting
   
   // إضافة تبليغ

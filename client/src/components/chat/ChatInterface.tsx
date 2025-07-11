@@ -13,6 +13,7 @@ import FriendRequestBadge from './FriendRequestBadge';
 import MessagesPanel from './MessagesPanel';
 import MessageAlert from './MessageAlert';
 import ModerationPanel from './ModerationPanel';
+import IgnorePanel from './IgnorePanel';
 import ReportsLog from '../moderation/ReportsLog';
 import ActiveModerationLog from '../moderation/ActiveModerationLog';
 import KickNotification from '../moderation/KickNotification';
@@ -48,6 +49,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showReportsLog, setShowReportsLog] = useState(false);
   const [showActiveActions, setShowActiveActions] = useState(false);
   const [showPromotePanel, setShowPromotePanel] = useState(false);
+  const [showIgnoreList, setShowIgnoreList] = useState(false);
 
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
@@ -329,6 +331,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             setShowAdminReports(true);
             setShowSettings(false);
           }}
+          onOpenIgnoreList={() => {
+            setShowIgnoreList(true);
+            setShowSettings(false);
+          }}
           currentUser={chat.currentUser}
         />
       )}
@@ -460,7 +466,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         onOpenMessages={() => setShowMessages(true)}
       />
 
-
+      {/* واجهة إدارة التجاهل */}
+      {showIgnoreList && (
+        <IgnorePanel
+          isOpen={showIgnoreList}
+          onClose={() => setShowIgnoreList(false)}
+          currentUser={chat.currentUser}
+        />
+      )}
 
     </div>
   );
