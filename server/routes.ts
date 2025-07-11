@@ -7,6 +7,8 @@ import { insertUserSchema, insertMessageSchema } from "@shared/schema";
 import { spamProtection } from "./spam-protection";
 import { moderationSystem } from "./moderation";
 import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter } from "./security";
+import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
+import securityApiRoutes from "./api-security";
 import { z } from "zod";
 
 interface WebSocketClient extends WebSocket {
@@ -20,6 +22,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);
+  app.use(advancedSecurityMiddleware);
 
   // Store connected clients
   const clients = new Set<WebSocketClient>();
@@ -702,6 +705,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (success) {
         res.json({ message: "تم حجب المستخدم بنجاح" });
+      
+      // إرسال إشعار وحجب المستخدم من WebSocket
+      broadcast({
+        type: 'moderationAction',
+        action: 'blocked',
+        targetUserId: targetUserId,
+        message: 'تم حجبك من الدردشة نهائياً'
+      });
+      
+      // إجبار قطع الاتصال
+      clients.forEach(client => {
+        if (client.userId === targetUserId) {
+          client.close();
+        }
+      });
         
         // إرسال إشعار وحجب المستخدم من WebSocket
         broadcast({
@@ -887,6 +905,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
     }
+  });
+
+  // Security API routes
+  app.use('/api/security', securityApiRoutes);
+  
+  // Performance ping endpoint
+  app.get('/api/ping', (req, res) => {
+    res.json({ timestamp: Date.now(), status: 'ok' });
   });
 
   return httpServer;

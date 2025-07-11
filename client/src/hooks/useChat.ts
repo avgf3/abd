@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation } from '@/types/chat';
+import { globalNotificationManager, MessageCacheManager, NetworkOptimizer } from '@/lib/chatOptimization';
+import { chatAnalytics } from '@/lib/chatAnalytics';
 
 // Audio notification function
 const playNotificationSound = () => {
@@ -43,8 +45,9 @@ export function useChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [ignoredUsers, setIgnoredUsers] = useState<Set<number>>(new Set());
   
-  // تحسين الأداء: تخزين مؤقت للرسائل
-  const messageCache = useRef<Map<string, ChatMessage[]>>(new Map());
+  // تحسين الأداء: مدراء التحسين
+  const messageCache = useRef(new MessageCacheManager());
+  const networkOptimizer = useRef(new NetworkOptimizer());
   const lastMessageTime = useRef<number>(0);
   
   const ws = useRef<WebSocket | null>(null);
