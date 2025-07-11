@@ -12,6 +12,7 @@ import type { ChatUser } from '@/types/chat';
 import { StealthModeButton } from "./StealthModeButton";
 import { UserMinus } from "lucide-react";
 import UsernameColorPicker from '../profile/UsernameColorPicker';
+import { getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 
 
 interface ProfileModalProps {
@@ -267,14 +268,11 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           />
           <div className="flex-1 space-y-2">
             <div 
-              className={`block w-full px-3 py-2 rounded-lg transition-all duration-300 ${
-                user?.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
-              }`}
+              className="block w-full px-3 py-2 rounded-lg transition-all duration-300"
               style={{
-                ...(user?.userType === 'owner' && {
-                  animation: 'golden-glow 2s ease-in-out infinite',
-                  boxShadow: '0 0 15px rgba(255, 215, 0, 0.6)'
-                })
+                background: getUserThemeStyles(user).background || 'transparent',
+                color: getUserThemeTextColor(user),
+                ...getUserThemeStyles(user)
               }}
             >
               <Input

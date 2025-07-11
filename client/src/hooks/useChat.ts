@@ -217,6 +217,24 @@ export function useChat() {
                 }
               }
               break;
+
+            case 'theme_update':
+              // تحديث ثيم المستخدم في الوقت الفعلي
+              if (message.userId && message.userTheme) {
+                setOnlineUsers(prev => 
+                  prev.map(user => 
+                    user.id === message.userId 
+                      ? { ...user, userTheme: message.userTheme }
+                      : user
+                  )
+                );
+                
+                // تحديث ثيم المستخدم الحالي إذا كان هو من غير الثيم
+                if (currentUser && currentUser.id === message.userId) {
+                  setCurrentUser(prev => prev ? { ...prev, userTheme: message.userTheme } : prev);
+                }
+              }
+              break;
               
             case 'moderationAction':
               // التعامل مع إجراءات الإدارة

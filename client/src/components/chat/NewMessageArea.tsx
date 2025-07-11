@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import ProfileImage from './ProfileImage';
+import { getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 
 import type { ChatMessage, ChatUser } from '@/types/chat';
 
@@ -80,17 +81,13 @@ export default function NewMessageArea({
               {/* Message Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  {/* Username with Premium Theme */}
+                  {/* Username with Theme */}
                   <div 
-                    className={`inline-block px-4 py-3 rounded-xl cursor-pointer hover:underline transition-all duration-300 min-w-[120px] ${
-                      sender.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
-                    }`}
+                    className="inline-block px-4 py-3 rounded-xl cursor-pointer hover:underline transition-all duration-300 min-w-[120px]"
                     style={{ 
-                      color: sender.userType === 'owner' ? '#000000' : (sender.usernameColor || '#000000'),
-                      ...(sender.userType === 'owner' && {
-                        animation: 'golden-glow 2s ease-in-out infinite',
-                        boxShadow: '0 0 25px rgba(255, 215, 0, 0.8)'
-                      })
+                      background: getUserThemeStyles(sender).background || 'transparent',
+                      color: getUserThemeTextColor(sender),
+                      ...getUserThemeStyles(sender)
                     }}
                     onClick={(e) => onUserClick(e, sender)}
                   >

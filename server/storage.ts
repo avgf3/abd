@@ -166,7 +166,8 @@ export class MixedStorage implements IStorage {
           isOnline: true,
           lastSeen: new Date(),
           joinDate: new Date(),
-          usernameColor: '#FFFFFF'
+          usernameColor: '#FFFFFF',
+          userTheme: 'default'
         })
         .returning();
       return dbUser;
@@ -196,6 +197,7 @@ export class MixedStorage implements IStorage {
         deviceId: null,
         ignoredUsers: [],
         usernameColor: '#FFFFFF',
+        userTheme: 'default',
         isHidden: false
       };
       

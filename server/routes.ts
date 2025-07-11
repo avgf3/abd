@@ -1814,5 +1814,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User Update Route with Theme Support
+  app.put('/api/users/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const user = await storage.updateUser(parseInt(id), updates);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // إرسال تحديث الثيم عبر WebSocket
+      if (updates.userTheme) {
+        const updateMessage = {
+          type: 'theme_update',
+          userId: parseInt(id),
+          userTheme: updates.userTheme,
+          timestamp: new Date().toISOString()
+        };
+        broadcast(updateMessage);
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      res.status(500).json({ error: 'Failed to update user' });
+    }
+  });
+
   return httpServer;
 }
