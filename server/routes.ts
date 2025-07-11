@@ -835,9 +835,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "يمكن ترقية الأعضاء فقط" });
       }
       
+      // التأكد من أن الرتبة صحيحة (إدمن أو مشرف فقط)
+      if (!['admin', 'moderator'].includes(role)) {
+        return res.status(400).json({ error: "رتبة غير صالحة - يمكن الترقية لإدمن أو مشرف فقط" });
+      }
+      
       // تحديث المستخدم في قاعدة البيانات
       await storage.updateUser(targetUserId, { userType: role });
       const updatedUser = await storage.getUser(targetUserId);
+      
+      const roleDisplay = role === 'admin' ? 'إدمن ⭐' : 'مشرف 🛡️';
+      const rolePermissions = role === 'admin' ? 'يمكنه كتم وطرد المستخدمين' : 'يمكنه كتم المستخدمين فقط';
       
       // إرسال إشعار للمستخدم المرقى
       const targetClient = Array.from(wss.clients).find((client: any) => client.userId === targetUserId);
@@ -845,7 +853,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetClient.send(JSON.stringify({
           type: 'promotion',
           newRole: role,
-          message: `تهانينا! تمت ترقيتك إلى ${role === 'admin' ? 'مشرف' : 'مالك'}`
+          message: `تهانينا! تمت ترقيتك إلى ${roleDisplay} - ${rolePermissions}`
         }));
       }
       
@@ -858,11 +866,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // إشعار عام في الدردشة
       broadcast({
         type: 'systemNotification',
-        message: `🎉 تم ترقية ${target.username} إلى ${role === 'admin' ? 'مشرف' : 'مالك'}`,
+        message: `🎉 تم ترقية ${target.username} إلى ${roleDisplay}`,
         timestamp: new Date().toISOString()
       });
       
-      res.json({ message: "تم ترقية المستخدم بنجاح" });
+      res.json({ 
+        success: true,
+        message: `تمت ترقية ${target.username} إلى ${roleDisplay}`,
+        user: updatedUser
+      });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
     }

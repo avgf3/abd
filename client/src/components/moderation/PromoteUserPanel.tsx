@@ -27,8 +27,8 @@ export default function PromoteUserPanel({
   const { toast } = useToast();
 
   const roleOptions = [
-    { value: 'admin', label: 'مشرف', icon: Shield, description: 'يمكنه كتم وطرد المستخدمين' },
-    { value: 'owner', label: 'مالك', icon: Crown, description: 'صلاحيات كاملة للإدارة' }
+    { value: 'moderator', label: 'مشرف 🛡️', icon: Shield, description: 'يمكنه كتم المستخدمين فقط' },
+    { value: 'admin', label: 'إدمن ⭐', icon: Crown, description: 'يمكنه كتم وطرد المستخدمين' }
   ];
 
   const handlePromote = async () => {
@@ -56,7 +56,7 @@ export default function PromoteUserPanel({
       const data = await response.json();
 
       if (response.ok) {
-        const roleDisplay = selectedRole === 'admin' ? 'إدمن ⭐' : 'مالك 👑';
+        const roleDisplay = selectedRole === 'admin' ? 'إدمن ⭐' : 'مشرف 🛡️';
         toast({
           title: 'تم ترقية المستخدم بنجاح',
           description: `تمت ترقية المستخدم إلى ${roleDisplay}`,
