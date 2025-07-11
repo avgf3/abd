@@ -81,13 +81,23 @@ export default function NewMessageArea({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   {/* Username with Premium Theme */}
-                  <span 
-                    className="font-medium cursor-pointer hover:underline"
-                    style={{ color: sender.usernameColor || '#000000' }}
+                  <div 
+                    className={`inline-block px-3 py-2 rounded-lg cursor-pointer hover:underline transition-all duration-300 ${
+                      sender.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
+                    }`}
+                    style={{ 
+                      color: sender.userType === 'owner' ? '#000000' : (sender.usernameColor || '#000000'),
+                      ...(sender.userType === 'owner' && {
+                        animation: 'golden-glow 2s ease-in-out infinite',
+                        boxShadow: '0 0 20px rgba(255, 215, 0, 0.6)'
+                      })
+                    }}
                     onClick={(e) => onUserClick(e, sender)}
                   >
-                    {getUserTypeBadge(sender.userType)} {sender.username}
-                  </span>
+                    <span className="font-medium">
+                      {getUserTypeBadge(sender.userType)} {sender.username}
+                    </span>
+                  </div>
                   
                   {/* Timestamp */}
                   <span className="text-xs text-gray-400">

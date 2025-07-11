@@ -206,13 +206,23 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
             }}
           />
           <div className="flex-1 space-y-2">
-            <div>
+            <div 
+              className={`inline-block px-4 py-3 rounded-lg transition-all duration-300 ${
+                user?.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
+              }`}
+              style={{
+                ...(user?.userType === 'owner' && {
+                  animation: 'golden-glow 2s ease-in-out infinite',
+                  boxShadow: '0 0 20px rgba(255, 215, 0, 0.6)'
+                })
+              }}
+            >
               <Input
                 value={profileData.name}
                 onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="اسم المستخدم"
                 style={{ 
-                  color: user?.usernameColor || '#FFFFFF',
+                  color: user?.userType === 'owner' ? '#000000' : (user?.usernameColor || '#FFFFFF'),
                   background: 'transparent'
                 }}
                 className="text-xl font-bold border-none"
