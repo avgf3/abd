@@ -171,37 +171,7 @@ export function useChat() {
               }
               break;
               
-            case 'moderationAction':
-              // التعامل مع إجراءات الإدارة
-              if (message.targetUserId === user.id) {
-                // المستخدم الحالي تم التأثير عليه
-                switch (message.action) {
-                  case 'muted':
-                    console.warn('⚠️ تم كتمك من الدردشة العامة');
-                    break;
-                  case 'banned':
-                    console.warn('⛔ تم طردك من الدردشة لمدة 15 دقيقة');
-                    break;
-                  case 'blocked':
-                    console.warn('🚫 تم حجبك من الدردشة نهائياً');
-                    break;
-                }
-              }
-              
-              // تحديث قائمة المستخدمين المتصلين لعكس التغييرات
-              setOnlineUsers(prev => 
-                prev.map(u => 
-                  u.id === message.targetUserId 
-                    ? { 
-                        ...u, 
-                        isMuted: message.action === 'muted' ? true : u.isMuted,
-                        isBanned: message.action === 'banned' ? true : u.isBanned,
-                        isBlocked: message.action === 'blocked' ? true : u.isBlocked
-                      }
-                    : u
-                )
-              );
-              break;
+
               
             case 'typing':
               if (message.username && message.isTyping !== undefined) {
