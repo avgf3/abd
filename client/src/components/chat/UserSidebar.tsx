@@ -96,7 +96,7 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span 
-                      className="text-sm font-medium"
+                      className="text-xs font-medium"
                       style={{ 
                         color: getUserThemeTextColor(user)
                       }}
