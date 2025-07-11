@@ -295,68 +295,214 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="glass-effect border border-border max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in">
-        <DialogHeader>
-          <DialogTitle className="text-center text-2xl font-bold text-white">
+      <DialogContent className="glass-effect border border-border max-w-3xl max-h-[90vh] overflow-y-auto animate-fade-in">
+        <DialogHeader className="p-0">
+          <DialogTitle className="sr-only">
             الملف الشخصي
           </DialogTitle>
         </DialogHeader>
 
-        {/* Profile Header - Enhanced with Banner and Avatar */}
-        <div className="space-y-4 p-4 border-b border-border">
-          {/* صورة البروفايل البانر */}
-          <ProfileBanner 
-            currentUser={currentUser}
-            onBannerUpdate={(bannerUrl) => {
-              setProfileData(prev => ({ ...prev, profileBanner: bannerUrl }));
-              if (currentUser) {
-                currentUser.profileBanner = bannerUrl;
-              }
-            }}
-          />
-          
-          {/* الصورة الشخصية والمعلومات */}
-          <div className="flex items-start gap-6 mt-4">
-            {/* الصورة الشخصية */}
-            <div className="flex-shrink-0">
-              <ProfileImageUpload 
-                currentUser={currentUser}
-                onImageUpdate={(imageUrl) => {
-                  setProfileData(prev => ({ ...prev, profileImage: imageUrl }));
-                  if (currentUser) {
-                    currentUser.profileImage = imageUrl;
-                  }
-                }}
+        {/* Profile Header - Modern Design */}
+        <div className="relative">
+          {/* Background Banner */}
+          <div className="relative h-64 overflow-hidden rounded-t-2xl">
+            {/* Banner Image */}
+            {user.profileBanner && user.profileBanner !== '' ? (
+              <img 
+                src={user.profileBanner} 
+                alt="صورة البروفايل" 
+                className="w-full h-full object-cover"
               />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/40 via-purple-600/40 to-pink-500/40"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center text-white">
+                    <div className="text-6xl mb-4 filter drop-shadow-lg">📸</div>
+                    <p className="text-xl font-bold opacity-90">صورة البروفايل</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+            
+            {/* Profile Image */}
+            <div className="absolute bottom-4 right-4">
+              <div className="relative">
+                <img
+                  src={user.profileImage && user.profileImage !== '/default_avatar.svg' ? user.profileImage : "/default_avatar.svg"}
+                  alt="صورة المستخدم"
+                  className="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/default_avatar.svg';
+                  }}
+                />
+                {user.isOnline && (
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-3 border-white rounded-full"></div>
+                )}
+              </div>
             </div>
             
-            {/* الاسم والحالة */}
-            <div className="flex-1 space-y-3">
-              <div 
-                className="px-4 py-2 rounded-lg transition-all duration-300"
-                style={{
-                  background: getUserThemeStyles(user).background || 'transparent',
-                  color: getUserThemeTextColor(user),
-                  ...getUserThemeStyles(user)
-                }}
-              >
-                <Input
-                  value={profileData.name}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="اسم المستخدم"
-                  style={{ 
-                    color: user?.userType === 'owner' ? '#000000' : (user?.usernameColor || '#FFFFFF'),
-                    background: 'transparent'
-                  }}
-                  className="text-xl font-bold border-none"
-                />
+            {/* User Info */}
+            <div className="absolute bottom-4 left-4 text-white">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xl">
+                  {user.userType === 'owner' && '👑'}
+                  {user.userType === 'admin' && '⭐'}
+                  {user.userType === 'moderator' && '🛡️'}
+                </span>
+                <span className="text-sm bg-white/20 px-2 py-1 rounded-full backdrop-blur-sm">
+                  {user.userType === 'owner' && 'المالك'}
+                  {user.userType === 'admin' && 'إدمن'}
+                  {user.userType === 'moderator' && 'مشرف'}
+                  {user.userType === 'member' && 'عضو'}
+                  {user.userType === 'guest' && 'ضيف'}
+                </span>
               </div>
-              <Input
-                value={profileData.status}
-                onChange={(e) => setProfileData(prev => ({ ...prev, status: e.target.value }))}
-                placeholder="اكتب حالتك..."
-                className="bg-transparent border-none text-muted-foreground"
-              />
+              <h2 
+                className="text-2xl font-bold mb-1"
+                style={{ color: user.usernameColor || '#FFFFFF' }}
+              >
+                {user.username}
+              </h2>
+              <p className="text-sm text-gray-200">
+                {user.status || 'لا توجد حالة'}
+              </p>
+            </div>
+            
+            {/* Upload Controls */}
+            {currentUser && currentUser.id === user.id && (
+              <div className="absolute top-4 right-4 flex gap-2">
+                <Button
+                  size="sm"
+                  className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full"
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) {
+                        // Handle banner upload
+                        console.log('Banner upload:', file);
+                      }
+                    };
+                    input.click();
+                  }}
+                >
+                  📸 بانر
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full"
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) {
+                        // Handle profile image upload
+                        console.log('Profile image upload:', file);
+                      }
+                    };
+                    input.click();
+                  }}
+                >
+                  👤 صورة
+                </Button>
+              </div>
+            )}
+          </div>
+          
+          {/* Action Buttons */}
+          {currentUser && currentUser.id !== user.id && (
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+              <Button
+                size="sm"
+                className="bg-red-500 hover:bg-red-600 text-white rounded-full px-4 py-2 shadow-lg"
+                onClick={() => onReportUser && onReportUser(user, 'تبليغ عن المستخدم', 0)}
+              >
+                🚨 إبلاغ
+              </Button>
+              <Button
+                size="sm"
+                className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-4 py-2 shadow-lg"
+                onClick={() => handleIgnoreUser && handleIgnoreUser(user)}
+              >
+                🚫 تجاهل
+              </Button>
+              <Button
+                size="sm"
+                className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-4 py-2 shadow-lg"
+                onClick={() => handleStartPrivateChat && handleStartPrivateChat(user)}
+              >
+                💬 رسالة خاصة
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Profile Information Panel */}
+        <div className="bg-gradient-to-br from-teal-500 to-blue-600 p-6 text-white">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Personal Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
+                📋 معلوماتي
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm bg-white/20 px-3 py-1 rounded-full">الجنس</span>
+                  <span className="font-medium">{user.gender || 'غير محدد'}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm bg-white/20 px-3 py-1 rounded-full">العمر</span>
+                  <span className="font-medium">{user.age || 'غير محدد'}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm bg-white/20 px-3 py-1 rounded-full">البلد</span>
+                  <span className="font-medium">{user.country || 'غير محدد'}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm bg-white/20 px-3 py-1 rounded-full">الحالة</span>
+                  <span className="font-medium">{user.relation || 'غير محدد'}</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Profile Link */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
+                🔗 رابط الملف الشخصي
+              </h3>
+              <div className="bg-white/20 p-4 rounded-lg backdrop-blur-sm">
+                <p className="text-sm text-center underline cursor-pointer hover:text-blue-200 transition-colors">
+                  https://www.arabic-chat.com/#{user.id}67540
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">الجنس</span>
+                  <span className="font-medium">{user.gender === 'ذكر' ? 'ذكر' : user.gender === 'أنثى' ? 'أنثى' : 'غير محدد'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">آخر تواجد</span>
+                  <span className="font-medium" dir="ltr">
+                    {user.isOnline ? 'متصل الآن' : 'PM 05:47 | غربية أستراليا'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">تاريخ الانضمام</span>
+                  <span className="font-medium" dir="ltr">
+                    2023-12-22
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
