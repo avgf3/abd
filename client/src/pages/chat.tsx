@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import WelcomeScreen from '@/components/chat/WelcomeScreen';
+import FixedWelcomeScreen from '@/components/chat/FixedWelcomeScreen';
 import FixedChatInterface from '@/components/chat/FixedChatInterface';
 import { useChat } from '@/hooks/useChat';
 import KickCountdown from '@/components/moderation/KickCountdown';
@@ -22,7 +22,7 @@ export default function ChatPage() {
   return (
     <div className="h-screen bg-background text-foreground font-['Cairo']" dir="rtl">
       {showWelcome ? (
-        <WelcomeScreen onUserLogin={handleUserLogin} />
+        <FixedWelcomeScreen onUserLogin={handleUserLogin} />
       ) : (
         <FixedChatInterface chat={chat} onLogout={handleLogout} />
       )}
