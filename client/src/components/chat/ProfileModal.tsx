@@ -132,7 +132,17 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
     { id: 'slate', name: 'أردوازي', emoji: '🗿', gradient: 'linear-gradient(45deg, #374151, #4B5563)', textColor: '#FFFFFF' },
     { id: 'storm', name: 'العاصفة', emoji: '⛈️', gradient: 'linear-gradient(45deg, #1F2937, #6B7280)', textColor: '#FFFFFF' },
     { id: 'crimson', name: 'قرمزي', emoji: '🌹', gradient: 'linear-gradient(45deg, #991B1B, #DC2626)', textColor: '#FFFFFF' },
-    { id: 'royal_blue', name: 'أزرق ملكي', emoji: '👑', gradient: 'linear-gradient(45deg, #1E3A8A, #60A5FA)', textColor: '#FFFFFF' }
+    { id: 'royal_blue', name: 'أزرق ملكي', emoji: '👑', gradient: 'linear-gradient(45deg, #1E3A8A, #60A5FA)', textColor: '#FFFFFF' },
+    { id: 'black_gradient', name: 'أسود متدرج', emoji: '⚫', gradient: 'linear-gradient(45deg, #000000, #374151)', textColor: '#FFFFFF' },
+    { id: 'deep_black', name: 'أسود عميق', emoji: '🖤', gradient: 'linear-gradient(45deg, #111827, #1F2937)', textColor: '#FFFFFF' },
+    { id: 'charcoal', name: 'فحمي', emoji: '⬛', gradient: 'linear-gradient(45deg, #1C1C1C, #4A4A4A)', textColor: '#FFFFFF' },
+    { id: 'blush_pink', name: 'وردي خجول', emoji: '🌸', gradient: 'linear-gradient(45deg, #FCE7F3, #F9A8D4)', textColor: '#000000' },
+    { id: 'lavender', name: 'خزامى', emoji: '💜', gradient: 'linear-gradient(45deg, #DDD6FE, #C4B5FD)', textColor: '#000000' },
+    { id: 'powder_blue', name: 'أزرق بودرة', emoji: '💙', gradient: 'linear-gradient(45deg, #DBEAFE, #93C5FD)', textColor: '#000000' },
+    { id: 'soft_mint', name: 'نعناع ناعم', emoji: '🌿', gradient: 'linear-gradient(45deg, #D1FAE5, #86EFAC)', textColor: '#000000' },
+    { id: 'peach', name: 'خوخي', emoji: '🍑', gradient: 'linear-gradient(45deg, #FED7AA, #FDBA74)', textColor: '#000000' },
+    { id: 'lilac', name: 'بنفسجي فاتح', emoji: '🪻', gradient: 'linear-gradient(45deg, #E9D5FF, #D8B4FE)', textColor: '#000000' },
+    { id: 'ivory', name: 'عاجي', emoji: '🤍', gradient: 'linear-gradient(45deg, #FFFBEB, #FEF3C7)', textColor: '#000000' }
   ];
 
   const handleImageUpload = () => {

@@ -35,7 +35,17 @@ export const getThemeData = (themeId: string) => {
     'slate': { gradient: 'linear-gradient(45deg, #374151, #4B5563)', textColor: '#FFFFFF', hasAnimation: true },
     'storm': { gradient: 'linear-gradient(45deg, #1F2937, #6B7280)', textColor: '#FFFFFF', hasAnimation: true },
     'crimson': { gradient: 'linear-gradient(45deg, #991B1B, #DC2626)', textColor: '#FFFFFF', hasAnimation: true },
-    'royal_blue': { gradient: 'linear-gradient(45deg, #1E3A8A, #60A5FA)', textColor: '#FFFFFF', hasAnimation: true }
+    'royal_blue': { gradient: 'linear-gradient(45deg, #1E3A8A, #60A5FA)', textColor: '#FFFFFF', hasAnimation: true },
+    'black_gradient': { gradient: 'linear-gradient(45deg, #000000, #374151)', textColor: '#FFFFFF', hasAnimation: true },
+    'deep_black': { gradient: 'linear-gradient(45deg, #111827, #1F2937)', textColor: '#FFFFFF', hasAnimation: true },
+    'charcoal': { gradient: 'linear-gradient(45deg, #1C1C1C, #4A4A4A)', textColor: '#FFFFFF', hasAnimation: true },
+    'blush_pink': { gradient: 'linear-gradient(45deg, #FCE7F3, #F9A8D4)', textColor: '#000000', hasAnimation: true },
+    'lavender': { gradient: 'linear-gradient(45deg, #DDD6FE, #C4B5FD)', textColor: '#000000', hasAnimation: true },
+    'powder_blue': { gradient: 'linear-gradient(45deg, #DBEAFE, #93C5FD)', textColor: '#000000', hasAnimation: true },
+    'soft_mint': { gradient: 'linear-gradient(45deg, #D1FAE5, #86EFAC)', textColor: '#000000', hasAnimation: true },
+    'peach': { gradient: 'linear-gradient(45deg, #FED7AA, #FDBA74)', textColor: '#000000', hasAnimation: true },
+    'lilac': { gradient: 'linear-gradient(45deg, #E9D5FF, #D8B4FE)', textColor: '#000000', hasAnimation: true },
+    'ivory': { gradient: 'linear-gradient(45deg, #FFFBEB, #FEF3C7)', textColor: '#000000', hasAnimation: true }
   };
   return themes[themeId as keyof typeof themes] || themes.default;
 };
