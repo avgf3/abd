@@ -90,8 +90,8 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                 <div className="flex items-center gap-2">
                   <div 
                     className={`clickable-username text-sm font-medium px-3 py-2 rounded-lg transition-all duration-300 ${
-                      user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg animate-pulse' :
-                      user.userType === 'admin' ? 'bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 text-white shadow-lg animate-pulse' :
+                      user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' :
+                      user.userType === 'admin' ? 'bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 text-white shadow-lg' :
                       ''
                     }`}
                     style={{ 
