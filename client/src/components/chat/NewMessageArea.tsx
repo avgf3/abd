@@ -72,10 +72,18 @@ export default function NewMessageArea({
             >
               {/* User Avatar */}
               <div 
-                className="cursor-pointer"
+                className="cursor-pointer flex-shrink-0"
                 onClick={(e) => onUserClick(e, sender)}
               >
-                <ProfileImage user={sender} size="small" />
+                <img
+                  src={sender.profileImage && sender.profileImage !== '/default_avatar.svg' ? sender.profileImage : "/default_avatar.svg"}
+                  alt="صورة المستخدم"
+                  className="w-10 h-10 rounded-full border-2 border-blue-400 ring-1 ring-blue-200 shadow-sm object-cover hover:scale-105 transition-transform"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/default_avatar.svg';
+                  }}
+                />
               </div>
 
               {/* Message Content */}

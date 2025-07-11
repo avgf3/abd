@@ -86,7 +86,7 @@ export default function PrivateMessageBox({
           <DialogTitle className="text-lg font-bold text-center text-purple-800 flex items-center justify-center gap-3">
             <div className="relative">
               <img
-                src={user.profileImage || "/default_avatar.svg"}
+                src={user.profileImage && user.profileImage !== '/default_avatar.svg' ? user.profileImage : "/default_avatar.svg"}
                 alt="صورة المستخدم"
                 className="w-12 h-12 rounded-full border-2 border-purple-300 shadow-md"
                 onError={(e) => {

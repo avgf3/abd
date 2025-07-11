@@ -316,7 +316,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           />
           
           {/* الصورة الشخصية والمعلومات */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-6 mt-4">
             {/* الصورة الشخصية */}
             <div className="flex-shrink-0">
               <ProfileImageUpload 

@@ -120,7 +120,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
   return (
     <div className="relative">
       {/* صورة البروفايل البانر */}
-      <div className="relative h-32 rounded-xl overflow-hidden bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg">
+      <div className="relative h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 shadow-2xl border border-white/20">
         {preview ? (
           <img 
             src={preview} 
@@ -134,11 +134,14 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-white">
-            <div className="text-center">
-              <div className="text-4xl mb-2">🎨</div>
-              <p className="text-sm opacity-80">صورة البروفايل</p>
+          <div className="w-full h-full flex items-center justify-center text-white relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/80 via-purple-600/80 to-pink-500/80"></div>
+            <div className="text-center relative z-10">
+              <div className="text-5xl mb-3 filter drop-shadow-lg">📸</div>
+              <p className="text-lg font-medium opacity-90 drop-shadow-md">إضافة صورة بروفايل</p>
+              <p className="text-sm opacity-70 mt-1">اضغط على الكاميرا أو الرفع</p>
             </div>
+            <div className="absolute inset-0 bg-black/10"></div>
           </div>
         )}
         
@@ -153,15 +156,15 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
         )}
 
         {/* أزرار التحكم */}
-        <div className="absolute bottom-2 right-2 flex gap-2">
+        <div className="absolute bottom-3 right-3 flex gap-3">
           {/* زر الكاميرا */}
           <Button
             onClick={() => cameraInputRef.current?.click()}
             disabled={uploading}
             size="sm"
-            className="bg-black/50 hover:bg-black/70 text-white border-none"
+            className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-10 h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
           >
-            <Camera size={14} />
+            <Camera size={16} />
           </Button>
 
           {/* زر رفع الملف */}
@@ -169,9 +172,9 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             size="sm"
-            className="bg-black/50 hover:bg-black/70 text-white border-none"
+            className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-10 h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
           >
-            <Upload size={14} />
+            <Upload size={16} />
           </Button>
         </div>
       </div>

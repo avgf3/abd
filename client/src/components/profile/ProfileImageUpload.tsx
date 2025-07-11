@@ -121,7 +121,7 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
     <div className="flex flex-col items-center space-y-4">
       {/* معاينة الصورة */}
       <div className="relative">
-        <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-lg">
+        <div className="w-28 h-28 rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 border-4 border-white shadow-xl ring-2 ring-blue-500/20">
           {preview ? (
             <img 
               src={preview} 
@@ -135,8 +135,9 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-              <span className="text-3xl text-gray-400">👤</span>
+            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10"></div>
+              <span className="text-3xl text-gray-500 relative z-10 filter drop-shadow-sm">👤</span>
             </div>
           )}
         </div>
@@ -144,24 +145,24 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
         {preview && (
           <button
             onClick={removePreview}
-            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-all duration-200 shadow-lg hover:scale-110 border-2 border-white"
           >
-            <X size={16} />
+            <X size={14} />
           </button>
         )}
       </div>
 
       {/* أزرار التحكم */}
-      <div className="flex gap-3">
+      <div className="flex gap-2">
         {/* زر الكاميرا */}
         <Button
           onClick={() => cameraInputRef.current?.click()}
           disabled={uploading}
           variant="outline"
           size="sm"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
         >
-          <Camera size={16} />
+          <Camera size={14} />
           كاميرا
         </Button>
 
@@ -171,10 +172,10 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
           disabled={uploading}
           variant="outline"
           size="sm"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
         >
-          <Upload size={16} />
-          رفع صورة
+          <Upload size={14} />
+          رفع
         </Button>
       </div>
 

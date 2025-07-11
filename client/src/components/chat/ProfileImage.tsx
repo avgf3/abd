@@ -21,7 +21,7 @@ export default function ProfileImage({ user, size = 'medium', className = '' }: 
   return (
     <div className="relative">
       <img
-        src={user.profileImage || "/default_avatar.svg"}
+        src={user.profileImage && user.profileImage !== '/default_avatar.svg' ? user.profileImage : "/default_avatar.svg"}
         alt="صورة المستخدم"
         className={`${sizeClasses[size]} rounded-full border-2 ${borderColor} ring-1 shadow-sm object-cover ${className}`}
         onError={(e) => {
