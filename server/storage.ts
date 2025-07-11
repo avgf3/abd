@@ -158,6 +158,7 @@ export class MixedStorage implements IStorage {
           password: insertUser.password,
           userType: insertUser.userType,
           profileImage: insertUser.profileImage || "/default_avatar.svg",
+          profileBanner: insertUser.profileBanner || null,
           status: insertUser.status,
           gender: insertUser.gender,
           age: insertUser.age,
@@ -180,6 +181,7 @@ export class MixedStorage implements IStorage {
         password: insertUser.password || null,
         userType: insertUser.userType || "guest",
         profileImage: "/default_avatar.svg", // Guests always use default
+        profileBanner: null, // Guests cannot have banners
         status: insertUser.status || null,
         gender: insertUser.gender || null,
         age: insertUser.age || null,
@@ -210,9 +212,12 @@ export class MixedStorage implements IStorage {
     // Check if user is in memory (guest)
     const memUser = this.users.get(id);
     if (memUser) {
-      // Guests cannot upload profile pictures
+      // Guests cannot upload profile pictures or banners
       if (updates.profileImage && memUser.userType === 'guest') {
         delete updates.profileImage;
+      }
+      if (updates.profileBanner && memUser.userType === 'guest') {
+        delete updates.profileBanner;
       }
       const updatedUser = { ...memUser, ...updates };
       this.users.set(id, updatedUser);

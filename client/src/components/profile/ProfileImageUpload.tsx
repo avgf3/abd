@@ -128,7 +128,7 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
               alt="معاينة الصورة" 
               className="w-full h-full object-cover"
             />
-          ) : currentUser?.profileImage ? (
+          ) : (currentUser?.profileImage && currentUser.profileImage !== '/default_avatar.svg') ? (
             <img 
               src={currentUser.profileImage} 
               alt="صورة البروفايل" 

@@ -277,6 +277,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
         country: savedData.country || user.country || '',
         relation: savedData.relation || user.relation || '',
         profileImage: savedData.profileImage || user.profileImage || '/default_avatar.svg',
+        profileBanner: savedData.profileBanner || user.profileBanner || '',
       });
     } else if (user) {
       setProfileData({
@@ -287,6 +288,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
         country: user.country || '',
         relation: user.relation || '',
         profileImage: user.profileImage || '/default_avatar.svg',
+        profileBanner: user.profileBanner || '',
       });
     }
   }, [user]);

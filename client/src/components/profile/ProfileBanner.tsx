@@ -127,7 +127,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
             alt="معاينة صورة البروفايل" 
             className="w-full h-full object-cover"
           />
-        ) : currentUser?.profileBanner ? (
+        ) : (currentUser?.profileBanner && currentUser.profileBanner !== '') ? (
           <img 
             src={currentUser.profileBanner} 
             alt="صورة البروفايل" 
