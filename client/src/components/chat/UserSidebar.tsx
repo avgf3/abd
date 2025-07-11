@@ -79,7 +79,7 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                 currentUser={currentUser}
               >
                 <div
-                  className={`flex items-center gap-2 p-3 rounded-lg transition-all duration-200 cursor-pointer w-full ${
+                  className={`flex items-center gap-2 p-2 rounded-lg transition-all duration-200 cursor-pointer w-full ${
                     getUserThemeClasses(user)
                   }`}
                   style={{ 
