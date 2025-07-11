@@ -7,6 +7,9 @@ import { insertUserSchema, insertMessageSchema } from "@shared/schema";
 import { spamProtection } from "./spam-protection";
 import { moderationSystem } from "./moderation";
 import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter } from "./security";
+import { backupSystem } from "./backup-system";
+import fs from 'fs';
+import path from 'path';
 import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
 import securityApiRoutes from "./api-security";
 import { z } from "zod";
@@ -1496,6 +1499,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Performance ping endpoint
   app.get('/api/ping', (req, res) => {
     res.json({ timestamp: Date.now(), status: 'ok' });
+  });
+
+  // Backup system routes
+  app.get("/api/backup/create", async (req, res) => {
+    try {
+      const format = req.query.format as 'zip' | 'tar' || 'zip';
+      const includeNodeModules = req.query.includeNodeModules === 'true';
+      const includeDist = req.query.includeDist === 'true';
+      
+      const backupPath = await backupSystem.createBackup({
+        format,
+        includeNodeModules,
+        includeDist
+      });
+      
+      res.json({ 
+        success: true, 
+        backupPath: backupPath,
+        downloadUrl: `/api/backup/download/${path.basename(backupPath)}`
+      });
+    } catch (error) {
+      console.error('خطأ في إنشاء النسخة الاحتياطية:', error);
+      res.status(500).json({ error: 'فشل في إنشاء النسخة الاحتياطية' });
+    }
+  });
+
+  app.get("/api/backup/create-code", async (req, res) => {
+    try {
+      const backupPath = await backupSystem.createCodeOnlyBackup();
+      res.json({ 
+        success: true, 
+        backupPath: backupPath,
+        downloadUrl: `/api/backup/download/${path.basename(backupPath)}`
+      });
+    } catch (error) {
+      console.error('خطأ في إنشاء نسخة الكود:', error);
+      res.status(500).json({ error: 'فشل في إنشاء نسخة الكود' });
+    }
+  });
+
+  app.get("/api/backup/list", async (req, res) => {
+    try {
+      const backups = backupSystem.getBackupsList();
+      res.json({ backups });
+    } catch (error) {
+      console.error('خطأ في قائمة النسخ الاحتياطية:', error);
+      res.status(500).json({ error: 'فشل في جلب قائمة النسخ الاحتياطية' });
+    }
+  });
+
+  app.get("/api/backup/download/:filename", async (req, res) => {
+    try {
+      const filename = req.params.filename;
+      const backupPath = path.join(process.cwd(), 'backups', filename);
+      
+      if (!fs.existsSync(backupPath)) {
+        return res.status(404).json({ error: 'الملف غير موجود' });
+      }
+      
+      res.download(backupPath, filename);
+    } catch (error) {
+      console.error('خطأ في تحميل النسخة الاحتياطية:', error);
+      res.status(500).json({ error: 'فشل في تحميل الملف' });
+    }
   });
 
   return httpServer;
