@@ -43,13 +43,6 @@ export const friends = pgTable("friends", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const ignoredUsers = pgTable("ignored_users", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
-  ignoredUserId: integer("ignored_user_id").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -85,16 +78,9 @@ export const insertFriendSchema = createInsertSchema(friends).pick({
   status: true,
 });
 
-export const insertIgnoredUserSchema = createInsertSchema(ignoredUsers).pick({
-  userId: true,
-  ignoredUserId: true,
-});
-
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 export type InsertFriend = z.infer<typeof insertFriendSchema>;
 export type Friend = typeof friends.$inferSelect;
-export type InsertIgnoredUser = z.infer<typeof insertIgnoredUserSchema>;
-export type IgnoredUser = typeof ignoredUsers.$inferSelect;

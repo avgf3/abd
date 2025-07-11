@@ -19,37 +19,14 @@ interface WebSocketClient extends WebSocket {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
-  
-  // Optimize WebSocket for Autoscale - add connection limits and timeouts
-  const wss = new WebSocketServer({ 
-    server: httpServer, 
-    path: '/ws',
-    maxPayload: 1024 * 1024, // 1MB max payload
-    perMessageDeflate: {
-      threshold: 1024,
-      concurrencyLimit: 10,
-      memLevel: 7,
-    },
-    handleProtocols: () => false, // Disable subprotocols for performance
-  });
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);
   app.use(advancedSecurityMiddleware);
 
-  // Store connected clients with connection tracking
+  // Store connected clients
   const clients = new Set<WebSocketClient>();
-  const MAX_CONNECTIONS = 100; // Limit concurrent connections for Autoscale
-  const CONNECTION_TIMEOUT = 300000; // 5 minutes idle timeout
-  
-  // Cleanup inactive connections periodically
-  setInterval(() => {
-    clients.forEach(client => {
-      if (client.readyState === WebSocket.CLOSED || client.readyState === WebSocket.CLOSING) {
-        clients.delete(client);
-      }
-    });
-  }, 60000); // Clean up every minute
 
   // Member registration route - مع أمان محسن
   app.post("/api/auth/register", async (req, res) => {
@@ -294,23 +271,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // WebSocket handling with Autoscale optimization
-  wss.on('connection', (ws: WebSocketClient, req) => {
-    // Check connection limit for Autoscale billing optimization
-    if (clients.size >= MAX_CONNECTIONS) {
-      ws.close(1013, 'Server busy');
-      return;
-    }
-
+  // WebSocket handling
+  wss.on('connection', (ws: WebSocketClient) => {
     console.log('اتصال WebSocket جديد');
     clients.add(ws);
-    
-    // Set connection timeout to prevent prolonged billing
-    const connectionTimeout = setTimeout(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close(1000, 'Connection timeout');
-      }
-    }, CONNECTION_TIMEOUT);
     
     // إرسال رسالة ترحيب فورية
     ws.send(JSON.stringify({
@@ -318,15 +282,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       message: 'متصل بنجاح'
     }));
     
-    // Optimized heartbeat for Autoscale - less frequent pings
+    // heartbeat للحفاظ على الاتصال
     const heartbeat = setInterval(() => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.ping();
       } else {
         clearInterval(heartbeat);
-        clearTimeout(connectionTimeout);
       }
-    }, 45000); // Reduced frequency to 45 seconds
+    }, 30000);
 
     ws.on('message', async (data) => {
       try {
@@ -552,13 +515,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     ws.on('close', async () => {
-      console.log('اتصال WebSocket مقطوع');
       clients.delete(ws);
-      
-      // Clean up timers to prevent memory leaks and billing issues
-      clearInterval(heartbeat);
-      clearTimeout(connectionTimeout);
-      
       if (ws.userId) {
         await storage.setUserOnlineStatus(ws.userId, false);
         broadcast({
@@ -568,30 +525,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }, ws);
       }
     });
-
-    // Handle WebSocket errors for better cleanup
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
-      clearInterval(heartbeat);
-      clearTimeout(connectionTimeout);
-      clients.delete(ws);
-    });
   });
 
   function broadcast(message: any, sender?: WebSocketClient) {
-    // Optimize for Autoscale - batch operations and minimize iterations
     const messageStr = JSON.stringify(message);
-    const activeClients = Array.from(clients).filter(client => 
-      client !== sender && client.readyState === WebSocket.OPEN
-    );
-    
-    // Send in batch to reduce execution time
-    activeClients.forEach(client => {
-      try {
+    clients.forEach(client => {
+      if (client !== sender && client.readyState === WebSocket.OPEN) {
         client.send(messageStr);
-      } catch (error) {
-        // Remove dead connections immediately
-        clients.delete(client);
       }
     });
   }
@@ -663,18 +603,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // الحصول على جميع طلبات الصداقة (واردة وصادرة)
-  app.get("/api/friend-requests/:userId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const incoming = await storage.getIncomingFriendRequests(userId);
-      const outgoing = await storage.getOutgoingFriendRequests(userId);
-      res.json({ incoming, outgoing });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
-
   // الحصول على طلبات الصداقة الواردة
   app.get("/api/friend-requests/incoming/:userId", async (req, res) => {
     try {
@@ -716,7 +644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       broadcast({
         type: 'friendRequestAccepted',
         targetUserId: request.senderId,
-        accepterName: receiver?.username
+        senderName: receiver?.username
       });
 
       res.json({ message: "تم قبول طلب الصداقة" });
@@ -781,80 +709,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.removeFriend(userId, friendId);
       res.json({ message: "تم إزالة الصديق" });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
-
-  // ============= Ignore System API Routes =============
-
-  // إضافة مستخدم إلى قائمة التجاهل
-  app.post("/api/ignore", async (req, res) => {
-    try {
-      const { userId, ignoredUserId } = req.body;
-      
-      if (!userId || !ignoredUserId) {
-        return res.status(400).json({ error: "معرف المستخدم والمستخدم المُتجاهل مطلوبين" });
-      }
-      
-      if (userId === ignoredUserId) {
-        return res.status(400).json({ error: "لا يمكنك تجاهل نفسك" });
-      }
-      
-      const ignoredRecord = await storage.addIgnoredUser(userId, ignoredUserId);
-      
-      res.json({ 
-        message: "تم إضافة المستخدم إلى قائمة التجاهل",
-        ignoredRecord 
-      });
-    } catch (error) {
-      console.error("خطأ في إضافة المستخدم للتجاهل:", error);
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
-
-  // إزالة مستخدم من قائمة التجاهل
-  app.delete("/api/ignore/:userId/:ignoredUserId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const ignoredUserId = parseInt(req.params.ignoredUserId);
-      
-      const success = await storage.removeIgnoredUser(userId, ignoredUserId);
-      
-      if (success) {
-        res.json({ message: "تم إزالة المستخدم من قائمة التجاهل" });
-      } else {
-        res.status(404).json({ error: "المستخدم غير موجود في قائمة التجاهل" });
-      }
-    } catch (error) {
-      console.error("خطأ في إزالة المستخدم من التجاهل:", error);
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
-
-  // الحصول على قائمة المستخدمين المُتجاهلين
-  app.get("/api/ignore/:userId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const ignoredUsers = await storage.getIgnoredUsers(userId);
-      
-      res.json({ ignoredUsers });
-    } catch (error) {
-      console.error("خطأ في جلب قائمة التجاهل:", error);
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
-
-  // فحص ما إذا كان المستخدم مُتجاهل
-  app.get("/api/ignore/check/:userId/:targetUserId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const targetUserId = parseInt(req.params.targetUserId);
-      
-      const isIgnored = await storage.isUserIgnored(userId, targetUserId);
-      
-      res.json({ isIgnored });
-    } catch (error) {
-      console.error("خطأ في فحص التجاهل:", error);
       res.status(500).json({ error: "خطأ في الخادم" });
     }
   });

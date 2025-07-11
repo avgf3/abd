@@ -2,15 +2,12 @@ import {
   users,
   messages,
   friends,
-  ignoredUsers,
   type User,
   type InsertUser,
   type Message,
   type InsertMessage,
   type Friend,
   type InsertFriend,
-  type IgnoredUser,
-  type InsertIgnoredUser,
 } from "../shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -47,12 +44,6 @@ export interface IStorage {
   acceptFriendRequest(requestId: number): Promise<boolean>;
   declineFriendRequest(requestId: number): Promise<boolean>;
   deleteFriendRequest(requestId: number): Promise<boolean>;
-
-  // Ignored users operations
-  addIgnoredUser(userId: number, ignoredUserId: number): Promise<IgnoredUser>;
-  removeIgnoredUser(userId: number, ignoredUserId: number): Promise<boolean>;
-  getIgnoredUsers(userId: number): Promise<User[]>;
-  isUserIgnored(userId: number, ignoredUserId: number): Promise<boolean>;
 }
 
 // Mixed storage: Database for members, Memory for guests
@@ -61,24 +52,20 @@ export class MixedStorage implements IStorage {
   private messages: Map<number, Message>;
   private friends: Map<number, Friend>;
   private friendRequests: Map<number, any>;
-  private ignoredUsersMap: Map<number, IgnoredUser>;
   private currentUserId: number;
   private currentMessageId: number;
   private currentFriendId: number;
   private currentRequestId: number;
-  private currentIgnoredId: number;
 
   constructor() {
     this.users = new Map();
     this.messages = new Map();
     this.friends = new Map();
     this.friendRequests = new Map();
-    this.ignoredUsersMap = new Map();
     this.currentUserId = 1000; // Start guest IDs from 1000 to avoid conflicts
     this.currentMessageId = 1;
     this.currentFriendId = 1;
     this.currentRequestId = 1;
-    this.currentIgnoredId = 1;
 
     // Initialize owner user in database
     this.initializeOwner();
@@ -373,7 +360,67 @@ export class MixedStorage implements IStorage {
     return blockedIds.map(id => this.users.get(id!)).filter(Boolean) as User[];
   }
 
+  // Enhanced friend request operations
+  async getIncomingFriendRequests(userId: number): Promise<any[]> {
+    const incomingRequests = Array.from(this.friends.values())
+      .filter(f => f.friendId === userId && f.status === 'pending');
+    
+    return await Promise.all(incomingRequests.map(async (request) => {
+      const user = await this.getUser(request.userId!);
+      return {
+        ...request,
+        user
+      };
+    }));
+  }
 
+  async getOutgoingFriendRequests(userId: number): Promise<any[]> {
+    const outgoingRequests = Array.from(this.friends.values())
+      .filter(f => f.userId === userId && f.status === 'pending');
+    
+    return await Promise.all(outgoingRequests.map(async (request) => {
+      const user = await this.getUser(request.friendId!);
+      return {
+        ...request,
+        user
+      };
+    }));
+  }
+
+  async acceptFriendRequest(requestId: number): Promise<boolean> {
+    const request = this.friends.get(requestId);
+    if (!request || request.status !== 'pending') return false;
+    
+    request.status = 'accepted';
+    this.friends.set(requestId, request);
+    return true;
+  }
+
+  async declineFriendRequest(requestId: number): Promise<boolean> {
+    const request = this.friends.get(requestId);
+    if (!request || request.status !== 'pending') return false;
+    
+    request.status = 'declined';
+    this.friends.set(requestId, request);
+    return true;
+  }
+
+  async ignoreFriendRequest(requestId: number): Promise<boolean> {
+    const request = this.friends.get(requestId);
+    if (!request || request.status !== 'pending') return false;
+    
+    request.status = 'ignored';
+    this.friends.set(requestId, request);
+    return true;
+  }
+
+  async deleteFriendRequest(requestId: number): Promise<boolean> {
+    const request = this.friends.get(requestId);
+    if (!request) return false;
+    
+    this.friends.delete(requestId);
+    return true;
+  }
 
   async removeFriend(userId: number, friendId: number): Promise<boolean> {
     const friendship = Array.from(this.friends.values())
@@ -474,146 +521,6 @@ export class MixedStorage implements IStorage {
 
   async deleteFriendRequest(requestId: number): Promise<boolean> {
     return this.friendRequests.delete(requestId);
-  }
-
-  // ============= Ignored Users Operations =============
-  
-  async addIgnoredUser(userId: number, ignoredUserId: number): Promise<IgnoredUser> {
-    const user = await this.getUser(userId);
-    const ignoredUser = await this.getUser(ignoredUserId);
-    
-    if (!user || !ignoredUser) {
-      throw new Error("المستخدم غير موجود");
-    }
-    
-    // التحقق من وجود التجاهل مسبقاً
-    const existing = Array.from(this.ignoredUsersMap.values()).find(
-      iu => iu.userId === userId && iu.ignoredUserId === ignoredUserId
-    );
-    
-    if (existing) {
-      return existing;
-    }
-
-    // إنشاء إدخال جديد للتجاهل
-    const ignoredRecord: IgnoredUser = {
-      id: this.currentIgnoredId++,
-      userId,
-      ignoredUserId,
-      createdAt: new Date()
-    };
-
-    this.ignoredUsersMap.set(ignoredRecord.id, ignoredRecord);
-
-    // محاولة حفظ في قاعدة البيانات للأعضاء
-    if (user.userType === 'member' || user.userType === 'owner') {
-      try {
-        await db.insert(ignoredUsers).values({
-          userId,
-          ignoredUserId,
-        });
-      } catch (error) {
-        console.error("خطأ في حفظ التجاهل في قاعدة البيانات:", error);
-      }
-    }
-
-    console.log(`🚫 ${user.username} يتجاهل ${ignoredUser.username}`);
-    return ignoredRecord;
-  }
-
-  async removeIgnoredUser(userId: number, ignoredUserId: number): Promise<boolean> {
-    const user = await this.getUser(userId);
-    
-    // البحث عن السجل في الذاكرة
-    const record = Array.from(this.ignoredUsersMap.values()).find(
-      iu => iu.userId === userId && iu.ignoredUserId === ignoredUserId
-    );
-    
-    if (record) {
-      this.ignoredUsersMap.delete(record.id);
-    }
-
-    // حذف من قاعدة البيانات للأعضاء
-    if (user && (user.userType === 'member' || user.userType === 'owner')) {
-      try {
-        await db.delete(ignoredUsers)
-          .where(eq(ignoredUsers.userId, userId))
-          .where(eq(ignoredUsers.ignoredUserId, ignoredUserId));
-      } catch (error) {
-        console.error("خطأ في حذف التجاهل من قاعدة البيانات:", error);
-      }
-    }
-
-    return true;
-  }
-
-  async getIgnoredUsers(userId: number): Promise<User[]> {
-    const user = await this.getUser(userId);
-    const ignoredUsersList: User[] = [];
-
-    // جلب من الذاكرة (للزوار)
-    const memoryIgnored = Array.from(this.ignoredUsersMap.values())
-      .filter(iu => iu.userId === userId);
-    
-    for (const ignored of memoryIgnored) {
-      const ignoredUser = await this.getUser(ignored.ignoredUserId);
-      if (ignoredUser) {
-        ignoredUsersList.push(ignoredUser);
-      }
-    }
-
-    // جلب من قاعدة البيانات (للأعضاء)
-    if (user && (user.userType === 'member' || user.userType === 'owner')) {
-      try {
-        const dbIgnored = await db.select({
-          id: ignoredUsers.id,
-          ignoredUserId: ignoredUsers.ignoredUserId,
-          createdAt: ignoredUsers.createdAt,
-          ignoredUser: users
-        })
-        .from(ignoredUsers)
-        .leftJoin(users, eq(ignoredUsers.ignoredUserId, users.id))
-        .where(eq(ignoredUsers.userId, userId));
-
-        for (const record of dbIgnored) {
-          if (record.ignoredUser && !ignoredUsersList.find(u => u.id === record.ignoredUser!.id)) {
-            ignoredUsersList.push(record.ignoredUser);
-          }
-        }
-      } catch (error) {
-        console.error("خطأ في جلب المُتجاهلين من قاعدة البيانات:", error);
-      }
-    }
-
-    return ignoredUsersList;
-  }
-
-  async isUserIgnored(userId: number, ignoredUserId: number): Promise<boolean> {
-    const user = await this.getUser(userId);
-    
-    // فحص الذاكرة
-    const memoryIgnored = Array.from(this.ignoredUsersMap.values()).some(
-      iu => iu.userId === userId && iu.ignoredUserId === ignoredUserId
-    );
-    
-    if (memoryIgnored) return true;
-
-    // فحص قاعدة البيانات للأعضاء
-    if (user && (user.userType === 'member' || user.userType === 'owner')) {
-      try {
-        const dbIgnored = await db.select()
-          .from(ignoredUsers)
-          .where(eq(ignoredUsers.userId, userId))
-          .where(eq(ignoredUsers.ignoredUserId, ignoredUserId))
-          .limit(1);
-        
-        return dbIgnored.length > 0;
-      } catch (error) {
-        console.error("خطأ في فحص التجاهل في قاعدة البيانات:", error);
-      }
-    }
-
-    return false;
   }
 }
 
