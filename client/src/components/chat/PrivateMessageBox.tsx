@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ChatUser, ChatMessage } from '@/types/chat';
+import MediaUploadButton from './MediaUploadButton';
 
 interface PrivateMessageBoxProps {
   isOpen: boolean;
@@ -38,6 +39,14 @@ export default function PrivateMessageBox({
       onSendMessage(messageText.trim());
       setMessageText('');
     }
+  };
+
+  const handleMediaSelect = (file: File, type: 'image' | 'video') => {
+    const fileUrl = URL.createObjectURL(file);
+    const mediaMessage = type === 'image' ? 
+      `[صورة: ${file.name}] ${fileUrl}` : 
+      `[فيديو: ${file.name}] ${fileUrl}`;
+    onSendMessage(mediaMessage);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -81,10 +90,10 @@ export default function PrivateMessageBox({
               <p className="font-bold text-purple-800 text-lg">{user.username}</p>
               <p className="text-sm text-purple-600 font-medium">
                 {user.userType === 'owner' && '👑 مالك'}
-                {user.userType === 'admin' && '🛡️ مدير'}
-                {user.userType === 'moderator' && '⚖️ مشرف'}
-                {user.userType === 'member' && '👤 عضو'}
-                {user.userType === 'guest' && '👋 زائر'}
+                {user.userType === 'admin' && '⭐ إدمن'}
+                {user.userType === 'moderator' && '🛡️ مشرف'}
+                {user.userType === 'member' && ''}
+                {user.userType === 'guest' && ''}
               </p>
               <p className={`text-xs font-medium ${user.isOnline ? 'text-green-600' : 'text-gray-500'}`}>
                 {user.isOnline ? '🟢 متصل الآن' : '⚫ غير متصل'}
@@ -129,6 +138,10 @@ export default function PrivateMessageBox({
         </ScrollArea>
 
         <div className="flex gap-2 p-4 border-t border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
+          <MediaUploadButton 
+            onMediaSelect={handleMediaSelect}
+            disabled={false}
+          />
           <Input
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}

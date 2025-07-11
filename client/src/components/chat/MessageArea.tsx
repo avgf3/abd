@@ -72,14 +72,20 @@ export default function MessageArea({
     });
   };
 
-  const getUserRankBadge = (userType?: string) => {
+  const getUserRankBadge = (userType?: string, username?: string) => {
+    if (username === 'عبود') {
+      return <span className="text-yellow-400 ml-1">👑</span>;
+    }
+    
     switch (userType) {
       case 'owner':
-        return <span className="user-rank crown">مالك</span>;
-      case 'member':
-        return <span className="user-rank star">عضو</span>;
+        return <span className="text-yellow-400 ml-1">👑</span>;
+      case 'admin':
+        return <span className="text-blue-400 ml-1">⭐</span>;
+      case 'moderator':
+        return <span className="text-green-400 ml-1">🛡️</span>;
       default:
-        return <span className="user-rank shield">زائر</span>;
+        return null;
     }
   };
 
@@ -125,7 +131,7 @@ export default function MessageArea({
                   ) : (
                     <span className="font-medium text-sm text-blue-600">مستخدم</span>
                   )}
-                  {message.sender && getUserRankBadge(message.sender.userType)}
+                  {message.sender && getUserRankBadge(message.sender.userType, message.sender.username)}
                   <span className="text-xs text-gray-500">
                     {formatTime(message.timestamp)}
                   </span>

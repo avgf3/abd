@@ -17,14 +17,20 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
     user.isOnline && user.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getUserRankBadge = (userType: string) => {
+  const getUserRankBadge = (userType: string, username: string) => {
+    if (username === 'عبود') {
+      return <span className="text-yellow-400">👑</span>;
+    }
+    
     switch (userType) {
       case 'owner':
-        return <span className="user-rank crown">مالك</span>;
-      case 'member':
-        return <span className="user-rank star">عضو</span>;
+        return <span className="text-yellow-400">👑</span>;
+      case 'admin':
+        return <span className="text-blue-400">⭐</span>;
+      case 'moderator':
+        return <span className="text-green-400">🛡️</span>;
       default:
-        return <span className="user-rank shield">زائر</span>;
+        return null;
     }
   };
 
@@ -82,11 +88,11 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="clickable-username text-sm font-medium">{user.username}</span>
+                  {getUserRankBadge(user.userType, user.username)}
                   {/* إشارة المكتوم */}
                   {user.isMuted && (
                     <span className="text-yellow-400 text-xs">🔇</span>
                   )}
-                  {getUserRankBadge(user.userType)}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   متصل الآن

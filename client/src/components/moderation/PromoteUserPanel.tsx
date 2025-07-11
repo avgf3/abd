@@ -56,9 +56,10 @@ export default function PromoteUserPanel({
       const data = await response.json();
 
       if (response.ok) {
+        const roleDisplay = selectedRole === 'admin' ? 'إدمن ⭐' : 'مالك 👑';
         toast({
-          title: 'تم بنجاح',
-          description: data.message,
+          title: 'تم ترقية المستخدم بنجاح',
+          description: `تمت ترقية المستخدم إلى ${roleDisplay}`,
           variant: 'default'
         });
         setSelectedUser('');

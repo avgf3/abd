@@ -252,7 +252,7 @@ export function useChat() {
                 if (message.action === 'muted') {
                   console.log('🔇 تم كتمك من الدردشة العامة');
                   
-                  // إضافة إشعار إلى تبويب الإشعارات
+                  // إضافة إشعار إلى تبويب الإشعارات فقط
                   setNotifications(prev => [...prev, {
                     id: Date.now(),
                     type: 'system',
@@ -260,14 +260,6 @@ export function useChat() {
                     message: 'تم كتمك من الدردشة العامة',
                     timestamp: new Date()
                   }]);
-                  
-                  // إظهار إشعار الكتم
-                  if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification('تم كتمك 🔇', {
-                      body: 'لا يمكنك إرسال رسائل في الدردشة العامة',
-                      icon: '/favicon.ico'
-                    });
-                  }
                 } else if (message.action === 'unmuted') {
                   console.log('🔊 تم إلغاء كتمك من الدردشة');
                   if ('Notification' in window && Notification.permission === 'granted') {
