@@ -73,13 +73,13 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
         
         <ul className="space-y-1">
           {filteredUsers.map((user) => (
-            <li key={user.id} className="relative">
+            <li key={user.id} className="relative -mx-4">
               <SimpleUserMenu
                 targetUser={user}
                 currentUser={currentUser}
               >
                 <div
-                  className={`flex items-center gap-2 p-2 rounded-lg transition-all duration-200 cursor-pointer w-full ${
+                  className={`flex items-center gap-2 p-2 px-4 rounded-lg transition-all duration-200 cursor-pointer w-full ${
                     getUserThemeClasses(user)
                   }`}
                   style={{ 
