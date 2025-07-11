@@ -79,7 +79,7 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                 currentUser={currentUser}
               >
                 <div
-                  className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer ${
+                  className={`flex items-center gap-2 p-2 rounded-lg transition-all duration-200 cursor-pointer ${
                     getUserThemeClasses(user)
                   }`}
                   style={{ 
@@ -96,7 +96,7 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span 
-                      className="text-xs font-medium"
+                      className="text-sm font-medium"
                       style={{ 
                         color: getUserThemeTextColor(user)
                       }}
