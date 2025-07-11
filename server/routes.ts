@@ -603,6 +603,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // الحصول على جميع طلبات الصداقة (واردة وصادرة)
+  app.get("/api/friend-requests/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const incoming = await storage.getIncomingFriendRequests(userId);
+      const outgoing = await storage.getOutgoingFriendRequests(userId);
+      res.json({ incoming, outgoing });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   // الحصول على طلبات الصداقة الواردة
   app.get("/api/friend-requests/incoming/:userId", async (req, res) => {
     try {
@@ -644,7 +656,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       broadcast({
         type: 'friendRequestAccepted',
         targetUserId: request.senderId,
-        senderName: receiver?.username
+        accepterName: receiver?.username
       });
 
       res.json({ message: "تم قبول طلب الصداقة" });

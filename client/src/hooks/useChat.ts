@@ -171,6 +171,54 @@ export function useChat() {
               }
               break;
               
+            case 'friendRequestReceived':
+              // إضافة إشعار طلب صداقة جديد
+              if (message.targetUserId === user.id) {
+                setNotifications(prev => [...prev, {
+                  id: Date.now(),
+                  type: 'friend_request',
+                  username: message.senderName || 'مستخدم',
+                  message: 'أرسل لك طلب صداقة',
+                  timestamp: new Date()
+                }]);
+                
+                // صوت إشعار
+                playNotificationSound();
+                
+                // إشعار مرئي
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('طلب صداقة جديد 👥', {
+                    body: `${message.senderName} أرسل لك طلب صداقة`,
+                    icon: '/favicon.ico'
+                  });
+                }
+              }
+              break;
+              
+            case 'friendRequestAccepted':
+              // إضافة إشعار قبول طلب الصداقة
+              if (message.targetUserId === user.id) {
+                setNotifications(prev => [...prev, {
+                  id: Date.now(),
+                  type: 'friend_accepted',
+                  username: message.accepterName || 'مستخدم',
+                  message: 'قبل طلب صداقتك',
+                  timestamp: new Date()
+                }]);
+                
+                // صوت إشعار
+                playNotificationSound();
+                
+                // إشعار مرئي
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('تم قبول طلب الصداقة ✅', {
+                    body: `${message.accepterName} قبل طلب صداقتك`,
+                    icon: '/favicon.ico'
+                  });
+                }
+              }
+              break;
+
 
               
             case 'typing':
@@ -243,69 +291,45 @@ export function useChat() {
                     message: 'تم كتمك من الدردشة العامة',
                     timestamp: new Date()
                   }]);
-                } else if (message.action === 'unmuted') {
-                  console.log('🔊 تم إلغاء كتمك من الدردشة');
-                  if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification('تم إلغاء الكتم 🔊', {
-                      body: 'يمكنك الآن إرسال رسائل في الدردشة العامة',
-                      icon: '/favicon.ico'
-                    });
-                  }
-                } else if (message.action === 'banned') {
-                  console.log('⏰ تم طردك من الدردشة لمدة 15 دقيقة');
-                  setKickNotification({ show: true, duration: message.duration || 15 });
+                  
+                  setMuteNotification({
+                    isVisible: true,
+                    moderator: message.moderatorName || 'مشرف',
+                    reason: message.reason || 'مخالفة قوانين الدردشة'
+                  });
+                } else if (message.action === 'kicked') {
+                  console.log('👢 تم طردك من الدردشة');
+                  setKickNotification({
+                    isVisible: true,
+                    moderator: message.moderatorName || 'مشرف',
+                    reason: message.reason || 'مخالفة قوانين الدردشة',
+                    duration: message.duration || 15
+                  });
                 } else if (message.action === 'blocked') {
-                  console.log('🚫 تم حجبك نهائياً من الموقع');
-                  setBlockNotification({ show: true, reason: message.reason || 'مخالفة قوانين الدردشة' });
-                  setTimeout(() => {
-                    window.location.reload();
-                  }, 1000);
-                }
-              }
-              break;
-
-            case 'kicked':
-              if (message.targetUserId === user.id) {
-                setKickNotification({ 
-                  show: true, 
-                  duration: message.duration || 15 
-                });
-              }
-              break;
-
-            case 'blocked':
-              if (message.targetUserId === user.id) {
-                setBlockNotification({ 
-                  show: true, 
-                  reason: message.reason || 'مخالفة قوانين الموقع' 
-                });
-              }
-              break;
-              
-            case 'friendRequest':
-              // تنبيه طلب صداقة جديد
-              if (message.targetUserId === user.id) {
-                console.log('📨 طلب صداقة جديد من:', message.senderUsername);
-                
-                // إشعار مرئي في المتصفح
-                if ('Notification' in window && Notification.permission === 'granted') {
-                  new Notification('طلب صداقة جديد 👥', {
-                    body: `${message.senderUsername} يريد إضافتك كصديق`,
-                    icon: '/favicon.ico'
+                  console.log('🚫 تم حجبك نهائياً');
+                  setBlockNotification({
+                    isVisible: true,
+                    moderator: message.moderatorName || 'مشرف',
+                    reason: message.reason || 'مخالفة قوانين الدردشة'
+                  });
+                } else if (message.action === 'promoted') {
+                  console.log('⭐ تم ترقيتك');
+                  
+                  // إضافة إشعار الترقية
+                  setNotifications(prev => [...prev, {
+                    id: Date.now(),
+                    type: 'promotion',
+                    username: 'النظام',
+                    message: `تم ترقيتك إلى ${message.newRole}`,
+                    timestamp: new Date()
+                  }]);
+                  
+                  setPromoteNotification({
+                    isVisible: true,
+                    moderator: message.moderatorName || 'المالك',
+                    newRole: message.newRole || 'مشرف'
                   });
                 }
-                
-                // صوت تنبيه
-                playNotificationSound();
-                
-                // إضافة إشعار حقيقي للواجهة
-                setNotifications(prev => [...prev, {
-                  id: Date.now(),
-                  type: 'friendRequest',
-                  username: message.senderUsername,
-                  message: `${message.senderUsername} يريد إضافتك كصديق`,
-                  timestamp: new Date()
-                }]);
               }
               break;
 
