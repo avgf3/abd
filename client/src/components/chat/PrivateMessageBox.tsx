@@ -106,8 +106,7 @@ export default function PrivateMessageBox({
                 style={{
                   ...(user.userType === 'owner' && {
                     animation: 'golden-glow 2s ease-in-out infinite',
-                    boxShadow: '0 0 30px rgba(255, 215, 0, 0.9)',
-                    border: '3px solid rgba(255, 215, 0, 0.6)'
+                    boxShadow: '0 0 30px rgba(255, 215, 0, 0.9)'
                   })
                 }}
               >

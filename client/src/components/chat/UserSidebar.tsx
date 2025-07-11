@@ -96,8 +96,7 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                       color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#FFFFFF'),
                       ...(user.userType === 'owner' && {
                         animation: 'golden-glow 2s ease-in-out infinite',
-                        boxShadow: '0 0 25px rgba(255, 215, 0, 0.8)',
-                        border: '2px solid rgba(255, 215, 0, 0.5)'
+                        boxShadow: '0 0 25px rgba(255, 215, 0, 0.8)'
                       })
                     }}
                   >
