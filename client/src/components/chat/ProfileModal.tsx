@@ -207,13 +207,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           />
           <div className="flex-1 space-y-2">
             <div 
-              className={`block w-full px-6 py-4 rounded-xl transition-all duration-300 ${
+              className={`block w-full px-3 py-2 rounded-lg transition-all duration-300 ${
                 user?.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
               }`}
               style={{
                 ...(user?.userType === 'owner' && {
                   animation: 'golden-glow 2s ease-in-out infinite',
-                  boxShadow: '0 0 30px rgba(255, 215, 0, 0.9)'
+                  boxShadow: '0 0 15px rgba(255, 215, 0, 0.6)'
                 })
               }}
             >

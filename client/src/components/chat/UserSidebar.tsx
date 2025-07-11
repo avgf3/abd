@@ -87,31 +87,42 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                 className="transition-transform hover:scale-105"
               />
               <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <div 
-                    className={`text-sm font-medium px-4 py-3 rounded-xl w-full transition-all duration-300 ${
-                      user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
-                    }`}
-                    style={{ 
-                      color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#FFFFFF'),
-                      ...(user.userType === 'owner' && {
-                        animation: 'golden-glow 2s ease-in-out infinite',
-                        boxShadow: '0 0 25px rgba(255, 215, 0, 0.8)'
-                      })
-                    }}
-                  >
-                    {getUserRankBadge(user.userType, user.username)} {user.username}
+                <div 
+                  className={`w-full p-3 rounded-xl transition-all duration-300 ${
+                    user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
+                  }`}
+                  style={{ 
+                    ...(user.userType === 'owner' && {
+                      animation: 'golden-glow 2s ease-in-out infinite',
+                      boxShadow: '0 0 25px rgba(255, 215, 0, 0.8)'
+                    })
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span 
+                        className="text-sm font-medium"
+                        style={{ 
+                          color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#FFFFFF')
+                        }}
+                      >
+                        {getUserRankBadge(user.userType, user.username)} {user.username}
+                      </span>
+                      {/* إشارة المكتوم */}
+                      {user.isMuted && (
+                        <span className="text-yellow-400 text-xs">🔇</span>
+                      )}
+                    </div>
+                    <span 
+                      className="text-xs font-medium"
+                      style={{ 
+                        color: user.userType === 'owner' ? '#000000' : '#10B981'
+                      }}
+                    >
+                      متصل
+                    </span>
                   </div>
-                  {/* إشارة المكتوم */}
-                  {user.isMuted && (
-                    <span className="text-yellow-400 text-xs">🔇</span>
-                  )}
                 </div>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-xs text-green-400">
-                  متصل
-                </span>
               </div>
                 </div>
               </SimpleUserMenu>
