@@ -195,7 +195,9 @@ export default function PromoteUserPanel({
                   {eligibleUsers.map((user) => (
                     <div key={user.id} className="flex items-center justify-between p-2 bg-gray-800/50 rounded">
                       <div className="flex items-center gap-2">
-                        <span className="text-gray-200">{user.username}</span>
+                        <span style={{ color: user.usernameColor || '#E5E7EB' }}>
+                          {user.username}
+                        </span>
                         {getRoleBadge(user.userType)}
                       </div>
                       <div className="text-sm text-gray-400">

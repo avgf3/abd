@@ -99,7 +99,10 @@ export default function NewUserSidebar({ users, currentUser, onUserClick }: User
                 {/* User Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
-                    <span className={`text-sm font-medium truncate ${getUserTypeColor(user.userType)}`}>
+                    <span 
+                      className="text-sm font-medium truncate"
+                      style={{ color: user.usernameColor || '#000000' }}
+                    >
                       {getUserTypeBadge(user.userType)} {user.username}
                     </span>
                   </div>
@@ -141,7 +144,10 @@ export default function NewUserSidebar({ users, currentUser, onUserClick }: User
           <div className="flex items-center gap-3">
             <ProfileImage user={currentUser} size="small" />
             <div className="flex-1 min-w-0">
-              <div className={`text-sm font-medium truncate ${getUserTypeColor(currentUser.userType)}`}>
+              <div 
+                className="text-sm font-medium truncate"
+                style={{ color: currentUser.usernameColor || '#000000' }}
+              >
                 {getUserTypeBadge(currentUser.userType)} {currentUser.username}
               </div>
               <div className="text-xs text-gray-500">

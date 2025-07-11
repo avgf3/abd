@@ -98,7 +98,12 @@ export default function PrivateMessageBox({
               )}
             </div>
             <div className="text-center">
-              <p className="font-bold text-purple-800 text-lg">{user.username}</p>
+              <p 
+                className="font-bold text-lg"
+                style={{ color: user.usernameColor || '#7C3AED' }}
+              >
+                {user.username}
+              </p>
               <p className="text-sm text-purple-600 font-medium">
                 {user.userType === 'owner' && '👑 مالك'}
                 {user.userType === 'admin' && '⭐ إدمن'}

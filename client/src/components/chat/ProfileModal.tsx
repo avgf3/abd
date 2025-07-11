@@ -209,7 +209,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               value={profileData.name}
               onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="اسم المستخدم"
-              className="text-xl font-bold bg-transparent border-none text-white"
+              style={{ color: user?.usernameColor || '#FFFFFF' }}
+              className="text-xl font-bold bg-transparent border-none"
             />
             <Input
               value={profileData.status}

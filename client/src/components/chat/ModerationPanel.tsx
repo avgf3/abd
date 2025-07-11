@@ -298,7 +298,9 @@ export default function ModerationPanel({
                         />
                         <div>
                           <div className="font-semibold flex items-center gap-2">
-                            {user.username}
+                            <span style={{ color: user.usernameColor || '#000000' }}>
+                              {user.username}
+                            </span>
                             {getUserRoleBadge(user.userType)}
                           </div>
                           <div className="text-sm text-gray-600">
