@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import FixedWelcomeScreen from '@/components/chat/FixedWelcomeScreen';
-import FixedChatInterface from '@/components/chat/FixedChatInterface';
-import { useChat } from '@/hooks/useChat';
+import SimpleChatInterface from '@/components/chat/SimpleChatInterface';
+import { useSimpleChat } from '@/hooks/useSimpleChat';
 import KickCountdown from '@/components/moderation/KickCountdown';
 import type { ChatUser } from '@/types/chat';
 
 export default function ChatPage() {
   const [showWelcome, setShowWelcome] = useState(true);
-  const chat = useChat();
+  const chat = useSimpleChat();
 
   const handleUserLogin = (user: ChatUser) => {
     chat.connect(user);
@@ -24,7 +24,7 @@ export default function ChatPage() {
       {showWelcome ? (
         <FixedWelcomeScreen onUserLogin={handleUserLogin} />
       ) : (
-        <FixedChatInterface chat={chat} onLogout={handleLogout} />
+        <SimpleChatInterface chat={chat} onLogout={handleLogout} />
       )}
       
       {/* عداد الطرد */}
