@@ -82,15 +82,15 @@ export default function NewMessageArea({
                 <div className="flex items-center gap-2 mb-1">
                   {/* Username with Premium Theme */}
                   <div 
-                    className={`inline-block px-4 py-3 rounded-xl cursor-pointer hover:underline transition-all duration-300 min-w-[120px] ${
+                    className={`inline-block px-6 py-4 rounded-xl cursor-pointer hover:underline transition-all duration-300 min-w-[180px] ${
                       sender.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
                     }`}
                     style={{ 
                       color: sender.userType === 'owner' ? '#000000' : (sender.usernameColor || '#000000'),
                       ...(sender.userType === 'owner' && {
-                        animation: 'golden-glow 2s ease-in-out infinite',
-                        boxShadow: '0 0 25px rgba(255, 215, 0, 0.8)',
-                        border: '2px solid rgba(255, 215, 0, 0.5)'
+                        animation: 'gentle-golden-glow 4s ease-in-out infinite',
+                        boxShadow: '0 0 15px rgba(255, 215, 0, 0.5)',
+                        border: '1px solid rgba(255, 215, 0, 0.3)'
                       })
                     }}
                     onClick={(e) => onUserClick(e, sender)}
