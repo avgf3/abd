@@ -535,6 +535,183 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
+  // Friend system APIs
+  
+  // البحث عن المستخدمين
+  app.get("/api/users/search", async (req, res) => {
+    try {
+      const { q, userId } = req.query;
+      
+      if (!q || !userId) {
+        return res.status(400).json({ error: "معاملات البحث مطلوبة" });
+      }
+
+      const allUsers = await storage.getAllUsers();
+      const searchTerm = (q as string).toLowerCase();
+      
+      const filteredUsers = allUsers.filter(user => 
+        user.id !== parseInt(userId as string) && // استبعاد المستخدم الحالي
+        user.username.toLowerCase().includes(searchTerm)
+      ).slice(0, 10); // حد أقصى 10 نتائج
+
+      res.json({ users: filteredUsers });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // إرسال طلب صداقة
+  app.post("/api/friend-requests", async (req, res) => {
+    try {
+      const { senderId, receiverId } = req.body;
+      
+      if (!senderId || !receiverId) {
+        return res.status(400).json({ error: "معلومات المرسل والمستقبل مطلوبة" });
+      }
+
+      if (senderId === receiverId) {
+        return res.status(400).json({ error: "لا يمكنك إرسال طلب صداقة لنفسك" });
+      }
+
+      // التحقق من وجود طلب سابق
+      const existingRequest = await storage.getFriendRequest(senderId, receiverId);
+      if (existingRequest) {
+        return res.status(400).json({ error: "طلب الصداقة موجود بالفعل" });
+      }
+
+      // التحقق من الصداقة الموجودة
+      const friendship = await storage.getFriendship(senderId, receiverId);
+      if (friendship) {
+        return res.status(400).json({ error: "أنتما أصدقاء بالفعل" });
+      }
+
+      const request = await storage.createFriendRequest(senderId, receiverId);
+      
+      // إرسال إشعار عبر WebSocket
+      const sender = await storage.getUser(senderId);
+      broadcast({
+        type: 'friendRequestReceived',
+        targetUserId: receiverId,
+        senderName: sender?.username,
+        senderId: senderId
+      });
+
+      res.json({ message: "تم إرسال طلب الصداقة", request });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // الحصول على طلبات الصداقة الواردة
+  app.get("/api/friend-requests/incoming/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const requests = await storage.getIncomingFriendRequests(userId);
+      res.json({ requests });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // الحصول على طلبات الصداقة الصادرة
+  app.get("/api/friend-requests/outgoing/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const requests = await storage.getOutgoingFriendRequests(userId);
+      res.json({ requests });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // قبول طلب صداقة
+  app.post("/api/friend-requests/:requestId/accept", async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.requestId);
+      const { userId } = req.body;
+      
+      const request = await storage.getFriendRequestById(requestId);
+      if (!request || request.receiverId !== userId) {
+        return res.status(403).json({ error: "غير مسموح" });
+      }
+
+      await storage.acceptFriendRequest(requestId);
+      await storage.addFriend(request.senderId, request.receiverId);
+      
+      // إرسال إشعار للمرسل
+      const receiver = await storage.getUser(userId);
+      broadcast({
+        type: 'friendRequestAccepted',
+        targetUserId: request.senderId,
+        senderName: receiver?.username
+      });
+
+      res.json({ message: "تم قبول طلب الصداقة" });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // رفض طلب صداقة
+  app.post("/api/friend-requests/:requestId/decline", async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.requestId);
+      const { userId } = req.body;
+      
+      const request = await storage.getFriendRequestById(requestId);
+      if (!request || request.receiverId !== userId) {
+        return res.status(403).json({ error: "غير مسموح" });
+      }
+
+      await storage.declineFriendRequest(requestId);
+      res.json({ message: "تم رفض طلب الصداقة" });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // إلغاء طلب صداقة
+  app.post("/api/friend-requests/:requestId/cancel", async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.requestId);
+      const { userId } = req.body;
+      
+      const request = await storage.getFriendRequestById(requestId);
+      if (!request || request.senderId !== userId) {
+        return res.status(403).json({ error: "غير مسموح" });
+      }
+
+      await storage.deleteFriendRequest(requestId);
+      res.json({ message: "تم إلغاء طلب الصداقة" });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // الحصول على قائمة الأصدقاء
+  app.get("/api/friends/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const friends = await storage.getFriends(userId);
+      res.json({ friends });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // إزالة صديق
+  app.delete("/api/friends/:userId/:friendId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const friendId = parseInt(req.params.friendId);
+      
+      await storage.removeFriend(userId, friendId);
+      res.json({ message: "تم إزالة الصديق" });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   // API routes for spam protection and reporting
   
   // إضافة تبليغ

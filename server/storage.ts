@@ -20,6 +20,7 @@ export interface IStorage {
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
   setUserOnlineStatus(id: number, isOnline: boolean): Promise<void>;
   getOnlineUsers(): Promise<User[]>;
+  getAllUsers(): Promise<User[]>;
 
   // Message operations
   createMessage(message: InsertMessage): Promise<Message>;
@@ -31,15 +32,18 @@ export interface IStorage {
   getFriends(userId: number): Promise<User[]>;
   updateFriendStatus(userId: number, friendId: number, status: string): Promise<void>;
   getBlockedUsers(userId: number): Promise<User[]>;
+  removeFriend(userId: number, friendId: number): Promise<boolean>;
+  getFriendship(userId1: number, userId2: number): Promise<Friend | undefined>;
   
-  // Enhanced friend request operations
+  // Friend request operations
+  createFriendRequest(senderId: number, receiverId: number): Promise<any>;
+  getFriendRequest(senderId: number, receiverId: number): Promise<any>;
+  getFriendRequestById(requestId: number): Promise<any>;
   getIncomingFriendRequests(userId: number): Promise<any[]>;
   getOutgoingFriendRequests(userId: number): Promise<any[]>;
   acceptFriendRequest(requestId: number): Promise<boolean>;
   declineFriendRequest(requestId: number): Promise<boolean>;
-  ignoreFriendRequest(requestId: number): Promise<boolean>;
   deleteFriendRequest(requestId: number): Promise<boolean>;
-  removeFriend(userId: number, friendId: number): Promise<boolean>;
 }
 
 // Mixed storage: Database for members, Memory for guests
@@ -47,17 +51,21 @@ export class MixedStorage implements IStorage {
   private users: Map<number, User>;
   private messages: Map<number, Message>;
   private friends: Map<number, Friend>;
+  private friendRequests: Map<number, any>;
   private currentUserId: number;
   private currentMessageId: number;
   private currentFriendId: number;
+  private currentRequestId: number;
 
   constructor() {
     this.users = new Map();
     this.messages = new Map();
     this.friends = new Map();
+    this.friendRequests = new Map();
     this.currentUserId = 1000; // Start guest IDs from 1000 to avoid conflicts
     this.currentMessageId = 1;
     this.currentFriendId = 1;
+    this.currentRequestId = 1;
 
     // Initialize owner user in database
     this.initializeOwner();
@@ -423,6 +431,96 @@ export class MixedStorage implements IStorage {
     
     this.friends.delete(friendship.id);
     return true;
+  }
+
+  // Friend Request Operations
+  async getAllUsers(): Promise<User[]> {
+    try {
+      const dbUsers = await db.select().from(users);
+      const memoryUsers = Array.from(this.users.values());
+      return [...dbUsers, ...memoryUsers];
+    } catch (error) {
+      console.error("خطأ في الحصول على جميع المستخدمين:", error);
+      return Array.from(this.users.values());
+    }
+  }
+
+  async getFriendship(userId1: number, userId2: number): Promise<Friend | undefined> {
+    return Array.from(this.friends.values()).find(
+      f => (f.userId === userId1 && f.friendId === userId2) ||
+           (f.userId === userId2 && f.friendId === userId1)
+    );
+  }
+
+  async createFriendRequest(senderId: number, receiverId: number): Promise<any> {
+    const request = {
+      id: this.currentRequestId++,
+      senderId,
+      receiverId,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      sender: await this.getUser(senderId),
+      receiver: await this.getUser(receiverId)
+    };
+
+    this.friendRequests.set(request.id, request);
+    return request;
+  }
+
+  async getFriendRequest(senderId: number, receiverId: number): Promise<any> {
+    return Array.from(this.friendRequests.values()).find(
+      r => r.senderId === senderId && r.receiverId === receiverId && r.status === 'pending'
+    );
+  }
+
+  async getFriendRequestById(requestId: number): Promise<any> {
+    return this.friendRequests.get(requestId);
+  }
+
+  async getIncomingFriendRequests(userId: number): Promise<any[]> {
+    const requests = Array.from(this.friendRequests.values()).filter(
+      r => r.receiverId === userId && r.status === 'pending'
+    );
+
+    for (const request of requests) {
+      request.sender = await this.getUser(request.senderId);
+    }
+
+    return requests;
+  }
+
+  async getOutgoingFriendRequests(userId: number): Promise<any[]> {
+    const requests = Array.from(this.friendRequests.values()).filter(
+      r => r.senderId === userId && r.status === 'pending'
+    );
+
+    for (const request of requests) {
+      request.receiver = await this.getUser(request.receiverId);
+    }
+
+    return requests;
+  }
+
+  async acceptFriendRequest(requestId: number): Promise<boolean> {
+    const request = this.friendRequests.get(requestId);
+    if (!request) return false;
+
+    request.status = 'accepted';
+    this.friendRequests.set(requestId, request);
+    return true;
+  }
+
+  async declineFriendRequest(requestId: number): Promise<boolean> {
+    const request = this.friendRequests.get(requestId);
+    if (!request) return false;
+
+    request.status = 'declined';
+    this.friendRequests.set(requestId, request);
+    return true;
+  }
+
+  async deleteFriendRequest(requestId: number): Promise<boolean> {
+    return this.friendRequests.delete(requestId);
   }
 }
 
