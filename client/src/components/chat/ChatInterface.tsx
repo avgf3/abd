@@ -12,7 +12,13 @@ import FriendsPanel from './FriendsPanel';
 import FriendRequestBadge from './FriendRequestBadge';
 import MessagesPanel from './MessagesPanel';
 import MessageAlert from './MessageAlert';
-// إزالة جميع واردات تبويب الإدارة
+import ModerationPanel from './ModerationPanel';
+import ReportsLog from '../moderation/ReportsLog';
+import ActiveModerationLog from '../moderation/ActiveModerationLog';
+import KickNotification from '../moderation/KickNotification';
+import BlockNotification from '../moderation/BlockNotification';
+import PromoteUserPanel from '../moderation/PromoteUserPanel';
+import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -35,7 +41,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
-  // إزالة جميع متغيرات تبويب الإدارة
+  const [showModerationPanel, setShowModerationPanel] = useState(false);
+  const [showOwnerPanel, setShowOwnerPanel] = useState(false);
+  const [showModerationActions, setShowModerationActions] = useState(false);
+  const [showReportsLog, setShowReportsLog] = useState(false);
+  const [showActiveActions, setShowActiveActions] = useState(false);
+  const [showPromotePanel, setShowPromotePanel] = useState(false);
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
     sender: ChatUser | null;
@@ -184,7 +195,62 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             الرسائل
           </Button>
           
-          {/* تم إزالة جميع أزرار تبويب الإدارة */}
+          {/* زر لوحة الإدارة للمشرفين */}
+          {chat.currentUser && (chat.currentUser.userType === 'owner' || chat.currentUser.userType === 'admin') && (
+            <>
+              <Button 
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+                onClick={() => setShowModerationPanel(true)}
+              >
+                <span>🛡️</span>
+                إدارة
+              </Button>
+              <Button 
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 border border-red-400 relative"
+                onClick={() => setShowReportsLog(true)}
+              >
+                <span>⚠️</span>
+                سجل البلاغات
+              </Button>
+              
+              <Button 
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2"
+                onClick={() => setShowModerationActions(true)}
+              >
+                <span>📋</span>
+                سجل الإجراءات
+              </Button>
+
+              {/* زر ترقية المستخدمين - للمالك فقط */}
+              {chat.currentUser?.userType === 'owner' && (
+                <Button 
+                  className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2"
+                  onClick={() => setShowPromotePanel(true)}
+                >
+                  <span>👑</span>
+                  ترقية المستخدمين
+                </Button>
+              )}
+              <Button 
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400"
+                onClick={() => setShowActiveActions(true)}
+              >
+                <span>🔒</span>
+                سجل الإجراءات
+              </Button>
+            </>
+          )}
+
+          {/* زر خاص بالمالك فقط */}
+          {chat.currentUser && chat.currentUser.userType === 'owner' && (
+            <Button 
+              className="glass-effect px-4 py-2 rounded-lg hover:bg-purple-600 transition-all duration-200 flex items-center gap-2 border border-purple-400"
+              onClick={() => setShowOwnerPanel(true)}
+            >
+              <span>👑</span>
+              إدارة المالك
+            </Button>
+          )}
           
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
@@ -282,12 +348,22 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
-      {showFriends && chat.currentUser && (
+      {/* Admin Reports Panel */}
+      {showAdminReports && chat.currentUser && chat.currentUser.userType === 'owner' && (
+        <AdminReportsPanel
+          isOpen={showAdminReports}
+          onClose={() => setShowAdminReports(false)}
+          currentUser={chat.currentUser}
+        />
+      )}
+
+      {showFriends && (
         <FriendsPanel
           isOpen={showFriends}
           onClose={() => setShowFriends(false)}
           currentUser={chat.currentUser}
-          onStartChat={(friend) => {
+          onlineUsers={chat.onlineUsers}
+          onStartPrivateChat={(friend) => {
             setSelectedPrivateUser(friend);
             setShowFriends(false);
           }}
@@ -307,6 +383,70 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           }}
         />
       )}
+
+      {showModerationPanel && (
+        <ModerationPanel
+          isOpen={showModerationPanel}
+          onClose={() => setShowModerationPanel(false)}
+          currentUser={chat.currentUser}
+          onlineUsers={chat.onlineUsers}
+        />
+      )}
+
+      {showOwnerPanel && (
+        <OwnerAdminPanel 
+          isOpen={showOwnerPanel}
+          onClose={() => setShowOwnerPanel(false)}
+          currentUser={chat.currentUser}
+          onlineUsers={chat.onlineUsers}
+        />
+      )}
+
+      {showModerationActions && (
+        <ModerationPanel 
+          isVisible={showModerationActions}
+          onClose={() => setShowModerationActions(false)}
+          currentUser={chat.currentUser}
+        />
+      )}
+
+      {showReportsLog && (
+        <ReportsLog 
+          isVisible={showReportsLog}
+          onClose={() => setShowReportsLog(false)}
+          currentUser={chat.currentUser}
+        />
+      )}
+
+      {showActiveActions && (
+        <ActiveModerationLog 
+          isVisible={showActiveActions}
+          onClose={() => setShowActiveActions(false)}
+          currentUser={chat.currentUser}
+        />
+      )}
+
+      {showPromotePanel && (
+        <PromoteUserPanel 
+          isVisible={showPromotePanel}
+          onClose={() => setShowPromotePanel(false)}
+          currentUser={chat.currentUser}
+          onlineUsers={chat.onlineUsers}
+        />
+      )}
+
+      {/* إشعارات الطرد والحجب */}
+      <KickNotification
+        isVisible={chat.kickNotification?.show || false}
+        durationMinutes={chat.kickNotification?.duration || 15}
+        onClose={() => {}}
+      />
+      
+      <BlockNotification
+        isVisible={chat.blockNotification?.show || false}
+        reason={chat.blockNotification?.reason || ''}
+        onClose={() => {}}
+      />
 
       {/* تنبيه الرسائل الجديدة */}
       <MessageAlert

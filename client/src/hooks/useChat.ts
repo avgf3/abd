@@ -241,32 +241,6 @@ export function useChat() {
               }
               break;
 
-            case 'friendRequestReceived':
-              // تحديث قائمة طلبات الصداقة الواردة
-              if (message.targetUserId === user.id) {
-                setNotifications(prev => [...prev, {
-                  id: Date.now(),
-                  type: 'friendRequest',
-                  username: message.senderName,
-                  message: `طلب صداقة من ${message.senderName}`,
-                  timestamp: new Date()
-                }]);
-              }
-              break;
-
-            case 'friendRequestAccepted':
-              // إشعار بقبول طلب الصداقة
-              if (message.targetUserId === user.id) {
-                setNotifications(prev => [...prev, {
-                  id: Date.now(),
-                  type: 'friendAccepted',
-                  username: message.senderName,
-                  message: `${message.senderName} قبل طلب صداقتك`,
-                  timestamp: new Date()
-                }]);
-              }
-              break;
-
             case 'moderationAction':
               // إضافة رسالة النظام للدردشة العامة
               const systemMessage = {
