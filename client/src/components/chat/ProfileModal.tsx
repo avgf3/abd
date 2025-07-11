@@ -12,6 +12,7 @@ import type { ChatUser } from '@/types/chat';
 import { StealthModeButton } from "./StealthModeButton";
 import { UserMinus } from "lucide-react";
 import UsernameColorPicker from '../profile/UsernameColorPicker';
+import ProfileImageUpload from '../profile/ProfileImageUpload';
 import { getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 
 
@@ -297,21 +298,25 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           </DialogTitle>
         </DialogHeader>
 
-        {/* Profile Header */}
-        <div className="flex items-center gap-4 p-4 border-b border-border">
-          <img
-            src={profileData.profileImage || "/default_avatar.svg"}
-            alt="صورة المستخدم"
-            className="w-20 h-20 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={handleImageUpload}
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = '/default_avatar.svg';
-            }}
-          />
-          <div className="flex-1 space-y-2">
+        {/* Profile Header - Enhanced with Image Upload */}
+        <div className="space-y-6 p-4 border-b border-border">
+          {/* صورة البروفايل مع خاصية الرفع */}
+          <div className="flex flex-col items-center">
+            <ProfileImageUpload 
+              currentUser={currentUser}
+              onImageUpdate={(imageUrl) => {
+                setProfileData(prev => ({ ...prev, profileImage: imageUrl }));
+                if (currentUser) {
+                  currentUser.profileImage = imageUrl;
+                }
+              }}
+            />
+          </div>
+          
+          {/* الاسم والحالة */}
+          <div className="flex flex-col items-center space-y-3">
             <div 
-              className="block w-full px-3 py-2 rounded-lg transition-all duration-300"
+              className="px-4 py-2 rounded-lg transition-all duration-300 min-w-[200px] text-center"
               style={{
                 background: getUserThemeStyles(user).background || 'transparent',
                 color: getUserThemeTextColor(user),
@@ -333,7 +338,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               value={profileData.status}
               onChange={(e) => setProfileData(prev => ({ ...prev, status: e.target.value }))}
               placeholder="اكتب حالتك..."
-              className="bg-transparent border-none text-muted-foreground"
+              className="bg-transparent border-none text-muted-foreground text-center max-w-xs"
             />
           </div>
         </div>

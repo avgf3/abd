@@ -11,13 +11,92 @@ import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, me
 import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
 import securityApiRoutes from "./api-security";
 import { z } from "zod";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 interface WebSocketClient extends WebSocket {
   userId?: number;
   username?: string;
 }
 
+// إعداد multer لرفع الصور
+const storage_multer = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'profiles');
+    
+    // التأكد من وجود المجلد
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `profile-${uniqueSuffix}${ext}`);
+  }
+});
+
+const upload = multer({
+  storage: storage_multer,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    // التحقق من نوع الملف
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('يرجى رفع ملف صورة صحيح'));
+    }
+  }
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // رفع صور البروفايل
+  app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
+      }
+
+      const userId = req.body.userId;
+      if (!userId) {
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      }
+
+      // تحديث مسار الصورة في قاعدة البيانات
+      const imageUrl = `/uploads/profiles/${req.file.filename}`;
+      
+      const user = await storage.getUser(parseInt(userId));
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      // حذف الصورة القديمة إذا كانت موجودة
+      if (user.profileImage && user.profileImage !== '/default_avatar.svg') {
+        const oldImagePath = path.join(process.cwd(), 'client', 'public', user.profileImage);
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+      }
+
+      await storage.updateUser(parseInt(userId), { profileImage: imageUrl });
+
+      res.json({
+        message: 'تم رفع الصورة بنجاح',
+        imageUrl: imageUrl
+      });
+
+    } catch (error) {
+      console.error('Error uploading profile image:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'خطأ في رفع الصورة' 
+      });
+    }
+  });
   // إدارة الإخفاء للإدمن والمالك
   app.post("/api/users/:userId/toggle-hidden", async (req, res) => {
     try {
