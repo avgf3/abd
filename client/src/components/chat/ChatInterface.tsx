@@ -296,7 +296,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {showProfile && (
         <ProfileModal 
           user={chat.currentUser}
+          currentUser={chat.currentUser}
           onClose={() => setShowProfile(false)}
+          onIgnoreUser={(userId) => {
+            chat.ignoreUser(userId);
+          }}
         />
       )}
 
@@ -318,7 +322,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           y={userPopup.y}
           onPrivateMessage={() => handlePrivateMessage(userPopup.user!)}
           onAddFriend={() => handleAddFriend(userPopup.user!)}
-          onIgnore={() => handleIgnoreUser(userPopup.user!)}
+          onIgnore={() => {
+            // إزالة زر التجاهل من UserPopup - الآن في الملف الشخصي فقط
+          }}
           onViewProfile={() => handleViewProfile(userPopup.user!)}
           currentUser={chat.currentUser}
           onClose={closeUserPopup}

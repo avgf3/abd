@@ -4,16 +4,22 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import { StealthModeButton } from "./StealthModeButton";
+import { UserMinus } from "lucide-react";
 
 interface ProfileModalProps {
   user: ChatUser | null;
+  currentUser: ChatUser | null;
   onClose: () => void;
+  onIgnoreUser?: (userId: number) => void;
 }
 
-export default function ProfileModal({ user, onClose }: ProfileModalProps) {
+export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser }: ProfileModalProps) {
   const { toast } = useToast();
   const [profileData, setProfileData] = useState({
     name: user?.username || '',
@@ -24,6 +30,8 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
     relation: user?.relation || 'عدم إظهار',
     profileImage: user?.profileImage || '/default_avatar.svg',
   });
+  const [isIgnored, setIsIgnored] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const countries = [
     'السعودية', 'مصر', 'الإمارات', 'الأردن', 'العراق', 'سوريا', 
@@ -82,6 +90,64 @@ export default function ProfileModal({ user, onClose }: ProfileModalProps) {
     };
     input.click();
   };
+
+  const handleIgnoreToggle = async () => {
+    if (!user || !currentUser || loading) return;
+
+    try {
+      setLoading(true);
+      
+      if (isIgnored) {
+        await apiRequest(`/api/users/${currentUser.id}/ignore/${user.id}`, {
+          method: 'DELETE'
+        });
+        setIsIgnored(false);
+        toast({
+          title: "تم الإلغاء",
+          description: `تم إلغاء تجاهل ${user.username}`,
+        });
+      } else {
+        await apiRequest(`/api/users/${currentUser.id}/ignore/${user.id}`, {
+          method: 'POST'
+        });
+        setIsIgnored(true);
+        toast({
+          title: "تم التجاهل",
+          description: `تم تجاهل ${user.username} - لن ترى رسائله أو طلباته`,
+          variant: "destructive"
+        });
+      }
+      
+      if (onIgnoreUser) {
+        onIgnoreUser(user.id);
+      }
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: error instanceof Error ? error.message : "فشل في تحديث التجاهل",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // تحقق من حالة التجاهل عند فتح الملف الشخصي
+  useEffect(() => {
+    const checkIgnoreStatus = async () => {
+      if (!user || !currentUser) return;
+      
+      try {
+        const response = await apiRequest(`/api/users/${currentUser.id}/ignored`);
+        const ignoredUsers = response.ignoredUsers || [];
+        setIsIgnored(ignoredUsers.includes(user.id));
+      } catch (error) {
+        console.error('Error checking ignore status:', error);
+      }
+    };
+    
+    checkIgnoreStatus();
+  }, [user, currentUser]);
 
   const handleSave = () => {
     // Save to localStorage

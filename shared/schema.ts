@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   country: text("country"),
   relation: text("relation"),
   isOnline: boolean("is_online").default(false),
+  isHidden: boolean("is_hidden").default(false), // خاصية الإخفاء للمراقبة
   lastSeen: timestamp("last_seen"),
   joinDate: timestamp("join_date").defaultNow(),
   isMuted: boolean("is_muted").default(false),
@@ -23,6 +24,7 @@ export const users = pgTable("users", {
   isBlocked: boolean("is_blocked").default(false),
   ipAddress: varchar("ip_address", { length: 45 }),
   deviceId: varchar("device_id", { length: 100 }),
+  ignoredUsers: text("ignored_users").array().default([]), // قائمة المستخدمين المتجاهلين
 });
 
 export const messages = pgTable("messages", {

@@ -19,6 +19,10 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
   setUserOnlineStatus(id: number, isOnline: boolean): Promise<void>;
+  setUserHiddenStatus(id: number, isHidden: boolean): Promise<void>;
+  addIgnoredUser(userId: number, ignoredUserId: number): Promise<void>;
+  removeIgnoredUser(userId: number, ignoredUserId: number): Promise<void>;
+  getIgnoredUsers(userId: number): Promise<number[]>;
   getOnlineUsers(): Promise<User[]>;
   getAllUsers(): Promise<User[]>;
 
@@ -253,15 +257,101 @@ export class MixedStorage implements IStorage {
   }
 
   async getOnlineUsers(): Promise<User[]> {
-    const memUsers = Array.from(this.users.values()).filter(user => user.isOnline);
+    const memUsers = Array.from(this.users.values()).filter(user => user.isOnline && !user.isHidden);
     
-    // Get online members from database
+    // Get online members from database (excluding hidden)
     try {
       const dbUsers = await db.select().from(users).where(eq(users.isOnline, true));
-      return [...memUsers, ...dbUsers];
+      const visibleDbUsers = dbUsers.filter(user => !user.isHidden);
+      return [...memUsers, ...visibleDbUsers];
     } catch (error) {
       return memUsers;
     }
+  }
+
+  async setUserHiddenStatus(id: number, isHidden: boolean): Promise<void> {
+    // Check memory first (guests)
+    const memUser = this.users.get(id);
+    if (memUser) {
+      memUser.isHidden = isHidden;
+      this.users.set(id, memUser);
+      return;
+    }
+
+    // Check database (members)
+    try {
+      await db.update(users).set({ isHidden }).where(eq(users.id, id));
+    } catch (error) {
+      console.error('Error updating user hidden status:', error);
+    }
+  }
+
+  async addIgnoredUser(userId: number, ignoredUserId: number): Promise<void> {
+    // Check memory first (guests)
+    const memUser = this.users.get(userId);
+    if (memUser) {
+      if (!memUser.ignoredUsers) memUser.ignoredUsers = [];
+      if (!memUser.ignoredUsers.includes(ignoredUserId.toString())) {
+        memUser.ignoredUsers.push(ignoredUserId.toString());
+        this.users.set(userId, memUser);
+      }
+      return;
+    }
+
+    // Check database (members)
+    try {
+      const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
+      if (dbUser) {
+        const currentIgnored = dbUser.ignoredUsers || [];
+        if (!currentIgnored.includes(ignoredUserId.toString())) {
+          currentIgnored.push(ignoredUserId.toString());
+          await db.update(users).set({ ignoredUsers: currentIgnored }).where(eq(users.id, userId));
+        }
+      }
+    } catch (error) {
+      console.error('Error adding ignored user:', error);
+    }
+  }
+
+  async removeIgnoredUser(userId: number, ignoredUserId: number): Promise<void> {
+    // Check memory first (guests)
+    const memUser = this.users.get(userId);
+    if (memUser && memUser.ignoredUsers) {
+      memUser.ignoredUsers = memUser.ignoredUsers.filter(id => id !== ignoredUserId.toString());
+      this.users.set(userId, memUser);
+      return;
+    }
+
+    // Check database (members)
+    try {
+      const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
+      if (dbUser && dbUser.ignoredUsers) {
+        const filteredIgnored = dbUser.ignoredUsers.filter(id => id !== ignoredUserId.toString());
+        await db.update(users).set({ ignoredUsers: filteredIgnored }).where(eq(users.id, userId));
+      }
+    } catch (error) {
+      console.error('Error removing ignored user:', error);
+    }
+  }
+
+  async getIgnoredUsers(userId: number): Promise<number[]> {
+    // Check memory first (guests)
+    const memUser = this.users.get(userId);
+    if (memUser && memUser.ignoredUsers) {
+      return memUser.ignoredUsers.map(id => parseInt(id));
+    }
+    
+    // Check database (members)
+    try {
+      const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
+      if (dbUser && dbUser.ignoredUsers) {
+        return dbUser.ignoredUsers.map(id => parseInt(id));
+      }
+    } catch (error) {
+      console.error('Error getting ignored users:', error);
+    }
+    
+    return [];
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {

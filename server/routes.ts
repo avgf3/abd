@@ -18,6 +18,71 @@ interface WebSocketClient extends WebSocket {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // إدارة الإخفاء للإدمن والمالك
+  app.post("/api/users/:userId/toggle-hidden", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { isHidden } = req.body;
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "المستخدم غير موجود" });
+      }
+      
+      // فقط الإدمن والمالك يمكنهم تفعيل الإخفاء
+      if (user.userType !== 'admin' && user.userType !== 'owner') {
+        return res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+      }
+      
+      await storage.setUserHiddenStatus(userId, isHidden);
+      
+      res.json({ 
+        message: isHidden ? "تم تفعيل وضع المراقبة المخفية" : "تم إلغاء وضع المراقبة المخفية",
+        isHidden 
+      });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في تحديث حالة الإخفاء" });
+    }
+  });
+
+  // إدارة التجاهل
+  app.post("/api/users/:userId/ignore/:targetId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const targetId = parseInt(req.params.targetId);
+      
+      await storage.addIgnoredUser(userId, targetId);
+      
+      res.json({ message: "تم تجاهل المستخدم" });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في تجاهل المستخدم" });
+    }
+  });
+
+  app.delete("/api/users/:userId/ignore/:targetId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const targetId = parseInt(req.params.targetId);
+      
+      await storage.removeIgnoredUser(userId, targetId);
+      
+      res.json({ message: "تم إلغاء تجاهل المستخدم" });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في إلغاء تجاهل المستخدم" });
+    }
+  });
+
+  app.get("/api/users/:userId/ignored", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const ignoredUsers = await storage.getIgnoredUsers(userId);
+      
+      res.json({ ignoredUsers });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في جلب قائمة المتجاهلين" });
+    }
+  });
+
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
@@ -1429,6 +1494,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
+
+  // API routes للإخفاء والتجاهل
+  app.post('/api/users/:userId/stealth', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { isHidden } = req.body;
+      
+      await storage.setUserHiddenStatus(userId, isHidden);
+      
+      res.json({ success: true, message: isHidden ? 'تم إخفاؤك' : 'تم إظهارك' });
+    } catch (error) {
+      console.error('خطأ في تحديث وضع الإخفاء:', error);
+      res.status(500).json({ error: 'فشل في تحديث وضع الإخفاء' });
+    }
+  });
+
+  app.post('/api/users/:userId/ignore/:targetId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const targetId = parseInt(req.params.targetId);
+      
+      await storage.addIgnoredUser(userId, targetId);
+      
+      res.json({ success: true, message: 'تم تجاهل المستخدم' });
+    } catch (error) {
+      console.error('خطأ في تجاهل المستخدم:', error);
+      res.status(500).json({ error: 'فشل في تجاهل المستخدم' });
+    }
+  });
+
+  app.delete('/api/users/:userId/ignore/:targetId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const targetId = parseInt(req.params.targetId);
+      
+      await storage.removeIgnoredUser(userId, targetId);
+      
+      res.json({ success: true, message: 'تم إلغاء تجاهل المستخدم' });
+    } catch (error) {
+      console.error('خطأ في إلغاء تجاهل المستخدم:', error);
+      res.status(500).json({ error: 'فشل في إلغاء تجاهل المستخدم' });
+    }
+  });
+
+  app.get('/api/users/:userId/ignored', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const ignoredUsers = await storage.getIgnoredUsers(userId);
+      
+      res.json({ ignoredUsers });
+    } catch (error) {
+      console.error('خطأ في جلب المستخدمين المتجاهلين:', error);
+      res.status(500).json({ error: 'فشل في جلب المستخدمين المتجاهلين' });
+    }
+  });
 
   return httpServer;
 }

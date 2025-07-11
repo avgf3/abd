@@ -1,7 +1,7 @@
 export interface ChatUser {
   id: number;
   username: string;
-  userType: 'guest' | 'member' | 'owner';
+  userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
   profileImage?: string;
   status?: string;
   gender?: string;
@@ -9,11 +9,13 @@ export interface ChatUser {
   country?: string;
   relation?: string;
   isOnline: boolean;
+  isHidden?: boolean; // خاصية الإخفاء للمراقبة
   lastSeen?: Date;
   joinDate?: Date;
   isMuted?: boolean;
   isKicked?: boolean;
   isBlocked?: boolean;
+  ignoredUsers?: string[]; // قائمة المستخدمين المتجاهلين
 }
 
 export interface ChatMessage {
