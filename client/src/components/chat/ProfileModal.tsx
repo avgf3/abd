@@ -323,9 +323,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               Object.assign(currentUser, result.user);
             }
             
-            // إعادة تحميل الصفحة لضمان التحديث
-            window.location.reload();
-            
             toast({
               title: "تم بنجاح",
               description: "تم تحديث الصورة الشخصية",
@@ -382,9 +379,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
             if (currentUser && result.user) {
               Object.assign(currentUser, result.user);
             }
-            
-            // إعادة تحميل الصفحة لضمان التحديث
-            window.location.reload();
             
             toast({
               title: "تم بنجاح",

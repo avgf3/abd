@@ -142,6 +142,20 @@ export default function PrivateMessageBox({
                     ? 'bg-purple-500 text-white rounded-br-sm' 
                     : 'bg-white text-gray-800 rounded-bl-sm border border-purple-200'
                 }`}>
+                  {message.senderId !== currentUser?.id && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <img
+                        src={message.sender?.profileImage || "/default_avatar.svg"}
+                        alt={message.senderName}
+                        className="w-6 h-6 rounded-full object-cover border border-gray-300"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/default_avatar.svg';
+                        }}
+                      />
+                      <span className="text-xs font-medium text-gray-600">{message.senderName}</span>
+                    </div>
+                  )}
                   <div className="text-sm font-medium mb-1">
                     {message.content}
                   </div>
