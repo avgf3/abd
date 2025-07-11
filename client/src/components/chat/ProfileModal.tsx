@@ -122,7 +122,17 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
     { id: 'mystical', name: 'غامض', emoji: '🔮', gradient: 'linear-gradient(45deg, #7C3AED, #5B21B6)', textColor: '#FFFFFF' },
     { id: 'tropical', name: 'استوائي', emoji: '🌺', gradient: 'linear-gradient(45deg, #FF6B6B, #4ECDC4)', textColor: '#FFFFFF' },
     { id: 'aurora', name: 'شفق', emoji: '🌌', gradient: 'linear-gradient(45deg, #00C9FF, #92FE9D)', textColor: '#000000' },
-    { id: 'phoenix', name: 'عنقاء', emoji: '🔥', gradient: 'linear-gradient(45deg, #FF4E50, #F9CA24)', textColor: '#FFFFFF' }
+    { id: 'phoenix', name: 'عنقاء', emoji: '🔥', gradient: 'linear-gradient(45deg, #FF4E50, #F9CA24)', textColor: '#FFFFFF' },
+    { id: 'burgundy', name: 'خمري', emoji: '🍷', gradient: 'linear-gradient(45deg, #722F37, #B91C1C)', textColor: '#FFFFFF' },
+    { id: 'midnight', name: 'منتصف الليل', emoji: '🌙', gradient: 'linear-gradient(45deg, #1E293B, #334155)', textColor: '#FFFFFF' },
+    { id: 'arctic', name: 'القطب الشمالي', emoji: '❄️', gradient: 'linear-gradient(45deg, #0F172A, #1E40AF)', textColor: '#FFFFFF' },
+    { id: 'wine', name: 'نبيذي', emoji: '🍇', gradient: 'linear-gradient(45deg, #881337, #4C1D95)', textColor: '#FFFFFF' },
+    { id: 'steel', name: 'فولاذي', emoji: '⚔️', gradient: 'linear-gradient(45deg, #475569, #64748B)', textColor: '#FFFFFF' },
+    { id: 'navy', name: 'كحلي', emoji: '🌊', gradient: 'linear-gradient(45deg, #1E3A8A, #3730A3)', textColor: '#FFFFFF' },
+    { id: 'slate', name: 'أردوازي', emoji: '🗿', gradient: 'linear-gradient(45deg, #374151, #4B5563)', textColor: '#FFFFFF' },
+    { id: 'storm', name: 'العاصفة', emoji: '⛈️', gradient: 'linear-gradient(45deg, #1F2937, #6B7280)', textColor: '#FFFFFF' },
+    { id: 'crimson', name: 'قرمزي', emoji: '🌹', gradient: 'linear-gradient(45deg, #991B1B, #DC2626)', textColor: '#FFFFFF' },
+    { id: 'royal_blue', name: 'أزرق ملكي', emoji: '👑', gradient: 'linear-gradient(45deg, #1E3A8A, #60A5FA)', textColor: '#FFFFFF' }
   ];
 
   const handleImageUpload = () => {

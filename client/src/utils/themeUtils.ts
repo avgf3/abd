@@ -25,7 +25,17 @@ export const getThemeData = (themeId: string) => {
     'mystical': { gradient: 'linear-gradient(45deg, #7C3AED, #5B21B6)', textColor: '#FFFFFF', hasAnimation: true },
     'tropical': { gradient: 'linear-gradient(45deg, #FF6B6B, #4ECDC4)', textColor: '#FFFFFF', hasAnimation: true },
     'aurora': { gradient: 'linear-gradient(45deg, #00C9FF, #92FE9D)', textColor: '#000000', hasAnimation: true },
-    'phoenix': { gradient: 'linear-gradient(45deg, #FF4E50, #F9CA24)', textColor: '#FFFFFF', hasAnimation: true }
+    'phoenix': { gradient: 'linear-gradient(45deg, #FF4E50, #F9CA24)', textColor: '#FFFFFF', hasAnimation: true },
+    'burgundy': { gradient: 'linear-gradient(45deg, #722F37, #B91C1C)', textColor: '#FFFFFF', hasAnimation: true },
+    'midnight': { gradient: 'linear-gradient(45deg, #1E293B, #334155)', textColor: '#FFFFFF', hasAnimation: true },
+    'arctic': { gradient: 'linear-gradient(45deg, #0F172A, #1E40AF)', textColor: '#FFFFFF', hasAnimation: true },
+    'wine': { gradient: 'linear-gradient(45deg, #881337, #4C1D95)', textColor: '#FFFFFF', hasAnimation: true },
+    'steel': { gradient: 'linear-gradient(45deg, #475569, #64748B)', textColor: '#FFFFFF', hasAnimation: true },
+    'navy': { gradient: 'linear-gradient(45deg, #1E3A8A, #3730A3)', textColor: '#FFFFFF', hasAnimation: true },
+    'slate': { gradient: 'linear-gradient(45deg, #374151, #4B5563)', textColor: '#FFFFFF', hasAnimation: true },
+    'storm': { gradient: 'linear-gradient(45deg, #1F2937, #6B7280)', textColor: '#FFFFFF', hasAnimation: true },
+    'crimson': { gradient: 'linear-gradient(45deg, #991B1B, #DC2626)', textColor: '#FFFFFF', hasAnimation: true },
+    'royal_blue': { gradient: 'linear-gradient(45deg, #1E3A8A, #60A5FA)', textColor: '#FFFFFF', hasAnimation: true }
   };
   return themes[themeId as keyof typeof themes] || themes.default;
 };
