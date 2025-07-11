@@ -79,10 +79,10 @@ export default function NewMessageArea({
 
               {/* Message Content */}
               <div className="flex-1 min-w-0">
-                <div className="mb-1">
-                  {/* Username with Premium Theme - Full Width */}
+                <div className="flex items-center gap-2 mb-1">
+                  {/* Username with Premium Theme */}
                   <div 
-                    className={`w-full px-4 py-3 rounded-lg cursor-pointer hover:underline transition-all duration-300 ${
+                    className={`flex-1 px-4 py-3 rounded-lg cursor-pointer hover:underline transition-all duration-300 ${
                       sender.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
                     }`}
                     style={{ 
@@ -94,29 +94,24 @@ export default function NewMessageArea({
                     }}
                     onClick={(e) => onUserClick(e, sender)}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">
-                        {getUserTypeBadge(sender.userType)} {sender.username}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {/* Timestamp */}
-                        <span className="text-xs text-gray-400">
-                          {formatTime(message.timestamp)}
-                        </span>
-                        {/* Report Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onReportMessage(sender, message.content, message.id);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 text-xs text-red-500 hover:text-red-700 transition-opacity"
-                          title="تبليغ"
-                        >
-                          🚨
-                        </button>
-                      </div>
-                    </div>
+                    <span className="font-medium">
+                      {getUserTypeBadge(sender.userType)} {sender.username}
+                    </span>
                   </div>
+                  
+                  {/* Timestamp */}
+                  <span className="text-xs text-gray-400">
+                    {formatTime(message.timestamp)}
+                  </span>
+                  
+                  {/* Report Button */}
+                  <button
+                    onClick={() => onReportMessage(sender, message.content, message.id)}
+                    className="opacity-0 group-hover:opacity-100 text-xs text-red-500 hover:text-red-700 transition-opacity"
+                    title="تبليغ"
+                  >
+                    🚨
+                  </button>
                 </div>
 
                 {/* Message Text */}
