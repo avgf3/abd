@@ -108,7 +108,7 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                       })
                     }}
                   >
-                    {getUserTypeBadge(user.userType)} {user.username}
+                    {getUserRankBadge(user.userType, user.username)} {user.username}
                   </div>
                   {/* إشارة المكتوم */}
                   {user.isMuted && (

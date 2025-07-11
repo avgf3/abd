@@ -219,14 +219,16 @@ Preferred communication style: Simple, everyday language.
 - **Default Color Support**: White default color for new users, customizable for all user types
 - **Performance Optimized**: Efficient color rendering with CSS inline styles for instant display
 
-### Premium User Theme System - Golden Gradient (January 11, 2025)
-- **Golden Gradient Theme**: Beautiful gradient background (yellow-400 to yellow-600) for Owner 👑 users
-- **Purple Gradient Theme**: Elegant gradient background (purple-400 to purple-600) for Admin ⭐ users  
-- **Full Username Styling**: Complete username background with gradient, padding, and rounded corners
-- **Shadow Effects**: Subtle shadow-lg for enhanced visual appeal
-- **Applied Everywhere**: Gradient themes appear in all components - UserSidebar, NewMessageArea, PrivateMessageBox, ProfileModal
+### Premium User Theme System - Golden Gradient with Glow (January 11, 2025)
+- **Golden Gradient Theme**: Beautiful gradient background (yellow-400 to yellow-600) with animated glow for Owner 👑 users
+- **Purple Gradient Theme**: Elegant gradient background (purple-400 to purple-600) with animated glow for Admin ⭐ users  
+- **Full Username Styling**: Complete username background with gradient, padding, rounded corners, and glow animation
+- **Glow Animation**: Smooth 2-second glow animation with shadow effects and slight scaling
+- **Shadow Effects**: Dynamic shadow effects with color-matching glow (golden for owner, purple for admin)
+- **Applied Everywhere**: Gradient themes with glow appear in all components - UserSidebar, NewMessageArea, PrivateMessageBox, ProfileModal
 - **Smart Text Color**: Black text on golden background, white text on purple background for optimal readability
-- **User Request**: User specifically requested beautiful golden theme for complete username area
+- **CSS Animations**: Custom keyframe animations (golden-glow, purple-glow) for smooth visual effects
+- **User Request**: User specifically requested beautiful golden theme with glow for complete username area
 
 ### Replit Integration
 - **Development**: Special Replit plugins for development environment
