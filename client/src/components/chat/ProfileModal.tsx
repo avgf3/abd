@@ -40,7 +40,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
   // دوال معالجة الثيمات
   const handleThemeChange = async (themeId: string) => {
-    if (!currentUser) return;
+    if (!currentUser || (currentUser.userType !== 'admin' && currentUser.userType !== 'owner')) return;
     
     try {
       setProfileData(prev => ({ ...prev, userTheme: themeId }));
@@ -297,21 +297,24 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           </DialogTitle>
         </DialogHeader>
 
-        {/* Profile Header */}
-        <div className="flex items-center gap-4 p-4 border-b border-border">
-          <img
-            src={profileData.profileImage || "/default_avatar.svg"}
-            alt="صورة المستخدم"
-            className="w-20 h-20 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={handleImageUpload}
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = '/default_avatar.svg';
-            }}
-          />
-          <div className="flex-1 space-y-2">
+        {/* Profile Header - صورة البروفايل في كامل المساحة */}
+        <div className="space-y-4 p-4 border-b border-border">
+          {/* صورة البروفايل في كامل المساحة في الأعلى */}
+          <div className="w-full h-32 bg-gray-800 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity" onClick={handleImageUpload}>
+            <img 
+              src={profileData.profileImage || '/default_avatar.svg'} 
+              alt="صورة البروفايل"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = '/default_avatar.svg';
+              }}
+            />
+          </div>
+          
+          {/* الاسم والحالة للأسفل */}
+          <div className="text-center space-y-2">
             <div 
-              className="block w-full px-3 py-2 rounded-lg transition-all duration-300"
+              className="inline-block px-3 py-2 rounded-lg transition-all duration-300"
               style={{
                 background: getUserThemeStyles(user).background || 'transparent',
                 color: getUserThemeTextColor(user),
@@ -333,7 +336,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               value={profileData.status}
               onChange={(e) => setProfileData(prev => ({ ...prev, status: e.target.value }))}
               placeholder="اكتب حالتك..."
-              className="bg-transparent border-none text-muted-foreground"
+              className="bg-transparent border-none text-muted-foreground text-center"
             />
           </div>
         </div>
@@ -411,7 +414,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
           <TabsContent value="colors">
             <h3 className="text-lg font-semibold text-primary mb-4">🎨 تخصيص المظهر والألوان</h3>
-            {user && currentUser && user.id === currentUser.id ? (
+            {user && currentUser && user.id === currentUser.id && (currentUser.userType === 'admin' || currentUser.userType === 'owner') ? (
               <div className="space-y-6">
                 {/* ثيمات المستخدم */}
                 <div className="space-y-4">
@@ -458,7 +461,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                   </div>
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <div className="text-center p-8 text-gray-400">
+                <div className="text-6xl mb-4">🎨</div>
+                <p>الثيمات متاحة للأدمن فقط</p>
+                <p className="text-sm mt-2">تحتاج إلى صلاحيات إدارية لاستخدام هذه الميزة</p>
+              </div>
+            )}
             
             {user && currentUser && user.id !== currentUser.id && (
               <div className="text-center p-8 text-gray-400">
@@ -471,9 +480,56 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
           <TabsContent value="friends">
             <h3 className="text-lg font-semibold text-primary mb-4">قائمة الأصدقاء</h3>
-            <div className="text-center text-muted-foreground py-8">
-              لا يوجد أصدقاء حالياً
-            </div>
+            {user && currentUser && user.id === currentUser.id ? (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    الأصدقاء ({currentUser.friends?.length || 0})
+                  </span>
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                    إضافة صديق
+                  </Button>
+                </div>
+                
+                {currentUser.friends && currentUser.friends.length > 0 ? (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {currentUser.friends.map((friend: any) => (
+                      <div key={friend.id} className="flex items-center justify-between p-2 bg-accent rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <img 
+                            src={friend.profileImage || '/default_avatar.svg'} 
+                            alt={friend.username}
+                            className="w-8 h-8 rounded-full"
+                          />
+                          <div>
+                            <span className="font-medium">{friend.username}</span>
+                            <div className="text-xs text-muted-foreground">
+                              {friend.isOnline ? '🟢 متصل' : '⚫ غير متصل'}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="outline" className="text-xs">
+                            رسالة
+                          </Button>
+                          <Button size="sm" variant="destructive" className="text-xs">
+                            حذف
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground py-8">
+                    لا يوجد أصدقاء حالياً
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                لا يمكن عرض قائمة الأصدقاء
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="ignore">
