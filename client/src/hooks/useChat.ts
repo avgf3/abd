@@ -44,6 +44,7 @@ export function useChat() {
   const [newMessageSender, setNewMessageSender] = useState<ChatUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [ignoredUsers, setIgnoredUsers] = useState<Set<number>>(new Set());
+  const [showKickCountdown, setShowKickCountdown] = useState(false);
   
   // تحسين الأداء: مدراء التحسين
   const messageCache = useRef(new MessageCacheManager());
@@ -227,21 +228,53 @@ export function useChat() {
               break;
               
             case 'moderationAction':
+              // إضافة رسالة النظام للدردشة العامة
+              const systemMessage = {
+                id: Date.now(),
+                content: message.message,
+                timestamp: new Date().toISOString(),
+                user: {
+                  id: 0,
+                  username: 'النظام',
+                  userType: 'system' as const,
+                  profileImage: null,
+                  isOnline: true,
+                  status: 'online' as const
+                },
+                isSystem: true
+              };
+              
+              setPublicMessages(prev => [...prev, systemMessage]);
+              
               // إذا تم تطبيق إجراء إداري على المستخدم الحالي
               if (message.targetUserId === user.id) {
-                console.log('تم تطبيق إجراء إداري:', message.message);
-                
-                // إظهار رسالة الإجراء
                 if (message.action === 'muted') {
-                  console.log('تم كتمك من الدردشة العامة');
+                  console.log('🔇 تم كتمك من الدردشة العامة');
+                  // إظهار إشعار الكتم
+                  if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('تم كتمك 🔇', {
+                      body: 'لا يمكنك إرسال رسائل في الدردشة العامة',
+                      icon: '/favicon.ico'
+                    });
+                  }
+                } else if (message.action === 'unmuted') {
+                  console.log('🔊 تم إلغاء كتمك من الدردشة');
+                  if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('تم إلغاء الكتم 🔊', {
+                      body: 'يمكنك الآن إرسال رسائل في الدردشة العامة',
+                      icon: '/favicon.ico'
+                    });
+                  }
                 } else if (message.action === 'banned') {
-                  console.log('تم طردك من الدردشة');
-                  // قطع الاتصال
-                  disconnect();
+                  console.log('⏰ تم طردك من الدردشة لمدة 15 دقيقة');
+                  setShowKickCountdown(true);
                 } else if (message.action === 'blocked') {
-                  console.log('تم حجبك نهائياً');
-                  // قطع الاتصال
+                  console.log('🚫 تم حجبك نهائياً من الموقع');
+                  alert('🚫 تم حجبك نهائياً من الموقع بواسطة عنوان IP والجهاز. لا يمكنك الدخول مرة أخرى.');
                   disconnect();
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 1000);
                 }
               }
               break;

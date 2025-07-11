@@ -645,16 +645,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/moderation/mute", async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
+      const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
+      const deviceId = req.headers['user-agent'] || 'unknown';
       
-      const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, duration);
+      // استخدام النظام المحسن
+      const { enhancedModerationSystem } = await import('./enhanced-moderation');
+      const success = await enhancedModerationSystem.muteUser(
+        moderatorId, 
+        targetUserId, 
+        reason, 
+        duration, 
+        clientIP, 
+        deviceId
+      );
       
       if (success) {
-        // إرسال إشعار للمستخدم المكتوم
+        const moderator = await storage.getUser(moderatorId);
+        const target = await storage.getUser(targetUserId);
+        
+        // إرسال إشعار للدردشة العامة
+        const systemMessage = `🔇 تم كتم ${target?.username} من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`;
+        
         broadcast({
           type: 'moderationAction',
           action: 'muted',
           targetUserId: targetUserId,
-          message: 'تم كتمك من الدردشة العامة'
+          message: systemMessage
         });
         
         res.json({ message: "تم كتم المستخدم بنجاح" });
@@ -666,21 +682,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/moderation/unmute", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId } = req.body;
+      
+      const success = await moderationSystem.unmuteUser(moderatorId, targetUserId);
+      
+      if (success) {
+        const moderator = await storage.getUser(moderatorId);
+        const target = await storage.getUser(targetUserId);
+        
+        // إرسال إشعار للدردشة العامة
+        const systemMessage = `🔊 تم إلغاء كتم ${target?.username} من قبل ${moderator?.username}`;
+        
+        broadcast({
+          type: 'moderationAction',
+          action: 'unmuted',
+          targetUserId: targetUserId,
+          message: systemMessage
+        });
+        
+        res.json({ message: "تم إلغاء الكتم بنجاح" });
+      } else {
+        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   app.post("/api/moderation/ban", async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
+      const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
+      const deviceId = req.headers['user-agent'] || 'unknown';
       
-      const success = await moderationSystem.banUser(moderatorId, targetUserId, reason, duration);
+      const success = await moderationSystem.banUser(
+        moderatorId, 
+        targetUserId, 
+        reason, 
+        duration, 
+        clientIP, 
+        deviceId
+      );
       
       if (success) {
-        res.json({ message: "تم طرد المستخدم بنجاح" });
+        const moderator = await storage.getUser(moderatorId);
+        const target = await storage.getUser(targetUserId);
         
-        // إرسال إشعار وطرد المستخدم من WebSocket
+        // إرسال إشعار للدردشة العامة
+        const systemMessage = `⏰ تم طرد ${target?.username} من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`;
+        
         broadcast({
           type: 'moderationAction',
           action: 'banned',
           targetUserId: targetUserId,
-          message: 'تم طردك من الدردشة لمدة 15 دقيقة'
+          message: systemMessage
         });
         
         // إجبار قطع الاتصال
@@ -689,6 +746,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             client.close();
           }
         });
+        
+        res.json({ message: "تم طرد المستخدم بنجاح" });
       } else {
         res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
       }
@@ -700,33 +759,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/moderation/block", async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, ipAddress, deviceId } = req.body;
+      const clientIP = req.ip || req.connection.remoteAddress || ipAddress || 'unknown';
+      const clientDevice = req.headers['user-agent'] || deviceId || 'unknown';
       
-      const success = await moderationSystem.blockUser(moderatorId, targetUserId, reason, ipAddress, deviceId);
+      const success = await moderationSystem.blockUser(
+        moderatorId, 
+        targetUserId, 
+        reason, 
+        clientIP, 
+        clientDevice
+      );
       
       if (success) {
-        res.json({ message: "تم حجب المستخدم بنجاح" });
-      
-      // إرسال إشعار وحجب المستخدم من WebSocket
-      broadcast({
-        type: 'moderationAction',
-        action: 'blocked',
-        targetUserId: targetUserId,
-        message: 'تم حجبك من الدردشة نهائياً'
-      });
-      
-      // إجبار قطع الاتصال
-      clients.forEach(client => {
-        if (client.userId === targetUserId) {
-          client.close();
-        }
-      });
+        const moderator = await storage.getUser(moderatorId);
+        const target = await storage.getUser(targetUserId);
         
-        // إرسال إشعار وحجب المستخدم من WebSocket
+        // إرسال إشعار للدردشة العامة
+        const systemMessage = `🚫 تم حجب ${target?.username} نهائياً من قبل ${moderator?.username} - السبب: ${reason}`;
+        
         broadcast({
           type: 'moderationAction',
           action: 'blocked',
           targetUserId: targetUserId,
-          message: 'تم حجبك من الدردشة نهائياً'
+          message: systemMessage
         });
         
         // إجبار قطع الاتصال
@@ -735,6 +790,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             client.close();
           }
         });
+        
+        res.json({ message: "تم حجب المستخدم بنجاح" });
       } else {
         res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
       }

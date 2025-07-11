@@ -2,6 +2,7 @@ import { useState } from 'react';
 import WelcomeScreen from '@/components/chat/WelcomeScreen';
 import ChatInterface from '@/components/chat/ChatInterface';
 import { useChat } from '@/hooks/useChat';
+import KickCountdown from '@/components/moderation/KickCountdown';
 import type { ChatUser } from '@/types/chat';
 
 export default function ChatPage() {
@@ -25,6 +26,13 @@ export default function ChatPage() {
       ) : (
         <ChatInterface chat={chat} onLogout={handleLogout} />
       )}
+      
+      {/* عداد الطرد */}
+      <KickCountdown 
+        isVisible={chat.showKickCountdown || false}
+        onClose={() => chat.setShowKickCountdown?.(false)}
+        durationMinutes={15}
+      />
     </div>
   );
 }
