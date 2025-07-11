@@ -37,16 +37,14 @@ export class SpamProtection {
 
   constructor() {
     this.config = {
-      maxMessageLength: 500,
+      maxMessageLength: 1000,
       minMessageLength: 1,
       bannedWords: [
-        // كلمات عربية مسيئة (مخفية لأغراض الحماية)
-        'سبام', 'إعلان', 'ادخل هنا', 'اربح المال', 'مجاني',
-        'www.', 'http', '.com', '.net', '.org',
-        // يمكن إضافة المزيد حسب الحاجة
+        // كلمات محظورة أساسية فقط
+        'سبام'
       ],
-      maxDuplicateMessages: 3,
-      duplicateTimeWindow: 60000, // دقيقة واحدة
+      maxDuplicateMessages: 10, // زيادة الحد المسموح
+      duplicateTimeWindow: 30000, // 30 ثانية فقط
     };
 
     this.userSpamData = new Map();
@@ -54,47 +52,13 @@ export class SpamProtection {
     this.currentReportId = 1;
   }
 
-  // فحص الرسالة قبل إرسالها (بدون نظام النقاط)
+  // فحص الرسالة قبل إرسالها (معطل مؤقتاً)
   checkMessage(userId: number, content: string): {
     isAllowed: boolean;
     reason?: string;
     action?: 'warn' | 'tempBan' | 'ban';
   } {
-    // فحص طول الرسالة
-    if (content.length < this.config.minMessageLength) {
-      return {
-        isAllowed: false,
-        reason: 'الرسالة قصيرة جداً'
-      };
-    }
-
-    if (content.length > this.config.maxMessageLength) {
-      return {
-        isAllowed: false,
-        reason: `الرسالة طويلة جداً. الحد الأقصى ${this.config.maxMessageLength} حرف`
-      };
-    }
-
-    // فحص الكلمات المحظورة
-    const bannedWordFound = this.config.bannedWords.find(word => 
-      content.toLowerCase().includes(word.toLowerCase())
-    );
-    if (bannedWordFound) {
-      return {
-        isAllowed: false,
-        reason: 'الرسالة تحتوي على محتوى محظور',
-        action: 'warn'
-      };
-    }
-
-    // فحص الرسائل المكررة
-    const duplicateCheck = this.checkDuplicateMessage(userId, content);
-    if (!duplicateCheck.isAllowed) {
-      return duplicateCheck;
-    }
-
-    // تسجيل الرسالة
-    this.addMessage(userId, content);
+    // السماح بجميع الرسائل بدون فحص مؤقتاً
     return { isAllowed: true };
   }
 
