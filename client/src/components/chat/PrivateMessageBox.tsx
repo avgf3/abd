@@ -100,7 +100,7 @@ export default function PrivateMessageBox({
             </div>
             <div className="text-center">
               <div 
-                className={`inline-block px-3 py-2 rounded-lg ${
+                className={`inline-block px-4 py-3 rounded-lg transition-all duration-300 ${
                   user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' :
                   user.userType === 'admin' ? 'bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 text-white shadow-lg' :
                   ''
@@ -108,7 +108,15 @@ export default function PrivateMessageBox({
                 style={{ 
                   color: (user.userType === 'owner' || user.userType === 'admin') ? 
                     (user.userType === 'owner' ? '#000000' : '#FFFFFF') : 
-                    (user.usernameColor || '#7C3AED') 
+                    (user.usernameColor || '#7C3AED'),
+                  ...(user.userType === 'owner' && {
+                    animation: 'golden-glow 2s ease-in-out infinite',
+                    boxShadow: '0 0 20px rgba(255, 215, 0, 0.6)'
+                  }),
+                  ...(user.userType === 'admin' && {
+                    animation: 'purple-glow 2s ease-in-out infinite',
+                    boxShadow: '0 0 15px rgba(147, 51, 234, 0.6)'
+                  })
                 }}
               >
                 <p className="font-bold text-lg">

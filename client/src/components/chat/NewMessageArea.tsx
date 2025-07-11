@@ -82,7 +82,7 @@ export default function NewMessageArea({
                 <div className="flex items-center gap-2 mb-1">
                   {/* Username with Premium Theme */}
                   <div 
-                    className={`inline-block px-2 py-1 rounded-lg cursor-pointer hover:underline ${
+                    className={`inline-block px-3 py-2 rounded-lg cursor-pointer hover:underline transition-all duration-300 ${
                       sender.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' :
                       sender.userType === 'admin' ? 'bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 text-white shadow-lg' :
                       ''
@@ -90,7 +90,15 @@ export default function NewMessageArea({
                     style={{ 
                       color: (sender.userType === 'owner' || sender.userType === 'admin') ? 
                         (sender.userType === 'owner' ? '#000000' : '#FFFFFF') : 
-                        (sender.usernameColor || '#000000') 
+                        (sender.usernameColor || '#000000'),
+                      ...(sender.userType === 'owner' && {
+                        animation: 'golden-glow 2s ease-in-out infinite',
+                        boxShadow: '0 0 20px rgba(255, 215, 0, 0.6)'
+                      }),
+                      ...(sender.userType === 'admin' && {
+                        animation: 'purple-glow 2s ease-in-out infinite', 
+                        boxShadow: '0 0 15px rgba(147, 51, 234, 0.6)'
+                      })
                     }}
                     onClick={(e) => onUserClick(e, sender)}
                   >
