@@ -40,7 +40,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
   // دوال معالجة الثيمات
   const handleThemeChange = async (themeId: string) => {
-    if (!currentUser || (currentUser.userType !== 'admin' && currentUser.userType !== 'owner')) return;
+    if (!currentUser) return;
     
     try {
       setProfileData(prev => ({ ...prev, userTheme: themeId }));
@@ -414,7 +414,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
           <TabsContent value="colors">
             <h3 className="text-lg font-semibold text-primary mb-4">🎨 تخصيص المظهر والألوان</h3>
-            {user && currentUser && user.id === currentUser.id && (currentUser.userType === 'admin' || currentUser.userType === 'owner') ? (
+            {user && currentUser && user.id === currentUser.id ? (
               <div className="space-y-6">
                 {/* ثيمات المستخدم */}
                 <div className="space-y-4">
@@ -461,13 +461,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="text-center p-8 text-gray-400">
-                <div className="text-6xl mb-4">🎨</div>
-                <p>الثيمات متاحة للأدمن فقط</p>
-                <p className="text-sm mt-2">تحتاج إلى صلاحيات إدارية لاستخدام هذه الميزة</p>
-              </div>
-            )}
+            ) : null}
             
             {user && currentUser && user.id !== currentUser.id && (
               <div className="text-center p-8 text-gray-400">
