@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import UserSidebar from './UserSidebar';
-import NewMessageArea from './NewMessageArea';
-import MessageInputArea from './MessageInputArea';
+import MessageArea from './MessageArea';
 import ProfileModal from './ProfileModal';
 import PrivateMessageBox from './PrivateMessageBox';
 import UserPopup from './UserPopup';
@@ -278,20 +277,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           onUserClick={handleUserClick}
           currentUser={chat.currentUser}
         />
-        <div className="flex flex-col h-full">
-          <NewMessageArea
-            messages={chat.publicMessages}
-            onUserClick={handleUserClick}
-            onReportMessage={handleReportUser}
-            typingUsers={chat.typingUsers}
-          />
-          <MessageInputArea
-            onSendMessage={chat.sendPublicMessage}
-            onTyping={chat.handleTyping}
-            currentUser={chat.currentUser}
-            disabled={chat.currentUser?.isMuted}
-          />
-        </div>
+        <MessageArea 
+          messages={chat.publicMessages}
+          currentUser={chat.currentUser}
+          onSendMessage={chat.sendPublicMessage}
+          onTyping={chat.handleTyping}
+          typingUsers={chat.typingUsers}
+          onReportMessage={handleReportUser}
+          onUserClick={handleUserClick}
+        />
       </main>
 
       {/* Modals and Popups */}

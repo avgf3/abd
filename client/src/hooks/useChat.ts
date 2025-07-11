@@ -44,8 +44,8 @@ export function useChat() {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [newMessageSender, setNewMessageSender] = useState<ChatUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [kickNotification, setKickNotification] = useState<string | null>(null);
-  const [blockNotification, setBlockNotification] = useState<string | null>(null);
+  const [kickNotification, setKickNotification] = useState<{show: boolean, duration: number}>({show: false, duration: 0});
+  const [blockNotification, setBlockNotification] = useState<{show: boolean, reason: string}>({show: false, reason: ''});
   
   // تحسين الأداء: مدراء التحسين
   const messageCache = useRef(new MessageCacheManager());
@@ -219,9 +219,21 @@ export function useChat() {
               break;
               
             case 'moderationAction':
-              // التعامل مع إجراءات الإدارة - فقط لوقت التطوير
-              console.log('Moderation action received:', message);
-              break;
+              // التعامل مع إجراءات الإدارة
+              if (message.targetUserId === user.id) {
+                // المستخدم الحالي تم التأثير عليه
+                switch (message.action) {
+                  case 'muted':
+                    console.warn('⚠️ تم كتمك من الدردشة العامة');
+                    break;
+                  case 'banned':
+                    console.warn('⛔ تم طردك من الدردشة لمدة 15 دقيقة');
+                    break;
+                  case 'blocked':
+                    console.warn('🚫 تم حجبك من الدردشة نهائياً');
+                    break;
+                }
+              }
               
               // تحديث قائمة المستخدمين المتصلين لعكس التغييرات
               setOnlineUsers(prev => 
@@ -590,8 +602,6 @@ export function useChat() {
     kickNotification,
     blockNotification,
     setNewMessageSender,
-    setKickNotification,
-    setBlockNotification,
     connect,
     disconnect,
     ignoreUser,
@@ -617,6 +627,6 @@ export function useChat() {
       return false;
     }, [currentUser]),
     sendPrivateMessage,
-    handleTyping
+    handleTyping,
   };
 }

@@ -1,54 +1,45 @@
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 
 interface FriendRequestBadgeProps {
   currentUser: ChatUser | null;
-  onClick: () => void;
 }
 
-export default function FriendRequestBadge({ currentUser, onClick }: FriendRequestBadgeProps) {
-  const [requestCount, setRequestCount] = useState(0);
+export default function FriendRequestBadge({ currentUser }: FriendRequestBadgeProps) {
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     if (currentUser) {
-      fetchRequestCount();
+      fetchPendingRequests();
+      
+      // تحديث العداد كل 30 ثانية
+      const interval = setInterval(fetchPendingRequests, 30000);
+      return () => clearInterval(interval);
     }
   }, [currentUser]);
 
-  const fetchRequestCount = async () => {
+  const fetchPendingRequests = async () => {
+    if (!currentUser) return;
+    
     try {
-      const data = await apiRequest(`/api/friends/requests/incoming/${currentUser?.id}`);
-      setRequestCount(data.requests?.length || 0);
+      const response = await apiRequest('GET', `/api/friend-requests/${currentUser.id}`);
+      const incoming = response.incoming || [];
+      setPendingCount(incoming.length);
     } catch (error) {
-      console.error('خطأ في جلب طلبات الصداقة:', error);
+      console.error('Error fetching friend requests:', error);
+      setPendingCount(0);
     }
   };
 
-  if (requestCount === 0) {
-    return (
-      <Button
-        onClick={onClick}
-        variant="outline"
-        size="sm"
-        className="border-gray-600 text-gray-300 hover:bg-gray-700"
-      >
-        👥 طلبات الصداقة
-      </Button>
-    );
-  }
+  if (pendingCount === 0) return null;
 
   return (
-    <Button
-      onClick={onClick}
-      className="bg-blue-600 hover:bg-blue-700 relative"
-      size="sm"
+    <Badge 
+      className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[20px] h-5 flex items-center justify-center rounded-full"
     >
-      👥 طلبات الصداقة
-      <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
-        {requestCount > 9 ? '9+' : requestCount}
-      </span>
-    </Button>
+      {pendingCount > 9 ? '9+' : pendingCount}
+    </Badge>
   );
 }

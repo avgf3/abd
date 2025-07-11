@@ -27,7 +27,12 @@ export default function ChatPage() {
         <ChatInterface chat={chat} onLogout={handleLogout} />
       )}
       
-
+      {/* عداد الطرد */}
+      <KickCountdown 
+        isVisible={chat.showKickCountdown || false}
+        onClose={() => chat.setShowKickCountdown?.(false)}
+        durationMinutes={15}
+      />
     </div>
   );
 }

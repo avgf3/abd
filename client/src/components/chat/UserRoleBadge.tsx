@@ -1,32 +1,36 @@
-import type { ChatUser } from '@/types/chat';
+import React from 'react';
 
 interface UserRoleBadgeProps {
-  user: ChatUser;
-  showText?: boolean;
+  userType: string;
+  username: string;
+  showOnlyIcon?: boolean;
 }
 
-export default function UserRoleBadge({ user, showText = false }: UserRoleBadgeProps) {
-  const getBadge = () => {
-    switch (user.userType) {
+export default function UserRoleBadge({ userType, username, showOnlyIcon = false }: UserRoleBadgeProps) {
+  const getRoleDisplay = () => {
+    if (username === 'عبود') {
+      return showOnlyIcon ? '👑' : '👑';
+    }
+    
+    switch (userType) {
       case 'owner':
-        return { icon: '👑', text: 'مالك', color: 'text-yellow-400' };
+        return showOnlyIcon ? '👑' : '👑';
       case 'admin':
-        return { icon: '⭐', text: 'مشرف', color: 'text-blue-400' };
+        return showOnlyIcon ? '⭐' : '⭐';
       case 'moderator':
-        return { icon: '🛡️', text: 'مراقب', color: 'text-green-400' };
-      case 'member':
-        return { icon: '👤', text: 'عضو', color: 'text-gray-400' };
+        return showOnlyIcon ? '🛡️' : '🛡️';
       default:
-        return { icon: '👤', text: 'ضيف', color: 'text-gray-400' };
+        return '';
     }
   };
 
-  const badge = getBadge();
+  const roleIcon = getRoleDisplay();
+  
+  if (!roleIcon) return null;
 
   return (
-    <span className={`${badge.color} flex items-center gap-1`}>
-      <span>{badge.icon}</span>
-      {showText && <span className="text-xs">{badge.text}</span>}
+    <span className="inline-flex items-center">
+      {roleIcon}
     </span>
   );
 }

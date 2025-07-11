@@ -45,15 +45,15 @@ export default function NewMessageArea({
   const getUserTypeBadge = (userType: string) => {
     switch (userType) {
       case 'owner': return '👑';
-      case 'admin': return '⭐';
-      case 'moderator': return '🛡️';
-      case 'member': return '👤';
+      case 'admin': return '🛡️';
+      case 'moderator': return '🔰';
+      case 'member': return '⭐';
       default: return '👤';
     }
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-800 p-4">
+    <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
       <div className="space-y-2">
         {messages.map((message, index) => {
           const sender = message.sender || {
@@ -67,7 +67,7 @@ export default function NewMessageArea({
           return (
             <div 
               key={`${message.id}-${index}`}
-              className="flex items-start gap-3 p-3 bg-gray-700 rounded-lg shadow-sm hover:bg-gray-600 transition-colors group"
+              className="flex items-start gap-3 p-3 bg-white rounded-lg shadow-sm hover:bg-gray-50 transition-colors group"
             >
               {/* User Avatar */}
               <div 
@@ -80,17 +80,28 @@ export default function NewMessageArea({
               {/* Message Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  {/* Username */}
-                  <span 
-                    className={`font-medium cursor-pointer hover:underline ${getUserTypeColor(sender.userType)}`}
-                    style={{ color: sender.usernameColor || undefined }}
+                  {/* Username with Premium Theme */}
+                  <div 
+                    className={`inline-block px-4 py-3 rounded-xl cursor-pointer hover:underline transition-all duration-300 min-w-[120px] ${
+                      sender.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
+                    }`}
+                    style={{ 
+                      color: sender.userType === 'owner' ? '#000000' : (sender.usernameColor || '#000000'),
+                      ...(sender.userType === 'owner' && {
+                        animation: 'golden-glow 2s ease-in-out infinite',
+                        boxShadow: '0 0 25px rgba(255, 215, 0, 0.8)',
+                        border: '2px solid rgba(255, 215, 0, 0.5)'
+                      })
+                    }}
                     onClick={(e) => onUserClick(e, sender)}
                   >
-                    {getUserTypeBadge(sender.userType)} {sender.username}
-                  </span>
+                    <span className="font-medium">
+                      {getUserTypeBadge(sender.userType)} {sender.username}
+                    </span>
+                  </div>
                   
                   {/* Timestamp */}
-                  <span className="text-xs text-gray-300">
+                  <span className="text-xs text-gray-400">
                     {formatTime(message.timestamp)}
                   </span>
                   
@@ -105,7 +116,7 @@ export default function NewMessageArea({
                 </div>
 
                 {/* Message Text */}
-                <div className="text-gray-100 break-words leading-relaxed">
+                <div className="text-gray-800 break-words leading-relaxed">
                   {message.messageType === 'image' ? (
                     <img 
                       src={message.content} 
@@ -123,13 +134,13 @@ export default function NewMessageArea({
 
         {/* Typing Indicators */}
         {typingUsers.size > 0 && (
-          <div className="flex items-center gap-2 p-3 bg-blue-900 rounded-lg">
+          <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
             <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
             </div>
-            <span className="text-sm text-blue-300">
+            <span className="text-sm text-blue-600">
               {Array.from(typingUsers).join(', ')} يكتب...
             </span>
           </div>

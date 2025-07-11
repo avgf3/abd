@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { UserPlus } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import UserRegistration from './UserRegistration';
 import type { ChatUser } from '@/types/chat';
 
 interface WelcomeScreenProps {
@@ -14,18 +13,25 @@ interface WelcomeScreenProps {
 }
 
 export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
-  const [guestUsername, setGuestUsername] = useState('');
-  const [guestGender, setGuestGender] = useState('');
-  const [memberUsername, setMemberUsername] = useState('');
+  const [showGuestModal, setShowGuestModal] = useState(false);
+  const [showMemberModal, setShowMemberModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [guestName, setGuestName] = useState('');
+  const [guestGender, setGuestGender] = useState('male');
+  const [memberName, setMemberName] = useState('');
   const [memberPassword, setMemberPassword] = useState('');
+  const [registerName, setRegisterName] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [registerGender, setRegisterGender] = useState('male');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const handleGuestLogin = async () => {
-    if (!guestUsername.trim() || !guestGender) {
+    if (!guestName.trim()) {
       toast({
         title: "خطأ",
-        description: "يرجى إدخال اسم المستخدم واختيار الجنس",
+        description: "يرجى إدخال اسم الزائر",
         variant: "destructive",
       });
       return;
@@ -36,18 +42,12 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
       const data = await apiRequest('/api/auth/guest', {
         method: 'POST',
         body: {
-          username: guestUsername.trim(),
+          username: guestName.trim(),
           gender: guestGender,
         }
       });
-      
-      if (data && data.user) {
-        onUserLogin(data.user);
-        toast({
-          title: "مرحباً",
-          description: `مرحباً ${data.user.username}!`,
-        });
-      }
+      onUserLogin(data.user);
+      setShowGuestModal(false);
     } catch (error: any) {
       toast({
         title: "خطأ",
@@ -60,7 +60,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
   };
 
   const handleMemberLogin = async () => {
-    if (!memberUsername.trim() || !memberPassword.trim()) {
+    if (!memberName.trim() || !memberPassword.trim()) {
       toast({
         title: "خطأ",
         description: "يرجى إدخال اسم المستخدم وكلمة المرور",
@@ -74,18 +74,12 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
       const data = await apiRequest('/api/auth/member', {
         method: 'POST',
         body: {
-          username: memberUsername.trim(),
+          username: memberName.trim(),
           password: memberPassword.trim(),
         }
       });
-      
-      if (data && data.user) {
-        onUserLogin(data.user);
-        toast({
-          title: "مرحباً",
-          description: `مرحباً ${data.user.username}!`,
-        });
-      }
+      onUserLogin(data.user);
+      setShowMemberModal(false);
     } catch (error: any) {
       toast({
         title: "خطأ",
@@ -97,125 +91,267 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
     }
   };
 
+  const handleRegister = async () => {
+    if (!registerName.trim() || !registerPassword.trim() || !confirmPassword.trim()) {
+      toast({
+        title: "خطأ",
+        description: "يرجى ملء جميع الحقول",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (registerPassword !== confirmPassword) {
+      toast({
+        title: "خطأ",
+        description: "كلمات المرور غير متطابقة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = await apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: {
+          username: registerName.trim(),
+          password: registerPassword.trim(),
+          confirmPassword: confirmPassword.trim(),
+          gender: registerGender,
+        }
+      });
+      toast({
+        title: "نجح التسجيل",
+        description: data.message,
+      });
+      onUserLogin(data.user);
+      setShowRegisterModal(false);
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message || "حدث خطأ في التسجيل",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    toast({
+      title: "قريباً",
+      description: "🔄 جاري تطوير خدمة تسجيل الدخول بـ Google",
+    });
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-900 via-purple-900 to-blue-900 text-white p-4 font-['Cairo']" dir="rtl">
-      <div className="max-w-md w-full space-y-8">
-        {/* Logo */}
-        <div className="text-center">
-          <div className="text-6xl mb-4">💬</div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-            Arabic Chat
+    <div className="h-screen flex flex-col justify-center items-center welcome-gradient">
+      <div className="text-center animate-slide-up">
+        <div className="mb-8">
+          <div className="text-6xl mb-4 animate-pulse-slow">💬</div>
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
+            مرحبًا بك في دردشة العرب
           </h1>
-          <p className="text-gray-300 mt-2">منصة الدردشة العربية</p>
+          <p className="text-xl text-muted-foreground mb-8">منصة التواصل العربية الأولى</p>
         </div>
-
-        {/* Login Tabs */}
-        <Tabs defaultValue="guest" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-gray-800 border-gray-700">
-            <TabsTrigger value="guest" className="text-white data-[state=active]:bg-blue-600">
-              دخول سريع
-            </TabsTrigger>
-            <TabsTrigger value="member" className="text-white data-[state=active]:bg-blue-600">
-              عضو مسجل
-            </TabsTrigger>
-          </TabsList>
+        
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <Button 
+            className="btn-success text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3"
+            onClick={() => setShowGuestModal(true)}
+          >
+            <span>👤</span>
+            دخول كزائر
+          </Button>
           
-          <TabsContent value="guest">
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white">دخول سريع</CardTitle>
-                <CardDescription className="text-gray-300">
-                  ادخل كضيف بدون تسجيل
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="guestUsername" className="text-gray-300">اسم المستخدم</Label>
-                  <Input
-                    id="guestUsername"
-                    value={guestUsername}
-                    onChange={(e) => setGuestUsername(e.target.value)}
-                    placeholder="أدخل اسم المستخدم"
-                    className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                    disabled={loading}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="guestGender" className="text-gray-300">الجنس</Label>
-                  <Select value={guestGender} onValueChange={setGuestGender} disabled={loading}>
-                    <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                      <SelectValue placeholder="اختر الجنس" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
-                      <SelectItem value="male" className="text-white">ذكر</SelectItem>
-                      <SelectItem value="female" className="text-white">أنثى</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button
-                  onClick={handleGuestLogin}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  disabled={loading || !guestUsername.trim() || !guestGender}
-                >
-                  {loading ? 'جاري الدخول...' : 'دخول سريع'}
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <Button 
+            className="btn-primary text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3"
+            onClick={() => setShowMemberModal(true)}
+          >
+            <span>✅</span>
+            دخول كعضو
+          </Button>
           
-          <TabsContent value="member">
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white">عضو مسجل</CardTitle>
-                <CardDescription className="text-gray-300">
-                  ادخل بحسابك المسجل
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="memberUsername" className="text-gray-300">اسم المستخدم</Label>
-                  <Input
-                    id="memberUsername"
-                    value={memberUsername}
-                    onChange={(e) => setMemberUsername(e.target.value)}
-                    placeholder="أدخل اسم المستخدم"
-                    className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                    disabled={loading}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="memberPassword" className="text-gray-300">كلمة المرور</Label>
-                  <Input
-                    id="memberPassword"
-                    type="password"
-                    value={memberPassword}
-                    onChange={(e) => setMemberPassword(e.target.value)}
-                    placeholder="أدخل كلمة المرور"
-                    className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                    disabled={loading}
-                  />
-                </div>
-                <Button
-                  onClick={handleMemberLogin}
-                  className="w-full bg-purple-600 hover:bg-purple-700"
-                  disabled={loading || !memberUsername.trim() || !memberPassword.trim()}
-                >
-                  {loading ? 'جاري الدخول...' : 'دخول'}
-                </Button>
-                
-                <div className="text-center text-sm text-gray-400">
-                  <p>للدخول كمدير: المستخدم "عبود" وكلمة المرور "22333"</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        <div className="text-center text-sm text-gray-400">
-          <p>مرحباً بك في أفضل منصة دردشة عربية</p>
-          <p>ادخل واستمتع بالتواصل مع الآخرين</p>
+          <Button 
+            className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3 transition-all duration-300"
+            onClick={() => setShowRegisterModal(true)}
+          >
+            <span>📝</span>
+            تسجيل عضوية جديدة
+          </Button>
+          
+          <Button 
+            className="btn-danger text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3"
+            onClick={handleGoogleLogin}
+          >
+            <span>🔐</span>
+            دخول بـ Google
+          </Button>
         </div>
       </div>
+
+      {/* Guest Name Modal */}
+      <Dialog open={showGuestModal} onOpenChange={setShowGuestModal}>
+        <DialogContent className="glass-effect border border-border animate-fade-in">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-bold text-white flex items-center justify-center gap-2">
+              <span>📝</span>
+              أدخل اسم الزائر
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+              placeholder="مثال: زائر_2025"
+              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+              onKeyPress={(e) => e.key === 'Enter' && handleGuestLogin()}
+            />
+            <div className="space-y-2">
+              <label className="text-white text-sm font-medium">الجنس:</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-white cursor-pointer">
+                  <input
+                    type="radio"
+                    name="guestGender"
+                    value="male"
+                    checked={guestGender === 'male'}
+                    onChange={(e) => setGuestGender(e.target.value)}
+                    className="text-blue-500"
+                  />
+                  🧑 ذكر
+                </label>
+                <label className="flex items-center gap-2 text-white cursor-pointer">
+                  <input
+                    type="radio"
+                    name="guestGender"
+                    value="female"
+                    checked={guestGender === 'female'}
+                    onChange={(e) => setGuestGender(e.target.value)}
+                    className="text-pink-500"
+                  />
+                  👩 أنثى
+                </label>
+              </div>
+            </div>
+            <Button 
+              onClick={handleGuestLogin} 
+              disabled={loading}
+              className="btn-success w-full text-white px-6 py-3 rounded-xl font-semibold"
+            >
+              <span className="ml-2">🚀</span>
+              {loading ? 'جاري الدخول...' : 'دخول الآن'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Member Login Modal */}
+      <Dialog open={showMemberModal} onOpenChange={setShowMemberModal}>
+        <DialogContent className="glass-effect border border-border animate-fade-in">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-bold text-white flex items-center justify-center gap-2">
+              <span>🔐</span>
+              تسجيل دخول الأعضاء
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              value={memberName}
+              onChange={(e) => setMemberName(e.target.value)}
+              placeholder="اسم المستخدم"
+              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+            />
+            <Input
+              type="password"
+              value={memberPassword}
+              onChange={(e) => setMemberPassword(e.target.value)}
+              placeholder="كلمة المرور"
+              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+              onKeyPress={(e) => e.key === 'Enter' && handleMemberLogin()}
+            />
+            <Button 
+              onClick={handleMemberLogin} 
+              disabled={loading}
+              className="btn-primary w-full text-white px-6 py-3 rounded-xl font-semibold"
+            >
+              <span className="ml-2">🔑</span>
+              {loading ? 'جاري الدخول...' : 'دخول'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Registration Modal */}
+      <Dialog open={showRegisterModal} onOpenChange={setShowRegisterModal}>
+        <DialogContent className="glass-effect border border-border animate-fade-in">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-bold text-white flex items-center justify-center gap-2">
+              <span>📝</span>
+              تسجيل عضوية جديدة
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              value={registerName}
+              onChange={(e) => setRegisterName(e.target.value)}
+              placeholder="اسم المستخدم الجديد"
+              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+            />
+            <Input
+              type="password"
+              value={registerPassword}
+              onChange={(e) => setRegisterPassword(e.target.value)}
+              placeholder="كلمة المرور (6 أحرف على الأقل)"
+              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+            />
+            <Input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="تأكيد كلمة المرور"
+              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+              onKeyPress={(e) => e.key === 'Enter' && handleRegister()}
+            />
+            <div className="space-y-2">
+              <label className="text-white text-sm font-medium">الجنس:</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-white cursor-pointer">
+                  <input
+                    type="radio"
+                    name="registerGender"
+                    value="male"
+                    checked={registerGender === 'male'}
+                    onChange={(e) => setRegisterGender(e.target.value)}
+                    className="text-blue-500"
+                  />
+                  🧑 ذكر
+                </label>
+                <label className="flex items-center gap-2 text-white cursor-pointer">
+                  <input
+                    type="radio"
+                    name="registerGender"
+                    value="female"
+                    checked={registerGender === 'female'}
+                    onChange={(e) => setRegisterGender(e.target.value)}
+                    className="text-pink-500"
+                  />
+                  👩 أنثى
+                </label>
+              </div>
+            </div>
+            <Button 
+              onClick={handleRegister} 
+              disabled={loading}
+              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 w-full text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300"
+            >
+              <span className="ml-2">🎉</span>
+              {loading ? 'جاري التسجيل...' : 'إنشاء الحساب'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

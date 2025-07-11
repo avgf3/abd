@@ -1,7 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 import type { ChatUser } from '@/types/chat';
+
+interface SystemMessage {
+  id: number;
+  type: 'welcome' | 'rules' | 'system_info';
+  title: string;
+  message: string;
+  timestamp: Date;
+  isRead: boolean;
+}
 
 interface NotificationPanelProps {
   isOpen: boolean;
@@ -10,91 +28,127 @@ interface NotificationPanelProps {
 }
 
 export default function NotificationPanel({ isOpen, onClose, currentUser }: NotificationPanelProps) {
-  const [notifications] = useState([
-    {
-      id: 1,
-      type: 'friend_request',
-      title: 'طلب صداقة جديد',
-      message: 'أحمد أرسل لك طلب صداقة',
-      timestamp: new Date(),
-      read: false
-    },
-    {
-      id: 2,
-      type: 'promotion',
-      title: 'ترقية في المنصة',
-      message: 'تم ترقيتك إلى مشرف!',
-      timestamp: new Date(Date.now() - 3600000),
-      read: true
-    }
-  ]);
+  const [notifications, setNotifications] = useState<SystemMessage[]>([]);
+  const { toast } = useToast();
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'friend_request': return '👥';
-      case 'promotion': return '⭐';
-      case 'message': return '💬';
-      case 'warning': return '⚠️';
-      default: return '🔔';
+  // رسائل النظام للمستخدمين الجدد
+  useEffect(() => {
+    if (isOpen) {
+      const systemMessages: SystemMessage[] = [
+        {
+          id: 1,
+          type: 'welcome',
+          title: '🌟 مرحباً بك في الدردشة العربية',
+          message: 'أهلاً وسهلاً بك في منصة الدردشة العربية! نحن سعداء بانضمامك إلينا. هنا يمكنك التواصل مع الأصدقاء، إرسال الرسائل الخاصة، وإضافة أصدقاء جدد. استمتع بتجربة دردشة آمنة ومريحة.',
+          timestamp: new Date(),
+          isRead: false
+        },
+        {
+          id: 2,
+          type: 'rules',
+          title: '📋 قوانين المحادثة',
+          message: 'يرجى الالتزام بالقوانين التالية: استخدام اللغة المهذبة، احترام جميع المستخدمين، عدم إرسال محتوى غير لائق، عدم التنمر أو المضايقة. نشكركم لتعاونكم في جعل هذا المكان آمناً للجميع.',
+          timestamp: new Date(Date.now() - 60000), // دقيقة مضت
+          isRead: false
+        }
+      ];
+      setNotifications(systemMessages);
     }
+  }, [isOpen]);
+
+  const formatTime = (timestamp: Date) => {
+    const now = Date.now();
+    const diff = now - timestamp.getTime();
+    
+    if (diff < 60000) return 'الآن';
+    if (diff < 3600000) return `منذ ${Math.floor(diff / 60000)} دقيقة`;
+    if (diff < 86400000) return `منذ ${Math.floor(diff / 3600000)} ساعة`;
+    return `منذ ${Math.floor(diff / 86400000)} يوم`;
   };
+
+  const markAsRead = (messageId: number) => {
+    setNotifications(prev => 
+      prev.map(message => 
+        message.id === messageId 
+          ? { ...message, isRead: true }
+          : message
+      )
+    );
+  };
+
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-800 border-gray-700 text-white max-w-md" dir="rtl">
+      <DialogContent className="sm:max-w-[500px] max-h-[600px]" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="text-right">🔔 الإشعارات</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            🔔 رسائل النظام
+            <Badge variant="secondary">
+              {notifications.filter(n => !n.isRead).length}
+            </Badge>
+          </DialogTitle>
+          <DialogDescription>
+            رسائل ترحيبية ومعلومات مهمة للمستخدمين الجدد
+          </DialogDescription>
         </DialogHeader>
-        
-        <div className="space-y-4 max-h-96 overflow-y-auto">
+
+        <div className="space-y-4 max-h-[400px] overflow-y-auto">
           {notifications.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-gray-400">لا توجد إشعارات جديدة</div>
+            <div className="text-center py-8 text-gray-500">
+              <div className="text-4xl mb-4">📭</div>
+              <p>لا توجد رسائل نظام حالياً</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {notifications.map((notification) => (
-                <div 
-                  key={notification.id} 
-                  className={`p-3 rounded-lg border-r-4 ${
-                    notification.read 
-                      ? 'bg-gray-700 border-gray-600' 
-                      : 'bg-blue-900/50 border-blue-500'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="text-xl">{getNotificationIcon(notification.type)}</span>
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">{notification.title}</div>
-                      <div className="text-gray-300 text-sm mt-1">{notification.message}</div>
-                      <div className="text-xs text-gray-500 mt-2">
-                        {notification.timestamp.toLocaleString('ar-SA')}
+            notifications.map((message) => (
+              <div 
+                key={message.id} 
+                className={`border rounded-lg p-4 space-y-3 transition-colors cursor-pointer ${
+                  !message.isRead 
+                    ? 'bg-blue-50 border-blue-200 shadow-sm' 
+                    : 'bg-gray-50 border-gray-200'
+                }`}
+                onClick={() => !message.isRead && markAsRead(message.id)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                      🤖
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm text-blue-800">
+                        نظام الدردشة
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {formatTime(message.timestamp)}
                       </div>
                     </div>
-                    {!notification.read && (
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    )}
+                  </div>
+                  {!message.isRead && (
+                    <Badge variant="default" className="text-xs bg-blue-500">
+                      جديد
+                    </Badge>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="font-medium text-sm text-gray-800">
+                    {message.title}
+                  </div>
+                  <div className="text-sm text-gray-700 leading-relaxed">
+                    {message.message}
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))
           )}
-
-          <div className="flex gap-2 pt-4">
-            <Button
-              onClick={onClose}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
-            >
-              إغلاق
-            </Button>
-            <Button
-              variant="outline"
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
-            >
-              تعيين الكل كمقروء
-            </Button>
-          </div>
         </div>
+
+        <DialogFooter>
+          <Button onClick={onClose} variant="outline" className="w-full">
+            ✖️ إغلاق
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
