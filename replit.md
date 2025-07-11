@@ -189,14 +189,15 @@ Preferred communication style: Simple, everyday language.
 - **All Core Features Working**: Authentication, messaging, moderation, and friend systems fully functional
 - **WebSocket Connection**: Stable and reliable real-time communication with advanced optimization
 - **Enhanced Moderation System**: Complete permissions system with IP/device blocking capabilities
-- **Moderation Actions Panel**: Dedicated panel showing all moderator actions with timestamps and details
-- **IP Blocking System**: Permanent IP and device blocking for enhanced security
+- **Reports Log System**: Dedicated panel for viewing and managing user reports with red notification badges
+- **Active Moderation Log**: Shows currently muted/blocked users with ability to unmute/unblock (excludes temporary kicks)
+- **Admin Interface Update**: Replaced user icons with reports log, added notification system for moderators
 - **System Notifications**: Public display of moderation actions with usernames
 - **Kick Countdown Timer**: Visual countdown for temporary bans with automatic page refresh
 - **Admin Hierarchy Fixed**: Proper permissions for moderators, admins, and owner (عبود)
-- **UI Design**: Modern dark theme with glass effects, Arabic RTL support, and moderation panels
+- **UI Design**: Modern dark theme with glass effects, Arabic RTL support, and specialized moderation panels
 - **Database Integration**: Mixed storage system working perfectly for guests and members
-- **Professional Grade**: Enterprise-level moderation, security, and performance monitoring systems
+- **Professional Grade**: Enterprise-level moderation, security, performance monitoring, and reporting systems
 
 ### Replit Integration
 - **Development**: Special Replit plugins for development environment

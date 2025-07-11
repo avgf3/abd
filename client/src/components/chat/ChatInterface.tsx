@@ -13,6 +13,8 @@ import FriendRequestBadge from './FriendRequestBadge';
 import MessagesPanel from './MessagesPanel';
 import MessageAlert from './MessageAlert';
 import ModerationPanel from './ModerationPanel';
+import ReportsLog from '../moderation/ReportsLog';
+import ActiveModerationLog from '../moderation/ActiveModerationLog';
 import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
 import { Button } from '@/components/ui/button';
@@ -39,6 +41,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showModerationPanel, setShowModerationPanel] = useState(false);
   const [showOwnerPanel, setShowOwnerPanel] = useState(false);
   const [showModerationActions, setShowModerationActions] = useState(false);
+  const [showReportsLog, setShowReportsLog] = useState(false);
+  const [showActiveActions, setShowActiveActions] = useState(false);
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
     sender: ChatUser | null;
@@ -199,11 +203,19 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 إدارة
               </Button>
               <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2 border border-blue-400"
-                onClick={() => setShowModerationActions(true)}
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 border border-red-400 relative"
+                onClick={() => setShowReportsLog(true)}
               >
-                <span>📋</span>
-                إجراءات المشرفين
+                <span>⚠️</span>
+                سجل البلاغات
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+              </Button>
+              <Button 
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400"
+                onClick={() => setShowActiveActions(true)}
+              >
+                <span>🔒</span>
+                سجل الإجراءات
               </Button>
             </>
           )}
@@ -372,6 +384,22 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         <ModerationPanel 
           isVisible={showModerationActions}
           onClose={() => setShowModerationActions(false)}
+          currentUser={chat.currentUser}
+        />
+      )}
+
+      {showReportsLog && (
+        <ReportsLog 
+          isVisible={showReportsLog}
+          onClose={() => setShowReportsLog(false)}
+          currentUser={chat.currentUser}
+        />
+      )}
+
+      {showActiveActions && (
+        <ActiveModerationLog 
+          isVisible={showActiveActions}
+          onClose={() => setShowActiveActions(false)}
           currentUser={chat.currentUser}
         />
       )}

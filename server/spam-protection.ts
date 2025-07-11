@@ -208,7 +208,12 @@ export class SpamProtection {
       totalReports: this.reports.size
     };
   }
+
+  getReviewedReports(): ReportData[] {
+    return Array.from(this.reports.values())
+      .filter(report => report.status === 'reviewed' || report.status === 'dismissed')
+      .sort((a, b) => b.timestamp - a.timestamp);
+  }
 }
 
-// إنشاء مثيل واحد للاستخدام في التطبيق
 export const spamProtection = new SpamProtection();

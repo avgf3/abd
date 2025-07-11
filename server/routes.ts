@@ -1062,6 +1062,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // إضافة endpoint لسجل البلاغات
+  app.get("/api/reports", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      const user = await storage.getUser(Number(userId));
+      
+      if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
+        return res.status(403).json({ error: "غير مسموح - للمشرفين فقط" });
+      }
+
+      const reports = spamProtection.getPendingReports()
+        .concat(spamProtection.getReviewedReports())
+        .map(report => ({
+          ...report,
+          reporterName: '',
+          reportedUserName: ''
+        }));
+      
+      // إضافة أسماء المستخدمين للبلاغات
+      for (const report of reports) {
+        const reporter = await storage.getUser(report.reporterId);
+        const reported = await storage.getUser(report.reportedUserId);
+        report.reporterName = reporter?.username || 'مجهول';
+        report.reportedUserName = reported?.username || 'مجهول';
+      }
+
+      console.log(`📋 ${user.username} طلب سجل البلاغات - ${reports.length} بلاغ`);
+      res.json(reports);
+    } catch (error) {
+      console.error("خطأ في الحصول على البلاغات:", error);
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // إضافة endpoint لمراجعة البلاغات
+  app.post("/api/reports/:id/review", async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      const { action, moderatorId } = req.body;
+      
+      const user = await storage.getUser(moderatorId);
+      if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
+        return res.status(403).json({ error: "غير مسموح" });
+      }
+
+      const success = spamProtection.reviewReport(reportId, action);
+      
+      if (success) {
+        console.log(`📋 ${user.username} راجع البلاغ ${reportId} - ${action}`);
+        res.json({ message: "تمت مراجعة البلاغ" });
+      } else {
+        res.status(404).json({ error: "البلاغ غير موجود" });
+      }
+    } catch (error) {
+      console.error("خطأ في مراجعة البلاغ:", error);
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // إضافة endpoint للإجراءات النشطة
+  app.get("/api/moderation/active-actions", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      const user = await storage.getUser(Number(userId));
+      
+      if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
+        return res.status(403).json({ error: "غير مسموح - للمشرفين فقط" });
+      }
+
+      const allActions = moderationSystem.getModerationLog();
+      const activeActions = allActions
+        .filter(action => (action.type === 'mute' || action.type === 'block'))
+        .map(action => ({
+          ...action,
+          moderatorName: '',
+          targetName: ''
+        }));
+      
+      // إضافة أسماء المستخدمين
+      for (const action of activeActions) {
+        const moderator = await storage.getUser(action.moderatorId);
+        const target = await storage.getUser(action.targetUserId);
+        action.moderatorName = moderator?.username || 'مجهول';
+        action.targetName = target?.username || 'مجهول';
+      }
+
+      console.log(`📋 ${user.username} طلب الإجراءات النشطة - ${activeActions.length} إجراء`);
+      res.json(activeActions);
+    } catch (error) {
+      console.error("خطأ في الحصول على الإجراءات النشطة:", error);
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   // Security API routes
   app.use('/api/security', securityApiRoutes);
   
