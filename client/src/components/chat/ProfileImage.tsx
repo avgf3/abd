@@ -19,14 +19,16 @@ export default function ProfileImage({ user, size = 'medium', className = '' }: 
     : 'border-blue-400 ring-blue-200';
 
   return (
-    <img
-      src={user.profileImage || "/default_avatar.svg"}
-      alt="صورة المستخدم"
-      className={`${sizeClasses[size]} rounded-full border-2 ${borderColor} ring-1 shadow-sm object-cover ${className}`}
-      onError={(e) => {
-        const target = e.target as HTMLImageElement;
-        target.src = '/default_avatar.svg';
-      }}
-    />
+    <div className="relative">
+      <img
+        src={user.profileImage || "/default_avatar.svg"}
+        alt="صورة المستخدم"
+        className={`${sizeClasses[size]} rounded-full border-2 ${borderColor} ring-1 shadow-sm object-cover ${className}`}
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.src = '/default_avatar.svg';
+        }}
+      />
+    </div>
   );
 }

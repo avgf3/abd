@@ -97,6 +97,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // رفع صور البروفايل البانر
+  app.post('/api/upload/profile-banner', upload.single('bannerImage'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
+      }
+
+      const userId = req.body.userId;
+      if (!userId) {
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      }
+
+      // تحديث مسار صورة البانر
+      const bannerUrl = `/uploads/profiles/${req.file.filename}`;
+      
+      const user = await storage.getUser(parseInt(userId));
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      // حذف صورة البانر القديمة إذا كانت موجودة
+      if (user.profileBanner && user.profileBanner !== '') {
+        const oldBannerPath = path.join(process.cwd(), 'client', 'public', user.profileBanner);
+        if (fs.existsSync(oldBannerPath)) {
+          fs.unlinkSync(oldBannerPath);
+        }
+      }
+
+      await storage.updateUser(parseInt(userId), { profileBanner: bannerUrl });
+
+      res.json({
+        message: 'تم رفع صورة البروفايل بنجاح',
+        bannerUrl: bannerUrl
+      });
+
+    } catch (error) {
+      console.error('Error uploading profile banner:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'خطأ في رفع صورة البروفايل' 
+      });
+    }
+  });
+
   // إدارة الإخفاء للإدمن والمالك
   app.post("/api/users/:userId/toggle-hidden", async (req, res) => {
     try {

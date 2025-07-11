@@ -13,6 +13,7 @@ import { StealthModeButton } from "./StealthModeButton";
 import { UserMinus } from "lucide-react";
 import UsernameColorPicker from '../profile/UsernameColorPicker';
 import ProfileImageUpload from '../profile/ProfileImageUpload';
+import ProfileBanner from '../profile/ProfileBanner';
 import { getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 
 
@@ -33,6 +34,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
     country: user?.country || 'السعودية',
     relation: user?.relation || 'عدم إظهار',
     profileImage: user?.profileImage || '/default_avatar.svg',
+    profileBanner: user?.profileBanner || '',
     userTheme: user?.userTheme || 'default',
     usernameColor: user?.usernameColor || '#FFFFFF',
   });
@@ -298,48 +300,62 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           </DialogTitle>
         </DialogHeader>
 
-        {/* Profile Header - Enhanced with Image Upload */}
-        <div className="space-y-6 p-4 border-b border-border">
-          {/* صورة البروفايل مع خاصية الرفع */}
-          <div className="flex flex-col items-center">
-            <ProfileImageUpload 
-              currentUser={currentUser}
-              onImageUpdate={(imageUrl) => {
-                setProfileData(prev => ({ ...prev, profileImage: imageUrl }));
-                if (currentUser) {
-                  currentUser.profileImage = imageUrl;
-                }
-              }}
-            />
-          </div>
+        {/* Profile Header - Enhanced with Banner and Avatar */}
+        <div className="space-y-4 p-4 border-b border-border">
+          {/* صورة البروفايل البانر */}
+          <ProfileBanner 
+            currentUser={currentUser}
+            onBannerUpdate={(bannerUrl) => {
+              setProfileData(prev => ({ ...prev, profileBanner: bannerUrl }));
+              if (currentUser) {
+                currentUser.profileBanner = bannerUrl;
+              }
+            }}
+          />
           
-          {/* الاسم والحالة */}
-          <div className="flex flex-col items-center space-y-3">
-            <div 
-              className="px-4 py-2 rounded-lg transition-all duration-300 min-w-[200px] text-center"
-              style={{
-                background: getUserThemeStyles(user).background || 'transparent',
-                color: getUserThemeTextColor(user),
-                ...getUserThemeStyles(user)
-              }}
-            >
-              <Input
-                value={profileData.name}
-                onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="اسم المستخدم"
-                style={{ 
-                  color: user?.userType === 'owner' ? '#000000' : (user?.usernameColor || '#FFFFFF'),
-                  background: 'transparent'
+          {/* الصورة الشخصية والمعلومات */}
+          <div className="flex items-center gap-4">
+            {/* الصورة الشخصية */}
+            <div className="flex-shrink-0">
+              <ProfileImageUpload 
+                currentUser={currentUser}
+                onImageUpdate={(imageUrl) => {
+                  setProfileData(prev => ({ ...prev, profileImage: imageUrl }));
+                  if (currentUser) {
+                    currentUser.profileImage = imageUrl;
+                  }
                 }}
-                className="text-xl font-bold border-none text-center"
               />
             </div>
-            <Input
-              value={profileData.status}
-              onChange={(e) => setProfileData(prev => ({ ...prev, status: e.target.value }))}
-              placeholder="اكتب حالتك..."
-              className="bg-transparent border-none text-muted-foreground text-center max-w-xs"
-            />
+            
+            {/* الاسم والحالة */}
+            <div className="flex-1 space-y-3">
+              <div 
+                className="px-4 py-2 rounded-lg transition-all duration-300"
+                style={{
+                  background: getUserThemeStyles(user).background || 'transparent',
+                  color: getUserThemeTextColor(user),
+                  ...getUserThemeStyles(user)
+                }}
+              >
+                <Input
+                  value={profileData.name}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="اسم المستخدم"
+                  style={{ 
+                    color: user?.userType === 'owner' ? '#000000' : (user?.usernameColor || '#FFFFFF'),
+                    background: 'transparent'
+                  }}
+                  className="text-xl font-bold border-none"
+                />
+              </div>
+              <Input
+                value={profileData.status}
+                onChange={(e) => setProfileData(prev => ({ ...prev, status: e.target.value }))}
+                placeholder="اكتب حالتك..."
+                className="bg-transparent border-none text-muted-foreground"
+              />
+            </div>
           </div>
         </div>
 

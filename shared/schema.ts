@@ -8,6 +8,7 @@ export const users = pgTable("users", {
   password: text("password"),
   userType: text("user_type").notNull().default("guest"), // 'guest', 'member', 'owner'
   profileImage: text("profile_image"),
+  profileBanner: text("profile_banner"),
   status: text("status"),
   gender: text("gender"),
   age: integer("age"),
@@ -52,6 +53,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   userType: true,
   profileImage: true,
+  profileBanner: true,
   status: true,
   gender: true,
   age: true,

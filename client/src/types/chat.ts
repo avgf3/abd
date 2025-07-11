@@ -3,6 +3,7 @@ export interface ChatUser {
   username: string;
   userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
   profileImage?: string;
+  profileBanner?: string;
   status?: string;
   gender?: string;
   age?: number;
@@ -57,4 +58,5 @@ export interface UserProfile {
   country: string;
   relation: string;
   profileImage?: string;
+  profileBanner?: string;
 }
