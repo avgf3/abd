@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import FileUploadButton from './FileUploadButton';
-import PremiumUserTheme from '@/components/ui/PremiumUserTheme';
+
 
 interface PrivateMessageBoxProps {
   isOpen: boolean;
@@ -99,14 +99,22 @@ export default function PrivateMessageBox({
               )}
             </div>
             <div className="text-center">
-              <PremiumUserTheme user={user} size="medium" showFlag={true}>
-                <p 
-                  className="font-bold text-lg"
-                  style={{ color: user.usernameColor || '#7C3AED' }}
-                >
-                  {user.username}
+              <div 
+                className={`inline-block px-3 py-2 rounded-lg ${
+                  user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' :
+                  user.userType === 'admin' ? 'bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 text-white shadow-lg' :
+                  ''
+                }`}
+                style={{ 
+                  color: (user.userType === 'owner' || user.userType === 'admin') ? 
+                    (user.userType === 'owner' ? '#000000' : '#FFFFFF') : 
+                    (user.usernameColor || '#7C3AED') 
+                }}
+              >
+                <p className="font-bold text-lg">
+                  {user.userType === 'owner' ? '👑' : user.userType === 'admin' ? '⭐' : ''} {user.username}
                 </p>
-              </PremiumUserTheme>
+              </div>
               <p className="text-sm text-purple-600 font-medium">
                 {user.userType === 'owner' && '👑 مالك'}
                 {user.userType === 'admin' && '⭐ إدمن'}

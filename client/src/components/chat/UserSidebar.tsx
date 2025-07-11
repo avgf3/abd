@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import SimpleUserMenu from './SimpleUserMenu';
 import ProfileImage from './ProfileImage';
-import PremiumUserTheme from '@/components/ui/PremiumUserTheme';
+
 import type { ChatUser } from '@/types/chat';
 
 interface UserSidebarProps {
@@ -88,14 +88,20 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <PremiumUserTheme user={user} size="small" showFlag={true}>
-                    <span 
-                      className="clickable-username text-sm font-medium"
-                      style={{ color: user.usernameColor || '#FFFFFF' }}
-                    >
-                      {user.username}
-                    </span>
-                  </PremiumUserTheme>
+                  <div 
+                    className={`clickable-username text-sm font-medium px-2 py-1 rounded-lg ${
+                      user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' :
+                      user.userType === 'admin' ? 'bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 text-white shadow-lg' :
+                      ''
+                    }`}
+                    style={{ 
+                      color: (user.userType === 'owner' || user.userType === 'admin') ? 
+                        (user.userType === 'owner' ? '#000000' : '#FFFFFF') : 
+                        (user.usernameColor || '#FFFFFF') 
+                    }}
+                  >
+                    {getUserTypeBadge(user.userType)} {user.username}
+                  </div>
                   {/* إشارة المكتوم */}
                   {user.isMuted && (
                     <span className="text-yellow-400 text-xs">🔇</span>
