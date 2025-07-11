@@ -1091,6 +1091,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         senderId: senderId
       });
 
+      // إنشاء إشعار حقيقي في قاعدة البيانات
+      await storage.createNotification({
+        userId: receiverId,
+        type: 'friendRequest',
+        title: '👫 طلب صداقة جديد',
+        message: `أرسل ${sender?.username} طلب صداقة إليك`,
+        data: { friendRequestId: request.id, senderId: senderId, senderName: sender?.username }
+      });
+
       res.json({ message: "تم إرسال طلب الصداقة", request });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
@@ -1139,6 +1148,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'friendRequestAccepted',
         targetUserId: request.senderId,
         senderName: receiver?.username
+      });
+
+      // إنشاء إشعار حقيقي في قاعدة البيانات
+      await storage.createNotification({
+        userId: request.senderId,
+        type: 'friendAccepted',
+        title: '✅ تم قبول طلب الصداقة',
+        message: `قبل ${receiver?.username} طلب صداقتك`,
+        data: { friendId: userId, friendName: receiver?.username }
       });
 
       res.json({ message: "تم قبول طلب الصداقة" });
@@ -2011,6 +2029,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating user:', error);
       res.status(500).json({ error: 'Failed to update user', details: error.message });
+    }
+  });
+
+  // Notifications API
+  app.get("/api/notifications/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const notifications = await storage.getUserNotifications(userId);
+      res.json({ notifications });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في جلب الإشعارات" });
+    }
+  });
+
+  app.post("/api/notifications", async (req, res) => {
+    try {
+      const { userId, type, title, message, data } = req.body;
+      
+      const notification = await storage.createNotification({
+        userId,
+        type,
+        title,
+        message,
+        data
+      });
+      
+      // إرسال إشعار فوري عبر WebSocket
+      if (wss) {
+        wss.clients.forEach((client: WebSocketClient) => {
+          if (client.readyState === WebSocket.OPEN && client.userId === userId) {
+            client.send(JSON.stringify({
+              type: 'newNotification',
+              notification
+            }));
+          }
+        });
+      }
+      
+      res.json({ notification });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في إنشاء الإشعار" });
+    }
+  });
+
+  app.put("/api/notifications/:id/read", async (req, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      const success = await storage.markNotificationAsRead(notificationId);
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في تحديث الإشعار" });
+    }
+  });
+
+  app.put("/api/notifications/user/:userId/read-all", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const success = await storage.markAllNotificationsAsRead(userId);
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في تحديث الإشعارات" });
+    }
+  });
+
+  app.delete("/api/notifications/:id", async (req, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      const success = await storage.deleteNotification(notificationId);
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في حذف الإشعار" });
+    }
+  });
+
+  app.get("/api/notifications/:userId/unread-count", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const count = await storage.getUnreadNotificationCount(userId);
+      res.json({ count });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في جلب عدد الإشعارات" });
     }
   });
 

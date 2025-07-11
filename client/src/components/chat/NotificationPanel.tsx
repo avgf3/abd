@@ -10,15 +10,20 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { Bell, X, Check, Trash2, Users } from 'lucide-react';
 import type { ChatUser } from '@/types/chat';
 
-interface SystemMessage {
+interface Notification {
   id: number;
-  type: 'welcome' | 'rules' | 'system_info';
+  userId: number;
+  type: string;
   title: string;
   message: string;
-  timestamp: Date;
+  data: any;
   isRead: boolean;
+  createdAt: string;
 }
 
 interface NotificationPanelProps {
@@ -28,37 +33,85 @@ interface NotificationPanelProps {
 }
 
 export default function NotificationPanel({ isOpen, onClose, currentUser }: NotificationPanelProps) {
-  const [notifications, setNotifications] = useState<SystemMessage[]>([]);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // رسائل النظام للمستخدمين الجدد
-  useEffect(() => {
-    if (isOpen) {
-      const systemMessages: SystemMessage[] = [
-        {
-          id: 1,
-          type: 'welcome',
-          title: '🌟 مرحباً بك في الدردشة العربية',
-          message: 'أهلاً وسهلاً بك في منصة الدردشة العربية! نحن سعداء بانضمامك إلينا. هنا يمكنك التواصل مع الأصدقاء، إرسال الرسائل الخاصة، وإضافة أصدقاء جدد. استمتع بتجربة دردشة آمنة ومريحة.',
-          timestamp: new Date(),
-          isRead: false
-        },
-        {
-          id: 2,
-          type: 'rules',
-          title: '📋 قوانين المحادثة',
-          message: 'يرجى الالتزام بالقوانين التالية: استخدام اللغة المهذبة، احترام جميع المستخدمين، عدم إرسال محتوى غير لائق، عدم التنمر أو المضايقة. نشكركم لتعاونكم في جعل هذا المكان آمناً للجميع.',
-          timestamp: new Date(Date.now() - 60000), // دقيقة مضت
-          isRead: false
-        }
-      ];
-      setNotifications(systemMessages);
+  // جلب الإشعارات الحقيقية من قاعدة البيانات
+  const { data: notificationsData, isLoading } = useQuery({
+    queryKey: ['/api/notifications', currentUser?.id],
+    enabled: !!currentUser?.id && isOpen,
+    refetchInterval: 5000 // تحديث كل 5 ثوان
+  });
+
+  // جلب عدد الإشعارات غير المقروءة
+  const { data: unreadCountData } = useQuery({
+    queryKey: ['/api/notifications/unread-count', currentUser?.id],
+    enabled: !!currentUser?.id,
+    refetchInterval: 2000 // تحديث كل ثانيتين
+  });
+
+  // تحديد إشعار كمقروء
+  const markAsReadMutation = useMutation({
+    mutationFn: async (notificationId: number) => {
+      return apiRequest(`/api/notifications/${notificationId}/read`, {
+        method: 'PUT'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['/api/notifications', currentUser?.id]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/notifications/unread-count', currentUser?.id]
+      });
     }
-  }, [isOpen]);
+  });
 
-  const formatTime = (timestamp: Date) => {
+  // تحديد جميع الإشعارات كمقروءة
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(`/api/notifications/user/${currentUser?.id}/read-all`, {
+        method: 'PUT'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['/api/notifications', currentUser?.id]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/notifications/unread-count', currentUser?.id]
+      });
+      toast({
+        title: "تم بنجاح",
+        description: "تم تحديد جميع الإشعارات كمقروءة",
+      });
+    }
+  });
+
+  // حذف إشعار
+  const deleteNotificationMutation = useMutation({
+    mutationFn: async (notificationId: number) => {
+      return apiRequest(`/api/notifications/${notificationId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['/api/notifications', currentUser?.id]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/notifications/unread-count', currentUser?.id]
+      });
+    }
+  });
+
+  const notifications = notificationsData?.notifications || [];
+  const unreadCount = unreadCountData?.count || 0;
+
+  const formatTime = (timestamp: string) => {
     const now = Date.now();
-    const diff = now - timestamp.getTime();
+    const notificationTime = new Date(timestamp).getTime();
+    const diff = now - notificationTime;
     
     if (diff < 60000) return 'الآن';
     if (diff < 3600000) return `منذ ${Math.floor(diff / 60000)} دقيقة`;
@@ -66,77 +119,137 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     return `منذ ${Math.floor(diff / 86400000)} يوم`;
   };
 
-  const markAsRead = (messageId: number) => {
-    setNotifications(prev => 
-      prev.map(message => 
-        message.id === messageId 
-          ? { ...message, isRead: true }
-          : message
-      )
-    );
+  const markAsRead = (notificationId: number) => {
+    markAsReadMutation.mutate(notificationId);
   };
 
+  const deleteNotification = (notificationId: number) => {
+    deleteNotificationMutation.mutate(notificationId);
+  };
 
+  const markAllAsRead = () => {
+    markAllAsReadMutation.mutate();
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'friendRequest':
+        return '👫';
+      case 'message':
+        return '💬';
+      case 'moderation':
+        return '🛡️';
+      case 'promotion':
+        return '⭐';
+      case 'system':
+        return '🔔';
+      default:
+        return '📢';
+    }
+  };
+
+  const getNotificationTypeColor = (type: string) => {
+    switch (type) {
+      case 'friendRequest':
+        return 'bg-blue-500';
+      case 'message':
+        return 'bg-green-500';
+      case 'moderation':
+        return 'bg-red-500';
+      case 'promotion':
+        return 'bg-yellow-500';
+      case 'system':
+        return 'bg-purple-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[600px]" dir="rtl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            🔔 رسائل النظام
-            <Badge variant="secondary">
-              {notifications.filter(n => !n.isRead).length}
-            </Badge>
+      <DialogContent className="max-w-md w-full bg-white text-black rounded-lg shadow-xl border-2 border-gray-200" dir="rtl">
+        <DialogHeader className="text-right">
+          <DialogTitle className="flex items-center justify-between text-lg font-bold text-gray-800">
+            <div className="flex items-center gap-2">
+              <Bell className="w-5 h-5 text-blue-600" />
+              الإشعارات
+              {unreadCount > 0 && (
+                <Badge className="bg-red-500 text-white px-2 py-1 text-xs">
+                  {unreadCount}
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 p-1"
+            >
+              <X className="w-4 h-4" />
+            </Button>
           </DialogTitle>
-          <DialogDescription>
-            رسائل ترحيبية ومعلومات مهمة للمستخدمين الجدد
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 max-h-[400px] overflow-y-auto">
-          {notifications.length === 0 ? (
+        <div className="space-y-3 max-h-96 overflow-y-auto">
+          {isLoading ? (
             <div className="text-center py-8 text-gray-500">
-              <div className="text-4xl mb-4">📭</div>
-              <p>لا توجد رسائل نظام حالياً</p>
+              جاري تحميل الإشعارات...
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Bell className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>لا توجد إشعارات</p>
             </div>
           ) : (
-            notifications.map((message) => (
-              <div 
-                key={message.id} 
-                className={`border rounded-lg p-4 space-y-3 transition-colors cursor-pointer ${
-                  !message.isRead 
-                    ? 'bg-blue-50 border-blue-200 shadow-sm' 
-                    : 'bg-gray-50 border-gray-200'
+            notifications.map((notification: Notification) => (
+              <div
+                key={notification.id}
+                className={`p-4 rounded-lg border transition-all duration-200 ${
+                  notification.isRead 
+                    ? 'bg-gray-50 border-gray-200' 
+                    : 'bg-blue-50 border-blue-200 shadow-sm'
                 }`}
-                onClick={() => !message.isRead && markAsRead(message.id)}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
-                      🤖
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm ${getNotificationTypeColor(notification.type)}`}>
+                      {getNotificationIcon(notification.type)}
                     </div>
-                    <div>
-                      <div className="font-semibold text-sm text-blue-800">
-                        نظام الدردشة
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {formatTime(message.timestamp)}
-                      </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900 mb-1">
+                        {notification.title}
+                      </h4>
+                      <p className="text-sm text-gray-600 leading-relaxed">
+                        {notification.message}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        {formatTime(notification.createdAt)}
+                      </p>
                     </div>
                   </div>
-                  {!message.isRead && (
-                    <Badge variant="default" className="text-xs bg-blue-500">
-                      جديد
-                    </Badge>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="font-medium text-sm text-gray-800">
-                    {message.title}
-                  </div>
-                  <div className="text-sm text-gray-700 leading-relaxed">
-                    {message.message}
+                  <div className="flex gap-1">
+                    {!notification.isRead && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => markAsRead(notification.id)}
+                        className="text-blue-600 hover:text-blue-800 p-1"
+                        title="تحديد كمقروء"
+                      >
+                        <Check className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteNotification(notification.id)}
+                      className="text-red-600 hover:text-red-800 p-1"
+                      title="حذف"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -144,10 +257,23 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
           )}
         </div>
 
-        <DialogFooter>
-          <Button onClick={onClose} variant="outline" className="w-full">
-            ✖️ إغلاق
+        <DialogFooter className="flex justify-between gap-2">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="flex-1"
+          >
+            إغلاق
           </Button>
+          {unreadCount > 0 && (
+            <Button
+              onClick={markAllAsRead}
+              disabled={markAllAsReadMutation.isPending}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              تحديد الكل كمقروء
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

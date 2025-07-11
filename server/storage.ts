@@ -2,12 +2,15 @@ import {
   users,
   messages,
   friends,
+  notifications,
   type User,
   type InsertUser,
   type Message,
   type InsertMessage,
   type Friend,
   type InsertFriend,
+  type Notification,
+  type InsertNotification,
 } from "../shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -49,6 +52,14 @@ export interface IStorage {
   declineFriendRequest(requestId: number): Promise<boolean>;
   ignoreFriendRequest(requestId: number): Promise<boolean>;
   deleteFriendRequest(requestId: number): Promise<boolean>;
+
+  // Notification operations
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getUserNotifications(userId: number, limit?: number): Promise<Notification[]>;
+  markNotificationAsRead(notificationId: number): Promise<boolean>;
+  markAllNotificationsAsRead(userId: number): Promise<boolean>;
+  deleteNotification(notificationId: number): Promise<boolean>;
+  getUnreadNotificationCount(userId: number): Promise<number>;
 }
 
 // Mixed storage: Database for members, Memory for guests
@@ -674,6 +685,85 @@ export class MixedStorage implements IStorage {
 
   async deleteFriendRequest(requestId: number): Promise<boolean> {
     return this.friendRequests.delete(requestId);
+  }
+
+  // Notification operations
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    try {
+      const [newNotification] = await db
+        .insert(notifications)
+        .values(notification)
+        .returning();
+      return newNotification;
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      throw error;
+    }
+  }
+
+  async getUserNotifications(userId: number, limit: number = 50): Promise<Notification[]> {
+    try {
+      const userNotifications = await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt))
+        .limit(limit);
+      return userNotifications;
+    } catch (error) {
+      console.error('Error getting user notifications:', error);
+      return [];
+    }
+  }
+
+  async markNotificationAsRead(notificationId: number): Promise<boolean> {
+    try {
+      await db
+        .update(notifications)
+        .set({ isRead: true })
+        .where(eq(notifications.id, notificationId));
+      return true;
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      return false;
+    }
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<boolean> {
+    try {
+      await db
+        .update(notifications)
+        .set({ isRead: true })
+        .where(eq(notifications.userId, userId));
+      return true;
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      return false;
+    }
+  }
+
+  async deleteNotification(notificationId: number): Promise<boolean> {
+    try {
+      await db.delete(notifications).where(eq(notifications.id, notificationId));
+      return true;
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      return false;
+    }
+  }
+
+  async getUnreadNotificationCount(userId: number): Promise<number> {
+    try {
+      const result = await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.userId, userId))
+        .where(eq(notifications.isRead, false));
+      return result.length;
+    } catch (error) {
+      console.error('Error getting unread notification count:', error);
+      return 0;
+    }
   }
 }
 
