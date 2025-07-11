@@ -223,12 +223,24 @@ export class MixedStorage implements IStorage {
     try {
       const [existing] = await db.select().from(users).where(eq(users.id, id));
       if (existing && (existing.userType === 'member' || existing.userType === 'owner')) {
-        // Members can upload profile pictures
+        // Members can upload profile pictures and change themes
+        const updateData: any = { ...updates };
+        
+        // تأكد من أن الحقول المطلوبة موجودة
+        if (updates.userTheme !== undefined) {
+          updateData.userTheme = updates.userTheme;
+        }
+        if (updates.usernameColor !== undefined) {
+          updateData.usernameColor = updates.usernameColor;
+        }
+        
         const [updatedUser] = await db
           .update(users)
-          .set(updates)
+          .set(updateData)
           .where(eq(users.id, id))
           .returning();
+        
+        console.log('Updated user in database:', updatedUser);
         return updatedUser;
       }
     } catch (error) {

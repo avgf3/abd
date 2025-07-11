@@ -46,9 +46,12 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
       setProfileData(prev => ({ ...prev, userTheme: themeId }));
       
       // إرسال التحديث للخادم
-      await apiRequest('PUT', `/api/users/${currentUser.id}`, {
-        userTheme: themeId
+      const response = await apiRequest(`/api/users/${currentUser.id}`, {
+        method: 'PUT',
+        body: { userTheme: themeId }
       });
+      
+      console.log('Theme update response:', response);
       
       // تحديث المستخدم الحالي
       currentUser.userTheme = themeId;

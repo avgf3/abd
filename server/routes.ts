@@ -1820,10 +1820,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const updates = req.body;
       
+      console.log('Updating user:', id, 'with updates:', updates);
+      
       const user = await storage.updateUser(parseInt(id), updates);
       if (!user) {
+        console.log('User not found:', id);
         return res.status(404).json({ error: 'User not found' });
       }
+      
+      console.log('User updated successfully:', user);
       
       // إرسال تحديث الثيم عبر WebSocket
       if (updates.userTheme) {
@@ -1834,12 +1839,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           timestamp: new Date().toISOString()
         };
         broadcast(updateMessage);
+        console.log('Broadcasting theme update:', updateMessage);
       }
       
       res.json(user);
     } catch (error) {
       console.error('Error updating user:', error);
-      res.status(500).json({ error: 'Failed to update user' });
+      res.status(500).json({ error: 'Failed to update user', details: error.message });
     }
   });
 
