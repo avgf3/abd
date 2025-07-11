@@ -25,6 +25,7 @@ export const users = pgTable("users", {
   ipAddress: varchar("ip_address", { length: 45 }),
   deviceId: varchar("device_id", { length: 100 }),
   ignoredUsers: text("ignored_users").array().default([]), // قائمة المستخدمين المتجاهلين
+  usernameColor: text("username_color").default('#FFFFFF'), // لون اسم المستخدم
 });
 
 export const messages = pgTable("messages", {

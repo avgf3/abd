@@ -81,7 +81,8 @@ export default function NewMessageArea({
                 <div className="flex items-center gap-2 mb-1">
                   {/* Username with Badge */}
                   <span 
-                    className={`font-medium cursor-pointer hover:underline ${getUserTypeColor(sender.userType)}`}
+                    className="font-medium cursor-pointer hover:underline"
+                    style={{ color: sender.usernameColor || '#000000' }}
                     onClick={(e) => onUserClick(e, sender)}
                   >
                     {getUserTypeBadge(sender.userType)} {sender.username}

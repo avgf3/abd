@@ -267,6 +267,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API لتحديث لون اسم المستخدم
+  app.post("/api/users/:userId/username-color", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { color } = req.body;
+      const userIdNum = parseInt(userId);
+      
+      // التحقق من صحة اللون (hex color)
+      if (!color || !/^#[0-9A-F]{6}$/i.test(color)) {
+        return res.status(400).json({ error: "لون غير صحيح" });
+      }
+      
+      // التحقق من وجود المستخدم
+      const user = await storage.getUser(userIdNum);
+      if (!user) {
+        return res.status(404).json({ error: "المستخدم غير موجود" });
+      }
+      
+      // تحديث لون الاسم
+      await storage.updateUser(userIdNum, { usernameColor: color });
+      
+      // إرسال إشعار WebSocket لتحديث لون الاسم
+      wss.clients.forEach((client: WebSocketClient) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: 'usernameColorChanged',
+            userId: userIdNum,
+            color: color
+          }));
+        }
+      });
+      
+      res.json({ 
+        message: "تم تحديث لون اسم المستخدم بنجاح",
+        color: color
+      });
+      
+    } catch (error) {
+      console.error('خطأ في تحديث لون الاسم:', error);
+      res.status(500).json({ error: "خطأ في تحديث لون الاسم" });
+    }
+  });
+
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
@@ -519,6 +562,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
+
+  // Update username color
+  app.post('/api/users/:userId/color', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { color } = req.body;
+      
+      if (!userId || !color) {
+        return res.status(400).json({ message: 'معرف المستخدم واللون مطلوبان' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'المستخدم غير موجود' });
+      }
+
+      // Update username color
+      await storage.updateUser(userId, { usernameColor: color });
+      
+      // Broadcast the color change to all connected clients
+      broadcast({
+        type: 'usernameColorChanged',
+        userId: userId,
+        color: color,
+        username: user.username
+      });
+      
+      res.json({ 
+        success: true, 
+        message: 'تم تحديث لون الاسم بنجاح',
+        color 
+      });
+    } catch (error) {
+      console.error('Error updating username color:', error);
+      res.status(500).json({ message: 'خطأ في تحديث لون الاسم' });
+    }
+  });
 
   // WebSocket handling
   wss.on('connection', (ws: WebSocketClient) => {

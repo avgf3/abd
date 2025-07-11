@@ -200,6 +200,24 @@ export function useChat() {
               }
               break;
               
+            case 'usernameColorChanged':
+              // تحديث لون اسم المستخدم في الوقت الفعلي
+              if (message.userId && message.color) {
+                setOnlineUsers(prev => 
+                  prev.map(user => 
+                    user.id === message.userId 
+                      ? { ...user, usernameColor: message.color }
+                      : user
+                  )
+                );
+                
+                // تحديث لون المستخدم الحالي إذا كان هو من غير اللون
+                if (currentUser && currentUser.id === message.userId) {
+                  setCurrentUser(prev => prev ? { ...prev, usernameColor: message.color } : prev);
+                }
+              }
+              break;
+              
             case 'moderationAction':
               // التعامل مع إجراءات الإدارة
               if (message.targetUserId === user.id) {

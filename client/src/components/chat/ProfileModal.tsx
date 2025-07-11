@@ -11,6 +11,7 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { StealthModeButton } from "./StealthModeButton";
 import { UserMinus } from "lucide-react";
+import UsernameColorPicker from '../profile/UsernameColorPicker';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -220,8 +221,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
         </div>
 
         <Tabs defaultValue="info" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-4">
+          <TabsList className="grid w-full grid-cols-6 mb-4">
             <TabsTrigger value="info">معلوماتي</TabsTrigger>
+            <TabsTrigger value="colors">🎨 الألوان</TabsTrigger>
             <TabsTrigger value="friends">الأصدقاء</TabsTrigger>
             <TabsTrigger value="ignore">المحظورون</TabsTrigger>
             <TabsTrigger value="options">الإعدادات</TabsTrigger>
@@ -287,6 +289,29 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                 </Select>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="colors" className="space-y-4">
+            {/* تبويب تلوين الاسم - فقط للمستخدم الحالي */}
+            {user && currentUser && user.id === currentUser.id && (
+              <UsernameColorPicker 
+                currentUser={currentUser} 
+                onColorUpdate={(color) => {
+                  // تحديث لون الاسم في الذاكرة
+                  if (currentUser) {
+                    currentUser.usernameColor = color;
+                  }
+                }} 
+              />
+            )}
+            {/* إذا كان يعرض ملف شخص آخر */}
+            {user && currentUser && user.id !== currentUser.id && (
+              <div className="text-center p-8 text-gray-400">
+                <div className="text-6xl mb-4">🎨</div>
+                <p>لا يمكنك تغيير لون اسم مستخدم آخر</p>
+                <p className="text-sm mt-2">هذه الخاصية متاحة فقط في ملفك الشخصي</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="friends">

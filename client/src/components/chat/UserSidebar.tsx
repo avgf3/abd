@@ -87,7 +87,12 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="clickable-username text-sm font-medium">{user.username}</span>
+                  <span 
+                    className="clickable-username text-sm font-medium"
+                    style={{ color: user.usernameColor || '#FFFFFF' }}
+                  >
+                    {user.username}
+                  </span>
                   {getUserRankBadge(user.userType, user.username)}
                   {/* إشارة المكتوم */}
                   {user.isMuted && (
