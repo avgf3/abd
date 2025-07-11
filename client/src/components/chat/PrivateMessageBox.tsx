@@ -100,14 +100,13 @@ export default function PrivateMessageBox({
             </div>
             <div className="text-center">
               <div 
-                className={`block w-full px-8 py-5 rounded-xl transition-all duration-300 text-center ${
+                className={`inline-block px-4 py-3 rounded-lg transition-all duration-300 ${
                   user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
                 }`}
                 style={{
                   ...(user.userType === 'owner' && {
-                    animation: 'gentle-golden-glow 4s ease-in-out infinite',
-                    boxShadow: '0 0 15px rgba(255, 215, 0, 0.5)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)'
+                    animation: 'golden-glow 2s ease-in-out infinite',
+                    boxShadow: '0 0 20px rgba(255, 215, 0, 0.6)'
                   })
                 }}
               >

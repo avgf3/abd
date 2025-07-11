@@ -87,26 +87,25 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                 className="transition-transform hover:scale-105"
               />
               <div className="flex-1">
-                <div className="w-full">
+                <div className="flex items-center gap-2">
                   <div 
-                    className={`text-sm font-medium px-6 py-4 rounded-xl w-full transition-all duration-300 ${
+                    className={`text-sm font-medium px-4 py-2 rounded-lg transition-all duration-300 flex-1 ${
                       user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
                     }`}
                     style={{ 
                       color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#FFFFFF'),
                       ...(user.userType === 'owner' && {
-                        animation: 'gentle-golden-glow 4s ease-in-out infinite',
-                        boxShadow: '0 0 15px rgba(255, 215, 0, 0.5)',
-                        border: '1px solid rgba(255, 215, 0, 0.3)'
+                        animation: 'golden-glow 2s ease-in-out infinite',
+                        boxShadow: '0 0 20px rgba(255, 215, 0, 0.6)'
                       })
                     }}
                   >
                     {getUserRankBadge(user.userType, user.username)} {user.username}
-                    {/* إشارة المكتوم */}
-                    {user.isMuted && (
-                      <span className="text-yellow-400 text-xs ml-2">🔇</span>
-                    )}
                   </div>
+                  {/* إشارة المكتوم */}
+                  {user.isMuted && (
+                    <span className="text-yellow-400 text-xs">🔇</span>
+                  )}
                 </div>
               </div>
               <div className="flex flex-col items-center">

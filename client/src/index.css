@@ -3,15 +3,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Gentle Golden Glow Animation for Owner */
-@keyframes gentle-golden-glow {
+/* Golden Glow Animation for Owner */
+@keyframes golden-glow {
   0%, 100% {
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4), inset 0 0 5px rgba(255, 215, 0, 0.2);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(255, 215, 0, 0.2);
     transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(255, 215, 0, 0.3);
-    transform: scale(1.01);
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.9), inset 0 0 15px rgba(255, 215, 0, 0.4);
+    transform: scale(1.02);
   }
 }
 
