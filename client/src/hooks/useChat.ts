@@ -44,8 +44,8 @@ export function useChat() {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [newMessageSender, setNewMessageSender] = useState<ChatUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [kickNotification, setKickNotification] = useState<{show: boolean, duration: number}>({show: false, duration: 0});
-  const [blockNotification, setBlockNotification] = useState<{show: boolean, reason: string}>({show: false, reason: ''});
+  const [kickNotification, setKickNotification] = useState<string | null>(null);
+  const [blockNotification, setBlockNotification] = useState<string | null>(null);
   
   // تحسين الأداء: مدراء التحسين
   const messageCache = useRef(new MessageCacheManager());
@@ -224,13 +224,13 @@ export function useChat() {
                 // المستخدم الحالي تم التأثير عليه
                 switch (message.action) {
                   case 'muted':
-                    console.warn('⚠️ تم كتمك من الدردشة العامة');
+                    setKickNotification('تم كتمك من الدردشة العامة');
                     break;
                   case 'banned':
-                    console.warn('⛔ تم طردك من الدردشة لمدة 15 دقيقة');
+                    setKickNotification('تم طردك من الدردشة لمدة 15 دقيقة');
                     break;
                   case 'blocked':
-                    console.warn('🚫 تم حجبك من الدردشة نهائياً');
+                    setBlockNotification('تم حجبك من الدردشة نهائياً');
                     break;
                 }
               }
@@ -602,6 +602,8 @@ export function useChat() {
     kickNotification,
     blockNotification,
     setNewMessageSender,
+    setKickNotification,
+    setBlockNotification,
     connect,
     disconnect,
     ignoreUser,
