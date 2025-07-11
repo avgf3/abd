@@ -101,14 +101,14 @@ export default function MessageArea({
   };
 
   return (
-    <section className="flex-1 flex flex-col bg-white">
-      <div className="flex-1 p-6 overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white">
+    <section className="flex-1 flex flex-col bg-gradient-to-br from-slate-800 via-slate-900 to-gray-900">
+      <div className="flex-1 p-6 overflow-y-auto space-y-4 text-sm bg-gradient-to-br from-slate-800/70 via-slate-900/70 to-gray-900/70 backdrop-blur-sm">
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`chat-message bg-blue-50 border-r-4 ${getMessageBorderColor(message.sender?.userType)} animate-slide-up`}
+            className={`chat-message bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-all duration-300 group shadow-lg`}
           >
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-4">
               {message.sender && (
                 <ProfileImage 
                   user={message.sender} 
@@ -116,12 +116,13 @@ export default function MessageArea({
                 />
               )}
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-3 mb-2">
                   {message.sender ? (
                     <span 
-                      className="font-medium text-sm text-blue-600 cursor-pointer hover:underline"
+                      className="font-semibold text-sm text-blue-300 cursor-pointer hover:underline transition-colors"
                       onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                     >
+                      <span className="text-lg mr-1">{getUserRankBadge(message.sender.userType, message.sender.username)}</span>
                       {message.sender.username}
                       {/* إشارة المكتوم */}
                       {message.sender.isMuted && (
@@ -129,21 +130,20 @@ export default function MessageArea({
                       )}
                     </span>
                   ) : (
-                    <span className="font-medium text-sm text-blue-600">مستخدم</span>
+                    <span className="font-semibold text-sm text-blue-300">مستخدم</span>
                   )}
-                  {message.sender && getUserRankBadge(message.sender.userType, message.sender.username)}
-                  <span className="text-xs text-gray-500">
-                    {formatTime(message.timestamp)}
+                  <span className="text-xs text-blue-200 bg-blue-900/30 px-2 py-1 rounded-full">
+                    🕐 {formatTime(message.timestamp)}
                   </span>
                 </div>
                 {message.messageType === 'image' ? (
                   <img
                     src={message.content}
                     alt="صورة من المحادثة"
-                    className="rounded-lg max-w-xs shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                    className="rounded-xl max-w-xs shadow-lg cursor-pointer hover:shadow-xl transition-shadow border-2 border-white/20"
                   />
                 ) : (
-                  <p className="text-gray-800">{message.content}</p>
+                  <p className="text-gray-100 text-base leading-relaxed">{message.content}</p>
                 )}
               </div>
               
@@ -153,10 +153,10 @@ export default function MessageArea({
                   variant="ghost"
                   size="sm"
                   onClick={() => onReportMessage(message.sender!, message.content, message.id)}
-                  className="text-gray-400 hover:text-red-500 p-1"
+                  className="opacity-0 group-hover:opacity-100 text-red-300 hover:text-red-200 bg-red-500/20 hover:bg-red-500/30 p-2 rounded-full transition-all duration-200"
                   title="إبلاغ عن هذه الرسالة"
                 >
-                  🚩
+                  ⚠️
                 </Button>
               )}
             </div>
@@ -164,8 +164,15 @@ export default function MessageArea({
         ))}
         
         {typingUsers.size > 0 && (
-          <div className="text-sm text-muted-foreground italic">
-            {Array.from(typingUsers).join(', ')} يكتب...
+          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl border border-blue-400/30 backdrop-blur-sm">
+            <div className="flex space-x-1">
+              <div className="w-3 h-3 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full animate-bounce"></div>
+              <div className="w-3 h-3 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-3 h-3 bg-gradient-to-r from-pink-400 to-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            </div>
+            <span className="text-sm font-medium text-blue-200">
+              ✍️ {Array.from(typingUsers).join(', ')} يكتب الآن...
+            </span>
           </div>
         )}
         
@@ -173,7 +180,7 @@ export default function MessageArea({
       </div>
       
       {/* Message Input */}
-      <div className="shrink-0 flex items-center gap-3 p-4 border-t border-gray-200 bg-gray-50">
+      <div className="shrink-0 flex items-center gap-4 p-6 border-t border-white/10 bg-gradient-to-r from-slate-800/90 to-gray-900/90 backdrop-blur-xl">
         <input
           ref={fileInputRef}
           type="file"
@@ -184,16 +191,16 @@ export default function MessageArea({
         
         <Button
           onClick={() => fileInputRef.current?.click()}
-          className="btn-primary text-white px-4 py-3 rounded-xl flex items-center gap-2"
+          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-3 rounded-2xl flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
         >
-          📷
+          <span className="text-lg">📷</span>
         </Button>
         
         <Button 
-          className="glass-effect text-gray-600 px-4 py-3 rounded-xl hover:bg-gray-200 transition-all duration-200" 
+          className="bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white px-5 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105" 
           title="الرموز التعبيرية"
         >
-          😊
+          <span className="text-lg">😊</span>
         </Button>
         
         <Input
@@ -201,15 +208,15 @@ export default function MessageArea({
           onChange={(e) => setMessageText(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="اكتب رسالتك هنا..."
-          className="flex-1 px-4 py-3 rounded-xl bg-white border border-gray-300 text-gray-800 placeholder:text-gray-500"
+          className="flex-1 px-6 py-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-gray-300 focus:bg-white/15 focus:border-white/30 transition-all duration-300 text-lg"
         />
         
         <Button
           onClick={handleSendMessage}
-          className="btn-success text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2"
+          className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-8 py-4 rounded-2xl font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
         >
-          📤
-          إرسال
+          <span className="text-lg">📤</span>
+          <span className="text-lg">إرسال</span>
         </Button>
       </div>
     </section>
