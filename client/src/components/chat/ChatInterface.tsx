@@ -212,6 +212,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 <span>⚠️</span>
                 سجل البلاغات
               </Button>
+              
+              <Button 
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2"
+                onClick={() => setShowModerationActions(true)}
+              >
+                <span>📋</span>
+                سجل الإجراءات
+              </Button>
 
               {/* زر ترقية المستخدمين - للمالك فقط */}
               {chat.currentUser?.userType === 'owner' && (

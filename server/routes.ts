@@ -668,10 +668,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'moderationAction',
           action: 'muted',
           targetUserId: targetUserId,
-          message: systemMessage
+          message: systemMessage,
+          reason,
+          duration
         });
         
-        res.json({ message: "تم كتم المستخدم بنجاح" });
+        // لا يتم قطع الاتصال - المستخدم يبقى في الدردشة لكن مكتوم
+        res.json({ message: "تم كتم المستخدم بنجاح - يمكنه البقاء في الدردشة ولكن لا يمكنه التحدث في العام" });
       } else {
         res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
       }
@@ -917,13 +920,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.query.userId as string);
       const user = await storage.getUser(userId);
       
+      // للإدمن والمالك فقط
       if (!user || (user.userType !== 'owner' && user.userType !== 'admin')) {
-        return res.status(403).json({ error: "غير مسموح لك بالوصول" });
+        return res.status(403).json({ error: "غير مسموح لك بالوصول - للإدمن والمالك فقط" });
       }
 
       const log = moderationSystem.getModerationLog();
       res.json({ log });
     } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // إضافة endpoint سجل الإجراءات للإدمن
+  app.get("/api/moderation/actions", async (req, res) => {
+    try {
+      const userId = parseInt(req.query.userId as string);
+      const user = await storage.getUser(userId);
+      
+      // للإدمن والمالك فقط
+      if (!user || (user.userType !== 'owner' && user.userType !== 'admin')) {
+        return res.status(403).json({ error: "غير مسموح - للإدمن والمالك فقط" });
+      }
+
+      const actions = moderationSystem.getModerationLog()
+        .map(action => ({
+          ...action,
+          moderatorName: '', 
+          targetName: '' 
+        }));
+      
+      // إضافة أسماء المستخدمين للإجراءات
+      for (const action of actions) {
+        const moderator = await storage.getUser(action.moderatorId);
+        const target = await storage.getUser(action.targetUserId);
+        action.moderatorName = moderator?.username || 'مجهول';
+        action.targetName = target?.username || 'مجهول';
+      }
+
+      console.log(`📋 ${user.username} طلب سجل الإجراءات - ${actions.length} إجراء`);
+      res.json(actions);
+    } catch (error) {
+      console.error("خطأ في الحصول على سجل الإجراءات:", error);
       res.status(500).json({ error: "خطأ في الخادم" });
     }
   });

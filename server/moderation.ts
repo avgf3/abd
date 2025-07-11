@@ -49,11 +49,11 @@ export class ModerationSystem {
 
     // تحديد الصلاحيات حسب النوع والإجراء
     const permissions = {
-      'mute': ['admin', 'owner'],
-      'unmute': ['admin', 'owner'],
+      'mute': ['admin', 'moderator', 'owner'],
+      'unmute': ['admin', 'moderator', 'owner'],
       'ban': ['admin', 'owner'],
       'kick': ['admin', 'owner'],
-      'block': ['owner'],
+      'block': ['admin', 'owner'],
       'promote': ['owner'],
       'demote': ['owner']
     };

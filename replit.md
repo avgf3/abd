@@ -189,11 +189,14 @@ Preferred communication style: Simple, everyday language.
 - **All Core Features Working**: Authentication, messaging, moderation, and friend systems fully functional
 - **WebSocket Connection**: Stable and reliable real-time communication with advanced optimization
 - **Enhanced Moderation System**: Complete permissions system with IP/device blocking capabilities
+- **Admin Access Controls**: Reports and Actions logs accessible by Admin ⭐ and Owner 👑 only
+- **Improved Mute System**: Muted users stay in chat but cannot send public messages (can still send private messages)
+- **Admin Blocking Powers**: Admins can now block users in addition to mute/kick capabilities
+- **Role System Updated**: Owner 👑 (all powers), Admin ⭐ (mute/kick/block), Moderator 🛡️ (mute only)
+- **Action Logs Panel**: Dedicated interface for viewing all moderation actions with timestamps
 - **Reports Log System**: Dedicated panel for viewing and managing user reports with red notification badges
-- **Active Moderation Log**: Shows currently muted/blocked users with ability to unmute/unblock (excludes temporary kicks)
-- **Admin Interface Update**: Replaced user icons with reports log, added notification system for moderators
+- **Media Sharing**: Image/video upload button implemented for private messages only
 - **System Notifications**: Public display of moderation actions with usernames
-- **Kick Countdown Timer**: Visual countdown for temporary bans with automatic page refresh
 - **Admin Hierarchy Fixed**: Proper permissions for moderators, admins, and owner (عبود)
 - **UI Design**: Modern dark theme with glass effects, Arabic RTL support, and specialized moderation panels
 - **Database Integration**: Mixed storage system working perfectly for guests and members
