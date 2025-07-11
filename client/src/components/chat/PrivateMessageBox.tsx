@@ -146,14 +146,19 @@ export default function PrivateMessageBox({
                     <div className="flex items-center gap-2 mb-2">
                       <img
                         src={message.sender?.profileImage || "/default_avatar.svg"}
-                        alt={message.senderName}
+                        alt={message.senderName || 'User'}
                         className="w-6 h-6 rounded-full object-cover border border-gray-300"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = '/default_avatar.svg';
                         }}
                       />
-                      <span className="text-xs font-medium text-gray-600">{message.senderName}</span>
+                      <span 
+                        className="text-xs font-medium text-gray-600"
+                        style={{ color: message.sender?.usernameColor || '#000000' }}
+                      >
+                        {message.senderName || 'مجهول'}
+                      </span>
                     </div>
                   )}
                   <div className="text-sm font-medium mb-1">

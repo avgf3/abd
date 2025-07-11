@@ -378,26 +378,65 @@ export class MixedStorage implements IStorage {
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
-    // Always store messages in memory for performance
-    const id = this.currentMessageId++;
-    const message: Message = {
-      id,
-      senderId: insertMessage.senderId || null,
-      receiverId: insertMessage.receiverId || null,
-      content: insertMessage.content,
-      messageType: insertMessage.messageType || "text",
-      isPrivate: insertMessage.isPrivate || false,
-      timestamp: new Date(),
-    };
-    this.messages.set(id, message);
-    return message;
+    try {
+      // Always try database first for persistence
+      const [dbMessage] = await db
+        .insert(messages)
+        .values({
+          senderId: insertMessage.senderId,
+          receiverId: insertMessage.receiverId,
+          content: insertMessage.content,
+          messageType: insertMessage.messageType || 'text',
+          isPrivate: insertMessage.isPrivate || false,
+          timestamp: new Date(),
+        })
+        .returning();
+      
+      return dbMessage;
+    } catch (error) {
+      console.error('Database insert failed, using memory:', error);
+      // Fallback to memory for guests or if database fails
+      const message: Message = {
+        id: this.currentMessageId++,
+        senderId: insertMessage.senderId,
+        receiverId: insertMessage.receiverId,
+        content: insertMessage.content,
+        messageType: insertMessage.messageType || 'text',
+        isPrivate: insertMessage.isPrivate || false,
+        timestamp: new Date(),
+      };
+      
+      this.messages.set(message.id, message);
+      return message;
+    }
   }
 
   async getPublicMessages(limit: number = 50): Promise<Message[]> {
-    return Array.from(this.messages.values())
+    // Get from memory first
+    const memMessages = Array.from(this.messages.values())
       .filter(msg => !msg.isPrivate)
-      .sort((a, b) => (a.timestamp || new Date()).getTime() - (b.timestamp || new Date()).getTime())
-      .slice(-limit);
+      .sort((a, b) => (a.timestamp || new Date()).getTime() - (b.timestamp || new Date()).getTime());
+    
+    // Try to get from database as well
+    try {
+      const dbMessages = await db.select().from(messages)
+        .where(eq(messages.isPrivate, false))
+        .orderBy(desc(messages.timestamp))
+        .limit(limit);
+      
+      // Combine both sources and remove duplicates
+      const allMessages = [...memMessages, ...dbMessages];
+      const uniqueMessages = allMessages.filter((msg, index, arr) => 
+        index === arr.findIndex(m => m.id === msg.id)
+      );
+      
+      return uniqueMessages
+        .sort((a, b) => (a.timestamp || new Date()).getTime() - (b.timestamp || new Date()).getTime())
+        .slice(-limit);
+    } catch (error) {
+      console.error('Error getting database messages:', error);
+      return memMessages.slice(-limit);
+    }
   }
 
   async getPrivateMessages(userId1: number, userId2: number, limit: number = 50): Promise<Message[]> {
