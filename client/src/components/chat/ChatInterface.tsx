@@ -168,80 +168,80 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800" onClick={closeUserPopup}>
+    <div className="h-screen flex flex-col" onClick={closeUserPopup}>
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 backdrop-blur-xl py-6 px-8 flex justify-between items-center shadow-2xl border-b border-blue-500/30">
-        <div className="flex items-center gap-4">
-          <div className="text-4xl animate-pulse">💬</div>
-          <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Arabic<span className="text-cyan-400">Chat</span>
+      <header className="bg-secondary py-4 px-6 flex justify-between items-center shadow-2xl border-b border-accent">
+        <div className="flex items-center gap-3">
+          <div className="text-2xl">💬</div>
+          <div className="text-2xl font-bold text-white">
+            Arabic<span className="text-primary">Chat</span>
           </div>
         </div>
         <div className="flex gap-3">
           <Button 
-            className="bg-gradient-to-r from-blue-600/80 to-blue-700/80 hover:from-blue-700 hover:to-blue-800 backdrop-blur-sm px-6 py-3 rounded-2xl transition-all duration-300 flex items-center gap-2 relative shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
             onClick={() => setShowNotifications(true)}
           >
-            <span className="text-lg">🔔</span>
-            <span className="font-semibold">إشعارات</span>
+            <span>🔔</span>
+            إشعارات
           </Button>
           
           <Button 
-            className="bg-gradient-to-r from-green-600/80 to-green-700/80 hover:from-green-700 hover:to-green-800 backdrop-blur-sm px-6 py-3 rounded-2xl transition-all duration-300 flex items-center gap-2 relative shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
             onClick={() => setShowFriends(true)}
           >
-            <span className="text-lg">👥</span>
-            <span className="font-semibold">الأصدقاء</span>
+            <span>👥</span>
+            الأصدقاء
             {/* تنبيه طلبات الصداقة */}
             <FriendRequestBadge currentUser={chat.currentUser} />
           </Button>
 
           <Button 
-            className="bg-gradient-to-r from-purple-600/80 to-purple-700/80 hover:from-purple-700 hover:to-purple-800 backdrop-blur-sm px-6 py-3 rounded-2xl transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowMessages(true)}
             title="الرسائل"
           >
-            <span className="text-lg">✉️</span>
-            <span className="font-semibold">الرسائل</span>
+            <span>✉️</span>
+            الرسائل
           </Button>
           
           {/* زر لوحة الإدارة للمشرفين */}
           {chat.currentUser && (chat.currentUser.userType === 'owner' || chat.currentUser.userType === 'admin') && (
             <>
               <Button 
-                className="bg-gradient-to-r from-yellow-600/80 to-yellow-700/80 hover:from-yellow-700 hover:to-yellow-800 backdrop-blur-sm px-6 py-3 rounded-2xl transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
                 onClick={() => setShowModerationPanel(true)}
               >
-                <span className="text-lg">🛡️</span>
-                <span className="font-semibold">إدارة</span>
+                <span>🛡️</span>
+                إدارة
               </Button>
               
               <StealthModeToggle currentUser={chat.currentUser} />
               
               <Button 
-                className="bg-gradient-to-r from-red-600/80 to-red-700/80 hover:from-red-700 hover:to-red-800 backdrop-blur-sm px-6 py-3 rounded-2xl transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 border border-red-400/30"
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 border border-red-400 relative"
                 onClick={() => setShowReportsLog(true)}
               >
-                <span className="text-lg">⚠️</span>
-                <span className="font-semibold">سجل البلاغات</span>
+                <span>⚠️</span>
+                سجل البلاغات
               </Button>
               
               <Button 
-                className="bg-gradient-to-r from-orange-600/80 to-orange-700/80 hover:from-orange-700 hover:to-orange-800 backdrop-blur-sm px-6 py-3 rounded-2xl transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 border border-orange-400/30"
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400"
                 onClick={() => setShowActiveActions(true)}
               >
-                <span className="text-lg">🔒</span>
-                <span className="font-semibold">سجل الإجراءات</span>
+                <span>🔒</span>
+                سجل الإجراءات النشطة
               </Button>
 
               {/* زر ترقية المستخدمين - للمالك فقط */}
               {chat.currentUser?.userType === 'owner' && (
                 <Button 
-                  className="bg-gradient-to-r from-indigo-600/80 to-indigo-700/80 hover:from-indigo-700 hover:to-indigo-800 backdrop-blur-sm px-6 py-3 rounded-2xl transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+                  className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2"
                   onClick={() => setShowPromotePanel(true)}
                 >
-                  <span className="text-lg">👑</span>
-                  <span className="font-semibold">ترقية المستخدمين</span>
+                  <span>👑</span>
+                  ترقية المستخدمين
                 </Button>
               )}
             </>
@@ -250,20 +250,20 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* زر خاص بالمالك فقط */}
           {chat.currentUser && chat.currentUser.userType === 'owner' && (
             <Button 
-              className="bg-gradient-to-r from-pink-600/80 to-pink-700/80 hover:from-pink-700 hover:to-pink-800 backdrop-blur-sm px-6 py-3 rounded-2xl transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 border border-pink-400/30"
+              className="glass-effect px-4 py-2 rounded-lg hover:bg-purple-600 transition-all duration-200 flex items-center gap-2 border border-purple-400"
               onClick={() => setShowOwnerPanel(true)}
             >
-              <span className="text-lg">👑</span>
-              <span className="font-semibold">إدارة المالك</span>
+              <span>👑</span>
+              إدارة المالك
             </Button>
           )}
           
           <Button 
-            className="bg-gradient-to-r from-gray-600/80 to-gray-700/80 hover:from-gray-700 hover:to-gray-800 backdrop-blur-sm px-6 py-3 rounded-2xl transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowSettings(!showSettings)}
           >
-            <span className="text-lg">⚙️</span>
-            <span className="font-semibold">إعدادات</span>
+            <span>⚙️</span>
+            إعدادات
           </Button>
 
 
@@ -271,7 +271,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       </header>
       
       {/* Main Content */}
-      <main className="flex flex-1 overflow-hidden bg-gradient-to-br from-slate-800/50 to-gray-900/50">
+      <main className="flex flex-1 overflow-hidden">
         <UserSidebar 
           users={chat.onlineUsers}
           onUserClick={handleUserClick}
