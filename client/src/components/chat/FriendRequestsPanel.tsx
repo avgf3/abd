@@ -132,7 +132,7 @@ export default function FriendRequestsPanel({
 
   const handleIgnoreRequest = async (request: FriendRequest) => {
     try {
-      await apiRequest(`/api/friend-requests/${request.id}/decline`, {
+      await apiRequest(`/api/friend-requests/${request.id}/ignore`, {
         method: 'POST',
         body: JSON.stringify({ userId: currentUser?.id }),
         headers: { 'Content-Type': 'application/json' }

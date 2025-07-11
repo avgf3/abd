@@ -43,6 +43,7 @@ export interface IStorage {
   getOutgoingFriendRequests(userId: number): Promise<any[]>;
   acceptFriendRequest(requestId: number): Promise<boolean>;
   declineFriendRequest(requestId: number): Promise<boolean>;
+  ignoreFriendRequest(requestId: number): Promise<boolean>;
   deleteFriendRequest(requestId: number): Promise<boolean>;
 }
 
@@ -397,28 +398,28 @@ export class MixedStorage implements IStorage {
   }
 
   async declineFriendRequest(requestId: number): Promise<boolean> {
-    const request = this.friends.get(requestId);
+    const request = this.friendRequests.get(requestId);
     if (!request || request.status !== 'pending') return false;
     
     request.status = 'declined';
-    this.friends.set(requestId, request);
+    this.friendRequests.set(requestId, request);
     return true;
   }
 
   async ignoreFriendRequest(requestId: number): Promise<boolean> {
-    const request = this.friends.get(requestId);
+    const request = this.friendRequests.get(requestId);
     if (!request || request.status !== 'pending') return false;
     
     request.status = 'ignored';
-    this.friends.set(requestId, request);
+    this.friendRequests.set(requestId, request);
     return true;
   }
 
   async deleteFriendRequest(requestId: number): Promise<boolean> {
-    const request = this.friends.get(requestId);
+    const request = this.friendRequests.get(requestId);
     if (!request) return false;
     
-    this.friends.delete(requestId);
+    this.friendRequests.delete(requestId);
     return true;
   }
 

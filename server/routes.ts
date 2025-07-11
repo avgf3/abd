@@ -689,6 +689,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // تجاهل طلب صداقة
+  app.post("/api/friend-requests/:requestId/ignore", async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.requestId);
+      const { userId } = req.body;
+      
+      const request = await storage.getFriendRequestById(requestId);
+      if (!request || request.receiverId !== userId) {
+        return res.status(403).json({ error: "غير مسموح" });
+      }
+
+      await storage.ignoreFriendRequest(requestId);
+      res.json({ message: "تم تجاهل طلب الصداقة" });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   // الحصول على قائمة الأصدقاء
   app.get("/api/friends/:userId", async (req, res) => {
     try {
@@ -1228,96 +1246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Friend requests routes
-  app.get("/api/friend-requests/:userId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const incoming = await storage.getIncomingFriendRequests(userId);
-      const outgoing = await storage.getOutgoingFriendRequests(userId);
-      
-      res.json({ incoming, outgoing });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
 
-  app.post("/api/friend-requests/:id/accept", async (req, res) => {
-    try {
-      const requestId = parseInt(req.params.id);
-      const success = await storage.acceptFriendRequest(requestId);
-      
-      if (success) {
-        res.json({ message: "تم قبول طلب الصداقة" });
-      } else {
-        res.status(404).json({ error: "طلب الصداقة غير موجود" });
-      }
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
-
-  app.post("/api/friend-requests/:id/decline", async (req, res) => {
-    try {
-      const requestId = parseInt(req.params.id);
-      const success = await storage.declineFriendRequest(requestId);
-      
-      if (success) {
-        res.json({ message: "تم رفض طلب الصداقة" });
-      } else {
-        res.status(404).json({ error: "طلب الصداقة غير موجود" });
-      }
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
-
-  app.post("/api/friend-requests/:id/ignore", async (req, res) => {
-    try {
-      const requestId = parseInt(req.params.id);
-      const success = await storage.ignoreFriendRequest(requestId);
-      
-      if (success) {
-        res.json({ message: "تم تجاهل طلب الصداقة" });
-      } else {
-        res.status(404).json({ error: "طلب الصداقة غير موجود" });
-      }
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
-
-  app.delete("/api/friend-requests/:id", async (req, res) => {
-    try {
-      const requestId = parseInt(req.params.id);
-      const success = await storage.deleteFriendRequest(requestId);
-      
-      if (success) {
-        res.json({ message: "تم إلغاء طلب الصداقة" });
-      } else {
-        res.status(404).json({ error: "طلب الصداقة غير موجود" });
-      }
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
-
-  // Add route for removing friends with confirmation
-  app.delete("/api/friends/:userId/:friendId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const friendId = parseInt(req.params.friendId);
-      
-      const success = await storage.removeFriend(userId, friendId);
-      
-      if (success) {
-        res.json({ message: "تم حذف الصديق" });
-      } else {
-        res.status(404).json({ error: "الصداقة غير موجودة" });
-      }
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
 
   // إضافة endpoint لوحة إجراءات المشرفين
   app.get("/api/moderation/actions", async (req, res) => {
