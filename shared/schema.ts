@@ -26,6 +26,7 @@ export const users = pgTable("users", {
   deviceId: varchar("device_id", { length: 100 }),
   ignoredUsers: text("ignored_users").array().default([]), // قائمة المستخدمين المتجاهلين
   usernameColor: text("username_color").default('#FFFFFF'), // لون اسم المستخدم
+  userTheme: text("user_theme").default('default'), // ثيم المستخدم
 });
 
 export const messages = pgTable("messages", {

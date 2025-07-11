@@ -5,6 +5,53 @@ import ProfileImage from './ProfileImage';
 
 import type { ChatUser } from '@/types/chat';
 
+// دوال مساعدة للثيمات
+const getThemeData = (themeId: string) => {
+  const themes = {
+    'default': { gradient: 'transparent', textColor: '#FFFFFF', hasAnimation: false },
+    'golden': { gradient: 'linear-gradient(45deg, #FFD700, #FFA500)', textColor: '#000000', hasAnimation: true },
+    'royal': { gradient: 'linear-gradient(45deg, #8B5CF6, #A855F7)', textColor: '#FFFFFF', hasAnimation: true },
+    'ocean': { gradient: 'linear-gradient(45deg, #0EA5E9, #0284C7)', textColor: '#FFFFFF', hasAnimation: true },
+    'sunset': { gradient: 'linear-gradient(45deg, #F97316, #EA580C)', textColor: '#FFFFFF', hasAnimation: true },
+    'forest': { gradient: 'linear-gradient(45deg, #22C55E, #16A34A)', textColor: '#FFFFFF', hasAnimation: true },
+    'rose': { gradient: 'linear-gradient(45deg, #EC4899, #DB2777)', textColor: '#FFFFFF', hasAnimation: true },
+    'emerald': { gradient: 'linear-gradient(45deg, #10B981, #059669)', textColor: '#FFFFFF', hasAnimation: true },
+    'fire': { gradient: 'linear-gradient(45deg, #EF4444, #DC2626)', textColor: '#FFFFFF', hasAnimation: true },
+    'galaxy': { gradient: 'linear-gradient(45deg, #6366F1, #4F46E5)', textColor: '#FFFFFF', hasAnimation: true },
+    'rainbow': { gradient: 'linear-gradient(45deg, #F59E0B, #EF4444, #EC4899, #8B5CF6)', textColor: '#FFFFFF', hasAnimation: true }
+  };
+  return themes[themeId as keyof typeof themes] || themes.default;
+};
+
+const getUserThemeClasses = (user: any) => {
+  const theme = getThemeData(user.userTheme || (user.userType === 'owner' ? 'golden' : 'default'));
+  if (theme.gradient === 'transparent') {
+    return 'glass-effect hover:bg-accent';
+  }
+  return 'shadow-lg';
+};
+
+const getUserThemeStyles = (user: any) => {
+  const theme = getThemeData(user.userTheme || (user.userType === 'owner' ? 'golden' : 'default'));
+  const styles: any = {};
+  
+  if (theme.gradient !== 'transparent') {
+    styles.background = theme.gradient;
+  }
+  
+  if (theme.hasAnimation) {
+    styles.animation = 'golden-glow 2s ease-in-out infinite';
+    styles.boxShadow = '0 0 25px rgba(255, 215, 0, 0.8)';
+  }
+  
+  return styles;
+};
+
+const getUserThemeTextColor = (user: any) => {
+  const theme = getThemeData(user.userTheme || (user.userType === 'owner' ? 'golden' : 'default'));
+  return theme.textColor;
+};
+
 interface UserSidebarProps {
   users: ChatUser[];
   onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
@@ -79,13 +126,10 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
               >
                 <div
                   className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer ${
-                    user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : 'glass-effect hover:bg-accent'
+                    getUserThemeClasses(user)
                   }`}
                   style={{ 
-                    ...(user.userType === 'owner' && {
-                      animation: 'golden-glow 2s ease-in-out infinite',
-                      boxShadow: '0 0 25px rgba(255, 215, 0, 0.8)'
-                    })
+                    ...getUserThemeStyles(user)
                   }}
                   onClick={(e) => onUserClick(e, user)}
                 >
@@ -100,7 +144,7 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                     <span 
                       className="text-sm font-medium"
                       style={{ 
-                        color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#FFFFFF')
+                        color: getUserThemeTextColor(user)
                       }}
                     >
                       {getUserRankBadge(user.userType, user.username)} {user.username}

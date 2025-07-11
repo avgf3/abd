@@ -16,7 +16,8 @@ export interface ChatUser {
   isKicked?: boolean;
   isBlocked?: boolean;
   ignoredUsers?: string[]; // قائمة المستخدمين المتجاهلين
-  usernameColor?: string; // لون اسم المستخدم
+  usernameColor?: string;
+  userTheme?: string; // لون اسم المستخدم
 }
 
 export interface ChatMessage {

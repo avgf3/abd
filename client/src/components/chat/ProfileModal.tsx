@@ -31,14 +31,74 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
     country: user?.country || 'السعودية',
     relation: user?.relation || 'عدم إظهار',
     profileImage: user?.profileImage || '/default_avatar.svg',
+    userTheme: user?.userTheme || 'default',
+    usernameColor: user?.usernameColor || '#FFFFFF',
   });
   const [isIgnored, setIsIgnored] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // دوال معالجة الثيمات
+  const handleThemeChange = async (themeId: string) => {
+    if (!currentUser) return;
+    
+    try {
+      setProfileData(prev => ({ ...prev, userTheme: themeId }));
+      
+      // إرسال التحديث للخادم
+      await apiRequest('PUT', `/api/users/${currentUser.id}`, {
+        userTheme: themeId
+      });
+      
+      // تحديث المستخدم الحالي
+      currentUser.userTheme = themeId;
+      
+      toast({
+        title: "تم التحديث",
+        description: "تم تغيير الثيم بنجاح!",
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "فشل في تحديث الثيم",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getCurrentThemeGradient = () => {
+    const theme = themeOptions.find(t => t.id === profileData.userTheme);
+    return theme?.gradient || 'transparent';
+  };
+
+  const getCurrentThemeTextColor = () => {
+    const theme = themeOptions.find(t => t.id === profileData.userTheme);
+    return theme?.textColor || '#FFFFFF';
+  };
+
+  const getCurrentThemeEmoji = () => {
+    const theme = themeOptions.find(t => t.id === profileData.userTheme);
+    return theme?.emoji || '';
+  };
 
   const countries = [
     'السعودية', 'مصر', 'الإمارات', 'الأردن', 'العراق', 'سوريا', 
     'لبنان', 'تونس', 'الجزائر', 'ليبيا', 'قطر', 'البحرين', 
     'عمان', 'فلسطين', 'اليمن', 'السودان', 'موريتانيا', 'الصومال'
+  ];
+
+  // ثيمات المستخدم الجميلة
+  const themeOptions = [
+    { id: 'default', name: 'افتراضي', emoji: '⚪', gradient: 'transparent', textColor: '#FFFFFF' },
+    { id: 'golden', name: 'ذهبي', emoji: '👑', gradient: 'linear-gradient(45deg, #FFD700, #FFA500)', textColor: '#000000' },
+    { id: 'royal', name: 'ملكي', emoji: '💜', gradient: 'linear-gradient(45deg, #8B5CF6, #A855F7)', textColor: '#FFFFFF' },
+    { id: 'ocean', name: 'المحيط', emoji: '🌊', gradient: 'linear-gradient(45deg, #0EA5E9, #0284C7)', textColor: '#FFFFFF' },
+    { id: 'sunset', name: 'غروب', emoji: '🌅', gradient: 'linear-gradient(45deg, #F97316, #EA580C)', textColor: '#FFFFFF' },
+    { id: 'forest', name: 'الغابة', emoji: '🌲', gradient: 'linear-gradient(45deg, #22C55E, #16A34A)', textColor: '#FFFFFF' },
+    { id: 'rose', name: 'وردي', emoji: '🌹', gradient: 'linear-gradient(45deg, #EC4899, #DB2777)', textColor: '#FFFFFF' },
+    { id: 'emerald', name: 'زمردي', emoji: '💎', gradient: 'linear-gradient(45deg, #10B981, #059669)', textColor: '#FFFFFF' },
+    { id: 'fire', name: 'نار', emoji: '🔥', gradient: 'linear-gradient(45deg, #EF4444, #DC2626)', textColor: '#FFFFFF' },
+    { id: 'galaxy', name: 'مجرة', emoji: '🌌', gradient: 'linear-gradient(45deg, #6366F1, #4F46E5)', textColor: '#FFFFFF' },
+    { id: 'rainbow', name: 'قوس قزح', emoji: '🌈', gradient: 'linear-gradient(45deg, #F59E0B, #EF4444, #EC4899, #8B5CF6)', textColor: '#FFFFFF' }
   ];
 
   const handleImageUpload = () => {
@@ -308,24 +368,61 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
             </div>
           </TabsContent>
 
-          <TabsContent value="colors" className="space-y-4">
-            {/* تبويب تلوين الاسم - فقط للمستخدم الحالي */}
-            {user && currentUser && user.id === currentUser.id && (
-              <UsernameColorPicker 
-                currentUser={currentUser} 
-                onColorUpdate={(color) => {
-                  // تحديث لون الاسم في الذاكرة
-                  if (currentUser) {
-                    currentUser.usernameColor = color;
-                  }
-                }} 
-              />
-            )}
-            {/* إذا كان يعرض ملف شخص آخر */}
+          <TabsContent value="colors">
+            <h3 className="text-lg font-semibold text-primary mb-4">🎨 تخصيص المظهر والألوان</h3>
+            {user && currentUser && user.id === currentUser.id ? (
+              <div className="space-y-6">
+                {/* ثيمات المستخدم */}
+                <div className="space-y-4">
+                  <h4 className="text-md font-semibold text-primary">🌟 ثيمات مميزة</h4>
+                  <p className="text-sm text-muted-foreground">اختر ثيماً مميزاً لمظهرك في الدردشة:</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {themeOptions.map((theme, index) => (
+                      <button
+                        key={index}
+                        className={`p-3 rounded-xl border-2 transition-all hover:scale-105 ${
+                          profileData.userTheme === theme.id ? 'border-primary ring-2 ring-primary/20' : 'border-gray-600'
+                        }`}
+                        style={{ 
+                          background: theme.gradient,
+                          color: theme.textColor
+                        }}
+                        onClick={() => handleThemeChange(theme.id)}
+                        title={theme.name}
+                      >
+                        <div className="text-center">
+                          <div className="text-lg mb-1">{theme.emoji}</div>
+                          <div className="text-sm font-bold">{theme.name}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* معاينة */}
+                <div className="mt-4 p-4 bg-accent rounded-lg">
+                  <p className="text-sm text-center mb-3">معاينة المظهر:</p>
+                  <div className="text-center">
+                    <div 
+                      className="inline-block px-4 py-2 rounded-xl transition-all duration-300"
+                      style={{ 
+                        background: getCurrentThemeGradient(),
+                        color: getCurrentThemeTextColor()
+                      }}
+                    >
+                      <span className="text-lg font-bold">
+                        {getCurrentThemeEmoji()} {profileData.name || 'اسم المستخدم'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+            
             {user && currentUser && user.id !== currentUser.id && (
               <div className="text-center p-8 text-gray-400">
                 <div className="text-6xl mb-4">🎨</div>
-                <p>لا يمكنك تغيير لون اسم مستخدم آخر</p>
+                <p>لا يمكنك تغيير مظهر مستخدم آخر</p>
                 <p className="text-sm mt-2">هذه الخاصية متاحة فقط في ملفك الشخصي</p>
               </div>
             )}
