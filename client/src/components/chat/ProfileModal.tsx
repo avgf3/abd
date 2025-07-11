@@ -54,6 +54,12 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
       currentUser.userTheme = themeId;
       
       toast({
+        title: "تم تحديث الثيم",
+        description: "تم تطبيق الثيم الجديد بنجاح",
+        variant: "default"
+      });
+      
+      toast({
         title: "تم التحديث",
         description: "تم تغيير الثيم بنجاح!",
       });
