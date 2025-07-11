@@ -68,9 +68,19 @@ export default function UserContextMenu({
     return <>{children}</>;
   }
 
-  // إزالة قيود الصلاحيات - الجميع يمكنه الوصول للخيارات
+  // التحقق من صلاحيات الإدارة
   const canModerate = (action: string) => {
-    return true; // جميع المستخدمين يمكنهم الوصول للخيارات
+    if (!currentUser) return false;
+    
+    // المالك له صلاحية كاملة
+    if (currentUser.userType === 'owner') return true;
+    
+    // المشرف يمكنه الكتم والطرد فقط
+    if (currentUser.userType === 'admin') {
+      return ['mute', 'kick', 'ban'].includes(action);
+    }
+    
+    return false;
   };
 
   const handleMute = async () => {
@@ -101,13 +111,12 @@ export default function UserContextMenu({
       setMuteReason('');
       onAction?.();
     } catch (error) {
+      console.error('خطأ في الكتم:', error);
       toast({
-        title: 'تم الكتم ✅',
-        description: `تم كتم ${targetUser.username} لمدة ${muteDuration} دقيقة`,
-        variant: 'default'
+        title: 'فشل الكتم ❌',
+        description: 'حدث خطأ أثناء محاولة الكتم. تحقق من صلاحياتك.',
+        variant: 'destructive'
       });
-      setShowMuteDialog(false);
-      setMuteReason('');
     }
   };
 
@@ -139,13 +148,12 @@ export default function UserContextMenu({
       setKickReason('');
       onAction?.();
     } catch (error) {
+      console.error('خطأ في الطرد:', error);
       toast({
-        title: 'تم الطرد ⏰',
-        description: `تم طرد ${targetUser.username} لمدة 15 دقيقة`,
-        variant: 'default'
+        title: 'فشل الطرد ❌',
+        description: 'حدث خطأ أثناء محاولة الطرد. تحقق من صلاحياتك.',
+        variant: 'destructive'
       });
-      setShowKickDialog(false);
-      setKickReason('');
     }
   };
 
@@ -178,13 +186,12 @@ export default function UserContextMenu({
       setBlockReason('');
       onAction?.();
     } catch (error) {
+      console.error('خطأ في الحجب:', error);
       toast({
-        title: 'تم الحجب النهائي 🚫',
-        description: `تم حجب ${targetUser.username} نهائياً من الموقع`,
-        variant: 'default'
+        title: 'فشل الحجب ❌',
+        description: 'حدث خطأ أثناء محاولة الحجب. تحقق من صلاحياتك.',
+        variant: 'destructive'
       });
-      setShowBlockDialog(false);
-      setBlockReason('');
     }
   };
 
