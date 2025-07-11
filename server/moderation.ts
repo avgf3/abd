@@ -25,38 +25,42 @@ export class ModerationSystem {
     this.blockedDevices = new Set();
   }
 
-  // التحقق من الصلاحيات
+  // التحقق من الصلاحيات - نظام محسن
   canModerate(moderator: User, target: User, action: string): boolean {
-    // المالك (عبود) له صلاحية كاملة
-    if (moderator.username === 'عبود' && moderator.userType === 'owner') {
-      return true;
-    }
-
-    // المشرف لا يستطيع التأثير على المالك أو مشرف آخر
-    if (moderator.userType === 'admin' && (target.userType === 'owner' || target.userType === 'admin')) {
+    console.log(`🔍 فحص الصلاحيات: ${moderator.username} (${moderator.userType}) -> ${target.username} (${target.userType}) | الإجراء: ${action}`);
+    
+    // لا يمكن استخدام الإجراءات على النفس
+    if (moderator.id === target.id) {
+      console.log('❌ لا يمكن استخدام الإجراءات على النفس');
       return false;
     }
 
     // المالك له صلاحية كاملة
-    if (moderator.userType === 'owner') return true;
-
-    // تحديد الصلاحيات حسب النوع
-    switch (action) {
-      case 'mute':
-        return moderator.userType === 'admin' || moderator.userType === 'owner';
-      case 'ban':
-        return moderator.userType === 'admin' || moderator.userType === 'owner';
-      case 'block':
-        return moderator.userType === 'owner';
-      case 'kick':
-        return moderator.userType === 'admin' || moderator.userType === 'owner';
-      case 'promote':
-        return moderator.userType === 'owner';
-      case 'demote':
-        return moderator.userType === 'owner';
-      default:
-        return false;
+    if (moderator.userType === 'owner') {
+      console.log('✅ المالك له صلاحية كاملة');
+      return true;
     }
+
+    // الأدمن لا يستطيع إدارة المالك أو أدمن آخر
+    if (moderator.userType === 'admin' && (target.userType === 'owner' || target.userType === 'admin')) {
+      console.log('❌ الأدمن لا يستطيع إدارة المالك أو أدمن آخر');
+      return false;
+    }
+
+    // تحديد الصلاحيات حسب النوع والإجراء
+    const permissions = {
+      'mute': ['admin', 'owner'],
+      'unmute': ['admin', 'owner'],
+      'ban': ['admin', 'owner'],
+      'kick': ['admin', 'owner'],
+      'block': ['owner'],
+      'promote': ['owner'],
+      'demote': ['owner']
+    };
+
+    const hasPermission = permissions[action]?.includes(moderator.userType) || false;
+    console.log(`${hasPermission ? '✅' : '❌'} الصلاحية: ${hasPermission} للإجراء: ${action}`);
+    return hasPermission;
   }
 
   // كتم المستخدم (المشرف)

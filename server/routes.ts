@@ -648,9 +648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
       const deviceId = req.headers['user-agent'] || 'unknown';
       
-      // استخدام النظام المحسن
-      const { enhancedModerationSystem } = await import('./enhanced-moderation');
-      const success = await enhancedModerationSystem.muteUser(
+      const success = await moderationSystem.muteUser(
         moderatorId, 
         targetUserId, 
         reason, 
@@ -1026,6 +1024,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(404).json({ error: "الصداقة غير موجودة" });
       }
     } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // إضافة endpoint لوحة إجراءات المشرفين
+  app.get("/api/moderation/actions", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      const user = await storage.getUser(Number(userId));
+      
+      // التحقق من أن المستخدم مشرف أو مالك
+      if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
+        return res.status(403).json({ error: "غير مسموح - للمشرفين فقط" });
+      }
+
+      const actions = moderationSystem.getModerationLog()
+        .map(action => ({
+          ...action,
+          moderatorName: '', // سيتم إضافة اسم المشرف
+          targetName: '' // سيتم إضافة اسم المستهدف
+        }));
+      
+      // إضافة أسماء المستخدمين للإجراءات
+      for (const action of actions) {
+        const moderator = await storage.getUser(action.moderatorId);
+        const target = await storage.getUser(action.targetUserId);
+        action.moderatorName = moderator?.username || 'مجهول';
+        action.targetName = target?.username || 'مجهول';
+      }
+
+      console.log(`📋 ${user.username} طلب تاريخ الإجراءات - ${actions.length} إجراء`);
+      res.json(actions);
+    } catch (error) {
+      console.error("خطأ في الحصول على تاريخ الإجراءات:", error);
       res.status(500).json({ error: "خطأ في الخادم" });
     }
   });

@@ -38,6 +38,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showMessages, setShowMessages] = useState(false);
   const [showModerationPanel, setShowModerationPanel] = useState(false);
   const [showOwnerPanel, setShowOwnerPanel] = useState(false);
+  const [showModerationActions, setShowModerationActions] = useState(false);
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
     sender: ChatUser | null;
@@ -189,13 +190,22 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           
           {/* زر لوحة الإدارة للمشرفين */}
           {chat.currentUser && (chat.currentUser.userType === 'owner' || chat.currentUser.userType === 'admin') && (
-            <Button 
-              className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
-              onClick={() => setShowModerationPanel(true)}
-            >
-              <span>🛡️</span>
-              إدارة
-            </Button>
+            <>
+              <Button 
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+                onClick={() => setShowModerationPanel(true)}
+              >
+                <span>🛡️</span>
+                إدارة
+              </Button>
+              <Button 
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2 border border-blue-400"
+                onClick={() => setShowModerationActions(true)}
+              >
+                <span>📋</span>
+                إجراءات المشرفين
+              </Button>
+            </>
           )}
 
           {/* زر خاص بالمالك فقط */}
@@ -355,6 +365,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           onClose={() => setShowOwnerPanel(false)}
           currentUser={chat.currentUser}
           onlineUsers={chat.onlineUsers}
+        />
+      )}
+
+      {showModerationActions && (
+        <ModerationPanel 
+          isVisible={showModerationActions}
+          onClose={() => setShowModerationActions(false)}
+          currentUser={chat.currentUser}
         />
       )}
 
