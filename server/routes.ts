@@ -6,7 +6,6 @@ import { setupDownloadRoute } from "./download-route";
 import { insertUserSchema, insertMessageSchema } from "@shared/schema";
 import { spamProtection } from "./spam-protection";
 import { moderationSystem } from "./moderation";
-import { notificationHelper } from "./notification-helper";
 import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter } from "./security";
 
 import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
@@ -56,71 +55,8 @@ const upload = multer({
 });
 
 let wss: WebSocketServer;
-let clients: Set<WebSocketClient>;
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
-  // Smart Notifications API
-  app.get('/api/notifications/:userId', async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const notifications = await storage.getUserNotifications(userId, 100);
-      
-      // Smart categorization
-      const categorized = {
-        messages: notifications.filter(n => n.type === 'private_message'),
-        friends: notifications.filter(n => ['friend_request', 'friend_accepted'].includes(n.type)),
-        system: notifications.filter(n => ['welcome', 'system'].includes(n.type)),
-        moderation: notifications.filter(n => ['promotion', 'mute', 'kick', 'ban'].includes(n.type))
-      };
-      
-      res.json(categorized);
-    } catch (error) {
-      res.status(500).json({ error: 'خطأ في جلب الإشعارات' });
-    }
-  });
-
-  app.put('/api/notifications/:notificationId/read', async (req, res) => {
-    try {
-      const notificationId = parseInt(req.params.notificationId);
-      await storage.markNotificationAsRead(notificationId);
-      res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: 'خطأ في تحديث الإشعار' });
-    }
-  });
-
-  app.put('/api/notifications/:userId/mark-all-read', async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const { type } = req.body;
-      
-      if (type) {
-        const notifications = await storage.getUserNotifications(userId);
-        const filteredNotifications = notifications.filter(n => n.type === type);
-        
-        for (const notification of filteredNotifications) {
-          await storage.markNotificationAsRead(notification.id);
-        }
-      } else {
-        await storage.markAllNotificationsAsRead(userId);
-      }
-      
-      res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: 'خطأ في تحديث الإشعارات' });
-    }
-  });
-
-  app.get('/api/notifications/:userId/unread-count', async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const count = await storage.getUnreadNotificationCount(userId);
-      res.json({ count });
-    } catch (error) {
-      res.status(500).json({ error: 'خطأ في جلب عدد الإشعارات' });
-    }
-  });
   // رفع صور البروفايل
   app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
     try {
@@ -541,16 +477,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  clients = new Set<WebSocketClient>();
-  
-  // Connect notification helper to WebSocket
-  notificationHelper.setWebSocketServer(wss);
   
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);
   app.use(advancedSecurityMiddleware);
 
-
+  // Store connected clients
+  const clients = new Set<WebSocketClient>();
 
   // Member registration route - مع أمان محسن
   app.post("/api/auth/register", async (req, res) => {
@@ -761,13 +694,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Broadcast user update to all connected clients
-      wss.clients.forEach((client: WebSocketClient) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({
-            type: 'userUpdated',
-            user
-          }));
-        }
+      broadcast({
+        type: 'userUpdated',
+        user
       });
 
       res.json({ user, message: "تم تحديث الصورة الشخصية بنجاح" });
