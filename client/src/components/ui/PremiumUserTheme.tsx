@@ -1,54 +1,35 @@
-import { ChatUser } from '@/types/chat';
+import { ReactNode } from 'react';
+import type { ChatUser } from '@/types/chat';
 
 interface PremiumUserThemeProps {
-  user: ChatUser;
-  children: React.ReactNode;
-  showFlag?: boolean;
+  user: ChatUser | null;
+  children: ReactNode;
   size?: 'small' | 'medium' | 'large';
+  showFlag?: boolean;
 }
 
-export default function PremiumUserTheme({ 
-  user, 
-  children, 
-  showFlag = true, 
-  size = 'medium' 
-}: PremiumUserThemeProps) {
-  const isPremium = user.userType === 'admin' || user.userType === 'owner';
-  
-  if (!isPremium) {
+export default function PremiumUserTheme({ user, children, size = 'medium', showFlag = false }: PremiumUserThemeProps) {
+  if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
     return <>{children}</>;
   }
 
-  const getThemeStyles = () => {
+  const getFrameStyles = () => {
     if (user.userType === 'owner') {
       return {
-        background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6B35 100%)',
         border: '2px solid #FFD700',
-        boxShadow: '0 0 15px rgba(255, 215, 0, 0.6), inset 0 0 15px rgba(255, 215, 0, 0.2)',
-        animation: 'premium-glow 3s ease-in-out infinite alternate'
+        borderRadius: '8px',
+        padding: '4px 8px',
+        background: 'rgba(255, 215, 0, 0.1)',
       };
     } else if (user.userType === 'admin') {
       return {
-        background: 'linear-gradient(135deg, #9333EA 0%, #7C3AED 50%, #6366F1 100%)',
         border: '2px solid #9333EA',
-        boxShadow: '0 0 12px rgba(147, 51, 234, 0.5), inset 0 0 12px rgba(147, 51, 234, 0.2)',
-        animation: 'admin-glow 3s ease-in-out infinite alternate'
+        borderRadius: '8px', 
+        padding: '4px 8px',
+        background: 'rgba(147, 51, 234, 0.1)',
       };
     }
     return {};
-  };
-
-  const getBadgeSize = () => {
-    switch (size) {
-      case 'small':
-        return user.userType === 'owner' ? 'text-lg' : 'text-base';
-      case 'medium':
-        return user.userType === 'owner' ? 'text-xl' : 'text-lg';
-      case 'large':
-        return user.userType === 'owner' ? 'text-2xl' : 'text-xl';
-      default:
-        return user.userType === 'owner' ? 'text-xl' : 'text-lg';
-    }
   };
 
   const getCountryFlag = (country: string) => {
@@ -56,95 +37,92 @@ export default function PremiumUserTheme({
       'السعودية': '🇸🇦',
       'مصر': '🇪🇬',
       'الإمارات': '🇦🇪',
-      'الكويت': '🇰🇼',
+      'الأردن': '🇯🇴',
+      'العراق': '🇮🇶',
+      'سوريا': '🇸🇾',
+      'لبنان': '🇱🇧',
+      'تونس': '🇹🇳',
+      'الجزائر': '🇩🇿',
+      'ليبيا': '🇱🇾',
       'قطر': '🇶🇦',
       'البحرين': '🇧🇭',
       'عمان': '🇴🇲',
-      'الأردن': '🇯🇴',
-      'لبنان': '🇱🇧',
-      'سوريا': '🇸🇾',
-      'العراق': '🇮🇶',
       'فلسطين': '🇵🇸',
-      'المغرب': '🇲🇦',
-      'الجزائر': '🇩🇿',
-      'تونس': '🇹🇳',
-      'ليبيا': '🇱🇾',
+      'اليمن': '🇾🇪',
       'السودان': '🇸🇩',
-      'الصومال': '🇸🇴',
-      'جيبوتي': '🇩🇯',
       'موريتانيا': '🇲🇷',
+      'الصومال': '🇸🇴',
+      'المغرب': '🇲🇦',
+      'جيبوتي': '🇩🇯',
       'جزر القمر': '🇰🇲',
-      'أمريكا': '🇺🇸',
-      'كندا': '🇨🇦',
-      'بريطانيا': '🇬🇧',
-      'فرنسا': '🇫🇷',
-      'ألمانيا': '🇩🇪',
-      'إيطاليا': '🇮🇹',
-      'إسبانيا': '🇪🇸',
       'تركيا': '🇹🇷',
-      'روسيا': '🇷🇺',
-      'الصين': '🇨🇳',
-      'اليابان': '🇯🇵',
-      'كوريا الجنوبية': '🇰🇷',
-      'الهند': '🇮🇳',
-      'باكستان': '🇵🇰',
-      'بنغلاديش': '🇧🇩',
       'إيران': '🇮🇷',
       'أفغانستان': '🇦🇫',
+      'باكستان': '🇵🇰',
+      'بنغلاديش': '🇧🇩',
+      'إندونيسيا': '🇮🇩',
+      'ماليزيا': '🇲🇾',
+      'بروناي': '🇧🇳',
+      'الفلبين': '🇵🇭',
+      'تايلاند': '🇹🇭',
+      'سنغافورة': '🇸🇬',
+      'بريطانيا': '🇬🇧',
+      'أمريكا': '🇺🇸',
+      'كندا': '🇨🇦',
       'أستراليا': '🇦🇺',
+      'ألمانيا': '🇩🇪',
+      'فرنسا': '🇫🇷',
+      'إيطاليا': '🇮🇹',
+      'إسبانيا': '🇪🇸',
+      'البرتغال': '🇵🇹',
+      'هولندا': '🇳🇱',
+      'بلجيكا': '🇧🇪',
+      'سويسرا': '🇨🇭',
+      'النمسا': '🇦🇹',
+      'الدنمارك': '🇩🇰',
+      'السويد': '🇸🇪',
+      'النرويج': '🇳🇴',
+      'فنلندا': '🇫🇮',
+      'روسيا': '🇷🇺',
+      'بولندا': '🇵🇱',
+      'التشيك': '🇨🇿',
+      'المجر': '🇭🇺',
+      'اليونان': '🇬🇷',
+      'بلغاريا': '🇧🇬',
+      'رومانيا': '🇷🇴',
+      'كرواتيا': '🇭🇷',
+      'صربيا': '🇷🇸',
+      'البوسنة': '🇧🇦',
+      'الصين': '🇨🇳',
+      'اليابان': '🇯🇵',
+      'كوريا': '🇰🇷',
+      'الهند': '🇮🇳',
+      'نيبال': '🇳🇵',
+      'سريلانكا': '🇱🇰',
       'البرازيل': '🇧🇷',
       'الأرجنتين': '🇦🇷',
-      'المكسيك': '🇲🇽',
-      'مصر': '🇪🇬'
+      'المكسيك': '🇲🇽'
     };
     return flags[country] || '🌍';
   };
 
   return (
-    <div 
-      className="relative rounded-xl p-3 transition-all duration-500 hover:scale-105"
-      style={getThemeStyles()}
-    >
-      <div className="flex items-center gap-3">
-        {/* Role Badge with Enhanced Size */}
-        <span className={`${getBadgeSize()} filter drop-shadow-lg transition-transform duration-300 hover:scale-110`}>
+    <div className="inline-block" style={getFrameStyles()}>
+      <div className="flex items-center gap-1">
+        <span className="text-base">
           {user.userType === 'owner' ? '👑' : '⭐'}
         </span>
         
-        {/* Username with Color */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {children}
           
-          {/* Country Flag */}
           {showFlag && user.country && (
-            <span className="text-base filter drop-shadow-sm transition-transform duration-300 hover:scale-110" title={user.country}>
+            <span className="text-sm" title={user.country}>
               {getCountryFlag(user.country)}
             </span>
           )}
         </div>
       </div>
-      
-      {/* Premium Effect Sparkles */}
-      <div className="absolute -top-2 -right-2 text-sm sparkle-effect">
-        ✨
-      </div>
-      {user.userType === 'owner' && (
-        <div className="absolute -bottom-2 -left-2 text-sm diamond-effect">
-          💎
-        </div>
-      )}
-      
-      {/* Additional Premium Effects */}
-      {user.userType === 'owner' && (
-        <>
-          <div className="absolute top-1 left-1 text-xs opacity-60 animate-pulse">
-            ⭐
-          </div>
-          <div className="absolute bottom-1 right-1 text-xs opacity-60 animate-bounce">
-            🌟
-          </div>
-        </>
-      )}
     </div>
   );
 }

@@ -3,75 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Premium User Theme Animations */
-@keyframes premium-glow {
-  0% { 
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.6), inset 0 0 15px rgba(255, 215, 0, 0.2);
-    transform: scale(1);
-  }
-  50% { 
-    box-shadow: 0 0 25px rgba(255, 215, 0, 0.8), inset 0 0 20px rgba(255, 215, 0, 0.4);
-    transform: scale(1.02);
-  }
-  100% { 
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.6), inset 0 0 15px rgba(255, 215, 0, 0.2);
-    transform: scale(1);
-  }
-}
 
-@keyframes admin-glow {
-  0% { 
-    box-shadow: 0 0 12px rgba(147, 51, 234, 0.5), inset 0 0 12px rgba(147, 51, 234, 0.2);
-    transform: scale(1);
-  }
-  50% { 
-    box-shadow: 0 0 18px rgba(147, 51, 234, 0.7), inset 0 0 16px rgba(147, 51, 234, 0.3);
-    transform: scale(1.02);
-  }
-  100% { 
-    box-shadow: 0 0 12px rgba(147, 51, 234, 0.5), inset 0 0 12px rgba(147, 51, 234, 0.2);
-    transform: scale(1);
-  }
-}
-
-@keyframes sparkle {
-  0%, 100% { 
-    opacity: 0.4;
-    transform: scale(0.8) rotate(0deg);
-  }
-  50% { 
-    opacity: 1;
-    transform: scale(1.2) rotate(180deg);
-  }
-}
-
-@keyframes diamond-pulse {
-  0%, 100% { 
-    opacity: 0.6;
-    transform: scale(0.9);
-  }
-  50% { 
-    opacity: 1;
-    transform: scale(1.1);
-  }
-}
-
-/* Premium Theme Styling */
-.premium-glow {
-  animation: premium-glow 3s ease-in-out infinite;
-}
-
-.admin-glow {
-  animation: admin-glow 3s ease-in-out infinite;
-}
-
-.sparkle-effect {
-  animation: sparkle 2s ease-in-out infinite;
-}
-
-.diamond-effect {
-  animation: diamond-pulse 2.5s ease-in-out infinite;
-}
 
 /* تحسينات للرسائل الخاصة */
 .line-clamp-2 {
