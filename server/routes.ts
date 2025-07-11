@@ -194,6 +194,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/moderation/unmute", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId } = req.body;
+      
+      const success = await moderationSystem.unmuteUser(moderatorId, targetUserId);
+      if (success) {
+        res.json({ message: "تم إلغاء الكتم بنجاح" });
+      } else {
+        res.status(400).json({ error: "فشل في إلغاء الكتم" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في إلغاء الكتم" });
+    }
+  });
+
+  app.post("/api/moderation/unblock", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId } = req.body;
+      
+      const success = await moderationSystem.unblockUser(moderatorId, targetUserId);
+      if (success) {
+        res.json({ message: "تم إلغاء الحجب بنجاح" });
+      } else {
+        res.status(400).json({ error: "فشل في إلغاء الحجب" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في إلغاء الحجب" });
+    }
+  });
+
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   

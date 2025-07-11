@@ -44,7 +44,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showMessages, setShowMessages] = useState(false);
   const [showModerationPanel, setShowModerationPanel] = useState(false);
   const [showOwnerPanel, setShowOwnerPanel] = useState(false);
-  const [showModerationActions, setShowModerationActions] = useState(false);
   const [showReportsLog, setShowReportsLog] = useState(false);
   const [showActiveActions, setShowActiveActions] = useState(false);
   const [showPromotePanel, setShowPromotePanel] = useState(false);
@@ -224,11 +223,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               </Button>
               
               <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2"
-                onClick={() => setShowModerationActions(true)}
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400"
+                onClick={() => setShowActiveActions(true)}
               >
-                <span>📋</span>
-                سجل الإجراءات
+                <span>🔒</span>
+                سجل الإجراءات النشطة
               </Button>
 
               {/* زر ترقية المستخدمين - للمالك فقط */}
@@ -241,13 +240,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   ترقية المستخدمين
                 </Button>
               )}
-              <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400"
-                onClick={() => setShowActiveActions(true)}
-              >
-                <span>🔒</span>
-                سجل الإجراءات
-              </Button>
             </>
           )}
 
@@ -420,11 +412,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
-      {showModerationActions && (
+      {showModerationPanel && (
         <ModerationPanel 
-          isVisible={showModerationActions}
-          onClose={() => setShowModerationActions(false)}
+          isOpen={showModerationPanel}
+          onClose={() => setShowModerationPanel(false)}
           currentUser={chat.currentUser}
+          onlineUsers={chat.onlineUsers}
         />
       )}
 
