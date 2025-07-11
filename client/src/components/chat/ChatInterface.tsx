@@ -20,7 +20,7 @@ import BlockNotification from '../moderation/BlockNotification';
 import PromoteUserPanel from '../moderation/PromoteUserPanel';
 import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
-import BackupPanel from '../BackupPanel';
+
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -48,7 +48,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showReportsLog, setShowReportsLog] = useState(false);
   const [showActiveActions, setShowActiveActions] = useState(false);
   const [showPromotePanel, setShowPromotePanel] = useState(false);
-  const [showBackupPanel, setShowBackupPanel] = useState(false);
+
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
     sender: ChatUser | null;
@@ -262,14 +262,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             إعدادات
           </Button>
 
-          <Button 
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-green-600 transition-all duration-200 flex items-center gap-2 border border-green-400"
-            onClick={() => setShowBackupPanel(true)}
-            title="حفظ المشروع"
-          >
-            <span>💾</span>
-            حفظ المشروع
-          </Button>
+
         </div>
       </header>
       
@@ -467,11 +460,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         onOpenMessages={() => setShowMessages(true)}
       />
 
-      {/* لوحة النسخ الاحتياطي */}
-      <BackupPanel
-        isOpen={showBackupPanel}
-        onClose={() => setShowBackupPanel(false)}
-      />
+
 
     </div>
   );
