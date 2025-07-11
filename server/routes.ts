@@ -728,6 +728,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const moderator = await storage.getUser(moderatorId);
         const target = await storage.getUser(targetUserId);
         
+        // إرسال إشعار خاص للمستخدم المطرود
+        const targetClient = Array.from(wss.clients).find((client: any) => client.userId === targetUserId);
+        if (targetClient && targetClient.readyState === WebSocket.OPEN) {
+          targetClient.send(JSON.stringify({
+            type: 'kicked',
+            targetUserId: targetUserId,
+            duration: duration,
+            reason: reason
+          }));
+        }
+
         // إرسال إشعار للدردشة العامة
         const systemMessage = `⏰ تم طرد ${target?.username} من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`;
         
@@ -772,6 +783,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const moderator = await storage.getUser(moderatorId);
         const target = await storage.getUser(targetUserId);
         
+        // إرسال إشعار خاص للمستخدم المحجوب
+        const targetClient = Array.from(wss.clients).find((client: any) => client.userId === targetUserId);
+        if (targetClient && targetClient.readyState === WebSocket.OPEN) {
+          targetClient.send(JSON.stringify({
+            type: 'blocked',
+            targetUserId: targetUserId,
+            reason: reason
+          }));
+        }
+
         // إرسال إشعار للدردشة العامة
         const systemMessage = `🚫 تم حجب ${target?.username} نهائياً من قبل ${moderator?.username} - السبب: ${reason}`;
         
@@ -1117,6 +1138,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("خطأ في مراجعة البلاغ:", error);
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // إضافة endpoint لترقية المستخدمين
+  app.post("/api/moderation/promote", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, newRole } = req.body;
+      
+      const moderator = await storage.getUser(moderatorId);
+      const target = await storage.getUser(targetUserId);
+      
+      if (!moderator || moderator.userType !== 'owner') {
+        return res.status(403).json({ error: "فقط المالك يمكنه ترقية المستخدمين" });
+      }
+      
+      if (!target) {
+        return res.status(404).json({ error: "المستخدم غير موجود" });
+      }
+      
+      if (target.userType !== 'member') {
+        return res.status(400).json({ error: "يمكن ترقية الأعضاء فقط" });
+      }
+      
+      if (!['admin', 'owner'].includes(newRole)) {
+        return res.status(400).json({ error: "رتبة غير صالحة" });
+      }
+      
+      // تحديث نوع المستخدم
+      await storage.updateUser(targetUserId, { userType: newRole as any });
+      
+      // إرسال إشعار عبر WebSocket
+      const promotionMessage = {
+        type: 'systemNotification',
+        message: `🎉 تم ترقية ${target.username} إلى ${newRole === 'admin' ? 'مشرف' : 'مالك'} بواسطة ${moderator.username}`,
+        timestamp: new Date().toISOString()
+      };
+      
+      broadcast(promotionMessage);
+      
+      console.log(`👑 ${moderator.username} رقى ${target.username} إلى ${newRole}`);
+      res.json({ message: `تم ترقية ${target.username} إلى ${newRole === 'admin' ? 'مشرف' : 'مالك'} بنجاح` });
+    } catch (error) {
+      console.error("خطأ في ترقية المستخدم:", error);
       res.status(500).json({ error: "خطأ في الخادم" });
     }
   });

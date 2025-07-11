@@ -53,6 +53,15 @@ export default function ReportModal({
   ];
 
   const handleSubmit = async () => {
+    if (currentUser?.userType === 'guest') {
+      toast({
+        title: 'غير مسموح',
+        description: 'التبليغ متاح للأعضاء فقط. سجل كعضو أولاً',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     if (!reason || !reportedUser || !currentUser) {
       toast({
         title: 'خطأ',
@@ -164,8 +173,17 @@ export default function ReportModal({
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             إلغاء
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || !reason}>
-            {isSubmitting ? 'جاري الإرسال...' : 'إرسال التبليغ'}
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isSubmitting || !reason || currentUser?.userType === 'guest'}
+            variant={currentUser?.userType === 'guest' ? 'secondary' : 'default'}
+          >
+            {currentUser?.userType === 'guest' 
+              ? 'للأعضاء فقط' 
+              : isSubmitting 
+                ? 'جاري الإرسال...' 
+                : 'إرسال التبليغ'
+            }
           </Button>
         </DialogFooter>
       </DialogContent>

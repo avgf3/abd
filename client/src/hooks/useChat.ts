@@ -44,7 +44,8 @@ export function useChat() {
   const [newMessageSender, setNewMessageSender] = useState<ChatUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [ignoredUsers, setIgnoredUsers] = useState<Set<number>>(new Set());
-  const [showKickCountdown, setShowKickCountdown] = useState(false);
+  const [kickNotification, setKickNotification] = useState<{show: boolean, duration: number}>({show: false, duration: 0});
+  const [blockNotification, setBlockNotification] = useState<{show: boolean, reason: string}>({show: false, reason: ''});
   
   // تحسين الأداء: مدراء التحسين
   const messageCache = useRef(new MessageCacheManager());
@@ -267,15 +268,32 @@ export function useChat() {
                   }
                 } else if (message.action === 'banned') {
                   console.log('⏰ تم طردك من الدردشة لمدة 15 دقيقة');
-                  setShowKickCountdown(true);
+                  setKickNotification({ show: true, duration: message.duration || 15 });
                 } else if (message.action === 'blocked') {
                   console.log('🚫 تم حجبك نهائياً من الموقع');
-                  alert('🚫 تم حجبك نهائياً من الموقع بواسطة عنوان IP والجهاز. لا يمكنك الدخول مرة أخرى.');
-                  disconnect();
+                  setBlockNotification({ show: true, reason: message.reason || 'مخالفة قوانين الدردشة' });
                   setTimeout(() => {
                     window.location.reload();
                   }, 1000);
                 }
+              }
+              break;
+
+            case 'kicked':
+              if (message.targetUserId === user.id) {
+                setKickNotification({ 
+                  show: true, 
+                  duration: message.duration || 15 
+                });
+              }
+              break;
+
+            case 'blocked':
+              if (message.targetUserId === user.id) {
+                setBlockNotification({ 
+                  show: true, 
+                  reason: message.reason || 'مخالفة قوانين الموقع' 
+                });
               }
               break;
               
@@ -457,6 +475,8 @@ export function useChat() {
     connectionError,
     newMessageSender,
     ignoredUsers,
+    kickNotification,
+    blockNotification,
     setNewMessageSender,
     connect,
     disconnect,

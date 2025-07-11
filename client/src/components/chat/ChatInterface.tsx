@@ -15,6 +15,9 @@ import MessageAlert from './MessageAlert';
 import ModerationPanel from './ModerationPanel';
 import ReportsLog from '../moderation/ReportsLog';
 import ActiveModerationLog from '../moderation/ActiveModerationLog';
+import KickNotification from '../moderation/KickNotification';
+import BlockNotification from '../moderation/BlockNotification';
+import PromoteUserPanel from '../moderation/PromoteUserPanel';
 import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
 import { Button } from '@/components/ui/button';
@@ -43,6 +46,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showModerationActions, setShowModerationActions] = useState(false);
   const [showReportsLog, setShowReportsLog] = useState(false);
   const [showActiveActions, setShowActiveActions] = useState(false);
+  const [showPromotePanel, setShowPromotePanel] = useState(false);
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
     sender: ChatUser | null;
@@ -210,6 +214,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 سجل البلاغات
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
               </Button>
+
+              {/* زر ترقية المستخدمين - للمالك فقط */}
+              {chat.currentUser?.userType === 'owner' && (
+                <Button 
+                  className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2"
+                  onClick={() => setShowPromotePanel(true)}
+                >
+                  <span>👑</span>
+                  ترقية المستخدمين
+                </Button>
+              )}
               <Button 
                 className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400"
                 onClick={() => setShowActiveActions(true)}
@@ -403,6 +418,28 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           currentUser={chat.currentUser}
         />
       )}
+
+      {showPromotePanel && (
+        <PromoteUserPanel 
+          isVisible={showPromotePanel}
+          onClose={() => setShowPromotePanel(false)}
+          currentUser={chat.currentUser}
+          onlineUsers={chat.onlineUsers}
+        />
+      )}
+
+      {/* إشعارات الطرد والحجب */}
+      <KickNotification
+        isVisible={chat.kickNotification?.show || false}
+        durationMinutes={chat.kickNotification?.duration || 15}
+        onClose={() => {}}
+      />
+      
+      <BlockNotification
+        isVisible={chat.blockNotification?.show || false}
+        reason={chat.blockNotification?.reason || ''}
+        onClose={() => {}}
+      />
 
       {/* تنبيه الرسائل الجديدة */}
       <MessageAlert
