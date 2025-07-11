@@ -3,6 +3,43 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 220 13% 9%;
+    --foreground: 220 8% 94%;
+    --card: 220 13% 11%;
+    --card-foreground: 220 8% 94%;
+    --popover: 220 13% 9%;
+    --popover-foreground: 220 8% 94%;
+    --primary: 220 91% 56%;
+    --primary-foreground: 220 8% 94%;
+    --secondary: 220 13% 15%;
+    --secondary-foreground: 220 8% 94%;
+    --muted: 220 13% 15%;
+    --muted-foreground: 220 8% 70%;
+    --accent: 220 13% 15%;
+    --accent-foreground: 220 8% 94%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 20%;
+    --input: 220 13% 20%;
+    --ring: 220 91% 56%;
+    --radius: 0.5rem;
+  }
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Cairo', sans-serif;
+}
+
 /* Golden Glow Animation for Owner */
 @keyframes golden-glow {
   0%, 100% {

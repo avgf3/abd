@@ -28,11 +28,13 @@ export default function ChatPage() {
       )}
       
       {/* عداد الطرد */}
-      <KickCountdown 
-        isVisible={chat.showKickCountdown || false}
-        onClose={() => chat.setShowKickCountdown?.(false)}
-        durationMinutes={15}
-      />
+      {chat.kickNotification && (
+        <KickCountdown 
+          isVisible={true}
+          onClose={() => {}}
+          durationMinutes={15}
+        />
+      )}
     </div>
   );
 }

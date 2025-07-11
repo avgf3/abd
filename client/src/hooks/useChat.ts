@@ -627,8 +627,6 @@ export function useChat() {
       return false;
     }, [currentUser]),
     sendPrivateMessage,
-    handleTyping,
-    newMessageSender,
-    setNewMessageSender,
+    handleTyping
   };
 }
