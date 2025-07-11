@@ -62,9 +62,14 @@ export default function FriendRequestsPanel({
     
     setLoading(true);
     try {
-      const response = await apiRequest('GET', `/api/friend-requests/${currentUser.id}`);
-      setIncomingRequests(response.incoming || []);
-      setOutgoingRequests(response.outgoing || []);
+      // جلب الطلبات الواردة والصادرة بشكل منفصل
+      const [incomingResponse, outgoingResponse] = await Promise.all([
+        apiRequest(`/api/friend-requests/incoming/${currentUser.id}`),
+        apiRequest(`/api/friend-requests/outgoing/${currentUser.id}`)
+      ]);
+      
+      setIncomingRequests(incomingResponse.requests || []);
+      setOutgoingRequests(outgoingResponse.requests || []);
     } catch (error) {
       console.error('Error fetching friend requests:', error);
       toast({
@@ -79,7 +84,11 @@ export default function FriendRequestsPanel({
 
   const handleAcceptRequest = async (request: FriendRequest) => {
     try {
-      await apiRequest('POST', `/api/friend-requests/${request.id}/accept`);
+      await apiRequest(`/api/friend-requests/${request.id}/accept`, {
+        method: 'POST',
+        body: JSON.stringify({ userId: currentUser?.id }),
+        headers: { 'Content-Type': 'application/json' }
+      });
       
       toast({
         title: 'تم قبول الطلب',
@@ -99,7 +108,11 @@ export default function FriendRequestsPanel({
 
   const handleDeclineRequest = async (request: FriendRequest) => {
     try {
-      await apiRequest('POST', `/api/friend-requests/${request.id}/decline`);
+      await apiRequest(`/api/friend-requests/${request.id}/decline`, {
+        method: 'POST',
+        body: JSON.stringify({ userId: currentUser?.id }),
+        headers: { 'Content-Type': 'application/json' }
+      });
       
       toast({
         title: 'تم رفض الطلب',
@@ -119,7 +132,11 @@ export default function FriendRequestsPanel({
 
   const handleIgnoreRequest = async (request: FriendRequest) => {
     try {
-      await apiRequest('POST', `/api/friend-requests/${request.id}/ignore`);
+      await apiRequest(`/api/friend-requests/${request.id}/decline`, {
+        method: 'POST',
+        body: JSON.stringify({ userId: currentUser?.id }),
+        headers: { 'Content-Type': 'application/json' }
+      });
       
       toast({
         title: 'تم تجاهل الطلب',
@@ -139,7 +156,11 @@ export default function FriendRequestsPanel({
 
   const handleCancelRequest = async (request: FriendRequest) => {
     try {
-      await apiRequest('DELETE', `/api/friend-requests/${request.id}`);
+      await apiRequest(`/api/friend-requests/${request.id}/cancel`, {
+        method: 'POST',
+        body: JSON.stringify({ userId: currentUser?.id }),
+        headers: { 'Content-Type': 'application/json' }
+      });
       
       toast({
         title: 'تم إلغاء الطلب',

@@ -73,7 +73,7 @@ export default function FriendsPanel({
     
     setLoading(true);
     try {
-      const response = await apiRequest('GET', `/api/friends/${currentUser.id}`);
+      const response = await apiRequest(`/api/friends/${currentUser.id}`);
       const friendsData = response.friends || [];
       
       // تحويل البيانات إلى تنسيق Friend
@@ -98,10 +98,14 @@ export default function FriendsPanel({
     if (!currentUser) return;
     
     try {
-      const response = await apiRequest('GET', `/api/friend-requests/${currentUser.id}`);
+      const [incomingResponse, outgoingResponse] = await Promise.all([
+        apiRequest(`/api/friend-requests/incoming/${currentUser.id}`),
+        apiRequest(`/api/friend-requests/outgoing/${currentUser.id}`)
+      ]);
+      
       setFriendRequests({
-        incoming: response.incoming || [],
-        outgoing: response.outgoing || []
+        incoming: incomingResponse.requests || [],
+        outgoing: outgoingResponse.requests || []
       });
     } catch (error) {
       console.error('Error fetching friend requests:', error);
@@ -113,9 +117,13 @@ export default function FriendsPanel({
     if (!currentUser) return;
     
     try {
-      await apiRequest('POST', '/api/friends', {
-        userId: currentUser.id,
-        friendId: friendId
+      await apiRequest('/api/friend-requests', {
+        method: 'POST',
+        body: JSON.stringify({
+          senderId: currentUser.id,
+          receiverId: friendId
+        }),
+        headers: { 'Content-Type': 'application/json' }
       });
       
       toast({
@@ -138,7 +146,9 @@ export default function FriendsPanel({
     if (!currentUser) return;
     
     try {
-      await apiRequest('DELETE', `/api/friends/${currentUser.id}/${friendId}`);
+      await apiRequest(`/api/friends/${currentUser.id}/${friendId}`, {
+        method: 'DELETE'
+      });
       
       toast({
         title: 'تم الحذف',

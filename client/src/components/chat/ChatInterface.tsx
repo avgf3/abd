@@ -108,9 +108,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     if (!chat.currentUser) return;
     
     try {
-      await apiRequest('POST', '/api/friends', {
-        userId: chat.currentUser.id,
-        friendId: user.id,
+      await apiRequest('/api/friend-requests', {
+        method: 'POST',
+        body: JSON.stringify({
+          senderId: chat.currentUser.id,
+          receiverId: user.id,
+        }),
+        headers: { 'Content-Type': 'application/json' }
       });
       
       toast({
