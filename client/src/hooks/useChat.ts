@@ -219,21 +219,9 @@ export function useChat() {
               break;
               
             case 'moderationAction':
-              // التعامل مع إجراءات الإدارة
-              if (message.targetUserId === user.id) {
-                // المستخدم الحالي تم التأثير عليه
-                switch (message.action) {
-                  case 'muted':
-                    setKickNotification('تم كتمك من الدردشة العامة');
-                    break;
-                  case 'banned':
-                    setKickNotification('تم طردك من الدردشة لمدة 15 دقيقة');
-                    break;
-                  case 'blocked':
-                    setBlockNotification('تم حجبك من الدردشة نهائياً');
-                    break;
-                }
-              }
+              // التعامل مع إجراءات الإدارة - فقط لوقت التطوير
+              console.log('Moderation action received:', message);
+              break;
               
               // تحديث قائمة المستخدمين المتصلين لعكس التغييرات
               setOnlineUsers(prev => 
