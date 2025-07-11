@@ -82,7 +82,7 @@ export default function NewMessageArea({
                 <div className="flex items-center gap-2 mb-1">
                   {/* Username with Premium Theme */}
                   <div 
-                    className={`inline-block px-3 py-2 rounded-lg cursor-pointer hover:underline transition-all duration-300 ${
+                    className={`inline-block px-4 py-3 rounded-lg cursor-pointer hover:underline transition-all duration-300 min-w-[150px] ${
                       sender.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
                     }`}
                     style={{ 

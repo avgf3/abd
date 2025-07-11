@@ -100,7 +100,7 @@ export default function PrivateMessageBox({
             </div>
             <div className="text-center">
               <div 
-                className={`inline-block px-4 py-3 rounded-lg transition-all duration-300 ${
+                className={`block w-full px-6 py-4 rounded-lg transition-all duration-300 text-center ${
                   user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
                 }`}
                 style={{

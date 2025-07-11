@@ -87,9 +87,9 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                 className="transition-transform hover:scale-105"
               />
               <div className="flex-1">
-                <div className="flex items-center gap-2">
+                <div className="w-full">
                   <div 
-                    className={`text-sm font-medium px-4 py-2 rounded-lg transition-all duration-300 flex-1 ${
+                    className={`text-sm font-medium px-4 py-3 rounded-lg transition-all duration-300 w-full ${
                       user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
                     }`}
                     style={{ 
@@ -100,12 +100,14 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                       })
                     }}
                   >
-                    {getUserRankBadge(user.userType, user.username)} {user.username}
+                    <div className="flex items-center justify-between">
+                      <span>{getUserRankBadge(user.userType, user.username)} {user.username}</span>
+                      {/* إشارة المكتوم */}
+                      {user.isMuted && (
+                        <span className="text-yellow-400 text-xs">🔇</span>
+                      )}
+                    </div>
                   </div>
-                  {/* إشارة المكتوم */}
-                  {user.isMuted && (
-                    <span className="text-yellow-400 text-xs">🔇</span>
-                  )}
                 </div>
               </div>
               <div className="flex flex-col items-center">
