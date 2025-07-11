@@ -12,6 +12,7 @@ import type { ChatUser } from '@/types/chat';
 import { StealthModeButton } from "./StealthModeButton";
 import { UserMinus } from "lucide-react";
 import UsernameColorPicker from '../profile/UsernameColorPicker';
+import PremiumUserTheme from '@/components/ui/PremiumUserTheme';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -205,13 +206,15 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
             }}
           />
           <div className="flex-1 space-y-2">
-            <Input
-              value={profileData.name}
-              onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="اسم المستخدم"
-              style={{ color: user?.usernameColor || '#FFFFFF' }}
-              className="text-xl font-bold bg-transparent border-none"
-            />
+            <PremiumUserTheme user={user} size="medium" showFlag={true}>
+              <Input
+                value={profileData.name}
+                onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="اسم المستخدم"
+                style={{ color: user?.usernameColor || '#FFFFFF' }}
+                className="text-xl font-bold bg-transparent border-none"
+              />
+            </PremiumUserTheme>
             <Input
               value={profileData.status}
               onChange={(e) => setProfileData(prev => ({ ...prev, status: e.target.value }))}

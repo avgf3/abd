@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import ProfileImage from './ProfileImage';
+import PremiumUserTheme from '@/components/ui/PremiumUserTheme';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 
 interface MessageAreaProps {
@@ -79,14 +80,16 @@ export default function NewMessageArea({
               {/* Message Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  {/* Username with Badge */}
-                  <span 
-                    className="font-medium cursor-pointer hover:underline"
-                    style={{ color: sender.usernameColor || '#000000' }}
-                    onClick={(e) => onUserClick(e, sender)}
-                  >
-                    {getUserTypeBadge(sender.userType)} {sender.username}
-                  </span>
+                  {/* Username with Premium Theme */}
+                  <PremiumUserTheme user={sender} size="small" showFlag={true}>
+                    <span 
+                      className="font-medium cursor-pointer hover:underline"
+                      style={{ color: sender.usernameColor || '#000000' }}
+                      onClick={(e) => onUserClick(e, sender)}
+                    >
+                      {sender.username}
+                    </span>
+                  </PremiumUserTheme>
                   
                   {/* Timestamp */}
                   <span className="text-xs text-gray-400">

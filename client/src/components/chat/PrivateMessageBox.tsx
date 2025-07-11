@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import FileUploadButton from './FileUploadButton';
+import PremiumUserTheme from '@/components/ui/PremiumUserTheme';
 
 interface PrivateMessageBoxProps {
   isOpen: boolean;
@@ -98,12 +99,14 @@ export default function PrivateMessageBox({
               )}
             </div>
             <div className="text-center">
-              <p 
-                className="font-bold text-lg"
-                style={{ color: user.usernameColor || '#7C3AED' }}
-              >
-                {user.username}
-              </p>
+              <PremiumUserTheme user={user} size="medium" showFlag={true}>
+                <p 
+                  className="font-bold text-lg"
+                  style={{ color: user.usernameColor || '#7C3AED' }}
+                >
+                  {user.username}
+                </p>
+              </PremiumUserTheme>
               <p className="text-sm text-purple-600 font-medium">
                 {user.userType === 'owner' && '👑 مالك'}
                 {user.userType === 'admin' && '⭐ إدمن'}

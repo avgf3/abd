@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import SimpleUserMenu from './SimpleUserMenu';
 import ProfileImage from './ProfileImage';
+import PremiumUserTheme from '@/components/ui/PremiumUserTheme';
 import type { ChatUser } from '@/types/chat';
 
 interface UserSidebarProps {
@@ -87,20 +88,18 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span 
-                    className="clickable-username text-sm font-medium"
-                    style={{ color: user.usernameColor || '#FFFFFF' }}
-                  >
-                    {user.username}
-                  </span>
-                  {getUserRankBadge(user.userType, user.username)}
+                  <PremiumUserTheme user={user} size="small" showFlag={true}>
+                    <span 
+                      className="clickable-username text-sm font-medium"
+                      style={{ color: user.usernameColor || '#FFFFFF' }}
+                    >
+                      {user.username}
+                    </span>
+                  </PremiumUserTheme>
                   {/* إشارة المكتوم */}
                   {user.isMuted && (
                     <span className="text-yellow-400 text-xs">🔇</span>
                   )}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  متصل الآن
                 </div>
               </div>
               <div className="flex flex-col items-center">
