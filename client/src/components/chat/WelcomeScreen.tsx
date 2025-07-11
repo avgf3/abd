@@ -39,18 +39,19 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
 
     setLoading(true);
     try {
-      const response = await apiRequest('POST', '/api/auth/guest', {
-        username: guestName.trim(),
-        gender: guestGender,
+      const data = await apiRequest('/api/auth/guest', {
+        method: 'POST',
+        body: {
+          username: guestName.trim(),
+          gender: guestGender,
+        }
       });
-      const data = await response.json();
       onUserLogin(data.user);
       setShowGuestModal(false);
     } catch (error: any) {
-      const errorData = await error.response?.json();
       toast({
         title: "خطأ",
-        description: errorData?.error || "حدث خطأ في تسجيل الدخول",
+        description: error.message || "حدث خطأ في تسجيل الدخول",
         variant: "destructive",
       });
     } finally {
@@ -70,18 +71,19 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
 
     setLoading(true);
     try {
-      const response = await apiRequest('POST', '/api/auth/member', {
-        username: memberName.trim(),
-        password: memberPassword.trim(),
+      const data = await apiRequest('/api/auth/member', {
+        method: 'POST',
+        body: {
+          username: memberName.trim(),
+          password: memberPassword.trim(),
+        }
       });
-      const data = await response.json();
       onUserLogin(data.user);
       setShowMemberModal(false);
     } catch (error: any) {
-      const errorData = await error.response?.json();
       toast({
         title: "خطأ",
-        description: errorData?.error || "حدث خطأ في تسجيل الدخول",
+        description: error.message || "حدث خطأ في تسجيل الدخول",
         variant: "destructive",
       });
     } finally {
@@ -110,13 +112,15 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
 
     setLoading(true);
     try {
-      const response = await apiRequest('POST', '/api/auth/register', {
-        username: registerName.trim(),
-        password: registerPassword.trim(),
-        confirmPassword: confirmPassword.trim(),
-        gender: registerGender,
+      const data = await apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: {
+          username: registerName.trim(),
+          password: registerPassword.trim(),
+          confirmPassword: confirmPassword.trim(),
+          gender: registerGender,
+        }
       });
-      const data = await response.json();
       toast({
         title: "نجح التسجيل",
         description: data.message,
@@ -124,10 +128,9 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
       onUserLogin(data.user);
       setShowRegisterModal(false);
     } catch (error: any) {
-      const errorData = await error.response?.json();
       toast({
         title: "خطأ",
-        description: errorData?.error || "حدث خطأ في التسجيل",
+        description: error.message || "حدث خطأ في التسجيل",
         variant: "destructive",
       });
     } finally {

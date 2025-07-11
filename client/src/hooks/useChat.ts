@@ -248,7 +248,7 @@ export function useChat() {
               }
               break;
 
-            case 'moderationAction':
+            case 'systemMessage':
               // إضافة رسالة النظام للدردشة العامة
               const systemMessage = {
                 id: Date.now(),
