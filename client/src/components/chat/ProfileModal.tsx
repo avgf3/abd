@@ -293,6 +293,92 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
     }
   }, [user]);
 
+  // Handle profile image upload
+  const handleProfileImageUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file && currentUser) {
+        const formData = new FormData();
+        formData.append('profileImage', file);
+        formData.append('userId', currentUser.id.toString());
+        
+        try {
+          const response = await fetch('/api/upload/profile-image', {
+            method: 'POST',
+            body: formData
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            setProfileData(prev => ({ ...prev, profileImage: result.imageUrl }));
+            if (currentUser) {
+              currentUser.profileImage = result.imageUrl;
+            }
+            toast({
+              title: "تم بنجاح",
+              description: "تم تحديث الصورة الشخصية",
+              variant: "default"
+            });
+          }
+        } catch (error) {
+          console.error('خطأ في رفع الصورة:', error);
+          toast({
+            title: "خطأ",
+            description: "فشل في رفع الصورة",
+            variant: "destructive"
+          });
+        }
+      }
+    };
+    input.click();
+  };
+
+  // Handle banner upload
+  const handleBannerUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file && currentUser) {
+        const formData = new FormData();
+        formData.append('profileBanner', file);
+        formData.append('userId', currentUser.id.toString());
+        
+        try {
+          const response = await fetch('/api/upload/profile-banner', {
+            method: 'POST',
+            body: formData
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            setProfileData(prev => ({ ...prev, profileBanner: result.bannerUrl }));
+            if (currentUser) {
+              currentUser.profileBanner = result.bannerUrl;
+            }
+            toast({
+              title: "تم بنجاح",
+              description: "تم تحديث صورة البانر",
+              variant: "default"
+            });
+          }
+        } catch (error) {
+          console.error('خطأ في رفع البانر:', error);
+          toast({
+            title: "خطأ",
+            description: "فشل في رفع صورة البانر",
+            variant: "destructive"
+          });
+        }
+      }
+    };
+    input.click();
+  };
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="glass-effect border border-border max-w-3xl max-h-[90vh] overflow-y-auto animate-fade-in">
@@ -307,32 +393,31 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           {/* Background Banner */}
           <div className="relative h-64 overflow-hidden rounded-t-2xl">
             {/* Banner Image */}
-            {user.profileBanner && user.profileBanner !== '' ? (
+            {profileData.profileBanner && profileData.profileBanner !== '' ? (
               <img 
-                src={user.profileBanner} 
+                src={profileData.profileBanner} 
                 alt="صورة البروفايل" 
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/40 via-purple-600/40 to-pink-500/40"></div>
+              <div className="w-full h-full bg-white relative border border-gray-200">
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <div className="text-6xl mb-4 filter drop-shadow-lg">📸</div>
-                    <p className="text-xl font-bold opacity-90">صورة البروفايل</p>
+                  <div className="text-center text-gray-500">
+                    <div className="text-6xl mb-4">📸</div>
+                    <p className="text-xl font-medium">صورة البروفايل</p>
                   </div>
                 </div>
               </div>
             )}
             
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+            {/* Light Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-white/30 via-transparent to-transparent"></div>
             
             {/* Profile Image */}
             <div className="absolute bottom-4 right-4">
               <div className="relative">
                 <img
-                  src={user.profileImage && user.profileImage !== '/default_avatar.svg' ? user.profileImage : "/default_avatar.svg"}
+                  src={profileData.profileImage && profileData.profileImage !== '/default_avatar.svg' ? profileData.profileImage : "/default_avatar.svg"}
                   alt="صورة المستخدم"
                   className="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover"
                   onError={(e) => {
@@ -347,14 +432,14 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
             </div>
             
             {/* User Info */}
-            <div className="absolute bottom-4 left-4 text-white">
+            <div className="absolute bottom-4 left-4 text-gray-800">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xl">
                   {user.userType === 'owner' && '👑'}
                   {user.userType === 'admin' && '⭐'}
                   {user.userType === 'moderator' && '🛡️'}
                 </span>
-                <span className="text-sm bg-white/20 px-2 py-1 rounded-full backdrop-blur-sm">
+                <span className="text-sm bg-white/90 px-2 py-1 rounded-full backdrop-blur-sm text-gray-700 border">
                   {user.userType === 'owner' && 'المالك'}
                   {user.userType === 'admin' && 'إدمن'}
                   {user.userType === 'moderator' && 'مشرف'}
@@ -363,13 +448,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                 </span>
               </div>
               <h2 
-                className="text-2xl font-bold mb-1"
-                style={{ color: user.usernameColor || '#FFFFFF' }}
+                className="text-2xl font-bold mb-1 text-gray-800"
+                style={{ color: user.usernameColor || '#1f2937' }}
               >
                 {user.username}
               </h2>
-              <p className="text-sm text-gray-200">
-                {user.status || 'لا توجد حالة'}
+              <p className="text-sm text-gray-600 bg-white/80 px-2 py-1 rounded">
+                {profileData.status || 'لا توجد حالة'}
               </p>
             </div>
             
@@ -378,41 +463,17 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               <div className="absolute top-4 right-4 flex gap-2">
                 <Button
                   size="sm"
-                  className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full"
-                  onClick={() => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = 'image/*';
-                    input.onchange = (e) => {
-                      const file = (e.target as HTMLInputElement).files?.[0];
-                      if (file) {
-                        // Handle banner upload
-                        console.log('Banner upload:', file);
-                      }
-                    };
-                    input.click();
-                  }}
+                  className="bg-white/90 backdrop-blur-md hover:bg-white text-gray-700 border border-gray-200 rounded-lg shadow-md"
+                  onClick={handleBannerUpload}
                 >
-                  📸 بانر
+                  📸 تغيير البانر
                 </Button>
                 <Button
                   size="sm"
-                  className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full"
-                  onClick={() => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = 'image/*';
-                    input.onchange = (e) => {
-                      const file = (e.target as HTMLInputElement).files?.[0];
-                      if (file) {
-                        // Handle profile image upload
-                        console.log('Profile image upload:', file);
-                      }
-                    };
-                    input.click();
-                  }}
+                  className="bg-white/90 backdrop-blur-md hover:bg-white text-gray-700 border border-gray-200 rounded-lg shadow-md"
+                  onClick={handleProfileImageUpload}
                 >
-                  👤 صورة
+                  👤 تغيير الصورة
                 </Button>
               </div>
             )}
@@ -447,28 +508,28 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
         </div>
 
         {/* Profile Information Panel */}
-        <div className="bg-gradient-to-br from-teal-500 to-blue-600 p-6 text-white">
+        <div className="bg-white p-6 border border-gray-200 text-gray-800">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Personal Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
+              <h3 className="text-lg font-bold mb-3 flex items-center gap-2 text-gray-800">
                 📋 معلوماتي
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-sm bg-white/20 px-3 py-1 rounded-full">الجنس</span>
+                  <span className="text-sm bg-gray-100 px-3 py-1 rounded-full text-gray-700">الجنس</span>
                   <span className="font-medium">{user.gender || 'غير محدد'}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm bg-white/20 px-3 py-1 rounded-full">العمر</span>
+                  <span className="text-sm bg-gray-100 px-3 py-1 rounded-full text-gray-700">العمر</span>
                   <span className="font-medium">{user.age || 'غير محدد'}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm bg-white/20 px-3 py-1 rounded-full">البلد</span>
+                  <span className="text-sm bg-gray-100 px-3 py-1 rounded-full text-gray-700">البلد</span>
                   <span className="font-medium">{user.country || 'غير محدد'}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm bg-white/20 px-3 py-1 rounded-full">الحالة</span>
+                  <span className="text-sm bg-gray-100 px-3 py-1 rounded-full text-gray-700">الحالة</span>
                   <span className="font-medium">{user.relation || 'غير محدد'}</span>
                 </div>
               </div>
@@ -476,28 +537,28 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
             
             {/* Profile Link */}
             <div className="space-y-4">
-              <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
+              <h3 className="text-lg font-bold mb-3 flex items-center gap-2 text-gray-800">
                 🔗 رابط الملف الشخصي
               </h3>
-              <div className="bg-white/20 p-4 rounded-lg backdrop-blur-sm">
-                <p className="text-sm text-center underline cursor-pointer hover:text-blue-200 transition-colors">
+              <div className="bg-gray-50 p-4 rounded-lg border">
+                <p className="text-sm text-center underline cursor-pointer hover:text-blue-600 transition-colors text-blue-500">
                   https://www.arabic-chat.com/#{user.id}67540
                 </p>
               </div>
               
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">الجنس</span>
+                  <span className="text-sm text-gray-600">الجنس</span>
                   <span className="font-medium">{user.gender === 'ذكر' ? 'ذكر' : user.gender === 'أنثى' ? 'أنثى' : 'غير محدد'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">آخر تواجد</span>
+                  <span className="text-sm text-gray-600">آخر تواجد</span>
                   <span className="font-medium" dir="ltr">
                     {user.isOnline ? 'متصل الآن' : 'PM 05:47 | غربية أستراليا'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">تاريخ الانضمام</span>
+                  <span className="text-sm text-gray-600">تاريخ الانضمام</span>
                   <span className="font-medium" dir="ltr">
                     2023-12-22
                   </span>
@@ -507,15 +568,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           </div>
         </div>
 
-        <Tabs defaultValue="info" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-4">
-            <TabsTrigger value="info">معلوماتي</TabsTrigger>
-            <TabsTrigger value="colors">🎨 الألوان</TabsTrigger>
-            <TabsTrigger value="friends">الأصدقاء</TabsTrigger>
-            <TabsTrigger value="ignore">المحظورون</TabsTrigger>
-            <TabsTrigger value="options">الإعدادات</TabsTrigger>
-            <TabsTrigger value="more">المزيد</TabsTrigger>
-          </TabsList>
+        {currentUser && currentUser.id === user.id && (
+          <Tabs defaultValue="info" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsTrigger value="info">معلوماتي</TabsTrigger>
+              <TabsTrigger value="colors">🎨 الألوان</TabsTrigger>
+              <TabsTrigger value="options">الإعدادات</TabsTrigger>
+            </TabsList>
 
           <TabsContent value="info" className="space-y-4">
             <h3 className="text-lg font-semibold text-primary">المعلومات الشخصية</h3>
@@ -724,24 +783,25 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               </Button>
             </div>
           </TabsContent>
-        </Tabs>
 
-        {/* Footer */}
-        <div className="flex gap-3 justify-end pt-4 border-t border-border">
-          <Button
-            onClick={onClose}
-            variant="outline"
-            className="px-6 py-3 glass-effect rounded-lg font-semibold hover:bg-accent"
-          >
-            إلغاء
-          </Button>
-          <Button
-            onClick={handleSave}
-            className="btn-success px-6 py-3 rounded-lg font-semibold flex items-center gap-2"
-          >
-            💾 حفظ التغييرات
-          </Button>
-        </div>
+            {/* Footer */}
+            <div className="flex gap-3 justify-end pt-4 border-t border-border">
+              <Button
+                onClick={onClose}
+                variant="outline"
+                className="px-6 py-3 glass-effect rounded-lg font-semibold hover:bg-accent"
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={handleSave}
+                className="btn-success px-6 py-3 rounded-lg font-semibold flex items-center gap-2"
+              >
+                💾 حفظ التغييرات
+              </Button>
+            </div>
+          </Tabs>
+        )}
       </DialogContent>
     </Dialog>
   );

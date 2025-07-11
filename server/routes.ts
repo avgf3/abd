@@ -99,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // رفع صور البروفايل البانر
-  app.post('/api/upload/profile-banner', upload.single('bannerImage'), async (req, res) => {
+  app.post('/api/upload/profile-banner', upload.single('profileBanner'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
