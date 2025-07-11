@@ -21,6 +21,7 @@ import PromoteUserPanel from '../moderation/PromoteUserPanel';
 import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
 import StealthModeToggle from './StealthModeToggle';
+import WelcomeNotification from './WelcomeNotification';
 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -472,7 +473,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         onOpenMessages={() => setShowMessages(true)}
       />
 
-
+      {/* إشعار الترحيب */}
+      {chat.currentUser && <WelcomeNotification user={chat.currentUser} />}
 
     </div>
   );
