@@ -88,25 +88,12 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <div 
-                    className="clickable-username text-sm font-medium px-3 py-2 rounded-lg transition-all duration-300"
-                    style={{ 
-                      background: user.userType === 'owner' ? 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)' :
-                                 user.userType === 'admin' ? 'linear-gradient(135deg, #a855f7, #9333ea, #7c3aed)' :
-                                 'transparent',
-                      color: user.userType === 'owner' ? '#000000' :
-                             user.userType === 'admin' ? '#FFFFFF' :
-                             (user.usernameColor || '#FFFFFF'),
-                      animation: user.userType === 'owner' ? 'golden-glow 2s ease-in-out infinite' :
-                                user.userType === 'admin' ? 'purple-glow 2s ease-in-out infinite' :
-                                'none',
-                      boxShadow: user.userType === 'owner' ? '0 0 20px rgba(255, 215, 0, 0.6)' :
-                                user.userType === 'admin' ? '0 0 15px rgba(147, 51, 234, 0.6)' :
-                                'none'
-                    }}
+                  <span 
+                    className="text-sm font-medium"
+                    style={{ color: user.usernameColor || '#FFFFFF' }}
                   >
                     {getUserRankBadge(user.userType, user.username)} {user.username}
-                  </div>
+                  </span>
                   {/* إشارة المكتوم */}
                   {user.isMuted && (
                     <span className="text-yellow-400 text-xs">🔇</span>
