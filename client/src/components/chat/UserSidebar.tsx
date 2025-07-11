@@ -96,10 +96,7 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span 
-                      className="text-base font-medium"
-                      style={{ 
-                        color: getUserThemeTextColor(user)
-                      }}
+                      className="text-lg font-bold text-black"
                       title={user.username}
                     >
                       {getUserRankBadge(user.userType, user.username)} {user.username}
