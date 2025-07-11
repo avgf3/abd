@@ -19,14 +19,37 @@ interface WebSocketClient extends WebSocket {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Optimize WebSocket for Autoscale - add connection limits and timeouts
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws',
+    maxPayload: 1024 * 1024, // 1MB max payload
+    perMessageDeflate: {
+      threshold: 1024,
+      concurrencyLimit: 10,
+      memLevel: 7,
+    },
+    handleProtocols: () => false, // Disable subprotocols for performance
+  });
   
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);
   app.use(advancedSecurityMiddleware);
 
-  // Store connected clients
+  // Store connected clients with connection tracking
   const clients = new Set<WebSocketClient>();
+  const MAX_CONNECTIONS = 100; // Limit concurrent connections for Autoscale
+  const CONNECTION_TIMEOUT = 300000; // 5 minutes idle timeout
+  
+  // Cleanup inactive connections periodically
+  setInterval(() => {
+    clients.forEach(client => {
+      if (client.readyState === WebSocket.CLOSED || client.readyState === WebSocket.CLOSING) {
+        clients.delete(client);
+      }
+    });
+  }, 60000); // Clean up every minute
 
   // Member registration route - مع أمان محسن
   app.post("/api/auth/register", async (req, res) => {
@@ -271,10 +294,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // WebSocket handling
-  wss.on('connection', (ws: WebSocketClient) => {
+  // WebSocket handling with Autoscale optimization
+  wss.on('connection', (ws: WebSocketClient, req) => {
+    // Check connection limit for Autoscale billing optimization
+    if (clients.size >= MAX_CONNECTIONS) {
+      ws.close(1013, 'Server busy');
+      return;
+    }
+
     console.log('اتصال WebSocket جديد');
     clients.add(ws);
+    
+    // Set connection timeout to prevent prolonged billing
+    const connectionTimeout = setTimeout(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close(1000, 'Connection timeout');
+      }
+    }, CONNECTION_TIMEOUT);
     
     // إرسال رسالة ترحيب فورية
     ws.send(JSON.stringify({
@@ -282,14 +318,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       message: 'متصل بنجاح'
     }));
     
-    // heartbeat للحفاظ على الاتصال
+    // Optimized heartbeat for Autoscale - less frequent pings
     const heartbeat = setInterval(() => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.ping();
       } else {
         clearInterval(heartbeat);
+        clearTimeout(connectionTimeout);
       }
-    }, 30000);
+    }, 45000); // Reduced frequency to 45 seconds
 
     ws.on('message', async (data) => {
       try {
@@ -515,7 +552,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     ws.on('close', async () => {
+      console.log('اتصال WebSocket مقطوع');
       clients.delete(ws);
+      
+      // Clean up timers to prevent memory leaks and billing issues
+      clearInterval(heartbeat);
+      clearTimeout(connectionTimeout);
+      
       if (ws.userId) {
         await storage.setUserOnlineStatus(ws.userId, false);
         broadcast({
@@ -525,13 +568,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }, ws);
       }
     });
+
+    // Handle WebSocket errors for better cleanup
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+      clearInterval(heartbeat);
+      clearTimeout(connectionTimeout);
+      clients.delete(ws);
+    });
   });
 
   function broadcast(message: any, sender?: WebSocketClient) {
+    // Optimize for Autoscale - batch operations and minimize iterations
     const messageStr = JSON.stringify(message);
-    clients.forEach(client => {
-      if (client !== sender && client.readyState === WebSocket.OPEN) {
+    const activeClients = Array.from(clients).filter(client => 
+      client !== sender && client.readyState === WebSocket.OPEN
+    );
+    
+    // Send in batch to reduce execution time
+    activeClients.forEach(client => {
+      try {
         client.send(messageStr);
+      } catch (error) {
+        // Remove dead connections immediately
+        clients.delete(client);
       }
     });
   }

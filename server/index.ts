@@ -3,6 +3,17 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Add request timeout middleware (10 seconds for health checks)
+app.use((req, res, next) => {
+  if (req.path === '/' || req.path === '/health') {
+    res.setTimeout(5000, () => {
+      res.status(408).json({ error: 'Request timeout' });
+    });
+  }
+  next();
+});
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -34,6 +45,24 @@ app.use((req, res, next) => {
   });
 
   next();
+});
+
+// Add health check endpoint before route registration
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// Add root endpoint for health checks
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    status: 'Arabic Chat Application Running',
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
+  });
 });
 
 (async () => {

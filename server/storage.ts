@@ -360,67 +360,7 @@ export class MixedStorage implements IStorage {
     return blockedIds.map(id => this.users.get(id!)).filter(Boolean) as User[];
   }
 
-  // Enhanced friend request operations
-  async getIncomingFriendRequests(userId: number): Promise<any[]> {
-    const incomingRequests = Array.from(this.friends.values())
-      .filter(f => f.friendId === userId && f.status === 'pending');
-    
-    return await Promise.all(incomingRequests.map(async (request) => {
-      const user = await this.getUser(request.userId!);
-      return {
-        ...request,
-        user
-      };
-    }));
-  }
 
-  async getOutgoingFriendRequests(userId: number): Promise<any[]> {
-    const outgoingRequests = Array.from(this.friends.values())
-      .filter(f => f.userId === userId && f.status === 'pending');
-    
-    return await Promise.all(outgoingRequests.map(async (request) => {
-      const user = await this.getUser(request.friendId!);
-      return {
-        ...request,
-        user
-      };
-    }));
-  }
-
-  async acceptFriendRequest(requestId: number): Promise<boolean> {
-    const request = this.friends.get(requestId);
-    if (!request || request.status !== 'pending') return false;
-    
-    request.status = 'accepted';
-    this.friends.set(requestId, request);
-    return true;
-  }
-
-  async declineFriendRequest(requestId: number): Promise<boolean> {
-    const request = this.friends.get(requestId);
-    if (!request || request.status !== 'pending') return false;
-    
-    request.status = 'declined';
-    this.friends.set(requestId, request);
-    return true;
-  }
-
-  async ignoreFriendRequest(requestId: number): Promise<boolean> {
-    const request = this.friends.get(requestId);
-    if (!request || request.status !== 'pending') return false;
-    
-    request.status = 'ignored';
-    this.friends.set(requestId, request);
-    return true;
-  }
-
-  async deleteFriendRequest(requestId: number): Promise<boolean> {
-    const request = this.friends.get(requestId);
-    if (!request) return false;
-    
-    this.friends.delete(requestId);
-    return true;
-  }
 
   async removeFriend(userId: number, friendId: number): Promise<boolean> {
     const friendship = Array.from(this.friends.values())
