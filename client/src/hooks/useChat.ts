@@ -628,5 +628,7 @@ export function useChat() {
     }, [currentUser]),
     sendPrivateMessage,
     handleTyping,
+    newMessageSender,
+    setNewMessageSender,
   };
 }
