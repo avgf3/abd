@@ -47,11 +47,11 @@ export default function AdminReportsPanel({ isOpen, onClose, currentUser }: Admi
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/reports/pending?userId=${currentUser.id}`);
+      const response = await fetch(`/api/moderation/reports?userId=${currentUser.id}`);
       const data = await response.json();
       
       if (response.ok) {
-        setReports(data.reports);
+        setReports(data.reports || []);
       } else {
         throw new Error(data.error || 'خطأ في تحميل التبليغات');
       }

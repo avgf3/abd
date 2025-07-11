@@ -38,10 +38,10 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
   const loadReports = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/reports?userId=${currentUser.id}`);
+      const response = await fetch(`/api/moderation/reports?userId=${currentUser.id}`);
       if (response.ok) {
         const data = await response.json();
-        setReports(data);
+        setReports(data.reports || []);
       }
     } catch (error) {
       console.error('خطأ في تحميل البلاغات:', error);

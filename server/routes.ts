@@ -83,6 +83,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API endpoints للإدارة
+  app.get("/api/moderation/actions", async (req, res) => {
+    try {
+      // فحص صلاحيات الإدمن
+      const { userId } = req.query;
+      if (!userId) {
+        return res.status(401).json({ error: "غير مسموح - للإدمن والمالك فقط" });
+      }
+      
+      const user = await storage.getUser(parseInt(userId as string));
+      if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
+        return res.status(403).json({ error: "غير مسموح - للإدمن والمالك فقط" });
+      }
+      
+      const actions = moderationSystem.getModerationLog();
+      res.json({ actions });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في جلب سجل الإدارة" });
+    }
+  });
+
+  app.get("/api/moderation/reports", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      if (!userId) {
+        return res.status(401).json({ error: "غير مسموح - للإدمن والمالك فقط" });
+      }
+      
+      const user = await storage.getUser(parseInt(userId as string));
+      if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
+        return res.status(403).json({ error: "غير مسموح - للإدمن والمالك فقط" });
+      }
+      
+      const reports = spamProtection.getPendingReports();
+      res.json({ reports });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في جلب التقارير" });
+    }
+  });
+
+  app.post("/api/moderation/report", async (req, res) => {
+    try {
+      const { reporterId, reportedUserId, reason, content, messageId } = req.body;
+      
+      const report = spamProtection.addReport(reporterId, reportedUserId, reason, content, messageId);
+      res.json({ message: "تم إرسال التقرير بنجاح", report });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في إرسال التقرير" });
+    }
+  });
+
+  app.post("/api/moderation/mute", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, reason, duration } = req.body;
+      
+      const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, duration);
+      if (success) {
+        res.json({ message: "تم كتم المستخدم بنجاح" });
+      } else {
+        res.status(400).json({ error: "فشل في كتم المستخدم" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في كتم المستخدم" });
+    }
+  });
+
+  app.post("/api/moderation/ban", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, reason, duration } = req.body;
+      
+      const success = await moderationSystem.banUser(moderatorId, targetUserId, reason, duration);
+      if (success) {
+        res.json({ message: "تم طرد المستخدم بنجاح" });
+      } else {
+        res.status(400).json({ error: "فشل في طرد المستخدم" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في طرد المستخدم" });
+    }
+  });
+
+  app.post("/api/moderation/block", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, reason } = req.body;
+      
+      const success = await moderationSystem.blockUser(moderatorId, targetUserId, reason);
+      if (success) {
+        res.json({ message: "تم حجب المستخدم بنجاح" });
+      } else {
+        res.status(400).json({ error: "فشل في حجب المستخدم" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في حجب المستخدم" });
+    }
+  });
+
+  app.post("/api/moderation/promote", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, newRole } = req.body;
+      
+      const success = await moderationSystem.promoteUser(moderatorId, targetUserId, newRole);
+      if (success) {
+        res.json({ message: "تم ترقية المستخدم بنجاح" });
+      } else {
+        res.status(400).json({ error: "فشل في ترقية المستخدم" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في ترقية المستخدم" });
+    }
+  });
+
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   

@@ -41,10 +41,12 @@ export default function ActiveModerationLog({ currentUser, isVisible, onClose }:
   const loadActiveActions = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/moderation/active-actions?userId=${currentUser.id}`);
+      const response = await fetch(`/api/moderation/actions?userId=${currentUser.id}`);
       if (response.ok) {
         const data = await response.json();
-        setActiveActions(data);
+        // فلترة الإجراءات النشطة فقط
+        const activeActions = (data.actions || []).filter((action: any) => action.isActive);
+        setActiveActions(activeActions);
       }
     } catch (error) {
       console.error('خطأ في تحميل الإجراءات النشطة:', error);

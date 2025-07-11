@@ -94,7 +94,7 @@ export default function ReportModal({
 
     try {
       const finalReason = reason === 'other' ? customReason : reason;
-      const response = await fetch('/api/reports', {
+      const response = await fetch('/api/moderation/report', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

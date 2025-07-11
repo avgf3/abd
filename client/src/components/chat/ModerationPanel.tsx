@@ -142,7 +142,10 @@ export default function ModerationPanel({
           throw new Error('إجراء غير مدعوم');
       }
       
-      const response = await apiRequest('POST', endpoint, body);
+      const response = await apiRequest(endpoint, {
+        method: 'POST',
+        body: body
+      });
       
       toast({
         title: 'تم بنجاح',
@@ -187,9 +190,12 @@ export default function ModerationPanel({
     if (!currentUser) return;
     
     try {
-      await apiRequest('POST', '/api/moderation/unmute', {
-        moderatorId: currentUser.id,
-        targetUserId: targetUser.id
+      await apiRequest('/api/moderation/unmute', {
+        method: 'POST',
+        body: {
+          moderatorId: currentUser.id,
+          targetUserId: targetUser.id
+        }
       });
       
       toast({
@@ -210,9 +216,12 @@ export default function ModerationPanel({
     if (!currentUser) return;
     
     try {
-      await apiRequest('POST', '/api/moderation/unblock', {
-        moderatorId: currentUser.id,
-        targetUserId: targetUser.id
+      await apiRequest('/api/moderation/unblock', {
+        method: 'POST',
+        body: {
+          moderatorId: currentUser.id,
+          targetUserId: targetUser.id
+        }
       });
       
       toast({
