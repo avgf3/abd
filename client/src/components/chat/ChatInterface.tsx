@@ -108,23 +108,27 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     if (!chat.currentUser) return;
     
     try {
-      await apiRequest('/api/friend-requests', {
+      console.log('Sending friend request:', { senderId: chat.currentUser.id, receiverId: user.id });
+      
+      const response = await apiRequest('/api/friend-requests', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           senderId: chat.currentUser.id,
           receiverId: user.id,
-        }),
-        headers: { 'Content-Type': 'application/json' }
+        }
       });
+      
+      console.log('Friend request response:', response);
       
       toast({
         title: "تمت الإضافة",
         description: `تم إرسال طلب صداقة إلى ${user.username}`,
       });
     } catch (error) {
+      console.error('Friend request error:', error);
       toast({
         title: "خطأ",
-        description: "لم نتمكن من إرسال طلب الصداقة",
+        description: error instanceof Error ? error.message : "لم نتمكن من إرسال طلب الصداقة",
         variant: "destructive",
       });
     }

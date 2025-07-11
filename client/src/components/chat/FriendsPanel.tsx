@@ -119,11 +119,10 @@ export default function FriendsPanel({
     try {
       await apiRequest('/api/friend-requests', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           senderId: currentUser.id,
           receiverId: friendId
-        }),
-        headers: { 'Content-Type': 'application/json' }
+        }
       });
       
       toast({
@@ -134,9 +133,10 @@ export default function FriendsPanel({
       
       fetchFriendRequests(); // تحديث طلبات الصداقة
     } catch (error) {
+      console.error('Add friend error:', error);
       toast({
         title: 'خطأ',
-        description: 'فشل في إرسال طلب الصداقة',
+        description: error instanceof Error ? error.message : 'فشل في إرسال طلب الصداقة',
         variant: 'destructive'
       });
     }

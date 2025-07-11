@@ -86,8 +86,7 @@ export default function FriendRequestsPanel({
     try {
       await apiRequest(`/api/friend-requests/${request.id}/accept`, {
         method: 'POST',
-        body: JSON.stringify({ userId: currentUser?.id }),
-        headers: { 'Content-Type': 'application/json' }
+        body: { userId: currentUser?.id }
       });
       
       toast({
@@ -98,9 +97,10 @@ export default function FriendRequestsPanel({
       
       fetchFriendRequests();
     } catch (error) {
+      console.error('Accept request error:', error);
       toast({
         title: 'خطأ',
-        description: 'فشل في قبول الطلب',
+        description: error instanceof Error ? error.message : 'فشل في قبول الطلب',
         variant: 'destructive'
       });
     }
@@ -110,8 +110,7 @@ export default function FriendRequestsPanel({
     try {
       await apiRequest(`/api/friend-requests/${request.id}/decline`, {
         method: 'POST',
-        body: JSON.stringify({ userId: currentUser?.id }),
-        headers: { 'Content-Type': 'application/json' }
+        body: { userId: currentUser?.id }
       });
       
       toast({
@@ -122,9 +121,10 @@ export default function FriendRequestsPanel({
       
       fetchFriendRequests();
     } catch (error) {
+      console.error('Decline request error:', error);
       toast({
         title: 'خطأ',
-        description: 'فشل في رفض الطلب',
+        description: error instanceof Error ? error.message : 'فشل في رفض الطلب',
         variant: 'destructive'
       });
     }
@@ -134,8 +134,7 @@ export default function FriendRequestsPanel({
     try {
       await apiRequest(`/api/friend-requests/${request.id}/ignore`, {
         method: 'POST',
-        body: JSON.stringify({ userId: currentUser?.id }),
-        headers: { 'Content-Type': 'application/json' }
+        body: { userId: currentUser?.id }
       });
       
       toast({
@@ -146,9 +145,10 @@ export default function FriendRequestsPanel({
       
       fetchFriendRequests();
     } catch (error) {
+      console.error('Ignore request error:', error);
       toast({
         title: 'خطأ',
-        description: 'فشل في تجاهل الطلب',
+        description: error instanceof Error ? error.message : 'فشل في تجاهل الطلب',
         variant: 'destructive'
       });
     }
