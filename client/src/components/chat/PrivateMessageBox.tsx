@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ChatUser, ChatMessage } from '@/types/chat';
-import MediaUploadButton from './MediaUploadButton';
+import FileUploadButton from './FileUploadButton';
 
 interface PrivateMessageBoxProps {
   isOpen: boolean;
@@ -41,12 +41,23 @@ export default function PrivateMessageBox({
     }
   };
 
-  const handleMediaSelect = (file: File, type: 'image' | 'video') => {
+  const handleFileSelect = (file: File, type: 'image' | 'video' | 'document') => {
     const fileUrl = URL.createObjectURL(file);
-    const mediaMessage = type === 'image' ? 
-      `[صورة: ${file.name}] ${fileUrl}` : 
-      `[فيديو: ${file.name}] ${fileUrl}`;
-    onSendMessage(mediaMessage);
+    let fileMessage = '';
+    
+    switch (type) {
+      case 'image':
+        fileMessage = `📷 صورة: ${file.name}`;
+        break;
+      case 'video':
+        fileMessage = `🎥 فيديو: ${file.name}`;
+        break;
+      case 'document':
+        fileMessage = `📄 مستند: ${file.name}`;
+        break;
+    }
+    
+    onSendMessage(fileMessage);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -138,8 +149,8 @@ export default function PrivateMessageBox({
         </ScrollArea>
 
         <div className="flex gap-2 p-4 border-t border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
-          <MediaUploadButton 
-            onMediaSelect={handleMediaSelect}
+          <FileUploadButton 
+            onFileSelect={handleFileSelect}
             disabled={false}
           />
           <Input

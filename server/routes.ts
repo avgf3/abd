@@ -357,9 +357,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (userStatus.isMuted) {
                 ws.send(JSON.stringify({
                   type: 'error',
-                  message: 'أنت مكتوم من الدردشة العامة',
-                  action: 'blocked'
+                  message: 'أنت مكتوم ولا يمكنك إرسال رسائل في الدردشة العامة. يمكنك التحدث في الرسائل الخاصة.',
+                  action: 'muted'
                 }));
+                console.log(`🔇 المستخدم ${ws.username} محاول الكتابة وهو مكتوم`);
                 break;
               }
               
@@ -545,6 +546,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "جميع الحقول مطلوبة" });
       }
 
+      // منع البلاغ على الإدمن والمشرف والمالك
+      const reportedUser = await storage.getUser(reportedUserId);
+      if (reportedUser && ['admin', 'moderator', 'owner'].includes(reportedUser.userType)) {
+        return res.status(403).json({ 
+          error: "لا يمكن الإبلاغ عن أعضاء الإدارة (المشرف، الإدمن، المالك)" 
+        });
+      }
+
       const report = spamProtection.addReport(reporterId, reportedUserId, reason, content, messageId);
       res.json({ report, message: "تم إرسال التبليغ بنجاح" });
     } catch (error) {
@@ -671,6 +680,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: systemMessage,
           reason,
           duration
+        });
+
+        // إرسال إشعار للمستخدم المكتوم
+        broadcast({
+          type: 'notification',
+          targetUserId: targetUserId,
+          notificationType: 'muted',
+          message: `تم كتمك من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`,
+          moderatorName: moderator?.username
         });
         
         // لا يتم قطع الاتصال - المستخدم يبقى في الدردشة لكن مكتوم

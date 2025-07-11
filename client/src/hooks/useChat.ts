@@ -228,6 +228,19 @@ export function useChat() {
               }
               break;
               
+            case 'notification':
+              // إضافة إشعار للمستخدم فقط
+              if (message.targetUserId === user.id) {
+                setNotifications(prev => [...prev, {
+                  id: Date.now(),
+                  type: message.notificationType || 'system',
+                  username: message.moderatorName || 'النظام',
+                  message: message.message,
+                  timestamp: new Date()
+                }]);
+              }
+              break;
+
             case 'moderationAction':
               // إضافة رسالة النظام للدردشة العامة
               const systemMessage = {
