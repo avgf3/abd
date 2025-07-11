@@ -816,6 +816,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Friends routes
+  app.get("/api/friends/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const friends = await storage.getFriends(userId);
+      
+      res.json({ friends });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/friends", async (req, res) => {
+    try {
+      const { userId, friendId } = req.body;
+      
+      // التحقق من أن المستخدمين موجودين
+      const user = await storage.getUser(userId);
+      const friend = await storage.getUser(friendId);
+      
+      if (!user || !friend) {
+        return res.status(404).json({ error: "المستخدم غير موجود" });
+      }
+      
+      // التحقق من أن المستخدم لا يضيف نفسه
+      if (userId === friendId) {
+        return res.status(400).json({ error: "لا يمكنك إضافة نفسك كصديق" });
+      }
+      
+      const friendship = await storage.addFriend(userId, friendId);
+      
+      // إرسال تنبيه WebSocket للمستخدم المستهدف
+      broadcast({
+        type: 'friendRequest',
+        targetUserId: friendId,
+        senderUserId: userId,
+        senderUsername: user.username,
+        message: `${user.username} يريد إضافتك كصديق`
+      });
+      
+      res.json({ 
+        message: "تم إرسال طلب الصداقة",
+        friendship 
+      });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.delete("/api/friends/:userId/:friendId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const friendId = parseInt(req.params.friendId);
+      
+      const success = await storage.removeFriend(userId, friendId);
+      
+      if (success) {
+        res.json({ message: "تم حذف الصديق" });
+      } else {
+        res.status(404).json({ error: "الصداقة غير موجودة" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   // Friend requests routes
   app.get("/api/friend-requests/:userId", async (req, res) => {
     try {

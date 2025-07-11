@@ -246,6 +246,24 @@ export function useChat() {
               }
               break;
               
+            case 'friendRequest':
+              // تنبيه طلب صداقة جديد
+              if (message.targetUserId === user.id) {
+                console.log('📨 طلب صداقة جديد من:', message.senderUsername);
+                
+                // إشعار مرئي في المتصفح
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('طلب صداقة جديد 👥', {
+                    body: `${message.senderUsername} يريد إضافتك كصديق`,
+                    icon: '/favicon.ico'
+                  });
+                }
+                
+                // صوت تنبيه
+                playNotificationSound();
+              }
+              break;
+              
             case 'userUpdated':
               if (message.user) {
                 setOnlineUsers(prev => 
