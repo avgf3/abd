@@ -92,55 +92,44 @@ export default function ViewProfileModal({
 
         {/* Profile Header - Modern Design */}
         <div className="relative">
-          {/* Background Banner */}
-          <div className="relative h-48 overflow-hidden rounded-t-2xl">
-            {/* Banner Image */}
-            {user.profileBanner && user.profileBanner !== '' ? (
-              <img 
-                src={user.profileBanner} 
-                alt="صورة البروفايل" 
-                className="w-full h-full object-cover"
-              />
+          {/* Full Cover Profile Image */}
+          <div className="relative h-64 overflow-hidden rounded-t-2xl">
+            {/* Main Profile Image as Full Background */}
+            {user.profileImage && user.profileImage !== '/default_avatar.svg' ? (
+              <div className="w-full h-full relative">
+                <img 
+                  src={user.profileImage} 
+                  alt="صورة المستخدم" 
+                  className="w-full h-full object-cover"
+                />
+                {/* Dark gradient overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+              </div>
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 relative border border-gray-200">
+              <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 relative">
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center text-gray-500">
-                    <div className="text-6xl mb-4">👤</div>
-                    <p className="text-xl font-medium">{user.username}</p>
+                  <div className="text-center text-gray-600">
+                    <div className="text-8xl mb-4">👤</div>
+                    <p className="text-2xl font-bold">{user.username}</p>
                   </div>
                 </div>
               </div>
             )}
-            
 
+            {/* Online status indicator */}
+            {user.isOnline && (
+              <div className="absolute top-4 right-4 w-6 h-6 bg-green-500 border-2 border-white rounded-full z-20"></div>
+            )}
             
-            {/* Profile Image - Bottom Right Corner */}
-            <div className="absolute -bottom-6 right-6 z-20">
-              <div className="relative">
-                <img
-                  src={user.profileImage && user.profileImage !== '/default_avatar.svg' ? user.profileImage : "/default_avatar.svg"}
-                  alt="صورة المستخدم"
-                  className="w-32 h-32 rounded-full ring-2 ring-gray-300 object-cover shadow-lg"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/default_avatar.svg';
-                  }}
-                />
-                {user.isOnline && (
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
-                )}
-              </div>
-            </div>
-            
-            {/* User Info */}
-            <div className="absolute bottom-4 left-4 text-gray-800">
+            {/* User Info Over Profile Image */}
+            <div className="absolute bottom-4 left-4 text-white z-10">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xl">
                   {user.userType === 'owner' && '👑'}
                   {user.userType === 'admin' && '⭐'}
                   {user.userType === 'moderator' && '🛡️'}
                 </span>
-                <span className="text-sm bg-white/90 px-2 py-1 rounded-full backdrop-blur-sm text-gray-700 border">
+                <span className="text-sm bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm text-white border border-white/30">
                   {user.userType === 'owner' && 'المالك'}
                   {user.userType === 'admin' && 'إدمن'}
                   {user.userType === 'moderator' && 'مشرف'}
@@ -149,12 +138,15 @@ export default function ViewProfileModal({
                 </span>
               </div>
               <h2 
-                className="text-2xl font-bold mb-1 text-gray-800"
-                style={{ color: user.usernameColor || '#1f2937' }}
+                className="text-3xl font-bold mb-2 text-white drop-shadow-lg"
+                style={{ 
+                  color: user.usernameColor || '#ffffff',
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+                }}
               >
                 {user.username}
               </h2>
-              <p className="text-sm text-gray-600 bg-white/80 px-2 py-1 rounded">
+              <p className="text-sm text-white bg-black/40 px-3 py-2 rounded-lg backdrop-blur-sm border border-white/20">
                 {user.status || 'لا توجد حالة'}
               </p>
             </div>
