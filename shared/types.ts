@@ -13,6 +13,7 @@ export interface ExtendedUser {
   age?: number;
   country?: string;
   relation?: string;
+  bio?: string;
   lastSeen?: Date;
   joinDate?: Date;
   isHidden?: boolean;

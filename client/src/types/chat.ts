@@ -9,6 +9,7 @@ export interface ChatUser {
   age?: number;
   country?: string;
   relation?: string;
+  bio?: string;
   isOnline: boolean;
   isHidden?: boolean; // خاصية الإخفاء للمراقبة
   lastSeen?: Date;
@@ -57,6 +58,7 @@ export interface UserProfile {
   age: string;
   country: string;
   relation: string;
+  bio?: string;
   profileImage?: string;
   profileBanner?: string;
 }

@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   age: integer("age"),
   country: text("country"),
   relation: text("relation"),
+  bio: text("bio"), // نبذة شخصية
   isOnline: boolean("is_online").default(false),
   isHidden: boolean("is_hidden").default(false), // خاصية الإخفاء للمراقبة
   lastSeen: timestamp("last_seen"),
@@ -70,6 +71,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   age: true,
   country: true,
   relation: true,
+  bio: true,
 }).extend({
   // إضافة حقول الإدارة كاختيارية
   isMuted: z.boolean().optional(),
