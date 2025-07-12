@@ -633,7 +633,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User routes
+  // User routes - إضافة مسار الحصول على جميع المستخدمين
+  app.get("/api/users", async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json({ users });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.get("/api/all-users", async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json({ users });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   app.get("/api/users/online", async (req, res) => {
     try {
       const users = await storage.getOnlineUsers();
@@ -671,6 +689,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Message routes
+  // إضافة مسار إنشاء الرسائل
+  app.post("/api/messages", async (req, res) => {
+    try {
+      const { senderId, receiverId, content, messageType, isPrivate = false } = req.body;
+      
+      if (!senderId || !content || !messageType) {
+        return res.status(400).json({ error: "البيانات المطلوبة مفقودة" });
+      }
+
+      const message = await storage.createMessage({
+        senderId,
+        receiverId: isPrivate ? receiverId : null,
+        content,
+        messageType,
+        isPrivate,
+        timestamp: new Date()
+      });
+
+      // Broadcast message to connected clients
+      if (wss) {
+        wss.clients.forEach((client: WebSocketClient) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'newMessage',
+              message: {
+                ...message,
+                sender: {
+                  id: senderId,
+                  username: '',
+                  userType: ''
+                }
+              }
+            }));
+          }
+        });
+      }
+
+      res.json({ message, success: true });
+    } catch (error) {
+      console.error("خطأ في إنشاء الرسالة:", error);
+      res.status(500).json({ error: "خطأ في إنشاء الرسالة" });
+    }
+  });
+
   app.get("/api/messages/public", async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
