@@ -42,7 +42,7 @@ export interface IStorage {
   removeFriend(userId: number, friendId: number): Promise<boolean>;
   getFriendship(userId1: number, userId2: number): Promise<Friend | undefined>;
   
-  // Friend request operations
+  // Friend request operations - محسن ومنظم
   createFriendRequest(senderId: number, receiverId: number): Promise<any>;
   getFriendRequest(senderId: number, receiverId: number): Promise<any>;
   getFriendRequestById(requestId: number): Promise<any>;
@@ -52,6 +52,9 @@ export interface IStorage {
   declineFriendRequest(requestId: number): Promise<boolean>;
   ignoreFriendRequest(requestId: number): Promise<boolean>;
   deleteFriendRequest(requestId: number): Promise<boolean>;
+  
+  // User verification and security
+  verifyUserCredentials(username: string, password: string): Promise<User | null>;
 
   // Notification operations
   createNotification(notification: InsertNotification): Promise<Notification>;

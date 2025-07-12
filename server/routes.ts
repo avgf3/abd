@@ -56,6 +56,54 @@ const upload = multer({
 
 let wss: WebSocketServer;
 
+// إنشاء خدمات محسنة ومنظمة
+const authService = new (class AuthService {
+  async login(username: string, password: string) {
+    const user = await storage.getUserByUsername(username.trim());
+    if (!user || user.password !== password.trim()) {
+      throw new Error('بيانات الدخول غير صحيحة');
+    }
+    await storage.setUserOnlineStatus(user.id, true);
+    return user;
+  }
+  
+  async register(userData: any) {
+    const existingUser = await storage.getUserByUsername(userData.username);
+    if (existingUser) {
+      throw new Error('اسم المستخدم موجود مسبقاً');
+    }
+    return await storage.createUser(userData);
+  }
+})();
+
+const messageService = new (class MessageService {
+  async sendMessage(senderId: number, messageData: any) {
+    const sender = await storage.getUser(senderId);
+    if (!sender) throw new Error('المرسل غير موجود');
+    
+    if (sender.isMuted && !messageData.isPrivate) {
+      throw new Error('أنت مكتوم ولا يمكنك إرسال رسائل عامة');
+    }
+    
+    return await storage.createMessage({ ...messageData, senderId });
+  }
+})();
+
+const friendService = new (class FriendService {
+  async sendFriendRequest(senderId: number, receiverId: number) {
+    if (senderId === receiverId) {
+      throw new Error('لا يمكنك إرسال طلب صداقة لنفسك');
+    }
+    
+    const existingRequest = await storage.getFriendRequest(senderId, receiverId);
+    if (existingRequest) {
+      throw new Error('طلب الصداقة مرسل مسبقاً');
+    }
+    
+    return await storage.createFriendRequest(senderId, receiverId);
+  }
+})();
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // رفع صور البروفايل
   app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
