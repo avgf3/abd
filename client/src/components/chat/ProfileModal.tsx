@@ -442,20 +442,20 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
             <div className="absolute inset-0 bg-gradient-to-t from-white/60 via-white/20 to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white via-white/80 to-transparent"></div>
             
-            {/* Profile Image - Extended Coverage */}
-            <div className="absolute bottom-2 right-4 z-20">
+            {/* Profile Image - Bottom Right Corner */}
+            <div className="absolute -bottom-6 right-6 z-20">
               <div className="relative">
                 <img
                   src={profileData.profileImage && profileData.profileImage !== '/default_avatar.svg' ? profileData.profileImage : "/default_avatar.svg"}
                   alt="صورة المستخدم"
-                  className="w-32 h-32 rounded-full border-4 border-white shadow-2xl object-cover ring-2 ring-gray-100"
+                  className="w-28 h-28 rounded-full border-2 border-white object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = '/default_avatar.svg';
                   }}
                 />
                 {user.isOnline && (
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 border-4 border-white rounded-full shadow-lg animate-pulse"></div>
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
                 )}
               </div>
             </div>
@@ -539,7 +539,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
 
         {currentUser && currentUser.id === user.id && (
-          <div className="bg-white p-6 -mt-16 relative z-10 rounded-t-3xl shadow-lg">
+          <div className="bg-white p-6 -mt-12 relative z-10 rounded-t-3xl">
             <Tabs defaultValue="info" className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="info">معلوماتي</TabsTrigger>
