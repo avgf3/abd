@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import WelcomeScreen from '@/components/chat/WelcomeScreen';
-import ChatInterface from '@/components/chat/ChatInterfaceNew';
-import { useChat } from '@/hooks/useChatNew';
+import ChatInterface from '@/components/chat/ChatInterface';
+import { useChat } from '@/hooks/useChat';
+import KickCountdown from '@/components/moderation/KickCountdown';
 import type { ChatUser } from '@/types/chat';
 
 export default function ChatPage() {
@@ -19,12 +20,19 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="h-screen bg-gray-900 text-white font-['Cairo']" dir="rtl">
+    <div className="h-screen bg-background text-foreground font-['Cairo']" dir="rtl">
       {showWelcome ? (
         <WelcomeScreen onUserLogin={handleUserLogin} />
       ) : (
         <ChatInterface chat={chat} onLogout={handleLogout} />
       )}
+      
+      {/* عداد الطرد */}
+      <KickCountdown 
+        isVisible={chat.showKickCountdown || false}
+        onClose={() => chat.setShowKickCountdown?.(false)}
+        durationMinutes={15}
+      />
     </div>
   );
 }
