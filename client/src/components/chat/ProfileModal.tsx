@@ -429,11 +429,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               />
             ) : (
               <div 
-                className="w-full h-full bg-gradient-to-br from-blue-600 to-purple-600"
+                className="w-full h-full"
                 style={{
+                  background: `linear-gradient(135deg, ${profileData.profileBackgroundColor || '#3c0d0d'} 0%, #7b1b1b 100%)`,
                   backgroundImage: 'url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80")',
                   backgroundSize: 'cover',
-                  backgroundPosition: 'center'
+                  backgroundPosition: 'center',
+                  backgroundBlendMode: 'overlay'
                 }}
               >
               </div>
@@ -637,6 +639,101 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
           <TabsContent value="colors">
             <h3 className="text-lg font-semibold text-primary mb-4">🎨 تخصيص المظهر والألوان</h3>
+            
+            {/* منتقي لون خلفية البروفايل */}
+            <div className="mb-6 p-4 bg-accent rounded-lg">
+              <h4 className="text-md font-semibold text-primary mb-3">🌈 لون خلفية البروفايل</h4>
+              
+              {/* معاينة اللون الحالي */}
+              <div className="mb-4">
+                <div 
+                  className="w-full h-16 rounded-lg shadow-lg"
+                  style={{
+                    background: `linear-gradient(135deg, ${profileData.profileBackgroundColor || '#3c0d0d'} 0%, #7b1b1b 100%)`
+                  }}
+                ></div>
+                <p className="text-sm text-muted-foreground mt-2">معاينة التدرج الحالي</p>
+              </div>
+
+              {/* أزرار الألوان المحددة مسبقاً */}
+              <div className="grid grid-cols-5 gap-3 mb-4">
+                {[
+                  '#3c0d0d', // أحمر عنابي داكن جداً (افتراضي)
+                  '#0d1a3c', // أزرق داكن
+                  '#0d3c1a', // أخضر داكن
+                  '#3c1a0d', // بني داكن
+                  '#3c0d3c', // بنفسجي داكن
+                  '#1a3c0d', // أخضر زيتوني
+                  '#3c2e0d', // ذهبي داكن
+                  '#0d3c3c', // تيل داكن
+                  '#2e0d3c', // بنفسجي أحمر
+                  '#3c3c0d'  // أصفر داكن
+                ].map((color, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setProfileData(prev => ({ ...prev, profileBackgroundColor: color }));
+                      toast({
+                        title: "تم التحديث",
+                        description: "تم تحديث لون خلفية البروفايل",
+                        variant: "default"
+                      });
+                    }}
+                    className="w-12 h-12 rounded-lg border-2 border-white/20 hover:border-white/60 transition-all duration-200 hover:scale-110"
+                    style={{
+                      background: `linear-gradient(135deg, ${color} 0%, ${color}80 100%)`
+                    }}
+                    title={`لون ${index + 1}`}
+                  />
+                ))}
+              </div>
+
+              {/* منتقي اللون المخصص */}
+              <div className="flex gap-2">
+                <input
+                  type="color"
+                  value={profileData.profileBackgroundColor || '#3c0d0d'}
+                  onChange={(e) => {
+                    setProfileData(prev => ({ ...prev, profileBackgroundColor: e.target.value }));
+                    toast({
+                      title: "تم التحديث",
+                      description: "تم تحديث لون خلفية البروفايل",
+                      variant: "default"
+                    });
+                  }}
+                  className="w-12 h-10 rounded border-0 cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={profileData.profileBackgroundColor || '#3c0d0d'}
+                  onChange={(e) => {
+                    setProfileData(prev => ({ ...prev, profileBackgroundColor: e.target.value }));
+                    toast({
+                      title: "تم التحديث",
+                      description: "تم تحديث لون خلفية البروفايل",
+                      variant: "default"
+                    });
+                  }}
+                  placeholder="#3c0d0d"
+                  className="flex-1 px-3 py-2 bg-background border border-border rounded-md text-foreground"
+                />
+              </div>
+
+              {/* زر الإعادة للافتراضي */}
+              <button
+                onClick={() => {
+                  setProfileData(prev => ({ ...prev, profileBackgroundColor: '#3c0d0d' }));
+                  toast({
+                    title: "تم التحديث",
+                    description: "تم إعادة تعيين لون خلفية البروفايل",
+                    variant: "default"
+                  });
+                }}
+                className="w-full mt-3 px-4 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg transition-colors"
+              >
+                العودة للون الافتراضي
+              </button>
+            </div>
             {user && currentUser && user.id === currentUser.id ? (
               <div className="space-y-6">
                 {/* ثيمات المستخدم */}
