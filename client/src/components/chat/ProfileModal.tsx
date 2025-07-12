@@ -537,7 +537,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
 
         {currentUser && currentUser.id === user.id && (
-          <div className="p-6 -mt-12 relative z-10">
+          <div className="bg-white p-6 -mt-12 relative z-10 rounded-t-3xl">
             <Tabs defaultValue="info" className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="info">معلوماتي</TabsTrigger>

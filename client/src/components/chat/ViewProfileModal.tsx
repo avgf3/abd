@@ -162,7 +162,7 @@ export default function ViewProfileModal({
         </div>
 
         {/* Profile Content */}
-        <div className="p-6 -mt-12 relative z-10" dir="rtl">
+        <div className="bg-white p-6 -mt-12 relative z-10 rounded-t-3xl" dir="rtl">
           {/* Action Buttons Row */}
           {currentUser && currentUser.id !== user.id && (
             <div className="flex justify-center gap-2 mb-6 pt-8">
