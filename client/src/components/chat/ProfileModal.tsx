@@ -540,26 +540,33 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
 
         {currentUser && currentUser.id === user.id && (
-          <div className="bg-white p-6 -mt-12 relative z-10 rounded-t-3xl">
+          <div 
+            className="p-6 -mt-12 relative z-10 rounded-t-3xl"
+            style={{ 
+              background: user?.profileBackgroundColor 
+                ? `linear-gradient(135deg, ${user.profileBackgroundColor} 0%, #7b1b1b 100%)`
+                : 'linear-gradient(135deg, #3c0d0d 0%, #7b1b1b 100%)'
+            }}
+          >
             <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-4">
-              <TabsTrigger value="info">معلوماتي</TabsTrigger>
-              <TabsTrigger value="colors">🎨 الألوان</TabsTrigger>
-              <TabsTrigger value="options">الإعدادات</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 mb-4 h-8 bg-white/20 backdrop-blur-sm">
+              <TabsTrigger value="info" className="text-xs py-1 text-white data-[state=active]:text-black">معلوماتي</TabsTrigger>
+              <TabsTrigger value="colors" className="text-xs py-1 text-white data-[state=active]:text-black">🎨 الألوان</TabsTrigger>
+              <TabsTrigger value="options" className="text-xs py-1 text-white data-[state=active]:text-black">الإعدادات</TabsTrigger>
             </TabsList>
 
           <TabsContent value="info" className="space-y-4">
-            <h3 className="text-lg font-semibold text-primary">المعلومات الشخصية</h3>
+            <h3 className="text-lg font-semibold text-white">المعلومات الشخصية</h3>
             
             {/* رابط الملف الشخصي */}
-            <div className="bg-accent/50 p-4 rounded-lg border border-border">
-              <label className="block text-sm font-medium text-muted-foreground mb-2">رابط الملف الشخصي</label>
+            <div className="bg-white/20 backdrop-blur-sm p-2 rounded-lg border border-white/30">
+              <label className="block text-xs font-medium text-white mb-2">🔗 رابط الملف الشخصي</label>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   readOnly
-                  value={`https://www.arabic.chat/#id${user?.id || ''}`}
-                  className="flex-1 bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground"
+                  value={`arabic.chat/#id${user?.id || ''}`}
+                  className="flex-1 bg-background border border-border rounded-md px-2 py-1 text-xs text-foreground"
                 />
                 <Button
                   size="sm"
@@ -571,16 +578,16 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                       description: "تم نسخ رابط الملف الشخصي",
                     });
                   }}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-2 py-1"
                 >
-                  📋 نسخ
+                  📋
                 </Button>
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-muted-foreground">الجنس</label>
+                <label className="block text-sm font-medium text-white">الجنس</label>
                 <Select value={profileData.gender} onValueChange={(value) => setProfileData(prev => ({ ...prev, gender: value }))}>
                   <SelectTrigger className="bg-accent border-border text-white">
                     <SelectValue />
@@ -593,7 +600,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-muted-foreground">العمر</label>
+                <label className="block text-sm font-medium text-white">العمر</label>
                 <Select value={profileData.age} onValueChange={(value) => setProfileData(prev => ({ ...prev, age: value }))}>
                   <SelectTrigger className="bg-accent border-border text-white">
                     <SelectValue />
@@ -608,7 +615,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-muted-foreground">البلد</label>
+                <label className="block text-sm font-medium text-white">البلد</label>
                 <Select value={profileData.country} onValueChange={(value) => setProfileData(prev => ({ ...prev, country: value }))}>
                   <SelectTrigger className="bg-accent border-border text-white">
                     <SelectValue />
@@ -807,10 +814,10 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           </TabsContent>
 
           <TabsContent value="options">
-            <h3 className="text-lg font-semibold text-primary mb-4">إعدادات الحساب</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">إعدادات الحساب</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-muted-foreground">المنطقة الزمنية</label>
+                <label className="block text-sm font-medium text-white">المنطقة الزمنية</label>
                 <Select defaultValue="Asia/Riyadh">
                   <SelectTrigger className="bg-accent border-border text-white">
                     <SelectValue />
@@ -823,7 +830,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-muted-foreground">اللغة</label>
+                <label className="block text-sm font-medium text-white">اللغة</label>
                 <Select defaultValue="العربية">
                   <SelectTrigger className="bg-accent border-border text-white">
                     <SelectValue />
@@ -836,7 +843,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-muted-foreground">الرسائل الخاصة</label>
+                <label className="block text-sm font-medium text-white">الرسائل الخاصة</label>
                 <Select defaultValue="مفتوحة للجميع">
                   <SelectTrigger className="bg-accent border-border text-white">
                     <SelectValue />
@@ -850,7 +857,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-muted-foreground">الإشعارات الصوتية</label>
+                <label className="block text-sm font-medium text-white">الإشعارات الصوتية</label>
                 <Select defaultValue="مفعلة">
                   <SelectTrigger className="bg-accent border-border text-white">
                     <SelectValue />
