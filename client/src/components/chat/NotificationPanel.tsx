@@ -156,6 +156,69 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     markAllAsReadMutation.mutate();
   };
 
+  // معالجات طلبات الصداقة
+  const handleAcceptFriendRequest = async (notification: Notification) => {
+    try {
+      const requestId = notification.data?.requestId;
+      if (!requestId) return;
+
+      await apiRequest(`/api/friend-requests/${requestId}/accept`, {
+        method: 'POST',
+        body: { userId: currentUser?.id }
+      });
+
+      // تحديد الإشعار كمقروء وحذفه بعد القبول
+      deleteNotification(notification.id);
+      
+      // تحديث فوري للبيانات
+      forceRefreshAll();
+
+      toast({
+        title: "تم قبول طلب الصداقة ✅",
+        description: `تمت إضافة ${notification.data?.senderName} كصديق`,
+        variant: "default"
+      });
+
+    } catch (error) {
+      toast({
+        title: "خطأ ❌",
+        description: "فشل في قبول طلب الصداقة",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeclineFriendRequest = async (notification: Notification) => {
+    try {
+      const requestId = notification.data?.requestId;
+      if (!requestId) return;
+
+      await apiRequest(`/api/friend-requests/${requestId}/decline`, {
+        method: 'POST',
+        body: { userId: currentUser?.id }
+      });
+
+      // تحديد الإشعار كمقروء وحذفه
+      deleteNotification(notification.id);
+      
+      // تحديث فوري للبيانات
+      forceRefreshAll();
+
+      toast({
+        title: "تم رفض طلب الصداقة",
+        description: `تم رفض طلب صداقة ${notification.data?.senderName}`,
+        variant: "default"
+      });
+
+    } catch (error) {
+      toast({
+        title: "خطأ ❌",
+        description: "فشل في رفض طلب الصداقة",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'friendRequest':
@@ -254,27 +317,51 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-1">
-                    {!notification.isRead && (
+                  <div className="flex gap-1 flex-col">
+                    {/* أزرار خاصة بطلبات الصداقة الجديدة فقط */}
+                    {notification.type === 'friendRequest' && notification.data?.requestId && !notification.isRead && (
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleAcceptFriendRequest(notification)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs"
+                        >
+                          ✓ قبول
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeclineFriendRequest(notification)}
+                          className="border-red-300 text-red-600 hover:bg-red-50 px-3 py-1 text-xs"
+                        >
+                          ✗ رفض
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* الأزرار العادية */}
+                    <div className="flex gap-1 mt-1">
+                      {!notification.isRead && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => markAsRead(notification.id)}
+                          className="text-blue-600 hover:text-blue-800 p-1"
+                          title="تحديد كمقروء"
+                        >
+                          <Check className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => markAsRead(notification.id)}
-                        className="text-blue-600 hover:text-blue-800 p-1"
-                        title="تحديد كمقروء"
+                        onClick={() => deleteNotification(notification.id)}
+                        className="text-red-600 hover:text-red-800 p-1"
+                        title="حذف"
                       >
-                        <Check className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4" />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteNotification(notification.id)}
-                      className="text-red-600 hover:text-red-800 p-1"
-                      title="حذف"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    </div>
                   </div>
                 </div>
               </div>
