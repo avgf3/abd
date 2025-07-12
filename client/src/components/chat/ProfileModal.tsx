@@ -419,7 +419,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
         {/* Profile Header - Simple Design */}
         <div className="relative bg-gray-900 rounded-lg overflow-hidden">
           {/* Background Banner */}
-          <div className="relative h-48 overflow-hidden">
+          <div className="relative h-48">
             {/* Banner Image */}
             {profileData.profileBanner && profileData.profileBanner !== '' ? (
               <img 
