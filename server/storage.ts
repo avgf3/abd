@@ -465,25 +465,38 @@ export class MixedStorage implements IStorage {
   }
 
   async addFriend(userId: number, friendId: number): Promise<Friend> {
-    const id = this.currentFriendId++;
-    const friend: Friend = {
-      id,
+    // إضافة الصداقة في الاتجاه الأول
+    const id1 = this.currentFriendId++;
+    const friend1: Friend = {
+      id: id1,
       userId,
       friendId,
-      status: "pending",
+      status: "accepted",
       createdAt: new Date(),
     };
-    this.friends.set(id, friend);
-    return friend;
+    this.friends.set(id1, friend1);
+
+    // إضافة الصداقة في الاتجاه المعاكس
+    const id2 = this.currentFriendId++;
+    const friend2: Friend = {
+      id: id2,
+      userId: friendId,
+      friendId: userId,
+      status: "accepted",
+      createdAt: new Date(),
+    };
+    this.friends.set(id2, friend2);
+
+    return friend1;
   }
 
   async getFriends(userId: number): Promise<User[]> {
     const friendships = Array.from(this.friends.values())
       .filter(f => (f.userId === userId || f.friendId === userId) && f.status === "accepted");
     
-    const friendIds = friendships.map(f => 
+    const friendIds = [...new Set(friendships.map(f => 
       f.userId === userId ? f.friendId : f.userId
-    );
+    ))]; // إزالة التكرار
     
     const friends: User[] = [];
     
@@ -614,8 +627,9 @@ export class MixedStorage implements IStorage {
 
   async getFriendship(userId1: number, userId2: number): Promise<Friend | undefined> {
     return Array.from(this.friends.values()).find(
-      f => (f.userId === userId1 && f.friendId === userId2) ||
-           (f.userId === userId2 && f.friendId === userId1)
+      f => ((f.userId === userId1 && f.friendId === userId2) ||
+           (f.userId === userId2 && f.friendId === userId1)) &&
+           f.status === "accepted"
     );
   }
 

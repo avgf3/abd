@@ -1187,11 +1187,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "غير مسموح" });
       }
 
+      // قبول طلب الصداقة وإضافة الصداقة
       await storage.acceptFriendRequest(requestId);
       await storage.addFriend(request.senderId, request.receiverId);
       
-      // إرسال إشعار للمرسل
+      // الحصول على بيانات المستخدمين
       const receiver = await storage.getUser(userId);
+      const sender = await storage.getUser(request.senderId);
+      
+      // إرسال إشعار WebSocket لتحديث قوائم الأصدقاء
+      broadcast({
+        type: 'friendAdded',
+        targetUserId: request.senderId,
+        friendId: request.receiverId,
+        friendName: receiver?.username
+      });
+      
+      broadcast({
+        type: 'friendAdded', 
+        targetUserId: request.receiverId,
+        friendId: request.senderId,
+        friendName: sender?.username
+      });
       broadcast({
         type: 'friendRequestAccepted',
         targetUserId: request.senderId,
@@ -1209,6 +1226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ message: "تم قبول طلب الصداقة" });
     } catch (error) {
+      console.error("خطأ في قبول طلب الصداقة:", error);
       res.status(500).json({ error: "خطأ في الخادم" });
     }
   });
