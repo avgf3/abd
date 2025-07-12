@@ -36,6 +36,7 @@ interface ChatInterfaceProps {
 
 export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showProfile, setShowProfile] = useState(false);
+  const [profileUser, setProfileUser] = useState<ChatUser | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -148,8 +149,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
 
   const handleViewProfile = (user: ChatUser) => {
+    setProfileUser(user);
     setShowProfile(true);
-    setSelectedPrivateUser(user);
     closeUserPopup();
   };
 
@@ -290,11 +291,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {/* Modals and Popups */}
       {showProfile && (
         <ProfileModal 
-          user={selectedPrivateUser || chat.currentUser}
+          user={profileUser || chat.currentUser}
           currentUser={chat.currentUser}
           onClose={() => {
             setShowProfile(false);
-            if (selectedPrivateUser) setSelectedPrivateUser(null);
+            setProfileUser(null);
           }}
           onIgnoreUser={(userId) => {
             chat.ignoreUser(userId);
