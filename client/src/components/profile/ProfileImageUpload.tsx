@@ -121,20 +121,18 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
     <div className="flex flex-col items-center space-y-4">
       {/* معاينة الصورة */}
       <div className="relative">
-        <div className="w-28 h-28 rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+        <div className="w-28 h-28 rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 border-4 border-white shadow-xl ring-2 ring-blue-500/20">
           {preview ? (
             <img 
               src={preview} 
               alt="معاينة الصورة" 
               className="w-full h-full object-cover"
-              style={{ objectFit: 'cover' }}
             />
           ) : (currentUser?.profileImage && currentUser.profileImage !== '/default_avatar.svg') ? (
             <img 
               src={currentUser.profileImage} 
               alt="صورة البروفايل" 
               className="w-full h-full object-cover"
-              style={{ objectFit: 'cover' }}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center relative">
