@@ -379,7 +379,7 @@ export default function OwnerAdminPanel({
                             <img
                               src={staff.profileImage || '/default_avatar.svg'}
                               alt={staff.username}
-                              className="w-14 h-14 rounded-full border-2 border-purple-200"
+                              className="w-14 h-14 rounded-full ring-2 ring-purple-200 object-cover"
                             />
                             {staff.isOnline && (
                               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
