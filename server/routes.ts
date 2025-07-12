@@ -2179,5 +2179,202 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin API routes for modern Admin Panel
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json({ users });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.get("/api/admin/actions", async (req, res) => {
+    try {
+      const actions = moderationSystem.getModerationLog();
+      res.json({ actions });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/admin/mute", async (req, res) => {
+    try {
+      const { targetUserId, moderatorId, reason, duration = 30 } = req.body;
+      
+      const moderator = await storage.getUser(moderatorId);
+      if (!moderator || (moderator.userType !== 'moderator' && moderator.userType !== 'admin' && moderator.userType !== 'owner')) {
+        return res.status(403).json({ error: "غير مصرح" });
+      }
+
+      const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, duration);
+      if (success) {
+        broadcast({
+          type: 'userMuted',
+          targetUserId,
+          duration,
+          reason,
+          moderatorName: moderator.username
+        });
+
+        res.json({ message: "تم كتم المستخدم بنجاح" });
+      } else {
+        res.status(400).json({ error: "فشل في كتم المستخدم" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/admin/kick", async (req, res) => {
+    try {
+      const { targetUserId, moderatorId, reason, duration = 15 } = req.body;
+      
+      const moderator = await storage.getUser(moderatorId);
+      if (!moderator || (moderator.userType !== 'admin' && moderator.userType !== 'owner')) {
+        return res.status(403).json({ error: "غير مصرح" });
+      }
+
+      const success = await moderationSystem.banUser(moderatorId, targetUserId, reason, duration);
+      if (success) {
+        wss.clients.forEach((client: WebSocketClient) => {
+          if (client.userId === targetUserId) {
+            client.close();
+          }
+        });
+
+        broadcast({
+          type: 'userKicked',
+          targetUserId,
+          duration,
+          reason,
+          moderatorName: moderator.username
+        });
+
+        res.json({ message: "تم طرد المستخدم بنجاح" });
+      } else {
+        res.status(400).json({ error: "فشل في طرد المستخدم" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/admin/ban", async (req, res) => {
+    try {
+      const { targetUserId, moderatorId, reason } = req.body;
+      
+      const moderator = await storage.getUser(moderatorId);
+      if (!moderator || (moderator.userType !== 'admin' && moderator.userType !== 'owner')) {
+        return res.status(403).json({ error: "غير مصرح" });
+      }
+
+      const success = await moderationSystem.banUser(moderatorId, targetUserId, reason, 0);
+      if (success) {
+        wss.clients.forEach((client: WebSocketClient) => {
+          if (client.userId === targetUserId) {
+            client.close();
+          }
+        });
+
+        broadcast({
+          type: 'userBanned',
+          targetUserId,
+          reason,
+          moderatorName: moderator.username
+        });
+
+        res.json({ message: "تم حظر المستخدم بنجاح" });
+      } else {
+        res.status(400).json({ error: "فشل في حظر المستخدم" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/admin/block", async (req, res) => {
+    try {
+      const { targetUserId, moderatorId, reason } = req.body;
+      
+      const moderator = await storage.getUser(moderatorId);
+      if (!moderator || (moderator.userType !== 'admin' && moderator.userType !== 'owner')) {
+        return res.status(403).json({ error: "غير مصرح" });
+      }
+
+      const success = await moderationSystem.blockUser(moderatorId, targetUserId, reason);
+      if (success) {
+        broadcast({
+          type: 'userBlocked',
+          targetUserId,
+          reason,
+          moderatorName: moderator.username
+        });
+
+        res.json({ message: "تم حجب المستخدم بنجاح" });
+      } else {
+        res.status(400).json({ error: "فشل في حجب المستخدم" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/admin/promote", async (req, res) => {
+    try {
+      const { targetUserId, moderatorId, newRole, reason } = req.body;
+      
+      const moderator = await storage.getUser(moderatorId);
+      if (!moderator || moderator.userType !== 'owner') {
+        return res.status(403).json({ error: "فقط المالك يمكنه الترقية" });
+      }
+
+      const targetUser = await storage.getUser(targetUserId);
+      if (!targetUser) {
+        return res.status(404).json({ error: "المستخدم غير موجود" });
+      }
+
+      await storage.updateUser(targetUserId, { userType: newRole });
+
+      broadcast({
+        type: 'userPromoted',
+        targetUserId,
+        newRole,
+        reason,
+        moderatorName: moderator.username
+      });
+
+      res.json({ message: "تم ترقية المستخدم بنجاح" });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  app.post("/api/admin/unmute", async (req, res) => {
+    try {
+      const { targetUserId, moderatorId } = req.body;
+      
+      const moderator = await storage.getUser(moderatorId);
+      if (!moderator || (moderator.userType !== 'moderator' && moderator.userType !== 'admin' && moderator.userType !== 'owner')) {
+        return res.status(403).json({ error: "غير مصرح" });
+      }
+
+      const success = await moderationSystem.unmuteUser(moderatorId, targetUserId);
+      if (success) {
+        broadcast({
+          type: 'userUnmuted',
+          targetUserId,
+          moderatorName: moderator.username
+        });
+
+        res.json({ message: "تم إلغاء كتم المستخدم بنجاح" });
+      } else {
+        res.status(400).json({ error: "فشل في إلغاء الكتم" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   return httpServer;
 }
