@@ -456,3 +456,39 @@ body.ltr {
     z-index: 1000;
   }
 }
+
+/* Profile Image Full Coverage - No Borders */
+.profile-image-full-cover {
+  object-fit: cover !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+}
+
+/* Override all profile image borders and margins */
+img[alt="صورة المستخدم"],
+img[alt="معاينة الصورة"],
+img[alt="صورة البروفايل"] {
+  object-fit: cover !important;
+  border: none !important;
+  box-shadow: none !important;
+  ring: none !important;
+  outline: none !important;
+}
+
+/* Remove any container margins/padding for profile images */
+.profile-image-container {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Ensure circular images maintain aspect ratio */
+.rounded-full {
+  aspect-ratio: 1 / 1 !important;
+  object-fit: cover !important;
+}
