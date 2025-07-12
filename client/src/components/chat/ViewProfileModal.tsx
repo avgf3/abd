@@ -103,11 +103,13 @@ export default function ViewProfileModal({
               />
             ) : (
               <div 
-                className="w-full h-full bg-gradient-to-br from-blue-600 to-purple-600"
+                className="w-full h-full"
                 style={{
-                  backgroundImage: 'url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w-1000&q=80")',
+                  background: `linear-gradient(135deg, ${user.profileBackgroundColor || '#3c0d0d'} 0%, #7b1b1b 100%)`,
+                  backgroundImage: 'url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80")',
                   backgroundSize: 'cover',
-                  backgroundPosition: 'center'
+                  backgroundPosition: 'center',
+                  backgroundBlendMode: 'overlay'
                 }}
               >
               </div>

@@ -2179,5 +2179,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update profile background color
+  app.post('/api/users/update-background-color', async (req: Request, res: Response) => {
+    try {
+      const { userId, profileBackgroundColor } = req.body;
+      
+      if (!userId || !profileBackgroundColor) {
+        return res.status(400).json({ error: 'معرف المستخدم ولون الخلفية مطلوبان' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      await storage.updateUser(userId, { profileBackgroundColor });
+      
+      // إشعار المستخدمين الآخرين عبر WebSocket
+      broadcast({
+        type: 'user_background_updated',
+        data: { userId, profileBackgroundColor }
+      });
+
+      res.json({ success: true, message: 'تم تحديث لون خلفية البروفايل بنجاح' });
+    } catch (error) {
+      console.error('خطأ في تحديث لون الخلفية:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
   return httpServer;
 }

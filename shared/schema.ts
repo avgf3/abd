@@ -29,6 +29,7 @@ export const users = pgTable("users", {
   ignoredUsers: text("ignored_users").array().default([]), // قائمة المستخدمين المتجاهلين
   usernameColor: text("username_color").default('#FFFFFF'), // لون اسم المستخدم
   userTheme: text("user_theme").default('default'), // ثيم المستخدم
+  profileBackgroundColor: text("profile_background_color").default('#3c0d0d'), // لون خلفية البروفايل
 });
 
 export const messages = pgTable("messages", {
