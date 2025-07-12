@@ -120,8 +120,7 @@ export default function ViewProfileModal({
                 <img
                   src={user.profileImage && user.profileImage !== '/default_avatar.svg' ? user.profileImage : "/default_avatar.svg"}
                   alt="صورة المستخدم"
-                  className="w-32 h-32 rounded-full object-cover"
-                  style={{ objectFit: 'cover' }}
+                  className="w-32 h-28 rounded-full border-2 border-white object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = '/default_avatar.svg';
