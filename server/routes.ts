@@ -1145,7 +1145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'friendRequest',
         title: '👫 طلب صداقة جديد',
         message: `أرسل ${sender?.username} طلب صداقة إليك`,
-        data: { friendRequestId: request.id, senderId: senderId, senderName: sender?.username }
+        data: { requestId: request.id, senderId: senderId, senderName: sender?.username }
       });
 
       res.json({ message: "تم إرسال طلب الصداقة", request });

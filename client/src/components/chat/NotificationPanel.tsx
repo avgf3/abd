@@ -159,7 +159,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
   // معالجات طلبات الصداقة
   const handleAcceptFriendRequest = async (notification: Notification) => {
     try {
-      const requestId = notification.data?.requestId;
+      const requestId = notification.data?.requestId || notification.data?.friendRequestId;
       if (!requestId) return;
 
       await apiRequest(`/api/friend-requests/${requestId}/accept`, {
@@ -190,7 +190,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
 
   const handleDeclineFriendRequest = async (notification: Notification) => {
     try {
-      const requestId = notification.data?.requestId;
+      const requestId = notification.data?.requestId || notification.data?.friendRequestId;
       if (!requestId) return;
 
       await apiRequest(`/api/friend-requests/${requestId}/decline`, {
@@ -319,7 +319,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
                   </div>
                   <div className="flex gap-1 flex-col">
                     {/* أزرار خاصة بطلبات الصداقة الجديدة فقط */}
-                    {notification.type === 'friendRequest' && notification.data?.requestId && !notification.isRead && (
+                    {notification.type === 'friendRequest' && (notification.data?.requestId || notification.data?.friendRequestId) && !notification.isRead && (
                       <div className="flex gap-2 mt-2">
                         <Button
                           size="sm"
