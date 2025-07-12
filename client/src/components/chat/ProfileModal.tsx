@@ -538,7 +538,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
 
         {currentUser && currentUser.id === user.id && (
-          <div className="bg-white p-6 -mt-12 relative z-10 rounded-t-3xl">
+          <div className="p-6 -mt-12 relative z-10">
             <Tabs defaultValue="info" className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="info">معلوماتي</TabsTrigger>
@@ -550,14 +550,14 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
             <h3 className="text-lg font-semibold text-primary">المعلومات الشخصية</h3>
             
             {/* رابط الملف الشخصي */}
-            <div className="bg-accent/50 p-4 rounded-lg border border-border">
+            <div className="p-4 rounded-lg border border-border/30">
               <label className="block text-sm font-medium text-muted-foreground mb-2">رابط الملف الشخصي</label>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   readOnly
                   value={`https://www.arabic.chat/#id${user?.id || ''}`}
-                  className="flex-1 bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground"
+                  className="flex-1 bg-transparent border border-border/30 rounded-md px-3 py-2 text-sm text-white"
                 />
                 <Button
                   size="sm"
@@ -667,7 +667,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                 </div>
 
                 {/* معاينة */}
-                <div className="mt-4 p-4 bg-accent rounded-lg">
+                <div className="mt-4 p-4 rounded-lg border border-border/30">
                   <p className="text-sm text-center mb-3">معاينة المظهر:</p>
                   <div className="text-center">
                     <div 
