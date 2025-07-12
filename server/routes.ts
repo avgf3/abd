@@ -105,59 +105,44 @@ const friendService = new (class FriendService {
 })();
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // رفع صور البروفايل (الصورة الشخصية) - مع تأكيد الحفظ
+  // رفع صور البروفايل
   app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
     try {
-      console.log('🖼️ طلب رفع صورة البروفايل - الملف:', req.file?.filename);
-      console.log('البيانات المرسلة:', req.body);
+      console.log('رفع صورة البروفايل - الملف:', req.file);
+      console.log('البيانات:', req.body);
 
       if (!req.file) {
         return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
       }
 
       const userId = req.body.userId;
-      const confirmSave = req.body.confirmSave; // تأكيد الحفظ من المستخدم
-
       if (!userId) {
         return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
       }
 
-      // إذا لم يكن هناك تأكيد حفظ، نرجع مسار الصورة المؤقت فقط للمعاينة
-      const tempImageUrl = `/uploads/profiles/${req.file.filename}`;
+      // تحديث مسار الصورة في قاعدة البيانات
+      const imageUrl = `/uploads/profiles/${req.file.filename}`;
       
-      if (!confirmSave || confirmSave === 'false') {
-        console.log('📋 معاينة الصورة فقط - لم يتم الحفظ بعد');
-        return res.json({
-          success: true,
-          preview: true,
-          message: 'تم رفع الصورة للمعاينة - اضغط حفظ للتأكيد',
-          tempImageUrl: tempImageUrl,
-          filename: req.file.filename
-        });
-      }
-
-      // إذا كان هناك تأكيد حفظ، نحفظ في قاعدة البيانات
       const user = await storage.getUser(parseInt(userId));
       if (!user) {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
-      // حذف الصورة القديمة إذا كانت موجودة (وليست الافتراضية)
+      // حذف الصورة القديمة إذا كانت موجودة
       if (user.profileImage && user.profileImage !== '/default_avatar.svg') {
         const oldImagePath = path.join(process.cwd(), 'client', 'public', user.profileImage);
         if (fs.existsSync(oldImagePath)) {
           fs.unlinkSync(oldImagePath);
-          console.log('🗑️ تم حذف الصورة القديمة:', user.profileImage);
         }
       }
 
-      // تحديث المستخدم في قاعدة البيانات بالصورة الجديدة
-      const updatedUser = await storage.updateUser(parseInt(userId), { profileImage: tempImageUrl });
+      // تحديث المستخدم في قاعدة البيانات
+      const updatedUser = await storage.updateUser(parseInt(userId), { profileImage: imageUrl });
       
-      console.log('✅ تم تحديث صورة البروفايل للمستخدم:', updatedUser?.username);
+      console.log('تم تحديث المستخدم:', updatedUser);
 
       // إرسال تحديث WebSocket لجميع المستخدمين
-      if (wss && updatedUser) {
+      if (wss) {
         wss.clients.forEach((client: WebSocketClient) => {
           if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify({
@@ -170,51 +155,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         success: true,
-        message: 'تم حفظ صورة البروفايل بنجاح',
-        imageUrl: tempImageUrl,
+        message: 'تم رفع الصورة بنجاح',
+        imageUrl: imageUrl,
         user: updatedUser
       });
 
     } catch (error) {
-      console.error('❌ خطأ في رفع صورة البروفايل:', error);
+      console.error('Error uploading profile image:', error);
       res.status(500).json({ 
         error: error instanceof Error ? error.message : 'خطأ في رفع الصورة' 
       });
     }
   });
 
-  // رفع صور البانر (الخلفية) - مع تأكيد الحفظ
+  // رفع صور البروفايل البانر
   app.post('/api/upload/profile-banner', upload.single('profileBanner'), async (req, res) => {
     try {
-      console.log('🎨 طلب رفع صورة البانر - الملف:', req.file?.filename);
-      console.log('البيانات المرسلة:', req.body);
+      console.log('رفع صورة البانر - الملف:', req.file);
+      console.log('البيانات:', req.body);
 
       if (!req.file) {
         return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
       }
 
       const userId = req.body.userId;
-      const confirmSave = req.body.confirmSave; // تأكيد الحفظ من المستخدم
-
       if (!userId) {
         return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
       }
 
-      // إذا لم يكن هناك تأكيد حفظ، نرجع مسار الصورة المؤقت فقط للمعاينة
-      const tempBannerUrl = `/uploads/profiles/${req.file.filename}`;
+      // تحديث مسار صورة البانر
+      const bannerUrl = `/uploads/profiles/${req.file.filename}`;
       
-      if (!confirmSave || confirmSave === 'false') {
-        console.log('📋 معاينة صورة البانر فقط - لم يتم الحفظ بعد');
-        return res.json({
-          success: true,
-          preview: true,
-          message: 'تم رفع صورة البانر للمعاينة - اضغط حفظ للتأكيد',
-          tempBannerUrl: tempBannerUrl,
-          filename: req.file.filename
-        });
-      }
-
-      // إذا كان هناك تأكيد حفظ، نحفظ في قاعدة البيانات
       const user = await storage.getUser(parseInt(userId));
       if (!user) {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
@@ -225,17 +196,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const oldBannerPath = path.join(process.cwd(), 'client', 'public', user.profileBanner);
         if (fs.existsSync(oldBannerPath)) {
           fs.unlinkSync(oldBannerPath);
-          console.log('🗑️ تم حذف صورة البانر القديمة:', user.profileBanner);
         }
       }
 
-      // تحديث المستخدم في قاعدة البيانات بصورة البانر الجديدة
-      const updatedUser = await storage.updateUser(parseInt(userId), { profileBanner: tempBannerUrl });
+      // تحديث المستخدم في قاعدة البيانات
+      const updatedUser = await storage.updateUser(parseInt(userId), { profileBanner: bannerUrl });
       
-      console.log('✅ تم تحديث صورة البانر للمستخدم:', updatedUser?.username);
+      console.log('تم تحديث المستخدم:', updatedUser);
 
       // إرسال تحديث WebSocket لجميع المستخدمين
-      if (wss && updatedUser) {
+      if (wss) {
         wss.clients.forEach((client: WebSocketClient) => {
           if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify({
@@ -248,8 +218,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         success: true,
-        message: 'تم حفظ صورة البانر بنجاح',
-        bannerUrl: tempBannerUrl,
+        message: 'تم رفع صورة البروفايل بنجاح',
+        bannerUrl: bannerUrl,
         user: updatedUser
       });
 
@@ -663,25 +633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User routes - إضافة مسار الحصول على جميع المستخدمين
-  app.get("/api/users", async (req, res) => {
-    try {
-      const users = await storage.getAllUsers();
-      res.json({ users });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
-
-  app.get("/api/all-users", async (req, res) => {
-    try {
-      const users = await storage.getAllUsers();
-      res.json({ users });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
-
+  // User routes
   app.get("/api/users/online", async (req, res) => {
     try {
       const users = await storage.getOnlineUsers();
@@ -719,50 +671,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Message routes
-  // إضافة مسار إنشاء الرسائل
-  app.post("/api/messages", async (req, res) => {
-    try {
-      const { senderId, receiverId, content, messageType, isPrivate = false } = req.body;
-      
-      if (!senderId || !content || !messageType) {
-        return res.status(400).json({ error: "البيانات المطلوبة مفقودة" });
-      }
-
-      const message = await storage.createMessage({
-        senderId,
-        receiverId: isPrivate ? receiverId : null,
-        content,
-        messageType,
-        isPrivate,
-        timestamp: new Date()
-      });
-
-      // Broadcast message to connected clients
-      if (wss) {
-        wss.clients.forEach((client: WebSocketClient) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-              type: 'newMessage',
-              message: {
-                ...message,
-                sender: {
-                  id: senderId,
-                  username: '',
-                  userType: ''
-                }
-              }
-            }));
-          }
-        });
-      }
-
-      res.json({ message, success: true });
-    } catch (error) {
-      console.error("خطأ في إنشاء الرسالة:", error);
-      res.status(500).json({ error: "خطأ في إنشاء الرسالة" });
-    }
-  });
-
   app.get("/api/messages/public", async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
