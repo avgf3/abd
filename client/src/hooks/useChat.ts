@@ -393,14 +393,38 @@ export function useChat() {
                 // صوت تنبيه
                 playNotificationSound();
                 
-                // إضافة إشعار حقيقي للواجهة
-                setNotifications(prev => [...prev, {
-                  id: Date.now(),
-                  type: 'friendRequest',
-                  username: message.senderUsername,
-                  message: `${message.senderUsername} يريد إضافتك كصديق`,
-                  timestamp: new Date()
-                }]);
+                // تحديث فوري للإشعارات والأصدقاء
+                // هذا سيؤدي لإعادة جلب البيانات من الخادم فوراً
+                setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent('friendRequestReceived', {
+                    detail: { senderId: message.senderId, senderName: message.senderUsername }
+                  }));
+                }, 100);
+              }
+              break;
+              
+            case 'friendRequestAccepted':
+              // إشعار قبول طلب الصداقة
+              if (message.targetUserId === user.id) {
+                console.log('✅ تم قبول طلب صداقتك من:', message.acceptedBy);
+                
+                // إشعار مرئي
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('تم قبول طلب الصداقة ✅', {
+                    body: `${message.acceptedBy} قبل طلب صداقتك`,
+                    icon: '/favicon.ico'
+                  });
+                }
+                
+                // صوت تنبيه
+                playNotificationSound();
+                
+                // تحديث فوري لقائمة الأصدقاء
+                setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent('friendRequestAccepted', {
+                    detail: { friendId: message.friendId, friendName: message.acceptedBy }
+                  }));
+                }, 100);
               }
               break;
 
@@ -505,30 +529,115 @@ export function useChat() {
     setConnectionError(null);
   }, []);
 
-  const sendMessage = useCallback((content: string, messageType: string = 'text') => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({
-        type: 'publicMessage',
-        content,
-        messageType,
-      }));
-      return true;
+  // إرسال رسالة عامة محسن
+  const sendMessage = useCallback(async (content: string, messageType: string = 'text') => {
+    if (!currentUser || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
+      throw new Error('غير متصل بالخادم');
     }
-    return false;
-  }, []);
 
-  const sendPrivateMessage = useCallback((receiverId: number, content: string, messageType: string = 'text') => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({
-        type: 'privateMessage',
-        receiverId,
-        content,
-        messageType,
-      }));
-      return true;
+    // فحص التأخير الزمني
+    const now = Date.now();
+    if (now - lastMessageTime.current < 500) {
+      throw new Error('الرجاء الانتظار قبل إرسال رسالة أخرى');
     }
-    return false;
-  }, []);
+    lastMessageTime.current = now;
+
+    try {
+      const messageData = {
+        senderId: currentUser.id,
+        content: content.trim(),
+        messageType,
+        isPrivate: false
+      };
+
+      // إرسال إلى الخادم عبر API أولاً
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(messageData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'فشل في إرسال الرسالة');
+      }
+
+      const result = await response.json();
+      
+      // إضافة الرسالة مباشرة للواجهة للحصول على رد فعل فوري
+      const newMessage = {
+        id: result.data.id || Date.now(),
+        senderId: currentUser.id,
+        content: content.trim(),
+        messageType,
+        isPrivate: false,
+        timestamp: new Date(),
+        sender: currentUser
+      };
+      
+      setPublicMessages(prev => [...prev, newMessage]);
+      
+      console.log('✅ تم إرسال الرسالة بنجاح');
+      return result.data;
+    } catch (error: any) {
+      console.error('❌ خطأ في إرسال الرسالة:', error);
+      throw error;
+    }
+  }, [currentUser]);
+
+  // إرسال رسالة خاصة محسن
+  const sendPrivateMessage = useCallback(async (receiverId: number, content: string, messageType: string = 'text') => {
+    if (!currentUser || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
+      throw new Error('غير متصل بالخادم');
+    }
+
+    try {
+      const messageData = {
+        senderId: currentUser.id,
+        receiverId,
+        content: content.trim(),
+        messageType,
+        isPrivate: true
+      };
+
+      // إرسال إلى الخادم عبر API
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(messageData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'فشل في إرسال الرسالة');
+      }
+
+      const result = await response.json();
+      
+      // إضافة الرسالة مباشرة للمحادثة الخاصة
+      const newMessage = {
+        id: result.data.id || Date.now(),
+        senderId: currentUser.id,
+        receiverId,
+        content: content.trim(),
+        messageType,
+        isPrivate: true,
+        timestamp: new Date(),
+        sender: currentUser
+      };
+      
+      setPrivateConversations(prev => ({
+        ...prev,
+        [receiverId]: [...(prev[receiverId] || []), newMessage]
+      }));
+      
+      console.log('✅ تم إرسال الرسالة الخاصة بنجاح');
+      return result.data;
+    } catch (error: any) {
+      console.error('❌ خطأ في إرسال الرسالة الخاصة:', error);
+      throw error;
+    }
+  }, [currentUser]);
 
   const sendTyping = useCallback((isTyping: boolean) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN && currentUser) {

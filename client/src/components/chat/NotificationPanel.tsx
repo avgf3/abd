@@ -12,6 +12,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useRealTimeUpdates } from '@/hooks/useRealTimeUpdates';
 import { Bell, X, Check, Trash2, Users } from 'lucide-react';
 import type { ChatUser } from '@/types/chat';
 
@@ -35,12 +36,13 @@ interface NotificationPanelProps {
 export default function NotificationPanel({ isOpen, onClose, currentUser }: NotificationPanelProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { forceRefreshAll, updateNotifications, updateFriends } = useRealTimeUpdates(currentUser?.id);
 
   // جلب الإشعارات الحقيقية من قاعدة البيانات
   const { data: notificationsData, isLoading } = useQuery({
     queryKey: ['/api/notifications', currentUser?.id],
     enabled: !!currentUser?.id && isOpen,
-    refetchInterval: 5000 // تحديث كل 5 ثوان
+    refetchInterval: 3000 // تحديث كل 3 ثوان
   });
 
   // جلب عدد الإشعارات غير المقروءة
@@ -49,6 +51,29 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     enabled: !!currentUser?.id,
     refetchInterval: 2000 // تحديث كل ثانيتين
   });
+
+  // معالج الأحداث للتحديث الفوري عند استلام طلبات الصداقة
+  useEffect(() => {
+    const handleFriendRequestReceived = () => {
+      updateNotifications();
+      forceRefreshAll();
+    };
+
+    const handleFriendRequestAccepted = () => {
+      updateFriends();
+      updateNotifications();
+    };
+
+    // إضافة مستمعي الأحداث
+    window.addEventListener('friendRequestReceived', handleFriendRequestReceived);
+    window.addEventListener('friendRequestAccepted', handleFriendRequestAccepted);
+
+    // تنظيف المستمعين عند إلغاء تحميل المكون
+    return () => {
+      window.removeEventListener('friendRequestReceived', handleFriendRequestReceived);
+      window.removeEventListener('friendRequestAccepted', handleFriendRequestAccepted);
+    };
+  }, [updateNotifications, updateFriends, forceRefreshAll]);
 
   // تحديد إشعار كمقروء
   const markAsReadMutation = useMutation({

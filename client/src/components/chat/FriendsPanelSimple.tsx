@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useRealTimeUpdates } from '@/hooks/useRealTimeUpdates';
 import ProfileImage from './ProfileImage';
 import type { ChatUser } from '@/types/chat';
 
@@ -37,6 +38,7 @@ export default function FriendsPanel({
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { updateFriends } = useRealTimeUpdates(currentUser?.id);
 
   useEffect(() => {
     if (isOpen && currentUser) {
@@ -51,10 +53,11 @@ export default function FriendsPanel({
     try {
       const response = await apiRequest(`/api/friends/${currentUser.id}`);
       if (response && Array.isArray(response.friends)) {
-        setFriends(response.friends.map((friend: any) => ({
+        const updatedFriends = response.friends.map((friend: any) => ({
           ...friend,
           status: onlineUsers.find(u => u.id === friend.id) ? 'online' : 'offline'
-        })));
+        }));
+        setFriends(updatedFriends);
       }
     } catch (error) {
       console.error('Error fetching friends:', error);
@@ -63,6 +66,32 @@ export default function FriendsPanel({
       setLoading(false);
     }
   };
+
+  // تحديث قائمة الأصدقاء عند تغيير المستخدمين المتصلين
+  useEffect(() => {
+    if (friends.length > 0) {
+      setFriends(prev => prev.map(friend => ({
+        ...friend,
+        status: onlineUsers.find(u => u.id === friend.id) ? 'online' : 'offline'
+      })));
+    }
+  }, [onlineUsers]);
+
+  // معالج الأحداث للتحديث الفوري عند قبول طلبات الصداقة
+  useEffect(() => {
+    const handleFriendRequestAccepted = () => {
+      // إعادة جلب قائمة الأصدقاء فوراً
+      if (isOpen && currentUser) {
+        fetchFriends();
+      }
+    };
+
+    window.addEventListener('friendRequestAccepted', handleFriendRequestAccepted);
+    
+    return () => {
+      window.removeEventListener('friendRequestAccepted', handleFriendRequestAccepted);
+    };
+  }, [isOpen, currentUser]);
 
   if (!isOpen) return null;
 
