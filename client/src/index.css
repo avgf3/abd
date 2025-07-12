@@ -26,32 +26,32 @@
 }
 
 :root {
-  --background: hsl(208, 100%, 7%);
-  --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(208, 87%, 15%);
-  --muted-foreground: hsl(208, 20%, 65%);
-  --popover: hsl(208, 87%, 15%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(208, 87%, 15%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(208, 50%, 25%);
-  --input: hsl(208, 50%, 25%);
-  --primary: hsl(197, 100%, 55%);
-  --primary-foreground: hsl(208, 100%, 7%);
-  --secondary: hsl(208, 87%, 15%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(208, 60%, 31%);
-  --accent-foreground: hsl(0, 0%, 98%);
+  --background: hsl(330, 40%, 95%);
+  --foreground: hsl(0, 0%, 15%);
+  --muted: hsl(320, 30%, 85%);
+  --muted-foreground: hsl(320, 20%, 35%);
+  --popover: hsl(330, 40%, 95%);
+  --popover-foreground: hsl(0, 0%, 15%);
+  --card: hsl(320, 30%, 92%);
+  --card-foreground: hsl(0, 0%, 15%);
+  --border: hsl(320, 25%, 75%);
+  --input: hsl(320, 25%, 75%);
+  --primary: hsl(315, 70%, 55%);
+  --primary-foreground: hsl(330, 40%, 95%);
+  --secondary: hsl(320, 30%, 85%);
+  --secondary-foreground: hsl(0, 0%, 15%);
+  --accent: hsl(315, 40%, 69%);
+  --accent-foreground: hsl(0, 0%, 15%);
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(197, 100%, 55%);
+  --ring: hsl(315, 70%, 55%);
   --radius: 0.75rem;
   
   /* Custom chat colors */
-  --chat-primary: hsl(208, 100%, 7%);
-  --chat-secondary: hsl(208, 87%, 15%);
-  --chat-accent: hsl(208, 60%, 31%);
-  --chat-highlight: hsl(197, 100%, 55%);
+  --chat-primary: hsl(330, 40%, 95%);
+  --chat-secondary: hsl(320, 30%, 85%);
+  --chat-accent: hsl(315, 40%, 69%);
+  --chat-highlight: hsl(315, 70%, 55%);
   --chat-success: hsl(142, 76%, 36%);
   --chat-warning: hsl(32, 95%, 44%);
   --chat-danger: hsl(0, 84%, 60%);
@@ -85,9 +85,11 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground;
     font-family: 'Cairo', sans-serif;
     direction: rtl;
+    background: linear-gradient(135deg, #f8d7da, #f3c4d4, #edb5d1, #e7a6ce);
+    min-height: 100vh;
   }
 
   html {
