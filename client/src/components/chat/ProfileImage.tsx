@@ -23,7 +23,7 @@ export default function ProfileImage({ user, size = 'medium', className = '' }: 
       <img
         src={user.profileImage && user.profileImage !== '/default_avatar.svg' ? user.profileImage : "/default_avatar.svg"}
         alt="صورة المستخدم"
-        className={`${sizeClasses[size]} rounded-full border-2 ${borderColor} ring-1 shadow-sm object-cover ${className}`}
+        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className}`}
         onError={(e) => {
           const target = e.target as HTMLImageElement;
           target.src = '/default_avatar.svg';
