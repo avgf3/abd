@@ -93,7 +93,7 @@ export default function ViewProfileModal({
         {/* Profile Header - Simple Design */}
         <div className="relative bg-gray-900 rounded-lg overflow-hidden">
           {/* Background Banner */}
-          <div className="relative h-48 overflow-hidden">
+          <div className="relative h-48">
             {/* Banner Image */}
             {user.profileBanner && user.profileBanner !== '' ? (
               <img 
@@ -105,7 +105,7 @@ export default function ViewProfileModal({
               <div 
                 className="w-full h-full bg-gradient-to-br from-blue-600 to-purple-600"
                 style={{
-                  backgroundImage: 'url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80")',
+                  backgroundImage: 'url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w-1000&q=80")',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center'
                 }}
