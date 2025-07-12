@@ -19,7 +19,6 @@ import KickNotification from '../moderation/KickNotification';
 import BlockNotification from '../moderation/BlockNotification';
 import PromoteUserPanel from '../moderation/PromoteUserPanel';
 import OwnerAdminPanel from './OwnerAdminPanel';
-import AdminPanel from './AdminPanel';
 import ProfileImage from './ProfileImage';
 import StealthModeToggle from './StealthModeToggle';
 import WelcomeNotification from './WelcomeNotification';
@@ -50,7 +49,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showReportsLog, setShowReportsLog] = useState(false);
   const [showActiveActions, setShowActiveActions] = useState(false);
   const [showPromotePanel, setShowPromotePanel] = useState(false);
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
@@ -233,15 +231,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               >
                 <span>🔒</span>
                 سجل الإجراءات النشطة
-              </Button>
-
-              {/* زر لوحة الإدارة الشاملة */}
-              <Button 
-                className="glass-effect px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 text-white border-0"
-                onClick={() => setShowAdminPanel(true)}
-              >
-                <span>⚙️</span>
-                لوحة الإدارة
               </Button>
 
               {/* زر ترقية المستخدمين - للمالك فقط */}
@@ -486,16 +475,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* إشعار الترحيب */}
       {chat.currentUser && <WelcomeNotification user={chat.currentUser} />}
-
-      {/* لوحة الإدارة الشاملة */}
-      {showAdminPanel && (
-        <AdminPanel
-          isOpen={showAdminPanel}
-          onClose={() => setShowAdminPanel(false)}
-          currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
-        />
-      )}
 
     </div>
   );
