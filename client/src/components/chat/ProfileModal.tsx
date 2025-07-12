@@ -409,7 +409,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="glass-effect border border-border max-w-3xl max-h-[90vh] overflow-y-auto animate-fade-in">
+      <DialogContent className="glass-effect border border-border max-w-md max-h-[90vh] overflow-y-auto animate-fade-in">
         <DialogHeader className="p-0">
           <DialogTitle className="sr-only">
             الملف الشخصي
@@ -419,7 +419,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
         {/* Profile Header - Modern Design */}
         <div className="relative">
           {/* Background Banner */}
-          <div className="relative h-64 overflow-hidden rounded-t-2xl">
+          <div className="relative h-32 overflow-hidden rounded-t-2xl">
             {/* Banner Image */}
             {profileData.profileBanner && profileData.profileBanner !== '' ? (
               <img 
@@ -547,6 +547,34 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
           <TabsContent value="info" className="space-y-4">
             <h3 className="text-lg font-semibold text-primary">المعلومات الشخصية</h3>
+            
+            {/* رابط الملف الشخصي */}
+            <div className="bg-accent/50 p-4 rounded-lg border border-border">
+              <label className="block text-sm font-medium text-muted-foreground mb-2">رابط الملف الشخصي</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={`https://www.arabic.chat/#id${user?.id || ''}`}
+                  className="flex-1 bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const profileLink = `https://www.arabic.chat/#id${user?.id || ''}`;
+                    navigator.clipboard.writeText(profileLink);
+                    toast({
+                      title: "تم النسخ",
+                      description: "تم نسخ رابط الملف الشخصي",
+                    });
+                  }}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  📋 نسخ
+                </Button>
+              </div>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-muted-foreground">الجنس</label>

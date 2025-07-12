@@ -155,6 +155,45 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     closeUserPopup();
   };
 
+  // معالج للروابط الشخصية
+  const handleProfileLink = (userId: number) => {
+    const user = chat.users.find(u => u.id === userId);
+    if (user) {
+      setProfileUser(user);
+      setShowProfile(true);
+    } else {
+      toast({
+        title: "مستخدم غير موجود",
+        description: "لم نتمكن من العثور على هذا المستخدم",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // تفعيل نظام الروابط الشخصية
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      const match = hash.match(/#id(\d+)/);
+      if (match) {
+        const userId = parseInt(match[1]);
+        handleProfileLink(userId);
+        // إزالة الهاش من العنوان
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    };
+
+    // فحص الهاش عند تحميل الصفحة
+    handleHashChange();
+    
+    // مراقبة تغييرات الهاش
+    window.addEventListener('hashchange', handleHashChange);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [chat.users]);
+
   const handleReportUser = (user: ChatUser, messageContent?: string, messageId?: number) => {
     setReportedUser(user);
     setReportedMessage(messageContent && messageId ? { content: messageContent, id: messageId } : null);

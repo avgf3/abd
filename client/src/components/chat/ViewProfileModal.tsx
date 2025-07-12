@@ -83,7 +83,7 @@ export default function ViewProfileModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="glass-effect border border-border max-w-3xl max-h-[90vh] overflow-y-auto animate-fade-in">
+      <DialogContent className="glass-effect border border-border max-w-md max-h-[90vh] overflow-y-auto animate-fade-in">
         <DialogHeader className="p-0">
           <DialogTitle className="sr-only">
             الملف الشخصي - {user.username}
@@ -93,7 +93,7 @@ export default function ViewProfileModal({
         {/* Profile Header - Modern Design */}
         <div className="relative">
           {/* Background Banner */}
-          <div className="relative h-64 overflow-hidden rounded-t-2xl">
+          <div className="relative h-32 overflow-hidden rounded-t-2xl">
             {/* Banner Image */}
             {user.profileBanner && user.profileBanner !== '' ? (
               <img 
@@ -212,9 +212,19 @@ export default function ViewProfileModal({
             <div className="border-b border-gray-200 pb-4">
               <div className="flex justify-between items-center">
                 <span className="text-gray-700 font-medium">رابط الملف الشخصي</span>
-                <span className="text-orange-500 text-sm">
+                <button
+                  onClick={() => {
+                    const profileLink = `https://www.arabic.chat/#id${user.id}`;
+                    navigator.clipboard.writeText(profileLink);
+                    toast({
+                      title: "تم النسخ",
+                      description: "تم نسخ رابط الملف الشخصي",
+                    });
+                  }}
+                  className="text-orange-500 text-sm hover:text-orange-600 cursor-pointer"
+                >
                   https://www.arabic.chat/#id{user.id}
-                </span>
+                </button>
               </div>
             </div>
 
