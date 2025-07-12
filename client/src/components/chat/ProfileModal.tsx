@@ -409,7 +409,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="glass-effect border border-border max-w-md max-h-[90vh] overflow-y-auto animate-fade-in">
+      <DialogContent className="bg-gradient-to-br from-pink-100 to-purple-100 border border-border max-w-md max-h-[90vh] overflow-y-auto animate-fade-in">
         <DialogHeader className="p-0">
           <DialogTitle className="sr-only">
             الملف الشخصي
