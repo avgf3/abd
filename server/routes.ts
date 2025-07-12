@@ -2376,5 +2376,243 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========================= API نظام الإشراف المتكامل =========================
+
+  // API عمليات الإشراف المتقدمة
+  app.post('/api/moderation/mute', async (req, res) => {
+    try {
+      const { targetUserId, duration, reason, moderatorId } = req.body;
+      
+      if (!targetUserId || !duration || !reason || !moderatorId) {
+        return res.status(400).json({ error: 'البيانات المطلوبة مفقودة' });
+      }
+
+      const success = await storage.muteUser(targetUserId, duration, reason, moderatorId);
+      
+      if (success) {
+        const moderator = await storage.getUser(moderatorId);
+        const targetUser = await storage.getUser(targetUserId);
+        
+        // إرسال إشعار عبر WebSocket
+        wss.clients.forEach((client: WebSocketClient) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'userMuted',
+              targetUserId,
+              targetUsername: targetUser?.username,
+              moderatorName: moderator?.username,
+              duration,
+              reason
+            }));
+          }
+        });
+        
+        res.json({ success: true, message: 'تم كتم المستخدم بنجاح' });
+      } else {
+        res.status(500).json({ error: 'فشل في كتم المستخدم' });
+      }
+    } catch (error) {
+      console.error('خطأ في كتم المستخدم:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  app.post('/api/moderation/unmute', async (req, res) => {
+    try {
+      const { targetUserId, moderatorId } = req.body;
+      
+      const success = await storage.unmuteUser(targetUserId, moderatorId);
+      
+      if (success) {
+        const moderator = await storage.getUser(moderatorId);
+        const targetUser = await storage.getUser(targetUserId);
+        
+        // إرسال إشعار عبر WebSocket
+        wss.clients.forEach((client: WebSocketClient) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'userUnmuted',
+              targetUserId,
+              targetUsername: targetUser?.username,
+              moderatorName: moderator?.username
+            }));
+          }
+        });
+        
+        res.json({ success: true, message: 'تم إلغاء كتم المستخدم بنجاح' });
+      } else {
+        res.status(500).json({ error: 'فشل في إلغاء كتم المستخدم' });
+      }
+    } catch (error) {
+      console.error('خطأ في إلغاء كتم المستخدم:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  app.post('/api/moderation/kick', async (req, res) => {
+    try {
+      const { targetUserId, duration, reason, moderatorId } = req.body;
+      
+      const success = await storage.kickUser(targetUserId, duration, reason, moderatorId);
+      
+      if (success) {
+        const moderator = await storage.getUser(moderatorId);
+        const targetUser = await storage.getUser(targetUserId);
+        
+        // إرسال إشعار عبر WebSocket
+        wss.clients.forEach((client: WebSocketClient) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'userKicked',
+              targetUserId,
+              targetUsername: targetUser?.username,
+              moderatorName: moderator?.username,
+              duration,
+              reason
+            }));
+          }
+        });
+        
+        res.json({ success: true, message: 'تم طرد المستخدم بنجاح' });
+      } else {
+        res.status(500).json({ error: 'فشل في طرد المستخدم' });
+      }
+    } catch (error) {
+      console.error('خطأ في طرد المستخدم:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  app.post('/api/moderation/ban', async (req, res) => {
+    try {
+      const { targetUserId, reason, moderatorId, ipAddress, deviceId } = req.body;
+      
+      const success = await storage.banUser(targetUserId, reason, moderatorId, ipAddress, deviceId);
+      
+      if (success) {
+        const moderator = await storage.getUser(moderatorId);
+        const targetUser = await storage.getUser(targetUserId);
+        
+        // إرسال إشعار عبر WebSocket
+        wss.clients.forEach((client: WebSocketClient) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'userBanned',
+              targetUserId,
+              targetUsername: targetUser?.username,
+              moderatorName: moderator?.username,
+              reason
+            }));
+          }
+        });
+        
+        res.json({ success: true, message: 'تم حظر المستخدم بنجاح' });
+      } else {
+        res.status(500).json({ error: 'فشل في حظر المستخدم' });
+      }
+    } catch (error) {
+      console.error('خطأ في حظر المستخدم:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  app.post('/api/moderation/block', async (req, res) => {
+    try {
+      const { targetUserId, reason, moderatorId, ipAddress, deviceId } = req.body;
+      
+      const success = await storage.blockUser(targetUserId, reason, moderatorId, ipAddress, deviceId);
+      
+      if (success) {
+        const moderator = await storage.getUser(moderatorId);
+        const targetUser = await storage.getUser(targetUserId);
+        
+        // إرسال إشعار عبر WebSocket
+        wss.clients.forEach((client: WebSocketClient) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'userBlocked',
+              targetUserId,
+              targetUsername: targetUser?.username,
+              moderatorName: moderator?.username,
+              reason
+            }));
+          }
+        });
+        
+        res.json({ success: true, message: 'تم حجب المستخدم بنجاح' });
+      } else {
+        res.status(500).json({ error: 'فشل في حجب المستخدم' });
+      }
+    } catch (error) {
+      console.error('خطأ في حجب المستخدم:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  app.post('/api/moderation/promote', async (req, res) => {
+    try {
+      const { targetUserId, newRole, moderatorId } = req.body;
+      
+      const success = await storage.promoteUser(targetUserId, newRole, moderatorId);
+      
+      if (success) {
+        const moderator = await storage.getUser(moderatorId);
+        const targetUser = await storage.getUser(targetUserId);
+        
+        // إرسال إشعار عبر WebSocket
+        wss.clients.forEach((client: WebSocketClient) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'userPromoted',
+              targetUserId,
+              targetUsername: targetUser?.username,
+              moderatorName: moderator?.username,
+              newRole
+            }));
+          }
+        });
+        
+        res.json({ success: true, message: 'تم ترقية المستخدم بنجاح' });
+      } else {
+        res.status(500).json({ error: 'فشل في ترقية المستخدم' });
+      }
+    } catch (error) {
+      console.error('خطأ في ترقية المستخدم:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  app.get('/api/moderation/user-status/:userId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const status = await storage.getUserModerationStatus(userId);
+      
+      res.json(status);
+    } catch (error) {
+      console.error('خطأ في جلب حالة المستخدم:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  app.get('/api/moderation/enhanced-stats', async (req, res) => {
+    try {
+      const moderationStats = await storage.getModerationStats();
+      const moderationData = moderationSystem.getStats();
+      const onlineUsers = await storage.getOnlineUsers();
+      
+      const stats = {
+        ...moderationStats,
+        ...moderationData,
+        onlineUsers: onlineUsers.filter(u => u.isOnline).length,
+        activeActions: Array.from(moderationData.actions.values()).filter(a => a.isActive).length
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error('خطأ في جلب إحصائيات الإشراف المحسنة:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
   return httpServer;
 }
