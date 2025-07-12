@@ -203,8 +203,7 @@ Preferred communication style: Simple, everyday language.
 - **Copy Link Feature**: Added click-to-copy functionality for personal profile links with toast confirmation
 - **Consistent Design**: Maintained uniform profile design across personal and other user profiles
 - **Link Integration**: Profile links work in chat messages and can be shared/clicked to open user profiles
-- **Full Cover Profile Design**: Changed profile image to cover entire modal width and height as main background
-- **Berry Theme Background**: Updated profile modal background to beautiful gradient from pink-100 to purple-100 (berry/توتي theme)
+- **Profile Image Enhancement**: Improved profile image positioning and removed dark overlays for cleaner appearance
 
 ### Contextual Language Switcher with Smooth Transitions (January 12, 2025)
 - **Multi-Language Support**: Added comprehensive language switcher supporting 11 languages (Arabic, English, French, Spanish, German, Italian, Portuguese, Russian, Chinese, Japanese, Korean)
