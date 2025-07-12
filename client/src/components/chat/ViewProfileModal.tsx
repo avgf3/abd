@@ -112,9 +112,7 @@ export default function ViewProfileModal({
               </div>
             )}
             
-            {/* Enhanced Overlay with Better Coverage */}
-            <div className="absolute inset-0 bg-gradient-to-t from-white/60 via-white/20 to-transparent"></div>
-            <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white via-white/80 to-transparent"></div>
+
             
             {/* Profile Image - Bottom Right Corner */}
             <div className="absolute -bottom-6 right-6 z-20">
@@ -122,7 +120,7 @@ export default function ViewProfileModal({
                 <img
                   src={user.profileImage && user.profileImage !== '/default_avatar.svg' ? user.profileImage : "/default_avatar.svg"}
                   alt="صورة المستخدم"
-                  className="w-28 h-28 rounded-full border-2 border-white object-cover"
+                  className="w-32 h-28 rounded-full border-2 border-white object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = '/default_avatar.svg';

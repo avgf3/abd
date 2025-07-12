@@ -381,3 +381,78 @@
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(15px);
 }
+
+/* Language Transition Animations */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeOutScale {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+.language-transition-content {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.language-fade-in {
+  animation: fadeInScale 0.3s ease-out;
+}
+
+.language-fade-out {
+  animation: fadeOutScale 0.3s ease-in;
+}
+
+/* RTL/LTR Direction Transitions */
+body {
+  transition: all 0.3s ease;
+}
+
+body.rtl {
+  direction: rtl;
+}
+
+body.ltr {
+  direction: ltr;
+}
+
+/* Text alignment based on direction */
+.rtl .text-align-start {
+  text-align: right;
+}
+
+.ltr .text-align-start {
+  text-align: left;
+}
+
+.rtl .text-align-end {
+  text-align: left;
+}
+
+.ltr .text-align-end {
+  text-align: right;
+}
+
+/* Responsive language switcher */
+@media (max-width: 768px) {
+  .language-switcher-mobile {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+  }
+}
