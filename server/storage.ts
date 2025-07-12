@@ -299,7 +299,40 @@ export class MixedStorage implements IStorage {
     // Get online members from database (excluding hidden)
     try {
       const dbUsers = await db.select().from(users).where(eq(users.isOnline, true));
-      const visibleDbUsers = dbUsers.filter(user => !user.isHidden);
+      
+      // تنظيف حالة الكتم والطرد للمستخدمين المنتهية المدة
+      const now = new Date();
+      const cleanedDbUsers = dbUsers.map(user => {
+        let cleaned = { ...user };
+        
+        // إذا انتهت مدة الكتم، نلغيها
+        if (user.isMuted && user.muteExpiry && new Date(user.muteExpiry) <= now) {
+          console.log(`🔄 إزالة الكتم المنتهي للمستخدم: ${user.username}`);
+          cleaned.isMuted = false;
+          cleaned.muteExpiry = null;
+          // تحديث في قاعدة البيانات بشكل غير متزامن
+          this.updateUser(user.id, { 
+            isMuted: false, 
+            muteExpiry: null 
+          }).catch(console.error);
+        }
+        
+        // إذا انتهت مدة الطرد، نلغيها
+        if (user.isBanned && user.banExpiry && new Date(user.banExpiry) <= now) {
+          console.log(`🔄 إزالة الطرد المنتهي للمستخدم: ${user.username}`);
+          cleaned.isBanned = false;
+          cleaned.banExpiry = null;
+          // تحديث في قاعدة البيانات بشكل غير متزامن
+          this.updateUser(user.id, { 
+            isBanned: false, 
+            banExpiry: null 
+          }).catch(console.error);
+        }
+        
+        return cleaned;
+      });
+      
+      const visibleDbUsers = cleanedDbUsers.filter(user => !user.isHidden);
       return [...memUsers, ...visibleDbUsers];
     } catch (error) {
       return memUsers;

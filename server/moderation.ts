@@ -65,42 +65,63 @@ export class ModerationSystem {
 
   // كتم المستخدم (المشرف)
   async muteUser(moderatorId: number, targetUserId: number, reason: string, durationMinutes: number = 30, ipAddress?: string, deviceId?: string): Promise<boolean> {
-    const moderator = await storage.getUser(moderatorId);
-    const target = await storage.getUser(targetUserId);
+    try {
+      const moderator = await storage.getUser(moderatorId);
+      const target = await storage.getUser(targetUserId);
 
-    if (!moderator || !target) return false;
-    if (!this.canModerate(moderator, target, 'mute')) return false;
+      if (!moderator || !target) {
+        console.log('❌ المستخدم غير موجود:', { moderatorId, targetUserId });
+        return false;
+      }
+      
+      if (!this.canModerate(moderator, target, 'mute')) {
+        console.log('❌ لا توجد صلاحية للكتم');
+        return false;
+      }
 
-    const muteExpiry = new Date(Date.now() + durationMinutes * 60 * 1000);
-    
-    await storage.updateUser(targetUserId, {
-      isMuted: true,
-      muteExpiry: muteExpiry
-    });
+      const muteExpiry = new Date(Date.now() + durationMinutes * 60 * 1000);
+      
+      // تحديث حالة الكتم في قاعدة البيانات
+      const updatedUser = await storage.updateUser(targetUserId, {
+        isMuted: true,
+        muteExpiry: muteExpiry
+      });
+      
+      if (!updatedUser) {
+        console.log('❌ فشل في تحديث حالة الكتم');
+        return false;
+      }
+      
+      console.log(`✅ تم كتم ${target.username} لمدة ${durationMinutes} دقيقة`);
 
-    // حجب IP والجهاز مؤقتاً أثناء الكتم
-    if (ipAddress) {
-      this.blockedIPs.add(ipAddress);
-      setTimeout(() => this.blockedIPs.delete(ipAddress), durationMinutes * 60 * 1000);
+      // حجب IP والجهاز مؤقتاً أثناء الكتم
+      if (ipAddress) {
+        this.blockedIPs.add(ipAddress);
+        setTimeout(() => this.blockedIPs.delete(ipAddress), durationMinutes * 60 * 1000);
+      }
+      if (deviceId) {
+        this.blockedDevices.add(deviceId);
+        setTimeout(() => this.blockedDevices.delete(deviceId), durationMinutes * 60 * 1000);
+      }
+
+      // تسجيل الإجراء
+      this.recordAction({
+        id: `mute_${Date.now()}`,
+        type: 'mute',
+        targetUserId,
+        moderatorId,
+        reason,
+        duration: durationMinutes,
+        timestamp: Date.now(),
+        ipAddress,
+        deviceId
+      });
+
+      return true;
+    } catch (error) {
+      console.error('❌ خطأ في كتم المستخدم:', error);
+      return false;
     }
-    if (deviceId) {
-      this.blockedDevices.add(deviceId);
-      setTimeout(() => this.blockedDevices.delete(deviceId), durationMinutes * 60 * 1000);
-    }
-
-    this.recordAction({
-      id: `mute_${Date.now()}`,
-      type: 'mute',
-      targetUserId,
-      moderatorId,
-      reason,
-      duration: durationMinutes,
-      timestamp: Date.now(),
-      ipAddress,
-      deviceId
-    });
-
-    return true;
   }
 
   // طرد المستخدم (الأدمن - 15 دقيقة)
