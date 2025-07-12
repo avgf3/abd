@@ -418,44 +418,45 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
         {/* Profile Header - Modern Design */}
         <div className="relative">
-          {/* Full Cover Profile Image */}
-          <div className="relative h-64 overflow-hidden rounded-t-2xl">
-            {/* Main Profile Image as Full Background */}
-            {profileData.profileImage && profileData.profileImage !== '/default_avatar.svg' ? (
-              <div className="w-full h-full relative">
-                <img 
-                  src={profileData.profileImage} 
-                  alt="صورة المستخدم" 
-                  className="w-full h-full object-cover"
-                />
-                {/* Dark gradient overlay for text readability */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-              </div>
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 relative">
+          {/* Profile Header Image - 100% Width Fixed Height */}
+          <div className="relative w-full h-[200px] overflow-hidden rounded-t-2xl">
+            {/* Background Profile Image */}
+            <div 
+              className="w-full h-full bg-center bg-cover bg-no-repeat"
+              style={{
+                backgroundImage: profileData.profileImage && profileData.profileImage !== '/default_avatar.svg' 
+                  ? `url(${profileData.profileImage})` 
+                  : 'linear-gradient(135deg, #e2e8f0, #cbd5e1, #94a3b8)'
+              }}
+            >
+              {/* Dark gradient overlay for text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+              
+              {/* Default Icon if no image */}
+              {(!profileData.profileImage || profileData.profileImage === '/default_avatar.svg') && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center text-gray-600">
-                    <div className="text-8xl mb-4">👤</div>
+                  <div className="text-center text-gray-500">
+                    <div className="text-8xl mb-2">👤</div>
                     <p className="text-2xl font-bold">{profileData.name}</p>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Online status indicator */}
+            {/* Online Status Indicator */}
             {user.isOnline && (
-              <div className="absolute top-4 right-4 w-6 h-6 bg-green-500 border-2 border-white rounded-full z-20"></div>
+              <div className="absolute top-4 right-4 w-6 h-6 bg-green-500 border-2 border-white rounded-full z-30"></div>
             )}
             
-            {/* User Info Over Profile Image */}
-            <div className="absolute bottom-4 left-4 text-white z-10">
+            {/* User Information Layer */}
+            <div className="absolute bottom-4 left-4 text-white z-20">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xl">
                   {user.userType === 'owner' && '👑'}
                   {user.userType === 'admin' && '⭐'}
                   {user.userType === 'moderator' && '🛡️'}
                 </span>
-                <span className="text-sm bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm text-white border border-white/30">
+                <span className="text-sm bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm text-white border border-white/30">
                   {user.userType === 'owner' && 'المالك'}
                   {user.userType === 'admin' && 'إدمن'}
                   {user.userType === 'moderator' && 'مشرف'}
@@ -467,22 +468,22 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                 className="text-3xl font-bold mb-2 text-white drop-shadow-lg"
                 style={{ 
                   color: user.usernameColor || '#ffffff',
-                  textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.9)'
                 }}
               >
                 {user.username}
               </h2>
-              <p className="text-sm text-white bg-black/40 px-3 py-2 rounded-lg backdrop-blur-sm border border-white/20">
+              <p className="text-sm text-white bg-black/50 px-3 py-2 rounded-lg backdrop-blur-sm border border-white/20">
                 {profileData.status || 'لا توجد حالة'}
               </p>
             </div>
             
             {/* Upload Controls */}
             {currentUser && currentUser.id === user.id && (
-              <div className="absolute top-4 left-4 flex gap-2">
+              <div className="absolute top-4 left-4 z-20">
                 <Button
                   size="sm"
-                  className="bg-black/50 backdrop-blur-md hover:bg-black/70 text-white border border-white/30 rounded-lg shadow-lg"
+                  className="bg-black/60 backdrop-blur-md hover:bg-black/80 text-white border border-white/30 rounded-lg shadow-lg"
                   onClick={handleProfileImageUpload}
                 >
                   📸 تغيير الصورة
