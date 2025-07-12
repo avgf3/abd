@@ -203,7 +203,7 @@ export default function ViewProfileModal({
           <div className="space-y-6">
             {/* معلوماتي Header */}
             <div className="text-center">
-              <h3 className="text-lg font-bold text-white px-4 py-2 rounded-lg inline-block">
+              <h3 className="text-lg font-bold text-gray-600 bg-gray-100 px-4 py-2 rounded-lg inline-block">
                 معلوماتي
               </h3>
             </div>
