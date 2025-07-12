@@ -91,7 +91,7 @@ export default function ViewProfileModal({
         </DialogHeader>
 
         {/* Profile Header - Simple Design */}
-        <div className="relative bg-gray-900 rounded-lg overflow-hidden">
+        <div className="relative rounded-lg overflow-hidden">
           {/* Background Banner */}
           <div className="relative h-48">
             {/* Banner Image */}
