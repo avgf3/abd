@@ -122,17 +122,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
       }
 
+      // التحقق من نوع الملف أولاً
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        // حذف الملف غير المسموح
+        const filePath = path.join(process.cwd(), 'client', 'public', 'uploads', 'profiles', req.file.filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+        return res.status(400).json({ error: 'نوع الملف غير مسموح. يُسمح فقط بـ JPG, PNG, GIF' });
+      }
+
       // إذا لم يكن هناك تأكيد حفظ، نرجع مسار الصورة المؤقت فقط للمعاينة
       const tempImageUrl = `/uploads/profiles/${req.file.filename}`;
       
-      if (!confirmSave || confirmSave === 'false') {
+      if (!confirmSave || confirmSave === 'false' || confirmSave === false) {
         console.log('📋 معاينة الصورة فقط - لم يتم الحفظ بعد');
         return res.json({
           success: true,
           preview: true,
           message: 'تم رفع الصورة للمعاينة - اضغط حفظ للتأكيد',
           tempImageUrl: tempImageUrl,
-          filename: req.file.filename
+          filename: req.file.filename,
+          requiresConfirmation: true
         });
       }
 
@@ -200,17 +212,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
       }
 
+      // التحقق من نوع الملف أولاً
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        // حذف الملف غير المسموح
+        const filePath = path.join(process.cwd(), 'client', 'public', 'uploads', 'profiles', req.file.filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+        return res.status(400).json({ error: 'نوع الملف غير مسموح. يُسمح فقط بـ JPG, PNG, GIF' });
+      }
+
       // إذا لم يكن هناك تأكيد حفظ، نرجع مسار الصورة المؤقت فقط للمعاينة
       const tempBannerUrl = `/uploads/profiles/${req.file.filename}`;
       
-      if (!confirmSave || confirmSave === 'false') {
+      if (!confirmSave || confirmSave === 'false' || confirmSave === false) {
         console.log('📋 معاينة صورة البانر فقط - لم يتم الحفظ بعد');
         return res.json({
           success: true,
           preview: true,
           message: 'تم رفع صورة البانر للمعاينة - اضغط حفظ للتأكيد',
           tempBannerUrl: tempBannerUrl,
-          filename: req.file.filename
+          filename: req.file.filename,
+          requiresConfirmation: true
         });
       }
 
@@ -467,7 +491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API لتبديل وضع الإخفاء للإدمن والمالك
+  // API لتبديل وضع الإخفاء للإدمن والمالك - إصلاح عدم الخروج من الشات
   app.post("/api/users/:userId/toggle-hidden", async (req, res) => {
     try {
       const { userId } = req.params;
@@ -485,23 +509,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "هذه الخاصية للإدمن والمالك فقط" });
       }
       
-      // تحديث حالة الإخفاء
+      // تحديث حالة الإخفاء في قاعدة البيانات
       await storage.setUserHiddenStatus(userIdNum, isHidden);
       
-      // إرسال إشعار WebSocket لتحديث قائمة المتصلين
+      // الحصول على البيانات المحدثة
+      const updatedUser = await storage.getUser(userIdNum);
+      
+      console.log(`🔄 ${isHidden ? 'تفعيل' : 'إلغاء'} الوضع المخفي للمستخدم: ${user.username}`);
+      
+      // إرسال إشعار WebSocket محدود - فقط لتحديث حالة الرؤية دون إخراج من الشات
       wss.clients.forEach((client: WebSocketClient) => {
         if (client.readyState === WebSocket.OPEN) {
+          // إرسال تحديث محدود للواجهة فقط
           client.send(JSON.stringify({
-            type: 'userVisibilityChanged',
+            type: 'userHiddenStatusUpdate',
             userId: userIdNum,
-            isHidden: isHidden
+            isHidden: isHidden,
+            username: user.username,
+            // إرسال البيانات الكاملة للمستخدم المتأثر فقط
+            ...(client.userId === userIdNum && { user: updatedUser })
           }));
         }
       });
       
       res.json({ 
-        message: isHidden ? "تم تفعيل الوضع المخفي" : "تم إلغاء الوضع المخفي",
-        isHidden: isHidden
+        message: isHidden ? "تم تفعيل الوضع المخفي بنجاح" : "تم إلغاء الوضع المخفي بنجاح",
+        isHidden: isHidden,
+        user: updatedUser
       });
       
     } catch (error) {

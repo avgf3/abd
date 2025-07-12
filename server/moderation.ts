@@ -117,6 +117,15 @@ export class ModerationSystem {
         deviceId
       });
 
+      // تنظيف تلقائي بعد انتهاء مدة الكتم
+      setTimeout(async () => {
+        console.log(`🔄 انتهت مدة كتم ${target.username} - إزالة تلقائية`);
+        await storage.updateUser(targetUserId, {
+          isMuted: false,
+          muteExpiry: null
+        });
+      }, durationMinutes * 60 * 1000);
+
       return true;
     } catch (error) {
       console.error('❌ خطأ في كتم المستخدم:', error);
@@ -124,44 +133,74 @@ export class ModerationSystem {
     }
   }
 
-  // طرد المستخدم (الأدمن - 15 دقيقة)
+  // طرد المستخدم (الأدمن - 15 دقيقة) - محسن مع التنظيف التلقائي
   async banUser(moderatorId: number, targetUserId: number, reason: string, durationMinutes: number = 15, ipAddress?: string, deviceId?: string): Promise<boolean> {
-    const moderator = await storage.getUser(moderatorId);
-    const target = await storage.getUser(targetUserId);
+    try {
+      const moderator = await storage.getUser(moderatorId);
+      const target = await storage.getUser(targetUserId);
 
-    if (!moderator || !target) return false;
-    if (!this.canModerate(moderator, target, 'ban')) return false;
+      if (!moderator || !target) {
+        console.log('❌ مستخدم غير موجود');
+        return false;
+      }
+      
+      if (!this.canModerate(moderator, target, 'ban')) {
+        console.log('❌ لا توجد صلاحية للطرد');
+        return false;
+      }
 
-    const banExpiry = new Date(Date.now() + durationMinutes * 60 * 1000);
-    
-    await storage.updateUser(targetUserId, {
-      isBanned: true,
-      banExpiry: banExpiry
-    });
+      const banExpiry = new Date(Date.now() + durationMinutes * 60 * 1000);
+      
+      // تحديث حالة الطرد في قاعدة البيانات
+      const updatedUser = await storage.updateUser(targetUserId, {
+        isBanned: true,
+        banExpiry: banExpiry
+      });
 
-    // حجب IP والجهاز لمدة الطرد
-    if (ipAddress) {
-      this.blockedIPs.add(ipAddress);
-      setTimeout(() => this.blockedIPs.delete(ipAddress), durationMinutes * 60 * 1000);
+      if (!updatedUser) {
+        console.log('❌ فشل في تحديث حالة الطرد');
+        return false;
+      }
+
+      console.log(`✅ تم طرد ${target.username} لمدة ${durationMinutes} دقيقة`);
+
+      // حجب IP والجهاز لمدة الطرد
+      if (ipAddress) {
+        this.blockedIPs.add(ipAddress);
+        setTimeout(() => this.blockedIPs.delete(ipAddress), durationMinutes * 60 * 1000);
+      }
+      if (deviceId) {
+        this.blockedDevices.add(deviceId);
+        setTimeout(() => this.blockedDevices.delete(deviceId), durationMinutes * 60 * 1000);
+      }
+
+      // تسجيل الإجراء
+      this.recordAction({
+        id: `ban_${Date.now()}`,
+        type: 'ban',
+        targetUserId,
+        moderatorId,
+        reason,
+        duration: durationMinutes,
+        timestamp: Date.now(),
+        ipAddress,
+        deviceId
+      });
+
+      // تنظيف تلقائي بعد انتهاء المدة
+      setTimeout(async () => {
+        console.log(`🔄 انتهت مدة طرد ${target.username} - إزالة تلقائية`);
+        await storage.updateUser(targetUserId, {
+          isBanned: false,
+          banExpiry: null
+        });
+      }, durationMinutes * 60 * 1000);
+
+      return true;
+    } catch (error) {
+      console.error('❌ خطأ في طرد المستخدم:', error);
+      return false;
     }
-    if (deviceId) {
-      this.blockedDevices.add(deviceId);
-      setTimeout(() => this.blockedDevices.delete(deviceId), durationMinutes * 60 * 1000);
-    }
-
-    this.recordAction({
-      id: `ban_${Date.now()}`,
-      type: 'ban',
-      targetUserId,
-      moderatorId,
-      reason,
-      duration: durationMinutes,
-      timestamp: Date.now(),
-      ipAddress,
-      deviceId
-    });
-
-    return true;
   }
 
   // حجب المستخدم (المالك - حجب كامل ونهائي)
