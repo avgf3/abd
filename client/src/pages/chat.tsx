@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import WelcomeScreen from '@/components/chat/WelcomeScreen';
-import ChatInterface from '@/components/chat/ChatInterface';
-import { useChat } from '@/hooks/useChat';
-import KickCountdown from '@/components/moderation/KickCountdown';
+import CleanChatInterface from '@/components/chat/CleanChatInterface';
+import { useCleanChat } from '@/hooks/useCleanChat';
 import type { ChatUser } from '@/types/chat';
 
 export default function ChatPage() {
   const [showWelcome, setShowWelcome] = useState(true);
-  const chat = useChat();
+  const chat = useCleanChat();
 
   const handleUserLogin = (user: ChatUser) => {
     chat.connect(user);
@@ -24,15 +23,8 @@ export default function ChatPage() {
       {showWelcome ? (
         <WelcomeScreen onUserLogin={handleUserLogin} />
       ) : (
-        <ChatInterface chat={chat} onLogout={handleLogout} />
+        <CleanChatInterface chat={chat} onLogout={handleLogout} />
       )}
-      
-      {/* عداد الطرد */}
-      <KickCountdown 
-        isVisible={chat.showKickCountdown || false}
-        onClose={() => chat.setShowKickCountdown?.(false)}
-        durationMinutes={15}
-      />
     </div>
   );
 }
