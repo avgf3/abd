@@ -93,7 +93,7 @@ export default function ViewProfileModal({
         {/* Profile Header - Modern Design */}
         <div className="relative">
           {/* Background Banner */}
-          <div className="relative h-32 overflow-hidden rounded-t-2xl">
+          <div className="relative h-48 overflow-hidden rounded-t-2xl">
             {/* Banner Image */}
             {user.profileBanner && user.profileBanner !== '' ? (
               <img 
@@ -112,23 +112,24 @@ export default function ViewProfileModal({
               </div>
             )}
             
-            {/* Light Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-white/30 via-transparent to-transparent"></div>
+            {/* Enhanced Overlay with Better Coverage */}
+            <div className="absolute inset-0 bg-gradient-to-t from-white/60 via-white/20 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white via-white/80 to-transparent"></div>
             
-            {/* Profile Image */}
-            <div className="absolute bottom-4 right-4">
+            {/* Profile Image - Extended Coverage */}
+            <div className="absolute bottom-2 right-4 z-20">
               <div className="relative">
                 <img
                   src={user.profileImage && user.profileImage !== '/default_avatar.svg' ? user.profileImage : "/default_avatar.svg"}
                   alt="صورة المستخدم"
-                  className="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover"
+                  className="w-32 h-32 rounded-full border-4 border-white shadow-2xl object-cover ring-2 ring-gray-100"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = '/default_avatar.svg';
                   }}
                 />
                 {user.isOnline && (
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-3 border-white rounded-full"></div>
+                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 border-4 border-white rounded-full shadow-lg animate-pulse"></div>
                 )}
               </div>
             </div>
@@ -163,10 +164,10 @@ export default function ViewProfileModal({
         </div>
 
         {/* Profile Content */}
-        <div className="bg-white p-8" dir="rtl">
+        <div className="bg-white p-6 -mt-16 relative z-10 rounded-t-3xl shadow-lg" dir="rtl">
           {/* Action Buttons Row */}
           {currentUser && currentUser.id !== user.id && (
-            <div className="flex justify-center gap-2 mb-8">
+            <div className="flex justify-center gap-2 mb-6 pt-4">
               <Button
                 onClick={handleReport}
                 disabled={loading}
