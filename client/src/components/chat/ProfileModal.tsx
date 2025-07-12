@@ -535,49 +535,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           )}
         </div>
 
-        {/* Profile Information Panel - للمستخدم الحالي فقط */}
-        {currentUser && currentUser.id === user.id && (
-          <div className="bg-white p-6 border border-gray-200 text-gray-800">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Personal Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold mb-3 flex items-center gap-2 text-gray-800">
-                  📋 معلوماتي
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm bg-gray-100 px-3 py-1 rounded-full text-gray-700">الجنس</span>
-                    <span className="font-medium">{user.gender || 'غير محدد'}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm bg-gray-100 px-3 py-1 rounded-full text-gray-700">العمر</span>
-                    <span className="font-medium">{user.age || 'غير محدد'}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm bg-gray-100 px-3 py-1 rounded-full text-gray-700">البلد</span>
-                    <span className="font-medium">{user.country || 'غير محدد'}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm bg-gray-100 px-3 py-1 rounded-full text-gray-700">الحالة</span>
-                    <span className="font-medium">{user.relation || 'غير محدد'}</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Profile Link */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold mb-3 flex items-center gap-2 text-gray-800">
-                  🔗 رابط الملف الشخصي
-                </h3>
-                <div className="bg-gray-50 p-4 rounded-lg border">
-                  <p className="text-sm text-center underline cursor-pointer hover:text-blue-600 transition-colors text-blue-500">
-                    https://www.arabic-chat.com/#{user.id}67540
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
 
         {currentUser && currentUser.id === user.id && (
           <Tabs defaultValue="info" className="w-full">
