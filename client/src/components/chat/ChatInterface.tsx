@@ -23,6 +23,7 @@ import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
 import StealthModeToggle from './StealthModeToggle';
 import WelcomeNotification from './WelcomeNotification';
+import LanguageSwitcher, { LanguageProvider } from '@/components/ui/LanguageSwitcher';
 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -208,7 +209,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   return (
-    <div className="h-screen flex flex-col" onClick={closeUserPopup}>
+    <LanguageProvider>
+      <div className="h-screen flex flex-col" onClick={closeUserPopup}>
       {/* Header */}
       <header className="bg-secondary py-4 px-6 flex justify-between items-center shadow-2xl border-b border-accent">
         <div className="flex items-center gap-3">
@@ -306,6 +308,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             إعدادات
           </Button>
 
+          {/* Language Switcher */}
+          <LanguageSwitcher 
+            compact={true}
+            className="glass-effect"
+            onLanguageChange={(language) => {
+              // تحديث الواجهة بناءً على اللغة المختارة
+              console.log('Language changed to:', language);
+            }}
+          />
 
         </div>
       </header>
@@ -536,5 +547,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {chat.currentUser && <WelcomeNotification user={chat.currentUser} />}
 
     </div>
+    </LanguageProvider>
   );
 }
