@@ -416,42 +416,43 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           </DialogTitle>
         </DialogHeader>
 
-        {/* Profile Header - Modern Design */}
-        <div className="relative">
+        {/* Profile Header - Simple Design */}
+        <div className="relative bg-gray-900 rounded-lg overflow-hidden">
           {/* Background Banner */}
-          <div className="relative h-48 overflow-hidden rounded-t-2xl">
+          <div className="relative h-48 overflow-hidden">
             {/* Banner Image */}
             {profileData.profileBanner && profileData.profileBanner !== '' ? (
               <img 
                 src={profileData.profileBanner} 
-                alt="صورة البروفايل" 
+                alt="صورة الغلاف" 
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-white relative border border-gray-200">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center text-gray-500">
-                    <div className="text-6xl mb-4">📸</div>
-                    <p className="text-xl font-medium">صورة البروفايل</p>
-                  </div>
-                </div>
+              <div 
+                className="w-full h-full bg-gradient-to-br from-blue-600 to-purple-600"
+                style={{
+                  backgroundImage: 'url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80")',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              >
               </div>
             )}
             
-
-            
             {/* Profile Image - Bottom Right Corner */}
-            <div className="absolute -bottom-6 right-6 z-20">
+            <div className="absolute top-36 right-5 z-20">
               <div className="relative">
-                <img
-                  src={profileData.profileImage && profileData.profileImage !== '/default_avatar.svg' ? profileData.profileImage : "/default_avatar.svg"}
-                  alt="صورة المستخدم"
-                  className="w-32 h-32 rounded-full ring-2 ring-gray-300 object-cover shadow-lg"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/default_avatar.svg';
-                  }}
-                />
+                <div className="w-24 h-24 rounded-full border-4 border-white bg-white overflow-hidden shadow-lg">
+                  <img
+                    src={profileData.profileImage && profileData.profileImage !== '/default_avatar.svg' ? profileData.profileImage : "/default_avatar.svg"}
+                    alt="الصورة الشخصية"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/default_avatar.svg';
+                    }}
+                  />
+                </div>
                 {user.isOnline && (
                   <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
                 )}
