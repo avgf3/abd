@@ -409,7 +409,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-gradient-to-br from-pink-100 to-purple-100 border border-border max-w-md max-h-[90vh] overflow-y-auto animate-fade-in">
+      <DialogContent className="glass-effect border border-border max-w-md max-h-[90vh] overflow-y-auto animate-fade-in">
         <DialogHeader className="p-0">
           <DialogTitle className="sr-only">
             الملف الشخصي
@@ -418,45 +418,55 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
         {/* Profile Header - Modern Design */}
         <div className="relative">
-          {/* Profile Header Image - 100% Width Fixed Height */}
-          <div className="relative w-full h-[200px] overflow-hidden rounded-t-2xl">
-            {/* Background Profile Image */}
-            <div 
-              className="w-full h-full bg-center bg-cover bg-no-repeat"
-              style={{
-                backgroundImage: profileData.profileImage && profileData.profileImage !== '/default_avatar.svg' 
-                  ? `url(${profileData.profileImage})` 
-                  : 'linear-gradient(135deg, #e2e8f0, #cbd5e1, #94a3b8)'
-              }}
-            >
-              {/* Dark gradient overlay for text readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
-              
-              {/* Default Icon if no image */}
-              {(!profileData.profileImage || profileData.profileImage === '/default_avatar.svg') && (
+          {/* Background Banner */}
+          <div className="relative h-48 overflow-hidden rounded-t-2xl">
+            {/* Banner Image */}
+            {profileData.profileBanner && profileData.profileBanner !== '' ? (
+              <img 
+                src={profileData.profileBanner} 
+                alt="صورة البروفايل" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-white relative border border-gray-200">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center text-gray-500">
-                    <div className="text-8xl mb-2">👤</div>
-                    <p className="text-2xl font-bold">{profileData.name}</p>
+                    <div className="text-6xl mb-4">📸</div>
+                    <p className="text-xl font-medium">صورة البروفايل</p>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Online Status Indicator */}
-            {user.isOnline && (
-              <div className="absolute top-4 right-4 w-6 h-6 bg-green-500 border-2 border-white rounded-full z-30"></div>
+              </div>
             )}
             
-            {/* User Information Layer */}
-            <div className="absolute bottom-4 left-4 text-white z-20">
+
+            
+            {/* Profile Image - Bottom Right Corner */}
+            <div className="absolute -bottom-6 right-6 z-20">
+              <div className="relative">
+                <img
+                  src={profileData.profileImage && profileData.profileImage !== '/default_avatar.svg' ? profileData.profileImage : "/default_avatar.svg"}
+                  alt="صورة المستخدم"
+                  className="w-32 h-32 rounded-full ring-2 ring-gray-300 object-cover shadow-lg"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/default_avatar.svg';
+                  }}
+                />
+                {user.isOnline && (
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
+                )}
+              </div>
+            </div>
+            
+            {/* User Info */}
+            <div className="absolute bottom-4 left-4 text-gray-800">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xl">
                   {user.userType === 'owner' && '👑'}
                   {user.userType === 'admin' && '⭐'}
                   {user.userType === 'moderator' && '🛡️'}
                 </span>
-                <span className="text-sm bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm text-white border border-white/30">
+                <span className="text-sm bg-white/90 px-2 py-1 rounded-full backdrop-blur-sm text-gray-700 border">
                   {user.userType === 'owner' && 'المالك'}
                   {user.userType === 'admin' && 'إدمن'}
                   {user.userType === 'moderator' && 'مشرف'}
@@ -465,28 +475,32 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                 </span>
               </div>
               <h2 
-                className="text-3xl font-bold mb-2 text-white drop-shadow-lg"
-                style={{ 
-                  color: user.usernameColor || '#ffffff',
-                  textShadow: '2px 2px 4px rgba(0,0,0,0.9)'
-                }}
+                className="text-2xl font-bold mb-1 text-gray-800"
+                style={{ color: user.usernameColor || '#1f2937' }}
               >
                 {user.username}
               </h2>
-              <p className="text-sm text-white bg-black/50 px-3 py-2 rounded-lg backdrop-blur-sm border border-white/20">
+              <p className="text-sm text-gray-600 bg-white/80 px-2 py-1 rounded">
                 {profileData.status || 'لا توجد حالة'}
               </p>
             </div>
             
             {/* Upload Controls */}
             {currentUser && currentUser.id === user.id && (
-              <div className="absolute top-4 left-4 z-20">
+              <div className="absolute top-4 right-4 flex gap-2">
                 <Button
                   size="sm"
-                  className="bg-black/60 backdrop-blur-md hover:bg-black/80 text-white border border-white/30 rounded-lg shadow-lg"
+                  className="bg-white/90 backdrop-blur-md hover:bg-white text-gray-700 border border-gray-200 rounded-lg shadow-md"
+                  onClick={handleBannerUpload}
+                >
+                  📸 تغيير صورة البروفايل
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-white/90 backdrop-blur-md hover:bg-white text-gray-700 border border-gray-200 rounded-lg shadow-md"
                   onClick={handleProfileImageUpload}
                 >
-                  📸 تغيير الصورة
+                  👤 تغيير الصورة
                 </Button>
               </div>
             )}
