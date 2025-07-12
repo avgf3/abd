@@ -163,102 +163,143 @@ export default function ViewProfileModal({
         </div>
 
         {/* Profile Content */}
-        <div className="p-6 space-y-6">
-          {/* Basic Information */}
-          <div className="bg-gradient-to-r from-teal-50 to-blue-50 p-6 rounded-2xl border border-teal-200">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span>📋</span>
-              المعلومات الشخصية
-            </h3>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-600">الجنس</label>
-                <p className="text-gray-800 bg-white/70 p-2 rounded-lg border">
-                  {user.gender || 'غير محدد'}
-                </p>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-gray-600">العمر</label>
-                <p className="text-gray-800 bg-white/70 p-2 rounded-lg border">
-                  {user.age ? `${user.age} سنة` : 'غير محدد'}
-                </p>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-gray-600">البلد</label>
-                <p className="text-gray-800 bg-white/70 p-2 rounded-lg border">
-                  {user.country || 'غير محدد'}
-                </p>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-gray-600">الحالة الاجتماعية</label>
-                <p className="text-gray-800 bg-white/70 p-2 rounded-lg border">
-                  {user.relation || 'غير محدد'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Profile Link */}
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-200">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span>🔗</span>
-              رابط الملف الشخصي
-            </h3>
-            
-            <div className="bg-white/70 p-3 rounded-lg border text-center">
-              <code className="text-blue-600 font-mono">
-                https://chat.example.com/profile/{user.id}
-              </code>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
+        <div className="bg-white p-8" dir="rtl">
+          {/* Action Buttons Row */}
           {currentUser && currentUser.id !== user.id && (
-            <div className="flex flex-wrap gap-3 justify-center">
+            <div className="flex justify-center gap-2 mb-8">
               <Button
-                onClick={handlePrivateMessage}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-medium shadow-lg"
+                onClick={handleReport}
+                disabled={loading}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
               >
-                💬 رسالة خاصة
-              </Button>
-              
-              <Button
-                onClick={handleAddFriend}
-                className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-medium shadow-lg"
-              >
-                👥 إضافة صديق
+                📢 ابلاغ
               </Button>
               
               <Button
                 onClick={handleIgnore}
                 disabled={isIgnored}
-                variant="outline"
-                className="border-orange-300 text-orange-600 hover:bg-orange-50 px-6 py-3 rounded-xl font-medium"
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
               >
-                {isIgnored ? '✅ تم التجاهل' : '🚫 تجاهل'}
+                🚫 تجاهل
               </Button>
               
               <Button
-                onClick={handleReport}
-                disabled={loading}
-                variant="outline"
-                className="border-red-300 text-red-600 hover:bg-red-50 px-6 py-3 rounded-xl font-medium"
+                onClick={handleAddFriend}
+                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
               >
-                {loading ? '⏳ جاري الإرسال...' : '⚠️ إبلاغ'}
+                👥 اضافة صديق
+              </Button>
+              
+              <Button
+                onClick={handlePrivateMessage}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
+              >
+                💬 محادثة خاصة
               </Button>
             </div>
           )}
 
+          {/* Profile Information */}
+          <div className="space-y-6">
+            {/* معلوماتي Header */}
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-gray-600 bg-gray-100 px-4 py-2 rounded-lg inline-block">
+                معلوماتي
+              </h3>
+            </div>
+
+            {/* رابط الملف الشخصي */}
+            <div className="border-b border-gray-200 pb-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-medium">رابط الملف الشخصي</span>
+                <span className="text-orange-500 text-sm">
+                  https://www.arabic.chat/#id{user.id}
+                </span>
+              </div>
+            </div>
+
+            {/* الجنس */}
+            <div className="border-b border-gray-200 pb-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-medium">الجنس</span>
+                <span className="text-gray-600">
+                  {user.gender || 'ذكر'}
+                </span>
+              </div>
+            </div>
+
+            {/* البلد */}
+            <div className="border-b border-gray-200 pb-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-medium">البلد</span>
+                <span className="text-gray-600">
+                  {user.country || 'السودان'}
+                </span>
+              </div>
+            </div>
+
+            {/* تاريخ الانضمام */}
+            <div className="border-b border-gray-200 pb-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-medium">تاريخ الانضمام</span>
+                <span className="text-gray-600">
+                  {user.joinDate ? new Date(user.joinDate).toLocaleDateString('ar-SA') : 
+                   user.createdAt ? new Date(user.createdAt).toLocaleDateString('ar-SA') : 
+                   new Date().toLocaleDateString('ar-SA')}
+                </span>
+              </div>
+            </div>
+
+            {/* آخر تواجد */}
+            <div className="border-b border-gray-200 pb-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-medium">آخر تواجد</span>
+                <span className="text-gray-600">
+                  {user.isOnline ? 'متصل الآن' : 
+                    user.lastSeen ? 
+                      `${user.country || 'غير محدد'} / ${new Date(user.lastSeen).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true })}` :
+                      `${user.country || 'غير محدد'} / منذ وقت قريب`
+                  }
+                </span>
+              </div>
+            </div>
+
+            {/* معلوماتي */}
+            <div className="border-b border-gray-200 pb-4">
+              <div className="space-y-2">
+                <span className="text-gray-700 font-medium block">معلوماتي</span>
+                <div className="flex items-start gap-2">
+                  <span className="text-gray-400">💬</span>
+                  <div className="text-gray-600 text-sm leading-relaxed">
+                    {user.status && (
+                      <p className="mb-2">{user.status}</p>
+                    )}
+                    {user.bio && (
+                      <p>{user.bio}</p>
+                    )}
+                    {!user.status && !user.bio && (
+                      <p className="text-gray-400">لا توجد معلومات إضافية</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* عدد التنبيهات */}
+            <div className="border-b border-gray-200 pb-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-medium">عدد التنبيهات</span>
+                <span className="text-gray-600">0</span>
+              </div>
+            </div>
+          </div>
+
           {/* Close Button */}
-          <div className="flex justify-center pt-4">
+          <div className="flex justify-center mt-8">
             <Button
               onClick={onClose}
               variant="outline"
-              className="px-8 py-3 rounded-xl font-medium border-gray-300 text-gray-600 hover:bg-gray-50"
+              className="px-8 py-2 rounded-lg font-medium border-gray-300 text-gray-600 hover:bg-gray-50"
             >
               إغلاق
             </Button>
