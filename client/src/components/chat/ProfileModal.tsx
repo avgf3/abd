@@ -1,911 +1,1073 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Upload, Camera } from 'lucide-react';
+import { User } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
-import type { ChatUser } from '@/types/chat';
-import { StealthModeButton } from "./StealthModeButton";
-import { UserMinus } from "lucide-react";
-import UsernameColorPicker from '../profile/UsernameColorPicker';
-import ProfileImageUpload from '../profile/ProfileImageUpload';
-import ProfileBanner from '../profile/ProfileBanner';
-import { getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
-
+import { useToast } from '@/hooks/use-toast';
 
 interface ProfileModalProps {
-  user: ChatUser | null;
-  currentUser: ChatUser | null;
+  user: User;
+  isOpen: boolean;
   onClose: () => void;
-  onIgnoreUser?: (userId: number) => void;
+  onUpdate?: (updatedUser: User) => void;
 }
 
-export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser }: ProfileModalProps) {
-  const { toast } = useToast();
-  const [profileData, setProfileData] = useState({
-    name: user?.username || '',
-    status: user?.status || '',
-    gender: user?.gender || 'ذكر',
-    age: user?.age?.toString() || 'عدم إظهار',
-    country: user?.country || 'السعودية',
-    relation: user?.relation || 'عدم إظهار',
-    profileImage: user?.profileImage || '/default_avatar.svg',
-    profileBanner: user?.profileBanner || '',
-    userTheme: user?.userTheme || 'default',
-    usernameColor: user?.usernameColor || '#FFFFFF',
-  });
-  const [isIgnored, setIsIgnored] = useState(false);
-  const [loading, setLoading] = useState(false);
+interface ThemeOption {
+  value: string;
+  name: string;
+  preview: string;
+  emoji: string;
+}
 
-  // دوال معالجة الثيمات
-  const handleThemeChange = async (themeId: string) => {
-    if (!currentUser) return;
-    
-    try {
-      setProfileData(prev => ({ ...prev, userTheme: themeId }));
-      
-      // إرسال التحديث للخادم
-      const response = await apiRequest(`/api/users/${currentUser.id}`, {
-        method: 'PUT',
-        body: { userTheme: themeId }
-      });
-      
-      console.log('Theme update response:', response);
-      
-      // تحديث المستخدم الحالي
-      currentUser.userTheme = themeId;
-      
-      toast({
-        title: "تم تحديث الثيم",
-        description: "تم تطبيق الثيم الجديد بنجاح",
-        variant: "default"
-      });
-      
-      toast({
-        title: "تم التحديث",
-        description: "تم تغيير الثيم بنجاح!",
-      });
-    } catch (error) {
+interface EffectOption {
+  value: string;
+  name: string;
+  emoji: string;
+  description: string;
+}
+
+export function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalProps) {
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [currentEditType, setCurrentEditType] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [currentTheme, setCurrentTheme] = useState(user?.profileBackgroundColor || 'theme-new-gradient');
+  const [currentEffect, setCurrentEffect] = useState('none');
+
+  // Complete theme collection
+  const themes: ThemeOption[] = [
+    {
+      value: 'theme-default',
+      name: 'الافتراضي',
+      preview: 'linear-gradient(135deg, #1a1a1a, #2a2a2a)',
+      emoji: '🌑'
+    },
+    {
+      value: 'theme-golden',
+      name: 'الذهبي',
+      preview: 'linear-gradient(135deg, #ffd700, #ffb347)',
+      emoji: '✨'
+    },
+    {
+      value: 'theme-royal',
+      name: 'الملكي',
+      preview: 'linear-gradient(135deg, #4b0082, #8a2be2)',
+      emoji: '👑'
+    },
+    {
+      value: 'theme-ocean',
+      name: 'المحيط',
+      preview: 'linear-gradient(135deg, #006994, #47b5ff)',
+      emoji: '🌊'
+    },
+    {
+      value: 'theme-sunset',
+      name: 'الغروب',
+      preview: 'linear-gradient(135deg, #ff7e5f, #feb47b)',
+      emoji: '🌅'
+    },
+    {
+      value: 'theme-forest',
+      name: 'الغابة',
+      preview: 'linear-gradient(135deg, #134e5e, #71b280)',
+      emoji: '🌲'
+    },
+    {
+      value: 'theme-rose',
+      name: 'الوردي',
+      preview: 'linear-gradient(135deg, #ff9a9e, #fecfef)',
+      emoji: '🌹'
+    },
+    {
+      value: 'theme-emerald',
+      name: 'الزمردي',
+      preview: 'linear-gradient(135deg, #667eea, #764ba2)',
+      emoji: '💚'
+    },
+    {
+      value: 'theme-fire',
+      name: 'النار',
+      preview: 'linear-gradient(135deg, #ff416c, #ff4b2b)',
+      emoji: '🔥'
+    },
+    {
+      value: 'theme-galaxy',
+      name: 'المجرة',
+      preview: 'linear-gradient(135deg, #667db6, #0082c8, #0082c8, #667db6)',
+      emoji: '🌌'
+    },
+    {
+      value: 'theme-new-gradient',
+      name: 'التدرج الجديد المطابق للصورة',
+      preview: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)',
+      emoji: '🎨'
+    }
+  ];
+
+  // Effect options
+  const effects: EffectOption[] = [
+    {
+      value: 'none',
+      name: 'بدون تأثيرات',
+      emoji: '🚫',
+      description: 'بدون أي تأثيرات حركية'
+    },
+    {
+      value: 'effect-pulse',
+      name: 'النبض الناعم',
+      emoji: '💓',
+      description: 'نبض خفيف ومريح'
+    },
+    {
+      value: 'effect-glow',
+      name: 'التوهج الذهبي',
+      emoji: '✨',
+      description: 'توهج ذهبي جميل'
+    },
+    {
+      value: 'effect-water',
+      name: 'التموج المائي',
+      emoji: '🌊',
+      description: 'حركة مائية سلسة'
+    },
+    {
+      value: 'effect-aurora',
+      name: 'الشفق القطبي',
+      emoji: '🌌',
+      description: 'تأثير الشفق الملون'
+    },
+    {
+      value: 'effect-neon',
+      name: 'النيون المتوهج',
+      emoji: '💖',
+      description: 'توهج نيون وردي'
+    },
+    {
+      value: 'effect-crystal',
+      name: 'البلور المتلألئ',
+      emoji: '💎',
+      description: 'لمعة بلورية جميلة'
+    },
+    {
+      value: 'effect-fire',
+      name: 'النار المتوهجة',
+      emoji: '🔥',
+      description: 'توهج ناري حارق'
+    }
+  ];
+
+  // Get theme styles
+  const getThemeStyles = (themeValue: string) => {
+    const theme = themes.find(t => t.value === themeValue);
+    if (theme) {
+      return { background: theme.preview };
+    }
+    return { background: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)' };
+  };
+
+  // Profile image fallback
+  const getProfileImageSrc = () => {
+    if (user?.profileImage) {
+      return user.profileImage.startsWith('http') ? user.profileImage : `/uploads/${user.profileImage}`;
+    }
+    return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user?.username || 'User')}`;
+  };
+
+  // Profile banner fallback
+  const getProfileBannerSrc = () => {
+    if (user?.profileBanner) {
+      return user.profileBanner.startsWith('http') ? user.profileBanner : `/uploads/${user.profileBanner}`;
+    }
+    return null;
+  };
+
+  // File upload handler
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, uploadType: 'profile' | 'banner') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
       toast({
         title: "خطأ",
-        description: "فشل في تحديث الثيم",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getCurrentThemeGradient = () => {
-    const theme = themeOptions.find(t => t.id === profileData.userTheme);
-    return theme?.gradient || 'transparent';
-  };
-
-  const getCurrentThemeTextColor = () => {
-    const theme = themeOptions.find(t => t.id === profileData.userTheme);
-    return theme?.textColor || '#FFFFFF';
-  };
-
-  const getCurrentThemeEmoji = () => {
-    const theme = themeOptions.find(t => t.id === profileData.userTheme);
-    return theme?.emoji || '';
-  };
-
-  const countries = [
-    'السعودية', 'مصر', 'الإمارات', 'الأردن', 'العراق', 'سوريا', 
-    'لبنان', 'تونس', 'الجزائر', 'ليبيا', 'قطر', 'البحرين', 
-    'عمان', 'فلسطين', 'اليمن', 'السودان', 'موريتانيا', 'الصومال'
-  ];
-
-  // ثيمات المستخدم الجميلة
-  const themeOptions = [
-    { id: 'default', name: 'افتراضي', emoji: '⚪', gradient: 'transparent', textColor: '#FFFFFF' },
-    { id: 'golden', name: 'ذهبي', emoji: '👑', gradient: 'linear-gradient(45deg, #FFD700, #FFA500)', textColor: '#000000' },
-    { id: 'royal', name: 'ملكي', emoji: '💜', gradient: 'linear-gradient(45deg, #8B5CF6, #A855F7)', textColor: '#FFFFFF' },
-    { id: 'ocean', name: 'المحيط', emoji: '🌊', gradient: 'linear-gradient(45deg, #0EA5E9, #0284C7)', textColor: '#FFFFFF' },
-    { id: 'sunset', name: 'غروب', emoji: '🌅', gradient: 'linear-gradient(45deg, #F97316, #EA580C)', textColor: '#FFFFFF' },
-    { id: 'forest', name: 'الغابة', emoji: '🌲', gradient: 'linear-gradient(45deg, #22C55E, #16A34A)', textColor: '#FFFFFF' },
-    { id: 'rose', name: 'وردي', emoji: '🌹', gradient: 'linear-gradient(45deg, #EC4899, #DB2777)', textColor: '#FFFFFF' },
-    { id: 'emerald', name: 'زمردي', emoji: '💎', gradient: 'linear-gradient(45deg, #10B981, #059669)', textColor: '#FFFFFF' },
-    { id: 'fire', name: 'نار', emoji: '🔥', gradient: 'linear-gradient(45deg, #EF4444, #DC2626)', textColor: '#FFFFFF' },
-    { id: 'galaxy', name: 'مجرة', emoji: '🌌', gradient: 'linear-gradient(45deg, #6366F1, #4F46E5)', textColor: '#FFFFFF' },
-    { id: 'rainbow', name: 'قوس قزح', emoji: '🌈', gradient: 'linear-gradient(45deg, #F59E0B, #EF4444, #EC4899, #8B5CF6)', textColor: '#FFFFFF' },
-    { id: 'aqua', name: 'أكوا', emoji: '💧', gradient: 'linear-gradient(45deg, #06B6D4, #0891B2)', textColor: '#FFFFFF' },
-    { id: 'crystal', name: 'كريستال', emoji: '💠', gradient: 'linear-gradient(45deg, #E5E7EB, #9CA3AF)', textColor: '#000000' },
-    { id: 'amber', name: 'عنبر', emoji: '🟨', gradient: 'linear-gradient(45deg, #F59E0B, #D97706)', textColor: '#000000' },
-    { id: 'coral', name: 'مرجاني', emoji: '🪸', gradient: 'linear-gradient(45deg, #FB7185, #F43F5E)', textColor: '#FFFFFF' },
-    { id: 'jade', name: 'يشم', emoji: '🟩', gradient: 'linear-gradient(45deg, #059669, #047857)', textColor: '#FFFFFF' },
-    { id: 'sapphire', name: 'ياقوت', emoji: '🔷', gradient: 'linear-gradient(45deg, #3B82F6, #1D4ED8)', textColor: '#FFFFFF' },
-    { id: 'bronze', name: 'برونزي', emoji: '🥉', gradient: 'linear-gradient(45deg, #CD7F32, #B8860B)', textColor: '#FFFFFF' },
-    { id: 'silver', name: 'فضي', emoji: '🥈', gradient: 'linear-gradient(45deg, #C0C0C0, #A8A8A8)', textColor: '#000000' },
-    { id: 'platinum', name: 'بلاتيني', emoji: '⚪', gradient: 'linear-gradient(45deg, #E5E4E2, #D3D3D3)', textColor: '#000000' },
-    { id: 'obsidian', name: 'سبج', emoji: '⚫', gradient: 'linear-gradient(45deg, #1F2937, #111827)', textColor: '#FFFFFF' },
-    { id: 'mystical', name: 'غامض', emoji: '🔮', gradient: 'linear-gradient(45deg, #7C3AED, #5B21B6)', textColor: '#FFFFFF' },
-    { id: 'tropical', name: 'استوائي', emoji: '🌺', gradient: 'linear-gradient(45deg, #FF6B6B, #4ECDC4)', textColor: '#FFFFFF' },
-    { id: 'aurora', name: 'شفق', emoji: '🌌', gradient: 'linear-gradient(45deg, #00C9FF, #92FE9D)', textColor: '#000000' },
-    { id: 'phoenix', name: 'عنقاء', emoji: '🔥', gradient: 'linear-gradient(45deg, #FF4E50, #F9CA24)', textColor: '#FFFFFF' },
-    { id: 'burgundy', name: 'خمري', emoji: '🍷', gradient: 'linear-gradient(45deg, #722F37, #B91C1C)', textColor: '#FFFFFF' },
-    { id: 'midnight', name: 'منتصف الليل', emoji: '🌙', gradient: 'linear-gradient(45deg, #1E293B, #334155)', textColor: '#FFFFFF' },
-    { id: 'arctic', name: 'القطب الشمالي', emoji: '❄️', gradient: 'linear-gradient(45deg, #0F172A, #1E40AF)', textColor: '#FFFFFF' },
-    { id: 'wine', name: 'نبيذي', emoji: '🍇', gradient: 'linear-gradient(45deg, #881337, #4C1D95)', textColor: '#FFFFFF' },
-    { id: 'steel', name: 'فولاذي', emoji: '⚔️', gradient: 'linear-gradient(45deg, #475569, #64748B)', textColor: '#FFFFFF' },
-    { id: 'navy', name: 'كحلي', emoji: '🌊', gradient: 'linear-gradient(45deg, #1E3A8A, #3730A3)', textColor: '#FFFFFF' },
-    { id: 'slate', name: 'أردوازي', emoji: '🗿', gradient: 'linear-gradient(45deg, #374151, #4B5563)', textColor: '#FFFFFF' },
-    { id: 'storm', name: 'العاصفة', emoji: '⛈️', gradient: 'linear-gradient(45deg, #1F2937, #6B7280)', textColor: '#FFFFFF' },
-    { id: 'crimson', name: 'قرمزي', emoji: '🌹', gradient: 'linear-gradient(45deg, #991B1B, #DC2626)', textColor: '#FFFFFF' },
-    { id: 'royal_blue', name: 'أزرق ملكي', emoji: '👑', gradient: 'linear-gradient(45deg, #1E3A8A, #60A5FA)', textColor: '#FFFFFF' },
-    { id: 'black_gradient', name: 'أسود متدرج', emoji: '⚫', gradient: 'linear-gradient(45deg, #000000, #374151)', textColor: '#FFFFFF' },
-    { id: 'deep_black', name: 'أسود عميق', emoji: '🖤', gradient: 'linear-gradient(45deg, #111827, #1F2937)', textColor: '#FFFFFF' },
-    { id: 'charcoal', name: 'فحمي', emoji: '⬛', gradient: 'linear-gradient(45deg, #1C1C1C, #4A4A4A)', textColor: '#FFFFFF' },
-    { id: 'blush_pink', name: 'وردي خجول', emoji: '🌸', gradient: 'linear-gradient(45deg, #FCE7F3, #F9A8D4)', textColor: '#000000' },
-    { id: 'lavender', name: 'خزامى', emoji: '💜', gradient: 'linear-gradient(45deg, #DDD6FE, #C4B5FD)', textColor: '#000000' },
-    { id: 'powder_blue', name: 'أزرق بودرة', emoji: '💙', gradient: 'linear-gradient(45deg, #DBEAFE, #93C5FD)', textColor: '#000000' },
-    { id: 'soft_mint', name: 'نعناع ناعم', emoji: '🌿', gradient: 'linear-gradient(45deg, #D1FAE5, #86EFAC)', textColor: '#000000' },
-    { id: 'peach', name: 'خوخي', emoji: '🍑', gradient: 'linear-gradient(45deg, #FED7AA, #FDBA74)', textColor: '#000000' },
-    { id: 'lilac', name: 'بنفسجي فاتح', emoji: '🪻', gradient: 'linear-gradient(45deg, #E9D5FF, #D8B4FE)', textColor: '#000000' },
-    { id: 'ivory', name: 'عاجي', emoji: '🤍', gradient: 'linear-gradient(45deg, #FFFBEB, #FEF3C7)', textColor: '#000000' }
-  ];
-
-  const handleImageUpload = () => {
-    if (!user) return;
-    
-    // Check if user is a member or owner (not guest)
-    if (user.userType === 'guest') {
-      toast({
-        title: "غير مسموح",
-        description: "رفع الصور الشخصية متاح للأعضاء فقط. سجل كعضو أولاً.",
+        description: "يرجى اختيار ملف صورة صحيح",
         variant: "destructive",
       });
       return;
     }
 
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file && user) {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          const imageData = event.target?.result as string;
-          
-          try {
-            // Upload to server and update user's profile image
-            const response = await apiRequest('POST', `/api/users/${user.id}/profile-image`, {
-              imageData
-            });
-            const data = await response.json();
-            
-            // Update local state to show the new image immediately
-            setProfileData(prev => ({ ...prev, profileImage: imageData }));
-            
-            toast({
-              title: "تم التحديث",
-              description: data.message,
-            });
-          } catch (error: any) {
-            const errorData = await error.response?.json();
-            toast({
-              title: "خطأ",
-              description: errorData?.error || "فشل في رفع الصورة",
-              variant: "destructive",
-            });
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-    input.click();
-  };
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "خطأ", 
+        description: "حجم الملف كبير جداً. الحد الأقصى 5 ميجابايت",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const handleIgnoreToggle = async () => {
-    if (!user || !currentUser || loading) return;
+    setIsUploading(true);
 
     try {
-      setLoading(true);
-      
-      if (isIgnored) {
-        await apiRequest(`/api/users/${currentUser.id}/ignore/${user.id}`, {
-          method: 'DELETE'
-        });
-        setIsIgnored(false);
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const endpoint = uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
+      const response = await apiRequest(endpoint, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.user && onUpdate) {
+        onUpdate(response.user);
         toast({
-          title: "تم الإلغاء",
-          description: `تم إلغاء تجاهل ${user.username}`,
+          title: "نجح",
+          description: uploadType === 'profile' ? "تم تحديث الصورة الشخصية" : "تم تحديث صورة الغلاف",
         });
-      } else {
-        await apiRequest(`/api/users/${currentUser.id}/ignore/${user.id}`, {
-          method: 'POST'
-        });
-        setIsIgnored(true);
-        toast({
-          title: "تم التجاهل",
-          description: `تم تجاهل ${user.username} - لن ترى رسائله أو طلباته`,
-          variant: "destructive"
-        });
-      }
-      
-      if (onIgnoreUser) {
-        onIgnoreUser(user.id);
       }
     } catch (error) {
+      console.error('Upload error:', error);
       toast({
         title: "خطأ",
-        description: error instanceof Error ? error.message : "فشل في تحديث التجاهل",
-        variant: "destructive"
+        description: "فشل في تحميل الصورة",
+        variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsUploading(false);
     }
   };
 
-  // تحقق من حالة التجاهل عند فتح الملف الشخصي
-  useEffect(() => {
-    const checkIgnoreStatus = async () => {
-      if (!user || !currentUser) return;
-      
-      try {
-        const response = await apiRequest(`/api/users/${currentUser.id}/ignored`);
-        const ignoredUsers = response.ignoredUsers || [];
-        setIsIgnored(ignoredUsers.includes(user.id));
-      } catch (error) {
-        console.error('Error checking ignore status:', error);
+  // Handle field updates
+  const handleUpdateField = async (fieldName: string, newValue: string) => {
+    setIsLoading(true);
+    try {
+      if (fieldName === 'theme') {
+        const response = await apiRequest('/api/users/update-background-color', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ color: newValue }),
+        });
+        
+        if (response.success && onUpdate) {
+          setCurrentTheme(newValue);
+          onUpdate({ ...user, profileBackgroundColor: newValue });
+          toast({
+            title: "نجح",
+            description: "تم تحديث لون الخلفية",
+          });
+        }
+      } else {
+        const response = await apiRequest('/api/users/update-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [fieldName]: newValue }),
+        });
+
+        if (response.user && onUpdate) {
+          onUpdate(response.user);
+          toast({
+            title: "نجح",
+            description: "تم تحديث الملف الشخصي",
+          });
+        }
       }
-    };
+    } catch (error) {
+      console.error('Update error:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تحديث البيانات",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setCurrentEditType(null);
+    }
+  };
+
+  // Edit modal handlers
+  const openEditModal = (type: string) => {
+    setCurrentEditType(type);
     
-    checkIgnoreStatus();
-  }, [user, currentUser]);
-
-  const handleSave = () => {
-    // Save to localStorage
-    localStorage.setItem('userProfile', JSON.stringify(profileData));
-    onClose();
-  };
-
-  useEffect(() => {
-    // Load saved profile data
-    const saved = localStorage.getItem('userProfile');
-    if (saved && user) {
-      const savedData = JSON.parse(saved);
-      setProfileData({
-        name: savedData.name || user.username,
-        status: savedData.status || user.status || '',
-        gender: savedData.gender || user.gender || 'ذكر',
-        age: savedData.age || user.age?.toString() || 'عدم إظهار',
-        country: savedData.country || user.country || '',
-        relation: savedData.relation || user.relation || '',
-        profileImage: savedData.profileImage || user.profileImage || '/default_avatar.svg',
-        profileBanner: savedData.profileBanner || user.profileBanner || '',
-      });
-    } else if (user) {
-      setProfileData({
-        name: user.username,
-        status: user.status || '',
-        gender: user.gender || 'ذكر',
-        age: user.age?.toString() || 'عدم إظهار',
-        country: user.country || '',
-        relation: user.relation || '',
-        profileImage: user.profileImage || '/default_avatar.svg',
-        profileBanner: user.profileBanner || '',
-      });
+    // Set initial values
+    switch (type) {
+      case 'name':
+        setEditValue(user?.username || '');
+        break;
+      case 'status':
+        setEditValue(user?.bio || '');
+        break;
+      case 'gender':
+        setEditValue(user?.gender || '');
+        break;
+      case 'country':
+        setEditValue(user?.country || '');
+        break;
+      case 'age':
+        setEditValue(user?.age?.toString() || '');
+        break;
+      case 'socialStatus':
+        setEditValue(user?.socialStatus || '');
+        break;
+      default:
+        setEditValue('');
     }
-  }, [user]);
-
-  // Handle profile image upload
-  const handleProfileImageUpload = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file && currentUser) {
-        const formData = new FormData();
-        formData.append('profileImage', file);
-        formData.append('userId', currentUser.id.toString());
-        
-        try {
-          const response = await fetch('/api/upload/profile-image', {
-            method: 'POST',
-            body: formData
-          });
-          
-          if (response.ok) {
-            const result = await response.json();
-            console.log('نتيجة رفع الصورة:', result);
-            
-            // تحديث الصورة في الواجهة فوراً
-            setProfileData(prev => ({ ...prev, profileImage: result.imageUrl }));
-            
-            // تحديث بيانات المستخدم الحالي
-            if (currentUser && result.user) {
-              Object.assign(currentUser, result.user);
-            }
-            
-            toast({
-              title: "تم بنجاح",
-              description: "تم تحديث الصورة الشخصية",
-              variant: "default"
-            });
-          } else {
-            const error = await response.json();
-            console.error('خطأ من الخادم:', error);
-            toast({
-              title: "خطأ",
-              description: error.error || "فشل في رفع الصورة",
-              variant: "destructive"
-            });
-          }
-        } catch (error) {
-          console.error('خطأ في رفع الصورة:', error);
-          toast({
-            title: "خطأ",
-            description: "فشل في رفع الصورة",
-            variant: "destructive"
-          });
-        }
-      }
-    };
-    input.click();
   };
 
-  // Handle banner upload
-  const handleBannerUpload = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file && currentUser) {
-        const formData = new FormData();
-        formData.append('profileBanner', file);
-        formData.append('userId', currentUser.id.toString());
-        
-        try {
-          const response = await fetch('/api/upload/profile-banner', {
-            method: 'POST',
-            body: formData
-          });
-          
-          if (response.ok) {
-            const result = await response.json();
-            console.log('نتيجة رفع البانر:', result);
-            
-            // تحديث البانر في الواجهة فوراً
-            setProfileData(prev => ({ ...prev, profileBanner: result.bannerUrl }));
-            
-            // تحديث بيانات المستخدم الحالي
-            if (currentUser && result.user) {
-              Object.assign(currentUser, result.user);
-            }
-            
-            toast({
-              title: "تم بنجاح",
-              description: "تم تحديث صورة البانر",
-              variant: "default"
-            });
-          } else {
-            const error = await response.json();
-            console.error('خطأ من الخادم:', error);
-            toast({
-              title: "خطأ",
-              description: error.error || "فشل في رفع صورة البانر",
-              variant: "destructive"
-            });
-          }
-        } catch (error) {
-          console.error('خطأ في رفع البانر:', error);
-          toast({
-            title: "خطأ",
-            description: "فشل في رفع صورة البانر",
-            variant: "destructive"
-          });
-        }
-      }
-    };
-    input.click();
+  const saveEdit = () => {
+    if (!editValue.trim()) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال قيمة صحيحة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    let fieldName = '';
+    switch (currentEditType) {
+      case 'name':
+        fieldName = 'username';
+        break;
+      case 'status':
+        fieldName = 'bio';
+        break;
+      case 'gender':
+        fieldName = 'gender';
+        break;
+      case 'country':
+        fieldName = 'country';
+        break;
+      case 'age':
+        fieldName = 'age';
+        break;
+      case 'socialStatus':
+        fieldName = 'socialStatus';
+        break;
+    }
+
+    if (fieldName) {
+      handleUpdateField(fieldName, editValue);
+    }
   };
+
+  const selectTheme = (themeValue: string) => {
+    setCurrentTheme(themeValue);
+    handleUpdateField('theme', themeValue);
+    setTimeout(() => {
+      setCurrentEditType(null);
+    }, 1000);
+  };
+
+  if (!isOpen) return null;
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-transparent border-0 max-w-md max-h-[90vh] overflow-y-auto animate-fade-in shadow-none">
-        <DialogHeader className="p-0">
-          <DialogTitle className="sr-only">
-            الملف الشخصي
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      {/* CSS Styles */}
+      <style>{`
+        .profile-card {
+          position: relative;
+          width: 100%;
+          max-width: 350px;
+          background: linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%);
+          border-radius: 16px;
+          overflow: hidden;
+          color: white;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
 
-        {/* Profile Header - Simple Design */}
-        <div className="relative rounded-lg overflow-hidden">
-          {/* Background Banner */}
-          <div className="relative h-48">
-            {/* Banner Image */}
-            {profileData.profileBanner && profileData.profileBanner !== '' ? (
+        .profile-cover {
+          position: relative;
+          height: 120px;
+          background: rgba(0,0,0,0.2);
+          overflow: hidden;
+        }
+
+        .change-cover-btn {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: rgba(0,0,0,0.8);
+          color: white;
+          border: none;
+          padding: 6px 12px;
+          border-radius: 8px;
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .change-cover-btn:hover {
+          background: rgba(0,0,0,1);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .profile-avatar {
+          position: absolute;
+          top: calc(100% - 50px);
+          right: 20px;
+          width: 100px;
+          height: 100px;
+          border-radius: 0;
+          border: 4px solid rgba(255,255,255,0.3);
+          background: rgba(255,255,255,0.1);
+          backdrop-filter: blur(10px);
+          overflow: hidden;
+          transition: all 0.3s ease;
+          z-index: 2;
+        }
+
+        .profile-avatar:hover {
+          transform: scale(1.05);
+        }
+
+        .profile-avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .change-avatar-btn {
+          position: absolute;
+          top: calc(100% - 25px);
+          right: 28px;
+          background: rgba(0,0,0,0.8);
+          border-radius: 50%;
+          width: 30px;
+          height: 30px;
+          text-align: center;
+          line-height: 30px;
+          font-size: 14px;
+          color: #fff;
+          cursor: pointer;
+          z-index: 3;
+          transition: background 0.3s ease, transform 0.2s ease;
+          border: none;
+        }
+
+        .change-avatar-btn:hover {
+          background: rgba(0,0,0,1);
+          transform: scale(1.1);
+        }
+
+        .profile-body {
+          padding: 60px 20px 16px;
+        }
+
+        .profile-info {
+          margin-bottom: 12px;
+          text-align: center;
+          margin-top: -50px;
+        }
+
+        .profile-info h3 {
+          margin: 0 0 6px 0;
+          font-size: 20px;
+          font-weight: bold;
+          color: #ffc107;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .profile-info h3:hover {
+          color: #fff;
+          transform: translateY(-2px);
+        }
+
+        .profile-info small {
+          display: block;
+          font-size: 13px;
+          color: #ddd;
+          opacity: 0.9;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .profile-info small:hover {
+          color: #ffc107;
+          transform: translateY(-1px);
+        }
+
+        .profile-buttons {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin: 12px 0;
+          justify-content: center;
+        }
+
+        .profile-buttons button {
+          flex: 1 1 30%;
+          background: linear-gradient(135deg, #b71c1c, #8e0000);
+          color: white;
+          border: none;
+          padding: 8px 12px;
+          border-radius: 8px;
+          font-weight: bold;
+          cursor: pointer;
+          font-size: 12px;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          border: 1px solid rgba(255,255,255,0.1);
+          backdrop-filter: blur(10px);
+        }
+
+        .profile-buttons button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+          background: linear-gradient(135deg, #d32f2f, #b71c1c);
+          border-color: rgba(255,255,255,0.2);
+        }
+
+        .profile-details {
+          padding: 12px;
+          font-size: 13px;
+          background: rgba(255,255,255,0.08);
+          border-radius: 12px;
+          margin: 12px 0;
+          border: 1px solid rgba(255,255,255,0.1);
+          backdrop-filter: blur(10px);
+        }
+
+        .profile-details p {
+          margin: 6px 0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 6px 8px;
+          border-radius: 6px;
+          transition: all 0.3s ease;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+          cursor: pointer;
+        }
+        
+        .profile-details p:hover {
+          background: rgba(255,255,255,0.05);
+          transform: translateX(-3px);
+        }
+
+        .profile-details p:last-child {
+          border-bottom: none;
+        }
+
+        .profile-details span {
+          font-weight: bold;
+          color: #ffc107;
+          text-align: left;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+          padding: 3px 6px;
+          border-radius: 4px;
+          background: rgba(255,255,255,0.05);
+        }
+
+        .additional-details {
+          background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+          padding: 10px 16px;
+          border-radius: 12px;
+          margin: 10px 0;
+          border: 1px solid rgba(255,255,255,0.15);
+          backdrop-filter: blur(15px);
+          box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .additional-details p {
+          margin: 6px 0;
+          font-size: 12px;
+          color: #eee;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 4px 8px;
+          border-radius: 6px;
+          transition: all 0.3s ease;
+        }
+        
+        .additional-details p:hover {
+          background: rgba(255,255,255,0.08);
+          transform: scale(1.02);
+        }
+
+        .additional-details span {
+          font-weight: bold;
+          color: #ffc107;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+          padding: 2px 6px;
+          border-radius: 4px;
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .edit-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0,0,0,0.8);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
+
+        .edit-content {
+          background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+          padding: 24px;
+          border-radius: 16px;
+          width: 90%;
+          max-width: 350px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .edit-content h3 {
+          margin: 0 0 16px 0;
+          color: #ffc107;
+          text-align: center;
+          font-size: 18px;
+        }
+
+        .edit-field {
+          margin-bottom: 16px;
+        }
+
+        .edit-field label {
+          display: block;
+          margin-bottom: 6px;
+          color: #fff;
+          font-weight: bold;
+          font-size: 14px;
+        }
+
+        .edit-field input, .edit-field select {
+          width: 100%;
+          padding: 12px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-radius: 10px;
+          background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+          color: #fff;
+          font-size: 14px;
+          font-weight: 500;
+          backdrop-filter: blur(10px);
+          transition: all 0.3s ease;
+        }
+
+        .edit-field input:focus, .edit-field select:focus {
+          outline: none;
+          border-color: #ffc107;
+          background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1));
+          box-shadow: 0 0 15px rgba(255,193,7,0.3);
+        }
+
+        .theme-option {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 12px;
+          border-radius: 8px;
+          margin: 4px 0;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .theme-option:hover {
+          background: rgba(255,255,255,0.1);
+          transform: translateX(-5px);
+        }
+
+        .theme-option.selected {
+          background: #ffc107;
+          color: #000;
+          font-weight: bold;
+          transform: scale(1.05);
+          box-shadow: 0 4px 15px rgba(255,193,7,0.4);
+        }
+
+        .theme-preview {
+          width: 24px;
+          height: 24px;
+          border-radius: 0;
+          border: 2px solid rgba(255,255,255,0.3);
+          flex-shrink: 0;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          transition: all 0.3s ease;
+        }
+
+        .theme-option:hover .theme-preview {
+          transform: scale(1.2);
+          border-color: rgba(255,255,255,0.8);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .theme-name {
+          flex: 1;
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .edit-buttons {
+          display: flex;
+          gap: 10px;
+          justify-content: center;
+        }
+
+        .edit-buttons button {
+          padding: 10px 20px;
+          border: none;
+          border-radius: 8px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.3s;
+          font-size: 13px;
+        }
+
+        .save-btn {
+          background: #28a745;
+          color: white;
+        }
+
+        .cancel-btn {
+          background: #dc3545;
+          color: white;
+        }
+
+        .edit-buttons button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        @media (max-width: 480px) {
+          .profile-card {
+            max-width: 100%;
+          }
+          
+          .profile-avatar {
+            width: 80px;
+            height: 80px;
+            top: calc(100% - 40px);
+            right: 16px;
+          }
+          
+          .change-avatar-btn {
+            top: calc(100% - 20px);
+            right: 22px;
+            width: 25px;
+            height: 25px;
+            line-height: 25px;
+            font-size: 12px;
+          }
+          
+          .profile-body {
+            padding: 50px 12px 12px;
+          }
+          
+          .profile-info h3 {
+            font-size: 18px;
+          }
+        }
+      `}</style>
+
+      {/* Main Modal */}
+      <div className="fixed inset-0 z-50 bg-black/80" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="profile-card" style={getThemeStyles(currentTheme)}>
+          {/* Close Button */}
+          <button 
+            onClick={onClose}
+            className="absolute top-4 left-4 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+          >
+            <X size={20} />
+          </button>
+
+          {/* Cover Section */}
+          <div className="profile-cover">
+            {getProfileBannerSrc() && (
               <img 
-                src={profileData.profileBanner} 
-                alt="صورة الغلاف" 
+                src={getProfileBannerSrc()!} 
+                alt="غلاف الملف الشخصي"
                 className="w-full h-full object-cover"
               />
-            ) : (
-              <div 
-                className="w-full h-full"
-                style={{
-                  background: `linear-gradient(135deg, ${profileData.profileBackgroundColor || '#3c0d0d'} 0%, #7b1b1b 100%)`,
-                  backgroundImage: 'url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80")',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundBlendMode: 'overlay'
-                }}
-              >
-              </div>
             )}
             
-            {/* Profile Image - Bottom Right Corner */}
-            <div className="absolute top-36 right-5 z-20">
-              <div className="relative">
-                <div className="w-24 h-24 rounded-full border-4 border-white bg-white overflow-hidden shadow-lg">
-                  <img
-                    src={profileData.profileImage && profileData.profileImage !== '/default_avatar.svg' ? profileData.profileImage : "/default_avatar.svg"}
-                    alt="الصورة الشخصية"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = '/default_avatar.svg';
-                    }}
-                  />
-                </div>
-                {user.isOnline && (
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
-                )}
-              </div>
-            </div>
-            
-            {/* User Info */}
-            <div className="absolute bottom-4 left-4 text-gray-800">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xl">
-                  {user.userType === 'owner' && '👑'}
-                  {user.userType === 'admin' && '⭐'}
-                  {user.userType === 'moderator' && '🛡️'}
-                </span>
-                <span className="text-sm bg-white/90 px-2 py-1 rounded-full backdrop-blur-sm text-gray-700 border">
-                  {user.userType === 'owner' && 'المالك'}
-                  {user.userType === 'admin' && 'إدمن'}
-                  {user.userType === 'moderator' && 'مشرف'}
-                  {user.userType === 'member' && 'عضو'}
-                  {user.userType === 'guest' && 'ضيف'}
-                </span>
-              </div>
-              <h2 
-                className="text-2xl font-bold mb-1 text-gray-800"
-                style={{ color: user.usernameColor || '#1f2937' }}
+            <button 
+              className="change-cover-btn"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              🖼️ تغيير الغلاف
+            </button>
+
+            <div className="profile-avatar">
+              <img 
+                src={getProfileImageSrc()} 
+                alt="الصورة الشخصية"
+              />
+              <button 
+                className="change-avatar-btn"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={isUploading}
+                title="تغيير الصورة"
               >
-                {user.username}
-              </h2>
-              <p className="text-sm text-gray-600 bg-white/80 px-2 py-1 rounded">
-                {profileData.status || 'لا توجد حالة'}
-              </p>
-            </div>
-            
-            {/* Upload Controls */}
-            {currentUser && currentUser.id === user.id && (
-              <div className="absolute top-4 right-4 flex gap-2">
-                <Button
-                  size="sm"
-                  className="bg-white/90 backdrop-blur-md hover:bg-white text-gray-700 border border-gray-200 rounded-lg shadow-md"
-                  onClick={handleBannerUpload}
-                >
-                  📸 تغيير صورة البروفايل
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-white/90 backdrop-blur-md hover:bg-white text-gray-700 border border-gray-200 rounded-lg shadow-md"
-                  onClick={handleProfileImageUpload}
-                >
-                  👤 تغيير الصورة
-                </Button>
-              </div>
-            )}
-          </div>
-          
-          {/* Action Buttons */}
-          {currentUser && currentUser.id !== user.id && (
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-              <Button
-                size="sm"
-                className="bg-red-500 hover:bg-red-600 text-white rounded-full px-4 py-2 shadow-lg"
-                onClick={() => onReportUser && onReportUser(user, 'تبليغ عن المستخدم', 0)}
-              >
-                🚨 إبلاغ
-              </Button>
-              <Button
-                size="sm"
-                className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-4 py-2 shadow-lg"
-                onClick={() => handleIgnoreUser && handleIgnoreUser(user)}
-              >
-                🚫 تجاهل
-              </Button>
-              <Button
-                size="sm"
-                className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-4 py-2 shadow-lg"
-                onClick={() => handleStartPrivateChat && handleStartPrivateChat(user)}
-              >
-                💬 رسالة خاصة
-              </Button>
-            </div>
-          )}
-        </div>
-
-
-
-        {currentUser && currentUser.id === user.id && (
-          <div 
-            className="p-6 -mt-12 relative z-10 rounded-t-3xl"
-            style={{ 
-              background: user?.profileBackgroundColor 
-                ? `linear-gradient(135deg, ${user.profileBackgroundColor} 0%, #7b1b1b 100%)`
-                : 'linear-gradient(135deg, #3c0d0d 0%, #7b1b1b 100%)'
-            }}
-          >
-            <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-4 h-8 bg-white/20 backdrop-blur-sm">
-              <TabsTrigger value="info" className="text-xs py-1 text-white data-[state=active]:text-black">معلوماتي</TabsTrigger>
-              <TabsTrigger value="colors" className="text-xs py-1 text-white data-[state=active]:text-black">🎨 الألوان</TabsTrigger>
-              <TabsTrigger value="options" className="text-xs py-1 text-white data-[state=active]:text-black">الإعدادات</TabsTrigger>
-            </TabsList>
-
-          <TabsContent value="info" className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">المعلومات الشخصية</h3>
-            
-            {/* رابط الملف الشخصي */}
-            <div className="bg-white/20 backdrop-blur-sm p-2 rounded-lg border border-white/30">
-              <label className="block text-xs font-medium text-white mb-2">🔗 رابط الملف الشخصي</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={`arabic.chat/#id${user?.id || ''}`}
-                  className="flex-1 bg-background border border-border rounded-md px-2 py-1 text-xs text-foreground"
-                />
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    const profileLink = `https://www.arabic.chat/#id${user?.id || ''}`;
-                    navigator.clipboard.writeText(profileLink);
-                    toast({
-                      title: "تم النسخ",
-                      description: "تم نسخ رابط الملف الشخصي",
-                    });
-                  }}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-2 py-1"
-                >
-                  📋
-                </Button>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">الجنس</label>
-                <Select value={profileData.gender} onValueChange={(value) => setProfileData(prev => ({ ...prev, gender: value }))}>
-                  <SelectTrigger className="bg-accent border-border text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ذكر">ذكر</SelectItem>
-                    <SelectItem value="أنثى">أنثى</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">العمر</label>
-                <Select value={profileData.age} onValueChange={(value) => setProfileData(prev => ({ ...prev, age: value }))}>
-                  <SelectTrigger className="bg-accent border-border text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="عدم إظهار">عدم إظهار</SelectItem>
-                    {Array.from({ length: 82 }, (_, i) => i + 18).map(age => (
-                      <SelectItem key={age} value={age.toString()}>{age}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">البلد</label>
-                <Select value={profileData.country} onValueChange={(value) => setProfileData(prev => ({ ...prev, country: value }))}>
-                  <SelectTrigger className="bg-accent border-border text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map(country => (
-                      <SelectItem key={country} value={country}>{country}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-muted-foreground">الحالة الاجتماعية</label>
-                <Select value={profileData.relation} onValueChange={(value) => setProfileData(prev => ({ ...prev, relation: value }))}>
-                  <SelectTrigger className="bg-accent border-border text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="عدم إظهار">عدم إظهار</SelectItem>
-                    <SelectItem value="أعزب">أعزب</SelectItem>
-                    <SelectItem value="مرتبط">مرتبط</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="colors">
-            <h3 className="text-lg font-semibold text-primary mb-4">🎨 تخصيص المظهر والألوان</h3>
-            
-            {/* منتقي لون خلفية البروفايل */}
-            <div className="mb-6 p-4 bg-accent rounded-lg">
-              <h4 className="text-md font-semibold text-primary mb-3">🌈 لون خلفية البروفايل</h4>
-              
-              {/* معاينة اللون الحالي */}
-              <div className="mb-4">
-                <div 
-                  className="w-full h-16 rounded-lg shadow-lg"
-                  style={{
-                    background: `linear-gradient(135deg, ${profileData.profileBackgroundColor || '#3c0d0d'} 0%, #7b1b1b 100%)`
-                  }}
-                ></div>
-                <p className="text-sm text-muted-foreground mt-2">معاينة التدرج الحالي</p>
-              </div>
-
-              {/* أزرار الألوان المحددة مسبقاً */}
-              <div className="grid grid-cols-5 gap-3 mb-4">
-                {[
-                  '#3c0d0d', // أحمر عنابي داكن جداً (افتراضي)
-                  '#0d1a3c', // أزرق داكن
-                  '#0d3c1a', // أخضر داكن
-                  '#3c1a0d', // بني داكن
-                  '#3c0d3c', // بنفسجي داكن
-                  '#1a3c0d', // أخضر زيتوني
-                  '#3c2e0d', // ذهبي داكن
-                  '#0d3c3c', // تيل داكن
-                  '#2e0d3c', // بنفسجي أحمر
-                  '#3c3c0d'  // أصفر داكن
-                ].map((color, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      setProfileData(prev => ({ ...prev, profileBackgroundColor: color }));
-                      toast({
-                        title: "تم التحديث",
-                        description: "تم تحديث لون خلفية البروفايل",
-                        variant: "default"
-                      });
-                    }}
-                    className="w-12 h-12 rounded-lg border-2 border-white/20 hover:border-white/60 transition-all duration-200 hover:scale-110"
-                    style={{
-                      background: `linear-gradient(135deg, ${color} 0%, ${color}80 100%)`
-                    }}
-                    title={`لون ${index + 1}`}
-                  />
-                ))}
-              </div>
-
-              {/* منتقي اللون المخصص */}
-              <div className="flex gap-2">
-                <input
-                  type="color"
-                  value={profileData.profileBackgroundColor || '#3c0d0d'}
-                  onChange={(e) => {
-                    setProfileData(prev => ({ ...prev, profileBackgroundColor: e.target.value }));
-                    toast({
-                      title: "تم التحديث",
-                      description: "تم تحديث لون خلفية البروفايل",
-                      variant: "default"
-                    });
-                  }}
-                  className="w-12 h-10 rounded border-0 cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={profileData.profileBackgroundColor || '#3c0d0d'}
-                  onChange={(e) => {
-                    setProfileData(prev => ({ ...prev, profileBackgroundColor: e.target.value }));
-                    toast({
-                      title: "تم التحديث",
-                      description: "تم تحديث لون خلفية البروفايل",
-                      variant: "default"
-                    });
-                  }}
-                  placeholder="#3c0d0d"
-                  className="flex-1 px-3 py-2 bg-background border border-border rounded-md text-foreground"
-                />
-              </div>
-
-              {/* زر الإعادة للافتراضي */}
-              <button
-                onClick={() => {
-                  setProfileData(prev => ({ ...prev, profileBackgroundColor: '#3c0d0d' }));
-                  toast({
-                    title: "تم التحديث",
-                    description: "تم إعادة تعيين لون خلفية البروفايل",
-                    variant: "default"
-                  });
-                }}
-                className="w-full mt-3 px-4 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg transition-colors"
-              >
-                العودة للون الافتراضي
+                📷
               </button>
             </div>
-            {user && currentUser && user.id === currentUser.id ? (
-              <div className="space-y-6">
-                {/* ثيمات المستخدم */}
-                <div className="space-y-4">
-                  <h4 className="text-md font-semibold text-primary">🌟 ثيمات مميزة</h4>
-                  <p className="text-sm text-muted-foreground">اختر ثيماً مميزاً لمظهرك في الدردشة:</p>
-                  <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto">
-                    {themeOptions.map((theme, index) => (
-                      <button
-                        key={index}
-                        className={`p-2 rounded-lg border-2 transition-all hover:scale-105 ${
-                          profileData.userTheme === theme.id ? 'border-primary ring-2 ring-primary/20' : 'border-gray-600'
-                        }`}
-                        style={{ 
-                          background: theme.gradient,
-                          color: theme.textColor
-                        }}
-                        onClick={() => handleThemeChange(theme.id)}
-                        title={theme.name}
-                      >
-                        <div className="text-center">
-                          <div className="text-sm mb-1">{theme.emoji}</div>
-                          <div className="text-xs font-bold">{theme.name}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+          </div>
 
-                {/* معاينة */}
-                <div className="mt-4 p-4 bg-accent rounded-lg">
-                  <p className="text-sm text-center mb-3">معاينة المظهر:</p>
-                  <div className="text-center">
+          {/* Profile Body */}
+          <div className="profile-body">
+            <div className="profile-info">
+              <h3 onClick={() => openEditModal('name')}>
+                {user?.username || 'اسم المستخدم'}
+              </h3>
+              <small onClick={() => openEditModal('status')}>
+                {user?.bio || 'اضغط لإضافة حالة'}
+              </small>
+            </div>
+
+            <div className="profile-buttons">
+              <button>🚩 تبليغ</button>
+              <button>🚫 حظر</button>
+              <button>💬 محادثة</button>
+            </div>
+
+            <div className="profile-details">
+              <p onClick={() => openEditModal('gender')}>
+                🧍‍♀️ الجنس: <span>{user?.gender || 'غير محدد'}</span>
+              </p>
+              <p onClick={() => openEditModal('country')}>
+                🌍 البلد: <span>{user?.country || 'غير محدد'}</span>
+              </p>
+              <p onClick={() => openEditModal('age')}>
+                🎂 العمر: <span>{user?.age ? `${user.age} سنة` : 'غير محدد'}</span>
+              </p>
+              <p onClick={() => openEditModal('socialStatus')}>
+                💍 الحالة الاجتماعية: <span>{user?.socialStatus || 'غير محدد'}</span>
+              </p>
+              <p>
+                📅 تاريخ الإنضمام: <span>{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('ar-SA') : 'غير محدد'}</span>
+              </p>
+              <p>
+                🎁 نقاط الهدايا: <span>340</span>
+              </p>
+              <p>
+                🧾 الحالة: <span>متاحة</span>
+              </p>
+            </div>
+
+            <div className="additional-details">
+              <p>💬 عدد الرسائل: <span>0</span></p>
+              <p>⭐ مستوى العضو: <span>الرتبة 1</span></p>
+              <p onClick={() => setCurrentEditType('theme')}>
+                🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
+              </p>
+              <p onClick={() => setCurrentEditType('effects')}>
+                ✨ تأثيرات حركية: <span>بدون تأثيرات</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Hidden File Inputs */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleFileUpload(e, 'banner')}
+            style={{ display: 'none' }}
+          />
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleFileUpload(e, 'profile')}
+            style={{ display: 'none' }}
+          />
+        </div>
+      </div>
+
+      {/* Edit Modal */}
+      {currentEditType && (
+        <div className="edit-modal">
+          <div className="edit-content">
+            <h3>
+              {currentEditType === 'name' && 'تعديل الاسم'}
+              {currentEditType === 'status' && 'تعديل الحالة'}
+              {currentEditType === 'gender' && 'تعديل الجنس'}
+              {currentEditType === 'country' && 'تعديل البلد'}
+              {currentEditType === 'age' && 'تعديل العمر'}
+              {currentEditType === 'socialStatus' && 'تعديل الحالة الاجتماعية'}
+              {currentEditType === 'theme' && 'تعديل لون الملف الشخصي'}
+              {currentEditType === 'effects' && 'تعديل التأثيرات الحركية'}
+            </h3>
+            
+            {currentEditType === 'theme' ? (
+              <div style={{ maxHeight: '300px', overflowY: 'auto', marginTop: '10px' }}>
+                {themes.map(theme => (
+                  <div
+                    key={theme.value}
+                    className={`theme-option ${currentTheme === theme.value ? 'selected' : ''}`}
+                    onClick={() => selectTheme(theme.value)}
+                  >
                     <div 
-                      className="inline-block px-4 py-2 rounded-xl transition-all duration-300"
-                      style={{ 
-                        background: getCurrentThemeGradient(),
-                        color: getCurrentThemeTextColor()
-                      }}
-                    >
-                      <span className="text-lg font-bold">
-                        {getCurrentThemeEmoji()} {profileData.name || 'اسم المستخدم'}
-                      </span>
+                      className="theme-preview"
+                      style={{ background: theme.preview }}
+                    />
+                    <div className="theme-name">
+                      {theme.emoji} {theme.name}
                     </div>
                   </div>
+                ))}
+              </div>
+            ) : currentEditType === 'effects' ? (
+              <div style={{ maxHeight: '400px', overflowY: 'auto', marginTop: '10px' }}>
+                {effects.map(effect => (
+                  <div
+                    key={effect.value}
+                    className={`theme-option ${currentEffect === effect.value ? 'selected' : ''}`}
+                    onClick={() => setCurrentEffect(effect.value)}
+                  >
+                    <div 
+                      className="theme-preview"
+                      style={{ 
+                        background: 'linear-gradient(45deg, #ff7c00, #e10026, #800e8c, #1a004d)',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      {effect.emoji}
+                    </div>
+                    <div>
+                      <div className="theme-name">{effect.emoji} {effect.name}</div>
+                      <div style={{ fontSize: '11px', color: '#ccc', marginTop: '2px' }}>
+                        {effect.description}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : currentEditType === 'gender' ? (
+              <div>
+                <div className="edit-field">
+                  <label>اختر الجنس:</label>
+                  <select 
+                    value={editValue} 
+                    onChange={(e) => setEditValue(e.target.value)}
+                  >
+                    <option value="">اختر...</option>
+                    <option value="ذكر">👨 ذكر</option>
+                    <option value="أنثى">👩 أنثى</option>
+                  </select>
+                </div>
+                <div className="edit-buttons">
+                  <button className="save-btn" onClick={saveEdit} disabled={isLoading || !editValue.trim()}>
+                    {isLoading ? 'جاري الحفظ...' : '💾 حفظ'}
+                  </button>
+                  <button className="cancel-btn" onClick={() => setCurrentEditType(null)}>
+                    ❌ إلغاء
+                  </button>
                 </div>
               </div>
-            ) : null}
-            
-            {user && currentUser && user.id !== currentUser.id && (
-              <div className="text-center p-8 text-gray-400">
-                <div className="text-6xl mb-4">🎨</div>
-                <p>لا يمكنك تغيير مظهر مستخدم آخر</p>
-                <p className="text-sm mt-2">هذه الخاصية متاحة فقط في ملفك الشخصي</p>
+            ) : currentEditType === 'country' ? (
+              <div>
+                <div className="edit-field">
+                  <label>اختر البلد:</label>
+                  <select 
+                    value={editValue} 
+                    onChange={(e) => setEditValue(e.target.value)}
+                  >
+                    <option value="">اختر...</option>
+                    <option value="🇸🇦 السعودية">🇸🇦 السعودية</option>
+                    <option value="🇦🇪 الإمارات">🇦🇪 الإمارات</option>
+                    <option value="🇪🇬 مصر">🇪🇬 مصر</option>
+                    <option value="🇯🇴 الأردن">🇯🇴 الأردن</option>
+                    <option value="🇱🇧 لبنان">🇱🇧 لبنان</option>
+                    <option value="🇸🇾 سوريا">🇸🇾 سوريا</option>
+                    <option value="🇮🇶 العراق">🇮🇶 العراق</option>
+                    <option value="🇰🇼 الكويت">🇰🇼 الكويت</option>
+                    <option value="🇶🇦 قطر">🇶🇦 قطر</option>
+                    <option value="🇧🇭 البحرين">🇧🇭 البحرين</option>
+                    <option value="🇴🇲 عمان">🇴🇲 عمان</option>
+                    <option value="🇾🇪 اليمن">🇾🇪 اليمن</option>
+                    <option value="🇱🇾 ليبيا">🇱🇾 ليبيا</option>
+                    <option value="🇹🇳 تونس">🇹🇳 تونس</option>
+                    <option value="🇩🇿 الجزائر">🇩🇿 الجزائر</option>
+                    <option value="🇲🇦 المغرب">🇲🇦 المغرب</option>
+                  </select>
+                </div>
+                <div className="edit-buttons">
+                  <button className="save-btn" onClick={saveEdit} disabled={isLoading || !editValue.trim()}>
+                    {isLoading ? 'جاري الحفظ...' : '💾 حفظ'}
+                  </button>
+                  <button className="cancel-btn" onClick={() => setCurrentEditType(null)}>
+                    ❌ إلغاء
+                  </button>
+                </div>
+              </div>
+            ) : currentEditType === 'socialStatus' ? (
+              <div>
+                <div className="edit-field">
+                  <label>اختر الحالة الاجتماعية:</label>
+                  <select 
+                    value={editValue} 
+                    onChange={(e) => setEditValue(e.target.value)}
+                  >
+                    <option value="">اختر...</option>
+                    <option value="أعزب">💚 أعزب</option>
+                    <option value="متزوج">💍 متزوج</option>
+                    <option value="مطلق">💔 مطلق</option>
+                    <option value="أرمل">🖤 أرمل</option>
+                  </select>
+                </div>
+                <div className="edit-buttons">
+                  <button className="save-btn" onClick={saveEdit} disabled={isLoading || !editValue.trim()}>
+                    {isLoading ? 'جاري الحفظ...' : '💾 حفظ'}
+                  </button>
+                  <button className="cancel-btn" onClick={() => setCurrentEditType(null)}>
+                    ❌ إلغاء
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="edit-field">
+                  <label>
+                    {currentEditType === 'name' && 'الاسم الجديد:'}
+                    {currentEditType === 'status' && 'الحالة الجديدة:'}
+                    {currentEditType === 'age' && 'العمر الجديد:'}
+                  </label>
+                  <input
+                    type={currentEditType === 'age' ? 'number' : 'text'}
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    placeholder={`أدخل ${currentEditType === 'name' ? 'الاسم' : currentEditType === 'status' ? 'الحالة' : 'العمر'} الجديد`}
+                    autoFocus
+                  />
+                </div>
+                <div className="edit-buttons">
+                  <button className="save-btn" onClick={saveEdit} disabled={isLoading || !editValue.trim()}>
+                    {isLoading ? 'جاري الحفظ...' : '💾 حفظ'}
+                  </button>
+                  <button className="cancel-btn" onClick={() => setCurrentEditType(null)}>
+                    ❌ إلغاء
+                  </button>
+                </div>
               </div>
             )}
-          </TabsContent>
-
-          <TabsContent value="friends">
-            <h3 className="text-lg font-semibold text-primary mb-4">قائمة الأصدقاء</h3>
-            <div className="text-center text-muted-foreground py-8">
-              لا يوجد أصدقاء حالياً
-            </div>
-          </TabsContent>
-
-          <TabsContent value="ignore">
-            <h3 className="text-lg font-semibold text-primary mb-4">قائمة المحظورين</h3>
-            <div className="text-center text-muted-foreground py-8">
-              لا يوجد مستخدمون محظورون حالياً
-            </div>
-          </TabsContent>
-
-          <TabsContent value="options">
-            <h3 className="text-lg font-semibold text-white mb-4">إعدادات الحساب</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">المنطقة الزمنية</label>
-                <Select defaultValue="Asia/Riyadh">
-                  <SelectTrigger className="bg-accent border-border text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Asia/Riyadh">Asia/Riyadh</SelectItem>
-                    <SelectItem value="Asia/Amman">Asia/Amman</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">اللغة</label>
-                <Select defaultValue="العربية">
-                  <SelectTrigger className="bg-accent border-border text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="العربية">العربية</SelectItem>
-                    <SelectItem value="English">English</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">الرسائل الخاصة</label>
-                <Select defaultValue="مفتوحة للجميع">
-                  <SelectTrigger className="bg-accent border-border text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="مفتوحة للجميع">مفتوحة للجميع</SelectItem>
-                    <SelectItem value="الأصدقاء فقط">الأصدقاء فقط</SelectItem>
-                    <SelectItem value="مغلقة">مغلقة</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">الإشعارات الصوتية</label>
-                <Select defaultValue="مفعلة">
-                  <SelectTrigger className="bg-accent border-border text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="مفعلة">مفعلة</SelectItem>
-                    <SelectItem value="صامت">صامت</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="more">
-            <h3 className="text-lg font-semibold text-primary mb-4">المزيد من الخيارات</h3>
-            <div className="space-y-4">
-              <Button className="w-full glass-effect rounded-lg text-right hover:bg-accent transition-all justify-start">
-                📥 تصدير بيانات الدردشة
-              </Button>
-              <Button className="w-full glass-effect rounded-lg text-right hover:bg-accent transition-all justify-start">
-                🛡️ إعدادات الخصوصية المتقدمة
-              </Button>
-              <Button className="w-full glass-effect rounded-lg text-right hover:bg-accent transition-all justify-start">
-                🎨 تخصيص المظهر
-              </Button>
-            </div>
-          </TabsContent>
-
-            {/* Footer */}
-            <div className="flex gap-3 justify-end pt-4 border-t border-border">
-              <Button
-                onClick={onClose}
-                variant="outline"
-                className="px-6 py-3 glass-effect rounded-lg font-semibold hover:bg-accent"
-              >
-                إلغاء
-              </Button>
-              <Button
-                onClick={handleSave}
-                className="btn-success px-6 py-3 rounded-lg font-semibold flex items-center gap-2"
-              >
-                💾 حفظ التغييرات
-              </Button>
-            </div>
-          </Tabs>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+        </div>
+      )}
+    </>
   );
 }
+
+export default ProfileModal;
