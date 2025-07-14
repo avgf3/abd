@@ -1,17 +1,38 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>عربي شات - دردشة عربية</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
-    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <title>دردشة عربية</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body { font-family: 'Cairo', Arial, sans-serif; background: #f5f5f5; direction: rtl; }
+    #chat { background: #fff; border-radius: 8px; padding: 16px; margin: 20px auto; width: 350px; height: 300px; overflow-y: auto; box-shadow: 0 2px 8px #0001; }
+    #msg { width: 250px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+    button { padding: 8px 16px; border-radius: 4px; border: none; background: #007bff; color: #fff; cursor: pointer; }
+    button:hover { background: #0056b3; }
+  </style>
+</head>
+<body>
+  <h1 style="text-align:center;">دردشة عربية</h1>
+  <div id="chat"></div>
+  <input id="msg" placeholder="اكتب رسالة..." onkeydown="if(event.key==='Enter'){send()}" />
+  <button onclick="send()">إرسال</button>
+  <script>
+    const socket = io();
+    const username = 'مستخدم' + Math.floor(Math.random()*1000);
+    socket.emit('user:join', { name: username });
+    socket.on('message:received', msg => {
+      const div = document.createElement('div');
+      div.textContent = msg.userName + ': ' + msg.content;
+      document.getElementById('chat').appendChild(div);
+      document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+    });
+    function send() {
+      const val = document.getElementById('msg').value;
+      if(val.trim() === '') return;
+      socket.emit('message:send', { content: val });
+      document.getElementById('msg').value = '';
+    }
+  </script>
+</body>
 </html>
