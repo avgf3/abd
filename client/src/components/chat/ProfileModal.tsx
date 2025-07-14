@@ -1,14 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { X, Upload, Camera } from 'lucide-react';
-import { User } from '@shared/schema';
+import React, { useState, useRef } from 'react';
+import { X } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import type { ChatUser } from '@/types/chat';
 
 interface ProfileModalProps {
-  user: User;
-  isOpen: boolean;
+  user: ChatUser | null;
+  currentUser: ChatUser | null;
   onClose: () => void;
-  onUpdate?: (updatedUser: User) => void;
+  onIgnoreUser?: (userId: number) => void;
 }
 
 interface ThemeOption {
@@ -25,7 +25,7 @@ interface EffectOption {
   description: string;
 }
 
-export function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalProps) {
+export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser }: ProfileModalProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -33,8 +33,10 @@ export function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalPr
   const [isUploading, setIsUploading] = useState(false);
   const [currentEditType, setCurrentEditType] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
-  const [currentTheme, setCurrentTheme] = useState(user?.profileBackgroundColor || 'theme-new-gradient');
+  const [currentTheme, setCurrentTheme] = useState(user?.userTheme || 'theme-new-gradient');
   const [currentEffect, setCurrentEffect] = useState('none');
+
+  if (!user) return null;
 
   // Complete theme collection
   const themes: ThemeOption[] = [
@@ -219,12 +221,13 @@ export function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalPr
         body: formData,
       });
 
-      if (response.user && onUpdate) {
-        onUpdate(response.user);
+      if (response.success) {
         toast({
           title: "نجح",
           description: uploadType === 'profile' ? "تم تحديث الصورة الشخصية" : "تم تحديث صورة الغلاف",
         });
+        // Reload page to show new image
+        window.location.reload();
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -249,9 +252,8 @@ export function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalPr
           body: JSON.stringify({ color: newValue }),
         });
         
-        if (response.success && onUpdate) {
+        if (response.success) {
           setCurrentTheme(newValue);
-          onUpdate({ ...user, profileBackgroundColor: newValue });
           toast({
             title: "نجح",
             description: "تم تحديث لون الخلفية",
@@ -264,8 +266,7 @@ export function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalPr
           body: JSON.stringify({ [fieldName]: newValue }),
         });
 
-        if (response.user && onUpdate) {
-          onUpdate(response.user);
+        if (response.success) {
           toast({
             title: "نجح",
             description: "تم تحديث الملف الشخصي",
@@ -295,7 +296,7 @@ export function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalPr
         setEditValue(user?.username || '');
         break;
       case 'status':
-        setEditValue(user?.bio || '');
+        setEditValue(user?.status || '');
         break;
       case 'gender':
         setEditValue(user?.gender || '');
@@ -307,7 +308,7 @@ export function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalPr
         setEditValue(user?.age?.toString() || '');
         break;
       case 'socialStatus':
-        setEditValue(user?.socialStatus || '');
+        setEditValue(user?.relation || '');
         break;
       default:
         setEditValue('');
@@ -330,7 +331,7 @@ export function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalPr
         fieldName = 'username';
         break;
       case 'status':
-        fieldName = 'bio';
+        fieldName = 'status';
         break;
       case 'gender':
         fieldName = 'gender';
@@ -342,7 +343,7 @@ export function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalPr
         fieldName = 'age';
         break;
       case 'socialStatus':
-        fieldName = 'socialStatus';
+        fieldName = 'relation';
         break;
     }
 
@@ -358,8 +359,6 @@ export function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalPr
       setCurrentEditType(null);
     }, 1000);
   };
-
-  if (!isOpen) return null;
 
   return (
     <>
@@ -798,59 +797,86 @@ export function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalPr
               />
             )}
             
-            <button 
-              className="change-cover-btn"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-            >
-              🖼️ تغيير الغلاف
-            </button>
+            {/* Show upload button only for own profile */}
+            {user.id === currentUser?.id && (
+              <button 
+                className="change-cover-btn"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+              >
+                🖼️ تغيير الغلاف
+              </button>
+            )}
 
             <div className="profile-avatar">
               <img 
                 src={getProfileImageSrc()} 
                 alt="الصورة الشخصية"
               />
-              <button 
-                className="change-avatar-btn"
-                onClick={() => avatarInputRef.current?.click()}
-                disabled={isUploading}
-                title="تغيير الصورة"
-              >
-                📷
-              </button>
+              {/* Show upload button only for own profile */}
+              {user.id === currentUser?.id && (
+                <button 
+                  className="change-avatar-btn"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={isUploading}
+                  title="تغيير الصورة"
+                >
+                  📷
+                </button>
+              )}
             </div>
           </div>
 
           {/* Profile Body */}
           <div className="profile-body">
             <div className="profile-info">
-              <h3 onClick={() => openEditModal('name')}>
+              <h3 
+                onClick={() => user.id === currentUser?.id && openEditModal('name')}
+                style={{ cursor: user.id === currentUser?.id ? 'pointer' : 'default' }}
+              >
                 {user?.username || 'اسم المستخدم'}
               </h3>
-              <small onClick={() => openEditModal('status')}>
-                {user?.bio || 'اضغط لإضافة حالة'}
+              <small 
+                onClick={() => user.id === currentUser?.id && openEditModal('status')}
+                style={{ cursor: user.id === currentUser?.id ? 'pointer' : 'default' }}
+              >
+                {user?.status || 'بدون حالة'}
               </small>
             </div>
 
-            <div className="profile-buttons">
-              <button>🚩 تبليغ</button>
-              <button>🚫 حظر</button>
-              <button>💬 محادثة</button>
-            </div>
+            {/* Show action buttons only for other users */}
+            {user.id !== currentUser?.id && (
+              <div className="profile-buttons">
+                <button>🚩 تبليغ</button>
+                <button onClick={() => onIgnoreUser?.(user.id)}>🚫 حظر</button>
+                <button>💬 محادثة</button>
+              </div>
+            )}
 
             <div className="profile-details">
-              <p onClick={() => openEditModal('gender')}>
+              <p 
+                onClick={() => user.id === currentUser?.id && openEditModal('gender')}
+                style={{ cursor: user.id === currentUser?.id ? 'pointer' : 'default' }}
+              >
                 🧍‍♀️ الجنس: <span>{user?.gender || 'غير محدد'}</span>
               </p>
-              <p onClick={() => openEditModal('country')}>
+              <p 
+                onClick={() => user.id === currentUser?.id && openEditModal('country')}
+                style={{ cursor: user.id === currentUser?.id ? 'pointer' : 'default' }}
+              >
                 🌍 البلد: <span>{user?.country || 'غير محدد'}</span>
               </p>
-              <p onClick={() => openEditModal('age')}>
+              <p 
+                onClick={() => user.id === currentUser?.id && openEditModal('age')}
+                style={{ cursor: user.id === currentUser?.id ? 'pointer' : 'default' }}
+              >
                 🎂 العمر: <span>{user?.age ? `${user.age} سنة` : 'غير محدد'}</span>
               </p>
-              <p onClick={() => openEditModal('socialStatus')}>
-                💍 الحالة الاجتماعية: <span>{user?.socialStatus || 'غير محدد'}</span>
+              <p 
+                onClick={() => user.id === currentUser?.id && openEditModal('socialStatus')}
+                style={{ cursor: user.id === currentUser?.id ? 'pointer' : 'default' }}
+              >
+                💍 الحالة الاجتماعية: <span>{user?.relation || 'غير محدد'}</span>
               </p>
               <p>
                 📅 تاريخ الإنضمام: <span>{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('ar-SA') : 'غير محدد'}</span>
@@ -859,42 +885,49 @@ export function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalPr
                 🎁 نقاط الهدايا: <span>340</span>
               </p>
               <p>
-                🧾 الحالة: <span>متاحة</span>
+                🧾 الحالة: <span>{user?.isOnline ? 'متصل' : 'غير متصل'}</span>
               </p>
             </div>
 
-            <div className="additional-details">
-              <p>💬 عدد الرسائل: <span>0</span></p>
-              <p>⭐ مستوى العضو: <span>الرتبة 1</span></p>
-              <p onClick={() => setCurrentEditType('theme')}>
-                🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
-              </p>
-              <p onClick={() => setCurrentEditType('effects')}>
-                ✨ تأثيرات حركية: <span>بدون تأثيرات</span>
-              </p>
-            </div>
+            {/* Show theme and effects options only for own profile */}
+            {user.id === currentUser?.id && (
+              <div className="additional-details">
+                <p>💬 عدد الرسائل: <span>0</span></p>
+                <p>⭐ مستوى العضو: <span>الرتبة 1</span></p>
+                <p onClick={() => setCurrentEditType('theme')}>
+                  🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
+                </p>
+                <p onClick={() => setCurrentEditType('effects')}>
+                  ✨ تأثيرات حركية: <span>بدون تأثيرات</span>
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Hidden File Inputs */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleFileUpload(e, 'banner')}
-            style={{ display: 'none' }}
-          />
-          <input
-            ref={avatarInputRef}
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleFileUpload(e, 'profile')}
-            style={{ display: 'none' }}
-          />
+          {/* Hidden File Inputs - only for own profile */}
+          {user.id === currentUser?.id && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileUpload(e, 'banner')}
+                style={{ display: 'none' }}
+              />
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileUpload(e, 'profile')}
+                style={{ display: 'none' }}
+              />
+            </>
+          )}
         </div>
       </div>
 
-      {/* Edit Modal */}
-      {currentEditType && (
+      {/* Edit Modal - only for own profile */}
+      {currentEditType && user.id === currentUser?.id && (
         <div className="edit-modal">
           <div className="edit-content">
             <h3>
@@ -1069,5 +1102,3 @@ export function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalPr
     </>
   );
 }
-
-export default ProfileModal;
