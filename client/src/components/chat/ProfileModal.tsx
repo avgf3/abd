@@ -11,163 +11,277 @@ interface ProfileModalProps {
   onIgnoreUser?: (userId: number) => void;
 }
 
-interface ThemeOption {
-  value: string;
-  name: string;
-  preview: string;
-  emoji: string;
-}
-
-interface EffectOption {
-  value: string;
-  name: string;
-  emoji: string;
-  description: string;
-}
-
 export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser }: ProfileModalProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [currentEditType, setCurrentEditType] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
-  const [currentTheme, setCurrentTheme] = useState(user?.userTheme || 'theme-new-gradient');
-  const [currentEffect, setCurrentEffect] = useState('none');
+  const [selectedTheme, setSelectedTheme] = useState(user?.userTheme || 'theme-new-gradient');
+  const [selectedEffect, setSelectedEffect] = useState('none');
 
   if (!user) return null;
 
-  // Complete theme collection
-  const themes: ThemeOption[] = [
-    {
-      value: 'theme-default',
-      name: 'الافتراضي',
-      preview: 'linear-gradient(135deg, #1a1a1a, #2a2a2a)',
-      emoji: '🌑'
-    },
-    {
-      value: 'theme-golden',
-      name: 'الذهبي',
-      preview: 'linear-gradient(135deg, #ffd700, #ffb347)',
-      emoji: '✨'
-    },
-    {
-      value: 'theme-royal',
-      name: 'الملكي',
-      preview: 'linear-gradient(135deg, #4b0082, #8a2be2)',
-      emoji: '👑'
-    },
-    {
-      value: 'theme-ocean',
-      name: 'المحيط',
-      preview: 'linear-gradient(135deg, #006994, #47b5ff)',
-      emoji: '🌊'
-    },
-    {
-      value: 'theme-sunset',
-      name: 'الغروب',
-      preview: 'linear-gradient(135deg, #ff7e5f, #feb47b)',
+  // Complete themes collection from original code
+  const themes = [
+    { 
+      value: 'theme-sunset-glow', 
+      name: 'توهج الغروب',
+      preview: 'linear-gradient(135deg, #ff6b6b, #ff8e53, #ffa726, #ffcc02, #ff6b6b)',
       emoji: '🌅'
     },
-    {
-      value: 'theme-forest',
-      name: 'الغابة',
-      preview: 'linear-gradient(135deg, #134e5e, #71b280)',
-      emoji: '🌲'
+    { 
+      value: 'theme-ocean-depths', 
+      name: 'أعماق المحيط',
+      preview: 'linear-gradient(135deg, #667eea, #764ba2, #f093fb, #667eea)',
+      emoji: '🌊'
     },
-    {
-      value: 'theme-rose',
-      name: 'الوردي',
-      preview: 'linear-gradient(135deg, #ff9a9e, #fecfef)',
-      emoji: '🌹'
+    { 
+      value: 'theme-aurora-borealis', 
+      name: 'الشفق القطبي',
+      preview: 'linear-gradient(135deg, #a8edea, #fed6e3, #ffecd2, #fcb69f, #a8edea)',
+      emoji: '✨'
     },
-    {
-      value: 'theme-emerald',
-      name: 'الزمردي',
-      preview: 'linear-gradient(135deg, #667eea, #764ba2)',
-      emoji: '💚'
-    },
-    {
-      value: 'theme-fire',
-      name: 'النار',
-      preview: 'linear-gradient(135deg, #ff416c, #ff4b2b)',
-      emoji: '🔥'
-    },
-    {
-      value: 'theme-galaxy',
-      name: 'المجرة',
-      preview: 'linear-gradient(135deg, #667db6, #0082c8, #0082c8, #667db6)',
+    { 
+      value: 'theme-cosmic-night', 
+      name: 'الليل الكوني',
+      preview: 'linear-gradient(135deg, #667eea, #764ba2, #f093fb, #667eea, #764ba2)',
       emoji: '🌌'
     },
-    {
-      value: 'theme-new-gradient',
+    { 
+      value: 'theme-emerald-forest', 
+      name: 'الغابة الزمردية',
+      preview: 'linear-gradient(135deg, #11998e, #38ef7d, #11998e, #38ef7d)',
+      emoji: '🌿'
+    },
+    { 
+      value: 'theme-rose-gold', 
+      name: 'الوردي الذهبي',
+      preview: 'linear-gradient(135deg, #ff9a9e, #fecfef, #fecfef, #ff9a9e)',
+      emoji: '🌸'
+    },
+    { 
+      value: 'theme-midnight-purple', 
+      name: 'البنفسجي الليلي',
+      preview: 'linear-gradient(135deg, #4facfe, #00f2fe, #4facfe, #00f2fe)',
+      emoji: '🔮'
+    },
+    { 
+      value: 'theme-golden-hour', 
+      name: 'الساعة الذهبية',
+      preview: 'linear-gradient(135deg, #fa709a, #fee140, #fa709a, #fee140)',
+      emoji: '🌟'
+    },
+    { 
+      value: 'theme-neon-dreams', 
+      name: 'أحلام النيون',
+      preview: 'linear-gradient(135deg, #ff0099, #493240, #ff0099, #493240)',
+      emoji: '💫'
+    },
+    { 
+      value: 'theme-silver-mist', 
+      name: 'الضباب الفضي',
+      preview: 'linear-gradient(135deg, #c3cfe2, #c3cfe2, #e0c3fc, #c3cfe2)',
+      emoji: '☁️'
+    },
+    { 
+      value: 'theme-fire-opal', 
+      name: 'الأوبال الناري',
+      preview: 'linear-gradient(135deg, #ff416c, #ff4b2b, #ff416c, #ff4b2b)',
+      emoji: '🔥'
+    },
+    { 
+      value: 'theme-crystal-clear', 
+      name: 'البلور الصافي',
+      preview: 'linear-gradient(135deg, #89f7fe, #66a6ff, #89f7fe, #66a6ff)',
+      emoji: '💎'
+    },
+    { 
+      value: 'theme-burgundy-velvet', 
+      name: 'الخمري المخملي',
+      preview: 'linear-gradient(135deg, #800020, #8b0000, #a52a2a, #800020)',
+      emoji: '🍷'
+    },
+    { 
+      value: 'theme-golden-velvet', 
+      name: 'الذهبي المخملي',
+      preview: 'linear-gradient(135deg, #ffd700, #daa520, #b8860b, #ffd700)',
+      emoji: '👑'
+    },
+    { 
+      value: 'theme-royal-black', 
+      name: 'الأسود الملكي',
+      preview: 'linear-gradient(135deg, #191970, #2f4f4f, #000000, #191970)',
+      emoji: '⚜️'
+    },
+    { 
+      value: 'theme-berry-velvet', 
+      name: 'التوتي المخملي',
+      preview: 'linear-gradient(135deg, #8a2be2, #4b0082, #800080, #8a2be2)',
+      emoji: '🫐'
+    },
+    { 
+      value: 'theme-crimson-velvet', 
+      name: 'العنابي المخملي',
+      preview: 'linear-gradient(135deg, #dc143c, #b22222, #8b0000, #dc143c)',
+      emoji: '🔴'
+    },
+    { 
+      value: 'theme-emerald-velvet', 
+      name: 'الزمردي المخملي',
+      preview: 'linear-gradient(135deg, #008000, #228b22, #006400, #008000)',
+      emoji: '💚'
+    },
+    { 
+      value: 'theme-sapphire-velvet', 
+      name: 'الياقوتي المخملي',
+      preview: 'linear-gradient(135deg, #0047ab, #191970, #00008b, #0047ab)',
+      emoji: '💙'
+    },
+    { 
+      value: 'theme-ruby-velvet', 
+      name: 'الياقوت الأحمر',
+      preview: 'linear-gradient(135deg, #9b111e, #8b0000, #800000, #9b111e)',
+      emoji: '❤️'
+    },
+    { 
+      value: 'theme-amethyst-velvet', 
+      name: 'الأميثيست المخملي',
+      preview: 'linear-gradient(135deg, #9966cc, #8a2be2, #4b0082, #9966cc)',
+      emoji: '💜'
+    },
+    { 
+      value: 'theme-onyx-velvet', 
+      name: 'الأونيكس المخملي',
+      preview: 'linear-gradient(135deg, #2f4f4f, #191919, #000000, #2f4f4f)',
+      emoji: '🖤'
+    },
+    { 
+      value: 'theme-sunset-fire', 
+      name: 'توهج النار البرتقالي - محدث',
+      preview: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)',
+      emoji: '🔥'
+    },
+    { 
+      value: 'theme-perfect-gradient', 
+      name: 'التدرج المثالي - محدث',
+      preview: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)',
+      emoji: '🌟'
+    },
+    { 
+      value: 'theme-image-gradient', 
+      name: 'تدرج الصورة - محدث',
+      preview: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)',
+      emoji: '🖼️'
+    },
+    { 
+      value: 'theme-new-gradient', 
       name: 'التدرج الجديد المطابق للصورة',
       preview: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)',
       emoji: '🎨'
     }
   ];
 
-  // Effect options
-  const effects: EffectOption[] = [
-    {
-      value: 'none',
+  // Complete effects collection from original code
+  const effects = [
+    { 
+      value: 'none', 
       name: 'بدون تأثيرات',
       emoji: '🚫',
       description: 'بدون أي تأثيرات حركية'
     },
-    {
-      value: 'effect-pulse',
+    { 
+      value: 'effect-pulse', 
       name: 'النبض الناعم',
       emoji: '💓',
       description: 'نبض خفيف ومريح'
     },
-    {
-      value: 'effect-glow',
+    { 
+      value: 'effect-glow', 
       name: 'التوهج الذهبي',
       emoji: '✨',
       description: 'توهج ذهبي جميل'
     },
-    {
-      value: 'effect-water',
+    { 
+      value: 'effect-water', 
       name: 'التموج المائي',
       emoji: '🌊',
       description: 'حركة مائية سلسة'
     },
-    {
-      value: 'effect-aurora',
+    { 
+      value: 'effect-aurora', 
       name: 'الشفق القطبي',
       emoji: '🌌',
       description: 'تأثير الشفق الملون'
     },
-    {
-      value: 'effect-neon',
+    { 
+      value: 'effect-neon', 
       name: 'النيون المتوهج',
       emoji: '💖',
       description: 'توهج نيون وردي'
     },
-    {
-      value: 'effect-crystal',
+    { 
+      value: 'effect-crystal', 
       name: 'البلور المتلألئ',
       emoji: '💎',
       description: 'لمعة بلورية جميلة'
     },
-    {
-      value: 'effect-fire',
+    { 
+      value: 'effect-fire', 
       name: 'النار المتوهجة',
       emoji: '🔥',
       description: 'توهج ناري حارق'
+    },
+    { 
+      value: 'effect-magnetic', 
+      name: 'المغناطيس',
+      emoji: '🧲',
+      description: 'حركة عائمة مغناطيسية'
+    },
+    { 
+      value: 'effect-heartbeat', 
+      name: 'القلب النابض',
+      emoji: '❤️',
+      description: 'نبض مثل القلب'
+    },
+    { 
+      value: 'effect-stars', 
+      name: 'النجوم المتلألئة',
+      emoji: '⭐',
+      description: 'نجوم متحركة'
+    },
+    { 
+      value: 'effect-rainbow', 
+      name: 'قوس قزح',
+      emoji: '🌈',
+      description: 'تدرج قوس قزح متحرك'
+    },
+    { 
+      value: 'effect-snow', 
+      name: 'الثلج المتساقط',
+      emoji: '❄️',
+      description: 'ثلج متساقط جميل'
+    },
+    { 
+      value: 'effect-lightning', 
+      name: 'البرق',
+      emoji: '⚡',
+      description: 'وميض البرق'
+    },
+    { 
+      value: 'effect-smoke', 
+      name: 'الدخان',
+      emoji: '💨',
+      description: 'دخان متصاعد'
+    },
+    { 
+      value: 'effect-butterfly', 
+      name: 'الفراشة',
+      emoji: '🦋',
+      description: 'فراشة متحركة'
     }
   ];
-
-  // Get theme styles
-  const getThemeStyles = (themeValue: string) => {
-    const theme = themes.find(t => t.value === themeValue);
-    if (theme) {
-      return { background: theme.preview };
-    }
-    return { background: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)' };
-  };
 
   // Profile image fallback
   const getProfileImageSrc = () => {
@@ -182,115 +296,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
     if (user?.profileBanner) {
       return user.profileBanner.startsWith('http') ? user.profileBanner : `/uploads/${user.profileBanner}`;
     }
-    return null;
-  };
-
-  // File upload handler
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, uploadType: 'profile' | 'banner') => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "خطأ",
-        description: "يرجى اختيار ملف صورة صحيح",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "خطأ", 
-        description: "حجم الملف كبير جداً. الحد الأقصى 5 ميجابايت",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const endpoint = uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
-      const response = await apiRequest(endpoint, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.success) {
-        toast({
-          title: "نجح",
-          description: uploadType === 'profile' ? "تم تحديث الصورة الشخصية" : "تم تحديث صورة الغلاف",
-        });
-        // Reload page to show new image
-        window.location.reload();
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في تحميل الصورة",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  // Handle field updates
-  const handleUpdateField = async (fieldName: string, newValue: string) => {
-    setIsLoading(true);
-    try {
-      if (fieldName === 'theme') {
-        const response = await apiRequest('/api/users/update-background-color', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ color: newValue }),
-        });
-        
-        if (response.success) {
-          setCurrentTheme(newValue);
-          toast({
-            title: "نجح",
-            description: "تم تحديث لون الخلفية",
-          });
-        }
-      } else {
-        const response = await apiRequest('/api/users/update-profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ [fieldName]: newValue }),
-        });
-
-        if (response.success) {
-          toast({
-            title: "نجح",
-            description: "تم تحديث الملف الشخصي",
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Update error:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في تحديث البيانات",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-      setCurrentEditType(null);
-    }
+    return 'https://i.imgur.com/rJKrUfs.jpeg';
   };
 
   // Edit modal handlers
   const openEditModal = (type: string) => {
     setCurrentEditType(type);
     
-    // Set initial values
     switch (type) {
       case 'name':
         setEditValue(user?.username || '');
@@ -310,12 +322,65 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
       case 'socialStatus':
         setEditValue(user?.relation || '');
         break;
-      default:
-        setEditValue('');
     }
   };
 
-  const saveEdit = () => {
+  const closeEditModal = () => {
+    setCurrentEditType(null);
+    setEditValue('');
+  };
+
+  // File upload handler
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, uploadType: 'profile' | 'banner') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "خطأ",
+        description: "يرجى اختيار ملف صورة صحيح",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "خطأ", 
+        description: "حجم الملف كبير جداً. الحد الأقصى 5 ميجابايت",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const endpoint = uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
+      const response = await apiRequest(endpoint, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.success) {
+        toast({
+          title: "نجح",
+          description: uploadType === 'profile' ? "تم تحديث الصورة الشخصية" : "تم تحديث صورة الغلاف",
+        });
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تحميل الصورة",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveEdit = async () => {
     if (!editValue.trim()) {
       toast({
         title: "خطأ",
@@ -325,100 +390,462 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
       return;
     }
 
-    let fieldName = '';
-    switch (currentEditType) {
-      case 'name':
-        fieldName = 'username';
-        break;
-      case 'status':
-        fieldName = 'status';
-        break;
-      case 'gender':
-        fieldName = 'gender';
-        break;
-      case 'country':
-        fieldName = 'country';
-        break;
-      case 'age':
-        fieldName = 'age';
-        break;
-      case 'socialStatus':
-        fieldName = 'relation';
-        break;
-    }
+    setIsLoading(true);
+    try {
+      let fieldName = '';
+      switch (currentEditType) {
+        case 'name':
+          fieldName = 'username';
+          break;
+        case 'status':
+          fieldName = 'status';
+          break;
+        case 'gender':
+          fieldName = 'gender';
+          break;
+        case 'country':
+          fieldName = 'country';
+          break;
+        case 'age':
+          fieldName = 'age';
+          break;
+        case 'socialStatus':
+          fieldName = 'relation';
+          break;
+      }
 
-    if (fieldName) {
-      handleUpdateField(fieldName, editValue);
+      const response = await apiRequest('/api/users/update-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [fieldName]: editValue }),
+      });
+
+      if (response.success) {
+        toast({
+          title: "نجح",
+          description: "تم تحديث الملف الشخصي",
+        });
+        closeEditModal();
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تحديث البيانات",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const selectTheme = (themeValue: string) => {
-    setCurrentTheme(themeValue);
-    handleUpdateField('theme', themeValue);
-    setTimeout(() => {
-      setCurrentEditType(null);
-    }, 1000);
+  const handleThemeChange = async (theme: string) => {
+    setSelectedTheme(theme);
+    try {
+      await apiRequest('/api/users/update-background-color', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ color: theme }),
+      });
+      toast({
+        title: "نجح",
+        description: "تم تحديث لون الخلفية",
+      });
+    } catch (error) {
+      console.error('Theme update error:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تحديث اللون",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEffectChange = (effect: string) => {
+    setSelectedEffect(effect);
+    toast({
+      title: "نجح",
+      description: "تم تحديث التأثيرات",
+    });
   };
 
   return (
     <>
-      {/* CSS Styles */}
+      {/* Complete CSS Styles from original HTML */}
       <style>{`
+        :root {
+          --main-bg: #121212;
+          --card-bg: linear-gradient(135deg, #f57f17, #b71c1c, #6a1b9a);
+          --text-color: #ffffff;
+          --accent-color: #ffc107;
+          --error-color: #f44336;
+          --success-color: #4caf50;
+        }
+
+        /* أنماط الألوان العصرية مع التدريج المائي */
+        .theme-sunset-glow {
+          --card-bg: linear-gradient(135deg, 
+            #2c1810, 
+            #8b0000, 
+            #dc143c, 
+            #ff6347, 
+            #ff8c00
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #fff3e0;
+        }
+
+        .theme-ocean-depths {
+          --card-bg: linear-gradient(135deg, 
+            rgba(102, 126, 234, 0.9), 
+            rgba(118, 75, 162, 0.85), 
+            rgba(171, 147, 251, 0.8), 
+            rgba(102, 126, 234, 0.9)
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0, 150, 255, 0.25) 0%, transparent 60%);
+          --accent-color: #e3f2fd;
+        }
+
+        .theme-aurora-borealis {
+          --card-bg: linear-gradient(135deg, 
+            #0a0a0a, 
+            #1a1a2e, 
+            #16213e, 
+            #0f3460, 
+            #533483
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #f0f8ff;
+        }
+
+        .theme-cosmic-night {
+          --card-bg: linear-gradient(135deg, 
+            #000000, 
+            #1a0033, 
+            #330066, 
+            #6600cc, 
+            #9933ff
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #e8eaf6;
+        }
+
+        .theme-emerald-forest {
+          --card-bg: linear-gradient(135deg, 
+            #0a1a0a, 
+            #1a3a1a, 
+            #2d5a2d, 
+            #4a7c4a, 
+            #6b9e6b
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #e8f5e8;
+        }
+
+        .theme-rose-gold {
+          --card-bg: linear-gradient(135deg, 
+            #2d1b1b, 
+            #4a2c2c, 
+            #8b4513, 
+            #daa520, 
+            #ffd700
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #fff0f3;
+        }
+
+        .theme-midnight-purple {
+          --card-bg: linear-gradient(135deg, 
+            #000033, 
+            #1a1a4a, 
+            #333366, 
+            #4d4d99, 
+            #6666cc
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #f3e5f5;
+        }
+
+        .theme-golden-hour {
+          --card-bg: linear-gradient(135deg, 
+            #1a0f0f, 
+            #4a2c1a, 
+            #8b4513, 
+            #daa520, 
+            #ffd700
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #fff8e1;
+        }
+
+        .theme-neon-dreams {
+          --card-bg: linear-gradient(135deg, 
+            #0a0a0a, 
+            #2d1b2d, 
+            #4a1a4a, 
+            #8b008b, 
+            #ff00ff
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #fce4ec;
+        }
+
+        .theme-silver-mist {
+          --card-bg: linear-gradient(135deg, 
+            #1a1a1a, 
+            #2d2d2d, 
+            #4a4a4a, 
+            #666666, 
+            #808080
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #fafafa;
+        }
+
+        .theme-fire-opal {
+          --card-bg: linear-gradient(135deg, 
+            #1a0a0a, 
+            #4a1a1a, 
+            #8b0000, 
+            #dc143c, 
+            #ff4500
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #fff3e0;
+        }
+
+        .theme-crystal-clear {
+          --card-bg: linear-gradient(135deg, 
+            #0a1a2a, 
+            #1a2a4a, 
+            #2a4a6a, 
+            #4a6a8a, 
+            #6a8aaa
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #e1f5fe;
+        }
+
+        .theme-burgundy-velvet {
+          --card-bg: linear-gradient(135deg, 
+            #0a0a0a, 
+            #2d1b1b, 
+            #4a1a1a, 
+            #8b0000, 
+            #a52a2a
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #ffe4e1;
+        }
+
+        .theme-golden-velvet {
+          --card-bg: linear-gradient(135deg, 
+            #1a1a0a, 
+            #2d2d1a, 
+            #4a4a1a, 
+            #8b8b00, 
+            #ffd700
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #fff8dc;
+        }
+
+        .theme-royal-black {
+          --card-bg: linear-gradient(135deg, 
+            #000000, 
+            #1a1a2e, 
+            #2d2d4a, 
+            #4a4a6a, 
+            #66668a
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #f0f8ff;
+        }
+
+        .theme-berry-velvet {
+          --card-bg: linear-gradient(135deg, 
+            #0a0a1a, 
+            #1a1a2d, 
+            #2d2d4a, 
+            #4a4a6a, 
+            #8a2be2
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #f8f0ff;
+        }
+
+        .theme-crimson-velvet {
+          --card-bg: linear-gradient(135deg, 
+            #0a0a0a, 
+            #2d1b1b, 
+            #4a1a1a, 
+            #8b0000, 
+            #dc143c
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #ffe4e1;
+        }
+
+        .theme-emerald-velvet {
+          --card-bg: linear-gradient(135deg, 
+            #0a1a0a, 
+            #1a2d1a, 
+            #2d4a2d, 
+            #4a6a4a, 
+            #6b8a6b
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #f0fff0;
+        }
+
+        .theme-sapphire-velvet {
+          --card-bg: linear-gradient(135deg, 
+            #0a0a1a, 
+            #1a1a2d, 
+            #2d2d4a, 
+            #4a4a6a, 
+            #6b6b8a
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #f0f8ff;
+        }
+
+        .theme-ruby-velvet {
+          --card-bg: linear-gradient(135deg, 
+            #0a0a0a, 
+            #2d1b1b, 
+            #4a1a1a, 
+            #8b0000, 
+            #9b111e
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #ffe4e1;
+        }
+
+        .theme-amethyst-velvet {
+          --card-bg: linear-gradient(135deg, 
+            #0a0a1a, 
+            #1a1a2d, 
+            #2d2d4a, 
+            #4a4a6a, 
+            #9966cc
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #f8f0ff;
+        }
+
+        .theme-onyx-velvet {
+          --card-bg: linear-gradient(135deg, 
+            #000000, 
+            #1a1a1a, 
+            #2d2d2d, 
+            #4a4a4a, 
+            #666666
+          ),
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
+          --accent-color: #f5f5f5;
+        }
+
+        .theme-sunset-fire {
+          --card-bg: linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%);
+          --accent-color: #fff3e0;
+        }
+
+        .theme-perfect-gradient {
+          --card-bg: linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%);
+          --accent-color: #fff3e0;
+        }
+
+        .theme-image-gradient {
+          --card-bg: linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%);
+          --accent-color: #fff3e0;
+        }
+
+        .theme-new-gradient {
+          --card-bg: linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%);
+          --accent-color: #fff3e0;
+        }
+
         .profile-card {
-          position: relative;
           width: 100%;
-          max-width: 350px;
-          background: linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%);
+          max-width: 380px;
           border-radius: 16px;
           overflow: hidden;
-          color: white;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255,255,255,0.1);
+          background: var(--card-bg);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+          position: relative;
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          height: fit-content;
+        }
+
+        .profile-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 12px 40px rgba(0,0,0,0.9);
         }
 
         .profile-cover {
           position: relative;
-          height: 120px;
-          background: rgba(0,0,0,0.2);
-          overflow: hidden;
+          aspect-ratio: 3 / 1;
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
         }
 
         .change-cover-btn {
           position: absolute;
-          top: 10px;
-          right: 10px;
-          background: rgba(0,0,0,0.8);
-          color: white;
-          border: none;
-          padding: 6px 12px;
+          top: 12px;
+          left: 12px;
+          background: rgba(0,0,0,0.7);
           border-radius: 8px;
+          padding: 8px 12px;
+          color: #fff;
           font-size: 12px;
           cursor: pointer;
-          transition: all 0.3s ease;
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255,255,255,0.2);
+          z-index: 3;
+          transition: background 0.3s ease;
+          border: none;
+          font-weight: 500;
         }
 
         .change-cover-btn:hover {
-          background: rgba(0,0,0,1);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+          background: rgba(0,0,0,0.9);
         }
 
         .profile-avatar {
+          width: 100px;
+          height: 100px;
+          border-radius: 16px;
+          overflow: hidden;
+          border: 4px solid rgba(255,255,255,0.9);
           position: absolute;
           top: calc(100% - 50px);
           right: 20px;
-          width: 100px;
-          height: 100px;
-          border-radius: 0;
-          border: 4px solid rgba(255,255,255,0.3);
-          background: rgba(255,255,255,0.1);
-          backdrop-filter: blur(10px);
-          overflow: hidden;
-          transition: all 0.3s ease;
+          background-color: white;
+          box-shadow: 0 6px 20px rgba(0,0,0,0.6);
           z-index: 2;
+          transition: transform 0.3s ease;
         }
 
         .profile-avatar:hover {
@@ -455,6 +882,10 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           transform: scale(1.1);
         }
 
+        input[type="file"] {
+          display: none;
+        }
+
         .profile-body {
           padding: 60px 20px 16px;
         }
@@ -469,7 +900,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           margin: 0 0 6px 0;
           font-size: 20px;
           font-weight: bold;
-          color: #ffc107;
+          color: var(--accent-color);
           text-shadow: 0 2px 4px rgba(0,0,0,0.5);
           cursor: pointer;
           transition: all 0.3s ease;
@@ -488,9 +919,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           cursor: pointer;
           transition: all 0.3s ease;
         }
-
+        
         .profile-info small:hover {
-          color: #ffc107;
+          color: var(--accent-color);
           transform: translateY(-1px);
         }
 
@@ -523,6 +954,10 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           box-shadow: 0 6px 20px rgba(0,0,0,0.4);
           background: linear-gradient(135deg, #d32f2f, #b71c1c);
           border-color: rgba(255,255,255,0.2);
+        }
+
+        .profile-buttons button:active {
+          transform: translateY(0);
         }
 
         .profile-details {
@@ -558,7 +993,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
         .profile-details span {
           font-weight: bold;
-          color: #ffc107;
+          color: var(--accent-color);
           text-align: left;
           text-shadow: 0 1px 2px rgba(0,0,0,0.3);
           padding: 3px 6px;
@@ -595,7 +1030,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
 
         .additional-details span {
           font-weight: bold;
-          color: #ffc107;
+          color: var(--accent-color);
           text-shadow: 0 1px 2px rgba(0,0,0,0.3);
           padding: 2px 6px;
           border-radius: 4px;
@@ -615,28 +1050,27 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           align-items: center;
           z-index: 1000;
         }
-
+        
         .edit-content {
-          background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+          background: var(--card-bg);
           padding: 24px;
           border-radius: 16px;
           width: 90%;
           max-width: 350px;
           box-shadow: 0 10px 30px rgba(0,0,0,0.9);
-          border: 1px solid rgba(255,255,255,0.1);
         }
-
+        
         .edit-content h3 {
           margin: 0 0 16px 0;
-          color: #ffc107;
+          color: var(--accent-color);
           text-align: center;
           font-size: 18px;
         }
-
+        
         .edit-field {
           margin-bottom: 16px;
         }
-
+        
         .edit-field label {
           display: block;
           margin-bottom: 6px;
@@ -644,8 +1078,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           font-weight: bold;
           font-size: 14px;
         }
-
-        .edit-field input, .edit-field select {
+        
+        .edit-field input, .edit-field select, .edit-field textarea {
           width: 100%;
           padding: 12px;
           border: 2px solid rgba(255,255,255,0.3);
@@ -656,13 +1090,24 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           font-weight: 500;
           backdrop-filter: blur(10px);
           transition: all 0.3s ease;
+          box-sizing: border-box;
         }
-
-        .edit-field input:focus, .edit-field select:focus {
+        
+        .edit-field input:focus, .edit-field select:focus, .edit-field textarea:focus {
           outline: none;
-          border-color: #ffc107;
+          border-color: var(--accent-color);
           background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1));
           box-shadow: 0 0 15px rgba(255,193,7,0.3);
+        }
+
+        .edit-field select {
+          cursor: pointer;
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffc107' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+          background-repeat: no-repeat;
+          background-position: right 12px center;
+          background-size: 16px;
+          padding-right: 40px;
         }
 
         .theme-option {
@@ -684,7 +1129,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
         }
 
         .theme-option.selected {
-          background: #ffc107;
+          background: var(--accent-color);
           color: #000;
           font-weight: bold;
           transform: scale(1.05);
@@ -694,7 +1139,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
         .theme-preview {
           width: 24px;
           height: 24px;
-          border-radius: 0;
+          border-radius: 50%;
           border: 2px solid rgba(255,255,255,0.3);
           flex-shrink: 0;
           box-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -713,10 +1158,285 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
           font-weight: 500;
         }
 
+        /* ===== تأثيرات حركية جميلة ===== */
+        
+        .effect-pulse {
+          animation: gentlePulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes gentlePulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.02); }
+        }
+        
+        .effect-glow {
+          animation: goldenGlow 4s ease-in-out infinite;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 20px rgba(255,215,0,0.3);
+        }
+        
+        @keyframes goldenGlow {
+          0%, 100% { 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 20px rgba(255,215,0,0.3);
+          }
+          50% { 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 30px rgba(255,215,0,0.6);
+          }
+        }
+        
+        .effect-water {
+          animation: waterWave 6s ease-in-out infinite;
+          background-size: 400% 400% !important;
+        }
+        
+        @keyframes waterWave {
+          0%, 100% { background-position: 0% 50%; }
+          25% { background-position: 100% 50%; }
+          50% { background-position: 100% 100%; }
+          75% { background-position: 0% 100%; }
+        }
+        
+        .effect-aurora {
+          animation: auroraShift 8s ease-in-out infinite;
+          background-size: 300% 300% !important;
+        }
+        
+        @keyframes auroraShift {
+          0%, 100% { 
+            background-position: 0% 50%;
+            filter: hue-rotate(0deg);
+          }
+          25% { 
+            background-position: 100% 50%;
+            filter: hue-rotate(90deg);
+          }
+          50% { 
+            background-position: 100% 100%;
+            filter: hue-rotate(180deg);
+          }
+          75% { 
+            background-position: 0% 100%;
+            filter: hue-rotate(270deg);
+          }
+        }
+        
+        .effect-neon {
+          animation: neonFlicker 2s ease-in-out infinite;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 20px rgba(255,20,147,0.5);
+        }
+        
+        @keyframes neonFlicker {
+          0%, 100% { 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 20px rgba(255,20,147,0.5);
+          }
+          50% { 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 30px rgba(255,20,147,0.8);
+          }
+        }
+        
+        .effect-crystal {
+          animation: crystalShimmer 5s ease-in-out infinite;
+          position: relative;
+        }
+        
+        .effect-crystal::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+          animation: crystalSweep 3s ease-in-out infinite;
+          z-index: 1;
+          pointer-events: none;
+        }
+        
+        @keyframes crystalShimmer {
+          0%, 100% { filter: brightness(1) contrast(1); }
+          50% { filter: brightness(1.1) contrast(1.1); }
+        }
+        
+        @keyframes crystalSweep {
+          0% { left: -100%; }
+          100% { left: 100%; }
+        }
+        
+        .effect-fire {
+          animation: fireFlicker 1.5s ease-in-out infinite;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 20px rgba(255,69,0,0.5);
+        }
+        
+        @keyframes fireFlicker {
+          0%, 100% { 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 20px rgba(255,69,0,0.5);
+            filter: brightness(1);
+          }
+          50% { 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 30px rgba(255,69,0,0.8);
+            filter: brightness(1.1);
+          }
+        }
+
+        .effect-magnetic {
+          animation: magneticFloat 4s ease-in-out infinite;
+        }
+        
+        @keyframes magneticFloat {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        
+        .effect-heartbeat {
+          animation: heartbeat 2s ease-in-out infinite;
+        }
+        
+        @keyframes heartbeat {
+          0%, 100% { transform: scale(1); }
+          14% { transform: scale(1.03); }
+          28% { transform: scale(1); }
+          42% { transform: scale(1.03); }
+          70% { transform: scale(1); }
+        }
+        
+        .effect-stars {
+          position: relative;
+          animation: starTwinkle 3s ease-in-out infinite;
+        }
+        
+        .effect-stars::before {
+          content: '✨';
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          font-size: 20px;
+          animation: starFloat 4s ease-in-out infinite;
+          z-index: 10;
+          pointer-events: none;
+        }
+        
+        .effect-stars::after {
+          content: '⭐';
+          position: absolute;
+          bottom: 10px;
+          left: 10px;
+          font-size: 16px;
+          animation: starFloat 3s ease-in-out infinite reverse;
+          z-index: 10;
+          pointer-events: none;
+        }
+        
+        @keyframes starTwinkle {
+          0%, 100% { filter: brightness(1); }
+          50% { filter: brightness(1.2); }
+        }
+        
+        @keyframes starFloat {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-10px) rotate(180deg); }
+        }
+
+        .effect-rainbow {
+          animation: rainbowShift 4s ease-in-out infinite;
+          background-size: 400% 400% !important;
+        }
+        
+        @keyframes rainbowShift {
+          0% { filter: hue-rotate(0deg); }
+          25% { filter: hue-rotate(90deg); }
+          50% { filter: hue-rotate(180deg); }
+          75% { filter: hue-rotate(270deg); }
+          100% { filter: hue-rotate(360deg); }
+        }
+
+        .effect-snow {
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .effect-snow::before {
+          content: '❄️';
+          position: absolute;
+          top: -20px;
+          left: 20%;
+          font-size: 16px;
+          animation: snowfall 5s linear infinite;
+          z-index: 10;
+          pointer-events: none;
+        }
+        
+        .effect-snow::after {
+          content: '❄️';
+          position: absolute;
+          top: -20px;
+          right: 30%;
+          font-size: 12px;
+          animation: snowfall 6s linear infinite 2s;
+          z-index: 10;
+          pointer-events: none;
+        }
+        
+        @keyframes snowfall {
+          0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(400px) rotate(360deg); opacity: 0; }
+        }
+
+        .effect-lightning {
+          animation: lightningFlash 3s ease-in-out infinite;
+        }
+        
+        @keyframes lightningFlash {
+          0%, 90%, 100% { filter: brightness(1); }
+          95% { filter: brightness(1.5) contrast(1.2); }
+        }
+
+        .effect-smoke {
+          position: relative;
+        }
+        
+        .effect-smoke::before {
+          content: '💨';
+          position: absolute;
+          bottom: 10px;
+          right: 10px;
+          font-size: 18px;
+          animation: smokeRise 4s ease-in-out infinite;
+          z-index: 10;
+          pointer-events: none;
+        }
+        
+        @keyframes smokeRise {
+          0% { transform: translateY(0px) scale(0.8); opacity: 0.7; }
+          50% { transform: translateY(-15px) scale(1.1); opacity: 0.9; }
+          100% { transform: translateY(-30px) scale(1.2); opacity: 0.3; }
+        }
+
+        .effect-butterfly {
+          position: relative;
+        }
+        
+        .effect-butterfly::before {
+          content: '🦋';
+          position: absolute;
+          top: 15px;
+          left: 15px;
+          font-size: 16px;
+          animation: butterflyFly 6s ease-in-out infinite;
+          z-index: 10;
+          pointer-events: none;
+        }
+        
+        @keyframes butterflyFly {
+          0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+          25% { transform: translate(20px, -10px) rotate(15deg); }
+          50% { transform: translate(-10px, -20px) rotate(-10deg); }
+          75% { transform: translate(15px, -5px) rotate(20deg); }
+        }
+
         .edit-buttons {
           display: flex;
           gap: 10px;
           justify-content: center;
+          margin-top: 16px;
         }
 
         .edit-buttons button {
@@ -775,10 +1495,12 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
         }
       `}</style>
 
-      {/* Main Modal */}
+      {/* Modal Background - completely transparent */}
       <div className="fixed inset-0 z-50 bg-black/80" onClick={onClose} />
+      
+      {/* Main Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div className="profile-card" style={getThemeStyles(currentTheme)}>
+        <div className={`profile-card ${selectedTheme} ${selectedEffect}`}>
           {/* Close Button */}
           <button 
             onClick={onClose}
@@ -787,22 +1509,15 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
             <X size={20} />
           </button>
 
-          {/* Cover Section */}
-          <div className="profile-cover">
-            {getProfileBannerSrc() && (
-              <img 
-                src={getProfileBannerSrc()!} 
-                alt="غلاف الملف الشخصي"
-                className="w-full h-full object-cover"
-              />
-            )}
-            
-            {/* Show upload button only for own profile */}
+          {/* Cover Section - exact match to original */}
+          <div 
+            className="profile-cover"
+            style={{ backgroundImage: `url(${getProfileBannerSrc()})` }}
+          >
             {user.id === currentUser?.id && (
               <button 
                 className="change-cover-btn"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
               >
                 🖼️ تغيير الغلاف
               </button>
@@ -813,21 +1528,20 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                 src={getProfileImageSrc()} 
                 alt="الصورة الشخصية"
               />
-              {/* Show upload button only for own profile */}
-              {user.id === currentUser?.id && (
-                <button 
-                  className="change-avatar-btn"
-                  onClick={() => avatarInputRef.current?.click()}
-                  disabled={isUploading}
-                  title="تغيير الصورة"
-                >
-                  📷
-                </button>
-              )}
             </div>
+            
+            {user.id === currentUser?.id && (
+              <button 
+                className="change-avatar-btn"
+                onClick={() => avatarInputRef.current?.click()}
+                title="تغيير الصورة"
+              >
+                📷
+              </button>
+            )}
           </div>
 
-          {/* Profile Body */}
+          {/* Profile Body - exact match to original */}
           <div className="profile-body">
             <div className="profile-info">
               <h3 
@@ -840,11 +1554,10 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                 onClick={() => user.id === currentUser?.id && openEditModal('status')}
                 style={{ cursor: user.id === currentUser?.id ? 'pointer' : 'default' }}
               >
-                {user?.status || 'بدون حالة'}
+                {user?.status || 'اضغط لإضافة حالة'}
               </small>
             </div>
 
-            {/* Show action buttons only for other users */}
             {user.id !== currentUser?.id && (
               <div className="profile-buttons">
                 <button>🚩 تبليغ</button>
@@ -889,7 +1602,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               </p>
             </div>
 
-            {/* Show theme and effects options only for own profile */}
             {user.id === currentUser?.id && (
               <div className="additional-details">
                 <p>💬 عدد الرسائل: <span>0</span></p>
@@ -898,13 +1610,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                   🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
                 </p>
                 <p onClick={() => setCurrentEditType('effects')}>
-                  ✨ تأثيرات حركية: <span>بدون تأثيرات</span>
+                  ✨ تأثيرات حركية: <span>اضغط للتغيير</span>
                 </p>
               </div>
             )}
           </div>
 
-          {/* Hidden File Inputs - only for own profile */}
+          {/* Hidden File Inputs */}
           {user.id === currentUser?.id && (
             <>
               <input
@@ -912,21 +1624,19 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                 type="file"
                 accept="image/*"
                 onChange={(e) => handleFileUpload(e, 'banner')}
-                style={{ display: 'none' }}
               />
               <input
                 ref={avatarInputRef}
                 type="file"
                 accept="image/*"
                 onChange={(e) => handleFileUpload(e, 'profile')}
-                style={{ display: 'none' }}
               />
             </>
           )}
         </div>
       </div>
 
-      {/* Edit Modal - only for own profile */}
+      {/* Edit Modal - exact match to original */}
       {currentEditType && user.id === currentUser?.id && (
         <div className="edit-modal">
           <div className="edit-content">
@@ -937,35 +1647,33 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               {currentEditType === 'country' && 'تعديل البلد'}
               {currentEditType === 'age' && 'تعديل العمر'}
               {currentEditType === 'socialStatus' && 'تعديل الحالة الاجتماعية'}
-              {currentEditType === 'theme' && 'تعديل لون الملف الشخصي'}
-              {currentEditType === 'effects' && 'تعديل التأثيرات الحركية'}
+              {currentEditType === 'theme' && '🎨 اختيار لون الملف الشخصي'}
+              {currentEditType === 'effects' && '✨ تعديل التأثيرات الحركية'}
             </h3>
             
             {currentEditType === 'theme' ? (
-              <div style={{ maxHeight: '300px', overflowY: 'auto', marginTop: '10px' }}>
+              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                 {themes.map(theme => (
                   <div
                     key={theme.value}
-                    className={`theme-option ${currentTheme === theme.value ? 'selected' : ''}`}
-                    onClick={() => selectTheme(theme.value)}
+                    className={`theme-option ${selectedTheme === theme.value ? 'selected' : ''}`}
+                    onClick={() => handleThemeChange(theme.value)}
                   >
                     <div 
                       className="theme-preview"
                       style={{ background: theme.preview }}
                     />
-                    <div className="theme-name">
-                      {theme.emoji} {theme.name}
-                    </div>
+                    <div className="theme-name">{theme.emoji} {theme.name}</div>
                   </div>
                 ))}
               </div>
             ) : currentEditType === 'effects' ? (
-              <div style={{ maxHeight: '400px', overflowY: 'auto', marginTop: '10px' }}>
+              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                 {effects.map(effect => (
                   <div
                     key={effect.value}
-                    className={`theme-option ${currentEffect === effect.value ? 'selected' : ''}`}
-                    onClick={() => setCurrentEffect(effect.value)}
+                    className={`theme-option ${selectedEffect === effect.value ? 'selected' : ''}`}
+                    onClick={() => handleEffectChange(effect.value)}
                   >
                     <div 
                       className="theme-preview"
@@ -988,112 +1696,76 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                   </div>
                 ))}
               </div>
-            ) : currentEditType === 'gender' ? (
-              <div>
-                <div className="edit-field">
-                  <label>اختر الجنس:</label>
-                  <select 
-                    value={editValue} 
-                    onChange={(e) => setEditValue(e.target.value)}
-                  >
-                    <option value="">اختر...</option>
-                    <option value="ذكر">👨 ذكر</option>
-                    <option value="أنثى">👩 أنثى</option>
-                  </select>
-                </div>
-                <div className="edit-buttons">
-                  <button className="save-btn" onClick={saveEdit} disabled={isLoading || !editValue.trim()}>
-                    {isLoading ? 'جاري الحفظ...' : '💾 حفظ'}
-                  </button>
-                  <button className="cancel-btn" onClick={() => setCurrentEditType(null)}>
-                    ❌ إلغاء
-                  </button>
-                </div>
-              </div>
-            ) : currentEditType === 'country' ? (
-              <div>
-                <div className="edit-field">
-                  <label>اختر البلد:</label>
-                  <select 
-                    value={editValue} 
-                    onChange={(e) => setEditValue(e.target.value)}
-                  >
-                    <option value="">اختر...</option>
-                    <option value="🇸🇦 السعودية">🇸🇦 السعودية</option>
-                    <option value="🇦🇪 الإمارات">🇦🇪 الإمارات</option>
-                    <option value="🇪🇬 مصر">🇪🇬 مصر</option>
-                    <option value="🇯🇴 الأردن">🇯🇴 الأردن</option>
-                    <option value="🇱🇧 لبنان">🇱🇧 لبنان</option>
-                    <option value="🇸🇾 سوريا">🇸🇾 سوريا</option>
-                    <option value="🇮🇶 العراق">🇮🇶 العراق</option>
-                    <option value="🇰🇼 الكويت">🇰🇼 الكويت</option>
-                    <option value="🇶🇦 قطر">🇶🇦 قطر</option>
-                    <option value="🇧🇭 البحرين">🇧🇭 البحرين</option>
-                    <option value="🇴🇲 عمان">🇴🇲 عمان</option>
-                    <option value="🇾🇪 اليمن">🇾🇪 اليمن</option>
-                    <option value="🇱🇾 ليبيا">🇱🇾 ليبيا</option>
-                    <option value="🇹🇳 تونس">🇹🇳 تونس</option>
-                    <option value="🇩🇿 الجزائر">🇩🇿 الجزائر</option>
-                    <option value="🇲🇦 المغرب">🇲🇦 المغرب</option>
-                  </select>
-                </div>
-                <div className="edit-buttons">
-                  <button className="save-btn" onClick={saveEdit} disabled={isLoading || !editValue.trim()}>
-                    {isLoading ? 'جاري الحفظ...' : '💾 حفظ'}
-                  </button>
-                  <button className="cancel-btn" onClick={() => setCurrentEditType(null)}>
-                    ❌ إلغاء
-                  </button>
-                </div>
-              </div>
-            ) : currentEditType === 'socialStatus' ? (
-              <div>
-                <div className="edit-field">
-                  <label>اختر الحالة الاجتماعية:</label>
-                  <select 
-                    value={editValue} 
-                    onChange={(e) => setEditValue(e.target.value)}
-                  >
-                    <option value="">اختر...</option>
-                    <option value="أعزب">💚 أعزب</option>
-                    <option value="متزوج">💍 متزوج</option>
-                    <option value="مطلق">💔 مطلق</option>
-                    <option value="أرمل">🖤 أرمل</option>
-                  </select>
-                </div>
-                <div className="edit-buttons">
-                  <button className="save-btn" onClick={saveEdit} disabled={isLoading || !editValue.trim()}>
-                    {isLoading ? 'جاري الحفظ...' : '💾 حفظ'}
-                  </button>
-                  <button className="cancel-btn" onClick={() => setCurrentEditType(null)}>
-                    ❌ إلغاء
-                  </button>
-                </div>
-              </div>
             ) : (
-              <div>
+              <>
                 <div className="edit-field">
                   <label>
                     {currentEditType === 'name' && 'الاسم الجديد:'}
                     {currentEditType === 'status' && 'الحالة الجديدة:'}
-                    {currentEditType === 'age' && 'العمر الجديد:'}
+                    {currentEditType === 'gender' && 'الجنس:'}
+                    {currentEditType === 'country' && 'البلد:'}
+                    {currentEditType === 'age' && 'العمر:'}
+                    {currentEditType === 'socialStatus' && 'الحالة الاجتماعية:'}
                   </label>
-                  <input
-                    type={currentEditType === 'age' ? 'number' : 'text'}
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    placeholder={`أدخل ${currentEditType === 'name' ? 'الاسم' : currentEditType === 'status' ? 'الحالة' : 'العمر'} الجديد`}
-                    autoFocus
-                  />
+                  {currentEditType === 'gender' ? (
+                    <select value={editValue} onChange={(e) => setEditValue(e.target.value)}>
+                      <option value="">اختر...</option>
+                      <option value="ذكر">👨 ذكر</option>
+                      <option value="أنثى">👩 أنثى</option>
+                    </select>
+                  ) : currentEditType === 'country' ? (
+                    <select value={editValue} onChange={(e) => setEditValue(e.target.value)}>
+                      <option value="">اختر...</option>
+                      <option value="🇸🇦 السعودية">🇸🇦 السعودية</option>
+                      <option value="🇦🇪 الإمارات">🇦🇪 الإمارات</option>
+                      <option value="🇪🇬 مصر">🇪🇬 مصر</option>
+                      <option value="🇯🇴 الأردن">🇯🇴 الأردن</option>
+                      <option value="🇱🇧 لبنان">🇱🇧 لبنان</option>
+                      <option value="🇸🇾 سوريا">🇸🇾 سوريا</option>
+                      <option value="🇮🇶 العراق">🇮🇶 العراق</option>
+                      <option value="🇰🇼 الكويت">🇰🇼 الكويت</option>
+                      <option value="🇶🇦 قطر">🇶🇦 قطر</option>
+                      <option value="🇧🇭 البحرين">🇧🇭 البحرين</option>
+                      <option value="🇴🇲 عمان">🇴🇲 عمان</option>
+                      <option value="🇾🇪 اليمن">🇾🇪 اليمن</option>
+                      <option value="🇱🇾 ليبيا">🇱🇾 ليبيا</option>
+                      <option value="🇹🇳 تونس">🇹🇳 تونس</option>
+                      <option value="🇩🇿 الجزائر">🇩🇿 الجزائر</option>
+                      <option value="🇲🇦 المغرب">🇲🇦 المغرب</option>
+                    </select>
+                  ) : currentEditType === 'socialStatus' ? (
+                    <select value={editValue} onChange={(e) => setEditValue(e.target.value)}>
+                      <option value="">اختر...</option>
+                      <option value="أعزب">💚 أعزب</option>
+                      <option value="متزوج">💍 متزوج</option>
+                      <option value="مطلق">💔 مطلق</option>
+                      <option value="أرمل">🖤 أرمل</option>
+                    </select>
+                  ) : (
+                    <input
+                      type={currentEditType === 'age' ? 'number' : 'text'}
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      autoFocus
+                    />
+                  )}
                 </div>
                 <div className="edit-buttons">
-                  <button className="save-btn" onClick={saveEdit} disabled={isLoading || !editValue.trim()}>
+                  <button className="save-btn" onClick={handleSaveEdit} disabled={isLoading}>
                     {isLoading ? 'جاري الحفظ...' : '💾 حفظ'}
                   </button>
-                  <button className="cancel-btn" onClick={() => setCurrentEditType(null)}>
+                  <button className="cancel-btn" onClick={closeEditModal}>
                     ❌ إلغاء
                   </button>
                 </div>
+              </>
+            )}
+
+            {(currentEditType === 'theme' || currentEditType === 'effects') && (
+              <div className="edit-buttons">
+                <button className="cancel-btn" onClick={closeEditModal}>
+                  ❌ إغلاق
+                </button>
               </div>
             )}
           </div>
