@@ -130,8 +130,8 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     }
   });
 
-  const notifications = notificationsData || [];
-  const unreadCount = unreadCountData || 0;
+  const notifications = (notificationsData || []) as Notification[];
+  const unreadCount = (unreadCountData || 0) as number;
 
   const formatTime = (timestamp: string) => {
     const now = Date.now();

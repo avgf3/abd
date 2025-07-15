@@ -331,6 +331,7 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
 
       {selectedPrivateUser && (
         <PrivateMessageBox
+          isOpen={!!selectedPrivateUser}
           user={selectedPrivateUser}
           onClose={closePrivateMessage}
           messages={chat.privateConversations[selectedPrivateUser.id] || []}
