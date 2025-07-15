@@ -152,9 +152,9 @@ export class PerformanceManager {
   }
 
   // تحسين الرسوم البيانية
-  optimizeAnimations() {
+  async optimizeAnimations() {
     // تقليل معدل الإطارات للعتاد الضعيف
-    const fps = this.detectFrameRate();
+    const fps = await this.detectFrameRate();
     
     if (fps < 30) {
       document.documentElement.style.setProperty('--animation-duration', '0.5s');

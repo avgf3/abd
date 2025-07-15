@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 // نظام تحليلات الشات المتقدم
 export interface ChatAnalytics {
   messagesPerHour: number[];
