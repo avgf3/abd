@@ -152,14 +152,15 @@ export class PerformanceManager {
   }
 
   // تحسين الرسوم البيانية
-  optimizeAnimations() {
+  async optimizeAnimations() {
     // تقليل معدل الإطارات للعتاد الضعيف
-    const fps = this.detectFrameRate();
+    const fps = await this.detectFrameRate();
     
-    if (fps < 30) {
+    const fpsValue = await fps;
+    if (fpsValue < 30) {
       document.documentElement.style.setProperty('--animation-duration', '0.5s');
       document.documentElement.classList.add('reduce-motion');
-    } else if (fps < 50) {
+    } else if (fpsValue < 50) {
       document.documentElement.style.setProperty('--animation-duration', '0.3s');
     }
   }

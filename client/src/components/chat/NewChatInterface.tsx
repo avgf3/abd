@@ -59,6 +59,8 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
     y: 0,
   });
 
+  const [profileUser, setProfileUser] = useState<ChatUser | null>(null);
+
   const { toast } = useToast();
 
   // تفعيل التنبيه عند وصول رسالة جديدة
@@ -338,7 +340,6 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
             chat.sendPrivateMessage(selectedPrivateUser.id, content);
           }}
           currentUser={chat.currentUser}
-          onReportUser={handleReportUser}
         />
       )}
 

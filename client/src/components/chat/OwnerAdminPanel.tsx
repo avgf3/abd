@@ -107,8 +107,15 @@ export default function OwnerAdminPanel({
         user.userType === 'moderator' || 
         user.userType === 'admin' || 
         user.userType === 'owner'
-      );
-      
+      ).map(user => ({
+        id: user.id,
+        username: user.username,
+        userType: user.userType as 'moderator' | 'admin' | 'owner',
+        profileImage: user.profileImage,
+        joinDate: user.joinDate,
+        lastSeen: user.lastSeen,
+        isOnline: true
+      }));
       setStaffMembers(staff);
     } catch (error) {
       console.error('Error fetching staff:', error);
