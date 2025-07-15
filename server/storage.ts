@@ -92,43 +92,44 @@ export class MixedStorage implements IStorage {
 
   private async initializeOwner() {
     try {
-      // Check if owner already exists
-      const existing = await db.select().from(users).where(eq(users.username, "عبدالكريم"));
-      if (existing.length === 0) {
-        // Create owner user in database
-        await db.insert(users).values({
-          username: "عبدالكريم",
-          password: "عبدالكريم22333",
-          userType: "owner",
-          profileImage: "/default_avatar.svg",
-          status: "مالك الموقع",
-          gender: "ذكر",
-          age: 30,
-          country: "السعودية",
-          relation: "مرتبط",
-          bio: "مالك الموقع",
-          profileBackgroundColor: "#3c0d0d",
-        } as any);
-      }
-
-      // Check if admin already exists
-      const existingAdmin = await db.select().from(users).where(eq(users.username, "عبود"));
-      if (existingAdmin.length === 0) {
-        // Create admin user in database
-        await db.insert(users).values({
-          username: "عبود",
-          password: "22333",
-          userType: "owner",
-          profileImage: "/default_avatar.svg",
-          status: "مشرف مؤقت",
-          gender: "ذكر",
-          age: 25,
-          country: "العراق",
-          relation: "أعزب",
-          bio: "مشرف مؤقت",
-          profileBackgroundColor: "#3c0d0d",
-        } as any);
-      }
+      if (db) {
+        // Check if owner already exists
+        const existing = await db.select().from(users).where(eq(users.username, "عبدالكريم"));
+        if (existing.length === 0) {
+          // Create owner user in database
+          await db.insert(users).values({
+            username: "عبدالكريم",
+            password: "عبدالكريم22333",
+            userType: "owner",
+            profileImage: "/default_avatar.svg",
+            status: "مالك الموقع",
+            gender: "ذكر",
+            age: 30,
+            country: "السعودية",
+            relation: "مرتبط",
+            bio: "مالك الموقع",
+            profileBackgroundColor: "#3c0d0d",
+          } as any);
+        }
+        // Check if admin already exists
+        const existingAdmin = await db.select().from(users).where(eq(users.username, "عبود"));
+        if (existingAdmin.length === 0) {
+          // Create admin user in database
+          await db.insert(users).values({
+            username: "عبود",
+            password: "22333",
+            userType: "owner",
+            profileImage: "/default_avatar.svg",
+            status: "مشرف مؤقت",
+            gender: "ذكر",
+            age: 25,
+            country: "العراق",
+            relation: "أعزب",
+            bio: "مشرف مؤقت",
+            profileBackgroundColor: "#3c0d0d",
+          } as any);
+        }
+      } // إذا لم توجد db، تجاهل قاعدة البيانات
     } catch (error) {
       console.error('Error initializing owner:', error);
     }
