@@ -158,7 +158,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   // معالج للروابط الشخصية
   const handleProfileLink = (userId: number) => {
-    const user = chat.users.find(u => u.id === userId);
+    const user = chat.onlineUsers.find(u => u.id === userId);
     if (user) {
       setProfileUser(user);
       setShowProfile(true);
@@ -193,7 +193,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
     };
-  }, [chat.users]);
+  }, [chat.onlineUsers]);
 
   const handleReportUser = (user: ChatUser, messageContent?: string, messageId?: number) => {
     setReportedUser(user);
