@@ -106,10 +106,9 @@ export class MixedStorage implements IStorage {
           age: 30,
           country: "السعودية",
           relation: "مرتبط",
-          isOnline: true,
-          lastSeen: new Date(),
-          joinDate: new Date(),
-        });
+          bio: "مالك الموقع",
+          profileBackgroundColor: "#3c0d0d",
+        } as any);
       }
 
       // Check if admin already exists
@@ -126,10 +125,9 @@ export class MixedStorage implements IStorage {
           age: 25,
           country: "العراق",
           relation: "أعزب",
-          isOnline: false,
-          lastSeen: new Date(),
-          joinDate: new Date(),
-        });
+          bio: "مشرف مؤقت",
+          profileBackgroundColor: "#3c0d0d",
+        } as any);
       }
     } catch (error) {
       console.error('Error initializing owner:', error);
@@ -162,6 +160,17 @@ export class MixedStorage implements IStorage {
     return dbUser || undefined;
   }
 
+  async verifyUserCredentials(username: string, password: string): Promise<User | null> {
+    const user = await this.getUserByUsername(username);
+    if (!user) return null;
+    
+    if (user.password === password) {
+      return user;
+    }
+    
+    return null;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     if (insertUser.userType === 'member' || insertUser.userType === 'owner') {
       // Store members in database with profile picture support
@@ -178,12 +187,11 @@ export class MixedStorage implements IStorage {
           age: insertUser.age,
           country: insertUser.country,
           relation: insertUser.relation,
-          isOnline: true,
-          lastSeen: new Date(),
-          joinDate: new Date(),
+          bio: insertUser.bio || null,
+          profileBackgroundColor: "#3c0d0d",
           usernameColor: '#FFFFFF',
           userTheme: 'default'
-        })
+        } as any)
         .returning();
       return dbUser;
     } else {
@@ -194,6 +202,8 @@ export class MixedStorage implements IStorage {
         username: insertUser.username,
         password: insertUser.password || null,
         userType: insertUser.userType || "guest",
+        bio: insertUser.bio || null,
+        profileBackgroundColor: "#3c0d0d",
         profileImage: "/default_avatar.svg", // Guests always use default
         profileBanner: null, // Guests cannot have banners
         status: insertUser.status || null,
@@ -286,7 +296,7 @@ export class MixedStorage implements IStorage {
         .set({ 
           isOnline: isOnline,
           lastSeen: new Date()
-        })
+        } as any)
         .where(eq(users.id, id));
     } catch (error) {
       console.error('Error updating user online status:', error);
@@ -317,7 +327,7 @@ export class MixedStorage implements IStorage {
 
     // Check database (members)
     try {
-      await db.update(users).set({ isHidden }).where(eq(users.id, id));
+      await db.update(users).set({ isHidden } as any).where(eq(users.id, id));
     } catch (error) {
       console.error('Error updating user hidden status:', error);
     }
@@ -342,7 +352,7 @@ export class MixedStorage implements IStorage {
         const currentIgnored = dbUser.ignoredUsers || [];
         if (!currentIgnored.includes(ignoredUserId.toString())) {
           currentIgnored.push(ignoredUserId.toString());
-          await db.update(users).set({ ignoredUsers: currentIgnored }).where(eq(users.id, userId));
+          await db.update(users).set({ ignoredUsers: currentIgnored } as any).where(eq(users.id, userId));
         }
       }
     } catch (error) {
@@ -364,7 +374,7 @@ export class MixedStorage implements IStorage {
       const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
       if (dbUser && dbUser.ignoredUsers) {
         const filteredIgnored = dbUser.ignoredUsers.filter(id => id !== ignoredUserId.toString());
-        await db.update(users).set({ ignoredUsers: filteredIgnored }).where(eq(users.id, userId));
+        await db.update(users).set({ ignoredUsers: filteredIgnored } as any).where(eq(users.id, userId));
       }
     } catch (error) {
       console.error('Error removing ignored user:', error);
@@ -402,8 +412,7 @@ export class MixedStorage implements IStorage {
           content: insertMessage.content,
           messageType: insertMessage.messageType || 'text',
           isPrivate: insertMessage.isPrivate || false,
-          timestamp: new Date(),
-        })
+        } as any)
         .returning();
       
       return dbMessage;
@@ -658,58 +667,14 @@ export class MixedStorage implements IStorage {
     return this.friendRequests.get(requestId);
   }
 
-  async getIncomingFriendRequests(userId: number): Promise<any[]> {
-    const requests = Array.from(this.friendRequests.values()).filter(
-      r => r.receiverId === userId && r.status === 'pending'
-    );
 
-    for (const request of requests) {
-      request.sender = await this.getUser(request.senderId);
-    }
-
-    return requests;
-  }
-
-  async getOutgoingFriendRequests(userId: number): Promise<any[]> {
-    const requests = Array.from(this.friendRequests.values()).filter(
-      r => r.senderId === userId && r.status === 'pending'
-    );
-
-    for (const request of requests) {
-      request.receiver = await this.getUser(request.receiverId);
-    }
-
-    return requests;
-  }
-
-  async acceptFriendRequest(requestId: number): Promise<boolean> {
-    const request = this.friendRequests.get(requestId);
-    if (!request) return false;
-
-    request.status = 'accepted';
-    this.friendRequests.set(requestId, request);
-    return true;
-  }
-
-  async declineFriendRequest(requestId: number): Promise<boolean> {
-    const request = this.friendRequests.get(requestId);
-    if (!request) return false;
-
-    request.status = 'declined';
-    this.friendRequests.set(requestId, request);
-    return true;
-  }
-
-  async deleteFriendRequest(requestId: number): Promise<boolean> {
-    return this.friendRequests.delete(requestId);
-  }
 
   // Notification operations
   async createNotification(notification: InsertNotification): Promise<Notification> {
     try {
       const [newNotification] = await db
         .insert(notifications)
-        .values(notification)
+        .values(notification as any)
         .returning();
       return newNotification;
     } catch (error) {
@@ -737,7 +702,7 @@ export class MixedStorage implements IStorage {
     try {
       await db
         .update(notifications)
-        .set({ isRead: true })
+        .set({ isRead: true } as any)
         .where(eq(notifications.id, notificationId));
       return true;
     } catch (error) {
@@ -750,7 +715,7 @@ export class MixedStorage implements IStorage {
     try {
       await db
         .update(notifications)
-        .set({ isRead: true })
+        .set({ isRead: true } as any)
         .where(eq(notifications.userId, userId));
       return true;
     } catch (error) {
@@ -774,8 +739,7 @@ export class MixedStorage implements IStorage {
       const result = await db
         .select()
         .from(notifications)
-        .where(eq(notifications.userId, userId))
-        .where(eq(notifications.isRead, false));
+        .where(eq(notifications.userId, userId));
       return result.length;
     } catch (error) {
       console.error('Error getting unread notification count:', error);
