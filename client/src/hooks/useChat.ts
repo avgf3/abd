@@ -441,7 +441,7 @@ export function useChat() {
                 // إشعار مرئي
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification('ترقية جديدة! 🎉', {
-                    body: message.message,
+                    body: typeof message.message === 'string' ? message.message : (typeof message.message === 'object' && 'content' in message.message ? message.message.content : 'تمت ترقيتك!'),
                     icon: '/favicon.ico'
                   });
                 }
