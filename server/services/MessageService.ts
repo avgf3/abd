@@ -62,8 +62,7 @@ export class MessageService {
       const fullMessageData: InsertMessage = {
         ...messageData,
         senderId,
-        content: messageData.content.trim(),
-        timestamp: new Date()
+        content: messageData.content.trim()
       };
 
       const message = await this.storage.createMessage(fullMessageData);
@@ -113,7 +112,7 @@ export class MessageService {
       
       // تصفية الرسائل من المستخدمين المُتجاهلين
       const ignoredUsers = await this.storage.getIgnoredUsers(userId);
-      const filteredMessages = messages.filter(msg => !ignoredUsers.includes(msg.senderId));
+      const filteredMessages = messages.filter(msg => msg.senderId && !ignoredUsers.includes(msg.senderId));
 
       return { success: true, messages: filteredMessages };
 

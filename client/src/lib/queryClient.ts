@@ -8,14 +8,37 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  url: string,
-  options?: {
+  urlOrMethod: string,
+  urlOrOptions?: string | {
     method?: string;
     body?: any;
     headers?: Record<string, string>;
-  }
+  },
+  bodyOrUndefined?: any
 ): Promise<any> {
-  const { method = 'GET', body, headers = {} } = options || {};
+  let url: string;
+  let options: {
+    method?: string;
+    body?: any;
+    headers?: Record<string, string>;
+  };
+
+  // دعم النمط القديم (method, url, body) والنمط الجديد (url, options)
+  if (typeof urlOrOptions === 'string') {
+    // النمط القديم: apiRequest(method, url, body)
+    url = urlOrOptions;
+    options = {
+      method: urlOrMethod,
+      body: bodyOrUndefined,
+      headers: {}
+    };
+  } else {
+    // النمط الجديد: apiRequest(url, options)
+    url = urlOrMethod;
+    options = urlOrOptions || {};
+  }
+
+  const { method = 'GET', body, headers = {} } = options;
   
   const res = await fetch(url, {
     method,

@@ -2094,7 +2094,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(user);
     } catch (error) {
       console.error('Error updating user:', error);
-      res.status(500).json({ error: 'Failed to update user', details: error.message });
+      res.status(500).json({ error: 'Failed to update user', details: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -2180,7 +2180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update profile background color
-  app.post('/api/users/update-background-color', async (req: Request, res: Response) => {
+  app.post('/api/users/update-background-color', async (req, res) => {
     try {
       const { userId, profileBackgroundColor } = req.body;
       

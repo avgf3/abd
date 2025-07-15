@@ -2,8 +2,10 @@ export interface ChatUser {
   id: number;
   username: string;
   userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
+  role?: 'guest' | 'member' | 'owner' | 'admin' | 'moderator'; // نفس userType للتوافق
   profileImage?: string;
   profileBanner?: string;
+  profileBackgroundColor?: string; // لون خلفية البروفايل
   status?: string;
   gender?: string;
   age?: number;
@@ -14,9 +16,11 @@ export interface ChatUser {
   isHidden?: boolean; // خاصية الإخفاء للمراقبة
   lastSeen?: Date;
   joinDate?: Date;
+  createdAt?: Date; // تاريخ الإنشاء
   isMuted?: boolean;
   isKicked?: boolean;
   isBlocked?: boolean;
+  isBanned?: boolean; // حالة الحظر
   ignoredUsers?: string[]; // قائمة المستخدمين المتجاهلين
   usernameColor?: string;
   userTheme?: string; // لون اسم المستخدم
@@ -38,7 +42,9 @@ export interface PrivateConversation {
 }
 
 export interface WebSocketMessage {
-  type: 'auth' | 'publicMessage' | 'privateMessage' | 'typing' | 'userJoined' | 'userLeft' | 'newMessage' | 'onlineUsers' | 'userUpdated' | 'error' | 'warning';
+  type: 'auth' | 'publicMessage' | 'privateMessage' | 'typing' | 'userJoined' | 'userLeft' | 'newMessage' | 'onlineUsers' | 'userUpdated' | 'error' | 'warning' |
+        'userVisibilityChanged' | 'usernameColorChanged' | 'theme_update' | 'moderationAction' | 'notification' | 'systemMessage' | 'kicked' | 'blocked' | 
+        'friendRequest' | 'friendRequestAccepted' | 'promotion';
   userId?: number;
   username?: string;
   content?: string;
@@ -47,8 +53,23 @@ export interface WebSocketMessage {
   isTyping?: boolean;
   user?: ChatUser;
   users?: ChatUser[];
-  message?: ChatMessage;
+  message?: ChatMessage | string; // يمكن أن يكون string أيضاً
   action?: string;
+  
+  // خصائص إضافية للوظائف المختلفة
+  isHidden?: boolean; // لرؤية المستخدم
+  color?: string; // لتغيير لون اسم المستخدم
+  userTheme?: string; // لموضوع المستخدم
+  targetUserId?: number; // للإجراءات المستهدفة
+  duration?: number; // مدة الإجراء (كيك، حظر، إلخ)
+  reason?: string; // سبب الإجراء
+  moderatorName?: string; // اسم المراقب
+  notificationType?: string; // نوع الإشعار
+  senderId?: number; // معرف المرسل
+  senderUsername?: string; // اسم المرسل
+  acceptedBy?: string; // من قبل الطلب
+  friendId?: number; // معرف الصديق
+  newRole?: string; // الدور الجديد للترقية
 }
 
 export interface UserProfile {
@@ -61,4 +82,13 @@ export interface UserProfile {
   bio?: string;
   profileImage?: string;
   profileBanner?: string;
+}
+
+export interface Notification {
+  id: number;
+  type: 'system' | 'friend' | 'moderation' | 'message';
+  username: string;
+  content: string;
+  timestamp: Date;
+  isRead?: boolean;
 }
