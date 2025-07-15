@@ -117,6 +117,19 @@ export default function FriendsPanel({
     onStartPrivateChat(friend);
     onClose();
   };
+
+  const handleAddFriend = async (username: string) => {
+    if (!currentUser) return;
+    
+    try {
+      await apiRequest('/api/friends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userId: currentUser.id, 
+          targetUsername: username 
+        })
+      });
       
       toast({
         title: 'تم إرسال الطلب',
