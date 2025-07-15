@@ -260,7 +260,7 @@ export class ModerationSystem {
     timeLeft?: number;
   }> {
     const user = await storage.getUser(userId);
-    if (!user) return { canChat: false, canJoin: false, reason: 'مستخدم غير موجود' };
+    if (!user) return { canChat: false, canJoin: false, isMuted: false, isBlocked: false, isBanned: false, reason: 'مستخدم غير موجود' };
 
     const now = new Date();
 

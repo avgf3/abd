@@ -39,14 +39,14 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
   const { forceRefreshAll, updateNotifications, updateFriends } = useRealTimeUpdates(currentUser?.id);
 
   // جلب الإشعارات الحقيقية من قاعدة البيانات
-  const { data: notificationsData, isLoading } = useQuery({
+  const { data: notificationsData, isLoading } = useQuery<{ notifications: Notification[] }>({
     queryKey: ['/api/notifications', currentUser?.id],
     enabled: !!currentUser?.id && isOpen,
     refetchInterval: 3000 // تحديث كل 3 ثوان
   });
 
   // جلب عدد الإشعارات غير المقروءة
-  const { data: unreadCountData } = useQuery({
+  const { data: unreadCountData } = useQuery<{ count: number }>({
     queryKey: ['/api/notifications/unread-count', currentUser?.id],
     enabled: !!currentUser?.id,
     refetchInterval: 2000 // تحديث كل ثانيتين

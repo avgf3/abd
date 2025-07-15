@@ -246,7 +246,7 @@ export default function UserContextMenu({
         <ContextMenuTrigger asChild>
           {children}
         </ContextMenuTrigger>
-        <ContextMenuContent className="w-80 bg-white shadow-2xl border-2 border-gray-200 rounded-xl p-4" dir="rtl">
+        <ContextMenuContent className="w-80 bg-white shadow-2xl border-2 border-gray-200 rounded-xl p-4">
           {/* إجراءات عامة */}
           <ContextMenuItem className="flex items-center gap-3 text-blue-600 font-semibold bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-2 cursor-pointer transition-all duration-200">
             <MessageSquare className="w-5 h-5" />
