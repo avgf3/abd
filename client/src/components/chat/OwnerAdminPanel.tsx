@@ -103,12 +103,17 @@ export default function OwnerAdminPanel({
         // يمكن إضافة مستخدمين آخرين من قاعدة البيانات
       );
       
-      const staff = allUsers.filter(user => 
-        user.userType === 'moderator' || 
-        user.userType === 'admin' || 
-        user.userType === 'owner'
-      );
-      
+      const staff = allUsers
+        .filter(user => user.userType === 'moderator' || user.userType === 'admin' || user.userType === 'owner')
+        .map(user => ({
+          id: user.id,
+          username: user.username,
+          userType: user.userType as 'moderator' | 'admin' | 'owner',
+          profileImage: user.profileImage,
+          joinDate: undefined,
+          lastSeen: undefined,
+          isOnline: user.isOnline
+        }));
       setStaffMembers(staff);
     } catch (error) {
       console.error('Error fetching staff:', error);

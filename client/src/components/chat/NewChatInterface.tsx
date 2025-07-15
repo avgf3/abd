@@ -338,7 +338,6 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
             chat.sendPrivateMessage(selectedPrivateUser.id, content);
           }}
           currentUser={chat.currentUser}
-          onReportUser={handleReportUser}
         />
       )}
 
