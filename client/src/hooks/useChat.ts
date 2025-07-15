@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation } from '@/types/chat';
+import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation, Notification } from '@/types/chat';
 import { globalNotificationManager, MessageCacheManager, NetworkOptimizer } from '@/lib/chatOptimization';
 import { chatAnalytics } from '@/lib/chatAnalytics';
+import { apiRequest } from '@/lib/queryClient';
 
 // Audio notification function
 const playNotificationSound = () => {
@@ -46,6 +47,8 @@ export function useChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [kickNotification, setKickNotification] = useState<{show: boolean, duration: number}>({show: false, duration: 0});
   const [blockNotification, setBlockNotification] = useState<{show: boolean, reason: string}>({show: false, reason: ''});
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showKickCountdown, setShowKickCountdown] = useState(false);
   
   // تحسين الأداء: مدراء التحسين
   const messageCache = useRef(new MessageCacheManager());
@@ -138,10 +141,10 @@ export function useChat() {
               break;
               
             case 'newMessage':
-              if (message.message && !message.message.isPrivate) {
+              if (message.message && typeof message.message === 'object' && !message.message.isPrivate) {
                 // فحص إذا كان المرسل مُتجاهل
                 if (!ignoredUsers.has(message.message.senderId)) {
-                  setPublicMessages(prev => [...prev, message.message!]);
+                  setPublicMessages(prev => [...prev, message.message as ChatMessage]);
                   // Play notification sound for new public messages from others
                   if (message.message.senderId !== user.id) {
                     playNotificationSound();
@@ -151,7 +154,7 @@ export function useChat() {
               break;
               
             case 'privateMessage':
-              if (message.message && message.message.isPrivate) {
+              if (message.message && typeof message.message === 'object' && message.message.isPrivate) {
                 const otherUserId = message.message.senderId === user.id 
                   ? message.message.receiverId! 
                   : message.message.senderId;
@@ -160,7 +163,7 @@ export function useChat() {
                 if (!ignoredUsers.has(message.message.senderId)) {
                   setPrivateConversations(prev => ({
                     ...prev,
-                    [otherUserId]: [...(prev[otherUserId] || []), message.message!]
+                    [otherUserId]: [...(prev[otherUserId] || []), message.message as ChatMessage]
                   }));
                   
                   // Play notification sound for new private messages from others
@@ -168,14 +171,14 @@ export function useChat() {
                     playNotificationSound();
                     
                     // تعيين المرسل لإظهار التنبيه
-                    if (message.message.sender) {
-                      setNewMessageSender(message.message.sender);
+                    if ((message.message as ChatMessage).sender) {
+                      setNewMessageSender((message.message as ChatMessage).sender!);
                     }
                     
                     // إشعار مرئي في المتصفح
                     if ('Notification' in window && Notification.permission === 'granted') {
                       new Notification('رسالة خاصة جديدة 📱', {
-                        body: `${message.message.sender?.username}: ${message.message.content.slice(0, 50)}...`,
+                        body: `${(message.message as ChatMessage).sender?.username}: ${(message.message as ChatMessage).content.slice(0, 50)}...`,
                         icon: '/favicon.ico'
                       });
                     }
@@ -298,9 +301,11 @@ export function useChat() {
               if (message.targetUserId === user.id) {
                 setNotifications(prev => [...prev, {
                   id: Date.now(),
-                  type: message.notificationType || 'system',
+                  type: (message.notificationType === 'system' || message.notificationType === 'friend' || 
+                        message.notificationType === 'moderation' || message.notificationType === 'message') 
+                        ? message.notificationType : 'system',
                   username: message.moderatorName || 'النظام',
-                  message: message.message,
+                  content: typeof message.message === 'string' ? message.message : 'إشعار نظام',
                   timestamp: new Date()
                 }]);
               }
@@ -308,19 +313,20 @@ export function useChat() {
 
             case 'systemMessage':
               // إضافة رسالة النظام للدردشة العامة
-              const systemMessage = {
+              const systemMessage: ChatMessage = {
                 id: Date.now(),
-                content: message.message,
-                timestamp: new Date().toISOString(),
-                user: {
+                senderId: 0,
+                content: typeof message.message === 'string' ? message.message : 'رسالة نظام',
+                messageType: 'text',
+                isPrivate: false,
+                timestamp: new Date(),
+                sender: {
                   id: 0,
                   username: 'النظام',
-                  userType: 'system' as const,
+                  userType: 'admin',
                   profileImage: null,
-                  isOnline: true,
-                  status: 'online' as const
-                },
-                isSystem: true
+                  isOnline: true
+                }
               };
               
               setPublicMessages(prev => [...prev, systemMessage]);
@@ -335,7 +341,7 @@ export function useChat() {
                     id: Date.now(),
                     type: 'system',
                     username: 'النظام',
-                    message: 'تم كتمك من الدردشة العامة',
+                    content: 'تم كتمك من الدردشة العامة',
                     timestamp: new Date()
                   }]);
                 } else if (message.action === 'unmuted') {
@@ -446,9 +452,9 @@ export function useChat() {
                 // إضافة إشعار للواجهة
                 setNotifications(prev => [...prev, {
                   id: Date.now(),
-                  type: 'promotion',
+                  type: 'system',
                   username: 'النظام',
-                  message: message.message,
+                  content: typeof message.message === 'string' ? message.message : 'تم ترقيتك',
                   timestamp: new Date()
                 }]);
               }
@@ -565,11 +571,11 @@ export function useChat() {
       const result = await response.json();
       
       // إضافة الرسالة مباشرة للواجهة للحصول على رد فعل فوري
-      const newMessage = {
+      const newMessage: ChatMessage = {
         id: result.data.id || Date.now(),
         senderId: currentUser.id,
         content: content.trim(),
-        messageType,
+        messageType: messageType as 'text' | 'image',
         isPrivate: false,
         timestamp: new Date(),
         sender: currentUser
@@ -615,12 +621,12 @@ export function useChat() {
       const result = await response.json();
       
       // إضافة الرسالة مباشرة للمحادثة الخاصة
-      const newMessage = {
+      const newMessage: ChatMessage = {
         id: result.data.id || Date.now(),
         senderId: currentUser.id,
         receiverId,
         content: content.trim(),
-        messageType,
+        messageType: messageType as 'text' | 'image',
         isPrivate: true,
         timestamp: new Date(),
         sender: currentUser
@@ -755,5 +761,9 @@ export function useChat() {
     }, [currentUser]),
     sendPrivateMessage,
     handleTyping,
+    notifications,
+    setNotifications,
+    showKickCountdown,
+    setShowKickCountdown,
   };
 }
