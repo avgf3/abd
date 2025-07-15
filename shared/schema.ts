@@ -61,19 +61,18 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-  userType: true,
-  profileImage: true,
-  profileBanner: true,
-  status: true,
-  gender: true,
-  age: true,
-  country: true,
-  relation: true,
-  bio: true,
-}).extend({
+export const insertUserSchema = z.object({
+  username: z.string(),
+  password: z.string().optional(),
+  userType: z.string(),
+  profileImage: z.string().optional(),
+  profileBanner: z.string().optional(),
+  status: z.string().optional(),
+  gender: z.string().optional(),
+  age: z.number().optional(),
+  country: z.string().optional(),
+  relation: z.string().optional(),
+  bio: z.string().optional(),
   // إضافة حقول الإدارة كاختيارية
   isMuted: z.boolean().optional(),
   muteExpiry: z.date().optional(),
@@ -84,18 +83,18 @@ export const insertUserSchema = createInsertSchema(users).pick({
   deviceId: z.string().optional(),
 });
 
-export const insertMessageSchema = createInsertSchema(messages).pick({
-  senderId: true,
-  receiverId: true,
-  content: true,
-  messageType: true,
-  isPrivate: true,
+export const insertMessageSchema = z.object({
+  senderId: z.number().optional(),
+  receiverId: z.number().optional(),
+  content: z.string(),
+  messageType: z.string().optional(),
+  isPrivate: z.boolean().optional(),
 });
 
-export const insertFriendSchema = createInsertSchema(friends).pick({
-  userId: true,
-  friendId: true,
-  status: true,
+export const insertFriendSchema = z.object({
+  userId: z.number().optional(),
+  friendId: z.number().optional(),
+  status: z.string().optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -105,12 +104,12 @@ export type Message = typeof messages.$inferSelect;
 export type InsertFriend = z.infer<typeof insertFriendSchema>;
 export type Friend = typeof friends.$inferSelect;
 
-export const insertNotificationSchema = createInsertSchema(notifications).pick({
-  userId: true,
-  type: true,
-  title: true,
-  message: true,
-  data: true,
+export const insertNotificationSchema = z.object({
+  userId: z.number(),
+  type: z.string(),
+  title: z.string(),
+  message: z.string(),
+  data: z.any().optional(),
 });
 
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
