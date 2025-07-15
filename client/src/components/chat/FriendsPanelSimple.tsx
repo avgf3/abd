@@ -154,7 +154,7 @@ export default function FriendsPanel({
                     <ProfileImage
                       imageUrl={friend.profileImage || '/default_avatar.svg'}
                       username={friend.username}
-                      size="md"
+                      size="medium"
                       className="w-12 h-12"
                     />
                     <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${getStatusColor(friend.status)}`}></div>
