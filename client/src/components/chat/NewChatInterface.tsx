@@ -315,7 +315,6 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
 
       {showProfile && (
         <ProfileModal
-          isOpen={showProfile}
           onClose={() => setShowProfile(false)}
           currentUser={chat.currentUser}
         />
@@ -323,7 +322,6 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
 
       {showSettings && (
         <SettingsMenu
-          isOpen={showSettings}
           onClose={() => setShowSettings(false)}
           onLogout={onLogout}
         />
@@ -334,8 +332,8 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
           user={selectedPrivateUser}
           onClose={closePrivateMessage}
           messages={chat.privateConversations[selectedPrivateUser.id] || []}
-          onSendMessage={(content, messageType) => {
-            chat.sendPrivateMessage(selectedPrivateUser.id, content, messageType);
+          onSendMessage={(content) => {
+            chat.sendPrivateMessage(selectedPrivateUser.id, content);
           }}
           currentUser={chat.currentUser}
           onReportUser={handleReportUser}
@@ -379,6 +377,7 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
           onClose={() => setShowFriends(false)}
           currentUser={chat.currentUser}
           onStartPrivateChat={handlePrivateMessage}
+          onlineUsers={chat.onlineUsers}
         />
       )}
 
@@ -388,7 +387,8 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
           onClose={() => setShowMessages(false)}
           currentUser={chat.currentUser}
           privateConversations={chat.privateConversations}
-          onSelectConversation={handlePrivateMessage}
+          onStartPrivateChat={handlePrivateMessage}
+          onlineUsers={chat.onlineUsers}
         />
       )}
 
@@ -397,6 +397,7 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
           isOpen={showModerationPanel}
           onClose={() => setShowModerationPanel(false)}
           currentUser={chat.currentUser}
+          onlineUsers={chat.onlineUsers}
         />
       )}
 
@@ -405,6 +406,7 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
           isOpen={showOwnerPanel}
           onClose={() => setShowOwnerPanel(false)}
           currentUser={chat.currentUser}
+          onlineUsers={chat.onlineUsers}
         />
       )}
 
