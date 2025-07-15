@@ -315,6 +315,7 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
 
       {showProfile && (
         <ProfileModal
+          user={chat.currentUser}
           onClose={() => setShowProfile(false)}
           currentUser={chat.currentUser}
         />
@@ -322,6 +323,7 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
 
       {showSettings && (
         <SettingsMenu
+          onOpenProfile={() => setShowProfile(true)}
           onClose={() => setShowSettings(false)}
           onLogout={onLogout}
         />
@@ -332,8 +334,8 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
           user={selectedPrivateUser}
           onClose={closePrivateMessage}
           messages={chat.privateConversations[selectedPrivateUser.id] || []}
-          onSendMessage={(content, messageType) => {
-            chat.sendPrivateMessage(selectedPrivateUser.id, content, messageType);
+          onSendMessage={(content) => {
+            chat.sendPrivateMessage(selectedPrivateUser.id, content);
           }}
           currentUser={chat.currentUser}
           onReportUser={handleReportUser}
@@ -388,7 +390,7 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
           currentUser={chat.currentUser}
           privateConversations={chat.privateConversations}
           onlineUsers={chat.onlineUsers}
-          onSelectConversation={handlePrivateMessage}
+          onStartPrivateChat={handlePrivateMessage}
         />
       )}
 

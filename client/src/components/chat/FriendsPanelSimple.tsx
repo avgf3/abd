@@ -152,8 +152,7 @@ export default function FriendsPanel({
                 >
                   <div className="relative">
                     <ProfileImage
-                      imageUrl={friend.profileImage || '/default_avatar.svg'}
-                      username={friend.username}
+                      user={friend}
                       size="medium"
                       className="w-12 h-12"
                     />
