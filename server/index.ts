@@ -51,13 +51,18 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
+  // طباعة اسم البيئة الحالية للمعلومات فقط
+  const currentEnv = process.env.NODE_ENV || app.get("env") || "undefined";
+  log(`Current environment: ${currentEnv}`);
+
+  // إذا كان مجلد البناء موجود (dist)، استخدم serveStatic، وإلا استخدم setupVite
+  const fs = await import('fs');
+  const path = await import('path');
+  const distPath = path.resolve(process.cwd(), 'dist');
+  if (fs.existsSync(distPath)) {
     serveStatic(app);
+  } else {
+    await setupVite(app, server);
   }
 
   // ALWAYS serve the app on port 5000
