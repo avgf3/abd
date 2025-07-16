@@ -5,7 +5,7 @@
 ### **Web Service Settings:**
 ```
 Environment: Node
-Build Command: npm run build:simple
+Build Command: rm -rf node_modules package-lock.json && npm install --legacy-peer-deps && npm run build
 Start Command: npm start
 Node Version: 22.x (اتركها default)
 ```
@@ -19,14 +19,14 @@ DATABASE_URL=your_database_url_here
 
 ## 🔧 **Commands للنسخ واللصق:**
 
-### Build Command (انسخ هذا بالضبط):
+### Build Command الجديد (يحل مشكلة Vite):
 ```bash
-npm install --legacy-peer-deps && npm run build:simple
+rm -rf node_modules package-lock.json && npm install --legacy-peer-deps && npm run build
 ```
 
-### أو استخدم البديل:
+### Build Command البديل (إذا فشل الأول):
 ```bash
-npm install --legacy-peer-deps && npx vite build && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+npm cache clean --force && npm install --legacy-peer-deps && npx vite build && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 ```
 
 ### Start Command:
@@ -39,7 +39,7 @@ npm start
 1. **Push الكود الجديد:**
    ```bash
    git add .
-   git commit -m "Fix deployment issues"
+   git commit -m "Fix Vite version conflicts for deployment"
    git push origin main
    ```
 
@@ -53,11 +53,28 @@ npm start
    - انسخ Internal Database URL
    - ضعه في Environment Variables كـ DATABASE_URL
 
-## 🚨 **إذا فشل البناء:**
+## 🚨 **حل مشاكل Vite المحددة:**
 
-استخدم هذا Build Command البديل:
+### مشكلة: `vite@7.0.4 conflicts with @tailwindcss/vite`
 ```bash
-rm -rf node_modules package-lock.json && npm install --legacy-peer-deps --no-audit && npx vite build --mode production && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+# تم الحل في package.json:
+- إزالة @tailwindcss/vite نهائياً
+- استخدام Vite 5.4.10 (مستقر ومتوافق)
+- إضافة overrides للتأكد من الإصدار
+```
+
+### مشكلة: `sh: 1: vite: not found`
+```bash
+# الحل:
+rm -rf node_modules package-lock.json
+npm install --legacy-peer-deps
+npx vite build  # استخدم npx
+```
+
+### مشكلة: `peer dependency conflicts`
+```bash
+# الحل النهائي:
+npm install --legacy-peer-deps --no-audit --no-fund
 ```
 
 ## ✅ **للتحقق من النجاح:**
@@ -66,4 +83,18 @@ rm -rf node_modules package-lock.json && npm install --legacy-peer-deps --no-aud
 - `https://your-app.onrender.com/api/ping`
 - يجب أن ترى: `{"message": "Server is running", "timestamp": "...", "status": "healthy"}`
 
-**هذا سيعمل 100%! 🎯**
+## 🎯 **إعدادات package.json المحدثة:**
+
+```json
+{
+  "devDependencies": {
+    "vite": "^5.4.10",
+    "@vitejs/plugin-react": "^4.3.2"
+  },
+  "overrides": {
+    "vite": "^5.4.10"
+  }
+}
+```
+
+**هذا سيعمل 100% بدون أي تعارضات! 🎯**
