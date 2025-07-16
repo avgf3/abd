@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Disallow sensitive areas
+Disallow: /admin
+Disallow: /api
+Disallow: /uploads/private
+
+Sitemap: /sitemap.xml

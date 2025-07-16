@@ -27,11 +27,50 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // Security and performance optimizations
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: process.env.NODE_ENV === 'production',
+        drop_debugger: true,
+      },
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          utils: ['@tanstack/react-query'],
+        },
+      },
+    },
+    // Source maps for debugging in development
+    sourcemap: process.env.NODE_ENV !== 'production',
   },
   server: {
+    port: 5173,
+    strictPort: true,
+    host: process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost',
     fs: {
       strict: true,
-      deny: ["**/.*"],
+      deny: ["**/.*", "**/node_modules/**"],
     },
+    // Security headers
+    headers: process.env.NODE_ENV === 'production' ? {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'X-XSS-Protection': '1; mode=block',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+    } : {},
+  },
+  preview: {
+    port: 4173,
+    strictPort: true,
+    host: '0.0.0.0',
+  },
+  // Environment variables configuration
+  envPrefix: ['VITE_', 'PUBLIC_'],
+  // Security optimizations
+  define: {
+    __DEV__: process.env.NODE_ENV !== 'production',
   },
 });
