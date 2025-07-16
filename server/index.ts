@@ -2,6 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
+import { Server as IOServer } from 'socket.io';
+import http from 'http';
 
 const app = express();
 app.use(express.json({ limit: '50mb' }));
@@ -41,6 +43,24 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // استخدم http.createServer لربط socket.io مع express
+  const httpServer = http.createServer(app);
+  const io = new IOServer(httpServer, {
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST']
+    }
+  });
+
+  // مثال: استقبال اتصال جديد
+  io.on('connection', (socket) => {
+    console.log('🔌 مستخدم متصل عبر WebSocket');
+    // يمكنك هنا إضافة منطق الدردشة الحية
+    socket.on('disconnect', () => {
+      console.log('❌ مستخدم قطع الاتصال');
+    });
+  });
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -66,14 +86,8 @@ app.use((req, res, next) => {
   }
 
   // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = process.env.PORT ? Number(process.env.PORT) : 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+  httpServer.listen(port, '0.0.0.0', () => {
     log(`serving on port ${port}`);
   });
 })();
