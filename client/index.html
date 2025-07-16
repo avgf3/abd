@@ -17,8 +17,8 @@
   <input id="msg" placeholder="اكتب رسالة..." onkeydown="if(event.key==='Enter'){send()}" />
   <button onclick="send()">إرسال</button>
   <script>
-    const socket = io();
     const username = 'مستخدم' + Math.floor(Math.random()*1000);
+    // تمت إزالة const socket = io(); لأنه غير معرف في هذا السياق
     socket.emit('user:join', { name: username });
     socket.on('message:received', msg => {
       const div = document.createElement('div');
