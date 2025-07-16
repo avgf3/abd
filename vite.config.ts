@@ -1,20 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 export default defineConfig({
   plugins: [
     react(),
-    runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
-      ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
-        ]
-      : []),
   ],
   resolve: {
     alias: {
@@ -27,7 +17,7 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
-    // Use esbuild for better compatibility instead of terser
+    // Use esbuild for better compatibility
     minify: 'esbuild',
     rollupOptions: {
       output: {
@@ -37,8 +27,8 @@ export default defineConfig({
         },
       },
     },
-    // Source maps for debugging in development
-    sourcemap: process.env.NODE_ENV !== 'production',
+    // Source maps for debugging in development only
+    sourcemap: false,
     // Ensure compatibility with older browsers
     target: 'es2015',
   },
@@ -53,13 +43,6 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*", "**/node_modules/**"],
     },
-    // Security headers
-    headers: process.env.NODE_ENV === 'production' ? {
-      'X-Content-Type-Options': 'nosniff',
-      'X-Frame-Options': 'DENY',
-      'X-XSS-Protection': '1; mode=block',
-      'Referrer-Policy': 'strict-origin-when-cross-origin',
-    } : {},
   },
   preview: {
     port: 4173,
