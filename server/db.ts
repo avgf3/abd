@@ -1,9 +1,6 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "../shared/schema";
-
-neonConfig.webSocketConstructor = ws;
 
 // إعداد قاعدة البيانات مع معالجة أخطاء متقدمة
 function initializeDatabase() {
@@ -12,7 +9,7 @@ function initializeDatabase() {
   if (!databaseUrl) {
     console.error("❌ DATABASE_URL غير محدد في متغيرات البيئة");
     console.log("💡 يرجى إنشاء ملف .env وإضافة DATABASE_URL");
-    console.log("📝 مثال: DATABASE_URL=postgresql://username:password@host:port/dbname");
+    console.log("📝 مثال: DATABASE_URL=postgres://username:password@host:port/dbname");
     
     // في بيئة التطوير، نستخدم قاعدة بيانات وهمية
     if (process.env.NODE_ENV === 'development') {
@@ -28,8 +25,8 @@ function initializeDatabase() {
 
   try {
     const pool = new Pool({ connectionString: databaseUrl });
-    console.log("✅ تم الاتصال بقاعدة البيانات بنجاح");
-    return { pool, db: drizzle({ client: pool, schema }) };
+    console.log("✅ تم الاتصال بقاعدة البيانات بنجاح (pg)");
+    return { pool, db: drizzle(pool, { schema }) };
   } catch (error) {
     console.error("❌ فشل في الاتصال بقاعدة البيانات:", error);
     
