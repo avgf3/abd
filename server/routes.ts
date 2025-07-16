@@ -16,11 +16,6 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-interface WebSocketClient extends WebSocket {
-  userId?: number;
-  username?: string;
-}
-
 // إعداد multer لرفع الصور
 const storage_multer = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -144,13 +139,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // إرسال تحديث WebSocket لجميع المستخدمين
       if (wss) {
-        wss.clients.forEach((client: WebSocketClient) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-              type: 'userUpdated',
-              user: updatedUser
-            }));
-          }
+        wss.clients.forEach((client: WebSocket) => {
+          client.send(JSON.stringify({
+            type: 'userUpdated',
+            user: updatedUser
+          }));
         });
       }
 
@@ -207,13 +200,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // إرسال تحديث WebSocket لجميع المستخدمين
       if (wss) {
-        wss.clients.forEach((client: WebSocketClient) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-              type: 'userUpdated',
-              user: updatedUser
-            }));
-          }
+        wss.clients.forEach((client: WebSocket) => {
+          client.send(JSON.stringify({
+            type: 'userUpdated',
+            user: updatedUser
+          }));
         });
       }
 
@@ -460,14 +451,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.setUserHiddenStatus(userIdNum, isHidden);
       
       // إرسال إشعار WebSocket لتحديث قائمة المتصلين
-      wss.clients.forEach((client: WebSocketClient) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({
-            type: 'userVisibilityChanged',
-            userId: userIdNum,
-            isHidden: isHidden
-          }));
-        }
+      wss.clients.forEach((client: WebSocket) => {
+        client.send(JSON.stringify({
+          type: 'userVisibilityChanged',
+          userId: userIdNum,
+          isHidden: isHidden
+        }));
       });
       
       res.json({ 
@@ -503,14 +492,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUser(userIdNum, { usernameColor: color });
       
       // إرسال إشعار WebSocket لتحديث لون الاسم
-      wss.clients.forEach((client: WebSocketClient) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({
-            type: 'usernameColorChanged',
-            userId: userIdNum,
-            color: color
-          }));
-        }
+      wss.clients.forEach((client: WebSocket) => {
+        client.send(JSON.stringify({
+          type: 'usernameColorChanged',
+          userId: userIdNum,
+          color: color
+        }));
       });
       
       res.json({ 
@@ -533,9 +520,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);
   app.use(advancedSecurityMiddleware);
-
-  // Store connected clients
-  const clients = new Set<WebSocketClient>();
 
   // Member registration route - مع أمان محسن
   app.post("/api/auth/register", async (req, res) => {
@@ -658,14 +642,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Broadcast user update to all connected clients
-      const connectedClients = Array.from(clients);
-      connectedClients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({
-            type: 'userUpdated',
-            user: user,
-          }));
-        }
+      wss.clients.forEach((client: WebSocket) => {
+        client.send(JSON.stringify({
+          type: 'userUpdated',
+          user: user,
+        }));
       });
 
       res.json({ user });
@@ -746,9 +727,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Broadcast user update to all connected clients
-      broadcast({
-        type: 'userUpdated',
-        user
+      wss.clients.forEach((client: WebSocket) => {
+        client.send(JSON.stringify({
+          type: 'userUpdated',
+          user
+        }));
       });
 
       res.json({ user, message: "تم تحديث الصورة الشخصية بنجاح" });
@@ -799,11 +782,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUser(userId, { usernameColor: color });
       
       // Broadcast the color change to all connected clients
-      broadcast({
-        type: 'usernameColorChanged',
-        userId: userId,
-        color: color,
-        username: user.username
+      wss.clients.forEach((client: WebSocket) => {
+        client.send(JSON.stringify({
+          type: 'usernameColorChanged',
+          userId: userId,
+          color: color,
+          username: user.username
+        }));
       });
       
       res.json({ 
@@ -820,18 +805,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // WebSocket handling
   wss.on("connection", (socket: Socket) => {
     console.log('اتصال WebSocket جديد');
-    clients.add(socket);
     
     // إرسال رسالة ترحيب فورية
     socket.emit('connected', { message: 'متصل بنجاح' });
     
     // heartbeat للحفاظ على الاتصال
     const heartbeat = setInterval(() => {
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.ping();
-      } else {
-        clearInterval(heartbeat);
-      }
+      socket.ping();
     }, 30000);
 
     socket.on('message', async (data) => {
@@ -869,10 +849,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.setUserOnlineStatus(message.userId, true);
             
             // Broadcast user joined
-            broadcast({
-              type: 'userJoined',
-              user: await storage.getUser(message.userId),
-            }, socket);
+            wss.clients.forEach((client: WebSocket) => {
+              client.send(JSON.stringify({
+                type: 'userJoined',
+                user: await storage.getUser(message.userId),
+              }));
+            });
             
             // Send online users list with moderation status
             const onlineUsers = await storage.getOnlineUsers();
@@ -964,10 +946,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
               
               const sender = await storage.getUser(socket.userId);
-              broadcast({
-                type: 'newMessage',
-                message: { ...newMessage, sender },
-              }, socket);
+              wss.clients.forEach((client: WebSocket) => {
+                client.send(JSON.stringify({
+                  type: 'newMessage',
+                  message: { ...newMessage, sender },
+                }));
+              });
             }
             break;
 
@@ -1019,26 +1003,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const messageWithSender = { ...newMessage, sender };
               
               // Send to receiver only (don't send to sender)
-              const receiverClient = Array.from(clients).find(
+              const receiverClient = wss.clients.find(
                 client => client.userId === message.receiverId
               );
-              if (receiverClient && receiverClient.readyState === WebSocket.OPEN) {
-                receiverClient.emit('privateMessage', messageWithSender);
+              if (receiverClient) {
+                receiverClient.send(JSON.stringify({
+                  type: 'privateMessage',
+                  message: messageWithSender
+                }));
               }
               
               // Send back to sender with confirmation
-              socket.emit('privateMessage', messageWithSender);
+              socket.send(JSON.stringify({
+                type: 'privateMessage',
+                message: messageWithSender
+              }));
             }
             break;
 
           case 'typing':
             if (socket.userId) {
-              broadcast({
-                type: 'userTyping',
-                userId: socket.userId,
-                username: socket.username,
-                isTyping: message.isTyping,
-              }, socket);
+              wss.clients.forEach((client: WebSocket) => {
+                client.send(JSON.stringify({
+                  type: 'userTyping',
+                  userId: socket.userId,
+                  username: socket.username,
+                  isTyping: message.isTyping,
+                }));
+              });
             }
             break;
         }
@@ -1048,24 +1040,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     socket.on('close', async () => {
-      clients.delete(socket);
+      clearInterval(heartbeat);
       if (socket.userId) {
         await storage.setUserOnlineStatus(socket.userId, false);
-        broadcast({
-          type: 'userLeft',
-          userId: socket.userId,
-          username: socket.username,
-        }, socket);
+        wss.clients.forEach((client: WebSocket) => {
+          client.send(JSON.stringify({
+            type: 'userLeft',
+            userId: socket.userId,
+            username: socket.username,
+          }));
+        });
       }
     });
   });
 
-  function broadcast(message: any, sender?: WebSocketClient) {
+  function broadcast(message: any) {
     const messageStr = JSON.stringify(message);
-    clients.forEach(client => {
-      if (client !== sender && client.readyState === WebSocket.OPEN) {
-        client.send(messageStr);
-      }
+    wss.clients.forEach(client => {
+      client.send(messageStr);
     });
   }
 
@@ -1128,7 +1120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetUserId: receiverId,
         senderName: sender?.username,
         senderId: senderId
-      }, socket);
+      });
 
       // إنشاء إشعار حقيقي في قاعدة البيانات
       await storage.createNotification({
@@ -1192,19 +1184,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetUserId: request.senderId,
         friendId: request.receiverId,
         friendName: receiver?.username
-      }, socket);
+      });
       
       broadcast({
         type: 'friendAdded', 
         targetUserId: request.receiverId,
         friendId: request.senderId,
         friendName: sender?.username
-      }, socket);
+      });
       broadcast({
         type: 'friendRequestAccepted',
         targetUserId: request.senderId,
         senderName: receiver?.username
-      }, socket);
+      });
 
       // إنشاء إشعار حقيقي في قاعدة البيانات
       await storage.createNotification({
@@ -1445,7 +1437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: systemMessage,
           reason,
           duration
-        }, socket);
+        });
 
         // إرسال إشعار للمستخدم المكتوم
         broadcast({
@@ -1454,7 +1446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           notificationType: 'muted',
           message: `تم كتمك من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`,
           moderatorName: moderator?.username
-        }, socket);
+        });
         
         // لا يتم قطع الاتصال - المستخدم يبقى في الدردشة لكن مكتوم
         res.json({ message: "تم كتم المستخدم بنجاح - يمكنه البقاء في الدردشة ولكن لا يمكنه التحدث في العام" });
@@ -1484,7 +1476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           action: 'unmuted',
           targetUserId: targetUserId,
           message: systemMessage
-        }, socket);
+        });
         
         res.json({ message: "تم إلغاء الكتم بنجاح" });
       } else {
@@ -1515,8 +1507,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const target = await storage.getUser(targetUserId);
         
         // إرسال إشعار خاص للمستخدم المطرود
-        const targetClient = Array.from(wss.clients).find((client: any) => client.userId === targetUserId);
-        if (targetClient && targetClient.readyState === WebSocket.OPEN) {
+        const targetClient = wss.clients.find((client: any) => client.userId === targetUserId);
+        if (targetClient) {
           targetClient.send(JSON.stringify({
             type: 'kicked',
             targetUserId: targetUserId,
@@ -1533,10 +1525,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           action: 'banned',
           targetUserId: targetUserId,
           message: systemMessage
-        }, socket);
+        });
         
         // إجبار قطع الاتصال
-        clients.forEach(client => {
+        wss.clients.forEach(client => {
           if (client.userId === targetUserId) {
             client.close();
           }
@@ -1570,8 +1562,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const target = await storage.getUser(targetUserId);
         
         // إرسال إشعار خاص للمستخدم المحجوب
-        const targetClient = Array.from(wss.clients).find((client: any) => client.userId === targetUserId);
-        if (targetClient && targetClient.readyState === WebSocket.OPEN) {
+        const targetClient = wss.clients.find((client: any) => client.userId === targetUserId);
+        if (targetClient) {
           targetClient.send(JSON.stringify({
             type: 'blocked',
             targetUserId: targetUserId,
@@ -1587,10 +1579,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           action: 'blocked',
           targetUserId: targetUserId,
           message: systemMessage
-        }, socket);
+        });
         
         // إجبار قطع الاتصال
-        clients.forEach(client => {
+        wss.clients.forEach(client => {
           if (client.userId === targetUserId) {
             client.close();
           }
@@ -1634,8 +1626,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const rolePermissions = role === 'admin' ? 'يمكنه كتم وطرد المستخدمين' : 'يمكنه كتم المستخدمين فقط';
       
       // إرسال إشعار للمستخدم المرقى
-      const targetClient = Array.from(wss.clients).find((client: any) => client.userId === targetUserId);
-      if (targetClient && targetClient.readyState === WebSocket.OPEN) {
+      const targetClient = wss.clients.find((client: any) => client.userId === targetUserId);
+      if (targetClient) {
         targetClient.send(JSON.stringify({
           type: 'promotion',
           newRole: role,
@@ -1647,14 +1639,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       broadcast({
         type: 'userUpdated',
         user: updatedUser
-      }, socket);
+      });
 
       // إشعار عام في الدردشة
       broadcast({
         type: 'systemNotification',
         message: `🎉 تم ترقية ${target.username} إلى ${roleDisplay}`,
         timestamp: new Date().toISOString()
-      }, socket);
+      });
       
       res.json({ 
         success: true,
@@ -1787,7 +1779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         senderUserId: userId,
         senderUsername: user.username,
         message: `${user.username} يريد إضافتك كصديق`
-      }, socket);
+      });
       
       res.json({ 
         message: "تم إرسال طلب الصداقة",
@@ -1944,7 +1936,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timestamp: new Date().toISOString()
       };
       
-      broadcast(promotionMessage, socket);
+      broadcast(promotionMessage);
       
       console.log(`👑 ${moderator.username} رقى ${target.username} إلى ${newRole}`);
       res.json({ message: `تم ترقية ${target.username} إلى ${newRole === 'admin' ? 'مشرف' : 'مالك'} بنجاح` });
@@ -2081,7 +2073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userTheme: updates.userTheme,
           timestamp: new Date().toISOString()
         };
-        broadcast(updateMessage, socket);
+        broadcast(updateMessage);
         console.log('Broadcasting theme update:', updateMessage);
       }
       
@@ -2117,8 +2109,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // إرسال إشعار فوري عبر WebSocket
       if (wss) {
-        wss.clients.forEach((client: WebSocketClient) => {
-          if (client.readyState === WebSocket.OPEN && client.userId === userId) {
+        wss.clients.forEach((client: WebSocket) => {
+          if (client.userId === userId) {
             client.send(JSON.stringify({
               type: 'newNotification',
               notification
@@ -2193,7 +2185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       broadcast({
         type: 'user_background_updated',
         data: { userId, profileBackgroundColor }
-      }, socket);
+      });
 
       res.json({ success: true, message: 'تم تحديث لون خلفية البروفايل بنجاح' });
     } catch (error) {
