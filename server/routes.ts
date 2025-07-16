@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { WebSocketServer, WebSocket } from "ws";
+import { Server as IOServer, Socket } from "socket.io";
 import { storage } from "./storage";
 import { setupDownloadRoute } from "./download-route";
 import { insertUserSchema, insertMessageSchema } from "@shared/schema";
@@ -15,11 +15,6 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-
-interface WebSocketClient extends WebSocket {
-  userId?: number;
-  username?: string;
-}
 
 // إعداد multer لرفع الصور
 const storage_multer = multer.diskStorage({
@@ -55,7 +50,7 @@ const upload = multer({
   }
 });
 
-let wss: WebSocketServer;
+let wss: IOServer;
 
 // إنشاء خدمات محسنة ومنظمة
 const authService = new (class AuthService {
@@ -144,13 +139,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // إرسال تحديث WebSocket لجميع المستخدمين
       if (wss) {
-        wss.clients.forEach((client: WebSocketClient) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-              type: 'userUpdated',
-              user: updatedUser
-            }));
-          }
+        wss.clients.forEach((client: WebSocket) => {
+          client.send(JSON.stringify({
+            type: 'userUpdated',
+            user: updatedUser
+          }));
         });
       }
 
@@ -207,13 +200,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // إرسال تحديث WebSocket لجميع المستخدمين
       if (wss) {
-        wss.clients.forEach((client: WebSocketClient) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-              type: 'userUpdated',
-              user: updatedUser
-            }));
-          }
+        wss.clients.forEach((client: WebSocket) => {
+          client.send(JSON.stringify({
+            type: 'userUpdated',
+            user: updatedUser
+          }));
         });
       }
 
@@ -460,14 +451,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.setUserHiddenStatus(userIdNum, isHidden);
       
       // إرسال إشعار WebSocket لتحديث قائمة المتصلين
-      wss.clients.forEach((client: WebSocketClient) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({
-            type: 'userVisibilityChanged',
-            userId: userIdNum,
-            isHidden: isHidden
-          }));
-        }
+      wss.clients.forEach((client: WebSocket) => {
+        client.send(JSON.stringify({
+          type: 'userVisibilityChanged',
+          userId: userIdNum,
+          isHidden: isHidden
+        }));
       });
       
       res.json({ 
@@ -503,14 +492,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUser(userIdNum, { usernameColor: color });
       
       // إرسال إشعار WebSocket لتحديث لون الاسم
-      wss.clients.forEach((client: WebSocketClient) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({
-            type: 'usernameColorChanged',
-            userId: userIdNum,
-            color: color
-          }));
-        }
+      wss.clients.forEach((client: WebSocket) => {
+        client.send(JSON.stringify({
+          type: 'usernameColorChanged',
+          userId: userIdNum,
+          color: color
+        }));
       });
       
       res.json({ 
@@ -525,14 +512,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
-  wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  wss = new IOServer(httpServer, {
+    cors: { origin: "*" },
+    path: "/socket.io/",
+  });
   
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);
   app.use(advancedSecurityMiddleware);
-
-  // Store connected clients
-  const clients = new Set<WebSocketClient>();
 
   // Member registration route - مع أمان محسن
   app.post("/api/auth/register", async (req, res) => {
@@ -655,14 +642,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Broadcast user update to all connected clients
-      const connectedClients = Array.from(clients);
-      connectedClients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({
-            type: 'userUpdated',
-            user: user,
-          }));
-        }
+      wss.clients.forEach((client: WebSocket) => {
+        client.send(JSON.stringify({
+          type: 'userUpdated',
+          user: user,
+        }));
       });
 
       res.json({ user });
@@ -743,9 +727,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Broadcast user update to all connected clients
-      broadcast({
-        type: 'userUpdated',
-        user
+      wss.clients.forEach((client: WebSocket) => {
+        client.send(JSON.stringify({
+          type: 'userUpdated',
+          user
+        }));
       });
 
       res.json({ user, message: "تم تحديث الصورة الشخصية بنجاح" });
@@ -796,11 +782,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUser(userId, { usernameColor: color });
       
       // Broadcast the color change to all connected clients
-      broadcast({
-        type: 'usernameColorChanged',
-        userId: userId,
-        color: color,
-        username: user.username
+      wss.clients.forEach((client: WebSocket) => {
+        client.send(JSON.stringify({
+          type: 'usernameColorChanged',
+          userId: userId,
+          color: color,
+          username: user.username
+        }));
       });
       
       res.json({ 
@@ -815,64 +803,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // WebSocket handling
-  wss.on('connection', (ws: WebSocketClient) => {
+  wss.on("connection", (socket: Socket) => {
     console.log('اتصال WebSocket جديد');
-    clients.add(ws);
     
     // إرسال رسالة ترحيب فورية
-    ws.send(JSON.stringify({
-      type: 'connected',
-      message: 'متصل بنجاح'
-    }));
+    socket.emit('connected', { message: 'متصل بنجاح' });
     
     // heartbeat للحفاظ على الاتصال
     const heartbeat = setInterval(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.ping();
-      } else {
-        clearInterval(heartbeat);
-      }
+      socket.ping();
     }, 30000);
 
-    ws.on('message', async (data) => {
+    socket.on('message', async (data) => {
       try {
         const message = JSON.parse(data.toString());
-        console.log(`رسالة WebSocket من ${ws.username || 'غير معروف'}: ${message.type}`);
+        console.log(`رسالة WebSocket من ${socket.username || 'غير معروف'}: ${message.type}`);
         
         switch (message.type) {
           case 'auth':
-            ws.userId = message.userId;
-            ws.username = message.username;
+            socket.userId = message.userId;
+            socket.username = message.username;
             
             // فحص حالة المستخدم قبل السماح بالاتصال
             const authUserStatus = await moderationSystem.checkUserStatus(message.userId);
             if (authUserStatus.isBlocked) {
-              ws.send(JSON.stringify({
+              socket.emit('error', {
                 type: 'error',
                 message: 'أنت محجوب نهائياً من الدردشة',
                 action: 'blocked'
-              }));
-              ws.close();
+              });
+              socket.close();
               return;
             }
             
             if (authUserStatus.isBanned) {
-              ws.send(JSON.stringify({
+              socket.emit('error', {
                 type: 'error',
                 message: `أنت مطرود من الدردشة لمدة ${authUserStatus.timeLeft} دقيقة`,
                 action: 'banned'
-              }));
-              ws.close();
+              });
+              socket.close();
               return;
             }
             
             await storage.setUserOnlineStatus(message.userId, true);
             
             // Broadcast user joined
-            broadcast({
-              type: 'userJoined',
-              user: await storage.getUser(message.userId),
-            }, ws);
+            wss.clients.forEach((client: WebSocket) => {
+              client.send(JSON.stringify({
+                type: 'userJoined',
+                user: await storage.getUser(message.userId),
+              }));
+            });
             
             // Send online users list with moderation status
             const onlineUsers = await storage.getOnlineUsers();
@@ -888,43 +870,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
               })
             );
             
-            ws.send(JSON.stringify({
-              type: 'onlineUsers',
-              users: usersWithStatus,
-            }));
+            socket.emit('onlineUsers', { users: usersWithStatus });
             break;
 
           case 'publicMessage':
-            if (ws.userId) {
+            if (socket.userId) {
               // فحص حالة الكتم والحظر
-              const userStatus = await moderationSystem.checkUserStatus(ws.userId);
+              const userStatus = await moderationSystem.checkUserStatus(socket.userId);
               if (userStatus.isMuted) {
-                ws.send(JSON.stringify({
+                socket.emit('error', {
                   type: 'error',
                   message: 'أنت مكتوم ولا يمكنك إرسال رسائل في الدردشة العامة. يمكنك التحدث في الرسائل الخاصة.',
                   action: 'muted'
-                }));
-                console.log(`🔇 المستخدم ${ws.username} محاول الكتابة وهو مكتوم`);
+                });
+                console.log(`🔇 المستخدم ${socket.username} محاول الكتابة وهو مكتوم`);
                 break;
               }
               
               if (userStatus.isBanned) {
-                ws.send(JSON.stringify({
+                socket.emit('error', {
                   type: 'error',
                   message: 'أنت مطرود من الدردشة',
                   action: 'banned'
-                }));
+                });
                 break;
               }
               
               if (userStatus.isBlocked) {
-                ws.send(JSON.stringify({
+                socket.emit('error', {
                   type: 'error',
                   message: 'أنت محجوب نهائياً من الدردشة',
                   action: 'blocked'
-                }));
+                });
                 // قطع الاتصال للمحجوبين
-                ws.close();
+                socket.close();
                 break;
               }
 
@@ -934,56 +913,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // فحص صحة المحتوى
               const contentCheck = validateMessageContent(sanitizedContent);
               if (!contentCheck.isValid) {
-                ws.send(JSON.stringify({
+                socket.emit('error', {
                   type: 'error',
                   message: contentCheck.reason
-                }));
+                });
                 break;
               }
               
               // فحص الرسالة ضد السبام
-              const spamCheck = spamProtection.checkMessage(ws.userId, sanitizedContent);
+              const spamCheck = spamProtection.checkMessage(socket.userId, sanitizedContent);
               if (!spamCheck.isAllowed) {
-                ws.send(JSON.stringify({
+                socket.emit('error', {
                   type: 'error',
                   message: spamCheck.reason,
                   action: spamCheck.action
-                }));
+                });
                 
                 // إرسال تحذير إذا لزم الأمر
                 if (spamCheck.action === 'warn') {
-                  ws.send(JSON.stringify({
-                    type: 'warning',
+                  socket.emit('warning', {
                     message: 'تم إعطاؤك تحذير بسبب مخالفة قوانين الدردشة'
-                  }));
+                  });
                 }
                 break;
               }
 
               const newMessage = await storage.createMessage({
-                senderId: ws.userId,
+                senderId: socket.userId,
                 content: sanitizedContent,
                 messageType: message.messageType || 'text',
                 isPrivate: false,
               });
               
-              const sender = await storage.getUser(ws.userId);
-              broadcast({
-                type: 'newMessage',
-                message: { ...newMessage, sender },
+              const sender = await storage.getUser(socket.userId);
+              wss.clients.forEach((client: WebSocket) => {
+                client.send(JSON.stringify({
+                  type: 'newMessage',
+                  message: { ...newMessage, sender },
+                }));
               });
             }
             break;
 
           case 'privateMessage':
-            if (ws.userId) {
+            if (socket.userId) {
               // منع إرسال رسالة للنفس
-              if (ws.userId === message.receiverId) {
-                ws.send(JSON.stringify({
+              if (socket.userId === message.receiverId) {
+                socket.emit('error', {
                   type: 'error',
                   message: 'لا يمكن إرسال رسالة لنفسك',
                   action: 'blocked'
-                }));
+                });
                 break;
               }
 
@@ -993,62 +973,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // فحص صحة المحتوى
               const contentCheck = validateMessageContent(sanitizedContent);
               if (!contentCheck.isValid) {
-                ws.send(JSON.stringify({
+                socket.emit('error', {
                   type: 'error',
                   message: contentCheck.reason
-                }));
+                });
                 break;
               }
               
               // فحص الرسالة الخاصة ضد السبام
-              const spamCheck = spamProtection.checkMessage(ws.userId, sanitizedContent);
+              const spamCheck = spamProtection.checkMessage(socket.userId, sanitizedContent);
               if (!spamCheck.isAllowed) {
-                ws.send(JSON.stringify({
+                socket.emit('error', {
                   type: 'error',
                   message: spamCheck.reason,
                   action: spamCheck.action
-                }));
+                });
                 break;
               }
 
               const newMessage = await storage.createMessage({
-                senderId: ws.userId,
+                senderId: socket.userId,
                 receiverId: message.receiverId,
                 content: sanitizedContent,
                 messageType: message.messageType || 'text',
                 isPrivate: true,
               });
               
-              const sender = await storage.getUser(ws.userId);
+              const sender = await storage.getUser(socket.userId);
               const messageWithSender = { ...newMessage, sender };
               
               // Send to receiver only (don't send to sender)
-              const receiverClient = Array.from(clients).find(
+              const receiverClient = wss.clients.find(
                 client => client.userId === message.receiverId
               );
-              if (receiverClient && receiverClient.readyState === WebSocket.OPEN) {
+              if (receiverClient) {
                 receiverClient.send(JSON.stringify({
                   type: 'privateMessage',
-                  message: messageWithSender,
+                  message: messageWithSender
                 }));
               }
               
               // Send back to sender with confirmation
-              ws.send(JSON.stringify({
+              socket.send(JSON.stringify({
                 type: 'privateMessage',
-                message: messageWithSender,
+                message: messageWithSender
               }));
             }
             break;
 
           case 'typing':
-            if (ws.userId) {
-              broadcast({
-                type: 'userTyping',
-                userId: ws.userId,
-                username: ws.username,
-                isTyping: message.isTyping,
-              }, ws);
+            if (socket.userId) {
+              wss.clients.forEach((client: WebSocket) => {
+                client.send(JSON.stringify({
+                  type: 'userTyping',
+                  userId: socket.userId,
+                  username: socket.username,
+                  isTyping: message.isTyping,
+                }));
+              });
             }
             break;
         }
@@ -1057,25 +1039,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-    ws.on('close', async () => {
-      clients.delete(ws);
-      if (ws.userId) {
-        await storage.setUserOnlineStatus(ws.userId, false);
-        broadcast({
-          type: 'userLeft',
-          userId: ws.userId,
-          username: ws.username,
-        }, ws);
+    socket.on('close', async () => {
+      clearInterval(heartbeat);
+      if (socket.userId) {
+        await storage.setUserOnlineStatus(socket.userId, false);
+        wss.clients.forEach((client: WebSocket) => {
+          client.send(JSON.stringify({
+            type: 'userLeft',
+            userId: socket.userId,
+            username: socket.username,
+          }));
+        });
       }
     });
   });
 
-  function broadcast(message: any, sender?: WebSocketClient) {
+  function broadcast(message: any) {
     const messageStr = JSON.stringify(message);
-    clients.forEach(client => {
-      if (client !== sender && client.readyState === WebSocket.OPEN) {
-        client.send(messageStr);
-      }
+    wss.clients.forEach(client => {
+      client.send(messageStr);
     });
   }
 
@@ -1525,8 +1507,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const target = await storage.getUser(targetUserId);
         
         // إرسال إشعار خاص للمستخدم المطرود
-        const targetClient = Array.from(wss.clients).find((client: any) => client.userId === targetUserId);
-        if (targetClient && targetClient.readyState === WebSocket.OPEN) {
+        const targetClient = wss.clients.find((client: any) => client.userId === targetUserId);
+        if (targetClient) {
           targetClient.send(JSON.stringify({
             type: 'kicked',
             targetUserId: targetUserId,
@@ -1546,7 +1528,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         // إجبار قطع الاتصال
-        clients.forEach(client => {
+        wss.clients.forEach(client => {
           if (client.userId === targetUserId) {
             client.close();
           }
@@ -1580,8 +1562,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const target = await storage.getUser(targetUserId);
         
         // إرسال إشعار خاص للمستخدم المحجوب
-        const targetClient = Array.from(wss.clients).find((client: any) => client.userId === targetUserId);
-        if (targetClient && targetClient.readyState === WebSocket.OPEN) {
+        const targetClient = wss.clients.find((client: any) => client.userId === targetUserId);
+        if (targetClient) {
           targetClient.send(JSON.stringify({
             type: 'blocked',
             targetUserId: targetUserId,
@@ -1600,7 +1582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         // إجبار قطع الاتصال
-        clients.forEach(client => {
+        wss.clients.forEach(client => {
           if (client.userId === targetUserId) {
             client.close();
           }
@@ -1644,8 +1626,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const rolePermissions = role === 'admin' ? 'يمكنه كتم وطرد المستخدمين' : 'يمكنه كتم المستخدمين فقط';
       
       // إرسال إشعار للمستخدم المرقى
-      const targetClient = Array.from(wss.clients).find((client: any) => client.userId === targetUserId);
-      if (targetClient && targetClient.readyState === WebSocket.OPEN) {
+      const targetClient = wss.clients.find((client: any) => client.userId === targetUserId);
+      if (targetClient) {
         targetClient.send(JSON.stringify({
           type: 'promotion',
           newRole: role,
@@ -2127,8 +2109,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // إرسال إشعار فوري عبر WebSocket
       if (wss) {
-        wss.clients.forEach((client: WebSocketClient) => {
-          if (client.readyState === WebSocket.OPEN && client.userId === userId) {
+        wss.clients.forEach((client: WebSocket) => {
+          if (client.userId === userId) {
             client.send(JSON.stringify({
               type: 'newNotification',
               notification

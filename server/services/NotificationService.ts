@@ -1,5 +1,4 @@
-import { WebSocket } from 'ws';
-import type { WebSocketServer } from 'ws';
+import type { Server as IOServer, Socket } from "socket.io";
 import type { InsertNotification, Notification } from '@shared/schema';
 
 /**
@@ -7,8 +6,8 @@ import type { InsertNotification, Notification } from '@shared/schema';
  */
 export class NotificationService {
   private static instance: NotificationService;
-  private wss: WebSocketServer | null = null;
-  private clients: Map<number, WebSocket[]> = new Map();
+  private io: IOServer | null = null;
+  private clients: Map<number, Set<string>> = new Map(); // userId -> Set<socketId>
   
   static getInstance(): NotificationService {
     if (!NotificationService.instance) {
@@ -20,36 +19,31 @@ export class NotificationService {
   /**
    * ربط خادم WebSocket
    */
-  setWebSocketServer(wss: WebSocketServer) {
-    this.wss = wss;
+  setSocketIOServer(io: IOServer) {
+    this.io = io;
   }
   
   /**
    * تسجيل عميل جديد
    */
-  registerClient(userId: number, ws: WebSocket) {
+  registerClient(userId: number, socket: Socket) {
     if (!this.clients.has(userId)) {
-      this.clients.set(userId, []);
+      this.clients.set(userId, new Set());
     }
-    this.clients.get(userId)!.push(ws);
-    
-    // إزالة العميل عند قطع الاتصال
-    ws.on('close', () => {
-      this.removeClient(userId, ws);
+    this.clients.get(userId)!.add(socket.id);
+    socket.on('disconnect', () => {
+      this.removeClient(userId, socket.id);
     });
   }
   
   /**
    * إزالة عميل
    */
-  removeClient(userId: number, ws: WebSocket) {
+  removeClient(userId: number, socketId: string) {
     const userClients = this.clients.get(userId);
     if (userClients) {
-      const index = userClients.indexOf(ws);
-      if (index > -1) {
-        userClients.splice(index, 1);
-      }
-      if (userClients.length === 0) {
+      userClients.delete(socketId);
+      if (userClients.size === 0) {
         this.clients.delete(userId);
       }
     }
@@ -59,18 +53,10 @@ export class NotificationService {
    * إرسال إشعار فوري لمستخدم معين
    */
   async sendNotification(userId: number, notification: Notification) {
-    const userClients = this.clients.get(userId);
-    if (userClients && userClients.length > 0) {
-      const message = JSON.stringify({
-        type: 'notificationReceived',
-        notification: notification
-      });
-      
-      userClients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(message);
-        }
-      });
+    if (this.io && this.clients.has(userId)) {
+      for (const socketId of this.clients.get(userId)!) {
+        this.io.to(socketId).emit('notificationReceived', { notification });
+      }
     }
   }
   
@@ -78,39 +64,24 @@ export class NotificationService {
    * إرسال إشعار لجميع المستخدمين المتصلين
    */
   async broadcastNotification(notification: any) {
-    if (!this.wss) return;
-    
-    const message = JSON.stringify({
-      type: 'broadcastNotification',
-      notification: notification
-    });
-    
-    this.wss.clients.forEach(client => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
-    });
+    if (this.io) {
+      this.io.emit('broadcastNotification', { notification });
+    }
   }
   
   /**
    * إرسال تحديث للأصدقاء
    */
   async notifyFriends(userIds: number[], update: any) {
-    userIds.forEach(userId => {
-      const userClients = this.clients.get(userId);
-      if (userClients) {
-        const message = JSON.stringify({
-          type: 'friendUpdate',
-          update: update
-        });
-        
-        userClients.forEach(client => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(message);
+    if (this.io) {
+      userIds.forEach(userId => {
+        if (this.clients.has(userId)) {
+          for (const socketId of this.clients.get(userId)!) {
+            this.io.to(socketId).emit('friendUpdate', { update });
           }
-        });
-      }
-    });
+        }
+      });
+    }
   }
   
   /**
@@ -124,7 +95,6 @@ export class NotificationService {
    * فحص إذا كان المستخدم متصل
    */
   isUserOnline(userId: number): boolean {
-    const userClients = this.clients.get(userId);
-    return userClients !== undefined && userClients.length > 0;
+    return this.clients.has(userId) && this.clients.get(userId)!.size > 0;
   }
 }
