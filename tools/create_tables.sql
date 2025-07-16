@@ -1,4 +1,6 @@
--- سكربت إنشاء جدول users كما هو معرف في السكيمة البرمجية
+-- سكربت إنشاء جميع الجداول الأساسية كما هو معرف في السكيمة البرمجية
+
+-- جدول المستخدمين
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username TEXT NOT NULL UNIQUE,
@@ -27,4 +29,36 @@ CREATE TABLE IF NOT EXISTS users (
     username_color TEXT DEFAULT '#FFFFFF',
     user_theme TEXT DEFAULT 'default',
     profile_background_color TEXT DEFAULT '#3c0d0d'
+);
+
+-- جدول الرسائل
+CREATE TABLE IF NOT EXISTS messages (
+    id SERIAL PRIMARY KEY,
+    sender_id INTEGER REFERENCES users(id),
+    receiver_id INTEGER REFERENCES users(id),
+    content TEXT NOT NULL,
+    message_type TEXT NOT NULL DEFAULT 'text',
+    is_private BOOLEAN DEFAULT FALSE,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- جدول الأصدقاء
+CREATE TABLE IF NOT EXISTS friends (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    friend_id INTEGER REFERENCES users(id),
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- جدول الإشعارات
+CREATE TABLE IF NOT EXISTS notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    data JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
