@@ -5,11 +5,15 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
-    "build": "node deploy.js",
+    "build": "node deploy.cjs",
     "build:simple": "npm install --legacy-peer-deps && vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc --noEmit",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "push": "node push.cjs",
+    "push:quick": "chmod +x push.sh && ./push.sh",
+    "test:build": "node test-build.cjs",
+    "help": "node help.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
