@@ -92,6 +92,12 @@ export class MixedStorage implements IStorage {
 
   private async initializeOwner() {
     try {
+      // Only initialize if database is connected
+      if (!db) {
+        console.log('Database not connected - skipping owner initialization');
+        return;
+      }
+      
       // Check if owner already exists
       const existing = await db.select().from(users).where(eq(users.username, "عبدالكريم"));
       if (existing.length === 0) {
