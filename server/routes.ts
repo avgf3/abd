@@ -10,6 +10,7 @@ import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, me
 
 import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
 import securityApiRoutes from "./api-security";
+import apiRoutes from "./routes/index";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -2000,6 +2001,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Security API routes
   app.use('/api/security', securityApiRoutes);
+  
+  // New Modular Routes - نظام المسارات المعاد تنظيمه
+  app.use('/api/v2', apiRoutes);
   
   // Performance ping endpoint
   app.get('/api/ping', (req, res) => {
