@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: arabic-chat-app
+    env: node
+    region: frankfurt  # أقرب سيرفر للمنطقة العربية
+    buildCommand: npm install --legacy-peer-deps && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/ping
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: arabic-chat-db
+          property: connectionString
+    # إعدادات الذاكرة والـ CPU
+    plan: starter
+    # متغيرات البيئة الإضافية
+    numInstances: 1
+    
+databases:
+  - name: arabic-chat-db
+    databaseName: arabic_chat
+    user: chat_user
+    region: frankfurt
+    plan: starter
+    
+# إعدادات إضافية للنشر
+buildCommand: |
+  echo "🚀 بدء عملية البناء..."
+  npm install --legacy-peer-deps
+  echo "📦 تثبيت المكتبات اكتمل"
+  npm run build
+  echo "✅ عملية البناء اكتملت بنجاح"

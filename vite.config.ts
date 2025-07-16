@@ -27,14 +27,8 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
-    // Security and performance optimizations
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: process.env.NODE_ENV === 'production',
-        drop_debugger: true,
-      },
-    },
+    // Use esbuild for better compatibility instead of terser
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -45,6 +39,11 @@ export default defineConfig({
     },
     // Source maps for debugging in development
     sourcemap: process.env.NODE_ENV !== 'production',
+    // Ensure compatibility with older browsers
+    target: 'es2015',
+  },
+  css: {
+    postcss: './postcss.config.js',
   },
   server: {
     port: 5173,
@@ -72,5 +71,9 @@ export default defineConfig({
   // Security optimizations
   define: {
     __DEV__: process.env.NODE_ENV !== 'production',
+  },
+  // Ensure optimal chunking for deployment
+  optimizeDeps: {
+    include: ['react', 'react-dom', '@tanstack/react-query'],
   },
 });

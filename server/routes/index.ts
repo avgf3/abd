@@ -2,6 +2,7 @@ import { Router } from "express";
 import authRoutes from "./auth";
 import userRoutes from "./users";
 import messageRoutes from "./messages";
+import healthRoutes from "./health";
 
 const router = Router();
 
@@ -10,13 +11,7 @@ router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/messages", messageRoutes);
 
-// Health check endpoint
-router.get("/ping", (req, res) => {
-  res.json({ 
-    message: "Server is running", 
-    timestamp: new Date().toISOString(),
-    status: "healthy" 
-  });
-});
+// Health check routes (also mounted at root level for compatibility)
+router.use("/", healthRoutes);
 
 export default router;
