@@ -17,9 +17,35 @@
   <input id="msg" placeholder="اكتب رسالة..." onkeydown="if(event.key==='Enter'){send()}" />
   <button onclick="send()">إرسال</button>
   <script>
-    // تم تعطيل جميع أكواد الاتصال - الموقع يعمل كواجهة فقط
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const socket = new WebSocket(wsUrl);
+    const username = 'مستخدم' + Math.floor(Math.random()*1000);
+
+    socket.onopen = () => {
+      // إرسال اسم المستخدم عند الاتصال
+      socket.send(JSON.stringify({ type: 'user:join', name: username }));
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'message:received') {
+          const div = document.createElement('div');
+          div.textContent = msg.userName + ': ' + msg.content;
+          document.getElementById('chat').appendChild(div);
+          document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+        }
+      } catch (e) {
+        // تجاهل الرسائل غير المتوافقة
+      }
+    };
+
     function send() {
-      alert('تم تعطيل الدردشة والاتصال بالسيرفر.');
+      const val = document.getElementById('msg').value;
+      if(val.trim() === '') return;
+      socket.send(JSON.stringify({ type: 'message:send', content: val }));
+      document.getElementById('msg').value = '';
     }
   </script>
 </body>
