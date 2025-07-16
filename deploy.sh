@@ -18,14 +18,12 @@ npm install --legacy-peer-deps
 
 print_section "2. تجهيز ملف البيئة (.env)"
 if [ ! -f .env ]; then
-  if [ -f .env.example ]; then
-    cp .env.example .env
-    echo -e "${GREEN}✔ تم إنشاء ملف .env من .env.example${NC}"
-    echo -e "${YELLOW}⚠️  عدل قيم DATABASE_URL و SESSION_SECRET في .env قبل التشغيل!${NC}"
-  else
-    echo -e "${RED}✖ لا يوجد .env أو .env.example! أضف ملف البيئة يدوياً.${NC}"
-    exit 1
-  fi
+  echo -e "${YELLOW}لا يوجد ملف .env، سيتم إنشاؤه الآن...${NC}"
+  read -p "أدخل DATABASE_URL (رابط قاعدة البيانات): " DBURL
+  read -p "أدخل SESSION_SECRET (كلمة سر الجلسة): " SESSION
+  echo "DATABASE_URL=$DBURL" > .env
+  echo "SESSION_SECRET=$SESSION" >> .env
+  echo -e "${GREEN}✔ تم إنشاء ملف .env بالقيم المدخلة${NC}"
 else
   echo -e "${GREEN}✔ ملف .env موجود${NC}"
 fi
