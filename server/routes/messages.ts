@@ -47,7 +47,7 @@ router.post("/send", async (req, res) => {
     // Validate and sanitize content
     const validationResult = validateMessageContent(content);
     if (!validationResult.isValid) {
-      return res.status(400).json({ error: validationResult.error });
+      return res.status(400).json({ error: validationResult.reason || 'المحتوى غير صالح' });
     }
     
     const sanitizedContent = sanitizeInput(content);
