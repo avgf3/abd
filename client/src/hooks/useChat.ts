@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { io, Socket } from 'socket.io-client';
 import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation, Notification } from '@/types/chat';
 import { globalNotificationManager, MessageCacheManager, NetworkOptimizer } from '@/lib/chatOptimization';
 import { chatAnalytics } from '@/lib/chatAnalytics';
@@ -55,7 +56,7 @@ export function useChat() {
   const networkOptimizer = useRef(new NetworkOptimizer());
   const lastMessageTime = useRef<number>(0);
   
-  const ws = useRef<WebSocket | null>(null);
+  const socket = useRef<Socket | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const reconnectAttempts = useRef<number>(0);
@@ -66,36 +67,39 @@ export function useChat() {
       setCurrentUser(user);
       setConnectionError(null);
       
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      // إنشاء اتصال Socket.IO
+      const socketUrl = `${window.location.origin}`;
+      console.log('محاولة الاتصال بـ Socket.IO:', socketUrl);
       
-      // Close existing connection if any
-      if (ws.current) {
-        ws.current.close();
+      // إغلاق الاتصال الموجود إن وجد
+      if (socket.current) {
+        socket.current.disconnect();
       }
       
-      console.log('محاولة الاتصال بـ WebSocket:', wsUrl);
-      ws.current = new WebSocket(wsUrl);
+      socket.current = io(socketUrl, {
+        autoConnect: true,
+        reconnection: true,
+        reconnectionAttempts: maxReconnectAttempts,
+        reconnectionDelay: 2000,
+        timeout: 20000
+      });
       
-      ws.current.onopen = () => {
-        console.log('WebSocket متصل بنجاح');
+      socket.current.on('connect', () => {
+        console.log('📡 متصل بـ Socket.IO');
         setIsConnected(true);
         setConnectionError(null);
         reconnectAttempts.current = 0;
         
-        // Send authentication
-        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-          ws.current.send(JSON.stringify({
-            type: 'auth',
-            userId: user.id,
-            username: user.username,
-          }));
-        }
-      };
+        // إرسال authentication
+        socket.current?.emit('auth', {
+          userId: user.id,
+          username: user.username,
+        });
+      });
 
-      ws.current.onmessage = (event) => {
+      socket.current.on('message', (message: WebSocketMessage) => {
         try {
-          const message: WebSocketMessage = JSON.parse(event.data);
+          console.log('🔔 رسالة واردة:', message.type);
           
           switch (message.type) {
             case 'error':
@@ -130,9 +134,7 @@ export function useChat() {
                     const exists = prev.some(user => user.id === message.userId);
                     if (!exists) {
                       // طلب تحديث قائمة المستخدمين من الخادم
-                      if (ws.current?.readyState === WebSocket.OPEN) {
-                        ws.current.send(JSON.stringify({ type: 'requestOnlineUsers' }));
-                      }
+                      socket.current?.emit('requestOnlineUsers');
                     }
                     return prev;
                   }
@@ -472,41 +474,26 @@ export function useChat() {
               break;
           }
         } catch (error) {
-          console.error('خطأ في معالجة رسالة WebSocket:', error);
+          console.error('خطأ في معالجة رسالة Socket.IO:', error);
         }
-      };
+      });
 
-      ws.current.onclose = (event) => {
-        console.log('WebSocket مقطوع - الكود:', event.code, 'السبب:', event.reason);
+      socket.current.on('disconnect', (reason) => {
+        console.log('Socket.IO مقطوع - السبب:', reason);
         setIsConnected(false);
         
-        // إعادة الاتصال الذكي مع تحسين الاستقرار
-        if (event.code !== 1000 && event.code !== 1001 && reconnectAttempts.current < maxReconnectAttempts) {
-          reconnectAttempts.current++;
-          // تأخير تدريجي مع حد أقصى 10 ثوان
-          const delay = Math.min(2000 * reconnectAttempts.current, 10000);
-          
-          console.log(`محاولة إعادة الاتصال ${reconnectAttempts.current}/${maxReconnectAttempts} خلال ${delay}ms`);
-          setConnectionError(`إعادة الاتصال... (${reconnectAttempts.current}/${maxReconnectAttempts})`);
-          
-          reconnectTimeoutRef.current = setTimeout(() => {
-            // فحص حالة الشبكة قبل إعادة المحاولة
-            if (navigator.onLine && user && (!ws.current || ws.current.readyState === WebSocket.CLOSED)) {
-              connect(user);
-            } else if (!navigator.onLine) {
-              setConnectionError('لا يوجد اتصال بالإنترنت');
-            }
-          }, delay);
-        } else if (reconnectAttempts.current >= maxReconnectAttempts) {
-          setConnectionError('فشل في الاتصال بالخادم. تحقق من الإنترنت وأعد المحاولة.');
+        // إعادة الاتصال التلقائي
+        if (reason === 'io server disconnect') {
+          // الخادم قطع الاتصال، نحتاج لإعادة الاتصال يدوياً
+          socket.current?.connect();
         }
-      };
+      });
 
-      ws.current.onerror = (error) => {
-        console.error('خطأ WebSocket:', error);
+      socket.current.on('connect_error', (error) => {
+        console.error('خطأ اتصال Socket.IO:', error);
         setIsConnected(false);
         setConnectionError('خطأ في الاتصال مع الخادم');
-      };
+      });
       
     } catch (error) {
       console.error('خطأ في الاتصال:', error);
@@ -522,8 +509,8 @@ export function useChat() {
     }
     reconnectAttempts.current = maxReconnectAttempts; // Prevent auto-reconnect
     
-    if (ws.current) {
-      ws.current.close(1000, 'User disconnect');
+    if (socket.current) {
+      socket.current.disconnect();
     }
     
     setCurrentUser(null);
@@ -537,7 +524,7 @@ export function useChat() {
 
   // إرسال رسالة عامة محسن
   const sendMessage = useCallback(async (content: string, messageType: string = 'text') => {
-    if (!currentUser || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
+    if (!currentUser || !socket.current || !socket.current.connected) {
       throw new Error('غير متصل بالخادم');
     }
 
@@ -593,7 +580,7 @@ export function useChat() {
 
   // إرسال رسالة خاصة محسن
   const sendPrivateMessage = useCallback(async (receiverId: number, content: string, messageType: string = 'text') => {
-    if (!currentUser || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
+    if (!currentUser || !socket.current || !socket.current.connected) {
       throw new Error('غير متصل بالخادم');
     }
 
@@ -646,11 +633,10 @@ export function useChat() {
   }, [currentUser]);
 
   const sendTyping = useCallback((isTyping: boolean) => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN && currentUser) {
-      ws.current.send(JSON.stringify({
-        type: 'typing',
+    if (socket.current && socket.current.connected && currentUser) {
+      socket.current.emit('typing', {
         isTyping,
-      }));
+      });
     }
   }, [currentUser]);
 
@@ -709,13 +695,12 @@ export function useChat() {
       // تحديث حالة المستخدم محلياً
       setCurrentUser(prev => prev ? { ...prev, isHidden } : null);
       
-      // إرسال التحديث للخادم عبر WebSocket
-      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-        ws.current.send(JSON.stringify({
-          type: 'toggleStealth',
+      // إرسال التحديث للخادم عبر Socket.IO
+      if (socket.current && socket.current.connected) {
+        socket.current.emit('toggleStealth', {
           userId: currentUser.id,
           isHidden
-        }));
+        });
       }
     } catch (error) {
       console.error('فشل في تغيير وضع الإخفاء:', error);
@@ -747,14 +732,13 @@ export function useChat() {
       if (now - lastMessageTime.current < 500) return false;
       lastMessageTime.current = now;
       
-      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-        ws.current.send(JSON.stringify({
-          type: 'publicMessage',
+      if (socket.current && socket.current.connected) {
+        socket.current.emit('chat message', {
           content: content.trim(),
           messageType,
           userId: currentUser.id,
           username: currentUser.username
-        }));
+        });
         return true;
       }
       return false;

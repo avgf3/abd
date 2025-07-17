@@ -2,6 +2,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express, { type Request, Response, NextFunction } from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
@@ -44,7 +46,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  const httpServer = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -65,18 +67,35 @@ app.use((req, res, next) => {
   if (fs.existsSync(distPath)) {
     serveStatic(app);
   } else {
-    await setupVite(app, server);
+    await setupVite(app, httpServer);
   }
+
+  // إنشاء خادم Socket.IO
+  const io = new Server(httpServer, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    }
+  });
+
+  // Socket.IO connection handling
+  io.on("connection", (socket) => {
+    console.log("✅ مستخدم متصل بـ Socket.IO");
+
+    socket.on("chat message", (msg) => {
+      io.emit("chat message", msg); // بث لجميع المستخدمين
+    });
+
+    socket.on("disconnect", () => {
+      console.log("❌ المستخدم فصل الاتصال");
+    });
+  });
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = process.env.PORT ? Number(process.env.PORT) : 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  httpServer.listen(port, "0.0.0.0", () => {
+    log(`✅ السيرفر يعمل على http://localhost:${port}`);
   });
 })();
