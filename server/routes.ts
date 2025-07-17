@@ -507,6 +507,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     path: "/socket.io/",
   });
   
+  // Health Check endpoint للمراقبة
+  app.get('/api/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      env: process.env.NODE_ENV,
+      socketIO: 'enabled'
+    });
+  });
+
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);
   app.use(advancedSecurityMiddleware);
