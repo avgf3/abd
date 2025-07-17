@@ -54,7 +54,7 @@ router.post("/register", async (req, res) => {
 });
 
 // Guest login
-router.post("/guest", authLimiter, async (req, res) => {
+router.post("/guest", async (req, res) => {
   try {
     const { username, gender } = req.body;
     
@@ -78,6 +78,7 @@ router.post("/guest", authLimiter, async (req, res) => {
     res.json({ user });
   } catch (error) {
     console.error("Guest login error:", error);
+    console.error("Error details:", error.message, error.stack);
     res.status(500).json({ error: "خطأ في الخادم" });
   }
 });
