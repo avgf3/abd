@@ -803,6 +803,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
       socket.emit('ping');
     }, 30000);
 
+    // Modern Socket.IO event handlers
+    socket.on('auth', async (data) => {
+      try {
+        console.log(`🔐 Auth من ${data.username || 'غير معروف'}`);
+        
+        socket.userId = data.userId;
+        socket.username = data.username;
+        
+        // انضمام للغرفة الخاصة بالمستخدم للرسائل المباشرة
+        socket.join(data.userId.toString());
+        
+        // فحص حالة المستخدم قبل السماح بالاتصال
+        const authUserStatus = await moderationSystem.checkUserStatus(data.userId);
+        if (authUserStatus.isBlocked) {
+          socket.emit('message', {
+            type: 'error',
+            message: 'أنت محجوب نهائياً من الدردشة',
+            action: 'blocked'
+          });
+          socket.disconnect();
+          return;
+        }
+        
+        if (authUserStatus.isBanned) {
+          socket.emit('message', {
+            type: 'error',
+            message: `أنت مطرود من الدردشة لمدة ${authUserStatus.timeLeft} دقيقة`,
+            action: 'banned'
+          });
+          socket.disconnect();
+          return;
+        }
+        
+        await storage.setUserOnlineStatus(data.userId, true);
+        
+        // Broadcast user joined
+        const joinedUser = await storage.getUser(data.userId);
+        io.emit('message', { type: 'userJoined', user: joinedUser });
+        
+        // Send online users list with moderation status
+        const onlineUsers = await storage.getOnlineUsers();
+        const usersWithStatus = await Promise.all(
+          onlineUsers.map(async (user) => {
+            const status = await moderationSystem.checkUserStatus(user.id);
+            return {
+              ...user,
+              isMuted: status.isMuted,
+              isBlocked: status.isBlocked,
+              isBanned: status.isBanned
+            };
+          })
+        );
+        
+        socket.emit('message', { type: 'onlineUsers', users: usersWithStatus });
+      } catch (error) {
+        console.error('خطأ في المصادقة:', error);
+        socket.emit('message', { type: 'error', message: 'خطأ في المصادقة' });
+      }
+    });
+
+    socket.on('publicMessage', async (data) => {
+      try {
+        if (!socket.userId) return;
+        
+        // فحص حالة الكتم والحظر
+        const userStatus = await moderationSystem.checkUserStatus(socket.userId);
+        if (userStatus.isMuted) {
+          socket.emit('message', {
+            type: 'error',
+            message: 'أنت مكتوم ولا يمكنك إرسال رسائل في الدردشة العامة. يمكنك التحدث في الرسائل الخاصة.',
+            action: 'muted'
+          });
+          return;
+        }
+        
+        if (userStatus.isBanned || userStatus.isBlocked) {
+          return; // تجاهل الرسالة
+        }
+
+        // تنظيف المحتوى
+        const sanitizedContent = sanitizeInput(data.content);
+        
+        // فحص صحة المحتوى
+        const contentCheck = validateMessageContent(sanitizedContent);
+        if (!contentCheck.isValid) {
+          socket.emit('message', { type: 'error', message: contentCheck.reason });
+          return;
+        }
+        
+        // فحص الرسالة ضد السبام
+        const spamCheck = spamProtection.checkMessage(socket.userId, sanitizedContent);
+        if (!spamCheck.isAllowed) {
+          socket.emit('message', { type: 'error', message: spamCheck.reason, action: spamCheck.action });
+          return;
+        }
+
+        const newMessage = await storage.createMessage({
+          senderId: socket.userId,
+          content: sanitizedContent,
+          messageType: data.messageType || 'text',
+          isPrivate: false,
+        });
+        
+        const sender = await storage.getUser(socket.userId);
+        io.emit('message', { type: 'newMessage', message: { ...newMessage, sender } });
+      } catch (error) {
+        console.error('خطأ في إرسال الرسالة العامة:', error);
+        socket.emit('message', { type: 'error', message: 'خطأ في إرسال الرسالة' });
+      }
+    });
+
     socket.on('message', async (data) => {
       try {
         const message = JSON.parse(data.toString());
