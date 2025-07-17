@@ -2,8 +2,6 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express, { type Request, Response, NextFunction } from "express";
-import { createServer } from "http";
-import { Server } from "socket.io";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
@@ -69,64 +67,6 @@ app.use((req, res, next) => {
   } else {
     await setupVite(app, httpServer);
   }
-
-  // إنشاء خادم Socket.IO - إعدادات محسنة للإنتاج
-  const io = new Server(httpServer, {
-    cors: {
-      origin: process.env.NODE_ENV === 'production' 
-        ? ["https://abd-gmva.onrender.com"]
-        : ["http://localhost:5000", "http://localhost:3000", "http://127.0.0.1:5000"],
-      methods: ["GET", "POST"],
-      allowedHeaders: ["*"],
-      credentials: true
-    },
-    allowEIO3: true,
-    // ترتيب النقل: polling أولاً للاستقرار
-    transports: ['polling', 'websocket'],
-    // قيم مناسبة للـ free tier في Render
-    pingTimeout: 30000,  // 30 ثانية بدلاً من 60
-    pingInterval: 15000, // 15 ثانية بدلاً من 25
-    upgradeTimeout: 10000, // timeout للـ WebSocket upgrade
-    maxHttpBufferSize: 1e6, // 1MB حد أقصى
-    // إعدادات إضافية للاستقرار
-    connectTimeout: 30000,
-    serveClient: true,
-    // Cookie settings للـ sticky sessions
-    cookie: {
-      name: "io",
-      httpOnly: true,
-      sameSite: "strict"
-    }
-  });
-
-  // Socket.IO connection handling
-  io.on("connection", (socket) => {
-    console.log(`✅ Socket.IO: اتصال جديد - ${socket.id}`);
-    console.log(`📍 من: ${socket.handshake.address}`);
-    console.log(`🌐 User-Agent: ${socket.handshake.headers['user-agent']}`);
-
-    socket.on("chat message", (msg) => {
-      io.emit("chat message", msg); // بث لجميع المستخدمين
-    });
-
-    socket.on("disconnect", (reason) => {
-      console.log(`❌ Socket.IO: انقطاع الاتصال - ${socket.id} - السبب: ${reason}`);
-    });
-    
-    socket.on("error", (error) => {
-      console.error(`🚨 Socket.IO خطأ - ${socket.id}:`, error);
-    });
-  });
-
-  // إضافة معالجة أخطاء عامة
-  io.engine.on("connection_error", (err) => {
-    console.error("🚨 Socket.IO Engine خطأ اتصال:", {
-      message: err.message,
-      description: err.description,
-      context: err.context,
-      type: err.type
-    });
-  });
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.

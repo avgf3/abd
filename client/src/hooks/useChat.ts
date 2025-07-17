@@ -780,7 +780,7 @@ export function useChat() {
       lastMessageTime.current = now;
       
       if (socket.current && socket.current.connected) {
-        socket.current.emit('chat message', {
+        socket.current.emit('publicMessage', {
           content: content.trim(),
           messageType,
           userId: currentUser.id,
