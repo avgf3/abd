@@ -583,6 +583,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ user });
     } catch (error) {
+      console.error("Guest login error:", error);
+      console.error("Error details:", error.message, error.stack);
       res.status(500).json({ error: "خطأ في الخادم" });
     }
   });

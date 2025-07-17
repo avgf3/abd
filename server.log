@@ -1,0 +1,15 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+✅ تم الاتصال بقاعدة البيانات بنجاح
+[dotenv@17.2.0] injecting env (0) from .env (tip: ⚙️  write to custom object with { processEnv: myObject })
+5:15:35 AM [express] Current environment: development
+Error initializing owner: ErrorEvent {
+  type: 'error',
+  defaultPrevented: false,
+  cancelable: false,
+  timeStamp: 1446.612838
+}
+5:15:35 AM [express] serving on port 5000
+5:15:42 AM [express] POST /api/auth/guest 500 in 11ms :: {"error":"خطأ في الخادم"}
