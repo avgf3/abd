@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: chat-app
+    env: node
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: ENABLE_WEBSOCKET
+        value: true
+      - key: SOCKET_IO_POLLING_ONLY
+        value: false
+    healthCheckPath: /api/health
+    numInstances: 1
+    plan: free
+    # إعدادات محسنة لـ Socket.IO
+    buildFilter:
+      paths:
+        - client/**
+        - server/**
+        - package.json
+        - package-lock.json
+        - tsconfig.json
+        - vite.config.ts
+        - render.yaml

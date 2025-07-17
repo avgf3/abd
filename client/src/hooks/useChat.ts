@@ -67,9 +67,22 @@ export function useChat() {
       setCurrentUser(user);
       setConnectionError(null);
       
-      // إنشاء اتصال Socket.IO
-      const socketUrl = `${window.location.origin}`;
+      // إنشاء اتصال Socket.IO - إعدادات محسنة للإنتاج
+      const getSocketUrl = () => {
+        if (process.env.NODE_ENV === 'production') {
+          return 'https://abd-gmva.onrender.com'; // استخدم HTTPS دائماً في الإنتاج
+        }
+        
+        // للتطوير المحلي
+        const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+        return `${protocol}//${window.location.host}`;
+      };
+
+      const socketUrl = getSocketUrl();
       console.log('محاولة الاتصال بـ Socket.IO:', socketUrl);
+      console.log('🔗 Socket URL:', socketUrl);
+      console.log('🌐 Window Location:', window.location.origin);
+      console.log('📦 Environment:', process.env.NODE_ENV);
       
       // إغلاق الاتصال الموجود إن وجد
       if (socket.current) {
@@ -79,13 +92,28 @@ export function useChat() {
       socket.current = io(socketUrl, {
         autoConnect: true,
         reconnection: true,
-        reconnectionAttempts: maxReconnectAttempts,
-        reconnectionDelay: 2000,
-        timeout: 20000
+        reconnectionAttempts: 15,  // المزيد من المحاولات
+        reconnectionDelay: 2000,   // انتظار أطول بين المحاولات
+        reconnectionDelayMax: 10000, // حد أقصى أعلى
+        timeout: 30000,           // timeout أطول للاتصال الأولي
+        forceNew: true,
+        // إعدادات محسنة للإنتاج - polling أولاً
+        transports: process.env.NODE_ENV === 'production' 
+          ? ['polling', 'websocket']  // polling أولاً في الإنتاج
+          : ['websocket', 'polling'], // websocket أولاً في التطوير
+        upgrade: true,
+        rememberUpgrade: false,
+        // إعدادات أمان محسنة
+        secure: process.env.NODE_ENV === 'production',
+        rejectUnauthorized: process.env.NODE_ENV === 'production', // آمن في الإنتاج
+        // إعدادات إضافية للاستقرار
+        closeOnBeforeunload: false,
+        withCredentials: true
       });
       
       socket.current.on('connect', () => {
         console.log('📡 متصل بـ Socket.IO');
+        console.log(`🚀 Transport: ${socket.current?.io.engine.transport.name}`);
         setIsConnected(true);
         setConnectionError(null);
         reconnectAttempts.current = 0;
@@ -95,6 +123,25 @@ export function useChat() {
           userId: user.id,
           username: user.username,
         });
+      });
+
+      // مراقبة تغيير transport
+      socket.current.io.engine.on('upgrade', () => {
+        console.log(`🔄 تم الترقية إلى: ${socket.current?.io.engine.transport.name}`);
+      });
+
+      socket.current.io.engine.on('upgradeError', (error) => {
+        console.warn('⚠️ فشل ترقية WebSocket، سيتم الاستمرار مع polling:', error.message);
+      });
+
+      // استقبال رسالة الترحيب من الخادم
+      socket.current.on('connected', (data) => {
+        console.log('✅ تأكيد الاتصال من الخادم:', data);
+      });
+
+      // معالجة ping/pong للحفاظ على الاتصال
+      socket.current.on('ping', (data) => {
+        socket.current?.emit('pong', { timestamp: Date.now() });
       });
 
       socket.current.on('message', (message: WebSocketMessage) => {
