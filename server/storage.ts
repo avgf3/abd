@@ -92,6 +92,12 @@ export class MixedStorage implements IStorage {
 
   private async initializeOwner() {
     try {
+      // فحص وجود قاعدة البيانات أولاً
+      if (!db) {
+        console.warn("⚠️ تشغيل وضع التطوير بدون قاعدة بيانات - سيتم حفظ البيانات في الذاكرة فقط");
+        return;
+      }
+      
       // Check if owner already exists
       const existing = await db.select().from(users).where(eq(users.username, "عبدالكريم"));
       if (existing.length === 0) {
@@ -172,7 +178,7 @@ export class MixedStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    if (insertUser.userType === 'member' || insertUser.userType === 'owner') {
+    if ((insertUser.userType === 'member' || insertUser.userType === 'owner') && db) {
       // Store members in database with profile picture support
       const [dbUser] = await db
         .insert(users)
