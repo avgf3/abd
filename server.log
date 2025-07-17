@@ -2,14 +2,11 @@
 > rest-express@1.0.0 dev
 > NODE_ENV=development tsx server/index.ts
 
-✅ تم الاتصال بقاعدة البيانات بنجاح
-[dotenv@17.2.0] injecting env (0) from .env (tip: ⚙️  write to custom object with { processEnv: myObject })
-5:15:35 AM [express] Current environment: development
-Error initializing owner: ErrorEvent {
-  type: 'error',
-  defaultPrevented: false,
-  cancelable: false,
-  timeStamp: 1446.612838
-}
-5:15:35 AM [express] serving on port 5000
-5:15:42 AM [express] POST /api/auth/guest 500 in 11ms :: {"error":"خطأ في الخادم"}
+❌ DATABASE_URL غير محدد في متغيرات البيئة
+💡 يرجى إنشاء ملف .env وإضافة DATABASE_URL
+📝 مثال: DATABASE_URL=postgresql://username:password@host:port/dbname
+⚠️  استخدام وضع التطوير بدون قاعدة بيانات - سيتم حفظ البيانات في الذاكرة فقط
+⚠️ تشغيل وضع التطوير بدون قاعدة بيانات - سيتم حفظ البيانات في الذاكرة فقط
+[dotenv@17.2.0] injecting env (1) from .env (tip: ⚙️  enable debug logging with { debug: true })
+7:25:31 AM [express] Current environment: development
+7:25:31 AM [express] ✅ السيرفر يعمل على http://localhost:5000
