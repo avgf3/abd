@@ -99,7 +99,14 @@ export default function NewMessageArea({
                     }}
                     onClick={(e) => onUserClick(e, sender)}
                   >
-                    <span className="font-medium">
+                    <span 
+                      className="font-medium transition-all duration-300"
+                      style={{ 
+                        color: sender.usernameColor || '#ffffff',
+                        textShadow: sender.usernameColor ? `0 0 8px ${sender.usernameColor}40` : 'none',
+                        filter: sender.usernameColor ? 'drop-shadow(0 0 2px rgba(255,255,255,0.3))' : 'none'
+                      }}
+                    >
                       {getUserTypeBadge(sender.userType)} {sender.username}
                     </span>
                   </div>

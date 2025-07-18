@@ -1,4 +1,13 @@
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { 
+  User, 
+  Home, 
+  Moon, 
+  Shield, 
+  LogOut, 
+  Settings 
+} from 'lucide-react';
 
 interface SettingsMenuProps {
   onOpenProfile: () => void;
@@ -16,52 +25,70 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
   };
 
   return (
-    <div className="fixed top-20 right-4 glass-effect rounded-2xl border border-accent z-50 shadow-2xl animate-fade-in min-w-[200px]">
-      <Button
-        onClick={onOpenProfile}
-        variant="ghost"
-        className="w-full px-6 py-4 border-b border-border text-right hover:bg-accent transition-all rounded-t-2xl flex items-center gap-3 justify-start"
-      >
-        <span className="text-primary">👤</span>
-        الملف الشخصي
-      </Button>
-      
-      <Button
-        variant="ghost"
-        className="w-full px-6 py-4 border-b border-border text-right hover:bg-accent transition-all flex items-center gap-3 justify-start"
-      >
-        <span className="text-primary">🏠</span>
-        الغرف المتاحة
-      </Button>
-      
-      <Button
-        variant="ghost"
-        className="w-full px-6 py-4 border-b border-border text-right hover:bg-accent transition-all flex items-center gap-3 justify-start"
-      >
-        <span className="text-primary">🌙</span>
-        تبديل المظهر
-      </Button>
-      
-      {/* زر إدارة التبليغات للمشرفين فقط */}
-      {currentUser?.userType === 'owner' && onOpenReports && (
-        <Button
-          onClick={onOpenReports}
-          variant="ghost"
-          className="w-full px-6 py-4 border-b border-border text-right hover:bg-accent transition-all flex items-center gap-3 justify-start"
-        >
-          <span className="text-primary">🛡️</span>
-          إدارة التبليغات
-        </Button>
-      )}
-      
-      <Button
-        onClick={handleLogout}
-        variant="ghost"
-        className="w-full px-6 py-4 text-right hover:bg-red-600 transition-all rounded-b-2xl flex items-center gap-3 text-red-400 hover:text-white justify-start"
-      >
-        <span>🚪</span>
-        تسجيل الخروج
-      </Button>
-    </div>
+    <Card className="fixed top-20 right-4 z-50 shadow-2xl animate-fade-in w-56 bg-card/95 backdrop-blur-md border-accent">
+      <CardContent className="p-0">
+        {/* القسم الأول - الملف الشخصي */}
+        <div className="p-3 border-b border-border">
+          <Button
+            onClick={onOpenProfile}
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+          >
+            <User className="w-4 h-4 text-primary" />
+            الملف الشخصي
+          </Button>
+        </div>
+
+        {/* القسم الثاني - الإعدادات العامة */}
+        <div className="p-3 border-b border-border space-y-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+          >
+            <Home className="w-4 h-4 text-primary" />
+            الغرف
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+          >
+            <Moon className="w-4 h-4 text-primary" />
+            المظهر
+          </Button>
+        </div>
+
+        {/* القسم الثالث - الإدارة (للمشرفين فقط) */}
+        {currentUser?.userType === 'owner' && onOpenReports && (
+          <div className="p-3 border-b border-border">
+            <Button
+              onClick={onOpenReports}
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+            >
+              <Shield className="w-4 h-4 text-primary" />
+              إدارة التبليغات
+            </Button>
+          </div>
+        )}
+
+        {/* القسم الرابع - تسجيل الخروج */}
+        <div className="p-3">
+          <Button
+            onClick={handleLogout}
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-3 h-9 hover:bg-destructive/10 text-destructive hover:text-destructive"
+          >
+            <LogOut className="w-4 h-4" />
+            تسجيل الخروج
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

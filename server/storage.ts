@@ -63,6 +63,18 @@ export interface IStorage {
   markAllNotificationsAsRead(userId: number): Promise<boolean>;
   deleteNotification(notificationId: number): Promise<boolean>;
   getUnreadNotificationCount(userId: number): Promise<number>;
+  
+  // Blocked devices operations
+  createBlockedDevice(blockData: {
+    ipAddress: string;
+    deviceId: string;
+    userId: number;
+    reason: string;
+    blockedAt: Date;
+    blockedBy: number;
+  }): Promise<boolean>;
+  isDeviceBlocked(ipAddress: string, deviceId: string): Promise<boolean>;
+  getBlockedDevices(): Promise<Array<{ipAddress: string, deviceId: string}>>;
 }
 
 // Mixed storage: Database for members, Memory for guests
@@ -750,6 +762,71 @@ export class MixedStorage implements IStorage {
     } catch (error) {
       console.error('Error getting unread notification count:', error);
       return 0;
+    }
+  }
+
+  // Blocked devices operations
+  async createBlockedDevice(blockData: {
+    ipAddress: string;
+    deviceId: string;
+    userId: number;
+    reason: string;
+    blockedAt: Date;
+    blockedBy: number;
+  }): Promise<boolean> {
+    try {
+      // Create blocked devices table if it doesn't exist
+      await db.run(sql`
+        CREATE TABLE IF NOT EXISTS blocked_devices (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ip_address TEXT NOT NULL,
+          device_id TEXT NOT NULL,
+          user_id INTEGER NOT NULL,
+          reason TEXT NOT NULL,
+          blocked_at DATETIME NOT NULL,
+          blocked_by INTEGER NOT NULL,
+          UNIQUE(ip_address, device_id)
+        )
+      `);
+
+      await db.run(sql`
+        INSERT OR REPLACE INTO blocked_devices 
+        (ip_address, device_id, user_id, reason, blocked_at, blocked_by)
+        VALUES (${blockData.ipAddress}, ${blockData.deviceId}, ${blockData.userId}, 
+                ${blockData.reason}, ${blockData.blockedAt.toISOString()}, ${blockData.blockedBy})
+      `);
+      
+      return true;
+    } catch (error) {
+      console.error('Error creating blocked device:', error);
+      return false;
+    }
+  }
+
+  async isDeviceBlocked(ipAddress: string, deviceId: string): Promise<boolean> {
+    try {
+      const result = await db.get(sql`
+        SELECT COUNT(*) as count FROM blocked_devices 
+        WHERE ip_address = ${ipAddress} OR device_id = ${deviceId}
+      `);
+      
+      return (result?.count || 0) > 0;
+    } catch (error) {
+      console.error('Error checking blocked device:', error);
+      return false;
+    }
+  }
+
+  async getBlockedDevices(): Promise<Array<{ipAddress: string, deviceId: string}>> {
+    try {
+      const result = await db.all(sql`
+        SELECT ip_address as ipAddress, device_id as deviceId FROM blocked_devices
+      `);
+      
+      return result || [];
+    } catch (error) {
+      console.error('Error getting blocked devices:', error);
+      return [];
     }
   }
 }

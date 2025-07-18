@@ -96,9 +96,11 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span 
-                      className="text-base font-medium"
+                      className="text-base font-medium transition-all duration-300"
                       style={{ 
-                        color: getUserThemeTextColor(user)
+                        color: user.usernameColor || getUserThemeTextColor(user),
+                        textShadow: user.usernameColor ? `0 0 10px ${user.usernameColor}40` : 'none',
+                        filter: user.usernameColor ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
                       }}
                       title={user.username}
                     >
