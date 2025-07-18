@@ -171,8 +171,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // رفع صور البروفايل البانر
-  app.post('/api/upload/profile-banner', upload.single('profileBanner'), async (req, res) => {
+  // إضافة endpoints لرفع الصور (تطابق مع ProfileModal)
+  app.post('/api/upload/profile-image', upload.single('image'), async (req, res) => {
+    try {
+      console.log('رفع صورة البروفايل - الملف:', req.file);
+      console.log('البيانات:', req.body);
+
+      if (!req.file) {
+        return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
+      }
+
+      const userId = req.body.userId;
+      if (!userId) {
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      }
+
+      // تحديث مسار الصورة في قاعدة البيانات
+      const imageUrl = `/uploads/profiles/${req.file.filename}`;
+      
+      const user = await storage.getUser(parseInt(userId));
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      // حذف الصورة القديمة إذا كانت موجودة
+      if (user.profileImage && user.profileImage !== '/default_avatar.svg') {
+        const oldImagePath = path.join(process.cwd(), 'client', 'public', user.profileImage);
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+      }
+
+      // تحديث المستخدم في قاعدة البيانات
+      const updatedUser = await storage.updateUser(parseInt(userId), { profileImage: imageUrl });
+      
+      console.log('تم تحديث المستخدم:', updatedUser);
+
+      // إرسال تحديث WebSocket لجميع المستخدمين
+      if (io) {
+        io.emit('userUpdated', { user: updatedUser });
+      }
+
+      res.json({
+        success: true,
+        message: 'تم رفع الصورة بنجاح',
+        imageUrl: imageUrl,
+        user: updatedUser
+      });
+
+    } catch (error) {
+      console.error('Error uploading profile image:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'خطأ في رفع الصورة' 
+      });
+    }
+  });
+
+  app.post('/api/upload/profile-banner', upload.single('image'), async (req, res) => {
+    try {
+      console.log('رفع صورة البانر - الملف:', req.file);
+      console.log('البيانات:', req.body);
+
+      if (!req.file) {
+        return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
+      }
+
+      const userId = req.body.userId;
+      if (!userId) {
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      }
+
+      // تحديث مسار صورة البانر
+      const bannerUrl = `/uploads/profiles/${req.file.filename}`;
+      
+      const user = await storage.getUser(parseInt(userId));
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      // حذف صورة البانر القديمة إذا كانت موجودة
+      if (user.profileBanner && user.profileBanner !== '') {
+        const oldBannerPath = path.join(process.cwd(), 'client', 'public', user.profileBanner);
+        if (fs.existsSync(oldBannerPath)) {
+          fs.unlinkSync(oldBannerPath);
+        }
+      }
+
+      // تحديث المستخدم في قاعدة البيانات
+      const updatedUser = await storage.updateUser(parseInt(userId), { profileBanner: bannerUrl });
+      
+      console.log('تم تحديث المستخدم:', updatedUser);
+
+      // إرسال تحديث WebSocket لجميع المستخدمين
+      if (io) {
+        io.emit('userUpdated', { user: updatedUser });
+      }
+
+      res.json({
+        success: true,
+        message: 'تم رفع صورة البروفايل بنجاح',
+        bannerUrl: bannerUrl,
+        user: updatedUser
+      });
+
+    } catch (error) {
+      console.error('Error uploading profile banner:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'خطأ في رفع صورة البروفايل' 
+      });
+    }
+  });
+
+  // رفع صور البروفايل البانر (endpoint القديم للتوافق)
+  app.post('/api/upload/profile-banner-old', upload.single('profileBanner'), async (req, res) => {
     try {
       console.log('رفع صورة البانر - الملف:', req.file);
       console.log('البيانات:', req.body);
@@ -995,9 +1106,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     socket.on('privateMessage', async (data) => {
       try {
-        if (!socket.userId) return;
+        if (!socket.userId) {
+          socket.emit('message', { type: 'error', message: 'غير مصرح - يجب تسجيل الدخول' });
+          return;
+        }
         
         const { receiverId, content, messageType = 'text' } = data;
+        
+        // التحقق من صحة البيانات
+        if (!receiverId || !content || !content.trim()) {
+          socket.emit('message', { type: 'error', message: 'بيانات غير صحيحة' });
+          return;
+        }
+        
+        // التحقق من المرسل
+        const sender = await storage.getUser(socket.userId);
+        if (!sender) {
+          socket.emit('message', { type: 'error', message: 'المرسل غير موجود' });
+          return;
+        }
         
         // التحقق من المستقبل
         const receiver = await storage.getUser(receiverId);
@@ -1015,7 +1142,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isPrivate: true
         });
         
-        const sender = await storage.getUser(socket.userId);
         const messageWithSender = { ...newMessage, sender };
         
         // إرسال للمستقبل
@@ -1856,6 +1982,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
       }
     } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // إضافة endpoint منفصل للطرد (kick)
+  app.post("/api/moderation/kick", async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, reason, duration = 15 } = req.body;
+      const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
+      const deviceId = req.headers['user-agent'] || 'unknown';
+      
+      const success = await moderationSystem.banUser(
+        moderatorId, 
+        targetUserId, 
+        reason, 
+        duration, 
+        clientIP, 
+        deviceId
+      );
+      
+      if (success) {
+        const moderator = await storage.getUser(moderatorId);
+        const target = await storage.getUser(targetUserId);
+        
+        // إرسال إشعار خاص للمستخدم المطرود
+        broadcast({
+          type: 'kicked',
+          targetUserId: targetUserId,
+          duration: duration,
+          reason: reason
+        });
+
+        // إرسال إشعار للدردشة العامة
+        const systemMessage = `⏰ تم طرد ${target?.username} من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`;
+        
+        broadcast({
+          type: 'systemMessage',
+          action: 'kicked',
+          targetUserId: targetUserId,
+          message: systemMessage,
+          duration: duration,
+          reason: reason
+        });
+        
+        res.json({ message: "تم طرد المستخدم بنجاح" });
+      } else {
+        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+      }
+    } catch (error) {
+      console.error('خطأ في الطرد:', error);
       res.status(500).json({ error: "خطأ في الخادم" });
     }
   });

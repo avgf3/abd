@@ -134,7 +134,7 @@ export default function UserContextMenu({
     }
 
     try {
-      await apiRequest('/api/moderation/ban', {
+      await apiRequest('/api/moderation/kick', {
         method: 'POST',
         body: {
           moderatorId: currentUser?.id || 0,
@@ -174,14 +174,21 @@ export default function UserContextMenu({
     }
 
     try {
+      // الحصول على معلومات الجهاز والشبكة
+      const deviceInfo = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        timestamp: new Date().toISOString()
+      };
+
       await apiRequest('/api/moderation/block', {
         method: 'POST',
         body: {
           moderatorId: currentUser?.id || 0,
           targetUserId: targetUser.id,
           reason: blockReason,
-          ipAddress: 'unknown',
-          deviceId: 'unknown'
+          deviceInfo: JSON.stringify(deviceInfo)
         }
       });
 

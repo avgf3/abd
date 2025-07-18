@@ -4,6 +4,7 @@ dotenv.config();
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { initializeDatabase } from "./init-database";
 import path from "path";
 
 const app = express();
@@ -44,6 +45,13 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // تهيئة قاعدة البيانات أولاً
+  try {
+    await initializeDatabase();
+  } catch (error) {
+    console.error('❌ فشل في تهيئة قاعدة البيانات:', error);
+  }
+  
   const httpServer = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

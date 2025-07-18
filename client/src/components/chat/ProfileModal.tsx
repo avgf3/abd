@@ -356,25 +356,32 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
     try {
       const formData = new FormData();
       formData.append('image', file);
+      formData.append('userId', user?.id?.toString() || '');
 
       const endpoint = uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
-      const response = await apiRequest(endpoint, {
+      
+      // استخدام fetch بدلاً من apiRequest لـ FormData
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
       });
 
-      if (response.success) {
+      if (response.ok) {
+        const result = await response.json();
         toast({
           title: "نجح",
           description: uploadType === 'profile' ? "تم تحديث الصورة الشخصية" : "تم تحديث صورة الغلاف",
         });
         window.location.reload();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'فشل في رفع الصورة');
       }
     } catch (error) {
       console.error('Upload error:', error);
       toast({
         title: "خطأ",
-        description: "فشل في تحميل الصورة",
+        description: error instanceof Error ? error.message : "فشل في تحميل الصورة",
         variant: "destructive",
       });
     }

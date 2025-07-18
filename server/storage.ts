@@ -147,9 +147,15 @@ export class MixedStorage implements IStorage {
     
     // Check database (for members)
     try {
+      if (!db) {
+        console.warn("⚠️ قاعدة البيانات غير متاحة");
+        return undefined;
+      }
+      
       const [dbUser] = await db.select().from(users).where(eq(users.id, id));
       return dbUser || undefined;
     } catch (error) {
+      console.error('خطأ في جلب المستخدم:', error);
       return undefined;
     }
   }

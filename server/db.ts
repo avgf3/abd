@@ -18,9 +18,29 @@ function initializeDatabase() {
       console.warn("⚠️  استخدام SQLite للتطوير");
       try {
         const sqlite = new Database('./dev.db');
-        const db = drizzleSqlite(sqlite, { schema });
+        // إعداد SQLite للعمل بشكل أفضل
+        sqlite.pragma('journal_mode = WAL');
+        sqlite.pragma('synchronous = NORMAL');
+        sqlite.pragma('cache_size = 1000');
+        sqlite.pragma('temp_store = memory');
+        
+        // إنشاء wrapper لدعم الدوال المطلوبة
+        const sqliteWrapper = {
+          ...sqlite,
+          run: (query: string, params?: any[]) => {
+            return sqlite.prepare(query).run(params || []);
+          },
+          get: (query: string, params?: any[]) => {
+            return sqlite.prepare(query).get(params || []);
+          },
+          all: (query: string, params?: any[]) => {
+            return sqlite.prepare(query).all(params || []);
+          }
+        };
+        
+        const drizzleDb = drizzleSqlite(sqlite, { schema });
         console.log("✅ تم الاتصال بقاعدة بيانات SQLite للتطوير");
-        return { pool: null, db, sqlite };
+        return { pool: null, db: drizzleDb, sqlite: sqliteWrapper };
       } catch (error) {
         console.error("❌ فشل في إنشاء قاعدة بيانات SQLite:", error);
         return null;
