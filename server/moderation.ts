@@ -23,6 +23,23 @@ export class ModerationSystem {
     this.actions = new Map();
     this.blockedIPs = new Set();
     this.blockedDevices = new Set();
+    
+    // تحميل الأجهزة المحجوبة من قاعدة البيانات عند بدء التشغيل
+    this.loadBlockedDevices();
+  }
+
+  // تحميل الأجهزة المحجوبة من قاعدة البيانات
+  private async loadBlockedDevices() {
+    try {
+      const blockedDevices = await storage.getBlockedDevices();
+      for (const device of blockedDevices) {
+        this.blockedIPs.add(device.ipAddress);
+        this.blockedDevices.add(device.deviceId);
+      }
+      console.log(`تم تحميل ${blockedDevices.length} جهاز محجوب`);
+    } catch (error) {
+      console.error('خطأ في تحميل الأجهزة المحجوبة:', error);
+    }
   }
 
   // التحقق من الصلاحيات - نظام محسن
@@ -157,9 +174,23 @@ export class ModerationSystem {
       deviceId
     });
 
-    // حجب IP والجهاز
+    // حجب IP والجهاز نهائياً (بدون انتهاء صلاحية)
     if (ipAddress) this.blockedIPs.add(ipAddress);
     if (deviceId) this.blockedDevices.add(deviceId);
+
+    // حفظ بيانات الحجب في قاعدة البيانات للاستمرارية
+    try {
+      await storage.createBlockedDevice({
+        ipAddress: ipAddress || 'unknown',
+        deviceId: deviceId || 'unknown',
+        userId: targetUserId,
+        reason: reason,
+        blockedAt: new Date(),
+        blockedBy: moderatorId
+      });
+    } catch (error) {
+      console.error('خطأ في حفظ بيانات الحجب:', error);
+    }
 
     this.recordAction({
       id: `block_${Date.now()}`,

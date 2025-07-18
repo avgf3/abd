@@ -119,7 +119,12 @@ export default function MessageArea({
                 <div className="flex items-center gap-2 mb-1">
                   {message.sender ? (
                     <span 
-                      className="font-medium text-sm text-blue-600 cursor-pointer hover:underline"
+                      className="font-medium text-sm cursor-pointer hover:underline transition-all duration-300"
+                      style={{ 
+                        color: message.sender.usernameColor || '#2563eb',
+                        textShadow: message.sender.usernameColor ? `0 0 8px ${message.sender.usernameColor}40` : 'none',
+                        filter: message.sender.usernameColor ? 'drop-shadow(0 0 2px rgba(255,255,255,0.3))' : 'none'
+                      }}
                       onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                     >
                       {message.sender.username}

@@ -361,15 +361,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/moderation/ban", async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
+      const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
+      const deviceId = req.headers['user-agent'] || 'unknown';
       
-      const success = await moderationSystem.banUser(moderatorId, targetUserId, reason, duration);
+      const success = await moderationSystem.banUser(
+        moderatorId, 
+        targetUserId, 
+        reason, 
+        duration, 
+        clientIP, 
+        deviceId
+      );
+      
       if (success) {
+        const moderator = await storage.getUser(moderatorId);
+        const target = await storage.getUser(targetUserId);
+        
+        // إرسال إشعار خاص للمستخدم المطرود - تحسين الإشعار
+        if (target) {
+          io.to(targetUserId.toString()).emit('message', {
+            type: 'kicked',
+            targetUserId: targetUserId,
+            duration: duration,
+            reason: reason,
+            moderatorName: moderator?.username || 'مشرف'
+          });
+        }
+
+        // إرسال إشعار للدردشة العامة
+        const systemMessage = `⏰ تم طرد ${target?.username} من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`;
+        
+        broadcast({
+          type: 'moderationAction',
+          action: 'banned',
+          targetUserId: targetUserId,
+          message: systemMessage
+        });
+        
+        // إجبار قطع الاتصال
+        setTimeout(() => {
+          io.to(targetUserId.toString()).disconnectSockets();
+        }, 2000); // إعطاء وقت لاستلام الإشعار
+        
         res.json({ message: "تم طرد المستخدم بنجاح" });
       } else {
-        res.status(400).json({ error: "فشل في طرد المستخدم" });
+        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
       }
     } catch (error) {
-      res.status(500).json({ error: "خطأ في طرد المستخدم" });
+      res.status(500).json({ error: "خطأ في الخادم" });
     }
   });
 
@@ -1926,11 +1965,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const moderator = await storage.getUser(moderatorId);
         const target = await storage.getUser(targetUserId);
         
-        // إرسال إشعار خاص للمستخدم المحجوب
-        io.to(targetUserId.toString()).emit('blocked', {
-          targetUserId: targetUserId,
-          reason: reason
-        });
+        // إرسال إشعار خاص للمستخدم المحجوب - تحسين الإشعار
+        if (target) {
+          io.to(targetUserId.toString()).emit('message', {
+            type: 'blocked',
+            targetUserId: targetUserId,
+            reason: reason,
+            moderatorName: moderator?.username || 'مشرف'
+          });
+        }
 
         // إرسال إشعار للدردشة العامة
         const systemMessage = `🚫 تم حجب ${target?.username} نهائياً من قبل ${moderator?.username} - السبب: ${reason}`;
@@ -1942,8 +1985,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: systemMessage
         });
         
-        // إجبار قطع الاتصال
-        io.to(targetUserId.toString()).disconnectSockets();
+        // إجبار قطع الاتصال بعد فترة قصيرة
+        setTimeout(() => {
+          io.to(targetUserId.toString()).disconnectSockets();
+        }, 3000); // إعطاء وقت أطول لاستلام إشعار الحجب النهائي
         
         res.json({ message: "تم حجب المستخدم بنجاح" });
       } else {
