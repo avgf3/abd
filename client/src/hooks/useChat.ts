@@ -53,6 +53,29 @@ export function useChat() {
   
   // تحسين الأداء: مدراء التحسين
   const messageCache = useRef(new MessageCacheManager());
+
+  // فلترة الرسائل غير الصالحة
+  const isValidMessage = (message: ChatMessage): boolean => {
+    // التأكد من وجود بيانات المرسل
+    if (!message.sender || !message.sender.username || message.sender.username === 'مستخدم') {
+      console.warn('رسالة مرفوضة - بيانات مرسل غير صالحة:', message);
+      return false;
+    }
+    
+    // التأكد من وجود محتوى الرسالة
+    if (!message.content || message.content.trim() === '') {
+      console.warn('رسالة مرفوضة - محتوى فارغ:', message);
+      return false;
+    }
+    
+    // التأكد من وجود معرف المرسل
+    if (!message.senderId || message.senderId <= 0) {
+      console.warn('رسالة مرفوضة - معرف مرسل غير صالح:', message);
+      return false;
+    }
+    
+    return true;
+  };
   const networkOptimizer = useRef(new NetworkOptimizer());
   const lastMessageTime = useRef<number>(0);
   
@@ -191,6 +214,12 @@ export function useChat() {
               
             case 'newMessage':
               if (message.message && typeof message.message === 'object' && !message.message.isPrivate) {
+                // فحص صحة الرسالة أولاً
+                if (!isValidMessage(message.message as ChatMessage)) {
+                  console.warn('رسالة مرفوضة من الخادم:', message.message);
+                  break;
+                }
+                
                 // فحص إذا كان المرسل مُتجاهل
                 if (!ignoredUsers.has(message.message.senderId)) {
                   setPublicMessages(prev => [...prev, message.message as ChatMessage]);
@@ -204,6 +233,12 @@ export function useChat() {
               
             case 'privateMessage':
               if (message.message && typeof message.message === 'object' && message.message.isPrivate) {
+                // فحص صحة الرسالة أولاً
+                if (!isValidMessage(message.message as ChatMessage)) {
+                  console.warn('رسالة خاصة مرفوضة من الخادم:', message.message);
+                  break;
+                }
+                
                 const otherUserId = message.message.senderId === user.id 
                   ? message.message.receiverId! 
                   : message.message.senderId;
@@ -529,10 +564,29 @@ export function useChat() {
         console.log('Socket.IO مقطوع - السبب:', reason);
         setIsConnected(false);
         
-        // إعادة الاتصال التلقائي
+        // تنظيف الحالة المحلية فوراً
+        setCurrentUser(null);
+        setOnlineUsers([]);
+        setTypingUsers(new Set());
+        
+        // معالجة أسباب مختلفة لقطع الاتصال
         if (reason === 'io server disconnect') {
-          // الخادم قطع الاتصال، نحتاج لإعادة الاتصال يدوياً
-          socket.current?.connect();
+          // الخادم قطع الاتصال عمداً (مثل حظر المستخدم)
+          setConnectionError('تم قطع الاتصال من الخادم');
+          // لا نعيد الاتصال تلقائياً
+          return;
+        }
+        
+        if (reason === 'transport close' || reason === 'ping timeout') {
+          // قطع اتصال غير متوقع - نحاول إعادة الاتصال
+          setConnectionError('انقطع الاتصال - محاولة إعادة الاتصال...');
+          
+          // إعادة الاتصال بعد تأخير قصير
+          setTimeout(() => {
+            if (socket.current && !socket.current.connected) {
+              socket.current.connect();
+            }
+          }, 2000);
         }
       });
 

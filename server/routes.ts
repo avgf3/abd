@@ -7,6 +7,7 @@ import { insertUserSchema, insertMessageSchema } from "@shared/schema";
 import { spamProtection } from "./spam-protection";
 import { moderationSystem } from "./moderation";
 import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter } from "./security";
+import { databaseCleanup } from "./utils/database-cleanup";
 
 import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
 import securityApiRoutes from "./api-security";
@@ -973,6 +974,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
 
           case 'publicMessage':
+            // التحقق الأولي من وجود معرف المستخدم والجلسة
+            if (!socket.userId || !socket.username) {
+              socket.emit('error', {
+                type: 'error',
+                message: 'جلسة غير صالحة - يرجى إعادة تسجيل الدخول',
+                action: 'invalid_session'
+              });
+              socket.disconnect(true);
+              break;
+            }
+            
+            // التحقق من وجود المستخدم في قاعدة البيانات
+            const currentUser = await storage.getUser(socket.userId);
+            if (!currentUser) {
+              socket.emit('error', {
+                type: 'error',
+                message: 'المستخدم غير موجود في النظام',
+                action: 'user_not_found'
+              });
+              socket.disconnect(true);
+              break;
+            }
+            
+            // التحقق من أن المستخدم متصل فعلياً
+            if (!currentUser.isOnline) {
+              socket.emit('error', {
+                type: 'error',
+                message: 'المستخدم غير متصل',
+                action: 'user_offline'
+              });
+              socket.disconnect(true);
+              break;
+            }
+            
             if (socket.userId) {
               // فحص حالة الكتم والحظر
               const userStatus = await moderationSystem.checkUserStatus(socket.userId);
@@ -1050,6 +1085,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
 
           case 'privateMessage':
+            // التحقق الأولي من وجود معرف المستخدم والجلسة
+            if (!socket.userId || !socket.username) {
+              socket.emit('error', {
+                type: 'error',
+                message: 'جلسة غير صالحة - يرجى إعادة تسجيل الدخول',
+                action: 'invalid_session'
+              });
+              socket.disconnect(true);
+              break;
+            }
+            
+            // التحقق من وجود المستخدم في قاعدة البيانات
+            const currentUserPrivate = await storage.getUser(socket.userId);
+            if (!currentUserPrivate) {
+              socket.emit('error', {
+                type: 'error',
+                message: 'المستخدم غير موجود في النظام',
+                action: 'user_not_found'
+              });
+              socket.disconnect(true);
+              break;
+            }
+            
             if (socket.userId) {
               // منع إرسال رسالة للنفس
               if (socket.userId === message.receiverId) {
@@ -1119,14 +1177,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-    socket.on('disconnect', async () => {
+    socket.on('disconnect', async (reason) => {
+      console.log(`🔌 المستخدم ${socket.username} قطع الاتصال - السبب: ${reason}`);
+      
+      // تنظيف الجلسة بالكامل
       clearInterval(heartbeat);
+      
       if (socket.userId) {
-        await storage.setUserOnlineStatus(socket.userId, false);
-        io.emit('userLeft', {
-          userId: socket.userId,
-          username: socket.username,
-        });
+        try {
+          // تحديث حالة المستخدم في قاعدة البيانات
+          await storage.setUserOnlineStatus(socket.userId, false);
+          
+          // إزالة المستخدم من جميع الغرف
+          socket.leave(socket.userId.toString());
+          
+          // إشعار جميع المستخدمين بالخروج
+          io.emit('userLeft', {
+            userId: socket.userId,
+            username: socket.username,
+            timestamp: new Date()
+          });
+          
+          // إرسال قائمة محدثة للمستخدمين المتصلين
+          const onlineUsers = await storage.getOnlineUsers();
+          io.emit('onlineUsers', { users: onlineUsers });
+          
+          // تنظيف متغيرات الجلسة
+          socket.userId = undefined;
+          socket.username = undefined;
+          
+        } catch (error) {
+          console.error('خطأ في تنظيف الجلسة:', error);
+        }
       }
     });
   });
@@ -1134,6 +1216,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   function broadcast(message: any) {
     io.emit(message.type || 'broadcast', message.data || message);
   }
+
+  // فحص دوري لتنظيف الجلسات المنتهية الصلاحية
+  const sessionCleanupInterval = setInterval(async () => {
+    try {
+      const connectedSockets = await io.fetchSockets();
+      console.log(`🧹 فحص ${connectedSockets.length} جلسة متصلة...`);
+      
+      for (const socket of connectedSockets) {
+        if (socket.userId) {
+          try {
+            // التحقق من وجود المستخدم في قاعدة البيانات
+            const user = await storage.getUser(socket.userId);
+            if (!user || !user.isOnline) {
+              console.log(`🧹 تنظيف جلسة منتهية الصلاحية للمستخدم ${socket.userId}`);
+              socket.disconnect(true);
+            }
+          } catch (error) {
+            console.error('خطأ في فحص الجلسة:', error);
+            socket.disconnect(true);
+          }
+        } else {
+          // قطع الاتصال للجلسات بدون معرف مستخدم
+          console.log('🧹 قطع اتصال جلسة بدون معرف مستخدم');
+          socket.disconnect(true);
+        }
+      }
+    } catch (error) {
+      console.error('خطأ في تنظيف الجلسات:', error);
+    }
+  }, 30000); // كل 30 ثانية
+
+  // بدء التنظيف الدوري لقاعدة البيانات
+  const dbCleanupInterval = databaseCleanup.startPeriodicCleanup(6); // كل 6 ساعات
+  
+  // تنظيف فوري عند بدء الخادم
+  setTimeout(async () => {
+    console.log('🧹 تنظيف فوري لقاعدة البيانات عند بدء الخادم...');
+    await databaseCleanup.performFullCleanup();
+    
+    // عرض الإحصائيات
+    const stats = await databaseCleanup.getDatabaseStats();
+    console.log('📊 إحصائيات قاعدة البيانات:', stats);
+  }, 5000); // بعد 5 ثوانٍ من بدء الخادم
+
+  // تنظيف الفترة الزمنية عند إغلاق الخادم
+  process.on('SIGINT', () => {
+    clearInterval(sessionCleanupInterval);
+    clearInterval(dbCleanupInterval);
+    process.exit(0);
+  });
 
   // Friend system APIs
   
