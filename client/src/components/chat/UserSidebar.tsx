@@ -83,7 +83,13 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                     getUserThemeClasses(user)
                   }`}
                   style={{ 
-                    ...getUserThemeStyles(user)
+                    ...getUserThemeStyles(user),
+                    // تطبيق الثيم إذا كان متوفراً
+                    ...(user.userTheme && user.userTheme !== 'default' ? {
+                      background: getUserThemeStyles(user).background || 'transparent',
+                      boxShadow: getUserThemeStyles(user).boxShadow || 'none',
+                      animation: getUserThemeStyles(user).animation || 'none'
+                    } : {})
                   }}
                   onClick={(e) => onUserClick(e, user)}
                 >

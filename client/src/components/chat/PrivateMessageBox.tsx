@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import FileUploadButton from './FileUploadButton';
+import { getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 
 
 interface PrivateMessageBoxProps {
@@ -154,8 +155,18 @@ export default function PrivateMessageBox({
                         }}
                       />
                       <span 
-                        className="text-xs font-medium text-gray-600"
-                        style={{ color: message.sender?.usernameColor || '#000000' }}
+                        className="text-xs font-medium text-gray-600 px-2 py-1 rounded-md transition-all duration-300"
+                        style={{ 
+                          color: message.sender?.usernameColor || getUserThemeTextColor(message.sender || {} as ChatUser),
+                          textShadow: message.sender?.usernameColor ? `0 0 6px ${message.sender.usernameColor}40` : 'none',
+                          filter: message.sender?.usernameColor ? 'drop-shadow(0 0 2px rgba(255,255,255,0.3))' : 'none',
+                          // تطبيق الثيم إذا كان متوفراً
+                          ...(message.sender?.userTheme && message.sender.userTheme !== 'default' ? {
+                            background: getUserThemeStyles(message.sender).background || 'transparent',
+                            boxShadow: getUserThemeStyles(message.sender).boxShadow || 'none',
+                            animation: getUserThemeStyles(message.sender).animation || 'none'
+                          } : {})
+                        }}
                       >
                         {message.sender?.username || 'مجهول'}
                       </span>

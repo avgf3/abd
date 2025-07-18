@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import { getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 
 interface ViewProfileModalProps {
   user: ChatUser | null;
@@ -152,8 +153,18 @@ export default function ViewProfileModal({
                 </span>
               </div>
               <h2 
-                className="text-2xl font-bold mb-1 text-gray-800"
-                style={{ color: user.usernameColor || '#1f2937' }}
+                className="text-2xl font-bold mb-1 text-gray-800 px-3 py-2 rounded-lg transition-all duration-300"
+                style={{ 
+                  color: user.usernameColor || getUserThemeTextColor(user),
+                  textShadow: user.usernameColor ? `0 0 12px ${user.usernameColor}40` : 'none',
+                  filter: user.usernameColor ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none',
+                  // تطبيق الثيم إذا كان متوفراً
+                  ...(user.userTheme && user.userTheme !== 'default' ? {
+                    background: getUserThemeStyles(user).background || 'transparent',
+                    boxShadow: getUserThemeStyles(user).boxShadow || 'none',
+                    animation: getUserThemeStyles(user).animation || 'none'
+                  } : {})
+                }}
               >
                 {user.username}
               </h2>

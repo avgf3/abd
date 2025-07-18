@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ProfileImage from './ProfileImage';
 import type { ChatMessage, ChatUser } from '@/types/chat';
+import { getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -119,11 +120,17 @@ export default function MessageArea({
                 <div className="flex items-center gap-2 mb-1">
                   {message.sender ? (
                     <span 
-                      className="font-medium text-sm cursor-pointer hover:underline transition-all duration-300"
+                      className="font-medium text-sm cursor-pointer hover:underline transition-all duration-300 px-2 py-1 rounded-md"
                       style={{ 
-                        color: message.sender.usernameColor || '#2563eb',
+                        color: message.sender.usernameColor || getUserThemeTextColor(message.sender),
                         textShadow: message.sender.usernameColor ? `0 0 8px ${message.sender.usernameColor}40` : 'none',
-                        filter: message.sender.usernameColor ? 'drop-shadow(0 0 2px rgba(255,255,255,0.3))' : 'none'
+                        filter: message.sender.usernameColor ? 'drop-shadow(0 0 2px rgba(255,255,255,0.3))' : 'none',
+                        // تطبيق الثيم إذا كان متوفراً
+                        ...(message.sender.userTheme && message.sender.userTheme !== 'default' ? {
+                          background: getUserThemeStyles(message.sender).background || 'transparent',
+                          boxShadow: getUserThemeStyles(message.sender).boxShadow || 'none',
+                          animation: getUserThemeStyles(message.sender).animation || 'none'
+                        } : {})
                       }}
                       onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                     >

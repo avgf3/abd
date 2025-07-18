@@ -13,6 +13,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import { getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 
 interface ModerationPanelProps {
   isOpen: boolean;
@@ -298,7 +299,20 @@ export default function ModerationPanel({
                         />
                         <div>
                           <div className="font-semibold flex items-center gap-2">
-                            <span style={{ color: user.usernameColor || '#000000' }}>
+                            <span 
+                              className="px-2 py-1 rounded-md transition-all duration-300"
+                              style={{ 
+                                color: user.usernameColor || getUserThemeTextColor(user),
+                                textShadow: user.usernameColor ? `0 0 8px ${user.usernameColor}40` : 'none',
+                                filter: user.usernameColor ? 'drop-shadow(0 0 2px rgba(255,255,255,0.3))' : 'none',
+                                // تطبيق الثيم إذا كان متوفراً
+                                ...(user.userTheme && user.userTheme !== 'default' ? {
+                                  background: getUserThemeStyles(user).background || 'transparent',
+                                  boxShadow: getUserThemeStyles(user).boxShadow || 'none',
+                                  animation: getUserThemeStyles(user).animation || 'none'
+                                } : {})
+                              }}
+                            >
                               {user.username}
                             </span>
                             {getUserRoleBadge(user.userType)}

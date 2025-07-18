@@ -2,6 +2,7 @@ import { useState } from 'react';
 import ProfileImage from './ProfileImage';
 import PremiumUserTheme from '@/components/ui/PremiumUserTheme';
 import type { ChatUser } from '@/types/chat';
+import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 
 interface UserSidebarProps {
   users: ChatUser[];
@@ -88,7 +89,18 @@ export default function NewUserSidebar({ users, currentUser, onUserClick }: User
                   flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200
                   hover:bg-gray-100 hover:shadow-sm
                   ${user.id === currentUser?.id ? 'bg-teal-50 border border-teal-200' : ''}
+                  ${getUserThemeClasses(user)}
                 `}
+                style={{
+                  ...getUserThemeStyles(user),
+                  // تطبيق الثيم إذا كان متوفراً
+                  ...(user.userTheme && user.userTheme !== 'default' ? {
+                    background: getUserThemeStyles(user).background || 'transparent',
+                    boxShadow: getUserThemeStyles(user).boxShadow || 'none',
+                    animation: getUserThemeStyles(user).animation || 'none',
+                    border: getUserThemeStyles(user).background ? '1px solid rgba(255,255,255,0.2)' : undefined
+                  } : {})
+                }}
               >
                 {/* User Avatar */}
                 <div className="relative">
@@ -147,7 +159,19 @@ export default function NewUserSidebar({ users, currentUser, onUserClick }: User
 
       {/* Current User Info */}
       {currentUser && (
-        <div className="p-3 border-t border-gray-200 bg-gray-50">
+        <div 
+          className={`p-3 border-t border-gray-200 bg-gray-50 ${getUserThemeClasses(currentUser)}`}
+          style={{
+            ...getUserThemeStyles(currentUser),
+            // تطبيق الثيم إذا كان متوفراً
+            ...(currentUser.userTheme && currentUser.userTheme !== 'default' ? {
+              background: getUserThemeStyles(currentUser).background || 'rgba(249, 250, 251, 1)',
+              boxShadow: getUserThemeStyles(currentUser).boxShadow || 'none',
+              animation: getUserThemeStyles(currentUser).animation || 'none',
+              border: getUserThemeStyles(currentUser).background ? '1px solid rgba(255,255,255,0.2)' : undefined
+            } : {})
+          }}
+        >
           <div className="flex items-center gap-3">
             <ProfileImage user={currentUser} size="small" />
             <div className="flex-1 min-w-0">
