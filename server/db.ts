@@ -1,5 +1,7 @@
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
+import Database from 'better-sqlite3';
+import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
 import * as schema from "../shared/schema";
 
 // إعداد قاعدة البيانات مع معالجة أخطاء متقدمة
@@ -11,10 +13,18 @@ function initializeDatabase() {
     console.log("💡 يرجى إنشاء ملف .env وإضافة DATABASE_URL");
     console.log("📝 مثال: DATABASE_URL=postgresql://username:password@host:port/dbname");
     
-    // في بيئة التطوير، نستخدم قاعدة بيانات وهمية
+    // في بيئة التطوير، نستخدم SQLite
     if (process.env.NODE_ENV === 'development') {
-      console.warn("⚠️  استخدام وضع التطوير بدون قاعدة بيانات - سيتم حفظ البيانات في الذاكرة فقط");
-      return null;
+      console.warn("⚠️  استخدام SQLite للتطوير");
+      try {
+        const sqlite = new Database('./dev.db');
+        const db = drizzleSqlite(sqlite, { schema });
+        console.log("✅ تم الاتصال بقاعدة بيانات SQLite للتطوير");
+        return { pool: null, db, sqlite };
+      } catch (error) {
+        console.error("❌ فشل في إنشاء قاعدة بيانات SQLite:", error);
+        return null;
+      }
     }
     
     // في بيئة الإنتاج، نرمي خطأ
@@ -26,7 +36,7 @@ function initializeDatabase() {
   try {
     const pool = new Pool({ connectionString: databaseUrl });
     console.log("✅ تم الاتصال بقاعدة البيانات بنجاح");
-    return { pool, db: drizzle({ client: pool, schema }) };
+    return { pool, db: drizzle({ client: pool, schema }), sqlite: null };
   } catch (error) {
     console.error("❌ فشل في الاتصال بقاعدة البيانات:", error);
     
@@ -43,16 +53,25 @@ const dbConnection = initializeDatabase();
 
 export const pool = dbConnection?.pool;
 export const db = dbConnection?.db;
+export const sqlite = dbConnection?.sqlite;
 
 // دالة للتحقق من حالة قاعدة البيانات
 export async function checkDatabaseHealth(): Promise<boolean> {
-  if (!db || !pool) {
+  if (!db) {
     return false;
   }
   
   try {
-    await pool.query('SELECT 1');
-    return true;
+    if (sqlite) {
+      // اختبار SQLite
+      sqlite.prepare('SELECT 1').get();
+      return true;
+    } else if (pool) {
+      // اختبار PostgreSQL
+      await pool.query('SELECT 1');
+      return true;
+    }
+    return false;
   } catch (error) {
     console.error("❌ خطأ في فحص صحة قاعدة البيانات:", error);
     return false;
@@ -62,7 +81,8 @@ export async function checkDatabaseHealth(): Promise<boolean> {
 // دالة للحصول على حالة قاعدة البيانات
 export function getDatabaseStatus() {
   return {
-    connected: !!db && !!pool,
+    connected: !!db,
+    type: sqlite ? 'SQLite' : 'PostgreSQL',
     url: process.env.DATABASE_URL ? '***محددة***' : 'غير محددة',
     environment: process.env.NODE_ENV || 'development'
   };
