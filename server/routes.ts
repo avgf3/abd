@@ -1125,7 +1125,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     socket.on('message', async (data) => {
       try {
-        const message = JSON.parse(data.toString());
+        // Handle different data types
+        let messageData;
+        if (typeof data === 'string') {
+          messageData = data;
+        } else if (Buffer.isBuffer(data)) {
+          messageData = data.toString();
+        } else if (typeof data === 'object') {
+          // If it's already an object, use it directly
+          messageData = data;
+        } else {
+          console.error('❌ نوع بيانات غير مدعوم في WebSocket:', typeof data);
+          return;
+        }
+
+        let message;
+        if (typeof messageData === 'string') {
+          // Check if it's valid JSON before parsing
+          if (messageData.trim().startsWith('{') || messageData.trim().startsWith('[')) {
+            message = JSON.parse(messageData);
+          } else {
+            console.error('❌ البيانات ليست JSON صالح:', messageData);
+            return;
+          }
+        } else {
+          message = messageData;
+        }
+        
         console.log(`رسالة WebSocket من ${socket.username || 'غير معروف'}: ${message.type}`);
         
         switch (message.type) {

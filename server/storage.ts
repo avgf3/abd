@@ -441,8 +441,44 @@ export class MixedStorage implements IStorage {
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    // For memory-only mode, always use memory
+    if (!db) {
+      const message: Message = {
+        id: this.currentMessageId++,
+        senderId: insertMessage.senderId,
+        receiverId: insertMessage.receiverId,
+        content: insertMessage.content,
+        messageType: insertMessage.messageType || 'text',
+        isPrivate: insertMessage.isPrivate || false,
+        timestamp: new Date(),
+      };
+      
+      this.messages.set(message.id, message);
+      return message;
+    }
+
     try {
-      // Always try database first for persistence
+      // Check if sender exists in database (only for registered users)
+      if (insertMessage.senderId) {
+        const sender = await this.getUser(insertMessage.senderId);
+        if (!sender) {
+          // If sender doesn't exist in database, use memory
+          const message: Message = {
+            id: this.currentMessageId++,
+            senderId: insertMessage.senderId,
+            receiverId: insertMessage.receiverId,
+            content: insertMessage.content,
+            messageType: insertMessage.messageType || 'text',
+            isPrivate: insertMessage.isPrivate || false,
+            timestamp: new Date(),
+          };
+          
+          this.messages.set(message.id, message);
+          return message;
+        }
+      }
+
+      // Try database insert
       const [dbMessage] = await db
         .insert(messages)
         .values({
