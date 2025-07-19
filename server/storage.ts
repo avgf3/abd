@@ -802,19 +802,7 @@ export class MixedStorage implements IStorage {
         return false;
       }
       
-      // Create blocked devices table if it doesn't exist
-      await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS blocked_devices (
-          id SERIAL PRIMARY KEY,
-          ip_address TEXT NOT NULL,
-          device_id TEXT NOT NULL,
-          user_id INTEGER NOT NULL,
-          reason TEXT NOT NULL,
-          blocked_at TIMESTAMP NOT NULL,
-          blocked_by INTEGER NOT NULL,
-          UNIQUE(ip_address, device_id)
-        )
-      `);
+      // Table should already exist from database initialization
 
       await db.execute(sql`
         INSERT INTO blocked_devices 
