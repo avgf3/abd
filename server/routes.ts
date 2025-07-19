@@ -575,8 +575,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       status: 'ok', 
       timestamp: new Date().toISOString(),
       env: process.env.NODE_ENV,
-      socketIO: 'enabled'
+      socketIO: 'enabled',
+      database: {
+        connected: !!db,
+        type: dbType,
+        adapter: dbAdapter.type
+      }
     });
+  });
+
+  // Debug endpoint to check users
+  app.get('/api/debug/users', async (req, res) => {
+    try {
+      console.log('🔍 Debug: فحص المستخدمين');
+      console.log('Database connected:', !!db);
+      console.log('Database type:', dbType);
+      
+      if (!db) {
+        return res.json({
+          error: 'Database not connected',
+          type: dbType,
+          memoryUsers: Array.from(storage.users.keys())
+        });
+      }
+
+      // Try to get all users using Drizzle
+      const allUsers = await db.select().from(users);
+      console.log('Users from Drizzle:', allUsers.length);
+      
+      res.json({
+        database: { connected: true, type: dbType },
+        users: allUsers.map(u => ({ 
+          id: u.id, 
+          username: u.username, 
+          userType: u.userType,
+          role: u.role 
+        }))
+      });
+    } catch (error) {
+      console.error('Debug users error:', error);
+      res.status(500).json({ 
+        error: error.message,
+        database: { connected: !!db, type: dbType }
+      });
+    }
   });
 
   // تطبيق فحص الأمان على جميع الطلبات
