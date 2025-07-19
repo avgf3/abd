@@ -575,51 +575,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       status: 'ok', 
       timestamp: new Date().toISOString(),
       env: process.env.NODE_ENV,
-      socketIO: 'enabled',
-      database: {
-        connected: !!db,
-        type: dbType,
-        adapter: dbAdapter.type
-      }
+      socketIO: 'enabled'
     });
   });
 
-  // Debug endpoint to check users
-  app.get('/api/debug/users', async (req, res) => {
-    try {
-      console.log('🔍 Debug: فحص المستخدمين');
-      console.log('Database connected:', !!db);
-      console.log('Database type:', dbType);
-      
-      if (!db) {
-        return res.json({
-          error: 'Database not connected',
-          type: dbType,
-          memoryUsers: Array.from(storage.users.keys())
-        });
-      }
 
-      // Try to get all users using Drizzle
-      const allUsers = await db.select().from(users);
-      console.log('Users from Drizzle:', allUsers.length);
-      
-      res.json({
-        database: { connected: true, type: dbType },
-        users: allUsers.map(u => ({ 
-          id: u.id, 
-          username: u.username, 
-          userType: u.userType,
-          role: u.role 
-        }))
-      });
-    } catch (error) {
-      console.error('Debug users error:', error);
-      res.status(500).json({ 
-        error: error.message,
-        database: { connected: !!db, type: dbType }
-      });
-    }
-  });
 
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);
@@ -741,46 +701,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create user endpoint (for development/admin)
-  app.post("/api/users/create", async (req, res) => {
-    try {
-      const { username, password, userType = 'member' } = req.body;
-      
-      if (!username?.trim() || !password?.trim()) {
-        return res.status(400).json({ error: "اسم المستخدم وكلمة المرور مطلوبان" });
-      }
 
-      // Check if user already exists
-      const existingUser = await storage.getUserByUsername(username.trim());
-      if (existingUser) {
-        return res.status(400).json({ error: "اسم المستخدم موجود بالفعل" });
-      }
-
-      // Create new user
-      const userData = {
-        username: username.trim(),
-        password: password.trim(),
-        userType: userType,
-        role: userType,
-        profileImage: '/default_avatar.svg',
-        profileBackgroundColor: '#3c0d0d',
-        usernameColor: '#FFFFFF',
-        userTheme: 'default'
-      };
-
-      const newUser = await storage.createUser(userData);
-      console.log(`✅ تم إنشاء المستخدم: ${username}`);
-      
-      res.json({ 
-        success: true, 
-        message: "تم إنشاء المستخدم بنجاح",
-        user: newUser 
-      });
-    } catch (error) {
-      console.error('Error creating user:', error);
-      res.status(500).json({ error: "خطأ في إنشاء المستخدم" });
-    }
-  });
 
   // User routes
   app.get("/api/users/online", async (req, res) => {
