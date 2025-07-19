@@ -9,8 +9,8 @@ export type DatabaseType = PgDatabase<NeonQueryResultHKT, typeof schema>;
 
 // واجهة موحدة للعمليات
 export interface DatabaseAdapter {
-  db: DatabaseType;
-  type: 'postgresql';
+  db: DatabaseType | null;
+  type: 'postgresql' | 'memory';
   close?: () => void;
 }
 
@@ -19,28 +19,11 @@ export function createDatabaseAdapter(): DatabaseAdapter {
   const databaseUrl = process.env.DATABASE_URL;
   
   if (!databaseUrl) {
-    // في حالة عدم وجود DATABASE_URL، استخدم قاعدة بيانات تجريبية
-    console.warn("⚠️  DATABASE_URL غير محدد، استخدام قاعدة بيانات تجريبية");
-    
-    // يمكن استخدام قاعدة بيانات تجريبية مؤقتة أو رمي خطأ
-    const testUrl = "postgresql://test:test@localhost:5432/test";
-    
-    try {
-      neonConfig.fetchConnectionCache = true;
-      const pool = new Pool({ connectionString: testUrl });
-      const db = drizzleNeon({ client: pool, schema });
-      
-      console.log("⚠️  تم إنشاء اتصال تجريبي - يرجى تعيين DATABASE_URL");
-      
-      return {
-        db: db as DatabaseType,
-        type: 'postgresql',
-        close: () => pool.end()
-      };
-    } catch (error) {
-      console.error("❌ فشل في إنشاء الاتصال التجريبي:", error);
-      throw new Error("DATABASE_URL مطلوب. يرجى تحديد DATABASE_URL في متغيرات البيئة.");
-    }
+    console.warn("⚠️  DATABASE_URL غير محدد، استخدام وضع الذاكرة");
+    return {
+      db: null,
+      type: 'memory'
+    };
   }
 
   try {
@@ -58,8 +41,11 @@ export function createDatabaseAdapter(): DatabaseAdapter {
       close: () => pool.end()
     };
   } catch (error) {
-    console.error("❌ فشل في الاتصال بقاعدة البيانات:", error);
-    throw error;
+    console.error("❌ فشل في الاتصال بقاعدة البيانات، استخدام وضع الذاكرة:", error);
+    return {
+      db: null,
+      type: 'memory'
+    };
   }
 }
 
@@ -71,6 +57,7 @@ export const dbType = dbAdapter.type;
 // دالة للتحقق من حالة قاعدة البيانات
 export async function checkDatabaseHealth(): Promise<boolean> {
   try {
+    if (!db) return false;
     // اختبار PostgreSQL فقط
     await db.execute('SELECT 1' as any);
     return true;
@@ -84,7 +71,7 @@ export async function checkDatabaseHealth(): Promise<boolean> {
 export function getDatabaseStatus() {
   return {
     connected: !!db,
-    type: 'PostgreSQL',
+    type: dbType === 'postgresql' ? 'PostgreSQL' : 'Memory',
     url: process.env.DATABASE_URL ? '***محددة***' : 'غير محددة',
     environment: process.env.NODE_ENV || 'development'
   };
