@@ -1,5 +1,5 @@
 import { eq, desc, and, or } from "drizzle-orm";
-import { db } from "../database-adapter";
+import { db } from "../db";
 import { messages, users, type Message, type InsertMessage } from "../../shared/schema";
 
 export class MessageService {

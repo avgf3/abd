@@ -1,5 +1,5 @@
 import { eq, desc, and } from "drizzle-orm";
-import { db } from "../database-adapter";
+import { db } from "../db";
 import { users, type User, type InsertUser } from "../../shared/schema";
 import bcrypt from "bcrypt";
 

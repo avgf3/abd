@@ -1,5 +1,5 @@
 import { eq, desc, and, or } from "drizzle-orm";
-import { db } from "../database-adapter";
+import { db } from "../db";
 import { friends, users, type Friend, type InsertFriend, type User } from "../../shared/schema";
 
 export class FriendService {

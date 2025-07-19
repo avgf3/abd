@@ -12,10 +12,10 @@ import {
   type Notification,
   type InsertNotification,
 } from "../shared/schema";
-import { db } from "./database-adapter";
+import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
-import { userService } from "./services/userService";
-import { messageService } from "./services/messageService";
+// import { userService } from "./services/userService";
+// import { messageService } from "./services/messageService";
 
 export interface IStorage {
   // User operations
@@ -109,6 +109,77 @@ export class MixedStorage implements IStorage {
       // فحص وجود قاعدة البيانات أولاً
       if (!db) {
         console.warn("⚠️ تشغيل وضع التطوير بدون قاعدة بيانات - سيتم حفظ البيانات في الذاكرة فقط");
+        
+        // إنشاء مستخدمين تجريبيين في الذاكرة للاختبار
+        const testOwner: User = {
+          id: 1,
+          username: "عبدالكريم",
+          password: "عبدالكريم22333",
+          userType: "owner",
+          role: "owner",
+          profileImage: "/default_avatar.svg",
+          profileBanner: null,
+          profileBackgroundColor: "#3c0d0d",
+          status: "مالك الموقع",
+          gender: "ذكر",
+          age: 30,
+          country: "السعودية",
+          relation: "مرتبط",
+          bio: "مالك الموقع",
+          isOnline: false,
+          isHidden: false,
+          lastSeen: new Date(),
+          joinDate: new Date(),
+          createdAt: new Date(),
+          isMuted: false,
+          muteExpiry: null,
+          isBanned: false,
+          banExpiry: null,
+          isBlocked: false,
+          ipAddress: null,
+          deviceId: null,
+          ignoredUsers: [],
+          usernameColor: '#FFFFFF',
+          userTheme: 'default'
+        };
+        
+        const testAdmin: User = {
+          id: 2,
+          username: "عبود",
+          password: "22333",
+          userType: "owner",
+          role: "owner",
+          profileImage: "/default_avatar.svg",
+          profileBanner: null,
+          profileBackgroundColor: "#3c0d0d",
+          status: "مشرف مؤقت",
+          gender: "ذكر",
+          age: 25,
+          country: "العراق",
+          relation: "أعزب",
+          bio: "مشرف مؤقت",
+          isOnline: false,
+          isHidden: false,
+          lastSeen: new Date(),
+          joinDate: new Date(),
+          createdAt: new Date(),
+          isMuted: false,
+          muteExpiry: null,
+          isBanned: false,
+          banExpiry: null,
+          isBlocked: false,
+          ipAddress: null,
+          deviceId: null,
+          ignoredUsers: [],
+          usernameColor: '#FFFFFF',
+          userTheme: 'default'
+        };
+        
+        this.users.set(1, testOwner);
+        this.users.set(2, testAdmin);
+        this.currentUserId = 1000; // بدء العد من 1000 للضيوف
+        
+        console.log("✅ تم إنشاء مستخدمين تجريبيين في الذاكرة");
         return;
       }
       
@@ -175,9 +246,18 @@ export class MixedStorage implements IStorage {
     );
     if (memUser) return memUser;
     
-    // Check database (for members)
-    const [dbUser] = await db.select().from(users).where(eq(users.username, username));
-    return dbUser || undefined;
+    // Check database (for members) - only if db is available
+    if (db) {
+      try {
+        const [dbUser] = await db.select().from(users).where(eq(users.username, username));
+        return dbUser || undefined;
+      } catch (error) {
+        console.warn('خطأ في الاتصال بقاعدة البيانات، استخدام الذاكرة فقط:', error);
+        return undefined;
+      }
+    }
+    
+    return undefined;
   }
 
   async verifyUserCredentials(username: string, password: string): Promise<User | null> {
