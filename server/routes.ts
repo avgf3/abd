@@ -24,6 +24,7 @@ const storage_multer = multer.diskStorage({
     
     // التأكد من وجود المجلد
     if (!fs.existsSync(uploadDir)) {
+      console.log(`Creating upload directory: ${uploadDir}`);
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     
@@ -122,9 +123,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('رفع صورة البروفايل - الملف:', req.file);
       console.log('البيانات:', req.body);
+      console.log('Headers:', req.headers);
+      console.log('Content-Type:', req.get('Content-Type'));
 
       if (!req.file) {
-        return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
+        console.log('No file uploaded in profile image request');
+        return res.status(400).json({ 
+          error: 'لم يتم رفع أي ملف',
+          details: 'تأكد من إرسال الملف مع اسم الحقل profileImage'
+        });
       }
 
       const userId = req.body.userId;
@@ -178,9 +185,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('رفع صورة البانر - الملف:', req.file);
       console.log('البيانات:', req.body);
+      console.log('Headers:', req.headers);
+      console.log('Content-Type:', req.get('Content-Type'));
 
       if (!req.file) {
-        return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
+        console.log('No file uploaded in profile banner request');
+        return res.status(400).json({ 
+          error: 'لم يتم رفع أي ملف',
+          details: 'تأكد من إرسال الملف مع اسم الحقل profileBanner'
+        });
       }
 
       const userId = req.body.userId;
@@ -656,18 +669,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "اسم المستخدم وكلمة المرور مطلوبان" });
       }
 
-      const user = await storage.getUserByUsername(username);
+      console.log(`Attempting member login for username: ${username}`);
+      
+      const user = await storage.getUserByUsername(username.trim());
       if (!user) {
+        console.log(`User not found: ${username}`);
         return res.status(401).json({ error: "اسم المستخدم غير موجود" });
       }
 
-      if (user.password !== password) {
+      console.log(`User found: ${user.username}, type: ${user.userType}`);
+
+      if (user.password !== password.trim()) {
+        console.log(`Password mismatch for user: ${username}`);
         return res.status(401).json({ error: "كلمة المرور غير صحيحة" });
       }
 
+      // Check if user is actually a member or owner
+      if (user.userType === 'guest') {
+        console.log(`Guest user trying to login as member: ${username}`);
+        return res.status(401).json({ error: "هذا المستخدم ضيف وليس عضو" });
+      }
+
       await storage.setUserOnlineStatus(user.id, true);
+      console.log(`Member login successful: ${username}`);
       res.json({ user });
     } catch (error) {
+      console.error('Member authentication error:', error);
       res.status(500).json({ error: "خطأ في الخادم" });
     }
   });
