@@ -12,8 +12,10 @@ import {
   type Notification,
   type InsertNotification,
 } from "../shared/schema";
-import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { db } from "./database-adapter";
+import { eq, desc, and, sql } from "drizzle-orm";
+import { userService } from "./services/userService";
+import { messageService } from "./services/messageService";
 
 export interface IStorage {
   // User operations
@@ -220,6 +222,7 @@ export class MixedStorage implements IStorage {
         username: insertUser.username,
         password: insertUser.password || null,
         userType: insertUser.userType || "guest",
+        role: insertUser.role || insertUser.userType || "guest",
         bio: insertUser.bio || null,
         profileBackgroundColor: "#3c0d0d",
         profileImage: "/default_avatar.svg", // Guests always use default
@@ -232,6 +235,7 @@ export class MixedStorage implements IStorage {
         isOnline: true,
         lastSeen: new Date(),
         joinDate: new Date(),
+        createdAt: new Date(),
         isMuted: false,
         muteExpiry: null,
         isBanned: false,
@@ -776,24 +780,28 @@ export class MixedStorage implements IStorage {
   }): Promise<boolean> {
     try {
       // Create blocked devices table if it doesn't exist
-      await db.run(sql`
+      await db.execute(sql`
         CREATE TABLE IF NOT EXISTS blocked_devices (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          id SERIAL PRIMARY KEY,
           ip_address TEXT NOT NULL,
           device_id TEXT NOT NULL,
           user_id INTEGER NOT NULL,
           reason TEXT NOT NULL,
-          blocked_at DATETIME NOT NULL,
+          blocked_at TIMESTAMP NOT NULL,
           blocked_by INTEGER NOT NULL,
           UNIQUE(ip_address, device_id)
         )
       `);
 
-      await db.run(sql`
-        INSERT OR REPLACE INTO blocked_devices 
+      await db.execute(sql`
+        INSERT INTO blocked_devices 
         (ip_address, device_id, user_id, reason, blocked_at, blocked_by)
         VALUES (${blockData.ipAddress}, ${blockData.deviceId}, ${blockData.userId}, 
                 ${blockData.reason}, ${blockData.blockedAt.toISOString()}, ${blockData.blockedBy})
+        ON CONFLICT (ip_address, device_id) DO UPDATE SET
+        reason = EXCLUDED.reason,
+        blocked_at = EXCLUDED.blocked_at,
+        blocked_by = EXCLUDED.blocked_by
       `);
       
       return true;
@@ -805,12 +813,12 @@ export class MixedStorage implements IStorage {
 
   async isDeviceBlocked(ipAddress: string, deviceId: string): Promise<boolean> {
     try {
-      const result = await db.get(sql`
+      const result = await db.execute(sql`
         SELECT COUNT(*) as count FROM blocked_devices 
         WHERE ip_address = ${ipAddress} OR device_id = ${deviceId}
       `);
       
-      return (result?.count || 0) > 0;
+      return ((result as any)?.count || 0) > 0;
     } catch (error) {
       console.error('Error checking blocked device:', error);
       return false;
@@ -819,11 +827,11 @@ export class MixedStorage implements IStorage {
 
   async getBlockedDevices(): Promise<Array<{ipAddress: string, deviceId: string}>> {
     try {
-      const result = await db.all(sql`
+      const result = await db.execute(sql`
         SELECT ip_address as ipAddress, device_id as deviceId FROM blocked_devices
       `);
       
-      return result || [];
+      return (result as any) || [];
     } catch (error) {
       console.error('Error getting blocked devices:', error);
       return [];
