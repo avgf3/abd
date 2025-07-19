@@ -148,38 +148,6 @@ export async function initializeDatabase(): Promise<boolean> {
 }
 
 export async function createDefaultUsers(): Promise<void> {
-  try {
-    if (!db) {
-      console.log('📄 Memory mode - skipping default user creation');
-      return;
-    }
-
-    // Check if admin user exists
-    const adminExists = await db.execute(sql`
-      SELECT COUNT(*) as count FROM users WHERE username = 'admin'
-    `);
-
-    if ((adminExists as any)?.[0]?.count === 0) {
-      await db.execute(sql`
-        INSERT INTO users (username, password, user_type, role, profile_image, join_date, created_at)
-        VALUES ('admin', 'admin123', 'owner', 'owner', '/default_avatar.svg', NOW(), NOW())
-      `);
-      console.log('✅ Default admin user created');
-    }
-
-    // Create a test member user
-    const memberExists = await db.execute(sql`
-      SELECT COUNT(*) as count FROM users WHERE username = 'testuser'
-    `);
-
-    if ((memberExists as any)?.[0]?.count === 0) {
-      await db.execute(sql`
-        INSERT INTO users (username, password, user_type, role, profile_image, join_date, created_at)
-        VALUES ('testuser', 'test123', 'member', 'member', '/default_avatar.svg', NOW(), NOW())
-      `);
-      console.log('✅ Default test user created');
-    }
-  } catch (error) {
-    console.error('❌ Error creating default users:', error);
-  }
+  // لا نضيف مستخدمين افتراضيين - المستخدم الأصلي موجود في قاعدة البيانات
+  console.log('📄 Skipping default user creation - using existing database users');
 }
