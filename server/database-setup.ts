@@ -99,15 +99,30 @@ export async function initializeDatabase(): Promise<boolean> {
     `);
 
     // Add missing columns to existing tables if they don't exist
-    await db.execute(sql`
-      DO $$ 
-      BEGIN 
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_name='users' AND column_name='role') THEN
-          ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'guest';
-        END IF;
-      END $$
-    `);
+    try {
+      await db.execute(sql`
+        DO $$ 
+        BEGIN 
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='users' AND column_name='role') THEN
+            ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'guest';
+            UPDATE users SET role = user_type WHERE role IS NULL;
+            ALTER TABLE users ALTER COLUMN role SET NOT NULL;
+          END IF;
+        END $$
+      `);
+      console.log('✅ Role column added successfully');
+    } catch (error) {
+      console.error('❌ Error adding role column:', error);
+      // Try alternative approach
+      try {
+        await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'guest'`);
+        await db.execute(sql`UPDATE users SET role = user_type WHERE role IS NULL OR role = ''`);
+        console.log('✅ Role column added with alternative method');
+      } catch (altError) {
+        console.error('❌ Alternative method also failed:', altError);
+      }
+    }
 
     await db.execute(sql`
       DO $$ 
@@ -148,6 +163,52 @@ export async function initializeDatabase(): Promise<boolean> {
 }
 
 export async function createDefaultUsers(): Promise<void> {
-  // لا نضيف مستخدمين افتراضيين - المستخدم الأصلي موجود في قاعدة البيانات
-  console.log('📄 Skipping default user creation - using existing database users');
+  try {
+    if (!db) {
+      console.log('📄 Database not available - skipping user creation');
+      return;
+    }
+
+    console.log('🔍 Ensuring owner عبود exists...');
+
+    // Check if owner exists
+    const ownerExists = await db.execute(sql`
+      SELECT COUNT(*) as count FROM users WHERE username = 'عبود'
+    `);
+
+    const count = (ownerExists as any)?.[0]?.count || 0;
+    
+    if (count === 0) {
+      console.log('➕ Creating owner عبود...');
+      
+      // Create owner عبود
+      await db.execute(sql`
+        INSERT INTO users (
+          username, password, user_type, role, profile_image, 
+          join_date, created_at, profile_background_color, username_color, user_theme,
+          is_online, is_hidden, is_muted, is_banned, is_blocked, ignored_users
+        ) VALUES (
+          'عبود', '22333', 'owner', 'owner', '/default_avatar.svg',
+          NOW(), NOW(), '#3c0d0d', '#FFFFFF', 'default',
+          false, false, false, false, false, '[]'
+        )
+      `);
+      
+      console.log('✅ Owner عبود created successfully');
+    } else {
+      console.log('✅ Owner عبود already exists');
+      
+      // Update password and role to make sure they're correct
+      await db.execute(sql`
+        UPDATE users 
+        SET password = '22333', user_type = 'owner', role = 'owner'
+        WHERE username = 'عبود'
+      `);
+      
+      console.log('✅ Owner عبود updated successfully');
+    }
+    
+  } catch (error) {
+    console.error('❌ Error ensuring owner exists:', error);
+  }
 }

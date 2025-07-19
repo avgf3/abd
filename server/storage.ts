@@ -852,7 +852,14 @@ export class MixedStorage implements IStorage {
         SELECT ip_address as ipAddress, device_id as deviceId FROM blocked_devices
       `);
       
-      return (result as any) || [];
+      // تأكد من أن النتيجة array
+      if (Array.isArray(result)) {
+        return result;
+      } else if (result && typeof result === 'object' && 'rows' in result) {
+        return (result as any).rows || [];
+      }
+      
+      return [];
     } catch (error) {
       console.error('Error getting blocked devices:', error);
       return [];
