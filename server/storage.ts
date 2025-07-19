@@ -120,6 +120,7 @@ export class MixedStorage implements IStorage {
           username: "عبدالكريم",
           password: "عبدالكريم22333",
           userType: "owner",
+          role: "owner",
           profileImage: "/default_avatar.svg",
           status: "مالك الموقع",
           gender: "ذكر",
@@ -139,6 +140,7 @@ export class MixedStorage implements IStorage {
           username: "عبود",
           password: "22333",
           userType: "owner",
+          role: "owner",
           profileImage: "/default_avatar.svg",
           status: "مشرف مؤقت",
           gender: "ذكر",
@@ -159,13 +161,18 @@ export class MixedStorage implements IStorage {
     const memUser = this.users.get(id);
     if (memUser) return memUser;
     
-    // Check database (for members)
-    try {
-      const [dbUser] = await db.select().from(users).where(eq(users.id, id));
-      return dbUser || undefined;
-    } catch (error) {
-      return undefined;
+    // Check database (for members) only if database is available
+    if (db) {
+      try {
+        const [dbUser] = await db.select().from(users).where(eq(users.id, id));
+        return dbUser || undefined;
+      } catch (error) {
+        console.error('Database query error in getUser:', error);
+        return undefined;
+      }
     }
+    
+    return undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
@@ -175,9 +182,18 @@ export class MixedStorage implements IStorage {
     );
     if (memUser) return memUser;
     
-    // Check database (for members)
-    const [dbUser] = await db.select().from(users).where(eq(users.username, username));
-    return dbUser || undefined;
+    // Check database (for members) only if database is available
+    if (db) {
+      try {
+        const [dbUser] = await db.select().from(users).where(eq(users.username, username));
+        return dbUser || undefined;
+      } catch (error) {
+        console.error('Database query error in getUserByUsername:', error);
+        return undefined;
+      }
+    }
+    
+    return undefined;
   }
 
   async verifyUserCredentials(username: string, password: string): Promise<User | null> {
@@ -200,6 +216,7 @@ export class MixedStorage implements IStorage {
           username: insertUser.username,
           password: insertUser.password,
           userType: insertUser.userType,
+          role: insertUser.role || insertUser.userType || "guest",
           profileImage: insertUser.profileImage || "/default_avatar.svg",
           profileBanner: insertUser.profileBanner || null,
           status: insertUser.status,
@@ -779,6 +796,12 @@ export class MixedStorage implements IStorage {
     blockedBy: number;
   }): Promise<boolean> {
     try {
+      if (!db) {
+        // في وضع الذاكرة، لا يمكن حفظ الأجهزة المحجوبة
+        console.warn('Cannot block device in memory mode');
+        return false;
+      }
+      
       // Create blocked devices table if it doesn't exist
       await db.execute(sql`
         CREATE TABLE IF NOT EXISTS blocked_devices (
@@ -813,6 +836,11 @@ export class MixedStorage implements IStorage {
 
   async isDeviceBlocked(ipAddress: string, deviceId: string): Promise<boolean> {
     try {
+      if (!db) {
+        // في وضع الذاكرة، لا توجد أجهزة محجوبة
+        return false;
+      }
+      
       const result = await db.execute(sql`
         SELECT COUNT(*) as count FROM blocked_devices 
         WHERE ip_address = ${ipAddress} OR device_id = ${deviceId}
@@ -827,6 +855,11 @@ export class MixedStorage implements IStorage {
 
   async getBlockedDevices(): Promise<Array<{ipAddress: string, deviceId: string}>> {
     try {
+      if (!db) {
+        // في وضع الذاكرة، لا توجد أجهزة محجوبة
+        return [];
+      }
+      
       const result = await db.execute(sql`
         SELECT ip_address as ipAddress, device_id as deviceId FROM blocked_devices
       `);

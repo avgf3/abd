@@ -63,6 +63,17 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// إضافة جدول blocked_devices المفقود
+export const blockedDevices = pgTable("blocked_devices", {
+  id: serial("id").primaryKey(),
+  ipAddress: text("ip_address").notNull(),
+  deviceId: text("device_id").notNull(),
+  userId: integer("user_id").notNull(),
+  reason: text("reason").notNull(),
+  blockedAt: timestamp("blocked_at").notNull(),
+  blockedBy: integer("blocked_by").notNull(),
+});
+
 export const insertUserSchema = z.object({
   username: z.string(),
   password: z.string().optional(),
@@ -120,3 +131,16 @@ export const insertNotificationSchema = z.object({
 
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
+
+// إضافة أنواع البيانات لجدول blocked_devices
+export const insertBlockedDeviceSchema = z.object({
+  ipAddress: z.string(),
+  deviceId: z.string(),
+  userId: z.number(),
+  reason: z.string(),
+  blockedAt: z.date(),
+  blockedBy: z.number(),
+});
+
+export type InsertBlockedDevice = z.infer<typeof insertBlockedDeviceSchema>;
+export type BlockedDevice = typeof blockedDevices.$inferSelect;
