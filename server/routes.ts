@@ -699,6 +699,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create user endpoint (for development/admin)
+  app.post("/api/users/create", async (req, res) => {
+    try {
+      const { username, password, userType = 'member' } = req.body;
+      
+      if (!username?.trim() || !password?.trim()) {
+        return res.status(400).json({ error: "اسم المستخدم وكلمة المرور مطلوبان" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(username.trim());
+      if (existingUser) {
+        return res.status(400).json({ error: "اسم المستخدم موجود بالفعل" });
+      }
+
+      // Create new user
+      const userData = {
+        username: username.trim(),
+        password: password.trim(),
+        userType: userType,
+        role: userType,
+        profileImage: '/default_avatar.svg',
+        profileBackgroundColor: '#3c0d0d',
+        usernameColor: '#FFFFFF',
+        userTheme: 'default'
+      };
+
+      const newUser = await storage.createUser(userData);
+      console.log(`✅ تم إنشاء المستخدم: ${username}`);
+      
+      res.json({ 
+        success: true, 
+        message: "تم إنشاء المستخدم بنجاح",
+        user: newUser 
+      });
+    } catch (error) {
+      console.error('Error creating user:', error);
+      res.status(500).json({ error: "خطأ في إنشاء المستخدم" });
+    }
+  });
+
   // User routes
   app.get("/api/users/online", async (req, res) => {
     try {
