@@ -71,6 +71,11 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
 
     setLoading(true);
     try {
+      console.log('🔄 محاولة تسجيل دخول العضو:', {
+        username: memberName.trim(),
+        password: '***'
+      });
+
       const data = await apiRequest('/api/auth/member', {
         method: 'POST',
         body: {
@@ -78,9 +83,12 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           password: memberPassword.trim(),
         }
       });
+      
+      console.log('✅ نجح تسجيل الدخول:', data);
       onUserLogin(data.user);
       setShowMemberModal(false);
     } catch (error: any) {
+      console.error('❌ خطأ في تسجيل الدخول:', error);
       toast({
         title: "خطأ",
         description: error.message || "حدث خطأ في تسجيل الدخول",
