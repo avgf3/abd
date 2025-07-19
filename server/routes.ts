@@ -57,6 +57,8 @@ let io: IOServer;
 interface CustomSocket extends Socket {
   userId?: number;
   username?: string;
+  userType?: string;
+  isAuthenticated?: boolean;
 }
 
 // دالة broadcast للإرسال لجميع المستخدمين
@@ -1430,12 +1432,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`🧹 فحص ${connectedSockets.length} جلسة متصلة...`);
       
       for (const socket of connectedSockets) {
-        if (socket.userId) {
+        const customSocket = socket as any;
+        if (customSocket.userId) {
           try {
             // التحقق من وجود المستخدم في قاعدة البيانات
-            const user = await storage.getUser(socket.userId);
+            const user = await storage.getUser(customSocket.userId);
             if (!user || !user.isOnline) {
-              console.log(`🧹 تنظيف جلسة منتهية الصلاحية للمستخدم ${socket.userId}`);
+              console.log(`🧹 تنظيف جلسة منتهية الصلاحية للمستخدم ${customSocket.userId}`);
               socket.disconnect(true);
             }
           } catch (error) {

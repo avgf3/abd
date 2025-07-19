@@ -7,8 +7,10 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password"),
   userType: text("user_type").notNull().default("guest"), // 'guest', 'member', 'owner'
+  role: text("role").notNull().default("guest"), // نفس userType للتوافق مع ChatUser
   profileImage: text("profile_image"),
   profileBanner: text("profile_banner"),
+  profileBackgroundColor: text("profile_background_color").default('#3c0d0d'), // لون خلفية البروفايل
   status: text("status"),
   gender: text("gender"),
   age: integer("age"),
@@ -19,6 +21,7 @@ export const users = pgTable("users", {
   isHidden: boolean("is_hidden").default(false), // خاصية الإخفاء للمراقبة
   lastSeen: timestamp("last_seen"),
   joinDate: timestamp("join_date").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(), // تاريخ الإنشاء للتوافق مع ChatUser
   isMuted: boolean("is_muted").default(false),
   muteExpiry: timestamp("mute_expiry"),
   isBanned: boolean("is_banned").default(false),
@@ -29,7 +32,6 @@ export const users = pgTable("users", {
   ignoredUsers: text("ignored_users").array().default([]), // قائمة المستخدمين المتجاهلين
   usernameColor: text("username_color").default('#FFFFFF'), // لون اسم المستخدم
   userTheme: text("user_theme").default('default'), // ثيم المستخدم
-  profileBackgroundColor: text("profile_background_color").default('#3c0d0d'), // لون خلفية البروفايل
 });
 
 export const messages = pgTable("messages", {
@@ -65,8 +67,10 @@ export const insertUserSchema = z.object({
   username: z.string(),
   password: z.string().optional(),
   userType: z.string(),
+  role: z.string().optional(), // إضافة role
   profileImage: z.string().optional(),
   profileBanner: z.string().optional(),
+  profileBackgroundColor: z.string().optional(), // إضافة profileBackgroundColor
   status: z.string().optional(),
   gender: z.string().optional(),
   age: z.number().optional(),
@@ -81,6 +85,8 @@ export const insertUserSchema = z.object({
   isBlocked: z.boolean().optional(),
   ipAddress: z.string().optional(),
   deviceId: z.string().optional(),
+  usernameColor: z.string().optional(),
+  userTheme: z.string().optional(),
 });
 
 export const insertMessageSchema = z.object({
