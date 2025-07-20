@@ -1,4 +1,122 @@
-import type { Express, Request, Response, NextFunction } from 'express';
+import express, { type Express, Request, Response, NextFunction } from 'express';
+
+// Rate limiting maps
+const authRequestCounts = new Map<string, { count: number; resetTime: number }>();
+const messageRequestCounts = new Map<string, { count: number; resetTime: number }>();
+const blockedIPs = new Set<string>();
+
+// Rate limiter for authentication endpoints
+export function authLimiter(req: Request, res: Response, next: NextFunction): void {
+  const clientId = req.ip || 'unknown';
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000; // 15 minutes
+  const maxRequests = 10; // Lower limit for auth endpoints
+
+  const current = authRequestCounts.get(clientId);
+  
+  if (!current || now > current.resetTime) {
+    authRequestCounts.set(clientId, { count: 1, resetTime: now + windowMs });
+    next();
+  } else if (current.count < maxRequests) {
+    current.count++;
+    next();
+  } else {
+    res.status(429).json({ 
+      error: 'تم تجاوز حد طلبات المصادقة، حاول مرة أخرى لاحقاً',
+      retryAfter: Math.ceil((current.resetTime - now) / 1000)
+    });
+  }
+}
+
+// Rate limiter for message endpoints
+export function messageLimiter(req: Request, res: Response, next: NextFunction): void {
+  const clientId = req.ip || 'unknown';
+  const now = Date.now();
+  const windowMs = 1 * 60 * 1000; // 1 minute
+  const maxRequests = 30; // 30 messages per minute
+
+  const current = messageRequestCounts.get(clientId);
+  
+  if (!current || now > current.resetTime) {
+    messageRequestCounts.set(clientId, { count: 1, resetTime: now + windowMs });
+    next();
+  } else if (current.count < maxRequests) {
+    current.count++;
+    next();
+  } else {
+    res.status(429).json({ 
+      error: 'تم تجاوز حد إرسال الرسائل، حاول مرة أخرى لاحقاً',
+      retryAfter: Math.ceil((current.resetTime - now) / 1000)
+    });
+  }
+}
+
+// IP security check middleware
+export function checkIPSecurity(req: Request, res: Response, next: NextFunction): void {
+  const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
+  
+  // Check if IP is blocked
+  if (blockedIPs.has(clientIp)) {
+    return res.status(403).json({ error: 'عذراً، تم حظر هذا العنوان' });
+  }
+  
+  // Add basic security checks
+  const userAgent = req.headers['user-agent'] || '';
+  const suspicious = [
+    'bot', 'crawler', 'spider', 'scraper', 'wget', 'curl'
+  ].some(term => userAgent.toLowerCase().includes(term));
+  
+  if (suspicious) {
+    console.log(`Suspicious request from ${clientIp}: ${userAgent}`);
+    // Don't block, just log for now
+  }
+  
+  next();
+}
+
+// Message content validation
+export function validateMessageContent(content: string): { isValid: boolean; reason?: string } {
+  if (!content || typeof content !== 'string') {
+    return { isValid: false, reason: 'المحتوى غير صالح' };
+  }
+  
+  const trimmedContent = content.trim();
+  
+  if (trimmedContent.length === 0) {
+    return { isValid: false, reason: 'لا يمكن إرسال رسالة فارغة' };
+  }
+  
+  if (trimmedContent.length > SecurityConfig.MAX_MESSAGE_LENGTH) {
+    return { isValid: false, reason: `الرسالة طويلة جداً (الحد الأقصى ${SecurityConfig.MAX_MESSAGE_LENGTH} حرف)` };
+  }
+  
+  // Check for spam patterns
+  const spamPatterns = [
+    /(.)\1{10,}/gi, // Repeated characters
+    /https?:\/\/[^\s]+/gi, // URLs (adjust based on your needs)
+    /[^\w\s\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/gi // Non-Arabic/alphanumeric chars (allowing Arabic)
+  ];
+  
+  for (const pattern of spamPatterns) {
+    if (pattern.test(trimmedContent)) {
+      return { isValid: false, reason: 'المحتوى يحتوي على نص مشبوه' };
+    }
+  }
+  
+  return { isValid: true };
+}
+
+// Add IP to block list
+export function blockIP(ip: string): void {
+  blockedIPs.add(ip);
+  console.log(`IP blocked: ${ip}`);
+}
+
+// Remove IP from block list
+export function unblockIP(ip: string): void {
+  blockedIPs.delete(ip);
+  console.log(`IP unblocked: ${ip}`);
+}
 
 // Security middleware to prevent common attacks
 export function setupSecurity(app: Express): void {
