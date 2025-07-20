@@ -249,12 +249,12 @@ export class MixedStorage implements IStorage {
       } catch (error: any) {
         console.error('Database query error in getUserByUsername:', error);
         
-        // If it's a missing column error, provide a helpful message and try without role column
-        if (error.code === '42703' && error.message?.includes('role')) {
-          console.error('❌ CRITICAL: Missing "role" column in users table!');
-          console.error('💡 Run: npm run db:fix-production to fix this issue');
+        // If it's a missing column error, try with only basic columns
+        if (error.code === '42703') {
+          console.error('❌ Missing column detected, trying with basic columns');
+          console.error('💡 Run: npm run db:fix-points to fix missing columns');
           
-          // Try query without role column as temporary fix
+          // Try query with only essential columns that should exist
           try {
             const [basicUser] = await db.select({
               id: users.id,
@@ -262,22 +262,41 @@ export class MixedStorage implements IStorage {
               password: users.password,
               userType: users.userType,
               profileImage: users.profileImage,
+              profileBanner: users.profileBanner,
+              profileBackgroundColor: users.profileBackgroundColor,
               status: users.status,
               gender: users.gender,
               age: users.age,
               country: users.country,
               relation: users.relation,
+              bio: users.bio,
               isOnline: users.isOnline,
+              isHidden: users.isHidden,
               lastSeen: users.lastSeen,
               joinDate: users.joinDate,
               createdAt: users.createdAt,
               isMuted: users.isMuted,
-              isBanned: users.isBanned
+              muteExpiry: users.muteExpiry,
+              isBanned: users.isBanned,
+              banExpiry: users.banExpiry,
+              isBlocked: users.isBlocked,
+              ipAddress: users.ipAddress,
+              deviceId: users.deviceId,
+              ignoredUsers: users.ignoredUsers,
+              usernameColor: users.usernameColor,
+              userTheme: users.userTheme
             }).from(users).where(eq(users.username, username));
             
             if (basicUser) {
-              // Add role field based on userType as fallback
-              return { ...basicUser, role: basicUser.userType || 'guest' } as any;
+              // Add missing fields with default values
+              return { 
+                ...basicUser, 
+                role: basicUser.userType || 'guest',
+                points: 0,
+                level: 1,
+                totalPoints: 0,
+                levelProgress: 0
+              } as any;
             }
           } catch (fallbackError) {
             console.error('❌ Fallback query also failed:', fallbackError);
@@ -536,11 +555,64 @@ export class MixedStorage implements IStorage {
     // Get online members from database (excluding hidden)
     if (db) {
       try {
-        const dbUsers = await db.select().from(users).where(eq(users.isOnline, 1)); // Use 1 instead of true for SQLite
+        const dbUsers = await db.select().from(users).where(eq(users.isOnline, true));
         const visibleDbUsers = dbUsers.filter(user => !user.isHidden);
         return [...memUsers, ...visibleDbUsers];
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error getting online users from database:', error);
+        
+        // If it's a missing column error, try with basic columns
+        if (error.code === '42703') {
+          console.error('❌ Missing column detected in getOnlineUsers, trying with basic columns');
+          try {
+            const basicUsers = await db.select({
+              id: users.id,
+              username: users.username,
+              userType: users.userType,
+              profileImage: users.profileImage,
+              profileBackgroundColor: users.profileBackgroundColor,
+              status: users.status,
+              gender: users.gender,
+              age: users.age,
+              country: users.country,
+              isOnline: users.isOnline,
+              isHidden: users.isHidden,
+              usernameColor: users.usernameColor,
+              userTheme: users.userTheme
+            }).from(users).where(eq(users.isOnline, true));
+            
+            const visibleBasicUsers = basicUsers
+              .filter(user => !user.isHidden)
+              .map(user => ({
+                ...user,
+                role: user.userType || 'guest',
+                points: 0,
+                level: 1,
+                totalPoints: 0,
+                levelProgress: 0,
+                password: null,
+                profileBanner: null,
+                relation: null,
+                bio: null,
+                lastSeen: null,
+                joinDate: new Date(),
+                createdAt: new Date(),
+                isMuted: false,
+                muteExpiry: null,
+                isBanned: false,
+                banExpiry: null,
+                isBlocked: false,
+                ipAddress: null,
+                deviceId: null,
+                ignoredUsers: []
+              }));
+              
+            return [...memUsers, ...visibleBasicUsers];
+          } catch (fallbackError) {
+            console.error('❌ Fallback getOnlineUsers query also failed:', fallbackError);
+          }
+        }
+        
         return memUsers;
       }
     }
@@ -664,19 +736,51 @@ export class MixedStorage implements IStorage {
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
     try {
-      // Always try database first for persistence
-      const [dbMessage] = await db
-        .insert(messages)
-        .values({
+      // Check if this is a guest user (ID >= 1000) or if the user exists in database
+      let shouldUseDatabase = true;
+      
+      if (insertMessage.senderId >= 1000) {
+        // This is likely a guest user, check if they exist in database
+        try {
+          const [senderExists] = await db.select().from(users).where(eq(users.id, insertMessage.senderId));
+          if (!senderExists) {
+            shouldUseDatabase = false;
+          }
+        } catch (error) {
+          console.log('Could not check sender existence, using memory');
+          shouldUseDatabase = false;
+        }
+      }
+      
+      if (shouldUseDatabase && db) {
+        // Try database insert only if sender exists in database
+        const [dbMessage] = await db
+          .insert(messages)
+          .values({
+            senderId: insertMessage.senderId,
+            receiverId: insertMessage.receiverId,
+            content: insertMessage.content,
+            messageType: insertMessage.messageType || 'text',
+            isPrivate: insertMessage.isPrivate || false,
+          } as any)
+          .returning();
+        
+        return dbMessage;
+      } else {
+        // Use memory storage for guest users or when database is not available
+        const message: Message = {
+          id: this.currentMessageId++,
           senderId: insertMessage.senderId,
           receiverId: insertMessage.receiverId,
           content: insertMessage.content,
           messageType: insertMessage.messageType || 'text',
           isPrivate: insertMessage.isPrivate || false,
-        } as any)
-        .returning();
-      
-      return dbMessage;
+          timestamp: new Date(),
+        };
+        
+        this.messages.set(message.id, message);
+        return message;
+      }
     } catch (error) {
       console.error('Database insert failed, using memory:', error);
       // Fallback to memory for guests or if database fails
@@ -927,8 +1031,6 @@ export class MixedStorage implements IStorage {
   async getFriendRequestById(requestId: number): Promise<any> {
     return this.friendRequests.get(requestId);
   }
-
-
 
   // Notification operations
   async createNotification(notification: InsertNotification): Promise<Notification> {

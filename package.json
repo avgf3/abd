@@ -14,6 +14,7 @@
     "db:fix": "node fix-database.js",
     "db:fix-sqlite": "node fix-sqlite-database.js",
     "db:fix-production": "node fix-production-database.mjs",
+    "db:fix-points": "node fix-production-points-database.mjs",
     "test:supabase": "node test-supabase-connection.js"
   },
   "dependencies": {
