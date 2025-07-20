@@ -5,11 +5,15 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase, createDefaultUsers } from "./database-setup";
+import { setupSecurity } from "./security";
 import path from "path";
 
 const app = express();
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Setup security first
+setupSecurity(app);
+
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // خدمة الملفات الثابتة للصور المرفوعة
 app.use('/uploads', express.static(path.join(process.cwd(), 'client/public/uploads')));

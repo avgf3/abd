@@ -81,7 +81,7 @@ export class EnhancedModerationSystem {
     
     await storage.updateUser(targetUserId, {
       isMuted: true,
-      muteExpiry: muteExpiry
+      muteExpiry: muteExpiry.toISOString()
     });
 
     // حجب IP والجهاز مؤقتاً
