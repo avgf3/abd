@@ -2,10 +2,10 @@ export interface ChatUser {
   id: number;
   username: string;
   userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
-  role?: 'guest' | 'member' | 'owner' | 'admin' | 'moderator'; // نفس userType للتوافق
+  role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
   profileImage?: string;
   profileBanner?: string;
-  profileBackgroundColor?: string; // لون خلفية البروفايل
+  profileBackgroundColor: string;
   status?: string;
   gender?: string;
   age?: number;
@@ -13,17 +13,21 @@ export interface ChatUser {
   relation?: string;
   bio?: string;
   isOnline: boolean;
-  isHidden?: boolean; // خاصية الإخفاء للمراقبة
-  lastSeen?: Date;
-  joinDate?: Date;
-  createdAt?: Date; // تاريخ الإنشاء
-  isMuted?: boolean;
+  isHidden: boolean;
+  lastSeen: Date | null;
+  joinDate: Date;
+  createdAt: Date;
+  isMuted: boolean;
+  muteExpiry: Date | null;
+  isBanned: boolean;
+  banExpiry: Date | null;
+  isBlocked: boolean;
   isKicked?: boolean;
-  isBlocked?: boolean;
-  isBanned?: boolean; // حالة الحظر
-  ignoredUsers?: string[]; // قائمة المستخدمين المتجاهلين
-  usernameColor?: string;
-  userTheme?: string; // لون اسم المستخدم
+  ipAddress?: string;
+  deviceId?: string;
+  ignoredUsers: number[];
+  usernameColor: string;
+  userTheme: string;
 }
 
 export interface ChatMessage {

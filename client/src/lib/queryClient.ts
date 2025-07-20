@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import type { ApiResponse } from "@/types/chat";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -7,7 +8,7 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
+export async function apiRequest<T = any>(
   urlOrMethod: string,
   urlOrOptions?: string | {
     method?: string;
@@ -15,7 +16,7 @@ export async function apiRequest(
     headers?: Record<string, string>;
   },
   bodyOrUndefined?: any
-): Promise<any> {
+): Promise<T> {
   let url: string;
   let options: {
     method?: string;
@@ -51,38 +52,58 @@ export async function apiRequest(
   });
 
   await throwIfResNotOk(res);
-  return await res.json();
+  
+  if (res.headers.get('content-type')?.includes('application/json')) {
+    return await res.json();
+  }
+  
+  return await res.text() as any;
 }
 
-type UnauthorizedBehavior = "returnNull" | "throw";
-export const getQueryFn: <T>(options: {
-  on401: UnauthorizedBehavior;
-}) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
-  async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
-      credentials: "include",
+// Helper methods for better type safety
+export const api = {
+  get: <T = any>(endpoint: string): Promise<T> => 
+    apiRequest<T>(endpoint, { method: 'GET' }),
+  
+  post: <T = any>(endpoint: string, data?: any): Promise<T> =>
+    apiRequest<T>(endpoint, { method: 'POST', body: data }),
+  
+  put: <T = any>(endpoint: string, data?: any): Promise<T> =>
+    apiRequest<T>(endpoint, { method: 'PUT', body: data }),
+  
+  delete: <T = any>(endpoint: string): Promise<T> =>
+    apiRequest<T>(endpoint, { method: 'DELETE' }),
+  
+  patch: <T = any>(endpoint: string, data?: any): Promise<T> =>
+    apiRequest<T>(endpoint, { method: 'PATCH', body: data }),
+};
+
+const queryFn: QueryFunction = async ({ queryKey }) => {
+  const [url, params] = queryKey as [string, Record<string, any>?];
+  if (params) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, String(value));
+      }
     });
-
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
-    }
-
-    await throwIfResNotOk(res);
-    return await res.json();
-  };
+    const paramString = searchParams.toString();
+    return apiRequest(`${url}${paramString ? `?${paramString}` : ''}`);
+  }
+  return apiRequest(url);
+};
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
-    },
-    mutations: {
-      retry: false,
+      queryFn,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: (failureCount, error: any) => {
+        if (error?.message?.includes('401') || error?.message?.includes('403')) {
+          return false;
+        }
+        return failureCount < 3;
+      },
     },
   },
 });

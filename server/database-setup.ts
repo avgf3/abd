@@ -9,14 +9,30 @@ export async function initializeDatabase(): Promise<boolean> {
       return true;
     }
 
-    console.log('🔄 SQLite database already initialized by fallback system');
+    console.log('🔄 Initializing database tables...');
+    
+    // Create tables first
+    await createTables();
+    
+    // Check and add missing columns
+    await addMissingColumns();
+    
+    // Create default users if needed
+    await createDefaultUsersIfNeeded();
+    
+    console.log('✅ Database initialization completed successfully');
     return true;
+  } catch (error) {
+    console.error('❌ Database initialization failed:', error);
+    return false;
+  }
+}
 
-    // Disabled to avoid conflicts with SQLite
-    // await addMissingColumns();
-
-    // Create users table with all required columns
-    await db.execute(sql`
+async function createTables(): Promise<void> {
+  if (!db) return;
+  
+  // Create users table with all required columns
+  await db.execute(sql`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         username TEXT NOT NULL UNIQUE,
@@ -102,12 +118,7 @@ export async function initializeDatabase(): Promise<boolean> {
       )
     `);
 
-    console.log('✅ Database tables initialized successfully');
-    return true;
-  } catch (error) {
-    console.error('❌ Error initializing database:', error);
-    return false;
-  }
+    console.log('✅ Database tables created successfully');
 }
 
 async function addMissingColumns(): Promise<void> {
@@ -189,11 +200,10 @@ export async function createDefaultUsers(): Promise<void> {
       return;
     }
 
-    console.log('👤 Default users already created by SQLite fallback system');
-    return;
-
-    // Disabled to avoid conflicts
     // Check if admin user exists
+    const adminResult = await db.execute(sql`
+      SELECT COUNT(*) as count FROM users WHERE username = 'admin'
+    `);
     
     const adminCount = Number((adminResult as any)?.[0]?.count || 0);
 
