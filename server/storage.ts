@@ -191,10 +191,39 @@ export class MixedStorage implements IStorage {
       } catch (error: any) {
         console.error('Database query error in getUser:', error);
         
-        // If it's a missing column error, provide a helpful message
+        // If it's a missing column error, provide a helpful message and try without role column
         if (error.code === '42703' && error.message?.includes('role')) {
           console.error('❌ CRITICAL: Missing "role" column in users table!');
-          console.error('💡 Run: npm run db:fix to fix this issue');
+          console.error('💡 Run: npm run db:fix-production to fix this issue');
+          
+          // Try query without role column as temporary fix
+          try {
+            const [basicUser] = await db.select({
+              id: users.id,
+              username: users.username,
+              password: users.password,
+              userType: users.userType,
+              profileImage: users.profileImage,
+              status: users.status,
+              gender: users.gender,
+              age: users.age,
+              country: users.country,
+              relation: users.relation,
+              isOnline: users.isOnline,
+              lastSeen: users.lastSeen,
+              joinDate: users.joinDate,
+              createdAt: users.createdAt,
+              isMuted: users.isMuted,
+              isBanned: users.isBanned
+            }).from(users).where(eq(users.id, id));
+            
+            if (basicUser) {
+              // Add role field based on userType as fallback
+              return { ...basicUser, role: basicUser.userType || 'guest' } as any;
+            }
+          } catch (fallbackError) {
+            console.error('❌ Fallback query also failed:', fallbackError);
+          }
         }
         
         return undefined;
@@ -219,10 +248,39 @@ export class MixedStorage implements IStorage {
       } catch (error: any) {
         console.error('Database query error in getUserByUsername:', error);
         
-        // If it's a missing column error, provide a helpful message
+        // If it's a missing column error, provide a helpful message and try without role column
         if (error.code === '42703' && error.message?.includes('role')) {
           console.error('❌ CRITICAL: Missing "role" column in users table!');
-          console.error('💡 Run: npm run db:fix to fix this issue');
+          console.error('💡 Run: npm run db:fix-production to fix this issue');
+          
+          // Try query without role column as temporary fix
+          try {
+            const [basicUser] = await db.select({
+              id: users.id,
+              username: users.username,
+              password: users.password,
+              userType: users.userType,
+              profileImage: users.profileImage,
+              status: users.status,
+              gender: users.gender,
+              age: users.age,
+              country: users.country,
+              relation: users.relation,
+              isOnline: users.isOnline,
+              lastSeen: users.lastSeen,
+              joinDate: users.joinDate,
+              createdAt: users.createdAt,
+              isMuted: users.isMuted,
+              isBanned: users.isBanned
+            }).from(users).where(eq(users.username, username));
+            
+            if (basicUser) {
+              // Add role field based on userType as fallback
+              return { ...basicUser, role: basicUser.userType || 'guest' } as any;
+            }
+          } catch (fallbackError) {
+            console.error('❌ Fallback query also failed:', fallbackError);
+          }
         }
         
         return undefined;
@@ -245,37 +303,73 @@ export class MixedStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     if ((insertUser.userType === 'member' || insertUser.userType === 'owner') && db) {
-      // Store members in database with SQLite-compatible schema
-      const [dbUser] = await db
-        .insert(users)
-        .values({
-          username: insertUser.username,
-          password: insertUser.password,
-          userType: insertUser.userType,
-          role: insertUser.role || insertUser.userType || "member",
-          profileImage: insertUser.profileImage || "/default_avatar.svg",
-          profileBanner: insertUser.profileBanner || null,
-          status: insertUser.status,
-          gender: insertUser.gender,
-          age: insertUser.age,
-          country: insertUser.country,
-          relation: insertUser.relation,
-          bio: insertUser.bio || null,
-          profileBackgroundColor: "#3c0d0d",
-          usernameColor: '#FFFFFF',
-          userTheme: 'default',
-          isOnline: 1, // SQLite integer for boolean
-          isHidden: 0,
-          isMuted: 0,
-          isBanned: 0,
-          isBlocked: 0,
-          lastSeen: new Date().toISOString(), // SQLite text for timestamp
-          joinDate: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          ignoredUsers: '[]' // JSON string
-        } as any)
-        .returning();
-      return dbUser;
+      try {
+        // Store members in database with SQLite-compatible schema
+        const [dbUser] = await db
+          .insert(users)
+          .values({
+            username: insertUser.username,
+            password: insertUser.password,
+            userType: insertUser.userType,
+            role: insertUser.role || insertUser.userType || "member",
+            profileImage: insertUser.profileImage || "/default_avatar.svg",
+            profileBanner: insertUser.profileBanner || null,
+            status: insertUser.status,
+            gender: insertUser.gender,
+            age: insertUser.age,
+            country: insertUser.country,
+            relation: insertUser.relation,
+            bio: insertUser.bio || null,
+            profileBackgroundColor: "#3c0d0d",
+            usernameColor: '#FFFFFF',
+            userTheme: 'default',
+            isOnline: 1, // SQLite integer for boolean
+            isHidden: 0,
+            isMuted: 0,
+            isBanned: 0,
+            isBlocked: 0,
+            lastSeen: new Date().toISOString(), // SQLite text for timestamp
+            joinDate: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            ignoredUsers: '[]' // JSON string
+          } as any)
+          .returning();
+        return dbUser;
+      } catch (error: any) {
+        console.error('Database insert error in createUser:', error);
+        
+        // If role column missing, try without it
+        if (error.code === '42703' && error.message?.includes('role')) {
+          console.error('⚠️ Role column missing, trying insert without role column...');
+          try {
+            const [basicUser] = await db
+              .insert(users)
+              .values({
+                username: insertUser.username,
+                password: insertUser.password,
+                userType: insertUser.userType,
+                profileImage: insertUser.profileImage || "/default_avatar.svg",
+                status: insertUser.status,
+                gender: insertUser.gender,
+                age: insertUser.age,
+                country: insertUser.country,
+                relation: insertUser.relation,
+                isOnline: 1,
+                lastSeen: new Date().toISOString(),
+                joinDate: new Date().toISOString(),
+                createdAt: new Date().toISOString()
+              } as any)
+              .returning();
+            
+            // Add role field manually
+            return { ...basicUser, role: basicUser.userType || 'member' } as any;
+          } catch (fallbackError) {
+            console.error('❌ Fallback insert also failed:', fallbackError);
+            throw fallbackError;
+          }
+        }
+        throw error;
+      }
     } else {
       // Store guests in memory (temporary, no profile picture upload)
       const id = this.currentUserId++;

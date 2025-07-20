@@ -1,14 +1,16 @@
 import { Pool } from '@neondatabase/serverless';
 
-async function fixDatabase() {
+async function fixProductionDatabase() {
+  // Use production DATABASE_URL from Render environment
   const databaseUrl = process.env.DATABASE_URL;
   
   if (!databaseUrl) {
     console.error('❌ DATABASE_URL is not set');
+    console.log('💡 This script should be run in production environment (Render)');
     process.exit(1);
   }
 
-  console.log('🔄 Connecting to database...');
+  console.log('🔄 Connecting to production database...');
   const pool = new Pool({ connectionString: databaseUrl });
 
   try {
@@ -41,7 +43,7 @@ async function fixDatabase() {
       { name: 'username_color', type: 'TEXT DEFAULT \'#FFFFFF\'' },
       { name: 'user_theme', type: 'TEXT DEFAULT \'default\'' },
       { name: 'bio', type: 'TEXT' },
-      { name: 'ignored_users', type: 'TEXT[] DEFAULT \'{}\''}
+      { name: 'ignored_users', type: 'TEXT DEFAULT \'[]\'' }
     ];
 
     for (const column of missingColumns) {
@@ -53,8 +55,12 @@ async function fixDatabase() {
 
       if (checkColumn.rows.length === 0) {
         console.log(`🔧 Adding missing ${column.name} column...`);
-        await pool.query(`ALTER TABLE users ADD COLUMN ${column.name} ${column.type}`);
-        console.log(`✅ ${column.name} column added successfully`);
+        try {
+          await pool.query(`ALTER TABLE users ADD COLUMN ${column.name} ${column.type}`);
+          console.log(`✅ ${column.name} column added successfully`);
+        } catch (colError) {
+          console.log(`⚠️ Could not add ${column.name}: ${colError.message}`);
+        }
       } else {
         console.log(`✅ ${column.name} column already exists`);
       }
@@ -78,16 +84,20 @@ async function fixDatabase() {
     const userCount = await pool.query('SELECT COUNT(*) as count FROM users');
     console.log(`👥 Total users in database: ${userCount.rows[0].count}`);
 
-    const users = await pool.query('SELECT id, username, user_type, role FROM users LIMIT 10');
-    console.log('📊 Sample users:');
-    users.rows.forEach(user => {
-      console.log(`  - ID: ${user.id}, Username: ${user.username}, Type: ${user.user_type}, Role: ${user.role}`);
-    });
+    if (userCount.rows[0].count > 0) {
+      const users = await pool.query('SELECT id, username, user_type, role FROM users LIMIT 10');
+      console.log('📊 Sample users:');
+      users.rows.forEach(user => {
+        console.log(`  - ID: ${user.id}, Username: ${user.username}, Type: ${user.user_type}, Role: ${user.role}`);
+      });
+    }
 
-    console.log('✅ Database fix completed successfully!');
+    console.log('✅ Production database fix completed successfully!');
+    console.log('🔄 Please restart the application for changes to take effect');
     
   } catch (error) {
-    console.error('❌ Error fixing database:', error);
+    console.error('❌ Error fixing production database:', error);
+    console.error('Full error details:', error.message);
     process.exit(1);
   } finally {
     await pool.end();
@@ -95,4 +105,7 @@ async function fixDatabase() {
 }
 
 // Run the fix
-fixDatabase().catch(console.error);
+fixProductionDatabase().catch(error => {
+  console.error('💥 Critical error:', error);
+  process.exit(1);
+});
