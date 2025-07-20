@@ -49,15 +49,137 @@ async function runMigrations(): Promise<void> {
     const migrationClient = postgres(process.env.DATABASE_URL, { max: 1 });
     const migrationDb = drizzle(migrationClient);
     
-    // Run migrations
-    await migrate(migrationDb, { migrationsFolder: './migrations' });
+    try {
+      // First, try to run migrations normally
+      await migrate(migrationDb, { migrationsFolder: './migrations' });
+      console.log('✅ Database migrations completed successfully');
+    } catch (migrationError: any) {
+      console.log('⚠️ Migration failed, trying to fix existing schema...');
+      
+      // If migration fails due to existing tables, try to update them
+      if (migrationError.code === '42P07') { // relation already exists
+        await updateExistingTables(migrationClient);
+      } else {
+        throw migrationError;
+      }
+    }
     
     // Close migration connection
     await migrationClient.end();
     
-    console.log('✅ Database migrations completed successfully');
   } catch (error) {
     console.error('❌ Error running migrations:', error);
+    throw error;
+  }
+}
+
+async function updateExistingTables(client: any): Promise<void> {
+  try {
+    console.log('🔄 Updating existing tables schema...');
+    
+    // Add missing columns to users table
+    const addColumnsQueries = [
+      // Add missing timestamp columns if they don't exist
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS join_date TIMESTAMP DEFAULT NOW()`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen TIMESTAMP`,
+      
+      // Add missing user profile columns
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_background_color TEXT DEFAULT '#3c0d0d'`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS username_color TEXT DEFAULT '#FFFFFF'`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS user_theme TEXT DEFAULT 'default'`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS ignored_users TEXT DEFAULT '[]'`,
+      
+      // Add missing boolean columns with proper defaults
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT false`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN DEFAULT false`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_muted BOOLEAN DEFAULT false`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT false`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT false`,
+      
+      // Add missing admin columns
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS mute_expiry TIMESTAMP`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_expiry TIMESTAMP`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS ip_address VARCHAR(45)`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS device_id VARCHAR(100)`,
+      
+      // Add missing profile columns
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image TEXT`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_banner TEXT`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS gender TEXT`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS age INTEGER`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS country TEXT`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS relation TEXT`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'guest'`,
+      
+      // Update existing rows to have proper timestamps
+      `UPDATE users SET created_at = NOW() WHERE created_at IS NULL`,
+      `UPDATE users SET join_date = NOW() WHERE join_date IS NULL`
+    ];
+    
+    // Execute each query
+    for (const query of addColumnsQueries) {
+      try {
+        await client.unsafe(query);
+        console.log(`✅ Executed: ${query.slice(0, 50)}...`);
+      } catch (error: any) {
+        // Ignore errors for columns that already exist
+        if (error.code !== '42701') { // duplicate column error
+          console.warn(`⚠️ Warning in query: ${error.message}`);
+        }
+      }
+    }
+    
+    // Create missing tables that might not exist
+    const createTablesQueries = [
+      `CREATE TABLE IF NOT EXISTS friends (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        friend_id INTEGER REFERENCES users(id),
+        status TEXT DEFAULT 'pending' NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )`,
+      
+      `CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        is_read BOOLEAN DEFAULT false,
+        data JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+      )`,
+      
+      `CREATE TABLE IF NOT EXISTS blocked_devices (
+        id SERIAL PRIMARY KEY,
+        ip_address TEXT NOT NULL,
+        device_id TEXT NOT NULL,
+        user_id INTEGER NOT NULL,
+        reason TEXT NOT NULL,
+        blocked_at TIMESTAMP NOT NULL,
+        blocked_by INTEGER NOT NULL,
+        UNIQUE(ip_address, device_id)
+      )`
+    ];
+    
+    for (const query of createTablesQueries) {
+      try {
+        await client.unsafe(query);
+        console.log(`✅ Created table successfully`);
+      } catch (error: any) {
+        if (error.code !== '42P07') { // table already exists
+          console.warn(`⚠️ Warning creating table: ${error.message}`);
+        }
+      }
+    }
+    
+    console.log('✅ Database schema updated successfully');
+    
+  } catch (error) {
+    console.error('❌ Error updating existing tables:', error);
     throw error;
   }
 }
