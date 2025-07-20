@@ -15,12 +15,29 @@ export interface DatabaseAdapter {
   close?: () => void;
 }
 
-// إنشاء محول قاعدة البيانات - PostgreSQL مع SQLite كبديل
+// إنشاء محول قاعدة البيانات - SQLite أولاً ثم PostgreSQL كبديل
 export function createDatabaseAdapter(): DatabaseAdapter {
   const databaseUrl = process.env.DATABASE_URL;
   
-  // Try PostgreSQL first if URL is provided
-  if (databaseUrl) {
+  // استخدم SQLite إذا كان الرابط يبدأ بـ sqlite: أو كان فارغاً
+  if (!databaseUrl || databaseUrl.startsWith('sqlite:')) {
+    try {
+      const sqliteResult = initSQLiteFallback();
+      if (sqliteResult) {
+        console.log("✅ تم الاتصال بقاعدة بيانات SQLite");
+        return {
+          db: sqliteResult.db,
+          type: 'sqlite',
+          close: () => {} // SQLite will be closed separately
+        };
+      }
+    } catch (error) {
+      console.error("❌ فشل في تهيئة SQLite:", error);
+    }
+  }
+  
+  // Try PostgreSQL if URL is provided and not SQLite
+  if (databaseUrl && !databaseUrl.startsWith('sqlite:')) {
     try {
       // إعداد Neon للإنتاج
       neonConfig.fetchConnectionCache = true;
@@ -37,21 +54,22 @@ export function createDatabaseAdapter(): DatabaseAdapter {
       };
     } catch (error) {
       console.error("❌ فشل في الاتصال بـ PostgreSQL، محاولة SQLite:", error);
+      
+      // Fall back to SQLite
+      try {
+        const sqliteResult = initSQLiteFallback();
+        if (sqliteResult) {
+          console.log("✅ تم الاتصال بقاعدة بيانات SQLite (كبديل)");
+          return {
+            db: sqliteResult.db,
+            type: 'sqlite',
+            close: () => {} // SQLite will be closed separately
+          };
+        }
+      } catch (error) {
+        console.error("❌ فشل في تهيئة SQLite:", error);
+      }
     }
-  }
-
-  // Try SQLite as fallback
-  try {
-    const sqliteResult = initSQLiteFallback();
-    if (sqliteResult) {
-      return {
-        db: sqliteResult.db,
-        type: 'sqlite',
-        close: () => {} // SQLite will be closed separately
-      };
-    }
-  } catch (error) {
-    console.error("❌ فشل في تهيئة SQLite:", error);
   }
 
   // Fall back to memory mode
@@ -71,8 +89,14 @@ export const dbType = dbAdapter.type;
 export async function checkDatabaseHealth(): Promise<boolean> {
   try {
     if (!db) return false;
-    // اختبار PostgreSQL فقط
-    await db.execute('SELECT 1' as any);
+    
+    if (dbType === 'sqlite') {
+      // اختبار SQLite
+      await db.execute('SELECT 1' as any);
+    } else {
+      // اختبار PostgreSQL
+      await db.execute('SELECT 1' as any);
+    }
     return true;
   } catch (error) {
     console.error("❌ خطأ في فحص صحة قاعدة البيانات:", error);
