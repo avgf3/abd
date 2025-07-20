@@ -51,6 +51,24 @@ export function useChat() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showKickCountdown, setShowKickCountdown] = useState(false);
   
+  // إشعارات النقاط والمستويات
+  const [levelUpNotification, setLevelUpNotification] = useState<{
+    show: boolean;
+    oldLevel: number;
+    newLevel: number;
+    levelInfo?: any;
+  }>({ show: false, oldLevel: 1, newLevel: 1 });
+  
+  const [achievementNotification, setAchievementNotification] = useState<{
+    show: boolean;
+    message: string;
+  }>({ show: false, message: '' });
+  
+  const [dailyBonusNotification, setDailyBonusNotification] = useState<{
+    show: boolean;
+    points: number;
+  }>({ show: false, points: 0 });
+  
   // تحسين الأداء: مدراء التحسين
   const messageCache = useRef(new MessageCacheManager());
 
@@ -544,6 +562,100 @@ export function useChat() {
               }
               break;
               
+            case 'levelUp':
+              // إشعار ترقية المستوى
+              if (message.oldLevel && message.newLevel && message.levelInfo) {
+                console.log('🎉 ترقية مستوى!', message);
+                
+                setLevelUpNotification({
+                  show: true,
+                  oldLevel: message.oldLevel,
+                  newLevel: message.newLevel,
+                  levelInfo: message.levelInfo
+                });
+                
+                // إشعار مرئي في المتصفح
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('ترقية مستوى! 🎉', {
+                    body: `وصلت للمستوى ${message.newLevel}: ${message.levelInfo?.title}`,
+                    icon: '/favicon.ico'
+                  });
+                }
+                
+                playNotificationSound();
+              }
+              break;
+              
+            case 'achievement':
+              // إشعار إنجاز جديد
+              if (message.message) {
+                console.log('🏆 إنجاز جديد!', message.message);
+                
+                setAchievementNotification({
+                  show: true,
+                  message: typeof message.message === 'string' ? message.message : 'إنجاز جديد!'
+                });
+                
+                // إشعار مرئي في المتصفح
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('إنجاز جديد! 🏆', {
+                    body: typeof message.message === 'string' ? message.message : 'إنجاز جديد!',
+                    icon: '/favicon.ico'
+                  });
+                }
+                
+                playNotificationSound();
+              }
+              break;
+              
+            case 'dailyBonus':
+              // إشعار المكافأة اليومية
+              if (message.points) {
+                console.log('🎁 مكافأة يومية!', message.points);
+                
+                setDailyBonusNotification({
+                  show: true,
+                  points: message.points
+                });
+                
+                // إشعار مرئي في المتصفح
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('مكافأة يومية! 🎁', {
+                    body: `حصلت على ${message.points} نقطة!`,
+                    icon: '/favicon.ico'
+                  });
+                }
+                
+                playNotificationSound();
+              }
+              break;
+              
+            case 'pointsAdded':
+              // إشعار إضافة نقاط من الإدارة
+              if (message.points && message.message) {
+                console.log('💎 نقاط من الإدارة!', message);
+                
+                // إضافة إشعار للواجهة
+                setNotifications(prev => [...prev, {
+                  id: Date.now(),
+                  type: 'system',
+                  username: 'الإدارة',
+                  content: typeof message.message === 'string' ? message.message : 'حصلت على نقاط من الإدارة',
+                  timestamp: new Date()
+                }]);
+                
+                // إشعار مرئي في المتصفح
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('نقاط من الإدارة! 💎', {
+                    body: typeof message.message === 'string' ? message.message : 'حصلت على نقاط',
+                    icon: '/favicon.ico'
+                  });
+                }
+                
+                playNotificationSound();
+              }
+              break;
+              
             case 'userUpdated':
               if (message.user) {
                 setOnlineUsers(prev => 
@@ -850,5 +962,13 @@ export function useChat() {
     setNotifications,
     showKickCountdown,
     setShowKickCountdown,
+    
+    // إشعارات النقاط والمستويات
+    levelUpNotification,
+    setLevelUpNotification,
+    achievementNotification,
+    setAchievementNotification,
+    dailyBonusNotification,
+    setDailyBonusNotification,
   };
 }
