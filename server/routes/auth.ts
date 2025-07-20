@@ -47,23 +47,9 @@ router.post("/register", async (req, res) => {
     });
 
     res.json({ user, message: "تم التسجيل بنجاح" });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Registration error:", error);
-    
-    // إرسال رسائل خطأ مفيدة للمستخدم
-    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.message?.includes('UNIQUE constraint failed')) {
-      return res.status(400).json({ error: "اسم المستخدم موجود بالفعل" });
-    }
-    
-    if (error.code === 'SQLITE_CONSTRAINT' || error.message?.includes('constraint failed')) {
-      return res.status(400).json({ error: "البيانات المدخلة غير صحيحة" });
-    }
-    
-    if (error.message?.includes('bind')) {
-      return res.status(400).json({ error: "خطأ في معالجة البيانات - يرجى المحاولة مرة أخرى" });
-    }
-    
-    res.status(500).json({ error: "خطأ في الخادم - يرجى المحاولة لاحقاً" });
+    res.status(500).json({ error: "خطأ في الخادم" });
   }
 });
 
@@ -106,28 +92,16 @@ router.post("/member", authLimiter, async (req, res) => {
       return res.status(400).json({ error: "اسم المستخدم وكلمة المرور مطلوبان" });
     }
 
-    console.log(`Attempting member login for username: ${username}`);
-    
     const user = await storage.getUserByUsername(username);
     if (!user) {
-      console.log(`User not found: ${username}`);
       return res.status(401).json({ error: "اسم المستخدم غير موجود" });
     }
 
-    console.log(`User found: ${user.username}, type: ${user.userType}`);
-
     if (user.password !== password) {
-      console.log(`Incorrect password for user: ${username}`);
       return res.status(401).json({ error: "كلمة المرور غير صحيحة" });
     }
 
-    try {
-      await storage.setUserOnlineStatus(user.id, true);
-      console.log(`Member login successful: ${username}`);
-    } catch (statusError) {
-      console.error('Error updating user online status:', statusError);
-      // Don't fail login just because status update failed
-    }
+    await storage.setUserOnlineStatus(user.id, true);
     
     res.json({ user });
   } catch (error) {

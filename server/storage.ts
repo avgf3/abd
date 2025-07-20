@@ -11,7 +11,7 @@ import {
   type InsertFriend,
   type Notification,
   type InsertNotification,
-} from "../shared/schema-sqlite";
+} from "../shared/schema";
 import { db } from "./database-adapter";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { userService } from "./services/userService";
@@ -115,7 +115,7 @@ export class MixedStorage implements IStorage {
       // Check if owner already exists
       const existing = await db.select().from(users).where(eq(users.username, "عبدالكريم"));
       if (existing.length === 0) {
-        // Create owner user in database - Fix SQLite compatibility
+        // Create owner user in database
         await db.insert(users).values({
           username: "عبدالكريم",
           password: "عبدالكريم22333",
@@ -129,24 +129,13 @@ export class MixedStorage implements IStorage {
           relation: "مرتبط",
           bio: "مالك الموقع",
           profileBackgroundColor: "#3c0d0d",
-          usernameColor: "#FFFFFF",
-          userTheme: "default",
-          isOnline: 0,
-          isHidden: 0,
-          isMuted: 0,
-          isBanned: 0,
-          isBlocked: 0,
-          joinDate: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          lastSeen: new Date().toISOString(),
-          ignoredUsers: '[]'
         } as any);
       }
 
       // Check if admin already exists
       const existingAdmin = await db.select().from(users).where(eq(users.username, "عبود"));
       if (existingAdmin.length === 0) {
-        // Create admin user in database - Fix SQLite compatibility
+        // Create admin user in database
         await db.insert(users).values({
           username: "عبود",
           password: "22333",
@@ -160,17 +149,6 @@ export class MixedStorage implements IStorage {
           relation: "أعزب",
           bio: "مشرف مؤقت",
           profileBackgroundColor: "#3c0d0d",
-          usernameColor: "#FFFFFF",
-          userTheme: "default",
-          isOnline: 0,
-          isHidden: 0,
-          isMuted: 0,
-          isBanned: 0,
-          isBlocked: 0,
-          joinDate: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          lastSeen: new Date().toISOString(),
-          ignoredUsers: '[]'
         } as any);
       }
     } catch (error) {
@@ -245,14 +223,14 @@ export class MixedStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     if ((insertUser.userType === 'member' || insertUser.userType === 'owner') && db) {
-      // Store members in database with SQLite-compatible schema
+      // Store members in database with profile picture support
       const [dbUser] = await db
         .insert(users)
         .values({
           username: insertUser.username,
           password: insertUser.password,
           userType: insertUser.userType,
-          role: insertUser.role || insertUser.userType || "member",
+          role: insertUser.role || insertUser.userType || "guest",
           profileImage: insertUser.profileImage || "/default_avatar.svg",
           profileBanner: insertUser.profileBanner || null,
           status: insertUser.status,
@@ -263,16 +241,7 @@ export class MixedStorage implements IStorage {
           bio: insertUser.bio || null,
           profileBackgroundColor: "#3c0d0d",
           usernameColor: '#FFFFFF',
-          userTheme: 'default',
-          isOnline: 1, // SQLite integer for boolean
-          isHidden: 0,
-          isMuted: 0,
-          isBanned: 0,
-          isBlocked: 0,
-          lastSeen: new Date().toISOString(), // SQLite text for timestamp
-          joinDate: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          ignoredUsers: '[]' // JSON string
+          userTheme: 'default'
         } as any)
         .returning();
       return dbUser;
@@ -379,8 +348,8 @@ export class MixedStorage implements IStorage {
         await db
           .update(users)
           .set({ 
-            isOnline: isOnline ? 1 : 0,  // Convert boolean to number for SQLite
-            lastSeen: new Date().toISOString()  // Convert to ISO string for SQLite
+            isOnline: isOnline,
+            lastSeen: new Date()
           } as any)
           .where(eq(users.id, id));
       } catch (error) {
@@ -395,7 +364,7 @@ export class MixedStorage implements IStorage {
     // Get online members from database (excluding hidden)
     if (db) {
       try {
-        const dbUsers = await db.select().from(users).where(eq(users.isOnline, 1)); // Use 1 instead of true for SQLite
+        const dbUsers = await db.select().from(users).where(eq(users.isOnline, true));
         const visibleDbUsers = dbUsers.filter(user => !user.isHidden);
         return [...memUsers, ...visibleDbUsers];
       } catch (error) {
@@ -418,7 +387,7 @@ export class MixedStorage implements IStorage {
     // Check database (members) - Fix SQLite binding
     if (db) {
       try {
-        await db.update(users).set({ isHidden: isHidden ? 1 : 0 } as any).where(eq(users.id, id));
+        await db.update(users).set({ isHidden } as any).where(eq(users.id, id));
       } catch (error) {
         console.error('Error updating user hidden status:', error);
       }
@@ -452,7 +421,7 @@ export class MixedStorage implements IStorage {
           
           if (!currentIgnored.includes(ignoredUserId.toString())) {
             currentIgnored.push(ignoredUserId.toString());
-            await db.update(users).set({ ignoredUsers: JSON.stringify(currentIgnored) } as any).where(eq(users.id, userId));
+            await db.update(users).set({ ignoredUsers: currentIgnored } as any).where(eq(users.id, userId));
           }
         }
       } catch (error) {
@@ -484,7 +453,7 @@ export class MixedStorage implements IStorage {
           }
           
           const filteredIgnored = currentIgnored.filter(id => id !== ignoredUserId.toString());
-          await db.update(users).set({ ignoredUsers: JSON.stringify(filteredIgnored) } as any).where(eq(users.id, userId));
+          await db.update(users).set({ ignoredUsers: filteredIgnored } as any).where(eq(users.id, userId));
         }
       } catch (error) {
         console.error('Error removing ignored user:', error);
