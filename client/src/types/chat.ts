@@ -28,6 +28,10 @@ export interface ChatUser {
   ignoredUsers: number[];
   usernameColor: string;
   userTheme: string;
+  points: number;
+  level: number;
+  totalPoints: number;
+  levelProgress: number;
 }
 
 export interface ChatMessage {
