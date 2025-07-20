@@ -11,6 +11,9 @@ export async function initializeDatabase(): Promise<boolean> {
 
     console.log('🔄 Initializing database tables...');
 
+    // First, fix missing columns in existing users table
+    await addMissingColumns();
+
     // Create users table with all required columns
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS users (
@@ -98,17 +101,30 @@ export async function initializeDatabase(): Promise<boolean> {
       )
     `);
 
-    // Add missing columns to existing tables if they don't exist
+    console.log('✅ Database tables initialized successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Error initializing database:', error);
+    return false;
+  }
+}
+
+async function addMissingColumns(): Promise<void> {
+  try {
+    // Add role column if missing
     await db.execute(sql`
       DO $$ 
       BEGIN 
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                       WHERE table_name='users' AND column_name='role') THEN
           ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'guest';
+          -- Update existing users to set role = user_type
+          UPDATE users SET role = COALESCE(user_type, 'guest') WHERE role IS NULL OR role = '';
         END IF;
       END $$
     `);
 
+    // Add profile_background_color column if missing
     await db.execute(sql`
       DO $$ 
       BEGIN 
@@ -119,6 +135,7 @@ export async function initializeDatabase(): Promise<boolean> {
       END $$
     `);
 
+    // Add username_color column if missing
     await db.execute(sql`
       DO $$ 
       BEGIN 
@@ -129,6 +146,7 @@ export async function initializeDatabase(): Promise<boolean> {
       END $$
     `);
 
+    // Add user_theme column if missing
     await db.execute(sql`
       DO $$ 
       BEGIN 
@@ -139,11 +157,32 @@ export async function initializeDatabase(): Promise<boolean> {
       END $$
     `);
 
-    console.log('✅ Database tables initialized successfully');
-    return true;
+    // Add bio column if missing
+    await db.execute(sql`
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='bio') THEN
+          ALTER TABLE users ADD COLUMN bio TEXT;
+        END IF;
+      END $$
+    `);
+
+    // Add ignored_users column if missing
+    await db.execute(sql`
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='ignored_users') THEN
+          ALTER TABLE users ADD COLUMN ignored_users TEXT[] DEFAULT '{}';
+        END IF;
+      END $$
+    `);
+
+    console.log('✅ Missing columns added successfully');
   } catch (error) {
-    console.error('❌ Error initializing database:', error);
-    return false;
+    console.error('❌ Error adding missing columns:', error);
+    throw error;
   }
 }
 
@@ -155,11 +194,13 @@ export async function createDefaultUsers(): Promise<void> {
     }
 
     // Check if admin user exists
-    const adminExists = await db.execute(sql`
+    const adminResult = await db.execute(sql`
       SELECT COUNT(*) as count FROM users WHERE username = 'admin'
     `);
+    
+    const adminCount = Number((adminResult as any)?.[0]?.count || 0);
 
-    if ((adminExists as any)?.[0]?.count === 0) {
+    if (adminCount === 0) {
       await db.execute(sql`
         INSERT INTO users (username, password, user_type, role, profile_image, join_date, created_at)
         VALUES ('admin', 'admin123', 'owner', 'owner', '/default_avatar.svg', NOW(), NOW())
@@ -168,17 +209,21 @@ export async function createDefaultUsers(): Promise<void> {
     }
 
     // Create a test member user
-    const memberExists = await db.execute(sql`
+    const memberResult = await db.execute(sql`
       SELECT COUNT(*) as count FROM users WHERE username = 'testuser'
     `);
+    
+    const memberCount = Number((memberResult as any)?.[0]?.count || 0);
 
-    if ((memberExists as any)?.[0]?.count === 0) {
+    if (memberCount === 0) {
       await db.execute(sql`
         INSERT INTO users (username, password, user_type, role, profile_image, join_date, created_at)
         VALUES ('testuser', 'test123', 'member', 'member', '/default_avatar.svg', NOW(), NOW())
       `);
       console.log('✅ Default test user created');
     }
+    
+    console.log('✅ Default users verification complete');
   } catch (error) {
     console.error('❌ Error creating default users:', error);
   }
