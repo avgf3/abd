@@ -1,9 +1,9 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer, blob } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   username: text("username").notNull().unique(),
   password: text("password"),
   userType: text("user_type").notNull().default("guest"), // 'guest', 'member', 'owner'
@@ -17,60 +17,59 @@ export const users = pgTable("users", {
   country: text("country"),
   relation: text("relation"),
   bio: text("bio"), // نبذة شخصية
-  isOnline: boolean("is_online").default(false),
-  isHidden: boolean("is_hidden").default(false), // خاصية الإخفاء للمراقبة
-  lastSeen: timestamp("last_seen"),
-  joinDate: timestamp("join_date").defaultNow(),
-  createdAt: timestamp("created_at").defaultNow(), // تاريخ الإنشاء للتوافق مع ChatUser
-  isMuted: boolean("is_muted").default(false),
-  muteExpiry: timestamp("mute_expiry"),
-  isBanned: boolean("is_banned").default(false),
-  banExpiry: timestamp("ban_expiry"),
-  isBlocked: boolean("is_blocked").default(false),
-  ipAddress: varchar("ip_address", { length: 45 }),
-  deviceId: varchar("device_id", { length: 100 }),
-  ignoredUsers: text("ignored_users").default('[]'), // قائمة المستخدمين المتجاهلين - JSON string للتوافق مع SQLite
+  isOnline: integer("is_online").default(0), // SQLite uses integers for booleans
+  isHidden: integer("is_hidden").default(0), // خاصية الإخفاء للمراقبة
+  lastSeen: text("last_seen"), // SQLite uses text for timestamps
+  joinDate: text("join_date"), // SQLite uses text for timestamps
+  createdAt: text("created_at"), // SQLite uses text for timestamps
+  isMuted: integer("is_muted").default(0),
+  muteExpiry: text("mute_expiry"),
+  isBanned: integer("is_banned").default(0),
+  banExpiry: text("ban_expiry"),
+  isBlocked: integer("is_blocked").default(0),
+  ipAddress: text("ip_address"),
+  deviceId: text("device_id"),
+  ignoredUsers: text("ignored_users").default('[]'), // JSON string للتوافق مع SQLite
   usernameColor: text("username_color").default('#FFFFFF'), // لون اسم المستخدم
   userTheme: text("user_theme").default('default'), // ثيم المستخدم
 });
 
-export const messages = pgTable("messages", {
-  id: serial("id").primaryKey(),
+export const messages = sqliteTable("messages", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   senderId: integer("sender_id").references(() => users.id),
   receiverId: integer("receiver_id").references(() => users.id), // null for public messages
   content: text("content").notNull(),
   messageType: text("message_type").notNull().default("text"), // 'text', 'image'
-  isPrivate: boolean("is_private").default(false),
-  timestamp: timestamp("timestamp").defaultNow(),
+  isPrivate: integer("is_private").default(0),
+  timestamp: text("timestamp"),
 });
 
-export const friends = pgTable("friends", {
-  id: serial("id").primaryKey(),
+export const friends = sqliteTable("friends", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").references(() => users.id),
   friendId: integer("friend_id").references(() => users.id),
   status: text("status").notNull().default("pending"), // 'pending', 'accepted', 'blocked'
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: text("created_at"),
 });
 
-export const notifications = pgTable("notifications", {
-  id: serial("id").primaryKey(),
+export const notifications = sqliteTable("notifications", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull().references(() => users.id),
   type: text("type").notNull(), // 'system', 'friend_request', 'message', 'promotion', etc.
   title: text("title").notNull(),
   message: text("message").notNull(),
-  isRead: boolean("is_read").default(false),
-  data: jsonb("data"), // معلومات إضافية 
-  createdAt: timestamp("created_at").defaultNow(),
+  isRead: integer("is_read").default(0),
+  data: text("data"), // JSON string معلومات إضافية 
+  createdAt: text("created_at"),
 });
 
-// إضافة جدول blocked_devices المفقود
-export const blockedDevices = pgTable("blocked_devices", {
-  id: serial("id").primaryKey(),
+export const blockedDevices = sqliteTable("blocked_devices", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   ipAddress: text("ip_address").notNull(),
   deviceId: text("device_id").notNull(),
   userId: integer("user_id").notNull(),
   reason: text("reason").notNull(),
-  blockedAt: timestamp("blocked_at").notNull(),
+  blockedAt: text("blocked_at").notNull(),
   blockedBy: integer("blocked_by").notNull(),
 });
 
@@ -100,47 +99,11 @@ export const insertUserSchema = z.object({
   userTheme: z.string().optional(),
 });
 
-export const insertMessageSchema = z.object({
-  senderId: z.number().optional(),
-  receiverId: z.number().optional(),
-  content: z.string(),
-  messageType: z.string().optional(),
-  isPrivate: z.boolean().optional(),
-});
-
-export const insertFriendSchema = z.object({
-  userId: z.number().optional(),
-  friendId: z.number().optional(),
-  status: z.string().optional(),
-});
-
-export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type InsertUser = typeof users.$inferInsert;
 export type Message = typeof messages.$inferSelect;
-export type InsertFriend = z.infer<typeof insertFriendSchema>;
+export type InsertMessage = typeof messages.$inferInsert;
 export type Friend = typeof friends.$inferSelect;
-
-export const insertNotificationSchema = z.object({
-  userId: z.number(),
-  type: z.string(),
-  title: z.string(),
-  message: z.string(),
-  data: z.any().optional(),
-});
-
-export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type InsertFriend = typeof friends.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
-
-// إضافة أنواع البيانات لجدول blocked_devices
-export const insertBlockedDeviceSchema = z.object({
-  ipAddress: z.string(),
-  deviceId: z.string(),
-  userId: z.number(),
-  reason: z.string(),
-  blockedAt: z.date(),
-  blockedBy: z.number(),
-});
-
-export type InsertBlockedDevice = z.infer<typeof insertBlockedDeviceSchema>;
-export type BlockedDevice = typeof blockedDevices.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;
