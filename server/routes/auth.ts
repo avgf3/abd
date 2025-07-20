@@ -32,11 +32,11 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: "كلمة المرور يجب أن تحتوي على رقم واحد على الأقل" });
     }
 
-    // Check if username already exists - Temporarily disabled
-    // const existing = await storage.getUserByUsername(username);
-    // if (existing) {
-    //   return res.status(400).json({ error: "اسم المستخدم موجود بالفعل" });
-    // }
+    // Check if username already exists
+    const existing = await storage.getUserByUsername(username);
+    if (existing) {
+      return res.status(400).json({ error: "اسم المستخدم موجود بالفعل" });
+    }
 
     const user = await storage.createUser({
       username,

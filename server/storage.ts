@@ -100,8 +100,8 @@ export class MixedStorage implements IStorage {
     this.currentFriendId = 1;
     this.currentRequestId = 1;
 
-    // Initialize owner user in database - Temporarily disabled due to SQLite issues
-    // this.initializeOwner();
+    // Initialize owner user in database
+    this.initializeOwner();
   }
 
   private async initializeOwner() {
@@ -138,8 +138,8 @@ export class MixedStorage implements IStorage {
           isBlocked: 0,
           joinDate: new Date(),
           createdAt: new Date(),
-          lastSeen: new Date()
-          // ignoredUsers omitted for SQLite compatibility
+          lastSeen: new Date(),
+          ignoredUsers: '[]'
         } as any);
       }
 
@@ -169,8 +169,8 @@ export class MixedStorage implements IStorage {
           isBlocked: 0,
           joinDate: new Date(),
           createdAt: new Date(),
-          lastSeen: new Date()
-          // ignoredUsers omitted for SQLite compatibility
+          lastSeen: new Date(),
+          ignoredUsers: '[]'
         } as any);
       }
     } catch (error) {
@@ -243,45 +243,70 @@ export class MixedStorage implements IStorage {
     return null;
   }
 
-    async createUser(insertUser: InsertUser): Promise<User> {
-    // For now, store all users in memory to avoid SQLite schema conflicts
-    // TODO: Fix PostgreSQL connection for proper database storage
-    const id = this.currentUserId++;
-    const user: User = {
-      id,
-      username: insertUser.username,
-      password: insertUser.password || null,
-      userType: insertUser.userType || "guest",
-      role: insertUser.role || insertUser.userType || "guest",
-      bio: insertUser.bio || null,
-      profileBackgroundColor: "#3c0d0d",
-      profileImage: insertUser.profileImage || "/default_avatar.svg",
-      profileBanner: insertUser.profileBanner || null,
-      status: insertUser.status || null,
-      gender: insertUser.gender || null,
-      age: insertUser.age || null,
-      country: insertUser.country || null,
-      relation: insertUser.relation || null,
-      isOnline: true,
-      lastSeen: new Date(),
-      joinDate: new Date(),
-      createdAt: new Date(),
-      isMuted: false,
-      muteExpiry: null,
-      isBanned: false,
-      banExpiry: null,
-      isBlocked: false,
-      ipAddress: null,
-      deviceId: null,
-      ignoredUsers: [],
-      usernameColor: '#FFFFFF',
-      userTheme: 'default',
-      isHidden: false
-    };
-    
-    this.users.set(id, user);
-    return user;
-    
+  async createUser(insertUser: InsertUser): Promise<User> {
+    if ((insertUser.userType === 'member' || insertUser.userType === 'owner') && db) {
+      // Store members in database - simplified version for testing
+      try {
+        console.log('Creating user in database:', insertUser.username);
+        const [dbUser] = await db
+          .insert(users)
+          .values({
+            username: insertUser.username,
+            password: insertUser.password,
+            userType: insertUser.userType,
+            role: insertUser.role || insertUser.userType || "member",
+            gender: insertUser.gender || null,
+            profileImage: "/default_avatar.svg",
+            profileBackgroundColor: "#3c0d0d",
+            usernameColor: '#FFFFFF',
+            userTheme: 'default',
+            ignoredUsers: '[]'
+          } as any)
+          .returning();
+        console.log('User created successfully:', dbUser.username);
+        return dbUser;
+      } catch (error) {
+        console.error('Database insert error:', error);
+        throw error;
+      }
+    } else {
+      // Store guests in memory (temporary, no profile picture upload)
+      const id = this.currentUserId++;
+      const user: User = {
+        id,
+        username: insertUser.username,
+        password: insertUser.password || null,
+        userType: insertUser.userType || "guest",
+        role: insertUser.role || insertUser.userType || "guest",
+        bio: insertUser.bio || null,
+        profileBackgroundColor: "#3c0d0d",
+        profileImage: "/default_avatar.svg", // Guests always use default
+        profileBanner: null, // Guests cannot have banners
+        status: insertUser.status || null,
+        gender: insertUser.gender || null,
+        age: insertUser.age || null,
+        country: insertUser.country || null,
+        relation: insertUser.relation || null,
+        isOnline: true,
+        lastSeen: new Date(),
+        joinDate: new Date(),
+        createdAt: new Date(),
+        isMuted: false,
+        muteExpiry: null,
+        isBanned: false,
+        banExpiry: null,
+        isBlocked: false,
+        ipAddress: null,
+        deviceId: null,
+        ignoredUsers: [],
+        usernameColor: '#FFFFFF',
+        userTheme: 'default',
+        isHidden: false
+      };
+      
+      this.users.set(id, user);
+      return user;
+    }
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
@@ -420,7 +445,7 @@ export class MixedStorage implements IStorage {
           
           if (!currentIgnored.includes(ignoredUserId.toString())) {
             currentIgnored.push(ignoredUserId.toString());
-            await db.update(users).set({ ignoredUsers: currentIgnored } as any).where(eq(users.id, userId));
+            await db.update(users).set({ ignoredUsers: JSON.stringify(currentIgnored) } as any).where(eq(users.id, userId));
           }
         }
       } catch (error) {
@@ -452,7 +477,7 @@ export class MixedStorage implements IStorage {
           }
           
           const filteredIgnored = currentIgnored.filter(id => id !== ignoredUserId.toString());
-          await db.update(users).set({ ignoredUsers: filteredIgnored } as any).where(eq(users.id, userId));
+          await db.update(users).set({ ignoredUsers: JSON.stringify(filteredIgnored) } as any).where(eq(users.id, userId));
         }
       } catch (error) {
         console.error('Error removing ignored user:', error);
