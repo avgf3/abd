@@ -304,71 +304,117 @@ export class MixedStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     if ((insertUser.userType === 'member' || insertUser.userType === 'owner') && db) {
       try {
-        // Store members in database with SQLite-compatible schema
+        // تحضير البيانات مع إصلاح ربط SQLite
+        const userData = {
+          username: insertUser.username,
+          password: insertUser.password,
+          userType: insertUser.userType,
+          role: insertUser.role || insertUser.userType || "member",
+          profileImage: insertUser.profileImage || "/default_avatar.svg",
+          profileBanner: insertUser.profileBanner,
+          profileBackgroundColor: insertUser.profileBackgroundColor || "#3c0d0d",
+          status: insertUser.status,
+          gender: insertUser.gender || "male",
+          age: insertUser.age,
+          country: insertUser.country,
+          relation: insertUser.relation,
+          bio: insertUser.bio,
+          usernameColor: insertUser.usernameColor || '#FFFFFF',
+          userTheme: insertUser.userTheme || 'default',
+          // إصلاح القيم المنطقية لـ SQLite
+          isOnline: 1, // SQLite يستخدم integers للقيم المنطقية
+          isHidden: 0,
+          isMuted: insertUser.isMuted ? 1 : 0,
+          isBanned: insertUser.isBanned ? 1 : 0,
+          isBlocked: insertUser.isBlocked ? 1 : 0,
+          // إصلاح التواريخ لـ SQLite
+          lastSeen: new Date().toISOString(),
+          joinDate: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          muteExpiry: insertUser.muteExpiry ? insertUser.muteExpiry.toISOString() : null,
+          banExpiry: insertUser.banExpiry ? insertUser.banExpiry.toISOString() : null,
+          ipAddress: insertUser.ipAddress,
+          deviceId: insertUser.deviceId,
+          ignoredUsers: '[]' // JSON string للتوافق مع SQLite
+        };
+
+        // إزالة القيم undefined لتجنب مشاكل الربط
+        const cleanUserData = Object.fromEntries(
+          Object.entries(userData).filter(([_, value]) => value !== undefined)
+        );
+
         const [dbUser] = await db
           .insert(users)
-          .values({
-            username: insertUser.username,
-            password: insertUser.password,
-            userType: insertUser.userType,
-            role: insertUser.role || insertUser.userType || "member",
-            profileImage: insertUser.profileImage || "/default_avatar.svg",
-            profileBanner: insertUser.profileBanner || null,
-            status: insertUser.status,
-            gender: insertUser.gender,
-            age: insertUser.age,
-            country: insertUser.country,
-            relation: insertUser.relation,
-            bio: insertUser.bio || null,
-            profileBackgroundColor: "#3c0d0d",
-            usernameColor: '#FFFFFF',
-            userTheme: 'default',
-            isOnline: 1, // SQLite integer for boolean
-            isHidden: 0,
-            isMuted: 0,
-            isBanned: 0,
-            isBlocked: 0,
-            lastSeen: new Date().toISOString(), // SQLite text for timestamp
-            joinDate: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            ignoredUsers: '[]' // JSON string
-          } as any)
+          .values(cleanUserData as any)
           .returning();
+        
+        console.log('✅ تم إنشاء المستخدم في قاعدة البيانات:', dbUser.username);
         return dbUser;
       } catch (error: any) {
-        console.error('Database insert error in createUser:', error);
+        console.error('❌ خطأ في إنشاء المستخدم في قاعدة البيانات:', error);
         
-        // If role column missing, try without it
+        // معالجة مخصصة للأخطاء الشائعة
+        if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.message?.includes('UNIQUE constraint failed')) {
+          throw new Error('اسم المستخدم موجود بالفعل');
+        }
+        
         if (error.code === '42703' && error.message?.includes('role')) {
-          console.error('⚠️ Role column missing, trying insert without role column...');
+          console.error('⚠️ عمود role مفقود، محاولة بدونه...');
           try {
+            // إعادة المحاولة بدون عمود role
+            const basicUserData = { ...userData };
+            delete (basicUserData as any).role;
+            
             const [basicUser] = await db
               .insert(users)
-              .values({
-                username: insertUser.username,
-                password: insertUser.password,
-                userType: insertUser.userType,
-                profileImage: insertUser.profileImage || "/default_avatar.svg",
-                status: insertUser.status,
-                gender: insertUser.gender,
-                age: insertUser.age,
-                country: insertUser.country,
-                relation: insertUser.relation,
-                isOnline: 1,
-                lastSeen: new Date().toISOString(),
-                joinDate: new Date().toISOString(),
-                createdAt: new Date().toISOString()
-              } as any)
+              .values(basicUserData as any)
               .returning();
             
-            // Add role field manually
+            // إضافة role يدوياً
             return { ...basicUser, role: basicUser.userType || 'member' } as any;
           } catch (fallbackError) {
-            console.error('❌ Fallback insert also failed:', fallbackError);
-            throw fallbackError;
+            console.error('❌ فشل في الإنشاء حتى بدون عمود role:', fallbackError);
+            throw new Error('خطأ في قاعدة البيانات - يرجى المحاولة لاحقاً');
           }
         }
-        throw error;
+        
+        // إذا كانت قاعدة البيانات غير متاحة، استخدم الذاكرة
+        console.warn('⚠️ قاعدة البيانات غير متاحة، استخدام الذاكرة للعضو');
+        const id = this.currentUserId++;
+        const user: User = {
+          id,
+          username: insertUser.username,
+          password: insertUser.password || null,
+          userType: insertUser.userType || "member",
+          role: insertUser.role || insertUser.userType || "member",
+          profileImage: insertUser.profileImage || "/default_avatar.svg",
+          profileBanner: insertUser.profileBanner || null,
+          profileBackgroundColor: insertUser.profileBackgroundColor || "#3c0d0d",
+          status: insertUser.status || null,
+          gender: insertUser.gender || "male",
+          age: insertUser.age || null,
+          country: insertUser.country || null,
+          relation: insertUser.relation || null,
+          bio: insertUser.bio || null,
+          isOnline: true,
+          isHidden: false,
+          lastSeen: new Date(),
+          joinDate: new Date(),
+          createdAt: new Date(),
+          isMuted: false,
+          muteExpiry: null,
+          isBanned: false,
+          banExpiry: null,
+          isBlocked: false,
+          ipAddress: insertUser.ipAddress || null,
+          deviceId: insertUser.deviceId || null,
+          ignoredUsers: [],
+          usernameColor: insertUser.usernameColor || '#FFFFFF',
+          userTheme: insertUser.userTheme || 'default'
+        };
+        
+        this.users.set(id, user);
+        return user;
       }
     } else {
       // Store guests in memory (temporary, no profile picture upload)
