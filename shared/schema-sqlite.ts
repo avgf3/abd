@@ -32,6 +32,10 @@ export const users = sqliteTable("users", {
   ignoredUsers: text("ignored_users").default('[]'), // JSON string للتوافق مع SQLite
   usernameColor: text("username_color").default('#FFFFFF'), // لون اسم المستخدم
   userTheme: text("user_theme").default('default'), // ثيم المستخدم
+  points: integer("points").default(0), // نقاط المستخدم الحالية
+  level: integer("level").default(1), // مستوى المستخدم
+  totalPoints: integer("total_points").default(0), // إجمالي النقاط التي كسبها المستخدم
+  levelProgress: integer("level_progress").default(0), // تقدم المستخدم في المستوى الحالي
 });
 
 export const messages = sqliteTable("messages", {
@@ -73,6 +77,27 @@ export const blockedDevices = sqliteTable("blocked_devices", {
   blockedBy: integer("blocked_by").notNull(),
 });
 
+// جدول تاريخ النقاط لتتبع كيفية كسب/فقدان النقاط
+export const pointsHistory = sqliteTable("points_history", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  points: integer("points").notNull(), // النقاط المكتسبة/المفقودة (يمكن أن تكون سالبة)
+  reason: text("reason").notNull(), // سبب الحصول على النقاط (رسالة، تسجيل دخول، إلخ)
+  action: text("action").notNull(), // 'earn' أو 'lose'
+  createdAt: text("created_at"), // SQLite uses text for timestamps
+});
+
+// جدول إعدادات مستويات النقاط
+export const levelSettings = sqliteTable("level_settings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  level: integer("level").notNull().unique(),
+  requiredPoints: integer("required_points").notNull(), // النقاط المطلوبة للوصول لهذا المستوى
+  title: text("title").notNull(), // لقب المستوى (مبتدئ، متقدم، خبير، إلخ)
+  color: text("color").default('#FFFFFF'), // لون خاص بالمستوى
+  benefits: text("benefits"), // مزايا المستوى (JSON string)
+  createdAt: text("created_at"), // SQLite uses text for timestamps
+});
+
 export const insertUserSchema = z.object({
   username: z.string(),
   password: z.string().optional(),
@@ -97,6 +122,10 @@ export const insertUserSchema = z.object({
   deviceId: z.string().optional(),
   usernameColor: z.string().optional(),
   userTheme: z.string().optional(),
+  points: z.number().optional(),
+  level: z.number().optional(),
+  totalPoints: z.number().optional(),
+  levelProgress: z.number().optional(),
 });
 
 export type User = typeof users.$inferSelect;
@@ -107,3 +136,26 @@ export type Friend = typeof friends.$inferSelect;
 export type InsertFriend = typeof friends.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
+
+// إضافة أنواع النقاط والمستويات
+export const insertPointsHistorySchema = z.object({
+  userId: z.number(),
+  points: z.number(),
+  reason: z.string(),
+  action: z.string(),
+});
+
+export const insertLevelSettingsSchema = z.object({
+  level: z.number(),
+  requiredPoints: z.number(),
+  title: z.string(),
+  color: z.string().optional(),
+  benefits: z.string().optional(), // JSON string للتوافق مع SQLite
+});
+
+export type InsertPointsHistory = z.infer<typeof insertPointsHistorySchema>;
+export type PointsHistory = typeof pointsHistory.$inferSelect;
+export type InsertLevelSettings = z.infer<typeof insertLevelSettingsSchema>;
+export type LevelSettings = typeof levelSettings.$inferSelect;
+export type BlockedDevice = typeof blockedDevices.$inferSelect;
+export type InsertBlockedDevice = typeof blockedDevices.$inferInsert;
