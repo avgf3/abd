@@ -1,6 +1,6 @@
 import { db } from './database-adapter';
 import { sql } from 'drizzle-orm';
-import { users, messages, friends, notifications, blockedDevices } from '../shared/schema';
+import { users, messages, friends, notifications, blockedDevices } from '../shared/schema-sqlite';
 
 export async function initializeDatabase(): Promise<boolean> {
   try {

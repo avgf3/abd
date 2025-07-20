@@ -1,6 +1,6 @@
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
-import * as schema from "../shared/schema";
+import * as schema from "../shared/schema-sqlite";
 import type { NeonQueryResultHKT } from 'drizzle-orm/neon-serverless';
 import type { PgDatabase } from 'drizzle-orm/pg-core';
 import { initSQLiteFallback } from './database-fallback';

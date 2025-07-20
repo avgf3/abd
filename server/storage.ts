@@ -11,7 +11,7 @@ import {
   type InsertFriend,
   type Notification,
   type InsertNotification,
-} from "../shared/schema";
+} from "../shared/schema-sqlite";
 import { db } from "./database-adapter";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { userService } from "./services/userService";
@@ -136,9 +136,9 @@ export class MixedStorage implements IStorage {
           isMuted: 0,
           isBanned: 0,
           isBlocked: 0,
-          joinDate: new Date(),
-          createdAt: new Date(),
-          lastSeen: new Date(),
+          joinDate: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          lastSeen: new Date().toISOString(),
           ignoredUsers: '[]'
         } as any);
       }
@@ -167,9 +167,9 @@ export class MixedStorage implements IStorage {
           isMuted: 0,
           isBanned: 0,
           isBlocked: 0,
-          joinDate: new Date(),
-          createdAt: new Date(),
-          lastSeen: new Date(),
+          joinDate: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          lastSeen: new Date().toISOString(),
           ignoredUsers: '[]'
         } as any);
       }
@@ -245,30 +245,37 @@ export class MixedStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     if ((insertUser.userType === 'member' || insertUser.userType === 'owner') && db) {
-      // Store members in database - simplified version for testing
-      try {
-        console.log('Creating user in database:', insertUser.username);
-        const [dbUser] = await db
-          .insert(users)
-          .values({
-            username: insertUser.username,
-            password: insertUser.password,
-            userType: insertUser.userType,
-            role: insertUser.role || insertUser.userType || "member",
-            gender: insertUser.gender || null,
-            profileImage: "/default_avatar.svg",
-            profileBackgroundColor: "#3c0d0d",
-            usernameColor: '#FFFFFF',
-            userTheme: 'default',
-            ignoredUsers: '[]'
-          } as any)
-          .returning();
-        console.log('User created successfully:', dbUser.username);
-        return dbUser;
-      } catch (error) {
-        console.error('Database insert error:', error);
-        throw error;
-      }
+      // Store members in database with SQLite-compatible schema
+      const [dbUser] = await db
+        .insert(users)
+        .values({
+          username: insertUser.username,
+          password: insertUser.password,
+          userType: insertUser.userType,
+          role: insertUser.role || insertUser.userType || "member",
+          profileImage: insertUser.profileImage || "/default_avatar.svg",
+          profileBanner: insertUser.profileBanner || null,
+          status: insertUser.status,
+          gender: insertUser.gender,
+          age: insertUser.age,
+          country: insertUser.country,
+          relation: insertUser.relation,
+          bio: insertUser.bio || null,
+          profileBackgroundColor: "#3c0d0d",
+          usernameColor: '#FFFFFF',
+          userTheme: 'default',
+          isOnline: 1, // SQLite integer for boolean
+          isHidden: 0,
+          isMuted: 0,
+          isBanned: 0,
+          isBlocked: 0,
+          lastSeen: new Date().toISOString(), // SQLite text for timestamp
+          joinDate: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          ignoredUsers: '[]' // JSON string
+        } as any)
+        .returning();
+      return dbUser;
     } else {
       // Store guests in memory (temporary, no profile picture upload)
       const id = this.currentUserId++;
@@ -373,7 +380,7 @@ export class MixedStorage implements IStorage {
           .update(users)
           .set({ 
             isOnline: isOnline ? 1 : 0,  // Convert boolean to number for SQLite
-            lastSeen: new Date()  // Keep as Date object
+            lastSeen: new Date().toISOString()  // Convert to ISO string for SQLite
           } as any)
           .where(eq(users.id, id));
       } catch (error) {
