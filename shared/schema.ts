@@ -32,6 +32,10 @@ export const users = pgTable("users", {
   ignoredUsers: text("ignored_users").default('[]'), // قائمة المستخدمين المتجاهلين - JSON string للتوافق مع SQLite
   usernameColor: text("username_color").default('#FFFFFF'), // لون اسم المستخدم
   userTheme: text("user_theme").default('default'), // ثيم المستخدم
+  points: integer("points").default(0), // نقاط المستخدم الحالية
+  level: integer("level").default(1), // مستوى المستخدم
+  totalPoints: integer("total_points").default(0), // إجمالي النقاط التي كسبها المستخدم
+  levelProgress: integer("level_progress").default(0), // تقدم المستخدم في المستوى الحالي
 });
 
 export const messages = pgTable("messages", {
@@ -74,6 +78,27 @@ export const blockedDevices = pgTable("blocked_devices", {
   blockedBy: integer("blocked_by").notNull(),
 });
 
+// جدول تاريخ النقاط لتتبع كيفية كسب/فقدان النقاط
+export const pointsHistory = pgTable("points_history", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  points: integer("points").notNull(), // النقاط المكتسبة/المفقودة (يمكن أن تكون سالبة)
+  reason: text("reason").notNull(), // سبب الحصول على النقاط (رسالة، تسجيل دخول، إلخ)
+  action: text("action").notNull(), // 'earn' أو 'lose'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// جدول إعدادات مستويات النقاط
+export const levelSettings = pgTable("level_settings", {
+  id: serial("id").primaryKey(),
+  level: integer("level").notNull().unique(),
+  requiredPoints: integer("required_points").notNull(), // النقاط المطلوبة للوصول لهذا المستوى
+  title: text("title").notNull(), // لقب المستوى (مبتدئ، متقدم، خبير، إلخ)
+  color: text("color").default('#FFFFFF'), // لون خاص بالمستوى
+  benefits: jsonb("benefits"), // مزايا المستوى (JSON)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = z.object({
   username: z.string(),
   password: z.string().optional(),
@@ -98,6 +123,10 @@ export const insertUserSchema = z.object({
   deviceId: z.string().optional(),
   usernameColor: z.string().optional(),
   userTheme: z.string().optional(),
+  points: z.number().optional(),
+  level: z.number().optional(),
+  totalPoints: z.number().optional(),
+  levelProgress: z.number().optional(),
 });
 
 export const insertMessageSchema = z.object({
@@ -144,3 +173,24 @@ export const insertBlockedDeviceSchema = z.object({
 
 export type InsertBlockedDevice = z.infer<typeof insertBlockedDeviceSchema>;
 export type BlockedDevice = typeof blockedDevices.$inferSelect;
+
+// إضافة نماذج النقاط والمستويات
+export const insertPointsHistorySchema = z.object({
+  userId: z.number(),
+  points: z.number(),
+  reason: z.string(),
+  action: z.string(),
+});
+
+export const insertLevelSettingsSchema = z.object({
+  level: z.number(),
+  requiredPoints: z.number(),
+  title: z.string(),
+  color: z.string().optional(),
+  benefits: z.any().optional(),
+});
+
+export type InsertPointsHistory = z.infer<typeof insertPointsHistorySchema>;
+export type PointsHistory = typeof pointsHistory.$inferSelect;
+export type InsertLevelSettings = z.infer<typeof insertLevelSettingsSchema>;
+export type LevelSettings = typeof levelSettings.$inferSelect;
