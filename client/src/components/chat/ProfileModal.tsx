@@ -1595,7 +1595,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                 📅 تاريخ الإنضمام: <span>{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('ar-SA') : 'غير محدد'}</span>
               </p>
               <p>
-                🎁 نقاط الهدايا: <span>340</span>
+                🎁 نقاط الهدايا: <span>{user?.points || 0}</span>
               </p>
               <p>
                 🧾 الحالة: <span>{user?.isOnline ? 'متصل' : 'غير متصل'}</span>
@@ -1605,7 +1605,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
             {user.id === currentUser?.id && (
               <div className="additional-details">
                 <p>💬 عدد الرسائل: <span>0</span></p>
-                <p>⭐ مستوى العضو: <span>الرتبة 1</span></p>
+                <p>⭐ مستوى العضو: <span>مستوى {user?.level || 1}</span></p>
                 <p onClick={() => setCurrentEditType('theme')}>
                   🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
                 </p>
