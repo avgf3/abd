@@ -1,31 +1,89 @@
-import type { Express, Request, Response, NextFunction } from 'express';
+import express, { type Express, Request, Response, NextFunction } from 'express';
+
+// Rate limiting stores
+const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+const blockedIPs = new Set<string>();
+
+// Create rate limiter
+export const createRateLimit = (windowMs: number, max: number, message: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const key = req.ip || 'unknown';
+    const now = Date.now();
+
+    let data = rateLimitStore.get(key);
+    
+    if (!data || now > data.resetTime) {
+      data = { count: 1, resetTime: now + windowMs };
+    } else {
+      data.count++;
+    }
+    
+    rateLimitStore.set(key, data);
+    
+    if (data.count > max) {
+      return res.status(429).json({ error: message });
+    }
+    
+    next();
+  };
+};
+
+// Auth rate limiter
+export const authLimiter = createRateLimit(
+  15 * 60 * 1000, // 15 minutes
+  5, // 5 attempts
+  'محاولات كثيرة جداً. حاول مرة أخرى خلال 15 دقيقة'
+);
+
+// Message rate limiter
+export const messageLimiter = createRateLimit(
+  60 * 1000, // 1 minute
+  30, // 30 messages
+  'رسائل كثيرة جداً. انتظر قليلاً'
+);
+
+// Check IP security
+export const checkIPSecurity = (req: Request, res: Response, next: NextFunction) => {
+  const clientIP = req.ip || 'unknown';
+  
+  if (blockedIPs.has(clientIP)) {
+    return res.status(403).json({ error: 'عنوان IP محظور' });
+  }
+  
+  next();
+};
+
+// Validate message content
+export const validateMessageContent = (content: string): { isValid: boolean; reason?: string } => {
+  if (!content || !content.trim()) {
+    return { isValid: false, reason: 'الرسالة فارغة' };
+  }
+  
+  if (content.length > 1000) {
+    return { isValid: false, reason: 'الرسالة طويلة جداً' };
+  }
+  
+  // Check for suspicious patterns
+  const suspiciousPatterns = [
+    /https?:\/\/[^\s]+\.(tk|ml|ga|cf)\b/i,
+    /discord\.gg\/[a-zA-Z0-9]+/i,
+    /t\.me\/[a-zA-Z0-9_]+/i,
+    /bit\.ly\/[a-zA-Z0-9]+/i,
+  ];
+  
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(content)) {
+      return { isValid: false, reason: 'يحتوي على روابط غير مسموحة' };
+    }
+  }
+  
+  return { isValid: true };
+};
 
 // Security middleware to prevent common attacks
 export function setupSecurity(app: Express): void {
-  // Rate limiting for API endpoints
-  const requestCounts = new Map<string, { count: number; resetTime: number }>();
-  
-  app.use('/api', (req: Request, res: Response, next: NextFunction) => {
-    const clientId = req.ip || 'unknown';
-    const now = Date.now();
-    const windowMs = 15 * 60 * 1000; // 15 minutes
-    const maxRequests = 100;
-
-    const current = requestCounts.get(clientId);
-    
-    if (!current || now > current.resetTime) {
-      requestCounts.set(clientId, { count: 1, resetTime: now + windowMs });
-      next();
-    } else if (current.count < maxRequests) {
-      current.count++;
-      next();
-    } else {
-      res.status(429).json({ 
-        error: 'تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً',
-        retryAfter: Math.ceil((current.resetTime - now) / 1000)
-      });
-    }
-  });
+  // Apply general rate limiting for API endpoints
+  app.use('/api', createRateLimit(15 * 60 * 1000, 100, 'تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً'));
 
   // Security headers
   app.use((req: Request, res: Response, next: NextFunction) => {
