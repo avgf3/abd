@@ -14,11 +14,8 @@ export async function initializeDatabase(): Promise<boolean> {
 
     console.log('🔄 Initializing database tables...');
     
-    // Run migrations for PostgreSQL
-    if (dbType === 'postgresql') {
-      await runMigrations();
-    } else {
-      // Create tables for SQLite
+    // Create tables for SQLite (PostgreSQL migrations are handled separately)
+    if (dbType !== 'postgresql') {
       await createTables();
     }
     
@@ -36,10 +33,10 @@ export async function initializeDatabase(): Promise<boolean> {
   }
 }
 
-async function runMigrations(): Promise<void> {
+export async function runMigrations(): Promise<void> {
   try {
-    if (!process.env.DATABASE_URL) {
-      console.log('⚠️ No DATABASE_URL found, skipping migrations');
+    if (!process.env.DATABASE_URL || process.env.DATABASE_URL.startsWith('sqlite:')) {
+      console.log('⚠️ No PostgreSQL DATABASE_URL found or using SQLite, skipping Drizzle migrations');
       return;
     }
 
@@ -49,8 +46,20 @@ async function runMigrations(): Promise<void> {
     const migrationClient = postgres(process.env.DATABASE_URL, { max: 1 });
     const migrationDb = drizzle(migrationClient);
     
+    // Determine migrations folder path based on environment
+    const fs = await import('fs');
+    const path = await import('path');
+    
+    // In production, migrations are in dist folder
+    const distMigrationsPath = path.resolve(process.cwd(), 'dist/migrations');
+    const devMigrationsPath = path.resolve(process.cwd(), 'migrations');
+    
+    const migrationsFolder = fs.existsSync(distMigrationsPath) ? 'dist/migrations' : 'migrations';
+    
+    console.log(`📁 Using migrations folder: ${migrationsFolder}`);
+    
     // Run migrations
-    await migrate(migrationDb, { migrationsFolder: './migrations' });
+    await migrate(migrationDb, { migrationsFolder });
     
     // Close migration connection
     await migrationClient.end();

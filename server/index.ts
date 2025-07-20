@@ -4,7 +4,7 @@ dotenv.config();
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { initializeDatabase, createDefaultUsers } from "./database-setup";
+import { initializeDatabase, createDefaultUsers, runMigrations } from "./database-setup";
 import { setupSecurity } from "./security";
 import path from "path";
 
@@ -76,6 +76,16 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
+  
+  // Run database migrations before starting server
+  try {
+    await runMigrations();
+    log("✅ Database migrations completed successfully");
+  } catch (error) {
+    log("⚠️ Database migration failed:", error);
+    // Continue server startup - fallback handling is in initializeDatabase
+  }
+  
   // Initialize database before starting server
   await initializeDatabase();
   await createDefaultUsers();
