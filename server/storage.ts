@@ -1088,6 +1088,129 @@ export class MixedStorage implements IStorage {
       return [];
     }
   }
+
+  // Points system methods
+  async updateUserPoints(userId: number, pointsData: {
+    points: number;
+    level: number;
+    totalPoints: number;
+    levelProgress: number;
+  }): Promise<void> {
+    try {
+      const user = await this.getUser(userId);
+      if (!user) return;
+
+      if (user.userType === 'guest') {
+        // تحديث المستخدم الضيف في الذاكرة
+        const userData = this.users.get(userId);
+        if (userData) {
+          Object.assign(userData, pointsData);
+        }
+      } else {
+        // تحديث المستخدم العضو في قاعدة البيانات
+        await db.update(users)
+          .set(pointsData)
+          .where(eq(users.id, userId));
+      }
+    } catch (error) {
+      console.error('Error updating user points:', error);
+    }
+  }
+
+  async addPointsHistory(userId: number, points: number, reason: string, action: string): Promise<void> {
+    try {
+      const user = await this.getUser(userId);
+      if (!user || user.userType === 'guest') return; // لا نحفظ تاريخ نقاط الضيوف
+
+      // إضافة سجل في تاريخ النقاط للأعضاء فقط
+      await db.execute(sql`
+        INSERT INTO points_history (user_id, points, reason, action, created_at)
+        VALUES (${userId}, ${points}, ${reason}, ${action}, ${new Date().toISOString()})
+      `);
+    } catch (error) {
+      console.error('Error adding points history:', error);
+    }
+  }
+
+  async getPointsHistory(userId: number, limit: number = 50): Promise<any[]> {
+    try {
+      const user = await this.getUser(userId);
+      if (!user || user.userType === 'guest') return [];
+
+      const result = await db.execute(sql`
+        SELECT * FROM points_history 
+        WHERE user_id = ${userId} 
+        ORDER BY created_at DESC 
+        LIMIT ${limit}
+      `);
+      return result || [];
+    } catch (error) {
+      console.error('Error getting points history:', error);
+      return [];
+    }
+  }
+
+  async getTopUsersByPoints(limit: number = 20): Promise<User[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM users 
+        WHERE user_type != 'guest'
+        ORDER BY total_points DESC 
+        LIMIT ${limit}
+      `);
+      return result || [];
+    } catch (error) {
+      console.error('Error getting top users by points:', error);
+      return [];
+    }
+  }
+
+  async getUserMessageCount(userId: number): Promise<number> {
+    try {
+      const result = await db.execute(sql`
+        SELECT COUNT(*) as count FROM messages 
+        WHERE sender_id = ${userId}
+      `);
+      return result?.[0]?.count || 0;
+    } catch (error) {
+      console.error('Error getting user message count:', error);
+      return 0;
+    }
+  }
+
+  async getUserLastDailyLogin(userId: number): Promise<string | null> {
+    try {
+      const user = await this.getUser(userId);
+      if (!user) return null;
+
+      // نحفظ آخر تسجيل دخول يومي في حقل منفصل أو نستخدم last_seen
+      // هنا سنستخدم طريقة بسيطة بحفظها في الذاكرة للضيوف
+      if (user.userType === 'guest') {
+        // للضيوف، نحفظ في الذاكرة (لن يحصلوا على نقاط يومية فعلياً)
+        return null;
+      }
+
+      // للأعضاء، يمكن استخدام last_seen أو إضافة حقل جديد
+      return user.lastSeen ? new Date(user.lastSeen).toDateString() : null;
+    } catch (error) {
+      console.error('Error getting user last daily login:', error);
+      return null;
+    }
+  }
+
+  async updateUserLastDailyLogin(userId: number, date: string): Promise<void> {
+    try {
+      const user = await this.getUser(userId);
+      if (!user || user.userType === 'guest') return;
+
+      // تحديث تاريخ آخر تسجيل دخول يومي
+      await db.update(users)
+        .set({ lastSeen: new Date() })
+        .where(eq(users.id, userId));
+    } catch (error) {
+      console.error('Error updating user last daily login:', error);
+    }
+  }
 }
 
 export const storage = new MixedStorage();

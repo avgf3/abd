@@ -12,6 +12,7 @@ import { databaseCleanup } from "./utils/database-cleanup";
 import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
 import securityApiRoutes from "./api-security";
 import apiRoutes from "./routes/index";
+import { pointsService } from "./services/pointsService";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -1004,6 +1005,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
         
         socket.emit('message', { type: 'onlineUsers', users: usersWithStatus });
+        
+        // إضافة نقاط تسجيل الدخول اليومي
+        try {
+          const dailyLoginResult = await pointsService.addDailyLoginPoints(socket.userId);
+          if (dailyLoginResult?.leveledUp) {
+            socket.emit('message', {
+              type: 'levelUp',
+              oldLevel: dailyLoginResult.oldLevel,
+              newLevel: dailyLoginResult.newLevel,
+              levelInfo: dailyLoginResult.levelInfo,
+              message: `🎉 تهانينا! وصلت للمستوى ${dailyLoginResult.newLevel}: ${dailyLoginResult.levelInfo?.title}`
+            });
+          } else if (dailyLoginResult) {
+            socket.emit('message', {
+              type: 'dailyBonus',
+              points: dailyLoginResult.newPoints - (dailyLoginResult.newTotalPoints - dailyLoginResult.newPoints),
+              message: `🎁 مكافأة يومية! حصلت على ${dailyLoginResult.newPoints - (dailyLoginResult.newTotalPoints - dailyLoginResult.newPoints)} نقطة!`
+            });
+          }
+        } catch (pointsError) {
+          console.error('خطأ في إضافة نقاط تسجيل الدخول:', pointsError);
+        }
       } catch (error) {
         console.error('خطأ في المصادقة:', error);
         socket.emit('message', { type: 'error', message: 'خطأ في المصادقة' });
@@ -1052,6 +1075,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
           messageType: data.messageType || 'text',
           isPrivate: false,
         });
+        
+        // إضافة نقاط لإرسال رسالة
+        try {
+          const pointsResult = await pointsService.addMessagePoints(socket.userId);
+          
+          // التحقق من إنجاز أول رسالة
+          const achievementResult = await pointsService.checkAchievement(socket.userId, 'FIRST_MESSAGE');
+          
+          // إرسال إشعار ترقية المستوى إذا حدثت
+          if (pointsResult?.leveledUp) {
+            socket.emit('message', {
+              type: 'levelUp',
+              oldLevel: pointsResult.oldLevel,
+              newLevel: pointsResult.newLevel,
+              levelInfo: pointsResult.levelInfo,
+              message: `🎉 تهانينا! وصلت للمستوى ${pointsResult.newLevel}: ${pointsResult.levelInfo?.title}`
+            });
+          }
+          
+          // إرسال إشعار إنجاز أول رسالة
+          if (achievementResult?.leveledUp) {
+            socket.emit('message', {
+              type: 'achievement',
+              message: `🏆 إنجاز جديد: أول رسالة! حصلت على ${achievementResult.newPoints - pointsResult.newPoints} نقطة إضافية!`
+            });
+          }
+          
+          // تحديث بيانات المستخدم في الذاكرة والإرسال للعملاء
+          const updatedSender = await storage.getUser(socket.userId);
+          if (updatedSender) {
+            // إرسال البيانات المحدثة للمستخدم
+            socket.emit('message', {
+              type: 'userUpdated',
+              user: updatedSender
+            });
+          }
+        } catch (pointsError) {
+          console.error('خطأ في إضافة النقاط:', pointsError);
+        }
         
         const sender = await storage.getUser(socket.userId);
         io.emit('message', { type: 'newMessage', message: { ...newMessage, sender } });
@@ -2611,6 +2673,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: 'تم تحديث لون خلفية البروفايل بنجاح' });
     } catch (error) {
       console.error('خطأ في تحديث لون الخلفية:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // ========== API نظام النقاط والمستويات ==========
+
+  // الحصول على معلومات النقاط والمستوى للمستخدم
+  app.get('/api/points/user/:userId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const pointsInfo = await pointsService.getUserPointsInfo(userId);
+      
+      if (!pointsInfo) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+      
+      res.json(pointsInfo);
+    } catch (error) {
+      console.error('خطأ في جلب معلومات النقاط:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // الحصول على تاريخ النقاط للمستخدم
+  app.get('/api/points/history/:userId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const limit = parseInt(req.query.limit as string) || 50;
+      
+      const history = await pointsService.getUserPointsHistory(userId, limit);
+      res.json(history);
+    } catch (error) {
+      console.error('خطأ في جلب تاريخ النقاط:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // لوحة الصدارة
+  app.get('/api/points/leaderboard', async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 20;
+      const leaderboard = await pointsService.getLeaderboard(limit);
+      res.json(leaderboard);
+    } catch (error) {
+      console.error('خطأ في جلب لوحة الصدارة:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // إضافة نقاط يدوياً (للمشرفين)
+  app.post('/api/points/add', async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, points, reason } = req.body;
+      
+      // التحقق من صلاحيات المشرف
+      const moderator = await storage.getUser(moderatorId);
+      if (!moderator || !['owner', 'admin'].includes(moderator.userType)) {
+        return res.status(403).json({ error: 'غير مصرح لك بهذا الإجراء' });
+      }
+      
+      const result = await pointsService.addPoints(targetUserId, points, reason || 'إضافة يدوية من المشرف');
+      
+      // إرسال إشعار للمستخدم
+      if (result.leveledUp) {
+        io.to(targetUserId.toString()).emit('message', {
+          type: 'levelUp',
+          oldLevel: result.oldLevel,
+          newLevel: result.newLevel,
+          levelInfo: result.levelInfo,
+          message: `🎉 تهانينا! وصلت للمستوى ${result.newLevel}: ${result.levelInfo?.title}`
+        });
+      }
+      
+      io.to(targetUserId.toString()).emit('message', {
+        type: 'pointsAdded',
+        points,
+        reason: reason || 'مكافأة من الإدارة',
+        message: `🎁 حصلت على ${points} نقطة من الإدارة!`
+      });
+      
+      res.json({ success: true, result });
+    } catch (error) {
+      console.error('خطأ في إضافة النقاط:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // إعادة حساب نقاط مستخدم (للصيانة)
+  app.post('/api/points/recalculate/:userId', async (req, res) => {
+    try {
+      const { moderatorId } = req.body;
+      const userId = parseInt(req.params.userId);
+      
+      // التحقق من صلاحيات المشرف
+      const moderator = await storage.getUser(moderatorId);
+      if (!moderator || moderator.userType !== 'owner') {
+        return res.status(403).json({ error: 'هذه الميزة للمالك فقط' });
+      }
+      
+      const result = await pointsService.recalculateUserPoints(userId);
+      res.json({ success: true, result });
+    } catch (error) {
+      console.error('خطأ في إعادة حساب النقاط:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
