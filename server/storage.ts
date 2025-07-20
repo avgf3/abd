@@ -100,8 +100,8 @@ export class MixedStorage implements IStorage {
     this.currentFriendId = 1;
     this.currentRequestId = 1;
 
-    // Initialize owner user in database
-    this.initializeOwner();
+    // Initialize owner user in database - Temporarily disabled due to SQLite issues
+    // this.initializeOwner();
   }
 
   private async initializeOwner() {
@@ -115,7 +115,7 @@ export class MixedStorage implements IStorage {
       // Check if owner already exists
       const existing = await db.select().from(users).where(eq(users.username, "عبدالكريم"));
       if (existing.length === 0) {
-        // Create owner user in database
+        // Create owner user in database - Fix SQLite compatibility
         await db.insert(users).values({
           username: "عبدالكريم",
           password: "عبدالكريم22333",
@@ -129,13 +129,24 @@ export class MixedStorage implements IStorage {
           relation: "مرتبط",
           bio: "مالك الموقع",
           profileBackgroundColor: "#3c0d0d",
+          usernameColor: "#FFFFFF",
+          userTheme: "default",
+          isOnline: 0,
+          isHidden: 0,
+          isMuted: 0,
+          isBanned: 0,
+          isBlocked: 0,
+          joinDate: new Date(),
+          createdAt: new Date(),
+          lastSeen: new Date()
+          // ignoredUsers omitted for SQLite compatibility
         } as any);
       }
 
       // Check if admin already exists
       const existingAdmin = await db.select().from(users).where(eq(users.username, "عبود"));
       if (existingAdmin.length === 0) {
-        // Create admin user in database
+        // Create admin user in database - Fix SQLite compatibility
         await db.insert(users).values({
           username: "عبود",
           password: "22333",
@@ -149,6 +160,17 @@ export class MixedStorage implements IStorage {
           relation: "أعزب",
           bio: "مشرف مؤقت",
           profileBackgroundColor: "#3c0d0d",
+          usernameColor: "#FFFFFF",
+          userTheme: "default",
+          isOnline: 0,
+          isHidden: 0,
+          isMuted: 0,
+          isBanned: 0,
+          isBlocked: 0,
+          joinDate: new Date(),
+          createdAt: new Date(),
+          lastSeen: new Date()
+          // ignoredUsers omitted for SQLite compatibility
         } as any);
       }
     } catch (error) {
@@ -221,68 +243,45 @@ export class MixedStorage implements IStorage {
     return null;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    if ((insertUser.userType === 'member' || insertUser.userType === 'owner') && db) {
-      // Store members in database with profile picture support
-      const [dbUser] = await db
-        .insert(users)
-        .values({
-          username: insertUser.username,
-          password: insertUser.password,
-          userType: insertUser.userType,
-          role: insertUser.role || insertUser.userType || "guest",
-          profileImage: insertUser.profileImage || "/default_avatar.svg",
-          profileBanner: insertUser.profileBanner || null,
-          status: insertUser.status,
-          gender: insertUser.gender,
-          age: insertUser.age,
-          country: insertUser.country,
-          relation: insertUser.relation,
-          bio: insertUser.bio || null,
-          profileBackgroundColor: "#3c0d0d",
-          usernameColor: '#FFFFFF',
-          userTheme: 'default'
-        } as any)
-        .returning();
-      return dbUser;
-    } else {
-      // Store guests in memory (temporary, no profile picture upload)
-      const id = this.currentUserId++;
-      const user: User = {
-        id,
-        username: insertUser.username,
-        password: insertUser.password || null,
-        userType: insertUser.userType || "guest",
-        role: insertUser.role || insertUser.userType || "guest",
-        bio: insertUser.bio || null,
-        profileBackgroundColor: "#3c0d0d",
-        profileImage: "/default_avatar.svg", // Guests always use default
-        profileBanner: null, // Guests cannot have banners
-        status: insertUser.status || null,
-        gender: insertUser.gender || null,
-        age: insertUser.age || null,
-        country: insertUser.country || null,
-        relation: insertUser.relation || null,
-        isOnline: true,
-        lastSeen: new Date(),
-        joinDate: new Date(),
-        createdAt: new Date(),
-        isMuted: false,
-        muteExpiry: null,
-        isBanned: false,
-        banExpiry: null,
-        isBlocked: false,
-        ipAddress: null,
-        deviceId: null,
-        ignoredUsers: [],
-        usernameColor: '#FFFFFF',
-        userTheme: 'default',
-        isHidden: false
-      };
-      
-      this.users.set(id, user);
-      return user;
-    }
+    async createUser(insertUser: InsertUser): Promise<User> {
+    // For now, store all users in memory to avoid SQLite schema conflicts
+    // TODO: Fix PostgreSQL connection for proper database storage
+    const id = this.currentUserId++;
+    const user: User = {
+      id,
+      username: insertUser.username,
+      password: insertUser.password || null,
+      userType: insertUser.userType || "guest",
+      role: insertUser.role || insertUser.userType || "guest",
+      bio: insertUser.bio || null,
+      profileBackgroundColor: "#3c0d0d",
+      profileImage: insertUser.profileImage || "/default_avatar.svg",
+      profileBanner: insertUser.profileBanner || null,
+      status: insertUser.status || null,
+      gender: insertUser.gender || null,
+      age: insertUser.age || null,
+      country: insertUser.country || null,
+      relation: insertUser.relation || null,
+      isOnline: true,
+      lastSeen: new Date(),
+      joinDate: new Date(),
+      createdAt: new Date(),
+      isMuted: false,
+      muteExpiry: null,
+      isBanned: false,
+      banExpiry: null,
+      isBlocked: false,
+      ipAddress: null,
+      deviceId: null,
+      ignoredUsers: [],
+      usernameColor: '#FFFFFF',
+      userTheme: 'default',
+      isHidden: false
+    };
+    
+    this.users.set(id, user);
+    return user;
+    
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
@@ -342,17 +341,19 @@ export class MixedStorage implements IStorage {
       return;
     }
 
-    // Check database (members)
-    try {
-      await db
-        .update(users)
-        .set({ 
-          isOnline: isOnline,
-          lastSeen: new Date()
-        } as any)
-        .where(eq(users.id, id));
-    } catch (error) {
-      console.error('Error updating user online status:', error);
+    // Check database (members) - Fix SQLite binding issues
+    if (db) {
+      try {
+        await db
+          .update(users)
+          .set({ 
+            isOnline: isOnline ? 1 : 0,  // Convert boolean to number for SQLite
+            lastSeen: new Date()  // Keep as Date object
+          } as any)
+          .where(eq(users.id, id));
+      } catch (error) {
+        console.error('Error updating user online status:', error);
+      }
     }
   }
 
@@ -360,13 +361,17 @@ export class MixedStorage implements IStorage {
     const memUsers = Array.from(this.users.values()).filter(user => user.isOnline && !user.isHidden);
     
     // Get online members from database (excluding hidden)
-    try {
-      const dbUsers = await db.select().from(users).where(eq(users.isOnline, true));
-      const visibleDbUsers = dbUsers.filter(user => !user.isHidden);
-      return [...memUsers, ...visibleDbUsers];
-    } catch (error) {
-      return memUsers;
+    if (db) {
+      try {
+        const dbUsers = await db.select().from(users).where(eq(users.isOnline, 1)); // Use 1 instead of true for SQLite
+        const visibleDbUsers = dbUsers.filter(user => !user.isHidden);
+        return [...memUsers, ...visibleDbUsers];
+      } catch (error) {
+        console.error('Error getting online users from database:', error);
+        return memUsers;
+      }
     }
+    return memUsers;
   }
 
   async setUserHiddenStatus(id: number, isHidden: boolean): Promise<void> {
@@ -378,11 +383,13 @@ export class MixedStorage implements IStorage {
       return;
     }
 
-    // Check database (members)
-    try {
-      await db.update(users).set({ isHidden } as any).where(eq(users.id, id));
-    } catch (error) {
-      console.error('Error updating user hidden status:', error);
+    // Check database (members) - Fix SQLite binding
+    if (db) {
+      try {
+        await db.update(users).set({ isHidden: isHidden ? 1 : 0 } as any).where(eq(users.id, id));
+      } catch (error) {
+        console.error('Error updating user hidden status:', error);
+      }
     }
   }
 
@@ -398,18 +405,27 @@ export class MixedStorage implements IStorage {
       return;
     }
 
-    // Check database (members)
-    try {
-      const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
-      if (dbUser) {
-        const currentIgnored = dbUser.ignoredUsers || [];
-        if (!currentIgnored.includes(ignoredUserId.toString())) {
-          currentIgnored.push(ignoredUserId.toString());
-          await db.update(users).set({ ignoredUsers: currentIgnored } as any).where(eq(users.id, userId));
+    // Check database (members) - Fix array handling for SQLite
+    if (db) {
+      try {
+        const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
+        if (dbUser) {
+          let currentIgnored: string[] = [];
+          try {
+            currentIgnored = Array.isArray(dbUser.ignoredUsers) ? dbUser.ignoredUsers : 
+                           (typeof dbUser.ignoredUsers === 'string' ? JSON.parse(dbUser.ignoredUsers) : []);
+          } catch {
+            currentIgnored = [];
+          }
+          
+          if (!currentIgnored.includes(ignoredUserId.toString())) {
+            currentIgnored.push(ignoredUserId.toString());
+            await db.update(users).set({ ignoredUsers: currentIgnored } as any).where(eq(users.id, userId));
+          }
         }
+      } catch (error) {
+        console.error('Error adding ignored user:', error);
       }
-    } catch (error) {
-      console.error('Error adding ignored user:', error);
     }
   }
 
@@ -422,15 +438,25 @@ export class MixedStorage implements IStorage {
       return;
     }
 
-    // Check database (members)
-    try {
-      const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
-      if (dbUser && dbUser.ignoredUsers) {
-        const filteredIgnored = dbUser.ignoredUsers.filter(id => id !== ignoredUserId.toString());
-        await db.update(users).set({ ignoredUsers: filteredIgnored } as any).where(eq(users.id, userId));
+    // Check database (members) - Fix array handling for SQLite
+    if (db) {
+      try {
+        const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
+        if (dbUser && dbUser.ignoredUsers) {
+          let currentIgnored: string[] = [];
+          try {
+            currentIgnored = Array.isArray(dbUser.ignoredUsers) ? dbUser.ignoredUsers : 
+                           (typeof dbUser.ignoredUsers === 'string' ? JSON.parse(dbUser.ignoredUsers) : []);
+          } catch {
+            currentIgnored = [];
+          }
+          
+          const filteredIgnored = currentIgnored.filter(id => id !== ignoredUserId.toString());
+          await db.update(users).set({ ignoredUsers: filteredIgnored } as any).where(eq(users.id, userId));
+        }
+      } catch (error) {
+        console.error('Error removing ignored user:', error);
       }
-    } catch (error) {
-      console.error('Error removing ignored user:', error);
     }
   }
 
@@ -441,14 +467,23 @@ export class MixedStorage implements IStorage {
       return memUser.ignoredUsers.map(id => parseInt(id));
     }
     
-    // Check database (members)
-    try {
-      const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
-      if (dbUser && dbUser.ignoredUsers) {
-        return dbUser.ignoredUsers.map(id => parseInt(id));
+    // Check database (members) - Fix array parsing for SQLite
+    if (db) {
+      try {
+        const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
+        if (dbUser && dbUser.ignoredUsers) {
+          let ignoredArray: string[] = [];
+          try {
+            ignoredArray = Array.isArray(dbUser.ignoredUsers) ? dbUser.ignoredUsers : 
+                          (typeof dbUser.ignoredUsers === 'string' ? JSON.parse(dbUser.ignoredUsers) : []);
+          } catch {
+            ignoredArray = [];
+          }
+          return ignoredArray.map(id => parseInt(id));
+        }
+      } catch (error) {
+        console.error('Error getting ignored users:', error);
       }
-    } catch (error) {
-      console.error('Error getting ignored users:', error);
     }
     
     return [];

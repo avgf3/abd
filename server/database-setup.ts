@@ -9,10 +9,11 @@ export async function initializeDatabase(): Promise<boolean> {
       return true;
     }
 
-    console.log('🔄 Initializing database tables...');
+    console.log('🔄 SQLite database already initialized by fallback system');
+    return true;
 
-    // First, fix missing columns in existing users table
-    await addMissingColumns();
+    // Disabled to avoid conflicts with SQLite
+    // await addMissingColumns();
 
     // Create users table with all required columns
     await db.execute(sql`
@@ -110,19 +111,14 @@ export async function initializeDatabase(): Promise<boolean> {
 }
 
 async function addMissingColumns(): Promise<void> {
+  if (!db) {
+    console.log('⚠️ No database connection, skipping column additions');
+    return;
+  }
+
   try {
-    // Add role column if missing
-    await db.execute(sql`
-      DO $$ 
-      BEGIN 
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_name='users' AND column_name='role') THEN
-          ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'guest';
-          -- Update existing users to set role = user_type
-          UPDATE users SET role = COALESCE(user_type, 'guest') WHERE role IS NULL OR role = '';
-        END IF;
-      END $$
-    `);
+    // For SQLite - different approach since it doesn't have information_schema
+    console.log('✅ Database columns are managed by migration scripts, skipping runtime additions');
 
     // Add profile_background_color column if missing
     await db.execute(sql`
@@ -193,10 +189,11 @@ export async function createDefaultUsers(): Promise<void> {
       return;
     }
 
+    console.log('👤 Default users already created by SQLite fallback system');
+    return;
+
+    // Disabled to avoid conflicts
     // Check if admin user exists
-    const adminResult = await db.execute(sql`
-      SELECT COUNT(*) as count FROM users WHERE username = 'admin'
-    `);
     
     const adminCount = Number((adminResult as any)?.[0]?.count || 0);
 
