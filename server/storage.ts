@@ -16,6 +16,7 @@ import { db } from "./database-adapter";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { userService } from "./services/userService";
 import { messageService } from "./services/messageService";
+import { DatabaseFallback } from "./storage-fallback";
 
 export interface IStorage {
   // User operations
@@ -169,10 +170,21 @@ export class MixedStorage implements IStorage {
       } catch (error: any) {
         console.error('Database query error in getUser:', error);
         
-        // If it's a missing column error, provide a helpful message
-        if (error.code === '42703' && error.message?.includes('role')) {
+        // If it's a missing column error, try fallback method
+        if (error.code === '42703') {
           console.error('❌ CRITICAL: Missing "role" column in users table!');
-          console.error('💡 Run: npm run db:fix to fix this issue');
+          console.error('💡 Run: npm run db:fix-simple to fix this issue');
+          console.log('🔄 محاولة الوصول بطريقة احتياطية...');
+          
+          try {
+            const fallbackUser = await DatabaseFallback.getUserById(id);
+            if (fallbackUser) {
+              console.log('✅ تم العثور على المستخدم بالطريقة الاحتياطية');
+              return fallbackUser;
+            }
+          } catch (fallbackError) {
+            console.error('❌ فشلت الطريقة الاحتياطية أيضاً:', fallbackError);
+          }
         }
         
         return undefined;
@@ -197,10 +209,21 @@ export class MixedStorage implements IStorage {
       } catch (error: any) {
         console.error('Database query error in getUserByUsername:', error);
         
-        // If it's a missing column error, provide a helpful message
-        if (error.code === '42703' && error.message?.includes('role')) {
+        // If it's a missing column error, try fallback method
+        if (error.code === '42703') {
           console.error('❌ CRITICAL: Missing "role" column in users table!');
-          console.error('💡 Run: npm run db:fix to fix this issue');
+          console.error('💡 Run: npm run db:fix-simple to fix this issue');
+          console.log('🔄 محاولة الوصول بطريقة احتياطية...');
+          
+          try {
+            const fallbackUser = await DatabaseFallback.getUserByUsername(username);
+            if (fallbackUser) {
+              console.log('✅ تم العثور على المستخدم بالطريقة الاحتياطية');
+              return fallbackUser;
+            }
+          } catch (fallbackError) {
+            console.error('❌ فشلت الطريقة الاحتياطية أيضاً:', fallbackError);
+          }
         }
         
         return undefined;
