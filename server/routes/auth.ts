@@ -51,6 +51,10 @@ router.post("/register", async (req, res) => {
     console.error("Registration error:", error);
     
     // إرسال رسائل خطأ مفيدة للمستخدم
+    if (error.message === 'اسم المستخدم موجود بالفعل') {
+      return res.status(400).json({ error: "اسم المستخدم موجود بالفعل" });
+    }
+    
     if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.message?.includes('UNIQUE constraint failed')) {
       return res.status(400).json({ error: "اسم المستخدم موجود بالفعل" });
     }
@@ -59,10 +63,16 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: "البيانات المدخلة غير صحيحة" });
     }
     
-    if (error.message?.includes('bind')) {
+    if (error.message?.includes('bind') || error.message?.includes('SQLite3 can only bind')) {
       return res.status(400).json({ error: "خطأ في معالجة البيانات - يرجى المحاولة مرة أخرى" });
     }
     
+    if (error.message?.includes('قاعدة البيانات')) {
+      return res.status(500).json({ error: error.message });
+    }
+    
+    // خطأ عام
+    console.error("خطأ غير متوقع في التسجيل:", error);
     res.status(500).json({ error: "خطأ في الخادم - يرجى المحاولة لاحقاً" });
   }
 });
