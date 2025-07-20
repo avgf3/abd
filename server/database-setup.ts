@@ -1,6 +1,9 @@
 import { db, dbType } from './database-adapter';
 import { sql } from 'drizzle-orm';
 import { users, messages, friends, notifications, blockedDevices } from '../shared/schema';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 
 export async function initializeDatabase(): Promise<boolean> {
   try {
@@ -11,8 +14,13 @@ export async function initializeDatabase(): Promise<boolean> {
 
     console.log('🔄 Initializing database tables...');
     
-    // Create tables first
-    await createTables();
+    // Run migrations for PostgreSQL
+    if (dbType === 'postgresql') {
+      await runMigrations();
+    } else {
+      // Create tables for SQLite
+      await createTables();
+    }
     
     // Check and add missing columns
     await addMissingColumns();
@@ -25,6 +33,32 @@ export async function initializeDatabase(): Promise<boolean> {
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     return false;
+  }
+}
+
+async function runMigrations(): Promise<void> {
+  try {
+    if (!process.env.DATABASE_URL) {
+      console.log('⚠️ No DATABASE_URL found, skipping migrations');
+      return;
+    }
+
+    console.log('🔄 Running database migrations...');
+    
+    // Create a separate connection for migrations
+    const migrationClient = postgres(process.env.DATABASE_URL, { max: 1 });
+    const migrationDb = drizzle(migrationClient);
+    
+    // Run migrations
+    await migrate(migrationDb, { migrationsFolder: './migrations' });
+    
+    // Close migration connection
+    await migrationClient.end();
+    
+    console.log('✅ Database migrations completed successfully');
+  } catch (error) {
+    console.error('❌ Error running migrations:', error);
+    throw error;
   }
 }
 
