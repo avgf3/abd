@@ -166,8 +166,15 @@ export class MixedStorage implements IStorage {
       try {
         const [dbUser] = await db.select().from(users).where(eq(users.id, id));
         return dbUser || undefined;
-      } catch (error) {
+      } catch (error: any) {
         console.error('Database query error in getUser:', error);
+        
+        // If it's a missing column error, provide a helpful message
+        if (error.code === '42703' && error.message?.includes('role')) {
+          console.error('❌ CRITICAL: Missing "role" column in users table!');
+          console.error('💡 Run: npm run db:fix to fix this issue');
+        }
+        
         return undefined;
       }
     }
@@ -187,8 +194,15 @@ export class MixedStorage implements IStorage {
       try {
         const [dbUser] = await db.select().from(users).where(eq(users.username, username));
         return dbUser || undefined;
-      } catch (error) {
+      } catch (error: any) {
         console.error('Database query error in getUserByUsername:', error);
+        
+        // If it's a missing column error, provide a helpful message
+        if (error.code === '42703' && error.message?.includes('role')) {
+          console.error('❌ CRITICAL: Missing "role" column in users table!');
+          console.error('💡 Run: npm run db:fix to fix this issue');
+        }
+        
         return undefined;
       }
     }
