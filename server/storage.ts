@@ -234,16 +234,27 @@ export class MixedStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
+    console.log(`🔍 Searching for user: "${username}"`);
+    
     // Check memory first (for guests)
     const memUser = Array.from(this.users.values()).find(
       (user) => user.username === username,
     );
-    if (memUser) return memUser;
+    if (memUser) {
+      console.log(`✅ Found user "${username}" in memory`);
+      return memUser;
+    }
     
     // Check database (for members) only if database is available
     if (db) {
+      console.log(`🔍 Searching database for user: "${username}"`);
       try {
         const [dbUser] = await db.select().from(users).where(eq(users.username, username));
+        if (dbUser) {
+          console.log(`✅ Found user "${username}" in database`);
+        } else {
+          console.log(`❌ User "${username}" not found in database`);
+        }
         return dbUser || undefined;
       } catch (error: any) {
         console.error('Database query error in getUserByUsername:', error);
