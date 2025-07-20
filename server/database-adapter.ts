@@ -1,12 +1,13 @@
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
-import * as schema from "../shared/schema-sqlite";
+import * as pgSchema from "../shared/schema";
+import * as sqliteSchema from "../shared/schema-sqlite";
 import type { NeonQueryResultHKT } from 'drizzle-orm/neon-serverless';
 import type { PgDatabase } from 'drizzle-orm/pg-core';
 import { initSQLiteFallback } from './database-fallback';
 
 // تعريف نوع قاعدة البيانات المبسط - PostgreSQL أو SQLite
-export type DatabaseType = PgDatabase<NeonQueryResultHKT, typeof schema> | any;
+export type DatabaseType = PgDatabase<NeonQueryResultHKT, typeof pgSchema> | any;
 
 // واجهة موحدة للعمليات
 export interface DatabaseAdapter {
@@ -43,7 +44,7 @@ export function createDatabaseAdapter(): DatabaseAdapter {
       neonConfig.fetchConnectionCache = true;
       
       const pool = new Pool({ connectionString: databaseUrl });
-      const db = drizzleNeon({ client: pool, schema });
+      const db = drizzleNeon({ client: pool, schema: pgSchema });
       
       console.log("✅ تم الاتصال بقاعدة بيانات PostgreSQL");
       

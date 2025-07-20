@@ -3,6 +3,7 @@ import {
   messages,
   friends,
   notifications,
+  blockedDevices,
   type User,
   type InsertUser,
   type Message,
@@ -1069,11 +1070,19 @@ export class MixedStorage implements IStorage {
         return [];
       }
       
-      const result = await db.execute(sql`
-        SELECT ip_address as ipAddress, device_id as deviceId FROM blocked_devices
-      `);
-      
-      return (result as any) || [];
+      // Use Drizzle ORM select query instead of raw SQL
+      try {
+        const result = await db.select({
+          ipAddress: blockedDevices.ipAddress,
+          deviceId: blockedDevices.deviceId
+        }).from(blockedDevices);
+        
+        return result || [];
+      } catch (queryError) {
+        // Fallback for empty table or table doesn't exist
+        console.log('Blocked devices table may not exist or be empty');
+        return [];
+      }
     } catch (error) {
       console.error('Error getting blocked devices:', error);
       return [];
