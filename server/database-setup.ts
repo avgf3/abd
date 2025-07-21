@@ -71,6 +71,147 @@ export async function runMigrations(): Promise<void> {
   }
 }
 
+// Emergency push function for when migrations fail
+export async function runDrizzlePush(): Promise<void> {
+  try {
+    if (!process.env.DATABASE_URL || process.env.DATABASE_URL.startsWith('sqlite:')) {
+      console.log('⚠️ No PostgreSQL DATABASE_URL found or using SQLite, skipping Drizzle push');
+      return;
+    }
+
+    console.log('🔄 Running emergency database push...');
+    
+    // This would be equivalent to drizzle-kit push but in code
+    // For now, we'll create tables manually as fallback
+    await createTablesManually();
+    
+    console.log('✅ Emergency database push completed successfully');
+  } catch (error) {
+    console.error('❌ Error running emergency push:', error);
+    throw error;
+  }
+}
+
+async function createTablesManually(): Promise<void> {
+  if (!db) return;
+  
+  try {
+    // Create all tables manually as emergency fallback
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE,
+        password TEXT,
+        user_type TEXT NOT NULL DEFAULT 'guest',
+        role TEXT NOT NULL DEFAULT 'guest',
+        profile_image TEXT,
+        profile_banner TEXT,
+        profile_background_color TEXT DEFAULT '#3c0d0d',
+        status TEXT,
+        gender TEXT,
+        age INTEGER,
+        country TEXT,
+        relation TEXT,
+        bio TEXT,
+        is_online BOOLEAN DEFAULT false,
+        is_hidden BOOLEAN DEFAULT false,
+        last_seen TIMESTAMP,
+        join_date TIMESTAMP DEFAULT NOW(),
+        created_at TIMESTAMP DEFAULT NOW(),
+        is_muted BOOLEAN DEFAULT false,
+        mute_expiry TIMESTAMP,
+        is_banned BOOLEAN DEFAULT false,
+        ban_expiry TIMESTAMP,
+        is_blocked BOOLEAN DEFAULT false,
+        ip_address VARCHAR(45),
+        device_id VARCHAR(100),
+        ignored_users TEXT DEFAULT '[]',
+        username_color TEXT DEFAULT '#FFFFFF',
+        user_theme TEXT DEFAULT 'default',
+        points INTEGER DEFAULT 0,
+        level INTEGER DEFAULT 1,
+        total_points INTEGER DEFAULT 0,
+        level_progress INTEGER DEFAULT 0
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        sender_id INTEGER REFERENCES users(id),
+        receiver_id INTEGER REFERENCES users(id),
+        content TEXT NOT NULL,
+        message_type TEXT NOT NULL DEFAULT 'text',
+        is_private BOOLEAN DEFAULT false,
+        timestamp TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS friends (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        friend_id INTEGER REFERENCES users(id),
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        is_read BOOLEAN DEFAULT false,
+        data JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS blocked_devices (
+        id SERIAL PRIMARY KEY,
+        ip_address TEXT NOT NULL,
+        device_id TEXT NOT NULL,
+        user_id INTEGER NOT NULL,
+        reason TEXT NOT NULL,
+        blocked_at TIMESTAMP NOT NULL,
+        blocked_by INTEGER NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS level_settings (
+        id SERIAL PRIMARY KEY,
+        level INTEGER NOT NULL UNIQUE,
+        required_points INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        color TEXT DEFAULT '#FFFFFF',
+        benefits JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS points_history (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        points INTEGER NOT NULL,
+        reason TEXT NOT NULL,
+        action TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    console.log('✅ All tables created successfully');
+  } catch (error) {
+    console.error('❌ Error creating tables manually:', error);
+    throw error;
+  }
+}
+
 async function createTables(): Promise<void> {
   if (!db) return;
   

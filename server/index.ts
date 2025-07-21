@@ -4,7 +4,7 @@ dotenv.config();
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { initializeDatabase, createDefaultUsers, runMigrations } from "./database-setup";
+import { initializeDatabase, createDefaultUsers, runMigrations, runDrizzlePush } from "./database-setup";
 import { setupSecurity } from "./security";
 import path from "path";
 
@@ -83,7 +83,13 @@ app.use((req, res, next) => {
     log("✅ Database migrations completed successfully");
   } catch (error) {
     log("⚠️ Database migration failed:", error);
-    // Continue server startup - fallback handling is in initializeDatabase
+    log("🔄 Trying emergency database push...");
+    try {
+      await runDrizzlePush();
+      log("✅ Emergency database push completed successfully");
+    } catch (pushError) {
+      log("❌ Emergency push also failed:", pushError);
+    }
   }
   
   // Initialize database before starting server
