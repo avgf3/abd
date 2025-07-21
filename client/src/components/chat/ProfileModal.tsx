@@ -461,12 +461,41 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
     }
   };
 
-  const handleEffectChange = (effect: string) => {
+  const handleEffectChange = async (effect: string) => {
     setSelectedEffect(effect);
-    toast({
-      title: "نجح",
-      description: "تم تحديث التأثيرات",
-    });
+    
+    // ربط التأثير بلون الاسم
+    const effectColors = {
+      'none': '#FFFFFF',
+      'effect-glow': '#FFD700',      // ذهبي للتوهج
+      'effect-pulse': '#FF69B4',     // وردي للنبض
+      'effect-water': '#00CED1',     // فيروزي للماء
+      'effect-aurora': '#9B59B6',    // بنفسجي للشفق
+      'effect-neon': '#FF1493',      // وردي نيون
+      'effect-fire': '#FF4500',      // برتقالي ناري
+      'effect-crystal': '#E6E6FA',   // بنفسجي فاتح
+    };
+    
+    const newColor = effectColors[effect] || '#FFFFFF';
+    
+    try {
+      // تحديث لون الاسم في قاعدة البيانات
+      await apiRequest(`/api/users/${user.id}/color`, {
+        method: 'POST',
+        body: { color: newColor }
+      });
+      
+      toast({
+        title: "نجح",
+        description: "تم تحديث التأثير ولون الاسم",
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "فشل في تحديث لون الاسم",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
