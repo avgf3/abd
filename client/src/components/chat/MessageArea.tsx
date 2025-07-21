@@ -119,7 +119,7 @@ export default function MessageArea({
                 <div className="flex items-center gap-2 mb-1">
                   {message.sender ? (
                     <span 
-                      className="font-medium text-sm cursor-pointer hover:underline transition-all duration-300"
+                      className={`font-medium text-sm cursor-pointer hover:underline transition-all duration-300 ${message.sender.profileEffect || ''}`}
                       style={{ 
                         color: message.sender.usernameColor || '#2563eb',
                         textShadow: message.sender.usernameColor ? `0 0 8px ${message.sender.usernameColor}40` : 'none',
