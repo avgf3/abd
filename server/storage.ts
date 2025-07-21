@@ -320,8 +320,9 @@ export class MixedStorage implements IStorage {
           country: insertUser.country,
           relation: insertUser.relation,
           bio: insertUser.bio,
-          usernameColor: insertUser.usernameColor || '#FFFFFF',
-          userTheme: insertUser.userTheme || 'default',
+                usernameColor: insertUser.usernameColor || '#FFFFFF',
+      userTheme: insertUser.userTheme || 'default',
+      profileEffect: insertUser.profileEffect || 'none',
           // إصلاح القيم المنطقية لـ SQLite
           isOnline: 1, // SQLite يستخدم integers للقيم المنطقية
           isHidden: 0,
@@ -481,9 +482,13 @@ export class MixedStorage implements IStorage {
         const updateData: any = { ...updates };
         
         // تأكد من أن الحقول المطلوبة موجودة
-        if (updates.userTheme !== undefined) {
-          updateData.userTheme = updates.userTheme;
-        }
+              if (updates.userTheme !== undefined) {
+        updateData.userTheme = updates.userTheme;
+      }
+      
+      if (updates.profileEffect !== undefined) {
+        updateData.profileEffect = updates.profileEffect;
+      }
         if (updates.usernameColor !== undefined) {
           updateData.usernameColor = updates.usernameColor;
         }

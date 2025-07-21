@@ -322,6 +322,46 @@ export function useChat() {
                 }
               }
               break;
+              
+            case 'profileEffectChanged':
+              // تحديث تأثير البروفايل ولون الاسم معاً
+              if (message.userId) {
+                setOnlineUsers(prev => 
+                  prev.map(user => 
+                    user.id === message.userId 
+                      ? { 
+                          ...user, 
+                          profileEffect: message.profileEffect, 
+                          usernameColor: message.usernameColor 
+                        }
+                      : user
+                  )
+                );
+                
+                // تحديث المستخدم الحالي
+                if (currentUser && currentUser.id === message.userId) {
+                  setCurrentUser(prev => prev ? { 
+                    ...prev, 
+                    profileEffect: message.profileEffect, 
+                    usernameColor: message.usernameColor 
+                  } : prev);
+                }
+                
+                // تحديث الرسائل بلون الاسم الجديد
+                setMessages(prev => prev.map(msg => 
+                  msg.sender && msg.sender.id === message.userId
+                    ? { 
+                        ...msg, 
+                        sender: { 
+                          ...msg.sender, 
+                          profileEffect: message.profileEffect, 
+                          usernameColor: message.usernameColor 
+                        } 
+                      }
+                    : msg
+                ));
+              }
+              break;
 
             case 'theme_update':
               // تحديث ثيم المستخدم في الوقت الفعلي
