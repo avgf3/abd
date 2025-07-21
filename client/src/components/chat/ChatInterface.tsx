@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import UserSidebar from './UserSidebar';
 import MessageArea from './MessageArea';
 import ProfileModal from './ProfileModal';
-import ViewProfileModal from './ViewProfileModal';
 import PrivateMessageBox from './PrivateMessageBox';
 import UserPopup from './UserPopup';
 import SettingsMenu from './SettingsMenu';
@@ -341,36 +340,20 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* Modals and Popups */}
       {showProfile && (
-        <>
-          {profileUser && profileUser.id !== chat.currentUser?.id ? (
-            <ViewProfileModal
-              user={profileUser}
-              currentUser={chat.currentUser}
-              onClose={() => {
-                setShowProfile(false);
-                setProfileUser(null);
-              }}
-              onIgnoreUser={(userId) => {
-                chat.ignoreUser(userId);
-              }}
-              onPrivateMessage={handlePrivateMessage}
-              onAddFriend={handleAddFriend}
-            />
-          ) : (
-            <ProfileModal 
-              user={profileUser || chat.currentUser}
-              currentUser={chat.currentUser}
-              onClose={() => {
-                setShowProfile(false);
-                setProfileUser(null);
-              }}
-              onIgnoreUser={(userId) => {
-                chat.ignoreUser(userId);
-              }}
-            />
-          )}
-        </>
-      )}
+        <ProfileModal 
+          user={profileUser || chat.currentUser}
+          currentUser={chat.currentUser}
+          onClose={() => {
+            setShowProfile(false);
+            setProfileUser(null);
+          }}
+          onIgnoreUser={(userId) => {
+            chat.ignoreUser(userId);
+          }}
+          onPrivateMessage={handlePrivateMessage}
+          onAddFriend={handleAddFriend}
+                 />
+       )}
 
       {selectedPrivateUser && (
         <PrivateMessageBox

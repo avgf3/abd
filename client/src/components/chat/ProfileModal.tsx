@@ -4,16 +4,17 @@ import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import type { ChatUser } from '@/types/chat';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
-import PointsSentNotification from '@/components/ui/PointsSentNotification';
 
 interface ProfileModalProps {
   user: ChatUser | null;
   currentUser: ChatUser | null;
   onClose: () => void;
   onIgnoreUser?: (userId: number) => void;
+  onPrivateMessage?: (user: ChatUser) => void;
+  onAddFriend?: (user: ChatUser) => void;
 }
 
-export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser }: ProfileModalProps) {
+export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser, onPrivateMessage, onAddFriend }: ProfileModalProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -24,11 +25,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
   const [selectedEffect, setSelectedEffect] = useState('none');
   const [sendingPoints, setSendingPoints] = useState(false);
   const [pointsToSend, setPointsToSend] = useState('');
-  const [pointsSentNotification, setPointsSentNotification] = useState<{
-    show: boolean;
-    points: number;
-    recipientName: string;
-  }>({ show: false, points: 0, recipientName: '' });
 
   if (!user) return null;
 
@@ -476,6 +472,69 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
       title: "نجح",
       description: "تم تحديث التأثيرات",
     });
+  };
+
+  const handleSendPoints = async () => {
+    const points = parseInt(pointsToSend);
+    
+    if (!points || points <= 0) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال عدد صحيح من النقاط",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (points > (currentUser?.points || 0)) {
+      toast({
+        title: "نقاط غير كافية",
+        description: `لديك ${currentUser?.points || 0} نقطة فقط`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setSendingPoints(true);
+      
+      const response = await apiRequest('/api/points/send', {
+        method: 'POST',
+        body: {
+          senderId: currentUser?.id,
+          receiverId: user?.id,
+          points: points,
+          reason: `نقاط مُهداة من ${currentUser?.username}`
+        }
+      });
+
+      if (response.success) {
+        toast({
+          title: "تم إرسال النقاط",
+          description: `تم إرسال ${points} نقطة إلى ${user?.username} بنجاح`,
+        });
+        
+        setPointsToSend('');
+        
+        // Update current user points locally for immediate UI feedback
+        if (currentUser && window.updateUserPoints) {
+          window.updateUserPoints(currentUser.points - points);
+        }
+        
+        // إغلاق البروفايل بعد الإرسال الناجح
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      }
+    } catch (error: any) {
+      toast({
+        title: "خطأ في الإرسال",
+        description: error.message || "فشل في إرسال النقاط",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingPoints(false);
+    }
   };
 
   return (
@@ -1571,7 +1630,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
               <div className="profile-buttons">
                 <button>🚩 تبليغ</button>
                 <button onClick={() => onIgnoreUser?.(user.id)}>🚫 حظر</button>
-                <button>💬 محادثة</button>
+                <button onClick={() => onAddFriend?.(user)}>👥 اضافة صديق</button>
+                <button onClick={() => onPrivateMessage?.(user)}>💬 محادثة</button>
               </div>
             )}
 
@@ -1610,6 +1670,84 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
                 🧾 الحالة: <span>{user?.isOnline ? 'متصل' : 'غير متصل'}</span>
               </p>
             </div>
+
+            {/* قسم إرسال النقاط - يظهر فقط للمستخدمين الآخرين */}
+            {currentUser && user && currentUser.id !== user.id && (
+              <div className="additional-details" style={{ marginTop: '12px' }}>
+                <div style={{ marginBottom: '12px', textAlign: 'center' }}>
+                  <span style={{ 
+                    color: 'var(--accent-color)', 
+                    fontSize: '14px', 
+                    fontWeight: 'bold',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                  }}>
+                    💰 إرسال النقاط
+                  </span>
+                </div>
+                
+                <div style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '12px', 
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <div style={{ fontSize: '11px', color: '#ddd', marginBottom: '8px', textAlign: 'center' }}>
+                    نقاطك الحالية: {formatPoints(currentUser.points || 0)}
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                    <input
+                      type="number"
+                      placeholder="عدد النقاط"
+                      value={pointsToSend}
+                      onChange={(e) => setPointsToSend(e.target.value)}
+                      min="1"
+                      max={currentUser.points || 0}
+                      disabled={sendingPoints}
+                      style={{
+                        flex: '1',
+                        padding: '8px 10px',
+                        border: '1px solid rgba(255,255,255,0.3)',
+                        borderRadius: '6px',
+                        background: 'rgba(255,255,255,0.1)',
+                        color: '#fff',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        textAlign: 'center'
+                      }}
+                    />
+                    <button
+                      onClick={handleSendPoints}
+                      disabled={sendingPoints || !pointsToSend || parseInt(pointsToSend) <= 0}
+                      style={{
+                        background: sendingPoints ? 'rgba(255,255,255,0.2)' : 'linear-gradient(135deg, #ffd700, #ff8c00)',
+                        color: sendingPoints ? '#ccc' : '#000',
+                        border: 'none',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        cursor: sendingPoints ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.3s ease',
+                        minWidth: '60px'
+                      }}
+                    >
+                      {sendingPoints ? '⏳' : '🎁'} إرسال
+                    </button>
+                  </div>
+                  
+                  <div style={{ 
+                    fontSize: '10px', 
+                    color: '#aaa', 
+                    marginTop: '6px', 
+                    textAlign: 'center',
+                    lineHeight: '1.3'
+                  }}>
+                    💡 سيتم خصم النقاط من رصيدك وإضافتها للمستخدم
+                  </div>
+                </div>
+              </div>
+            )}
 
             {user.id === currentUser?.id && (
               <div className="additional-details">
