@@ -479,11 +479,17 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
     const newColor = effectColors[effect] || '#FFFFFF';
     
     try {
-      // تحديث لون الاسم في قاعدة البيانات
+      // تحديث لون الاسم والتأثير في قاعدة البيانات
       await apiRequest(`/api/users/${user.id}/color`, {
         method: 'POST',
         body: { color: newColor }
       });
+
+      // حفظ التأثير في localStorage للاستخدام المباشر
+      if (user) {
+        user.profileEffect = effect;
+        user.usernameColor = newColor;
+      }
       
       toast({
         title: "نجح",
