@@ -367,6 +367,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onIgnoreUser={(userId) => {
                 chat.ignoreUser(userId);
               }}
+              onUpdate={(updatedUser) => {
+                // تحديث بيانات المستخدم في chat
+                if (chat.currentUser && updatedUser.id === chat.currentUser.id) {
+                  chat.setCurrentUser(updatedUser);
+                }
+                // تحديث في قائمة المستخدمين المتصلين
+                chat.setOnlineUsers(prev => prev.map(user => 
+                  user.id === updatedUser.id ? updatedUser : user
+                ));
+              }}
             />
           )}
         </>

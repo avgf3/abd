@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import ProfileImage from './ProfileImage';
 import PremiumUserTheme from '@/components/ui/PremiumUserTheme';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 import type { ChatUser } from '@/types/chat';
 
 interface UserSidebarProps {
@@ -103,11 +104,11 @@ export default function NewUserSidebar({ users, currentUser, onUserClick }: User
                     <PremiumUserTheme user={user} size="small" showFlag={true}>
                       <span 
                         className="text-sm font-medium truncate transition-all duration-300"
-                        style={{ 
-                          color: user.usernameColor || '#000000',
-                          textShadow: user.usernameColor ? `0 0 8px ${user.usernameColor}40` : 'none',
-                          filter: user.usernameColor ? 'drop-shadow(0 0 2px rgba(255,255,255,0.3))' : 'none'
-                        }}
+                                        style={{
+                  color: getFinalUsernameColor(user) || '#000000',
+                  textShadow: getFinalUsernameColor(user) ? `0 0 8px ${getFinalUsernameColor(user)}40` : 'none',
+                  filter: getFinalUsernameColor(user) ? 'drop-shadow(0 0 2px rgba(255,255,255,0.3))' : 'none'
+                }}
                       >
                         {user.username}
                       </span>
@@ -154,11 +155,11 @@ export default function NewUserSidebar({ users, currentUser, onUserClick }: User
               <PremiumUserTheme user={currentUser} size="small" showFlag={true}>
                 <div 
                   className="text-sm font-medium truncate transition-all duration-300"
-                  style={{ 
-                    color: currentUser.usernameColor || '#000000',
-                    textShadow: currentUser.usernameColor ? `0 0 8px ${currentUser.usernameColor}40` : 'none',
-                    filter: currentUser.usernameColor ? 'drop-shadow(0 0 2px rgba(255,255,255,0.3))' : 'none'
-                  }}
+                              style={{
+              color: getFinalUsernameColor(currentUser) || '#000000',
+              textShadow: getFinalUsernameColor(currentUser) ? `0 0 8px ${getFinalUsernameColor(currentUser)}40` : 'none',
+              filter: getFinalUsernameColor(currentUser) ? 'drop-shadow(0 0 2px rgba(255,255,255,0.3))' : 'none'
+            }}
                 >
                   {currentUser.username}
                 </div>

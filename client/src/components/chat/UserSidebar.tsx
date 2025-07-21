@@ -4,7 +4,7 @@ import SimpleUserMenu from './SimpleUserMenu';
 import ProfileImage from './ProfileImage';
 
 import type { ChatUser } from '@/types/chat';
-import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
+import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor, getFinalUsernameColor } from '@/utils/themeUtils';
 
 interface UserSidebarProps {
   users: ChatUser[];
@@ -97,11 +97,11 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
                   <div className="flex items-center gap-2">
                     <span 
                       className="text-base font-medium transition-all duration-300"
-                      style={{ 
-                        color: user.usernameColor || getUserThemeTextColor(user),
-                        textShadow: user.usernameColor ? `0 0 10px ${user.usernameColor}40` : 'none',
-                        filter: user.usernameColor ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
-                      }}
+                                      style={{
+                  color: getFinalUsernameColor(user) || getUserThemeTextColor(user),
+                  textShadow: getFinalUsernameColor(user) ? `0 0 10px ${getFinalUsernameColor(user)}40` : 'none',
+                  filter: getFinalUsernameColor(user) ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                }}
                       title={user.username}
                     >
                       {getUserRankBadge(user.userType, user.username)} {user.username}
