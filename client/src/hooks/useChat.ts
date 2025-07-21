@@ -656,6 +656,77 @@ export function useChat() {
               }
               break;
               
+            case 'pointsReceived':
+              // إشعار استلام نقاط من مستخدم آخر
+              if (message.points && message.senderName) {
+                console.log('🎁 استلام نقاط!', message);
+                
+                // إضافة إشعار للواجهة
+                setNotifications(prev => [...prev, {
+                  id: Date.now(),
+                  type: 'system',
+                  username: message.senderName || 'مستخدم',
+                  content: `🎁 تم استلام ${message.points} نقطة من ${message.senderName}`,
+                  timestamp: new Date()
+                }]);
+                
+                // إشعار مرئي في المتصفح
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('نقاط جديدة! 🎁', {
+                    body: `تم استلام ${message.points} نقطة من ${message.senderName}`,
+                    icon: '/favicon.ico'
+                  });
+                }
+                
+                playNotificationSound();
+              }
+              break;
+              
+            case 'pointsTransfer':
+              // إشعار في المحادثة العامة لإرسال النقاط
+              if (message.points && message.senderName && message.receiverName) {
+                // إضافة رسالة نظام في المحادثة العامة
+                const systemMessage: ChatMessage = {
+                  id: Date.now(),
+                  senderId: 0,
+                  content: `💰 تم إرسال ${message.points} نقطة من ${message.senderName} إلى ${message.receiverName}`,
+                  messageType: 'text',
+                  isPrivate: false,
+                  timestamp: new Date(),
+                  sender: {
+                    id: 0,
+                    username: 'النظام',
+                    userType: 'admin',
+                    role: 'admin',
+                    profileBackgroundColor: '#3c0d0d',
+                    isOnline: true,
+                    isHidden: false,
+                    lastSeen: null,
+                    joinDate: new Date(),
+                    createdAt: new Date(),
+                    isMuted: false,
+                    muteExpiry: null,
+                    isBanned: false,
+                    banExpiry: null,
+                    isBlocked: false,
+                    ignoredUsers: [],
+                    usernameColor: '#dc2626',
+                    userTheme: 'default',
+                    points: 0,
+                    level: 1,
+                    totalPoints: 0,
+                    levelProgress: 0
+                  }
+                };
+                
+                setPublicMessages(prev => {
+                  const filtered = prev.filter(isValidMessage);
+                  const newMessages = [...filtered, systemMessage];
+                  return newMessages.slice(-200); // الاحتفاظ بآخر 200 رسالة
+                });
+              }
+              break;
+              
             case 'userUpdated':
               if (message.user) {
                 setOnlineUsers(prev => 
@@ -877,6 +948,25 @@ export function useChat() {
       disconnect();
     };
   }, [disconnect]);
+
+  // دالة تحديث نقاط المستخدم (للاستخدام العام)
+  const updateUserPoints = useCallback((newPoints: number) => {
+    if (currentUser) {
+      setCurrentUser(prev => prev ? { ...prev, points: newPoints } : null);
+    }
+  }, [currentUser]);
+
+  // إضافة الدالة للنطاق العام
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).updateUserPoints = updateUserPoints;
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).updateUserPoints;
+      }
+    };
+  }, [updateUserPoints]);
 
   // دالة تجاهل مستخدم
   const ignoreUser = useCallback((userId: number) => {

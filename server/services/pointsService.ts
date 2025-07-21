@@ -43,7 +43,7 @@ export class PointsService {
       });
 
       // إضافة سجل في تاريخ النقاط
-      await storage.addPointsHistory(userId, points, reason, 'earn');
+      await storage.addPointsHistory(userId, points, reason, points >= 0 ? 'earn' : 'spend');
 
       return {
         leveledUp: levelUpInfo.leveledUp,
