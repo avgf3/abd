@@ -2760,6 +2760,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // إرسال النقاط بين المستخدمين
+  app.post('/api/points/send', async (req, res) => {
+    try {
+      const { senderId, receiverId, points, reason } = req.body;
+      
+      // التحقق من صحة البيانات
+      if (!senderId || !receiverId || !points || points <= 0) {
+        return res.status(400).json({ error: 'بيانات غير صحيحة' });
+      }
+      
+      if (senderId === receiverId) {
+        return res.status(400).json({ error: 'لا يمكنك إرسال نقاط لنفسك' });
+      }
+      
+      // التحقق من وجود المستخدمين
+      const sender = await storage.getUser(senderId);
+      const receiver = await storage.getUser(receiverId);
+      
+      if (!sender || !receiver) {
+        return res.status(404).json({ error: 'مستخدم غير موجود' });
+      }
+      
+      // التحقق من وجود نقاط كافية للمرسل
+      if ((sender.points || 0) < points) {
+        return res.status(400).json({ error: 'نقاط غير كافية' });
+      }
+      
+      // خصم النقاط من المرسل
+      await pointsService.addPoints(senderId, -points, `إرسال نقاط إلى ${receiver.username}`);
+      
+      // إضافة النقاط للمستقبل
+      const receiverResult = await pointsService.addPoints(receiverId, points, reason || `نقاط من ${sender.username}`);
+      
+      // إرسال إشعار للمستقبل
+      if (receiverResult.leveledUp) {
+        io.to(receiverId.toString()).emit('message', {
+          type: 'levelUp',
+          oldLevel: receiverResult.oldLevel,
+          newLevel: receiverResult.newLevel,
+          levelInfo: receiverResult.levelInfo,
+          message: `🎉 تهانينا! وصلت للمستوى ${receiverResult.newLevel}: ${receiverResult.levelInfo?.title}`
+        });
+      }
+      
+      // إشعار وصول النقاط للمستقبل
+      io.to(receiverId.toString()).emit('message', {
+        type: 'pointsReceived',
+        points,
+        senderName: sender.username,
+        message: `🎁 تم استلام ${points} نقطة من ${sender.username}`
+      });
+      
+      // إشعار في المحادثة العامة
+      io.emit('message', {
+        type: 'pointsTransfer',
+        senderName: sender.username,
+        receiverName: receiver.username,
+        points,
+        message: `💰 تم إرسال ${points} نقطة من ${sender.username} إلى ${receiver.username}`
+      });
+      
+      // تحديث بيانات المستخدمين في real-time
+      const updatedSender = await storage.getUser(senderId);
+      const updatedReceiver = await storage.getUser(receiverId);
+      
+      io.to(senderId.toString()).emit('message', {
+        type: 'userUpdated',
+        user: updatedSender
+      });
+      
+      io.to(receiverId.toString()).emit('message', {
+        type: 'userUpdated',
+        user: updatedReceiver
+      });
+      
+      res.json({ 
+        success: true, 
+        message: `تم إرسال ${points} نقطة إلى ${receiver.username} بنجاح`,
+        senderPoints: updatedSender?.points || 0,
+        receiverPoints: updatedReceiver?.points || 0
+      });
+      
+    } catch (error) {
+      console.error('خطأ في إرسال النقاط:', error);
+      res.status(500).json({ error: error.message || 'خطأ في الخادم' });
+    }
+  });
+
   // إعادة حساب نقاط مستخدم (للصيانة)
   app.post('/api/points/recalculate/:userId', async (req, res) => {
     try {

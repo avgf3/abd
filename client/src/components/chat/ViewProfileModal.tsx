@@ -2,9 +2,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
+import PointsSentNotification from '@/components/ui/PointsSentNotification';
 
 interface ViewProfileModalProps {
   user: ChatUser | null;
@@ -26,6 +29,13 @@ export default function ViewProfileModal({
   const { toast } = useToast();
   const [isIgnored, setIsIgnored] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [sendingPoints, setSendingPoints] = useState(false);
+  const [pointsToSend, setPointsToSend] = useState('');
+  const [pointsSentNotification, setPointsSentNotification] = useState<{
+    show: boolean;
+    points: number;
+    recipientName: string;
+  }>({ show: false, points: 0, recipientName: '' });
 
   if (!user) return null;
 
@@ -78,6 +88,71 @@ export default function ViewProfileModal({
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendPoints = async () => {
+    const points = parseInt(pointsToSend);
+    
+    if (!points || points <= 0) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال عدد صحيح من النقاط",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (points > (currentUser?.points || 0)) {
+      toast({
+        title: "نقاط غير كافية",
+        description: `لديك ${currentUser?.points || 0} نقطة فقط`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setSendingPoints(true);
+      
+      const response = await apiRequest('/api/points/send', {
+        method: 'POST',
+        body: {
+          senderId: currentUser?.id,
+          receiverId: user.id,
+          points: points,
+          reason: `نقاط مُهداة من ${currentUser?.username}`
+        }
+      });
+
+      if (response.success) {
+        // إظهار إشعار النجاح
+        setPointsSentNotification({
+          show: true,
+          points: points,
+          recipientName: user.username
+        });
+        
+        setPointsToSend('');
+        
+        // Update current user points locally for immediate UI feedback
+        if (currentUser && window.updateUserPoints) {
+          window.updateUserPoints(currentUser.points - points);
+        }
+        
+        // إغلاق البروفايل بعد الإرسال الناجح
+        setTimeout(() => {
+          onClose();
+        }, 1000);
+      }
+    } catch (error: any) {
+      toast({
+        title: "خطأ في الإرسال",
+        description: error.message || "فشل في إرسال النقاط",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingPoints(false);
     }
   };
 
@@ -304,6 +379,69 @@ export default function ViewProfileModal({
                 <span className="text-gray-600">0</span>
               </div>
             </div>
+
+            {/* نقاط الهدايا */}
+            <div className="border-b border-gray-200 pb-4">
+              <div className="space-y-2">
+                <span className="text-gray-700 font-medium block">نقاط الهدايا</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">🎁</span>
+                    <div className="text-sm">
+                      <p className="text-gray-600">النقاط: {formatPoints(user.points || 0)}</p>
+                      <p className="text-gray-500">المستوى: {user.level || 1} - {getLevelInfo(user.level || 1).title}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold">
+                      {user.level || 1}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* إرسال النقاط - يظهر فقط للمستخدمين الآخرين */}
+            {currentUser && currentUser.id !== user.id && (
+              <div className="border-b border-gray-200 pb-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 font-medium">إرسال النقاط</span>
+                    <span className="text-xl">💰</span>
+                  </div>
+                  
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="text-xs text-gray-500 mb-2">
+                      نقاطك الحالية: {formatPoints(currentUser.points || 0)}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        placeholder="عدد النقاط"
+                        value={pointsToSend}
+                        onChange={(e) => setPointsToSend(e.target.value)}
+                        className="flex-1 text-sm"
+                        min="1"
+                        max={currentUser.points || 0}
+                        disabled={sendingPoints}
+                      />
+                      <Button
+                        onClick={handleSendPoints}
+                        disabled={sendingPoints || !pointsToSend || parseInt(pointsToSend) <= 0}
+                        className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-4 py-2 text-sm"
+                      >
+                        {sendingPoints ? '⏳' : '🎁'} إرسال
+                      </Button>
+                    </div>
+                    
+                    <div className="mt-2 text-xs text-gray-500">
+                      💡 سيتم خصم النقاط من رصيدك وإضافتها للمستخدم
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Close Button */}
@@ -318,6 +456,14 @@ export default function ViewProfileModal({
           </div>
         </div>
       </DialogContent>
+      
+      {/* إشعار إرسال النقاط */}
+      <PointsSentNotification
+        show={pointsSentNotification.show}
+        points={pointsSentNotification.points}
+        recipientName={pointsSentNotification.recipientName}
+        onClose={() => setPointsSentNotification({ show: false, points: 0, recipientName: '' })}
+      />
     </Dialog>
   );
 }

@@ -582,3 +582,13 @@ body.ltr {
     filter: brightness(1.1);
   }
 }
+
+/* أنيميشن إشعار إرسال النقاط */
+@keyframes countdown {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.animate-countdown {
+  animation: countdown 4s linear forwards;
+}
