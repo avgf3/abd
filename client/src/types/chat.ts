@@ -52,7 +52,7 @@ export interface PrivateConversation {
 export interface WebSocketMessage {
   type: 'auth' | 'publicMessage' | 'privateMessage' | 'typing' | 'userJoined' | 'userLeft' | 'newMessage' | 'onlineUsers' | 'userUpdated' | 'error' | 'warning' |
         'userVisibilityChanged' | 'usernameColorChanged' | 'theme_update' | 'moderationAction' | 'notification' | 'systemMessage' | 'kicked' | 'blocked' | 
-        'friendRequest' | 'friendRequestAccepted' | 'promotion';
+        'friendRequest' | 'friendRequestAccepted' | 'promotion' | 'pointsReceived' | 'pointsTransfer' | 'pointsAdded' | 'levelUp';
   userId?: number;
   username?: string;
   content?: string;
@@ -78,6 +78,14 @@ export interface WebSocketMessage {
   acceptedBy?: string; // من قبل الطلب
   friendId?: number; // معرف الصديق
   newRole?: string; // الدور الجديد للترقية
+  
+  // خصائص النقاط
+  points?: number; // عدد النقاط
+  senderName?: string; // اسم مرسل النقاط
+  receiverName?: string; // اسم مستقبل النقاط
+  oldLevel?: number; // المستوى القديم
+  newLevel?: number; // المستوى الجديد
+  levelInfo?: any; // معلومات المستوى
 }
 
 export interface UserProfile {
