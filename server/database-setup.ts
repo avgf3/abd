@@ -128,6 +128,7 @@ async function createTablesManually(): Promise<void> {
         ignored_users TEXT DEFAULT '[]',
         username_color TEXT DEFAULT '#FFFFFF',
         user_theme TEXT DEFAULT 'default',
+        profile_effect TEXT DEFAULT 'none',
         points INTEGER DEFAULT 0,
         level INTEGER DEFAULT 1,
         total_points INTEGER DEFAULT 0,
@@ -248,7 +249,8 @@ async function createTables(): Promise<void> {
           device_id VARCHAR(100),
           ignored_users TEXT DEFAULT '[]',
           username_color TEXT DEFAULT '#FFFFFF',
-          user_theme TEXT DEFAULT 'default'
+          user_theme TEXT DEFAULT 'default',
+          profile_effect TEXT DEFAULT 'none'
         )
       `);
 

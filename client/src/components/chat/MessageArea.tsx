@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ProfileImage from './ProfileImage';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 
 interface MessageAreaProps {
@@ -120,11 +121,11 @@ export default function MessageArea({
                   {message.sender ? (
                     <span 
                       className="font-medium text-sm cursor-pointer hover:underline transition-all duration-300"
-                      style={{ 
-                        color: message.sender.usernameColor || '#2563eb',
-                        textShadow: message.sender.usernameColor ? `0 0 8px ${message.sender.usernameColor}40` : 'none',
-                        filter: message.sender.usernameColor ? 'drop-shadow(0 0 2px rgba(255,255,255,0.3))' : 'none'
-                      }}
+                                      style={{
+                  color: getFinalUsernameColor(message.sender),
+                  textShadow: getFinalUsernameColor(message.sender) ? `0 0 8px ${getFinalUsernameColor(message.sender)}40` : 'none',
+                  filter: getFinalUsernameColor(message.sender) ? 'drop-shadow(0 0 2px rgba(255,255,255,0.3))' : 'none'
+                }}
                       onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                     >
                       {message.sender.username}

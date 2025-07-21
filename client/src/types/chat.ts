@@ -28,6 +28,7 @@ export interface ChatUser {
   ignoredUsers: number[];
   usernameColor: string;
   userTheme: string;
+  profileEffect: string;
   points: number;
   level: number;
   totalPoints: number;
@@ -51,7 +52,7 @@ export interface PrivateConversation {
 
 export interface WebSocketMessage {
   type: 'auth' | 'publicMessage' | 'privateMessage' | 'typing' | 'userJoined' | 'userLeft' | 'newMessage' | 'onlineUsers' | 'userUpdated' | 'error' | 'warning' |
-        'userVisibilityChanged' | 'usernameColorChanged' | 'theme_update' | 'moderationAction' | 'notification' | 'systemMessage' | 'kicked' | 'blocked' | 
+        'userVisibilityChanged' | 'usernameColorChanged' | 'profileEffectChanged' | 'theme_update' | 'moderationAction' | 'notification' | 'systemMessage' | 'kicked' | 'blocked' | 
         'friendRequest' | 'friendRequestAccepted' | 'promotion' | 'pointsReceived' | 'pointsTransfer' | 'pointsAdded' | 'levelUp';
   userId?: number;
   username?: string;
@@ -68,6 +69,7 @@ export interface WebSocketMessage {
   isHidden?: boolean; // لرؤية المستخدم
   color?: string; // لتغيير لون اسم المستخدم
   userTheme?: string; // لموضوع المستخدم
+  profileEffect?: string; // لتأثير البروفايل
   targetUserId?: number; // للإجراءات المستهدفة
   duration?: number; // مدة الإجراء (كيك، حظر، إلخ)
   reason?: string; // سبب الإجراء
