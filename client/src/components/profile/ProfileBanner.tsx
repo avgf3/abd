@@ -45,7 +45,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
     try {
       // إنشاء FormData لرفع الصورة
       const formData = new FormData();
-      formData.append('bannerImage', file);
+      formData.append('profileBanner', file);  // تصحيح اسم الحقل
       formData.append('userId', currentUser.id.toString());
 
       // إنشاء معاينة للصورة
