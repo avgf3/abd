@@ -108,6 +108,15 @@ export function useChat() {
       setCurrentUser(user);
       setConnectionError(null);
       
+      // حفظ معلومات المستخدم محلياً لاستعادتها عند انقطاع الاتصال
+      localStorage.setItem('chat_user_session', JSON.stringify({
+        id: user.id,
+        username: user.username,
+        userType: user.userType,
+        role: user.role,
+        timestamp: Date.now()
+      }));
+      
       // إنشاء اتصال Socket.IO - إعدادات محسنة للإنتاج
       const getSocketUrl = () => {
         if (process.env.NODE_ENV === 'production') {
@@ -676,10 +685,24 @@ export function useChat() {
         console.log('Socket.IO مقطوع - السبب:', reason);
         setIsConnected(false);
         
+        // حفظ معلومات المستخدم الحالي قبل التنظيف
+        const userBackup = currentUser;
+        
         // تنظيف الحالة المحلية فوراً
-        setCurrentUser(null);
         setOnlineUsers([]);
         setTypingUsers(new Set());
+        
+        // لا نمسح currentUser فوراً إذا كان السبب مؤقت
+        if (reason !== 'io server disconnect') {
+          // حفظ في localStorage للاستعادة
+          if (currentUser) {
+            localStorage.setItem('chat_user_backup', JSON.stringify(currentUser));
+          }
+        } else {
+          // مسح فقط في حالة قطع الاتصال من الخادم
+          setCurrentUser(null);
+          localStorage.removeItem('chat_user_backup');
+        }
         
         // معالجة أسباب مختلفة لقطع الاتصال
         if (reason === 'io server disconnect') {

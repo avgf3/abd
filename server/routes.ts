@@ -129,9 +129,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!req.file) {
         console.log('No file uploaded in profile image request');
+        console.log('Request body:', req.body);
+        console.log('Request headers:', req.headers);
         return res.status(400).json({ 
           error: 'لم يتم رفع أي ملف',
-          details: 'تأكد من إرسال الملف مع اسم الحقل profileImage'
+          details: 'تأكد من إرسال الملف مع اسم الحقل profileImage',
+          received: {
+            body: req.body,
+            hasFile: !!req.file,
+            contentType: req.get('Content-Type')
+          }
         });
       }
 
@@ -363,6 +370,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
       
+      // التحقق من البيانات المطلوبة
+      if (!moderatorId || !targetUserId || !reason) {
+        return res.status(400).json({ 
+          error: "بيانات ناقصة", 
+          required: ["moderatorId", "targetUserId", "reason"],
+          received: { moderatorId, targetUserId, reason, duration }
+        });
+      }
+      
+      // التحقق من صلاحيات المشرف
+      const moderator = await storage.getUser(moderatorId);
+      if (!moderator || !['admin', 'owner', 'moderator'].includes(moderator.userType)) {
+        return res.status(403).json({ 
+          error: "ليس لديك صلاحية لهذا الإجراء",
+          userType: moderator?.userType || 'unknown'
+        });
+      }
+      
       const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, duration);
       if (success) {
         res.json({ message: "تم كتم المستخدم بنجاح" });
@@ -370,7 +395,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(400).json({ error: "فشل في كتم المستخدم" });
       }
     } catch (error) {
-      res.status(500).json({ error: "خطأ في كتم المستخدم" });
+      console.error('Error in mute endpoint:', error);
+      res.status(500).json({ error: "خطأ في كتم المستخدم", details: error.message });
     }
   });
 
@@ -1219,8 +1245,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         switch (message.type) {
           case 'auth':
-            socket.userId = message.userId;
-            socket.username = message.username;
+            // التحقق من صحة الهوية قبل تعيينها
+            if (!socket.userId && message.userId && message.username) {
+              socket.userId = message.userId;
+              socket.username = message.username;
+            } else if (socket.userId && socket.userId !== message.userId) {
+              // منع تغيير الهوية إذا كانت محددة مسبقاً
+              console.warn(`⚠️ محاولة تغيير هوية مستخدم من ${socket.userId} إلى ${message.userId}`);
+              socket.emit('error', {
+                type: 'error',
+                message: 'لا يمكن تغيير الهوية أثناء الجلسة',
+                action: 'identity_change_blocked'
+              });
+              return;
+            }
             
             // انضمام للغرفة الخاصة بالمستخدم للرسائل المباشرة
             socket.join(message.userId.toString());
