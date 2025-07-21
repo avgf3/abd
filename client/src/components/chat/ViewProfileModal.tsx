@@ -158,7 +158,12 @@ export default function ViewProfileModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-transparent border-0 max-w-md max-h-[90vh] overflow-y-auto animate-fade-in shadow-none">
+              <DialogContent className="bg-transparent border-0 max-w-md max-h-[90vh] overflow-y-auto animate-fade-in shadow-none"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            boxShadow: 'none'
+          }}>
         <DialogHeader className="p-0">
           <DialogTitle className="sr-only">
             الملف الشخصي - {user.username}
