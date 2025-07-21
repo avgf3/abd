@@ -83,3 +83,33 @@ export const getUserThemeGradient = (user: any) => {
   const theme = getThemeData(user.userTheme || (user.userType === 'owner' ? 'golden' : 'default'));
   return theme.gradient;
 };
+
+// دالة جديدة لربط تأثير البروفايل بلون الاسم
+export const getEffectColor = (effect: string): string => {
+  const effectColors = {
+    'none': '#FFFFFF',
+    'effect-glow': '#FFD700', // ذهبي للتوهج
+    'effect-pulse': '#FF69B4', // وردي للنبض
+    'effect-water': '#00CED1', // فيروزي للماء
+    'effect-aurora': '#9B59B6', // بنفسجي للشفق
+    'effect-neon': '#00FF7F', // أخضر نيون
+    'effect-fire': '#FF4500', // برتقالي ناري
+    'effect-ice': '#87CEEB', // أزرق جليدي
+    'effect-rainbow': '#FF69B4', // وردي للقوس قزح
+    'effect-shadow': '#696969', // رمادي للظل
+    'effect-electric': '#00BFFF', // أزرق كهربائي
+    'effect-crystal': '#E6E6FA', // بنفسجي فاتح
+  };
+  return effectColors[effect as keyof typeof effectColors] || '#FFFFFF';
+};
+
+// دالة لحصول على لون الاسم النهائي (يدمج usernameColor و profileEffect)
+export const getFinalUsernameColor = (user: any): string => {
+  // إذا المستخدم عنده profileEffect، استخدم لونه
+  if (user.profileEffect && user.profileEffect !== 'none') {
+    return getEffectColor(user.profileEffect);
+  }
+  
+  // وإلا استخدم usernameColor العادي
+  return user.usernameColor || '#FFFFFF';
+};

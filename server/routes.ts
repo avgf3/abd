@@ -2567,6 +2567,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Broadcasting theme update:', updateMessage);
       }
       
+      // إرسال تحديث تأثير البروفايل ولون الاسم عبر WebSocket
+      if (updates.profileEffect || updates.usernameColor) {
+        const updateMessage = {
+          type: 'profileEffectChanged',
+          userId: parseInt(id),
+          profileEffect: updates.profileEffect,
+          usernameColor: updates.usernameColor,
+          user: user,
+          timestamp: new Date().toISOString()
+        };
+        broadcast(updateMessage);
+        console.log('Broadcasting profile effect update:', updateMessage);
+      }
+      
       res.json(user);
     } catch (error) {
       console.error('Error updating user:', error);

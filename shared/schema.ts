@@ -32,6 +32,7 @@ export const users = pgTable("users", {
   ignoredUsers: text("ignored_users").default('[]'), // قائمة المستخدمين المتجاهلين - JSON string للتوافق مع SQLite
   usernameColor: text("username_color").default('#FFFFFF'), // لون اسم المستخدم
   userTheme: text("user_theme").default('default'), // ثيم المستخدم
+  profileEffect: text("profile_effect").default('none'), // تأثير البروفايل
   points: integer("points").default(0), // نقاط المستخدم الحالية
   level: integer("level").default(1), // مستوى المستخدم
   totalPoints: integer("total_points").default(0), // إجمالي النقاط التي كسبها المستخدم
@@ -123,6 +124,7 @@ export const insertUserSchema = z.object({
   deviceId: z.string().optional(),
   usernameColor: z.string().optional(),
   userTheme: z.string().optional(),
+  profileEffect: z.string().optional(),
   points: z.number().optional(),
   level: z.number().optional(),
   totalPoints: z.number().optional(),

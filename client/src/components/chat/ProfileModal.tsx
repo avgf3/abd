@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { X } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { getEffectColor } from '@/utils/themeUtils';
 import type { ChatUser } from '@/types/chat';
 
 interface ProfileModalProps {
@@ -19,7 +20,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
   const [currentEditType, setCurrentEditType] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [selectedTheme, setSelectedTheme] = useState(user?.userTheme || 'theme-new-gradient');
-  const [selectedEffect, setSelectedEffect] = useState('none');
+  const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
 
   if (!user) return null;
 
@@ -461,12 +462,41 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
     }
   };
 
-  const handleEffectChange = (effect: string) => {
+  const handleEffectChange = async (effect: string) => {
     setSelectedEffect(effect);
-    toast({
-      title: "نجح",
-      description: "تم تحديث التأثيرات",
-    });
+    
+    try {
+      // حفظ التأثير في قاعدة البيانات
+      await apiRequest(`/api/users/${user.id}`, {
+        method: 'PUT',
+        body: { 
+          profileEffect: effect,
+          // ربط لون الاسم بالتأثير تلقائياً
+          usernameColor: getEffectColor(effect)
+        }
+      });
+
+      // تحديث المستخدم في الواجهة
+      if (onUpdate) {
+        onUpdate({ 
+          ...user, 
+          profileEffect: effect,
+          usernameColor: getEffectColor(effect)
+        });
+      }
+      
+      toast({
+        title: "نجح",
+        description: "تم تحديث التأثيرات ولون الاسم",
+      });
+    } catch (error) {
+      console.error('Error updating profile effect:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تحديث التأثيرات",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
