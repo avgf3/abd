@@ -41,13 +41,20 @@ const storage_multer = multer.diskStorage({
 const upload = multer({
   storage: storage_multer,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
+    fileSize: 10 * 1024 * 1024 // 10MB بدلاً من 5MB
   },
   fileFilter: (req, file, cb) => {
+    console.log('File received:', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size
+    });
+    
     // التحقق من نوع الملف
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
+      console.log('Rejected file - not an image:', file.mimetype);
       cb(new Error('يرجى رفع ملف صورة صحيح'));
     }
   }
@@ -149,6 +156,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // تحديث مسار الصورة في قاعدة البيانات
       const imageUrl = `/uploads/profiles/${req.file.filename}`;
+      console.log('Image saved at:', imageUrl);
+      console.log('Full path:', req.file.path);
       
       const user = await storage.getUser(parseInt(userId));
       if (!user) {
@@ -163,6 +172,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // التحقق من صحة الصورة المرفوعة
+      const stats = fs.statSync(req.file.path);
+      console.log('File stats:', {
+        size: stats.size,
+        created: stats.birthtime
+      });
+      
+      if (stats.size < 1000) { // أقل من 1KB
+        console.warn('Warning: Very small image file uploaded');
+      }
+      
       // تحديث المستخدم في قاعدة البيانات
       const updatedUser = await storage.updateUser(parseInt(userId), { profileImage: imageUrl });
       
