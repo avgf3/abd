@@ -3,6 +3,8 @@ import { X } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import type { ChatUser } from '@/types/chat';
+import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
+import PointsSentNotification from '@/components/ui/PointsSentNotification';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -20,6 +22,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser 
   const [editValue, setEditValue] = useState('');
   const [selectedTheme, setSelectedTheme] = useState(user?.userTheme || 'theme-new-gradient');
   const [selectedEffect, setSelectedEffect] = useState('none');
+  const [sendingPoints, setSendingPoints] = useState(false);
+  const [pointsToSend, setPointsToSend] = useState('');
+  const [pointsSentNotification, setPointsSentNotification] = useState<{
+    show: boolean;
+    points: number;
+    recipientName: string;
+  }>({ show: false, points: 0, recipientName: '' });
 
   if (!user) return null;
 
