@@ -600,9 +600,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // إعداد Socket.IO محسن مع أمان وثبات أفضل
   io = new IOServer(httpServer, {
-    cors: { origin: "*" },
+    // إعدادات CORS محسنة
+    cors: { 
+      origin: process.env.NODE_ENV === 'production' 
+        ? [process.env.RENDER_EXTERNAL_URL, "https://abd-gmva.onrender.com"].filter(Boolean)
+        : "*",
+      methods: ["GET", "POST"],
+      credentials: true
+    },
     path: "/socket.io/",
+    
+    // إعدادات النقل محسنة للاستقرار
+    transports: ['websocket', 'polling'],
+    allowEIO3: true,
+    
+    // إعدادات الاتصال المحسنة
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    upgradeTimeout: 10000,
+    allowUpgrades: true,
+    
+    // إعدادات الأمان
+    cookie: false,
+    serveClient: false,
+    
+    // إعدادات الأداء
+    maxHttpBufferSize: 1e6, // 1MB
+    allowRequest: (req, callback) => {
+      // فحص أمني بسيط للطلبات
+      const isOriginAllowed = process.env.NODE_ENV !== 'production' || 
+        req.headers.origin === process.env.RENDER_EXTERNAL_URL;
+      callback(null, isOriginAllowed);
+    }
   });
   
   // Health Check endpoint للمراقبة
@@ -984,38 +1016,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // WebSocket handling
+  // WebSocket handling محسن مع إدارة أفضل للأخطاء والاتصال
   io.on("connection", (socket: CustomSocket) => {
-    console.log('اتصال WebSocket جديد');
+    console.log(`🔌 اتصال WebSocket جديد من ${socket.handshake.address}`);
+    
+    // متغيرات محلية لتتبع حالة الاتصال
+    let isAuthenticated = false;
+    let heartbeatInterval: NodeJS.Timeout | null = null;
+    let connectionTimeout: NodeJS.Timeout | null = null;
+    
+    // إعداد timeout للمصادقة (30 ثانية)
+    connectionTimeout = setTimeout(() => {
+      if (!isAuthenticated) {
+        console.log(`⏰ انتهت مهلة المصادقة للاتصال ${socket.id}`);
+        socket.emit('message', { type: 'error', message: 'انتهت مهلة المصادقة' });
+        socket.disconnect(true);
+      }
+    }, 30000);
     
     // إرسال رسالة ترحيب فورية
-    socket.emit('connected', { message: 'متصل بنجاح' });
+    socket.emit('connected', { 
+      message: 'متصل بنجاح',
+      socketId: socket.id,
+      timestamp: new Date().toISOString()
+    });
     
-    // heartbeat للحفاظ على الاتصال
-    const heartbeat = setInterval(() => {
-      socket.emit('ping');
-    }, 30000);
+    // دالة تنظيف الموارد
+    const cleanup = () => {
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+      }
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+        connectionTimeout = null;
+      }
+    };
+    
+    // heartbeat محسن للحفاظ على الاتصال
+    const startHeartbeat = () => {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      
+      heartbeatInterval = setInterval(() => {
+        if (socket.connected) {
+          socket.emit('ping', { timestamp: Date.now() });
+        } else {
+          cleanup();
+        }
+      }, 25000);
+    };
 
-    // Modern Socket.IO event handlers
+    // معالج المصادقة المحسن
     socket.on('auth', async (data) => {
       try {
-        console.log(`🔐 Auth من ${data.username || 'غير معروف'}`);
+        // التحقق من صحة بيانات المصادقة
+        if (!data || !data.userId || !data.username) {
+          console.log(`❌ بيانات مصادقة غير صالحة من ${socket.id}`);
+          socket.emit('message', { type: 'error', message: 'بيانات مصادقة غير صالحة' });
+          socket.disconnect(true);
+          return;
+        }
         
+        console.log(`🔐 محاولة مصادقة من ${data.username} (${data.userId})`);
+        
+        // إلغاء timeout المصادقة
+        if (connectionTimeout) {
+          clearTimeout(connectionTimeout);
+          connectionTimeout = null;
+        }
+        
+        // تعيين معلومات المستخدم
         socket.userId = data.userId;
         socket.username = data.username;
+        socket.isAuthenticated = true;
+        isAuthenticated = true;
         
         // انضمام للغرفة الخاصة بالمستخدم للرسائل المباشرة
         socket.join(data.userId.toString());
+        console.log(`👤 ${data.username} انضم للغرفة ${data.userId}`);
         
         // فحص حالة المستخدم قبل السماح بالاتصال
         const authUserStatus = await moderationSystem.checkUserStatus(data.userId);
         if (authUserStatus.isBlocked) {
+          console.log(`🚫 محاولة اتصال من مستخدم محجوب: ${data.username}`);
           socket.emit('message', {
             type: 'error',
             message: 'أنت محجوب نهائياً من الدردشة',
             action: 'blocked'
           });
-          socket.disconnect();
+          socket.disconnect(true);
           return;
         }
         
@@ -1519,40 +1608,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
+    // معالج قطع الاتصال المحسن
     socket.on('disconnect', async (reason) => {
-      console.log(`🔌 المستخدم ${socket.username} قطع الاتصال - السبب: ${reason}`);
+      console.log(`🔌 المستخدم ${socket.username || 'غير معروف'} قطع الاتصال - السبب: ${reason}`);
       
-      // تنظيف الجلسة بالكامل
-      clearInterval(heartbeat);
+      // تنظيف جميع الموارد
+      cleanup();
       
-      if (socket.userId) {
+      if (socket.userId && isAuthenticated) {
         try {
+          console.log(`👋 تنظيف جلسة المستخدم ${socket.username} (${socket.userId})`);
+          
           // تحديث حالة المستخدم في قاعدة البيانات
           await storage.setUserOnlineStatus(socket.userId, false);
           
           // إزالة المستخدم من جميع الغرف
           socket.leave(socket.userId.toString());
           
-          // إشعار جميع المستخدمين بالخروج
-          io.emit('userLeft', {
+          // إشعار جميع المستخدمين بالخروج (فقط إذا كان مصادق عليه)
+          io.emit('message', {
+            type: 'userLeft',
             userId: socket.userId,
             username: socket.username,
-            timestamp: new Date()
+            timestamp: new Date().toISOString()
           });
           
           // إرسال قائمة محدثة للمستخدمين المتصلين
           const onlineUsers = await storage.getOnlineUsers();
-          io.emit('onlineUsers', { users: onlineUsers });
+          io.emit('message', { 
+            type: 'onlineUsers', 
+            users: onlineUsers 
+          });
           
-          // تنظيف متغيرات الجلسة
-          socket.userId = undefined;
-          socket.username = undefined;
+          console.log(`✅ تم تنظيف جلسة ${socket.username} بنجاح`);
           
         } catch (error) {
-          console.error('خطأ في تنظيف الجلسة:', error);
+          console.error(`❌ خطأ في تنظيف جلسة ${socket.username}:`, error);
+        } finally {
+          // تنظيف متغيرات الجلسة في جميع الأحوال
+          socket.userId = undefined;
+          socket.username = undefined;
+          socket.isAuthenticated = false;
         }
       }
     });
+    
+    // معالج أخطاء Socket.IO
+    socket.on('error', (error) => {
+      console.error(`❌ خطأ Socket.IO للمستخدم ${socket.username || socket.id}:`, error);
+      cleanup();
+    });
+    
+    // معالج pong للheartbeat
+    socket.on('pong', (data) => {
+      // تسجيل آخر نشاط للمستخدم
+      if (socket.userId && isAuthenticated) {
+        console.log(`💓 Heartbeat من ${socket.username} - الزمن: ${data?.timestamp || 'غير محدد'}`);
+      }
+    });
+    
+    // بدء heartbeat بعد الإعداد
+    startHeartbeat();
   });
 
   function broadcast(message: any) {
