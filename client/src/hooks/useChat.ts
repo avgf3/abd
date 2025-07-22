@@ -105,85 +105,132 @@ export function useChat() {
 
   const connect = useCallback((user: ChatUser) => {
     try {
+      console.log('🚀 بدء اتصال المستخدم:', user.username);
       setCurrentUser(user);
       setConnectionError(null);
+      setIsLoading(true);
       
-      // إنشاء اتصال Socket.IO - إعدادات محسنة للإنتاج
+      // تنظيف الاتصال السابق
+      if (socket.current) {
+        console.log('🔄 إغلاق الاتصال السابق');
+        socket.current.removeAllListeners();
+        socket.current.disconnect();
+        socket.current = null;
+      }
+      
+      // إعادة تعيين المتغيرات
+      reconnectAttempts.current = 0;
+      
+      // إنشاء اتصال Socket.IO - إعدادات محسنة ومبسطة
       const getSocketUrl = () => {
         // في الإنتاج، استخدم نفس الخادم
         if (process.env.NODE_ENV === 'production') {
-          return window.location.origin; // استخدم نفس المضيف
+          return window.location.origin;
         }
         
-        // للتطوير المحلي
-        const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-        return `${protocol}//${window.location.host}`;
+        // للتطوير المحلي - استخدم localhost مباشرة
+        const port = window.location.port || '5000';
+        return `http://localhost:${port}`;
       };
 
       const socketUrl = getSocketUrl();
-      console.log('محاولة الاتصال بـ Socket.IO:', socketUrl);
-      console.log('🔗 Socket URL:', socketUrl);
-      console.log('🌐 Window Location:', window.location.origin);
-      console.log('📦 Environment:', process.env.NODE_ENV);
-      
-      // إغلاق الاتصال الموجود إن وجد
-      if (socket.current) {
-        socket.current.disconnect();
-      }
+      console.log('🔗 محاولة الاتصال بـ Socket.IO:', socketUrl);
       
       socket.current = io(socketUrl, {
+        // إعدادات الاتصال الأساسية
         autoConnect: true,
-        reconnection: true,
-        reconnectionAttempts: 10,  // عدد معقول من المحاولات
-        reconnectionDelay: 1000,   // بداية سريعة
-        reconnectionDelayMax: 5000, // حد أقصى معقول
-        timeout: 20000,           // timeout معقول
         forceNew: true,
-        // إعدادات النقل محسنة
-        transports: ['websocket', 'polling'], // websocket أولاً للأداء الأفضل
+        
+        // إعدادات إعادة الاتصال المحسنة
+        reconnection: true,
+        reconnectionAttempts: 5,     // عدد أقل من المحاولات
+        reconnectionDelay: 2000,     // تأخير أطول قليلاً
+        reconnectionDelayMax: 10000, // حد أقصى أطول
+        timeout: 15000,              // timeout أقصر
+        
+        // إعدادات النقل المبسطة
+        transports: ['websocket', 'polling'],
         upgrade: true,
-        rememberUpgrade: true, // تذكر الترقية للجلسات المستقبلية
-        // إعدادات أمان
+        
+        // إعدادات الأمان
         secure: window.location.protocol === 'https:',
-        // إعدادات إضافية
-        closeOnBeforeunload: false,
-        withCredentials: true,
-        // إعدادات ping/pong للحفاظ على الاتصال
-        pingTimeout: 60000,
-        pingInterval: 25000
+        withCredentials: false, // تبسيط الأمان
+        
+        // إعدادات ping/pong
+        pingTimeout: 30000,
+        pingInterval: 20000,
       });
       
+      // معالج الاتصال المحسن
       socket.current.on('connect', () => {
-        console.log('📡 متصل بـ Socket.IO');
-        console.log(`🚀 Transport: ${socket.current?.io.engine.transport.name}`);
+        console.log('🎉 نجح الاتصال بـ Socket.IO');
+        console.log(`🚀 نوع النقل: ${socket.current?.io.engine.transport.name}`);
+        console.log(`🆔 معرف الاتصال: ${socket.current?.id}`);
+        
         setIsConnected(true);
         setConnectionError(null);
+        setIsLoading(false);
         reconnectAttempts.current = 0;
         
-        // إرسال authentication
+        // إرسال authentication مع معلومات إضافية
+        console.log('🔐 إرسال بيانات المصادقة...');
         socket.current?.emit('auth', {
           userId: user.id,
           username: user.username,
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent
         });
+      });
+
+      // معالج أخطاء الاتصال
+      socket.current.on('connect_error', (error) => {
+        console.error('❌ خطأ في الاتصال:', error.message);
+        setConnectionError(`فشل الاتصال: ${error.message}`);
+        setIsConnected(false);
+        setIsLoading(false);
+        
+        reconnectAttempts.current++;
+        if (reconnectAttempts.current >= maxReconnectAttempts) {
+          console.error('🚫 تم الوصول للحد الأقصى من محاولات إعادة الاتصال');
+          setConnectionError('فشل الاتصال نهائياً - يرجى إعادة تحديث الصفحة');
+        }
+      });
+
+      // معالج قطع الاتصال
+      socket.current.on('disconnect', (reason) => {
+        console.warn('🔌 تم قطع الاتصال:', reason);
+        setIsConnected(false);
+        
+        if (reason === 'io server disconnect') {
+          // الخادم قطع الاتصال، حاول الاتصال مرة أخرى
+          console.log('🔄 الخادم قطع الاتصال، محاولة إعادة الاتصال...');
+          socket.current?.connect();
+        }
       });
 
       // مراقبة تغيير transport
       socket.current.io.engine.on('upgrade', () => {
-        console.log(`🔄 تم الترقية إلى: ${socket.current?.io.engine.transport.name}`);
+        console.log(`⬆️ تم الترقية إلى: ${socket.current?.io.engine.transport.name}`);
       });
 
       socket.current.io.engine.on('upgradeError', (error) => {
-        console.warn('⚠️ فشل ترقية WebSocket، سيتم الاستمرار مع polling:', error.message);
+        console.warn('⚠️ فشل ترقية WebSocket، الاستمرار مع polling:', error.message);
       });
 
       // استقبال رسالة الترحيب من الخادم
       socket.current.on('connected', (data) => {
         console.log('✅ تأكيد الاتصال من الخادم:', data);
+        setIsLoading(false);
       });
 
-      // معالجة ping/pong للحفاظ على الاتصال
+      // معالجة ping/pong محسنة للحفاظ على الاتصال
       socket.current.on('ping', (data) => {
-        socket.current?.emit('pong', { timestamp: Date.now() });
+        const pongData = { 
+          timestamp: Date.now(), 
+          userId: user.id,
+          received: data?.timestamp 
+        };
+        socket.current?.emit('pong', pongData);
       });
 
       socket.current.on('message', (message: WebSocketMessage) => {
