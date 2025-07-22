@@ -24,6 +24,10 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
   const [registerPassword, setRegisterPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [registerGender, setRegisterGender] = useState('male');
+  const [registerAge, setRegisterAge] = useState('');
+  const [registerCountry, setRegisterCountry] = useState('');
+  const [registerStatus, setRegisterStatus] = useState('');
+  const [registerRelation, setRegisterRelation] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -95,7 +99,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
     if (!registerName.trim() || !registerPassword.trim() || !confirmPassword.trim()) {
       toast({
         title: "خطأ",
-        description: "يرجى ملء جميع الحقول",
+        description: "يرجى ملء جميع الحقول المطلوبة",
         variant: "destructive",
       });
       return;
@@ -110,6 +114,24 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
       return;
     }
 
+    if (registerPassword.length < 6) {
+      toast({
+        title: "خطأ",
+        description: "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (registerAge && (parseInt(registerAge) < 13 || parseInt(registerAge) > 100)) {
+      toast({
+        title: "خطأ",
+        description: "العمر يجب أن يكون بين 13 و 100 سنة",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const data = await apiRequest('/api/auth/register', {
@@ -119,6 +141,10 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           password: registerPassword.trim(),
           confirmPassword: confirmPassword.trim(),
           gender: registerGender,
+          age: registerAge ? parseInt(registerAge) : undefined,
+          country: registerCountry.trim() || undefined,
+          status: registerStatus.trim() || undefined,
+          relation: registerRelation.trim() || undefined,
         }
       });
       toast({
@@ -341,6 +367,37 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
                 </label>
               </div>
             </div>
+            
+            <Input
+              type="number"
+              value={registerAge}
+              onChange={(e) => setRegisterAge(e.target.value)}
+              placeholder="العمر (اختياري)"
+              min="13"
+              max="100"
+              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+            />
+            
+            <Input
+              value={registerCountry}
+              onChange={(e) => setRegisterCountry(e.target.value)}
+              placeholder="البلد (اختياري)"
+              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+            />
+            
+            <Input
+              value={registerStatus}
+              onChange={(e) => setRegisterStatus(e.target.value)}
+              placeholder="الحالة الاجتماعية (اختياري)"
+              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+            />
+            
+            <Input
+              value={registerRelation}
+              onChange={(e) => setRegisterRelation(e.target.value)}
+              placeholder="البحث عن (اختياري)"
+              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+            />
             <Button 
               onClick={handleRegister} 
               disabled={loading}

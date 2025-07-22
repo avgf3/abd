@@ -23,6 +23,7 @@ import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
 import StealthModeToggle from './StealthModeToggle';
 import WelcomeNotification from './WelcomeNotification';
+import ThemeSelector from './ThemeSelector';
 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -52,6 +53,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showReportsLog, setShowReportsLog] = useState(false);
   const [showActiveActions, setShowActiveActions] = useState(false);
   const [showPromotePanel, setShowPromotePanel] = useState(false);
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
 
 
   const [newMessageAlert, setNewMessageAlert] = useState<{
@@ -424,21 +426,25 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
-      {showSettings && (
-        <SettingsMenu
-          onOpenProfile={() => {
-            setShowProfile(true);
-            setShowSettings(false);
-          }}
-          onLogout={onLogout}
-          onClose={() => setShowSettings(false)}
-          onOpenReports={() => {
-            setShowAdminReports(true);
-            setShowSettings(false);
-          }}
-          currentUser={chat.currentUser}
-        />
-      )}
+              {showSettings && (
+          <SettingsMenu
+            onOpenProfile={() => {
+              setShowProfile(true);
+              setShowSettings(false);
+            }}
+            onLogout={onLogout}
+            onClose={() => setShowSettings(false)}
+            onOpenReports={() => {
+              setShowAdminReports(true);
+              setShowSettings(false);
+            }}
+            onOpenThemeSelector={() => {
+              setShowThemeSelector(true);
+              setShowSettings(false);
+            }}
+            currentUser={chat.currentUser}
+          />
+        )}
 
       {showReportModal && (
         <ReportModal
@@ -544,6 +550,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           onClose={() => setShowPromotePanel(false)}
           currentUser={chat.currentUser}
           onlineUsers={chat.onlineUsers}
+        />
+      )}
+
+      {showThemeSelector && (
+        <ThemeSelector
+          isOpen={showThemeSelector}
+          onClose={() => setShowThemeSelector(false)}
+          currentUser={chat.currentUser}
+          onThemeUpdate={(theme) => {
+            console.log('تم تحديث الثيم إلى:', theme);
+          }}
         />
       )}
 

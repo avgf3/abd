@@ -110,8 +110,9 @@ export function useChat() {
       
       // إنشاء اتصال Socket.IO - إعدادات محسنة للإنتاج
       const getSocketUrl = () => {
+        // في الإنتاج، استخدم نفس الخادم
         if (process.env.NODE_ENV === 'production') {
-          return 'https://abd-gmva.onrender.com'; // استخدم HTTPS دائماً في الإنتاج
+          return window.location.origin; // استخدم نفس المضيف
         }
         
         // للتطوير المحلي
@@ -133,23 +134,23 @@ export function useChat() {
       socket.current = io(socketUrl, {
         autoConnect: true,
         reconnection: true,
-        reconnectionAttempts: 15,  // المزيد من المحاولات
-        reconnectionDelay: 2000,   // انتظار أطول بين المحاولات
-        reconnectionDelayMax: 10000, // حد أقصى أعلى
-        timeout: 30000,           // timeout أطول للاتصال الأولي
+        reconnectionAttempts: 10,  // عدد معقول من المحاولات
+        reconnectionDelay: 1000,   // بداية سريعة
+        reconnectionDelayMax: 5000, // حد أقصى معقول
+        timeout: 20000,           // timeout معقول
         forceNew: true,
-        // إعدادات محسنة للإنتاج - polling أولاً
-        transports: process.env.NODE_ENV === 'production' 
-          ? ['polling', 'websocket']  // polling أولاً في الإنتاج
-          : ['websocket', 'polling'], // websocket أولاً في التطوير
+        // إعدادات النقل محسنة
+        transports: ['websocket', 'polling'], // websocket أولاً للأداء الأفضل
         upgrade: true,
-        rememberUpgrade: false,
-        // إعدادات أمان محسنة
-        secure: process.env.NODE_ENV === 'production',
-        rejectUnauthorized: process.env.NODE_ENV === 'production', // آمن في الإنتاج
-        // إعدادات إضافية للاستقرار
+        rememberUpgrade: true, // تذكر الترقية للجلسات المستقبلية
+        // إعدادات أمان
+        secure: window.location.protocol === 'https:',
+        // إعدادات إضافية
         closeOnBeforeunload: false,
-        withCredentials: true
+        withCredentials: true,
+        // إعدادات ping/pong للحفاظ على الاتصال
+        pingTimeout: 60000,
+        pingInterval: 25000
       });
       
       socket.current.on('connect', () => {
@@ -203,10 +204,15 @@ export function useChat() {
             case 'onlineUsers':
               if (message.users) {
                 console.log('📥 استلام قائمة المستخدمين:', message.users.length, message.users.map(u => u.username));
-                // فلترة المستخدمين المتجاهلين والمخفيين من القائمة  
-                const filteredUsers = message.users.filter((chatUser: ChatUser) => 
-                  !ignoredUsers.has(chatUser.id) && !chatUser.isHidden
-                );
+                // فلترة المستخدمين المتجاهلين فقط (إظهار المخفيين للإدمن والمالك)
+                const filteredUsers = message.users.filter((chatUser: ChatUser) => {
+                  // إظهار جميع المستخدمين للإدمن والمالك
+                  if (user.userType === 'admin' || user.userType === 'owner') {
+                    return !ignoredUsers.has(chatUser.id);
+                  }
+                  // للمستخدمين العاديين، إخفاء المستخدمين المخفيين والمتجاهلين
+                  return !ignoredUsers.has(chatUser.id) && !chatUser.isHidden;
+                });
                 console.log('👥 المستخدمين بعد الفلترة:', filteredUsers.length, filteredUsers.map(u => u.username));
                 setOnlineUsers(filteredUsers);
               }
@@ -293,10 +299,25 @@ export function useChat() {
               
             case 'userJoined':
               if (message.user) {
+                console.log('👤 مستخدم جديد انضم:', message.user.username);
                 setOnlineUsers(prev => {
                   const exists = prev.find(u => u.id === message.user!.id);
-                  if (exists) return prev;
-                  return [...prev, message.user!];
+                  if (exists) {
+                    console.log('المستخدم موجود بالفعل في القائمة');
+                    return prev;
+                  }
+                  
+                  // فحص ما إذا كان المستخدم يجب إظهاره
+                  const shouldShow = user.userType === 'admin' || user.userType === 'owner' || !message.user!.isHidden;
+                  const isIgnored = ignoredUsers.has(message.user!.id);
+                  
+                  if (shouldShow && !isIgnored) {
+                    console.log('إضافة المستخدم للقائمة:', message.user!.username);
+                    return [...prev, message.user!];
+                  }
+                  
+                  console.log('المستخدم مخفي أو متجاهل');
+                  return prev;
                 });
               }
               break;
