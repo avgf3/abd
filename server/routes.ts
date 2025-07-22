@@ -755,7 +755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "اسم المستخدم غير موجود" });
       }
 
-      console.log(`User found: ${user.username}, type: ${user.userType}`);
+      console.log(`User found: ${user.username}, type: ${user.userType}, hidden: ${user.isHidden}`);
 
       if (user.password !== password.trim()) {
         console.log(`Password mismatch for user: ${username}`);
@@ -768,8 +768,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "هذا المستخدم ضيف وليس عضو" });
       }
 
+      // التأكد من أن الأعضاء العاديين غير مخفيين (فقط الإدمن والمالك يمكنهم الإخفاء)
+      if (user.userType !== 'owner' && user.userType !== 'admin') {
+        if (user.isHidden) {
+          console.log(`Unhiding regular member: ${username}`);
+          await storage.updateUser(user.id, { isHidden: false });
+          user.isHidden = false;
+        }
+      }
+
       await storage.setUserOnlineStatus(user.id, true);
-      console.log(`Member login successful: ${username}`);
+      console.log(`Member login successful: ${username} (Hidden: ${user.isHidden})`);
       res.json({ user });
     } catch (error) {
       console.error('Member authentication error:', error);
@@ -1120,9 +1129,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         await storage.setUserOnlineStatus(data.userId, true);
         
-        // Broadcast user joined
+        // Broadcast user joined - التأكد من إظهار المستخدم بشكل صحيح
         const joinedUser = await storage.getUser(data.userId);
-        io.emit('message', { type: 'userJoined', user: joinedUser });
+        if (joinedUser) {
+          // التأكد من أن المستخدم ليس مخفي إلا إذا كان إدمن أو مالك وقرر الإخفاء
+          if (joinedUser.userType !== 'guest' && !joinedUser.isHidden) {
+            joinedUser.isHidden = false; // التأكد من عدم الإخفاء للأعضاء
+          }
+          
+          console.log(`📢 إعلان انضمام المستخدم: ${joinedUser.username} (Type: ${joinedUser.userType}, Hidden: ${joinedUser.isHidden})`);
+          io.emit('message', { type: 'userJoined', user: joinedUser });
+        }
         
         // Send online users list with moderation status
         const onlineUsers = await storage.getOnlineUsers();
@@ -1138,6 +1155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })
         );
         
+        console.log(`📤 إرسال قائمة المستخدمين المتصلين: ${usersWithStatus.length} مستخدم`);
         socket.emit('message', { type: 'onlineUsers', users: usersWithStatus });
         
         // إضافة نقاط تسجيل الدخول اليومي
