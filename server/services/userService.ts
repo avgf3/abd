@@ -151,13 +151,13 @@ export class UserService {
       const user = await this.getUserById(userId);
       if (!user) return;
 
-      const ignoredUsers = user.ignoredUsers || [];
+      const ignoredUsers = JSON.parse(user.ignoredUsers || '[]');
       if (!ignoredUsers.includes(ignoredUserId.toString())) {
         ignoredUsers.push(ignoredUserId.toString());
         
         await db
           .update(users)
-          .set({ ignoredUsers } as any)
+          .set({ ignoredUsers: JSON.stringify(ignoredUsers) } as any)
           .where(eq(users.id, userId));
       }
     } catch (error) {
@@ -171,13 +171,13 @@ export class UserService {
       const user = await this.getUserById(userId);
       if (!user) return;
 
-      const ignoredUsers = (user.ignoredUsers || []).filter(
-        id => id !== ignoredUserId.toString()
+      const ignoredUsers = JSON.parse(user.ignoredUsers || '[]').filter(
+        (id: string) => id !== ignoredUserId.toString()
       );
       
       await db
         .update(users)
-        .set({ ignoredUsers } as any)
+        .set({ ignoredUsers: JSON.stringify(ignoredUsers) } as any)
         .where(eq(users.id, userId));
     } catch (error) {
       console.error('خطأ في إزالة مستخدم من القائمة المتجاهلة:', error);
@@ -190,7 +190,8 @@ export class UserService {
       const user = await this.getUserById(userId);
       if (!user || !user.ignoredUsers) return [];
       
-      return user.ignoredUsers.map(id => parseInt(id));
+      const ignoredArray = JSON.parse(user.ignoredUsers);
+      return ignoredArray.map((id: string) => parseInt(id));
     } catch (error) {
       console.error('خطأ في الحصول على قائمة المستخدمين المتجاهلين:', error);
       return [];
