@@ -622,11 +622,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Member registration route - مع أمان محسن
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { username, password, confirmPassword, gender } = req.body;
+      const { username, password, confirmPassword, gender, age, country, status, relation } = req.body;
       
       // فحص الأمان الأساسي
       if (!username?.trim() || !password?.trim() || !confirmPassword?.trim()) {
-        return res.status(400).json({ error: "جميع الحقول مطلوبة" });
+        return res.status(400).json({ error: "جميع الحقول المطلوبة" });
       }
 
       // فحص اسم المستخدم - منع الأحرف الخاصة
@@ -647,6 +647,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "كلمة المرور يجب أن تحتوي على رقم واحد على الأقل" });
       }
 
+      // فحص العمر إذا تم إدخاله
+      if (age && (age < 13 || age > 100)) {
+        return res.status(400).json({ error: "العمر يجب أن يكون بين 13 و 100 سنة" });
+      }
+
       // Check if username already exists
       const existing = await storage.getUserByUsername(username);
       if (existing) {
@@ -658,11 +663,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password,
         userType: "member",
         gender: gender || "male",
+        age: age || undefined,
+        country: country?.trim() || undefined,
+        status: status?.trim() || undefined,
+        relation: relation?.trim() || undefined,
         profileImage: "/default_avatar.svg",
       });
 
       res.json({ user, message: "تم التسجيل بنجاح" });
     } catch (error) {
+      console.error('Registration error:', error);
       res.status(500).json({ error: "خطأ في الخادم" });
     }
   });
