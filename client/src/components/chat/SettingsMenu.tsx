@@ -6,7 +6,8 @@ import {
   Moon, 
   Shield, 
   LogOut, 
-  Settings 
+  Settings,
+  Palette
 } from 'lucide-react';
 
 interface SettingsMenuProps {
@@ -14,10 +15,11 @@ interface SettingsMenuProps {
   onLogout: () => void;
   onClose: () => void;
   onOpenReports?: () => void;
+  onOpenThemeSelector?: () => void;
   currentUser?: any;
 }
 
-export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenReports, currentUser }: SettingsMenuProps) {
+export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenReports, onOpenThemeSelector, currentUser }: SettingsMenuProps) {
   const handleLogout = () => {
     if (confirm('🤔 هل أنت متأكد من تسجيل الخروج؟')) {
       onLogout();
@@ -52,12 +54,13 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
           </Button>
           
           <Button
+            onClick={onOpenThemeSelector}
             variant="ghost"
             size="sm"
             className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
           >
-            <Moon className="w-4 h-4 text-primary" />
-            المظهر
+            <Palette className="w-4 h-4 text-primary" />
+            اختيار الثيم
           </Button>
         </div>
 
