@@ -1025,14 +1025,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let heartbeatInterval: NodeJS.Timeout | null = null;
     let connectionTimeout: NodeJS.Timeout | null = null;
     
-    // إعداد timeout للمصادقة (30 ثانية)
+    // إعداد timeout للمصادقة (2 دقيقة - مدة أطول)
     connectionTimeout = setTimeout(() => {
       if (!isAuthenticated) {
         console.log(`⏰ انتهت مهلة المصادقة للاتصال ${socket.id}`);
         socket.emit('message', { type: 'error', message: 'انتهت مهلة المصادقة' });
         socket.disconnect(true);
       }
-    }, 30000);
+    }, 120000); // 2 minutes instead of 30 seconds
     
     // إرسال رسالة ترحيب فورية
     socket.emit('connected', { 
@@ -1053,17 +1053,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     };
     
-    // heartbeat محسن للحفاظ على الاتصال
+    // heartbeat محسن للحفاظ على الاتصال - أقل تكراراً
     const startHeartbeat = () => {
       if (heartbeatInterval) clearInterval(heartbeatInterval);
       
       heartbeatInterval = setInterval(() => {
-        if (socket.connected) {
-          socket.emit('ping', { timestamp: Date.now() });
-        } else {
+        if (socket.connected && isAuthenticated) {
+          socket.emit('ping', { 
+            timestamp: Date.now(),
+            userId: socket.userId,
+            username: socket.username
+          });
+        } else if (!socket.connected) {
+          console.log(`🔌 Socket ${socket.id} غير متصل، تنظيف heartbeat`);
           cleanup();
         }
-      }, 25000);
+      }, 45000); // 45 seconds instead of 25 seconds
     };
 
     // معالج المصادقة المحسن
@@ -1696,7 +1701,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     io.emit(message.type || 'broadcast', message.data || message);
   }
 
-  // فحص دوري لتنظيف الجلسات المنتهية الصلاحية
+  // فحص دوري لتنظيف الجلسات المنتهية الصلاحية - أقل تكراراً وأكثر تساهلاً
   const sessionCleanupInterval = setInterval(async () => {
     try {
       const connectedSockets = await io.fetchSockets();
@@ -1704,22 +1709,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       for (const socket of connectedSockets) {
         const customSocket = socket as any;
-        if (customSocket.userId) {
-          try {
-            // التحقق من وجود المستخدم في قاعدة البيانات
-            const user = await storage.getUser(customSocket.userId);
-            if (!user || !user.isOnline) {
-              console.log(`🧹 تنظيف جلسة منتهية الصلاحية للمستخدم ${customSocket.userId}`);
-              socket.disconnect(true);
-            }
-          } catch (error) {
-            console.error('خطأ في فحص الجلسة:', error);
+        
+        // فقط قطع الاتصال للجلسات غير المصادقة القديمة (أكثر من 5 دقائق)
+        if (!customSocket.userId && !customSocket.isAuthenticated) {
+          const socketAge = Date.now() - (customSocket.handshake?.time || Date.now());
+          if (socketAge > 300000) { // 5 minutes
+            console.log(`🧹 تنظيف جلسة غير مصادقة قديمة ${socket.id}`);
             socket.disconnect(true);
           }
-        } else {
-          // قطع الاتصال للجلسات بدون معرف مستخدم
-          console.log('🧹 قطع اتصال جلسة بدون معرف مستخدم');
-          socket.disconnect(true);
+        }
+        
+        // للمستخدمين المصادقين، كن أكثر تساهلاً
+        if (customSocket.userId && customSocket.isAuthenticated) {
+          try {
+            const user = await storage.getUser(customSocket.userId);
+            // فقط قطع الاتصال إذا كان المستخدم محجوب أو مطرود
+            if (user && (user.isBanned || user.isBlocked)) {
+              console.log(`🧹 تنظيف جلسة مستخدم محجوب/مطرود ${customSocket.userId}`);
+              socket.disconnect(true);
+            }
+            // لا نقطع الاتصال بناءً على isOnline لأنه قد يكون خطأ مؤقت
+          } catch (error) {
+            console.error(`خطأ في فحص الجلسة للمستخدم ${customSocket.userId}:`, error);
+            // لا نقطع الاتصال في حالة الخطأ
+          }
         }
       }
     } catch (error) {
