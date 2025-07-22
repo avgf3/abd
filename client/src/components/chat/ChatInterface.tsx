@@ -23,13 +23,16 @@ import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
 import StealthModeToggle from './StealthModeToggle';
 import WelcomeNotification from './WelcomeNotification';
-import WallSidebar from './WallSidebar';
 
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, Users, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { useChat } from '@/hooks/useChat';
-import type { ChatUser } from '@/types/chat';
+import type { ChatUser, WallPost } from '@/types/chat';
 
 interface ChatInterfaceProps {
   chat: ReturnType<typeof useChat>;
@@ -54,6 +57,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showPromotePanel, setShowPromotePanel] = useState(false);
   const [showWall, setShowWall] = useState(false);
 
+  // حالات الحوائط
+  const [activeWallTab, setActiveWallTab] = useState<'public' | 'friends'>('public');
+  const [wallPosts, setWallPosts] = useState<WallPost[]>([]);
+  const [wallLoading, setWallLoading] = useState(false);
+  const [newPostContent, setNewPostContent] = useState('');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [submitting, setSubmitting] = useState(false);
+
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
     sender: ChatUser | null;
@@ -61,6 +73,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     show: false,
     sender: null,
   });
+
+  const { toast } = useToast();
 
   // تفعيل التنبيه عند وصول رسالة جديدة
   useEffect(() => {
@@ -71,6 +85,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       });
     }
   }, [chat.newMessageSender]);
+
   const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
   const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(null);
   const [userPopup, setUserPopup] = useState<{
@@ -84,7 +99,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     x: 0,
     y: 0,
   });
-  const { toast } = useToast();
 
   const handleUserClick = (event: React.MouseEvent, user: ChatUser) => {
     event.stopPropagation();
@@ -100,113 +114,186 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setUserPopup(prev => ({ ...prev, show: false }));
   };
 
-  const handlePrivateMessage = (user: ChatUser) => {
-    setSelectedPrivateUser(user);
-    closeUserPopup();
-  };
-
-  const closePrivateMessage = () => {
-    setSelectedPrivateUser(null);
-  };
-
-  const handleAddFriend = async (user: ChatUser) => {
-    if (!chat.currentUser) return;
-    
+  // دوال الحوائط
+  const fetchWallPosts = async () => {
+    setWallLoading(true);
     try {
-      console.log('Sending friend request:', { senderId: chat.currentUser.id, receiverId: user.id });
-      
-      const response = await apiRequest('/api/friend-requests', {
-        method: 'POST',
-        body: {
-          senderId: chat.currentUser.id,
-          receiverId: user.id,
-        }
+      const response = await apiRequest(`/api/wall/posts/${activeWallTab}?userId=${chat.currentUser.id}`, {
+        method: 'GET',
       });
-      
-      console.log('Friend request response:', response);
-      
-      toast({
-        title: "تمت الإضافة",
-        description: `تم إرسال طلب صداقة إلى ${user.username}`,
-      });
+      if (response.ok) {
+        const data = await response.json();
+        setWallPosts(data.posts || []);
+      }
     } catch (error) {
-      console.error('Friend request error:', error);
+      console.error('خطأ في جلب المنشورات:', error);
+    } finally {
+      setWallLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showWall && chat.currentUser) {
+      fetchWallPosts();
+    }
+  }, [showWall, activeWallTab, chat.currentUser]);
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "خطأ في نوع الملف",
+          description: "يرجى اختيار صورة صالحة فقط",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "حجم الملف كبير",
+          description: "حجم الصورة يجب أن يكون أقل من 10 ميجابايت",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeSelectedImage = () => {
+    setSelectedImage(null);
+    setImagePreview('');
+  };
+
+  const handleCreatePost = async () => {
+    if (!newPostContent.trim() && !selectedImage) {
       toast({
-        title: "خطأ",
-        description: error instanceof Error ? error.message : "لم نتمكن من إرسال طلب الصداقة",
+        title: "محتوى مطلوب",
+        description: "يجب إضافة نص أو صورة على الأقل",
         variant: "destructive",
       });
+      return;
     }
-    closeUserPopup();
-  };
 
-  const handleIgnoreUser = (user: ChatUser) => {
-    chat.ignoreUser(user.id);
-    toast({
-      title: "تم التجاهل",
-      description: `تم تجاهل المستخدم ${user.username} - لن ترى رسائله بعد الآن`,
-    });
-    closeUserPopup();
-  };
-
-
-
-  const handleViewProfile = (user: ChatUser) => {
-    setProfileUser(user);
-    setShowProfile(true);
-    closeUserPopup();
-  };
-
-  // معالج للروابط الشخصية
-  const handleProfileLink = (userId: number) => {
-    const user = chat.onlineUsers.find(u => u.id === userId);
-    if (user) {
-      setProfileUser(user);
-      setShowProfile(true);
-    } else {
+    if (chat.currentUser.userType === 'guest') {
       toast({
-        title: "مستخدم غير موجود",
-        description: "لم نتمكن من العثور على هذا المستخدم",
-        variant: "destructive"
+        title: "غير مسموح",
+        description: "يجب التسجيل كعضو للنشر على الحائط",
+        variant: "destructive",
       });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('content', newPostContent.trim());
+      formData.append('type', activeWallTab);
+      formData.append('userId', chat.currentUser.id.toString());
+      if (selectedImage) {
+        formData.append('image', selectedImage);
+      }
+
+      const response = await fetch('/api/wall/posts', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const newPost = await response.json();
+        setWallPosts(prev => [newPost.post, ...prev]);
+        setNewPostContent('');
+        removeSelectedImage();
+        toast({
+          title: "تم النشر بنجاح ✨",
+          description: "تم نشر المنشور على الحائط",
+        });
+      } else {
+        const error = await response.json();
+        toast({
+          title: "فشل في النشر",
+          description: error.error || "حدث خطأ أثناء النشر",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('خطأ في النشر:', error);
+      toast({
+        title: "خطأ في الاتصال",
+        description: "تعذر الاتصال بالخادم",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  // تفعيل نظام الروابط الشخصية
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash;
-      const match = hash.match(/#id(\d+)/);
-      if (match) {
-        const userId = parseInt(match[1]);
-        handleProfileLink(userId);
-        // إزالة الهاش من العنوان
-        window.history.replaceState(null, '', window.location.pathname);
+  const handleWallReaction = async (postId: number, reactionType: 'like' | 'dislike' | 'heart') => {
+    try {
+      const response = await apiRequest('/api/wall/react', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          postId,
+          type: reactionType,
+          userId: chat.currentUser.id,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setWallPosts(prev => prev.map(post => 
+          post.id === postId ? data.post : post
+        ));
       }
-    };
-
-    // فحص الهاش عند تحميل الصفحة
-    handleHashChange();
-    
-    // مراقبة تغييرات الهاش
-    window.addEventListener('hashchange', handleHashChange);
-    
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-    };
-  }, [chat.onlineUsers]);
-
-  const handleReportUser = (user: ChatUser, messageContent?: string, messageId?: number) => {
-    setReportedUser(user);
-    setReportedMessage(messageContent && messageId ? { content: messageContent, id: messageId } : null);
-    setShowReportModal(true);
-    closeUserPopup();
+    } catch (error) {
+      console.error('خطأ في التفاعل:', error);
+    }
   };
 
-  const closeReportModal = () => {
-    setShowReportModal(false);
-    setReportedUser(null);
-    setReportedMessage(null);
+  const handleDeletePost = async (postId: number) => {
+    if (!confirm('هل أنت متأكد من حذف هذا المنشور؟')) return;
+
+    try {
+      const response = await apiRequest(`/api/wall/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: chat.currentUser.id,
+        }),
+      });
+
+      if (response.ok) {
+        setWallPosts(prev => prev.filter(post => post.id !== postId));
+        toast({
+          title: "تم الحذف",
+          description: "تم حذف المنشور بنجاح",
+        });
+      }
+    } catch (error) {
+      console.error('خطأ في الحذف:', error);
+    }
+  };
+
+  const canDeletePost = (post: WallPost) => {
+    return post.userId === chat.currentUser.id || 
+           ['admin', 'owner', 'moderator'].includes(chat.currentUser.userType);
+  };
+
+  const handleReportUser = (user: ChatUser, message?: { content: string; id: number }) => {
+    setReportedUser(user);
+    setReportedMessage(message || null);
+    setShowReportModal(true);
   };
 
   return (
@@ -234,7 +321,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           >
             <span>👥</span>
             الأصدقاء
-            {/* تنبيه طلبات الصداقة */}
             <FriendRequestBadge currentUser={chat.currentUser} />
           </Button>
 
@@ -247,56 +333,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             الرسائل
           </Button>
           
-          {/* زر لوحة الإدارة للمشرفين */}
-          {chat.currentUser && (chat.currentUser.userType === 'owner' || chat.currentUser.userType === 'admin') && (
-            <>
-              <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
-                onClick={() => setShowModerationPanel(true)}
-              >
-                <span>🛡️</span>
-                إدارة
-              </Button>
-              
-              <StealthModeToggle currentUser={chat.currentUser} />
-              
-              <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 border border-red-400 relative"
-                onClick={() => setShowReportsLog(true)}
-              >
-                <span>⚠️</span>
-                سجل البلاغات
-              </Button>
-              
-              <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400"
-                onClick={() => setShowActiveActions(true)}
-              >
-                <span>🔒</span>
-                سجل الإجراءات النشطة
-              </Button>
-
-              {/* زر ترقية المستخدمين - للمالك فقط */}
-              {chat.currentUser?.userType === 'owner' && (
-                <Button 
-                  className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2"
-                  onClick={() => setShowPromotePanel(true)}
-                >
-                  <span>👑</span>
-                  ترقية المستخدمين
-                </Button>
-              )}
-            </>
-          )}
-
-          {/* زر خاص بالمالك فقط */}
-          {chat.currentUser && chat.currentUser.userType === 'owner' && (
+          {['owner', 'admin', 'moderator'].includes(chat.currentUser?.userType || '') && (
             <Button 
-              className="glass-effect px-4 py-2 rounded-lg hover:bg-purple-600 transition-all duration-200 flex items-center gap-2 border border-purple-400"
-              onClick={() => setShowOwnerPanel(true)}
+              className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+              onClick={() => setShowModerationPanel(true)}
             >
-              <span>👑</span>
-              إدارة المالك
+              <span>🛡️</span>
+              الإشراف
             </Button>
           )}
           
@@ -308,13 +351,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             إعدادات
           </Button>
 
-          {/* زر الحوائط/المتصلين */}
+          {/* زر الحوائط */}
           <Button 
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+            className={`glass-effect px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              showWall ? 'bg-primary/20 hover:bg-primary/30' : 'hover:bg-accent'
+            }`}
             onClick={() => setShowWall(!showWall)}
           >
-            <span>{showWall ? '👥' : '🏠'}</span>
-            {showWall ? 'المتصلين' : 'الحوائط'}
+            <span>🏠</span>
+            الحوائط
           </Button>
 
         </div>
@@ -322,15 +367,273 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       
       {/* Main Content */}
       <main className="flex flex-1 overflow-hidden">
-        {showWall ? (
-          <WallSidebar currentUser={chat.currentUser} />
-        ) : (
-          <UserSidebar 
-            users={chat.onlineUsers}
-            onUserClick={handleUserClick}
-            currentUser={chat.currentUser}
-          />
-        )}
+        {/* Sidebar - يتوسع لما الحوائط تكون مفعلة */}
+        <div className={`bg-secondary border-l border-accent flex flex-col transition-all duration-300 ${
+          showWall ? 'w-96' : 'w-80'
+        }`} dir="rtl">
+          
+          {showWall ? (
+            /* عرض الحوائط */
+            <>
+              {/* رأس الحوائط */}
+              <div className="p-4 border-b border-accent bg-gradient-to-l from-primary/5 to-transparent">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                    <Globe className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-foreground">الحوائط</h2>
+                    <p className="text-xs text-muted-foreground">شارك أفكارك</p>
+                  </div>
+                </div>
+
+                <Tabs value={activeWallTab} onValueChange={(value) => setActiveWallTab(value as 'public' | 'friends')}>
+                  <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-lg p-1">
+                    <TabsTrigger value="public" className="rounded-md text-xs flex items-center gap-1">
+                      <Globe className="h-3 w-3" />
+                      عام
+                    </TabsTrigger>
+                    <TabsTrigger value="friends" className="rounded-md text-xs flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      أصدقاء
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              {/* نموذج النشر */}
+              {chat.currentUser?.userType !== 'guest' && (
+                <div className="p-3 border-b border-accent/50">
+                  <Card className="border-0 shadow-sm bg-background/60">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                          {chat.currentUser?.profileImage ? (
+                            <img 
+                              src={chat.currentUser.profileImage} 
+                              alt={chat.currentUser.username}
+                              className="w-6 h-6 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-xs font-bold text-primary">
+                              {chat.currentUser?.username.charAt(0)}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-medium" style={{ color: chat.currentUser?.usernameColor || 'inherit' }}>
+                          {chat.currentUser?.username}
+                        </span>
+                      </div>
+
+                      <Textarea
+                        placeholder="ماذا تريد أن تشارك؟"
+                        value={newPostContent}
+                        onChange={(e) => setNewPostContent(e.target.value)}
+                        className="mb-2 resize-none border-0 bg-muted/30 rounded-lg text-xs min-h-[60px]"
+                        maxLength={500}
+                      />
+                      
+                      <div className="text-xs text-muted-foreground mb-2 text-left">
+                        {newPostContent.length}/500
+                      </div>
+                      
+                      {imagePreview && (
+                        <div className="relative mb-2 group">
+                          <img 
+                            src={imagePreview} 
+                            alt="معاينة" 
+                            className="w-full h-24 object-cover rounded-lg"
+                          />
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-1 left-1 rounded-full w-5 h-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={removeSelectedImage}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageSelect}
+                            className="hidden"
+                            id="wall-image-upload"
+                          />
+                          <label htmlFor="wall-image-upload">
+                            <Button variant="outline" size="sm" className="cursor-pointer text-xs rounded-lg border-dashed h-7">
+                              <ImageIcon className="h-3 w-3 ml-1" />
+                              صورة
+                            </Button>
+                          </label>
+                        </div>
+                        
+                        <Button 
+                          onClick={handleCreatePost}
+                          disabled={submitting || (!newPostContent.trim() && !selectedImage)}
+                          size="sm"
+                          className="text-xs h-7 rounded-lg"
+                        >
+                          {submitting ? (
+                            <div className="flex items-center gap-1">
+                              <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                              نشر...
+                            </div>
+                          ) : (
+                            <>
+                              <Send className="h-3 w-3 ml-1" />
+                              نشر
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* قائمة المنشورات */}
+              <div className="flex-1 overflow-y-auto p-2">
+                {wallLoading ? (
+                  <div className="text-center py-8">
+                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">جاري التحميل...</p>
+                  </div>
+                ) : wallPosts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 rounded-full bg-muted/20 flex items-center justify-center mx-auto mb-3">
+                      <Globe className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-sm font-semibold mb-1">لا توجد منشورات</h3>
+                    <p className="text-xs text-muted-foreground">
+                      كن أول من ينشر!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {wallPosts.map((post) => (
+                      <Card key={post.id} className="hover:shadow-md transition-shadow border-0 bg-background/60 group">
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                                {post.userProfileImage ? (
+                                  <img 
+                                    src={post.userProfileImage} 
+                                    alt={post.username}
+                                    className="w-7 h-7 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-xs font-bold text-primary">
+                                    {post.username.charAt(0)}
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <div 
+                                  className="font-semibold text-xs"
+                                  style={{ color: post.usernameColor || 'inherit' }}
+                                >
+                                  {post.username}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(post.timestamp).toLocaleString('ar-SA', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {canDeletePost(post) && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeletePost(post.id)}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 p-0"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </CardHeader>
+                        
+                        <CardContent className="pt-0">
+                          {post.content && (
+                            <p className="mb-2 text-xs leading-relaxed whitespace-pre-wrap">
+                              {post.content}
+                            </p>
+                          )}
+                          
+                          {post.imageUrl && (
+                            <div className="mb-2 rounded-lg overflow-hidden">
+                              <img 
+                                src={post.imageUrl} 
+                                alt="منشور" 
+                                className="w-full h-auto object-cover max-h-32 hover:scale-105 transition-transform duration-300 cursor-pointer"
+                                onClick={() => window.open(post.imageUrl, '_blank')}
+                              />
+                            </div>
+                          )}
+                          
+                          {/* أزرار التفاعل */}
+                          <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleWallReaction(post.id, 'like')}
+                                className="flex items-center gap-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors h-6 px-2"
+                              >
+                                <ThumbsUp className="h-3 w-3" />
+                                <span className="text-xs">{post.totalLikes}</span>
+                              </Button>
+                              
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleWallReaction(post.id, 'heart')}
+                                className="flex items-center gap-1 text-pink-600 hover:text-pink-700 hover:bg-pink-50 rounded-lg transition-colors h-6 px-2"
+                              >
+                                <Heart className="h-3 w-3" />
+                                <span className="text-xs">{post.totalHearts}</span>
+                              </Button>
+                              
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleWallReaction(post.id, 'dislike')}
+                                className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors h-6 px-2"
+                              >
+                                <ThumbsDown className="h-3 w-3" />
+                                <span className="text-xs">{post.totalDislikes}</span>
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            /* عرض المتصلين العادي */
+            <UserSidebar 
+              users={chat.onlineUsers}
+              onUserClick={handleUserClick}
+              currentUser={chat.currentUser}
+            />
+          )}
+        </div>
+
+        {/* منطقة الدردشة - تتكيف مع عرض الشريط الجانبي */}
         <MessageArea 
           messages={chat.publicMessages}
           currentUser={chat.currentUser}
@@ -353,192 +656,191 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 setShowProfile(false);
                 setProfileUser(null);
               }}
-              onIgnoreUser={(userId) => {
-                chat.ignoreUser(userId);
-              }}
-              onPrivateMessage={handlePrivateMessage}
-              onAddFriend={handleAddFriend}
-            />
-          ) : (
-            <ProfileModal 
-              user={profileUser || chat.currentUser}
-              currentUser={chat.currentUser}
-              onClose={() => {
+              onSendPrivateMessage={(user: ChatUser) => {
+                setSelectedPrivateUser(user);
                 setShowProfile(false);
                 setProfileUser(null);
               }}
-              onIgnoreUser={(userId) => {
-                chat.ignoreUser(userId);
-              }}
+            />
+          ) : (
+            <ProfileModal
+              user={chat.currentUser}
+              onClose={() => setShowProfile(false)}
+              onUpdateUser={chat.updateUser}
             />
           )}
         </>
       )}
 
-      {selectedPrivateUser && (
-        <PrivateMessageBox
-          isOpen={!!selectedPrivateUser}
-          user={selectedPrivateUser}
-          currentUser={chat.currentUser}
-          messages={chat.privateConversations[selectedPrivateUser.id] || []}
-          onSendMessage={(content) => chat.sendPrivateMessage(selectedPrivateUser.id, content)}
-          onClose={closePrivateMessage}
-        />
-      )}
-
+      {/* User Popup */}
       {userPopup.show && userPopup.user && (
         <UserPopup
           user={userPopup.user}
-          x={userPopup.x}
-          y={userPopup.y}
-          onPrivateMessage={() => handlePrivateMessage(userPopup.user!)}
-          onAddFriend={() => handleAddFriend(userPopup.user!)}
-          onIgnore={() => {
-            // إزالة زر التجاهل من UserPopup - الآن في الملف الشخصي فقط
-          }}
-          onViewProfile={() => handleViewProfile(userPopup.user!)}
           currentUser={chat.currentUser}
+          position={{ x: userPopup.x, y: userPopup.y }}
           onClose={closeUserPopup}
+          onViewProfile={(user: ChatUser) => {
+            setProfileUser(user);
+            setShowProfile(true);
+            closeUserPopup();
+          }}
+          onSendPrivateMessage={(user: ChatUser) => {
+            setSelectedPrivateUser(user);
+            closeUserPopup();
+          }}
+          onReportUser={handleReportUser}
         />
       )}
 
+      {/* Settings Menu */}
       {showSettings && (
         <SettingsMenu
-          onOpenProfile={() => {
+          user={chat.currentUser}
+          onClose={() => setShowSettings(false)}
+          onLogout={onLogout}
+          onShowProfile={() => {
             setShowProfile(true);
             setShowSettings(false);
           }}
-          onLogout={onLogout}
-          onClose={() => setShowSettings(false)}
-          onOpenReports={() => {
-            setShowAdminReports(true);
-            setShowSettings(false);
-          }}
-          currentUser={chat.currentUser}
         />
       )}
 
-      {showReportModal && (
+      {/* Private Message Box */}
+      {selectedPrivateUser && (
+        <PrivateMessageBox
+          user={selectedPrivateUser}
+          currentUser={chat.currentUser}
+          onClose={() => setSelectedPrivateUser(null)}
+          onSendMessage={chat.sendPrivateMessage}
+          messages={chat.privateMessages[selectedPrivateUser.id] || []}
+        />
+      )}
+
+      {/* Report Modal */}
+      {showReportModal && reportedUser && (
         <ReportModal
-          isOpen={showReportModal}
-          onClose={closeReportModal}
           reportedUser={reportedUser}
+          reportedMessage={reportedMessage}
           currentUser={chat.currentUser}
-          messageContent={reportedMessage?.content}
-          messageId={reportedMessage?.id}
-        />
-      )}
-
-      {showNotifications && (
-        <NotificationPanel
-          isOpen={showNotifications}
-          onClose={() => setShowNotifications(false)}
-          currentUser={chat.currentUser}
+          onClose={() => {
+            setShowReportModal(false);
+            setReportedUser(null);
+            setReportedMessage(null);
+          }}
         />
       )}
 
       {/* Admin Reports Panel */}
-      {showAdminReports && chat.currentUser && chat.currentUser.userType === 'owner' && (
+      {showAdminReports && (
         <AdminReportsPanel
-          isOpen={showAdminReports}
-          onClose={() => setShowAdminReports(false)}
           currentUser={chat.currentUser}
+          onClose={() => setShowAdminReports(false)}
         />
       )}
 
+      {/* Notifications Panel */}
+      {showNotifications && (
+        <NotificationPanel
+          currentUser={chat.currentUser}
+          onClose={() => setShowNotifications(false)}
+        />
+      )}
+
+      {/* Friends Panel */}
       {showFriends && (
         <FriendsPanel
-          isOpen={showFriends}
-          onClose={() => setShowFriends(false)}
           currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
-          onStartPrivateChat={(friend) => {
-            setSelectedPrivateUser(friend);
+          onClose={() => setShowFriends(false)}
+          onSendPrivateMessage={(user: ChatUser) => {
+            setSelectedPrivateUser(user);
             setShowFriends(false);
           }}
         />
       )}
 
+      {/* Messages Panel */}
       {showMessages && (
         <MessagesPanel
-          isOpen={showMessages}
-          onClose={() => setShowMessages(false)}
           currentUser={chat.currentUser}
-          privateConversations={chat.privateConversations}
-          onlineUsers={chat.onlineUsers}
-          onStartPrivateChat={(user) => {
+          onClose={() => setShowMessages(false)}
+          onOpenConversation={(user: ChatUser) => {
             setSelectedPrivateUser(user);
             setShowMessages(false);
           }}
         />
       )}
 
+      {/* Moderation Panel */}
       {showModerationPanel && (
         <ModerationPanel
-          isOpen={showModerationPanel}
+          currentUser={chat.currentUser}
           onClose={() => setShowModerationPanel(false)}
-          currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
+          onShowReportsLog={() => {
+            setShowReportsLog(true);
+            setShowModerationPanel(false);
+          }}
+          onShowActiveActions={() => {
+            setShowActiveActions(true);
+            setShowModerationPanel(false);
+          }}
+          onShowPromotePanel={() => {
+            setShowPromotePanel(true);
+            setShowModerationPanel(false);
+          }}
         />
       )}
 
-      {showOwnerPanel && (
-        <OwnerAdminPanel 
-          isOpen={showOwnerPanel}
-          onClose={() => setShowOwnerPanel(false)}
-          currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
-        />
-      )}
-
-      {showModerationPanel && (
-        <ModerationPanel 
-          isOpen={showModerationPanel}
-          onClose={() => setShowModerationPanel(false)}
-          currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
-        />
-      )}
-
+      {/* Reports Log */}
       {showReportsLog && (
-        <ReportsLog 
-          isVisible={showReportsLog}
+        <ReportsLog
+          currentUser={chat.currentUser}
           onClose={() => setShowReportsLog(false)}
-          currentUser={chat.currentUser}
         />
       )}
 
+      {/* Active Moderation Log */}
       {showActiveActions && (
-        <ActiveModerationLog 
-          isVisible={showActiveActions}
+        <ActiveModerationLog
+          currentUser={chat.currentUser}
           onClose={() => setShowActiveActions(false)}
-          currentUser={chat.currentUser}
         />
       )}
 
+      {/* Promote User Panel */}
       {showPromotePanel && (
-        <PromoteUserPanel 
-          isVisible={showPromotePanel}
-          onClose={() => setShowPromotePanel(false)}
+        <PromoteUserPanel
           currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
+          onClose={() => setShowPromotePanel(false)}
         />
       )}
 
-      {/* إشعارات الطرد والحجب */}
-      <KickNotification
-        isVisible={chat.kickNotification?.show || false}
-        durationMinutes={chat.kickNotification?.duration || 15}
-        onClose={() => {}}
-      />
-      
-      <BlockNotification
-        isVisible={chat.blockNotification?.show || false}
-        reason={chat.blockNotification?.reason || ''}
-        onClose={() => {}}
-      />
+      {/* Owner Admin Panel */}
+      {showOwnerPanel && (
+        <OwnerAdminPanel
+          currentUser={chat.currentUser}
+          onClose={() => setShowOwnerPanel(false)}
+        />
+      )}
 
-      {/* تنبيه الرسائل الجديدة */}
+      {/* Kick Notification */}
+      {chat.showKickNotification && (
+        <KickNotification
+          isVisible={true}
+          message="تم طردك من الدردشة"
+          onClose={() => chat.setShowKickNotification?.(false)}
+        />
+      )}
+
+      {/* Block Notification */}
+      {chat.showBlockNotification && (
+        <BlockNotification
+          isVisible={true}
+          message="تم حظرك من الدردشة"
+          onClose={() => chat.setShowBlockNotification?.(false)}
+        />
+      )}
+
+      {/* New Message Alert */}
       <MessageAlert
         isOpen={newMessageAlert.show}
         sender={newMessageAlert.sender}
