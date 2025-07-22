@@ -136,29 +136,29 @@ export function useChat() {
       const socketUrl = getSocketUrl();
       console.log('🔗 محاولة الاتصال بـ Socket.IO:', socketUrl);
       
-      socket.current = io(socketUrl, {
-        // إعدادات الاتصال الأساسية
-        autoConnect: true,
-        forceNew: true,
-        
-        // إعدادات إعادة الاتصال المحسنة
-        reconnection: true,
-        reconnectionAttempts: 5,     // عدد أقل من المحاولات
-        reconnectionDelay: 2000,     // تأخير أطول قليلاً
-        reconnectionDelayMax: 10000, // حد أقصى أطول
-        timeout: 15000,              // timeout أقصر
-        
-        // إعدادات النقل المبسطة
-        transports: ['websocket', 'polling'],
-        upgrade: true,
-        
-        // إعدادات الأمان
-        secure: window.location.protocol === 'https:',
-        withCredentials: false, // تبسيط الأمان
-        
-        // إعدادات ping/pong
-        pingTimeout: 30000,
-        pingInterval: 20000,
+              socket.current = io(socketUrl, {
+          // إعدادات الاتصال الأساسية
+          autoConnect: true,
+          forceNew: true,
+          
+          // إعدادات إعادة الاتصال المحسنة - أكثر تساهلاً
+          reconnection: true,
+          reconnectionAttempts: 999,    // محاولات لا نهائية تقريباً
+          reconnectionDelay: 1000,      // بداية سريعة
+          reconnectionDelayMax: 5000,   // حد أقصى معقول
+          timeout: 30000,               // timeout أطول
+          
+          // إعدادات النقل المبسطة
+          transports: ['websocket', 'polling'],
+          upgrade: true,
+          
+          // إعدادات الأمان
+          secure: window.location.protocol === 'https:',
+          withCredentials: false,
+          
+          // إعدادات ping/pong - أكثر تساهلاً
+          pingTimeout: 120000,  // 2 minutes
+          pingInterval: 60000,  // 1 minute
       });
       
       // معالج الاتصال المحسن
@@ -196,17 +196,20 @@ export function useChat() {
         }
       });
 
-      // معالج قطع الاتصال
-      socket.current.on('disconnect', (reason) => {
-        console.warn('🔌 تم قطع الاتصال:', reason);
-        setIsConnected(false);
-        
-        if (reason === 'io server disconnect') {
-          // الخادم قطع الاتصال، حاول الاتصال مرة أخرى
-          console.log('🔄 الخادم قطع الاتصال، محاولة إعادة الاتصال...');
-          socket.current?.connect();
-        }
-      });
+             // معالج قطع الاتصال - أكثر تساهلاً
+       socket.current.on('disconnect', (reason) => {
+         console.warn('🔌 تم قطع الاتصال:', reason);
+         setIsConnected(false);
+         
+         // محاولة إعادة الاتصال في جميع الحالات
+         console.log('🔄 محاولة إعادة الاتصال التلقائي...');
+         setTimeout(() => {
+           if (socket.current && !socket.current.connected) {
+             console.log('🔄 إعادة اتصال يدوي...');
+             socket.current.connect();
+           }
+         }, 2000); // انتظار ثانيتين ثم إعادة الاتصال
+       });
 
       // مراقبة تغيير transport
       socket.current.io.engine.on('upgrade', () => {
@@ -223,15 +226,48 @@ export function useChat() {
         setIsLoading(false);
       });
 
-      // معالجة ping/pong محسنة للحفاظ على الاتصال
-      socket.current.on('ping', (data) => {
-        const pongData = { 
-          timestamp: Date.now(), 
-          userId: user.id,
-          received: data?.timestamp 
-        };
-        socket.current?.emit('pong', pongData);
-      });
+             // معالجة ping/pong محسنة للحفاظ على الاتصال
+       socket.current.on('ping', (data) => {
+         const pongData = { 
+           timestamp: Date.now(), 
+           userId: user.id,
+           username: user.username,
+           received: data?.timestamp 
+         };
+         socket.current?.emit('pong', pongData);
+         console.log(`💓 تم الرد على ping من الخادم`);
+       });
+       
+       // معالج إضافي لمنع انقطاع الاتصال
+       socket.current.on('reconnect', (attemptNumber) => {
+         console.log(`🎉 تم إعادة الاتصال بنجاح! المحاولة رقم: ${attemptNumber}`);
+         setIsConnected(true);
+         setConnectionError(null);
+         
+         // إعادة إرسال المصادقة
+         if (socket.current && user) {
+           socket.current.emit('auth', {
+             userId: user.id,
+             username: user.username,
+             timestamp: new Date().toISOString(),
+             userAgent: navigator.userAgent
+           });
+         }
+       });
+       
+       socket.current.on('reconnect_attempt', (attemptNumber) => {
+         console.log(`🔄 محاولة إعادة الاتصال رقم: ${attemptNumber}`);
+       });
+       
+       socket.current.on('reconnecting', (attemptNumber) => {
+         console.log(`🔄 جاري إعادة الاتصال... المحاولة: ${attemptNumber}`);
+         setConnectionError('جاري إعادة الاتصال...');
+       });
+       
+       socket.current.on('reconnect_failed', () => {
+         console.error('❌ فشلت جميع محاولات إعادة الاتصال');
+         setConnectionError('فشل في إعادة الاتصال - يرجى تحديث الصفحة');
+       });
 
       socket.current.on('message', (message: WebSocketMessage) => {
         try {

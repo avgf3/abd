@@ -617,10 +617,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     transports: ['websocket', 'polling'],
     allowEIO3: true,
     
-    // إعدادات الاتصال المحسنة
-    pingTimeout: 60000,
-    pingInterval: 25000,
-    upgradeTimeout: 10000,
+    // إعدادات الاتصال المحسنة - أكثر تساهلاً
+    pingTimeout: 120000,  // 2 minutes timeout
+    pingInterval: 60000,  // ping every minute
+    upgradeTimeout: 30000, // 30 seconds for upgrade
     allowUpgrades: true,
     
     // إعدادات الأمان
@@ -1053,22 +1053,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     };
     
-    // heartbeat محسن للحفاظ على الاتصال - أقل تكراراً
+    // heartbeat محسن للحفاظ على الاتصال - تساهل كامل
     const startHeartbeat = () => {
       if (heartbeatInterval) clearInterval(heartbeatInterval);
       
       heartbeatInterval = setInterval(() => {
-        if (socket.connected && isAuthenticated) {
-          socket.emit('ping', { 
-            timestamp: Date.now(),
-            userId: socket.userId,
-            username: socket.username
-          });
-        } else if (!socket.connected) {
-          console.log(`🔌 Socket ${socket.id} غير متصل، تنظيف heartbeat`);
-          cleanup();
+        if (socket.connected) {
+          if (isAuthenticated && socket.userId) {
+            socket.emit('ping', { 
+              timestamp: Date.now(),
+              userId: socket.userId,
+              username: socket.username
+            });
+            console.log(`💓 Heartbeat إلى ${socket.username || socket.userId}`);
+          }
         }
-      }, 45000); // 45 seconds instead of 25 seconds
+        // لا نقطع الاتصال أبداً من heartbeat
+      }, 90000); // كل دقيقة ونصف
     };
 
     // معالج المصادقة المحسن
@@ -1701,44 +1702,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     io.emit(message.type || 'broadcast', message.data || message);
   }
 
-  // فحص دوري لتنظيف الجلسات المنتهية الصلاحية - أقل تكراراً وأكثر تساهلاً
-  const sessionCleanupInterval = setInterval(async () => {
-    try {
-      const connectedSockets = await io.fetchSockets();
-      console.log(`🧹 فحص ${connectedSockets.length} جلسة متصلة...`);
-      
-      for (const socket of connectedSockets) {
-        const customSocket = socket as any;
-        
-        // فقط قطع الاتصال للجلسات غير المصادقة القديمة (أكثر من 5 دقائق)
-        if (!customSocket.userId && !customSocket.isAuthenticated) {
-          const socketAge = Date.now() - (customSocket.handshake?.time || Date.now());
-          if (socketAge > 300000) { // 5 minutes
-            console.log(`🧹 تنظيف جلسة غير مصادقة قديمة ${socket.id}`);
-            socket.disconnect(true);
-          }
-        }
-        
-        // للمستخدمين المصادقين، كن أكثر تساهلاً
-        if (customSocket.userId && customSocket.isAuthenticated) {
-          try {
-            const user = await storage.getUser(customSocket.userId);
-            // فقط قطع الاتصال إذا كان المستخدم محجوب أو مطرود
-            if (user && (user.isBanned || user.isBlocked)) {
-              console.log(`🧹 تنظيف جلسة مستخدم محجوب/مطرود ${customSocket.userId}`);
-              socket.disconnect(true);
-            }
-            // لا نقطع الاتصال بناءً على isOnline لأنه قد يكون خطأ مؤقت
-          } catch (error) {
-            console.error(`خطأ في فحص الجلسة للمستخدم ${customSocket.userId}:`, error);
-            // لا نقطع الاتصال في حالة الخطأ
-          }
-        }
-      }
-    } catch (error) {
-      console.error('خطأ في تنظيف الجلسات:', error);
-    }
-  }, 30000); // كل 30 ثانية
+    // تعطيل تنظيف الجلسات تماماً - المستخدم يجب أن يبقى متصل
+  // const sessionCleanupInterval = setInterval(() => {
+  //   // تم تعطيل تنظيف الجلسات للحفاظ على الاتصال
+  // }, 300000); // كل 5 دقائق فقط
 
   // بدء التنظيف الدوري لقاعدة البيانات
   const dbCleanupInterval = databaseCleanup.startPeriodicCleanup(6); // كل 6 ساعات
