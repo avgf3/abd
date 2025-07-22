@@ -23,7 +23,7 @@ import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
 import StealthModeToggle from './StealthModeToggle';
 import WelcomeNotification from './WelcomeNotification';
-import LanguageSwitcher, { LanguageProvider } from '@/components/ui/LanguageSwitcher';
+import WallPanel from './WallPanel';
 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -52,6 +52,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showReportsLog, setShowReportsLog] = useState(false);
   const [showActiveActions, setShowActiveActions] = useState(false);
   const [showPromotePanel, setShowPromotePanel] = useState(false);
+  const [showWallPanel, setShowWallPanel] = useState(false);
 
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;

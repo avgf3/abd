@@ -110,3 +110,36 @@ export interface Notification {
   timestamp: Date;
   isRead?: boolean;
 }
+
+// أنواع بيانات الحوائط
+export interface WallPost {
+  id: number;
+  userId: number;
+  username: string;
+  userRole: string;
+  content: string;
+  imageUrl?: string;
+  type: 'friends' | 'public';
+  timestamp: Date;
+  reactions: WallReaction[];
+  totalLikes: number;
+  totalDislikes: number;
+  totalHearts: number;
+  userProfileImage?: string;
+  usernameColor?: string;
+}
+
+export interface WallReaction {
+  id: number;
+  postId: number;
+  userId: number;
+  username: string;
+  type: 'like' | 'dislike' | 'heart';
+  timestamp: Date;
+}
+
+export interface CreateWallPostData {
+  content: string;
+  imageFile?: File;
+  type: 'friends' | 'public';
+}
