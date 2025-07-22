@@ -23,7 +23,7 @@ import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
 import StealthModeToggle from './StealthModeToggle';
 import WelcomeNotification from './WelcomeNotification';
-import WallPanel from './WallPanel';
+import WallSidebar from './WallSidebar';
 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -52,7 +52,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showReportsLog, setShowReportsLog] = useState(false);
   const [showActiveActions, setShowActiveActions] = useState(false);
   const [showPromotePanel, setShowPromotePanel] = useState(false);
-  const [showWallPanel, setShowWallPanel] = useState(false);
+  const [showWall, setShowWall] = useState(false);
 
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
@@ -308,13 +308,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             إعدادات
           </Button>
 
-          {/* زر الحوائط */}
+          {/* زر الحوائط/المتصلين */}
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
-            onClick={() => setShowWallPanel(true)}
+            onClick={() => setShowWall(!showWall)}
           >
-            <span>🏠</span>
-            الحوائط
+            <span>{showWall ? '👥' : '🏠'}</span>
+            {showWall ? 'المتصلين' : 'الحوائط'}
           </Button>
 
         </div>
@@ -322,11 +322,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       
       {/* Main Content */}
       <main className="flex flex-1 overflow-hidden">
-        <UserSidebar 
-          users={chat.onlineUsers}
-          onUserClick={handleUserClick}
-          currentUser={chat.currentUser}
-        />
+        {showWall ? (
+          <WallSidebar currentUser={chat.currentUser} />
+        ) : (
+          <UserSidebar 
+            users={chat.onlineUsers}
+            onUserClick={handleUserClick}
+            currentUser={chat.currentUser}
+          />
+        )}
         <MessageArea 
           messages={chat.publicMessages}
           currentUser={chat.currentUser}
@@ -544,15 +548,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* إشعار الترحيب */}
       {chat.currentUser && <WelcomeNotification user={chat.currentUser} />}
-
-      {/* لوحة الحوائط */}
-      {chat.currentUser && (
-        <WallPanel 
-          isOpen={showWallPanel}
-          onClose={() => setShowWallPanel(false)}
-          currentUser={chat.currentUser}
-        />
-      )}
 
     </div>
   );
