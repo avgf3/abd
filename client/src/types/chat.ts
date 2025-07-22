@@ -68,6 +68,7 @@ export interface WebSocketMessage {
   // خصائص إضافية للوظائف المختلفة
   isHidden?: boolean; // لرؤية المستخدم
   color?: string; // لتغيير لون اسم المستخدم
+  usernameColor?: string; // لون اسم المستخدم الجديد
   userTheme?: string; // لموضوع المستخدم
   profileEffect?: string; // لتأثير البروفايل
   targetUserId?: number; // للإجراءات المستهدفة
