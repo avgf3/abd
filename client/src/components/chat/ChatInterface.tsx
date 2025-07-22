@@ -42,7 +42,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAdminReports, setShowAdminReports] = useState(false);
-  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls'>('hidden'); // إخفاء المستخدمين افتراضياً
+  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls'>('users'); // إظهار المستخدمين افتراضياً
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
