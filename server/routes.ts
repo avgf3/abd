@@ -997,6 +997,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const status = await moderationSystem.checkUserStatus(user.id);
             return {
               ...user,
+              // تحويل صحيح للـ boolean من SQLite integer
+              isHidden: user.isHidden === 1 || user.isHidden === true,
+              isOnline: user.isOnline === 1 || user.isOnline === true,
               isMuted: status.isMuted,
               isBlocked: status.isBlocked,
               isBanned: status.isBanned
@@ -1260,6 +1263,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const status = await moderationSystem.checkUserStatus(user.id);
                 return {
                   ...user,
+                  // تحويل صحيح للـ boolean من SQLite integer
+                  isHidden: user.isHidden === 1 || user.isHidden === true,
+                  isOnline: user.isOnline === 1 || user.isOnline === true,
                   isMuted: status.isMuted,
                   isBlocked: status.isBlocked,
                   isBanned: status.isBanned
@@ -1267,7 +1273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               })
             );
             
-            socket.emit('onlineUsers', { users: usersWithStatus });
+            socket.emit('message', { type: 'onlineUsers', users: usersWithStatus });
             break;
 
           case 'publicMessage':
@@ -1497,7 +1503,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // إرسال قائمة محدثة للمستخدمين المتصلين
           const onlineUsers = await storage.getOnlineUsers();
-          io.emit('onlineUsers', { users: onlineUsers });
+          io.emit('message', { type: 'onlineUsers', users: onlineUsers });
           
           // تنظيف متغيرات الجلسة
           socket.userId = undefined;

@@ -204,7 +204,7 @@ export function useChat() {
               if (message.users) {
                 // فلترة المستخدمين المتجاهلين والمخفيين من القائمة  
                 const filteredUsers = message.users.filter((chatUser: ChatUser) => 
-                  !ignoredUsers.has(chatUser.id) && !chatUser.isHidden
+                  !ignoredUsers.has(chatUser.id) && !(chatUser.isHidden === true || chatUser.isHidden === 1)
                 );
                 setOnlineUsers(filteredUsers);
               }
