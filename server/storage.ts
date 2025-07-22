@@ -510,9 +510,11 @@ export class MixedStorage implements IStorage {
   }
 
   async setUserOnlineStatus(id: number, isOnline: boolean): Promise<void> {
+    console.log(`🔄 ضبط حالة المستخدم ${id}: ${isOnline ? 'متصل' : 'غير متصل'}`);
     // Check memory first (guests)
     const memUser = this.users.get(id);
     if (memUser) {
+      console.log(`✅ تم العثور على المستخدم ${memUser.username} في الذاكرة وضبط حالته`);
       memUser.isOnline = isOnline;
       memUser.lastSeen = new Date();
       this.users.set(id, memUser);
@@ -522,6 +524,7 @@ export class MixedStorage implements IStorage {
     // Check database (members) - Fix SQLite binding issues
     if (db) {
       try {
+        console.log(`🔄 محاولة تحديث المستخدم ${id} في قاعدة البيانات`);
         await db
           .update(users)
           .set({ 
@@ -529,6 +532,7 @@ export class MixedStorage implements IStorage {
             lastSeen: new Date().toISOString()  // Convert to ISO string for SQLite
           } as any)
           .where(eq(users.id, id));
+        console.log(`✅ تم تحديث المستخدم ${id} في قاعدة البيانات بنجاح`);
       } catch (error) {
         console.error('Error updating user online status:', error);
       }
@@ -537,11 +541,13 @@ export class MixedStorage implements IStorage {
 
   async getOnlineUsers(): Promise<User[]> {
     const memUsers = Array.from(this.users.values()).filter(user => user.isOnline && !user.isHidden);
+    console.log(`🔍 مستخدمين الذاكرة المتصلين: ${memUsers.length}`, memUsers.map(u => u.username));
     
     // Get online members from database (excluding hidden)
     if (db) {
       try {
         const dbUsers = await db.select().from(users).where(eq(users.isOnline, 1)); // Use 1 instead of true for SQLite
+        console.log(`🔍 مستخدمين قاعدة البيانات المتصلين: ${dbUsers.length}`, dbUsers.map(u => u.username));
         const visibleDbUsers = dbUsers.filter(user => !user.isHidden);
         
         // Convert SQLite integer booleans to JavaScript booleans for consistency
@@ -560,12 +566,16 @@ export class MixedStorage implements IStorage {
           ignoredUsers: user.ignoredUsers ? JSON.parse(user.ignoredUsers) : []
         }));
         
-        return [...memUsers, ...convertedDbUsers];
+        const allUsers = [...memUsers, ...convertedDbUsers];
+        console.log(`📊 إجمالي المستخدمين المتصلين: ${allUsers.length}`, allUsers.map(u => u.username));
+        return allUsers;
       } catch (error) {
         console.error('Error getting online users from database:', error);
+        console.log(`📊 إرجاع مستخدمي الذاكرة فقط: ${memUsers.length}`);
         return memUsers;
       }
     }
+    console.log(`📊 إرجاع مستخدمي الذاكرة فقط (لا توجد قاعدة بيانات): ${memUsers.length}`);
     return memUsers;
   }
 
