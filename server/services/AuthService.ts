@@ -55,11 +55,13 @@ export class AuthService {
           type: 'welcome_back',
           title: '🎉 أهلاً بعودتك',
           message: `مرحباً بك مرة أخرى ${user.username}! نسعد بعودتك إلى المنصة.`,
-          data: { loginTime: new Date().toISOString() }
+
         });
       }
 
-      return { success: true, user };
+      // Add missing profileEffect property for compatibility
+      const userWithEffect = { ...user, profileEffect: user.profileEffect || 'none' };
+      return { success: true, user: userWithEffect };
 
     } catch (error) {
       console.error('خطأ في تسجيل الدخول:', error);
@@ -101,10 +103,12 @@ export class AuthService {
         type: 'welcome',
         title: '🌟 مرحباً بك في منصة الدردشة العربية',
         message: `أهلاً وسهلاً ${newUser.username}! نتمنى لك تجربة رائعة معنا.`,
-        data: { registrationTime: new Date().toISOString() }
+
       });
 
-      return { success: true, user: newUser };
+      // Add missing profileEffect property for compatibility
+      const userWithEffect = { ...newUser, profileEffect: newUser.profileEffect || 'none' };
+      return { success: true, user: userWithEffect };
 
     } catch (error) {
       console.error('خطأ في التسجيل:', error);

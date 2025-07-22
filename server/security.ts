@@ -57,7 +57,8 @@ export function checkIPSecurity(req: Request, res: Response, next: NextFunction)
   
   // Check if IP is blocked
   if (blockedIPs.has(clientIp)) {
-    return res.status(403).json({ error: 'عذراً، تم حظر هذا العنوان' });
+    res.status(403).json({ error: 'عذراً، تم حظر هذا العنوان' });
+    return;
   }
   
   // Add basic security checks
