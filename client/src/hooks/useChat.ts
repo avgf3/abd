@@ -94,6 +94,7 @@ export function useChat() {
     
     return true;
   };
+  
   const networkOptimizer = useRef(new NetworkOptimizer());
   const lastMessageTime = useRef<number>(0);
   
@@ -101,17 +102,65 @@ export function useChat() {
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const reconnectAttempts = useRef<number>(0);
-  const maxReconnectAttempts = 5;
+  const maxReconnectAttempts = 10; // زيادة عدد محاولات الإعادة
+  const isReconnecting = useRef<boolean>(false);
+  const authSent = useRef<boolean>(false);
+  const userListUpdateTimeout = useRef<NodeJS.Timeout>();
+
+  // دالة لطلب تحديث قائمة المستخدمين المتصلين
+  const requestOnlineUsersUpdate = useCallback(() => {
+    if (socket.current && socket.current.connected && currentUser) {
+      console.log('🔄 طلب تحديث قائمة المستخدمين المتصلين');
+      socket.current.emit('requestOnlineUsers');
+    }
+  }, [currentUser]);
+
+  // دالة محسنة لتحديث قائمة المستخدمين المتصلين
+  const updateOnlineUsersList = useCallback((users: ChatUser[]) => {
+    if (!Array.isArray(users)) {
+      console.warn('⚠️ قائمة المستخدمين غير صالحة:', users);
+      return;
+    }
+
+    // تنظيف timeout سابق
+    if (userListUpdateTimeout.current) {
+      clearTimeout(userListUpdateTimeout.current);
+    }
+
+    // تأخير بسيط لتجنب التحديثات المتكررة
+    userListUpdateTimeout.current = setTimeout(() => {
+      try {
+        // فلترة المستخدمين المتجاهلين والمخفيين
+        const validUsers = users.filter((chatUser: ChatUser) => {
+          // التأكد من صحة بيانات المستخدم
+          if (!chatUser || !chatUser.id || !chatUser.username) {
+            console.warn('⚠️ بيانات مستخدم غير صالحة:', chatUser);
+            return false;
+          }
+          
+          // فلترة المستخدمين المتجاهلين والمخفيين
+          return !ignoredUsers.has(chatUser.id) && !chatUser.isHidden && chatUser.isOnline;
+        });
+
+        console.log(`✅ تحديث قائمة المستخدمين: ${validUsers.length} مستخدم متصل`);
+        setOnlineUsers(validUsers);
+      } catch (error) {
+        console.error('❌ خطأ في تحديث قائمة المستخدمين:', error);
+      }
+    }, 100);
+  }, [ignoredUsers]);
 
   const connect = useCallback((user: ChatUser) => {
     try {
       setCurrentUser(user);
       setConnectionError(null);
+      authSent.current = false;
+      isReconnecting.current = false;
       
-      // إنشاء اتصال Socket.IO - إعدادات محسنة للإنتاج
+      // إنشاء اتصال Socket.IO - إعدادات محسنة للاستقرار
       const getSocketUrl = () => {
         if (process.env.NODE_ENV === 'production') {
-          return 'https://abd-gmva.onrender.com'; // استخدم HTTPS دائماً في الإنتاج
+          return 'https://abd-gmva.onrender.com';
         }
         
         // للتطوير المحلي
@@ -120,50 +169,53 @@ export function useChat() {
       };
 
       const socketUrl = getSocketUrl();
-      console.log('محاولة الاتصال بـ Socket.IO:', socketUrl);
-      console.log('🔗 Socket URL:', socketUrl);
-      console.log('🌐 Window Location:', window.location.origin);
-      console.log('📦 Environment:', process.env.NODE_ENV);
+      console.log('🔗 محاولة الاتصال بـ Socket.IO:', socketUrl);
       
       // إغلاق الاتصال الموجود إن وجد
       if (socket.current) {
+        socket.current.removeAllListeners();
         socket.current.disconnect();
       }
       
       socket.current = io(socketUrl, {
         autoConnect: true,
         reconnection: true,
-        reconnectionAttempts: 15,  // المزيد من المحاولات
-        reconnectionDelay: 2000,   // انتظار أطول بين المحاولات
-        reconnectionDelayMax: 10000, // حد أقصى أعلى
-        timeout: 30000,           // timeout أطول للاتصال الأولي
+        reconnectionAttempts: 15,
+        reconnectionDelay: 1000,   // بدء سريع
+        reconnectionDelayMax: 5000, // حد أقصى أقل
+        timeout: 20000,            // timeout أقصر
         forceNew: true,
-        // إعدادات محسنة للإنتاج - polling أولاً
         transports: process.env.NODE_ENV === 'production' 
-          ? ['polling', 'websocket']  // polling أولاً في الإنتاج
-          : ['websocket', 'polling'], // websocket أولاً في التطوير
+          ? ['polling', 'websocket']
+          : ['websocket', 'polling'],
         upgrade: true,
         rememberUpgrade: false,
-        // إعدادات أمان محسنة
         secure: process.env.NODE_ENV === 'production',
-        rejectUnauthorized: process.env.NODE_ENV === 'production', // آمن في الإنتاج
-        // إعدادات إضافية للاستقرار
+        rejectUnauthorized: process.env.NODE_ENV === 'production',
         closeOnBeforeunload: false,
-        withCredentials: true
+        withCredentials: true,
+        // إعدادات محسنة للاستقرار
+        pingInterval: 25000,
+        pingTimeout: 5000
       });
       
       socket.current.on('connect', () => {
-        console.log('📡 متصل بـ Socket.IO');
+        console.log('✅ متصل بـ Socket.IO');
         console.log(`🚀 Transport: ${socket.current?.io.engine.transport.name}`);
         setIsConnected(true);
         setConnectionError(null);
         reconnectAttempts.current = 0;
+        isReconnecting.current = false;
         
-        // إرسال authentication
-        socket.current?.emit('auth', {
-          userId: user.id,
-          username: user.username,
-        });
+        // إرسال authentication مرة واحدة فقط
+        if (!authSent.current) {
+          console.log('🔐 إرسال بيانات المصادقة');
+          authSent.current = true;
+          socket.current?.emit('auth', {
+            userId: user.id,
+            username: user.username,
+          });
+        }
       });
 
       // مراقبة تغيير transport
@@ -172,41 +224,35 @@ export function useChat() {
       });
 
       socket.current.io.engine.on('upgradeError', (error) => {
-        console.warn('⚠️ فشل ترقية WebSocket، سيتم الاستمرار مع polling:', error.message);
-      });
-
-      // استقبال رسالة الترحيب من الخادم
-      socket.current.on('connected', (data) => {
-        console.log('✅ تأكيد الاتصال من الخادم:', data);
+        console.warn('⚠️ فشل ترقية WebSocket، الاستمرار مع polling:', error.message);
       });
 
       // معالجة ping/pong للحفاظ على الاتصال
-      socket.current.on('ping', (data) => {
+      socket.current.on('ping', () => {
         socket.current?.emit('pong', { timestamp: Date.now() });
       });
 
       socket.current.on('message', (message: WebSocketMessage) => {
         try {
-          console.log('🔔 رسالة واردة:', message.type);
+          console.log('📨 رسالة واردة:', message.type);
           
           switch (message.type) {
             case 'error':
-              // عرض رسالة خطأ من نظام مكافحة السبام
-              console.error('خطأ من الخادم:', message.message);
+              console.error('❌ خطأ من الخادم:', message.message);
+              if (message.action === 'blocked' || message.action === 'banned') {
+                setConnectionError(typeof message.message === 'string' ? message.message : 'تم منعك من الدردشة');
+                disconnect();
+              }
               break;
               
             case 'warning':
-              // عرض تحذير من نظام مكافحة السبام
-              console.warn('تحذير:', message.message);
+              console.warn('⚠️ تحذير:', message.message);
               break;
               
             case 'onlineUsers':
               if (message.users) {
-                // فلترة المستخدمين المتجاهلين والمخفيين من القائمة  
-                const filteredUsers = message.users.filter((chatUser: ChatUser) => 
-                  !ignoredUsers.has(chatUser.id) && !chatUser.isHidden
-                );
-                setOnlineUsers(filteredUsers);
+                console.log(`👥 تحديث قائمة المستخدمين: ${message.users.length} مستخدم`);
+                updateOnlineUsersList(message.users);
               }
               break;
               
@@ -215,15 +261,10 @@ export function useChat() {
               if (message.userId && message.isHidden !== undefined) {
                 setOnlineUsers(prev => {
                   if (message.isHidden) {
-                    // إزالة المستخدم من القائمة إذا أصبح مخفي
                     return prev.filter(user => user.id !== message.userId);
                   } else {
-                    // إضافة المستخدم للقائمة إذا أصبح ظاهر (إذا لم يكن موجود بالفعل)
-                    const exists = prev.some(user => user.id === message.userId);
-                    if (!exists) {
-                      // طلب تحديث قائمة المستخدمين من الخادم
-                      socket.current?.emit('requestOnlineUsers');
-                    }
+                    // طلب تحديث شامل للقائمة
+                    requestOnlineUsersUpdate();
                     return prev;
                   }
                 });
@@ -232,16 +273,13 @@ export function useChat() {
               
             case 'newMessage':
               if (message.message && typeof message.message === 'object' && !message.message.isPrivate) {
-                // فحص صحة الرسالة أولاً
                 if (!isValidMessage(message.message as ChatMessage)) {
-                  console.warn('رسالة مرفوضة من الخادم:', message.message);
+                  console.warn('⚠️ رسالة مرفوضة من الخادم:', message.message);
                   break;
                 }
                 
-                // فحص إذا كان المرسل مُتجاهل
                 if (!ignoredUsers.has(message.message.senderId)) {
                   setPublicMessages(prev => [...prev, message.message as ChatMessage]);
-                  // Play notification sound for new public messages from others
                   if (message.message.senderId !== user.id) {
                     playNotificationSound();
                   }
@@ -251,9 +289,8 @@ export function useChat() {
               
             case 'privateMessage':
               if (message.message && typeof message.message === 'object' && message.message.isPrivate) {
-                // فحص صحة الرسالة أولاً
                 if (!isValidMessage(message.message as ChatMessage)) {
-                  console.warn('رسالة خاصة مرفوضة من الخادم:', message.message);
+                  console.warn('⚠️ رسالة خاصة مرفوضة من الخادم:', message.message);
                   break;
                 }
                 
@@ -261,23 +298,19 @@ export function useChat() {
                   ? message.message.receiverId! 
                   : message.message.senderId;
                 
-                // فحص إذا كان المرسل مُتجاهل - لا تظهر رسائله الخاصة
                 if (!ignoredUsers.has(message.message.senderId)) {
                   setPrivateConversations(prev => ({
                     ...prev,
                     [otherUserId]: [...(prev[otherUserId] || []), message.message as ChatMessage]
                   }));
                   
-                  // Play notification sound for new private messages from others
                   if (message.message.senderId !== user.id) {
                     playNotificationSound();
                     
-                    // تعيين المرسل لإظهار التنبيه
                     if ((message.message as ChatMessage).sender) {
                       setNewMessageSender((message.message as ChatMessage).sender!);
                     }
                     
-                    // إشعار مرئي في المتصفح
                     if ('Notification' in window && Notification.permission === 'granted') {
                       new Notification('رسالة خاصة جديدة 📱', {
                         body: `${(message.message as ChatMessage).sender?.username}: ${(message.message as ChatMessage).content.slice(0, 50)}...`,
@@ -290,7 +323,8 @@ export function useChat() {
               break;
               
             case 'userJoined':
-              if (message.user) {
+              if (message.user && message.user.id !== user.id) {
+                console.log(`👋 انضم ${message.user.username}`);
                 setOnlineUsers(prev => {
                   const exists = prev.find(u => u.id === message.user!.id);
                   if (exists) return prev;
@@ -300,13 +334,13 @@ export function useChat() {
               break;
               
             case 'userLeft':
-              if (message.userId) {
+              if (message.userId && message.userId !== user.id) {
+                console.log(`👋 غادر المستخدم ${message.userId}`);
                 setOnlineUsers(prev => prev.filter(u => u.id !== message.userId));
               }
               break;
               
             case 'usernameColorChanged':
-              // تحديث لون اسم المستخدم في الوقت الفعلي
               if (message.userId && message.color) {
                 setOnlineUsers(prev => 
                   prev.map(user => 
@@ -316,7 +350,6 @@ export function useChat() {
                   )
                 );
                 
-                // تحديث لون المستخدم الحالي إذا كان هو من غير اللون
                 if (currentUser && currentUser.id === message.userId) {
                   setCurrentUser(prev => prev ? { ...prev, usernameColor: message.color } : prev);
                 }
@@ -324,7 +357,6 @@ export function useChat() {
               break;
               
             case 'profileEffectChanged':
-              // تحديث تأثير البروفايل ولون الاسم معاً
               if (message.userId) {
                 setOnlineUsers(prev => 
                   prev.map(user => 
@@ -338,7 +370,6 @@ export function useChat() {
                   )
                 );
                 
-                // تحديث المستخدم الحالي
                 if (currentUser && currentUser.id === message.userId) {
                   setCurrentUser(prev => prev ? { 
                     ...prev, 
@@ -346,25 +377,10 @@ export function useChat() {
                     usernameColor: message.usernameColor 
                   } : prev);
                 }
-                
-                // تحديث الرسائل بلون الاسم الجديد
-                setMessages(prev => prev.map(msg => 
-                  msg.sender && msg.sender.id === message.userId
-                    ? { 
-                        ...msg, 
-                        sender: { 
-                          ...msg.sender, 
-                          profileEffect: message.profileEffect, 
-                          usernameColor: message.usernameColor 
-                        } 
-                      }
-                    : msg
-                ));
               }
               break;
 
             case 'theme_update':
-              // تحديث ثيم المستخدم في الوقت الفعلي
               if (message.userId && message.userTheme) {
                 setOnlineUsers(prev => 
                   prev.map(user => 
@@ -374,7 +390,6 @@ export function useChat() {
                   )
                 );
                 
-                // تحديث ثيم المستخدم الحالي إذا كان هو من غير الثيم
                 if (currentUser && currentUser.id === message.userId) {
                   setCurrentUser(prev => prev ? { ...prev, userTheme: message.userTheme } : prev);
                 }
@@ -382,9 +397,7 @@ export function useChat() {
               break;
               
             case 'moderationAction':
-              // التعامل مع إجراءات الإدارة
               if (message.targetUserId === user.id) {
-                // المستخدم الحالي تم التأثير عليه
                 switch (message.action) {
                   case 'muted':
                     console.warn('⚠️ تم كتمك من الدردشة العامة');
@@ -398,7 +411,6 @@ export function useChat() {
                 }
               }
               
-              // تحديث قائمة المستخدمين المتصلين لعكس التغييرات
               setOnlineUsers(prev => 
                 prev.map(u => 
                   u.id === message.targetUserId 
@@ -425,7 +437,6 @@ export function useChat() {
                   return newSet;
                 });
                 
-                // Clear typing indicator after 3 seconds
                 if (message.isTyping) {
                   setTimeout(() => {
                     setTypingUsers(prev => {
@@ -439,7 +450,6 @@ export function useChat() {
               break;
               
             case 'notification':
-              // إضافة إشعار للمستخدم فقط
               if (message.targetUserId === user.id) {
                 setNotifications(prev => [...prev, {
                   id: Date.now(),
@@ -454,7 +464,6 @@ export function useChat() {
               break;
 
             case 'systemMessage':
-              // إضافة رسالة النظام للدردشة العامة
               const systemMessage: ChatMessage = {
                 id: Date.now(),
                 senderId: 0,
@@ -466,19 +475,33 @@ export function useChat() {
                   id: 0,
                   username: 'النظام',
                   userType: 'admin',
-                  profileImage: null,
-                  isOnline: true
+                  role: 'admin',
+                  profileBackgroundColor: '#3c0d0d',
+                  isOnline: true,
+                  isHidden: false,
+                  lastSeen: null,
+                  joinDate: new Date(),
+                  createdAt: new Date(),
+                  isMuted: false,
+                  muteExpiry: null,
+                  isBanned: false,
+                  banExpiry: null,
+                  isBlocked: false,
+                  ignoredUsers: [],
+                  usernameColor: '#dc2626',
+                  userTheme: 'default',
+                  profileEffect: '',
+                  points: 0,
+                  level: 1,
+                  totalPoints: 0,
+                  levelProgress: 0
                 }
               };
               
               setPublicMessages(prev => [...prev, systemMessage]);
               
-              // إذا تم تطبيق إجراء إداري على المستخدم الحالي
               if (message.targetUserId === user.id) {
                 if (message.action === 'muted') {
-                  console.log('🔇 تم كتمك من الدردشة العامة');
-                  
-                  // إضافة إشعار إلى تبويب الإشعارات فقط
                   setNotifications(prev => [...prev, {
                     id: Date.now(),
                     type: 'system',
@@ -487,7 +510,6 @@ export function useChat() {
                     timestamp: new Date()
                   }]);
                 } else if (message.action === 'unmuted') {
-                  console.log('🔊 تم إلغاء كتمك من الدردشة');
                   if ('Notification' in window && Notification.permission === 'granted') {
                     new Notification('تم إلغاء الكتم 🔊', {
                       body: 'يمكنك الآن إرسال رسائل في الدردشة العامة',
@@ -495,10 +517,8 @@ export function useChat() {
                     });
                   }
                 } else if (message.action === 'banned') {
-                  console.log('⏰ تم طردك من الدردشة لمدة 15 دقيقة');
                   setKickNotification({ show: true, duration: message.duration || 15 });
                 } else if (message.action === 'blocked') {
-                  console.log('🚫 تم حجبك نهائياً من الموقع');
                   setBlockNotification({ show: true, reason: message.reason || 'مخالفة قوانين الدردشة' });
                   setTimeout(() => {
                     window.location.reload();
@@ -526,11 +546,9 @@ export function useChat() {
               break;
               
             case 'friendRequest':
-              // تنبيه طلب صداقة جديد
               if (message.targetUserId === user.id) {
                 console.log('📨 طلب صداقة جديد من:', message.senderUsername);
                 
-                // إشعار مرئي في المتصفح
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification('طلب صداقة جديد 👥', {
                     body: `${message.senderUsername} يريد إضافتك كصديق`,
@@ -538,11 +556,8 @@ export function useChat() {
                   });
                 }
                 
-                // صوت تنبيه
                 playNotificationSound();
                 
-                // تحديث فوري للإشعارات والأصدقاء
-                // هذا سيؤدي لإعادة جلب البيانات من الخادم فوراً
                 setTimeout(() => {
                   window.dispatchEvent(new CustomEvent('friendRequestReceived', {
                     detail: { senderId: message.senderId, senderName: message.senderUsername }
@@ -552,11 +567,9 @@ export function useChat() {
               break;
               
             case 'friendRequestAccepted':
-              // إشعار قبول طلب الصداقة
               if (message.targetUserId === user.id) {
                 console.log('✅ تم قبول طلب صداقتك من:', message.acceptedBy);
                 
-                // إشعار مرئي
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification('تم قبول طلب الصداقة ✅', {
                     body: `${message.acceptedBy} قبل طلب صداقتك`,
@@ -564,10 +577,8 @@ export function useChat() {
                   });
                 }
                 
-                // صوت تنبيه
                 playNotificationSound();
                 
-                // تحديث فوري لقائمة الأصدقاء
                 setTimeout(() => {
                   window.dispatchEvent(new CustomEvent('friendRequestAccepted', {
                     detail: { friendId: message.friendId, friendName: message.acceptedBy }
@@ -580,7 +591,6 @@ export function useChat() {
               if (message.newRole && user.id) {
                 console.log('🎉 تمت ترقيتك:', message.message);
                 
-                // إشعار مرئي
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification('ترقية جديدة! 🎉', {
                     body: typeof message.message === 'string' ? message.message : message.message?.content || 'ترقية جديدة',
@@ -588,10 +598,8 @@ export function useChat() {
                   });
                 }
                 
-                // صوت تنبيه
                 playNotificationSound();
                 
-                // إضافة إشعار للواجهة
                 setNotifications(prev => [...prev, {
                   id: Date.now(),
                   type: 'system',
@@ -603,7 +611,6 @@ export function useChat() {
               break;
               
             case 'levelUp':
-              // إشعار ترقية المستوى
               if (message.oldLevel && message.newLevel && message.levelInfo) {
                 console.log('🎉 ترقية مستوى!', message);
                 
@@ -614,7 +621,6 @@ export function useChat() {
                   levelInfo: message.levelInfo
                 });
                 
-                // إشعار مرئي في المتصفح
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification('ترقية مستوى! 🎉', {
                     body: `وصلت للمستوى ${message.newLevel}: ${message.levelInfo?.title}`,
@@ -627,7 +633,6 @@ export function useChat() {
               break;
               
             case 'achievement':
-              // إشعار إنجاز جديد
               if (message.message) {
                 console.log('🏆 إنجاز جديد!', message.message);
                 
@@ -636,7 +641,6 @@ export function useChat() {
                   message: typeof message.message === 'string' ? message.message : 'إنجاز جديد!'
                 });
                 
-                // إشعار مرئي في المتصفح
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification('إنجاز جديد! 🏆', {
                     body: typeof message.message === 'string' ? message.message : 'إنجاز جديد!',
@@ -649,7 +653,6 @@ export function useChat() {
               break;
               
             case 'dailyBonus':
-              // إشعار المكافأة اليومية
               if (message.points) {
                 console.log('🎁 مكافأة يومية!', message.points);
                 
@@ -658,7 +661,6 @@ export function useChat() {
                   points: message.points
                 });
                 
-                // إشعار مرئي في المتصفح
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification('مكافأة يومية! 🎁', {
                     body: `حصلت على ${message.points} نقطة!`,
@@ -671,11 +673,9 @@ export function useChat() {
               break;
               
             case 'pointsAdded':
-              // إشعار إضافة نقاط من الإدارة
               if (message.points && message.message) {
                 console.log('💎 نقاط من الإدارة!', message);
                 
-                // إضافة إشعار للواجهة
                 setNotifications(prev => [...prev, {
                   id: Date.now(),
                   type: 'system',
@@ -684,7 +684,6 @@ export function useChat() {
                   timestamp: new Date()
                 }]);
                 
-                // إشعار مرئي في المتصفح
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification('نقاط من الإدارة! 💎', {
                     body: typeof message.message === 'string' ? message.message : 'حصلت على نقاط',
@@ -697,11 +696,9 @@ export function useChat() {
               break;
               
             case 'pointsReceived':
-              // إشعار استلام نقاط من مستخدم آخر
               if (message.points && message.senderName) {
                 console.log('🎁 استلام نقاط!', message);
                 
-                // إضافة إشعار للواجهة
                 setNotifications(prev => [...prev, {
                   id: Date.now(),
                   type: 'system',
@@ -710,7 +707,6 @@ export function useChat() {
                   timestamp: new Date()
                 }]);
                 
-                // إشعار مرئي في المتصفح
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification('نقاط جديدة! 🎁', {
                     body: `تم استلام ${message.points} نقطة من ${message.senderName}`,
@@ -723,9 +719,7 @@ export function useChat() {
               break;
               
             case 'pointsTransfer':
-              // إشعار في المحادثة العامة لإرسال النقاط
               if (message.points && message.senderName && message.receiverName) {
-                // إضافة رسالة نظام في المحادثة العامة
                 const systemMessage: ChatMessage = {
                   id: Date.now(),
                   senderId: 0,
@@ -752,6 +746,7 @@ export function useChat() {
                     ignoredUsers: [],
                     usernameColor: '#dc2626',
                     userTheme: 'default',
+                    profileEffect: '',
                     points: 0,
                     level: 1,
                     totalPoints: 0,
@@ -762,7 +757,7 @@ export function useChat() {
                 setPublicMessages(prev => {
                   const filtered = prev.filter(isValidMessage);
                   const newMessages = [...filtered, systemMessage];
-                  return newMessages.slice(-200); // الاحتفاظ بآخر 200 رسالة
+                  return newMessages.slice(-200);
                 });
               }
               break;
@@ -779,61 +774,80 @@ export function useChat() {
               break;
           }
         } catch (error) {
-          console.error('خطأ في معالجة رسالة Socket.IO:', error);
+          console.error('❌ خطأ في معالجة رسالة Socket.IO:', error);
         }
       });
 
       socket.current.on('disconnect', (reason) => {
-        console.log('Socket.IO مقطوع - السبب:', reason);
+        console.log('💔 Socket.IO مقطوع - السبب:', reason);
         setIsConnected(false);
+        authSent.current = false;
         
-        // تنظيف الحالة المحلية فوراً
-        setCurrentUser(null);
-        setOnlineUsers([]);
-        setTypingUsers(new Set());
+        // لا ننظف الحالة فوراً، انتظار للإعادة
         
-        // معالجة أسباب مختلفة لقطع الاتصال
         if (reason === 'io server disconnect') {
-          // الخادم قطع الاتصال عمداً (مثل حظر المستخدم)
           setConnectionError('تم قطع الاتصال من الخادم');
-          // لا نعيد الاتصال تلقائياً
           return;
         }
         
-        if (reason === 'transport close' || reason === 'ping timeout') {
-          // قطع اتصال غير متوقع - نحاول إعادة الاتصال
+        if (!isReconnecting.current && reconnectAttempts.current < maxReconnectAttempts) {
+          isReconnecting.current = true;
           setConnectionError('انقطع الاتصال - محاولة إعادة الاتصال...');
           
-          // إعادة الاتصال بعد تأخير قصير
           setTimeout(() => {
             if (socket.current && !socket.current.connected) {
+              console.log('🔄 محاولة إعادة الاتصال...');
+              reconnectAttempts.current++;
               socket.current.connect();
             }
           }, 2000);
+        } else {
+          setConnectionError('فقدان الاتصال بالخادم');
+          setOnlineUsers([]);
         }
       });
 
       socket.current.on('connect_error', (error) => {
-        console.error('خطأ اتصال Socket.IO:', error);
+        console.error('❌ خطأ اتصال Socket.IO:', error);
         setIsConnected(false);
-        setConnectionError('خطأ في الاتصال مع الخادم');
+        reconnectAttempts.current++;
+        
+        if (reconnectAttempts.current >= maxReconnectAttempts) {
+          setConnectionError('فشل في الاتصال مع الخادم');
+        } else {
+          setConnectionError(`محاولة الاتصال ${reconnectAttempts.current}/${maxReconnectAttempts}...`);
+        }
+      });
+
+      socket.current.on('reconnect', () => {
+        console.log('🔄 تم إعادة الاتصال بنجاح');
+        reconnectAttempts.current = 0;
+        isReconnecting.current = false;
+        authSent.current = false;
+        setConnectionError(null);
       });
       
     } catch (error) {
-      console.error('خطأ في الاتصال:', error);
+      console.error('❌ خطأ في الاتصال:', error);
       setIsConnected(false);
       setConnectionError('خطأ في إنشاء الاتصال');
     }
-  }, []);
+  }, [updateOnlineUsersList, ignoredUsers, disconnect, maxReconnectAttempts]);
 
   const disconnect = useCallback(() => {
-    // Clear reconnection attempts
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
     }
-    reconnectAttempts.current = maxReconnectAttempts; // Prevent auto-reconnect
+    if (userListUpdateTimeout.current) {
+      clearTimeout(userListUpdateTimeout.current);
+    }
+    
+    reconnectAttempts.current = maxReconnectAttempts;
+    isReconnecting.current = false;
+    authSent.current = false;
     
     if (socket.current) {
+      socket.current.removeAllListeners();
       socket.current.disconnect();
     }
     
@@ -852,7 +866,6 @@ export function useChat() {
       throw new Error('غير متصل بالخادم');
     }
 
-    // فحص التأخير الزمني
     const now = Date.now();
     if (now - lastMessageTime.current < 500) {
       throw new Error('الرجاء الانتظار قبل إرسال رسالة أخرى');
@@ -867,7 +880,6 @@ export function useChat() {
         isPrivate: false
       };
 
-      // إرسال إلى الخادم عبر API أولاً
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -881,7 +893,6 @@ export function useChat() {
 
       const result = await response.json();
       
-      // إضافة الرسالة مباشرة للواجهة للحصول على رد فعل فوري
       const newMessage: ChatMessage = {
         id: result.data.id || Date.now(),
         senderId: currentUser.id,
@@ -917,7 +928,6 @@ export function useChat() {
         isPrivate: true
       };
 
-      // إرسال إلى الخادم عبر API
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -931,7 +941,6 @@ export function useChat() {
 
       const result = await response.json();
       
-      // إضافة الرسالة مباشرة للمحادثة الخاصة
       const newMessage: ChatMessage = {
         id: result.data.id || Date.now(),
         senderId: currentUser.id,
@@ -985,18 +994,20 @@ export function useChat() {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
+      if (userListUpdateTimeout.current) {
+        clearTimeout(userListUpdateTimeout.current);
+      }
       disconnect();
     };
   }, [disconnect]);
 
-  // دالة تحديث نقاط المستخدم (للاستخدام العام)
+  // دالة تحديث نقاط المستخدم
   const updateUserPoints = useCallback((newPoints: number) => {
     if (currentUser) {
       setCurrentUser(prev => prev ? { ...prev, points: newPoints } : null);
     }
   }, [currentUser]);
 
-  // إضافة الدالة للنطاق العام
   useEffect(() => {
     if (typeof window !== 'undefined') {
       (window as any).updateUserPoints = updateUserPoints;
@@ -1011,8 +1022,8 @@ export function useChat() {
   // دالة تجاهل مستخدم
   const ignoreUser = useCallback((userId: number) => {
     setIgnoredUsers(prev => new Set([...prev, userId]));
-    // إزالة رسائل المستخدم المُتجاهل من الرسائل الحالية
     setPublicMessages(prev => prev.filter(msg => msg.senderId !== userId));
+    setOnlineUsers(prev => prev.filter(user => user.id !== userId));
   }, []);
 
   // دالة إلغاء تجاهل مستخدم  
@@ -1022,9 +1033,11 @@ export function useChat() {
       newSet.delete(userId);
       return newSet;
     });
-  }, []);
+    // طلب تحديث قائمة المستخدمين
+    requestOnlineUsersUpdate();
+  }, [requestOnlineUsersUpdate]);
 
-  // دالة تبديل وضع الإخفاء (للإدمن والمالك فقط)
+  // دالة تبديل وضع الإخفاء
   const toggleStealthMode = useCallback(async (isHidden: boolean) => {
     if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'owner')) return;
     
@@ -1035,10 +1048,8 @@ export function useChat() {
         body: JSON.stringify({ isHidden })
       });
       
-      // تحديث حالة المستخدم محلياً
       setCurrentUser(prev => prev ? { ...prev, isHidden } : null);
       
-      // إرسال التحديث للخادم عبر Socket.IO
       if (socket.current && socket.current.connected) {
         socket.current.emit('toggleStealth', {
           userId: currentUser.id,
@@ -1068,6 +1079,7 @@ export function useChat() {
     ignoreUser,
     unignoreUser,
     toggleStealthMode,
+    requestOnlineUsersUpdate,
     sendPublicMessage: useCallback((content: string, messageType: string = 'text') => {
       if (!content.trim() || !currentUser) return false;
       

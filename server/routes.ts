@@ -61,6 +61,7 @@ interface CustomSocket extends Socket {
   username?: string;
   userType?: string;
   isAuthenticated?: boolean;
+  lastActivity?: number;
 }
 
 // دالة broadcast للإرسال لجميع المستخدمين
@@ -939,25 +940,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // WebSocket handling
+  // WebSocket handling with improved stability
   io.on("connection", (socket: CustomSocket) => {
-    console.log('اتصال WebSocket جديد');
+    console.log('🔗 اتصال WebSocket جديد');
     
     // إرسال رسالة ترحيب فورية
-    socket.emit('connected', { message: 'متصل بنجاح' });
+    socket.emit('connected', { message: 'متصل بنجاح', timestamp: Date.now() });
     
-    // heartbeat للحفاظ على الاتصال
+    // heartbeat محسن للحفاظ على الاتصال
     const heartbeat = setInterval(() => {
-      socket.emit('ping');
-    }, 30000);
+      if (socket.connected) {
+        socket.emit('ping', { timestamp: Date.now() });
+      }
+    }, 25000); // تقليل الفترة لضمان الاستقرار
 
-    // Modern Socket.IO event handlers
+    // معالجة pong من العميل
+    socket.on('pong', (data) => {
+      // تسجيل آخر نشاط للمستخدم
+      if (socket.userId) {
+        socket.lastActivity = Date.now();
+      }
+    });
+
+    // Modern Socket.IO event handlers مع معالجة محسنة للأخطاء
     socket.on('auth', async (data) => {
       try {
-        console.log(`🔐 Auth من ${data.username || 'غير معروف'}`);
+        console.log(`🔐 مصادقة من ${data.username || 'غير معروف'} (ID: ${data.userId})`);
+        
+        // منع المصادقة المتكررة
+        if (socket.isAuthenticated) {
+          console.log(`⚠️ محاولة مصادقة متكررة من ${data.username}`);
+          return;
+        }
         
         socket.userId = data.userId;
         socket.username = data.username;
+        socket.isAuthenticated = true;
+        socket.lastActivity = Date.now();
         
         // انضمام للغرفة الخاصة بالمستخدم للرسائل المباشرة
         socket.join(data.userId.toString());
@@ -984,27 +1003,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
         
+        // تحديث حالة الاتصال في قاعدة البيانات
         await storage.setUserOnlineStatus(data.userId, true);
         
-        // Broadcast user joined
+        // الحصول على بيانات المستخدم المحدثة
         const joinedUser = await storage.getUser(data.userId);
-        io.emit('message', { type: 'userJoined', user: joinedUser });
+        if (!joinedUser) {
+          socket.emit('message', {
+            type: 'error',
+            message: 'المستخدم غير موجود'
+          });
+          socket.disconnect();
+          return;
+        }
+
+        // إرسال إشعار انضمام المستخدم للآخرين فقط (ليس للمستخدم نفسه)
+        socket.broadcast.emit('message', { type: 'userJoined', user: joinedUser });
         
-        // Send online users list with moderation status
+        // الحصول على قائمة المستخدمين المتصلين مع حالة الإدارة
         const onlineUsers = await storage.getOnlineUsers();
         const usersWithStatus = await Promise.all(
-          onlineUsers.map(async (user) => {
-            const status = await moderationSystem.checkUserStatus(user.id);
-            return {
-              ...user,
-              isMuted: status.isMuted,
-              isBlocked: status.isBlocked,
-              isBanned: status.isBanned
-            };
+          onlineUsers.filter(user => user && user.id) // فلترة البيانات الصالحة فقط
+          .map(async (user) => {
+            try {
+              const status = await moderationSystem.checkUserStatus(user.id);
+              return {
+                ...user,
+                isMuted: status.isMuted,
+                isBlocked: status.isBlocked,
+                isBanned: status.isBanned
+              };
+            } catch (error) {
+              console.error('خطأ في فحص حالة المستخدم:', user.id, error);
+              return user; // إرجاع المستخدم بدون تحديث الحالة في حالة الخطأ
+            }
           })
         );
         
+        // إرسال قائمة المستخدمين للمستخدم الجديد
         socket.emit('message', { type: 'onlineUsers', users: usersWithStatus });
+        
+        console.log(`✅ تم قبول اتصال ${data.username} - المستخدمون المتصلون: ${usersWithStatus.length}`);
         
         // إضافة نقاط تسجيل الدخول اليومي
         try {
@@ -1030,6 +1069,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.error('خطأ في المصادقة:', error);
         socket.emit('message', { type: 'error', message: 'خطأ في المصادقة' });
+      }
+    });
+
+    // معالج طلب تحديث قائمة المستخدمين المتصلين
+    socket.on('requestOnlineUsers', async () => {
+      try {
+        if (!socket.userId || !socket.isAuthenticated) {
+          console.log('⚠️ طلب تحديث المستخدمين من مستخدم غير مصدق عليه');
+          return;
+        }
+
+        console.log(`🔄 طلب تحديث قائمة المستخدمين من ${socket.username}`);
+        
+        const onlineUsers = await storage.getOnlineUsers();
+        const usersWithStatus = await Promise.all(
+          onlineUsers.filter(user => user && user.id)
+          .map(async (user) => {
+            try {
+              const status = await moderationSystem.checkUserStatus(user.id);
+              return {
+                ...user,
+                isMuted: status.isMuted,
+                isBlocked: status.isBlocked,
+                isBanned: status.isBanned
+              };
+            } catch (error) {
+              console.error('خطأ في فحص حالة المستخدم:', user.id, error);
+              return user;
+            }
+          })
+        );
+        
+        socket.emit('message', { type: 'onlineUsers', users: usersWithStatus });
+        console.log(`✅ تم إرسال قائمة محدثة بـ ${usersWithStatus.length} مستخدم إلى ${socket.username}`);
+        
+      } catch (error) {
+        console.error('خطأ في طلب قائمة المستخدمين:', error);
+        socket.emit('message', { type: 'error', message: 'خطأ في جلب قائمة المستخدمين' });
       }
     });
 
@@ -1475,36 +1552,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     socket.on('disconnect', async (reason) => {
-      console.log(`🔌 المستخدم ${socket.username} قطع الاتصال - السبب: ${reason}`);
+      console.log(`💔 المستخدم ${socket.username || 'غير معروف'} قطع الاتصال - السبب: ${reason}`);
       
       // تنظيف الجلسة بالكامل
       clearInterval(heartbeat);
       
-      if (socket.userId) {
+      if (socket.userId && socket.isAuthenticated) {
         try {
+          console.log(`🧹 تنظيف جلسة ${socket.username} (ID: ${socket.userId})`);
+          
           // تحديث حالة المستخدم في قاعدة البيانات
           await storage.setUserOnlineStatus(socket.userId, false);
           
           // إزالة المستخدم من جميع الغرف
           socket.leave(socket.userId.toString());
           
-          // إشعار جميع المستخدمين بالخروج
-          io.emit('userLeft', {
+          // إشعار جميع المستخدمين بالخروج (باستخدام message wrapper)
+          socket.broadcast.emit('message', {
+            type: 'userLeft',
             userId: socket.userId,
             username: socket.username,
             timestamp: new Date()
           });
           
-          // إرسال قائمة محدثة للمستخدمين المتصلين
-          const onlineUsers = await storage.getOnlineUsers();
-          io.emit('onlineUsers', { users: onlineUsers });
+          // تأخير قصير قبل إرسال القائمة المحدثة لضمان معالجة الخروج أولاً
+          setTimeout(async () => {
+            try {
+              const onlineUsers = await storage.getOnlineUsers();
+              const usersWithStatus = await Promise.all(
+                onlineUsers.filter(user => user && user.id)
+                .map(async (user) => {
+                  try {
+                    const status = await moderationSystem.checkUserStatus(user.id);
+                    return {
+                      ...user,
+                      isMuted: status.isMuted,
+                      isBlocked: status.isBlocked,
+                      isBanned: status.isBanned
+                    };
+                  } catch (error) {
+                    console.error('خطأ في فحص حالة المستخدم:', user.id, error);
+                    return user;
+                  }
+                })
+              );
+              
+              // إرسال قائمة محدثة للمستخدمين المتصلين
+              io.emit('message', { type: 'onlineUsers', users: usersWithStatus });
+              console.log(`📡 تم إرسال قائمة محدثة بـ ${usersWithStatus.length} مستخدم بعد خروج ${socket.username}`);
+              
+            } catch (error) {
+              console.error('خطأ في إرسال القائمة المحدثة:', error);
+            }
+          }, 100);
           
-          // تنظيف متغيرات الجلسة
-          socket.userId = undefined;
-          socket.username = undefined;
+          console.log(`✅ تم تنظيف جلسة ${socket.username} بنجاح`);
           
         } catch (error) {
           console.error('خطأ في تنظيف الجلسة:', error);
+        } finally {
+          // تنظيف متغيرات الجلسة في النهاية
+          socket.userId = undefined;
+          socket.username = undefined;
+          socket.isAuthenticated = false;
         }
       }
     });
