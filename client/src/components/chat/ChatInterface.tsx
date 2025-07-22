@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import UserSidebarWithWalls from './UserSidebarWithWalls';
+import UserSidebar from './UserSidebar';
 import MessageArea from './MessageArea';
 import ProfileModal from './ProfileModal';
 import ViewProfileModal from './ViewProfileModal';
@@ -23,8 +23,11 @@ import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
 import StealthModeToggle from './StealthModeToggle';
 import WelcomeNotification from './WelcomeNotification';
+import WallPanel from './WallPanel';
 
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Menu, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { useChat } from '@/hooks/useChat';
@@ -51,7 +54,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showReportsLog, setShowReportsLog] = useState(false);
   const [showActiveActions, setShowActiveActions] = useState(false);
   const [showPromotePanel, setShowPromotePanel] = useState(false);
-
+  const [showWallPanel, setShowWallPanel] = useState(false);
 
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
@@ -307,14 +310,37 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             إعدادات
           </Button>
 
-
-
         </div>
       </header>
       
       {/* Main Content */}
-      <main className="flex flex-1 overflow-hidden">
-        <UserSidebarWithWalls 
+      <main className="flex flex-1 overflow-hidden relative">
+        {/* Chat Menu - قائمة منسدلة في الزاوية */}
+        <div className="absolute top-4 right-4 z-50">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-white/90 backdrop-blur-sm border-gray-300 hover:bg-gray-100 shadow-lg"
+              >
+                <Menu className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem 
+                onClick={() => setShowWallPanel(true)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <Home className="w-4 h-4" />
+                الحوائط
+              </DropdownMenuItem>
+              {/* يمكن إضافة المزيد من الخيارات هنا مستقبلاً */}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <UserSidebar 
           users={chat.onlineUsers}
           onUserClick={handleUserClick}
           currentUser={chat.currentUser}
@@ -536,6 +562,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* إشعار الترحيب */}
       {chat.currentUser && <WelcomeNotification user={chat.currentUser} />}
+
+      {/* لوحة الحوائط */}
+      {chat.currentUser && (
+        <WallPanel 
+          isOpen={showWallPanel}
+          onClose={() => setShowWallPanel(false)}
+          currentUser={chat.currentUser}
+        />
+      )}
 
     </div>
   );
