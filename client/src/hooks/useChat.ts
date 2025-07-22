@@ -202,10 +202,12 @@ export function useChat() {
               
             case 'onlineUsers':
               if (message.users) {
+                console.log('📥 استلام قائمة المستخدمين:', message.users.length, message.users.map(u => u.username));
                 // فلترة المستخدمين المتجاهلين والمخفيين من القائمة  
                 const filteredUsers = message.users.filter((chatUser: ChatUser) => 
                   !ignoredUsers.has(chatUser.id) && !chatUser.isHidden
                 );
+                console.log('👥 المستخدمين بعد الفلترة:', filteredUsers.length, filteredUsers.map(u => u.username));
                 setOnlineUsers(filteredUsers);
               }
               break;
