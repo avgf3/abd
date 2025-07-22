@@ -398,19 +398,19 @@ export class MixedStorage implements IStorage {
           country: insertUser.country || null,
           relation: insertUser.relation || null,
           bio: insertUser.bio || null,
-          isOnline: true,
-          isHidden: false,
-          lastSeen: new Date(),
-          joinDate: new Date(),
-          createdAt: new Date(),
-          isMuted: false,
+          isOnline: 1,
+          isHidden: 0,
+          lastSeen: new Date().toISOString(),
+          joinDate: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          isMuted: 0,
           muteExpiry: null,
-          isBanned: false,
+          isBanned: 0,
           banExpiry: null,
-          isBlocked: false,
+          isBlocked: 0,
           ipAddress: insertUser.ipAddress || null,
           deviceId: insertUser.deviceId || null,
-          ignoredUsers: [],
+          ignoredUsers: '[]',
           usernameColor: insertUser.usernameColor || '#FFFFFF',
           userTheme: insertUser.userTheme || 'default'
         };
@@ -436,21 +436,21 @@ export class MixedStorage implements IStorage {
         age: insertUser.age || null,
         country: insertUser.country || null,
         relation: insertUser.relation || null,
-        isOnline: true,
-        lastSeen: new Date(),
-        joinDate: new Date(),
-        createdAt: new Date(),
-        isMuted: false,
+        isOnline: 1,
+        lastSeen: new Date().toISOString(),
+        joinDate: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        isMuted: 0,
         muteExpiry: null,
-        isBanned: false,
+        isBanned: 0,
         banExpiry: null,
-        isBlocked: false,
+        isBlocked: 0,
         ipAddress: null,
         deviceId: null,
-        ignoredUsers: [],
+        ignoredUsers: '[]',
         usernameColor: '#FFFFFF',
         userTheme: 'default',
-        isHidden: false
+        isHidden: 0
       };
       
       this.users.set(id, user);
@@ -513,8 +513,8 @@ export class MixedStorage implements IStorage {
     // Check memory first (guests)
     const memUser = this.users.get(id);
     if (memUser) {
-      memUser.isOnline = isOnline;
-      memUser.lastSeen = new Date();
+      memUser.isOnline = isOnline ? 1 : 0;
+      memUser.lastSeen = new Date().toISOString();
       this.users.set(id, memUser);
       return;
     }
@@ -573,7 +573,7 @@ export class MixedStorage implements IStorage {
     // Check memory first (guests)
     const memUser = this.users.get(id);
     if (memUser) {
-      memUser.isHidden = isHidden;
+      memUser.isHidden = isHidden ? 1 : 0;
       this.users.set(id, memUser);
       return;
     }
@@ -592,9 +592,11 @@ export class MixedStorage implements IStorage {
     // Check memory first (guests)
     const memUser = this.users.get(userId);
     if (memUser) {
-      if (!memUser.ignoredUsers) memUser.ignoredUsers = [];
-      if (!memUser.ignoredUsers.includes(ignoredUserId.toString())) {
-        memUser.ignoredUsers.push(ignoredUserId.toString());
+      if (!memUser.ignoredUsers) memUser.ignoredUsers = '[]';
+      const ignoredArray = JSON.parse(memUser.ignoredUsers as string);
+      if (!ignoredArray.includes(ignoredUserId.toString())) {
+        ignoredArray.push(ignoredUserId.toString());
+        memUser.ignoredUsers = JSON.stringify(ignoredArray);
         this.users.set(userId, memUser);
       }
       return;
@@ -628,7 +630,9 @@ export class MixedStorage implements IStorage {
     // Check memory first (guests)
     const memUser = this.users.get(userId);
     if (memUser && memUser.ignoredUsers) {
-      memUser.ignoredUsers = memUser.ignoredUsers.filter(id => id !== ignoredUserId.toString());
+      const ignoredArray = JSON.parse(memUser.ignoredUsers as string);
+      const filteredArray = ignoredArray.filter((id: string) => id !== ignoredUserId.toString());
+      memUser.ignoredUsers = JSON.stringify(filteredArray);
       this.users.set(userId, memUser);
       return;
     }
@@ -659,7 +663,8 @@ export class MixedStorage implements IStorage {
     // Check memory first (guests)
     const memUser = this.users.get(userId);
     if (memUser && memUser.ignoredUsers) {
-      return memUser.ignoredUsers.map(id => parseInt(id));
+      const ignoredArray = JSON.parse(memUser.ignoredUsers as string);
+      return ignoredArray.map((id: string) => parseInt(id));
     }
     
     // Check database (members) - Fix array parsing for SQLite
@@ -708,8 +713,8 @@ export class MixedStorage implements IStorage {
         receiverId: insertMessage.receiverId,
         content: insertMessage.content,
         messageType: insertMessage.messageType || 'text',
-        isPrivate: insertMessage.isPrivate || false,
-        timestamp: new Date(),
+        isPrivate: (insertMessage.isPrivate || false) ? 1 : 0,
+        timestamp: new Date().toISOString(),
       };
       
       this.messages.set(message.id, message);
@@ -721,12 +726,16 @@ export class MixedStorage implements IStorage {
     // Get from memory first
     const memMessages = Array.from(this.messages.values())
       .filter(msg => !msg.isPrivate)
-      .sort((a, b) => (a.timestamp || new Date()).getTime() - (b.timestamp || new Date()).getTime());
+      .sort((a, b) => {
+        const aTime = typeof a.timestamp === 'string' ? new Date(a.timestamp).getTime() : (a.timestamp || new Date()).getTime();
+        const bTime = typeof b.timestamp === 'string' ? new Date(b.timestamp).getTime() : (b.timestamp || new Date()).getTime();
+        return aTime - bTime;
+      });
     
     // Try to get from database as well
     try {
       const dbMessages = await db.select().from(messages)
-        .where(eq(messages.isPrivate, false))
+        .where(eq(messages.isPrivate, 0))
         .orderBy(desc(messages.timestamp))
         .limit(limit);
       
@@ -764,7 +773,7 @@ export class MixedStorage implements IStorage {
       userId,
       friendId,
       status: "accepted",
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
     };
     this.friends.set(id1, friend1);
 
@@ -775,7 +784,7 @@ export class MixedStorage implements IStorage {
       userId: friendId,
       friendId: userId,
       status: "accepted",
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
     };
     this.friends.set(id2, friend2);
 
