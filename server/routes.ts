@@ -53,6 +53,41 @@ const upload = multer({
   }
 });
 
+// إعداد multer لرفع صور الحوائط
+const wallStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'wall');
+    
+    // التأكد من وجود المجلد
+    if (!fs.existsSync(uploadDir)) {
+      console.log(`Creating wall upload directory: ${uploadDir}`);
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `wall-${uniqueSuffix}${ext}`);
+  }
+});
+
+const wallUpload = multer({
+  storage: wallStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    // التحقق من نوع الملف
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('يرجى رفع ملف صورة صحيح'));
+    }
+  }
+});
+
 let io: IOServer;
 
 // تعريف Socket مخصص للطباعة
@@ -2878,6 +2913,200 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, result });
     } catch (error) {
       console.error('خطأ في إعادة حساب النقاط:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // ============ APIs الحوائط ============
+
+  // جلب منشورات الحائط
+  app.get('/api/wall/posts/:type', async (req, res) => {
+    try {
+      const { type } = req.params; // 'public' أو 'friends'
+      const { userId } = req.query;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      }
+
+      const user = await storage.getUser(parseInt(userId as string));
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      let posts;
+      if (type === 'public') {
+        // جلب المنشورات العامة
+        posts = await storage.getWallPosts('public');
+      } else if (type === 'friends') {
+        // جلب منشورات الأصدقاء فقط
+        const friends = await storage.getUserFriends(user.id);
+        const friendIds = friends.map(f => f.id);
+        friendIds.push(user.id); // إضافة منشورات المستخدم نفسه
+        posts = await storage.getWallPostsByUsers(friendIds);
+      } else {
+        return res.status(400).json({ error: 'نوع الحائط غير صحيح' });
+      }
+
+      res.json({ posts: posts || [] });
+    } catch (error) {
+      console.error('خطأ في جلب المنشورات:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // إنشاء منشور جديد
+  app.post('/api/wall/posts', wallUpload.single('image'), async (req, res) => {
+    try {
+      const { content, type, userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      }
+
+      const user = await storage.getUser(parseInt(userId));
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      // التحقق من صلاحيات النشر
+      if (user.userType === 'guest') {
+        return res.status(403).json({ error: 'الضيوف لا يمكنهم النشر على الحائط' });
+      }
+
+      if (!content?.trim() && !req.file) {
+        return res.status(400).json({ error: 'يجب إضافة محتوى أو صورة' });
+      }
+
+      if (content && content.length > 500) {
+        return res.status(400).json({ error: 'النص طويل جداً (الحد الأقصى 500 حرف)' });
+      }
+
+      // إعداد بيانات المنشور
+      const postData = {
+        userId: user.id,
+        username: user.username,
+        userRole: user.userType,
+        content: content?.trim() || '',
+        imageUrl: req.file ? `/uploads/wall/${req.file.filename}` : null,
+        type: type || 'public',
+        timestamp: new Date(),
+        userProfileImage: user.profileImage,
+        usernameColor: user.usernameColor
+      };
+
+      // حفظ المنشور
+      const post = await storage.createWallPost(postData);
+      
+      // إرسال إشعار للمستخدمين المتصلين
+      io.emit('message', {
+        type: 'newWallPost',
+        post,
+        wallType: type
+      });
+
+      res.json({ post, message: 'تم نشر المنشور بنجاح' });
+    } catch (error) {
+      console.error('خطأ في إنشاء المنشور:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // التفاعل مع منشور
+  app.post('/api/wall/react', async (req, res) => {
+    try {
+      const { postId, type, userId } = req.body;
+
+      if (!postId || !type || !userId) {
+        return res.status(400).json({ error: 'بيانات غير مكتملة' });
+      }
+
+      const user = await storage.getUser(parseInt(userId));
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      const validReactionTypes = ['like', 'dislike', 'heart'];
+      if (!validReactionTypes.includes(type)) {
+        return res.status(400).json({ error: 'نوع التفاعل غير صحيح' });
+      }
+
+      // إضافة أو تحديث التفاعل
+      await storage.addWallReaction({
+        postId: parseInt(postId),
+        userId: user.id,
+        username: user.username,
+        type,
+        timestamp: new Date()
+      });
+
+      // جلب المنشور المحدث مع التفاعلات
+      const updatedPost = await storage.getWallPostWithReactions(parseInt(postId));
+      
+      // إرسال تحديث للمستخدمين المتصلين
+      io.emit('message', {
+        type: 'wallPostReaction',
+        post: updatedPost,
+        reactionType: type,
+        username: user.username
+      });
+
+      res.json({ post: updatedPost });
+    } catch (error) {
+      console.error('خطأ في التفاعل:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // حذف منشور
+  app.delete('/api/wall/posts/:postId', async (req, res) => {
+    try {
+      const { postId } = req.params;
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      }
+
+      const user = await storage.getUser(parseInt(userId));
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      const post = await storage.getWallPost(parseInt(postId));
+      if (!post) {
+        return res.status(404).json({ error: 'المنشور غير موجود' });
+      }
+
+      // التحقق من الصلاحيات
+      const canDelete = post.userId === user.id || 
+                       ['admin', 'owner', 'moderator'].includes(user.userType);
+      
+      if (!canDelete) {
+        return res.status(403).json({ error: 'ليس لديك صلاحية لحذف هذا المنشور' });
+      }
+
+      // حذف الصورة إن وجدت
+      if (post.imageUrl) {
+        const imagePath = path.join(process.cwd(), 'client', 'public', post.imageUrl);
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      }
+
+      // حذف المنشور
+      await storage.deleteWallPost(parseInt(postId));
+      
+      // إرسال إشعار بالحذف
+      io.emit('message', {
+        type: 'wallPostDeleted',
+        postId: parseInt(postId),
+        deletedBy: user.username
+      });
+
+      res.json({ message: 'تم حذف المنشور بنجاح' });
+    } catch (error) {
+      console.error('خطأ في حذف المنشور:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
