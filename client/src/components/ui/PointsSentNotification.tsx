@@ -69,7 +69,7 @@ export default function PointsSentNotification({
         </div>
       </div>
       
-      <style jsx>{`
+      <style>{`
         @keyframes countdown {
           from { width: 100%; }
           to { width: 0%; }

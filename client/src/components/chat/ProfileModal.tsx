@@ -10,9 +10,10 @@ interface ProfileModalProps {
   currentUser: ChatUser | null;
   onClose: () => void;
   onIgnoreUser?: (userId: number) => void;
+  onUpdate?: (user: ChatUser) => void;
 }
 
-export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser }: ProfileModalProps) {
+export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser, onUpdate }: ProfileModalProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);

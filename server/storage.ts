@@ -543,7 +543,24 @@ export class MixedStorage implements IStorage {
       try {
         const dbUsers = await db.select().from(users).where(eq(users.isOnline, 1)); // Use 1 instead of true for SQLite
         const visibleDbUsers = dbUsers.filter(user => !user.isHidden);
-        return [...memUsers, ...visibleDbUsers];
+        
+        // Convert SQLite integer booleans to JavaScript booleans for consistency
+        const convertedDbUsers = visibleDbUsers.map(user => ({
+          ...user,
+          isOnline: !!user.isOnline,
+          isHidden: !!user.isHidden,
+          isMuted: !!user.isMuted,
+          isBanned: !!user.isBanned,
+          isBlocked: !!user.isBlocked,
+          lastSeen: user.lastSeen ? new Date(user.lastSeen) : null,
+          joinDate: user.joinDate ? new Date(user.joinDate) : new Date(),
+          createdAt: user.createdAt ? new Date(user.createdAt) : new Date(),
+          muteExpiry: user.muteExpiry ? new Date(user.muteExpiry) : null,
+          banExpiry: user.banExpiry ? new Date(user.banExpiry) : null,
+          ignoredUsers: user.ignoredUsers ? JSON.parse(user.ignoredUsers) : []
+        }));
+        
+        return [...memUsers, ...convertedDbUsers];
       } catch (error) {
         console.error('Error getting online users from database:', error);
         return memUsers;
