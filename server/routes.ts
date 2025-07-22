@@ -1210,47 +1210,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isPrivate: false,
         });
         
-        // إضافة نقاط لإرسال رسالة
+        // إرسال الرسالة أولاً (الأهم)
+        let sender;
+        try {
+          sender = await storage.getUser(socket.userId);
+          if (sender) {
+            io.emit('message', { type: 'newMessage', message: { ...newMessage, sender } });
+            console.log(`✅ تم إرسال رسالة من ${sender.username}: ${sanitizedContent.substring(0, 50)}...`);
+          } else {
+            console.error(`❌ لم يتم العثور على المستخدم ${socket.userId}`);
+            socket.emit('message', { type: 'error', message: 'خطأ في العثور على بيانات المستخدم' });
+            return;
+          }
+        } catch (senderError) {
+          console.error('خطأ في الحصول على بيانات المرسل:', senderError);
+          socket.emit('message', { type: 'error', message: 'خطأ في إرسال الرسالة' });
+          return;
+        }
+        
+        // إضافة نقاط لإرسال رسالة (ثانوي - لا يؤثر على إرسال الرسالة)
         try {
           const pointsResult = await pointsService.addMessagePoints(socket.userId);
           
-          // التحقق من إنجاز أول رسالة
-          const achievementResult = await pointsService.checkAchievement(socket.userId, 'FIRST_MESSAGE');
-          
-          // إرسال إشعار ترقية المستوى إذا حدثت
           if (pointsResult?.leveledUp) {
             socket.emit('message', {
               type: 'levelUp',
               oldLevel: pointsResult.oldLevel,
               newLevel: pointsResult.newLevel,
               levelInfo: pointsResult.levelInfo,
-              message: `🎉 تهانينا! وصلت للمستوى ${pointsResult.newLevel}: ${pointsResult.levelInfo?.title}`
+              message: `🎉 تهانينا! وصلت للمستوى ${pointsResult.newLevel}: ${pointsResult.levelInfo?.title || 'مستوى جديد'}`
             });
           }
           
-          // إرسال إشعار إنجاز أول رسالة
-          if (achievementResult?.leveledUp) {
-            socket.emit('message', {
-              type: 'achievement',
-              message: `🏆 إنجاز جديد: أول رسالة! حصلت على ${achievementResult.newPoints - pointsResult.newPoints} نقطة إضافية!`
-            });
+          // التحقق من إنجاز أول رسالة
+          try {
+            const achievementResult = await pointsService.checkAchievement(socket.userId, 'FIRST_MESSAGE');
+            if (achievementResult?.leveledUp) {
+              socket.emit('message', {
+                type: 'achievement',
+                message: `🏆 إنجاز جديد: أول رسالة! حصلت على نقاط إضافية!`
+              });
+            }
+          } catch (achievementError) {
+            console.error('خطأ في فحص الإنجازات:', achievementError);
           }
           
-          // تحديث بيانات المستخدم في الذاكرة والإرسال للعملاء
-          const updatedSender = await storage.getUser(socket.userId);
-          if (updatedSender) {
-            // إرسال البيانات المحدثة للمستخدم
-            socket.emit('message', {
-              type: 'userUpdated',
-              user: updatedSender
-            });
+          // تحديث بيانات المستخدم
+          try {
+            const updatedSender = await storage.getUser(socket.userId);
+            if (updatedSender) {
+              socket.emit('message', {
+                type: 'userUpdated',
+                user: updatedSender
+              });
+            }
+          } catch (updateError) {
+            console.error('خطأ في تحديث بيانات المستخدم:', updateError);
           }
+          
         } catch (pointsError) {
-          console.error('خطأ في إضافة النقاط:', pointsError);
+          console.error('خطأ في إضافة النقاط (لا يؤثر على الرسالة):', pointsError);
+          // لا نرسل خطأ للمستخدم لأن الرسالة تم إرسالها بنجاح
         }
-        
-        const sender = await storage.getUser(socket.userId);
-        io.emit('message', { type: 'newMessage', message: { ...newMessage, sender } });
       } catch (error) {
         console.error('خطأ في إرسال الرسالة العامة:', error);
         socket.emit('message', { type: 'error', message: 'خطأ في إرسال الرسالة' });
