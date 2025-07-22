@@ -17,6 +17,19 @@ import { db } from "./database-adapter";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { userService } from "./services/userService";
 import { messageService } from "./services/messageService";
+import Database from 'better-sqlite3';
+import path from 'path';
+
+// إضافة اتصال SQLite مباشر كبديل
+let directSqliteDb: Database.Database | null = null;
+
+function getDirectSqliteConnection() {
+  if (!directSqliteDb) {
+    const dbPath = path.join(process.cwd(), 'data', 'chatapp.db');
+    directSqliteDb = new Database(dbPath);
+  }
+  return directSqliteDb;
+}
 
 export interface IStorage {
   // User operations
@@ -241,7 +254,57 @@ export class MixedStorage implements IStorage {
     );
     if (memUser) return memUser;
     
-    // Check database (for members) only if database is available
+    // إصلاح مؤقت: استخدام SQLite مباشرة
+    try {
+      const directDb = getDirectSqliteConnection();
+      const user = directDb.prepare('SELECT * FROM users WHERE username = ?').get(username);
+      
+      if (user) {
+        // تحويل البيانات من SQLite إلى تنسيق TypeScript
+        return {
+          id: user.id,
+          username: user.username,
+          password: user.password,
+          userType: user.user_type,
+          role: user.role,
+          profileImage: user.profile_image,
+          profileBanner: user.profile_banner,
+          profileBackgroundColor: user.profile_background_color,
+          status: user.status,
+          gender: user.gender,
+          age: user.age,
+          country: user.country,
+          relation: user.relation,
+          bio: user.bio,
+          isOnline: Boolean(user.is_online),
+          isHidden: Boolean(user.is_hidden),
+          lastSeen: user.last_seen ? new Date(user.last_seen) : null,
+          joinDate: user.join_date ? new Date(user.join_date) : new Date(),
+          createdAt: user.created_at ? new Date(user.created_at) : new Date(),
+          isMuted: Boolean(user.is_muted),
+          muteExpiry: user.mute_expiry ? new Date(user.mute_expiry) : null,
+          isBanned: Boolean(user.is_banned),
+          banExpiry: user.ban_expiry ? new Date(user.ban_expiry) : null,
+          isBlocked: Boolean(user.is_blocked),
+          ipAddress: user.ip_address,
+          deviceId: user.device_id,
+          ignoredUsers: JSON.parse(user.ignored_users || '[]'),
+          usernameColor: user.username_color || '#FFFFFF',
+          userTheme: user.user_theme || 'default',
+          profileEffect: user.profile_effect || 'none',
+          points: user.points || 0,
+          level: user.level || 1,
+          totalPoints: user.total_points || 0,
+          levelProgress: user.level_progress || 0
+        } as User;
+      }
+      
+      return undefined;
+    } catch (error: any) {
+      console.error('Direct SQLite query error in getUserByUsername:', error);
+    }
+    
+    // Check database (for members) only if database is available - الطريقة القديمة كبديل
     if (db) {
       try {
         const [dbUser] = await db.select().from(users).where(eq(users.username, username));
