@@ -1020,7 +1020,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         await storage.setUserOnlineStatus(data.userId, true);
-        console.log(`✅ تم ضبط المستخدم ${data.username} (ID: ${data.userId}) كمتصل`);
         
         // Broadcast user joined
         const joinedUser = await storage.getUser(data.userId);
@@ -1028,7 +1027,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Send online users list with moderation status
         const onlineUsers = await storage.getOnlineUsers();
-        console.log(`📊 عدد المتصلين الآن: ${onlineUsers.length}`);
         const usersWithStatus = await Promise.all(
           onlineUsers.map(async (user) => {
             const status = await moderationSystem.checkUserStatus(user.id);
