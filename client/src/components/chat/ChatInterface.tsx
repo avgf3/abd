@@ -23,7 +23,7 @@ import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
 import StealthModeToggle from './StealthModeToggle';
 import WelcomeNotification from './WelcomeNotification';
-import LanguageSwitcher, { LanguageProvider } from '@/components/ui/LanguageSwitcher';
+import WallPanel from './WallPanel';
 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -52,6 +52,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showReportsLog, setShowReportsLog] = useState(false);
   const [showActiveActions, setShowActiveActions] = useState(false);
   const [showPromotePanel, setShowPromotePanel] = useState(false);
+  const [showWallPanel, setShowWallPanel] = useState(false);
 
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
@@ -209,7 +210,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   return (
-    <LanguageProvider>
       <div className="h-screen flex flex-col" onClick={closeUserPopup}>
       {/* Header */}
       <header className="bg-secondary py-4 px-6 flex justify-between items-center shadow-2xl border-b border-accent">
@@ -308,15 +308,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             إعدادات
           </Button>
 
-          {/* Language Switcher */}
-          <LanguageSwitcher 
-            compact={true}
-            className="glass-effect"
-            onLanguageChange={(language) => {
-              // تحديث الواجهة بناءً على اللغة المختارة
-              console.log('Language changed to:', language);
-            }}
-          />
+          {/* زر الحوائط */}
+          <Button 
+            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+            onClick={() => setShowWallPanel(true)}
+          >
+            <span>🏠</span>
+            الحوائط
+          </Button>
 
         </div>
       </header>
@@ -546,7 +545,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {/* إشعار الترحيب */}
       {chat.currentUser && <WelcomeNotification user={chat.currentUser} />}
 
+      {/* لوحة الحوائط */}
+      {chat.currentUser && (
+        <WallPanel 
+          isOpen={showWallPanel}
+          onClose={() => setShowWallPanel(false)}
+          currentUser={chat.currentUser}
+        />
+      )}
+
     </div>
-    </LanguageProvider>
   );
 }

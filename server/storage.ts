@@ -1216,6 +1216,149 @@ export class MixedStorage implements IStorage {
       console.error('Error updating user last daily login:', error);
     }
   }
+
+  // ============ دوال الحوائط ============
+
+  // إنشاء منشور جديد
+  async createWallPost(postData: any): Promise<any> {
+    try {
+      // في الوقت الحالي، سنحفظ البيانات في الذاكرة
+      // يمكن إضافة جدول قاعدة بيانات لاحقاً
+      const post = {
+        id: Date.now(), // معرف مؤقت
+        ...postData,
+        reactions: [],
+        totalLikes: 0,
+        totalDislikes: 0,
+        totalHearts: 0
+      };
+      
+      // حفظ في الذاكرة المؤقتة
+      if (!global.wallPosts) {
+        global.wallPosts = [];
+      }
+      global.wallPosts.unshift(post);
+      
+      return post;
+    } catch (error) {
+      console.error('Error creating wall post:', error);
+      throw error;
+    }
+  }
+
+  // جلب منشورات الحائط
+  async getWallPosts(type: string): Promise<any[]> {
+    try {
+      if (!global.wallPosts) {
+        global.wallPosts = [];
+      }
+      
+      return global.wallPosts
+        .filter(post => post.type === type)
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    } catch (error) {
+      console.error('Error getting wall posts:', error);
+      return [];
+    }
+  }
+
+  // جلب منشورات مستخدمين محددين
+  async getWallPostsByUsers(userIds: number[]): Promise<any[]> {
+    try {
+      if (!global.wallPosts) {
+        global.wallPosts = [];
+      }
+      
+      return global.wallPosts
+        .filter(post => userIds.includes(post.userId))
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    } catch (error) {
+      console.error('Error getting wall posts by users:', error);
+      return [];
+    }
+  }
+
+  // جلب منشور واحد
+  async getWallPost(postId: number): Promise<any | null> {
+    try {
+      if (!global.wallPosts) {
+        return null;
+      }
+      
+      return global.wallPosts.find(post => post.id === postId) || null;
+    } catch (error) {
+      console.error('Error getting wall post:', error);
+      return null;
+    }
+  }
+
+  // حذف منشور
+  async deleteWallPost(postId: number): Promise<void> {
+    try {
+      if (!global.wallPosts) {
+        return;
+      }
+      
+      global.wallPosts = global.wallPosts.filter(post => post.id !== postId);
+    } catch (error) {
+      console.error('Error deleting wall post:', error);
+      throw error;
+    }
+  }
+
+  // إضافة تفاعل
+  async addWallReaction(reactionData: any): Promise<void> {
+    try {
+      if (!global.wallPosts) {
+        global.wallPosts = [];
+      }
+      
+      const postIndex = global.wallPosts.findIndex(post => post.id === reactionData.postId);
+      if (postIndex === -1) {
+        throw new Error('المنشور غير موجود');
+      }
+      
+      const post = global.wallPosts[postIndex];
+      
+      // إزالة التفاعل السابق للمستخدم إن وجد
+      post.reactions = post.reactions.filter(r => r.userId !== reactionData.userId);
+      
+      // إضافة التفاعل الجديد
+      post.reactions.push({
+        id: Date.now(),
+        ...reactionData
+      });
+      
+      // إعادة حساب التفاعلات
+      post.totalLikes = post.reactions.filter(r => r.type === 'like').length;
+      post.totalDislikes = post.reactions.filter(r => r.type === 'dislike').length;
+      post.totalHearts = post.reactions.filter(r => r.type === 'heart').length;
+      
+    } catch (error) {
+      console.error('Error adding wall reaction:', error);
+      throw error;
+    }
+  }
+
+  // جلب منشور مع التفاعلات
+  async getWallPostWithReactions(postId: number): Promise<any | null> {
+    try {
+      return await this.getWallPost(postId);
+    } catch (error) {
+      console.error('Error getting wall post with reactions:', error);
+      return null;
+    }
+  }
+
+  // جلب أصدقاء المستخدم (دالة مساعدة للحوائط)
+  async getUserFriends(userId: number): Promise<any[]> {
+    try {
+      return await this.getFriends(userId);
+    } catch (error) {
+      console.error('Error getting user friends:', error);
+      return [];
+    }
+  }
 }
 
 export const storage = new MixedStorage();
