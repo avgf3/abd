@@ -416,6 +416,7 @@ export class MixedStorage implements IStorage {
         };
         
         this.users.set(id, user);
+
         return user;
       }
     } else {
@@ -537,6 +538,7 @@ export class MixedStorage implements IStorage {
 
   async getOnlineUsers(): Promise<User[]> {
     const memUsers = Array.from(this.users.values()).filter(user => user.isOnline && !user.isHidden);
+
     
     // Get online members from database (excluding hidden)
     if (db) {
@@ -548,6 +550,7 @@ export class MixedStorage implements IStorage {
           const isHiddenValue = user.isHidden;
           return !(isHiddenValue === true || isHiddenValue === 1);
         });
+
         return [...memUsers, ...visibleDbUsers];
       } catch (error) {
         console.error('Error getting online users from database:', error);
