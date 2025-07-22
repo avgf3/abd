@@ -17,10 +17,11 @@ interface UserSidebarWithWallsProps {
   users: ChatUser[];
   onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
   currentUser?: ChatUser | null;
+  activeView?: 'users' | 'walls';
 }
 
-export default function UserSidebarWithWalls({ users, onUserClick, currentUser }: UserSidebarWithWallsProps) {
-  const [activeView, setActiveView] = useState<'users' | 'walls'>('users');
+export default function UserSidebarWithWalls({ users, onUserClick, currentUser, activeView: propActiveView }: UserSidebarWithWallsProps) {
+  const [activeView, setActiveView] = useState<'users' | 'walls'>(propActiveView || 'users');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'public' | 'friends'>('public');
   const [posts, setPosts] = useState<WallPost[]>([]);
@@ -59,6 +60,13 @@ export default function UserSidebarWithWalls({ users, onUserClick, currentUser }
       fetchPosts();
     }
   }, [activeView, activeTab, currentUser]);
+
+  // تحديث activeView عند تغيير propActiveView
+  useEffect(() => {
+    if (propActiveView) {
+      setActiveView(propActiveView);
+    }
+  }, [propActiveView]);
 
   // معالجة اختيار الصورة
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,7 +127,7 @@ export default function UserSidebarWithWalls({ users, onUserClick, currentUser }
     try {
       const formData = new FormData();
       formData.append('content', newPostContent);
-      formData.append('postType', activeTab);
+      formData.append('type', activeTab); // تم تغيير postType إلى type لمطابقة الخادم
       formData.append('userId', currentUser.id.toString());
       
       if (selectedImage) {
@@ -158,12 +166,12 @@ export default function UserSidebarWithWalls({ users, onUserClick, currentUser }
     if (!currentUser) return;
     
     try {
-      const response = await apiRequest('/api/wall/posts/react', {
+      const response = await apiRequest('/api/wall/react', {
         method: 'POST',
         body: {
           postId,
           userId: currentUser.id,
-          reactionType: type,
+          type: type, // تم تغيير reactionType إلى type لمطابقة الخادم
         }
       });
 
@@ -233,34 +241,36 @@ export default function UserSidebarWithWalls({ users, onUserClick, currentUser }
   };
 
   return (
-    <aside className="w-96 bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col">
-      {/* Toggle Buttons */}
-      <div className="flex border-b border-gray-200">
-        <Button
-          variant={activeView === 'users' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-none py-3 ${
-            activeView === 'users' 
-              ? 'bg-blue-500 text-white' 
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
-          onClick={() => setActiveView('users')}
-        >
-          <Users className="w-4 h-4 ml-2" />
-          المستخدمون
-        </Button>
-        <Button
-          variant={activeView === 'walls' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-none py-3 ${
-            activeView === 'walls' 
-              ? 'bg-blue-500 text-white' 
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
-          onClick={() => setActiveView('walls')}
-        >
-          <Home className="w-4 h-4 ml-2" />
-          الحوائط
-        </Button>
-      </div>
+    <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col">
+      {/* Toggle Buttons - يظهر فقط إذا لم يتم التحكم خارجياً */}
+      {!propActiveView && (
+        <div className="flex border-b border-gray-200">
+          <Button
+            variant={activeView === 'users' ? 'default' : 'ghost'}
+            className={`flex-1 rounded-none py-3 ${
+              activeView === 'users' 
+                ? 'bg-blue-500 text-white' 
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+            onClick={() => setActiveView('users')}
+          >
+            <Users className="w-4 h-4 ml-2" />
+            المستخدمون
+          </Button>
+          <Button
+            variant={activeView === 'walls' ? 'default' : 'ghost'}
+            className={`flex-1 rounded-none py-3 ${
+              activeView === 'walls' 
+                ? 'bg-blue-500 text-white' 
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+            onClick={() => setActiveView('walls')}
+          >
+            <Home className="w-4 h-4 ml-2" />
+            الحوائط
+          </Button>
+        </div>
+      )}
 
       {/* Users View */}
       {activeView === 'users' && (
@@ -340,8 +350,21 @@ export default function UserSidebarWithWalls({ users, onUserClick, currentUser }
             </ul>
             
             {filteredUsers.length === 0 && (
-              <div className="text-center text-gray-500 py-6">
-                {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمون متصلون'}
+              <div className="text-center text-gray-500 py-8">
+                <div className="mb-3">
+                  {searchTerm ? '🔍' : '👥'}
+                </div>
+                <p className="text-sm">
+                  {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمون متصلون حالياً'}
+                </p>
+                {searchTerm && (
+                  <button 
+                    onClick={() => setSearchTerm('')}
+                    className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
+                  >
+                    مسح البحث
+                  </button>
+                )}
               </div>
             )}
           </div>
