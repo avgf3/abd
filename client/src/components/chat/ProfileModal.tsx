@@ -1823,41 +1823,61 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               </div>
             ) : currentEditType === 'sendPoints' ? (
               <div>
-                <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+                <div style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  padding: '12px', 
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
                   <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '8px' }}>
                     نقاطك الحالية: {formatPoints(currentUser?.points || 0)}
                   </div>
-                  <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '16px' }}>
-                    نقاط {user.username}: {formatPoints(user.points || 0)}
+                  
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <input
+                      type="number"
+                      placeholder="عدد النقاط"
+                      value={pointsToSend}
+                      onChange={(e) => setPointsToSend(e.target.value)}
+                      style={{
+                        flex: '1',
+                        padding: '8px',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        background: 'rgba(255,255,255,0.1)',
+                        color: '#fff',
+                        fontSize: '12px'
+                      }}
+                      min="1"
+                      max={currentUser?.points || 0}
+                      disabled={sendingPoints}
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleSendPoints}
+                      disabled={sendingPoints || !pointsToSend || parseInt(pointsToSend) <= 0}
+                      style={{
+                        background: sendingPoints ? 'rgba(255,193,7,0.5)' : 'linear-gradient(135deg, #ffc107, #ff8f00)',
+                        color: '#000',
+                        border: 'none',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        cursor: sendingPoints ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      {sendingPoints ? '⏳' : '🎁'} إرسال
+                    </button>
+                  </div>
+                  
+                  <div style={{ fontSize: '10px', color: '#aaa' }}>
+                    💡 سيتم خصم النقاط من رصيدك وإضافتها للمستخدم
                   </div>
                 </div>
                 
-                <div className="edit-field">
-                  <label>عدد النقاط المراد إرسالها:</label>
-                  <input
-                    type="number"
-                    placeholder="أدخل عدد النقاط"
-                    value={pointsToSend}
-                    onChange={(e) => setPointsToSend(e.target.value)}
-                    min="1"
-                    max={currentUser?.points || 0}
-                    disabled={sendingPoints}
-                    autoFocus
-                  />
-                </div>
-                
-                <div style={{ fontSize: '11px', color: '#ccc', textAlign: 'center', margin: '12px 0' }}>
-                  💡 سيتم خصم النقاط من رصيدك وإضافتها لـ {user.username}
-                </div>
-                
-                <div className="edit-buttons">
-                  <button 
-                    className="save-btn" 
-                    onClick={handleSendPoints} 
-                    disabled={sendingPoints || !pointsToSend || parseInt(pointsToSend) <= 0}
-                  >
-                    {sendingPoints ? '⏳ جاري الإرسال...' : '🎁 إرسال النقاط'}
-                  </button>
+                <div className="edit-buttons" style={{ marginTop: '12px' }}>
                   <button className="cancel-btn" onClick={closeEditModal}>
                     ❌ إلغاء
                   </button>
