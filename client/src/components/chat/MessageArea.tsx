@@ -15,6 +15,7 @@ interface MessageAreaProps {
   onReportMessage?: (user: ChatUser, messageContent: string, messageId: number) => void;
   onUserClick?: (event: React.MouseEvent, user: ChatUser) => void;
   onlineUsers?: ChatUser[]; // إضافة قائمة المستخدمين المتصلين للمنشن
+  currentRoomName?: string; // اسم الغرفة الحالية
 }
 
 export default function MessageArea({ 
@@ -25,7 +26,8 @@ export default function MessageArea({
   typingUsers,
   onReportMessage,
   onUserClick,
-  onlineUsers = []
+  onlineUsers = [],
+  currentRoomName = 'الدردشة العامة'
 }: MessageAreaProps) {
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -135,6 +137,21 @@ export default function MessageArea({
 
   return (
     <section className="flex-1 flex flex-col bg-white">
+      {/* Room Header */}
+      <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 p-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
+            <span className="text-primary font-bold">💬</span>
+          </div>
+          <div>
+            <h2 className="font-bold text-lg text-primary">{currentRoomName}</h2>
+            <p className="text-sm text-muted-foreground">
+              {messages.length} رسالة • {typingUsers.size > 0 ? `${typingUsers.size} يكتب الآن...` : 'جاهز للدردشة'}
+            </p>
+          </div>
+        </div>
+      </div>
+      
       <div className="flex-1 p-6 overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white">
         {messages.map((message) => (
           <div

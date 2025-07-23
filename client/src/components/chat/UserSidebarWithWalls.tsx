@@ -7,21 +7,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Users, Globe, Home } from 'lucide-react';
 import SimpleUserMenu from './SimpleUserMenu';
 import ProfileImage from './ProfileImage';
+import RoomsPanel from './RoomsPanel';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
-import type { ChatUser, WallPost, CreateWallPostData } from '@/types/chat';
+import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 
 interface UserSidebarWithWallsProps {
   users: ChatUser[];
   onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
   currentUser?: ChatUser | null;
-  activeView?: 'users' | 'walls';
+  activeView?: 'users' | 'walls' | 'rooms';
+  rooms?: ChatRoom[];
+  currentRoomId?: string;
+  onRoomChange?: (roomId: string) => void;
+  onAddRoom?: (roomData: { name: string; description: string; image: File | null }) => void;
+  onDeleteRoom?: (roomId: string) => void;
 }
 
-export default function UserSidebarWithWalls({ users, onUserClick, currentUser, activeView: propActiveView }: UserSidebarWithWallsProps) {
-  const [activeView, setActiveView] = useState<'users' | 'walls'>(propActiveView || 'users');
+export default function UserSidebarWithWalls({ 
+  users, 
+  onUserClick, 
+  currentUser, 
+  activeView: propActiveView,
+  rooms = [],
+  currentRoomId = '',
+  onRoomChange,
+  onAddRoom,
+  onDeleteRoom
+}: UserSidebarWithWallsProps) {
+  const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms'>(propActiveView || 'users');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'public' | 'friends'>('public');
   const [posts, setPosts] = useState<WallPost[]>([]);
@@ -268,6 +284,18 @@ export default function UserSidebarWithWalls({ users, onUserClick, currentUser, 
           >
             <Home className="w-4 h-4 ml-2" />
             الحوائط
+          </Button>
+          <Button
+            variant={activeView === 'rooms' ? 'default' : 'ghost'}
+            className={`flex-1 rounded-none py-3 ${
+              activeView === 'rooms' 
+                ? 'bg-blue-500 text-white' 
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+            onClick={() => setActiveView('rooms')}
+          >
+            <Users className="w-4 h-4 ml-2" />
+            الغرف
           </Button>
         </div>
       )}
@@ -550,6 +578,18 @@ export default function UserSidebarWithWalls({ users, onUserClick, currentUser, 
             </div>
           </Tabs>
         </div>
+      )}
+
+      {/* Rooms View */}
+      {activeView === 'rooms' && onRoomChange && onAddRoom && onDeleteRoom && (
+        <RoomsPanel
+          currentUser={currentUser}
+          rooms={rooms}
+          currentRoomId={currentRoomId}
+          onRoomChange={onRoomChange}
+          onAddRoom={onAddRoom}
+          onDeleteRoom={onDeleteRoom}
+        />
       )}
     </aside>
   );
