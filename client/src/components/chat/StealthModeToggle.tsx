@@ -74,10 +74,10 @@ export default function StealthModeToggle({ currentUser }: StealthModeToggleProp
 
   return (
     <Button 
-      className={`glass-effect px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 border ${
+      className={`px-3 py-1 rounded-xl transition-all duration-200 flex items-center gap-2 border ${
         isHidden 
-          ? 'bg-purple-600/20 hover:bg-purple-600/30 border-purple-400 text-purple-300' 
-          : 'hover:bg-accent border-gray-400'
+          ? 'bg-purple-100 hover:bg-purple-200 border-purple-400 text-purple-800' 
+          : 'bg-white/50 hover:bg-purple-50 border-purple-200 text-purple-700'
       }`}
       onClick={toggleStealthMode}
       disabled={isLoading}
@@ -85,7 +85,7 @@ export default function StealthModeToggle({ currentUser }: StealthModeToggleProp
     >
       <span>{isHidden ? '🕵️' : '👁️'}</span>
       {isLoading ? 'جاري التحديث...' : (isHidden ? 'مخفي' : 'ظاهر')}
-      {isHidden && <span className="text-xs bg-purple-500 px-2 py-1 rounded">مراقبة</span>}
+      {isHidden && <span className="text-xs bg-purple-200 text-purple-800 px-2 py-1 rounded-full">مراقبة</span>}
     </Button>
   );
 }

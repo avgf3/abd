@@ -214,12 +214,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   return (
       <div className="h-screen flex flex-col" onClick={closeUserPopup}>
       {/* Header */}
-      <header className="bg-secondary py-4 px-6 flex justify-between items-center shadow-2xl border-b border-accent">
+      <header className="bg-gradient-to-r from-purple-50 to-blue-50 py-2 px-4 flex justify-between items-center shadow-2xl border-b-2 border-purple-200">
         <div className="flex items-center gap-3">
           {/* زر الحوائط في الزاوية اليسرى */}
           <Button 
-            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            className={`px-2 py-1 rounded-xl transition-all duration-200 flex items-center gap-2 border ${
+              activeView === 'walls' ? 'bg-purple-100 text-purple-800 border-purple-300' : 'bg-white/50 hover:bg-purple-50 border-purple-200 text-purple-700'
             }`}
             onClick={() => setActiveView(activeView === 'walls' ? 'hidden' : 'walls')}
             title="الحوائط"
@@ -234,8 +234,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           
           {/* زر المستخدمين */}
           <Button 
-            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            className={`px-2 py-1 rounded-xl transition-all duration-200 flex items-center gap-2 border ${
+              activeView === 'users' ? 'bg-purple-100 text-purple-800 border-purple-300' : 'bg-white/50 hover:bg-purple-50 border-purple-200 text-purple-700'
             }`}
             onClick={() => setActiveView(activeView === 'users' ? 'hidden' : 'users')}
             title="المستخدمون المتصلون"
@@ -243,14 +243,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             <span>👥</span>
             المستخدمون ({chat.onlineUsers.filter(u => u.isOnline).length})
           </Button>
-          <div className="text-2xl">💬</div>
-          <div className="text-2xl font-bold text-white">
-            Arabic<span className="text-primary">Chat</span>
+          <div className="text-xl">💬</div>
+          <div className="text-xl font-bold text-purple-800">
+            Arabic<span className="text-purple-600">Chat</span>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <Button 
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
+            className="px-3 py-1 rounded-xl bg-white/50 hover:bg-purple-50 border border-purple-200 text-purple-700 transition-all duration-200 flex items-center gap-2 relative"
             onClick={() => setShowNotifications(true)}
           >
             <span>🔔</span>
@@ -258,7 +258,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
           
           <Button 
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
+            className="px-3 py-1 rounded-xl bg-white/50 hover:bg-purple-50 border border-purple-200 text-purple-700 transition-all duration-200 flex items-center gap-2 relative"
             onClick={() => setShowFriends(true)}
           >
             <span>👥</span>
@@ -268,7 +268,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
 
           <Button 
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+            className="px-3 py-1 rounded-xl bg-white/50 hover:bg-purple-50 border border-purple-200 text-purple-700 transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowMessages(true)}
             title="الرسائل"
           >
@@ -280,7 +280,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {chat.currentUser && (chat.currentUser.userType === 'owner' || chat.currentUser.userType === 'admin') && (
             <>
               <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+                className="px-3 py-1 rounded-xl bg-white/50 hover:bg-purple-50 border border-purple-200 text-purple-700 transition-all duration-200 flex items-center gap-2"
                 onClick={() => setShowModerationPanel(true)}
               >
                 <span>🛡️</span>
@@ -290,7 +290,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               <StealthModeToggle currentUser={chat.currentUser} />
               
               <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 border border-red-400 relative"
+                className="px-3 py-1 rounded-xl bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 transition-all duration-200 flex items-center gap-2 relative"
                 onClick={() => setShowReportsLog(true)}
               >
                 <span>⚠️</span>
@@ -298,7 +298,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               </Button>
               
               <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400"
+                className="px-3 py-1 rounded-xl bg-yellow-50 hover:bg-yellow-100 border border-yellow-300 text-yellow-700 transition-all duration-200 flex items-center gap-2"
                 onClick={() => setShowActiveActions(true)}
               >
                 <span>🔒</span>
@@ -308,7 +308,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               {/* زر ترقية المستخدمين - للمالك فقط */}
               {chat.currentUser?.userType === 'owner' && (
                 <Button 
-                  className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2"
+                  className="px-3 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-700 transition-all duration-200 flex items-center gap-2"
                   onClick={() => setShowPromotePanel(true)}
                 >
                   <span>👑</span>
@@ -321,7 +321,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* زر خاص بالمالك فقط */}
           {chat.currentUser && chat.currentUser.userType === 'owner' && (
             <Button 
-              className="glass-effect px-4 py-2 rounded-lg hover:bg-purple-600 transition-all duration-200 flex items-center gap-2 border border-purple-400"
+              className="px-3 py-1 rounded-xl bg-purple-100 hover:bg-purple-200 border border-purple-400 text-purple-800 transition-all duration-200 flex items-center gap-2"
               onClick={() => setShowOwnerPanel(true)}
             >
               <span>👑</span>
@@ -330,7 +330,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           )}
           
           <Button 
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+            className="px-3 py-1 rounded-xl bg-white/50 hover:bg-purple-50 border border-purple-200 text-purple-700 transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowSettings(!showSettings)}
           >
             <span>⚙️</span>
