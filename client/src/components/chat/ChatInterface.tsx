@@ -23,12 +23,13 @@ import ProfileImage from './ProfileImage';
 import StealthModeToggle from './StealthModeToggle';
 import WelcomeNotification from './WelcomeNotification';
 import ThemeSelector from './ThemeSelector';
+import RoomsPanel from './RoomsPanel';
 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { useChat } from '@/hooks/useChat';
-import type { ChatUser } from '@/types/chat';
+import type { ChatUser, ChatRoom } from '@/types/chat';
 
 interface ChatInterfaceProps {
   chat: ReturnType<typeof useChat>;
@@ -42,7 +43,69 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAdminReports, setShowAdminReports] = useState(false);
-  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls'>('users'); // إظهار المستخدمين افتراضياً
+  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms'>('users'); // إظهار المستخدمين افتراضياً
+  
+  // حالة الغرف
+  const [rooms, setRooms] = useState([
+    { id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '' },
+    { id: 'music', name: 'أغاني وسهر', description: 'غرفة للموسيقى والترفيه', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '' }
+  ]);
+  const [currentRoomId, setCurrentRoomId] = useState('general');
+
+  // دوال إدارة الغرف
+  const handleRoomChange = (roomId: string) => {
+    setCurrentRoomId(roomId);
+    // هنا يمكن إضافة منطق تغيير الغرفة في الخادم
+  };
+
+  const handleAddRoom = async (roomData: { name: string; description: string; image: File | null }) => {
+    try {
+      // هنا سيتم إرسال البيانات للخادم لإنشاء الغرفة
+      const newRoom = {
+        id: `room_${Date.now()}`,
+        name: roomData.name,
+        description: roomData.description,
+        isDefault: false,
+        createdBy: chat.currentUser?.id || 1,
+        createdAt: new Date(),
+        isActive: true,
+        userCount: 0,
+        icon: roomData.image ? URL.createObjectURL(roomData.image) : ''
+      };
+      
+      setRooms(prev => [...prev, newRoom]);
+      toast({
+        title: "تم إنشاء الغرفة",
+        description: `تم إنشاء غرفة "${roomData.name}" بنجاح`,
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ في إنشاء الغرفة",
+        description: "حدث خطأ أثناء إنشاء الغرفة",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteRoom = async (roomId: string) => {
+    try {
+      // هنا سيتم حذف الغرفة من الخادم
+      setRooms(prev => prev.filter(room => room.id !== roomId));
+      if (currentRoomId === roomId) {
+        setCurrentRoomId('general'); // العودة للغرفة الرئيسية
+      }
+      toast({
+        title: "تم حذف الغرفة",
+        description: "تم حذف الغرفة بنجاح",
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ في حذف الغرفة",
+        description: "حدث خطأ أثناء حذف الغرفة",
+        variant: "destructive",
+      });
+    }
+  };
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
@@ -351,6 +414,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onUserClick={handleUserClick}
               currentUser={chat.currentUser}
               activeView={activeView}
+              rooms={rooms}
+              currentRoomId={currentRoomId}
+              onRoomChange={handleRoomChange}
+              onAddRoom={handleAddRoom}
+              onDeleteRoom={handleDeleteRoom}
             />
           </div>
         )}
@@ -363,6 +431,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           onReportMessage={handleReportUser}
           onUserClick={handleUserClick}
           onlineUsers={chat.onlineUsers}
+          currentRoomName={rooms.find(room => room.id === currentRoomId)?.name || 'الدردشة العامة'}
         />
       </main>
 
