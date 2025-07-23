@@ -1761,7 +1761,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       </div>
 
       {/* Edit Modal - exact match to original */}
-      {currentEditType && user.id === currentUser?.id && (
+      {currentEditType && (user.id === currentUser?.id || currentEditType === 'sendPoints') && (
         <div className="edit-modal">
           <div className="edit-content">
             <h3>
