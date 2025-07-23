@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Users, Globe, Home } from 'lucide-react';
+import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Users, Globe, Home, MessageSquare } from 'lucide-react';
 import SimpleUserMenu from './SimpleUserMenu';
 import ProfileImage from './ProfileImage';
 import RoomsPanel from './RoomsPanel';
@@ -19,6 +19,7 @@ interface UserSidebarWithWallsProps {
   onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
   currentUser?: ChatUser | null;
   activeView?: 'users' | 'walls' | 'rooms';
+  onActiveViewChange?: (view: 'users' | 'walls' | 'rooms') => void;
   rooms?: ChatRoom[];
   currentRoomId?: string;
   onRoomChange?: (roomId: string) => void;
@@ -31,6 +32,7 @@ export default function UserSidebarWithWalls({
   onUserClick, 
   currentUser, 
   activeView: propActiveView,
+  onActiveViewChange,
   rooms = [],
   currentRoomId = '',
   onRoomChange,
@@ -83,6 +85,14 @@ export default function UserSidebarWithWalls({
       setActiveView(propActiveView);
     }
   }, [propActiveView]);
+
+  // دالة للتعامل مع تغيير التبويب
+  const handleViewChange = (view: 'users' | 'walls' | 'rooms') => {
+    setActiveView(view);
+    if (onActiveViewChange) {
+      onActiveViewChange(view);
+    }
+  };
 
   // معالجة اختيار الصورة
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -258,9 +268,8 @@ export default function UserSidebarWithWalls({
 
   return (
     <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col">
-      {/* Toggle Buttons - يظهر فقط إذا لم يتم التحكم خارجياً */}
-      {!propActiveView && (
-        <div className="flex border-b border-gray-200">
+      {/* Toggle Buttons */}
+      <div className="flex border-b border-gray-200">
           <Button
             variant={activeView === 'users' ? 'default' : 'ghost'}
             className={`flex-1 rounded-none py-3 ${
@@ -268,7 +277,7 @@ export default function UserSidebarWithWalls({
                 ? 'bg-blue-500 text-white' 
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
-            onClick={() => setActiveView('users')}
+            onClick={() => handleViewChange('users')}
           >
             <Users className="w-4 h-4 ml-2" />
             المستخدمون
@@ -280,7 +289,7 @@ export default function UserSidebarWithWalls({
                 ? 'bg-blue-500 text-white' 
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
-            onClick={() => setActiveView('walls')}
+            onClick={() => handleViewChange('walls')}
           >
             <Home className="w-4 h-4 ml-2" />
             الحوائط
@@ -292,13 +301,12 @@ export default function UserSidebarWithWalls({
                 ? 'bg-blue-500 text-white' 
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
-            onClick={() => setActiveView('rooms')}
+            onClick={() => handleViewChange('rooms')}
           >
-            <Users className="w-4 h-4 ml-2" />
+            <MessageSquare className="w-4 h-4 ml-2" />
             الغرف
           </Button>
         </div>
-      )}
 
       {/* Users View */}
       {activeView === 'users' && (
@@ -581,14 +589,14 @@ export default function UserSidebarWithWalls({
       )}
 
       {/* Rooms View */}
-      {activeView === 'rooms' && onRoomChange && onAddRoom && onDeleteRoom && (
+      {activeView === 'rooms' && (
         <RoomsPanel
           currentUser={currentUser}
-          rooms={rooms}
-          currentRoomId={currentRoomId}
-          onRoomChange={onRoomChange}
-          onAddRoom={onAddRoom}
-          onDeleteRoom={onDeleteRoom}
+          rooms={rooms || []}
+          currentRoomId={currentRoomId || ''}
+          onRoomChange={onRoomChange || (() => {})}
+          onAddRoom={onAddRoom || (() => {})}
+          onDeleteRoom={onDeleteRoom || (() => {})}
         />
       )}
     </aside>

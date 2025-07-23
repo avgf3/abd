@@ -52,6 +52,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   ]);
   const [currentRoomId, setCurrentRoomId] = useState('general');
 
+  // دالة تغيير التبويب
+  const handleActiveViewChange = (view: 'users' | 'walls' | 'rooms') => {
+    setActiveView(view);
+  };
+
   // دوال إدارة الغرف
   const handleRoomChange = (roomId: string) => {
     setCurrentRoomId(roomId);
@@ -414,6 +419,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onUserClick={handleUserClick}
               currentUser={chat.currentUser}
               activeView={activeView}
+              onActiveViewChange={handleActiveViewChange}
               rooms={rooms}
               currentRoomId={currentRoomId}
               onRoomChange={handleRoomChange}
@@ -431,7 +437,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           onReportMessage={handleReportUser}
           onUserClick={handleUserClick}
           onlineUsers={chat.onlineUsers}
-          currentRoomName={rooms.find(room => room.id === currentRoomId)?.name || 'الدردشة العامة'}
         />
       </main>
 
