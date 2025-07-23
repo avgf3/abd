@@ -255,8 +255,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          {/* منطقة الحائط - ثلث الصفحة */}
-          <div className="w-1/3 border-l border-border/50 p-6 flex flex-col bg-gradient-to-b from-muted/20 to-transparent">
+          {/* منطقة الحائط - أكثر من الثلث قليلاً */}
+          <div className="w-2/5 border-l border-border/50 p-6 flex flex-col bg-gradient-to-b from-muted/20 to-transparent">
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col">
               <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50 backdrop-blur-sm rounded-xl p-1">
                 <TabsTrigger value="public" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2">
@@ -512,8 +512,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
             </Tabs>
           </div>
 
-          {/* منطقة الشات - ثلثين الصفحة */}
-          <div className="w-2/3 p-6">
+          {/* منطقة الشات - أقل من الثلثين قليلاً */}
+          <div className="w-3/5 p-6">
             <div className="h-full bg-gradient-to-br from-muted/10 to-muted/20 rounded-2xl flex items-center justify-center text-muted-foreground border border-dashed border-border/50">
               <div className="text-center">
                 <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
