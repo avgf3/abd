@@ -346,7 +346,7 @@ export function useChat() {
               
             case 'userJoined':
               if (message.user) {
-                console.log('👤 مستخدم جديد انضم:', message.user.username);
+                console.log('👤 مستخدم جديد انضم:', message.user.username, 'Type:', message.user.userType, 'Hidden:', message.user.isHidden);
                 setOnlineUsers(prev => {
                   const exists = prev.find(u => u.id === message.user!.id);
                   if (exists) {
@@ -355,15 +355,26 @@ export function useChat() {
                   }
                   
                   // فحص ما إذا كان المستخدم يجب إظهاره
-                  const shouldShow = user.userType === 'admin' || user.userType === 'owner' || !message.user!.isHidden;
+                  // للإدمن والمالك: إظهار جميع المستخدمين إلا المتجاهلين
+                  // للمستخدمين العاديين: إظهار المستخدمين غير المخفيين وغير المتجاهلين
+                  const shouldShow = (user.userType === 'admin' || user.userType === 'owner') || 
+                                   (!message.user!.isHidden);
                   const isIgnored = ignoredUsers.has(message.user!.id);
                   
+                  console.log(`فحص إظهار المستخدم ${message.user!.username}:`, {
+                    shouldShow,
+                    isIgnored,
+                    userType: message.user!.userType,
+                    isHidden: message.user!.isHidden,
+                    currentUserType: user.userType
+                  });
+                  
                   if (shouldShow && !isIgnored) {
-                    console.log('إضافة المستخدم للقائمة:', message.user!.username);
+                    console.log('✅ إضافة المستخدم للقائمة:', message.user!.username);
                     return [...prev, message.user!];
                   }
                   
-                  console.log('المستخدم مخفي أو متجاهل');
+                  console.log('❌ المستخدم مخفي أو متجاهل');
                   return prev;
                 });
               }
