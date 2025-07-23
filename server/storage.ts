@@ -4,6 +4,7 @@ import {
   friends,
   notifications,
   blockedDevices,
+  friendRequests,
   type User,
   type InsertUser,
   type Message,
@@ -12,6 +13,8 @@ import {
   type InsertFriend,
   type Notification,
   type InsertNotification,
+  type FriendRequest,
+  type InsertFriendRequest,
 } from "../shared/schema-sqlite";
 import { db } from "./database-adapter";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -383,9 +386,14 @@ export class MixedStorage implements IStorage {
           country: insertUser.country,
           relation: insertUser.relation,
           bio: insertUser.bio,
-                usernameColor: insertUser.usernameColor || '#FFFFFF',
-      userTheme: insertUser.userTheme || 'default',
-      profileEffect: insertUser.profileEffect || 'none',
+          usernameColor: insertUser.usernameColor || '#FFFFFF',
+          userTheme: insertUser.userTheme || 'default',
+          profileEffect: insertUser.profileEffect || 'none',
+          // إضافة نظام النقاط والمستويات
+          points: insertUser.points || 0,
+          level: insertUser.level || 1,
+          totalPoints: insertUser.totalPoints || 0,
+          levelProgress: insertUser.levelProgress || 0,
           // إصلاح القيم المنطقية لـ SQLite
           isOnline: 1, // SQLite يستخدم integers للقيم المنطقية
           isHidden: 0,
@@ -906,38 +914,114 @@ export class MixedStorage implements IStorage {
 
   // Enhanced friend request operations
   async getIncomingFriendRequests(userId: number): Promise<any[]> {
-    const incomingRequests = Array.from(this.friends.values())
-      .filter(f => f.friendId === userId && f.status === 'pending');
-    
-    return await Promise.all(incomingRequests.map(async (request) => {
-      const user = await this.getUser(request.userId!);
-      return {
-        ...request,
-        user
-      };
-    }));
+    try {
+      if (!db) {
+        const incomingRequests = Array.from(this.friendRequests.values())
+          .filter(r => r.receiverId === userId && r.status === 'pending');
+        
+        return await Promise.all(incomingRequests.map(async (request) => {
+          const sender = await this.getUser(request.senderId);
+          return {
+            ...request,
+            sender
+          };
+        }));
+      }
+
+      const requests = await db
+        .select()
+        .from(friendRequests)
+        .where(and(
+          eq(friendRequests.receiverId, userId),
+          eq(friendRequests.status, 'pending')
+        ));
+
+      return await Promise.all(requests.map(async (request) => {
+        const sender = await this.getUser(request.senderId);
+        return {
+          ...request,
+          sender
+        };
+      }));
+    } catch (error) {
+      console.error('Error getting incoming friend requests:', error);
+      return [];
+    }
   }
 
   async getOutgoingFriendRequests(userId: number): Promise<any[]> {
-    const outgoingRequests = Array.from(this.friends.values())
-      .filter(f => f.userId === userId && f.status === 'pending');
-    
-    return await Promise.all(outgoingRequests.map(async (request) => {
-      const user = await this.getUser(request.friendId!);
-      return {
-        ...request,
-        user
-      };
-    }));
+    try {
+      if (!db) {
+        const outgoingRequests = Array.from(this.friendRequests.values())
+          .filter(r => r.senderId === userId && r.status === 'pending');
+        
+        return await Promise.all(outgoingRequests.map(async (request) => {
+          const receiver = await this.getUser(request.receiverId);
+          return {
+            ...request,
+            receiver
+          };
+        }));
+      }
+
+      const requests = await db
+        .select()
+        .from(friendRequests)
+        .where(and(
+          eq(friendRequests.senderId, userId),
+          eq(friendRequests.status, 'pending')
+        ));
+
+      return await Promise.all(requests.map(async (request) => {
+        const receiver = await this.getUser(request.receiverId);
+        return {
+          ...request,
+          receiver
+        };
+      }));
+    } catch (error) {
+      console.error('Error getting outgoing friend requests:', error);
+      return [];
+    }
   }
 
   async acceptFriendRequest(requestId: number): Promise<boolean> {
-    const request = this.friends.get(requestId);
-    if (!request || request.status !== 'pending') return false;
-    
-    request.status = 'accepted';
-    this.friends.set(requestId, request);
-    return true;
+    try {
+      if (!db) {
+        const request = this.friendRequests.get(requestId);
+        if (!request || request.status !== 'pending') return false;
+        
+        request.status = 'accepted';
+        this.friendRequests.set(requestId, request);
+        
+        // Add to friends list
+        await this.addFriend(request.senderId, request.receiverId);
+        return true;
+      }
+
+      const [request] = await db
+        .select()
+        .from(friendRequests)
+        .where(eq(friendRequests.id, requestId));
+
+      if (!request || request.status !== 'pending') return false;
+
+      // Update request status
+      await db
+        .update(friendRequests)
+        .set({ 
+          status: 'accepted',
+          respondedAt: new Date().toISOString()
+        })
+        .where(eq(friendRequests.id, requestId));
+
+      // Add to friends list
+      await this.addFriend(request.senderId, request.receiverId);
+      return true;
+    } catch (error) {
+      console.error('Error accepting friend request:', error);
+      return false;
+    }
   }
 
   async declineFriendRequest(requestId: number): Promise<boolean> {
@@ -998,28 +1082,91 @@ export class MixedStorage implements IStorage {
   }
 
   async createFriendRequest(senderId: number, receiverId: number): Promise<any> {
-    const request = {
-      id: this.currentRequestId++,
-      senderId,
-      receiverId,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      sender: await this.getUser(senderId),
-      receiver: await this.getUser(receiverId)
-    };
+    try {
+      if (!db) {
+        // Fallback to memory storage
+        const request = {
+          id: this.currentRequestId++,
+          senderId,
+          receiverId,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          sender: await this.getUser(senderId),
+          receiver: await this.getUser(receiverId)
+        };
+        this.friendRequests.set(request.id, request);
+        return request;
+      }
 
-    this.friendRequests.set(request.id, request);
-    return request;
+      const [newRequest] = await db
+        .insert(friendRequests)
+        .values({
+          senderId,
+          receiverId,
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        })
+        .returning();
+
+      return {
+        ...newRequest,
+        sender: await this.getUser(senderId),
+        receiver: await this.getUser(receiverId)
+      };
+    } catch (error) {
+      console.error('Error creating friend request:', error);
+      throw error;
+    }
   }
 
   async getFriendRequest(senderId: number, receiverId: number): Promise<any> {
-    return Array.from(this.friendRequests.values()).find(
-      r => r.senderId === senderId && r.receiverId === receiverId && r.status === 'pending'
-    );
+    try {
+      if (!db) {
+        return Array.from(this.friendRequests.values()).find(
+          r => r.senderId === senderId && r.receiverId === receiverId && r.status === 'pending'
+        );
+      }
+
+      const [request] = await db
+        .select()
+        .from(friendRequests)
+        .where(and(
+          eq(friendRequests.senderId, senderId),
+          eq(friendRequests.receiverId, receiverId),
+          eq(friendRequests.status, 'pending')
+        ));
+
+      return request;
+    } catch (error) {
+      console.error('Error getting friend request:', error);
+      return null;
+    }
   }
 
   async getFriendRequestById(requestId: number): Promise<any> {
-    return this.friendRequests.get(requestId);
+    try {
+      if (!db) {
+        return this.friendRequests.get(requestId);
+      }
+
+      const [request] = await db
+        .select()
+        .from(friendRequests)
+        .where(eq(friendRequests.id, requestId));
+
+      if (request) {
+        return {
+          ...request,
+          sender: await this.getUser(request.senderId),
+          receiver: await this.getUser(request.receiverId)
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error getting friend request by ID:', error);
+      return null;
+    }
   }
 
 

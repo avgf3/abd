@@ -36,7 +36,7 @@ export function initSQLiteFallback() {
 function createSQLiteTables() {
   if (!sqliteDb) return;
 
-  // Create users table
+  // Create users table with all required columns
   sqliteDb.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,7 +67,12 @@ function createSQLiteTables() {
       device_id TEXT,
       ignored_users TEXT DEFAULT '[]',
       username_color TEXT DEFAULT '#FFFFFF',
-      user_theme TEXT DEFAULT 'default'
+      user_theme TEXT DEFAULT 'default',
+      profile_effect TEXT DEFAULT 'none',
+      points INTEGER DEFAULT 0,
+      level INTEGER DEFAULT 1,
+      total_points INTEGER DEFAULT 0,
+      level_progress INTEGER DEFAULT 0
     )
   `);
 
@@ -118,10 +123,72 @@ function createSQLiteTables() {
       user_id INTEGER NOT NULL,
       reason TEXT NOT NULL,
       blocked_at DATETIME NOT NULL,
-      blocked_by INTEGER NOT NULL,
-      UNIQUE(ip_address, device_id)
+      blocked_by INTEGER NOT NULL
     )
   `);
+
+  // Create points_history table
+  sqliteDb.exec(`
+    CREATE TABLE IF NOT EXISTS points_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      points INTEGER NOT NULL,
+      reason TEXT NOT NULL,
+      action TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create level_settings table
+  sqliteDb.exec(`
+    CREATE TABLE IF NOT EXISTS level_settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      level INTEGER NOT NULL UNIQUE,
+      required_points INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      color TEXT DEFAULT '#FFFFFF',
+      benefits TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create friend_requests table
+  sqliteDb.exec(`
+    CREATE TABLE IF NOT EXISTS friend_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sender_id INTEGER NOT NULL REFERENCES users(id),
+      receiver_id INTEGER NOT NULL REFERENCES users(id),
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      responded_at DATETIME
+    )
+  `);
+
+  // Add missing columns to existing tables
+  try {
+    // Check if columns exist and add them if missing
+    const userColumns = sqliteDb.prepare("PRAGMA table_info(users)").all();
+    const existingColumns = userColumns.map((col: any) => col.name);
+    
+    const requiredColumns = [
+      { name: 'profile_effect', sql: 'ALTER TABLE users ADD COLUMN profile_effect TEXT DEFAULT "none"' },
+      { name: 'points', sql: 'ALTER TABLE users ADD COLUMN points INTEGER DEFAULT 0' },
+      { name: 'level', sql: 'ALTER TABLE users ADD COLUMN level INTEGER DEFAULT 1' },
+      { name: 'total_points', sql: 'ALTER TABLE users ADD COLUMN total_points INTEGER DEFAULT 0' },
+      { name: 'level_progress', sql: 'ALTER TABLE users ADD COLUMN level_progress INTEGER DEFAULT 0' }
+    ];
+    
+    for (const column of requiredColumns) {
+      if (!existingColumns.includes(column.name)) {
+        console.log(`Adding missing column: ${column.name}`);
+        sqliteDb.exec(column.sql);
+      }
+    }
+  } catch (error) {
+    console.log('Note: Some columns may already exist, continuing...');
+  }
+
+  console.log('✅ SQLite tables are created by database-fallback.ts');
 }
 
 function createDefaultSQLiteUsers() {

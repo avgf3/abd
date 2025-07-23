@@ -356,7 +356,11 @@ export async function createDefaultUsers(): Promise<void> {
           password: 'admin123',
           userType: 'owner',
           role: 'owner',
-          profileImage: '/default_avatar.svg'
+          profileImage: '/default_avatar.svg',
+          points: 0,
+          level: 1,
+          totalPoints: 0,
+          levelProgress: 0
         });
         console.log('✅ Default admin user created');
       }
@@ -371,13 +375,17 @@ export async function createDefaultUsers(): Promise<void> {
           password: 'test123',
           userType: 'member',
           role: 'member',
-          profileImage: '/default_avatar.svg'
+          profileImage: '/default_avatar.svg',
+          points: 0,
+          level: 1,
+          totalPoints: 0,
+          levelProgress: 0
         });
         console.log('✅ Default test user created');
       }
     } else {
       // Use Drizzle ORM for SQLite - import SQLite schema
-      const { users: sqliteUsers } = await import('../shared/schema-sqlite');
+      const { users: sqliteUsers, levelSettings: sqliteLevelSettings } = await import('../shared/schema-sqlite');
       const { count } = await import('drizzle-orm');
       const { eq } = await import('drizzle-orm');
       
@@ -391,7 +399,11 @@ export async function createDefaultUsers(): Promise<void> {
           password: 'admin123',
           userType: 'owner',
           role: 'owner',
-          profileImage: '/default_avatar.svg'
+          profileImage: '/default_avatar.svg',
+          points: 0,
+          level: 1,
+          totalPoints: 0,
+          levelProgress: 0
         });
         console.log('✅ Default admin user created');
       }
@@ -406,14 +418,63 @@ export async function createDefaultUsers(): Promise<void> {
           password: 'test123',
           userType: 'member',
           role: 'member',
-          profileImage: '/default_avatar.svg'
+          profileImage: '/default_avatar.svg',
+          points: 0,
+          level: 1,
+          totalPoints: 0,
+          levelProgress: 0
         });
         console.log('✅ Default test user created');
       }
+
+      // Initialize default level settings
+      await initializeLevelSettings();
     }
     
     console.log('✅ Default users verification complete');
   } catch (error) {
     console.error('❌ Error creating default users:', error);
+  }
+}
+
+async function initializeLevelSettings(): Promise<void> {
+  try {
+    if (!db) return;
+    
+    const { levelSettings } = await import('../shared/schema-sqlite');
+    const { count } = await import('drizzle-orm');
+    
+    // Check if level settings exist
+    const levelResult = await db.select({ count: count() }).from(levelSettings);
+    const levelCount = levelResult[0]?.count || 0;
+
+    if (levelCount === 0) {
+      const defaultLevels = [
+        { level: 1, requiredPoints: 0, title: 'مبتدئ', color: '#FFFFFF' },
+        { level: 2, requiredPoints: 100, title: 'متدرب', color: '#10B981' },
+        { level: 3, requiredPoints: 250, title: 'نشط', color: '#3B82F6' },
+        { level: 4, requiredPoints: 500, title: 'متقدم', color: '#8B5CF6' },
+        { level: 5, requiredPoints: 1000, title: 'خبير', color: '#F59E0B' },
+        { level: 6, requiredPoints: 2000, title: 'محترف', color: '#EF4444' },
+        { level: 7, requiredPoints: 4000, title: 'أسطورة', color: '#EC4899' },
+        { level: 8, requiredPoints: 8000, title: 'بطل', color: '#6366F1' },
+        { level: 9, requiredPoints: 15000, title: 'ملك', color: '#F97316' },
+        { level: 10, requiredPoints: 30000, title: 'إمبراطور', color: '#DC2626' }
+      ];
+
+      for (const level of defaultLevels) {
+        await db.insert(levelSettings).values({
+          ...level,
+          benefits: JSON.stringify({
+            dailyBonus: level.level * 10,
+            specialFeatures: level.level > 5 ? ['custom_colors', 'profile_effects'] : []
+          })
+        });
+      }
+      
+      console.log('✅ Default level settings initialized');
+    }
+  } catch (error) {
+    console.error('❌ Error initializing level settings:', error);
   }
 }
