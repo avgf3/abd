@@ -1710,6 +1710,15 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               <p>
                 🎁 نقاط الهدايا: <span>{user?.points || 0}</span>
               </p>
+              {/* إرسال النقاط - يظهر فقط للمستخدمين الآخرين */}
+              {currentUser && currentUser.id !== user.id && (
+                <p 
+                  onClick={() => setCurrentEditType('sendPoints')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  💰 إرسال النقاط: <span>اضغط للإرسال</span>
+                </p>
+              )}
               <p>
                 🧾 الحالة: <span>{user?.isOnline ? 'متصل' : 'غير متصل'}</span>
               </p>
@@ -1827,6 +1836,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               {currentEditType === 'socialStatus' && 'تعديل الحالة الاجتماعية'}
               {currentEditType === 'theme' && '🎨 اختيار لون الملف الشخصي'}
               {currentEditType === 'effects' && '✨ تعديل التأثيرات الحركية'}
+              {currentEditType === 'sendPoints' && '💰 إرسال النقاط'}
             </h3>
             
             {currentEditType === 'theme' ? (
@@ -1873,6 +1883,48 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : currentEditType === 'sendPoints' ? (
+              <div>
+                <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '8px' }}>
+                    نقاطك الحالية: {formatPoints(currentUser?.points || 0)}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '16px' }}>
+                    نقاط {user.username}: {formatPoints(user.points || 0)}
+                  </div>
+                </div>
+                
+                <div className="edit-field">
+                  <label>عدد النقاط المراد إرسالها:</label>
+                  <input
+                    type="number"
+                    placeholder="أدخل عدد النقاط"
+                    value={pointsToSend}
+                    onChange={(e) => setPointsToSend(e.target.value)}
+                    min="1"
+                    max={currentUser?.points || 0}
+                    disabled={sendingPoints}
+                    autoFocus
+                  />
+                </div>
+                
+                <div style={{ fontSize: '11px', color: '#ccc', textAlign: 'center', margin: '12px 0' }}>
+                  💡 سيتم خصم النقاط من رصيدك وإضافتها لـ {user.username}
+                </div>
+                
+                <div className="edit-buttons">
+                  <button 
+                    className="save-btn" 
+                    onClick={handleSendPoints} 
+                    disabled={sendingPoints || !pointsToSend || parseInt(pointsToSend) <= 0}
+                  >
+                    {sendingPoints ? '⏳ جاري الإرسال...' : '🎁 إرسال النقاط'}
+                  </button>
+                  <button className="cancel-btn" onClick={closeEditModal}>
+                    ❌ إلغاء
+                  </button>
+                </div>
               </div>
             ) : (
               <>
