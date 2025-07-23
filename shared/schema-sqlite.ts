@@ -99,6 +99,16 @@ export const levelSettings = sqliteTable("level_settings", {
   createdAt: text("created_at"), // SQLite uses text for timestamps
 });
 
+// جدول طلبات الصداقة
+export const friendRequests = sqliteTable("friend_requests", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  senderId: integer("sender_id").notNull().references(() => users.id),
+  receiverId: integer("receiver_id").notNull().references(() => users.id),
+  status: text("status").notNull().default("pending"), // 'pending', 'accepted', 'declined', 'ignored'
+  createdAt: text("created_at"),
+  respondedAt: text("responded_at"),
+});
+
 export const insertUserSchema = z.object({
   username: z.string(),
   password: z.string().optional(),
@@ -161,3 +171,13 @@ export type InsertLevelSettings = z.infer<typeof insertLevelSettingsSchema>;
 export type LevelSettings = typeof levelSettings.$inferSelect;
 export type BlockedDevice = typeof blockedDevices.$inferSelect;
 export type InsertBlockedDevice = typeof blockedDevices.$inferInsert;
+
+// إضافة أنواع طلبات الصداقة
+export const insertFriendRequestSchema = z.object({
+  senderId: z.number(),
+  receiverId: z.number(),
+  status: z.string().optional(),
+});
+
+export type FriendRequest = typeof friendRequests.$inferSelect;
+export type InsertFriendRequest = typeof friendRequests.$inferInsert;

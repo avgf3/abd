@@ -429,7 +429,7 @@ export function useChat() {
                 }
                 
                 // تحديث الرسائل بلون الاسم الجديد
-                setMessages(prev => prev.map(msg => 
+                setPublicMessages(prev => prev.map(msg => 
                   msg.sender && msg.sender.id === message.userId
                     ? { 
                         ...msg, 
