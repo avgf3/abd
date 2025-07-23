@@ -362,6 +362,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           typingUsers={chat.typingUsers}
           onReportMessage={handleReportUser}
           onUserClick={handleUserClick}
+          onlineUsers={chat.onlineUsers}
         />
       </main>
 

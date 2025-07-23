@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ProfileImage from './ProfileImage';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
+import { findMentions, playMentionSound, renderMessageWithMentions, insertMention } from '@/utils/mentionUtils';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 
 interface MessageAreaProps {
@@ -13,6 +14,7 @@ interface MessageAreaProps {
   typingUsers: Set<string>;
   onReportMessage?: (user: ChatUser, messageContent: string, messageId: number) => void;
   onUserClick?: (event: React.MouseEvent, user: ChatUser) => void;
+  onlineUsers?: ChatUser[]; // إضافة قائمة المستخدمين المتصلين للمنشن
 }
 
 export default function MessageArea({ 
@@ -22,7 +24,8 @@ export default function MessageArea({
   onTyping,
   typingUsers,
   onReportMessage,
-  onUserClick
+  onUserClick,
+  onlineUsers = []
 }: MessageAreaProps) {
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -36,8 +39,23 @@ export default function MessageArea({
     scrollToBottom();
   }, [messages]);
 
+  // تشغيل صوت التنبيه عند استقبال منشن
+  useEffect(() => {
+    if (messages.length > 0 && currentUser) {
+      const lastMessage = messages[messages.length - 1];
+      
+      // فحص إذا كانت الرسالة الأخيرة تحتوي على منشن للمستخدم الحالي
+      // وليست من المستخدم الحالي نفسه
+      if (lastMessage.sender?.id !== currentUser.id && 
+          lastMessage.content.includes(currentUser.username)) {
+        playMentionSound();
+      }
+    }
+  }, [messages, currentUser]);
+
   const handleSendMessage = () => {
     if (messageText.trim() && currentUser) {
+      // إرسال الرسالة
       onSendMessage(messageText.trim());
       setMessageText('');
     }
@@ -101,6 +119,20 @@ export default function MessageArea({
     }
   };
 
+  // معالج النقر على اسم المستخدم لإدراج المنشن
+  const handleUsernameClick = (event: React.MouseEvent, user: ChatUser) => {
+    event.stopPropagation();
+    
+    // إدراج اسم المستخدم في مربع النص
+    insertMention(messageText, user.username, setMessageText);
+    
+    // التركيز على مربع النص
+    const inputElement = document.querySelector('input[placeholder="اكتب رسالتك هنا..."]') as HTMLInputElement;
+    if (inputElement) {
+      inputElement.focus();
+    }
+  };
+
   return (
     <section className="flex-1 flex flex-col bg-white">
       <div className="flex-1 p-6 overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white">
@@ -126,7 +158,7 @@ export default function MessageArea({
                   textShadow: getFinalUsernameColor(message.sender) ? `0 0 8px ${getFinalUsernameColor(message.sender)}40` : 'none',
                   filter: getFinalUsernameColor(message.sender) ? 'drop-shadow(0 0 2px rgba(255,255,255,0.3))' : 'none'
                 }}
-                      onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
+                      onClick={(e) => handleUsernameClick(e, message.sender!)}
                     >
                       {message.sender.username}
                       {/* إشارة المكتوم */}
@@ -149,7 +181,9 @@ export default function MessageArea({
                     className="rounded-lg max-w-xs shadow-md cursor-pointer hover:shadow-lg transition-shadow"
                   />
                 ) : (
-                  <p className="text-gray-800">{message.content}</p>
+                  <p className="text-gray-800">
+                    {renderMessageWithMentions(message.content, currentUser, onlineUsers)}
+                  </p>
                 )}
               </div>
               
