@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import UserSidebarWithWalls from './UserSidebarWithWalls';
 import MessageArea from './MessageArea';
 import ProfileModal from './ProfileModal';
-import ViewProfileModal from './ViewProfileModal';
 import PrivateMessageBox from './PrivateMessageBox';
 import UserPopup from './UserPopup';
 import SettingsMenu from './SettingsMenu';
@@ -370,7 +369,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {showProfile && (
         <>
           {profileUser && profileUser.id !== chat.currentUser?.id ? (
-            <ViewProfileModal
+            <ProfileModal
               user={profileUser}
               currentUser={chat.currentUser}
               onClose={() => {
