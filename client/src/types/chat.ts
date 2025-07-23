@@ -144,3 +144,33 @@ export interface CreateWallPostData {
   imageFile?: File;
   type: 'friends' | 'public';
 }
+
+// أنواع بيانات الروم الجديدة
+export interface ChatRoom {
+  id: string;
+  name: string;
+  description?: string;
+  isDefault: boolean;
+  createdBy: number;
+  createdAt: Date;
+  isActive: boolean;
+  userCount: number;
+  maxUsers?: number;
+  icon?: string;
+  color?: string;
+}
+
+export interface RoomUser extends ChatUser {
+  roomId: string;
+  joinedAt: Date;
+}
+
+export interface RoomMessage extends ChatMessage {
+  roomId: string;
+}
+
+export interface RoomWebSocketMessage extends WebSocketMessage {
+  roomId?: string;
+  room?: ChatRoom;
+  rooms?: ChatRoom[];
+}
