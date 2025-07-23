@@ -4,10 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Users, Globe, Home, MessageSquare } from 'lucide-react';
+import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Users, Globe, Home, MessageSquare, Plus } from 'lucide-react';
 import SimpleUserMenu from './SimpleUserMenu';
 import ProfileImage from './ProfileImage';
-import RoomsPanel from './RoomsPanel';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -268,45 +267,47 @@ export default function UserSidebarWithWalls({
 
   return (
     <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col">
-      {/* Toggle Buttons */}
+      {/* Toggle Buttons - التبويبات الثلاث */}
       <div className="flex border-b border-gray-200">
-          <Button
-            variant={activeView === 'users' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'users' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            onClick={() => handleViewChange('users')}
-          >
-            <Users className="w-4 h-4 ml-2" />
-            المستخدمون
-          </Button>
-          <Button
-            variant={activeView === 'walls' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'walls' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            onClick={() => handleViewChange('walls')}
-          >
-            <Home className="w-4 h-4 ml-2" />
-            الحوائط
-          </Button>
-          <Button
-            variant={activeView === 'rooms' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'rooms' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            onClick={() => handleViewChange('rooms')}
-          >
-            <MessageSquare className="w-4 h-4 ml-2" />
-            الغرف
-          </Button>
-        </div>
+        <Button
+          variant={activeView === 'users' ? 'default' : 'ghost'}
+          className={`flex-1 rounded-none py-3 text-sm ${
+            activeView === 'users' 
+              ? 'bg-blue-500 text-white' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+          onClick={() => handleViewChange('users')}
+        >
+          <Users className="w-4 h-4 ml-2" />
+          المستخدمون
+        </Button>
+        
+        <Button
+          variant={activeView === 'walls' ? 'default' : 'ghost'}
+          className={`flex-1 rounded-none py-3 text-sm ${
+            activeView === 'walls' 
+              ? 'bg-blue-500 text-white' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+          onClick={() => handleViewChange('walls')}
+        >
+          <Home className="w-4 h-4 ml-2" />
+          الحوائط
+        </Button>
+        
+        <Button
+          variant={activeView === 'rooms' ? 'default' : 'ghost'}
+          className={`flex-1 rounded-none py-3 text-sm ${
+            activeView === 'rooms' 
+              ? 'bg-blue-500 text-white' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+          onClick={() => handleViewChange('rooms')}
+        >
+          <MessageSquare className="w-4 h-4 ml-2" />
+          الغرف
+        </Button>
+      </div>
 
       {/* Users View */}
       {activeView === 'users' && (
@@ -588,16 +589,74 @@ export default function UserSidebarWithWalls({
         </div>
       )}
 
-      {/* Rooms View */}
+      {/* Rooms View - عرض الغرف */}
       {activeView === 'rooms' && (
-        <RoomsPanel
-          currentUser={currentUser}
-          rooms={rooms || []}
-          currentRoomId={currentRoomId || ''}
-          onRoomChange={onRoomChange || (() => {})}
-          onAddRoom={onAddRoom || (() => {})}
-          onDeleteRoom={onDeleteRoom || (() => {})}
-        />
+        <div className="h-full flex flex-col bg-white">
+          {/* Header */}
+          <div className="p-4 border-b">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-blue-500" />
+              <h3 className="font-semibold text-lg">الغرف</h3>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+            {/* Add Room Button for Admins */}
+            {currentUser && ['owner', 'admin'].includes(currentUser.role) && (
+              <Button
+                onClick={() => alert('إضافة غرفة جديدة - قريباً')}
+                variant="outline"
+                className="w-full justify-start gap-2 text-blue-500 hover:bg-blue-50"
+              >
+                <Plus className="w-4 h-4" />
+                إضافة غرفة جديدة
+              </Button>
+            )}
+
+            {/* Default Rooms */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors group bg-blue-50 border border-blue-200">
+                <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                  <div className="w-full h-full bg-gradient-to-br from-blue-200 to-blue-400 flex items-center justify-center">
+                    <span className="text-xs font-bold text-blue-800">د</span>
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">الدردشة العامة</div>
+                  <div className="text-xs text-gray-500">12 متصل</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors group hover:bg-gray-50">
+                <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                  <div className="w-full h-full bg-gradient-to-br from-green-200 to-green-400 flex items-center justify-center">
+                    <span className="text-xs font-bold text-green-800">أ</span>
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">أغاني وسهر</div>
+                  <div className="text-xs text-gray-500">8 متصل</div>
+                </div>
+                {currentUser && ['owner', 'admin'].includes(currentUser.role) && (
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm('هل أنت متأكد من حذف هذه الغرفة؟')) {
+                        alert('تم حذف الغرفة');
+                      }
+                    }}
+                    variant="ghost"
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </aside>
   );
