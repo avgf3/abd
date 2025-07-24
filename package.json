@@ -14,6 +14,7 @@
     "db:fix": "node fix-database.js",
     "db:fix-sqlite": "node fix-sqlite-database.js",
     "db:fix-sqlite-comprehensive": "node fix-sqlite-database-comprehensive.js",
+    "db:fix-postgresql": "node fix-postgresql-database.js",
     "db:fix-production": "node fix-production-database.mjs",
     "db:add-profile-effect": "node run-profile-effect-migration.js",
     "test:supabase": "node test-supabase-connection.js"
