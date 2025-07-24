@@ -208,14 +208,31 @@ export class MixedStorage implements IStorage {
   }
 
   async getUser(id: number): Promise<User | undefined> {
+    // تحقق من صحة المعرف
+    if (!id || typeof id !== 'number' || id <= 0) {
+      console.error(`❌ معرف مستخدم غير صالح: ${id}`);
+      return undefined;
+    }
+
+    console.log(`🔍 البحث عن المستخدم ID: ${id}`);
+    
     // Check memory first (for guests)
     const memUser = this.users.get(id);
-    if (memUser) return memUser;
+    if (memUser) {
+      console.log(`✅ تم العثور على المستخدم في الذاكرة: ${memUser.username}`);
+      return memUser;
+    }
     
     // Check database (for members) only if database is available
     if (db) {
       try {
+        console.log(`🗄️ البحث في قاعدة البيانات عن المستخدم ID: ${id}`);
         const [dbUser] = await db.select().from(users).where(eq(users.id, id));
+        if (dbUser) {
+          console.log(`✅ تم العثور على المستخدم في قاعدة البيانات: ${dbUser.username}`);
+        } else {
+          console.log(`❌ لم يتم العثور على المستخدم ID: ${id} في قاعدة البيانات`);
+        }
         return dbUser || undefined;
       } catch (error: any) {
         console.error('Database query error in getUser:', error);

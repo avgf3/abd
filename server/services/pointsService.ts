@@ -80,12 +80,16 @@ export class PointsService {
   // إضافة نقاط تسجيل الدخول اليومي
   async addDailyLoginPoints(userId: number): Promise<any> {
     try {
+      console.log(`🔍 محاولة إضافة نقاط تسجيل الدخول للمستخدم ID: ${userId}`);
+      
       // التحقق من وجود المستخدم أولاً
       const user = await storage.getUser(userId);
       if (!user) {
-        console.error(`❌ خطأ في نقاط تسجيل الدخول: المستخدم ${userId} غير موجود`);
+        console.error(`❌ خطأ في نقاط تسجيل الدخول: المستخدم ${userId} غير موجود في قاعدة البيانات`);
         return null;
       }
+
+      console.log(`✅ تم العثور على المستخدم: ${user.username} (Type: ${user.userType})`);
 
       // الضيوف لا يحصلون على نقاط يومية
       if (user.userType === 'guest') {

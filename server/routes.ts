@@ -1100,6 +1100,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         socket.isAuthenticated = true;
         isAuthenticated = true;
         
+        console.log(`🔑 تم تعيين معلومات المستخدم: ID=${socket.userId}, Username=${socket.username}`);
+        
         // انضمام للغرفة الخاصة بالمستخدم للرسائل المباشرة
         socket.join(data.userId.toString());
         console.log(`👤 ${data.username} انضم للغرفة ${data.userId}`);
@@ -1160,23 +1162,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // إضافة نقاط تسجيل الدخول اليومي (فقط للأعضاء)
         try {
-          // التحقق من أن المستخدم موجود وأنه عضو (ليس ضيف)
-          if (socket.userId && joinedUser && joinedUser.userType !== 'guest') {
-            const dailyLoginResult = await pointsService.addDailyLoginPoints(socket.userId);
-            if (dailyLoginResult?.leveledUp) {
-              socket.emit('message', {
-                type: 'levelUp',
-                oldLevel: dailyLoginResult.oldLevel,
-                newLevel: dailyLoginResult.newLevel,
-                levelInfo: dailyLoginResult.levelInfo,
-                message: `🎉 تهانينا! وصلت للمستوى ${dailyLoginResult.newLevel}: ${dailyLoginResult.levelInfo?.title}`
-              });
-            } else if (dailyLoginResult) {
-              socket.emit('message', {
-                type: 'dailyBonus',
-                points: dailyLoginResult.newPoints - (dailyLoginResult.newTotalPoints - dailyLoginResult.newPoints),
-                message: `🎁 مكافأة يومية! حصلت على ${dailyLoginResult.newPoints - (dailyLoginResult.newTotalPoints - dailyLoginResult.newPoints)} نقطة!`
-              });
+          // التحقق من أن المستخدم موجود أولاً
+          if (socket.userId) {
+            // الحصول على بيانات المستخدم للتأكد من وجوده ونوعه
+            const currentUser = await storage.getUser(socket.userId);
+            if (currentUser && currentUser.userType !== 'guest') {
+              console.log(`🎁 إضافة نقاط تسجيل الدخول للمستخدم: ${currentUser.username} (ID: ${socket.userId})`);
+              const dailyLoginResult = await pointsService.addDailyLoginPoints(socket.userId);
+              
+              if (dailyLoginResult?.leveledUp) {
+                socket.emit('message', {
+                  type: 'levelUp',
+                  oldLevel: dailyLoginResult.oldLevel,
+                  newLevel: dailyLoginResult.newLevel,
+                  levelInfo: dailyLoginResult.levelInfo,
+                  message: `🎉 تهانينا! وصلت للمستوى ${dailyLoginResult.newLevel}: ${dailyLoginResult.levelInfo?.title}`
+                });
+              } else if (dailyLoginResult) {
+                socket.emit('message', {
+                  type: 'dailyBonus',
+                  points: dailyLoginResult.newPoints - (dailyLoginResult.newTotalPoints - dailyLoginResult.newPoints),
+                  message: `🎁 مكافأة يومية! حصلت على ${dailyLoginResult.newPoints - (dailyLoginResult.newTotalPoints - dailyLoginResult.newPoints)} نقطة!`
+                });
+              }
+            } else if (currentUser) {
+              console.log(`⚠️ تجاهل نقاط تسجيل الدخول للضيف: ${currentUser.username}`);
             }
           }
         } catch (pointsError) {
