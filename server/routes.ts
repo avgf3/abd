@@ -1158,23 +1158,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`📤 إرسال قائمة المستخدمين المتصلين: ${usersWithStatus.length} مستخدم`);
         socket.emit('message', { type: 'onlineUsers', users: usersWithStatus });
         
-        // إضافة نقاط تسجيل الدخول اليومي
+        // إضافة نقاط تسجيل الدخول اليومي (فقط للأعضاء)
         try {
-          const dailyLoginResult = await pointsService.addDailyLoginPoints(socket.userId);
-          if (dailyLoginResult?.leveledUp) {
-            socket.emit('message', {
-              type: 'levelUp',
-              oldLevel: dailyLoginResult.oldLevel,
-              newLevel: dailyLoginResult.newLevel,
-              levelInfo: dailyLoginResult.levelInfo,
-              message: `🎉 تهانينا! وصلت للمستوى ${dailyLoginResult.newLevel}: ${dailyLoginResult.levelInfo?.title}`
-            });
-          } else if (dailyLoginResult) {
-            socket.emit('message', {
-              type: 'dailyBonus',
-              points: dailyLoginResult.newPoints - (dailyLoginResult.newTotalPoints - dailyLoginResult.newPoints),
-              message: `🎁 مكافأة يومية! حصلت على ${dailyLoginResult.newPoints - (dailyLoginResult.newTotalPoints - dailyLoginResult.newPoints)} نقطة!`
-            });
+          // التحقق من أن المستخدم موجود وأنه عضو (ليس ضيف)
+          if (socket.userId && joinedUser && joinedUser.userType !== 'guest') {
+            const dailyLoginResult = await pointsService.addDailyLoginPoints(socket.userId);
+            if (dailyLoginResult?.leveledUp) {
+              socket.emit('message', {
+                type: 'levelUp',
+                oldLevel: dailyLoginResult.oldLevel,
+                newLevel: dailyLoginResult.newLevel,
+                levelInfo: dailyLoginResult.levelInfo,
+                message: `🎉 تهانينا! وصلت للمستوى ${dailyLoginResult.newLevel}: ${dailyLoginResult.levelInfo?.title}`
+              });
+            } else if (dailyLoginResult) {
+              socket.emit('message', {
+                type: 'dailyBonus',
+                points: dailyLoginResult.newPoints - (dailyLoginResult.newTotalPoints - dailyLoginResult.newPoints),
+                message: `🎁 مكافأة يومية! حصلت على ${dailyLoginResult.newPoints - (dailyLoginResult.newTotalPoints - dailyLoginResult.newPoints)} نقطة!`
+              });
+            }
           }
         } catch (pointsError) {
           console.error('خطأ في إضافة نقاط تسجيل الدخول:', pointsError);
@@ -1231,40 +1234,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
           roomId: roomId,
         });
         
-        // إضافة نقاط لإرسال رسالة
+        // إضافة نقاط لإرسال رسالة (فقط للأعضاء)
         try {
-          const pointsResult = await pointsService.addMessagePoints(socket.userId);
-          
-          // التحقق من إنجاز أول رسالة
-          const achievementResult = await pointsService.checkAchievement(socket.userId, 'FIRST_MESSAGE');
-          
-          // إرسال إشعار ترقية المستوى إذا حدثت
-          if (pointsResult?.leveledUp) {
-            socket.emit('message', {
-              type: 'levelUp',
-              oldLevel: pointsResult.oldLevel,
-              newLevel: pointsResult.newLevel,
-              levelInfo: pointsResult.levelInfo,
-              message: `🎉 تهانينا! وصلت للمستوى ${pointsResult.newLevel}: ${pointsResult.levelInfo?.title}`
-            });
-          }
-          
-          // إرسال إشعار إنجاز أول رسالة
-          if (achievementResult?.leveledUp) {
-            socket.emit('message', {
-              type: 'achievement',
-              message: `🏆 إنجاز جديد: أول رسالة! حصلت على ${achievementResult.newPoints - pointsResult.newPoints} نقطة إضافية!`
-            });
-          }
-          
-          // تحديث بيانات المستخدم في الذاكرة والإرسال للعملاء
-          const updatedSender = await storage.getUser(socket.userId);
-          if (updatedSender) {
-            // إرسال البيانات المحدثة للمستخدم
-            socket.emit('message', {
-              type: 'userUpdated',
-              user: updatedSender
-            });
+          // التحقق من أن المستخدم موجود وأنه عضو
+          const currentUser = await storage.getUser(socket.userId);
+          if (currentUser && currentUser.userType !== 'guest') {
+            const pointsResult = await pointsService.addMessagePoints(socket.userId);
+            
+            // التحقق من إنجاز أول رسالة
+            const achievementResult = await pointsService.checkAchievement(socket.userId, 'FIRST_MESSAGE');
+            
+            // إرسال إشعار ترقية المستوى إذا حدثت
+            if (pointsResult?.leveledUp) {
+              socket.emit('message', {
+                type: 'levelUp',
+                oldLevel: pointsResult.oldLevel,
+                newLevel: pointsResult.newLevel,
+                levelInfo: pointsResult.levelInfo,
+                message: `🎉 تهانينا! وصلت للمستوى ${pointsResult.newLevel}: ${pointsResult.levelInfo?.title}`
+              });
+            }
+            
+            // إرسال إشعار إنجاز أول رسالة
+            if (achievementResult?.leveledUp) {
+              socket.emit('message', {
+                type: 'achievement',
+                message: `🏆 إنجاز جديد: أول رسالة! حصلت على ${achievementResult.newPoints - (pointsResult?.newPoints || 0)} نقطة إضافية!`
+              });
+            }
+            
+            // تحديث بيانات المستخدم في الذاكرة والإرسال للعملاء
+            const updatedSender = await storage.getUser(socket.userId);
+            if (updatedSender) {
+              // إرسال البيانات المحدثة للمستخدم
+              socket.emit('message', {
+                type: 'userUpdated',
+                user: updatedSender
+              });
+            }
           }
         } catch (pointsError) {
           console.error('خطأ في إضافة النقاط:', pointsError);

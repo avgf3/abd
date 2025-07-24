@@ -20,7 +20,20 @@ export class PointsService {
     try {
       const user = await storage.getUser(userId);
       if (!user) {
+        console.error(`❌ خطأ في النقاط: المستخدم ${userId} غير موجود`);
         throw new Error('المستخدم غير موجود');
+      }
+
+      // التحقق من أن المستخدم ليس ضيف (الضيوف لا يحصلون على نقاط)
+      if (user.userType === 'guest') {
+        console.log(`⚠️ تجاهل إضافة نقاط للضيف: ${user.username}`);
+        return {
+          leveledUp: false,
+          oldLevel: 1,
+          newLevel: 1,
+          newPoints: 0,
+          newTotalPoints: 0
+        };
       }
 
       const oldTotalPoints = user.totalPoints || 0;
@@ -66,16 +79,34 @@ export class PointsService {
 
   // إضافة نقاط تسجيل الدخول اليومي
   async addDailyLoginPoints(userId: number): Promise<any> {
-    // التحقق من آخر تسجيل دخول
-    const lastLogin = await storage.getUserLastDailyLogin(userId);
-    const today = new Date().toDateString();
-    
-    if (lastLogin !== today) {
-      await storage.updateUserLastDailyLogin(userId, today);
-      return this.addPoints(userId, DEFAULT_POINTS_CONFIG.DAILY_LOGIN, 'DAILY_LOGIN');
+    try {
+      // التحقق من وجود المستخدم أولاً
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.error(`❌ خطأ في نقاط تسجيل الدخول: المستخدم ${userId} غير موجود`);
+        return null;
+      }
+
+      // الضيوف لا يحصلون على نقاط يومية
+      if (user.userType === 'guest') {
+        console.log(`⚠️ تجاهل نقاط تسجيل الدخول للضيف: ${user.username}`);
+        return null;
+      }
+
+      // التحقق من آخر تسجيل دخول
+      const lastLogin = await storage.getUserLastDailyLogin(userId);
+      const today = new Date().toDateString();
+      
+      if (lastLogin !== today) {
+        await storage.updateUserLastDailyLogin(userId, today);
+        return this.addPoints(userId, DEFAULT_POINTS_CONFIG.DAILY_LOGIN, 'DAILY_LOGIN');
+      }
+      
+      return null; // لم يحصل على نقاط اليوم
+    } catch (error) {
+      console.error('خطأ في نقاط تسجيل الدخول اليومي:', error);
+      return null;
     }
-    
-    return null; // لم يحصل على نقاط اليوم
   }
 
   // إضافة نقاط إكمال الملف الشخصي
