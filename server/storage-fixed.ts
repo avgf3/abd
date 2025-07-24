@@ -4,7 +4,6 @@ import {
   friends,
   notifications,
   blockedDevices,
-  friendRequests,
   type User,
   type InsertUser,
   type Message,
@@ -13,9 +12,7 @@ import {
   type InsertFriend,
   type Notification,
   type InsertNotification,
-  type FriendRequest,
-  type InsertFriendRequest,
-} from "../shared/schema-sqlite";
+} from "../shared/schema";
 import { db } from "./database-adapter";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { userService } from "./services/userService";
