@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import FileUploadButton from './FileUploadButton';
+import EmojiPicker from './EmojiPicker';
 
 
 interface PrivateMessageBoxProps {
@@ -25,6 +26,7 @@ export default function PrivateMessageBox({
   onClose
 }: PrivateMessageBoxProps) {
   const [messageText, setMessageText] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -66,6 +68,11 @@ export default function PrivateMessageBox({
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setMessageText(prev => prev + emoji);
+    setShowEmojiPicker(false);
   };
 
   const formatTime = (date?: Date) => {
@@ -189,6 +196,24 @@ export default function PrivateMessageBox({
             onFileSelect={handleFileSelect}
             disabled={false}
           />
+          
+          <div className="relative">
+            <Button
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="bg-purple-100 hover:bg-purple-200 text-purple-600 px-3 py-2 rounded-lg"
+              title="الرموز التعبيرية"
+            >
+              😊
+            </Button>
+            
+            {showEmojiPicker && (
+              <EmojiPicker 
+                onEmojiSelect={handleEmojiSelect}
+                onClose={() => setShowEmojiPicker(false)}
+              />
+            )}
+          </div>
+          
           <Input
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
