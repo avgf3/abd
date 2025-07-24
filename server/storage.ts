@@ -4,7 +4,6 @@ import {
   friends,
   notifications,
   blockedDevices,
-  friendRequests,
   type User,
   type InsertUser,
   type Message,
@@ -13,9 +12,7 @@ import {
   type InsertFriend,
   type Notification,
   type InsertNotification,
-  type FriendRequest,
-  type InsertFriendRequest,
-} from "../shared/schema-sqlite";
+} from "../shared/schema";
 import { db } from "./database-adapter";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { userService } from "./services/userService";
@@ -107,8 +104,8 @@ export class MixedStorage implements IStorage {
   private friends: Map<number, Friend>;
   private friendRequests: Map<number, {
     id: number;
-    senderId: number;
-    receiverId: number;
+    userId: number;
+    friendId: number;
     status: string;
     createdAt: Date;
     senderUsername?: string;
@@ -930,10 +927,10 @@ export class MixedStorage implements IStorage {
     try {
       if (!db) {
         const incomingRequests = Array.from(this.friendRequests.values())
-          .filter(r => r.receiverId === userId && r.status === 'pending');
+          .filter(r => r.friendId === userId && r.status === 'pending');
         
-        return await Promise.all(incomingRequests.map(async (request) => {
-          const sender = await this.getUser(request.senderId);
+                  return await Promise.all(incomingRequests.map(async (request) => {
+            const sender = await this.getUser(request.userId);
           return {
             ...request,
             sender
@@ -943,14 +940,14 @@ export class MixedStorage implements IStorage {
 
       const requests = await db
         .select()
-        .from(friendRequests)
+        .from(friends)
         .where(and(
-          eq(friendRequests.receiverId, userId),
-          eq(friendRequests.status, 'pending')
+          eq(friends.friendId, userId),
+          eq(friends.status, 'pending')
         ));
 
-      return await Promise.all(requests.map(async (request) => {
-        const sender = await this.getUser(request.senderId);
+              return await Promise.all(requests.map(async (request) => {
+          const sender = await this.getUser(request.userId);
         return {
           ...request,
           sender
@@ -966,10 +963,10 @@ export class MixedStorage implements IStorage {
     try {
       if (!db) {
         const outgoingRequests = Array.from(this.friendRequests.values())
-          .filter(r => r.senderId === userId && r.status === 'pending');
+          .filter(r => r.userId === userId && r.status === 'pending');
         
-        return await Promise.all(outgoingRequests.map(async (request) => {
-          const receiver = await this.getUser(request.receiverId);
+                  return await Promise.all(outgoingRequests.map(async (request) => {
+            const receiver = await this.getUser(request.friendId);
           return {
             ...request,
             receiver
@@ -979,14 +976,14 @@ export class MixedStorage implements IStorage {
 
       const requests = await db
         .select()
-        .from(friendRequests)
+        .from(friends)
         .where(and(
-          eq(friendRequests.senderId, userId),
-          eq(friendRequests.status, 'pending')
+          eq(friends.userId, userId),
+          eq(friends.status, 'pending')
         ));
 
-      return await Promise.all(requests.map(async (request) => {
-        const receiver = await this.getUser(request.receiverId);
+              return await Promise.all(requests.map(async (request) => {
+          const receiver = await this.getUser(request.friendId);
         return {
           ...request,
           receiver
@@ -1008,28 +1005,28 @@ export class MixedStorage implements IStorage {
         this.friendRequests.set(requestId, request);
         
         // Add to friends list
-        await this.addFriend(request.senderId, request.receiverId);
+        await this.addFriend(request.userId, request.friendId);
         return true;
       }
 
       const [request] = await db
         .select()
-        .from(friendRequests)
-        .where(eq(friendRequests.id, requestId));
+        .from(friends)
+        .where(eq(friends.id, requestId));
 
       if (!request || request.status !== 'pending') return false;
 
       // Update request status
       await db
-        .update(friendRequests)
+        .update(friends)
         .set({ 
           status: 'accepted',
-          respondedAt: new Date().toISOString()
+          createdAt: new Date()
         })
-        .where(eq(friendRequests.id, requestId));
+        .where(eq(friends.id, requestId));
 
       // Add to friends list
-      await this.addFriend(request.senderId, request.receiverId);
+      await this.addFriend(request.userId, request.friendId);
       return true;
     } catch (error) {
       console.error('Error accepting friend request:', error);
@@ -1100,8 +1097,8 @@ export class MixedStorage implements IStorage {
         // Fallback to memory storage
         const request = {
           id: this.currentRequestId++,
-          senderId,
-          receiverId,
+          userId: senderId,
+          friendId: receiverId,
           status: 'pending',
           createdAt: new Date().toISOString(),
           sender: await this.getUser(senderId),
@@ -1112,19 +1109,18 @@ export class MixedStorage implements IStorage {
       }
 
       const [newRequest] = await db
-        .insert(friendRequests)
+        .insert(friends)
         .values({
-          senderId,
-          receiverId,
-          status: 'pending',
-          createdAt: new Date().toISOString()
+          userId: senderId,
+          friendId: receiverId,
+          status: 'pending'
         })
         .returning();
 
       return {
         ...newRequest,
-        sender: await this.getUser(senderId),
-        receiver: await this.getUser(receiverId)
+        sender: await this.getUser(newRequest.userId),
+        receiver: await this.getUser(newRequest.friendId)
       };
     } catch (error) {
       console.error('Error creating friend request:', error);
@@ -1136,17 +1132,17 @@ export class MixedStorage implements IStorage {
     try {
       if (!db) {
         return Array.from(this.friendRequests.values()).find(
-          r => r.senderId === senderId && r.receiverId === receiverId && r.status === 'pending'
+          r => r.userId === senderId && r.friendId === receiverId && r.status === 'pending'
         );
       }
 
       const [request] = await db
         .select()
-        .from(friendRequests)
+        .from(friends)
         .where(and(
-          eq(friendRequests.senderId, senderId),
-          eq(friendRequests.receiverId, receiverId),
-          eq(friendRequests.status, 'pending')
+          eq(friends.userId, senderId),
+          eq(friends.friendId, receiverId),
+          eq(friends.status, 'pending')
         ));
 
       return request;
@@ -1164,14 +1160,14 @@ export class MixedStorage implements IStorage {
 
       const [request] = await db
         .select()
-        .from(friendRequests)
-        .where(eq(friendRequests.id, requestId));
+        .from(friends)
+        .where(eq(friends.id, requestId));
 
       if (request) {
         return {
           ...request,
-          sender: await this.getUser(request.senderId),
-          receiver: await this.getUser(request.receiverId)
+          sender: await this.getUser(request.userId),
+          receiver: await this.getUser(request.friendId)
         };
       }
 
