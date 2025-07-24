@@ -46,62 +46,131 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms'>('users'); // إظهار المستخدمين افتراضياً
   
   // حالة الغرف
-  const [rooms, setRooms] = useState([
-    { id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '' },
-    { id: 'music', name: 'أغاني وسهر', description: 'غرفة للموسيقى والترفيه', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '' }
-  ]);
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [currentRoomId, setCurrentRoomId] = useState('general');
+  const [roomsLoading, setRoomsLoading] = useState(true);
+
+  // جلب الغرف من الخادم
+  const fetchRooms = async () => {
+    try {
+      setRoomsLoading(true);
+      const response = await apiRequest('/api/rooms', { method: 'GET' });
+      if (response.ok) {
+        const data = await response.json();
+        const formattedRooms = data.rooms.map((room: any) => ({
+          id: room.id,
+          name: room.name,
+          description: room.description || '',
+          isDefault: room.is_default,
+          createdBy: room.created_by,
+          createdAt: new Date(room.created_at),
+          isActive: room.is_active,
+          userCount: room.user_count || 0,
+          icon: room.icon || ''
+        }));
+        setRooms(formattedRooms);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب الغرف:', error);
+      // استخدام غرف افتراضية في حالة الخطأ
+      setRooms([
+        { id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '' },
+        { id: 'music', name: 'أغاني وسهر', description: 'غرفة للموسيقى والترفيه', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '' }
+      ]);
+    } finally {
+      setRoomsLoading(false);
+    }
+  };
 
   // دوال إدارة الغرف
-  const handleRoomChange = (roomId: string) => {
+  const handleRoomChange = async (roomId: string) => {
     setCurrentRoomId(roomId);
-    // هنا يمكن إضافة منطق تغيير الغرفة في الخادم
+    if (chat.currentUser) {
+      try {
+        await apiRequest(`/api/rooms/${roomId}/join`, {
+          method: 'POST',
+          body: { userId: chat.currentUser.id }
+        });
+      } catch (error) {
+        console.error('خطأ في الانضمام للغرفة:', error);
+      }
+    }
   };
 
   const handleAddRoom = async (roomData: { name: string; description: string; image: File | null }) => {
+    if (!chat.currentUser) return;
+    
     try {
-      // هنا سيتم إرسال البيانات للخادم لإنشاء الغرفة
-      const newRoom = {
-        id: `room_${Date.now()}`,
-        name: roomData.name,
-        description: roomData.description,
-        isDefault: false,
-        createdBy: chat.currentUser?.id || 1,
-        createdAt: new Date(),
-        isActive: true,
-        userCount: 0,
-        icon: roomData.image ? URL.createObjectURL(roomData.image) : ''
-      };
-      
-      setRooms(prev => [...prev, newRoom]);
-      toast({
-        title: "تم إنشاء الغرفة",
-        description: `تم إنشاء غرفة "${roomData.name}" بنجاح`,
+      const formData = new FormData();
+      formData.append('name', roomData.name);
+      formData.append('description', roomData.description);
+      formData.append('userId', chat.currentUser.id.toString());
+      if (roomData.image) {
+        formData.append('image', roomData.image);
+      }
+
+      const response = await fetch('/api/rooms', {
+        method: 'POST',
+        body: formData
       });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newRoom = {
+          id: data.room.id,
+          name: data.room.name,
+          description: data.room.description || '',
+          isDefault: data.room.is_default,
+          createdBy: data.room.created_by,
+          createdAt: new Date(data.room.created_at),
+          isActive: data.room.is_active,
+          userCount: 0,
+          icon: data.room.icon || ''
+        };
+        setRooms(prev => [...prev, newRoom]);
+        toast({
+          title: "تم إنشاء الغرفة",
+          description: `تم إنشاء غرفة "${roomData.name}" بنجاح`,
+        });
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'خطأ في إنشاء الغرفة');
+      }
     } catch (error) {
       toast({
         title: "خطأ في إنشاء الغرفة",
-        description: "حدث خطأ أثناء إنشاء الغرفة",
+        description: error instanceof Error ? error.message : "حدث خطأ أثناء إنشاء الغرفة",
         variant: "destructive",
       });
     }
   };
 
   const handleDeleteRoom = async (roomId: string) => {
+    if (!chat.currentUser) return;
+    
     try {
-      // هنا سيتم حذف الغرفة من الخادم
-      setRooms(prev => prev.filter(room => room.id !== roomId));
-      if (currentRoomId === roomId) {
-        setCurrentRoomId('general'); // العودة للغرفة الرئيسية
-      }
-      toast({
-        title: "تم حذف الغرفة",
-        description: "تم حذف الغرفة بنجاح",
+      const response = await apiRequest(`/api/rooms/${roomId}`, {
+        method: 'DELETE',
+        body: { userId: chat.currentUser.id }
       });
+
+      if (response.ok) {
+        setRooms(prev => prev.filter(room => room.id !== roomId));
+        if (currentRoomId === roomId) {
+          setCurrentRoomId('general'); // العودة للغرفة الرئيسية
+        }
+        toast({
+          title: "تم حذف الغرفة",
+          description: "تم حذف الغرفة بنجاح",
+        });
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'خطأ في حذف الغرفة');
+      }
     } catch (error) {
       toast({
         title: "خطأ في حذف الغرفة",
-        description: "حدث خطأ أثناء حذف الغرفة",
+        description: error instanceof Error ? error.message : "حدث خطأ أثناء حذف الغرفة",
         variant: "destructive",
       });
     }
@@ -125,6 +194,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     show: false,
     sender: null,
   });
+
+  // جلب الغرف عند تحميل المكون
+  useEffect(() => {
+    fetchRooms();
+  }, []);
 
   // تفعيل التنبيه عند وصول رسالة جديدة
   useEffect(() => {
@@ -305,6 +379,19 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             <span>👥</span>
             المستخدمون ({chat.onlineUsers.filter(u => u.isOnline).length})
           </Button>
+
+          {/* زر الغرف */}
+          <Button 
+            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            }`}
+            onClick={() => setActiveView(activeView === 'rooms' ? 'hidden' : 'rooms')}
+            title="الغرف"
+          >
+            <span>🏠</span>
+            الغرف
+          </Button>
+
           <div className="text-2xl">💬</div>
           <div className="text-2xl font-bold text-white">
             Arabic<span className="text-primary">Chat</span>

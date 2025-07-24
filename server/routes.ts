@@ -3255,5 +3255,187 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===================
+  // APIs الغرف
+  // ===================
+
+  // جلب جميع الغرف
+  app.get('/api/rooms', async (req, res) => {
+    try {
+      const rooms = await storage.getAllRooms();
+      res.json({ rooms });
+    } catch (error) {
+      console.error('خطأ في جلب الغرف:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // إنشاء غرفة جديدة
+  app.post('/api/rooms', upload.single('image'), async (req, res) => {
+    try {
+      const { name, description, userId } = req.body;
+
+      if (!name || !userId) {
+        return res.status(400).json({ error: 'اسم الغرفة ومعرف المستخدم مطلوبان' });
+      }
+
+      const user = await storage.getUser(parseInt(userId));
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      // التحقق من الصلاحيات
+      if (!['admin', 'owner'].includes(user.userType)) {
+        return res.status(403).json({ error: 'ليس لديك صلاحية لإنشاء غرف' });
+      }
+
+      // معالجة الصورة
+      let icon = '';
+      if (req.file) {
+        const timestamp = Date.now();
+        const filename = `room_${timestamp}_${req.file.originalname}`;
+        const filepath = path.join(process.cwd(), 'client', 'public', 'uploads', 'rooms', filename);
+        
+        // إنشاء مجلد الغرف إذا لم يكن موجوداً
+        const roomsDir = path.dirname(filepath);
+        if (!fs.existsSync(roomsDir)) {
+          fs.mkdirSync(roomsDir, { recursive: true });
+        }
+        
+        fs.writeFileSync(filepath, req.file.buffer);
+        icon = `/uploads/rooms/${filename}`;
+      }
+
+      const roomData = {
+        name: name.trim(),
+        description: description?.trim() || '',
+        icon,
+        createdBy: user.id,
+        isDefault: false,
+        isActive: true
+      };
+
+      const room = await storage.createRoom(roomData);
+      
+      // إرسال إشعار بالغرفة الجديدة
+      io.emit('message', {
+        type: 'roomCreated',
+        room
+      });
+
+      res.json({ room });
+    } catch (error) {
+      console.error('خطأ في إنشاء الغرفة:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // حذف غرفة
+  app.delete('/api/rooms/:roomId', async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      }
+
+      const user = await storage.getUser(parseInt(userId));
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      const room = await storage.getRoom(roomId);
+      if (!room) {
+        return res.status(404).json({ error: 'الغرفة غير موجودة' });
+      }
+
+      // لا يمكن حذف الغرفة الافتراضية
+      if (room.isDefault) {
+        return res.status(400).json({ error: 'لا يمكن حذف الغرفة الافتراضية' });
+      }
+
+      // التحقق من الصلاحيات
+      const canDelete = room.createdBy === user.id || ['admin', 'owner'].includes(user.userType);
+      if (!canDelete) {
+        return res.status(403).json({ error: 'ليس لديك صلاحية لحذف هذه الغرفة' });
+      }
+
+      // حذف صورة الغرفة إن وجدت
+      if (room.icon) {
+        const imagePath = path.join(process.cwd(), 'client', 'public', room.icon);
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      }
+
+      await storage.deleteRoom(roomId);
+
+      // إرسال إشعار بحذف الغرفة
+      io.emit('message', {
+        type: 'roomDeleted',
+        roomId,
+        deletedBy: user.username
+      });
+
+      res.json({ message: 'تم حذف الغرفة بنجاح' });
+    } catch (error) {
+      console.error('خطأ في حذف الغرفة:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // الانضمام لغرفة
+  app.post('/api/rooms/:roomId/join', async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      }
+
+      const user = await storage.getUser(parseInt(userId));
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      const room = await storage.getRoom(roomId);
+      if (!room) {
+        return res.status(404).json({ error: 'الغرفة غير موجودة' });
+      }
+
+      if (!room.isActive) {
+        return res.status(400).json({ error: 'الغرفة غير نشطة' });
+      }
+
+      await storage.joinRoom(userId, roomId);
+
+      res.json({ message: 'تم الانضمام للغرفة بنجاح' });
+    } catch (error) {
+      console.error('خطأ في الانضمام للغرفة:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // مغادرة غرفة
+  app.post('/api/rooms/:roomId/leave', async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      }
+
+      await storage.leaveRoom(userId, roomId);
+
+      res.json({ message: 'تم مغادرة الغرفة بنجاح' });
+    } catch (error) {
+      console.error('خطأ في مغادرة الغرفة:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
   return httpServer;
 }
