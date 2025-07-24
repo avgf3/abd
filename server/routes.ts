@@ -17,6 +17,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import bcrypt from "bcrypt";
 
 // إعداد multer لرفع الصور
 const storage_multer = multer.diskStorage({
@@ -109,9 +110,26 @@ function broadcast(message: any) {
 const authService = new (class AuthService {
   async login(username: string, password: string) {
     const user = await storage.getUserByUsername(username.trim());
-    if (!user || user.password !== password.trim()) {
+    if (!user) {
       throw new Error('بيانات الدخول غير صحيحة');
     }
+    
+    // التحقق من كلمة المرور - دعم التشفير والنص العادي
+    let passwordValid = false;
+    if (user.password) {
+      if (user.password.startsWith('$2b$')) {
+        // كلمة مرور مشفرة - استخدام bcrypt
+        passwordValid = await bcrypt.compare(password.trim(), user.password);
+      } else {
+        // كلمة مرور غير مشفرة - مقارنة مباشرة
+        passwordValid = user.password === password.trim();
+      }
+    }
+    
+    if (!passwordValid) {
+      throw new Error('بيانات الدخول غير صحيحة');
+    }
+    
     await storage.setUserOnlineStatus(user.id, true);
     return user;
   }
@@ -755,21 +773,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "اسم المستخدم غير موجود" });
       }
 
-      console.log(`User found: ${user.username}, type: ${user.userType}, hidden: ${user.isHidden}`);
+      console.log(`User found: ${user.username}, type: ${user.userType || user.user_type}, hidden: ${user.isHidden}`);
 
-      if (user.password !== password.trim()) {
+      // التحقق من كلمة المرور - دعم التشفير والنص العادي
+      let passwordValid = false;
+      if (user.password) {
+        if (user.password.startsWith('$2b$')) {
+          // كلمة مرور مشفرة - استخدام bcrypt
+          passwordValid = await bcrypt.compare(password.trim(), user.password);
+        } else {
+          // كلمة مرور غير مشفرة - مقارنة مباشرة
+          passwordValid = user.password === password.trim();
+        }
+      }
+
+      if (!passwordValid) {
         console.log(`Password mismatch for user: ${username}`);
         return res.status(401).json({ error: "كلمة المرور غير صحيحة" });
       }
 
       // Check if user is actually a member or owner
-      if (user.userType === 'guest') {
+      const userType = user.userType || user.user_type;
+      if (userType === 'guest') {
         console.log(`Guest user trying to login as member: ${username}`);
         return res.status(401).json({ error: "هذا المستخدم ضيف وليس عضو" });
       }
 
       // التأكد من أن الأعضاء العاديين غير مخفيين (فقط الإدمن والمالك يمكنهم الإخفاء)
-      if (user.userType !== 'owner' && user.userType !== 'admin') {
+      if (userType !== 'owner' && userType !== 'admin') {
         if (user.isHidden) {
           console.log(`Unhiding regular member: ${username}`);
           await storage.updateUser(user.id, { isHidden: false });
