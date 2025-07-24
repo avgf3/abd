@@ -51,6 +51,16 @@ export function useChat() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showKickCountdown, setShowKickCountdown] = useState(false);
   
+  // حالة الغرف
+  const [currentRoomId, setCurrentRoomId] = useState<string>('general');
+  const [roomMessages, setRoomMessages] = useState<Record<string, ChatMessage[]>>({});
+  
+  // تحديث الرسائل العامة عند تغيير الغرفة
+  useEffect(() => {
+    const currentMessages = roomMessages[currentRoomId] || [];
+    setPublicMessages(currentMessages);
+  }, [currentRoomId, roomMessages]);
+  
   // إشعارات النقاط والمستويات
   const [levelUpNotification, setLevelUpNotification] = useState<{
     show: boolean;
@@ -295,10 +305,22 @@ export function useChat() {
                 
                 // فحص إذا كان المرسل مُتجاهل
                 if (!ignoredUsers.has(message.message.senderId)) {
-                  setPublicMessages(prev => [...prev, message.message as ChatMessage]);
-                  // Play notification sound for new public messages from others
-                  if (message.message.senderId !== user.id) {
-                    playNotificationSound();
+                  const chatMessage = message.message as ChatMessage;
+                  const messageRoomId = (chatMessage as any).roomId || 'general';
+                  
+                  // إضافة الرسالة للغرفة المناسبة
+                  setRoomMessages(prev => ({
+                    ...prev,
+                    [messageRoomId]: [...(prev[messageRoomId] || []), chatMessage]
+                  }));
+                  
+                  // إضافة للرسائل العامة إذا كانت من الغرفة الحالية
+                  if (messageRoomId === currentRoomId) {
+                    setPublicMessages(prev => [...prev, chatMessage]);
+                    // تشغيل صوت الإشعار للرسائل من الآخرين
+                    if (chatMessage.senderId !== user.id) {
+                      playNotificationSound();
+                    }
                   }
                 }
               }
@@ -1161,12 +1183,13 @@ export function useChat() {
           content: content.trim(),
           messageType,
           userId: currentUser.id,
-          username: currentUser.username
+          username: currentUser.username,
+          roomId: currentRoomId
         });
         return true;
       }
       return false;
-    }, [currentUser]),
+    }, [currentUser, currentRoomId]),
     sendPrivateMessage,
     handleTyping,
     notifications,
@@ -1181,5 +1204,24 @@ export function useChat() {
     setAchievementNotification,
     dailyBonusNotification,
     setDailyBonusNotification,
+    
+    // وظائف الغرف
+    currentRoomId,
+    setCurrentRoomId,
+    roomMessages,
+    getCurrentRoomMessages: useCallback(() => {
+      return roomMessages[currentRoomId] || [];
+    }, [roomMessages, currentRoomId]),
+    joinRoom: useCallback((roomId: string) => {
+      if (socket.current && socket.current.connected && currentUser) {
+        socket.current.emit('joinRoom', { userId: currentUser.id, roomId });
+        setCurrentRoomId(roomId);
+      }
+    }, [currentUser]),
+    leaveRoom: useCallback((roomId: string) => {
+      if (socket.current && socket.current.connected && currentUser) {
+        socket.current.emit('leaveRoom', { userId: currentUser.id, roomId });
+      }
+    }, [currentUser])
   };
 }

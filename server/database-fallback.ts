@@ -82,6 +82,7 @@ function createSQLiteTables() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       sender_id INTEGER REFERENCES users(id),
       receiver_id INTEGER REFERENCES users(id),
+      room_id TEXT REFERENCES rooms(id) DEFAULT 'general',
       content TEXT NOT NULL,
       message_type TEXT NOT NULL DEFAULT 'text',
       is_private BOOLEAN DEFAULT 0,
@@ -164,6 +165,32 @@ function createSQLiteTables() {
     )
   `);
 
+  // Create rooms table
+  sqliteDb.exec(`
+    CREATE TABLE IF NOT EXISTS rooms (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT,
+      icon TEXT,
+      created_by INTEGER NOT NULL REFERENCES users(id),
+      is_default BOOLEAN DEFAULT 0,
+      is_active BOOLEAN DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create room_users table
+  sqliteDb.exec(`
+    CREATE TABLE IF NOT EXISTS room_users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      room_id TEXT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+      joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, room_id)
+    )
+  `);
+
   // Add missing columns to existing tables
   try {
     // Check if columns exist and add them if missing
@@ -178,6 +205,15 @@ function createSQLiteTables() {
       { name: 'level_progress', sql: 'ALTER TABLE users ADD COLUMN level_progress INTEGER DEFAULT 0' }
     ];
     
+    // Add room_id to messages table if missing
+    const messageColumns = sqliteDb.prepare("PRAGMA table_info(messages)").all();
+    const messageColumnNames = messageColumns.map((col: any) => col.name);
+    
+    if (!messageColumnNames.includes('room_id')) {
+      console.log('Adding room_id column to messages table');
+      sqliteDb.exec('ALTER TABLE messages ADD COLUMN room_id TEXT REFERENCES rooms(id) DEFAULT "general"');
+    }
+    
     for (const column of requiredColumns) {
       if (!existingColumns.includes(column.name)) {
         console.log(`Adding missing column: ${column.name}`);
@@ -189,6 +225,38 @@ function createSQLiteTables() {
   }
 
   console.log('✅ SQLite tables are created by database-fallback.ts');
+  
+  // Create default rooms
+  createDefaultRooms();
+}
+
+function createDefaultRooms() {
+  if (!sqliteDb) return;
+
+  try {
+    // Check if default rooms exist
+    const roomCount = sqliteDb.prepare('SELECT COUNT(*) as count FROM rooms').get();
+    
+    if ((roomCount as any)?.count === 0) {
+      console.log('🏠 Creating default rooms...');
+      
+      // Create general room
+      sqliteDb.prepare(`
+        INSERT INTO rooms (id, name, description, created_by, is_default, is_active)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run('general', 'الدردشة العامة', 'الغرفة الرئيسية للدردشة', 1, 1, 1);
+      
+      // Create music room
+      sqliteDb.prepare(`
+        INSERT INTO rooms (id, name, description, created_by, is_default, is_active)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run('music', 'أغاني وسهر', 'غرفة للموسيقى والترفيه', 1, 0, 1);
+      
+      console.log('✅ Default rooms created successfully');
+    }
+  } catch (error) {
+    console.log('Note: Default rooms may already exist:', error);
+  }
 }
 
 function createDefaultSQLiteUsers() {
