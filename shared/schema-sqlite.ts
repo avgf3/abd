@@ -43,6 +43,7 @@ export const messages = sqliteTable("messages", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   senderId: integer("sender_id").references(() => users.id),
   receiverId: integer("receiver_id").references(() => users.id), // null for public messages
+  roomId: text("room_id").default("general"), // ID of the room for public messages
   content: text("content").notNull(),
   messageType: text("message_type").notNull().default("text"), // 'text', 'image'
   isPrivate: integer("is_private").default(0),
@@ -180,4 +181,27 @@ export const insertFriendRequestSchema = z.object({
 });
 
 export type FriendRequest = typeof friendRequests.$inferSelect;
+
+export const rooms = sqliteTable("rooms", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  icon: text("icon"),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  isDefault: integer("is_default").default(0),
+  isActive: integer("is_active").default(1),
+  createdAt: text("created_at"),
+  updatedAt: text("updated_at"),
+});
+
+export const roomUsers = sqliteTable("room_users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  roomId: text("room_id").notNull().references(() => rooms.id),
+  joinedAt: text("joined_at"),
+});
+
+export type Room = typeof rooms.$inferSelect;
+export type InsertRoom = typeof rooms.$inferInsert;
+export type RoomUser = typeof roomUsers.$inferSelect;
 export type InsertFriendRequest = typeof friendRequests.$inferInsert;

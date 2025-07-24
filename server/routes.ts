@@ -1221,11 +1221,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
 
+        const roomId = data.roomId || 'general';
+        
         const newMessage = await storage.createMessage({
           senderId: socket.userId,
           content: sanitizedContent,
           messageType: data.messageType || 'text',
           isPrivate: false,
+          roomId: roomId,
         });
         
         // إضافة نقاط لإرسال رسالة
@@ -1268,7 +1271,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         const sender = await storage.getUser(socket.userId);
-        io.emit('message', { type: 'newMessage', message: { ...newMessage, sender } });
+        // إرسال الرسالة فقط للمستخدمين في نفس الغرفة
+        io.to(`room_${roomId}`).emit('message', { 
+          type: 'newMessage', 
+          message: { ...newMessage, sender, roomId } 
+        });
       } catch (error) {
         console.error('خطأ في إرسال الرسالة العامة:', error);
         socket.emit('message', { type: 'error', message: 'خطأ في إرسال الرسالة' });
@@ -1623,6 +1630,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
+      }
+    });
+
+    // معالجة انضمام للغرفة
+    socket.on('joinRoom', async (data) => {
+      try {
+        const { userId, roomId } = data;
+        
+        if (!socket.userId || socket.userId !== userId) return;
+        
+        // الانضمام للغرفة في Socket.IO
+        socket.join(`room_${roomId}`);
+        
+        // حفظ في قاعدة البيانات
+        await storage.joinRoom(userId, roomId);
+        
+        console.log(`🏠 المستخدم ${socket.username} انضم للغرفة ${roomId}`);
+        
+        // إرسال تأكيد الانضمام
+        socket.emit('message', {
+          type: 'roomJoined',
+          roomId: roomId
+        });
+        
+        // إشعار باقي المستخدمين في الغرفة
+        socket.to(`room_${roomId}`).emit('message', {
+          type: 'userJoinedRoom',
+          username: socket.username,
+          roomId: roomId
+        });
+        
+      } catch (error) {
+        console.error('خطأ في انضمام للغرفة:', error);
+        socket.emit('message', { type: 'error', message: 'خطأ في الانضمام للغرفة' });
+      }
+    });
+
+    // معالجة مغادرة الغرفة
+    socket.on('leaveRoom', async (data) => {
+      try {
+        const { userId, roomId } = data;
+        
+        if (!socket.userId || socket.userId !== userId) return;
+        
+        // المغادرة من الغرفة في Socket.IO
+        socket.leave(`room_${roomId}`);
+        
+        // حذف من قاعدة البيانات
+        await storage.leaveRoom(userId, roomId);
+        
+        console.log(`🚪 المستخدم ${socket.username} غادر الغرفة ${roomId}`);
+        
+        // إرسال تأكيد المغادرة
+        socket.emit('message', {
+          type: 'roomLeft',
+          roomId: roomId
+        });
+        
+        // إشعار باقي المستخدمين في الغرفة
+        socket.to(`room_${roomId}`).emit('message', {
+          type: 'userLeftRoom',
+          username: socket.username,
+          roomId: roomId
+        });
+        
+      } catch (error) {
+        console.error('خطأ في مغادرة الغرفة:', error);
+        socket.emit('message', { type: 'error', message: 'خطأ في مغادرة الغرفة' });
       }
     });
 
