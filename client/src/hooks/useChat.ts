@@ -1149,7 +1149,7 @@ export function useChat() {
     ignoreUser,
     unignoreUser,
     toggleStealthMode,
-    sendPublicMessage: useCallback((content: string, messageType: string = 'text') => {
+    sendPublicMessage: useCallback((content: string, messageType: string = 'text', roomId?: string) => {
       if (!content.trim() || !currentUser) return false;
       
       const now = Date.now();
@@ -1161,7 +1161,8 @@ export function useChat() {
           content: content.trim(),
           messageType,
           userId: currentUser.id,
-          username: currentUser.username
+          username: currentUser.username,
+          roomId: roomId || 'general'
         });
         return true;
       }

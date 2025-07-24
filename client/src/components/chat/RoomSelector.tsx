@@ -8,9 +8,10 @@ interface RoomSelectorProps {
   rooms: ChatRoom[];
   currentUser: ChatUser;
   onRoomSelect: (roomId: string) => void;
+  isLoading?: boolean;
 }
 
-export default function RoomSelector({ rooms, currentUser, onRoomSelect }: RoomSelectorProps) {
+export default function RoomSelector({ rooms, currentUser, onRoomSelect, isLoading = false }: RoomSelectorProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl mx-auto">
@@ -25,7 +26,17 @@ export default function RoomSelector({ rooms, currentUser, onRoomSelect }: RoomS
 
         {/* Rooms Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {rooms.map((room) => (
+          {isLoading ? (
+            <div className="col-span-full text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="mt-2 text-muted-foreground">جاري تحميل الغرف...</p>
+            </div>
+          ) : rooms.length === 0 ? (
+            <div className="col-span-full text-center py-8">
+              <p className="text-muted-foreground">لا توجد غرف متاحة</p>
+            </div>
+          ) : (
+            rooms.map((room) => (
             <Card 
               key={room.id}
               className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-primary/50"
@@ -70,8 +81,9 @@ export default function RoomSelector({ rooms, currentUser, onRoomSelect }: RoomS
                   دخول الغرفة
                 </Button>
               </CardContent>
-            </Card>
-          ))}
+                          </Card>
+            ))
+          )}
         </div>
 
         {/* Footer */}

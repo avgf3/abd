@@ -34,9 +34,20 @@ import type { ChatUser, ChatRoom } from '@/types/chat';
 interface ChatInterfaceProps {
   chat: ReturnType<typeof useChat>;
   onLogout: () => void;
+  initialRoomId?: string | null;
+  onBackToRoomSelector?: () => void;
+  roomsData?: ChatRoom[];
+  onRoomsUpdate?: (rooms: ChatRoom[]) => void;
 }
 
-export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
+export default function ChatInterface({ 
+  chat, 
+  onLogout, 
+  initialRoomId, 
+  onBackToRoomSelector, 
+  roomsData = [], 
+  onRoomsUpdate 
+}: ChatInterfaceProps) {
   const [showProfile, setShowProfile] = useState(false);
   const [profileUser, setProfileUser] = useState<ChatUser | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -46,9 +57,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms'>('users'); // إظهار المستخدمين افتراضياً
   
   // حالة الغرف
-  const [rooms, setRooms] = useState<ChatRoom[]>([]);
-  const [currentRoomId, setCurrentRoomId] = useState('general');
-  const [roomsLoading, setRoomsLoading] = useState(true);
+  const [rooms, setRooms] = useState<ChatRoom[]>(roomsData);
+  const [currentRoomId, setCurrentRoomId] = useState(initialRoomId || 'general');
+  const [roomsLoading, setRoomsLoading] = useState(false);
 
   // جلب الغرف من الخادم
   const fetchRooms = async () => {
@@ -127,7 +138,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           userCount: 0,
           icon: data.room.icon || ''
         };
-        setRooms(prev => [...prev, newRoom]);
+        const updatedRooms = [...rooms, newRoom];
+        setRooms(updatedRooms);
+        onRoomsUpdate?.(updatedRooms);
         toast({
           title: "تم إنشاء الغرفة",
           description: `تم إنشاء غرفة "${roomData.name}" بنجاح`,
@@ -155,7 +168,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       });
 
       if (response.ok) {
-        setRooms(prev => prev.filter(room => room.id !== roomId));
+        const updatedRooms = rooms.filter(room => room.id !== roomId);
+        setRooms(updatedRooms);
+        onRoomsUpdate?.(updatedRooms);
         if (currentRoomId === roomId) {
           setCurrentRoomId('general'); // العودة للغرفة الرئيسية
         }
@@ -195,10 +210,21 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     sender: null,
   });
 
-  // جلب الغرف عند تحميل المكون
+  // تحديث الغرف عند تغيير roomsData
   useEffect(() => {
-    fetchRooms();
-  }, []);
+    if (roomsData.length > 0) {
+      setRooms(roomsData);
+    } else {
+      fetchRooms();
+    }
+  }, [roomsData]);
+
+  // تحديث الغرفة الحالية عند تغيير initialRoomId
+  useEffect(() => {
+    if (initialRoomId) {
+      setCurrentRoomId(initialRoomId);
+    }
+  }, [initialRoomId]);
 
   // تفعيل التنبيه عند وصول رسالة جديدة
   useEffect(() => {
@@ -396,6 +422,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           <div className="text-2xl font-bold text-white">
             Arabic<span className="text-primary">Chat</span>
           </div>
+          
+          {/* عرض الغرفة الحالية */}
+          <div className="text-sm text-muted-foreground">
+            الغرفة: {rooms.find(room => room.id === currentRoomId)?.name || 'الدردشة العامة'}
+          </div>
         </div>
         <div className="flex gap-3">
           <Button 
@@ -478,6 +509,18 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             </Button>
           )}
           
+          {/* زر العودة لاختيار الغرف */}
+          {onBackToRoomSelector && (
+            <Button 
+              className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+              onClick={onBackToRoomSelector}
+              title="تغيير الغرفة"
+            >
+              <span>🔄</span>
+              تغيير الغرفة
+            </Button>
+          )}
+
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowSettings(!showSettings)}
@@ -512,7 +555,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         <MessageArea 
           messages={chat.publicMessages}
           currentUser={chat.currentUser}
-          onSendMessage={chat.sendPublicMessage}
+          onSendMessage={(content: string, messageType?: string) => chat.sendPublicMessage(content, messageType, currentRoomId)}
           onTyping={chat.handleTyping}
           typingUsers={chat.typingUsers}
           onReportMessage={handleReportUser}
