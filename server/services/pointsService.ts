@@ -61,21 +61,49 @@ export class PointsService {
 
   // إضافة نقاط لإرسال رسالة
   async addMessagePoints(userId: number): Promise<any> {
-    return this.addPoints(userId, DEFAULT_POINTS_CONFIG.MESSAGE_SENT, 'MESSAGE_SENT');
+    try {
+      // التحقق من وجود المستخدم ونوعه
+      const user = await storage.getUser(userId);
+      if (!user || user.userType === 'guest') {
+        return null; // الضيوف لا يحصلون على نقاط
+      }
+      return this.addPoints(userId, DEFAULT_POINTS_CONFIG.MESSAGE_SENT, 'MESSAGE_SENT');
+    } catch (error) {
+      console.error('خطأ في إضافة نقاط الرسالة:', error);
+      return null;
+    }
   }
 
   // إضافة نقاط تسجيل الدخول اليومي
   async addDailyLoginPoints(userId: number): Promise<any> {
-    // التحقق من آخر تسجيل دخول
-    const lastLogin = await storage.getUserLastDailyLogin(userId);
-    const today = new Date().toDateString();
-    
-    if (lastLogin !== today) {
-      await storage.updateUserLastDailyLogin(userId, today);
-      return this.addPoints(userId, DEFAULT_POINTS_CONFIG.DAILY_LOGIN, 'DAILY_LOGIN');
+    try {
+      // التحقق من وجود المستخدم أولاً
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.log(`تم تجاهل نقاط تسجيل الدخول - المستخدم ${userId} غير موجود`);
+        return null;
+      }
+
+      // التحقق من نوع المستخدم - الضيوف لا يحصلون على نقاط
+      if (user.userType === 'guest') {
+        console.log(`تم تجاهل نقاط تسجيل الدخول - المستخدم ${userId} ضيف`);
+        return null;
+      }
+
+      // التحقق من آخر تسجيل دخول
+      const lastLogin = await storage.getUserLastDailyLogin(userId);
+      const today = new Date().toDateString();
+      
+      if (lastLogin !== today) {
+        await storage.updateUserLastDailyLogin(userId, today);
+        return this.addPoints(userId, DEFAULT_POINTS_CONFIG.DAILY_LOGIN, 'DAILY_LOGIN');
+      }
+      
+      return null; // لم يحصل على نقاط اليوم
+    } catch (error) {
+      console.error('خطأ في إضافة نقاط تسجيل الدخول اليومي:', error);
+      return null;
     }
-    
-    return null; // لم يحصل على نقاط اليوم
   }
 
   // إضافة نقاط إكمال الملف الشخصي
@@ -138,16 +166,27 @@ export class PointsService {
 
   // التحقق من إنجاز معين (مثل أول رسالة)
   async checkAchievement(userId: number, achievementType: string) {
-    switch (achievementType) {
-      case 'FIRST_MESSAGE':
-        const messageCount = await storage.getUserMessageCount(userId);
-        if (messageCount === 1) {
-          return this.addPoints(userId, DEFAULT_POINTS_CONFIG.FIRST_MESSAGE, 'FIRST_MESSAGE');
-        }
-        break;
-      // يمكن إضافة إنجازات أخرى هنا
+    try {
+      // التحقق من وجود المستخدم ونوعه
+      const user = await storage.getUser(userId);
+      if (!user || user.userType === 'guest') {
+        return null; // الضيوف لا يحصلون على نقاط إنجازات
+      }
+
+      switch (achievementType) {
+        case 'FIRST_MESSAGE':
+          const messageCount = await storage.getUserMessageCount(userId);
+          if (messageCount === 1) {
+            return this.addPoints(userId, DEFAULT_POINTS_CONFIG.FIRST_MESSAGE, 'FIRST_MESSAGE');
+          }
+          break;
+        // يمكن إضافة إنجازات أخرى هنا
+      }
+      return null;
+    } catch (error) {
+      console.error('خطأ في فحص الإنجاز:', error);
+      return null;
     }
-    return null;
   }
 }
 
