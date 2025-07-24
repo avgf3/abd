@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { Pool } from '@neondatabase/serverless';
 
 async function fixDatabase() {

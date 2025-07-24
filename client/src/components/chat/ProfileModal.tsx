@@ -373,6 +373,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     try {
       const formData = new FormData();
       formData.append('image', file);
+      if (currentUser?.id) {
+        formData.append('userId', currentUser.id.toString());
+      }
 
       const endpoint = uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
       const response = await apiRequest(endpoint, {
