@@ -385,7 +385,7 @@ export async function createDefaultUsers(): Promise<void> {
       }
     } else {
       // Use Drizzle ORM for SQLite - import SQLite schema
-      const { users: sqliteUsers, levelSettings: sqliteLevelSettings } = await import('../shared/schema-sqlite');
+      const { users: sqliteUsers, levelSettings: sqliteLevelSettings } = await import('../shared/schema');
       const { count } = await import('drizzle-orm');
       const { eq } = await import('drizzle-orm');
       
@@ -441,7 +441,7 @@ async function initializeLevelSettings(): Promise<void> {
   try {
     if (!db) return;
     
-    const { levelSettings } = await import('../shared/schema-sqlite');
+            const { levelSettings } = await import('../shared/schema');
     const { count } = await import('drizzle-orm');
     
     // Check if level settings exist

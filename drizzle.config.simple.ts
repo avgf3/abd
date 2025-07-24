@@ -2,7 +2,7 @@
 // لا حاجة لإعداد معقد مع خادمنا البسيط
 
 export default {
-  schema: "./shared/schema-sqlite.ts",
+  schema: "./shared/schema.ts",
   out: "./migrations",
   dialect: "sqlite"
 };
