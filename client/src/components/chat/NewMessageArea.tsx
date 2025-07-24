@@ -57,12 +57,26 @@ export default function NewMessageArea({
     <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
       <div className="space-y-2">
         {messages.map((message, index) => {
-          const sender = message.sender || {
+          const sender: ChatUser = message.sender || {
             id: message.senderId || 0,
             username: 'مستخدم محذوف',
             userType: 'guest' as const,
+            role: 'guest' as const,
             profileImage: '/default_avatar.svg',
-            isOnline: false
+            profileBackgroundColor: '#3c0d0d',
+            isOnline: false,
+            isHidden: false,
+            lastSeen: null,
+            joinDate: new Date(),
+            createdAt: new Date(),
+            isMuted: false,
+            muteExpiry: null,
+            isBanned: false,
+            banExpiry: null,
+            isBlocked: false,
+            ignoredUsers: [],
+            usernameColor: '#666666',
+            userTheme: 'default'
           };
 
           return (

@@ -46,6 +46,7 @@ export const messages = pgTable("messages", {
   content: text("content").notNull(),
   messageType: text("message_type").notNull().default("text"), // 'text', 'image'
   isPrivate: boolean("is_private").default(false),
+  roomId: text("room_id").default("general"), // معرف الغرفة
   timestamp: timestamp("timestamp").defaultNow(),
 });
 
@@ -103,7 +104,7 @@ export const levelSettings = pgTable("level_settings", {
 export const insertUserSchema = z.object({
   username: z.string(),
   password: z.string().optional(),
-  userType: z.string(),
+  userType: z.string().optional(),
   role: z.string().optional(), // إضافة role
   profileImage: z.string().optional(),
   profileBanner: z.string().optional(),
@@ -137,6 +138,7 @@ export const insertMessageSchema = z.object({
   content: z.string(),
   messageType: z.string().optional(),
   isPrivate: z.boolean().optional(),
+  roomId: z.string().optional(),
 });
 
 export const insertFriendSchema = z.object({
