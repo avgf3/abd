@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ProfileImage from './ProfileImage';
+import EmojiPicker from './EmojiPicker';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { findMentions, playMentionSound, renderMessageWithMentions, insertMention } from '@/utils/mentionUtils';
 import type { ChatMessage, ChatUser } from '@/types/chat';
@@ -30,6 +31,7 @@ export default function MessageArea({
   currentRoomName = 'الدردشة العامة'
 }: MessageAreaProps) {
   const [messageText, setMessageText] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,6 +72,11 @@ export default function MessageArea({
     } else {
       onTyping();
     }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setMessageText(prev => prev + emoji);
+    setShowEmojiPicker(false);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -246,12 +253,22 @@ export default function MessageArea({
           📷
         </Button>
         
-        <Button 
-          className="glass-effect text-gray-600 px-4 py-3 rounded-xl hover:bg-gray-200 transition-all duration-200" 
-          title="الرموز التعبيرية"
-        >
-          😊
-        </Button>
+        <div className="relative">
+          <Button 
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            className="glass-effect text-gray-600 px-4 py-3 rounded-xl hover:bg-gray-200 transition-all duration-200" 
+            title="الرموز التعبيرية"
+          >
+            😊
+          </Button>
+          
+          {showEmojiPicker && (
+            <EmojiPicker 
+              onEmojiSelect={handleEmojiSelect}
+              onClose={() => setShowEmojiPicker(false)}
+            />
+          )}
+        </div>
         
         <Input
           value={messageText}
