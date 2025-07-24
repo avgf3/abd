@@ -15,28 +15,12 @@ import {
   type InsertNotification,
   type FriendRequest,
   type InsertFriendRequest,
-} from "../shared/schema-sqlite";
+} from "../shared/schema";
 import { db } from "./database-adapter";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { userService } from "./services/userService";
 import { messageService } from "./services/messageService";
-import Database from 'better-sqlite3';
 import path from 'path';
-
-// إضافة اتصال SQLite مباشر كبديل
-let directSqliteDb: Database.Database | null = null;
-
-function getDirectSqliteConnection() {
-  if (!directSqliteDb) {
-    const databaseUrl = process.env.DATABASE_URL || 'sqlite:./chat.db';
-    let dbPath = './chat.db';
-    if (databaseUrl.startsWith('sqlite:')) {
-      dbPath = databaseUrl.replace('sqlite:', '');
-    }
-    directSqliteDb = new Database(dbPath);
-  }
-  return directSqliteDb;
-}
 
 export interface IStorage {
   // User operations
@@ -144,7 +128,7 @@ export class MixedStorage implements IStorage {
       // Check if owner already exists
       const existing = await db.select().from(users).where(eq(users.username, "عبدالكريم"));
       if (existing.length === 0) {
-        // Create owner user in database - Fix SQLite compatibility
+        
         await db.insert(users).values({
           username: "عبدالكريم",
           password: "عبدالكريم22333",
@@ -175,7 +159,7 @@ export class MixedStorage implements IStorage {
       // Check if admin already exists
       const existingAdmin = await db.select().from(users).where(eq(users.username, "عبود"));
       if (existingAdmin.length === 0) {
-        // Create admin user in database - Fix SQLite compatibility
+        
         await db.insert(users).values({
           username: "عبود",
           password: "22333",
@@ -269,13 +253,13 @@ export class MixedStorage implements IStorage {
     );
     if (memUser) return memUser;
     
-    // إصلاح مؤقت: استخدام SQLite مباشرة
+    
     try {
       const directDb = getDirectSqliteConnection();
       const user = directDb.prepare('SELECT * FROM users WHERE username = ?').get(username);
       
       if (user) {
-        // تحويل البيانات من SQLite إلى تنسيق TypeScript
+        
         return {
           id: user.id,
           username: user.username,
@@ -383,7 +367,7 @@ export class MixedStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     if ((insertUser.userType === 'member' || insertUser.userType === 'owner') && db) {
       try {
-        // تحضير البيانات مع إصلاح ربط SQLite
+        
         const userData = {
           username: insertUser.username,
           password: insertUser.password,
@@ -406,13 +390,13 @@ export class MixedStorage implements IStorage {
           level: insertUser.level || 1,
           totalPoints: insertUser.totalPoints || 0,
           levelProgress: insertUser.levelProgress || 0,
-          // إصلاح القيم المنطقية لـ SQLite
-          isOnline: 1, // SQLite يستخدم integers للقيم المنطقية
+          
+          isOnline: 1, 
           isHidden: 0,
           isMuted: insertUser.isMuted ? 1 : 0,
           isBanned: insertUser.isBanned ? 1 : 0,
           isBlocked: insertUser.isBlocked ? 1 : 0,
-          // إصلاح التواريخ لـ SQLite
+          
           lastSeen: new Date().toISOString(),
           joinDate: new Date().toISOString(),
           createdAt: new Date().toISOString(),
@@ -420,7 +404,7 @@ export class MixedStorage implements IStorage {
           banExpiry: insertUser.banExpiry ? insertUser.banExpiry.toISOString() : null,
           ipAddress: insertUser.ipAddress,
           deviceId: insertUser.deviceId,
-          ignoredUsers: '[]' // JSON string للتوافق مع SQLite
+          ignoredUsers: '[]' 
         };
 
         // إزالة القيم undefined لتجنب مشاكل الربط
@@ -602,14 +586,14 @@ export class MixedStorage implements IStorage {
       return;
     }
 
-    // Check database (members) - Fix SQLite binding issues
+    
     if (db) {
       try {
         await db
           .update(users)
           .set({ 
-            isOnline: isOnline ? 1 : 0,  // Convert boolean to number for SQLite
-            lastSeen: new Date().toISOString()  // Convert to ISO string for SQLite
+            isOnline: isOnline ? 1 : 0,  
+            lastSeen: new Date().toISOString()  
           } as any)
           .where(eq(users.id, id));
       } catch (error) {
@@ -624,10 +608,10 @@ export class MixedStorage implements IStorage {
     // Get online members from database (excluding hidden)
     if (db) {
       try {
-        const dbUsers = await db.select().from(users).where(eq(users.isOnline, 1)); // Use 1 instead of true for SQLite
+        const dbUsers = await db.select().from(users).where(eq(users.isOnline, 1)); 
         const visibleDbUsers = dbUsers.filter(user => !user.isHidden);
         
-        // Convert SQLite integer booleans to JavaScript booleans for consistency
+        
         const convertedDbUsers = visibleDbUsers.map(user => ({
           ...user,
           isOnline: !!user.isOnline,
@@ -661,7 +645,7 @@ export class MixedStorage implements IStorage {
       return;
     }
 
-    // Check database (members) - Fix SQLite binding
+    
     if (db) {
       try {
         await db.update(users).set({ isHidden: isHidden ? 1 : 0 } as any).where(eq(users.id, id));
@@ -685,7 +669,7 @@ export class MixedStorage implements IStorage {
       return;
     }
 
-    // Check database (members) - Fix array handling for SQLite
+    
     if (db) {
       try {
         const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
@@ -720,7 +704,7 @@ export class MixedStorage implements IStorage {
       return;
     }
 
-    // Check database (members) - Fix array handling for SQLite
+    
     if (db) {
       try {
         const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
@@ -750,7 +734,7 @@ export class MixedStorage implements IStorage {
       return ignoredArray.map((id: string) => parseInt(id));
     }
     
-    // Check database (members) - Fix array parsing for SQLite
+    
     if (db) {
       try {
         const [dbUser] = await db.select().from(users).where(eq(users.id, userId));
@@ -1678,7 +1662,7 @@ export class MixedStorage implements IStorage {
         throw error;
       }
     } else {
-      // SQLite fallback
+      
       try {
         const rooms = await this.db.all(`
           SELECT 

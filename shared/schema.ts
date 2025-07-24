@@ -58,6 +58,15 @@ export const friends = pgTable("friends", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const friendRequests = pgTable("friend_requests", {
+  id: serial("id").primaryKey(),
+  senderId: integer("sender_id").notNull().references(() => users.id),
+  receiverId: integer("receiver_id").notNull().references(() => users.id),
+  status: text("status").notNull().default("pending"), // 'pending', 'accepted', 'rejected'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
@@ -147,12 +156,20 @@ export const insertFriendSchema = z.object({
   status: z.string().optional(),
 });
 
+export const insertFriendRequestSchema = z.object({
+  senderId: z.number(),
+  receiverId: z.number(),
+  status: z.string().optional(),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 export type InsertFriend = z.infer<typeof insertFriendSchema>;
 export type Friend = typeof friends.$inferSelect;
+export type InsertFriendRequest = z.infer<typeof insertFriendRequestSchema>;
+export type FriendRequest = typeof friendRequests.$inferSelect;
 
 export const insertNotificationSchema = z.object({
   userId: z.number(),

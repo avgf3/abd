@@ -15,26 +15,17 @@ import {
   type InsertNotification,
   type FriendRequest,
   type InsertFriendRequest,
-} from "../shared/schema-sqlite";
+} from "../shared/schema";
 import { db } from "./database-adapter";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { userService } from "./services/userService";
 import { messageService } from "./services/messageService";
-import Database from 'better-sqlite3';
 import bcrypt from 'bcrypt';
 import fs from 'fs';
 import path from 'path';
 
-// إضافة اتصال SQLite مباشر كبديل
-let directSqliteDb: Database.Database | null = null;
 
-function getDirectSqliteConnection() {
-  if (!directSqliteDb) {
-    const databaseUrl = process.env.DATABASE_URL || 'sqlite:./data/chatapp.db';
-    let dbPath = './data/chatapp.db';
-    if (databaseUrl.startsWith('sqlite:')) {
-      dbPath = databaseUrl.replace('sqlite:', '');
-    }
+
     
     // Ensure data directory exists
     const dataDir = path.dirname(dbPath);
@@ -42,10 +33,8 @@ function getDirectSqliteConnection() {
       fs.mkdirSync(dataDir, { recursive: true });
     }
     
-    directSqliteDb = new Database(dbPath);
     
     // Initialize tables if they don't exist
-    directSqliteDb.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
@@ -84,7 +73,6 @@ function getDirectSqliteConnection() {
       );
     `);
   }
-  return directSqliteDb;
 }
 
 // Helper function to convert database row to User type

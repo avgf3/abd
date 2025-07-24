@@ -22,6 +22,13 @@
       "when": 1753388354142,
       "tag": "0002_eminent_rocket_raccoon",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1753388838911,
+      "tag": "0003_whole_gladiator",
+      "breakpoints": true
     }
   ]
 }

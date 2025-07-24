@@ -14,7 +14,7 @@ export async function initializeDatabase(): Promise<boolean> {
 
     console.log('🔄 Initializing database tables...');
     
-    // Create tables for SQLite (PostgreSQL migrations are handled separately)
+    
     if (dbType !== 'postgresql') {
       await createTables();
     }
@@ -310,7 +310,7 @@ async function createTables(): Promise<void> {
     return;
   }
   
-  // For SQLite, tables are created by database-fallback.ts
+  
   console.log('✅ SQLite tables are created by database-fallback.ts');
 }
 
@@ -325,7 +325,7 @@ async function addMissingColumns(): Promise<void> {
     return;
   }
 
-  // For SQLite - columns are created by database-fallback.ts
+  
   console.log('✅ SQLite columns are managed by database-fallback.ts, skipping runtime additions');
 }
 
@@ -383,52 +383,6 @@ export async function createDefaultUsers(): Promise<void> {
         });
         console.log('✅ Default test user created');
       }
-    } else {
-      // Use Drizzle ORM for SQLite - import SQLite schema
-      const { users: sqliteUsers, levelSettings: sqliteLevelSettings } = await import('../shared/schema-sqlite');
-      const { count } = await import('drizzle-orm');
-      const { eq } = await import('drizzle-orm');
-      
-      // Check if admin user exists
-      const adminResult = await db.select({ count: count() }).from(sqliteUsers).where(eq(sqliteUsers.username, 'admin'));
-      const adminCount = adminResult[0]?.count || 0;
-
-      if (adminCount === 0) {
-        await db.insert(sqliteUsers).values({
-          username: 'admin',
-          password: 'admin123',
-          userType: 'owner',
-          role: 'owner',
-          profileImage: '/default_avatar.svg',
-          points: 0,
-          level: 1,
-          totalPoints: 0,
-          levelProgress: 0
-        });
-        console.log('✅ Default admin user created');
-      }
-
-      // Create a test member user
-      const memberResult = await db.select({ count: count() }).from(sqliteUsers).where(eq(sqliteUsers.username, 'testuser'));
-      const memberCount = memberResult[0]?.count || 0;
-
-      if (memberCount === 0) {
-        await db.insert(sqliteUsers).values({
-          username: 'testuser',
-          password: 'test123',
-          userType: 'member',
-          role: 'member',
-          profileImage: '/default_avatar.svg',
-          points: 0,
-          level: 1,
-          totalPoints: 0,
-          levelProgress: 0
-        });
-        console.log('✅ Default test user created');
-      }
-
-      // Initialize default level settings
-      await initializeLevelSettings();
     }
     
     console.log('✅ Default users verification complete');
@@ -441,7 +395,7 @@ async function initializeLevelSettings(): Promise<void> {
   try {
     if (!db) return;
     
-    const { levelSettings } = await import('../shared/schema-sqlite');
+    const { levelSettings } = await import('../shared/schema');
     const { count } = await import('drizzle-orm');
     
     // Check if level settings exist
