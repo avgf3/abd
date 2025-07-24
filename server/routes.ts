@@ -17,6 +17,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import bcrypt from "bcrypt";
 
 // إعداد multer لرفع الصور
 const storage_multer = multer.diskStorage({
@@ -109,9 +110,16 @@ function broadcast(message: any) {
 const authService = new (class AuthService {
   async login(username: string, password: string) {
     const user = await storage.getUserByUsername(username.trim());
-    if (!user || user.password !== password.trim()) {
+    if (!user) {
       throw new Error('بيانات الدخول غير صحيحة');
     }
+    
+    // التحقق من كلمة المرور المشفرة
+    const isValidPassword = await bcrypt.compare(password.trim(), user.password);
+    if (!isValidPassword) {
+      throw new Error('بيانات الدخول غير صحيحة');
+    }
+    
     await storage.setUserOnlineStatus(user.id, true);
     return user;
   }
