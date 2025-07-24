@@ -167,8 +167,8 @@ export function useChat() {
         withCredentials: false, // تبسيط الأمان
         
         // إعدادات ping/pong
-        pingTimeout: 30000,
-        pingInterval: 20000,
+        timeout: 30000,
+        // pingInterval: 20000, // إزالة هذا لأنه غير مدعوم في socket.io-client
       });
       
       // معالج الاتصال المحسن
@@ -569,9 +569,23 @@ export function useChat() {
                   id: 0,
                   username: 'النظام',
                   userType: 'admin',
+                  role: 'admin',
                   profileImage: null,
-                  isOnline: true
-                }
+                  profileBackgroundColor: '#3c0d0d',
+                  isOnline: true,
+                  isHidden: false,
+                  lastSeen: null,
+                  joinDate: new Date(),
+                  createdAt: new Date(),
+                  isMuted: false,
+                  muteExpiry: null,
+                  isBanned: false,
+                  banExpiry: null,
+                  isBlocked: false,
+                  ignoredUsers: [],
+                  usernameColor: '#FF0000',
+                  userTheme: 'default'
+                } as ChatUser
               };
               
               setPublicMessages(prev => [...prev, systemMessage]);
