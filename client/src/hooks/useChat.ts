@@ -167,7 +167,6 @@ export function useChat() {
         withCredentials: false, // تبسيط الأمان
         
         // إعدادات ping/pong
-        timeout: 30000,
         // pingInterval: 20000, // إزالة هذا لأنه غير مدعوم في socket.io-client
       });
       
