@@ -141,10 +141,101 @@ export const insertUserSchema = z.object({
   levelProgress: z.number().optional(),
 });
 
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
-export type Message = typeof messages.$inferSelect;
-export type InsertMessage = typeof messages.$inferInsert;
+// تعريف نوع المستخدم مع التوافق الكامل
+export type User = {
+  id: number;
+  username: string;
+  password: string | null;
+  userType: string;
+  role: string;
+  profileImage: string | null;
+  profileBanner: string | null;
+  profileBackgroundColor: string;
+  status: string | null;
+  gender: string | null;
+  age: number | null;
+  country: string | null;
+  relation: string | null;
+  bio: string | null;
+  isOnline: boolean;
+  isHidden: boolean;
+  lastSeen: Date | null;
+  joinDate: Date;
+  createdAt: Date;
+  isMuted: boolean;
+  muteExpiry: Date | null;
+  isBanned: boolean;
+  banExpiry: Date | null;
+  isBlocked: boolean;
+  ipAddress: string | null;
+  deviceId: string | null;
+  ignoredUsers: number[];
+  usernameColor: string;
+  userTheme: string;
+  profileEffect: string;
+  points: number;
+  level: number;
+  totalPoints: number;
+  levelProgress: number;
+};
+
+export type InsertUser = {
+  username: string;
+  password?: string | null;
+  userType?: string;
+  role?: string;
+  profileImage?: string | null;
+  profileBanner?: string | null;
+  profileBackgroundColor?: string;
+  status?: string | null;
+  gender?: string | null;
+  age?: number | null;
+  country?: string | null;
+  relation?: string | null;
+  bio?: string | null;
+  isOnline?: boolean;
+  isHidden?: boolean;
+  lastSeen?: Date | null;
+  joinDate?: Date;
+  createdAt?: Date;
+  isMuted?: boolean;
+  muteExpiry?: Date | null;
+  isBanned?: boolean;
+  banExpiry?: Date | null;
+  isBlocked?: boolean;
+  ipAddress?: string | null;
+  deviceId?: string | null;
+  ignoredUsers?: number[];
+  usernameColor?: string;
+  userTheme?: string;
+  profileEffect?: string;
+  points?: number;
+  level?: number;
+  totalPoints?: number;
+  levelProgress?: number;
+};
+
+export type Message = {
+  id: number;
+  senderId: number;
+  receiverId: number | null;
+  roomId: string;
+  content: string;
+  messageType: string;
+  isPrivate: number;
+  timestamp: string;
+};
+
+export type InsertMessage = {
+  senderId: number;
+  receiverId?: number | null;
+  roomId?: string;
+  content: string;
+  messageType?: string;
+  isPrivate?: boolean;
+  timestamp?: string;
+};
+
 export type Friend = typeof friends.$inferSelect;
 export type InsertFriend = typeof friends.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
