@@ -101,7 +101,15 @@ export class MixedStorage implements IStorage {
   private users: Map<number, User>;
   private messages: Map<number, Message>;
   private friends: Map<number, Friend>;
-  private friendRequests: Map<number, any>;
+  private friendRequests: Map<number, {
+    id: number;
+    senderId: number;
+    receiverId: number;
+    status: string;
+    createdAt: Date;
+    senderUsername?: string;
+    receiverUsername?: string;
+  }>;
   private currentUserId: number;
   private currentMessageId: number;
   private currentFriendId: number;
@@ -550,7 +558,7 @@ export class MixedStorage implements IStorage {
       const [existing] = await db.select().from(users).where(eq(users.id, id));
       if (existing && (existing.userType === 'member' || existing.userType === 'owner')) {
         // Members can upload profile pictures and change themes
-        const updateData: any = { ...updates };
+        const updateData: Partial<User> = { ...updates };
         
         // تأكد من أن الحقول المطلوبة موجودة
               if (updates.userTheme !== undefined) {
@@ -1457,7 +1465,32 @@ export class MixedStorage implements IStorage {
   // ============ دوال الحوائط ============
 
   // إنشاء منشور جديد
-  async createWallPost(postData: any): Promise<any> {
+  async createWallPost(postData: {
+    userId: number;
+    username: string;
+    userRole: string;
+    content: string;
+    imageUrl?: string | null;
+    type: string;
+    timestamp: Date;
+    userProfileImage?: string | null;
+    usernameColor?: string;
+  }): Promise<{
+    id: number;
+    userId: number;
+    username: string;
+    userRole: string;
+    content: string;
+    imageUrl?: string | null;
+    type: string;
+    timestamp: Date;
+    userProfileImage?: string | null;
+    usernameColor?: string;
+    reactions: any[];
+    totalLikes: number;
+    totalDislikes: number;
+    totalHearts: number;
+  }> {
     try {
       // في الوقت الحالي، سنحفظ البيانات في الذاكرة
       // يمكن إضافة جدول قاعدة بيانات لاحقاً
@@ -1516,7 +1549,22 @@ export class MixedStorage implements IStorage {
   }
 
   // جلب منشور واحد
-  async getWallPost(postId: number): Promise<any | null> {
+  async getWallPost(postId: number): Promise<{
+    id: number;
+    userId: number;
+    username: string;
+    userRole: string;
+    content: string;
+    imageUrl?: string | null;
+    type: string;
+    timestamp: Date;
+    userProfileImage?: string | null;
+    usernameColor?: string;
+    reactions: any[];
+    totalLikes: number;
+    totalDislikes: number;
+    totalHearts: number;
+  } | null> {
     try {
       if (!global.wallPosts) {
         return null;
@@ -1544,7 +1592,13 @@ export class MixedStorage implements IStorage {
   }
 
   // إضافة تفاعل
-  async addWallReaction(reactionData: any): Promise<void> {
+  async addWallReaction(reactionData: {
+    postId: number;
+    userId: number;
+    username: string;
+    type: string;
+    timestamp: Date;
+  }): Promise<void> {
     try {
       if (!global.wallPosts) {
         global.wallPosts = [];
@@ -1700,7 +1754,24 @@ export class MixedStorage implements IStorage {
     }
   }
 
-  async createRoom(roomData: any): Promise<any> {
+  async createRoom(roomData: {
+    name: string;
+    description: string;
+    icon: string;
+    createdBy: number;
+    isDefault: boolean;
+    isActive: boolean;
+  }): Promise<{
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+    createdBy: number;
+    isDefault: boolean;
+    isActive: boolean;
+    createdAt: Date;
+    userCount?: number;
+  }> {
     if (this.usePG) {
       try {
         const result = await this.pool.query(`
