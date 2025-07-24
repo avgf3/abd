@@ -1,9 +1,14 @@
+databases:
+  - name: chat-app-db
+    databaseName: chatapp
+    user: chatapp_user
+
 services:
   - type: web
     name: chat-app
     env: node
     region: oregon
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npm run build && npm run db:migrate-production
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -14,6 +19,10 @@ services:
         value: true
       - key: SOCKET_IO_POLLING_ONLY
         value: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chat-app-db
+          property: connectionString
     healthCheckPath: /api/health
     numInstances: 1
     plan: free
