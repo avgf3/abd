@@ -85,16 +85,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   // دوال إدارة الغرف
   const handleRoomChange = async (roomId: string) => {
     setCurrentRoomId(roomId);
-    if (chat.currentUser) {
-      try {
-        await apiRequest(`/api/rooms/${roomId}/join`, {
-          method: 'POST',
-          body: { userId: chat.currentUser.id }
-        });
-      } catch (error) {
-        console.error('خطأ في الانضمام للغرفة:', error);
-      }
-    }
+    chat.joinRoom(roomId);
   };
 
   const handleAddRoom = async (roomData: { name: string; description: string; image: File | null }) => {

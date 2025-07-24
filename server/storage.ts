@@ -768,6 +768,7 @@ export class MixedStorage implements IStorage {
         .values({
           senderId: insertMessage.senderId,
           receiverId: insertMessage.receiverId,
+          roomId: (insertMessage as any).roomId || 'general',
           content: insertMessage.content,
           messageType: insertMessage.messageType || 'text',
           isPrivate: insertMessage.isPrivate || false,
