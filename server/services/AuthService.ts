@@ -1,6 +1,6 @@
 import { SecurityManager } from '../auth/security';
 import type { IStorage } from '../storage';
-import type { InsertUser, User } from '@shared/schema';
+import type { InsertUser, User } from '../../shared/schema';
 
 /**
  * خدمة المصادقة المحسنة مع الأمان

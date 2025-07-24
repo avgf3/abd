@@ -5,7 +5,7 @@ import {
   checkLevelUp, 
   DEFAULT_POINTS_CONFIG,
   DEFAULT_LEVELS
-} from '@shared/points-system';
+} from '../../shared/points-system';
 
 export class PointsService {
   // إضافة نقاط لمستخدم
