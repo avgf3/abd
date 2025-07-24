@@ -42,6 +42,7 @@ router.post("/register", async (req, res) => {
       username,
       password,
       userType: "member",
+      role: "member",
       gender: gender || "male",
       profileImage: "/default_avatar.svg",
     });
@@ -95,6 +96,7 @@ router.post("/guest", async (req, res) => {
     const user = await storage.createUser({
       username,
       userType: "guest",
+      role: "guest",
       gender: gender || "male",
       profileImage: "/default_avatar.svg",
     });

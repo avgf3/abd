@@ -28,7 +28,11 @@ let directSqliteDb: Database.Database | null = null;
 
 function getDirectSqliteConnection() {
   if (!directSqliteDb) {
-    const dbPath = path.join(process.cwd(), 'data', 'chatapp.db');
+    const databaseUrl = process.env.DATABASE_URL || 'sqlite:./chat.db';
+    let dbPath = './chat.db';
+    if (databaseUrl.startsWith('sqlite:')) {
+      dbPath = databaseUrl.replace('sqlite:', '');
+    }
     directSqliteDb = new Database(dbPath);
   }
   return directSqliteDb;

@@ -53,9 +53,9 @@ router.post("/send", async (req, res) => {
     const sanitizedContent = sanitizeInput(content);
     
     const message = await storage.createMessage({
-      content: sanitizedContent,
       senderId: parseInt(senderId),
       receiverId: receiverId ? parseInt(receiverId) : undefined,
+      content: sanitizedContent,
       messageType: messageType || "text",
       isPrivate: isPrivate || false
     });
