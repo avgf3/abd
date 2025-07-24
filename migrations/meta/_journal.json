@@ -15,6 +15,13 @@
       "when": 1753076958977,
       "tag": "0001_tranquil_clea",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1753388354142,
+      "tag": "0002_eminent_rocket_raccoon",
+      "breakpoints": true
     }
   ]
 }
