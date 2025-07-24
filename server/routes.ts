@@ -2877,9 +2877,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/notifications/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
+      
+      // التحقق من صحة userId
+      if (isNaN(userId) || userId <= 0) {
+        return res.status(400).json({ error: "معرف المستخدم غير صحيح" });
+      }
+      
       const notifications = await storage.getUserNotifications(userId);
       res.json({ notifications });
     } catch (error) {
+      console.error('خطأ في جلب الإشعارات:', error);
+      res.status(500).json({ error: "خطأ في جلب الإشعارات" });
+    }
+  });
+
+  // إضافة endpoint للإشعارات بدون userId (للحالات التي تستدعى بدون معامل)
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      
+      if (!userId || isNaN(parseInt(userId as string))) {
+        return res.status(400).json({ error: "معرف المستخدم مطلوب وغير صحيح" });
+      }
+      
+      const userIdInt = parseInt(userId as string);
+      const notifications = await storage.getUserNotifications(userIdInt);
+      res.json({ notifications });
+    } catch (error) {
+      console.error('خطأ في جلب الإشعارات:', error);
       res.status(500).json({ error: "خطأ في جلب الإشعارات" });
     }
   });
