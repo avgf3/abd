@@ -155,7 +155,7 @@ const friendService = new (class FriendService {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // رفع صور البروفايل
-  app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
+  app.post('/api/upload/profile-image', upload.single('image'), async (req, res) => {
     try {
       console.log('رفع صورة البروفايل - الملف:', req.file);
       console.log('البيانات:', req.body);
@@ -166,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('No file uploaded in profile image request');
         return res.status(400).json({ 
           error: 'لم يتم رفع أي ملف',
-          details: 'تأكد من إرسال الملف مع اسم الحقل profileImage'
+          details: 'تأكد من إرسال الملف مع اسم الحقل image'
         });
       }
 
@@ -217,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // رفع صور البروفايل البانر
-  app.post('/api/upload/profile-banner', upload.single('profileBanner'), async (req, res) => {
+  app.post('/api/upload/profile-banner', wallUpload.single('image'), async (req, res) => {
     try {
       console.log('رفع صورة البانر - الملف:', req.file);
       console.log('البيانات:', req.body);
@@ -228,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('No file uploaded in profile banner request');
         return res.status(400).json({ 
           error: 'لم يتم رفع أي ملف',
-          details: 'تأكد من إرسال الملف مع اسم الحقل profileBanner'
+          details: 'تأكد من إرسال الملف مع اسم الحقل image'
         });
       }
 
@@ -238,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // تحديث مسار صورة البانر
-      const bannerUrl = `/uploads/profiles/${req.file.filename}`;
+      const bannerUrl = `/uploads/wall/${req.file.filename}`;
       
       const user = await storage.getUser(parseInt(userId));
       if (!user) {
