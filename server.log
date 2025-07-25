@@ -1,50 +1,71 @@
-
-> rest-express@1.0.0 dev
-> NODE_ENV=development tsx server/index.ts
-
-🔄 Initializing SQLite database at: /workspace/data/chatapp.db
-✅ SQLite database initialized successfully
-✅ تم الاتصال بقاعدة بيانات SQLite
-[dotenv@17.2.0] injecting env (7) from .env (tip: 🔐 encrypt with dotenvx: https://dotenvx.com)
-🛡️ Security middleware configured
-🔄 بدء التنظيف الدوري كل 6 ساعات
-7:47:24 PM [express] Current environment: development
-Error initializing owner: SqliteError: no such column: "points" - should this be a string literal in single-quotes?
-    at Database.prepare (/workspace/node_modules/better-sqlite3/lib/methods/wrappers.js:5:21)
-    at BetterSQLiteSession.prepareQuery (/workspace/node_modules/src/better-sqlite3/session.ts:50:28)
-    at BetterSQLiteSession.prepareOneTimeQuery (/workspace/node_modules/src/sqlite-core/session.ts:135:15)
-    at SQLiteSelectBase._prepare (/workspace/node_modules/src/sqlite-core/query-builders/select.ts:865:85)
-    at SQLiteSelectBase.all (/workspace/node_modules/src/sqlite-core/query-builders/select.ts:884:15)
-    at SQLiteSelectBase.execute (/workspace/node_modules/src/sqlite-core/query-builders/select.ts:896:15)
-    at SQLiteSelectBase.then (/workspace/node_modules/src/query-promise.ts:31:15) {
-  code: 'SQLITE_ERROR'
+[dotenv@17.2.0] injecting env (10) from .env (tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`)
+The `fetchConnectionCache` option is deprecated (now always `true`)
+[dotenv@17.2.0] injecting env (0) from .env (tip: ⚙️  enable debug logging with { debug: true })
+{
+  severity_local: 'NOTICE',
+  severity: 'NOTICE',
+  code: '42P06',
+  message: 'schema "drizzle" already exists, skipping',
+  file: 'schemacmds.c',
+  line: '132',
+  routine: 'CreateSchemaCommand'
 }
-تم تحميل 0 جهاز محجوب
-⚠️ No PostgreSQL DATABASE_URL found or using SQLite, skipping Drizzle migrations
-7:47:24 PM [express] ✅ Database migrations completed successfully
-🔄 Initializing database tables...
-✅ SQLite tables are created by database-fallback.ts
-✅ SQLite columns are managed by database-fallback.ts, skipping runtime additions
-✅ Default users verification complete
-✅ Database initialization completed successfully
-✅ Default users verification complete
-node:events:496
-      throw er; // Unhandled 'error' event
-      ^
-
-Error: listen EADDRINUSE: address already in use 0.0.0.0:5000
-    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
-    at listenInCluster (node:net:1996:12)
-    at node:net:2205:7
-    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
-Emitted 'error' event on Server instance at:
-    at emitErrorNT (node:net:1975:8)
-    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
-  code: 'EADDRINUSE',
-  errno: -98,
-  syscall: 'listen',
-  address: '0.0.0.0',
-  port: 5000
+{
+  severity_local: 'NOTICE',
+  severity: 'NOTICE',
+  code: '42P07',
+  message: 'relation "__drizzle_migrations" already exists, skipping',
+  file: 'parse_utilcmd.c',
+  line: '207',
+  routine: 'transformCreateStmt'
 }
+❌ Error running migrations: DrizzleQueryError: Failed query: CREATE TABLE "level_settings" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"level" integer NOT NULL,
+	"required_points" integer NOT NULL,
+	"title" text NOT NULL,
+	"color" text DEFAULT '#FFFFFF',
+	"benefits" jsonb,
+	"created_at" timestamp DEFAULT now(),
+	CONSTRAINT "level_settings_level_unique" UNIQUE("level")
+);
 
-Node.js v22.16.0
+params: 
+    at PostgresJsPreparedQuery.queryWithCache (file:///workspace/node_modules/drizzle-orm/pg-core/session.js:42:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async file:///workspace/node_modules/drizzle-orm/pg-core/dialect.js:64:13
+    at async scope (file:///workspace/node_modules/postgres/src/index.js:260:18)
+    at async Function.begin (file:///workspace/node_modules/postgres/src/index.js:243:14)
+    at async PgDialect.migrate (file:///workspace/node_modules/drizzle-orm/pg-core/dialect.js:60:5)
+    at async migrate (file:///workspace/node_modules/drizzle-orm/postgres-js/migrator.js:4:3)
+    at async runMigrations (file:///workspace/dist/index.js:6064:5)
+    at async file:///workspace/dist/index.js:6515:7 {
+  query: 'CREATE TABLE "level_settings" (\n' +
+    '\t"id" serial PRIMARY KEY NOT NULL,\n' +
+    '\t"level" integer NOT NULL,\n' +
+    '\t"required_points" integer NOT NULL,\n' +
+    '\t"title" text NOT NULL,\n' +
+    `\t"color" text DEFAULT '#FFFFFF',\n` +
+    '\t"benefits" jsonb,\n' +
+    '\t"created_at" timestamp DEFAULT now(),\n' +
+    '\tCONSTRAINT "level_settings_level_unique" UNIQUE("level")\n' +
+    ');\n',
+  params: [],
+  cause: PostgresError: relation "level_settings" already exists
+      at ErrorResponse (file:///workspace/node_modules/postgres/src/connection.js:794:26)
+      at handle (file:///workspace/node_modules/postgres/src/connection.js:480:6)
+      at Socket.data (file:///workspace/node_modules/postgres/src/connection.js:315:9)
+      at Socket.emit (node:events:518:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42P07',
+    file: 'heap.c',
+    line: '1159',
+    routine: 'heap_create_with_catalog'
+  }
+}
+[2025-07-25T13:35:02.962Z] INFO: 🔄 Initializing database tables...

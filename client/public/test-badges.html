@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار شارات SVG</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            direction: rtl;
+            text-align: center;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .badge-container {
+            margin: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+        .badge-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>اختبار شارات المستخدمين</h1>
+    
+    <div class="badge-container">
+        <div class="badge-title">شارة المالك</div>
+        <div class="badge">
+            <img src="/svgs/crown.svg" alt="owner" style="width: 24px; height: 24px;" />
+            <span>عبدالكريم (مالك)</span>
+        </div>
+    </div>
+
+    <div class="badge-container">
+        <div class="badge-title">شارة المشرف</div>
+        <div class="badge">
+            <span style="font-size: 24px;">⭐</span>
+            <span>أحمد (مشرف)</span>
+        </div>
+    </div>
+
+    <div class="badge-container">
+        <div class="badge-title">شارة المراقب</div>
+        <div class="badge">
+            <span style="font-size: 24px;">🛡️</span>
+            <span>سارة (مراقب)</span>
+        </div>
+    </div>
+
+    <div class="badge-container">
+        <div class="badge-title">عضو ذكر (مستوى 5)</div>
+        <div class="badge">
+            <img src="/svgs/blue_arrow.svg" alt="male-lvl1-10" style="width: 24px; height: 24px;" />
+            <span>محمد (عضو)</span>
+        </div>
+    </div>
+
+    <div class="badge-container">
+        <div class="badge-title">عضو أنثى (مستوى 8)</div>
+        <div class="badge">
+            <img src="/svgs/pink_medal.svg" alt="female-lvl1-10" style="width: 24px; height: 24px;" />
+            <span>فاطمة (عضو)</span>
+        </div>
+    </div>
+
+    <div class="badge-container">
+        <div class="badge-title">عضو (مستوى 15)</div>
+        <div class="badge">
+            <img src="/svgs/white.svg" alt="lvl10-20" style="width: 24px; height: 24px;" />
+            <span>علي (عضو)</span>
+        </div>
+    </div>
+
+    <div class="badge-container">
+        <div class="badge-title">عضو (مستوى 25)</div>
+        <div class="badge">
+            <img src="/svgs/emerald.svg" alt="lvl20-30" style="width: 24px; height: 24px;" />
+            <span>زينب (عضو)</span>
+        </div>
+    </div>
+
+    <div class="badge-container">
+        <div class="badge-title">عضو (مستوى 35)</div>
+        <div class="badge">
+            <img src="/svgs/orange_shine.svg" alt="lvl30-40" style="width: 24px; height: 24px;" />
+            <span>خالد (عضو)</span>
+        </div>
+    </div>
+
+    <script>
+        // تحقق من إمكانية الوصول للملفات
+        const svgFiles = [
+            '/svgs/crown.svg',
+            '/svgs/blue_arrow.svg', 
+            '/svgs/pink_medal.svg',
+            '/svgs/white.svg',
+            '/svgs/emerald.svg',
+            '/svgs/orange_shine.svg'
+        ];
+
+        svgFiles.forEach(svg => {
+            fetch(svg)
+                .then(response => {
+                    if (response.ok) {
+                        console.log(`✅ ${svg} متاح`);
+                    } else {
+                        console.error(`❌ ${svg} غير متاح - ${response.status}`);
+                    }
+                })
+                .catch(error => {
+                    console.error(`❌ خطأ في تحميل ${svg}:`, error);
+                });
+        });
+    </script>
+</body>
+</html>
