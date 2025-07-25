@@ -339,20 +339,15 @@ export default function UserSidebarWithWalls({
                               }}
                               title={user.username}
                             >
-                              {user.username} <UserRoleBadge user={user} />
+                              {user.username}
                             </span>
                             {user.isMuted && (
                               <span className="text-yellow-400 text-xs">🔇</span>
                             )}
                           </div>
-                          <span 
-                            className="text-xs font-medium"
-                            style={{ 
-                              color: user.userType === 'owner' ? '#000000' : '#10B981'
-                            }}
-                          >
-                            متصل
-                          </span>
+                          <div className="flex items-center">
+                            <UserRoleBadge user={user} />
+                          </div>
                         </div>
                       </div>
                     </div>
