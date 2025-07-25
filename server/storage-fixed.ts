@@ -17,72 +17,9 @@ import { db } from "./database-adapter";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { userService } from "./services/userService";
 import { messageService } from "./services/messageService";
-import Database from 'better-sqlite3';
 import bcrypt from 'bcrypt';
 import fs from 'fs';
 import path from 'path';
-
-// إضافة اتصال SQLite مباشر كبديل
-let directSqliteDb: Database.Database | null = null;
-
-function getDirectSqliteConnection() {
-  if (!directSqliteDb) {
-    const databaseUrl = process.env.DATABASE_URL || 'sqlite:./data/chatapp.db';
-    let dbPath = './data/chatapp.db';
-    if (databaseUrl.startsWith('sqlite:')) {
-      dbPath = databaseUrl.replace('sqlite:', '');
-    }
-    
-    // Ensure data directory exists
-    const dataDir = path.dirname(dbPath);
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    
-    directSqliteDb = new Database(dbPath);
-    
-    // Initialize tables if they don't exist
-    directSqliteDb.exec(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL UNIQUE,
-        password TEXT,
-        user_type TEXT NOT NULL DEFAULT 'guest',
-        role TEXT NOT NULL DEFAULT 'guest',
-        profile_image TEXT,
-        profile_banner TEXT,
-        profile_background_color TEXT DEFAULT '#3c0d0d',
-        status TEXT,
-        gender TEXT,
-        age INTEGER,
-        country TEXT,
-        relation TEXT,
-        bio TEXT,
-        is_online INTEGER DEFAULT 0,
-        is_hidden INTEGER DEFAULT 0,
-        last_seen TEXT,
-        join_date TEXT,
-        created_at TEXT,
-        is_muted INTEGER DEFAULT 0,
-        mute_expiry TEXT,
-        is_banned INTEGER DEFAULT 0,
-        ban_expiry TEXT,
-        is_blocked INTEGER DEFAULT 0,
-        ip_address TEXT,
-        device_id TEXT,
-        ignored_users TEXT DEFAULT '[]',
-        username_color TEXT DEFAULT '#FFFFFF',
-        user_theme TEXT DEFAULT 'default',
-        profile_effect TEXT DEFAULT 'none',
-        points INTEGER DEFAULT 0,
-        level INTEGER DEFAULT 1,
-        total_points INTEGER DEFAULT 0,
-        level_progress INTEGER DEFAULT 0
-      );
-    `);
-  }
-  return directSqliteDb;
-}
 
 // Helper function to convert database row to User type
 function convertRowToUser(user: any): User | null {
@@ -135,9 +72,8 @@ export class FixedStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     try {
-      const directDb = getDirectSqliteConnection();
-      const user = directDb.prepare('SELECT * FROM users WHERE id = ?').get(id);
-      return convertRowToUser(user) || undefined;
+      const user = await db.select().from(users).where(eq(users.id, id));
+      return convertRowToUser(user[0]) || undefined;
     } catch (error) {
       console.error('Error getting user:', error);
       return undefined;
@@ -146,9 +82,8 @@ export class FixedStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     try {
-      const directDb = getDirectSqliteConnection();
-      const user = directDb.prepare('SELECT * FROM users WHERE username = ?').get(username);
-      return convertRowToUser(user) || undefined;
+      const user = await db.select().from(users).where(eq(users.username, username));
+      return convertRowToUser(user[0]) || undefined;
     } catch (error) {
       console.error('Error getting user by username:', error);
       return undefined;
@@ -157,64 +92,50 @@ export class FixedStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     try {
-      const directDb = getDirectSqliteConnection();
-      
       // Hash password if provided
       let hashedPassword = null;
       if (insertUser.password) {
         hashedPassword = await bcrypt.hash(insertUser.password, 12);
       }
 
-      const stmt = directDb.prepare(`
-        INSERT INTO users (
-          username, password, user_type, role, profile_image, profile_banner,
-          profile_background_color, status, gender, age, country, relation, bio,
-          is_online, is_hidden, last_seen, join_date, created_at, is_muted,
-          mute_expiry, is_banned, ban_expiry, is_blocked, ip_address, device_id,
-          ignored_users, username_color, user_theme, profile_effect, points,
-          level, total_points, level_progress
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
+      const result = await db.insert(users).values({
+        username: insertUser.username,
+        password: hashedPassword,
+        userType: insertUser.userType || 'guest',
+        role: insertUser.role || insertUser.userType || 'guest',
+        profileImage: insertUser.profileImage || '/default_avatar.svg',
+        profileBanner: insertUser.profileBanner || null,
+        profileBackgroundColor: insertUser.profileBackgroundColor || '#3c0d0d',
+        status: insertUser.status || null,
+        gender: insertUser.gender || 'male',
+        age: insertUser.age || null,
+        country: insertUser.country || null,
+        relation: insertUser.relation || null,
+        bio: insertUser.bio || null,
+        isOnline: insertUser.isOnline ? 1 : 0,
+        isHidden: insertUser.isHidden ? 1 : 0,
+        lastSeen: new Date().toISOString(),
+        joinDate: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        isMuted: insertUser.isMuted ? 1 : 0,
+        muteExpiry: insertUser.muteExpiry ? insertUser.muteExpiry.toISOString() : null,
+        isBanned: insertUser.isBanned ? 1 : 0,
+        banExpiry: insertUser.banExpiry ? insertUser.banExpiry.toISOString() : null,
+        isBlocked: insertUser.isBlocked ? 1 : 0,
+        ipAddress: insertUser.ipAddress || null,
+        deviceId: insertUser.deviceId || null,
+        ignoredUsers: JSON.stringify(insertUser.ignoredUsers || []),
+        usernameColor: insertUser.usernameColor || '#FFFFFF',
+        userTheme: insertUser.userTheme || 'default',
+        profileEffect: insertUser.profileEffect || 'none',
+        points: insertUser.points || 0,
+        level: insertUser.level || 1,
+        totalPoints: insertUser.totalPoints || 0,
+        levelProgress: insertUser.levelProgress || 0
+      }).returning();
 
-      const now = new Date().toISOString();
-      const result = stmt.run(
-        insertUser.username,
-        hashedPassword,
-        insertUser.userType || 'guest',
-        insertUser.role || insertUser.userType || 'guest',
-        insertUser.profileImage || '/default_avatar.svg',
-        insertUser.profileBanner || null,
-        insertUser.profileBackgroundColor || '#3c0d0d',
-        insertUser.status || null,
-        insertUser.gender || 'male',
-        insertUser.age || null,
-        insertUser.country || null,
-        insertUser.relation || null,
-        insertUser.bio || null,
-        insertUser.isOnline ? 1 : 0,
-        insertUser.isHidden ? 1 : 0,
-        now,
-        now,
-        now,
-        insertUser.isMuted ? 1 : 0,
-        insertUser.muteExpiry ? insertUser.muteExpiry.toISOString() : null,
-        insertUser.isBanned ? 1 : 0,
-        insertUser.banExpiry ? insertUser.banExpiry.toISOString() : null,
-        insertUser.isBlocked ? 1 : 0,
-        insertUser.ipAddress || null,
-        insertUser.deviceId || null,
-        JSON.stringify(insertUser.ignoredUsers || []),
-        insertUser.usernameColor || '#FFFFFF',
-        insertUser.userTheme || 'default',
-        insertUser.profileEffect || 'none',
-        insertUser.points || 0,
-        insertUser.level || 1,
-        insertUser.totalPoints || 0,
-        insertUser.levelProgress || 0
-      );
-
-      const newUser = directDb.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
-      const convertedUser = convertRowToUser(newUser);
+      const newUser = await db.select().from(users).where(eq(users.id, result[0].id));
+      const convertedUser = convertRowToUser(newUser[0]);
       
       if (!convertedUser) {
         throw new Error('Failed to create user');
@@ -244,8 +165,7 @@ export class FixedStorage {
 
   async getAllUsers(): Promise<User[]> {
     try {
-      const directDb = getDirectSqliteConnection();
-      const users = directDb.prepare('SELECT * FROM users').all();
+      const users = await db.select().from(users);
       return users.map(convertRowToUser).filter((user): user is User => user !== null);
     } catch (error) {
       console.error('Error getting all users:', error);
@@ -255,29 +175,10 @@ export class FixedStorage {
 
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
     try {
-      const directDb = getDirectSqliteConnection();
-      
-      // Build dynamic update query
-      const setClause = [];
-      const values = [];
-      
-      if (updates.isOnline !== undefined) {
-        setClause.push('is_online = ?');
-        values.push(updates.isOnline ? 1 : 0);
-      }
-      
-      if (updates.lastSeen !== undefined) {
-        setClause.push('last_seen = ?');
-        values.push(updates.lastSeen ? updates.lastSeen.toISOString() : null);
-      }
-
-      if (setClause.length === 0) {
-        return this.getUser(id);
-      }
-
-      values.push(id);
-      const stmt = directDb.prepare(`UPDATE users SET ${setClause.join(', ')} WHERE id = ?`);
-      stmt.run(...values);
+      const result = await db.update(users)
+        .set(updates)
+        .where(eq(users.id, id))
+        .returning();
 
       return this.getUser(id);
     } catch (error) {
@@ -311,8 +212,7 @@ export class FixedStorage {
 
   async getOnlineUsers(): Promise<User[]> {
     try {
-      const directDb = getDirectSqliteConnection();
-      const users = directDb.prepare('SELECT * FROM users WHERE is_online = 1').all();
+      const users = await db.select().from(users).where(eq(users.isOnline, 1));
       return users.map(convertRowToUser).filter((user): user is User => user !== null);
     } catch (error) {
       console.error('Error getting online users:', error);

@@ -11,4 +11,3 @@ export {
 
 // للتوافق مع الكود الموجود
 export const pool = null; // سيتم إزالته تدريجياً
-export const sqlite = null; // سيتم إزالته تدريجياً
