@@ -277,7 +277,7 @@ export class MixedStorage implements IStorage {
           id: user.id,
           username: user.username,
           password: user.password,
-          userType: user.user_type,
+          userType: user.userType,
           role: user.role,
           profileImage: user.profile_image,
           profileBanner: user.profile_banner,
@@ -621,7 +621,7 @@ export class MixedStorage implements IStorage {
     // Get online members from database (excluding hidden)
     if (db) {
       try {
-        const dbUsers = await db.select().from(users).where(eq(users.isOnline, 1)); // Use 1 instead of true for SQLite
+        const dbUsers = await db.select().from(users).where(eq(users.isOnline, true));
         const visibleDbUsers = dbUsers.filter(user => !user.isHidden);
         
         // Convert SQLite integer booleans to JavaScript booleans for consistency
@@ -653,7 +653,7 @@ export class MixedStorage implements IStorage {
     // Check memory first (guests)
     const memUser = this.users.get(id);
     if (memUser) {
-      memUser.isHidden = isHidden ? 1 : 0;
+      memUser.isHidden = isHidden;
       this.users.set(id, memUser);
       return;
     }
@@ -794,8 +794,8 @@ export class MixedStorage implements IStorage {
         receiverId: insertMessage.receiverId,
         content: insertMessage.content,
         messageType: insertMessage.messageType || 'text',
-        isPrivate: (insertMessage.isPrivate || false) ? 1 : 0,
-        timestamp: new Date().toISOString(),
+        isPrivate: insertMessage.isPrivate || false,
+        timestamp: new Date(),
       };
       
       this.messages.set(message.id, message);
@@ -816,7 +816,7 @@ export class MixedStorage implements IStorage {
     // Try to get from database as well
     try {
       const dbMessages = await db.select().from(messages)
-        .where(eq(messages.isPrivate, 0))
+        .where(eq(messages.isPrivate, false))
         .orderBy(desc(messages.timestamp))
         .limit(limit);
       
