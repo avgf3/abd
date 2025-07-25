@@ -174,8 +174,6 @@ export const logSessionEvent = (event: string, userId: number, username: string,
     serverTime: Date.now()
   };
   
-  console.log(`📋 [SESSION] ${event}:`, logEntry);
-  
   // يمكن إضافة حفظ في ملف أو قاعدة بيانات هنا
 };
 

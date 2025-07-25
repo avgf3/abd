@@ -277,7 +277,7 @@ export class MixedStorage implements IStorage {
           id: user.id,
           username: user.username,
           password: user.password,
-          userType: user.user_type,
+          userType: user.userType,
           role: user.role,
           profileImage: user.profile_image,
           profileBanner: user.profile_banner,
@@ -430,7 +430,6 @@ export class MixedStorage implements IStorage {
           .values(cleanUserData as any)
           .returning();
         
-        console.log('✅ تم إنشاء المستخدم في قاعدة البيانات:', dbUser.username);
         return dbUser;
       } catch (error: any) {
         console.error('❌ خطأ في إنشاء المستخدم في قاعدة البيانات:', error);
@@ -478,16 +477,16 @@ export class MixedStorage implements IStorage {
           country: insertUser.country || null,
           relation: insertUser.relation || null,
           bio: insertUser.bio || null,
-          isOnline: 1,
-          isHidden: 0,
-          lastSeen: new Date().toISOString(),
-          joinDate: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          isMuted: 0,
+          isOnline: true,
+          isHidden: false,
+          lastSeen: new Date(),
+          joinDate: new Date(),
+          createdAt: new Date(),
+          isMuted: false,
           muteExpiry: null,
-          isBanned: 0,
+          isBanned: false,
           banExpiry: null,
-          isBlocked: 0,
+          isBlocked: false,
           ipAddress: insertUser.ipAddress || null,
           deviceId: insertUser.deviceId || null,
           ignoredUsers: '[]',
@@ -516,15 +515,15 @@ export class MixedStorage implements IStorage {
         age: insertUser.age || null,
         country: insertUser.country || null,
         relation: insertUser.relation || null,
-        isOnline: 1,
-        lastSeen: new Date().toISOString(),
-        joinDate: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        isMuted: 0,
+        isOnline: true,
+        lastSeen: new Date(),
+        joinDate: new Date(),
+        createdAt: new Date(),
+        isMuted: false,
         muteExpiry: null,
-        isBanned: 0,
+        isBanned: false,
         banExpiry: null,
-        isBlocked: 0,
+        isBlocked: false,
         ipAddress: null,
         deviceId: null,
         ignoredUsers: '[]',
@@ -579,7 +578,6 @@ export class MixedStorage implements IStorage {
           .where(eq(users.id, id))
           .returning();
         
-        console.log('Updated user in database:', updatedUser);
         return updatedUser;
       }
     } catch (error) {
@@ -593,8 +591,8 @@ export class MixedStorage implements IStorage {
     // Check memory first (guests)
     const memUser = this.users.get(id);
     if (memUser) {
-      memUser.isOnline = isOnline ? 1 : 0;
-      memUser.lastSeen = new Date().toISOString();
+      memUser.isOnline = isOnline;
+      memUser.lastSeen = new Date();
       this.users.set(id, memUser);
       return;
     }
@@ -621,7 +619,7 @@ export class MixedStorage implements IStorage {
     // Get online members from database (excluding hidden)
     if (db) {
       try {
-        const dbUsers = await db.select().from(users).where(eq(users.isOnline, 1)); // Use 1 instead of true for SQLite
+        const dbUsers = await db.select().from(users).where(eq(users.isOnline, true));
         const visibleDbUsers = dbUsers.filter(user => !user.isHidden);
         
         // Convert SQLite integer booleans to JavaScript booleans for consistency
@@ -653,7 +651,7 @@ export class MixedStorage implements IStorage {
     // Check memory first (guests)
     const memUser = this.users.get(id);
     if (memUser) {
-      memUser.isHidden = isHidden ? 1 : 0;
+      memUser.isHidden = isHidden;
       this.users.set(id, memUser);
       return;
     }
@@ -794,8 +792,8 @@ export class MixedStorage implements IStorage {
         receiverId: insertMessage.receiverId,
         content: insertMessage.content,
         messageType: insertMessage.messageType || 'text',
-        isPrivate: (insertMessage.isPrivate || false) ? 1 : 0,
-        timestamp: new Date().toISOString(),
+        isPrivate: insertMessage.isPrivate || false,
+        timestamp: new Date(),
       };
       
       this.messages.set(message.id, message);
@@ -816,7 +814,7 @@ export class MixedStorage implements IStorage {
     // Try to get from database as well
     try {
       const dbMessages = await db.select().from(messages)
-        .where(eq(messages.isPrivate, 0))
+        .where(eq(messages.isPrivate, false))
         .orderBy(desc(messages.timestamp))
         .limit(limit);
       
@@ -1330,7 +1328,6 @@ export class MixedStorage implements IStorage {
         return result || [];
       } catch (queryError) {
         // Fallback for empty table or table doesn't exist
-        console.log('Blocked devices table may not exist or be empty');
         return [];
       }
     } catch (error) {

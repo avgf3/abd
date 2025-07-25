@@ -329,8 +329,8 @@ export class FixedStorage {
       roomId: message.roomId || 'general',
       content: message.content,
       messageType: message.messageType || 'text',
-      isPrivate: message.isPrivate ? 1 : 0,
-      timestamp: new Date().toISOString()
+      isPrivate: message.isPrivate || false,
+      timestamp: new Date()
     };
     return msg;
   }

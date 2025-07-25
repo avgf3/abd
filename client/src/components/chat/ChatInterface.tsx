@@ -242,8 +242,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     if (!chat.currentUser) return;
     
     try {
-      console.log('Sending friend request:', { senderId: chat.currentUser.id, receiverId: user.id });
-      
       const response = await apiRequest('/api/friend-requests', {
         method: 'POST',
         body: {
@@ -251,8 +249,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           receiverId: user.id,
         }
       });
-      
-      console.log('Friend request response:', response);
       
       toast({
         title: "تمت الإضافة",
@@ -706,8 +702,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           onClose={() => setShowThemeSelector(false)}
           currentUser={chat.currentUser}
           onThemeUpdate={(theme) => {
-            console.log('تم تحديث الثيم إلى:', theme);
-          }}
+            }}
         />
       )}
 

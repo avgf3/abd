@@ -21,28 +21,22 @@ export class EnhancedModerationSystem {
   private temporaryBans = new Map<string, NodeJS.Timeout>();
 
   constructor() {
-    console.log('🛡️ نظام الإدارة المتقدم - تم التشغيل');
-  }
+    }
 
   // التحقق من الصلاحيات المحسن
   canModerate(moderator: User, target: User, action: string): boolean {
-    console.log(`🔍 فحص الصلاحيات: ${moderator.username} (${moderator.userType}) -> ${target.username} (${target.userType}) | الإجراء: ${action}`);
-    
     // لا يمكن استخدام الإجراءات على النفس
     if (moderator.id === target.id) {
-      console.log('❌ لا يمكن استخدام الإجراءات على النفس');
       return false;
     }
 
     // المالك له صلاحية كاملة
     if (moderator.userType === 'owner') {
-      console.log('✅ المالك له صلاحية كاملة');
       return true;
     }
 
     // الأدمن لا يستطيع إدارة المالك أو أدمن آخر
     if (moderator.userType === 'admin' && (target.userType === 'owner' || target.userType === 'admin')) {
-      console.log('❌ الأدمن لا يستطيع إدارة المالك أو أدمن آخر');
       return false;
     }
 
@@ -58,7 +52,6 @@ export class EnhancedModerationSystem {
     };
 
     const hasPermission = permissions[action]?.includes(moderator.userType) || false;
-    console.log(`${hasPermission ? '✅' : '❌'} النتيجة: ${hasPermission}`);
     return hasPermission;
   }
 
@@ -68,12 +61,10 @@ export class EnhancedModerationSystem {
     const target = await storage.getUser(targetUserId);
 
     if (!moderator || !target) {
-      console.log('❌ المستخدم غير موجود');
       return false;
     }
 
     if (!this.canModerate(moderator, target, 'mute')) {
-      console.log('❌ ليس لديك صلاحية للكتم');
       return false;
     }
 
@@ -81,7 +72,7 @@ export class EnhancedModerationSystem {
     
     await storage.updateUser(targetUserId, {
       isMuted: true,
-      muteExpiry: muteExpiry.toISOString()
+              muteExpiry: muteExpiry
     });
 
     // حجب IP والجهاز مؤقتاً
@@ -108,7 +99,6 @@ export class EnhancedModerationSystem {
     };
 
     this.actions.set(action.id, action);
-    console.log(`🔇 تم كتم ${target.username} لمدة ${duration} دقيقة`);
     return true;
   }
 
@@ -125,7 +115,6 @@ export class EnhancedModerationSystem {
       muteExpiry: null
     });
 
-    console.log(`🔊 تم إلغاء كتم ${target.username}`);
     return true;
   }
 
@@ -168,7 +157,6 @@ export class EnhancedModerationSystem {
     };
 
     this.actions.set(action.id, action);
-    console.log(`⏰ تم طرد ${target.username} لمدة ${duration} دقيقة`);
     return true;
   }
 
@@ -205,7 +193,6 @@ export class EnhancedModerationSystem {
     };
 
     this.actions.set(action.id, action);
-    console.log(`🚫 تم حجب ${target.username} نهائياً`);
     return true;
   }
 

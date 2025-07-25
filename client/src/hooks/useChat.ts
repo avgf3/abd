@@ -27,12 +27,10 @@ const playNotificationSound = () => {
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.3);
       } catch (error) {
-        console.log('تعذر تشغيل صوت الإشعار');
-      }
+        }
     });
   } catch (error) {
-    console.log('تعذر تشغيل صوت الإشعار');
-  }
+    }
 };
 
 export function useChat() {
@@ -115,14 +113,12 @@ export function useChat() {
 
   const connect = useCallback((user: ChatUser) => {
     try {
-      console.log('🚀 بدء اتصال المستخدم:', user.username);
       setCurrentUser(user);
       setConnectionError(null);
       setIsLoading(true);
       
       // تنظيف الاتصال السابق
       if (socket.current) {
-        console.log('🔄 إغلاق الاتصال السابق');
         socket.current.removeAllListeners();
         socket.current.disconnect();
         socket.current = null;
@@ -144,8 +140,6 @@ export function useChat() {
       };
 
       const socketUrl = getSocketUrl();
-      console.log('🔗 محاولة الاتصال بـ Socket.IO:', socketUrl);
-      
       socket.current = io(socketUrl, {
         // إعدادات الاتصال الأساسية
         autoConnect: true,
@@ -172,17 +166,12 @@ export function useChat() {
       
       // معالج الاتصال المحسن
       socket.current.on('connect', () => {
-        console.log('🎉 نجح الاتصال بـ Socket.IO');
-        console.log(`🚀 نوع النقل: ${socket.current?.io.engine.transport.name}`);
-        console.log(`🆔 معرف الاتصال: ${socket.current?.id}`);
-        
         setIsConnected(true);
         setConnectionError(null);
         setIsLoading(false);
         reconnectAttempts.current = 0;
         
         // إرسال authentication مع معلومات إضافية
-        console.log('🔐 إرسال بيانات المصادقة...');
         socket.current?.emit('auth', {
           userId: user.id,
           username: user.username,
@@ -212,15 +201,13 @@ export function useChat() {
         
         if (reason === 'io server disconnect') {
           // الخادم قطع الاتصال، حاول الاتصال مرة أخرى
-          console.log('🔄 الخادم قطع الاتصال، محاولة إعادة الاتصال...');
           socket.current?.connect();
         }
       });
 
       // مراقبة تغيير transport
       socket.current.io.engine.on('upgrade', () => {
-        console.log(`⬆️ تم الترقية إلى: ${socket.current?.io.engine.transport.name}`);
-      });
+        });
 
       socket.current.io.engine.on('upgradeError', (error) => {
         console.warn('⚠️ فشل ترقية WebSocket، الاستمرار مع polling:', error.message);
@@ -228,7 +215,6 @@ export function useChat() {
 
       // استقبال رسالة الترحيب من الخادم
       socket.current.on('connected', (data) => {
-        console.log('✅ تأكيد الاتصال من الخادم:', data);
         setIsLoading(false);
       });
 
@@ -244,8 +230,6 @@ export function useChat() {
 
       socket.current.on('message', (message: WebSocketMessage) => {
         try {
-          console.log('🔔 رسالة واردة:', message.type);
-          
           switch (message.type) {
             case 'error':
               // عرض رسالة خطأ من نظام مكافحة السبام
@@ -259,7 +243,6 @@ export function useChat() {
               
             case 'onlineUsers':
               if (message.users) {
-                console.log('📥 استلام قائمة المستخدمين:', message.users.length, message.users.map(u => u.username));
                 // فلترة المستخدمين المتجاهلين فقط (إظهار المخفيين للإدمن والمالك)
                 const filteredUsers = message.users.filter((chatUser: ChatUser) => {
                   // إظهار جميع المستخدمين للإدمن والمالك
@@ -269,7 +252,6 @@ export function useChat() {
                   // للمستخدمين العاديين، إخفاء المستخدمين المخفيين والمتجاهلين
                   return !ignoredUsers.has(chatUser.id) && !chatUser.isHidden;
                 });
-                console.log('👥 المستخدمين بعد الفلترة:', filteredUsers.length, filteredUsers.map(u => u.username));
                 setOnlineUsers(filteredUsers);
               }
               break;
@@ -367,11 +349,9 @@ export function useChat() {
               
             case 'userJoined':
               if (message.user) {
-                console.log('👤 مستخدم جديد انضم:', message.user.username, 'Type:', message.user.userType, 'Hidden:', message.user.isHidden);
                 setOnlineUsers(prev => {
                   const exists = prev.find(u => u.id === message.user!.id);
                   if (exists) {
-                    console.log('المستخدم موجود بالفعل في القائمة');
                     return prev;
                   }
                   
@@ -382,20 +362,10 @@ export function useChat() {
                                    (!message.user!.isHidden);
                   const isIgnored = ignoredUsers.has(message.user!.id);
                   
-                  console.log(`فحص إظهار المستخدم ${message.user!.username}:`, {
-                    shouldShow,
-                    isIgnored,
-                    userType: message.user!.userType,
-                    isHidden: message.user!.isHidden,
-                    currentUserType: user.userType
-                  });
-                  
                   if (shouldShow && !isIgnored) {
-                    console.log('✅ إضافة المستخدم للقائمة:', message.user!.username);
                     return [...prev, message.user!];
                   }
                   
-                  console.log('❌ المستخدم مخفي أو متجاهل');
                   return prev;
                 });
               }
@@ -592,8 +562,6 @@ export function useChat() {
               // إذا تم تطبيق إجراء إداري على المستخدم الحالي
               if (message.targetUserId === user.id) {
                 if (message.action === 'muted') {
-                  console.log('🔇 تم كتمك من الدردشة العامة');
-                  
                   // إضافة إشعار إلى تبويب الإشعارات فقط
                   setNotifications(prev => [...prev, {
                     id: Date.now(),
@@ -603,7 +571,6 @@ export function useChat() {
                     timestamp: new Date()
                   }]);
                 } else if (message.action === 'unmuted') {
-                  console.log('🔊 تم إلغاء كتمك من الدردشة');
                   if ('Notification' in window && Notification.permission === 'granted') {
                     new Notification('تم إلغاء الكتم 🔊', {
                       body: 'يمكنك الآن إرسال رسائل في الدردشة العامة',
@@ -611,10 +578,8 @@ export function useChat() {
                     });
                   }
                 } else if (message.action === 'banned') {
-                  console.log('⏰ تم طردك من الدردشة لمدة 15 دقيقة');
                   setKickNotification({ show: true, duration: message.duration || 15 });
                 } else if (message.action === 'blocked') {
-                  console.log('🚫 تم حجبك نهائياً من الموقع');
                   setBlockNotification({ show: true, reason: message.reason || 'مخالفة قوانين الدردشة' });
                   setTimeout(() => {
                     window.location.reload();
@@ -644,8 +609,6 @@ export function useChat() {
             case 'friendRequest':
               // تنبيه طلب صداقة جديد
               if (message.targetUserId === user.id) {
-                console.log('📨 طلب صداقة جديد من:', message.senderUsername);
-                
                 // إشعار مرئي في المتصفح
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification('طلب صداقة جديد 👥', {
@@ -670,8 +633,6 @@ export function useChat() {
             case 'friendRequestAccepted':
               // إشعار قبول طلب الصداقة
               if (message.targetUserId === user.id) {
-                console.log('✅ تم قبول طلب صداقتك من:', message.acceptedBy);
-                
                 // إشعار مرئي
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification('تم قبول طلب الصداقة ✅', {
@@ -694,8 +655,6 @@ export function useChat() {
 
             case 'promotion':
               if (message.newRole && user.id) {
-                console.log('🎉 تمت ترقيتك:', message.message);
-                
                 // إشعار مرئي
                 if ('Notification' in window && Notification.permission === 'granted') {
                   new Notification('ترقية جديدة! 🎉', {
@@ -721,8 +680,6 @@ export function useChat() {
             case 'levelUp':
               // إشعار ترقية المستوى
               if (message.oldLevel && message.newLevel && message.levelInfo) {
-                console.log('🎉 ترقية مستوى!', message);
-                
                 setLevelUpNotification({
                   show: true,
                   oldLevel: message.oldLevel,
@@ -745,8 +702,6 @@ export function useChat() {
             case 'achievement':
               // إشعار إنجاز جديد
               if (message.message) {
-                console.log('🏆 إنجاز جديد!', message.message);
-                
                 setAchievementNotification({
                   show: true,
                   message: typeof message.message === 'string' ? message.message : 'إنجاز جديد!'
@@ -767,8 +722,6 @@ export function useChat() {
             case 'dailyBonus':
               // إشعار المكافأة اليومية
               if (message.points) {
-                console.log('🎁 مكافأة يومية!', message.points);
-                
                 setDailyBonusNotification({
                   show: true,
                   points: message.points
@@ -789,8 +742,6 @@ export function useChat() {
             case 'pointsAdded':
               // إشعار إضافة نقاط من الإدارة
               if (message.points && message.message) {
-                console.log('💎 نقاط من الإدارة!', message);
-                
                 // إضافة إشعار للواجهة
                 setNotifications(prev => [...prev, {
                   id: Date.now(),
@@ -815,8 +766,6 @@ export function useChat() {
             case 'pointsReceived':
               // إشعار استلام نقاط من مستخدم آخر
               if (message.points && message.senderName) {
-                console.log('🎁 استلام نقاط!', message);
-                
                 // إضافة إشعار للواجهة
                 setNotifications(prev => [...prev, {
                   id: Date.now(),
@@ -900,7 +849,6 @@ export function useChat() {
       });
 
       socket.current.on('disconnect', (reason) => {
-        console.log('Socket.IO مقطوع - السبب:', reason);
         setIsConnected(false);
         
         // تنظيف الحالة المحلية فوراً
@@ -1010,7 +958,6 @@ export function useChat() {
       
       setPublicMessages(prev => [...prev, newMessage]);
       
-      console.log('✅ تم إرسال الرسالة بنجاح');
       return result.data;
     } catch (error: any) {
       console.error('❌ خطأ في إرسال الرسالة:', error);
@@ -1064,7 +1011,6 @@ export function useChat() {
         [receiverId]: [...(prev[receiverId] || []), newMessage]
       }));
       
-      console.log('✅ تم إرسال الرسالة الخاصة بنجاح');
       return result.data;
     } catch (error: any) {
       console.error('❌ خطأ في إرسال الرسالة الخاصة:', error);

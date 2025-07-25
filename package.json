@@ -25,7 +25,9 @@
     "fix-issues": "node fix-critical-issues.js",
     "check-fixed": "tsc --noEmit",
     "start-fixed": "NODE_ENV=production node server-fixed.js",
-    "dev-fixed": "NODE_ENV=development tsx server/index-fixed.ts"
+    "dev-fixed": "NODE_ENV=development tsx server/index-fixed.ts",
+    "clean-logs": "node tools/remove-console-logs.js",
+    "build-production": "npm run clean-logs && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
