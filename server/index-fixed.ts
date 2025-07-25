@@ -108,24 +108,18 @@ app.get('/api/users', async (req, res) => {
 
 // Socket.IO
 io.on('connection', (socket) => {
-  console.log('مستخدم متصل:', socket.id);
-  
   socket.on('join', (userData) => {
     socket.userId = userData.userId;
     socket.username = userData.username;
-    console.log(`${userData.username} انضم إلى الدردشة`);
-  });
+    });
   
   socket.on('disconnect', async () => {
     if (socket.userId) {
       await fixedStorage.setUserOnlineStatus(socket.userId, false);
-      console.log(`المستخدم ${socket.username} غادر الدردشة`);
-    }
+      }
   });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`🚀 الخادم يعمل على المنفذ ${PORT}`);
-  console.log(`📊 حالة قاعدة البيانات: ${fixedStorage ? 'متصلة' : 'غير متصلة'}`);
-});
+  });

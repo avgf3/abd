@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
 import * as pgSchema from "../shared/schema";
@@ -34,8 +37,6 @@ export function createDatabaseAdapter(): DatabaseAdapter {
     
     const pool = new Pool({ connectionString: databaseUrl });
     const db = drizzleNeon({ client: pool, schema: pgSchema });
-    
-    console.log("✅ تم الاتصال بقاعدة بيانات PostgreSQL على Supabase");
     
     return {
       db: db as DatabaseType,
