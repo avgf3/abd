@@ -8,19 +8,15 @@ interface UserRoleBadgeProps {
 
 export default function UserRoleBadge({ userType, username, showOnlyIcon = false }: UserRoleBadgeProps) {
   const getRoleDisplay = () => {
-    if (username === 'عبود') {
-      return showOnlyIcon ? '👑' : '👑';
-    }
-    
     switch (userType) {
       case 'owner':
-        return showOnlyIcon ? '👑' : '👑';
+        return <img src="/svgs/crown.svg" alt="owner" style={{width: 24, height: 24, display: 'inline'}} />;
       case 'admin':
-        return showOnlyIcon ? '⭐' : '⭐';
+        return <span style={{fontSize: 24, display: 'inline'}}>⭐</span>;
       case 'moderator':
-        return showOnlyIcon ? '🛡️' : '🛡️';
+        return <span style={{fontSize: 24, display: 'inline'}}>🛡️</span>;
       default:
-        return '';
+        return null;
     }
   };
 
