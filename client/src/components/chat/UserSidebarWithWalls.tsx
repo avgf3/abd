@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +13,7 @@ import { apiRequest } from '@/lib/queryClient';
 
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
+import UserRoleBadge from './UserRoleBadge';
 
 interface UserSidebarWithWallsProps {
   users: ChatUser[];
@@ -225,23 +226,6 @@ export default function UserSidebarWithWalls({
     }
   };
 
-  const getUserRankBadge = (userType: string, username: string) => {
-    if (username === 'عبود') {
-      return <span className="text-yellow-400">👑</span>;
-    }
-    
-    switch (userType) {
-      case 'owner':
-        return <span className="text-yellow-400">👑</span>;
-      case 'admin':
-        return <span className="text-blue-400">⭐</span>;
-      case 'moderator':
-        return <span className="text-green-400">🛡️</span>;
-      default:
-        return null;
-    }
-  };
-
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date();
     const time = new Date(timestamp);
@@ -355,7 +339,7 @@ export default function UserSidebarWithWalls({
                               }}
                               title={user.username}
                             >
-                              {getUserRankBadge(user.userType, user.username)} {user.username}
+                              {user.username} <UserRoleBadge user={user} />
                             </span>
                             {user.isMuted && (
                               <span className="text-yellow-400 text-xs">🔇</span>
@@ -506,7 +490,10 @@ export default function UserSidebarWithWalls({
                               >
                                 {post.username}
                               </span>
-                              {getUserRankBadge(post.userRole, post.username)}
+                                                              {/* Post badge for user role */}
+                                {post.userRole === 'owner' && <span className="text-yellow-400">👑</span>}
+                                {post.userRole === 'admin' && <span className="text-blue-400">⭐</span>}
+                                {post.userRole === 'moderator' && <span className="text-green-400">🛡️</span>}
                             </div>
                             <p className="text-xs text-gray-500">{formatTimeAgo(post.timestamp.toString())}</p>
                           </div>
