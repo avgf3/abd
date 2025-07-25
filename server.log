@@ -1,6 +1,6 @@
-[dotenv@17.2.0] injecting env (10) from .env (tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`)
+[dotenv@17.2.0] injecting env (10) from .env (tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' })
 The `fetchConnectionCache` option is deprecated (now always `true`)
-[dotenv@17.2.0] injecting env (0) from .env (tip: ⚙️  enable debug logging with { debug: true })
+[dotenv@17.2.0] injecting env (0) from .env (tip: 🔐 encrypt with dotenvx: https://dotenvx.com)
 {
   severity_local: 'NOTICE',
   severity: 'NOTICE',
@@ -68,4 +68,4 @@ params:
     routine: 'heap_create_with_catalog'
   }
 }
-[2025-07-25T13:35:02.962Z] INFO: 🔄 Initializing database tables...
+[2025-07-25T13:48:25.291Z] INFO: 🔄 Initializing database tables...
