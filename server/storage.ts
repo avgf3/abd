@@ -478,16 +478,16 @@ export class MixedStorage implements IStorage {
           country: insertUser.country || null,
           relation: insertUser.relation || null,
           bio: insertUser.bio || null,
-          isOnline: 1,
-          isHidden: 0,
-          lastSeen: new Date().toISOString(),
-          joinDate: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          isMuted: 0,
+          isOnline: true,
+          isHidden: false,
+          lastSeen: new Date(),
+          joinDate: new Date(),
+          createdAt: new Date(),
+          isMuted: false,
           muteExpiry: null,
-          isBanned: 0,
+          isBanned: false,
           banExpiry: null,
-          isBlocked: 0,
+          isBlocked: false,
           ipAddress: insertUser.ipAddress || null,
           deviceId: insertUser.deviceId || null,
           ignoredUsers: '[]',
@@ -516,15 +516,15 @@ export class MixedStorage implements IStorage {
         age: insertUser.age || null,
         country: insertUser.country || null,
         relation: insertUser.relation || null,
-        isOnline: 1,
-        lastSeen: new Date().toISOString(),
-        joinDate: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        isMuted: 0,
+        isOnline: true,
+        lastSeen: new Date(),
+        joinDate: new Date(),
+        createdAt: new Date(),
+        isMuted: false,
         muteExpiry: null,
-        isBanned: 0,
+        isBanned: false,
         banExpiry: null,
-        isBlocked: 0,
+        isBlocked: false,
         ipAddress: null,
         deviceId: null,
         ignoredUsers: '[]',
@@ -593,8 +593,8 @@ export class MixedStorage implements IStorage {
     // Check memory first (guests)
     const memUser = this.users.get(id);
     if (memUser) {
-      memUser.isOnline = isOnline ? 1 : 0;
-      memUser.lastSeen = new Date().toISOString();
+      memUser.isOnline = isOnline;
+      memUser.lastSeen = new Date();
       this.users.set(id, memUser);
       return;
     }
