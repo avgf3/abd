@@ -397,8 +397,8 @@ export class MixedStorage implements IStorage {
           lastSeen: new Date().toISOString(),
           joinDate: new Date().toISOString(),
           createdAt: new Date().toISOString(),
-          muteExpiry: insertUser.muteExpiry ? insertUser.muteExpiry.toISOString() : null,
-          banExpiry: insertUser.banExpiry ? insertUser.banExpiry.toISOString() : null,
+          muteExpiry: insertUser.muteExpiry ? (insertUser.muteExpiry instanceof Date ? insertUser.muteExpiry.toISOString() : new Date(insertUser.muteExpiry).toISOString()) : null,
+          banExpiry: insertUser.banExpiry ? (insertUser.banExpiry instanceof Date ? insertUser.banExpiry.toISOString() : new Date(insertUser.banExpiry).toISOString()) : null,
           ipAddress: insertUser.ipAddress,
           deviceId: insertUser.deviceId,
           ignoredUsers: '[]' // JSON string للتوافق مع SQLite
@@ -1637,101 +1637,54 @@ export class MixedStorage implements IStorage {
   // ===================
 
   async getAllRooms(): Promise<any[]> {
-    if (this.usePG) {
-      try {
-        const result = await this.pool.query(`
-          SELECT 
-            r.*,
-            COUNT(DISTINCT ru.user_id) as user_count
-          FROM rooms r 
-          LEFT JOIN room_users ru ON r.id = ru.room_id 
-          WHERE r.is_active = true
-          GROUP BY r.id
-          ORDER BY r.is_default DESC, r.created_at ASC
-        `);
-        return result.rows;
-      } catch (error) {
-        console.error('خطأ في جلب الغرف من PostgreSQL:', error);
-        throw error;
-      }
-    } else {
-      // SQLite fallback
-      try {
-        const rooms = await this.db.all(`
-          SELECT 
-            r.*,
-            COUNT(DISTINCT ru.user_id) as user_count
-          FROM rooms r 
-          LEFT JOIN room_users ru ON r.id = ru.room_id 
-          WHERE r.is_active = 1
-          GROUP BY r.id
-          ORDER BY r.is_default DESC, r.created_at ASC
-        `);
-        return rooms || [];
-      } catch (error) {
-        console.error('خطأ في جلب الغرف من SQLite:', error);
-        // إرجاع الغرف الافتراضية
-        return [
-          { 
-            id: 'general', 
-            name: 'الدردشة العامة', 
-            description: 'الغرفة الرئيسية للدردشة', 
-            is_default: true, 
-            created_by: 1, 
-            created_at: new Date(), 
-            is_active: true, 
-            user_count: 0, 
-            icon: '' 
-          },
-          { 
-            id: 'music', 
-            name: 'أغاني وسهر', 
-            description: 'غرفة للموسيقى والترفيه', 
-            is_default: false, 
-            created_by: 1, 
-            created_at: new Date(), 
-            is_active: true, 
-            user_count: 0, 
-            icon: '' 
-          }
-        ];
-      }
+    try {
+      const result = await db.select({
+        id: 'r.id',
+        name: 'r.name',
+        description: 'r.description',
+        icon: 'r.icon',
+        created_by: 'r.created_by',
+        is_default: 'r.is_default',
+        is_active: 'r.is_active',
+        created_at: 'r.created_at',
+        user_count: sql`COUNT(DISTINCT ru.user_id)`.as('user_count')
+      }).from(users)
+        .leftJoin(friends, eq(users.id, friends.userId))
+        .leftJoin(rooms, eq(friends.friendId, rooms.id))
+        .leftJoin(roomUsers, eq(rooms.id, roomUsers.roomId))
+        .where(eq(users.id, userId))
+        .groupBy('r.id')
+        .orderBy(desc(rooms.isDefault), asc(rooms.createdAt));
+
+      return result || [];
+    } catch (error) {
+      console.error('خطأ في جلب الغرف من PostgreSQL:', error);
+      throw error;
     }
   }
 
   async getRoom(roomId: string): Promise<any | null> {
-    if (this.usePG) {
-      try {
-        const result = await this.pool.query(`
-          SELECT 
-            r.*,
-            COUNT(DISTINCT ru.user_id) as user_count
-          FROM rooms r 
-          LEFT JOIN room_users ru ON r.id = ru.room_id 
-          WHERE r.id = $1
-          GROUP BY r.id
-        `, [roomId]);
-        return result.rows[0] || null;
-      } catch (error) {
-        console.error('خطأ في جلب الغرفة من PostgreSQL:', error);
-        throw error;
-      }
-    } else {
-      try {
-        const room = await this.db.get(`
-          SELECT 
-            r.*,
-            COUNT(DISTINCT ru.user_id) as user_count
-          FROM rooms r 
-          LEFT JOIN room_users ru ON r.id = ru.room_id 
-          WHERE r.id = ?
-          GROUP BY r.id
-        `, [roomId]);
-        return room || null;
-      } catch (error) {
-        console.error('خطأ في جلب الغرفة من SQLite:', error);
-        return null;
-      }
+    try {
+      const result = await db.select({
+        id: 'r.id',
+        name: 'r.name',
+        description: 'r.description',
+        icon: 'r.icon',
+        created_by: 'r.created_by',
+        is_default: 'r.is_default',
+        is_active: 'r.is_active',
+        created_at: 'r.created_at',
+        user_count: sql`COUNT(DISTINCT ru.user_id)`.as('user_count')
+      }).from(rooms)
+        .leftJoin(roomUsers, eq(rooms.id, roomUsers.roomId))
+        .where(eq(rooms.id, roomId))
+        .groupBy('r.id')
+        .get();
+
+      return result || null;
+    } catch (error) {
+      console.error('خطأ في جلب الغرفة من PostgreSQL:', error);
+      throw error;
     }
   }
 
@@ -1753,122 +1706,70 @@ export class MixedStorage implements IStorage {
     createdAt: Date;
     userCount?: number;
   }> {
-    if (this.usePG) {
-      try {
-        const result = await this.pool.query(`
-          INSERT INTO rooms (id, name, description, icon, created_by, is_default, is_active, created_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-          RETURNING *
-        `, [
-          `room_${Date.now()}`,
-          roomData.name,
-          roomData.description,
-          roomData.icon,
-          roomData.createdBy,
-          roomData.isDefault,
-          roomData.isActive,
-          new Date()
-        ]);
-        return result.rows[0];
-      } catch (error) {
-        console.error('خطأ في إنشاء الغرفة في PostgreSQL:', error);
-        throw error;
-      }
-    } else {
-      try {
-        const roomId = `room_${Date.now()}`;
-        await this.db.run(`
-          INSERT INTO rooms (id, name, description, icon, created_by, is_default, is_active, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `, [
-          roomId,
-          roomData.name,
-          roomData.description,
-          roomData.icon,
-          roomData.createdBy,
-          roomData.isDefault ? 1 : 0,
-          roomData.isActive ? 1 : 0,
-          new Date().toISOString()
-        ]);
-
-        return {
-          id: roomId,
+    try {
+      const result = await db.select({
+        id: 'r.id',
+        name: 'r.name',
+        description: 'r.description',
+        icon: 'r.icon',
+        created_by: 'r.created_by',
+        is_default: 'r.is_default',
+        is_active: 'r.is_active',
+        created_at: 'r.created_at',
+        user_count: sql`COUNT(DISTINCT ru.user_id)`.as('user_count')
+      }).from(rooms)
+        .insert({
+          id: `room_${Date.now()}`,
           name: roomData.name,
           description: roomData.description,
           icon: roomData.icon,
           created_by: roomData.createdBy,
-          is_default: roomData.isDefault,
-          is_active: roomData.isActive,
-          created_at: new Date(),
-          user_count: 0
-        };
-      } catch (error) {
-        console.error('خطأ في إنشاء الغرفة في SQLite:', error);
-        throw error;
-      }
+          is_default: roomData.isDefault ? 1 : 0,
+          is_active: roomData.isActive ? 1 : 0,
+          created_at: new Date()
+        })
+        .returning();
+
+      return result[0];
+    } catch (error) {
+      console.error('خطأ في إنشاء الغرفة في PostgreSQL:', error);
+      throw error;
     }
   }
 
   async deleteRoom(roomId: string): Promise<void> {
-    if (this.usePG) {
-      try {
-        await this.pool.query('DELETE FROM room_users WHERE room_id = $1', [roomId]);
-        await this.pool.query('DELETE FROM rooms WHERE id = $1', [roomId]);
-      } catch (error) {
-        console.error('خطأ في حذف الغرفة من PostgreSQL:', error);
-        throw error;
-      }
-    } else {
-      try {
-        await this.db.run('DELETE FROM room_users WHERE room_id = ?', [roomId]);
-        await this.db.run('DELETE FROM rooms WHERE id = ?', [roomId]);
-      } catch (error) {
-        console.error('خطأ في حذف الغرفة من SQLite:', error);
-        throw error;
-      }
+    try {
+      await db.execute(sql`
+        DELETE FROM room_users WHERE room_id = ${roomId};
+        DELETE FROM rooms WHERE id = ${roomId};
+      `);
+    } catch (error) {
+      console.error('خطأ في حذف الغرفة من PostgreSQL:', error);
+      throw error;
     }
   }
 
   async joinRoom(userId: number, roomId: string): Promise<void> {
-    if (this.usePG) {
-      try {
-        await this.pool.query(`
-          INSERT INTO room_users (user_id, room_id, joined_at)
-          VALUES ($1, $2, $3)
-          ON CONFLICT (user_id, room_id) DO UPDATE SET joined_at = $3
-        `, [userId, roomId, new Date()]);
-      } catch (error) {
-        console.error('خطأ في الانضمام للغرفة في PostgreSQL:', error);
-        throw error;
-      }
-    } else {
-      try {
-        await this.db.run(`
-          INSERT OR REPLACE INTO room_users (user_id, room_id, joined_at)
-          VALUES (?, ?, ?)
-        `, [userId, roomId, new Date().toISOString()]);
-      } catch (error) {
-        console.error('خطأ في الانضمام للغرفة في SQLite:', error);
-        throw error;
-      }
+    try {
+      await db.execute(sql`
+        INSERT INTO room_users (user_id, room_id, joined_at)
+        VALUES (${userId}, ${roomId}, ${new Date()})
+        ON CONFLICT (user_id, room_id) DO UPDATE SET joined_at = ${new Date()};
+      `);
+    } catch (error) {
+      console.error('خطأ في الانضمام للغرفة في PostgreSQL:', error);
+      throw error;
     }
   }
 
   async leaveRoom(userId: number, roomId: string): Promise<void> {
-    if (this.usePG) {
-      try {
-        await this.pool.query('DELETE FROM room_users WHERE user_id = $1 AND room_id = $2', [userId, roomId]);
-      } catch (error) {
-        console.error('خطأ في مغادرة الغرفة في PostgreSQL:', error);
-        throw error;
-      }
-    } else {
-      try {
-        await this.db.run('DELETE FROM room_users WHERE user_id = ? AND room_id = ?', [userId, roomId]);
-      } catch (error) {
-        console.error('خطأ في مغادرة الغرفة في SQLite:', error);
-        throw error;
-      }
+    try {
+      await db.execute(sql`
+        DELETE FROM room_users WHERE user_id = ${userId} AND room_id = ${roomId};
+      `);
+    } catch (error) {
+      console.error('خطأ في مغادرة الغرفة في PostgreSQL:', error);
+      throw error;
     }
   }
 }
