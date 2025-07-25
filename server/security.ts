@@ -68,7 +68,6 @@ export function checkIPSecurity(req: Request, res: Response, next: NextFunction)
   ].some(term => userAgent.toLowerCase().includes(term));
   
   if (suspicious) {
-    console.log(`Suspicious request from ${clientIp}: ${userAgent}`);
     // Don't block, just log for now
   }
   
@@ -110,14 +109,12 @@ export function validateMessageContent(content: string): { isValid: boolean; rea
 // Add IP to block list
 export function blockIP(ip: string): void {
   blockedIPs.add(ip);
-  console.log(`IP blocked: ${ip}`);
-}
+  }
 
 // Remove IP from block list
 export function unblockIP(ip: string): void {
   blockedIPs.delete(ip);
-  console.log(`IP unblocked: ${ip}`);
-}
+  }
 
 // Security middleware to prevent common attacks
 export function setupSecurity(app: Express): void {
@@ -215,8 +212,7 @@ export function setupSecurity(app: Express): void {
     }
   }));
 
-  console.log('🛡️ Security middleware configured');
-}
+  }
 
 // Utility function to validate user input
 export function sanitizeInput(input: string): string {

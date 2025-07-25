@@ -24,8 +24,7 @@ export const playMentionSound = () => {
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.3);
   } catch (error) {
-    console.log('لا يمكن تشغيل صوت التنبيه:', error);
-  }
+    }
 };
 
 // البحث عن المناشين في النص

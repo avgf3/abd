@@ -38,8 +38,6 @@ export function createDatabaseAdapter(): DatabaseAdapter {
     const pool = new Pool({ connectionString: databaseUrl });
     const db = drizzleNeon({ client: pool, schema: pgSchema });
     
-    console.log("✅ تم الاتصال بقاعدة بيانات PostgreSQL على Supabase");
-    
     return {
       db: db as DatabaseType,
       type: 'postgresql',

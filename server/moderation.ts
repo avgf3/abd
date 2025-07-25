@@ -36,31 +36,25 @@ export class ModerationSystem {
         this.blockedIPs.add(device.ipAddress);
         this.blockedDevices.add(device.deviceId);
       }
-      console.log(`تم تحميل ${blockedDevices.length} جهاز محجوب`);
-    } catch (error) {
+      } catch (error) {
       console.error('خطأ في تحميل الأجهزة المحجوبة:', error);
     }
   }
 
   // التحقق من الصلاحيات - نظام محسن
   canModerate(moderator: User, target: User, action: string): boolean {
-    console.log(`🔍 فحص الصلاحيات: ${moderator.username} (${moderator.userType}) -> ${target.username} (${target.userType}) | الإجراء: ${action}`);
-    
     // لا يمكن استخدام الإجراءات على النفس
     if (moderator.id === target.id) {
-      console.log('❌ لا يمكن استخدام الإجراءات على النفس');
       return false;
     }
 
     // المالك له صلاحية كاملة
     if (moderator.userType === 'owner') {
-      console.log('✅ المالك له صلاحية كاملة');
       return true;
     }
 
     // الأدمن لا يستطيع إدارة المالك أو أدمن آخر
     if (moderator.userType === 'admin' && (target.userType === 'owner' || target.userType === 'admin')) {
-      console.log('❌ الأدمن لا يستطيع إدارة المالك أو أدمن آخر');
       return false;
     }
 
@@ -76,7 +70,6 @@ export class ModerationSystem {
     };
 
     const hasPermission = permissions[action]?.includes(moderator.userType) || false;
-    console.log(`${hasPermission ? '✅' : '❌'} الصلاحية: ${hasPermission} للإجراء: ${action}`);
     return hasPermission;
   }
 

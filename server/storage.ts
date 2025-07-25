@@ -430,7 +430,6 @@ export class MixedStorage implements IStorage {
           .values(cleanUserData as any)
           .returning();
         
-        console.log('✅ تم إنشاء المستخدم في قاعدة البيانات:', dbUser.username);
         return dbUser;
       } catch (error: any) {
         console.error('❌ خطأ في إنشاء المستخدم في قاعدة البيانات:', error);
@@ -579,7 +578,6 @@ export class MixedStorage implements IStorage {
           .where(eq(users.id, id))
           .returning();
         
-        console.log('Updated user in database:', updatedUser);
         return updatedUser;
       }
     } catch (error) {
@@ -1330,7 +1328,6 @@ export class MixedStorage implements IStorage {
         return result || [];
       } catch (queryError) {
         // Fallback for empty table or table doesn't exist
-        console.log('Blocked devices table may not exist or be empty');
         return [];
       }
     } catch (error) {

@@ -118,25 +118,18 @@ router.post("/member", authLimiter, async (req, res) => {
       return res.status(400).json({ error: "اسم المستخدم وكلمة المرور مطلوبان" });
     }
 
-    console.log(`Attempting member login for username: ${username}`);
-    
     const user = await storage.getUserByUsername(username);
     if (!user) {
-      console.log(`User not found: ${username}`);
       return res.status(401).json({ error: "اسم المستخدم غير موجود" });
     }
 
-    console.log(`User found: ${user.username}, type: ${user.userType}`);
-
     if (user.password !== password) {
-      console.log(`Incorrect password for user: ${username}`);
       return res.status(401).json({ error: "كلمة المرور غير صحيحة" });
     }
 
     try {
       await storage.setUserOnlineStatus(user.id, true);
-      console.log(`Member login successful: ${username}`);
-    } catch (statusError) {
+      } catch (statusError) {
       console.error('Error updating user online status:', statusError);
       // Don't fail login just because status update failed
     }
