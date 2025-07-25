@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ProfileImage from './ProfileImage';
@@ -6,6 +6,8 @@ import EmojiPicker from './EmojiPicker';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { findMentions, playMentionSound, renderMessageWithMentions, insertMention } from '@/utils/mentionUtils';
 import type { ChatMessage, ChatUser } from '@/types/chat';
+import { Send, Image as ImageIcon, Smile } from "lucide-react";
+import UserRoleBadge from './UserRoleBadge';
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -100,23 +102,6 @@ export default function MessageArea({
     });
   };
 
-  const getUserRankBadge = (userType?: string, username?: string) => {
-    if (username === 'عبود') {
-      return <span className="text-yellow-400 ml-1">👑</span>;
-    }
-    
-    switch (userType) {
-      case 'owner':
-        return <span className="text-yellow-400 ml-1">👑</span>;
-      case 'admin':
-        return <span className="text-blue-400 ml-1">⭐</span>;
-      case 'moderator':
-        return <span className="text-green-400 ml-1">🛡️</span>;
-      default:
-        return null;
-    }
-  };
-
   const getMessageBorderColor = (userType?: string) => {
     switch (userType) {
       case 'owner':
@@ -193,7 +178,7 @@ export default function MessageArea({
                   ) : (
                     <span className="font-medium text-sm text-blue-600">مستخدم</span>
                   )}
-                  {message.sender && getUserRankBadge(message.sender.userType, message.sender.username)}
+                  {message.sender && <UserRoleBadge user={message.sender} />}
                   <span className="text-xs text-gray-500">
                     {formatTime(message.timestamp)}
                   </span>
