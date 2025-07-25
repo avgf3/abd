@@ -5,12 +5,16 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ChatPage from "@/pages/chat";
 import IconsPreviewPage from "@/pages/icons-preview";
+import VariedIconsPage from "@/pages/varied-icons";
+import FinalSelectionPage from "@/pages/final-selection";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={ChatPage} />
       <Route path="/icons" component={IconsPreviewPage} />
+      <Route path="/varied-icons" component={VariedIconsPage} />
+      <Route path="/final-selection" component={FinalSelectionPage} />
       <Route component={ChatPage} />
     </Switch>
   );
