@@ -7,6 +7,7 @@ import ChatPage from "@/pages/chat";
 import IconsPreviewPage from "@/pages/icons-preview";
 import VariedIconsPage from "@/pages/varied-icons";
 import FinalSelectionPage from "@/pages/final-selection";
+import CrownGalleryPage from "@/pages/crown-gallery";
 
 function Router() {
   return (
@@ -15,6 +16,7 @@ function Router() {
       <Route path="/icons" component={IconsPreviewPage} />
       <Route path="/varied-icons" component={VariedIconsPage} />
       <Route path="/final-selection" component={FinalSelectionPage} />
+      <Route path="/crowns" component={CrownGalleryPage} />
       <Route component={ChatPage} />
     </Switch>
   );
