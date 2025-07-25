@@ -9,14 +9,11 @@ export class DatabaseCleanup {
    */
   async cleanupOrphanedMessages(): Promise<number> {
     try {
-      console.log('🧹 بدء تنظيف الرسائل اليتيمة...');
-      
       // الحصول على جميع معرفات المستخدمين الموجودين
       const existingUsers = await db.select({ id: users.id }).from(users);
       const existingUserIds = existingUsers.map(user => user.id);
       
       if (existingUserIds.length === 0) {
-        console.log('⚠️ لا توجد مستخدمين في قاعدة البيانات');
         return 0;
       }
       
@@ -26,7 +23,6 @@ export class DatabaseCleanup {
         .where(notInArray(messages.senderId, existingUserIds))
         .returning({ id: messages.id });
       
-      console.log(`✅ تم حذف ${deletedMessages.length} رسالة يتيمة`);
       return deletedMessages.length;
       
     } catch (error) {
@@ -40,8 +36,6 @@ export class DatabaseCleanup {
    */
   async cleanupInvalidMessages(): Promise<number> {
     try {
-      console.log('🧹 بدء تنظيف الرسائل غير الصالحة...');
-      
       // حذف الرسائل الفارغة أو غير الصالحة
       const deletedMessages = await db
         .delete(messages)
@@ -54,7 +48,6 @@ export class DatabaseCleanup {
         )
         .returning({ id: messages.id });
       
-      console.log(`✅ تم حذف ${deletedMessages.length} رسالة غير صالحة`);
       return deletedMessages.length;
       
     } catch (error) {
@@ -68,8 +61,6 @@ export class DatabaseCleanup {
    */
   async cleanupOldGuestUsers(): Promise<number> {
     try {
-      console.log('🧹 بدء تنظيف المستخدمين الضيوف القدامى...');
-      
       // حذف المستخدمين الضيوف القدامى (معرف أكبر من 1000 وغير متصلين لأكثر من 24 ساعة)
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
       
@@ -82,7 +73,6 @@ export class DatabaseCleanup {
         )
         .returning({ id: users.id });
       
-      console.log(`✅ تم حذف ${deletedUsers.length} مستخدم ضيف قديم`);
       return deletedUsers.length;
       
     } catch (error) {
@@ -99,8 +89,6 @@ export class DatabaseCleanup {
     invalidMessages: number;
     oldGuestUsers: number;
   }> {
-    console.log('🧹 بدء التنظيف الشامل لقاعدة البيانات...');
-    
     const results = {
       orphanedMessages: await this.cleanupOrphanedMessages(),
       invalidMessages: await this.cleanupInvalidMessages(),
@@ -108,8 +96,6 @@ export class DatabaseCleanup {
     };
     
     const totalCleaned = results.orphanedMessages + results.invalidMessages + results.oldGuestUsers;
-    console.log(`✅ تم الانتهاء من التنظيف الشامل - تم حذف ${totalCleaned} عنصر`);
-    
     return results;
   }
   
@@ -117,8 +103,6 @@ export class DatabaseCleanup {
    * تشغيل التنظيف الدوري
    */
   startPeriodicCleanup(intervalHours: number = 6): NodeJS.Timeout {
-    console.log(`🔄 بدء التنظيف الدوري كل ${intervalHours} ساعات`);
-    
     return setInterval(async () => {
       try {
         await this.performFullCleanup();

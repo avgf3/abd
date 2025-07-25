@@ -4,15 +4,16 @@ import { users, messages, friends, notifications, blockedDevices } from '../shar
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import { log } from './utils/logger';
 
 export async function initializeDatabase(): Promise<boolean> {
   try {
     if (!db) {
-      console.log('📄 Running in memory mode - no database initialization needed');
+      log.info('📄 Running in memory mode - no database initialization needed');
       return true;
     }
 
-    console.log('🔄 Initializing database tables...');
+          log.info('🔄 Initializing database tables...');
     
     // Create tables for SQLite (PostgreSQL migrations are handled separately)
     if (dbType !== 'postgresql') {
@@ -25,7 +26,7 @@ export async function initializeDatabase(): Promise<boolean> {
     // Create default users if needed
     await createDefaultUsers();
     
-    console.log('✅ Database initialization completed successfully');
+          log.production('✅ Database initialization completed successfully');
     return true;
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
@@ -36,12 +37,9 @@ export async function initializeDatabase(): Promise<boolean> {
 export async function runMigrations(): Promise<void> {
   try {
     if (!process.env.DATABASE_URL || process.env.DATABASE_URL.startsWith('sqlite:')) {
-      console.log('⚠️ No PostgreSQL DATABASE_URL found or using SQLite, skipping Drizzle migrations');
       return;
     }
 
-    console.log('🔄 Running database migrations...');
-    
     // Create a separate connection for migrations
     const migrationClient = postgres(process.env.DATABASE_URL, { max: 1 });
     const migrationDb = drizzle(migrationClient);
@@ -56,17 +54,21 @@ export async function runMigrations(): Promise<void> {
     
     const migrationsFolder = fs.existsSync(distMigrationsPath) ? 'dist/migrations' : 'migrations';
     
-    console.log(`📁 Using migrations folder: ${migrationsFolder}`);
-    
     // Run migrations
     await migrate(migrationDb, { migrationsFolder });
     
     // Close migration connection
     await migrationClient.end();
     
-    console.log('✅ Database migrations completed successfully');
-  } catch (error) {
+    } catch (error: any) {
     console.error('❌ Error running migrations:', error);
+    
+    // إذا كانت المشكلة أن الجدول موجود بالفعل، استمر
+    if (error.message?.includes('already exists') || error.code === '42P07') {
+      return;
+    }
+    
+    // للأخطاء الأخرى، ارمي الخطأ
     throw error;
   }
 }
@@ -75,18 +77,14 @@ export async function runMigrations(): Promise<void> {
 export async function runDrizzlePush(): Promise<void> {
   try {
     if (!process.env.DATABASE_URL || process.env.DATABASE_URL.startsWith('sqlite:')) {
-      console.log('⚠️ No PostgreSQL DATABASE_URL found or using SQLite, skipping Drizzle push');
       return;
     }
 
-    console.log('🔄 Running emergency database push...');
-    
     // This would be equivalent to drizzle-kit push but in code
     // For now, we'll create tables manually as fallback
     await createTablesManually();
     
-    console.log('✅ Emergency database push completed successfully');
-  } catch (error) {
+    } catch (error) {
     console.error('❌ Error running emergency push:', error);
     throw error;
   }
@@ -206,8 +204,7 @@ async function createTablesManually(): Promise<void> {
       )
     `);
 
-    console.log('✅ All tables created successfully');
-  } catch (error) {
+    } catch (error) {
     console.error('❌ Error creating tables manually:', error);
     throw error;
   }
@@ -302,8 +299,7 @@ async function createTables(): Promise<void> {
         )
       `);
 
-      console.log('✅ PostgreSQL tables created successfully');
-    } catch (error) {
+      } catch (error) {
       console.error('❌ Error creating PostgreSQL tables:', error);
       throw error;
     }
@@ -311,23 +307,19 @@ async function createTables(): Promise<void> {
   }
   
   // For SQLite, tables are created by database-fallback.ts
-  console.log('✅ SQLite tables are created by database-fallback.ts');
-}
+  }
 
 async function addMissingColumns(): Promise<void> {
   if (!db) {
-    console.log('⚠️ No database connection, skipping column additions');
     return;
   }
 
   if (dbType === 'postgresql') {
-    console.log('✅ PostgreSQL columns are managed by Drizzle schema, skipping runtime additions');
     return;
   }
 
   // For SQLite - columns are created by database-fallback.ts
-  console.log('✅ SQLite columns are managed by database-fallback.ts, skipping runtime additions');
-}
+  }
 
 // Alias function for compatibility
 export async function createDefaultUsersIfNeeded(): Promise<void> {
@@ -337,7 +329,6 @@ export async function createDefaultUsersIfNeeded(): Promise<void> {
 export async function createDefaultUsers(): Promise<void> {
   try {
     if (!db) {
-      console.log('📄 Memory mode - skipping default user creation');
       return;
     }
 
@@ -362,8 +353,7 @@ export async function createDefaultUsers(): Promise<void> {
           totalPoints: 0,
           levelProgress: 0
         });
-        console.log('✅ Default admin user created');
-      }
+        }
 
       // Create a test member user
       const memberResult = await db.select({ count: count() }).from(users).where(eq(users.username, 'testuser'));
@@ -381,8 +371,7 @@ export async function createDefaultUsers(): Promise<void> {
           totalPoints: 0,
           levelProgress: 0
         });
-        console.log('✅ Default test user created');
-      }
+        }
     } else {
       // Use Drizzle ORM for SQLite - import SQLite schema
       const { users: sqliteUsers, levelSettings: sqliteLevelSettings } = await import('../shared/schema');
@@ -405,8 +394,7 @@ export async function createDefaultUsers(): Promise<void> {
           totalPoints: 0,
           levelProgress: 0
         });
-        console.log('✅ Default admin user created');
-      }
+        }
 
       // Create a test member user
       const memberResult = await db.select({ count: count() }).from(sqliteUsers).where(eq(sqliteUsers.username, 'testuser'));
@@ -424,15 +412,13 @@ export async function createDefaultUsers(): Promise<void> {
           totalPoints: 0,
           levelProgress: 0
         });
-        console.log('✅ Default test user created');
-      }
+        }
 
       // Initialize default level settings
       await initializeLevelSettings();
     }
     
-    console.log('✅ Default users verification complete');
-  } catch (error) {
+    } catch (error) {
     console.error('❌ Error creating default users:', error);
   }
 }
@@ -472,8 +458,7 @@ async function initializeLevelSettings(): Promise<void> {
         });
       }
       
-      console.log('✅ Default level settings initialized');
-    }
+      }
   } catch (error) {
     console.error('❌ Error initializing level settings:', error);
   }
