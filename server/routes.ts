@@ -773,7 +773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "اسم المستخدم غير موجود" });
       }
 
-      console.log(`User found: ${user.username}, type: ${user.userType || user.user_type}, hidden: ${user.isHidden}`);
+              console.log(`User found: ${user.username}, type: ${user.userType}, hidden: ${user.isHidden}`);
 
       // التحقق من كلمة المرور - دعم التشفير والنص العادي
       let passwordValid = false;
@@ -793,7 +793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if user is actually a member or owner
-      const userType = user.userType || user.user_type;
+              const userType = user.userType;
       if (userType === 'guest') {
         console.log(`Guest user trying to login as member: ${username}`);
         return res.status(401).json({ error: "هذا المستخدم ضيف وليس عضو" });
