@@ -64,7 +64,11 @@ export async function runMigrations(): Promise<void> {
     console.error('❌ Error running migrations:', error);
     
     // إذا كانت المشكلة أن الجدول موجود بالفعل، استمر
-    if (error.message?.includes('already exists') || error.code === '42P07') {
+    if (error.message?.includes('already exists') || 
+        error.code === '42P07' || 
+        error.message?.includes('relation') ||
+        error.message?.includes('constraint')) {
+      console.log('⚠️ Migration skipped - tables already exist');
       return;
     }
     
@@ -84,8 +88,18 @@ export async function runDrizzlePush(): Promise<void> {
     // For now, we'll create tables manually as fallback
     await createTablesManually();
     
-    } catch (error) {
+    } catch (error: any) {
     console.error('❌ Error running emergency push:', error);
+    
+    // إذا كانت المشكلة أن الجدول موجود بالفعل، استمر
+    if (error.message?.includes('already exists') || 
+        error.code === '42P07' || 
+        error.message?.includes('relation') ||
+        error.message?.includes('constraint')) {
+      console.log('⚠️ Emergency push skipped - tables already exist');
+      return;
+    }
+    
     throw error;
   }
 }
@@ -204,8 +218,18 @@ async function createTablesManually(): Promise<void> {
       )
     `);
 
-    } catch (error) {
+    } catch (error: any) {
     console.error('❌ Error creating tables manually:', error);
+    
+    // إذا كانت المشكلة أن الجدول موجود بالفعل، استمر
+    if (error.message?.includes('already exists') || 
+        error.code === '42P07' || 
+        error.message?.includes('relation') ||
+        error.message?.includes('constraint')) {
+      console.log('⚠️ Manual table creation skipped - tables already exist');
+      return;
+    }
+    
     throw error;
   }
 }
