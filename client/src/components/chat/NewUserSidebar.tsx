@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import ProfileImage from './ProfileImage';
 import PremiumUserTheme from '@/components/ui/PremiumUserTheme';
 import type { ChatUser } from '@/types/chat';
+import UserRoleBadge from './UserRoleBadge';
 
 interface UserSidebarProps {
   users: ChatUser[];
@@ -93,8 +94,10 @@ export default function NewUserSidebar({ users, currentUser, onUserClick }: User
                 {/* User Avatar */}
                 <div className="relative">
                   <ProfileImage user={user} size="small" />
-                  {/* Online Indicator */}
-                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                  {/* Badge instead of online indicator */}
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 flex items-center justify-center bg-white border-2 border-gray-200 rounded-full">
+                    <UserRoleBadge user={user} />
+                  </div>
                 </div>
 
                 {/* User Info */}
