@@ -277,7 +277,7 @@ export class MixedStorage implements IStorage {
           id: user.id,
           username: user.username,
           password: user.password,
-          userType: user.userType,
+          userType: user.user_type || user.userType, // تعديل هنا
           role: user.role,
           profileImage: user.profile_image,
           profileBanner: user.profile_banner,
