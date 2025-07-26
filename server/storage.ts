@@ -16,7 +16,12 @@ import {
   type InsertNotification,
 } from "../shared/schema";
 import { db } from "./database-adapter";
-import { eq, desc, and, sql, or } from "drizzle-orm";
+import { eq, desc, and, sql, or, inArray } from "drizzle-orm";
+
+// Global in-memory storage for wall posts
+declare global {
+  var wallPosts: any[] | undefined;
+}
 
 export interface IStorage {
   // User operations
@@ -40,10 +45,35 @@ export interface IStorage {
   // Friend operations
   addFriend(userId: number, friendId: number): Promise<Friend>;
   getFriends(userId: number): Promise<User[]>;
+  getUserFriends(userId: number): Promise<User[]>;
   updateFriendStatus(userId: number, friendId: number, status: string): Promise<void>;
   getBlockedUsers(userId: number): Promise<User[]>;
   removeFriend(userId: number, friendId: number): Promise<boolean>;
   getFriendship(userId1: number, userId2: number): Promise<Friend | undefined>;
+  
+  // Friend request operations
+  createFriendRequest(senderId: number, receiverId: number): Promise<any>;
+  getFriendRequest(senderId: number, receiverId: number): Promise<any>;
+  getFriendRequestById(requestId: number): Promise<any>;
+  getIncomingFriendRequests(userId: number): Promise<any[]>;
+  getOutgoingFriendRequests(userId: number): Promise<any[]>;
+  acceptFriendRequest(requestId: number): Promise<boolean>;
+  declineFriendRequest(requestId: number): Promise<boolean>;
+  ignoreFriendRequest(requestId: number): Promise<boolean>;
+  deleteFriendRequest(requestId: number): Promise<boolean>;
+  
+  // Wall post operations
+  createWallPost(postData: any): Promise<any>;
+  getWallPosts(type: string): Promise<any[]>;
+  getWallPostsByUsers(userIds: number[]): Promise<any[]>;
+  getWallPost(postId: number): Promise<any>;
+  deleteWallPost(postId: number): Promise<void>;
+  addWallPostReaction(reactionData: any): Promise<any>;
+  getWallPostWithReactions(postId: number): Promise<any | null>;
+  
+  // Room operations
+  getRoom(roomId: string): Promise<any>;
+  getBroadcastRoomInfo(roomId: string): Promise<any>;
   
   // Notification operations
   createNotification(notification: InsertNotification): Promise<Notification>;
@@ -189,6 +219,15 @@ export class PostgreSQLStorage implements IStorage {
     return friendsResult.map(f => f.users!).filter(Boolean);
   }
 
+  async getUserFriends(userId: number): Promise<User[]> {
+    const friendsResult = await db.select()
+      .from(friends)
+      .leftJoin(users, eq(friends.userId, users.id))
+      .where(and(eq(friends.friendId, userId), eq(friends.status, 'accepted')));
+    
+    return friendsResult.map(f => f.users!).filter(Boolean);
+  }
+
   async updateFriendStatus(userId: number, friendId: number, status: string): Promise<void> {
     await db.update(friends)
       .set({ status })
@@ -220,6 +259,228 @@ export class PostgreSQLStorage implements IStorage {
         )
       );
     return result[0];
+  }
+
+  // Friend request operations
+  async createFriendRequest(senderId: number, receiverId: number): Promise<any> {
+    const result = await db.insert(friends).values({
+      userId: senderId,
+      friendId: receiverId,
+      status: 'pending'
+    }).returning();
+    return result[0];
+  }
+
+  async getFriendRequest(senderId: number, receiverId: number): Promise<any> {
+    const result = await db.select()
+      .from(friends)
+      .where(
+        and(
+          eq(friends.userId, senderId),
+          eq(friends.friendId, receiverId),
+          eq(friends.status, 'pending')
+        )
+      );
+    return result[0];
+  }
+
+  async getFriendRequestById(requestId: number): Promise<any> {
+    const result = await db.select()
+      .from(friends)
+      .where(eq(friends.id, requestId));
+    return result[0];
+  }
+
+  async getIncomingFriendRequests(userId: number): Promise<any[]> {
+    const result = await db.select()
+      .from(friends)
+      .leftJoin(users, eq(friends.userId, users.id))
+      .where(and(eq(friends.friendId, userId), eq(friends.status, 'pending')));
+    return result.map(f => f.users!).filter(Boolean);
+  }
+
+  async getOutgoingFriendRequests(userId: number): Promise<any[]> {
+    const result = await db.select()
+      .from(friends)
+      .leftJoin(users, eq(friends.friendId, users.id))
+      .where(and(eq(friends.userId, userId), eq(friends.status, 'pending')));
+    return result.map(f => f.users!).filter(Boolean);
+  }
+
+  async acceptFriendRequest(requestId: number): Promise<boolean> {
+    const result = await db.update(friends)
+      .set({ status: 'accepted' })
+      .where(eq(friends.id, requestId));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async declineFriendRequest(requestId: number): Promise<boolean> {
+    const result = await db.update(friends)
+      .set({ status: 'declined' })
+      .where(eq(friends.id, requestId));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async ignoreFriendRequest(requestId: number): Promise<boolean> {
+    const result = await db.update(friends)
+      .set({ status: 'ignored' })
+      .where(eq(friends.id, requestId));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async deleteFriendRequest(requestId: number): Promise<boolean> {
+    const result = await db.delete(friends).where(eq(friends.id, requestId));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+  
+  // Wall post operations
+  async createWallPost(postData: any): Promise<any> {
+    try {
+      const post = {
+        id: Date.now(), // معرف مؤقت
+        ...postData,
+        reactions: [],
+        totalLikes: 0,
+        totalDislikes: 0,
+        totalHearts: 0
+      };
+      
+      // حفظ في الذاكرة المؤقتة
+      if (!global.wallPosts) {
+        global.wallPosts = [];
+      }
+      global.wallPosts.unshift(post);
+      
+      return post;
+    } catch (error) {
+      console.error('Error creating wall post:', error);
+      throw error;
+    }
+  }
+
+  async getWallPosts(type: string): Promise<any[]> {
+    try {
+      if (!global.wallPosts) {
+        global.wallPosts = [];
+      }
+      
+      return global.wallPosts
+        .filter(post => post.type === type)
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    } catch (error) {
+      console.error('Error getting wall posts:', error);
+      return [];
+    }
+  }
+
+  async getWallPostsByUsers(userIds: number[]): Promise<any[]> {
+    try {
+      if (!global.wallPosts) {
+        global.wallPosts = [];
+      }
+      
+      return global.wallPosts
+        .filter(post => userIds.includes(post.userId))
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    } catch (error) {
+      console.error('Error getting wall posts by users:', error);
+      return [];
+    }
+  }
+
+  async getWallPost(postId: number): Promise<any> {
+    try {
+      if (!global.wallPosts) {
+        global.wallPosts = [];
+      }
+      
+      return global.wallPosts.find(post => post.id === postId) || null;
+    } catch (error) {
+      console.error('Error getting wall post:', error);
+      return null;
+    }
+  }
+
+  async deleteWallPost(postId: number): Promise<void> {
+    try {
+      if (!global.wallPosts) {
+        global.wallPosts = [];
+      }
+      
+      global.wallPosts = global.wallPosts.filter(post => post.id !== postId);
+    } catch (error) {
+      console.error('Error deleting wall post:', error);
+    }
+  }
+
+  async addWallPostReaction(reactionData: any): Promise<any> {
+    try {
+      if (!global.wallPosts) {
+        global.wallPosts = [];
+      }
+      
+      const postIndex = global.wallPosts.findIndex(post => post.id === reactionData.postId);
+      if (postIndex === -1) {
+        throw new Error('Post not found');
+      }
+      
+      const post = global.wallPosts[postIndex];
+      if (!post.reactions) {
+        post.reactions = [];
+      }
+      
+      // إزالة التفاعل السابق للمستخدم إذا كان موجوداً
+      post.reactions = post.reactions.filter((r: any) => r.userId !== reactionData.userId);
+      
+      // إضافة التفاعل الجديد
+      post.reactions.push(reactionData);
+      
+      // تحديث عدادات التفاعل
+      post.totalLikes = post.reactions.filter((r: any) => r.type === 'like').length;
+      post.totalDislikes = post.reactions.filter((r: any) => r.type === 'dislike').length;
+      post.totalHearts = post.reactions.filter((r: any) => r.type === 'heart').length;
+      
+      return post;
+    } catch (error) {
+      console.error('Error adding wall post reaction:', error);
+      throw error;
+    }
+  }
+
+  async getWallPostWithReactions(postId: number): Promise<any | null> {
+    try {
+      return await this.getWallPost(postId);
+    } catch (error) {
+      console.error('Error getting wall post with reactions:', error);
+      return null;
+    }
+  }
+
+  // Room operations
+  async getRoom(roomId: string): Promise<any> {
+    // For now, returning predefined rooms
+    const predefinedRooms = {
+      'general': { id: 'general', name: 'الدردشة العامة', is_broadcast: false },
+      'broadcast': { id: 'broadcast', name: 'غرفة البث المباشر', is_broadcast: true },
+      'music': { id: 'music', name: 'أغاني وسهر', is_broadcast: false }
+    };
+    return predefinedRooms[roomId as keyof typeof predefinedRooms] || null;
+  }
+
+  async getBroadcastRoomInfo(roomId: string): Promise<any> {
+    const room = await this.getRoom(roomId);
+    if (!room || !room.is_broadcast) {
+      return null;
+    }
+    
+    // Return basic broadcast room info
+    return {
+      roomId: roomId,
+      hostId: 1, // Default host
+      speakers: [],
+      micQueue: [],
+      isLive: false
+    };
   }
 
   // Notification operations

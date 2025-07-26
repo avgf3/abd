@@ -171,12 +171,12 @@ const friendService = new (class FriendService {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // رفع صور البروفايل
-  app.post('/api/upload/profile-image', upload.single('image'), async (req, res) => {
+  app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ 
           error: 'لم يتم رفع أي ملف',
-          details: 'تأكد من إرسال الملف مع اسم الحقل image'
+          details: 'تأكد من إرسال الملف مع اسم الحقل profileImage'
         });
       }
 
