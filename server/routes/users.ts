@@ -1,8 +1,46 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { sanitizeInput } from "../security";
+import multer from 'multer';
+import path from 'path';
 
 const router = Router();
+
+// إعداد التخزين للصور
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(process.cwd(), 'client/public/uploads/profiles'));
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('الملف المرفوع ليس صورة!'));
+    }
+    cb(null, true);
+  }
+});
+
+// رفع صورة البروفايل
+router.post('/upload/profile-image', upload.single('profileImage'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'لم يتم رفع أي صورة' });
+    }
+    // رابط الصورة بالنسبة للعميل
+    const imageUrl = `/uploads/profiles/${req.file.filename}`;
+    res.json({ imageUrl });
+  } catch (error) {
+    console.error('خطأ في رفع صورة البروفايل:', error);
+    res.status(500).json({ error: 'فشل في رفع الصورة' });
+  }
+});
 
 // Get online users
 router.get("/online", async (req, res) => {
