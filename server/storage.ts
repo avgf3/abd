@@ -95,6 +95,17 @@ export interface IStorage {
   }): Promise<boolean>;
   isDeviceBlocked(ipAddress: string, deviceId: string): Promise<boolean>;
   getBlockedDevices(): Promise<Array<{ipAddress: string, deviceId: string}>>;
+  
+  // Broadcast Room operations - الجديدة
+  requestMic(userId: number, roomId: string): Promise<boolean>;
+  approveMicRequest(roomId: string, userId: number, approvedBy: number): Promise<boolean>;
+  rejectMicRequest(roomId: string, userId: number, rejectedBy: number): Promise<boolean>;
+  removeSpeaker(roomId: string, userId: number, removedBy: number): Promise<boolean>;
+  getBroadcastRoomInfo(roomId: string): Promise<{
+    hostId: number;
+    speakers: number[];
+    micQueue: number[];
+  } | null>;
 }
 
 // Mixed storage: Database for members, Memory for guests
@@ -111,6 +122,15 @@ export class MixedStorage implements IStorage {
     senderUsername?: string;
     receiverUsername?: string;
   }>;
+  private notifications: Map<number, Notification>;
+  private blockedDevices: Map<string, {
+    ipAddress: string;
+    deviceId: string;
+    userId: number;
+    reason: string;
+    blockedAt: Date;
+    blockedBy: number;
+  }>;
   private currentUserId: number;
   private currentMessageId: number;
   private currentFriendId: number;
@@ -121,13 +141,90 @@ export class MixedStorage implements IStorage {
     this.messages = new Map();
     this.friends = new Map();
     this.friendRequests = new Map();
-    this.currentUserId = 1000; // Start guest IDs from 1000 to avoid conflicts
+    this.notifications = new Map();
+    this.blockedDevices = new Map();
+    this.currentUserId = 1;
     this.currentMessageId = 1;
     this.currentFriendId = 1;
     this.currentRequestId = 1;
 
-    // Initialize owner user in database
+    this.initializeDatabase();
     this.initializeOwner();
+    this.initializeBroadcastRoom(); // إضافة غرفة البث الافتراضية
+  }
+
+  private async initializeDatabase() {
+    try {
+      // فحص وجود قاعدة البيانات أولاً
+      if (!db) {
+        console.warn("⚠️ تشغيل وضع التطوير بدون قاعدة بيانات - سيتم حفظ البيانات في الذاكرة فقط");
+        return;
+      }
+      
+      // Check if owner already exists
+      const existing = await db.select().from(users).where(eq(users.username, "عبدالكريم"));
+      if (existing.length === 0) {
+        // Create owner user in database - Fix SQLite compatibility
+        await db.insert(users).values({
+          username: "عبدالكريم",
+          password: "عبدالكريم22333",
+          userType: "owner",
+          role: "owner",
+          profileImage: "/default_avatar.svg",
+          status: "مالك الموقع",
+          gender: "ذكر",
+          age: 30,
+          country: "السعودية",
+          relation: "مرتبط",
+          bio: "مالك الموقع",
+          profileBackgroundColor: "#3c0d0d",
+          usernameColor: "#FFFFFF",
+          userTheme: "default",
+          isOnline: 0,
+          isHidden: 0,
+          isMuted: 0,
+          isBanned: 0,
+          isBlocked: 0,
+          joinDate: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          lastSeen: new Date().toISOString(),
+          ignoredUsers: '[]'
+        } as any);
+      }
+
+      // Check if admin already exists
+      const existingAdmin = await db.select().from(users).where(eq(users.username, "عبود"));
+      if (existingAdmin.length === 0) {
+        // Create admin user in database - Fix SQLite compatibility
+        await db.insert(users).values({
+          username: "عبود",
+          password: "22333",
+          userType: "owner",
+          role: "owner",
+          profileImage: "/default_avatar.svg",
+          status: "مشرف مؤقت",
+          gender: "ذكر",
+          age: 25,
+          country: "العراق",
+          relation: "أعزب",
+          bio: "مشرف مؤقت",
+          profileBackgroundColor: "#3c0d0d",
+          usernameColor: "#FFFFFF",
+          userTheme: "default",
+          isOnline: 0,
+          isHidden: 0,
+          isMuted: 0,
+          isBanned: 0,
+          isBlocked: 0,
+          joinDate: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          lastSeen: new Date().toISOString(),
+          ignoredUsers: '[]'
+        } as any);
+      }
+    } catch (error) {
+      console.error('Error initializing database:', error);
+    }
   }
 
   private async initializeOwner() {
@@ -201,6 +298,55 @@ export class MixedStorage implements IStorage {
       }
     } catch (error) {
       console.error('Error initializing owner:', error);
+    }
+  }
+
+  private async initializeBroadcastRoom() {
+    try {
+      // إنشاء غرفة البث الافتراضية في قاعدة البيانات
+      if (this.usePG) {
+        // PostgreSQL
+        const result = await this.pool.query(`
+          INSERT INTO rooms (id, name, description, icon, created_by, is_default, is_active, is_broadcast, host_id, speakers, mic_queue, created_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          ON CONFLICT (id) DO NOTHING
+        `, [
+          'broadcast',
+          'غرفة البث المباشر',
+          'غرفة خاصة للبث المباشر مع نظام المايك',
+          '',
+          1, // created_by (owner)
+          false, // is_default
+          true, // is_active
+          true, // is_broadcast
+          1, // host_id (owner)
+          '[]', // speakers (empty array)
+          '[]', // mic_queue (empty array)
+          new Date()
+        ]);
+      } else {
+        // SQLite
+        await this.db.run(`
+          INSERT OR IGNORE INTO rooms (id, name, description, icon, created_by, is_default, is_active, is_broadcast, host_id, speakers, mic_queue, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          'broadcast',
+          'غرفة البث المباشر',
+          'غرفة خاصة للبث المباشر مع نظام المايك',
+          '',
+          1, // created_by (owner)
+          0, // is_default (false)
+          1, // is_active (true)
+          1, // is_broadcast (true)
+          1, // host_id (owner)
+          '[]', // speakers (empty array)
+          '[]', // mic_queue (empty array)
+          new Date().toISOString()
+        ]);
+      }
+      console.log('✅ تم إنشاء غرفة البث المباشر بنجاح');
+    } catch (error) {
+      console.error('❌ خطأ في إنشاء غرفة البث المباشر:', error);
     }
   }
 
@@ -1686,7 +1832,7 @@ export class MixedStorage implements IStorage {
         return rooms || [];
       } catch (error) {
         console.error('خطأ في جلب الغرف من SQLite:', error);
-        // إرجاع الغرف الافتراضية
+        // إرجاع الغرف الافتراضية مع غرفة البث
         return [
           { 
             id: 'general', 
@@ -1697,7 +1843,26 @@ export class MixedStorage implements IStorage {
             created_at: new Date(), 
             is_active: true, 
             user_count: 0, 
-            icon: '' 
+            icon: '',
+            is_broadcast: false,
+            host_id: null,
+            speakers: '[]',
+            mic_queue: '[]'
+          },
+          { 
+            id: 'broadcast', 
+            name: 'غرفة البث المباشر', 
+            description: 'غرفة خاصة للبث المباشر مع نظام المايك', 
+            is_default: false, 
+            created_by: 1, 
+            created_at: new Date(), 
+            is_active: true, 
+            user_count: 0, 
+            icon: '',
+            is_broadcast: true,
+            host_id: 1,
+            speakers: '[]',
+            mic_queue: '[]'
           },
           { 
             id: 'music', 
@@ -1708,7 +1873,11 @@ export class MixedStorage implements IStorage {
             created_at: new Date(), 
             is_active: true, 
             user_count: 0, 
-            icon: '' 
+            icon: '',
+            is_broadcast: false,
+            host_id: null,
+            speakers: '[]',
+            mic_queue: '[]'
           }
         ];
       }
@@ -1758,6 +1927,8 @@ export class MixedStorage implements IStorage {
     createdBy: number;
     isDefault: boolean;
     isActive: boolean;
+    isBroadcast?: boolean;
+    hostId?: number;
   }): Promise<{
     id: string;
     name: string;
@@ -1766,14 +1937,18 @@ export class MixedStorage implements IStorage {
     createdBy: number;
     isDefault: boolean;
     isActive: boolean;
+    isBroadcast?: boolean;
+    hostId?: number;
+    speakers?: string;
+    micQueue?: string;
     createdAt: Date;
     userCount?: number;
   }> {
     if (this.usePG) {
       try {
         const result = await this.pool.query(`
-          INSERT INTO rooms (id, name, description, icon, created_by, is_default, is_active, created_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          INSERT INTO rooms (id, name, description, icon, created_by, is_default, is_active, is_broadcast, host_id, speakers, mic_queue, created_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
           RETURNING *
         `, [
           `room_${Date.now()}`,
@@ -1783,6 +1958,10 @@ export class MixedStorage implements IStorage {
           roomData.createdBy,
           roomData.isDefault,
           roomData.isActive,
+          roomData.isBroadcast || false,
+          roomData.hostId || roomData.createdBy,
+          '[]', // speakers (empty array)
+          '[]', // mic_queue (empty array)
           new Date()
         ]);
         return result.rows[0];
@@ -1794,8 +1973,8 @@ export class MixedStorage implements IStorage {
       try {
         const roomId = `room_${Date.now()}`;
         await this.db.run(`
-          INSERT INTO rooms (id, name, description, icon, created_by, is_default, is_active, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO rooms (id, name, description, icon, created_by, is_default, is_active, is_broadcast, host_id, speakers, mic_queue, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           roomId,
           roomData.name,
@@ -1804,6 +1983,10 @@ export class MixedStorage implements IStorage {
           roomData.createdBy,
           roomData.isDefault ? 1 : 0,
           roomData.isActive ? 1 : 0,
+          roomData.isBroadcast ? 1 : 0,
+          roomData.hostId || roomData.createdBy,
+          '[]', // speakers (empty array)
+          '[]', // mic_queue (empty array)
           new Date().toISOString()
         ]);
 
@@ -1815,6 +1998,10 @@ export class MixedStorage implements IStorage {
           created_by: roomData.createdBy,
           is_default: roomData.isDefault,
           is_active: roomData.isActive,
+          is_broadcast: roomData.isBroadcast || false,
+          host_id: roomData.hostId || roomData.createdBy,
+          speakers: '[]',
+          mic_queue: '[]',
           created_at: new Date(),
           user_count: 0
         };
@@ -1885,6 +2072,176 @@ export class MixedStorage implements IStorage {
         console.error('خطأ في مغادرة الغرفة في SQLite:', error);
         throw error;
       }
+    }
+  }
+
+  // Broadcast Room operations - الجديدة
+  async requestMic(userId: number, roomId: string): Promise<boolean> {
+    try {
+      const room = await this.getRoom(roomId);
+      if (!room || !room.is_broadcast) {
+        return false;
+      }
+
+      // التحقق من أن المستخدم ليس في قائمة المتحدثين أو في قائمة الانتظار
+      const currentInfo = await this.getBroadcastRoomInfo(roomId);
+      if (!currentInfo) {
+        return false;
+      }
+
+      if (currentInfo.speakers.includes(userId) || currentInfo.micQueue.includes(userId)) {
+        return false;
+      }
+
+      // إضافة المستخدم لقائمة الانتظار
+      const newQueue = [...currentInfo.micQueue, userId];
+      
+      if (this.usePG) {
+        await this.pool.query(
+          'UPDATE rooms SET mic_queue = $1 WHERE id = $2',
+          [JSON.stringify(newQueue), roomId]
+        );
+      } else {
+        await this.db.run(
+          'UPDATE rooms SET mic_queue = ? WHERE id = ?',
+          [JSON.stringify(newQueue), roomId]
+        );
+      }
+
+      return true;
+    } catch (error) {
+      console.error('خطأ في طلب المايك:', error);
+      return false;
+    }
+  }
+
+  async approveMicRequest(roomId: string, userId: number, approvedBy: number): Promise<boolean> {
+    try {
+      const room = await this.getRoom(roomId);
+      if (!room || !room.is_broadcast) {
+        return false;
+      }
+
+      const currentInfo = await this.getBroadcastRoomInfo(roomId);
+      if (!currentInfo) {
+        return false;
+      }
+
+      // التحقق من أن المستخدم في قائمة الانتظار
+      if (!currentInfo.micQueue.includes(userId)) {
+        return false;
+      }
+
+      // إزالة المستخدم من قائمة الانتظار وإضافته للمتحدثين
+      const newQueue = currentInfo.micQueue.filter(id => id !== userId);
+      const newSpeakers = [...currentInfo.speakers, userId];
+
+      if (this.usePG) {
+        await this.pool.query(
+          'UPDATE rooms SET mic_queue = $1, speakers = $2 WHERE id = $3',
+          [JSON.stringify(newQueue), JSON.stringify(newSpeakers), roomId]
+        );
+      } else {
+        await this.db.run(
+          'UPDATE rooms SET mic_queue = ?, speakers = ? WHERE id = ?',
+          [JSON.stringify(newQueue), JSON.stringify(newSpeakers), roomId]
+        );
+      }
+
+      return true;
+    } catch (error) {
+      console.error('خطأ في الموافقة على طلب المايك:', error);
+      return false;
+    }
+  }
+
+  async rejectMicRequest(roomId: string, userId: number, rejectedBy: number): Promise<boolean> {
+    try {
+      const room = await this.getRoom(roomId);
+      if (!room || !room.is_broadcast) {
+        return false;
+      }
+
+      const currentInfo = await this.getBroadcastRoomInfo(roomId);
+      if (!currentInfo) {
+        return false;
+      }
+
+      // إزالة المستخدم من قائمة الانتظار
+      const newQueue = currentInfo.micQueue.filter(id => id !== userId);
+
+      if (this.usePG) {
+        await this.pool.query(
+          'UPDATE rooms SET mic_queue = $1 WHERE id = $2',
+          [JSON.stringify(newQueue), roomId]
+        );
+      } else {
+        await this.db.run(
+          'UPDATE rooms SET mic_queue = ? WHERE id = ?',
+          [JSON.stringify(newQueue), roomId]
+        );
+      }
+
+      return true;
+    } catch (error) {
+      console.error('خطأ في رفض طلب المايك:', error);
+      return false;
+    }
+  }
+
+  async removeSpeaker(roomId: string, userId: number, removedBy: number): Promise<boolean> {
+    try {
+      const room = await this.getRoom(roomId);
+      if (!room || !room.is_broadcast) {
+        return false;
+      }
+
+      const currentInfo = await this.getBroadcastRoomInfo(roomId);
+      if (!currentInfo) {
+        return false;
+      }
+
+      // إزالة المستخدم من المتحدثين
+      const newSpeakers = currentInfo.speakers.filter(id => id !== userId);
+
+      if (this.usePG) {
+        await this.pool.query(
+          'UPDATE rooms SET speakers = $1 WHERE id = $2',
+          [JSON.stringify(newSpeakers), roomId]
+        );
+      } else {
+        await this.db.run(
+          'UPDATE rooms SET speakers = ? WHERE id = ?',
+          [JSON.stringify(newSpeakers), roomId]
+        );
+      }
+
+      return true;
+    } catch (error) {
+      console.error('خطأ في إزالة المتحدث:', error);
+      return false;
+    }
+  }
+
+  async getBroadcastRoomInfo(roomId: string): Promise<{
+    hostId: number;
+    speakers: number[];
+    micQueue: number[];
+  } | null> {
+    try {
+      const room = await this.getRoom(roomId);
+      if (!room || !room.is_broadcast) {
+        return null;
+      }
+
+      return {
+        hostId: room.host_id || room.created_by,
+        speakers: room.speakers ? JSON.parse(room.speakers) : [],
+        micQueue: room.mic_queue ? JSON.parse(room.mic_queue) : []
+      };
+    } catch (error) {
+      console.error('خطأ في جلب معلومات غرفة البث:', error);
+      return null;
     }
   }
 }

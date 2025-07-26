@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Users } from 'lucide-react';
+import { X, Plus, Users, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -120,9 +120,17 @@ export default function RoomsPanel({
 
               {/* Room Info */}
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate">{room.name}</div>
+                <div className="font-medium text-sm truncate flex items-center gap-2">
+                  {room.name}
+                  {room.isBroadcast && (
+                    <Mic className="w-3 h-3 text-orange-500" title="غرفة بث مباشر" />
+                  )}
+                </div>
                 <div className="text-xs text-muted-foreground">
                   {room.userCount} متصل
+                  {room.isBroadcast && (
+                    <span className="text-orange-500 ml-1">• بث مباشر</span>
+                  )}
                 </div>
               </div>
 
