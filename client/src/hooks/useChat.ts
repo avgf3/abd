@@ -499,6 +499,12 @@ export function useChat() {
     ignoreUser,
     unignoreUser,
     sendTyping,
-    setShowKickCountdown: (show: boolean) => dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: show })
+    setShowKickCountdown: (show: boolean) => dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: show }),
+
+    // إصلاح: دوال مطلوبة للمكونات
+    sendPublicMessage: (content: string) => sendMessage(content, 'text'),
+    sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId),
+    handleTyping: () => sendTyping(),
+    handlePrivateTyping: () => sendTyping(),
   };
 }
