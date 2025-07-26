@@ -18,6 +18,7 @@ interface BroadcastRoomInterfaceProps {
   typingUsers: string[];
   onReportMessage: (user: ChatUser, messageContent?: string, messageId?: number) => void;
   onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
+  chat: any; // إضافة chat object للوصول إلى sendPublicMessage
 }
 
 interface BroadcastInfo {
@@ -75,6 +76,13 @@ export default function BroadcastRoomInterface({
           fetchBroadcastInfo();
         } else if (data.type === 'speakerRemoved' && data.roomId === room.id) {
           fetchBroadcastInfo();
+        } else if (data.type === 'error' && data.message) {
+          // معالجة رسائل الخطأ من الخادم
+          toast({
+            title: 'خطأ',
+            description: data.message,
+            variant: 'destructive'
+          });
         }
       } catch (error) {
         console.error('خطأ في معالجة رسالة WebSocket:', error);
@@ -247,10 +255,29 @@ export default function BroadcastRoomInterface({
   // إرسال رسالة
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageInput.trim() || !canSpeak) return;
+    if (!messageInput.trim()) return;
 
-    onSendMessage(messageInput.trim());
-    setMessageInput('');
+    // التحقق من الصلاحيات قبل الإرسال
+    if (!canSpeak) {
+      toast({
+        title: 'غير مسموح',
+        description: 'فقط المضيف والمتحدثون يمكنهم إرسال الرسائل في غرفة البث المباشر',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // استخدام chat.sendPublicMessage بدلاً من onSendMessage
+    if (chat && chat.sendPublicMessage) {
+      const success = chat.sendPublicMessage(messageInput.trim());
+      if (success) {
+        setMessageInput('');
+      }
+    } else {
+      // fallback إلى onSendMessage
+      onSendMessage(messageInput.trim());
+      setMessageInput('');
+    }
   };
 
   // جلب معلومات المستخدم
