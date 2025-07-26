@@ -73,12 +73,22 @@ export default function FriendsPanel({
     
     setLoading(true);
     try {
-      const response = await apiRequest(`/api/friends/${currentUser.id}`);
-      if (response && Array.isArray(response.friends)) {
-        setFriends(response.friends.map((friend: any) => ({
-          ...friend,
-          status: friend.isOnline ? 'online' : 'offline'
-        })));
+      const response = await fetch(`/api/friends/${currentUser.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && Array.isArray(data.friends)) {
+          setFriends(data.friends.map((friend: any) => ({
+            ...friend,
+            status: friend.isOnline ? 'online' : 'offline'
+          })));
+        }
+      } else {
+        console.error('Error fetching friends:', response.status);
+        toast({
+          title: "خطأ",
+          description: "فشل في جلب قائمة الأصدقاء",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error fetching friends:', error);
@@ -97,16 +107,20 @@ export default function FriendsPanel({
     
     try {
       const [incomingResponse, outgoingResponse] = await Promise.all([
-        apiRequest(`/api/friend-requests/incoming/${currentUser.id}`).catch(() => ({ requests: [] })),
-        apiRequest(`/api/friend-requests/outgoing/${currentUser.id}`).catch(() => ({ requests: [] }))
+        fetch(`/api/friend-requests/incoming/${currentUser.id}`).catch(() => ({ ok: false })),
+        fetch(`/api/friend-requests/outgoing/${currentUser.id}`).catch(() => ({ ok: false }))
       ]);
       
+      const incoming = incomingResponse.ok ? await incomingResponse.json() : { requests: [] };
+      const outgoing = outgoingResponse.ok ? await outgoingResponse.json() : { requests: [] };
+      
       setFriendRequests({
-        incoming: incomingResponse.requests || [],
-        outgoing: outgoingResponse.requests || []
+        incoming: incoming.requests || [],
+        outgoing: outgoing.requests || []
       });
     } catch (error) {
       console.error('Error fetching friend requests:', error);
+      // التعامل بهدوء مع الأخطاء
       setFriendRequests({ incoming: [], outgoing: [] });
     }
   };
