@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -12,7 +12,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import { useRealTimeUpdates } from '@/hooks/useRealTimeUpdates';
 import { Bell, X, Check, Trash2, Users } from 'lucide-react';
 import type { ChatUser } from '@/types/chat';
 
@@ -36,235 +35,264 @@ interface NotificationPanelProps {
 export default function NotificationPanel({ isOpen, onClose, currentUser }: NotificationPanelProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { forceRefreshAll, updateNotifications, updateFriends } = useRealTimeUpdates(currentUser?.id);
+  const [lastChecked, setLastChecked] = useState<number>(Date.now());
 
-  // جلب الإشعارات الحقيقية من قاعدة البيانات
-  const { data: notificationsData, isLoading } = useQuery<{ notifications: Notification[] }>({
+  // جلب الإشعارات - polling محسن
+  const { data: notificationsData, isLoading, refetch } = useQuery<{ notifications: Notification[] }>({
     queryKey: ['/api/notifications', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) throw new Error('No user ID');
+      const response = await apiRequest(`/api/notifications?userId=${currentUser.id}&after=${lastChecked}`);
+      if (!response.ok) throw new Error('Failed to fetch notifications');
+      return response.json();
+    },
     enabled: !!currentUser?.id && isOpen,
-    refetchInterval: 3000 // تحديث كل 3 ثوان
+    refetchInterval: isOpen ? 30000 : false, // كل 30 ثانية بدلاً من 3 ثوانٍ عند فتح النافذة
+    staleTime: 10000, // البيانات صالحة لمدة 10 ثوانٍ
+    cacheTime: 5 * 60 * 1000, // حفظ في الكاش لمدة 5 دقائق
   });
 
-  // جلب عدد الإشعارات غير المقروءة
+  // جلب عدد الإشعارات غير المقروءة - مُحسّن
   const { data: unreadCountData } = useQuery<{ count: number }>({
     queryKey: ['/api/notifications/unread-count', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) throw new Error('No user ID');
+      const response = await apiRequest(`/api/notifications/unread-count?userId=${currentUser.id}`);
+      if (!response.ok) throw new Error('Failed to fetch unread count');
+      return response.json();
+    },
     enabled: !!currentUser?.id,
-    refetchInterval: 2000 // تحديث كل ثانيتين
+    refetchInterval: 60000, // كل دقيقة بدلاً من ثانيتين
+    staleTime: 30000, // البيانات صالحة لمدة 30 ثانية
   });
 
-  // معالج الأحداث للتحديث الفوري عند استلام طلبات الصداقة
+  // Real-time notifications via Socket.IO (مُحسّن)
   useEffect(() => {
-    const handleFriendRequestReceived = () => {
-      updateNotifications();
-      forceRefreshAll();
+    if (!currentUser?.id) return;
+
+    const handleNotificationReceived = (event: CustomEvent) => {
+      console.log('📬 إشعار جديد مستلم:', event.detail);
+      
+      // تحديث فوري للبيانات
+      queryClient.invalidateQueries({
+        queryKey: ['/api/notifications', currentUser.id]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/notifications/unread-count', currentUser.id]
+      });
+      
+      setLastChecked(Date.now());
     };
 
-    const handleFriendRequestAccepted = () => {
-      updateFriends();
-      updateNotifications();
+    const handleFriendRequestReceived = (event: CustomEvent) => {
+      console.log('👥 طلب صداقة جديد:', event.detail);
+      
+      // تحديث فوري
+      queryClient.invalidateQueries({
+        queryKey: ['/api/notifications', currentUser.id]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/notifications/unread-count', currentUser.id]
+      });
+      
+      // عرض toast notification
+      toast({
+        title: "طلب صداقة جديد",
+        description: `${event.detail.senderName} يريد إضافتك كصديق`,
+      });
     };
 
-    // إضافة مستمعي الأحداث
-    window.addEventListener('friendRequestReceived', handleFriendRequestReceived);
-    window.addEventListener('friendRequestAccepted', handleFriendRequestAccepted);
+    const handleFriendRequestAccepted = (event: CustomEvent) => {
+      console.log('✅ تم قبول طلب صداقة:', event.detail);
+      
+      queryClient.invalidateQueries({
+        queryKey: ['/api/notifications', currentUser.id]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/notifications/unread-count', currentUser.id]
+      });
+      
+      toast({
+        title: "تم قبول طلب الصداقة",
+        description: `${event.detail.friendName} قبل طلب صداقتك`,
+      });
+    };
 
-    // تنظيف المستمعين عند إلغاء تحميل المكون
+    // إضافة مستمعي الأحداث مع cleanup محسن
+    window.addEventListener('notificationReceived', handleNotificationReceived as EventListener);
+    window.addEventListener('friendRequestReceived', handleFriendRequestReceived as EventListener);
+    window.addEventListener('friendRequestAccepted', handleFriendRequestAccepted as EventListener);
+
+    // تنظيف المستمعين
     return () => {
-      window.removeEventListener('friendRequestReceived', handleFriendRequestReceived);
-      window.removeEventListener('friendRequestAccepted', handleFriendRequestAccepted);
+      window.removeEventListener('notificationReceived', handleNotificationReceived as EventListener);
+      window.removeEventListener('friendRequestReceived', handleFriendRequestReceived as EventListener);
+      window.removeEventListener('friendRequestAccepted', handleFriendRequestAccepted as EventListener);
     };
-  }, [updateNotifications, updateFriends, forceRefreshAll]);
+  }, [currentUser?.id, queryClient, toast]);
 
-  // تحديد إشعار كمقروء
+  // تحديد إشعار كمقروء - محسن
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: number) => {
-      return apiRequest(`/api/notifications/${notificationId}/read`, {
+      const response = await apiRequest(`/api/notifications/${notificationId}/read`, {
         method: 'PUT'
       });
+      if (!response.ok) throw new Error('Failed to mark as read');
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['/api/notifications', currentUser?.id]
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['/api/notifications/unread-count', currentUser?.id]
+      // تحديث فوري وذكي للكاش
+      queryClient.setQueryData(
+        ['/api/notifications', currentUser?.id],
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            notifications: oldData.notifications.map((notif: Notification) =>
+              notif.id === arguments[0] ? { ...notif, isRead: true } : notif
+            )
+          };
+        }
+      );
+      
+      // تحديث عدد غير المقروءة
+      queryClient.setQueryData(
+        ['/api/notifications/unread-count', currentUser?.id],
+        (oldData: any) => {
+          if (!oldData || oldData.count <= 0) return oldData;
+          return { count: oldData.count - 1 };
+        }
+      );
+    },
+    onError: (error) => {
+      toast({
+        title: "خطأ",
+        description: "فشل في تحديد الإشعار كمقروء",
+        variant: "destructive"
       });
     }
   });
 
-  // تحديد جميع الإشعارات كمقروءة
+  // تحديد جميع الإشعارات كمقروءة - محسن
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/notifications/user/${currentUser?.id}/read-all`, {
+      const response = await apiRequest(`/api/notifications/user/${currentUser?.id}/read-all`, {
         method: 'PUT'
       });
+      if (!response.ok) throw new Error('Failed to mark all as read');
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['/api/notifications', currentUser?.id]
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['/api/notifications/unread-count', currentUser?.id]
-      });
+      // تحديث فوري للكاش
+      queryClient.setQueryData(
+        ['/api/notifications', currentUser?.id],
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            notifications: oldData.notifications.map((notif: Notification) => ({
+              ...notif,
+              isRead: true
+            }))
+          };
+        }
+      );
+      
+      queryClient.setQueryData(
+        ['/api/notifications/unread-count', currentUser?.id],
+        { count: 0 }
+      );
+      
       toast({
-        title: "تم بنجاح",
-        description: "تم تحديد جميع الإشعارات كمقروءة",
+        title: "تم تحديد جميع الإشعارات كمقروءة",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "خطأ",
+        description: "فشل في تحديد الإشعارات كمقروءة",
+        variant: "destructive"
       });
     }
   });
 
-  // حذف إشعار
+  // حذف إشعار - محسن
   const deleteNotificationMutation = useMutation({
     mutationFn: async (notificationId: number) => {
-      return apiRequest(`/api/notifications/${notificationId}`, {
+      const response = await apiRequest(`/api/notifications/${notificationId}`, {
         method: 'DELETE'
       });
+      if (!response.ok) throw new Error('Failed to delete notification');
+      return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['/api/notifications', currentUser?.id]
+    onSuccess: (_, notificationId) => {
+      // تحديث فوري للكاش
+      queryClient.setQueryData(
+        ['/api/notifications', currentUser?.id],
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            notifications: oldData.notifications.filter((notif: Notification) => notif.id !== notificationId)
+          };
+        }
+      );
+      
+      toast({
+        title: "تم حذف الإشعار",
       });
-      queryClient.invalidateQueries({
-        queryKey: ['/api/notifications/unread-count', currentUser?.id]
+    },
+    onError: () => {
+      toast({
+        title: "خطأ",
+        description: "فشل في حذف الإشعار",
+        variant: "destructive"
       });
     }
   });
+
+  // تحديث الإشعارات يدوياً
+  const handleRefresh = useCallback(() => {
+    setLastChecked(Date.now());
+    refetch();
+  }, [refetch]);
 
   const notifications = notificationsData?.notifications || [];
   const unreadCount = unreadCountData?.count || 0;
 
-  const formatTime = (timestamp: string) => {
-    const now = Date.now();
-    const notificationTime = new Date(timestamp).getTime();
-    const diff = now - notificationTime;
-    
-    if (diff < 60000) return 'الآن';
-    if (diff < 3600000) return `منذ ${Math.floor(diff / 60000)} دقيقة`;
-    if (diff < 86400000) return `منذ ${Math.floor(diff / 3600000)} ساعة`;
-    return `منذ ${Math.floor(diff / 86400000)} يوم`;
-  };
-
-  const markAsRead = (notificationId: number) => {
-    markAsReadMutation.mutate(notificationId);
-  };
-
-  const deleteNotification = (notificationId: number) => {
-    deleteNotificationMutation.mutate(notificationId);
-  };
-
-  const markAllAsRead = () => {
-    markAllAsReadMutation.mutate();
-  };
-
-  // معالجات طلبات الصداقة
-  const handleAcceptFriendRequest = async (notification: Notification) => {
-    try {
-      const requestId = notification.data?.requestId || notification.data?.friendRequestId;
-      if (!requestId) return;
-
-      await apiRequest(`/api/friend-requests/${requestId}/accept`, {
-        method: 'POST',
-        body: { userId: currentUser?.id }
-      });
-
-      // تحديد الإشعار كمقروء وحذفه بعد القبول
-      deleteNotification(notification.id);
-      
-      // تحديث فوري للبيانات
-      forceRefreshAll();
-
-      toast({
-        title: "تم قبول طلب الصداقة ✅",
-        description: `تمت إضافة ${notification.data?.senderName} كصديق`,
-        variant: "default"
-      });
-
-    } catch (error) {
-      toast({
-        title: "خطأ ❌",
-        description: "فشل في قبول طلب الصداقة",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleDeclineFriendRequest = async (notification: Notification) => {
-    try {
-      const requestId = notification.data?.requestId || notification.data?.friendRequestId;
-      if (!requestId) return;
-
-      await apiRequest(`/api/friend-requests/${requestId}/decline`, {
-        method: 'POST',
-        body: { userId: currentUser?.id }
-      });
-
-      // تحديد الإشعار كمقروء وحذفه
-      deleteNotification(notification.id);
-      
-      // تحديث فوري للبيانات
-      forceRefreshAll();
-
-      toast({
-        title: "تم رفض طلب الصداقة",
-        description: `تم رفض طلب صداقة ${notification.data?.senderName}`,
-        variant: "default"
-      });
-
-    } catch (error) {
-      toast({
-        title: "خطأ ❌",
-        description: "فشل في رفض طلب الصداقة",
-        variant: "destructive"
-      });
-    }
-  };
-
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'friendRequest':
-        return '👫';
-      case 'message':
-        return '💬';
-      case 'moderation':
-        return '🛡️';
-      case 'promotion':
-        return '⭐';
+      case 'friend_request':
+      case 'friend':
+        return <Users className="w-4 h-4" />;
       case 'system':
-        return '🔔';
+        return <Bell className="w-4 h-4" />;
       default:
-        return '📢';
+        return <Bell className="w-4 h-4" />;
     }
   };
 
-  const getNotificationTypeColor = (type: string) => {
-    switch (type) {
-      case 'friendRequest':
-        return 'bg-blue-500';
-      case 'message':
-        return 'bg-green-500';
-      case 'moderation':
-        return 'bg-red-500';
-      case 'promotion':
-        return 'bg-yellow-500';
-      case 'system':
-        return 'bg-purple-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (!isOpen) return null;
+    if (diffInSeconds < 60) return 'الآن';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} دقيقة`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} ساعة`;
+    return `${Math.floor(diffInSeconds / 86400)} يوم`;
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md w-full bg-white text-black rounded-lg shadow-xl border-2 border-gray-200" dir="rtl">
-        <DialogHeader className="text-right">
-          <DialogTitle className="flex items-center justify-between text-lg font-bold text-gray-800">
+      <DialogContent className="sm:max-w-md max-h-[80vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Bell className="w-5 h-5 text-blue-600" />
+              <Bell className="w-5 h-5" />
               الإشعارات
               {unreadCount > 0 && (
-                <Badge className="bg-red-500 text-white px-2 py-1 text-xs">
+                <Badge variant="destructive" className="text-xs">
                   {unreadCount}
                 </Badge>
               )}
@@ -272,120 +300,94 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
             <Button
               variant="ghost"
               size="sm"
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 p-1"
+              onClick={handleRefresh}
+              disabled={isLoading}
             >
-              <X className="w-4 h-4" />
+              🔄
             </Button>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 max-h-96 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto max-h-96">
           {isLoading ? (
-            <div className="text-center py-8 text-gray-500">
-              جاري تحميل الإشعارات...
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Bell className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center p-8 text-muted-foreground">
+              <Bell className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>لا توجد إشعارات</p>
             </div>
           ) : (
-            notifications.map((notification: Notification) => (
-              <div
-                key={notification.id}
-                className={`p-4 rounded-lg border transition-all duration-200 ${
-                  notification.isRead 
-                    ? 'bg-gray-50 border-gray-200' 
-                    : 'bg-blue-50 border-blue-200 shadow-sm'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm ${getNotificationTypeColor(notification.type)}`}>
-                      {getNotificationIcon(notification.type)}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 mb-1">
-                        {notification.title}
-                      </h4>
-                      <p className="text-sm text-gray-600 leading-relaxed">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-2">
-                        {formatTime(notification.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-1 flex-col">
-                    {/* أزرار خاصة بطلبات الصداقة الجديدة فقط */}
-                    {notification.type === 'friendRequest' && (notification.data?.requestId || notification.data?.friendRequestId) && !notification.isRead && (
-                      <div className="flex gap-2 mt-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleAcceptFriendRequest(notification)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs"
-                        >
-                          ✓ قبول
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeclineFriendRequest(notification)}
-                          className="border-red-300 text-red-600 hover:bg-red-50 px-3 py-1 text-xs"
-                        >
-                          ✗ رفض
-                        </Button>
+            <div className="space-y-2">
+              {notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`p-3 border rounded-lg transition-colors ${
+                    notification.isRead 
+                      ? 'bg-muted/50 border-muted' 
+                      : 'bg-primary/5 border-primary/20'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 flex-1">
+                      <div className={`p-1 rounded ${
+                        notification.isRead ? 'text-muted-foreground' : 'text-primary'
+                      }`}>
+                        {getNotificationIcon(notification.type)}
                       </div>
-                    )}
-                    
-                    {/* الأزرار العادية */}
-                    <div className="flex gap-1 mt-1">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{notification.title}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatTimeAgo(notification.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
                       {!notification.isRead && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => markAsRead(notification.id)}
-                          className="text-blue-600 hover:text-blue-800 p-1"
-                          title="تحديد كمقروء"
+                          onClick={() => markAsReadMutation.mutate(notification.id)}
+                          disabled={markAsReadMutation.isPending}
                         >
-                          <Check className="w-4 h-4" />
+                          <Check className="w-3 h-3" />
                         </Button>
                       )}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => deleteNotification(notification.id)}
-                        className="text-red-600 hover:text-red-800 p-1"
-                        title="حذف"
+                        onClick={() => deleteNotificationMutation.mutate(notification.id)}
+                        disabled={deleteNotificationMutation.isPending}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <X className="w-3 h-3" />
                       </Button>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
 
-        <DialogFooter className="flex justify-between gap-2">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="flex-1"
-          >
-            إغلاق
-          </Button>
+        <DialogFooter className="flex-row gap-2">
           {unreadCount > 0 && (
             <Button
-              onClick={markAllAsRead}
+              variant="outline"
+              size="sm"
+              onClick={() => markAllAsReadMutation.mutate()}
               disabled={markAllAsReadMutation.isPending}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+              className="flex-1"
             >
               تحديد الكل كمقروء
             </Button>
           )}
+          <Button onClick={onClose} className="flex-1">
+            إغلاق
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

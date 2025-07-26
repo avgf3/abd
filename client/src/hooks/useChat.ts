@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation, Notification } from '@/types/chat';
 import { globalNotificationManager, MessageCacheManager, NetworkOptimizer } from '@/lib/chatOptimization';
@@ -27,39 +27,179 @@ const playNotificationSound = () => {
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.3);
       } catch (error) {
-        }
+        // Silent fail
+      }
     });
   } catch (error) {
-    }
+    // Silent fail
+  }
 };
 
+// State interfaces
+interface ChatState {
+  currentUser: ChatUser | null;
+  onlineUsers: ChatUser[];
+  publicMessages: ChatMessage[];
+  privateConversations: PrivateConversation;
+  ignoredUsers: Set<number>;
+  isConnected: boolean;
+  typingUsers: Set<string>;
+  connectionError: string | null;
+  newMessageSender: ChatUser | null;
+  isLoading: boolean;
+  notifications: Notification[];
+  currentRoomId: string;
+  roomMessages: Record<string, ChatMessage[]>;
+  showKickCountdown: boolean;
+}
+
+// Action types
+type ChatAction = 
+  | { type: 'SET_CURRENT_USER'; payload: ChatUser | null }
+  | { type: 'SET_ONLINE_USERS'; payload: ChatUser[] }
+  | { type: 'ADD_PUBLIC_MESSAGE'; payload: ChatMessage }
+  | { type: 'SET_PUBLIC_MESSAGES'; payload: ChatMessage[] }
+  | { type: 'ADD_PRIVATE_MESSAGE'; payload: { userId: number; message: ChatMessage } }
+  | { type: 'SET_CONNECTION_STATUS'; payload: boolean }
+  | { type: 'SET_TYPING_USERS'; payload: Set<string> }
+  | { type: 'SET_CONNECTION_ERROR'; payload: string | null }
+  | { type: 'SET_NEW_MESSAGE_SENDER'; payload: ChatUser | null }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'ADD_NOTIFICATION'; payload: Notification }
+  | { type: 'SET_ROOM'; payload: string }
+  | { type: 'ADD_ROOM_MESSAGE'; payload: { roomId: string; message: ChatMessage } }
+  | { type: 'SET_SHOW_KICK_COUNTDOWN'; payload: boolean }
+  | { type: 'IGNORE_USER'; payload: number }
+  | { type: 'UNIGNORE_USER'; payload: number };
+
+// Initial state
+const initialState: ChatState = {
+  currentUser: null,
+  onlineUsers: [],
+  publicMessages: [],
+  privateConversations: {},
+  ignoredUsers: new Set(),
+  isConnected: false,
+  typingUsers: new Set(),
+  connectionError: null,
+  newMessageSender: null,
+  isLoading: false,
+  notifications: [],
+  currentRoomId: 'general',
+  roomMessages: {},
+  showKickCountdown: false
+};
+
+// Reducer function
+function chatReducer(state: ChatState, action: ChatAction): ChatState {
+  switch (action.type) {
+    case 'SET_CURRENT_USER':
+      return { ...state, currentUser: action.payload };
+    
+    case 'SET_ONLINE_USERS':
+      return { ...state, onlineUsers: action.payload };
+    
+    case 'ADD_PUBLIC_MESSAGE':
+      return { 
+        ...state, 
+        publicMessages: [...state.publicMessages, action.payload] 
+      };
+    
+    case 'SET_PUBLIC_MESSAGES':
+      return { ...state, publicMessages: action.payload };
+    
+    case 'ADD_PRIVATE_MESSAGE':
+      const { userId, message } = action.payload;
+      return {
+        ...state,
+        privateConversations: {
+          ...state.privateConversations,
+          [userId]: [...(state.privateConversations[userId] || []), message]
+        }
+      };
+    
+    case 'SET_CONNECTION_STATUS':
+      return { ...state, isConnected: action.payload };
+    
+    case 'SET_TYPING_USERS':
+      return { ...state, typingUsers: action.payload };
+    
+    case 'SET_CONNECTION_ERROR':
+      return { ...state, connectionError: action.payload };
+    
+    case 'SET_NEW_MESSAGE_SENDER':
+      return { ...state, newMessageSender: action.payload };
+    
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload };
+    
+    case 'ADD_NOTIFICATION':
+      return { 
+        ...state, 
+        notifications: [...state.notifications, action.payload] 
+      };
+    
+    case 'SET_ROOM':
+      const currentMessages = state.roomMessages[action.payload] || [];
+      return { 
+        ...state, 
+        currentRoomId: action.payload,
+        publicMessages: currentMessages
+      };
+    
+    case 'ADD_ROOM_MESSAGE':
+      const { roomId, message: roomMessage } = action.payload;
+      const updatedRoomMessages = {
+        ...state.roomMessages,
+        [roomId]: [...(state.roomMessages[roomId] || []), roomMessage]
+      };
+      
+      // If it's the current room, also update public messages
+      const updatedPublicMessages = roomId === state.currentRoomId
+        ? [...state.publicMessages, roomMessage]
+        : state.publicMessages;
+      
+      return {
+        ...state,
+        roomMessages: updatedRoomMessages,
+        publicMessages: updatedPublicMessages
+      };
+    
+    case 'SET_SHOW_KICK_COUNTDOWN':
+      return { ...state, showKickCountdown: action.payload };
+    
+    case 'IGNORE_USER':
+      return { 
+        ...state, 
+        ignoredUsers: new Set([...state.ignoredUsers, action.payload]) 
+      };
+    
+    case 'UNIGNORE_USER':
+      const newIgnoredUsers = new Set(state.ignoredUsers);
+      newIgnoredUsers.delete(action.payload);
+      return { ...state, ignoredUsers: newIgnoredUsers };
+    
+    default:
+      return state;
+  }
+}
+
 export function useChat() {
-  const [currentUser, setCurrentUser] = useState<ChatUser | null>(null);
-  const [onlineUsers, setOnlineUsers] = useState<ChatUser[]>([]);
-  const [publicMessages, setPublicMessages] = useState<ChatMessage[]>([]);
-  const [privateConversations, setPrivateConversations] = useState<PrivateConversation>({});
-  const [ignoredUsers, setIgnoredUsers] = useState<Set<number>>(new Set());
-  const [isConnected, setIsConnected] = useState(false);
-  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
-  const [connectionError, setConnectionError] = useState<string | null>(null);
-  const [newMessageSender, setNewMessageSender] = useState<ChatUser | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [kickNotification, setKickNotification] = useState<{show: boolean, duration: number}>({show: false, duration: 0});
-  const [blockNotification, setBlockNotification] = useState<{show: boolean, reason: string}>({show: false, reason: ''});
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [showKickCountdown, setShowKickCountdown] = useState(false);
+  const [state, dispatch] = useReducer(chatReducer, initialState);
   
-  // حالة الغرف
-  const [currentRoomId, setCurrentRoomId] = useState<string>('general');
-  const [roomMessages, setRoomMessages] = useState<Record<string, ChatMessage[]>>({});
+  // Socket connection
+  const socket = useRef<Socket | null>(null);
   
-  // تحديث الرسائل العامة عند تغيير الغرفة
-  useEffect(() => {
-    const currentMessages = roomMessages[currentRoomId] || [];
-    setPublicMessages(currentMessages);
-  }, [currentRoomId, roomMessages]);
+  // تحسين الأداء: مدراء التحسين
+  const messageCache = useRef(new MessageCacheManager());
   
-  // إشعارات النقاط والمستويات
+  // Memoized values to prevent unnecessary re-renders
+  const memoizedOnlineUsers = useMemo(() => 
+    state.onlineUsers.filter(user => !state.ignoredUsers.has(user.id)),
+    [state.onlineUsers, state.ignoredUsers]
+  );
+
+  // Notifications state
   const [levelUpNotification, setLevelUpNotification] = useState<{
     show: boolean;
     oldLevel: number;
@@ -76,12 +216,9 @@ export function useChat() {
     show: boolean;
     points: number;
   }>({ show: false, points: 0 });
-  
-  // تحسين الأداء: مدراء التحسين
-  const messageCache = useRef(new MessageCacheManager());
 
-  // فلترة الرسائل غير الصالحة
-  const isValidMessage = (message: ChatMessage): boolean => {
+  // فلترة الرسائل غير الصالحة - محسنة
+  const isValidMessage = useCallback((message: ChatMessage): boolean => {
     // التأكد من وجود بيانات المرسل
     if (!message.sender || !message.sender.username || message.sender.username === 'مستخدم') {
       console.warn('رسالة مرفوضة - بيانات مرسل غير صالحة:', message);
@@ -101,1062 +238,238 @@ export function useChat() {
     }
     
     return true;
-  };
-  const networkOptimizer = useRef(new NetworkOptimizer());
-  const lastMessageTime = useRef<number>(0);
-  
-  const socket = useRef<Socket | null>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const reconnectAttempts = useRef<number>(0);
-  const maxReconnectAttempts = 5;
+  }, []);
 
-  const connect = useCallback((user: ChatUser) => {
-    try {
-      setCurrentUser(user);
-      setConnectionError(null);
-      setIsLoading(true);
+  // Socket event handlers - مُحسّنة
+  const setupSocketListeners = useCallback((user: ChatUser) => {
+    if (!socket.current) return;
+
+    socket.current.on('connect', () => {
+      console.log('🔗 متصل بالخادم');
+      dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
       
-      // تنظيف الاتصال السابق
-      if (socket.current) {
-        socket.current.removeAllListeners();
-        socket.current.disconnect();
-        socket.current = null;
+      // إرسال بيانات المصادقة
+      socket.current?.emit('auth', {
+        userId: user.id,
+        username: user.username,
+        userType: user.userType
+      });
+    });
+
+    socket.current.on('disconnect', (reason) => {
+      console.log('🔌 انقطع الاتصال:', reason);
+      dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+      
+      if (reason === 'io server disconnect') {
+        socket.current?.connect();
       }
-      
-      // إعادة تعيين المتغيرات
-      reconnectAttempts.current = 0;
-      
-      // إنشاء اتصال Socket.IO - إعدادات محسنة ومبسطة
-      const getSocketUrl = () => {
-        // في الإنتاج، استخدم نفس الخادم
-        if (process.env.NODE_ENV === 'production') {
-          return window.location.origin;
-        }
-        
-        // للتطوير المحلي - استخدم localhost مباشرة
-        const port = window.location.port || '5000';
-        return `http://localhost:${port}`;
-      };
+    });
 
-      const socketUrl = getSocketUrl();
-      socket.current = io(socketUrl, {
-        // إعدادات الاتصال الأساسية
-        autoConnect: true,
-        forceNew: true,
-        
-        // إعدادات إعادة الاتصال المحسنة
-        reconnection: true,
-        reconnectionAttempts: 5,     // عدد أقل من المحاولات
-        reconnectionDelay: 2000,     // تأخير أطول قليلاً
-        reconnectionDelayMax: 10000, // حد أقصى أطول
-        timeout: 15000,              // timeout أقصر
-        
-        // إعدادات النقل المبسطة
-        transports: ['websocket', 'polling'],
-        upgrade: true,
-        
-        // إعدادات الأمان
-        secure: window.location.protocol === 'https:',
-        withCredentials: false, // تبسيط الأمان
-        
-        // إعدادات ping/pong
-        // pingInterval: 20000, // إزالة هذا لأنه غير مدعوم في socket.io-client
-      });
-      
-      // معالج الاتصال المحسن
-      socket.current.on('connect', () => {
-        setIsConnected(true);
-        setConnectionError(null);
-        setIsLoading(false);
-        reconnectAttempts.current = 0;
-        
-        // إرسال authentication مع معلومات إضافية
-        socket.current?.emit('auth', {
-          userId: user.id,
-          username: user.username,
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent
-        });
-      });
-
-      // معالج أخطاء الاتصال
-      socket.current.on('connect_error', (error) => {
-        console.error('❌ خطأ في الاتصال:', error.message);
-        setConnectionError(`فشل الاتصال: ${error.message}`);
-        setIsConnected(false);
-        setIsLoading(false);
-        
-        reconnectAttempts.current++;
-        if (reconnectAttempts.current >= maxReconnectAttempts) {
-          console.error('🚫 تم الوصول للحد الأقصى من محاولات إعادة الاتصال');
-          setConnectionError('فشل الاتصال نهائياً - يرجى إعادة تحديث الصفحة');
-        }
-      });
-
-      // معالج قطع الاتصال
-      socket.current.on('disconnect', (reason) => {
-        console.warn('🔌 تم قطع الاتصال:', reason);
-        setIsConnected(false);
-        
-        if (reason === 'io server disconnect') {
-          // الخادم قطع الاتصال، حاول الاتصال مرة أخرى
-          socket.current?.connect();
-        }
-      });
-
-      // مراقبة تغيير transport
-      socket.current.io.engine.on('upgrade', () => {
-        });
-
-      socket.current.io.engine.on('upgradeError', (error) => {
-        console.warn('⚠️ فشل ترقية WebSocket، الاستمرار مع polling:', error.message);
-      });
-
-      // استقبال رسالة الترحيب من الخادم
-      socket.current.on('connected', (data) => {
-        setIsLoading(false);
-      });
-
-      // معالجة ping/pong محسنة للحفاظ على الاتصال
-      socket.current.on('ping', (data) => {
-        const pongData = { 
-          timestamp: Date.now(), 
-          userId: user.id,
-          received: data?.timestamp 
-        };
-        socket.current?.emit('pong', pongData);
-      });
-
-      socket.current.on('message', (message: WebSocketMessage) => {
-        try {
-          switch (message.type) {
-            case 'error':
-              // عرض رسالة خطأ من نظام مكافحة السبام
-              console.error('خطأ من الخادم:', message.message);
-              break;
-              
-            case 'warning':
-              // عرض تحذير من نظام مكافحة السبام
-              console.warn('تحذير:', message.message);
-              break;
-              
-            case 'onlineUsers':
-              if (message.users) {
-                // فلترة المستخدمين المتجاهلين فقط (إظهار المخفيين للإدمن والمالك)
-                const filteredUsers = message.users.filter((chatUser: ChatUser) => {
-                  // إظهار جميع المستخدمين للإدمن والمالك
-                  if (user.userType === 'admin' || user.userType === 'owner') {
-                    return !ignoredUsers.has(chatUser.id);
-                  }
-                  // للمستخدمين العاديين، إخفاء المستخدمين المخفيين والمتجاهلين
-                  return !ignoredUsers.has(chatUser.id) && !chatUser.isHidden;
-                });
-                setOnlineUsers(filteredUsers);
-              }
-              break;
-              
-            case 'userVisibilityChanged':
-              // تحديث قائمة المتصلين عند تغيير حالة الإخفاء
-              if (message.userId && message.isHidden !== undefined) {
-                setOnlineUsers(prev => {
-                  if (message.isHidden) {
-                    // إزالة المستخدم من القائمة إذا أصبح مخفي
-                    return prev.filter(user => user.id !== message.userId);
-                  } else {
-                    // إضافة المستخدم للقائمة إذا أصبح ظاهر (إذا لم يكن موجود بالفعل)
-                    const exists = prev.some(user => user.id === message.userId);
-                    if (!exists) {
-                      // طلب تحديث قائمة المستخدمين من الخادم
-                      socket.current?.emit('requestOnlineUsers');
-                    }
-                    return prev;
-                  }
-                });
-              }
-              break;
-              
-            case 'newMessage':
-              if (message.message && typeof message.message === 'object' && !message.message.isPrivate) {
-                // فحص صحة الرسالة أولاً
-                if (!isValidMessage(message.message as ChatMessage)) {
-                  console.warn('رسالة مرفوضة من الخادم:', message.message);
-                  break;
+    socket.current.on('message', (message: WebSocketMessage) => {
+      try {
+        switch (message.type) {
+          case 'error':
+            console.error('خطأ من الخادم:', message.message);
+            break;
+            
+          case 'warning':
+            console.warn('تحذير:', message.message);
+            break;
+            
+          case 'onlineUsers':
+            if (message.users) {
+              const filteredUsers = message.users.filter((chatUser: ChatUser) => {
+                if (user.userType === 'admin' || user.userType === 'owner') {
+                  return !state.ignoredUsers.has(chatUser.id);
                 }
+                return !state.ignoredUsers.has(chatUser.id) && !chatUser.isHidden;
+              });
+              dispatch({ type: 'SET_ONLINE_USERS', payload: filteredUsers });
+            }
+            break;
+            
+          case 'newMessage':
+            if (message.message && typeof message.message === 'object' && !message.message.isPrivate) {
+              if (!isValidMessage(message.message as ChatMessage)) {
+                console.warn('رسالة مرفوضة من الخادم:', message.message);
+                break;
+              }
+              
+              if (!state.ignoredUsers.has(message.message.senderId)) {
+                const chatMessage = message.message as ChatMessage;
+                const messageRoomId = (chatMessage as any).roomId || 'general';
                 
-                // فحص إذا كان المرسل مُتجاهل
-                if (!ignoredUsers.has(message.message.senderId)) {
-                  const chatMessage = message.message as ChatMessage;
-                  const messageRoomId = (chatMessage as any).roomId || 'general';
-                  
-                  // إضافة الرسالة للغرفة المناسبة
-                  setRoomMessages(prev => ({
-                    ...prev,
-                    [messageRoomId]: [...(prev[messageRoomId] || []), chatMessage]
-                  }));
-                  
-                  // إضافة للرسائل العامة إذا كانت من الغرفة الحالية
-                  if (messageRoomId === currentRoomId) {
-                    setPublicMessages(prev => [...prev, chatMessage]);
-                    // تشغيل صوت الإشعار للرسائل من الآخرين
-                    if (chatMessage.senderId !== user.id) {
-                      playNotificationSound();
-                    }
-                  }
-                }
-              }
-              break;
-              
-            case 'privateMessage':
-              if (message.message && typeof message.message === 'object' && message.message.isPrivate) {
-                // فحص صحة الرسالة أولاً
-                if (!isValidMessage(message.message as ChatMessage)) {
-                  console.warn('رسالة خاصة مرفوضة من الخادم:', message.message);
-                  break;
-                }
-                
-                const otherUserId = message.message.senderId === user.id 
-                  ? message.message.receiverId! 
-                  : message.message.senderId;
-                
-                // فحص إذا كان المرسل مُتجاهل - لا تظهر رسائله الخاصة
-                if (!ignoredUsers.has(message.message.senderId)) {
-                  setPrivateConversations(prev => ({
-                    ...prev,
-                    [otherUserId]: [...(prev[otherUserId] || []), message.message as ChatMessage]
-                  }));
-                  
-                  // Play notification sound for new private messages from others
-                  if (message.message.senderId !== user.id) {
-                    playNotificationSound();
-                    
-                    // تعيين المرسل لإظهار التنبيه
-                    if ((message.message as ChatMessage).sender) {
-                      setNewMessageSender((message.message as ChatMessage).sender!);
-                    }
-                    
-                    // إشعار مرئي في المتصفح
-                    if ('Notification' in window && Notification.permission === 'granted') {
-                      new Notification('رسالة خاصة جديدة 📱', {
-                        body: `${(message.message as ChatMessage).sender?.username}: ${(message.message as ChatMessage).content.slice(0, 50)}...`,
-                        icon: '/favicon.ico'
-                      });
-                    }
-                  }
-                }
-              }
-              break;
-              
-            case 'userJoined':
-              if (message.user) {
-                setOnlineUsers(prev => {
-                  const exists = prev.find(u => u.id === message.user!.id);
-                  if (exists) {
-                    return prev;
-                  }
-                  
-                  // فحص ما إذا كان المستخدم يجب إظهاره
-                  // للإدمن والمالك: إظهار جميع المستخدمين إلا المتجاهلين
-                  // للمستخدمين العاديين: إظهار المستخدمين غير المخفيين وغير المتجاهلين
-                  const shouldShow = (user.userType === 'admin' || user.userType === 'owner') || 
-                                   (!message.user!.isHidden);
-                  const isIgnored = ignoredUsers.has(message.user!.id);
-                  
-                  if (shouldShow && !isIgnored) {
-                    return [...prev, message.user!];
-                  }
-                  
-                  return prev;
-                });
-              }
-              break;
-              
-            case 'userLeft':
-              if (message.userId) {
-                setOnlineUsers(prev => prev.filter(u => u.id !== message.userId));
-              }
-              break;
-              
-            case 'usernameColorChanged':
-              // تحديث لون اسم المستخدم في الوقت الفعلي
-              if (message.userId && message.color) {
-                setOnlineUsers(prev => 
-                  prev.map(user => 
-                    user.id === message.userId 
-                      ? { ...user, usernameColor: message.color }
-                      : user
-                  )
-                );
-                
-                // تحديث لون المستخدم الحالي إذا كان هو من غير اللون
-                if (currentUser && currentUser.id === message.userId) {
-                  setCurrentUser(prev => prev ? { ...prev, usernameColor: message.color } : prev);
-                }
-              }
-              break;
-              
-            case 'profileEffectChanged':
-              // تحديث تأثير البروفايل ولون الاسم معاً
-              if (message.userId) {
-                setOnlineUsers(prev => 
-                  prev.map(user => 
-                    user.id === message.userId 
-                      ? { 
-                          ...user, 
-                          profileEffect: message.profileEffect, 
-                          usernameColor: message.usernameColor 
-                        }
-                      : user
-                  )
-                );
-                
-                // تحديث المستخدم الحالي
-                if (currentUser && currentUser.id === message.userId) {
-                  setCurrentUser(prev => prev ? { 
-                    ...prev, 
-                    profileEffect: message.profileEffect, 
-                    usernameColor: message.usernameColor 
-                  } : prev);
-                }
-                
-                // تحديث الرسائل بلون الاسم الجديد
-                setPublicMessages(prev => prev.map(msg => 
-                  msg.sender && msg.sender.id === message.userId
-                    ? { 
-                        ...msg, 
-                        sender: { 
-                          ...msg.sender, 
-                          profileEffect: message.profileEffect, 
-                          usernameColor: message.usernameColor 
-                        } 
-                      }
-                    : msg
-                ));
-              }
-              break;
-
-            case 'theme_update':
-              // تحديث ثيم المستخدم في الوقت الفعلي
-              if (message.userId && message.userTheme) {
-                setOnlineUsers(prev => 
-                  prev.map(user => 
-                    user.id === message.userId 
-                      ? { ...user, userTheme: message.userTheme }
-                      : user
-                  )
-                );
-                
-                // تحديث ثيم المستخدم الحالي إذا كان هو من غير الثيم
-                if (currentUser && currentUser.id === message.userId) {
-                  setCurrentUser(prev => prev ? { ...prev, userTheme: message.userTheme } : prev);
-                }
-              }
-              break;
-              
-            case 'moderationAction':
-              // التعامل مع إجراءات الإدارة
-              if (message.targetUserId === user.id) {
-                // المستخدم الحالي تم التأثير عليه
-                switch (message.action) {
-                  case 'muted':
-                    console.warn('⚠️ تم كتمك من الدردشة العامة');
-                    break;
-                  case 'banned':
-                    console.warn('⛔ تم طردك من الدردشة لمدة 15 دقيقة');
-                    break;
-                  case 'blocked':
-                    console.warn('🚫 تم حجبك من الدردشة نهائياً');
-                    break;
-                }
-              }
-              
-              // تحديث قائمة المستخدمين المتصلين لعكس التغييرات
-              setOnlineUsers(prev => 
-                prev.map(u => 
-                  u.id === message.targetUserId 
-                    ? { 
-                        ...u, 
-                        isMuted: message.action === 'muted' ? true : u.isMuted,
-                        isBanned: message.action === 'banned' ? true : u.isBanned,
-                        isBlocked: message.action === 'blocked' ? true : u.isBlocked
-                      }
-                    : u
-                )
-              );
-              break;
-              
-            case 'typing':
-              if (message.username && message.isTyping !== undefined) {
-                setTypingUsers(prev => {
-                  const newSet = new Set(prev);
-                  if (message.isTyping) {
-                    newSet.add(message.username!);
-                  } else {
-                    newSet.delete(message.username!);
-                  }
-                  return newSet;
+                dispatch({ 
+                  type: 'ADD_ROOM_MESSAGE', 
+                  payload: { roomId: messageRoomId, message: chatMessage }
                 });
                 
-                // Clear typing indicator after 3 seconds
-                if (message.isTyping) {
-                  setTimeout(() => {
-                    setTypingUsers(prev => {
-                      const newSet = new Set(prev);
-                      newSet.delete(message.username!);
-                      return newSet;
-                    });
-                  }, 3000);
+                // تشغيل صوت الإشعار للرسائل من الآخرين
+                if (chatMessage.senderId !== user.id) {
+                  playNotificationSound();
                 }
               }
-              break;
-              
-            case 'notification':
-              // إضافة إشعار للمستخدم فقط
-              if (message.targetUserId === user.id) {
-                setNotifications(prev => [...prev, {
-                  id: Date.now(),
-                  type: (message.notificationType === 'system' || message.notificationType === 'friend' || 
-                        message.notificationType === 'moderation' || message.notificationType === 'message') 
-                        ? message.notificationType : 'system',
-                  username: message.moderatorName || 'النظام',
-                  content: typeof message.message === 'string' ? message.message : 'إشعار نظام',
-                  timestamp: new Date()
-                }]);
+            }
+            break;
+            
+          case 'privateMessage':
+            if (message.message && typeof message.message === 'object' && message.message.isPrivate) {
+              if (!isValidMessage(message.message as ChatMessage)) {
+                console.warn('رسالة خاصة مرفوضة من الخادم:', message.message);
+                break;
               }
-              break;
-
-            case 'systemMessage':
-              // إضافة رسالة النظام للدردشة العامة
-              const systemMessage: ChatMessage = {
-                id: Date.now(),
-                senderId: 0,
-                content: typeof message.message === 'string' ? message.message : 'رسالة نظام',
-                messageType: 'text',
-                isPrivate: false,
-                timestamp: new Date(),
-                sender: {
-                  id: 0,
-                  username: 'النظام',
-                  userType: 'admin',
-                  role: 'admin',
-                  profileImage: null,
-                  profileBackgroundColor: '#3c0d0d',
-                  isOnline: true,
-                  isHidden: false,
-                  lastSeen: null,
-                  joinDate: new Date(),
-                  createdAt: new Date(),
-                  isMuted: false,
-                  muteExpiry: null,
-                  isBanned: false,
-                  banExpiry: null,
-                  isBlocked: false,
-                  ignoredUsers: [],
-                  usernameColor: '#FF0000',
-                  userTheme: 'default'
-                } as ChatUser
-              };
               
-              setPublicMessages(prev => [...prev, systemMessage]);
+              const otherUserId = message.message.senderId === user.id 
+                ? message.message.receiverId! 
+                : message.message.senderId;
               
-              // إذا تم تطبيق إجراء إداري على المستخدم الحالي
-              if (message.targetUserId === user.id) {
-                if (message.action === 'muted') {
-                  // إضافة إشعار إلى تبويب الإشعارات فقط
-                  setNotifications(prev => [...prev, {
-                    id: Date.now(),
-                    type: 'system',
-                    username: 'النظام',
-                    content: 'تم كتمك من الدردشة العامة',
-                    timestamp: new Date()
-                  }]);
-                } else if (message.action === 'unmuted') {
+              if (!state.ignoredUsers.has(message.message.senderId)) {
+                dispatch({
+                  type: 'ADD_PRIVATE_MESSAGE',
+                  payload: { userId: otherUserId, message: message.message as ChatMessage }
+                });
+                
+                if (message.message.senderId !== user.id) {
+                  playNotificationSound();
+                  dispatch({ 
+                    type: 'SET_NEW_MESSAGE_SENDER', 
+                    payload: (message.message as ChatMessage).sender! 
+                  });
+                  
+                  // إشعار مرئي في المتصفح
                   if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification('تم إلغاء الكتم 🔊', {
-                      body: 'يمكنك الآن إرسال رسائل في الدردشة العامة',
+                    new Notification('رسالة خاصة جديدة 📱', {
+                      body: `${(message.message as ChatMessage).sender?.username}: ${(message.message as ChatMessage).content.slice(0, 50)}...`,
                       icon: '/favicon.ico'
                     });
                   }
-                } else if (message.action === 'banned') {
-                  setKickNotification({ show: true, duration: message.duration || 15 });
-                } else if (message.action === 'blocked') {
-                  setBlockNotification({ show: true, reason: message.reason || 'مخالفة قوانين الدردشة' });
-                  setTimeout(() => {
-                    window.location.reload();
-                  }, 1000);
                 }
               }
-              break;
-
-            case 'kicked':
-              if (message.targetUserId === user.id) {
-                setKickNotification({ 
-                  show: true, 
-                  duration: message.duration || 15 
-                });
-              }
-              break;
-
-            case 'blocked':
-              if (message.targetUserId === user.id) {
-                setBlockNotification({ 
-                  show: true, 
-                  reason: message.reason || 'مخالفة قوانين الموقع' 
-                });
-              }
-              break;
-              
-            case 'friendRequest':
-              // تنبيه طلب صداقة جديد
-              if (message.targetUserId === user.id) {
-                // إشعار مرئي في المتصفح
-                if ('Notification' in window && Notification.permission === 'granted') {
-                  new Notification('طلب صداقة جديد 👥', {
-                    body: `${message.senderUsername} يريد إضافتك كصديق`,
-                    icon: '/favicon.ico'
-                  });
-                }
-                
-                // صوت تنبيه
-                playNotificationSound();
-                
-                // تحديث فوري للإشعارات والأصدقاء
-                // هذا سيؤدي لإعادة جلب البيانات من الخادم فوراً
-                setTimeout(() => {
-                  window.dispatchEvent(new CustomEvent('friendRequestReceived', {
-                    detail: { senderId: message.senderId, senderName: message.senderUsername }
-                  }));
-                }, 100);
-              }
-              break;
-              
-            case 'friendRequestAccepted':
-              // إشعار قبول طلب الصداقة
-              if (message.targetUserId === user.id) {
-                // إشعار مرئي
-                if ('Notification' in window && Notification.permission === 'granted') {
-                  new Notification('تم قبول طلب الصداقة ✅', {
-                    body: `${message.acceptedBy} قبل طلب صداقتك`,
-                    icon: '/favicon.ico'
-                  });
-                }
-                
-                // صوت تنبيه
-                playNotificationSound();
-                
-                // تحديث فوري لقائمة الأصدقاء
-                setTimeout(() => {
-                  window.dispatchEvent(new CustomEvent('friendRequestAccepted', {
-                    detail: { friendId: message.friendId, friendName: message.acceptedBy }
-                  }));
-                }, 100);
-              }
-              break;
-
-            case 'promotion':
-              if (message.newRole && user.id) {
-                // إشعار مرئي
-                if ('Notification' in window && Notification.permission === 'granted') {
-                  new Notification('ترقية جديدة! 🎉', {
-                    body: typeof message.message === 'string' ? message.message : message.message?.content || 'ترقية جديدة',
-                    icon: '/favicon.ico'
-                  });
-                }
-                
-                // صوت تنبيه
-                playNotificationSound();
-                
-                // إضافة إشعار للواجهة
-                setNotifications(prev => [...prev, {
-                  id: Date.now(),
-                  type: 'system',
-                  username: 'النظام',
-                  content: typeof message.message === 'string' ? message.message : 'تم ترقيتك',
-                  timestamp: new Date()
-                }]);
-              }
-              break;
-              
-            case 'levelUp':
-              // إشعار ترقية المستوى
-              if (message.oldLevel && message.newLevel && message.levelInfo) {
-                setLevelUpNotification({
-                  show: true,
-                  oldLevel: message.oldLevel,
-                  newLevel: message.newLevel,
-                  levelInfo: message.levelInfo
-                });
-                
-                // إشعار مرئي في المتصفح
-                if ('Notification' in window && Notification.permission === 'granted') {
-                  new Notification('ترقية مستوى! 🎉', {
-                    body: `وصلت للمستوى ${message.newLevel}: ${message.levelInfo?.title}`,
-                    icon: '/favicon.ico'
-                  });
-                }
-                
-                playNotificationSound();
-              }
-              break;
-              
-            case 'achievement':
-              // إشعار إنجاز جديد
-              if (message.message) {
-                setAchievementNotification({
-                  show: true,
-                  message: typeof message.message === 'string' ? message.message : 'إنجاز جديد!'
-                });
-                
-                // إشعار مرئي في المتصفح
-                if ('Notification' in window && Notification.permission === 'granted') {
-                  new Notification('إنجاز جديد! 🏆', {
-                    body: typeof message.message === 'string' ? message.message : 'إنجاز جديد!',
-                    icon: '/favicon.ico'
-                  });
-                }
-                
-                playNotificationSound();
-              }
-              break;
-              
-            case 'dailyBonus':
-              // إشعار المكافأة اليومية
-              if (message.points) {
-                setDailyBonusNotification({
-                  show: true,
-                  points: message.points
-                });
-                
-                // إشعار مرئي في المتصفح
-                if ('Notification' in window && Notification.permission === 'granted') {
-                  new Notification('مكافأة يومية! 🎁', {
-                    body: `حصلت على ${message.points} نقطة!`,
-                    icon: '/favicon.ico'
-                  });
-                }
-                
-                playNotificationSound();
-              }
-              break;
-              
-            case 'pointsAdded':
-              // إشعار إضافة نقاط من الإدارة
-              if (message.points && message.message) {
-                // إضافة إشعار للواجهة
-                setNotifications(prev => [...prev, {
-                  id: Date.now(),
-                  type: 'system',
-                  username: 'الإدارة',
-                  content: typeof message.message === 'string' ? message.message : 'حصلت على نقاط من الإدارة',
-                  timestamp: new Date()
-                }]);
-                
-                // إشعار مرئي في المتصفح
-                if ('Notification' in window && Notification.permission === 'granted') {
-                  new Notification('نقاط من الإدارة! 💎', {
-                    body: typeof message.message === 'string' ? message.message : 'حصلت على نقاط',
-                    icon: '/favicon.ico'
-                  });
-                }
-                
-                playNotificationSound();
-              }
-              break;
-              
-            case 'pointsReceived':
-              // إشعار استلام نقاط من مستخدم آخر
-              if (message.points && message.senderName) {
-                // إضافة إشعار للواجهة
-                setNotifications(prev => [...prev, {
-                  id: Date.now(),
-                  type: 'system',
-                  username: message.senderName || 'مستخدم',
-                  content: `🎁 تم استلام ${message.points} نقطة من ${message.senderName}`,
-                  timestamp: new Date()
-                }]);
-                
-                // إشعار مرئي في المتصفح
-                if ('Notification' in window && Notification.permission === 'granted') {
-                  new Notification('نقاط جديدة! 🎁', {
-                    body: `تم استلام ${message.points} نقطة من ${message.senderName}`,
-                    icon: '/favicon.ico'
-                  });
-                }
-                
-                playNotificationSound();
-              }
-              break;
-              
-            case 'pointsTransfer':
-              // إشعار في المحادثة العامة لإرسال النقاط
-              if (message.points && message.senderName && message.receiverName) {
-                // إضافة رسالة نظام في المحادثة العامة
-                const systemMessage: ChatMessage = {
-                  id: Date.now(),
-                  senderId: 0,
-                  content: `💰 تم إرسال ${message.points} نقطة من ${message.senderName} إلى ${message.receiverName}`,
-                  messageType: 'text',
-                  isPrivate: false,
-                  timestamp: new Date(),
-                  sender: {
-                    id: 0,
-                    username: 'النظام',
-                    userType: 'admin',
-                    role: 'admin',
-                    profileBackgroundColor: '#3c0d0d',
-                    isOnline: true,
-                    isHidden: false,
-                    lastSeen: null,
-                    joinDate: new Date(),
-                    createdAt: new Date(),
-                    isMuted: false,
-                    muteExpiry: null,
-                    isBanned: false,
-                    banExpiry: null,
-                    isBlocked: false,
-                    ignoredUsers: [],
-                    usernameColor: '#dc2626',
-                    userTheme: 'default',
-                    points: 0,
-                    level: 1,
-                    totalPoints: 0,
-                    levelProgress: 0
-                  }
-                };
-                
-                setPublicMessages(prev => {
-                  const filtered = prev.filter(isValidMessage);
-                  const newMessages = [...filtered, systemMessage];
-                  return newMessages.slice(-200); // الاحتفاظ بآخر 200 رسالة
-                });
-              }
-              break;
-              
-            case 'userUpdated':
-              if (message.user) {
-                setOnlineUsers(prev => 
-                  prev.map(u => u.id === message.user!.id ? message.user! : u)
-                );
-                if (message.user.id === user.id) {
-                  setCurrentUser(message.user);
-                }
-              }
-              break;
-          }
-        } catch (error) {
-          console.error('خطأ في معالجة رسالة Socket.IO:', error);
-        }
-      });
-
-      socket.current.on('disconnect', (reason) => {
-        setIsConnected(false);
-        
-        // تنظيف الحالة المحلية فوراً
-        setCurrentUser(null);
-        setOnlineUsers([]);
-        setTypingUsers(new Set());
-        
-        // معالجة أسباب مختلفة لقطع الاتصال
-        if (reason === 'io server disconnect') {
-          // الخادم قطع الاتصال عمداً (مثل حظر المستخدم)
-          setConnectionError('تم قطع الاتصال من الخادم');
-          // لا نعيد الاتصال تلقائياً
-          return;
-        }
-        
-        if (reason === 'transport close' || reason === 'ping timeout') {
-          // قطع اتصال غير متوقع - نحاول إعادة الاتصال
-          setConnectionError('انقطع الاتصال - محاولة إعادة الاتصال...');
-          
-          // إعادة الاتصال بعد تأخير قصير
-          setTimeout(() => {
-            if (socket.current && !socket.current.connected) {
-              socket.current.connect();
             }
-          }, 2000);
+            break;
+
+          case 'typing':
+            if (message.username && message.isTyping !== undefined) {
+              dispatch({
+                type: 'SET_TYPING_USERS',
+                payload: message.isTyping 
+                  ? new Set([...state.typingUsers, message.username])
+                  : new Set([...state.typingUsers].filter(u => u !== message.username))
+              });
+            }
+            break;
+
+          case 'kicked':
+            dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
+            break;
+
+          default:
+            break;
         }
+      } catch (error) {
+        console.error('خطأ في معالجة الرسالة:', error);
+      }
+    });
+  }, [state.ignoredUsers, state.typingUsers, isValidMessage]);
+
+  // Connect function - محسنة
+  const connect = useCallback((user: ChatUser) => {
+    dispatch({ type: 'SET_CURRENT_USER', payload: user });
+    dispatch({ type: 'SET_LOADING', payload: true });
+
+    try {
+      if (socket.current?.connected) {
+        socket.current.disconnect();
+      }
+
+      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
+      
+      socket.current = io(serverUrl, {
+        transports: ['websocket', 'polling'],
+        upgrade: true,
+        rememberUpgrade: true,
+        timeout: 10000,
+        forceNew: true
       });
 
-      socket.current.on('connect_error', (error) => {
-        console.error('خطأ اتصال Socket.IO:', error);
-        setIsConnected(false);
-        setConnectionError('خطأ في الاتصال مع الخادم');
-      });
-      
+      setupSocketListeners(user);
+
     } catch (error) {
       console.error('خطأ في الاتصال:', error);
-      setIsConnected(false);
-      setConnectionError('خطأ في إنشاء الاتصال');
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل في الاتصال بالخادم' });
     }
+  }, [setupSocketListeners]);
+
+  // Join room function
+  const joinRoom = useCallback((roomId: string) => {
+    dispatch({ type: 'SET_ROOM', payload: roomId });
+    socket.current?.emit('joinRoom', { roomId });
   }, []);
 
+  // Send message function - محسنة
+  const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number) => {
+    if (!state.currentUser || !socket.current?.connected) return;
+
+    const messageData = {
+      senderId: state.currentUser.id,
+      content,
+      messageType,
+      isPrivate: !!receiverId,
+      receiverId,
+      roomId: state.currentRoomId
+    };
+
+    socket.current.emit('message', messageData);
+  }, [state.currentUser, state.currentRoomId]);
+
+  // Disconnect function
   const disconnect = useCallback(() => {
-    // Clear reconnection attempts
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-    reconnectAttempts.current = maxReconnectAttempts; // Prevent auto-reconnect
-    
     if (socket.current) {
       socket.current.disconnect();
+      socket.current = null;
     }
     
-    setCurrentUser(null);
-    setIsConnected(false);
-    setOnlineUsers([]);
-    setPublicMessages([]);
-    setPrivateConversations({});
-    setTypingUsers(new Set());
-    setConnectionError(null);
+    dispatch({ type: 'SET_CURRENT_USER', payload: null });
+    dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+    dispatch({ type: 'SET_ONLINE_USERS', payload: [] });
+    dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: [] });
   }, []);
 
-  // إرسال رسالة عامة محسن
-  const sendMessage = useCallback(async (content: string, messageType: string = 'text') => {
-    if (!currentUser || !socket.current || !socket.current.connected) {
-      throw new Error('غير متصل بالخادم');
-    }
-
-    // فحص التأخير الزمني
-    const now = Date.now();
-    if (now - lastMessageTime.current < 500) {
-      throw new Error('الرجاء الانتظار قبل إرسال رسالة أخرى');
-    }
-    lastMessageTime.current = now;
-
-    try {
-      const messageData = {
-        senderId: currentUser.id,
-        content: content.trim(),
-        messageType,
-        isPrivate: false
-      };
-
-      // إرسال إلى الخادم عبر API أولاً
-      const response = await fetch('/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(messageData)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'فشل في إرسال الرسالة');
-      }
-
-      const result = await response.json();
-      
-      // إضافة الرسالة مباشرة للواجهة للحصول على رد فعل فوري
-      const newMessage: ChatMessage = {
-        id: result.data.id || Date.now(),
-        senderId: currentUser.id,
-        content: content.trim(),
-        messageType: messageType as 'text' | 'image',
-        isPrivate: false,
-        timestamp: new Date(),
-        sender: currentUser
-      };
-      
-      setPublicMessages(prev => [...prev, newMessage]);
-      
-      return result.data;
-    } catch (error: any) {
-      console.error('❌ خطأ في إرسال الرسالة:', error);
-      throw error;
-    }
-  }, [currentUser]);
-
-  // إرسال رسالة خاصة محسن
-  const sendPrivateMessage = useCallback(async (receiverId: number, content: string, messageType: string = 'text') => {
-    if (!currentUser || !socket.current || !socket.current.connected) {
-      throw new Error('غير متصل بالخادم');
-    }
-
-    try {
-      const messageData = {
-        senderId: currentUser.id,
-        receiverId,
-        content: content.trim(),
-        messageType,
-        isPrivate: true
-      };
-
-      // إرسال إلى الخادم عبر API
-      const response = await fetch('/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(messageData)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'فشل في إرسال الرسالة');
-      }
-
-      const result = await response.json();
-      
-      // إضافة الرسالة مباشرة للمحادثة الخاصة
-      const newMessage: ChatMessage = {
-        id: result.data.id || Date.now(),
-        senderId: currentUser.id,
-        receiverId,
-        content: content.trim(),
-        messageType: messageType as 'text' | 'image',
-        isPrivate: true,
-        timestamp: new Date(),
-        sender: currentUser
-      };
-      
-      setPrivateConversations(prev => ({
-        ...prev,
-        [receiverId]: [...(prev[receiverId] || []), newMessage]
-      }));
-      
-      return result.data;
-    } catch (error: any) {
-      console.error('❌ خطأ في إرسال الرسالة الخاصة:', error);
-      throw error;
-    }
-  }, [currentUser]);
-
-  const sendTyping = useCallback((isTyping: boolean) => {
-    if (socket.current && socket.current.connected && currentUser) {
-      socket.current.emit('typing', {
-        isTyping,
-      });
-    }
-  }, [currentUser]);
-
-  const handleTyping = useCallback(() => {
-    sendTyping(true);
-    
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-    
-    typingTimeoutRef.current = setTimeout(() => {
-      sendTyping(false);
-    }, 1000);
-  }, [sendTyping]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      disconnect();
-    };
-  }, [disconnect]);
-
-  // دالة تحديث نقاط المستخدم (للاستخدام العام)
-  const updateUserPoints = useCallback((newPoints: number) => {
-    if (currentUser) {
-      setCurrentUser(prev => prev ? { ...prev, points: newPoints } : null);
-    }
-  }, [currentUser]);
-
-  // إضافة الدالة للنطاق العام
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      (window as any).updateUserPoints = updateUserPoints;
-    }
-    return () => {
-      if (typeof window !== 'undefined') {
-        delete (window as any).updateUserPoints;
-      }
-    };
-  }, [updateUserPoints]);
-
-  // دالة تجاهل مستخدم
+  // Ignore/Unignore user functions
   const ignoreUser = useCallback((userId: number) => {
-    setIgnoredUsers(prev => new Set([...prev, userId]));
-    // إزالة رسائل المستخدم المُتجاهل من الرسائل الحالية
-    setPublicMessages(prev => prev.filter(msg => msg.senderId !== userId));
+    dispatch({ type: 'IGNORE_USER', payload: userId });
   }, []);
 
-  // دالة إلغاء تجاهل مستخدم  
   const unignoreUser = useCallback((userId: number) => {
-    setIgnoredUsers(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(userId);
-      return newSet;
-    });
+    dispatch({ type: 'UNIGNORE_USER', payload: userId });
   }, []);
 
-  // دالة تبديل وضع الإخفاء (للإدمن والمالك فقط)
-  const toggleStealthMode = useCallback(async (isHidden: boolean) => {
-    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'owner')) return;
-    
-    try {
-      await apiRequest(`/api/users/${currentUser.id}/stealth`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isHidden })
-      });
-      
-      // تحديث حالة المستخدم محلياً
-      setCurrentUser(prev => prev ? { ...prev, isHidden } : null);
-      
-      // إرسال التحديث للخادم عبر Socket.IO
-      if (socket.current && socket.current.connected) {
-        socket.current.emit('toggleStealth', {
-          userId: currentUser.id,
-          isHidden
-        });
-      }
-    } catch (error) {
-      console.error('فشل في تغيير وضع الإخفاء:', error);
+  // Send typing indicator - محسنة مع throttling
+  const sendTyping = useCallback(() => {
+    if (socket.current?.connected) {
+      socket.current.emit('typing', { isTyping: true });
     }
-  }, [currentUser]);
+  }, []);
 
   return {
-    currentUser,
-    onlineUsers,
-    publicMessages,
-    privateConversations,
-    isConnected,
-    typingUsers,
-    connectionError,
-    newMessageSender,
-    ignoredUsers,
-    kickNotification,
-    blockNotification,
-    setNewMessageSender,
-    connect,
-    disconnect,
-    ignoreUser,
-    unignoreUser,
-    toggleStealthMode,
-    sendPublicMessage: useCallback((content: string, messageType: string = 'text') => {
-      if (!content.trim() || !currentUser) return false;
-      
-      const now = Date.now();
-      if (now - lastMessageTime.current < 500) return false;
-      lastMessageTime.current = now;
-      
-      if (socket.current && socket.current.connected) {
-        socket.current.emit('publicMessage', {
-          content: content.trim(),
-          messageType,
-          userId: currentUser.id,
-          username: currentUser.username,
-          roomId: currentRoomId
-        });
-        return true;
-      }
-      return false;
-    }, [currentUser, currentRoomId]),
-    sendPrivateMessage,
-    handleTyping,
-    notifications,
-    setNotifications,
-    showKickCountdown,
-    setShowKickCountdown,
+    // State
+    currentUser: state.currentUser,
+    onlineUsers: memoizedOnlineUsers,
+    publicMessages: state.publicMessages,
+    privateConversations: state.privateConversations,
+    ignoredUsers: state.ignoredUsers,
+    isConnected: state.isConnected,
+    typingUsers: state.typingUsers,
+    connectionError: state.connectionError,
+    newMessageSender: state.newMessageSender,
+    isLoading: state.isLoading,
+    notifications: state.notifications,
+    currentRoomId: state.currentRoomId,
+    roomMessages: state.roomMessages,
+    showKickCountdown: state.showKickCountdown,
     
-    // إشعارات النقاط والمستويات
+    // Notification states
     levelUpNotification,
     setLevelUpNotification,
     achievementNotification,
@@ -1164,23 +477,14 @@ export function useChat() {
     dailyBonusNotification,
     setDailyBonusNotification,
     
-    // وظائف الغرف
-    currentRoomId,
-    setCurrentRoomId,
-    roomMessages,
-    getCurrentRoomMessages: useCallback(() => {
-      return roomMessages[currentRoomId] || [];
-    }, [roomMessages, currentRoomId]),
-    joinRoom: useCallback((roomId: string) => {
-      if (socket.current && socket.current.connected && currentUser) {
-        socket.current.emit('joinRoom', { userId: currentUser.id, roomId });
-        setCurrentRoomId(roomId);
-      }
-    }, [currentUser]),
-    leaveRoom: useCallback((roomId: string) => {
-      if (socket.current && socket.current.connected && currentUser) {
-        socket.current.emit('leaveRoom', { userId: currentUser.id, roomId });
-      }
-    }, [currentUser])
+    // Actions
+    connect,
+    disconnect,
+    sendMessage,
+    joinRoom,
+    ignoreUser,
+    unignoreUser,
+    sendTyping,
+    setShowKickCountdown: (show: boolean) => dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: show })
   };
 }
