@@ -264,9 +264,34 @@ export function useChat() {
       console.log('🔌 انقطع الاتصال:', reason);
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
       
+      // تنظيف الفترة الزمنية للتحديث الدوري
+      if ((socket.current as any)?.userListInterval) {
+        clearInterval((socket.current as any).userListInterval);
+      }
+      
       if (reason === 'io server disconnect') {
         socket.current?.connect();
       }
+    });
+
+    socket.current.on('connected', (data) => {
+      console.log('✅ تم الاتصال بنجاح:', data.message);
+      dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+      dispatch({ type: 'SET_CURRENT_USER', payload: data.user });
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+      
+      // طلب قائمة المستخدمين المتصلين فور الاتصال
+      socket.current?.emit('requestOnlineUsers');
+      
+      // تحديث دوري لقائمة المستخدمين كل 30 ثانية
+      const userListInterval = setInterval(() => {
+        if (socket.current?.connected) {
+          socket.current.emit('requestOnlineUsers');
+        }
+      }, 30000);
+      
+      // حفظ معرف الفترة الزمنية للتنظيف لاحقاً
+      (socket.current as any).userListInterval = userListInterval;
     });
 
     socket.current.on('message', (message: WebSocketMessage) => {
@@ -291,7 +316,17 @@ export function useChat() {
           case 'userJoined':
             if (message.user) {
               console.log('👤 مستخدم جديد انضم:', message.user.username);
-              dispatch({ type: 'SET_ONLINE_USERS', payload: [...state.onlineUsers, message.user] });
+              // التحقق من عدم وجود المستخدم مسبقاً قبل إضافته
+              const userExists = state.onlineUsers.some(u => u.id === message.user.id);
+              if (!userExists) {
+                dispatch({ type: 'SET_ONLINE_USERS', payload: [...state.onlineUsers, message.user] });
+              } else {
+                // تحديث بيانات المستخدم الموجود
+                const updatedUsers = state.onlineUsers.map(u => 
+                  u.id === message.user.id ? message.user : u
+                );
+                dispatch({ type: 'SET_ONLINE_USERS', payload: updatedUsers });
+              }
             }
             break;
             
@@ -393,19 +428,17 @@ export function useChat() {
     dispatch({ type: 'SET_LOADING', payload: true });
 
     try {
-      if (socket.current?.connected) {
-        socket.current.disconnect();
+      // إنشاء اتصال Socket.IO
+      if (!socket.current) {
+        const serverUrl = import.meta.env?.VITE_SERVER_URL || 'http://localhost:5000';
+        socket.current = io(serverUrl, {
+          transports: ['websocket', 'polling'],
+          timeout: 10000,
+          reconnection: true,
+          reconnectionAttempts: 5,
+          reconnectionDelay: 1000
+        });
       }
-
-      const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
-      
-      socket.current = io(serverUrl, {
-        transports: ['websocket', 'polling'],
-        upgrade: true,
-        rememberUpgrade: true,
-        timeout: 10000,
-        forceNew: true
-      });
 
       setupSocketListeners(user);
 
