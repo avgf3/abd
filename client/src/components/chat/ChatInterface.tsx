@@ -737,17 +737,21 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       )}
 
       {/* إشعارات الطرد والحجب */}
-      <KickNotification
-        isVisible={chat.kickNotification?.show || false}
-        durationMinutes={chat.kickNotification?.duration || 15}
-        onClose={() => {}}
-      />
-      
-      <BlockNotification
-        isVisible={chat.blockNotification?.show || false}
-        reason={chat.blockNotification?.reason || ''}
-        onClose={() => {}}
-      />
+      {chat.showKickCountdown && (
+        <KickNotification
+          isVisible={chat.showKickCountdown}
+          durationMinutes={15}
+          onClose={() => chat.setShowKickCountdown(false)}
+        />
+      )}
+      {/* إشعار الحجب (block) */}
+      {chat.notifications && chat.notifications.some(n => n.type === 'moderation' && n.content.includes('حظر')) && (
+        <BlockNotification
+          isVisible={true}
+          reason={chat.notifications.find(n => n.type === 'moderation' && n.content.includes('حظر'))?.content || ''}
+          onClose={() => {}}
+        />
+      )}
 
       {/* تنبيه الرسائل الجديدة */}
       <MessageAlert
