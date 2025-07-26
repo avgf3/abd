@@ -2001,21 +2001,22 @@ export class MixedStorage implements IStorage {
             new Date().toISOString()
           ]);
 
-        return {
-          id: roomId,
-          name: roomData.name,
-          description: roomData.description,
-          icon: roomData.icon,
-          created_by: roomData.createdBy,
-          is_default: roomData.isDefault,
-          is_active: roomData.isActive,
-          is_broadcast: roomData.isBroadcast || false,
-          host_id: roomData.hostId || roomData.createdBy,
-          speakers: '[]',
-          mic_queue: '[]',
-          created_at: new Date(),
-          user_count: 0
-        };
+          return {
+            id: roomId,
+            name: roomData.name,
+            description: roomData.description,
+            icon: roomData.icon,
+            created_by: roomData.createdBy,
+            is_default: roomData.isDefault,
+            is_active: roomData.isActive,
+            is_broadcast: roomData.isBroadcast || false,
+            host_id: roomData.hostId || roomData.createdBy,
+            speakers: '[]',
+            mic_queue: '[]',
+            created_at: new Date(),
+            user_count: 0
+          };
+        }
       } catch (error) {
         console.error('خطأ في إنشاء الغرفة في SQLite:', error);
         throw error;
