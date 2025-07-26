@@ -1216,6 +1216,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const roomId = data.roomId || 'general';
         
+        // التحقق من صلاحيات البث المباشر
+        const room = await storage.getRoom(roomId);
+        if (room && room.is_broadcast) {
+          const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
+          if (broadcastInfo) {
+            const isHost = broadcastInfo.hostId === socket.userId;
+            const isSpeaker = broadcastInfo.speakers.includes(socket.userId);
+            
+            if (!isHost && !isSpeaker) {
+              socket.emit('message', {
+                type: 'error',
+                message: 'فقط المضيف والمتحدثون يمكنهم إرسال الرسائل في غرفة البث المباشر'
+              });
+              return;
+            }
+          }
+        }
+        
         const newMessage = await storage.createMessage({
           senderId: socket.userId,
           content: sanitizedContent,
