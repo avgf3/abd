@@ -325,24 +325,27 @@ export class MixedStorage implements IStorage {
           new Date()
         ]);
       } else {
-        // SQLite
-        await this.db.run(`
-          INSERT OR IGNORE INTO rooms (id, name, description, icon, created_by, is_default, is_active, is_broadcast, host_id, speakers, mic_queue, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [
-          'broadcast',
-          'غرفة البث المباشر',
-          'غرفة خاصة للبث المباشر مع نظام المايك',
-          '',
-          1, // created_by (owner)
-          0, // is_default (false)
-          1, // is_active (true)
-          1, // is_broadcast (true)
-          1, // host_id (owner)
-          '[]', // speakers (empty array)
-          '[]', // mic_queue (empty array)
-          new Date().toISOString()
-        ]);
+        // SQLite - استخدام الاتصال المباشر
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          await sqliteDb.run(`
+            INSERT OR IGNORE INTO rooms (id, name, description, icon, created_by, is_default, is_active, is_broadcast, host_id, speakers, mic_queue, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            'broadcast',
+            'غرفة البث المباشر',
+            'غرفة خاصة للبث المباشر مع نظام المايك',
+            '',
+            1, // created_by (owner)
+            0, // is_default (false)
+            1, // is_active (true)
+            1, // is_broadcast (true)
+            1, // host_id (owner)
+            '[]', // speakers (empty array)
+            '[]', // mic_queue (empty array)
+            new Date().toISOString()
+          ]);
+        }
       }
       console.log('✅ تم إنشاء غرفة البث المباشر بنجاح');
     } catch (error) {
@@ -751,7 +754,7 @@ export class MixedStorage implements IStorage {
           .set({ 
             isOnline: isOnline ? 1 : 0,  // Convert boolean to number for SQLite
             lastSeen: new Date().toISOString()  // Convert to ISO string for SQLite
-          } as any)
+          })
           .where(eq(users.id, id));
       } catch (error) {
         console.error('Error updating user online status:', error);
@@ -1819,17 +1822,20 @@ export class MixedStorage implements IStorage {
     } else {
       // SQLite fallback
       try {
-        const rooms = await this.db.all(`
-          SELECT 
-            r.*,
-            COUNT(DISTINCT ru.user_id) as user_count
-          FROM rooms r 
-          LEFT JOIN room_users ru ON r.id = ru.room_id 
-          WHERE r.is_active = 1
-          GROUP BY r.id
-          ORDER BY r.is_default DESC, r.created_at ASC
-        `);
-        return rooms || [];
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          const rooms = await sqliteDb.all(`
+            SELECT 
+              r.*,
+              COUNT(DISTINCT ru.user_id) as user_count
+            FROM rooms r 
+            LEFT JOIN room_users ru ON r.id = ru.room_id 
+            WHERE r.is_active = 1
+            GROUP BY r.id
+            ORDER BY r.is_default DESC, r.created_at ASC
+          `);
+          return rooms || [];
+        }
       } catch (error) {
         console.error('خطأ في جلب الغرف من SQLite:', error);
         // إرجاع الغرف الافتراضية مع غرفة البث
@@ -1903,16 +1909,19 @@ export class MixedStorage implements IStorage {
       }
     } else {
       try {
-        const room = await this.db.get(`
-          SELECT 
-            r.*,
-            COUNT(DISTINCT ru.user_id) as user_count
-          FROM rooms r 
-          LEFT JOIN room_users ru ON r.id = ru.room_id 
-          WHERE r.id = ?
-          GROUP BY r.id
-        `, [roomId]);
-        return room || null;
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          const room = await sqliteDb.get(`
+            SELECT 
+              r.*,
+              COUNT(DISTINCT ru.user_id) as user_count
+            FROM rooms r 
+            LEFT JOIN room_users ru ON r.id = ru.room_id 
+            WHERE r.id = ?
+            GROUP BY r.id
+          `, [roomId]);
+          return room || null;
+        }
       } catch (error) {
         console.error('خطأ في جلب الغرفة من SQLite:', error);
         return null;
@@ -1971,24 +1980,26 @@ export class MixedStorage implements IStorage {
       }
     } else {
       try {
-        const roomId = `room_${Date.now()}`;
-        await this.db.run(`
-          INSERT INTO rooms (id, name, description, icon, created_by, is_default, is_active, is_broadcast, host_id, speakers, mic_queue, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [
-          roomId,
-          roomData.name,
-          roomData.description,
-          roomData.icon,
-          roomData.createdBy,
-          roomData.isDefault ? 1 : 0,
-          roomData.isActive ? 1 : 0,
-          roomData.isBroadcast ? 1 : 0,
-          roomData.hostId || roomData.createdBy,
-          '[]', // speakers (empty array)
-          '[]', // mic_queue (empty array)
-          new Date().toISOString()
-        ]);
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          const roomId = `room_${Date.now()}`;
+          await sqliteDb.run(`
+            INSERT INTO rooms (id, name, description, icon, created_by, is_default, is_active, is_broadcast, host_id, speakers, mic_queue, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            roomId,
+            roomData.name,
+            roomData.description,
+            roomData.icon,
+            roomData.createdBy,
+            roomData.isDefault ? 1 : 0,
+            roomData.isActive ? 1 : 0,
+            roomData.isBroadcast ? 1 : 0,
+            roomData.hostId || roomData.createdBy,
+            '[]', // speakers (empty array)
+            '[]', // mic_queue (empty array)
+            new Date().toISOString()
+          ]);
 
         return {
           id: roomId,
@@ -2023,8 +2034,11 @@ export class MixedStorage implements IStorage {
       }
     } else {
       try {
-        await this.db.run('DELETE FROM room_users WHERE room_id = ?', [roomId]);
-        await this.db.run('DELETE FROM rooms WHERE id = ?', [roomId]);
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          await sqliteDb.run('DELETE FROM room_users WHERE room_id = ?', [roomId]);
+          await sqliteDb.run('DELETE FROM rooms WHERE id = ?', [roomId]);
+        }
       } catch (error) {
         console.error('خطأ في حذف الغرفة من SQLite:', error);
         throw error;
@@ -2046,10 +2060,13 @@ export class MixedStorage implements IStorage {
       }
     } else {
       try {
-        await this.db.run(`
-          INSERT OR REPLACE INTO room_users (user_id, room_id, joined_at)
-          VALUES (?, ?, ?)
-        `, [userId, roomId, new Date().toISOString()]);
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          await sqliteDb.run(`
+            INSERT OR REPLACE INTO room_users (user_id, room_id, joined_at)
+            VALUES (?, ?, ?)
+          `, [userId, roomId, new Date().toISOString()]);
+        }
       } catch (error) {
         console.error('خطأ في الانضمام للغرفة في SQLite:', error);
         throw error;
@@ -2067,7 +2084,10 @@ export class MixedStorage implements IStorage {
       }
     } else {
       try {
-        await this.db.run('DELETE FROM room_users WHERE user_id = ? AND room_id = ?', [userId, roomId]);
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          await sqliteDb.run('DELETE FROM room_users WHERE user_id = ? AND room_id = ?', [userId, roomId]);
+        }
       } catch (error) {
         console.error('خطأ في مغادرة الغرفة في SQLite:', error);
         throw error;
@@ -2102,10 +2122,13 @@ export class MixedStorage implements IStorage {
           [JSON.stringify(newQueue), roomId]
         );
       } else {
-        await this.db.run(
-          'UPDATE rooms SET mic_queue = ? WHERE id = ?',
-          [JSON.stringify(newQueue), roomId]
-        );
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          await sqliteDb.run(
+            'UPDATE rooms SET mic_queue = ? WHERE id = ?',
+            [JSON.stringify(newQueue), roomId]
+          );
+        }
       }
 
       return true;
@@ -2142,10 +2165,13 @@ export class MixedStorage implements IStorage {
           [JSON.stringify(newQueue), JSON.stringify(newSpeakers), roomId]
         );
       } else {
-        await this.db.run(
-          'UPDATE rooms SET mic_queue = ?, speakers = ? WHERE id = ?',
-          [JSON.stringify(newQueue), JSON.stringify(newSpeakers), roomId]
-        );
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          await sqliteDb.run(
+            'UPDATE rooms SET mic_queue = ?, speakers = ? WHERE id = ?',
+            [JSON.stringify(newQueue), JSON.stringify(newSpeakers), roomId]
+          );
+        }
       }
 
       return true;
@@ -2176,10 +2202,13 @@ export class MixedStorage implements IStorage {
           [JSON.stringify(newQueue), roomId]
         );
       } else {
-        await this.db.run(
-          'UPDATE rooms SET mic_queue = ? WHERE id = ?',
-          [JSON.stringify(newQueue), roomId]
-        );
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          await sqliteDb.run(
+            'UPDATE rooms SET mic_queue = ? WHERE id = ?',
+            [JSON.stringify(newQueue), roomId]
+          );
+        }
       }
 
       return true;
@@ -2210,10 +2239,13 @@ export class MixedStorage implements IStorage {
           [JSON.stringify(newSpeakers), roomId]
         );
       } else {
-        await this.db.run(
-          'UPDATE rooms SET speakers = ? WHERE id = ?',
-          [JSON.stringify(newSpeakers), roomId]
-        );
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          await sqliteDb.run(
+            'UPDATE rooms SET speakers = ? WHERE id = ?',
+            [JSON.stringify(newSpeakers), roomId]
+          );
+        }
       }
 
       return true;
