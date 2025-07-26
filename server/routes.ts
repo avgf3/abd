@@ -844,7 +844,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // تحديث حالة المستخدم إلى متصل
       try {
-        await storage.updateUser(user.id, { isOnline: true, lastSeen: new Date() });
+        await storage.setUserOnlineStatus(user.id, true);
+        console.log(`✅ تم تحديث حالة ${user.username} إلى متصل`);
       } catch (updateError) {
         console.error('خطأ في تحديث حالة المستخدم:', updateError);
       }
@@ -1167,7 +1168,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // تحديث حالة المستخدم إلى متصل
         try {
-          await storage.updateUser(user.id, { isOnline: true, lastSeen: new Date() });
+          await storage.setUserOnlineStatus(user.id, true);
+          console.log(`✅ تم تحديث حالة ${user.username} إلى متصل`);
         } catch (updateError) {
           console.error('خطأ في تحديث حالة المستخدم:', updateError);
         }
@@ -1188,6 +1190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('📡 جلب قائمة المستخدمين المتصلين...');
         const onlineUsers = await storage.getOnlineUsers();
         console.log(`👥 عدد المستخدمين المتصلين: ${onlineUsers.length}`);
+        console.log(`👥 المستخدمون: ${onlineUsers.map(u => u.username).join(', ')}`);
         
         // إرسال قائمة المستخدمين للمستخدم الجديد
         socket.emit('message', { 
@@ -1333,15 +1336,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         const sender = await storage.getUser(socket.userId);
+        console.log(`📤 إرسال رسالة من ${sender?.username} للغرفة ${roomId}`);
+        console.log('📝 محتوى الرسالة:', sanitizedContent);
+        
         // إرسال الرسالة فقط للمستخدمين في نفس الغرفة
         if (roomId === 'general') {
           // للغرفة العامة، إرسال لجميع المستخدمين
+          console.log('📡 إرسال رسالة للغرفة العامة لجميع المستخدمين');
           io.emit('message', { 
             type: 'newMessage', 
             message: { ...newMessage, sender, roomId } 
           });
         } else {
           // للغرف الأخرى، إرسال فقط للمستخدمين في الغرفة
+          console.log(`📡 إرسال رسالة للغرفة ${roomId}`);
           io.to(`room_${roomId}`).emit('message', { 
             type: 'newMessage', 
             message: { ...newMessage, sender, roomId } 
