@@ -33,6 +33,8 @@ export interface ChatUser {
   level: number;
   totalPoints: number;
   levelProgress: number;
+  // خصائص إضافية للتوافق مع قاعدة البيانات
+  password?: string;
 }
 
 export interface ChatMessage {
@@ -55,7 +57,9 @@ export interface WebSocketMessage {
         'userVisibilityChanged' | 'usernameColorChanged' | 'profileEffectChanged' | 'theme_update' | 'moderationAction' | 'notification' | 'systemMessage' | 'kicked' | 'blocked' | 
         'friendRequest' | 'friendRequestAccepted' | 'promotion' | 'pointsReceived' | 'pointsTransfer' | 'pointsAdded' | 'levelUp' |
         // أنواع جديدة للـ Broadcast Room
-        'micRequest' | 'micApproved' | 'micRejected' | 'micRemoved' | 'speakerAdded' | 'speakerRemoved' | 'broadcastUpdate';
+        'micRequest' | 'micApproved' | 'micRejected' | 'micRemoved' | 'speakerAdded' | 'speakerRemoved' | 'broadcastUpdate' |
+        // أنواع إضافية للتوافق
+        'achievement' | 'dailyBonus';
   userId?: number;
   username?: string;
   content?: string;
@@ -188,4 +192,12 @@ export interface RoomWebSocketMessage extends WebSocketMessage {
   roomId?: string;
   room?: ChatRoom;
   rooms?: ChatRoom[];
+}
+
+// ApiResponse type for API responses
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
 }

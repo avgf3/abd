@@ -30,6 +30,7 @@ export class MessageService {
           messageType: messages.messageType,
           isPrivate: messages.isPrivate,
           timestamp: messages.timestamp,
+          roomId: messages.roomId,
           // بيانات المرسل
           senderUsername: users.username,
           senderUserType: users.userType,
@@ -52,6 +53,7 @@ export class MessageService {
         messageType: msg.messageType,
         isPrivate: msg.isPrivate,
         timestamp: msg.timestamp,
+        roomId: msg.roomId || 'general',
         sender: msg.senderId ? {
           id: msg.senderId,
           username: msg.senderUsername || 'مستخدم محذوف',
@@ -81,6 +83,7 @@ export class MessageService {
           messageType: messages.messageType,
           isPrivate: messages.isPrivate,
           timestamp: messages.timestamp,
+          roomId: messages.roomId,
           // بيانات المرسل
           senderUsername: users.username,
           senderUserType: users.userType,
@@ -111,6 +114,7 @@ export class MessageService {
         messageType: msg.messageType,
         isPrivate: msg.isPrivate,
         timestamp: msg.timestamp,
+        roomId: msg.roomId || 'general',
         sender: msg.senderId ? {
           id: msg.senderId,
           username: msg.senderUsername || 'مستخدم محذوف',
@@ -191,6 +195,7 @@ export class MessageService {
           messageType: messages.messageType,
           isPrivate: messages.isPrivate,
           timestamp: messages.timestamp,
+          roomId: messages.roomId,
           // بيانات المرسل
           senderUsername: users.username,
           senderUserType: users.userType,
@@ -218,6 +223,7 @@ export class MessageService {
         messageType: msg.messageType,
         isPrivate: msg.isPrivate,
         timestamp: msg.timestamp,
+        roomId: msg.roomId || 'general',
         sender: msg.senderId ? {
           id: msg.senderId,
           username: msg.senderUsername || 'مستخدم محذوف',
@@ -228,7 +234,7 @@ export class MessageService {
           profileBackgroundColor: msg.senderProfileBackgroundColor || '#3c0d0d',
           isOnline: false
         } : undefined
-      })) as Message[];
+      })) as unknown as Message[];
     } catch (error) {
       console.error('خطأ في البحث في الرسائل:', error);
       return [];

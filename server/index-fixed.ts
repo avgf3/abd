@@ -4,6 +4,14 @@ import { fixedStorage } from './storage-fixed.js';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
+// Extend Socket interface to include custom properties
+declare module 'socket.io' {
+  interface Socket {
+    userId?: number;
+    username?: string;
+  }
+}
+
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {

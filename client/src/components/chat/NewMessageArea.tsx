@@ -76,7 +76,12 @@ export default function NewMessageArea({
             isBlocked: false,
             ignoredUsers: [],
             usernameColor: '#666666',
-            userTheme: 'default'
+            userTheme: 'default',
+            profileEffect: 'none',
+            points: 0,
+            level: 1,
+            totalPoints: 0,
+            levelProgress: 0
           };
 
           return (

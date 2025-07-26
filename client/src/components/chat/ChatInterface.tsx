@@ -514,7 +514,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 onlineUsers={chat.onlineUsers}
                 onSendMessage={chat.sendPublicMessage}
                 onTyping={chat.handleTyping}
-                typingUsers={chat.typingUsers}
+                typingUsers={Array.from(chat.typingUsers)}
                 onReportMessage={handleReportUser}
                 onUserClick={handleUserClick}
                 chat={chat}
@@ -529,7 +529,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               currentUser={chat.currentUser}
               onSendMessage={chat.sendPublicMessage}
               onTyping={chat.handleTyping}
-              typingUsers={chat.typingUsers}
+              typingUsers={Array.from(chat.typingUsers)}
               onReportMessage={handleReportUser}
               onUserClick={handleUserClick}
               onlineUsers={chat.onlineUsers}

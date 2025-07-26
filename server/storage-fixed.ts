@@ -191,8 +191,8 @@ export class FixedStorage {
         insertUser.country || null,
         insertUser.relation || null,
         insertUser.bio || null,
-        insertUser.isOnline ? 1 : 0,
-        insertUser.isHidden ? 1 : 0,
+        0, // isOnline - default to false
+        0, // isHidden - default to false
         now,
         now,
         now,
@@ -203,7 +203,7 @@ export class FixedStorage {
         insertUser.isBlocked ? 1 : 0,
         insertUser.ipAddress || null,
         insertUser.deviceId || null,
-        JSON.stringify(insertUser.ignoredUsers || []),
+        JSON.stringify([]), // ignoredUsers - default to empty array
         insertUser.usernameColor || '#FFFFFF',
         insertUser.userTheme || 'default',
         insertUser.profileEffect || 'none',
@@ -306,7 +306,10 @@ export class FixedStorage {
 
   async getIgnoredUsers(userId: number): Promise<number[]> {
     const user = await this.getUser(userId);
-    return user?.ignoredUsers || [];
+    if (user?.ignoredUsers && Array.isArray(user.ignoredUsers)) {
+      return user.ignoredUsers;
+    }
+    return [];
   }
 
   async getOnlineUsers(): Promise<User[]> {
@@ -447,6 +450,122 @@ export class FixedStorage {
   }
 
   async getBlockedDevices(): Promise<Array<{ipAddress: string, deviceId: string}>> {
+    return [];
+  }
+
+  // Points system methods (placeholder)
+  async updateUserPoints(userId: number, pointsData: {
+    points: number;
+    level: number;
+    totalPoints: number;
+    levelProgress: number;
+  }): Promise<void> {
+    // Implementation needed
+  }
+
+  async addPointsHistory(userId: number, points: number, reason: string, action: string): Promise<void> {
+    // Implementation needed
+  }
+
+  async getPointsHistory(userId: number, limit: number = 50): Promise<any[]> {
+    return [];
+  }
+
+  async getTopUsersByPoints(limit: number = 20): Promise<User[]> {
+    return [];
+  }
+
+  async getUserMessageCount(userId: number): Promise<number> {
+    return 0;
+  }
+
+  async getUserLastDailyLogin(userId: number): Promise<string | null> {
+    return null;
+  }
+
+  async updateUserLastDailyLogin(userId: number, date: string): Promise<void> {
+    // Implementation needed
+  }
+
+  // Room methods (placeholder)
+  async getAllRooms(): Promise<any[]> {
+    return [];
+  }
+
+  async getRoom(roomId: string): Promise<any | null> {
+    return null;
+  }
+
+  async createRoom(roomData: any): Promise<any> {
+    return null;
+  }
+
+  async deleteRoom(roomId: string): Promise<void> {
+    // Implementation needed
+  }
+
+  async joinRoom(userId: number, roomId: string): Promise<void> {
+    // Implementation needed
+  }
+
+  async leaveRoom(userId: number, roomId: string): Promise<void> {
+    // Implementation needed
+  }
+
+  async requestMic(userId: number, roomId: string): Promise<boolean> {
+    return false;
+  }
+
+  async approveMicRequest(roomId: string, userId: number, approvedBy: number): Promise<boolean> {
+    return false;
+  }
+
+  async rejectMicRequest(roomId: string, userId: number, rejectedBy: number): Promise<boolean> {
+    return false;
+  }
+
+  async removeSpeaker(roomId: string, userId: number, removedBy: number): Promise<boolean> {
+    return false;
+  }
+
+  async getBroadcastRoomInfo(roomId: string): Promise<{
+    hostId: number;
+    speakers: number[];
+    micQueue: number[];
+  } | null> {
+    return null;
+  }
+
+  // Wall methods (placeholder)
+  async createWallPost(postData: any): Promise<any> {
+    return null;
+  }
+
+  async getWallPosts(type: string): Promise<any[]> {
+    return [];
+  }
+
+  async getWallPostsByUsers(userIds: number[]): Promise<any[]> {
+    return [];
+  }
+
+  async getWallPost(postId: number): Promise<any | null> {
+    return null;
+  }
+
+  async deleteWallPost(postId: number): Promise<void> {
+    // Implementation needed
+  }
+
+  async addWallReaction(reactionData: any): Promise<void> {
+    // Implementation needed
+  }
+
+  async getWallPostWithReactions(postId: number): Promise<any | null> {
+    return null;
+  }
+
+  async getUserFriends(userId: number): Promise<any[]> {
     return [];
   }
 }

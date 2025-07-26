@@ -817,6 +817,7 @@ export function useChat() {
                     ignoredUsers: [],
                     usernameColor: '#dc2626',
                     userTheme: 'default',
+                    profileEffect: 'none',
                     points: 0,
                     level: 1,
                     totalPoints: 0,

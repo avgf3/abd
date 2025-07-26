@@ -117,7 +117,7 @@ function setupGracefulShutdown(httpServer: Server) {
   });
   
   process.on('unhandledRejection', (reason, promise) => {
-    log(`❌ Promise مرفوض غير معالج في ${promise}:`, reason);
+    log(`❌ Promise مرفوض غير معالج في ${promise}:`, String(reason));
     shutdown('unhandledRejection');
   });
 }

@@ -14,7 +14,7 @@ interface MessageAreaProps {
   currentUser: ChatUser | null;
   onSendMessage: (content: string, messageType?: string) => void;
   onTyping: () => void;
-  typingUsers: Set<string>;
+  typingUsers: string[];
   onReportMessage?: (user: ChatUser, messageContent: string, messageId: number) => void;
   onUserClick?: (event: React.MouseEvent, user: ChatUser) => void;
   onlineUsers?: ChatUser[]; // إضافة قائمة المستخدمين المتصلين للمنشن
@@ -138,7 +138,7 @@ export default function MessageArea({
           <div>
             <h2 className="font-bold text-lg text-primary">{currentRoomName}</h2>
             <p className="text-sm text-muted-foreground">
-              {messages.length} رسالة • {typingUsers.size > 0 ? `${typingUsers.size} يكتب الآن...` : 'جاهز للدردشة'}
+              {messages.length} رسالة • {typingUsers.length > 0 ? `${typingUsers.length} يكتب الآن...` : 'جاهز للدردشة'}
             </p>
           </div>
         </div>
@@ -212,7 +212,7 @@ export default function MessageArea({
           </div>
         ))}
         
-        {typingUsers.size > 0 && (
+        {typingUsers.length > 0 && (
           <div className="text-sm text-muted-foreground italic">
             {Array.from(typingUsers).join(', ')} يكتب...
           </div>
