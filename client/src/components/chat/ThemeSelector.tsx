@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -17,49 +17,97 @@ const themes = [
     id: 'default',
     name: 'الافتراضي',
     preview: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    description: 'الثيم الافتراضي الأنيق'
+    description: 'الثيم الافتراضي الأنيق',
+    cssVars: {
+      '--primary': '#667eea',
+      '--primary-dark': '#764ba2',
+      '--background': '#ffffff',
+      '--text': '#1a202c'
+    }
   },
   {
     id: 'dark',
     name: 'الداكن',
     preview: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
-    description: 'ثيم داكن مريح للعيون'
+    description: 'ثيم داكن مريح للعيون',
+    cssVars: {
+      '--primary': '#2c3e50',
+      '--primary-dark': '#34495e',
+      '--background': '#1a202c',
+      '--text': '#ffffff'
+    }
   },
   {
     id: 'ocean',
     name: 'المحيط',
-    preview: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    description: 'ثيم أزرق هادئ'
+    preview: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    description: 'ثيم أزرق هادئ',
+    cssVars: {
+      '--primary': '#4facfe',
+      '--primary-dark': '#00f2fe',
+      '--background': '#f0f9ff',
+      '--text': '#0c4a6e'
+    }
   },
   {
     id: 'sunset',
     name: 'الغروب',
     preview: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-    description: 'ثيم دافئ بألوان الغروب'
+    description: 'ثيم دافئ بألوان الغروب',
+    cssVars: {
+      '--primary': '#f093fb',
+      '--primary-dark': '#f5576c',
+      '--background': '#fef7ff',
+      '--text': '#831843'
+    }
   },
   {
     id: 'forest',
     name: 'الغابة',
     preview: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-    description: 'ثيم أخضر طبيعي'
+    description: 'ثيم أخضر طبيعي',
+    cssVars: {
+      '--primary': '#11998e',
+      '--primary-dark': '#38ef7d',
+      '--background': '#f0fdf4',
+      '--text': '#14532d'
+    }
   },
   {
     id: 'royal',
     name: 'الملكي',
-    preview: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    description: 'ثيم أرجواني فاخر'
+    preview: 'linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)',
+    description: 'ثيم أرجواني فاخر',
+    cssVars: {
+      '--primary': '#8b5cf6',
+      '--primary-dark': '#a855f7',
+      '--background': '#faf5ff',
+      '--text': '#581c87'
+    }
   },
   {
     id: 'fire',
     name: 'النار',
     preview: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
-    description: 'ثيم ناري حماسي'
+    description: 'ثيم ناري حماسي',
+    cssVars: {
+      '--primary': '#ff9a9e',
+      '--primary-dark': '#fecfef',
+      '--background': '#fef2f2',
+      '--text': '#991b1b'
+    }
   },
   {
     id: 'ice',
     name: 'الثلج',
     preview: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-    description: 'ثيم بارد منعش'
+    description: 'ثيم بارد منعش',
+    cssVars: {
+      '--primary': '#a8edea',
+      '--primary-dark': '#fed6e3',
+      '--background': '#f0fdfa',
+      '--text': '#134e4a'
+    }
   }
 ];
 
@@ -68,17 +116,48 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // تطبيق CSS variables فوراً
+  const applyThemeVariables = (themeId: string) => {
+    const theme = themes.find(t => t.id === themeId);
+    if (!theme) return;
+
+    const root = document.documentElement;
+    Object.entries(theme.cssVars).forEach(([property, value]) => {
+      root.style.setProperty(property, value);
+    });
+
+    // حفظ الثيم في localStorage للبقاء بين الجلسات
+    localStorage.setItem('selectedTheme', themeId);
+  };
+
+  // تطبيق الثيم المحفوظ عند التحميل
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('selectedTheme') || currentUser?.userTheme || 'default';
+    setSelectedTheme(savedTheme);
+    applyThemeVariables(savedTheme);
+  }, [currentUser?.userTheme]);
+
   const handleThemeSelect = async (themeId: string) => {
     if (!currentUser) return;
 
     setLoading(true);
+    
+    // تطبيق الثيم فوراً للحصول على استجابة سريعة
+    applyThemeVariables(themeId);
+    setSelectedTheme(themeId);
+
     try {
-      await apiRequest(`/api/users/${currentUser.id}`, {
+      const response = await apiRequest(`/api/users/${currentUser.id}`, {
         method: 'PUT',
-        body: { userTheme: themeId }
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userTheme: themeId })
       });
 
-      setSelectedTheme(themeId);
+      if (!response.ok) {
+        throw new Error('فشل في حفظ الثيم');
+      }
       
       if (onThemeUpdate) {
         onThemeUpdate(themeId);
@@ -94,6 +173,11 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
         onClose();
       }, 1000);
     } catch (error: any) {
+      // إذا فشل في الحفظ، أعد الثيم السابق
+      const previousTheme = currentUser.userTheme || 'default';
+      applyThemeVariables(previousTheme);
+      setSelectedTheme(previousTheme);
+      
       toast({
         title: "خطأ",
         description: error.message || "فشل في تحديث الثيم",
@@ -102,6 +186,18 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
     } finally {
       setLoading(false);
     }
+  };
+
+  // معاينة الثيم عند التمرير فوقه
+  const handleThemeHover = (themeId: string) => {
+    if (loading) return;
+    applyThemeVariables(themeId);
+  };
+
+  // إعادة الثيم المحدد عند مغادرة المعاينة
+  const handleThemeLeave = () => {
+    if (loading) return;
+    applyThemeVariables(selectedTheme);
   };
 
   return (
@@ -124,6 +220,8 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
                   : 'border-slate-600 hover:border-slate-500'
               }`}
               onClick={() => !loading && handleThemeSelect(theme.id)}
+              onMouseEnter={() => handleThemeHover(theme.id)}
+              onMouseLeave={handleThemeLeave}
             >
               {/* معاينة الثيم */}
               <div
@@ -158,11 +256,20 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
           ))}
         </div>
         
-        <div className="flex justify-center p-4">
+        <div className="flex justify-center p-4 gap-3">
+          <Button
+            onClick={() => applyThemeVariables(selectedTheme)}
+            variant="outline"
+            className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+            disabled={loading}
+          >
+            معاينة
+          </Button>
           <Button
             onClick={onClose}
             variant="outline"
             className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+            disabled={loading}
           >
             إغلاق
           </Button>

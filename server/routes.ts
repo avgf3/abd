@@ -41,14 +41,16 @@ const storage_multer = multer.diskStorage({
 const upload = multer({
   storage: storage_multer,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
+    fileSize: 5 * 1024 * 1024, // 5MB
+    files: 1 // ملف واحد فقط
   },
   fileFilter: (req, file, cb) => {
     // التحقق من نوع الملف
-    if (file.mimetype.startsWith('image/')) {
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('يرجى رفع ملف صورة صحيح'));
+      cb(new Error('نوع الملف غير مدعوم. يرجى رفع صورة بصيغة JPG, PNG, GIF, أو WebP'));
     }
   }
 });
@@ -75,14 +77,51 @@ const wallStorage = multer.diskStorage({
 const wallUpload = multer({
   storage: wallStorage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB
+    fileSize: 10 * 1024 * 1024, // 10MB
+    files: 1
   },
   fileFilter: (req, file, cb) => {
     // التحقق من نوع الملف
-    if (file.mimetype.startsWith('image/')) {
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('يرجى رفع ملف صورة صحيح'));
+      cb(new Error('نوع الملف غير مدعوم. يرجى رفع صورة بصيغة JPG, PNG, GIF, أو WebP'));
+    }
+  }
+});
+
+// إعداد multer لرفع صور البانر
+const bannerStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'banners');
+    
+    // التأكد من وجود المجلد
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `banner-${uniqueSuffix}${ext}`);
+  }
+});
+
+const bannerUpload = multer({
+  storage: bannerStorage,
+  limits: {
+    fileSize: 8 * 1024 * 1024, // 8MB
+    files: 1
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('نوع الملف غير مدعوم. يرجى رفع صورة بصيغة JPG, PNG, GIF, أو WebP'));
     }
   }
 });
@@ -173,107 +212,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // رفع صور البروفايل
   app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
     try {
+      console.log('📤 رفع صورة بروفايل:', {
+        file: req.file ? 'موجود' : 'غير موجود',
+        body: req.body,
+        headers: req.headers['content-type']
+      });
+
       if (!req.file) {
         return res.status(400).json({ 
-          error: 'لم يتم رفع أي ملف',
-          details: 'تأكد من إرسال الملف مع اسم الحقل profileImage'
+          error: "لم يتم رفع أي ملف",
+          details: "تأكد من إرسال الملف في حقل 'profileImage'"
         });
       }
 
-      const userId = req.body.userId;
+      const userId = parseInt(req.body.userId);
       if (!userId) {
-        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+        // حذف الملف المرفوع إذا فشل في الحصول على userId
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: "معرف المستخدم مطلوب" });
       }
 
-      // تحديث مسار الصورة في قاعدة البيانات
-      const imageUrl = `/uploads/profiles/${req.file.filename}`;
-      
-      const user = await storage.getUser(parseInt(userId));
+      // التحقق من وجود المستخدم
+      const user = await storage.getUser(userId);
       if (!user) {
-        return res.status(404).json({ error: 'المستخدم غير موجود' });
+        fs.unlinkSync(req.file.path);
+        return res.status(404).json({ error: "المستخدم غير موجود" });
       }
 
-      // حذف الصورة القديمة إذا كانت موجودة
-      if (user.profileImage && user.profileImage !== '/default_avatar.svg') {
-        const oldImagePath = path.join(process.cwd(), 'client', 'public', user.profileImage);
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
-        }
-      }
-
-      // تحديث المستخدم في قاعدة البيانات
-      const updatedUser = await storage.updateUser(parseInt(userId), { profileImage: imageUrl });
+      // إنشاء مسار الصورة النسبي
+      const relativePath = `/uploads/profiles/${req.file.filename}`;
       
-      // إرسال تحديث WebSocket لجميع المستخدمين
-      if (io) {
-        io.emit('userUpdated', { user: updatedUser });
-      }
+      // تحديث صورة البروفايل في قاعدة البيانات
+      await storage.updateUser(userId, { profileImage: relativePath });
+
+      console.log('✅ تم رفع صورة البروفايل بنجاح:', {
+        userId,
+        filename: req.file.filename,
+        path: relativePath
+      });
 
       res.json({
-        success: true,
-        message: 'تم رفع الصورة بنجاح',
-        imageUrl: imageUrl,
-        user: updatedUser
+        message: "تم رفع الصورة بنجاح",
+        imageUrl: relativePath,
+        filename: req.file.filename
       });
 
     } catch (error) {
-      console.error('Error uploading profile image:', error);
+      console.error('❌ خطأ في رفع صورة البروفايل:', error);
+      
+      // حذف الملف في حالة الخطأ
+      if (req.file && fs.existsSync(req.file.path)) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (unlinkError) {
+          console.error('خطأ في حذف الملف:', unlinkError);
+        }
+      }
+
       res.status(500).json({ 
-        error: error instanceof Error ? error.message : 'خطأ في رفع الصورة' 
+        error: "خطأ في رفع الصورة",
+        details: error instanceof Error ? error.message : 'خطأ غير معروف'
       });
     }
   });
 
-  // رفع صور البروفايل البانر
-  app.post('/api/upload/profile-banner', wallUpload.single('image'), async (req, res) => {
+  // إصلاح رفع صورة البانر
+  app.post('/api/upload/profile-banner', bannerUpload.single('banner'), async (req, res) => {
     try {
+      console.log('📤 رفع صورة بانر:', {
+        file: req.file ? 'موجود' : 'غير موجود',
+        body: req.body
+      });
+
       if (!req.file) {
         return res.status(400).json({ 
-          error: 'لم يتم رفع أي ملف',
-          details: 'تأكد من إرسال الملف مع اسم الحقل image'
+          error: "لم يتم رفع أي ملف",
+          details: "تأكد من إرسال الملف في حقل 'banner'"
         });
       }
 
-      const userId = req.body.userId;
+      const userId = parseInt(req.body.userId);
       if (!userId) {
-        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: "معرف المستخدم مطلوب" });
       }
 
-      // تحديث مسار صورة البانر
-      const bannerUrl = `/uploads/wall/${req.file.filename}`;
-      
-      const user = await storage.getUser(parseInt(userId));
+      // التحقق من وجود المستخدم
+      const user = await storage.getUser(userId);
       if (!user) {
-        return res.status(404).json({ error: 'المستخدم غير موجود' });
+        fs.unlinkSync(req.file.path);
+        return res.status(404).json({ error: "المستخدم غير موجود" });
       }
 
-      // حذف صورة البانر القديمة إذا كانت موجودة
-      if (user.profileBanner && user.profileBanner !== '') {
-        const oldBannerPath = path.join(process.cwd(), 'client', 'public', user.profileBanner);
-        if (fs.existsSync(oldBannerPath)) {
-          fs.unlinkSync(oldBannerPath);
-        }
-      }
-
-      // تحديث المستخدم في قاعدة البيانات
-      const updatedUser = await storage.updateUser(parseInt(userId), { profileBanner: bannerUrl });
+      const relativePath = `/uploads/banners/${req.file.filename}`;
       
-      // إرسال تحديث WebSocket لجميع المستخدمين
-      if (io) {
-        io.emit('userUpdated', { user: updatedUser });
-      }
+      await storage.updateUser(userId, { profileBanner: relativePath });
+
+      console.log('✅ تم رفع صورة البانر بنجاح:', {
+        userId,
+        filename: req.file.filename,
+        path: relativePath
+      });
 
       res.json({
-        success: true,
-        message: 'تم رفع صورة البروفايل بنجاح',
-        bannerUrl: bannerUrl,
-        user: updatedUser
+        message: "تم رفع صورة البانر بنجاح",
+        imageUrl: relativePath,
+        filename: req.file.filename
       });
 
     } catch (error) {
-      console.error('Error uploading profile banner:', error);
+      console.error('❌ خطأ في رفع صورة البانر:', error);
+      
+      if (req.file && fs.existsSync(req.file.path)) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (unlinkError) {
+          console.error('خطأ في حذف الملف:', unlinkError);
+        }
+      }
+
       res.status(500).json({ 
-        error: error instanceof Error ? error.message : 'خطأ في رفع صورة البروفايل' 
+        error: "خطأ في رفع صورة البانر",
+        details: error instanceof Error ? error.message : 'خطأ غير معروف'
       });
     }
   });
