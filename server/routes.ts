@@ -842,7 +842,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      await storage.setUserOnlineStatus(user.id, true);
+      // تحديث حالة المستخدم إلى متصل
+      try {
+        await storage.updateUser(user.id, { isOnline: true, lastSeen: new Date() });
+      } catch (updateError) {
+        console.error('خطأ في تحديث حالة المستخدم:', updateError);
+      }
+
       res.json({ user });
     } catch (error) {
       console.error('Member authentication error:', error);
@@ -1160,7 +1166,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (socket as CustomSocket).isAuthenticated = true;
 
         // تحديث حالة المستخدم إلى متصل
-        await storage.updateUserStatus(user.id, true);
+        try {
+          await storage.updateUser(user.id, { isOnline: true, lastSeen: new Date() });
+        } catch (updateError) {
+          console.error('خطأ في تحديث حالة المستخدم:', updateError);
+        }
+
+        // انضمام المستخدم للغرفة العامة تلقائياً
+        socket.join('room_general');
+        console.log(`🏠 المستخدم ${user.username} انضم للغرفة العامة`);
 
         console.log(`✅ تمت مصادقة المستخدم: ${user.username} (${user.userType})`);
 
@@ -1320,10 +1334,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const sender = await storage.getUser(socket.userId);
         // إرسال الرسالة فقط للمستخدمين في نفس الغرفة
-        io.to(`room_${roomId}`).emit('message', { 
-          type: 'newMessage', 
-          message: { ...newMessage, sender, roomId } 
-        });
+        if (roomId === 'general') {
+          // للغرفة العامة، إرسال لجميع المستخدمين
+          io.emit('message', { 
+            type: 'newMessage', 
+            message: { ...newMessage, sender, roomId } 
+          });
+        } else {
+          // للغرف الأخرى، إرسال فقط للمستخدمين في الغرفة
+          io.to(`room_${roomId}`).emit('message', { 
+            type: 'newMessage', 
+            message: { ...newMessage, sender, roomId } 
+          });
+        }
       } catch (error) {
         console.error('خطأ في إرسال الرسالة العامة:', error);
         socket.emit('message', { type: 'error', message: 'خطأ في إرسال الرسالة' });
@@ -1919,6 +1942,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ message: "تم إرسال طلب الصداقة", request });
     } catch (error) {
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // إرسال طلب صداقة باستخدام اسم المستخدم
+  app.post("/api/friend-requests/by-username", async (req, res) => {
+    try {
+      const { senderId, targetUsername } = req.body;
+      
+      if (!senderId || !targetUsername) {
+        return res.status(400).json({ error: "معرف المرسل واسم المستخدم المستهدف مطلوبان" });
+      }
+
+      // البحث عن المستخدم المستهدف
+      const targetUser = await storage.getUserByUsername(targetUsername);
+      if (!targetUser) {
+        return res.status(404).json({ error: "المستخدم غير موجود" });
+      }
+
+      if (senderId === targetUser.id) {
+        return res.status(400).json({ error: "لا يمكنك إرسال طلب صداقة لنفسك" });
+      }
+
+      // التحقق من وجود طلب سابق
+      const existingRequest = await storage.getFriendRequest(senderId, targetUser.id);
+      if (existingRequest) {
+        return res.status(400).json({ error: "طلب الصداقة موجود بالفعل" });
+      }
+
+      // التحقق من الصداقة الموجودة
+      const friendship = await storage.getFriendship(senderId, targetUser.id);
+      if (friendship) {
+        return res.status(400).json({ error: "أنتما أصدقاء بالفعل" });
+      }
+
+      const request = await storage.createFriendRequest(senderId, targetUser.id);
+      
+      // إرسال إشعار عبر WebSocket
+      const sender = await storage.getUser(senderId);
+      broadcast({
+        type: 'friendRequestReceived',
+        targetUserId: targetUser.id,
+        senderName: sender?.username,
+        senderId: senderId
+      });
+
+      // إنشاء إشعار حقيقي في قاعدة البيانات
+      await storage.createNotification({
+        userId: targetUser.id,
+        type: 'friendRequest',
+        title: '👫 طلب صداقة جديد',
+        message: `أرسل ${sender?.username} طلب صداقة إليك`,
+        data: { requestId: request.id, senderId: senderId, senderName: sender?.username }
+      });
+
+      res.json({ message: "تم إرسال طلب الصداقة", request });
+    } catch (error) {
+      console.error('خطأ في إرسال طلب الصداقة:', error);
       res.status(500).json({ error: "خطأ في الخادم" });
     }
   });
