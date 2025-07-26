@@ -256,25 +256,13 @@ export default function BroadcastRoomInterface({
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageInput.trim()) return;
-
-    // التحقق من الصلاحيات قبل الإرسال
-    if (!canSpeak) {
-      toast({
-        title: 'غير مسموح',
-        description: 'فقط المضيف والمتحدثون يمكنهم إرسال الرسائل في غرفة البث المباشر',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    // استخدام chat.sendPublicMessage بدلاً من onSendMessage
+    // تم إلغاء التحقق من canSpeak بناءً على طلب العميل
     if (chat && chat.sendPublicMessage) {
       const success = chat.sendPublicMessage(messageInput.trim());
       if (success) {
         setMessageInput('');
       }
     } else {
-      // fallback إلى onSendMessage
       onSendMessage(messageInput.trim());
       setMessageInput('');
     }
@@ -437,16 +425,16 @@ export default function BroadcastRoomInterface({
             type="text"
             value={messageInput}
             onChange={(e) => setMessageInput(e.target.value)}
-            placeholder={canSpeak ? "اكتب رسالتك..." : "فقط المتحدثون يمكنهم إرسال الرسائل"}
-            disabled={!canSpeak}
+            placeholder={"اكتب رسالتك..."}
+            disabled={false}
             className="flex-1"
           />
           <Button
             type="submit"
-            disabled={!canSpeak || !messageInput.trim() || isLoading}
+            disabled={!messageInput.trim() || isLoading}
             className="flex items-center gap-2"
           >
-            {canSpeak ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+            <Mic className="w-4 h-4" />
             إرسال
           </Button>
         </form>
