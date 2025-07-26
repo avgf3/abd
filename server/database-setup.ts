@@ -36,8 +36,8 @@ export async function initializeDatabase(): Promise<boolean> {
 
 export async function runMigrations(): Promise<void> {
   try {
-    if (!process.env.DATABASE_URL || process.env.DATABASE_URL.startsWith('sqlite:')) {
-      return;
+    if (!process.env.DATABASE_URL) {
+      throw new Error("❌ DATABASE_URL غير محدد - مطلوب PostgreSQL");
     }
 
     // Create a separate connection for migrations
@@ -80,7 +80,7 @@ export async function runMigrations(): Promise<void> {
 // Emergency push function for when migrations fail
 export async function runDrizzlePush(): Promise<void> {
   try {
-    if (!process.env.DATABASE_URL || process.env.DATABASE_URL.startsWith('sqlite:')) {
+    if (!process.env.DATABASE_URL) {
       return;
     }
 
