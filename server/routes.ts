@@ -1257,6 +1257,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // فحص حالة الكتم والحظر
         const userStatus = await moderationSystem.checkUserStatus(socket.userId);
+        console.log(`🔍 User ${socket.userId} status:`, userStatus);
+        
         if (userStatus.isMuted) {
           socket.emit('message', {
             type: 'error',
@@ -1267,6 +1269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         if (userStatus.isBanned || userStatus.isBlocked) {
+          console.log(`🚫 User ${socket.userId} is banned/blocked, ignoring message`);
           return; // تجاهل الرسالة
         }
 
@@ -1289,20 +1292,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const roomId = data.roomId || 'general';
         
-        // التحقق من صلاحيات البث المباشر
-        const room = await storage.getRoom(roomId);
-        if (room && room.is_broadcast) {
-          const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
-          if (broadcastInfo) {
-            const isHost = broadcastInfo.hostId === socket.userId;
-            const isSpeaker = broadcastInfo.speakers.includes(socket.userId);
-            
-            if (!isHost && !isSpeaker) {
-              socket.emit('message', {
-                type: 'error',
-                message: 'فقط المضيف والمتحدثون يمكنهم إرسال الرسائل في غرفة البث المباشر'
-              });
-              return;
+        // التحقق من صلاحيات البث المباشر (فقط للغرف غير العامة)
+        if (roomId !== 'general') {
+          const room = await storage.getRoom(roomId);
+          if (room && room.is_broadcast) {
+            const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
+            if (broadcastInfo) {
+              const isHost = broadcastInfo.hostId === socket.userId;
+              const isSpeaker = broadcastInfo.speakers.includes(socket.userId);
+              
+              if (!isHost && !isSpeaker) {
+                socket.emit('message', {
+                  type: 'error',
+                  message: 'فقط المضيف والمتحدثون يمكنهم إرسال الرسائل في غرفة البث المباشر'
+                });
+                return;
+              }
             }
           }
         }
