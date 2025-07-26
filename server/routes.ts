@@ -1170,6 +1170,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           await storage.setUserOnlineStatus(user.id, true);
           console.log(`✅ تم تحديث حالة ${user.username} إلى متصل`);
+          
+          // انتظار قصير للتأكد من التحديث في قاعدة البيانات
+          await new Promise(resolve => setTimeout(resolve, 100));
         } catch (updateError) {
           console.error('خطأ في تحديث حالة المستخدم:', updateError);
         }
@@ -1186,11 +1189,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           user: user 
         });
 
-        // جلب وإرسال قائمة المستخدمين المتصلين - إصلاح
+        // جلب وإرسال قائمة المستخدمين المتصلين - إصلاح محسن
         console.log('📡 جلب قائمة المستخدمين المتصلين...');
         const onlineUsers = await storage.getOnlineUsers();
-        console.log(`👥 عدد المستخدمين المتصلين: ${onlineUsers.length}`);
+        console.log(`👥 عدد المستخدمين المتصلين قبل الإضافة: ${onlineUsers.length}`);
         console.log(`👥 المستخدمون: ${onlineUsers.map(u => u.username).join(', ')}`);
+        
+        // التأكد من إضافة المستخدم الحالي للقائمة إذا لم يكن موجود
+        const userInList = onlineUsers.find(u => u.id === user.id);
+        if (!userInList) {
+          console.log(`➕ إضافة المستخدم ${user.username} للقائمة`);
+          onlineUsers.push(user);
+        }
+        
+        console.log(`👥 عدد المستخدمين المتصلين بعد التحقق: ${onlineUsers.length}`);
         
         // إرسال قائمة المستخدمين للمستخدم الجديد
         socket.emit('message', { 
@@ -1202,6 +1214,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         socket.broadcast.emit('message', {
           type: 'userJoined',
           user: user
+        });
+
+        // إرسال قائمة محدثة لجميع المستخدمين
+        const updatedOnlineUsers = await storage.getOnlineUsers();
+        socket.broadcast.emit('message', {
+          type: 'onlineUsers',
+          users: updatedOnlineUsers
         });
 
         console.log(`📤 تم إرسال قائمة ${onlineUsers.length} مستخدم إلى ${user.username}`);
