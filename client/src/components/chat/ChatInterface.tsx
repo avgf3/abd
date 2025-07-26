@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import UserSidebarWithWalls from './UserSidebarWithWalls';
 import MessageArea from './MessageArea';
+import BroadcastRoomInterface from './BroadcastRoomInterface';
 import ProfileModal from './ProfileModal';
 import PrivateMessageBox from './PrivateMessageBox';
 import UserPopup from './UserPopup';
@@ -66,7 +67,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           createdAt: new Date(room.created_at),
           isActive: room.is_active,
           userCount: room.user_count || 0,
-          icon: room.icon || ''
+          icon: room.icon || '',
+          isBroadcast: room.is_broadcast || false,
+          hostId: room.host_id,
+          speakers: room.speakers ? JSON.parse(room.speakers) : [],
+          micQueue: room.mic_queue ? JSON.parse(room.mic_queue) : []
         }));
         setRooms(formattedRooms);
       }
@@ -74,8 +79,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       console.error('خطأ في جلب الغرف:', error);
       // استخدام غرف افتراضية في حالة الخطأ
       setRooms([
-        { id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '' },
-        { id: 'music', name: 'أغاني وسهر', description: 'غرفة للموسيقى والترفيه', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '' }
+        { id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] },
+        { id: 'broadcast', name: 'غرفة البث المباشر', description: 'غرفة خاصة للبث المباشر مع نظام المايك', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: true, hostId: 1, speakers: [], micQueue: [] },
+        { id: 'music', name: 'أغاني وسهر', description: 'غرفة للموسيقى والترفيه', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] }
       ]);
     } finally {
       setRoomsLoading(false);
@@ -496,17 +502,41 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             />
           </div>
         )}
-        <MessageArea 
-          messages={chat.publicMessages}
-          currentUser={chat.currentUser}
-          onSendMessage={chat.sendPublicMessage}
-          onTyping={chat.handleTyping}
-          typingUsers={chat.typingUsers}
-          onReportMessage={handleReportUser}
-          onUserClick={handleUserClick}
-          onlineUsers={chat.onlineUsers}
-          currentRoomName={rooms.find(room => room.id === currentRoomId)?.name || 'الدردشة العامة'}
-        />
+        {(() => {
+          const currentRoom = rooms.find(room => room.id === currentRoomId);
+          
+          // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
+          if (currentRoom?.isBroadcast) {
+            return (
+              <BroadcastRoomInterface
+                currentUser={chat.currentUser}
+                room={currentRoom}
+                onlineUsers={chat.onlineUsers}
+                onSendMessage={chat.sendPublicMessage}
+                onTyping={chat.handleTyping}
+                typingUsers={chat.typingUsers}
+                onReportMessage={handleReportUser}
+                onUserClick={handleUserClick}
+                chat={chat}
+              />
+            );
+          }
+          
+          // وإلا استخدم MessageArea العادية
+          return (
+            <MessageArea 
+              messages={chat.publicMessages}
+              currentUser={chat.currentUser}
+              onSendMessage={chat.sendPublicMessage}
+              onTyping={chat.handleTyping}
+              typingUsers={chat.typingUsers}
+              onReportMessage={handleReportUser}
+              onUserClick={handleUserClick}
+              onlineUsers={chat.onlineUsers}
+              currentRoomName={currentRoom?.name || 'الدردشة العامة'}
+            />
+          );
+        })()}
       </main>
 
       {/* Modals and Popups */}

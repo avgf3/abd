@@ -1216,6 +1216,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const roomId = data.roomId || 'general';
         
+        // التحقق من صلاحيات البث المباشر
+        const room = await storage.getRoom(roomId);
+        if (room && room.is_broadcast) {
+          const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
+          if (broadcastInfo) {
+            const isHost = broadcastInfo.hostId === socket.userId;
+            const isSpeaker = broadcastInfo.speakers.includes(socket.userId);
+            
+            if (!isHost && !isSpeaker) {
+              socket.emit('message', {
+                type: 'error',
+                message: 'فقط المضيف والمتحدثون يمكنهم إرسال الرسائل في غرفة البث المباشر'
+              });
+              return;
+            }
+          }
+        }
+        
         const newMessage = await storage.createMessage({
           senderId: socket.userId,
           content: sanitizedContent,
@@ -3493,6 +3511,173 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: 'تم مغادرة الغرفة بنجاح' });
     } catch (error) {
       console.error('خطأ في مغادرة الغرفة:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // ===================
+  // Broadcast Room API Routes
+  // ===================
+
+  // طلب المايك
+  app.post('/api/rooms/:roomId/request-mic', async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      }
+
+      const success = await storage.requestMic(parseInt(userId), roomId);
+      if (!success) {
+        return res.status(400).json({ error: 'لا يمكن طلب المايك في هذه الغرفة' });
+      }
+
+      // إرسال إشعار للـ Host
+      const room = await storage.getRoom(roomId);
+      const user = await storage.getUser(parseInt(userId));
+      if (room && user) {
+        io.emit('message', {
+          type: 'micRequest',
+          roomId,
+          requestUserId: parseInt(userId),
+          username: user.username,
+          content: `${user.username} يطلب المايك`
+        });
+      }
+
+      res.json({ message: 'تم إرسال طلب المايك بنجاح' });
+    } catch (error) {
+      console.error('خطأ في طلب المايك:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // الموافقة على طلب المايك
+  app.post('/api/rooms/:roomId/approve-mic/:userId', async (req, res) => {
+    try {
+      const { roomId, userId } = req.params;
+      const { approvedBy } = req.body;
+
+      if (!approvedBy) {
+        return res.status(400).json({ error: 'معرف الموافق مطلوب' });
+      }
+
+      const success = await storage.approveMicRequest(roomId, parseInt(userId), parseInt(approvedBy));
+      if (!success) {
+        return res.status(400).json({ error: 'لا يمكن الموافقة على طلب المايك' });
+      }
+
+      // إرسال إشعار للجميع
+      const user = await storage.getUser(parseInt(userId));
+      const approver = await storage.getUser(parseInt(approvedBy));
+      if (user && approver) {
+        io.emit('message', {
+          type: 'micApproved',
+          roomId,
+          requestUserId: parseInt(userId),
+          approvedBy: parseInt(approvedBy),
+          username: user.username,
+          approverName: approver.username,
+          content: `${approver.username} وافق على طلب ${user.username} للمايك`
+        });
+      }
+
+      res.json({ message: 'تم الموافقة على طلب المايك بنجاح' });
+    } catch (error) {
+      console.error('خطأ في الموافقة على طلب المايك:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // رفض طلب المايك
+  app.post('/api/rooms/:roomId/reject-mic/:userId', async (req, res) => {
+    try {
+      const { roomId, userId } = req.params;
+      const { rejectedBy } = req.body;
+
+      if (!rejectedBy) {
+        return res.status(400).json({ error: 'معرف الرافض مطلوب' });
+      }
+
+      const success = await storage.rejectMicRequest(roomId, parseInt(userId), parseInt(rejectedBy));
+      if (!success) {
+        return res.status(400).json({ error: 'لا يمكن رفض طلب المايك' });
+      }
+
+      // إرسال إشعار للجميع
+      const user = await storage.getUser(parseInt(userId));
+      const rejecter = await storage.getUser(parseInt(rejectedBy));
+      if (user && rejecter) {
+        io.emit('message', {
+          type: 'micRejected',
+          roomId,
+          requestUserId: parseInt(userId),
+          rejectedBy: parseInt(rejectedBy),
+          username: user.username,
+          rejecterName: rejecter.username,
+          content: `${rejecter.username} رفض طلب ${user.username} للمايك`
+        });
+      }
+
+      res.json({ message: 'تم رفض طلب المايك بنجاح' });
+    } catch (error) {
+      console.error('خطأ في رفض طلب المايك:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // إزالة متحدث
+  app.post('/api/rooms/:roomId/remove-speaker/:userId', async (req, res) => {
+    try {
+      const { roomId, userId } = req.params;
+      const { removedBy } = req.body;
+
+      if (!removedBy) {
+        return res.status(400).json({ error: 'معرف المزيل مطلوب' });
+      }
+
+      const success = await storage.removeSpeaker(roomId, parseInt(userId), parseInt(removedBy));
+      if (!success) {
+        return res.status(400).json({ error: 'لا يمكن إزالة المتحدث' });
+      }
+
+      // إرسال إشعار للجميع
+      const user = await storage.getUser(parseInt(userId));
+      const remover = await storage.getUser(parseInt(removedBy));
+      if (user && remover) {
+        io.emit('message', {
+          type: 'speakerRemoved',
+          roomId,
+          requestUserId: parseInt(userId),
+          removedBy: parseInt(removedBy),
+          username: user.username,
+          removerName: remover.username,
+          content: `${remover.username} أزال ${user.username} من المتحدثين`
+        });
+      }
+
+      res.json({ message: 'تم إزالة المتحدث بنجاح' });
+    } catch (error) {
+      console.error('خطأ في إزالة المتحدث:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // جلب معلومات غرفة البث
+  app.get('/api/rooms/:roomId/broadcast-info', async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const info = await storage.getBroadcastRoomInfo(roomId);
+      
+      if (!info) {
+        return res.status(404).json({ error: 'غرفة البث غير موجودة' });
+      }
+
+      res.json({ info });
+    } catch (error) {
+      console.error('خطأ في جلب معلومات غرفة البث:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });

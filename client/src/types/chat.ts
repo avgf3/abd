@@ -53,7 +53,9 @@ export interface PrivateConversation {
 export interface WebSocketMessage {
   type: 'auth' | 'publicMessage' | 'privateMessage' | 'typing' | 'userJoined' | 'userLeft' | 'newMessage' | 'onlineUsers' | 'userUpdated' | 'error' | 'warning' |
         'userVisibilityChanged' | 'usernameColorChanged' | 'profileEffectChanged' | 'theme_update' | 'moderationAction' | 'notification' | 'systemMessage' | 'kicked' | 'blocked' | 
-        'friendRequest' | 'friendRequestAccepted' | 'promotion' | 'pointsReceived' | 'pointsTransfer' | 'pointsAdded' | 'levelUp';
+        'friendRequest' | 'friendRequestAccepted' | 'promotion' | 'pointsReceived' | 'pointsTransfer' | 'pointsAdded' | 'levelUp' |
+        // أنواع جديدة للـ Broadcast Room
+        'micRequest' | 'micApproved' | 'micRejected' | 'micRemoved' | 'speakerAdded' | 'speakerRemoved' | 'broadcastUpdate';
   userId?: number;
   username?: string;
   content?: string;
@@ -89,6 +91,14 @@ export interface WebSocketMessage {
   oldLevel?: number; // المستوى القديم
   newLevel?: number; // المستوى الجديد
   levelInfo?: any; // معلومات المستوى
+  
+  // خصائص Broadcast Room الجديدة
+  roomId?: string; // معرف الغرفة
+  hostId?: number; // معرف المضيف
+  speakers?: number[]; // قائمة المتحدثين
+  micQueue?: number[]; // قائمة انتظار طلبات المايك
+  requestUserId?: number; // معرف المستخدم الذي طلب المايك
+  approvedBy?: number; // معرف من وافق على الطلب
 }
 
 export interface UserProfile {
@@ -158,6 +168,11 @@ export interface ChatRoom {
   maxUsers?: number;
   icon?: string;
   color?: string;
+  // خصائص Broadcast Room الجديدة
+  isBroadcast?: boolean;
+  hostId?: number;
+  speakers?: number[];
+  micQueue?: number[];
 }
 
 export interface RoomUser extends ChatUser {
