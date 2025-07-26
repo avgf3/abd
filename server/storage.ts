@@ -17,23 +17,7 @@ import { db } from "./database-adapter";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { userService } from "./services/userService";
 import { messageService } from "./services/messageService";
-import Database from 'better-sqlite3';
 import path from 'path';
-
-// إضافة اتصال SQLite مباشر كبديل
-let directSqliteDb: Database.Database | null = null;
-
-function getDirectSqliteConnection() {
-  if (!directSqliteDb) {
-    const databaseUrl = process.env.DATABASE_URL || 'sqlite:./chat.db';
-    let dbPath = './chat.db';
-    if (databaseUrl.startsWith('sqlite:')) {
-      dbPath = databaseUrl.replace('sqlite:', '');
-    }
-    directSqliteDb = new Database(dbPath);
-  }
-  return directSqliteDb;
-}
 
 export interface IStorage {
   // User operations
@@ -326,26 +310,19 @@ export class MixedStorage implements IStorage {
         ]);
       } else {
         // SQLite - استخدام الاتصال المباشر
-        const sqliteDb = getDirectSqliteConnection();
-        if (sqliteDb) {
-          await sqliteDb.run(`
-            INSERT OR IGNORE INTO rooms (id, name, description, icon, created_by, is_default, is_active, is_broadcast, host_id, speakers, mic_queue, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `, [
-            'broadcast',
-            'غرفة البث المباشر',
-            'غرفة خاصة للبث المباشر مع نظام المايك',
-            '',
-            1, // created_by (owner)
-            0, // is_default (false)
-            1, // is_active (true)
-            1, // is_broadcast (true)
-            1, // host_id (owner)
-            '[]', // speakers (empty array)
-            '[]', // mic_queue (empty array)
-            new Date().toISOString()
-          ]);
-        }
+        // تم تعطيل كل كود SQLite - النظام يعمل فقط على PostgreSQL
+        // import Database from 'better-sqlite3';
+        // let directSqliteDb: Database.Database | null = null;
+        // function getDirectSqliteConnection() { return null; }
+        // ... existing code ...
+
+        // في جميع الدوال التي كانت تستخدم directDb أو sqliteDb:
+        // تم حذف أو تعليق كل كود SQLite، وجعل التنفيذ فقط عبر db (Drizzle ORM)
+        // مثال:
+        // const directDb = getDirectSqliteConnection();
+        // if (directDb) { ... }  ==> تم حذفه
+        // ... فقط db ...
+        // ... existing code ...
       }
       console.log('✅ تم إنشاء غرفة البث المباشر بنجاح');
     } catch (error) {
