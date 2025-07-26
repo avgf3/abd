@@ -1,8 +1,8 @@
 export interface ChatUser {
   id: number;
   username: string;
-  userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
-  role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
+  userType: 'guest' | 'member' | 'owner'; // نفس الموجود في قاعدة البيانات
+  role: 'guest' | 'member' | 'owner'; // نفس الموجود في قاعدة البيانات
   profileImage?: string;
   profileBanner?: string;
   profileBackgroundColor: string;
@@ -22,10 +22,9 @@ export interface ChatUser {
   isBanned: boolean;
   banExpiry: Date | null;
   isBlocked: boolean;
-  isKicked?: boolean;
   ipAddress?: string;
   deviceId?: string;
-  ignoredUsers: number[];
+  ignoredUsers: number[]; // في قاعدة البيانات نص JSON، في الواجهة number[]
   usernameColor: string;
   userTheme: string;
   profileEffect: string;
