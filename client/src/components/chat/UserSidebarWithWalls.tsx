@@ -50,8 +50,14 @@ export default function UserSidebarWithWalls({
   const { toast } = useToast();
 
   const filteredUsers = users.filter(user =>
-    user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    user && user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // إضافة logging للتشخيص
+  React.useEffect(() => {
+    console.log('👥 UserSidebarWithWalls - عدد المستخدمين المستلمين:', users.length);
+    console.log('👥 UserSidebarWithWalls - أسماء المستخدمين:', users.map(u => u?.username || 'غير معروف').join(', '));
+  }, [users]);
 
   // جلب المنشورات
   const fetchPosts = async () => {
