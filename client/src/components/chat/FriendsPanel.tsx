@@ -136,11 +136,11 @@ export default function FriendsPanel({
     if (!currentUser) return;
     
     try {
-      await apiRequest('/api/friends', {
+      await apiRequest('/api/friend-requests/by-username', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          userId: currentUser.id, 
+          senderId: currentUser.id, 
           targetUsername: username 
         })
       });
