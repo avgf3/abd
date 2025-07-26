@@ -50,7 +50,7 @@ export default function UserSidebarWithWalls({
   const { toast } = useToast();
 
   const filteredUsers = users.filter(user =>
-    user.isOnline && user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    user.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // جلب المنشورات
@@ -302,7 +302,7 @@ export default function UserSidebarWithWalls({
               <span className="text-xs">●</span>
               المتصلون الآن
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
-                {users.filter(u => u.isOnline).length}
+                {users.length}
               </span>
             </div>
             
