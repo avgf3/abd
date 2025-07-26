@@ -304,7 +304,7 @@ export default function MessageArea({
                     {message.sender?.username}
                   </button>
                   
-                  {message.sender && <UserRoleBadge userType={message.sender.userType} />}
+                                        {message.sender && <UserRoleBadge user={message.sender} />}
                   
                   <span className="text-xs text-gray-500 mr-auto">
                     {formatTime(message.timestamp)}
@@ -326,7 +326,7 @@ export default function MessageArea({
                     />
                   ) : (
                     <div className="leading-relaxed">
-                      {renderMessageWithMentions(message.content, onlineUsers)}
+                      {renderMessageWithMentions(message.content, currentUser, onlineUsers)}
                     </div>
                   )}
                 </div>
@@ -374,7 +374,7 @@ export default function MessageArea({
             </Button>
             {showEmojiPicker && (
               <div className="absolute bottom-full mb-2 z-10">
-                <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+                <EmojiPicker onEmojiSelect={handleEmojiSelect} onClose={() => setShowEmojiPicker(false)} />
               </div>
             )}
           </div>

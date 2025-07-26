@@ -438,7 +438,7 @@ export function useChat() {
     try {
       // إنشاء اتصال Socket.IO
       if (!socket.current) {
-        const serverUrl = import.meta.env?.VITE_SERVER_URL || 'http://localhost:5000';
+        const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
         socket.current = io(serverUrl, {
           transports: ['websocket', 'polling'],
           timeout: 10000,
@@ -552,6 +552,7 @@ export function useChat() {
     unignoreUser,
     sendTyping,
     setShowKickCountdown: (show: boolean) => dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: show }),
+    setNewMessageSender: (sender: ChatUser | null) => dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: sender }),
 
     // إصلاح: دوال مطلوبة للمكونات
     sendPublicMessage: (content: string) => sendMessage(content, 'text'),
