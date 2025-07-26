@@ -659,6 +659,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // إضافة endpoint لفحص حالة المستخدم
+  app.get('/api/user-status/:userId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'مستخدم غير موجود' });
+      }
+      
+      const userStatus = await moderationSystem.checkUserStatus(userId);
+      
+      res.json({
+        user: {
+          id: user.id,
+          username: user.username,
+          userType: user.userType,
+          isMuted: user.isMuted,
+          muteExpiry: user.muteExpiry,
+          isBanned: user.isBanned,
+          banExpiry: user.banExpiry,
+          isBlocked: user.isBlocked
+        },
+        status: userStatus
+      });
+    } catch (error) {
+      console.error('خطأ في فحص حالة المستخدم:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // إضافة endpoint لإصلاح حالة المراقبة
+  app.post('/api/fix-moderation/:userId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'مستخدم غير موجود' });
+      }
+      
+      // إزالة جميع قيود المراقبة للمستخدمين العاديين
+      if (user.userType === 'guest' || user.userType === 'member') {
+        await storage.updateUser(userId, {
+          isMuted: false,
+          muteExpiry: null,
+          isBanned: false,
+          banExpiry: null,
+          isBlocked: false
+        });
+        
+        res.json({ 
+          success: true, 
+          message: `تم إصلاح حالة المراقبة للمستخدم ${user.username}` 
+        });
+      } else {
+        res.json({ 
+          success: false, 
+          message: 'هذا المستخدم من الإدارة - لا يمكن تعديل حالته' 
+        });
+      }
+    } catch (error) {
+      console.error('خطأ في إصلاح حالة المراقبة:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // إعداد Socket.IO محسن مع أمان وثبات أفضل
@@ -1255,22 +1320,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         if (!socket.userId) return;
         
-        // فحص حالة الكتم والحظر
-        const userStatus = await moderationSystem.checkUserStatus(socket.userId);
-        console.log(`🔍 User ${socket.userId} status:`, userStatus);
+        // فحص حالة الكتم والحظر - تعطيل مؤقت للاختبار
+        const user = await storage.getUser(socket.userId);
+        console.log(`🔍 User ${socket.userId} details:`, {
+          id: user?.id,
+          username: user?.username,
+          userType: user?.userType,
+          isMuted: user?.isMuted,
+          isBanned: user?.isBanned,
+          isBlocked: user?.isBlocked
+        });
         
-        if (userStatus.isMuted) {
-          socket.emit('message', {
-            type: 'error',
-            message: 'أنت مكتوم ولا يمكنك إرسال رسائل في الدردشة العامة. يمكنك التحدث في الرسائل الخاصة.',
-            action: 'muted'
-          });
-          return;
-        }
-        
-        if (userStatus.isBanned || userStatus.isBlocked) {
-          console.log(`🚫 User ${socket.userId} is banned/blocked, ignoring message`);
-          return; // تجاهل الرسالة
+        // للمستخدمين العاديين - تخطي فحص المراقبة مؤقتاً
+        if (user && (user.userType === 'guest' || user.userType === 'member')) {
+          console.log(`✅ تخطي فحص المراقبة للمستخدم العادي ${user.username}`);
+          // لا نفحص المراقبة للمستخدمين العاديين
+        } else {
+          // فحص المراقبة فقط للإدارة
+          const userStatus = await moderationSystem.checkUserStatus(socket.userId);
+          console.log(`🔍 Admin user ${socket.userId} status:`, userStatus);
+          
+          if (userStatus.isMuted) {
+            socket.emit('message', {
+              type: 'error',
+              message: 'أنت مكتوم ولا يمكنك إرسال رسائل في الدردشة العامة.',
+              action: 'muted'
+            });
+            return;
+          }
+          
+          if (userStatus.isBanned || userStatus.isBlocked) {
+            console.log(`🚫 Admin user ${socket.userId} is banned/blocked, ignoring message`);
+            return;
+          }
         }
 
         // تنظيف المحتوى
