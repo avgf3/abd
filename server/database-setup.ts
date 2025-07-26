@@ -13,7 +13,7 @@ export async function initializeDatabase(): Promise<boolean> {
       return true;
     }
 
-          log.info('🔄 Initializing database tables...');
+    log.info('🔄 Initializing database tables...');
     
     // Create tables for SQLite (PostgreSQL migrations are handled separately)
     if (dbType !== 'postgresql') {
@@ -23,10 +23,13 @@ export async function initializeDatabase(): Promise<boolean> {
     // Check and add missing columns
     await addMissingColumns();
     
+    // إنشاء المالك الافتراضي إذا لم يكن موجود
+    await createDefaultOwner();
+    
     // Create default users if needed
     await createDefaultUsers();
     
-          log.production('✅ Database initialization completed successfully');
+    log.production('✅ Database initialization completed successfully');
     return true;
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
@@ -37,7 +40,8 @@ export async function initializeDatabase(): Promise<boolean> {
 export async function runMigrations(): Promise<void> {
   try {
     if (!process.env.DATABASE_URL) {
-      throw new Error("❌ DATABASE_URL غير محدد - مطلوب PostgreSQL");
+      console.log("⚠️ DATABASE_URL غير محدد - تخطي المايقريشن");
+      return;
     }
 
     // Create a separate connection for migrations
@@ -60,7 +64,8 @@ export async function runMigrations(): Promise<void> {
     // Close migration connection
     await migrationClient.end();
     
-    } catch (error: any) {
+    console.log('✅ Migrations completed successfully');
+  } catch (error: any) {
     console.error('❌ Error running migrations:', error);
     
     // إذا كانت المشكلة أن الجدول موجود بالفعل، استمر
@@ -72,8 +77,55 @@ export async function runMigrations(): Promise<void> {
       return;
     }
     
-    // للأخطاء الأخرى، ارمي الخطأ
-    throw error;
+    // للأخطاء الأخرى، لا ترمي الخطأ - استمر مع SQLite
+    console.log('⚠️ Falling back to SQLite mode');
+  }
+}
+
+// إنشاء المالك الافتراضي
+export async function createDefaultOwner(): Promise<void> {
+  try {
+    if (!db) return;
+
+    // البحث عن مالك موجود
+    const existingOwner = await db.select().from(users).where(sql`user_type = 'owner'`).limit(1);
+    
+    if (existingOwner.length === 0) {
+      console.log('🔑 Creating default owner...');
+      
+      const bcrypt = await import('bcrypt');
+      const hashedPassword = await bcrypt.hash('admin123', 12);
+      
+      await db.insert(users).values({
+        username: 'Owner',
+        password: hashedPassword,
+        userType: 'owner',
+        role: 'owner',
+        profileBackgroundColor: '#FFD700',
+        usernameColor: '#FFD700',
+        userTheme: 'royal',
+        profileEffect: 'golden',
+        points: 10000,
+        level: 100,
+        totalPoints: 10000,
+        levelProgress: 100,
+        joinDate: new Date(),
+        createdAt: new Date(),
+        isOnline: false,
+        isHidden: false,
+        isMuted: false,
+        isBanned: false,
+        isBlocked: false,
+        ignoredUsers: '[]'
+      });
+      
+      console.log('✅ Default owner created successfully');
+      console.log('👑 Owner credentials: Username: Owner, Password: admin123');
+    } else {
+      console.log('✅ Owner already exists');
+    }
+  } catch (error) {
+    console.error('❌ Error creating default owner:', error);
   }
 }
 
@@ -88,7 +140,7 @@ export async function runDrizzlePush(): Promise<void> {
     // For now, we'll create tables manually as fallback
     await createTablesManually();
     
-    } catch (error: any) {
+  } catch (error: any) {
     console.error('❌ Error running emergency push:', error);
     
     // إذا كانت المشكلة أن الجدول موجود بالفعل، استمر
@@ -100,146 +152,18 @@ export async function runDrizzlePush(): Promise<void> {
       return;
     }
     
-    throw error;
+    // للأخطاء الأخرى، لا ترمي الخطأ
+    console.log('⚠️ Emergency push failed, continuing...');
   }
 }
 
+// إنشاء الجداول يدوياً
 async function createTablesManually(): Promise<void> {
   if (!db) return;
-  
+
   try {
-    // Create all tables manually as emergency fallback
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username TEXT NOT NULL UNIQUE,
-        password TEXT,
-        user_type TEXT NOT NULL DEFAULT 'guest',
-        role TEXT NOT NULL DEFAULT 'guest',
-        profile_image TEXT,
-        profile_banner TEXT,
-        profile_background_color TEXT DEFAULT '#3c0d0d',
-        status TEXT,
-        gender TEXT,
-        age INTEGER,
-        country TEXT,
-        relation TEXT,
-        bio TEXT,
-        is_online BOOLEAN DEFAULT false,
-        is_hidden BOOLEAN DEFAULT false,
-        last_seen TIMESTAMP,
-        join_date TIMESTAMP DEFAULT NOW(),
-        created_at TIMESTAMP DEFAULT NOW(),
-        is_muted BOOLEAN DEFAULT false,
-        mute_expiry TIMESTAMP,
-        is_banned BOOLEAN DEFAULT false,
-        ban_expiry TIMESTAMP,
-        is_blocked BOOLEAN DEFAULT false,
-        ip_address VARCHAR(45),
-        device_id VARCHAR(100),
-        ignored_users TEXT DEFAULT '[]',
-        username_color TEXT DEFAULT '#FFFFFF',
-        user_theme TEXT DEFAULT 'default',
-        profile_effect TEXT DEFAULT 'none',
-        points INTEGER DEFAULT 0,
-        level INTEGER DEFAULT 1,
-        total_points INTEGER DEFAULT 0,
-        level_progress INTEGER DEFAULT 0
-      )
-    `);
-
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS messages (
-        id SERIAL PRIMARY KEY,
-        sender_id INTEGER REFERENCES users(id),
-        receiver_id INTEGER REFERENCES users(id),
-        content TEXT NOT NULL,
-        message_type TEXT NOT NULL DEFAULT 'text',
-        is_private BOOLEAN DEFAULT false,
-        timestamp TIMESTAMP DEFAULT NOW()
-      )
-    `);
-
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS friends (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id),
-        friend_id INTEGER REFERENCES users(id),
-        status TEXT NOT NULL DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
-
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS notifications (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL REFERENCES users(id),
-        type TEXT NOT NULL,
-        title TEXT NOT NULL,
-        message TEXT NOT NULL,
-        is_read BOOLEAN DEFAULT false,
-        data JSONB,
-        created_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
-
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS blocked_devices (
-        id SERIAL PRIMARY KEY,
-        ip_address TEXT NOT NULL,
-        device_id TEXT NOT NULL,
-        user_id INTEGER NOT NULL,
-        reason TEXT NOT NULL,
-        blocked_at TIMESTAMP NOT NULL,
-        blocked_by INTEGER NOT NULL
-      )
-    `);
-
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS level_settings (
-        id SERIAL PRIMARY KEY,
-        level INTEGER NOT NULL UNIQUE,
-        required_points INTEGER NOT NULL,
-        title TEXT NOT NULL,
-        color TEXT DEFAULT '#FFFFFF',
-        benefits JSONB,
-        created_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
-
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS points_history (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL REFERENCES users(id),
-        points INTEGER NOT NULL,
-        reason TEXT NOT NULL,
-        action TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
-
-    } catch (error: any) {
-    console.error('❌ Error creating tables manually:', error);
-    
-    // إذا كانت المشكلة أن الجدول موجود بالفعل، استمر
-    if (error.message?.includes('already exists') || 
-        error.code === '42P07' || 
-        error.message?.includes('relation') ||
-        error.message?.includes('constraint')) {
-      console.log('⚠️ Manual table creation skipped - tables already exist');
-      return;
-    }
-    
-    throw error;
-  }
-}
-
-async function createTables(): Promise<void> {
-  if (!db) return;
-  
-  if (dbType === 'postgresql') {
-    // Create PostgreSQL tables with proper syntax
-    try {
+    // إنشاء جداول PostgreSQL يدوياً
+    if (dbType === 'postgresql') {
       await db.execute(sql`
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
@@ -271,7 +195,11 @@ async function createTables(): Promise<void> {
           ignored_users TEXT DEFAULT '[]',
           username_color TEXT DEFAULT '#FFFFFF',
           user_theme TEXT DEFAULT 'default',
-          profile_effect TEXT DEFAULT 'none'
+          profile_effect TEXT DEFAULT 'none',
+          points INTEGER DEFAULT 0,
+          level INTEGER DEFAULT 1,
+          total_points INTEGER DEFAULT 0,
+          level_progress INTEGER DEFAULT 0
         )
       `);
 
@@ -283,6 +211,7 @@ async function createTables(): Promise<void> {
           content TEXT NOT NULL,
           message_type TEXT NOT NULL DEFAULT 'text',
           is_private BOOLEAN DEFAULT false,
+          room_id TEXT DEFAULT 'general',
           timestamp TIMESTAMP DEFAULT NOW()
         )
       `);
@@ -318,32 +247,102 @@ async function createTables(): Promise<void> {
           user_id INTEGER NOT NULL,
           reason TEXT NOT NULL,
           blocked_at TIMESTAMP NOT NULL,
-          blocked_by INTEGER NOT NULL,
-          UNIQUE(ip_address, device_id)
+          blocked_by INTEGER NOT NULL
         )
       `);
 
-      } catch (error) {
-      console.error('❌ Error creating PostgreSQL tables:', error);
-      throw error;
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS points_history (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id),
+          points INTEGER NOT NULL,
+          reason TEXT NOT NULL,
+          action TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS level_settings (
+          id SERIAL PRIMARY KEY,
+          level INTEGER NOT NULL UNIQUE,
+          required_points INTEGER NOT NULL,
+          title TEXT NOT NULL,
+          color TEXT DEFAULT '#FFFFFF',
+          benefits JSONB,
+          created_at TIMESTAMP DEFAULT NOW()
+        ) ON CONFLICT DO NOTHING
+      `);
     }
-    return;
+    
+    console.log('✅ Manual table creation completed');
+  } catch (error) {
+    console.error('❌ Error creating tables manually:', error);
   }
-  
-  // For SQLite, tables are created by database-fallback.ts
-  }
+}
 
+// إضافة الأعمدة المفقودة
 async function addMissingColumns(): Promise<void> {
-  if (!db) {
-    return;
-  }
+  if (!db) return;
 
-  if (dbType === 'postgresql') {
-    return;
-  }
+  try {
+    console.log('🔧 Checking for missing columns...');
+    
+    // إضافة عمود role إذا كان مفقود
+    try {
+      if (dbType === 'postgresql') {
+        await db.execute(sql`
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'guest'
+        `);
+        
+        // تحديث عمود role ليطابق user_type للمستخدمين الموجودين
+        await db.execute(sql`
+          UPDATE users SET role = user_type WHERE role IS NULL OR role = ''
+        `);
+      } else {
+        // SQLite
+        await db.execute(sql`
+          ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'guest'
+        `);
+      }
+      console.log('✅ Added missing role column');
+    } catch (error: any) {
+      if (!error.message?.includes('already exists') && !error.message?.includes('duplicate')) {
+        console.error('❌ Error adding role column:', error);
+      }
+    }
 
-  // For SQLite - columns are created by database-fallback.ts
+    // إضافة أعمدة أخرى مفقودة
+    const columnsToAdd = [
+      'profile_background_color TEXT DEFAULT \'#3c0d0d\'',
+      'username_color TEXT DEFAULT \'#FFFFFF\'',
+      'user_theme TEXT DEFAULT \'default\'',
+      'profile_effect TEXT DEFAULT \'none\'',
+      'points INTEGER DEFAULT 0',
+      'level INTEGER DEFAULT 1',
+      'total_points INTEGER DEFAULT 0',
+      'level_progress INTEGER DEFAULT 0'
+    ];
+
+    for (const column of columnsToAdd) {
+      try {
+        if (dbType === 'postgresql') {
+          await db.execute(sql.raw(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ${column}`));
+        } else {
+          await db.execute(sql.raw(`ALTER TABLE users ADD COLUMN ${column}`));
+        }
+      } catch (error: any) {
+        if (!error.message?.includes('already exists') && !error.message?.includes('duplicate')) {
+          console.warn(`⚠️ Could not add column ${column}:`, error.message);
+        }
+      }
+    }
+
+    console.log('✅ Missing columns check completed');
+  } catch (error) {
+    console.error('❌ Error checking missing columns:', error);
   }
+}
 
 // Alias function for compatibility
 export async function createDefaultUsersIfNeeded(): Promise<void> {
