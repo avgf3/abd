@@ -189,3 +189,11 @@ export interface RoomWebSocketMessage extends WebSocketMessage {
   room?: ChatRoom;
   rooms?: ChatRoom[];
 }
+
+// API Response interface
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}

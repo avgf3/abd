@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { Server as IOServer, Socket } from "socket.io";
 import { storage } from "./storage";
 import { setupDownloadRoute } from "./download-route";
-import { insertUserSchema, insertMessageSchema } from "../../shared/schema";
+import { insertUserSchema, insertMessageSchema } from "../shared/schema";
 import { spamProtection } from "./spam-protection";
 import { moderationSystem } from "./moderation";
 import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter } from "./security";

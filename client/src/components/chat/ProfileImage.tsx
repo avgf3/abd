@@ -5,9 +5,10 @@ interface ProfileImageProps {
   user: ChatUser;
   size?: 'small' | 'medium' | 'large';
   className?: string;
+  onClick?: (e: any) => void;
 }
 
-export default function ProfileImage({ user, size = 'medium', className = '' }: ProfileImageProps) {
+export default function ProfileImage({ user, size = 'medium', className = '', onClick }: ProfileImageProps) {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,7 +61,7 @@ export default function ProfileImage({ user, size = 'medium', className = '' }: 
   };
 
   return (
-    <div className="relative">
+    <div className="relative" onClick={onClick}>
       {/* مؤشر التحميل */}
       {isLoading && (
         <div className={`${sizeClasses[size]} rounded-full bg-gray-200 animate-pulse flex items-center justify-center ${className}`}>
