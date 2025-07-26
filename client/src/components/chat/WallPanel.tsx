@@ -28,15 +28,27 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const response = await apiRequest(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`, {
+      const response = await fetch(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`, {
         method: 'GET',
       });
       if (response.ok) {
         const data = await response.json();
         setPosts(data.posts || []);
+      } else {
+        console.error('خطأ في جلب المنشورات:', response.status);
+        toast({
+          title: "خطأ",
+          description: "فشل في جلب المنشورات",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('خطأ في جلب المنشورات:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في الاتصال بالخادم",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
