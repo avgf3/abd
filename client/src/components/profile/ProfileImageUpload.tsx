@@ -55,45 +55,64 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       };
       reader.readAsDataURL(file);
 
-      // رفع الصورة للخادم
+      // رفع الصورة للخادم - إصلاح المشكلة
+      console.log('📤 بدء رفع صورة البروفايل...');
+      
       const response = await fetch('/api/upload/profile-image', {
         method: 'POST',
         body: formData,
       });
 
+      console.log('📡 استجابة الخادم:', response.status);
+      
       if (!response.ok) {
-        throw new Error('فشل في رفع الصورة');
+        const errorData = await response.json().catch(() => ({ error: 'فشل في رفع الصورة' }));
+        throw new Error(errorData.error || 'فشل في رفع الصورة');
       }
 
       const result = await response.json();
+      console.log('✅ نتيجة رفع الصورة:', result);
       
-      // تحديث بيانات المستخدم
-      await apiRequest(`/api/users/${currentUser.id}`, {
-        method: 'PUT',
-        body: { profileImage: result.imageUrl }
-      });
-
-      // تحديث الواجهة
+      // تحديث الواجهة فوراً
       if (onImageUpdate) {
         onImageUpdate(result.imageUrl);
       }
 
       toast({
-        title: "تم بنجاح",
+        title: "تم رفع الصورة بنجاح",
         description: "تم تحديث صورة البروفايل",
-        variant: "default",
       });
 
-    } catch (error) {
-      console.error('Error uploading image:', error);
+      // إخفاء المعاينة
+      setPreview(null);
+
+    } catch (error: any) {
+      console.error('❌ خطأ في رفع الصورة:', error);
+      
       toast({
-        title: "خطأ",
-        description: "فشل في رفع الصورة، يرجى المحاولة مرة أخرى",
+        title: "خطأ في رفع الصورة",
+        description: error.message || "حدث خطأ أثناء رفع الصورة",
         variant: "destructive",
       });
+      
       setPreview(null);
     } finally {
       setUploading(false);
+      
+      // تنظيف input files
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
     }
   };
 
@@ -104,82 +123,75 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileSelect(file);
+  const removePreview = () => {
+    setPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
     }
   };
 
-  const removePreview = () => {
-    setPreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    if (cameraInputRef.current) cameraInputRef.current.value = '';
-  };
-
   return (
-    <div className="flex flex-col items-center space-y-4">
+    <div className="space-y-4">
       {/* معاينة الصورة */}
-      <div className="relative">
-        <div className="w-28 h-28 rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 border-4 border-white shadow-xl ring-2 ring-blue-500/20">
-          {preview ? (
-            <img 
-              src={preview} 
-              alt="معاينة الصورة" 
-              className="w-full h-full object-cover"
-            />
-          ) : (currentUser?.profileImage && currentUser.profileImage !== '/default_avatar.svg') ? (
-            <img 
-              src={currentUser.profileImage} 
-              alt="صورة البروفايل" 
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10"></div>
-              <span className="text-3xl text-gray-500 relative z-10 filter drop-shadow-sm">👤</span>
-            </div>
-          )}
-        </div>
-        
-        {preview && (
+      {preview && (
+        <div className="relative w-32 h-32 mx-auto">
+          <img
+            src={preview}
+            alt="معاينة الصورة"
+            className="w-full h-full rounded-full object-cover border-4 border-primary"
+          />
           <button
             onClick={removePreview}
-            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-all duration-200 shadow-lg hover:scale-110 border-2 border-white"
+            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+            disabled={uploading}
           >
-            <X size={14} />
+            <X className="w-3 h-3" />
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* أزرار التحكم */}
-      <div className="flex gap-2">
-        {/* زر الكاميرا */}
-        <Button
-          onClick={() => cameraInputRef.current?.click()}
-          disabled={uploading}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
-        >
-          <Camera size={14} />
-          كاميرا
-        </Button>
-
-        {/* زر رفع الملف */}
+      {/* أزرار الرفع */}
+      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        {/* رفع من الجهاز */}
         <Button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
+          className="flex items-center gap-2"
           variant="outline"
-          size="sm"
-          className="flex items-center gap-2 bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
         >
-          <Upload size={14} />
-          رفع
+          {uploading ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+          ) : (
+            <Upload className="w-4 h-4" />
+          )}
+          اختيار صورة
+        </Button>
+
+        {/* التقاط بالكاميرا */}
+        <Button
+          onClick={() => cameraInputRef.current?.click()}
+          disabled={uploading}
+          className="flex items-center gap-2"
+          variant="outline"
+        >
+          <Camera className="w-4 h-4" />
+          التقاط صورة
         </Button>
       </div>
 
-      {/* حقول الإدخال المخفية */}
+      {/* Input مخفي للملفات */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileInputChange}
+        className="hidden"
+      />
+
+      {/* Input مخفي للكاميرا */}
       <input
         ref={cameraInputRef}
         type="file"
@@ -188,20 +200,12 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
         onChange={handleCameraCapture}
         className="hidden"
       />
-      
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileUpload}
-        className="hidden"
-      />
 
-      {uploading && (
-        <div className="text-sm text-blue-600 animate-pulse">
-          جاري رفع الصورة...
-        </div>
-      )}
+      {/* نصائح */}
+      <div className="text-center text-sm text-muted-foreground">
+        <p>الحد الأقصى: 5 ميجابايت</p>
+        <p>الصيغ المدعومة: JPG, PNG, GIF, WebP</p>
+      </div>
     </div>
   );
 }
