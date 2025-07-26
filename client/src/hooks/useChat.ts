@@ -284,6 +284,14 @@ export function useChat() {
       console.log('🔄 طلب قائمة المستخدمين المتصلين...');
       socket.current?.emit('requestOnlineUsers');
       
+      // طلب إضافي بعد ثانية واحدة للتأكد
+      setTimeout(() => {
+        if (socket.current?.connected) {
+          console.log('🔄 طلب إضافي لقائمة المستخدمين...');
+          socket.current.emit('requestOnlineUsers');
+        }
+      }, 1000);
+      
       // تحديث دوري لقائمة المستخدمين كل 30 ثانية
       const userListInterval = setInterval(() => {
         if (socket.current?.connected) {
@@ -311,7 +319,9 @@ export function useChat() {
               // تبسيط عرض المستخدمين - عرض الكل بدون فلترة معقدة
               console.log('👥 تحديث قائمة المستخدمين:', message.users.length);
               console.log('👥 المستخدمون:', message.users.map(u => u.username).join(', '));
+              console.log('👥 قبل التحديث كان لدينا:', state.onlineUsers.length, 'مستخدم');
               dispatch({ type: 'SET_ONLINE_USERS', payload: message.users });
+              console.log('✅ تم تحديث قائمة المستخدمين بنجاح');
             } else {
               console.warn('⚠️ لم يتم استقبال قائمة مستخدمين');
             }
@@ -331,6 +341,13 @@ export function useChat() {
                 );
                 dispatch({ type: 'SET_ONLINE_USERS', payload: updatedUsers });
               }
+              
+              // طلب قائمة محدثة من الخادم للتأكد
+              setTimeout(() => {
+                if (socket.current?.connected) {
+                  socket.current.emit('requestOnlineUsers');
+                }
+              }, 500);
             }
             break;
             
@@ -434,6 +451,9 @@ export function useChat() {
   const connect = useCallback((user: ChatUser) => {
     dispatch({ type: 'SET_CURRENT_USER', payload: user });
     dispatch({ type: 'SET_LOADING', payload: true });
+    
+    // إضافة المستخدم الحالي للقائمة فوراً
+    dispatch({ type: 'SET_ONLINE_USERS', payload: [user] });
 
     try {
       // إنشاء اتصال Socket.IO
