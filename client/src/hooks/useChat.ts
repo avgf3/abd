@@ -281,6 +281,7 @@ export function useChat() {
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
       
       // طلب قائمة المستخدمين المتصلين فور الاتصال
+      console.log('🔄 طلب قائمة المستخدمين المتصلين...');
       socket.current?.emit('requestOnlineUsers');
       
       // تحديث دوري لقائمة المستخدمين كل 30 ثانية
@@ -309,7 +310,10 @@ export function useChat() {
             if (message.users) {
               // تبسيط عرض المستخدمين - عرض الكل بدون فلترة معقدة
               console.log('👥 تحديث قائمة المستخدمين:', message.users.length);
+              console.log('👥 المستخدمون:', message.users.map(u => u.username).join(', '));
               dispatch({ type: 'SET_ONLINE_USERS', payload: message.users });
+            } else {
+              console.warn('⚠️ لم يتم استقبال قائمة مستخدمين');
             }
             break;
             
@@ -339,6 +343,7 @@ export function useChat() {
             break;
             
           case 'newMessage':
+            console.log('📨 استقبال رسالة جديدة:', message.message);
             if (message.message && typeof message.message === 'object' && !message.message.isPrivate) {
               if (!isValidMessage(message.message as ChatMessage)) {
                 console.warn('رسالة مرفوضة من الخادم:', message.message);
@@ -348,6 +353,7 @@ export function useChat() {
               if (!state.ignoredUsers.has(message.message.senderId)) {
                 const chatMessage = message.message as ChatMessage;
                 const messageRoomId = (chatMessage as any).roomId || 'general';
+                console.log(`✅ إضافة رسالة للغرفة ${messageRoomId}`);
                 
                 dispatch({ 
                   type: 'ADD_ROOM_MESSAGE', 
@@ -358,6 +364,8 @@ export function useChat() {
                 if (chatMessage.senderId !== user.id) {
                   playNotificationSound();
                 }
+              } else {
+                console.log('🚫 رسالة من مستخدم متجاهل:', message.message.senderId);
               }
             }
             break;
@@ -456,7 +464,10 @@ export function useChat() {
 
   // Send message function - محسنة
   const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number) => {
-    if (!state.currentUser || !socket.current?.connected) return;
+    if (!state.currentUser || !socket.current?.connected) {
+      console.error('❌ لا يمكن إرسال الرسالة - المستخدم غير متصل');
+      return;
+    }
 
     const messageData = {
       senderId: state.currentUser.id,
@@ -467,7 +478,15 @@ export function useChat() {
       roomId: state.currentRoomId
     };
 
-    socket.current.emit('message', messageData);
+    console.log('📤 إرسال رسالة:', messageData);
+    
+    if (receiverId) {
+      // رسالة خاصة
+      socket.current.emit('privateMessage', messageData);
+    } else {
+      // رسالة عامة
+      socket.current.emit('publicMessage', messageData);
+    }
   }, [state.currentUser, state.currentRoomId]);
 
   // Disconnect function
