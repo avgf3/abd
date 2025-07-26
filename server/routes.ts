@@ -1137,104 +1137,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
 
     // معالج المصادقة المحسن
-    socket.on('auth', async (data) => {
+    socket.on('auth', async (userData: { userId?: number; username?: string; userType?: string }) => {
       try {
-        // التحقق من صحة بيانات المصادقة
-        if (!data || !data.userId || !data.username) {
-          socket.emit('message', { type: 'error', message: 'بيانات مصادقة غير صالحة' });
-          socket.disconnect(true);
+        console.log('🔐 طلب مصادقة:', userData);
+        
+        if (!userData.userId) {
+          socket.emit('error', { message: 'بيانات المصادقة غير مكتملة' });
           return;
         }
-        
-        // إلغاء timeout المصادقة
-        if (connectionTimeout) {
-          clearTimeout(connectionTimeout);
-          connectionTimeout = null;
-        }
-        
-        // تعيين معلومات المستخدم
-        socket.userId = data.userId;
-        socket.username = data.username;
-        socket.isAuthenticated = true;
-        isAuthenticated = true;
-        
-        // انضمام للغرفة الخاصة بالمستخدم للرسائل المباشرة
-        socket.join(data.userId.toString());
-        // فحص حالة المستخدم قبل السماح بالاتصال
-        const authUserStatus = await moderationSystem.checkUserStatus(data.userId);
-        if (authUserStatus.isBlocked) {
-          socket.emit('message', {
-            type: 'error',
-            message: 'أنت محجوب نهائياً من الدردشة',
-            action: 'blocked'
-          });
-          socket.disconnect(true);
+
+        // الحصول على بيانات المستخدم
+        const user = await storage.getUser(userData.userId);
+        if (!user) {
+          socket.emit('error', { message: 'المستخدم غير موجود' });
           return;
         }
-        
-        if (authUserStatus.isBanned) {
-          socket.emit('message', {
-            type: 'error',
-            message: `أنت مطرود من الدردشة لمدة ${authUserStatus.timeLeft} دقيقة`,
-            action: 'banned'
-          });
-          socket.disconnect();
-          return;
-        }
-        
-        await storage.setUserOnlineStatus(data.userId, true);
-        
-        // Broadcast user joined - التأكد من إظهار المستخدم بشكل صحيح
-        const joinedUser = await storage.getUser(data.userId);
-        if (joinedUser) {
-          // التأكد من أن المستخدم ليس مخفي إلا إذا كان إدمن أو مالك وقرر الإخفاء
-          if (joinedUser.userType !== 'guest' && !joinedUser.isHidden) {
-            joinedUser.isHidden = false; // التأكد من عدم الإخفاء للأعضاء
-          }
-          
-          io.emit('message', { type: 'userJoined', user: joinedUser });
-        }
-        
-        // Send online users list with moderation status
+
+        // تحديث معلومات Socket
+        (socket as CustomSocket).userId = user.id;
+        (socket as CustomSocket).username = user.username;
+        (socket as CustomSocket).userType = user.userType;
+        (socket as CustomSocket).isAuthenticated = true;
+
+        // تحديث حالة المستخدم إلى متصل
+        await storage.updateUserStatus(user.id, true);
+
+        console.log(`✅ تمت مصادقة المستخدم: ${user.username} (${user.userType})`);
+
+        // إرسال تأكيد المصادقة
+        socket.emit('connected', { 
+          message: 'تم الاتصال بنجاح',
+          user: user 
+        });
+
+        // جلب وإرسال قائمة المستخدمين المتصلين - إصلاح
+        console.log('📡 جلب قائمة المستخدمين المتصلين...');
         const onlineUsers = await storage.getOnlineUsers();
-        const usersWithStatus = await Promise.all(
-          onlineUsers.map(async (user) => {
-            const status = await moderationSystem.checkUserStatus(user.id);
-            return {
-              ...user,
-              isMuted: status.isMuted,
-              isBlocked: status.isBlocked,
-              isBanned: status.isBanned
-            };
-          })
-        );
+        console.log(`👥 عدد المستخدمين المتصلين: ${onlineUsers.length}`);
         
-        socket.emit('message', { type: 'onlineUsers', users: usersWithStatus });
-        
-        // إضافة نقاط تسجيل الدخول اليومي
-        try {
-          const dailyLoginResult = await pointsService.addDailyLoginPoints(socket.userId);
-          if (dailyLoginResult?.leveledUp) {
-            socket.emit('message', {
-              type: 'levelUp',
-              oldLevel: dailyLoginResult.oldLevel,
-              newLevel: dailyLoginResult.newLevel,
-              levelInfo: dailyLoginResult.levelInfo,
-              message: `🎉 تهانينا! وصلت للمستوى ${dailyLoginResult.newLevel}: ${dailyLoginResult.levelInfo?.title}`
-            });
-          } else if (dailyLoginResult) {
-            socket.emit('message', {
-              type: 'dailyBonus',
-              points: dailyLoginResult.newPoints - (dailyLoginResult.newTotalPoints - dailyLoginResult.newPoints),
-              message: `🎁 مكافأة يومية! حصلت على ${dailyLoginResult.newPoints - (dailyLoginResult.newTotalPoints - dailyLoginResult.newPoints)} نقطة!`
-            });
-          }
-        } catch (pointsError) {
-          console.error('خطأ في إضافة نقاط تسجيل الدخول:', pointsError);
-        }
+        // إرسال قائمة المستخدمين للمستخدم الجديد
+        socket.emit('message', { 
+          type: 'onlineUsers', 
+          users: onlineUsers 
+        });
+
+        // إخبار باقي المستخدمين بانضمام مستخدم جديد
+        socket.broadcast.emit('message', {
+          type: 'userJoined',
+          user: user
+        });
+
+        console.log(`📤 تم إرسال قائمة ${onlineUsers.length} مستخدم إلى ${user.username}`);
+
       } catch (error) {
-        console.error('خطأ في المصادقة:', error);
-        socket.emit('message', { type: 'error', message: 'خطأ في المصادقة' });
+        console.error('❌ خطأ في المصادقة:', error);
+        socket.emit('error', { message: 'خطأ في المصادقة' });
+      }
+    });
+
+    // طلب تحديث قائمة المستخدمين المتصلين
+    socket.on('requestOnlineUsers', async () => {
+      try {
+        if (!(socket as CustomSocket).isAuthenticated) {
+          return;
+        }
+
+        console.log('🔄 طلب تحديث قائمة المستخدمين...');
+        const onlineUsers = await storage.getOnlineUsers();
+        console.log(`👥 إرسال ${onlineUsers.length} مستخدم متصل`);
+        
+        socket.emit('message', { 
+          type: 'onlineUsers', 
+          users: onlineUsers 
+        });
+      } catch (error) {
+        console.error('❌ خطأ في جلب المستخدمين المتصلين:', error);
       }
     });
 

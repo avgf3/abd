@@ -193,11 +193,14 @@ export function useChat() {
   // تحسين الأداء: مدراء التحسين
   const messageCache = useRef(new MessageCacheManager());
   
-  // Memoized values to prevent unnecessary re-renders
-  const memoizedOnlineUsers = useMemo(() => 
-    state.onlineUsers.filter(user => !state.ignoredUsers.has(user.id)),
-    [state.onlineUsers, state.ignoredUsers]
-  );
+  // Memoized values to prevent unnecessary re-renders - إصلاح المنطق
+  const memoizedOnlineUsers = useMemo(() => {
+    // عرض جميع المستخدمين بدون فلترة معقدة
+    return state.onlineUsers.filter(user => {
+      // إظهار جميع المستخدمين إلا المتجاهلين فقط
+      return !state.ignoredUsers.has(user.id);
+    });
+  }, [state.onlineUsers, state.ignoredUsers]);
 
   // Notifications state
   const [levelUpNotification, setLevelUpNotification] = useState<{
@@ -279,13 +282,24 @@ export function useChat() {
             
           case 'onlineUsers':
             if (message.users) {
-              const filteredUsers = message.users.filter((chatUser: ChatUser) => {
-                if (user.userType === 'admin' || user.userType === 'owner') {
-                  return !state.ignoredUsers.has(chatUser.id);
-                }
-                return !state.ignoredUsers.has(chatUser.id) && !chatUser.isHidden;
-              });
-              dispatch({ type: 'SET_ONLINE_USERS', payload: filteredUsers });
+              // تبسيط عرض المستخدمين - عرض الكل بدون فلترة معقدة
+              console.log('👥 تحديث قائمة المستخدمين:', message.users.length);
+              dispatch({ type: 'SET_ONLINE_USERS', payload: message.users });
+            }
+            break;
+            
+          case 'userJoined':
+            if (message.user) {
+              console.log('👤 مستخدم جديد انضم:', message.user.username);
+              dispatch({ type: 'SET_ONLINE_USERS', payload: [...state.onlineUsers, message.user] });
+            }
+            break;
+            
+          case 'userLeft':
+            if (message.userId) {
+              console.log('👤 مستخدم غادر:', message.userId);
+              const updatedUsers = state.onlineUsers.filter(u => u.id !== message.userId);
+              dispatch({ type: 'SET_ONLINE_USERS', payload: updatedUsers });
             }
             break;
             
@@ -371,7 +385,7 @@ export function useChat() {
         console.error('خطأ في معالجة الرسالة:', error);
       }
     });
-  }, [state.ignoredUsers, state.typingUsers, isValidMessage]);
+  }, [state.ignoredUsers, state.typingUsers, state.onlineUsers, isValidMessage]);
 
   // Connect function - محسنة
   const connect = useCallback((user: ChatUser) => {
