@@ -6,7 +6,7 @@ import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
 import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import * as pgSchema from "../shared/schema";
-import * as sqliteSchema from "../shared/schema-sqlite";
+import * as sqliteSchema from "../shared/schema";
 import type { NeonQueryResultHKT } from 'drizzle-orm/neon-serverless';
 import type { PgDatabase } from 'drizzle-orm/pg-core';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
