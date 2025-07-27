@@ -372,7 +372,11 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
     try {
       const formData = new FormData();
-      formData.append('image', file);
+      if (uploadType === 'profile') {
+        formData.append('profileImage', file);
+      } else {
+        formData.append('banner', file);
+      }
       if (currentUser?.id) {
         formData.append('userId', currentUser.id.toString());
       }
