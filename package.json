@@ -10,7 +10,7 @@
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "tsc server/index.ts --outDir dist/server --target ES2020 --module CommonJS --esModuleInterop --skipLibCheck --resolveJsonModule --declaration --sourceMap",
-    "start": "node dist/server/server/index.js",
+    "start": "node dist/server/index.js",
     "start:dev": "tsx server/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
