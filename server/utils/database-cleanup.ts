@@ -1,128 +1,110 @@
-import { db } from '../db';
-import { messages, users } from '../../shared/schema';
-import { sql, eq, notInArray } from 'drizzle-orm';
+import { db } from "../database-adapter";
+import { users, messages } from "../../shared/schema";
+import { eq, lt, and, sql } from "drizzle-orm";
 
-export class DatabaseCleanup {
-  
-  /**
-   * تنظيف الرسائل من مستخدمين غير موجودين
-   */
-  async cleanupOrphanedMessages(): Promise<number> {
-    try {
-      // الحصول على جميع معرفات المستخدمين الموجودين
-      const existingUsers = await db.select({ id: users.id }).from(users);
-      const existingUserIds = existingUsers.map(user => user.id);
-      
-      if (existingUserIds.length === 0) {
-        return 0;
-      }
-      
-      // حذف الرسائل من مستخدمين غير موجودين
-      const deletedMessages = await db
-        .delete(messages)
-        .where(notInArray(messages.senderId, existingUserIds))
-        .returning({ id: messages.id });
-      
-      return deletedMessages.length;
-      
-    } catch (error) {
-      console.error('❌ خطأ في تنظيف الرسائل اليتيمة:', error);
-      return 0;
-    }
-  }
-  
-  /**
-   * تنظيف الرسائل الفارغة أو غير الصالحة
-   */
-  async cleanupInvalidMessages(): Promise<number> {
-    try {
-      // حذف الرسائل الفارغة أو غير الصالحة
-      const deletedMessages = await db
-        .delete(messages)
-        .where(
-          sql`${messages.content} IS NULL 
-              OR ${messages.content} = '' 
-              OR ${messages.content} = 'مستخدم'
-              OR ${messages.senderId} IS NULL
-              OR ${messages.senderId} <= 0`
+export interface CleanupResults {
+  orphanedMessages: number;
+  invalidMessages: number;
+  oldGuestUsers: number;
+  totalUsers: number;
+  totalMessages: number;
+  onlineUsers: number;
+  guestUsers: number;
+  registeredUsers: number;
+}
+
+export async function cleanupOrphanedMessages(): Promise<number> {
+  try {
+    if (!db) return 0;
+    
+    const existingUsers = await db.select({ id: users.id }).from(users);
+    const existingUserIds = existingUsers.map((u: any) => u.id);
+    
+    if (existingUserIds.length === 0) return 0;
+    
+    const deletedMessages = await db
+      .delete(messages)
+      .where(
+        and(
+          sql`${messages.senderId} IS NOT NULL`,
+          sql`${messages.senderId} NOT IN (${existingUserIds.join(',')})`
         )
-        .returning({ id: messages.id });
-      
-      return deletedMessages.length;
-      
-    } catch (error) {
-      console.error('❌ خطأ في تنظيف الرسائل غير الصالحة:', error);
-      return 0;
-    }
+      );
+    
+    return deletedMessages.rowCount || 0;
+  } catch (error) {
+    console.error('Error cleaning up orphaned messages:', error);
+    return 0;
   }
-  
-  /**
-   * تنظيف المستخدمين الضيوف القدامى (أكثر من 24 ساعة)
-   */
-  async cleanupOldGuestUsers(): Promise<number> {
-    try {
-      // حذف المستخدمين الضيوف القدامى (معرف أكبر من 1000 وغير متصلين لأكثر من 24 ساعة)
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      
-      const deletedUsers = await db
-        .delete(users)
-        .where(
-          sql`${users.id} >= 1000 
-              AND ${users.isOnline} = false 
-              AND (${users.lastSeen} IS NULL OR ${users.lastSeen} < ${oneDayAgo})`
+}
+
+export async function cleanupInvalidMessages(): Promise<number> {
+  try {
+    if (!db) return 0;
+    
+    const existingUsers = await db.select({ id: users.id }).from(users);
+    const existingUserIds = existingUsers.map((u: any) => u.id);
+    
+    if (existingUserIds.length === 0) return 0;
+    
+    const deletedMessages = await db
+      .delete(messages)
+      .where(
+        and(
+          sql`${messages.receiverId} IS NOT NULL`,
+          sql`${messages.receiverId} NOT IN (${existingUserIds.join(',')})`
         )
-        .returning({ id: users.id });
-      
-      return deletedUsers.length;
-      
-    } catch (error) {
-      console.error('❌ خطأ في تنظيف المستخدمين الضيوف القدامى:', error);
-      return 0;
-    }
+      );
+    
+    return deletedMessages.rowCount || 0;
+  } catch (error) {
+    console.error('Error cleaning up invalid messages:', error);
+    return 0;
   }
-  
-  /**
-   * تنظيف شامل لقاعدة البيانات
-   */
-  async performFullCleanup(): Promise<{
-    orphanedMessages: number;
-    invalidMessages: number;
-    oldGuestUsers: number;
-  }> {
-    const results = {
-      orphanedMessages: await this.cleanupOrphanedMessages(),
-      invalidMessages: await this.cleanupInvalidMessages(),
-      oldGuestUsers: await this.cleanupOldGuestUsers()
+}
+
+export async function cleanupOldGuestUsers(): Promise<number> {
+  try {
+    if (!db) return 0;
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const deletedUsers = await db
+      .delete(users)
+      .where(
+        and(
+          eq(users.userType, 'guest'),
+          lt(users.createdAt, thirtyDaysAgo)
+        )
+      );
+    
+    return deletedUsers.rowCount || 0;
+  } catch (error) {
+    console.error('Error cleaning up old guest users:', error);
+    return 0;
+  }
+}
+
+export async function performDatabaseCleanup(): Promise<CleanupResults> {
+  try {
+    const orphanedMessages = await cleanupOrphanedMessages();
+    const invalidMessages = await cleanupInvalidMessages();
+    const oldGuestUsers = await cleanupOldGuestUsers();
+    
+    const results: CleanupResults = {
+      orphanedMessages,
+      invalidMessages,
+      oldGuestUsers,
+      totalUsers: 0,
+      totalMessages: 0,
+      onlineUsers: 0,
+      guestUsers: 0,
+      registeredUsers: 0
     };
     
-    const totalCleaned = results.orphanedMessages + results.invalidMessages + results.oldGuestUsers;
-    return results;
-  }
-  
-  /**
-   * تشغيل التنظيف الدوري
-   */
-  startPeriodicCleanup(intervalHours: number = 6): NodeJS.Timeout {
-    return setInterval(async () => {
-      try {
-        await this.performFullCleanup();
-      } catch (error) {
-        console.error('❌ خطأ في التنظيف الدوري:', error);
-      }
-    }, intervalHours * 60 * 60 * 1000);
-  }
-  
-  /**
-   * الحصول على إحصائيات قاعدة البيانات
-   */
-  async getDatabaseStats(): Promise<{
-    totalUsers: number;
-    totalMessages: number;
-    onlineUsers: number;
-    guestUsers: number;
-    registeredUsers: number;
-  }> {
-    try {
+    // Get database statistics
+    if (db) {
       const [totalUsersResult] = await db
         .select({ count: sql<number>`count(*)` })
         .from(users);
@@ -139,33 +121,32 @@ export class DatabaseCleanup {
       const [guestUsersResult] = await db
         .select({ count: sql<number>`count(*)` })
         .from(users)
-        .where(sql`${users.id} >= 1000`);
+        .where(eq(users.userType, 'guest'));
       
       const [registeredUsersResult] = await db
         .select({ count: sql<number>`count(*)` })
         .from(users)
-        .where(sql`${users.id} < 1000`);
+        .where(eq(users.userType, 'member'));
       
-      return {
-        totalUsers: totalUsersResult.count,
-        totalMessages: totalMessagesResult.count,
-        onlineUsers: onlineUsersResult.count,
-        guestUsers: guestUsersResult.count,
-        registeredUsers: registeredUsersResult.count
-      };
-      
-    } catch (error) {
-      console.error('❌ خطأ في الحصول على إحصائيات قاعدة البيانات:', error);
-      return {
-        totalUsers: 0,
-        totalMessages: 0,
-        onlineUsers: 0,
-        guestUsers: 0,
-        registeredUsers: 0
-      };
+      results.totalUsers = totalUsersResult?.count || 0;
+      results.totalMessages = totalMessagesResult?.count || 0;
+      results.onlineUsers = onlineUsersResult?.count || 0;
+      results.guestUsers = guestUsersResult?.count || 0;
+      results.registeredUsers = registeredUsersResult?.count || 0;
     }
+    
+    return results;
+  } catch (error) {
+    console.error('Error performing database cleanup:', error);
+    return {
+      orphanedMessages: 0,
+      invalidMessages: 0,
+      oldGuestUsers: 0,
+      totalUsers: 0,
+      totalMessages: 0,
+      onlineUsers: 0,
+      guestUsers: 0,
+      registeredUsers: 0
+    };
   }
 }
-
-// إنشاء مثيل واحد للاستخدام
-export const databaseCleanup = new DatabaseCleanup();
