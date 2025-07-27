@@ -23,14 +23,14 @@
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./client/src/*"],
-      "@/components/*": ["./client/src/components/*"],
-      "@/lib/*": ["./client/src/lib/*"],
+      "@/*": ["./src/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/lib/*": ["./src/lib/*"],
       "@/shared/*": ["./shared/*"]
     }
   },
   "include": [
-    "client/src/**/*",
+    "src/**/*",
     "shared/**/*"
   ],
   "exclude": [

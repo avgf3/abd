@@ -10,6 +10,7 @@ import {
   rooms,
   wallPosts,
   wallReactions,
+  wallComments,
   moderationLog,
   reports,
   type User,
@@ -17,6 +18,9 @@ import {
   type Message,
   type InsertMessage,
   type Friend,
+  type InsertFriend,
+  type FriendRequest,
+  type InsertFriendRequest,
   type Notification,
   type InsertNotification,
   type Room,
@@ -25,13 +29,15 @@ import {
   type InsertWallPost,
   type WallReaction,
   type InsertWallReaction,
+  type WallComment,
+  type InsertWallComment,
   type ModerationLog,
   type InsertModerationLog,
   type Report,
   type InsertReport,
 } from "../shared/schema";
 import { db } from "./database-adapter";
-import { eq, desc, and, sql, or, inArray } from "drizzle-orm";
+import { eq, desc, and, sql, or, inArray, isNull, isNotNull } from "drizzle-orm";
 
 // Global in-memory storage for wall posts
 declare global {
@@ -70,11 +76,11 @@ export interface IStorage {
   getFriendship(userId1: number, userId2: number): Promise<Friend | undefined>;
   
   // Friend request operations
-  createFriendRequest(senderId: number, receiverId: number, message?: string): Promise<any>;
-  getFriendRequest(senderId: number, receiverId: number): Promise<any>;
-  getFriendRequestById(requestId: number): Promise<any>;
-  getIncomingFriendRequests(userId: number): Promise<any[]>;
-  getOutgoingFriendRequests(userId: number): Promise<any[]>;
+  createFriendRequest(senderId: number, receiverId: number, message?: string): Promise<FriendRequest>;
+  getFriendRequest(senderId: number, receiverId: number): Promise<FriendRequest | undefined>;
+  getFriendRequestById(requestId: number): Promise<FriendRequest | undefined>;
+  getIncomingFriendRequests(userId: number): Promise<FriendRequest[]>;
+  getOutgoingFriendRequests(userId: number): Promise<FriendRequest[]>;
   acceptFriendRequest(requestId: number): Promise<boolean>;
   declineFriendRequest(requestId: number): Promise<boolean>;
   ignoreFriendRequest(requestId: number): Promise<boolean>;
@@ -132,11 +138,13 @@ export interface IStorage {
 }
 
 export class PostgreSQLStorage implements IStorage {
+  
+  // User operations
   async getUser(id: number): Promise<User | undefined> {
     try {
       if (!db) return undefined;
-      const [user] = await db.select().from(users).where(eq(users.id, id));
-      return user;
+      const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+      return result[0];
     } catch (error) {
       console.error('Error getting user:', error);
       return undefined;
@@ -146,8 +154,8 @@ export class PostgreSQLStorage implements IStorage {
   async getUserByUsername(username: string): Promise<User | undefined> {
     try {
       if (!db) return undefined;
-      const [user] = await db.select().from(users).where(eq(users.username, username));
-      return user;
+      const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+      return result[0];
     } catch (error) {
       console.error('Error getting user by username:', error);
       return undefined;
@@ -181,7 +189,7 @@ export class PostgreSQLStorage implements IStorage {
       if (!db) return;
       await db.update(users).set({ 
         isOnline, 
-        lastSeen: new Date() 
+        lastSeen: isOnline ? undefined : new Date() 
       }).where(eq(users.id, id));
     } catch (error) {
       console.error('Error setting user online status:', error);
@@ -220,8 +228,8 @@ export class PostgreSQLStorage implements IStorage {
       if (!user) return;
       
       const ignoredUsers = JSON.parse(user.ignoredUsers || '[]');
-      const filteredUsers = ignoredUsers.filter((id: number) => id !== ignoredUserId);
-      await db.update(users).set({ ignoredUsers: JSON.stringify(filteredUsers) }).where(eq(users.id, userId));
+      const filteredIgnored = ignoredUsers.filter((id: number) => id !== ignoredUserId);
+      await db.update(users).set({ ignoredUsers: JSON.stringify(filteredIgnored) }).where(eq(users.id, userId));
     } catch (error) {
       console.error('Error removing ignored user:', error);
     }
@@ -231,8 +239,7 @@ export class PostgreSQLStorage implements IStorage {
     try {
       if (!db) return [];
       const user = await this.getUser(userId);
-      if (!user) return [];
-      return JSON.parse(user.ignoredUsers || '[]');
+      return user ? JSON.parse(user.ignoredUsers || '[]') : [];
     } catch (error) {
       console.error('Error getting ignored users:', error);
       return [];
@@ -252,7 +259,7 @@ export class PostgreSQLStorage implements IStorage {
   async getAllUsers(): Promise<User[]> {
     try {
       if (!db) return [];
-      return await db.select().from(users);
+      return await db.select().from(users).orderBy(desc(users.createdAt));
     } catch (error) {
       console.error('Error getting all users:', error);
       return [];
@@ -265,18 +272,16 @@ export class PostgreSQLStorage implements IStorage {
       const user = await this.getUserByUsername(username);
       if (!user || !user.password) return null;
       
-      // Here you would typically use bcrypt to compare passwords
-      // For now, we'll do a simple comparison
-      if (user.password === password) {
-        return user;
-      }
-      return null;
+      const bcrypt = await import('bcrypt');
+      const isValid = await bcrypt.compare(password, user.password);
+      return isValid ? user : null;
     } catch (error) {
       console.error('Error verifying user credentials:', error);
       return null;
     }
   }
 
+  // Message operations
   async createMessage(message: InsertMessage): Promise<Message> {
     try {
       if (!db) throw new Error('Database not connected');
@@ -292,7 +297,7 @@ export class PostgreSQLStorage implements IStorage {
     try {
       if (!db) return [];
       return await db.select().from(messages)
-        .where(eq(messages.isPrivate, false))
+        .where(isNull(messages.receiverId))
         .orderBy(desc(messages.timestamp))
         .limit(limit);
     } catch (error) {
@@ -307,7 +312,7 @@ export class PostgreSQLStorage implements IStorage {
       return await db.select().from(messages)
         .where(
           and(
-            eq(messages.isPrivate, true),
+            isNotNull(messages.receiverId),
             or(
               and(eq(messages.senderId, userId1), eq(messages.receiverId, userId2)),
               and(eq(messages.senderId, userId2), eq(messages.receiverId, userId1))
@@ -325,9 +330,8 @@ export class PostgreSQLStorage implements IStorage {
   async deleteMessage(messageId: number, userId: number): Promise<boolean> {
     try {
       if (!db) return false;
-      await db.delete(messages).where(
-        and(eq(messages.id, messageId), eq(messages.senderId, userId))
-      );
+      const result = await db.delete(messages)
+        .where(and(eq(messages.id, messageId), eq(messages.senderId, userId)));
       return true;
     } catch (error) {
       console.error('Error deleting message:', error);
@@ -346,6 +350,7 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
+  // Friend operations
   async addFriend(userId: number, friendId: number): Promise<Friend> {
     try {
       if (!db) throw new Error('Database not connected');
@@ -367,7 +372,7 @@ export class PostgreSQLStorage implements IStorage {
       const friendships = await db.select().from(friends)
         .where(and(eq(friends.userId, userId), eq(friends.status, 'accepted')));
       
-      const friendIds = friendships.map((f: any) => f.friendId).filter((id: any): id is number => id !== null);
+      const friendIds = friendships.map(f => f.friendId);
       if (friendIds.length === 0) return [];
       
       return await db.select().from(users).where(inArray(users.id, friendIds));
@@ -398,7 +403,7 @@ export class PostgreSQLStorage implements IStorage {
       const blockedFriendships = await db.select().from(friends)
         .where(and(eq(friends.userId, userId), eq(friends.status, 'blocked')));
       
-      const blockedIds = blockedFriendships.map((f: any) => f.friendId).filter((id: any): id is number => id !== null);
+      const blockedIds = blockedFriendships.map(f => f.friendId);
       if (blockedIds.length === 0) return [];
       
       return await db.select().from(users).where(inArray(users.id, blockedIds));
@@ -440,7 +445,7 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   // Friend request operations
-  async createFriendRequest(senderId: number, receiverId: number, message?: string): Promise<any> {
+  async createFriendRequest(senderId: number, receiverId: number, message?: string): Promise<FriendRequest> {
     try {
       if (!db) throw new Error('Database not connected');
       const [newRequest] = await db.insert(friendRequests).values({
@@ -456,7 +461,7 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
-  async getFriendRequest(senderId: number, receiverId: number): Promise<any> {
+  async getFriendRequest(senderId: number, receiverId: number): Promise<FriendRequest | undefined> {
     try {
       if (!db) return undefined;
       const result = await db.select().from(friendRequests)
@@ -469,33 +474,35 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
-  async getFriendRequestById(requestId: number): Promise<any> {
+  async getFriendRequestById(requestId: number): Promise<FriendRequest | undefined> {
     try {
       if (!db) return undefined;
-      const [request] = await db.select().from(friendRequests).where(eq(friendRequests.id, requestId));
-      return request;
+      const result = await db.select().from(friendRequests).where(eq(friendRequests.id, requestId)).limit(1);
+      return result[0];
     } catch (error) {
-      console.error('Error getting friend request by id:', error);
+      console.error('Error getting friend request by ID:', error);
       return undefined;
     }
   }
 
-  async getIncomingFriendRequests(userId: number): Promise<any[]> {
+  async getIncomingFriendRequests(userId: number): Promise<FriendRequest[]> {
     try {
       if (!db) return [];
       return await db.select().from(friendRequests)
-        .where(and(eq(friendRequests.receiverId, userId), eq(friendRequests.status, 'pending')));
+        .where(and(eq(friendRequests.receiverId, userId), eq(friendRequests.status, 'pending')))
+        .orderBy(desc(friendRequests.createdAt));
     } catch (error) {
       console.error('Error getting incoming friend requests:', error);
       return [];
     }
   }
 
-  async getOutgoingFriendRequests(userId: number): Promise<any[]> {
+  async getOutgoingFriendRequests(userId: number): Promise<FriendRequest[]> {
     try {
       if (!db) return [];
       return await db.select().from(friendRequests)
-        .where(and(eq(friendRequests.senderId, userId), eq(friendRequests.status, 'pending')));
+        .where(and(eq(friendRequests.senderId, userId), eq(friendRequests.status, 'pending')))
+        .orderBy(desc(friendRequests.createdAt));
     } catch (error) {
       console.error('Error getting outgoing friend requests:', error);
       return [];
@@ -565,7 +572,7 @@ export class PostgreSQLStorage implements IStorage {
   async getRooms(): Promise<Room[]> {
     try {
       if (!db) return [];
-      return await db.select().from(rooms).where(eq(rooms.isActive, true));
+      return await db.select().from(rooms).where(eq(rooms.isActive, true)).orderBy(desc(rooms.createdAt));
     } catch (error) {
       console.error('Error getting rooms:', error);
       return [];
@@ -575,8 +582,8 @@ export class PostgreSQLStorage implements IStorage {
   async getRoom(roomId: string): Promise<Room | undefined> {
     try {
       if (!db) return undefined;
-      const [room] = await db.select().from(rooms).where(eq(rooms.id, parseInt(roomId)));
-      return room;
+      const result = await db.select().from(rooms).where(eq(rooms.id, parseInt(roomId))).limit(1);
+      return result[0];
     } catch (error) {
       console.error('Error getting room:', error);
       return undefined;
@@ -597,7 +604,7 @@ export class PostgreSQLStorage implements IStorage {
   async deleteRoom(roomId: string): Promise<boolean> {
     try {
       if (!db) return false;
-      await db.delete(rooms).where(eq(rooms.id, parseInt(roomId)));
+      await db.update(rooms).set({ isActive: false }).where(eq(rooms.id, parseInt(roomId)));
       return true;
     } catch (error) {
       console.error('Error deleting room:', error);
@@ -621,11 +628,9 @@ export class PostgreSQLStorage implements IStorage {
     try {
       if (!db) return [];
       let query = db.select().from(wallPosts).where(eq(wallPosts.isActive, true));
-      
       if (type) {
         query = query.where(eq(wallPosts.type, type));
       }
-      
       return await query.orderBy(desc(wallPosts.createdAt)).limit(limit);
     } catch (error) {
       console.error('Error getting wall posts:', error);
@@ -635,9 +640,7 @@ export class PostgreSQLStorage implements IStorage {
 
   async getWallPostsByUsers(userIds: number[]): Promise<WallPost[]> {
     try {
-      if (!db) return [];
-      if (userIds.length === 0) return [];
-      
+      if (!db || userIds.length === 0) return [];
       return await db.select().from(wallPosts)
         .where(and(eq(wallPosts.isActive, true), inArray(wallPosts.userId, userIds)))
         .orderBy(desc(wallPosts.createdAt));
@@ -650,8 +653,8 @@ export class PostgreSQLStorage implements IStorage {
   async getWallPost(postId: number): Promise<WallPost | undefined> {
     try {
       if (!db) return undefined;
-      const [post] = await db.select().from(wallPosts).where(eq(wallPosts.id, postId));
-      return post;
+      const result = await db.select().from(wallPosts).where(eq(wallPosts.id, postId)).limit(1);
+      return result[0];
     } catch (error) {
       console.error('Error getting wall post:', error);
       return undefined;
@@ -681,8 +684,11 @@ export class PostgreSQLStorage implements IStorage {
   async getWallPostWithReactions(postId: number): Promise<WallPost | null> {
     try {
       if (!db) return null;
-      const [post] = await db.select().from(wallPosts).where(eq(wallPosts.id, postId));
-      return post || null;
+      const post = await this.getWallPost(postId);
+      if (!post) return null;
+      
+      // يمكن إضافة جلب التفاعلات هنا إذا لزم الأمر
+      return post;
     } catch (error) {
       console.error('Error getting wall post with reactions:', error);
       return null;
@@ -765,20 +771,19 @@ export class PostgreSQLStorage implements IStorage {
     try {
       if (!db) return;
       
-      // Add to points history
+      // إضافة النقاط للمستخدم
+      await db.update(users).set({
+        points: sql`${users.points} + ${points}`,
+        totalPoints: sql`${users.totalPoints} + ${points}`
+      }).where(eq(users.id, userId));
+      
+      // تسجيل في التاريخ
       await db.insert(pointsHistory).values({
         userId,
         points,
         reason,
-        action: points > 0 ? 'earn' : 'lose',
-        createdAt: new Date()
+        action: points > 0 ? 'earn' : 'lose'
       });
-      
-      // Update user's total points
-      await db.update(users).set({
-        points: sql`points + ${points}`,
-        totalPoints: sql`total_points + ${points}`
-      }).where(eq(users.id, userId));
     } catch (error) {
       console.error('Error adding points:', error);
     }
@@ -800,7 +805,7 @@ export class PostgreSQLStorage implements IStorage {
   async getLevelSettings(): Promise<any[]> {
     try {
       if (!db) return [];
-      return await db.select().from(levelSettings);
+      return await db.select().from(levelSettings).orderBy(levelSettings.level);
     } catch (error) {
       console.error('Error getting level settings:', error);
       return [];
@@ -847,11 +852,9 @@ export class PostgreSQLStorage implements IStorage {
     try {
       if (!db) return [];
       let query = db.select().from(reports);
-      
       if (status) {
         query = query.where(eq(reports.status, status));
       }
-      
       return await query.orderBy(desc(reports.createdAt)).limit(limit);
     } catch (error) {
       console.error('Error getting reports:', error);
@@ -862,10 +865,10 @@ export class PostgreSQLStorage implements IStorage {
   async updateReportStatus(reportId: number, status: string, reviewedBy: number): Promise<boolean> {
     try {
       if (!db) return false;
-      await db.update(reports).set({ 
-        status, 
-        reviewedBy, 
-        reviewedAt: new Date() 
+      await db.update(reports).set({
+        status,
+        reviewedBy,
+        reviewedAt: new Date()
       }).where(eq(reports.id, reportId));
       return true;
     } catch (error) {
@@ -909,11 +912,9 @@ export class PostgreSQLStorage implements IStorage {
   async getBlockedDevices(): Promise<Array<{ipAddress: string, deviceId: string}>> {
     try {
       if (!db) return [];
-      const devices = await db.select({ 
-        ipAddress: blockedDevices.ipAddress, 
-        deviceId: blockedDevices.deviceId 
-      }).from(blockedDevices);
-      return devices;
+      const result = await db.select({ ipAddress: blockedDevices.ipAddress, deviceId: blockedDevices.deviceId })
+        .from(blockedDevices);
+      return result;
     } catch (error) {
       console.error('Error getting blocked devices:', error);
       return [];
@@ -921,5 +922,5 @@ export class PostgreSQLStorage implements IStorage {
   }
 }
 
-// Create and export the storage instance
+// إنشاء نسخة من التخزين
 export const storage = new PostgreSQLStorage();
