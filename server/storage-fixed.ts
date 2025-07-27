@@ -271,6 +271,91 @@ export class FixedStorage {
         values.push(updates.lastSeen ? updates.lastSeen.toISOString() : null);
       }
 
+      if (updates.profileImage !== undefined) {
+        setClause.push('profile_image = ?');
+        values.push(updates.profileImage);
+      }
+
+      if (updates.profileBanner !== undefined) {
+        setClause.push('profile_banner = ?');
+        values.push(updates.profileBanner);
+      }
+
+      if (updates.profileBackgroundColor !== undefined) {
+        setClause.push('profile_background_color = ?');
+        values.push(updates.profileBackgroundColor);
+      }
+
+      if (updates.usernameColor !== undefined) {
+        setClause.push('username_color = ?');
+        values.push(updates.usernameColor);
+      }
+
+      if (updates.userTheme !== undefined) {
+        setClause.push('user_theme = ?');
+        values.push(updates.userTheme);
+      }
+
+      if (updates.profileEffect !== undefined) {
+        setClause.push('profile_effect = ?');
+        values.push(updates.profileEffect);
+      }
+
+      if (updates.status !== undefined) {
+        setClause.push('status = ?');
+        values.push(updates.status);
+      }
+
+      if (updates.bio !== undefined) {
+        setClause.push('bio = ?');
+        values.push(updates.bio);
+      }
+
+      if (updates.gender !== undefined) {
+        setClause.push('gender = ?');
+        values.push(updates.gender);
+      }
+
+      if (updates.age !== undefined) {
+        setClause.push('age = ?');
+        values.push(updates.age);
+      }
+
+      if (updates.country !== undefined) {
+        setClause.push('country = ?');
+        values.push(updates.country);
+      }
+
+      if (updates.relation !== undefined) {
+        setClause.push('relation = ?');
+        values.push(updates.relation);
+      }
+
+      if (updates.isHidden !== undefined) {
+        setClause.push('is_hidden = ?');
+        values.push(updates.isHidden ? 1 : 0);
+      }
+
+      if (updates.points !== undefined) {
+        setClause.push('points = ?');
+        values.push(updates.points);
+      }
+
+      if (updates.level !== undefined) {
+        setClause.push('level = ?');
+        values.push(updates.level);
+      }
+
+      if (updates.totalPoints !== undefined) {
+        setClause.push('total_points = ?');
+        values.push(updates.totalPoints);
+      }
+
+      if (updates.levelProgress !== undefined) {
+        setClause.push('level_progress = ?');
+        values.push(updates.levelProgress);
+      }
+
       if (setClause.length === 0) {
         return this.getUser(id);
       }
