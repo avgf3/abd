@@ -1343,9 +1343,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           user: user
         });
 
-        // إرسال قائمة محدثة لجميع المستخدمين
+        // إرسال قائمة محدثة لجميع المستخدمين (INCLUDING المستخدم الحالي)
         const updatedOnlineUsers = await storage.getOnlineUsers();
-        socket.broadcast.emit('message', {
+        io.emit('message', {
           type: 'onlineUsers',
           users: updatedOnlineUsers
         });
@@ -1368,8 +1368,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('🔄 طلب تحديث قائمة المستخدمين...');
         const onlineUsers = await storage.getOnlineUsers();
         console.log(`👥 إرسال ${onlineUsers.length} مستخدم متصل`);
+        console.log(`👥 أسماء المستخدمين المتصلين: ${onlineUsers.map(u => u.username).join(', ')}`);
         
-        socket.emit('message', { 
+        // إرسال القائمة لجميع المستخدمين المتصلين (وليس فقط الطالب)
+        io.emit('message', { 
           type: 'onlineUsers', 
           users: onlineUsers 
         });

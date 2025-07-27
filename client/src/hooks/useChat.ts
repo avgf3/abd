@@ -535,20 +535,10 @@ export function useChat() {
     dispatch({ type: 'UNIGNORE_USER', payload: userId });
   }, []);
 
-  // جلب جميع المستخدمين (ليس فقط المتصلين)
+  // إلغاء - لا نريد جلب جميع المستخدمين، فقط المتصلين
   const fetchAllUsers = useCallback(async () => {
-    try {
-      const response = await apiRequest('/api/users', { method: 'GET' });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.users && Array.isArray(data.users)) {
-          dispatch({ type: 'SET_ONLINE_USERS', payload: data.users });
-          console.log('✅ تم جلب جميع المستخدمين:', data.users.length);
-        }
-      }
-    } catch (error) {
-      console.error('❌ خطأ في جلب جميع المستخدمين:', error);
-    }
+    // لا نفعل شيء - نكتفي بالمستخدمين المتصلين من Socket
+    console.log('🔄 تم تجاهل fetchAllUsers - نكتفي بالمستخدمين المتصلين');
   }, []);
 
   // Send typing indicator - محسنة مع throttling
