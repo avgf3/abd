@@ -7,36 +7,17 @@ services:
   - type: web
     name: chat-app
     env: node
-    region: oregon
-    buildCommand: npm install && npm run build && npm run db:migrate-production
+    plan: free
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
-      - key: ENABLE_WEBSOCKET
-        value: true
-      - key: SOCKET_IO_POLLING_ONLY
-        value: false
       - key: DATABASE_URL
-        value: postgresql://postgres:your_actual_password@qzehjgmawnrihmepboca.supabase.co:5432/postgres?sslmode=require
+        sync: false
       - key: JWT_SECRET
-        value: arabic-chat-secret-key-2025-production
-      - key: SESSION_SECRET
-        value: arabic-chat-session-secret-2025-production
-      - key: CORS_ORIGIN
-        value: https://your-app-name.onrender.com
-    healthCheckPath: /api/health
-    numInstances: 1
-    plan: free
-    # إعدادات محسنة لـ Socket.IO
-    buildFilter:
-      paths:
-        - client/**
-        - server/**
-        - package.json
-        - package-lock.json
-        - tsconfig.json
-        - vite.config.ts
-        - render.yaml
+        sync: false
+      - key: CLIENT_URL
+        value: https://chat-app.onrender.com
+    healthCheckPath: /health
+    autoDeploy: true
