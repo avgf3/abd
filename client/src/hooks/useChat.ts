@@ -253,7 +253,7 @@ export function useChat() {
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
       
       // إرسال بيانات المصادقة
-      socket.current?.emit('auth', {
+      socket.current?.emit('authenticate', {
         userId: user.id,
         username: user.username,
         userType: user.userType
@@ -274,6 +274,29 @@ export function useChat() {
       }
     });
 
+    socket.current.on('authenticated', (data) => {
+      console.log('✅ تم تأكيد المصادقة بنجاح');
+      dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+      dispatch({ type: 'SET_LOADING', payload: false });
+      
+      // طلب قائمة جميع المستخدمين (المتصلين وغير المتصلين)
+      console.log('🔄 طلب قائمة جميع المستخدمين...');
+      fetchAllUsers();
+      
+      // إضافة طلب للمستخدمين المتصلين أيضاً
+      socket.current?.emit('request_online_users');
+      
+      // طلب إضافي بعد ثانية واحدة للتأكد
+      setTimeout(() => {
+        if (socket.current?.connected) {
+          console.log('🔄 طلب إضافي لقائمة المستخدمين...');
+          fetchAllUsers();
+          socket.current?.emit('request_online_users');
+        }
+      }, 1000);
+    });
+
     socket.current.on('connected', (data) => {
       console.log('✅ تم الاتصال بنجاح:', data.message);
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
@@ -285,14 +308,14 @@ export function useChat() {
       fetchAllUsers();
       
       // إضافة طلب للمستخدمين المتصلين أيضاً
-      socket.current?.emit('requestOnlineUsers');
+      socket.current?.emit('request_online_users');
       
       // طلب إضافي بعد ثانية واحدة للتأكد
       setTimeout(() => {
         if (socket.current?.connected) {
           console.log('🔄 طلب إضافي لقائمة المستخدمين...');
           fetchAllUsers();
-          socket.current.emit('requestOnlineUsers');
+          socket.current?.emit('request_online_users');
         }
       }, 1000);
       

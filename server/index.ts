@@ -169,6 +169,65 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// Guest login endpoint
+app.post('/api/auth/guest', async (req, res) => {
+  try {
+    const { username } = req.body;
+    
+    if (!username || !username.trim()) {
+      return res.status(400).json({ error: 'اسم المستخدم مطلوب' });
+    }
+
+    // Check if username already exists
+    const existingUser = await storage.getUserByUsername(username.trim());
+    if (existingUser) {
+      return res.status(400).json({ error: 'الاسم مستخدم بالفعل' });
+    }
+
+    // Create guest user
+    const guestUser = await storage.createUser({
+      username: username.trim(),
+      userType: 'guest',
+      isOnline: true
+    });
+
+    res.json({ user: guestUser });
+  } catch (error) {
+    console.error('Guest login error:', error);
+    res.status(500).json({ error: 'فشل في تسجيل الدخول كضيف' });
+  }
+});
+
+// Member login endpoint  
+app.post('/api/auth/member', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: 'اسم المستخدم وكلمة المرور مطلوبان' });
+    }
+
+    // Verify credentials
+    const user = await storage.verifyUserCredentials(username.trim(), password.trim());
+    if (!user) {
+      return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+    }
+
+    // Check if user is actually a member (not guest)
+    if (user.userType === 'guest') {
+      return res.status(401).json({ error: 'هذا المستخدم ضيف وليس عضو' });
+    }
+
+    // Update online status
+    await storage.setUserOnlineStatus(user.id, true);
+
+    res.json({ user });
+  } catch (error) {
+    console.error('Member login error:', error);
+    res.status(500).json({ error: 'فشل في تسجيل الدخول' });
+  }
+});
+
 // User routes
 app.get('/api/users', authenticateToken, async (_, res) => {
   try {
@@ -529,6 +588,31 @@ io.on('connection', (socket: CustomSocket) => {
       console.log(`👥 أسماء المستخدمين المتصلين: ${onlineUsers.map(u => u.username).join(', ')}`);
       
       // إرسال القائمة لجميع المستخدمين المتصلين (وليس فقط المستخدم الحالي)
+      io.emit('online_users_updated', { users: onlineUsers });
+    } catch (error) {
+      console.error('خطأ في جلب قائمة المستخدمين:', error);
+    }
+  });
+
+  // Handle authentication (for new App.tsx)
+  socket.on('authenticate', async (data) => {
+    const { userId, username } = data;
+    socket.userId = userId;
+    socket.username = username;
+    socket.join('general');
+    
+    // Update user online status
+    await storage.setUserOnlineStatus(userId, true);
+    
+    // Send confirmation
+    socket.emit('authenticated', { success: true });
+    
+    // Notify others about user joining
+    socket.broadcast.emit('user_joined', { userId, username });
+    
+    // Send updated online users list to ALL users
+    try {
+      const onlineUsers = await storage.getOnlineUsers();
       io.emit('online_users_updated', { users: onlineUsers });
     } catch (error) {
       console.error('خطأ في جلب قائمة المستخدمين:', error);
