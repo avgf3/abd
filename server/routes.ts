@@ -1097,20 +1097,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isPrivate && receiverId) {
         // رسالة خاصة
         io.to(receiverId.toString()).emit('message', {
-          type: 'privateMessage',
-          message: { ...message, sender }
+          envelope: {
+            type: 'privateMessage',
+            message: { ...message, sender }
+          }
         });
         
         // إرسال للمرسل أيضاً
         io.to(senderId.toString()).emit('message', {
-          type: 'privateMessage',
-          message: { ...message, sender }
+          envelope: {
+            type: 'privateMessage',
+            message: { ...message, sender }
+          }
         });
       } else {
         // رسالة عامة
         io.emit('message', {
-          type: 'newMessage',
-          message: { ...message, sender }
+          envelope: {
+            type: 'newMessage',
+            message: { ...message, sender }
+          }
         });
       }
 
@@ -1508,15 +1514,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // للغرفة العامة، إرسال لجميع المستخدمين
           console.log('📡 إرسال رسالة للغرفة العامة لجميع المستخدمين');
           io.emit('message', { 
-            type: 'newMessage', 
-            message: { ...newMessage, sender, roomId } 
+            envelope: {
+              type: 'newMessage',
+              message: { ...newMessage, sender, roomId }
+            }
           });
         } else {
           // للغرف الأخرى، إرسال فقط للمستخدمين في الغرفة
           console.log(`📡 إرسال رسالة للغرفة ${roomId}`);
           io.to(`room_${roomId}`).emit('message', { 
-            type: 'newMessage', 
-            message: { ...newMessage, sender, roomId } 
+            envelope: {
+              type: 'newMessage',
+              message: { ...newMessage, sender, roomId }
+            }
           });
         }
       } catch (error) {
@@ -1552,14 +1562,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // إرسال للمستقبل
         io.to(receiverId.toString()).emit('message', {
-          type: 'privateMessage',
-          message: messageWithSender
+          envelope: {
+            type: 'privateMessage',
+            message: messageWithSender
+          }
         });
         
         // إرسال للمرسل أيضاً
         socket.emit('message', {
-          type: 'privateMessage',
-          message: messageWithSender
+          envelope: {
+            type: 'privateMessage',
+            message: messageWithSender
+          }
         });
         
       } catch (error) {
