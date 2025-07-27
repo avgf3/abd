@@ -1371,6 +1371,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     });
 
+    // معالج طلب قائمة المستخدمين المتصلين
+    socket.on('requestOnlineUsers', async () => {
+      try {
+        console.log('🔄 طلب تحديث قائمة المستخدمين...');
+        const onlineUsers = await storage.getOnlineUsers();
+        console.log(`👥 إرسال ${onlineUsers.length} مستخدم متصل`);
+        console.log(`👥 أسماء المستخدمين المتصلين: ${onlineUsers.map(u => u.username).join(', ')}`);
+        
+        // إرسال القائمة لجميع المستخدمين المتصلين (وليس فقط الطالب)
+        io.emit('message', { 
+          type: 'onlineUsers', 
+          users: onlineUsers 
+        });
+      } catch (error) {
+        console.error('خطأ في جلب قائمة المستخدمين:', error);
+        socket.emit('message', { type: 'error', message: 'خطأ في جلب قائمة المستخدمين' });
+      }
+    });
+
     socket.on('message', async (data) => {
       try {
         const message = JSON.parse(data.toString());
