@@ -1,16 +1,32 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import { createServer } from 'http';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import { storage } from './storage';
-import { db, checkDatabaseHealth } from './database-adapter';
-import { users, messages, friends, friendRequests, notifications, rooms, wallPosts, reports } from '../shared/schema';
-import { eq, desc, and, or, isNull, isNotNull } from 'drizzle-orm';
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import { storage } from './storage';
+import { checkDatabaseHealth } from './database-adapter';
 
-dotenv.config();
+// Extend Express Request interface
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        userId: number;
+        username: string;
+      };
+    }
+  }
+}
+
+// Extend Socket interface
+interface CustomSocket extends Socket {
+  userId?: number;
+  username?: string;
+}
 
 const app = express();
 const server = createServer(app);
@@ -23,8 +39,8 @@ const io = new Server(server, {
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -48,23 +64,30 @@ const authenticateToken = (req: any, res: any, next: any) => {
 };
 
 // Health check endpoint
-app.get('/health', async (req, res) => {
+app.get('/health', async (_, res) => {
   try {
     const dbHealth = await checkDatabaseHealth();
     res.json({
       status: 'ok',
-      database: dbHealth ? 'connected' : 'disconnected',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      database: {
+        connected: dbHealth,
+        url: process.env.DATABASE_URL ? 'configured' : 'not configured'
+      }
     });
   } catch (error) {
-    res.status(500).json({ error: 'Health check failed' });
+    res.status(500).json({
+      status: 'error',
+      message: 'Health check failed',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
 // Authentication routes
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { username, password, email } = req.body;
+    const { username, password } = req.body;
     
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password are required' });
@@ -73,7 +96,7 @@ app.post('/api/auth/register', async (req, res) => {
     // Check if user already exists
     const existingUser = await storage.getUserByUsername(username);
     if (existingUser) {
-      return res.status(409).json({ error: 'Username already exists' });
+      return res.status(400).json({ error: 'Username already exists' });
     }
 
     // Hash password
@@ -84,19 +107,22 @@ app.post('/api/auth/register', async (req, res) => {
       username,
       password: hashedPassword,
       userType: 'member',
-      role: 'member',
-      joinDate: new Date()
+      role: 'member'
     });
 
     // Generate JWT token
-    const token = jwt.sign({ userId: newUser.id, username: newUser.username }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign(
+      { userId: newUser.id, username: newUser.username },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
 
-    res.json({
+    res.status(201).json({
+      message: 'User registered successfully',
       user: {
         id: newUser.id,
         username: newUser.username,
-        userType: newUser.userType,
-        role: newUser.role
+        userType: newUser.userType
       },
       token
     });
@@ -120,35 +146,19 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Update online status
-    await storage.setUserOnlineStatus(user.id, true);
-
     // Generate JWT token
-    const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign(
+      { userId: user.id, username: user.username },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
 
     res.json({
+      message: 'Login successful',
       user: {
         id: user.id,
         username: user.username,
-        userType: user.userType,
-        role: user.role,
-        profileImage: user.profileImage,
-        profileBanner: user.profileBanner,
-        profileBackgroundColor: user.profileBackgroundColor,
-        status: user.status,
-        gender: user.gender,
-        age: user.age,
-        country: user.country,
-        relation: user.relation,
-        bio: user.bio,
-        isOnline: true,
-        points: user.points,
-        level: user.level,
-        totalPoints: user.totalPoints,
-        levelProgress: user.levelProgress,
-        usernameColor: user.usernameColor,
-        userTheme: user.userTheme,
-        profileEffect: user.profileEffect
+        userType: user.userType
       },
       token
     });
@@ -159,7 +169,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // User routes
-app.get('/api/users', authenticateToken, async (req, res) => {
+app.get('/api/users', authenticateToken, async (_, res) => {
   try {
     const users = await storage.getAllUsers();
     res.json(users);
@@ -169,7 +179,7 @@ app.get('/api/users', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/users/online', authenticateToken, async (req, res) => {
+app.get('/api/users/online', authenticateToken, async (_, res) => {
   try {
     const onlineUsers = await storage.getOnlineUsers();
     res.json(onlineUsers);
@@ -195,71 +205,55 @@ app.get('/api/users/:id', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/users/:id', authenticateToken, async (req, res) => {
+app.put('/api/users/:id/status', authenticateToken, async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
-    const updates = req.body;
+    const { isOnline } = req.body;
     
-    // Remove sensitive fields
-    delete updates.password;
-    delete updates.id;
-    
-    const updatedUser = await storage.updateUser(userId, updates);
-    
-    if (!updatedUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    res.json(updatedUser);
+    await storage.setUserOnlineStatus(userId, isOnline);
+    res.json({ message: 'Status updated successfully' });
   } catch (error) {
-    console.error('Error updating user:', error);
-    res.status(500).json({ error: 'Failed to update user' });
+    console.error('Error updating user status:', error);
+    res.status(500).json({ error: 'Failed to update status' });
   }
 });
 
 // Message routes
-app.get('/api/messages', authenticateToken, async (req, res) => {
-  try {
-    const limit = parseInt(req.query.limit as string) || 50;
-    const messages = await storage.getPublicMessages(limit);
-    res.json(messages);
-  } catch (error) {
-    console.error('Error getting messages:', error);
-    res.status(500).json({ error: 'Failed to get messages' });
-  }
-});
-
 app.post('/api/messages', authenticateToken, async (req, res) => {
   try {
-    const { content, receiverId, roomId, messageType } = req.body;
-    const senderId = req.user.userId;
-    
-    if (!content) {
-      return res.status(400).json({ error: 'Message content is required' });
-    }
+    const senderId = req.user!.userId;
+    const { receiverId, content, messageType = 'text', isPrivate = false, roomId = 'general' } = req.body;
     
     const message = await storage.createMessage({
       senderId,
-      receiverId: receiverId || null,
+      receiverId,
       content,
-      roomId: roomId || 'general',
-      messageType: messageType || 'text',
-      isPrivate: !!receiverId
+      messageType,
+      isPrivate,
+      roomId
     });
     
-    // Emit to socket
-    io.emit('new_message', message);
-    
-    res.json(message);
+    res.status(201).json(message);
   } catch (error) {
     console.error('Error creating message:', error);
     res.status(500).json({ error: 'Failed to create message' });
   }
 });
 
+app.get('/api/messages/public', authenticateToken, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 50;
+    const messages = await storage.getPublicMessages(limit);
+    res.json(messages);
+  } catch (error) {
+    console.error('Error getting public messages:', error);
+    res.status(500).json({ error: 'Failed to get messages' });
+  }
+});
+
 app.get('/api/messages/private/:userId', authenticateToken, async (req, res) => {
   try {
-    const currentUserId = req.user.userId;
+    const currentUserId = req.user!.userId;
     const otherUserId = parseInt(req.params.userId);
     const limit = parseInt(req.query.limit as string) || 50;
     
@@ -267,14 +261,27 @@ app.get('/api/messages/private/:userId', authenticateToken, async (req, res) => 
     res.json(messages);
   } catch (error) {
     console.error('Error getting private messages:', error);
-    res.status(500).json({ error: 'Failed to get private messages' });
+    res.status(500).json({ error: 'Failed to get messages' });
   }
 });
 
 // Friend routes
+app.post('/api/friends', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user!.userId;
+    const { friendId } = req.body;
+    
+    const friendship = await storage.addFriend(userId, friendId);
+    res.status(201).json(friendship);
+  } catch (error) {
+    console.error('Error adding friend:', error);
+    res.status(500).json({ error: 'Failed to add friend' });
+  }
+});
+
 app.get('/api/friends', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user!.userId;
     const friends = await storage.getFriends(userId);
     res.json(friends);
   } catch (error) {
@@ -283,39 +290,17 @@ app.get('/api/friends', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/friends', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const { friendId } = req.body;
-    
-    if (!friendId) {
-      return res.status(400).json({ error: 'Friend ID is required' });
-    }
-    
-    const friendship = await storage.getFriendship(userId, friendId);
-    if (friendship) {
-      return res.status(409).json({ error: 'Friendship already exists' });
-    }
-    
-    const newFriend = await storage.addFriend(userId, friendId);
-    res.json(newFriend);
-  } catch (error) {
-    console.error('Error adding friend:', error);
-    res.status(500).json({ error: 'Failed to add friend' });
-  }
-});
-
 app.delete('/api/friends/:friendId', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user!.userId;
     const friendId = parseInt(req.params.friendId);
     
     const success = await storage.removeFriend(userId, friendId);
-    if (!success) {
-      return res.status(404).json({ error: 'Friendship not found' });
+    if (success) {
+      res.json({ message: 'Friend removed successfully' });
+    } else {
+      res.status(404).json({ error: 'Friendship not found' });
     }
-    
-    res.json({ message: 'Friend removed successfully' });
   } catch (error) {
     console.error('Error removing friend:', error);
     res.status(500).json({ error: 'Failed to remove friend' });
@@ -323,9 +308,22 @@ app.delete('/api/friends/:friendId', authenticateToken, async (req, res) => {
 });
 
 // Friend request routes
+app.post('/api/friend-requests', authenticateToken, async (req, res) => {
+  try {
+    const senderId = req.user!.userId;
+    const { receiverId, message } = req.body;
+    
+    const request = await storage.createFriendRequest(senderId, receiverId, message);
+    res.status(201).json(request);
+  } catch (error) {
+    console.error('Error creating friend request:', error);
+    res.status(500).json({ error: 'Failed to create friend request' });
+  }
+});
+
 app.get('/api/friend-requests/incoming', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user!.userId;
     const requests = await storage.getIncomingFriendRequests(userId);
     res.json(requests);
   } catch (error) {
@@ -336,7 +334,7 @@ app.get('/api/friend-requests/incoming', authenticateToken, async (req, res) => 
 
 app.get('/api/friend-requests/outgoing', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user!.userId;
     const requests = await storage.getOutgoingFriendRequests(userId);
     res.json(requests);
   } catch (error) {
@@ -345,38 +343,16 @@ app.get('/api/friend-requests/outgoing', authenticateToken, async (req, res) => 
   }
 });
 
-app.post('/api/friend-requests', authenticateToken, async (req, res) => {
-  try {
-    const senderId = req.user.userId;
-    const { receiverId, message } = req.body;
-    
-    if (!receiverId) {
-      return res.status(400).json({ error: 'Receiver ID is required' });
-    }
-    
-    const existingRequest = await storage.getFriendRequest(senderId, receiverId);
-    if (existingRequest) {
-      return res.status(409).json({ error: 'Friend request already sent' });
-    }
-    
-    const request = await storage.createFriendRequest(senderId, receiverId, message);
-    res.json(request);
-  } catch (error) {
-    console.error('Error creating friend request:', error);
-    res.status(500).json({ error: 'Failed to create friend request' });
-  }
-});
-
 app.put('/api/friend-requests/:requestId/accept', authenticateToken, async (req, res) => {
   try {
     const requestId = parseInt(req.params.requestId);
     const success = await storage.acceptFriendRequest(requestId);
     
-    if (!success) {
-      return res.status(404).json({ error: 'Friend request not found' });
+    if (success) {
+      res.json({ message: 'Friend request accepted' });
+    } else {
+      res.status(404).json({ error: 'Friend request not found' });
     }
-    
-    res.json({ message: 'Friend request accepted' });
   } catch (error) {
     console.error('Error accepting friend request:', error);
     res.status(500).json({ error: 'Failed to accept friend request' });
@@ -388,11 +364,11 @@ app.put('/api/friend-requests/:requestId/decline', authenticateToken, async (req
     const requestId = parseInt(req.params.requestId);
     const success = await storage.declineFriendRequest(requestId);
     
-    if (!success) {
-      return res.status(404).json({ error: 'Friend request not found' });
+    if (success) {
+      res.json({ message: 'Friend request declined' });
+    } else {
+      res.status(404).json({ error: 'Friend request not found' });
     }
-    
-    res.json({ message: 'Friend request declined' });
   } catch (error) {
     console.error('Error declining friend request:', error);
     res.status(500).json({ error: 'Failed to decline friend request' });
@@ -400,7 +376,7 @@ app.put('/api/friend-requests/:requestId/decline', authenticateToken, async (req
 });
 
 // Room routes
-app.get('/api/rooms', authenticateToken, async (req, res) => {
+app.get('/api/rooms', authenticateToken, async (_, res) => {
   try {
     const rooms = await storage.getRooms();
     res.json(rooms);
@@ -410,27 +386,55 @@ app.get('/api/rooms', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/rooms/:roomId', authenticateToken, async (req, res) => {
+app.post('/api/rooms', authenticateToken, async (req, res) => {
   try {
-    const roomId = req.params.roomId;
-    const room = await storage.getRoom(roomId);
+    const userId = req.user!.userId;
+    const { name, description, isDefault = false, isActive = true, isBroadcast = false } = req.body;
     
-    if (!room) {
-      return res.status(404).json({ error: 'Room not found' });
-    }
+    const room = await storage.createRoom({
+      name,
+      description,
+      isDefault,
+      isActive,
+      isBroadcast,
+      createdBy: userId,
+      hostId: userId
+    });
     
-    res.json(room);
+    res.status(201).json(room);
   } catch (error) {
-    console.error('Error getting room:', error);
-    res.status(500).json({ error: 'Failed to get room' });
+    console.error('Error creating room:', error);
+    res.status(500).json({ error: 'Failed to create room' });
   }
 });
 
 // Wall post routes
+app.post('/api/wall-posts', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user!.userId;
+    const { content, imageUrl, type = 'text' } = req.body;
+    
+    const post = await storage.createWallPost({
+      userId,
+      content,
+      imageUrl,
+      type,
+      isActive: true
+    });
+    
+    res.status(201).json(post);
+  } catch (error) {
+    console.error('Error creating wall post:', error);
+    res.status(500).json({ error: 'Failed to create wall post' });
+  }
+});
+
 app.get('/api/wall-posts', authenticateToken, async (req, res) => {
   try {
-    const { type, limit } = req.query;
-    const posts = await storage.getWallPosts(type as string, parseInt(limit as string) || 50);
+    const type = req.query.type as string;
+    const limit = parseInt(req.query.limit as string) || 50;
+    
+    const posts = await storage.getWallPosts(type, limit);
     res.json(posts);
   } catch (error) {
     console.error('Error getting wall posts:', error);
@@ -438,45 +442,12 @@ app.get('/api/wall-posts', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/wall-posts', authenticateToken, async (req, res) => {
-  try {
-    const { content, imageUrl, type } = req.body;
-    const userId = req.user.userId;
-    
-    if (!content) {
-      return res.status(400).json({ error: 'Post content is required' });
-    }
-    
-    const post = await storage.createWallPost({
-      userId,
-      content,
-      imageUrl,
-      type: type || 'public'
-    });
-    
-    res.json(post);
-  } catch (error) {
-    console.error('Error creating wall post:', error);
-    res.status(500).json({ error: 'Failed to create wall post' });
-  }
-});
-
-app.delete('/api/wall-posts/:postId', authenticateToken, async (req, res) => {
-  try {
-    const postId = parseInt(req.params.postId);
-    await storage.deleteWallPost(postId);
-    res.json({ message: 'Post deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting wall post:', error);
-    res.status(500).json({ error: 'Failed to delete wall post' });
-  }
-});
-
 // Notification routes
 app.get('/api/notifications', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user!.userId;
     const limit = parseInt(req.query.limit as string) || 20;
+    
     const notifications = await storage.getUserNotifications(userId, limit);
     res.json(notifications);
   } catch (error) {
@@ -490,47 +461,19 @@ app.put('/api/notifications/:notificationId/read', authenticateToken, async (req
     const notificationId = parseInt(req.params.notificationId);
     const success = await storage.markNotificationAsRead(notificationId);
     
-    if (!success) {
-      return res.status(404).json({ error: 'Notification not found' });
+    if (success) {
+      res.json({ message: 'Notification marked as read' });
+    } else {
+      res.status(404).json({ error: 'Notification not found' });
     }
-    
-    res.json({ message: 'Notification marked as read' });
   } catch (error) {
     console.error('Error marking notification as read:', error);
     res.status(500).json({ error: 'Failed to mark notification as read' });
   }
 });
 
-app.put('/api/notifications/read-all', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const success = await storage.markAllNotificationsAsRead(userId);
-    
-    if (!success) {
-      return res.status(500).json({ error: 'Failed to mark notifications as read' });
-    }
-    
-    res.json({ message: 'All notifications marked as read' });
-  } catch (error) {
-    console.error('Error marking all notifications as read:', error);
-    res.status(500).json({ error: 'Failed to mark notifications as read' });
-  }
-});
-
 // Points and levels routes
-app.get('/api/points/history', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const limit = parseInt(req.query.limit as string) || 50;
-    const history = await storage.getPointsHistory(userId, limit);
-    res.json(history);
-  } catch (error) {
-    console.error('Error getting points history:', error);
-    res.status(500).json({ error: 'Failed to get points history' });
-  }
-});
-
-app.get('/api/levels/settings', authenticateToken, async (req, res) => {
+app.get('/api/levels/settings', authenticateToken, async (_, res) => {
   try {
     const settings = await storage.getLevelSettings();
     res.json(settings);
@@ -543,22 +486,19 @@ app.get('/api/levels/settings', authenticateToken, async (req, res) => {
 // Report routes
 app.post('/api/reports', authenticateToken, async (req, res) => {
   try {
+    const reporterId = req.user!.userId;
     const { reportedUserId, messageId, reason, details } = req.body;
-    const reporterId = req.user.userId;
-    
-    if (!reportedUserId || !reason) {
-      return res.status(400).json({ error: 'Reported user ID and reason are required' });
-    }
     
     const report = await storage.createReport({
       reporterId,
       reportedUserId,
       messageId,
       reason,
-      details
+      details,
+      status: 'pending'
     });
     
-    res.json(report);
+    res.status(201).json(report);
   } catch (error) {
     console.error('Error creating report:', error);
     res.status(500).json({ error: 'Failed to create report' });
@@ -566,98 +506,104 @@ app.post('/api/reports', authenticateToken, async (req, res) => {
 });
 
 // Socket.IO connection handling
-io.on('connection', (socket) => {
+io.on('connection', (socket: CustomSocket) => {
   console.log('User connected:', socket.id);
-  
-  // Join user to their personal room
-  socket.on('join', (userId: number) => {
-    socket.join(`user_${userId}`);
-    console.log(`User ${userId} joined their room`);
+
+  socket.on('join', (data) => {
+    const { userId, username } = data;
+    socket.userId = userId;
+    socket.username = username;
+    socket.join('general');
+    
+    // Update user online status
+    storage.setUserOnlineStatus(userId, true);
+    
+    // Notify others
+    socket.broadcast.emit('user_joined', { userId, username });
   });
-  
-  // Join chat room
-  socket.on('join_room', (roomId: string) => {
+
+  socket.on('join_room', (roomId) => {
     socket.join(roomId);
-    console.log(`User joined room: ${roomId}`);
+    socket.emit('room_joined', roomId);
   });
-  
-  // Leave chat room
-  socket.on('leave_room', (roomId: string) => {
+
+  socket.on('leave_room', (roomId) => {
     socket.leave(roomId);
-    console.log(`User left room: ${roomId}`);
+    socket.emit('room_left', roomId);
   });
-  
-  // Handle new message
+
   socket.on('send_message', async (data) => {
     try {
-      const { content, receiverId, roomId, messageType } = data;
-      const senderId = data.senderId;
+      const { content, roomId = 'general', messageType = 'text' } = data;
+      const userId = socket.userId;
       
-      const message = await storage.createMessage({
-        senderId,
-        receiverId,
-        content,
-        roomId: roomId || 'general',
-        messageType: messageType || 'text',
-        isPrivate: !!receiverId
-      });
-      
-      // Emit to appropriate room
-      if (receiverId) {
-        // Private message
-        io.to(`user_${senderId}`).to(`user_${receiverId}`).emit('new_message', message);
-      } else {
-        // Public message
-        io.to(roomId || 'general').emit('new_message', message);
+      if (!userId) {
+        socket.emit('error', { message: 'User not authenticated' });
+        return;
       }
+
+      const message = await storage.createMessage({
+        senderId: userId,
+        content,
+        messageType,
+        isPrivate: false,
+        roomId
+      });
+
+      io.to(roomId).emit('new_message', message);
     } catch (error) {
-      console.error('Error handling message:', error);
-      socket.emit('error', 'Failed to send message');
+      console.error('Error sending message:', error);
+      socket.emit('error', { message: 'Failed to send message' });
     }
   });
-  
-  // Handle user status updates
+
   socket.on('update_status', async (data) => {
     try {
-      const { userId, isOnline } = data;
-      await storage.setUserOnlineStatus(userId, isOnline);
-      io.emit('user_status_update', { userId, isOnline });
+      const { isOnline } = data;
+      const userId = socket.userId;
+      
+      if (userId) {
+        await storage.setUserOnlineStatus(userId, isOnline);
+        socket.broadcast.emit('user_status_changed', { userId, isOnline });
+      }
     } catch (error) {
-      console.error('Error updating user status:', error);
+      console.error('Error updating status:', error);
     }
   });
-  
-  // Handle typing indicator
+
   socket.on('typing', (data) => {
-    const { roomId, userId, isTyping } = data;
-    socket.to(roomId || 'general').emit('user_typing', { userId, isTyping });
+    const { roomId = 'general', isTyping } = data;
+    socket.broadcast.to(roomId).emit('user_typing', {
+      userId: socket.userId,
+      username: socket.username,
+      isTyping
+    });
   });
-  
-  // Handle disconnect
+
   socket.on('disconnect', async () => {
     console.log('User disconnected:', socket.id);
-    // Note: In a real app, you'd want to track which user this socket belongs to
-    // and update their online status accordingly
+    
+    const userId = socket.userId;
+    if (userId) {
+      await storage.setUserOnlineStatus(userId, false);
+      socket.broadcast.emit('user_left', { userId, username: socket.username });
+    }
   });
 });
 
 // Error handling middleware
-app.use((err: any, req: any, res: any, next: any) => {
+app.use((err: any, _: any, res: any, __: any) => {
   console.error('Server error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use('*', (_, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
+// Start server
 const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Database status: ${db ? 'Connected' : 'Disconnected'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  console.log(`Server running on port ${PORT}`);
 });
-
-export default app;

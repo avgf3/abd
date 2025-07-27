@@ -1,23 +1,15 @@
-import { defineConfig } from "drizzle-kit";
+import { defineConfig } from 'drizzle-kit';
+import dotenv from 'dotenv';
 
-const databaseUrl = process.env.DATABASE_URL;
+dotenv.config();
 
-// التحقق من وجود DATABASE_URL
-if (!databaseUrl) {
-  throw new Error("❌ DATABASE_URL غير محدد! يجب إضافة رابط PostgreSQL من Supabase في ملف .env");
-}
-
-// التحقق من أن الرابط هو PostgreSQL
-if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
-  throw new Error("❌ DATABASE_URL يجب أن يكون رابط PostgreSQL من Supabase");
-}
-
-// إعداد PostgreSQL فقط
 export default defineConfig({
-  out: "./migrations",
-  schema: "./shared/schema.ts", 
-  dialect: "postgresql",
+  schema: './shared/schema.ts',
+  out: './migrations',
+  dialect: 'postgresql',
   dbCredentials: {
-    url: databaseUrl,
+    url: process.env.DATABASE_URL || 'postgresql://username:password@localhost:5432/chat_app',
   },
+  verbose: true,
+  strict: true,
 });
