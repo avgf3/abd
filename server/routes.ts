@@ -45,12 +45,23 @@ const upload = multer({
     files: 1 // ملف واحد فقط
   },
   fileFilter: (req, file, cb) => {
-    // التحقق من نوع الملف
-    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    // التحقق من نوع الملف - دعم شامل للصور
+    const allowedMimes = [
+      'image/jpeg', 
+      'image/jpg', 
+      'image/png', 
+      'image/gif', 
+      'image/webp',
+      'image/svg+xml',
+      'image/bmp',
+      'image/tiff'
+    ];
+    
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('نوع الملف غير مدعوم. يرجى رفع صورة بصيغة JPG, PNG, GIF, أو WebP'));
+      console.log('❌ نوع ملف مرفوض:', file.mimetype);
+      cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`));
     }
   }
 });
@@ -81,12 +92,23 @@ const wallUpload = multer({
     files: 1
   },
   fileFilter: (req, file, cb) => {
-    // التحقق من نوع الملف
-    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    // التحقق من نوع الملف - دعم شامل للصور
+    const allowedMimes = [
+      'image/jpeg', 
+      'image/jpg', 
+      'image/png', 
+      'image/gif', 
+      'image/webp',
+      'image/svg+xml',
+      'image/bmp',
+      'image/tiff'
+    ];
+    
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('نوع الملف غير مدعوم. يرجى رفع صورة بصيغة JPG, PNG, GIF, أو WebP'));
+      console.log('❌ نوع ملف مرفوض:', file.mimetype);
+      cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`));
     }
   }
 });
@@ -117,11 +139,23 @@ const bannerUpload = multer({
     files: 1
   },
   fileFilter: (req, file, cb) => {
-    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    // التحقق من نوع الملف - دعم شامل للصور
+    const allowedMimes = [
+      'image/jpeg', 
+      'image/jpg', 
+      'image/png', 
+      'image/gif', 
+      'image/webp',
+      'image/svg+xml',
+      'image/bmp',
+      'image/tiff'
+    ];
+    
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('نوع الملف غير مدعوم. يرجى رفع صورة بصيغة JPG, PNG, GIF, أو WebP'));
+      console.log('❌ نوع ملف مرفوض:', file.mimetype);
+      cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`));
     }
   }
 });
