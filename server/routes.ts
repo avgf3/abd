@@ -3486,7 +3486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // إضافة أو تحديث التفاعل
-      await storage.addWallReaction({
+      await storage.addWallPostReaction({
         postId: parseInt(postId),
         userId: user.id,
         username: user.username,
