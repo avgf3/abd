@@ -1,43 +1,44 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": [
-      "ES2022",
-      "dom",
-      "dom.iterable"
-    ],
-    "allowJs": true,
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
     "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": false,
-    "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "module": "ESNext",
-    "types": [
-      "node"
-    ],
-    "declaration": true,
-    "outDir": "./dist",
-    "baseUrl": "./client",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Path mapping */
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/shared/*": ["./shared/*"]
     }
   },
   "include": [
-    "client/src/**/*",
-    "server/**/*",
-    "shared/**/*",
-    "*.ts",
-    "*.js"
+    "src/**/*",
+    "shared/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "build"
+    "server"
+  ],
+  "references": [
+    { "path": "./tsconfig.server.json" }
   ]
 }
