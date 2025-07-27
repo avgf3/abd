@@ -280,14 +280,18 @@ export function useChat() {
       dispatch({ type: 'SET_CURRENT_USER', payload: data.user });
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
       
-      // طلب قائمة المستخدمين المتصلين فور الاتصال
-      console.log('🔄 طلب قائمة المستخدمين المتصلين...');
+      // طلب قائمة جميع المستخدمين (المتصلين وغير المتصلين)
+      console.log('🔄 طلب قائمة جميع المستخدمين...');
+      fetchAllUsers();
+      
+      // إضافة طلب للمستخدمين المتصلين أيضاً
       socket.current?.emit('requestOnlineUsers');
       
       // طلب إضافي بعد ثانية واحدة للتأكد
       setTimeout(() => {
         if (socket.current?.connected) {
           console.log('🔄 طلب إضافي لقائمة المستخدمين...');
+          fetchAllUsers();
           socket.current.emit('requestOnlineUsers');
         }
       }, 1000);
@@ -531,6 +535,22 @@ export function useChat() {
     dispatch({ type: 'UNIGNORE_USER', payload: userId });
   }, []);
 
+  // جلب جميع المستخدمين (ليس فقط المتصلين)
+  const fetchAllUsers = useCallback(async () => {
+    try {
+      const response = await apiRequest('/api/users', { method: 'GET' });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.users && Array.isArray(data.users)) {
+          dispatch({ type: 'SET_ONLINE_USERS', payload: data.users });
+          console.log('✅ تم جلب جميع المستخدمين:', data.users.length);
+        }
+      }
+    } catch (error) {
+      console.error('❌ خطأ في جلب جميع المستخدمين:', error);
+    }
+  }, []);
+
   // Send typing indicator - محسنة مع throttling
   const sendTyping = useCallback(() => {
     if (socket.current?.connected) {
@@ -571,6 +591,7 @@ export function useChat() {
     ignoreUser,
     unignoreUser,
     sendTyping,
+    fetchAllUsers,
     setShowKickCountdown: (show: boolean) => dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: show }),
     setNewMessageSender: (sender: ChatUser | null) => dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: sender }),
 

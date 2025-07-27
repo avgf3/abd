@@ -45,12 +45,23 @@ const upload = multer({
     files: 1 // ملف واحد فقط
   },
   fileFilter: (req, file, cb) => {
-    // التحقق من نوع الملف
-    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    // التحقق من نوع الملف - دعم شامل للصور
+    const allowedMimes = [
+      'image/jpeg', 
+      'image/jpg', 
+      'image/png', 
+      'image/gif', 
+      'image/webp',
+      'image/svg+xml',
+      'image/bmp',
+      'image/tiff'
+    ];
+    
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('نوع الملف غير مدعوم. يرجى رفع صورة بصيغة JPG, PNG, GIF, أو WebP'));
+      console.log('❌ نوع ملف مرفوض:', file.mimetype);
+      cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`));
     }
   }
 });
@@ -81,12 +92,23 @@ const wallUpload = multer({
     files: 1
   },
   fileFilter: (req, file, cb) => {
-    // التحقق من نوع الملف
-    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    // التحقق من نوع الملف - دعم شامل للصور
+    const allowedMimes = [
+      'image/jpeg', 
+      'image/jpg', 
+      'image/png', 
+      'image/gif', 
+      'image/webp',
+      'image/svg+xml',
+      'image/bmp',
+      'image/tiff'
+    ];
+    
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('نوع الملف غير مدعوم. يرجى رفع صورة بصيغة JPG, PNG, GIF, أو WebP'));
+      console.log('❌ نوع ملف مرفوض:', file.mimetype);
+      cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`));
     }
   }
 });
@@ -117,11 +139,23 @@ const bannerUpload = multer({
     files: 1
   },
   fileFilter: (req, file, cb) => {
-    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    // التحقق من نوع الملف - دعم شامل للصور
+    const allowedMimes = [
+      'image/jpeg', 
+      'image/jpg', 
+      'image/png', 
+      'image/gif', 
+      'image/webp',
+      'image/svg+xml',
+      'image/bmp',
+      'image/tiff'
+    ];
+    
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('نوع الملف غير مدعوم. يرجى رفع صورة بصيغة JPG, PNG, GIF, أو WebP'));
+      console.log('❌ نوع ملف مرفوض:', file.mimetype);
+      cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`));
     }
   }
 });
@@ -923,6 +957,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User routes
+  // جلب جميع المستخدمين
+  app.get("/api/users", async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // إخفاء المعلومات الحساسة
+      const safeUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        userType: user.userType,
+        role: user.role,
+        isOnline: user.isOnline,
+        profileImage: user.profileImage,
+        level: user.level || 1,
+        gender: user.gender,
+        points: user.points || 0,
+        createdAt: user.createdAt,
+        lastActive: user.lastActive,
+        profileColor: user.profileColor,
+        profileEffect: user.profileEffect,
+        isHidden: user.isHidden
+      }));
+      res.json({ users: safeUsers });
+    } catch (error) {
+      console.error('خطأ في جلب جميع المستخدمين:', error);
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   app.get("/api/users/online", async (req, res) => {
     try {
       const users = await storage.getOnlineUsers();
@@ -1320,39 +1382,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         if (!socket.userId) return;
         
-        // فحص حالة الكتم والحظر - تعطيل مؤقت للاختبار
+        // التحقق من حالة المستخدم بشكل بسيط
         const user = await storage.getUser(socket.userId);
-        console.log(`🔍 User ${socket.userId} details:`, {
-          id: user?.id,
-          username: user?.username,
-          userType: user?.userType,
-          isMuted: user?.isMuted,
-          isBanned: user?.isBanned,
-          isBlocked: user?.isBlocked
-        });
+        console.log(`🔍 User ${socket.userId} (${user?.username}) sending message`);
         
-        // للمستخدمين العاديين - تخطي فحص المراقبة مؤقتاً
-        if (user && (user.userType === 'guest' || user.userType === 'member')) {
-          console.log(`✅ تخطي فحص المراقبة للمستخدم العادي ${user.username}`);
-          // لا نفحص المراقبة للمستخدمين العاديين
-        } else {
-          // فحص المراقبة فقط للإدارة
-          const userStatus = await moderationSystem.checkUserStatus(socket.userId);
-          console.log(`🔍 Admin user ${socket.userId} status:`, userStatus);
-          
-          if (userStatus.isMuted) {
-            socket.emit('message', {
-              type: 'error',
-              message: 'أنت مكتوم ولا يمكنك إرسال رسائل في الدردشة العامة.',
-              action: 'muted'
-            });
-            return;
-          }
-          
-          if (userStatus.isBanned || userStatus.isBlocked) {
-            console.log(`🚫 Admin user ${socket.userId} is banned/blocked, ignoring message`);
-            return;
-          }
+        if (!user) {
+          socket.emit('message', {
+            type: 'error',
+            message: 'المستخدم غير موجود'
+          });
+          return;
+        }
+        
+        // فحص حالة الحظر أو الكتم فقط إذا كانت موجودة في قاعدة البيانات
+        if (user.isBanned) {
+          socket.emit('message', {
+            type: 'error',
+            message: 'أنت محظور ولا يمكنك إرسال رسائل'
+          });
+          return;
+        }
+        
+        if (user.isMuted) {
+          socket.emit('message', {
+            type: 'error',
+            message: 'أنت مكتوم ولا يمكنك إرسال رسائل في الدردشة العامة'
+          });
+          return;
         }
 
         // تنظيف المحتوى
