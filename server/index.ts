@@ -7,7 +7,6 @@ import { Server, Socket } from 'socket.io';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import path from 'path';
 import { storage } from './storage';
 import { checkDatabaseHealth } from './database-adapter';
 
@@ -592,24 +591,15 @@ io.on('connection', (socket: CustomSocket) => {
   });
 });
 
-// Serve static files from the client build
-app.use(express.static(path.join(__dirname, '../../client')));
-
 // Error handling middleware
 app.use((err: any, _: any, res: any, __: any) => {
   console.error('Server error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Catch all handler - serve the React app for any non-API routes
-app.get('*', (req, res) => {
-  // Don't serve the React app for API routes
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ error: 'Route not found' });
-  }
-  
-  // Serve the React app for all other routes
-  res.sendFile(path.join(__dirname, '../../client/index.html'));
+// 404 handler
+app.use('*', (_, res) => {
+  res.status(404).json({ error: 'Route not found' });
 });
 
 // Start server
