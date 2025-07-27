@@ -382,18 +382,35 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       }
 
       const endpoint = uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
-      const response = await apiRequest(endpoint, {
+      
+      console.log('📤 رفع ملف:', {
+        type: uploadType,
+        endpoint,
+        fileSize: file.size,
+        fileName: file.name
+      });
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
+        credentials: 'include'
       });
 
-      if (response.success) {
-        toast({
-          title: "نجح",
-          description: uploadType === 'profile' ? "تم تحديث الصورة الشخصية" : "تم تحديث صورة الغلاف",
-        });
-        window.location.reload();
+      console.log('📡 استجابة الخادم:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'فشل في رفع الصورة' }));
+        throw new Error(errorData.error || 'فشل في رفع الصورة');
       }
+
+      const result = await response.json();
+      console.log('✅ نتيجة رفع الصورة:', result);
+      
+      toast({
+        title: "نجح",
+        description: uploadType === 'profile' ? "تم تحديث الصورة الشخصية" : "تم تحديث صورة الغلاف",
+      });
+      window.location.reload();
     } catch (error) {
       console.error('Upload error:', error);
       toast({

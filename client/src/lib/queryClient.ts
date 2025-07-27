@@ -41,13 +41,17 @@ export async function apiRequest<T = any>(
 
   const { method = 'GET', body, headers = {} } = options;
   
+  // التحقق من نوع البيانات لتحديد Content-Type
+  const isFormData = body instanceof FormData;
+  const defaultHeaders = isFormData ? {} : { 'Content-Type': 'application/json' };
+  
   const res = await fetch(url, {
     method,
     headers: {
-      'Content-Type': 'application/json',
+      ...defaultHeaders,
       ...headers
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: isFormData ? body : (body ? JSON.stringify(body) : undefined),
     credentials: "include",
   });
 
