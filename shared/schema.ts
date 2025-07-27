@@ -2,18 +2,17 @@ import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb } fr
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// جدول المستخدمين - محسن ومكتمل
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password"),
-  userType: text("user_type").notNull().default("guest"), // 'guest', 'member', 'admin', 'owner'
+  userType: text("user_type").notNull().default("guest"), // 'guest', 'member', 'owner'
   role: text("role").notNull().default("guest"), // نفس userType للتوافق مع ChatUser
   profileImage: text("profile_image"),
   profileBanner: text("profile_banner"),
-  profileBackgroundColor: text("profile_background_color").default('#3c0d0d'),
+  profileBackgroundColor: text("profile_background_color").default('#3c0d0d'), // لون خلفية البروفايل
   status: text("status"),
-  gender: text("gender").default('male'),
+  gender: text("gender"),
   age: integer("age"),
   country: text("country"),
   relation: text("relation"),
@@ -22,7 +21,7 @@ export const users = pgTable("users", {
   isHidden: boolean("is_hidden").default(false), // خاصية الإخفاء للمراقبة
   lastSeen: timestamp("last_seen"),
   joinDate: timestamp("join_date").defaultNow(),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(), // تاريخ الإنشاء للتوافق مع ChatUser
   isMuted: boolean("is_muted").default(false),
   muteExpiry: timestamp("mute_expiry"),
   isBanned: boolean("is_banned").default(false),
@@ -30,7 +29,7 @@ export const users = pgTable("users", {
   isBlocked: boolean("is_blocked").default(false),
   ipAddress: varchar("ip_address", { length: 45 }),
   deviceId: varchar("device_id", { length: 100 }),
-  ignoredUsers: text("ignored_users").default('[]'), // قائمة المستخدمين المتجاهلين - JSON string
+  ignoredUsers: text("ignored_users").default('[]'), // قائمة المستخدمين المتجاهلين - JSON string للتوافق مع SQLite
   usernameColor: text("username_color").default('#FFFFFF'), // لون اسم المستخدم
   userTheme: text("user_theme").default('default'), // ثيم المستخدم
   profileEffect: text("profile_effect").default('none'), // تأثير البروفايل
@@ -40,20 +39,17 @@ export const users = pgTable("users", {
   levelProgress: integer("level_progress").default(0), // تقدم المستخدم في المستوى الحالي
 });
 
-// جدول الرسائل - محسن
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   senderId: integer("sender_id").references(() => users.id),
   receiverId: integer("receiver_id").references(() => users.id), // null for public messages
   content: text("content").notNull(),
-  messageType: text("message_type").notNull().default("text"), // 'text', 'image', 'file'
+  messageType: text("message_type").notNull().default("text"), // 'text', 'image'
   isPrivate: boolean("is_private").default(false),
   roomId: text("room_id").default("general"), // معرف الغرفة
   timestamp: timestamp("timestamp").defaultNow(),
-  isRead: boolean("is_read").default(false), // للرسائل الخاصة
 });
 
-// جدول الأصدقاء - محسن
 export const friends = pgTable("friends", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
@@ -62,22 +58,10 @@ export const friends = pgTable("friends", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// جدول طلبات الصداقة - جديد
-export const friendRequests = pgTable("friend_requests", {
-  id: serial("id").primaryKey(),
-  senderId: integer("sender_id").references(() => users.id),
-  receiverId: integer("receiver_id").references(() => users.id),
-  status: text("status").notNull().default("pending"), // 'pending', 'accepted', 'declined', 'ignored'
-  message: text("message"), // رسالة مع الطلب
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// جدول الإشعارات - محسن
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
-  type: text("type").notNull(), // 'system', 'friend_request', 'message', 'promotion', 'points', 'level_up'
+  type: text("type").notNull(), // 'system', 'friend_request', 'message', 'promotion', etc.
   title: text("title").notNull(),
   message: text("message").notNull(),
   isRead: boolean("is_read").default(false),
@@ -85,7 +69,7 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// جدول الأجهزة المحجوبة - محسن
+// إضافة جدول blocked_devices المفقود
 export const blockedDevices = pgTable("blocked_devices", {
   id: serial("id").primaryKey(),
   ipAddress: text("ip_address").notNull(),
@@ -96,7 +80,7 @@ export const blockedDevices = pgTable("blocked_devices", {
   blockedBy: integer("blocked_by").notNull(),
 });
 
-// جدول تاريخ النقاط - محسن
+// جدول تاريخ النقاط لتتبع كيفية كسب/فقدان النقاط
 export const pointsHistory = pgTable("points_history", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
@@ -106,7 +90,7 @@ export const pointsHistory = pgTable("points_history", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// جدول إعدادات مستويات النقاط - محسن
+// جدول إعدادات مستويات النقاط
 export const levelSettings = pgTable("level_settings", {
   id: serial("id").primaryKey(),
   level: integer("level").notNull().unique(),
@@ -117,123 +101,100 @@ export const levelSettings = pgTable("level_settings", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// جدول الغرف - جديد
-export const rooms = pgTable("rooms", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  isDefault: boolean("is_default").default(false),
-  isActive: boolean("is_active").default(true),
-  isBroadcast: boolean("is_broadcast").default(false),
-  createdBy: integer("created_by").references(() => users.id),
-  hostId: integer("host_id").references(() => users.id),
-  speakers: text("speakers").default('[]'), // JSON array of speaker IDs
-  micQueue: text("mic_queue").default('[]'), // JSON array of mic queue
-  icon: text("icon"),
-  createdAt: timestamp("created_at").defaultNow(),
+export const insertUserSchema = z.object({
+  username: z.string(),
+  password: z.string().optional(),
+  userType: z.string().optional(),
+  role: z.string().optional(), // إضافة role
+  profileImage: z.string().optional(),
+  profileBanner: z.string().optional(),
+  profileBackgroundColor: z.string().optional(), // إضافة profileBackgroundColor
+  status: z.string().optional(),
+  gender: z.string().optional(),
+  age: z.number().optional(),
+  country: z.string().optional(),
+  relation: z.string().optional(),
+  bio: z.string().optional(),
+  // إضافة حقول الإدارة كاختيارية
+  isMuted: z.boolean().optional(),
+  muteExpiry: z.date().optional(),
+  isBanned: z.boolean().optional(),
+  banExpiry: z.date().optional(),
+  isBlocked: z.boolean().optional(),
+  ipAddress: z.string().optional(),
+  deviceId: z.string().optional(),
+  usernameColor: z.string().optional(),
+  userTheme: z.string().optional(),
+  profileEffect: z.string().optional(),
+  points: z.number().optional(),
+  level: z.number().optional(),
+  totalPoints: z.number().optional(),
+  levelProgress: z.number().optional(),
 });
 
-// جدول منشورات الحوائط - جديد
-export const wallPosts = pgTable("wall_posts", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  content: text("content").notNull(),
-  imageUrl: text("image_url"),
-  type: text("type").notNull().default("public"), // 'public', 'friends', 'private'
-  likes: integer("likes").default(0),
-  comments: integer("comments").default(0),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
+export const insertMessageSchema = z.object({
+  senderId: z.number().optional(),
+  receiverId: z.number().optional(),
+  content: z.string(),
+  messageType: z.string().optional(),
+  isPrivate: z.boolean().optional(),
+  roomId: z.string().optional(),
 });
 
-// جدول تفاعلات الحوائط - جديد
-export const wallReactions = pgTable("wall_reactions", {
-  id: serial("id").primaryKey(),
-  postId: integer("post_id").notNull().references(() => wallPosts.id),
-  userId: integer("user_id").notNull().references(() => users.id),
-  reactionType: text("reaction_type").notNull(), // 'like', 'love', 'laugh', 'wow', 'sad', 'angry'
-  createdAt: timestamp("created_at").defaultNow(),
+export const insertFriendSchema = z.object({
+  userId: z.number().optional(),
+  friendId: z.number().optional(),
+  status: z.string().optional(),
 });
 
-// جدول تعليقات الحوائط - جديد
-export const wallComments = pgTable("wall_comments", {
-  id: serial("id").primaryKey(),
-  postId: integer("post_id").notNull().references(() => wallPosts.id),
-  userId: integer("user_id").notNull().references(() => users.id),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// جدول سجل الإدارة - جديد
-export const moderationLog = pgTable("moderation_log", {
-  id: serial("id").primaryKey(),
-  moderatorId: integer("moderator_id").notNull().references(() => users.id),
-  targetUserId: integer("target_user_id").notNull().references(() => users.id),
-  action: text("action").notNull(), // 'mute', 'ban', 'kick', 'block', 'promote', 'demote'
-  reason: text("reason").notNull(),
-  duration: integer("duration"), // بالدقائق
-  ipAddress: text("ip_address"),
-  deviceId: text("device_id"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// جدول التبليغات - جديد
-export const reports = pgTable("reports", {
-  id: serial("id").primaryKey(),
-  reporterId: integer("reporter_id").notNull().references(() => users.id),
-  reportedUserId: integer("reported_user_id").notNull().references(() => users.id),
-  messageId: integer("message_id").references(() => messages.id),
-  reason: text("reason").notNull(),
-  details: text("details"),
-  status: text("status").notNull().default("pending"), // 'pending', 'reviewed', 'dismissed'
-  reviewedBy: integer("reviewed_by").references(() => users.id),
-  reviewedAt: timestamp("reviewed_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Zod schemas for validation
-export const insertUserSchema = createInsertSchema(users);
-export const insertMessageSchema = createInsertSchema(messages);
-export const insertFriendSchema = createInsertSchema(friends);
-export const insertFriendRequestSchema = createInsertSchema(friendRequests);
-export const insertNotificationSchema = createInsertSchema(notifications);
-export const insertBlockedDeviceSchema = createInsertSchema(blockedDevices);
-export const insertPointsHistorySchema = createInsertSchema(pointsHistory);
-export const insertLevelSettingsSchema = createInsertSchema(levelSettings);
-export const insertRoomSchema = createInsertSchema(rooms);
-export const insertWallPostSchema = createInsertSchema(wallPosts);
-export const insertWallReactionSchema = createInsertSchema(wallReactions);
-export const insertWallCommentSchema = createInsertSchema(wallComments);
-export const insertModerationLogSchema = createInsertSchema(moderationLog);
-export const insertReportSchema = createInsertSchema(reports);
-
-// TypeScript types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 export type InsertFriend = z.infer<typeof insertFriendSchema>;
 export type Friend = typeof friends.$inferSelect;
-export type InsertFriendRequest = z.infer<typeof insertFriendRequestSchema>;
-export type FriendRequest = typeof friendRequests.$inferSelect;
+
+export const insertNotificationSchema = z.object({
+  userId: z.number(),
+  type: z.string(),
+  title: z.string(),
+  message: z.string(),
+  data: z.any().optional(),
+});
+
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
+
+// إضافة أنواع البيانات لجدول blocked_devices
+export const insertBlockedDeviceSchema = z.object({
+  ipAddress: z.string(),
+  deviceId: z.string(),
+  userId: z.number(),
+  reason: z.string(),
+  blockedAt: z.date(),
+  blockedBy: z.number(),
+});
+
 export type InsertBlockedDevice = z.infer<typeof insertBlockedDeviceSchema>;
 export type BlockedDevice = typeof blockedDevices.$inferSelect;
+
+// إضافة نماذج النقاط والمستويات
+export const insertPointsHistorySchema = z.object({
+  userId: z.number(),
+  points: z.number(),
+  reason: z.string(),
+  action: z.string(),
+});
+
+export const insertLevelSettingsSchema = z.object({
+  level: z.number(),
+  requiredPoints: z.number(),
+  title: z.string(),
+  color: z.string().optional(),
+  benefits: z.any().optional(),
+});
+
 export type InsertPointsHistory = z.infer<typeof insertPointsHistorySchema>;
 export type PointsHistory = typeof pointsHistory.$inferSelect;
 export type InsertLevelSettings = z.infer<typeof insertLevelSettingsSchema>;
 export type LevelSettings = typeof levelSettings.$inferSelect;
-export type InsertRoom = z.infer<typeof insertRoomSchema>;
-export type Room = typeof rooms.$inferSelect;
-export type InsertWallPost = z.infer<typeof insertWallPostSchema>;
-export type WallPost = typeof wallPosts.$inferSelect;
-export type InsertWallReaction = z.infer<typeof insertWallReactionSchema>;
-export type WallReaction = typeof wallReactions.$inferSelect;
-export type InsertWallComment = z.infer<typeof insertWallCommentSchema>;
-export type WallComment = typeof wallComments.$inferSelect;
-export type InsertModerationLog = z.infer<typeof insertModerationLogSchema>;
-export type ModerationLog = typeof moderationLog.$inferSelect;
-export type InsertReport = z.infer<typeof insertReportSchema>;
-export type Report = typeof reports.$inferSelect;
