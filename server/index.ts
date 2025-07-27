@@ -510,17 +510,29 @@ app.post('/api/reports', authenticateToken, async (req, res) => {
 io.on('connection', (socket: CustomSocket) => {
   console.log('User connected:', socket.id);
 
-  socket.on('join', (data) => {
+  socket.on('join', async (data) => {
     const { userId, username } = data;
     socket.userId = userId;
     socket.username = username;
     socket.join('general');
     
     // Update user online status
-    storage.setUserOnlineStatus(userId, true);
+    await storage.setUserOnlineStatus(userId, true);
     
-    // Notify others
+    // Notify others about user joining
     socket.broadcast.emit('user_joined', { userId, username });
+    
+    // Send updated online users list to ALL users (including current user)
+    try {
+      const onlineUsers = await storage.getOnlineUsers();
+      console.log(`👥 إرسال ${onlineUsers.length} مستخدم متصل`);
+      console.log(`👥 أسماء المستخدمين المتصلين: ${onlineUsers.map(u => u.username).join(', ')}`);
+      
+      // إرسال القائمة لجميع المستخدمين المتصلين (وليس فقط المستخدم الحالي)
+      io.emit('online_users_updated', { users: onlineUsers });
+    } catch (error) {
+      console.error('خطأ في جلب قائمة المستخدمين:', error);
+    }
   });
 
   socket.on('join_room', (roomId) => {
@@ -581,6 +593,22 @@ io.on('connection', (socket: CustomSocket) => {
     });
   });
 
+  // معالج طلب قائمة المستخدمين المتصلين
+  socket.on('request_online_users', async () => {
+    try {
+      console.log('🔄 طلب تحديث قائمة المستخدمين...');
+      const onlineUsers = await storage.getOnlineUsers();
+      console.log(`👥 إرسال ${onlineUsers.length} مستخدم متصل`);
+      console.log(`👥 أسماء المستخدمين المتصلين: ${onlineUsers.map(u => u.username).join(', ')}`);
+      
+      // إرسال القائمة لجميع المستخدمين المتصلين (وليس فقط الطالب)
+      io.emit('online_users_updated', { users: onlineUsers });
+    } catch (error) {
+      console.error('خطأ في جلب قائمة المستخدمين:', error);
+      socket.emit('error', { message: 'خطأ في جلب قائمة المستخدمين' });
+    }
+  });
+
   socket.on('disconnect', async () => {
     console.log('User disconnected:', socket.id);
     
@@ -588,6 +616,14 @@ io.on('connection', (socket: CustomSocket) => {
     if (userId) {
       await storage.setUserOnlineStatus(userId, false);
       socket.broadcast.emit('user_left', { userId, username: socket.username });
+      
+      // إرسال قائمة محدثة للمستخدمين المتصلين
+      try {
+        const onlineUsers = await storage.getOnlineUsers();
+        io.emit('online_users_updated', { users: onlineUsers });
+      } catch (error) {
+        console.error('خطأ في تحديث قائمة المستخدمين بعد قطع الاتصال:', error);
+      }
     }
   });
 });

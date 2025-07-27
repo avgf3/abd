@@ -1,1 +1,10 @@
-test
+Fix: Improve online users list broadcasting in Socket.IO
+
+Changes made:
+1. Enhanced 'join' event handler to broadcast online users list to ALL users
+2. Added 'request_online_users' event handler for manual refresh
+3. Improved 'disconnect' event to update online users list for all users
+4. Added better logging for debugging online users functionality
+5. Used io.emit() instead of socket.broadcast.emit() to include current user
+
+This ensures that the online users list is properly synchronized across all connected clients.
