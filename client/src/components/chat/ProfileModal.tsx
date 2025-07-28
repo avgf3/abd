@@ -321,62 +321,54 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     }
   ];
 
-  // Profile image fallback - محسّن
+  // Profile image fallback - محسّن ومستقر
   const getProfileImageSrc = () => {
-    console.log('🖼️ Profile image data:', localUser?.profileImage);
-    
-    if (localUser?.profileImage && localUser.profileImage !== '/default_avatar.svg') {
-      let imageSrc = '';
-      
-      // إذا كان المسار يبدأ بـ http أو https، استخدمه مباشرة
-      if (localUser.profileImage.startsWith('http')) {
-        imageSrc = localUser.profileImage;
-      }
-      // إذا كان المسار يبدأ بـ /uploads، استخدمه مباشرة
-      else if (localUser.profileImage.startsWith('/uploads')) {
-        imageSrc = localUser.profileImage;
-      }
-      // إذا كان اسم ملف فقط، أضف المسار الكامل
-      else {
-        imageSrc = `/uploads/profiles/${localUser.profileImage}`;
-      }
-      
-      console.log('🖼️ Final image src:', imageSrc);
-      return imageSrc;
+    if (!localUser?.profileImage || localUser.profileImage === '' || localUser.profileImage === '/default_avatar.svg') {
+      return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(localUser?.username || 'User')}`;
     }
-    
-    const fallback = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(localUser?.username || 'User')}`;
-    console.log('🖼️ Using fallback:', fallback);
-    return fallback;
+
+    // إذا كان URL كامل
+    if (localUser.profileImage.startsWith('http://') || localUser.profileImage.startsWith('https://')) {
+      return localUser.profileImage;
+    }
+
+    // إذا كان مسار يبدأ بـ /uploads
+    if (localUser.profileImage.startsWith('/uploads/')) {
+      return localUser.profileImage;
+    }
+
+    // إذا كان مسار من الجذر
+    if (localUser.profileImage.startsWith('/')) {
+      return localUser.profileImage;
+    }
+
+    // إذا كان اسم ملف فقط
+    return `/uploads/profiles/${localUser.profileImage}`;
   };
 
-  // Profile banner fallback - محسّن
+  // Profile banner fallback - محسّن ومستقر
   const getProfileBannerSrc = () => {
-    console.log('🏞️ Profile banner data:', localUser?.profileBanner);
-    
-    if (localUser?.profileBanner) {
-      let bannerSrc = '';
-      
-      // إذا كان المسار يبدأ بـ http أو https، استخدمه مباشرة
-      if (localUser.profileBanner.startsWith('http')) {
-        bannerSrc = localUser.profileBanner;
-      }
-      // إذا كان المسار يبدأ بـ /uploads، استخدمه مباشرة
-      else if (localUser.profileBanner.startsWith('/uploads')) {
-        bannerSrc = localUser.profileBanner;
-      }
-      // إذا كان اسم ملف فقط، أضف المسار الكامل
-      else {
-        bannerSrc = `/uploads/banners/${localUser.profileBanner}`;
-      }
-      
-      console.log('🏞️ Final banner src:', bannerSrc);
-      return bannerSrc;
+    if (!localUser?.profileBanner || localUser.profileBanner === '') {
+      return 'https://i.imgur.com/rJKrUfs.jpeg';
     }
-    
-    const fallback = 'https://i.imgur.com/rJKrUfs.jpeg';
-    console.log('🏞️ Using fallback:', fallback);
-    return fallback;
+
+    // إذا كان URL كامل
+    if (localUser.profileBanner.startsWith('http://') || localUser.profileBanner.startsWith('https://')) {
+      return localUser.profileBanner;
+    }
+
+    // إذا كان مسار يبدأ بـ /uploads
+    if (localUser.profileBanner.startsWith('/uploads/')) {
+      return localUser.profileBanner;
+    }
+
+    // إذا كان مسار من الجذر
+    if (localUser.profileBanner.startsWith('/')) {
+      return localUser.profileBanner;
+    }
+
+    // إذا كان اسم ملف فقط
+    return `/uploads/banners/${localUser.profileBanner}`;
   };
 
   // Edit modal handlers
@@ -448,15 +440,12 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
       const endpoint = uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
       
-      console.log(`📤 رفع ${uploadType === 'profile' ? 'صورة شخصية' : 'صورة غلاف'}...`);
-      
       const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
       });
 
       const result = await response.json();
-      console.log(`📤 نتيجة رفع ${uploadType === 'profile' ? 'الصورة الشخصية' : 'صورة الغلاف'}:`, result);
 
       if (response.ok && result.success !== false) {
         const imageUrl = result.imageUrl || result.bannerUrl;
@@ -521,8 +510,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           break;
       }
 
-      console.log('📝 تحديث البروفايل:', { fieldName, editValue, userId: currentUser?.id });
-
       const response = await apiRequest('/api/users/update-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -531,8 +518,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           [fieldName]: editValue 
         }),
       });
-
-      console.log('📝 استجابة تحديث البروفايل:', response);
 
       if (response.success) {
         // تحديث فوري للبيانات
@@ -568,8 +553,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       setIsLoading(true);
       setSelectedTheme(theme);
       
-      console.log('🎨 تحديث الثيم:', { theme, userId: currentUser?.id });
-      
       const response = await apiRequest('/api/users/update-background-color', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -578,8 +561,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           color: theme 
         }),
       });
-      
-      console.log('🎨 استجابة تحديث الثيم:', response);
 
       if (response.success) {
         // تحديث فوري للبيانات
@@ -615,8 +596,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       setIsLoading(true);
       setSelectedEffect(effect);
       
-      console.log('✨ تحديث التأثير:', { effect, userId: localUser?.id });
-      
       const response = await apiRequest(`/api/users/${localUser?.id}`, {
         method: 'PUT',
         body: { 
@@ -624,8 +603,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           usernameColor: getEffectColor(effect)
         }
       });
-
-      console.log('✨ استجابة تحديث التأثير:', response);
 
       if (response.success || response.id) {
         // تحديث فوري للبيانات
@@ -1761,15 +1738,21 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
             <X size={20} />
           </button>
 
-          {/* Cover Section - exact match to original */}
+          {/* Cover Section - completely stable */}
           <div 
             className="profile-cover"
-            style={{ backgroundImage: `url(${getProfileBannerSrc()})` }}
+            style={{ 
+              backgroundImage: `url(${getProfileBannerSrc()})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
           >
-            {user.id === currentUser?.id && (
+            {localUser?.id === currentUser?.id && (
               <button 
                 className="change-cover-btn"
                 onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
               >
                 🖼️ تغيير الغلاف
               </button>
@@ -1779,14 +1762,31 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               <img 
                 src={getProfileImageSrc()} 
                 alt="الصورة الشخصية"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block',
+                  transition: 'none',
+                  backfaceVisibility: 'hidden',
+                  transform: 'translateZ(0)'
+                }}
+                onError={(e) => {
+                  // منع إعادة التحميل المستمر عند الخطأ
+                  const target = e.target as HTMLImageElement;
+                  if (target.src !== '/default_avatar.svg') {
+                    target.src = '/default_avatar.svg';
+                  }
+                }}
               />
             </div>
             
-            {user.id === currentUser?.id && (
+            {localUser?.id === currentUser?.id && (
               <button 
                 className="change-avatar-btn"
                 onClick={() => avatarInputRef.current?.click()}
                 title="تغيير الصورة"
+                disabled={isLoading}
               >
                 📷
               </button>
