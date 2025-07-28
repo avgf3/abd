@@ -441,7 +441,10 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       const response = await apiRequest('/api/users/update-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [fieldName]: editValue }),
+        body: JSON.stringify({ 
+          userId: currentUser?.id,
+          [fieldName]: editValue 
+        }),
       });
 
       if (response.success) {
@@ -469,7 +472,10 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       await apiRequest('/api/users/update-background-color', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ color: theme }),
+        body: JSON.stringify({ 
+          userId: currentUser?.id,
+          color: theme 
+        }),
       });
       toast({
         title: "نجح",

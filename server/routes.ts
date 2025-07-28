@@ -6,7 +6,7 @@ import { setupDownloadRoute } from "./download-route";
 import { insertUserSchema, insertMessageSchema } from "../shared/schema";
 import { spamProtection } from "./spam-protection";
 import { moderationSystem } from "./moderation";
-import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter } from "./security";
+import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter, friendRequestLimiter } from "./security";
 import { databaseCleanup } from "./utils/database-cleanup";
 
 import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
@@ -2190,8 +2190,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // الحصول على جميع طلبات الصداقة للمستخدم (واردة + صادرة)
+  app.get("/api/friend-requests/:userId", friendRequestLimiter, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const [incoming, outgoing] = await Promise.all([
+        storage.getIncomingFriendRequests(userId),
+        storage.getOutgoingFriendRequests(userId)
+      ]);
+      res.json({ incoming, outgoing });
+    } catch (error) {
+      console.error('خطأ في جلب طلبات الصداقة:', error);
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   // الحصول على طلبات الصداقة الواردة
-  app.get("/api/friend-requests/incoming/:userId", async (req, res) => {
+  app.get("/api/friend-requests/incoming/:userId", friendRequestLimiter, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const requests = await storage.getIncomingFriendRequests(userId);
@@ -2202,7 +2217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // الحصول على طلبات الصداقة الصادرة
-  app.get("/api/friend-requests/outgoing/:userId", async (req, res) => {
+  app.get("/api/friend-requests/outgoing/:userId", friendRequestLimiter, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const requests = await storage.getOutgoingFriendRequests(userId);
@@ -3223,12 +3238,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user profile - General endpoint
+  app.post('/api/users/update-profile', async (req, res) => {
+    try {
+      const { userId, ...updates } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      // تحديث البيانات
+      const updatedUser = await storage.updateUser(userId, updates);
+      
+      // إشعار المستخدمين الآخرين عبر WebSocket
+      broadcast({
+        type: 'user_profile_updated',
+        data: { userId, updates }
+      });
+
+      res.json({ success: true, message: 'تم تحديث البروفايل بنجاح', user: updatedUser });
+    } catch (error) {
+      console.error('خطأ في تحديث البروفايل:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
   // Update profile background color
   app.post('/api/users/update-background-color', async (req, res) => {
     try {
-      const { userId, profileBackgroundColor } = req.body;
+      const { userId, profileBackgroundColor, color } = req.body;
       
-      if (!userId || !profileBackgroundColor) {
+      // دعم كلا من color و profileBackgroundColor
+      const backgroundColorValue = profileBackgroundColor || color;
+      
+      if (!userId || !backgroundColorValue) {
         return res.status(400).json({ error: 'معرف المستخدم ولون الخلفية مطلوبان' });
       }
 
@@ -3237,12 +3285,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
-      await storage.updateUser(userId, { profileBackgroundColor });
+      await storage.updateUser(userId, { profileBackgroundColor: backgroundColorValue });
       
       // إشعار المستخدمين الآخرين عبر WebSocket
       broadcast({
         type: 'user_background_updated',
-        data: { userId, profileBackgroundColor }
+        data: { userId, profileBackgroundColor: backgroundColorValue }
       });
 
       res.json({ success: true, message: 'تم تحديث لون خلفية البروفايل بنجاح' });

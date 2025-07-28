@@ -3,6 +3,7 @@ import express, { type Express, Request, Response, NextFunction } from 'express'
 // Rate limiting maps
 const authRequestCounts = new Map<string, { count: number; resetTime: number }>();
 const messageRequestCounts = new Map<string, { count: number; resetTime: number }>();
+const friendRequestCounts = new Map<string, { count: number; resetTime: number }>();
 const blockedIPs = new Set<string>();
 
 // Rate limiter for authentication endpoints
@@ -10,7 +11,7 @@ export function authLimiter(req: Request, res: Response, next: NextFunction): vo
   const clientId = req.ip || 'unknown';
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxRequests = 10; // Lower limit for auth endpoints
+  const maxRequests = 50; // زيادة الحد للمصادقة
 
   const current = authRequestCounts.get(clientId);
   
@@ -46,6 +47,29 @@ export function messageLimiter(req: Request, res: Response, next: NextFunction):
   } else {
     res.status(429).json({ 
       error: 'تم تجاوز حد إرسال الرسائل، حاول مرة أخرى لاحقاً',
+      retryAfter: Math.ceil((current.resetTime - now) / 1000)
+    });
+  }
+}
+
+// Rate limiter for friend request endpoints
+export function friendRequestLimiter(req: Request, res: Response, next: NextFunction): void {
+  const clientId = req.ip || 'unknown';
+  const now = Date.now();
+  const windowMs = 5 * 60 * 1000; // 5 minutes
+  const maxRequests = 100; // 100 friend requests per 5 minutes
+
+  const current = friendRequestCounts.get(clientId);
+  
+  if (!current || now > current.resetTime) {
+    friendRequestCounts.set(clientId, { count: 1, resetTime: now + windowMs });
+    next();
+  } else if (current.count < maxRequests) {
+    current.count++;
+    next();
+  } else {
+    res.status(429).json({ 
+      error: 'تم تجاوز حد طلبات الصداقة، حاول مرة أخرى لاحقاً',
       retryAfter: Math.ceil((current.resetTime - now) / 1000)
     });
   }
@@ -125,7 +149,7 @@ export function setupSecurity(app: Express): void {
     const clientId = req.ip || 'unknown';
     const now = Date.now();
     const windowMs = 15 * 60 * 1000; // 15 minutes
-    const maxRequests = 100;
+    const maxRequests = 500; // زيادة الحد إلى 500 طلب
 
     const current = requestCounts.get(clientId);
     
