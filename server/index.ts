@@ -7,6 +7,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase, createDefaultUsers, runMigrations, runDrizzlePush } from "./database-setup";
 import { setupSecurity } from "./security";
 import path from "path";
+import fs from "fs";
 import { Server } from "http";
 
 const app = express();
@@ -16,8 +17,44 @@ setupSecurity(app);
 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// خدمة الملفات الثابتة للصور المرفوعة
-app.use('/uploads', express.static(path.join(process.cwd(), 'client/public/uploads')));
+// خدمة الملفات الثابتة للصور المرفوعة - محسّنة لـ Render
+const uploadsPath = path.join(process.cwd(), 'client/public/uploads');
+app.use('/uploads', (req, res, next) => {
+  console.log('📁 طلب ملف:', req.path, 'من:', uploadsPath);
+  
+  // التحقق من وجود الملف
+  const fullPath = path.join(uploadsPath, req.path);
+  if (!fs.existsSync(fullPath)) {
+    console.error('❌ الملف غير موجود:', fullPath);
+    return res.status(404).json({ error: 'File not found' });
+  }
+  
+  console.log('✅ الملف موجود:', fullPath);
+  next();
+}, express.static(uploadsPath, {
+  // إعدادات محسّنة للأداء
+  maxAge: '1d', // cache لمدة يوم واحد
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, path) => {
+    // إعداد headers مناسبة للصور
+    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (path.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (path.endsWith('.gif')) {
+      res.setHeader('Content-Type', 'image/gif');
+    } else if (path.endsWith('.webp')) {
+      res.setHeader('Content-Type', 'image/webp');
+    } else if (path.endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    }
+    
+    // السماح بالوصول من أي domain
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+  }
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();

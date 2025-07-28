@@ -243,7 +243,7 @@ const friendService = new (class FriendService {
 })();
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // رفع صور البروفايل - محسّن مع معالجة شاملة للأخطاء
+  // رفع صور البروفايل - محسّن مع حل مشكلة Render
   app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
     try {
       console.log('📤 رفع صورة بروفايل:', {
@@ -281,32 +281,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "المستخدم غير موجود" });
       }
 
-      // إنشاء مسار الصورة النسبي
-      const relativePath = `/uploads/profiles/${req.file.filename}`;
+      // حل مشكلة Render: تحويل الصورة إلى base64 وحفظها في قاعدة البيانات
+      let imageUrl: string;
+      
+      try {
+        // قراءة الملف كـ base64
+        const fileBuffer = fs.readFileSync(req.file.path);
+        const base64Image = fileBuffer.toString('base64');
+        const mimeType = req.file.mimetype;
+        
+        // إنشاء data URL
+        imageUrl = `data:${mimeType};base64,${base64Image}`;
+        
+        console.log('✅ تم تحويل الصورة إلى base64 بحجم:', base64Image.length);
+        
+        // حذف الملف الأصلي
+        fs.unlinkSync(req.file.path);
+        
+      } catch (fileError) {
+        console.error('❌ خطأ في معالجة الملف:', fileError);
+        
+        // في حالة فشل base64، استخدم المسار العادي
+        imageUrl = `/uploads/profiles/${req.file.filename}`;
+        
+        // حاول التأكد من وجود المجلد
+        const uploadsDir = path.dirname(req.file.path);
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+      }
       
       // تحديث صورة البروفايل في قاعدة البيانات
-      const updatedUser = await storage.updateUser(userId, { profileImage: relativePath });
+      const updatedUser = await storage.updateUser(userId, { profileImage: imageUrl });
       
       if (!updatedUser) {
-        try {
-          fs.unlinkSync(req.file.path);
-        } catch (unlinkError) {
-          console.error('خطأ في حذف الملف:', unlinkError);
-        }
         return res.status(500).json({ error: "فشل في تحديث صورة البروفايل في قاعدة البيانات" });
       }
 
       console.log('✅ تم رفع صورة البروفايل بنجاح:', {
         userId,
         filename: req.file.filename,
-        path: relativePath
+        imageType: imageUrl.startsWith('data:') ? 'base64' : 'file'
       });
 
       // إرسال إشعار للمستخدمين الآخرين عبر WebSocket
       const updateMessage = {
         type: 'user_profile_image_updated',
         userId: userId,
-        profileImage: relativePath,
+        profileImage: imageUrl,
         timestamp: new Date().toISOString()
       };
       broadcast(updateMessage);
@@ -314,7 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         message: "تم رفع الصورة بنجاح",
-        imageUrl: relativePath,
+        imageUrl: imageUrl,
         filename: req.file.filename,
         user: updatedUser
       });
@@ -338,7 +360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // إصلاح رفع صورة البانر - محسّن مع معالجة شاملة للأخطاء
+  // إصلاح رفع صورة البانر - محسّن مع حل مشكلة Render
   app.post('/api/upload/profile-banner', bannerUpload.single('banner'), async (req, res) => {
     try {
       console.log('📤 رفع صورة بانر:', {
@@ -374,30 +396,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "المستخدم غير موجود" });
       }
 
-      const relativePath = `/uploads/banners/${req.file.filename}`;
+      // حل مشكلة Render: تحويل الصورة إلى base64 وحفظها في قاعدة البيانات
+      let bannerUrl: string;
       
-      const updatedUser = await storage.updateUser(userId, { profileBanner: relativePath });
+      try {
+        // قراءة الملف كـ base64
+        const fileBuffer = fs.readFileSync(req.file.path);
+        const base64Image = fileBuffer.toString('base64');
+        const mimeType = req.file.mimetype;
+        
+        // إنشاء data URL
+        bannerUrl = `data:${mimeType};base64,${base64Image}`;
+        
+        console.log('✅ تم تحويل البانر إلى base64 بحجم:', base64Image.length);
+        
+        // حذف الملف الأصلي
+        fs.unlinkSync(req.file.path);
+        
+      } catch (fileError) {
+        console.error('❌ خطأ في معالجة الملف:', fileError);
+        
+        // في حالة فشل base64، استخدم المسار العادي
+        bannerUrl = `/uploads/banners/${req.file.filename}`;
+        
+        // حاول التأكد من وجود المجلد
+        const uploadsDir = path.dirname(req.file.path);
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+      }
+      
+      const updatedUser = await storage.updateUser(userId, { profileBanner: bannerUrl });
       
       if (!updatedUser) {
-        try {
-          fs.unlinkSync(req.file.path);
-        } catch (unlinkError) {
-          console.error('خطأ في حذف الملف:', unlinkError);
-        }
         return res.status(500).json({ error: "فشل في تحديث صورة البانر في قاعدة البيانات" });
       }
 
       console.log('✅ تم رفع صورة البانر بنجاح:', {
         userId,
         filename: req.file.filename,
-        path: relativePath
+        imageType: bannerUrl.startsWith('data:') ? 'base64' : 'file'
       });
 
       // إرسال إشعار للمستخدمين الآخرين عبر WebSocket
       const updateMessage = {
         type: 'user_profile_banner_updated',
         userId: userId,
-        profileBanner: relativePath,
+        profileBanner: bannerUrl,
         timestamp: new Date().toISOString()
       };
       broadcast(updateMessage);
@@ -405,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         message: "تم رفع صورة البانر بنجاح",
-        bannerUrl: relativePath,
+        bannerUrl: bannerUrl,
         filename: req.file.filename,
         user: updatedUser
       });
@@ -3357,16 +3402,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user profile - General endpoint - محسّن مع معالجة أفضل للأخطاء
   app.post('/api/users/update-profile', async (req, res) => {
     try {
+      console.log('📥 طلب تحديث البروفايل:', {
+        body: req.body,
+        headers: req.headers['content-type'],
+        method: req.method
+      });
+      
       const { userId, ...updates } = req.body;
       
       console.log('🔄 تحديث البروفايل:', { userId, updates });
       
-      if (!userId || isNaN(parseInt(userId))) {
-        return res.status(400).json({ error: 'معرف المستخدم مطلوب ويجب أن يكون رقم صحيح' });
+      if (!userId) {
+        console.error('❌ معرف المستخدم مفقود');
+        return res.status(400).json({ 
+          error: 'معرف المستخدم مطلوب',
+          received: { userId, type: typeof userId }
+        });
+      }
+      
+      const userIdNum = parseInt(userId);
+      if (isNaN(userIdNum)) {
+        console.error('❌ معرف المستخدم ليس رقم:', userId);
+        return res.status(400).json({ 
+          error: 'معرف المستخدم يجب أن يكون رقم صحيح',
+          received: { userId, type: typeof userId }
+        });
       }
 
-      const user = await storage.getUser(parseInt(userId));
+      const user = await storage.getUser(userIdNum);
       if (!user) {
+        console.error('❌ المستخدم غير موجود:', userIdNum);
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
@@ -3390,7 +3455,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updates.gender !== undefined) {
         const validGenders = ['ذكر', 'أنثى', ''];
         if (!validGenders.includes(updates.gender)) {
-          return res.status(400).json({ error: 'الجنس يجب أن يكون "ذكر" أو "أنثى"' });
+          return res.status(400).json({ 
+            error: 'الجنس يجب أن يكون "ذكر" أو "أنثى"',
+            received: updates.gender,
+            valid: validGenders
+          });
         }
         validatedUpdates.gender = updates.gender;
       }
@@ -3403,9 +3472,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (updates.age !== undefined) {
-        const age = parseInt(updates.age);
+        let age;
+        if (typeof updates.age === 'string') {
+          age = parseInt(updates.age);
+        } else if (typeof updates.age === 'number') {
+          age = updates.age;
+        } else {
+          return res.status(400).json({ 
+            error: 'العمر يجب أن يكون رقم',
+            received: { age: updates.age, type: typeof updates.age }
+          });
+        }
+        
         if (isNaN(age) || age < 13 || age > 120) {
-          return res.status(400).json({ error: 'العمر يجب أن يكون رقم بين 13 و 120' });
+          return res.status(400).json({ 
+            error: 'العمر يجب أن يكون رقم بين 13 و 120',
+            received: age
+          });
         }
         validatedUpdates.age = age;
       }
@@ -3427,19 +3510,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedUpdates.bio = updates.bio.trim();
       }
 
+      console.log('✅ البيانات صحيحة:', validatedUpdates);
+
       // تحديث البيانات
-      const updatedUser = await storage.updateUser(parseInt(userId), validatedUpdates);
+      const updatedUser = await storage.updateUser(userIdNum, validatedUpdates);
       
       if (!updatedUser) {
+        console.error('❌ فشل في تحديث قاعدة البيانات');
         return res.status(500).json({ error: 'فشل في تحديث البيانات في قاعدة البيانات' });
       }
       
-      console.log('✅ تم تحديث البروفايل بنجاح:', { userId, validatedUpdates });
+      console.log('✅ تم تحديث البروفايل بنجاح:', { userId: userIdNum, validatedUpdates });
       
       // إشعار المستخدمين الآخرين عبر WebSocket
       broadcast({
         type: 'user_profile_updated',
-        data: { userId: parseInt(userId), updates: validatedUpdates }
+        data: { userId: userIdNum, updates: validatedUpdates }
       });
 
       res.json({ 

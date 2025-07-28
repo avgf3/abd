@@ -368,12 +368,18 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     }
   ];
 
-  // Profile image fallback - محسّن ومستقر مع حل مشاكل الcache
+  // Profile image fallback - محسّن للتعامل مع base64 و مشاكل الcache
   const getProfileImageSrc = () => {
     console.log('🖼️ محاولة عرض صورة البروفايل:', localUser?.profileImage);
     
     if (!localUser?.profileImage || localUser.profileImage === '' || localUser.profileImage === '/default_avatar.svg') {
       return `/default_avatar.svg`;
+    }
+    
+    // إذا كان base64 data URL
+    if (localUser.profileImage.startsWith('data:')) {
+      console.log('📷 استخدام صورة base64');
+      return localUser.profileImage;
     }
     
     // إذا كان URL كامل
@@ -399,12 +405,18 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     return `/uploads/profiles/${localUser.profileImage}?t=${timestamp}`;
   };
 
-  // Profile banner fallback - محسّن ومستقر مع حل مشاكل الcache
+  // Profile banner fallback - محسّن للتعامل مع base64 و مشاكل الcache
   const getProfileBannerSrc = () => {
     console.log('🎆 محاولة عرض صورة البانر:', localUser?.profileBanner);
     
     if (!localUser?.profileBanner || localUser.profileBanner === '') {
       return 'https://i.imgur.com/rJKrUfs.jpeg';
+    }
+
+    // إذا كان base64 data URL
+    if (localUser.profileBanner.startsWith('data:')) {
+      console.log('📷 استخدام بانر base64');
+      return localUser.profileBanner;
     }
 
     // إذا كان URL كامل
