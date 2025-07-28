@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import FileUploadButton from './FileUploadButton';
 import EmojiPicker from './EmojiPicker';
@@ -93,7 +94,7 @@ export default function PrivateMessageBox({
           <DialogTitle className="text-lg font-bold text-center text-purple-800 flex items-center justify-center gap-3">
             <div className="relative">
               <img
-                src={user.profileImage && user.profileImage !== '/default_avatar.svg' ? user.profileImage : "/default_avatar.svg"}
+                src={getImageSrc(user.profileImage)}
                 alt="صورة المستخدم"
                 className="w-12 h-12 rounded-full border-2 border-purple-300 shadow-md"
                 onError={(e) => {
@@ -152,7 +153,7 @@ export default function PrivateMessageBox({
                   {message.senderId !== currentUser?.id && (
                     <div className="flex items-center gap-2 mb-2">
                       <img
-                        src={message.sender?.profileImage || "/default_avatar.svg"}
+                        src={getImageSrc(message.sender?.profileImage)}
                         alt={message.sender?.username || 'User'}
                         className="w-6 h-6 rounded-full object-cover border border-gray-300"
                         onError={(e) => {

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getImageSrc } from '@/utils/imageUtils';
 import {
   Dialog,
   DialogContent,
@@ -384,7 +385,7 @@ export default function OwnerAdminPanel({
                         <div className="flex items-center gap-4">
                           <div className="relative">
                             <img
-                              src={staff.profileImage || '/default_avatar.svg'}
+                              src={getImageSrc(staff.profileImage)}
                               alt={staff.username}
                               className="w-14 h-14 rounded-full ring-2 ring-purple-200 object-cover"
                             />

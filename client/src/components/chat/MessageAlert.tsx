@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 
 interface MessageAlertProps {
@@ -42,7 +43,7 @@ export default function MessageAlert({ isOpen, sender, onClose, onOpenMessages }
           {/* صورة المرسل */}
           <div className="relative">
             <img
-              src={sender.profileImage || "/default_avatar.svg"}
+              src={getImageSrc(sender.profileImage)}
               alt="صورة المرسل"
               className="w-12 h-12 rounded-full border-2 border-white"
               onError={(e) => {

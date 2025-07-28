@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Users, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { getImageSrc } from '@/utils/imageUtils';
 import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
 
 interface WallPanelProps {
@@ -289,7 +290,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
                         {currentUser.profileImage ? (
                           <img 
-                            src={currentUser.profileImage} 
+                            src={getImageSrc(currentUser.profileImage)} 
                             alt={currentUser.username}
                             className="w-10 h-10 rounded-full object-cover"
                           />
