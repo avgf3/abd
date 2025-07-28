@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { getImageSrc } from '@/utils/imageUtils';
 import {
   Dialog,
   DialogContent,
@@ -231,7 +232,7 @@ export default function FriendRequestsPanel({
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <img
-                              src={request.user.profileImage || '/default_avatar.svg'}
+                              src={getImageSrc(request.user.profileImage)}
                               alt={request.user.username}
                               className="w-10 h-10 rounded-full"
                             />
@@ -304,7 +305,7 @@ export default function FriendRequestsPanel({
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <img
-                              src={request.user.profileImage || '/default_avatar.svg'}
+                              src={getImageSrc(request.user.profileImage)}
                               alt={request.user.username}
                               className="w-10 h-10 rounded-full"
                             />

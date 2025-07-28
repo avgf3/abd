@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getImageSrc } from '@/utils/imageUtils';
 import {
   Dialog,
   DialogContent,
@@ -292,7 +293,7 @@ export default function ModerationPanel({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <img
-                          src={user.profileImage || '/default_avatar.svg'}
+                          src={getImageSrc(user.profileImage)}
                           alt={user.username}
                           className="w-10 h-10 rounded-full"
                         />

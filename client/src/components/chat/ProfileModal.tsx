@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { getEffectColor } from '@/utils/themeUtils';
+import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -369,76 +370,15 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   ];
 
   // Profile image fallback - محسّن للتعامل مع base64 و مشاكل الcache
-  const getProfileImageSrc = () => {
+  const getProfileImageSrcLocal = () => {
     console.log('🖼️ محاولة عرض صورة البروفايل:', localUser?.profileImage);
-    
-    if (!localUser?.profileImage || localUser.profileImage === '' || localUser.profileImage === '/default_avatar.svg') {
-      return `/default_avatar.svg`;
-    }
-    
-    // إذا كان base64 data URL
-    if (localUser.profileImage.startsWith('data:')) {
-      console.log('📷 استخدام صورة base64');
-      return localUser.profileImage;
-    }
-    
-    // إذا كان URL كامل
-    if (localUser.profileImage.startsWith('http://') || localUser.profileImage.startsWith('https://')) {
-      return localUser.profileImage;
-    }
-    
-    // إذا كان مسار يبدأ بـ /uploads
-    if (localUser.profileImage.startsWith('/uploads/')) {
-      // إضافة timestamp لتجنب cache
-      const timestamp = new Date().getTime();
-      return `${localUser.profileImage}?t=${timestamp}`;
-    }
-    
-    // إذا كان مسار من الجذر
-    if (localUser.profileImage.startsWith('/')) {
-      const timestamp = new Date().getTime();
-      return `${localUser.profileImage}?t=${timestamp}`;
-    }
-    
-    // إذا كان اسم ملف فقط
-    const timestamp = new Date().getTime();
-    return `/uploads/profiles/${localUser.profileImage}?t=${timestamp}`;
+    return getProfileImageSrc(localUser?.profileImage, '/default_avatar.svg');
   };
 
   // Profile banner fallback - محسّن للتعامل مع base64 و مشاكل الcache
-  const getProfileBannerSrc = () => {
+  const getProfileBannerSrcLocal = () => {
     console.log('🎆 محاولة عرض صورة البانر:', localUser?.profileBanner);
-    
-    if (!localUser?.profileBanner || localUser.profileBanner === '') {
-      return 'https://i.imgur.com/rJKrUfs.jpeg';
-    }
-
-    // إذا كان base64 data URL
-    if (localUser.profileBanner.startsWith('data:')) {
-      console.log('📷 استخدام بانر base64');
-      return localUser.profileBanner;
-    }
-
-    // إذا كان URL كامل
-    if (localUser.profileBanner.startsWith('http://') || localUser.profileBanner.startsWith('https://')) {
-      return localUser.profileBanner;
-    }
-
-    // إذا كان مسار يبدأ بـ /uploads
-    if (localUser.profileBanner.startsWith('/uploads/')) {
-      const timestamp = new Date().getTime();
-      return `${localUser.profileBanner}?t=${timestamp}`;
-    }
-
-    // إذا كان مسار من الجذر
-    if (localUser.profileBanner.startsWith('/')) {
-      const timestamp = new Date().getTime();
-      return `${localUser.profileBanner}?t=${timestamp}`;
-    }
-
-    // إذا كان اسم ملف فقط
-    const timestamp = new Date().getTime();
-    return `/uploads/banners/${localUser.profileBanner}?t=${timestamp}`;
+    return getBannerImageSrc(localUser?.profileBanner, 'https://i.imgur.com/rJKrUfs.jpeg');
   };
 
   // Edit modal handlers
@@ -1814,7 +1754,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           <div 
             className="profile-cover"
             style={{ 
-              backgroundImage: `url(${getProfileBannerSrc()})`,
+                              backgroundImage: `url(${getProfileBannerSrcLocal()})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat'
@@ -1832,7 +1772,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
             <div className="profile-avatar">
               <img 
-                src={getProfileImageSrc()} 
+                src={getProfileImageSrcLocal()} 
                 alt="الصورة الشخصية"
                 style={{
                   width: '100%',

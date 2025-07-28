@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useImageLoader } from '@/hooks/useImageLoader';
+import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 
 interface ProfileImageProps {
@@ -23,28 +24,7 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
 
   // تحديد مصدر الصورة بشكل مستقر
   const imageSrc = useMemo(() => {
-    // إذا لم تكن هناك صورة، استخدم الافتراضي
-    if (!user.profileImage || user.profileImage === '' || user.profileImage === '/default_avatar.svg') {
-      return '';
-    }
-
-    // إذا كانت الصورة URL كامل (http/https)
-    if (user.profileImage.startsWith('http://') || user.profileImage.startsWith('https://')) {
-      return user.profileImage;
-    }
-
-    // إذا كانت الصورة تبدأ بـ /uploads (مسار كامل)
-    if (user.profileImage.startsWith('/uploads/')) {
-      return user.profileImage;
-    }
-
-    // إذا كانت الصورة تبدأ بـ / (مسار من الجذر)
-    if (user.profileImage.startsWith('/')) {
-      return user.profileImage;
-    }
-
-    // إذا كانت اسم ملف فقط، أضف المسار
-    return `/uploads/profiles/${user.profileImage}`;
+    return getImageSrc(user.profileImage, '');
   }, [user.profileImage]);
 
   const fallbackSrc = '/default_avatar.svg';

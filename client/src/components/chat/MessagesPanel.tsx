@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { getImageSrc } from '@/utils/imageUtils';
 import {
   Dialog,
   DialogContent,
@@ -90,7 +91,7 @@ export default function MessagesPanel({
                   >
                     <div className="flex items-center gap-3">
                       <img
-                        src={user!.profileImage && user!.profileImage !== '/default_avatar.svg' ? user!.profileImage : "/default_avatar.svg"}
+                        src={getImageSrc(user!.profileImage)}
                         alt="صورة المستخدم"
                         className="w-10 h-10 rounded-full border-2 border-purple-400 ring-1 ring-purple-200 shadow-sm object-cover"
                         onError={(e) => {
