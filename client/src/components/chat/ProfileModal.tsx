@@ -324,25 +324,17 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   // Profile image fallback - محسّن ومستقر
   const getProfileImageSrc = () => {
     if (!localUser?.profileImage || localUser.profileImage === '' || localUser.profileImage === '/default_avatar.svg') {
-      return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(localUser?.username || 'User')}`;
+      return `/default_avatar.svg`;
     }
-
-    // إذا كان URL كامل
     if (localUser.profileImage.startsWith('http://') || localUser.profileImage.startsWith('https://')) {
       return localUser.profileImage;
     }
-
-    // إذا كان مسار يبدأ بـ /uploads
     if (localUser.profileImage.startsWith('/uploads/')) {
       return localUser.profileImage;
     }
-
-    // إذا كان مسار من الجذر
     if (localUser.profileImage.startsWith('/')) {
       return localUser.profileImage;
     }
-
-    // إذا كان اسم ملف فقط
     return `/uploads/profiles/${localUser.profileImage}`;
   };
 
@@ -448,12 +440,10 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       const result = await response.json();
 
       if (response.ok && result.success !== false) {
-        const imageUrl = result.imageUrl || result.bannerUrl;
-        
-        // تحديث فوري للبيانات بدون إعادة تحميل
-        updateUserData({
-          [uploadType === 'profile' ? 'profileImage' : 'profileBanner']: imageUrl
-        });
+        // إعادة جلب بيانات المستخدم بعد التحديث
+        const userRes = await fetch(`/api/users/${currentUser?.id}`);
+        const userData = await userRes.json();
+        updateUserData(userData);
         
         toast({
           title: "نجح ✅",
@@ -520,10 +510,10 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       });
 
       if (response.success) {
-        // تحديث فوري للبيانات
-        updateUserData({
-          [fieldName]: fieldName === 'age' ? parseInt(editValue) : editValue
-        });
+        // إعادة جلب بيانات المستخدم بعد التحديث
+        const userRes = await fetch(`/api/users/${currentUser?.id}`);
+        const userData = await userRes.json();
+        updateUserData(userData);
         
         toast({
           title: "نجح ✅",
