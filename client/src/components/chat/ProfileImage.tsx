@@ -35,18 +35,35 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
       return '/default_avatar.svg';
     }
 
+    let imageSrc = '';
+
     // إذا كانت الصورة تبدأ بـ http (صورة خارجية)
     if (user.profileImage.startsWith('http')) {
-      return user.profileImage;
+      imageSrc = user.profileImage;
+    }
+    // إذا كانت الصورة تبدأ بـ /uploads (مسار كامل)
+    else if (user.profileImage.startsWith('/uploads')) {
+      imageSrc = user.profileImage;
+    }
+    // إذا كانت الصورة تبدأ بـ / (مسار مطلق آخر)
+    else if (user.profileImage.startsWith('/')) {
+      imageSrc = user.profileImage;
+    }
+    // إذا كانت الصورة اسم ملف فقط، أضف المسار الكامل
+    else {
+      imageSrc = `/uploads/profiles/${user.profileImage}`;
     }
 
-    // إذا كانت الصورة تبدأ بـ / (مسار مطلق من الجذر)
-    if (user.profileImage.startsWith('/')) {
-      return user.profileImage;
-    }
+    // إضافة timestamp لمنع cache
+    const timestamp = new Date().getTime();
+    imageSrc += `?t=${timestamp}`;
 
-    // إذا كانت الصورة مسار نسبي، أضف / في البداية
-    return `/${user.profileImage}`;
+    console.log(`🖼️ ProfileImage for ${user.username}:`, {
+      original: user.profileImage,
+      final: imageSrc
+    });
+
+    return imageSrc;
   };
 
   const handleImageLoad = () => {
