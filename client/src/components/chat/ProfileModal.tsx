@@ -302,18 +302,68 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
   // Profile image fallback
   const getProfileImageSrc = () => {
+    console.log('🖼️ Profile image data:', user?.profileImage);
+    
     if (user?.profileImage) {
-      return user.profileImage.startsWith('http') ? user.profileImage : `/uploads/${user.profileImage}`;
+      let imageSrc = '';
+      
+      // إذا كان المسار يبدأ بـ http أو https، استخدمه مباشرة
+      if (user.profileImage.startsWith('http')) {
+        imageSrc = user.profileImage;
+      }
+      // إذا كان المسار يبدأ بـ /uploads، استخدمه مباشرة
+      else if (user.profileImage.startsWith('/uploads')) {
+        imageSrc = user.profileImage;
+      }
+      // إذا كان اسم ملف فقط، أضف المسار الكامل
+      else {
+        imageSrc = `/uploads/profiles/${user.profileImage}`;
+      }
+      
+      // إضافة timestamp لمنع cache
+      const timestamp = new Date().getTime();
+      imageSrc += `?t=${timestamp}`;
+      
+      console.log('🖼️ Final image src:', imageSrc);
+      return imageSrc;
     }
-    return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user?.username || 'User')}`;
+    
+    const fallback = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user?.username || 'User')}`;
+    console.log('🖼️ Using fallback:', fallback);
+    return fallback;
   };
 
   // Profile banner fallback
   const getProfileBannerSrc = () => {
+    console.log('🏞️ Profile banner data:', user?.profileBanner);
+    
     if (user?.profileBanner) {
-      return user.profileBanner.startsWith('http') ? user.profileBanner : `/uploads/${user.profileBanner}`;
+      let bannerSrc = '';
+      
+      // إذا كان المسار يبدأ بـ http أو https، استخدمه مباشرة
+      if (user.profileBanner.startsWith('http')) {
+        bannerSrc = user.profileBanner;
+      }
+      // إذا كان المسار يبدأ بـ /uploads، استخدمه مباشرة
+      else if (user.profileBanner.startsWith('/uploads')) {
+        bannerSrc = user.profileBanner;
+      }
+      // إذا كان اسم ملف فقط، أضف المسار الكامل
+      else {
+        bannerSrc = `/uploads/banners/${user.profileBanner}`;
+      }
+      
+      // إضافة timestamp لمنع cache
+      const timestamp = new Date().getTime();
+      bannerSrc += `?t=${timestamp}`;
+      
+      console.log('🏞️ Final banner src:', bannerSrc);
+      return bannerSrc;
     }
-    return 'https://i.imgur.com/rJKrUfs.jpeg';
+    
+    const fallback = 'https://i.imgur.com/rJKrUfs.jpeg';
+    console.log('🏞️ Using fallback:', fallback);
+    return fallback;
   };
 
   // Edit modal handlers
@@ -382,17 +432,41 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       }
 
       const endpoint = uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
-      const response = await apiRequest(endpoint, {
+      
+      console.log(`📤 رفع ${uploadType === 'profile' ? 'صورة شخصية' : 'صورة غلاف'}...`);
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
       });
 
-      if (response.success) {
+      const result = await response.json();
+      console.log(`📤 نتيجة رفع ${uploadType === 'profile' ? 'الصورة الشخصية' : 'صورة الغلاف'}:`, result);
+
+      if (response.ok && result.success !== false) {
+        const imageUrl = result.imageUrl || result.bannerUrl;
+        
+        // تحديث بيانات المستخدم في الواجهة فوراً
+        if (onUpdate && currentUser) {
+          const updatedUser = {
+            ...currentUser,
+            [uploadType === 'profile' ? 'profileImage' : 'profileBanner']: imageUrl
+          };
+          console.log('📤 تحديث بيانات المستخدم:', updatedUser);
+          onUpdate(updatedUser);
+        }
+        
         toast({
           title: "نجح",
           description: uploadType === 'profile' ? "تم تحديث الصورة الشخصية" : "تم تحديث صورة الغلاف",
         });
-        window.location.reload();
+        
+        // إعادة تحميل الصفحة لضمان ظهور الصورة
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        throw new Error(result.error || 'فشل في رفع الصورة');
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -438,6 +512,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           break;
       }
 
+      console.log('📝 تحديث البروفايل:', { fieldName, editValue, userId: currentUser?.id });
+
       const response = await apiRequest('/api/users/update-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -447,15 +523,32 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         }),
       });
 
+      console.log('📝 استجابة تحديث البروفايل:', response);
+
       if (response.success) {
         toast({
           title: "نجح",
           description: "تم تحديث الملف الشخصي",
         });
+        
         closeEditModal();
+        
+        // تحديث بيانات المستخدم في الواجهة
+        if (onUpdate && response.user) {
+          console.log('📝 تحديث بيانات المستخدم في الواجهة:', response.user);
+          onUpdate(response.user);
+        }
+        
+        // إعادة تحميل الصفحة بعد ثانية واحدة لضمان التحديث
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+        
+      } else {
+        throw new Error(response.error || 'فشل في التحديث');
       }
     } catch (error) {
-      console.error('Update error:', error);
+      console.error('❌ خطأ في تحديث البروفايل:', error);
       toast({
         title: "خطأ",
         description: "فشل في تحديث البيانات",

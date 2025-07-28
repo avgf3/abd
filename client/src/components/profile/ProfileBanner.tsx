@@ -83,6 +83,11 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
         description: "تم تحديث صورة البروفايل",
         variant: "default",
       });
+      
+      // إعادة تحميل الصفحة لضمان ظهور الصورة
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
 
     } catch (error) {
       console.error('Error uploading banner:', error);
