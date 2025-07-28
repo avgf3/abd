@@ -17,9 +17,8 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = async (file: File) => {
-    if (!currentUser) return;
-
+  // التحقق من صحة الملف
+  const validateFile = (file: File): boolean => {
     // التحقق من حجم الملف (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       toast({
@@ -27,27 +26,38 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
         description: "حجم الصورة يجب أن يكون أقل من 5 ميجابايت",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     // التحقق من نوع الملف
-    if (!file.type.startsWith('image/')) {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
       toast({
         title: "خطأ",
-        description: "يرجى اختيار ملف صورة صحيح",
+        description: "يرجى اختيار ملف صورة صحيح (JPG, PNG, GIF, WebP, SVG)",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleFileSelect = async (file: File) => {
+    if (!currentUser) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً",
         variant: "destructive",
       });
       return;
     }
 
+    if (!validateFile(file)) return;
+
     setUploading(true);
 
     try {
-      // إنشاء FormData لرفع الصورة
-      const formData = new FormData();
-      formData.append('profileImage', file);
-      formData.append('userId', currentUser.id.toString());
-
       // إنشاء معاينة للصورة
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -58,6 +68,11 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       // رفع الصورة للخادم - إصلاح المشكلة
       console.log('📤 بدء رفع صورة البروفايل...');
       
+      // إنشاء FormData لرفع الصورة
+      const formData = new FormData();
+      formData.append('profileImage', file);
+      formData.append('userId', currentUser.id.toString());
+
       const response = await fetch('/api/upload/profile-image', {
         method: 'POST',
         body: formData,
@@ -67,14 +82,18 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'فشل في رفع الصورة' }));
-        throw new Error(errorData.error || 'فشل في رفع الصورة');
+        throw new Error(errorData.error || errorData.details || 'فشل في رفع الصورة');
       }
 
       const result = await response.json();
       console.log('✅ نتيجة رفع الصورة:', result);
       
+      if (!result.success) {
+        throw new Error(result.error || 'فشل في رفع الصورة');
+      }
+      
       // تحديث الواجهة فوراً
-      if (onImageUpdate) {
+      if (onImageUpdate && result.imageUrl) {
         onImageUpdate(result.imageUrl);
       }
 
@@ -85,8 +104,6 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
 
       // إخفاء المعاينة
       setPreview(null);
-      
-      // لا حاجة لإعادة تحميل - التحديث فوري
 
     } catch (error: any) {
       console.error('❌ خطأ في رفع الصورة:', error);
@@ -188,7 +205,7 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
         onChange={handleFileInputChange}
         className="hidden"
       />
@@ -197,7 +214,7 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       <input
         ref={cameraInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
         capture="user"
         onChange={handleCameraCapture}
         className="hidden"
@@ -206,7 +223,7 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       {/* نصائح */}
       <div className="text-center text-sm text-muted-foreground">
         <p>الحد الأقصى: 5 ميجابايت</p>
-        <p>الصيغ المدعومة: JPG, PNG, GIF, WebP</p>
+        <p>الصيغ المدعومة: JPG, PNG, GIF, WebP, SVG</p>
       </div>
     </div>
   );

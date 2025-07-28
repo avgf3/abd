@@ -17,37 +17,47 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = async (file: File) => {
-    if (!currentUser) return;
-
+  // التحقق من صحة الملف
+  const validateFile = (file: File): boolean => {
     // التحقق من حجم الملف (10MB max للبانر)
     if (file.size > 10 * 1024 * 1024) {
       toast({
         title: "خطأ",
-        description: "حجم صورة البروفايل يجب أن يكون أقل من 10 ميجابايت",
+        description: "حجم صورة البانر يجب أن يكون أقل من 10 ميجابايت",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // التحقق من نوع الملف
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "خطأ",
+        description: "يرجى اختيار ملف صورة صحيح (JPG, PNG, GIF, WebP, SVG)",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleFileSelect = async (file: File) => {
+    if (!currentUser) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً",
         variant: "destructive",
       });
       return;
     }
 
-    // التحقق من نوع الملف
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "خطأ",
-        description: "يرجى اختيار ملف صورة صحيح",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!validateFile(file)) return;
 
     setUploading(true);
 
     try {
-      // إنشاء FormData لرفع الصورة
-      const formData = new FormData();
-      formData.append('banner', file);
-      formData.append('userId', currentUser.id.toString());
-
       // إنشاء معاينة للصورة
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -56,46 +66,64 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       reader.readAsDataURL(file);
 
       // رفع الصورة للخادم
+      console.log('📤 بدء رفع صورة البانر...');
+      
+      // إنشاء FormData لرفع الصورة
+      const formData = new FormData();
+      formData.append('banner', file);
+      formData.append('userId', currentUser.id.toString());
+
       const response = await fetch('/api/upload/profile-banner', {
         method: 'POST',
         body: formData,
       });
 
+      console.log('📡 استجابة الخادم:', response.status);
+
       if (!response.ok) {
-        throw new Error('فشل في رفع صورة البروفايل');
+        const errorData = await response.json().catch(() => ({ error: 'فشل في رفع صورة البانر' }));
+        throw new Error(errorData.error || errorData.details || 'فشل في رفع صورة البانر');
       }
 
       const result = await response.json();
+      console.log('✅ نتيجة رفع البانر:', result);
       
-      // تحديث بيانات المستخدم
-      await apiRequest(`/api/users/${currentUser.id}`, {
-        method: 'PUT',
-        body: { profileBanner: result.bannerUrl }
-      });
-
-      // تحديث الواجهة
-      if (onBannerUpdate) {
+      if (!result.success) {
+        throw new Error(result.error || 'فشل في رفع صورة البانر');
+      }
+      
+      // تحديث الواجهة فوراً
+      if (onBannerUpdate && result.bannerUrl) {
         onBannerUpdate(result.bannerUrl);
       }
 
       toast({
         title: "تم بنجاح",
-        description: "تم تحديث صورة البروفايل",
+        description: "تم تحديث صورة البانر",
         variant: "default",
       });
       
-      // لا حاجة لإعادة تحميل - التحديث فوري
+      // إخفاء المعاينة
+      setPreview(null);
 
-    } catch (error) {
-      console.error('Error uploading banner:', error);
+    } catch (error: any) {
+      console.error('❌ خطأ في رفع البانر:', error);
       toast({
         title: "خطأ",
-        description: "فشل في رفع صورة البروفايل، يرجى المحاولة مرة أخرى",
+        description: error.message || "فشل في رفع صورة البانر، يرجى المحاولة مرة أخرى",
         variant: "destructive",
       });
       setPreview(null);
     } finally {
       setUploading(false);
+      
+      // تنظيف input files
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = '';
+      }
     }
   };
 
@@ -126,13 +154,13 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
         {preview ? (
           <img 
             src={preview} 
-            alt="معاينة صورة البروفايل" 
+            alt="معاينة صورة البانر" 
             className="w-full h-full object-cover"
           />
         ) : (currentUser?.profileBanner && currentUser.profileBanner !== '') ? (
           <img 
             src={currentUser.profileBanner} 
-            alt="صورة البروفايل" 
+            alt="صورة البانر" 
             className="w-full h-full object-cover"
           />
         ) : (
@@ -140,7 +168,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
             <div className="absolute inset-0 bg-gradient-to-br from-blue-600/80 via-purple-600/80 to-pink-500/80"></div>
             <div className="text-center relative z-10">
               <div className="text-5xl mb-3 filter drop-shadow-lg">📸</div>
-              <p className="text-lg font-medium opacity-90 drop-shadow-md">إضافة صورة بروفايل</p>
+              <p className="text-lg font-medium opacity-90 drop-shadow-md">إضافة صورة بانر</p>
               <p className="text-sm opacity-70 mt-1">اضغط على الكاميرا أو الرفع</p>
             </div>
             <div className="absolute inset-0 bg-black/10"></div>
@@ -185,7 +213,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       <input
         ref={cameraInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
         capture="user"
         onChange={handleCameraCapture}
         className="hidden"
@@ -194,15 +222,16 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
         onChange={handleFileUpload}
         className="hidden"
       />
 
       {uploading && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
-          <div className="text-white text-sm animate-pulse">
-            جاري رفع الصورة...
+          <div className="bg-white/90 backdrop-blur-md rounded-lg p-4 flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-gray-700 font-medium">جاري رفع صورة البانر...</span>
           </div>
         </div>
       )}
