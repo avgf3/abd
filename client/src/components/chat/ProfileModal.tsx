@@ -52,26 +52,60 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
   if (!localUser) return null;
 
-  // دالة موحدة لجلب بيانات المستخدم من السيرفر وتحديث الحالة المحلية
+  // دالة موحدة لجلب بيانات المستخدم من السيرفر وتحديث الحالة المحلية - محسّنة
   const fetchAndUpdateUser = async (userId: number) => {
     try {
-      const res = await fetch(`/api/users/${userId}`);
-      if (!res.ok) throw new Error('فشل في جلب بيانات المستخدم');
+      console.log('🔄 جلب بيانات المستخدم من السيرفر:', userId);
+      
+      const res = await fetch(`/api/users/${userId}?t=${Date.now()}`); // إضافة timestamp لتجنب cache
+      if (!res.ok) {
+        throw new Error(`فشل في جلب بيانات المستخدم: ${res.status}`);
+      }
+      
       const userData = await res.json();
+      console.log('📦 بيانات المستخدم المُحدثة:', userData);
+      
       setLocalUser(userData);
       if (onUpdate) onUpdate(userData);
-    } catch (err) {
-      toast({ title: 'خطأ', description: 'فشل في تحديث بيانات الملف الشخصي من السيرفر', variant: 'destructive' });
+      
+      // تحديث الثيم والتأثير المحلي
+      if (userData.userTheme) {
+        setSelectedTheme(userData.userTheme);
+      }
+      if (userData.profileEffect) {
+        setSelectedEffect(userData.profileEffect);
+      }
+      
+    } catch (err: any) {
+      console.error('❌ خطأ في جلب بيانات المستخدم:', err);
+      toast({ 
+        title: 'خطأ', 
+        description: err.message || 'فشل في تحديث بيانات الملف الشخصي من السيرفر', 
+        variant: 'destructive' 
+      });
     }
   };
 
-  // تحديث المستخدم المحلي والخارجي
+  // تحديث المستخدم المحلي والخارجي - محسّن
   const updateUserData = (updates: Partial<ChatUser>) => {
+    console.log('🔄 تحديث بيانات المستخدم محلياً:', updates);
+    
     const updatedUser = { ...localUser, ...updates };
     setLocalUser(updatedUser);
+    
     if (onUpdate) {
       onUpdate(updatedUser);
     }
+    
+    // تحديث الثيم والتأثير إذا تم تغييرهما
+    if (updates.userTheme) {
+      setSelectedTheme(updates.userTheme);
+    }
+    if (updates.profileEffect) {
+      setSelectedEffect(updates.profileEffect);
+    }
+    
+    console.log('✅ تم تحديث البيانات المحلية:', updatedUser);
   };
 
   // Complete themes collection from original code
@@ -334,25 +368,41 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     }
   ];
 
-  // Profile image fallback - محسّن ومستقر
+  // Profile image fallback - محسّن ومستقر مع حل مشاكل الcache
   const getProfileImageSrc = () => {
+    console.log('🖼️ محاولة عرض صورة البروفايل:', localUser?.profileImage);
+    
     if (!localUser?.profileImage || localUser.profileImage === '' || localUser.profileImage === '/default_avatar.svg') {
       return `/default_avatar.svg`;
     }
+    
+    // إذا كان URL كامل
     if (localUser.profileImage.startsWith('http://') || localUser.profileImage.startsWith('https://')) {
       return localUser.profileImage;
     }
+    
+    // إذا كان مسار يبدأ بـ /uploads
     if (localUser.profileImage.startsWith('/uploads/')) {
-      return localUser.profileImage;
+      // إضافة timestamp لتجنب cache
+      const timestamp = new Date().getTime();
+      return `${localUser.profileImage}?t=${timestamp}`;
     }
+    
+    // إذا كان مسار من الجذر
     if (localUser.profileImage.startsWith('/')) {
-      return localUser.profileImage;
+      const timestamp = new Date().getTime();
+      return `${localUser.profileImage}?t=${timestamp}`;
     }
-    return `/uploads/profiles/${localUser.profileImage}`;
+    
+    // إذا كان اسم ملف فقط
+    const timestamp = new Date().getTime();
+    return `/uploads/profiles/${localUser.profileImage}?t=${timestamp}`;
   };
 
-  // Profile banner fallback - محسّن ومستقر
+  // Profile banner fallback - محسّن ومستقر مع حل مشاكل الcache
   const getProfileBannerSrc = () => {
+    console.log('🎆 محاولة عرض صورة البانر:', localUser?.profileBanner);
+    
     if (!localUser?.profileBanner || localUser.profileBanner === '') {
       return 'https://i.imgur.com/rJKrUfs.jpeg';
     }
@@ -364,16 +414,19 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
     // إذا كان مسار يبدأ بـ /uploads
     if (localUser.profileBanner.startsWith('/uploads/')) {
-      return localUser.profileBanner;
+      const timestamp = new Date().getTime();
+      return `${localUser.profileBanner}?t=${timestamp}`;
     }
 
     // إذا كان مسار من الجذر
     if (localUser.profileBanner.startsWith('/')) {
-      return localUser.profileBanner;
+      const timestamp = new Date().getTime();
+      return `${localUser.profileBanner}?t=${timestamp}`;
     }
 
     // إذا كان اسم ملف فقط
-    return `/uploads/banners/${localUser.profileBanner}`;
+    const timestamp = new Date().getTime();
+    return `/uploads/banners/${localUser.profileBanner}?t=${timestamp}`;
   };
 
   // Edit modal handlers
@@ -1778,10 +1831,16 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                   backfaceVisibility: 'hidden',
                   transform: 'translateZ(0)'
                 }}
+                onLoad={(e) => {
+                  console.log('✅ تم تحميل صورة البروفايل بنجاح:', (e.target as HTMLImageElement).src);
+                }}
                 onError={(e) => {
-                  // منع إعادة التحميل المستمر عند الخطأ
                   const target = e.target as HTMLImageElement;
-                  if (target.src !== '/default_avatar.svg') {
+                  console.error('❌ فشل في تحميل صورة البروفايل:', target.src);
+                  console.log('🔄 محاولة تحميل الصورة الافتراضية...');
+                  
+                  // منع إعادة التحميل المستمر عند الخطأ
+                  if (target.src !== '/default_avatar.svg' && !target.src.includes('default_avatar.svg')) {
                     target.src = '/default_avatar.svg';
                   }
                 }}

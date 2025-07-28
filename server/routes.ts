@@ -429,6 +429,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug endpoint للتحقق من الصور - مؤقت للاختبار
+  app.get('/api/debug/images', async (req, res) => {
+    try {
+      const uploadsDir = path.join(process.cwd(), 'client', 'public', 'uploads');
+      const profilesDir = path.join(uploadsDir, 'profiles');
+      const bannersDir = path.join(uploadsDir, 'banners');
+      
+      const debugInfo = {
+        uploadsDir: uploadsDir,
+        profilesDir: profilesDir,
+        bannersDir: bannersDir,
+        uploadsExists: fs.existsSync(uploadsDir),
+        profilesExists: fs.existsSync(profilesDir),
+        bannersExists: fs.existsSync(bannersDir),
+        profileFiles: [],
+        bannerFiles: [],
+        dbImages: []
+      };
+      
+      // قائمة ملفات البروفايل
+      if (debugInfo.profilesExists) {
+        debugInfo.profileFiles = fs.readdirSync(profilesDir).map(file => ({
+          name: file,
+          path: `/uploads/profiles/${file}`,
+          size: fs.statSync(path.join(profilesDir, file)).size
+        }));
+      }
+      
+      // قائمة ملفات البانر
+      if (debugInfo.bannersExists) {
+        debugInfo.bannerFiles = fs.readdirSync(bannersDir).map(file => ({
+          name: file,
+          path: `/uploads/banners/${file}`,
+          size: fs.statSync(path.join(bannersDir, file)).size
+        }));
+      }
+      
+      // جلب الصور من قاعدة البيانات
+      try {
+        const users = await storage.getAllUsers();
+        debugInfo.dbImages = users
+          .filter(user => user.profileImage || user.profileBanner)
+          .map(user => ({
+            id: user.id,
+            username: user.username,
+            profileImage: user.profileImage,
+            profileBanner: user.profileBanner
+          }));
+      } catch (dbError) {
+        debugInfo.dbImages = [`خطأ في قاعدة البيانات: ${dbError.message}`];
+      }
+      
+      res.json(debugInfo);
+    } catch (error) {
+      console.error('خطأ في debug endpoint:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // إدارة الإخفاء للإدمن والمالك
   app.post("/api/users/:userId/toggle-hidden", async (req, res) => {
     try {
@@ -4160,6 +4219,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('خطأ في جلب معلومات غرفة البث:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // Debug endpoint للتحقق من الصور - مؤقت للاختبار
+  app.get('/api/debug/images', async (req, res) => {
+    try {
+      const uploadsDir = path.join(process.cwd(), 'client', 'public', 'uploads');
+      const profilesDir = path.join(uploadsDir, 'profiles');
+      const bannersDir = path.join(uploadsDir, 'banners');
+      
+      const debugInfo = {
+        uploadsDir: uploadsDir,
+        profilesDir: profilesDir,
+        bannersDir: bannersDir,
+        uploadsExists: fs.existsSync(uploadsDir),
+        profilesExists: fs.existsSync(profilesDir),
+        bannersExists: fs.existsSync(bannersDir),
+        profileFiles: [],
+        bannerFiles: [],
+        dbImages: []
+      };
+      
+      // قائمة ملفات البروفايل
+      if (debugInfo.profilesExists) {
+        debugInfo.profileFiles = fs.readdirSync(profilesDir).map(file => ({
+          name: file,
+          path: `/uploads/profiles/${file}`,
+          size: fs.statSync(path.join(profilesDir, file)).size
+        }));
+      }
+      
+      // قائمة ملفات البانر
+      if (debugInfo.bannersExists) {
+        debugInfo.bannerFiles = fs.readdirSync(bannersDir).map(file => ({
+          name: file,
+          path: `/uploads/banners/${file}`,
+          size: fs.statSync(path.join(bannersDir, file)).size
+        }));
+      }
+      
+      // جلب الصور من قاعدة البيانات
+      try {
+        const users = await storage.getAllUsers();
+        debugInfo.dbImages = users
+          .filter(user => user.profileImage || user.profileBanner)
+          .map(user => ({
+            id: user.id,
+            username: user.username,
+            profileImage: user.profileImage,
+            profileBanner: user.profileBanner
+          }));
+      } catch (dbError) {
+        debugInfo.dbImages = [`خطأ في قاعدة البيانات: ${dbError.message}`];
+      }
+      
+      res.json(debugInfo);
+    } catch (error) {
+      console.error('خطأ في debug endpoint:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 
