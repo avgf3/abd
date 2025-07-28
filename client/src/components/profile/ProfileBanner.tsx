@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Camera, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { api } from '@/lib/queryClient';
 import { getBannerImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 
@@ -14,6 +14,7 @@ interface ProfileBannerProps {
 export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBannerProps) {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -74,19 +75,14 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       formData.append('banner', file);
       formData.append('userId', currentUser.id.toString());
 
-      const response = await fetch('/api/upload/profile-banner', {
-        method: 'POST',
-        body: formData,
+      // استخدام api.upload مع شريط التقدم
+      const result = await api.upload('/api/upload/profile-banner', formData, {
+        timeout: 60000, // دقيقة واحدة للصور
+        onProgress: (progress) => {
+          setUploadProgress(Math.round(progress));
+        }
       });
 
-      console.log('📡 استجابة الخادم:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'فشل في رفع صورة البانر' }));
-        throw new Error(errorData.error || errorData.details || 'فشل في رفع صورة البانر');
-      }
-
-      const result = await response.json();
       console.log('✅ نتيجة رفع البانر:', result);
       
       if (!result.success) {

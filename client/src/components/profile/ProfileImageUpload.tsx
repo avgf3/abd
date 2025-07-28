@@ -2,7 +2,8 @@ import { useState, useRef } from 'react';
 import { Camera, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { api } from '@/lib/queryClient';
+import { validateFile, formatFileSize, getUploadTimeout } from '@/lib/uploadConfig';
 import type { ChatUser } from '@/types/chat';
 
 interface ProfileImageUploadProps {
@@ -13,28 +14,19 @@ interface ProfileImageUploadProps {
 export default function ProfileImageUpload({ currentUser, onImageUpdate }: ProfileImageUploadProps) {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // التحقق من صحة الملف
-  const validateFile = (file: File): boolean => {
-    // التحقق من حجم الملف (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
+  // التحقق من صحة الملف باستخدام الإعدادات المركزية
+  const validateProfileImage = (file: File): boolean => {
+    const validation = validateFile(file, 'profile_image');
+    
+    if (!validation.isValid) {
       toast({
-        title: "خطأ",
-        description: "حجم الصورة يجب أن يكون أقل من 5 ميجابايت",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    // التحقق من نوع الملف
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-    if (!allowedTypes.includes(file.type)) {
-      toast({
-        title: "خطأ",
-        description: "يرجى اختيار ملف صورة صحيح (JPG, PNG, GIF, WebP, SVG)",
+        title: "خطأ في الملف",
+        description: validation.error,
         variant: "destructive",
       });
       return false;
@@ -53,7 +45,7 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       return;
     }
 
-    if (!validateFile(file)) return;
+    if (!validateProfileImage(file)) return;
 
     setUploading(true);
 
@@ -65,7 +57,7 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       };
       reader.readAsDataURL(file);
 
-      // رفع الصورة للخادم - إصلاح المشكلة
+      // رفع الصورة للخادم باستخدام API الموحد
       console.log('📤 بدء رفع صورة البروفايل...');
       
       // إنشاء FormData لرفع الصورة
@@ -73,19 +65,14 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       formData.append('profileImage', file);
       formData.append('userId', currentUser.id.toString());
 
-      const response = await fetch('/api/upload/profile-image', {
-        method: 'POST',
-        body: formData,
+      // استخدام api.upload مع شريط التقدم والإعدادات المركزية
+      const result = await api.upload('/api/upload/profile-image', formData, {
+        timeout: getUploadTimeout('image'),
+        onProgress: (progress) => {
+          setUploadProgress(Math.round(progress));
+        }
       });
 
-      console.log('📡 استجابة الخادم:', response.status);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'فشل في رفع الصورة' }));
-        throw new Error(errorData.error || errorData.details || 'فشل في رفع الصورة');
-      }
-
-      const result = await response.json();
       console.log('✅ نتيجة رفع الصورة:', result);
       
       if (!result.success) {
@@ -102,8 +89,9 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
         description: "تم تحديث صورة البروفايل",
       });
 
-      // إخفاء المعاينة
+      // إخفاء المعاينة وإعادة تعيين التقدم
       setPreview(null);
+      setUploadProgress(0);
 
     } catch (error: any) {
       console.error('❌ خطأ في رفع الصورة:', error);
@@ -172,6 +160,22 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
         </div>
       )}
 
+      {/* شريط التقدم */}
+      {uploading && uploadProgress > 0 && (
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>جاري الرفع...</span>
+            <span>{uploadProgress}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-primary h-2 rounded-full transition-all duration-300"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* أزرار الرفع */}
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         {/* رفع من الجهاز */}
@@ -220,10 +224,11 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
         className="hidden"
       />
 
-      {/* نصائح */}
-      <div className="text-center text-sm text-muted-foreground">
-        <p>الحد الأقصى: 5 ميجابايت</p>
+      {/* نصائح محسّنة */}
+      <div className="text-center text-sm text-muted-foreground space-y-1">
+        <p>الحد الأقصى: {formatFileSize(5 * 1024 * 1024)}</p>
         <p>الصيغ المدعومة: JPG, PNG, GIF, WebP, SVG</p>
+        <p className="text-xs">💡 للحصول على أفضل جودة، استخدم صور بدقة 400×400 بكسل</p>
       </div>
     </div>
   );
