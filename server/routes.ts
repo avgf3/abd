@@ -243,7 +243,7 @@ const friendService = new (class FriendService {
 })();
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // رفع صور البروفايل
+  // رفع صور البروفايل - محسّن مع معالجة شاملة للأخطاء
   app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
     try {
       console.log('📤 رفع صورة بروفايل:', {
@@ -260,16 +260,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const userId = parseInt(req.body.userId);
-      if (!userId) {
+      if (!userId || isNaN(userId)) {
         // حذف الملف المرفوع إذا فشل في الحصول على userId
-        fs.unlinkSync(req.file.path);
-        return res.status(400).json({ error: "معرف المستخدم مطلوب" });
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (unlinkError) {
+          console.error('خطأ في حذف الملف:', unlinkError);
+        }
+        return res.status(400).json({ error: "معرف المستخدم مطلوب ويجب أن يكون رقم صحيح" });
       }
 
       // التحقق من وجود المستخدم
       const user = await storage.getUser(userId);
       if (!user) {
-        fs.unlinkSync(req.file.path);
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (unlinkError) {
+          console.error('خطأ في حذف الملف:', unlinkError);
+        }
         return res.status(404).json({ error: "المستخدم غير موجود" });
       }
 
@@ -277,7 +285,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const relativePath = `/uploads/profiles/${req.file.filename}`;
       
       // تحديث صورة البروفايل في قاعدة البيانات
-      await storage.updateUser(userId, { profileImage: relativePath });
+      const updatedUser = await storage.updateUser(userId, { profileImage: relativePath });
+      
+      if (!updatedUser) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (unlinkError) {
+          console.error('خطأ في حذف الملف:', unlinkError);
+        }
+        return res.status(500).json({ error: "فشل في تحديث صورة البروفايل في قاعدة البيانات" });
+      }
 
       console.log('✅ تم رفع صورة البروفايل بنجاح:', {
         userId,
@@ -285,10 +302,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         path: relativePath
       });
 
+      // إرسال إشعار للمستخدمين الآخرين عبر WebSocket
+      const updateMessage = {
+        type: 'user_profile_image_updated',
+        userId: userId,
+        profileImage: relativePath,
+        timestamp: new Date().toISOString()
+      };
+      broadcast(updateMessage);
+
       res.json({
+        success: true,
         message: "تم رفع الصورة بنجاح",
         imageUrl: relativePath,
-        filename: req.file.filename
+        filename: req.file.filename,
+        user: updatedUser
       });
 
     } catch (error) {
@@ -310,7 +338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // إصلاح رفع صورة البانر
+  // إصلاح رفع صورة البانر - محسّن مع معالجة شاملة للأخطاء
   app.post('/api/upload/profile-banner', bannerUpload.single('banner'), async (req, res) => {
     try {
       console.log('📤 رفع صورة بانر:', {
@@ -326,21 +354,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const userId = parseInt(req.body.userId);
-      if (!userId) {
-        fs.unlinkSync(req.file.path);
-        return res.status(400).json({ error: "معرف المستخدم مطلوب" });
+      if (!userId || isNaN(userId)) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (unlinkError) {
+          console.error('خطأ في حذف الملف:', unlinkError);
+        }
+        return res.status(400).json({ error: "معرف المستخدم مطلوب ويجب أن يكون رقم صحيح" });
       }
 
       // التحقق من وجود المستخدم
       const user = await storage.getUser(userId);
       if (!user) {
-        fs.unlinkSync(req.file.path);
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (unlinkError) {
+          console.error('خطأ في حذف الملف:', unlinkError);
+        }
         return res.status(404).json({ error: "المستخدم غير موجود" });
       }
 
       const relativePath = `/uploads/banners/${req.file.filename}`;
       
-      await storage.updateUser(userId, { profileBanner: relativePath });
+      const updatedUser = await storage.updateUser(userId, { profileBanner: relativePath });
+      
+      if (!updatedUser) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (unlinkError) {
+          console.error('خطأ في حذف الملف:', unlinkError);
+        }
+        return res.status(500).json({ error: "فشل في تحديث صورة البانر في قاعدة البيانات" });
+      }
 
       console.log('✅ تم رفع صورة البانر بنجاح:', {
         userId,
@@ -348,15 +393,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         path: relativePath
       });
 
+      // إرسال إشعار للمستخدمين الآخرين عبر WebSocket
+      const updateMessage = {
+        type: 'user_profile_banner_updated',
+        userId: userId,
+        profileBanner: relativePath,
+        timestamp: new Date().toISOString()
+      };
+      broadcast(updateMessage);
+
       res.json({
+        success: true,
         message: "تم رفع صورة البانر بنجاح",
-        imageUrl: relativePath,
-        filename: req.file.filename
+        bannerUrl: relativePath,
+        filename: req.file.filename,
+        user: updatedUser
       });
 
     } catch (error) {
       console.error('❌ خطأ في رفع صورة البانر:', error);
       
+      // حذف الملف في حالة الخطأ
       if (req.file && fs.existsSync(req.file.path)) {
         try {
           fs.unlinkSync(req.file.path);
@@ -3238,33 +3295,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update user profile - General endpoint
+  // Update user profile - General endpoint - محسّن مع معالجة أفضل للأخطاء
   app.post('/api/users/update-profile', async (req, res) => {
     try {
       const { userId, ...updates } = req.body;
       
-      if (!userId) {
-        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      console.log('🔄 تحديث البروفايل:', { userId, updates });
+      
+      if (!userId || isNaN(parseInt(userId))) {
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب ويجب أن يكون رقم صحيح' });
       }
 
-      const user = await storage.getUser(userId);
+      const user = await storage.getUser(parseInt(userId));
       if (!user) {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
+      // التحقق من صحة البيانات المُدخلة
+      const validatedUpdates: any = {};
+      
+      if (updates.username !== undefined) {
+        if (typeof updates.username !== 'string' || updates.username.trim().length === 0) {
+          return res.status(400).json({ error: 'اسم المستخدم يجب أن يكون نص غير فارغ' });
+        }
+        validatedUpdates.username = updates.username.trim();
+      }
+      
+      if (updates.status !== undefined) {
+        if (typeof updates.status !== 'string') {
+          return res.status(400).json({ error: 'الحالة يجب أن تكون نص' });
+        }
+        validatedUpdates.status = updates.status.trim();
+      }
+      
+      if (updates.gender !== undefined) {
+        const validGenders = ['ذكر', 'أنثى', ''];
+        if (!validGenders.includes(updates.gender)) {
+          return res.status(400).json({ error: 'الجنس يجب أن يكون "ذكر" أو "أنثى"' });
+        }
+        validatedUpdates.gender = updates.gender;
+      }
+      
+      if (updates.country !== undefined) {
+        if (typeof updates.country !== 'string') {
+          return res.status(400).json({ error: 'البلد يجب أن يكون نص' });
+        }
+        validatedUpdates.country = updates.country.trim();
+      }
+      
+      if (updates.age !== undefined) {
+        const age = parseInt(updates.age);
+        if (isNaN(age) || age < 13 || age > 120) {
+          return res.status(400).json({ error: 'العمر يجب أن يكون رقم بين 13 و 120' });
+        }
+        validatedUpdates.age = age;
+      }
+      
+      if (updates.relation !== undefined) {
+        if (typeof updates.relation !== 'string') {
+          return res.status(400).json({ error: 'الحالة الاجتماعية يجب أن تكون نص' });
+        }
+        validatedUpdates.relation = updates.relation.trim();
+      }
+      
+      if (updates.bio !== undefined) {
+        if (typeof updates.bio !== 'string') {
+          return res.status(400).json({ error: 'السيرة الذاتية يجب أن تكون نص' });
+        }
+        if (updates.bio.length > 500) {
+          return res.status(400).json({ error: 'السيرة الذاتية يجب أن تكون أقل من 500 حرف' });
+        }
+        validatedUpdates.bio = updates.bio.trim();
+      }
+
       // تحديث البيانات
-      const updatedUser = await storage.updateUser(userId, updates);
+      const updatedUser = await storage.updateUser(parseInt(userId), validatedUpdates);
+      
+      if (!updatedUser) {
+        return res.status(500).json({ error: 'فشل في تحديث البيانات في قاعدة البيانات' });
+      }
+      
+      console.log('✅ تم تحديث البروفايل بنجاح:', { userId, validatedUpdates });
       
       // إشعار المستخدمين الآخرين عبر WebSocket
       broadcast({
         type: 'user_profile_updated',
-        data: { userId, updates }
+        data: { userId: parseInt(userId), updates: validatedUpdates }
       });
 
-      res.json({ success: true, message: 'تم تحديث البروفايل بنجاح', user: updatedUser });
+      res.json({ 
+        success: true, 
+        message: 'تم تحديث البروفايل بنجاح', 
+        user: updatedUser 
+      });
     } catch (error) {
-      console.error('خطأ في تحديث البروفايل:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
+      console.error('❌ خطأ في تحديث البروفايل:', error);
+      res.status(500).json({ 
+        error: 'خطأ في الخادم',
+        details: error instanceof Error ? error.message : 'خطأ غير معروف'
+      });
     }
   });
 

@@ -426,40 +426,95 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, uploadType: 'profile' | 'banner') => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast({ title: "خطأ", description: "يرجى اختيار ملف صورة صحيح", variant: "destructive" });
+    
+    // التحقق من نوع الملف
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ 
+        title: "خطأ", 
+        description: "يرجى اختيار ملف صورة صحيح (JPG, PNG, GIF, WebP, SVG)", 
+        variant: "destructive" 
+      });
       return;
     }
-    if (file.size > (uploadType === 'profile' ? 5 : 10) * 1024 * 1024) {
-      toast({ title: "خطأ", description: uploadType === 'profile' ? "حجم الصورة يجب أن يكون أقل من 5 ميجابايت" : "حجم الغلاف يجب أن يكون أقل من 10 ميجابايت", variant: "destructive" });
+    
+    // التحقق من حجم الملف
+    const maxSize = uploadType === 'profile' ? 5 * 1024 * 1024 : 10 * 1024 * 1024; // 5MB للبروفايل، 10MB للبانر
+    if (file.size > maxSize) {
+      toast({ 
+        title: "خطأ", 
+        description: uploadType === 'profile' 
+          ? "حجم الصورة يجب أن يكون أقل من 5 ميجابايت" 
+          : "حجم الغلاف يجب أن يكون أقل من 10 ميجابايت", 
+        variant: "destructive" 
+      });
       return;
     }
+    
     try {
       setIsLoading(true);
+      
+      console.log(`📤 بدء رفع ${uploadType === 'profile' ? 'صورة البروفايل' : 'صورة البانر'}...`);
+      
       const formData = new FormData();
       if (uploadType === 'profile') {
         formData.append('profileImage', file);
       } else {
         formData.append('banner', file);
       }
+      
       if (currentUser?.id) {
         formData.append('userId', currentUser.id.toString());
       }
+      
       const endpoint = uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
       const response = await fetch(endpoint, { method: 'POST', body: formData });
+      
+      console.log(`📡 استجابة ${uploadType}:`, response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'فشل في رفع الصورة' }));
+        throw new Error(errorData.error || errorData.details || 'فشل في رفع الصورة');
+      }
+      
       const result = await response.json();
-      if (response.ok && result.success !== false) {
-        await fetchAndUpdateUser(currentUser?.id!);
-        toast({ title: "نجح ✅", description: uploadType === 'profile' ? "تم تحديث الصورة الشخصية" : "تم تحديث صورة الغلاف" });
-        if (uploadType === 'profile') setPreviewProfile(null);
-        else setPreviewBanner(null);
-      } else {
+      console.log(`✅ نتيجة رفع ${uploadType}:`, result);
+      
+      if (!result.success) {
         throw new Error(result.error || 'فشل في رفع الصورة');
       }
-    } catch (error) {
-      toast({ title: "خطأ", description: "فشل في تحميل الصورة", variant: "destructive" });
+      
+      // تحديث البيانات المحلية فوراً
+      if (uploadType === 'profile' && result.imageUrl) {
+        updateUserData({ profileImage: result.imageUrl });
+      } else if (uploadType === 'banner' && result.bannerUrl) {
+        updateUserData({ profileBanner: result.bannerUrl });
+      }
+      
+      // جلب البيانات المحدثة من السيرفر للتأكد
+      await fetchAndUpdateUser(currentUser?.id!);
+      
+      toast({ 
+        title: "نجح ✅", 
+        description: uploadType === 'profile' ? "تم تحديث الصورة الشخصية" : "تم تحديث صورة الغلاف" 
+      });
+      
+      // إزالة المعاينة
+      if (uploadType === 'profile') setPreviewProfile(null);
+      else setPreviewBanner(null);
+      
+    } catch (error: any) {
+      console.error(`❌ خطأ في رفع ${uploadType}:`, error);
+      toast({ 
+        title: "خطأ", 
+        description: error.message || "فشل في تحميل الصورة", 
+        variant: "destructive" 
+      });
     } finally {
       setIsLoading(false);
+      // تنظيف input files
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
     }
   };
 
