@@ -59,18 +59,21 @@ export default function UserRegistration({ isOpen, onClose, onRegister }: UserRe
     setIsLoading(true);
     
     try {
-      const response = await apiRequest('POST', '/api/auth/register', {
-        username: formData.username,
-        password: formData.password,
-        userType: 'member',
-        status: formData.status,
-        gender: formData.gender,
-        age: formData.age ? parseInt(formData.age) : undefined,
-        country: formData.country,
-        relation: formData.relation
+      const response = await apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: {
+          username: formData.username,
+          password: formData.password,
+          userType: 'member',
+          status: formData.status,
+          gender: formData.gender,
+          age: formData.age ? parseInt(formData.age) : undefined,
+          country: formData.country,
+          relation: formData.relation
+        }
       });
 
-      const { user } = await response.json();
+      const { user } = response;
       
       toast({
         title: "تم التسجيل بنجاح",
