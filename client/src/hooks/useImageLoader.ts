@@ -22,6 +22,16 @@ export function useImageLoader({ src, fallback }: UseImageLoaderProps) {
       return;
     }
 
+    // إذا كانت الصورة base64، استخدمها مباشرة دون تحميل
+    if (imageSrc.startsWith('data:')) {
+      setImageState({
+        src: imageSrc,
+        isLoading: false,
+        hasError: false
+      });
+      return;
+    }
+
     setImageState(prev => ({
       ...prev,
       isLoading: true,
