@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import ProfileImage from './ProfileImage';
 import { getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
+import { getImageSrc } from '@/utils/imageUtils';
 
 import type { ChatMessage, ChatUser } from '@/types/chat';
 
@@ -95,7 +96,7 @@ export default function NewMessageArea({
                 onClick={(e) => onUserClick(e, sender)}
               >
                 <img
-                  src={sender.profileImage && sender.profileImage !== '/default_avatar.svg' ? sender.profileImage : "/default_avatar.svg"}
+                  src={getImageSrc(sender.profileImage)}
                   alt="صورة المستخدم"
                   className="w-10 h-10 rounded-full border-2 border-blue-400 ring-1 ring-blue-200 shadow-sm object-cover hover:scale-105 transition-transform"
                   onError={(e) => {
