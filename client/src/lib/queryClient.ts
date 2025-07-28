@@ -41,13 +41,20 @@ export async function apiRequest<T = any>(
 
   const { method = 'GET', body, headers = {} } = options;
   
+  // تحديد نوع المحتوى والجسم بناءً على نوع البيانات
+  let requestHeaders: Record<string, string> = { ...headers };
+  let requestBody: any = body;
+  
+  // إذا كان FormData، لا نضيف Content-Type (المتصفح يضيفه تلقائياً)
+  if (!(body instanceof FormData)) {
+    requestHeaders['Content-Type'] = 'application/json';
+    requestBody = body ? JSON.stringify(body) : undefined;
+  }
+  
   const res = await fetch(url, {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers
-    },
-    body: body ? JSON.stringify(body) : undefined,
+    headers: requestHeaders,
+    body: requestBody,
     credentials: "include",
   });
 
