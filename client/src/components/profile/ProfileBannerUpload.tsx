@@ -1,27 +1,27 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Camera, Upload, User, Loader2, X } from 'lucide-react';
+import { Camera, Upload, Image, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { uploadProfileImage } from '@/services/uploadService';
-import { getImageSrc } from '@/utils/imageUtils';
+import { uploadProfileBanner } from '@/services/uploadService';
+import { getBannerImageSrc } from '@/utils/imageUtils';
 import { validateImageFile } from '@/utils/validation';
 import type { ChatUser } from '@/types/chat';
 
-interface ProfileImageUploadProps {
+interface ProfileBannerUploadProps {
   currentUser: ChatUser | null;
   profileData: ChatUser;
   canEdit: boolean;
-  onImageUpdate: (imageUrl: string) => void;
+  onBannerUpdate: (bannerUrl: string) => void;
   isLoading: boolean;
 }
 
-export function ProfileImageUpload({
+export function ProfileBannerUpload({
   currentUser,
   profileData,
   canEdit,
-  onImageUpdate,
+  onBannerUpdate,
   isLoading
-}: ProfileImageUploadProps) {
+}: ProfileBannerUploadProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +42,7 @@ export function ProfileImageUpload({
     }
 
     // التحقق من صحة الملف
-    const validation = validateImageFile(file, 'profile');
+    const validation = validateImageFile(file, 'banner');
     if (!validation.isValid) {
       toast({
         title: "ملف غير صالح",
@@ -64,27 +64,27 @@ export function ProfileImageUpload({
       reader.readAsDataURL(file);
 
       // رفع الصورة
-      const result = await uploadProfileImage(file, currentUser.id, {
+      const result = await uploadProfileBanner(file, currentUser.id, {
         onProgress: (progress) => {
           setUploadProgress(progress);
         }
       });
 
-      if (result.success && result.imageUrl) {
-        onImageUpdate(result.imageUrl);
+      if (result.success && result.bannerUrl) {
+        onBannerUpdate(result.bannerUrl);
         setPreview(null);
         
         toast({
           title: "تم بنجاح",
-          description: "تم تحديث الصورة الشخصية"
+          description: "تم تحديث صورة الغلاف"
         });
       } else {
-        throw new Error(result.error || 'فشل في رفع الصورة');
+        throw new Error(result.error || 'فشل في رفع صورة الغلاف');
       }
     } catch (error: any) {
       toast({
         title: "خطأ في الرفع",
-        description: error.message || 'حدث خطأ أثناء رفع الصورة',
+        description: error.message || 'حدث خطأ أثناء رفع صورة الغلاف',
         variant: "destructive"
       });
       setPreview(null);
@@ -96,7 +96,7 @@ export function ProfileImageUpload({
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (cameraInputRef.current) cameraInputRef.current.value = '';
     }
-  }, [currentUser, canEdit, onImageUpdate, toast]);
+  }, [currentUser, canEdit, onBannerUpdate, toast]);
 
   // معالجة تغيير ملف الإدخال
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,91 +113,92 @@ export function ProfileImageUpload({
     if (cameraInputRef.current) cameraInputRef.current.value = '';
   }, []);
 
-  // الحصول على مصدر الصورة
-  const getImageSource = useCallback(() => {
+  // الحصول على مصدر صورة الغلاف
+  const getBannerSource = useCallback(() => {
     if (preview) return preview;
-    return getImageSrc(profileData.profileImage, '/default_avatar.svg');
-  }, [preview, profileData.profileImage]);
+    return getBannerImageSrc(
+      profileData.profileBanner, 
+      'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&h=300&fit=crop'
+    );
+  }, [preview, profileData.profileBanner]);
 
   return (
     <div className="relative">
-      {/* الصورة الشخصية */}
-      <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl bg-white">
-        <img
-          src={getImageSource()}
-          alt={`صورة ${profileData.username}`}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            if (target.src !== '/default_avatar.svg') {
-              target.src = '/default_avatar.svg';
-            }
-          }}
-        />
+      {/* صورة الغلاف */}
+      <div 
+        className="relative h-48 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden"
+        style={{
+          backgroundImage: `url(${getBannerSource()})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        {/* طبقة تراكب للتحسين البصري */}
+        <div className="absolute inset-0 bg-black/20" />
         
         {/* مؤشر التحميل */}
         {(uploading || isLoading) && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
             <div className="text-center text-white">
-              <Loader2 className="animate-spin mx-auto mb-2" size={24} />
+              <Loader2 className="animate-spin mx-auto mb-2" size={32} />
               {uploading && (
-                <div className="text-xs">
-                  {uploadProgress > 0 ? `${uploadProgress}%` : 'جاري الرفع...'}
+                <div className="text-sm">
+                  {uploadProgress > 0 ? `${uploadProgress}%` : 'جاري رفع الغلاف...'}
                 </div>
               )}
             </div>
           </div>
         )}
-        
+
         {/* زر إزالة المعاينة */}
         {preview && !uploading && (
           <Button
             onClick={removePreview}
             size="sm"
             variant="destructive"
-            className="absolute top-1 right-1 w-6 h-6 p-0 rounded-full"
+            className="absolute top-2 right-2 w-8 h-8 p-0 rounded-full"
           >
-            <X size={12} />
+            <X size={16} />
           </Button>
         )}
-      </div>
 
-      {/* أزرار التحكم */}
-      {canEdit && !uploading && !isLoading && (
-        <div className="absolute -bottom-2 -right-2 flex gap-1">
-          {/* زر رفع من الجهاز */}
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            size="sm"
-            className="w-8 h-8 p-0 rounded-full bg-blue-500 hover:bg-blue-600"
-            title="اختيار صورة من الجهاز"
-          >
-            <Upload size={16} />
-          </Button>
-          
-          {/* زر الكاميرا */}
-          <Button
-            onClick={() => cameraInputRef.current?.click()}
-            size="sm"
-            className="w-8 h-8 p-0 rounded-full bg-green-500 hover:bg-green-600"
-            title="التقاط صورة بالكاميرا"
-          >
-            <Camera size={16} />
-          </Button>
-        </div>
-      )}
+        {/* أزرار التحكم */}
+        {canEdit && !uploading && !isLoading && (
+          <div className="absolute bottom-3 left-3 flex gap-2">
+            {/* زر رفع من الجهاز */}
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              size="sm"
+              className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30"
+              title="اختيار صورة غلاف من الجهاز"
+            >
+              <Upload size={16} className="mr-1" />
+              رفع صورة
+            </Button>
+            
+            {/* زر الكاميرا */}
+            <Button
+              onClick={() => cameraInputRef.current?.click()}
+              size="sm"
+              className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30"
+              title="التقاط صورة غلاف بالكاميرا"
+            >
+              <Camera size={16} />
+            </Button>
+          </div>
+        )}
 
-      {/* شريط التقدم */}
-      {uploading && uploadProgress > 0 && (
-        <div className="absolute -bottom-8 left-0 right-0">
-          <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
+        {/* شريط التقدم */}
+        {uploading && uploadProgress > 0 && (
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
             <div 
-              className="bg-blue-500 h-full transition-all duration-300 rounded-full"
+              className="h-full bg-white transition-all duration-300"
               style={{ width: `${uploadProgress}%` }}
             />
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* مدخلات الملفات المخفية */}
       <input
@@ -213,7 +214,7 @@ export function ProfileImageUpload({
         ref={cameraInputRef}
         type="file"
         accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-        capture="user"
+        capture="environment"
         onChange={handleFileChange}
         className="hidden"
         disabled={uploading || isLoading}
