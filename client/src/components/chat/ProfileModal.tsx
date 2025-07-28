@@ -52,6 +52,19 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
   if (!localUser) return null;
 
+  // دالة موحدة لجلب بيانات المستخدم من السيرفر وتحديث الحالة المحلية
+  const fetchAndUpdateUser = async (userId: number) => {
+    try {
+      const res = await fetch(`/api/users/${userId}`);
+      if (!res.ok) throw new Error('فشل في جلب بيانات المستخدم');
+      const userData = await res.json();
+      setLocalUser(userData);
+      if (onUpdate) onUpdate(userData);
+    } catch (err) {
+      toast({ title: 'خطأ', description: 'فشل في تحديث بيانات الملف الشخصي من السيرفر', variant: 'destructive' });
+    }
+  };
+
   // تحديث المستخدم المحلي والخارجي
   const updateUserData = (updates: Partial<ChatUser>) => {
     const updatedUser = { ...localUser, ...updates };
@@ -394,32 +407,35 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     setEditValue('');
   };
 
-  // File upload handler - محسّن بدون إعادة تحميل
+  // دعم المعاينة قبل رفع الصورة الشخصية أو الغلاف
+  const [previewProfile, setPreviewProfile] = useState<string | null>(null);
+  const [previewBanner, setPreviewBanner] = useState<string | null>(null);
+
+  const handlePreview = (event: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'banner') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (type === 'profile') setPreviewProfile(e.target?.result as string);
+      else setPreviewBanner(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // عند رفع صورة جديدة، أضمن تحديث بيانات المستخدم من السيرفر بعد نجاح الرفع
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, uploadType: 'profile' | 'banner') => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     if (!file.type.startsWith('image/')) {
-      toast({
-        title: "خطأ",
-        description: "يرجى اختيار ملف صورة صحيح",
-        variant: "destructive",
-      });
+      toast({ title: "خطأ", description: "يرجى اختيار ملف صورة صحيح", variant: "destructive" });
       return;
     }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "خطأ", 
-        description: "حجم الملف كبير جداً. الحد الأقصى 5 ميجابايت",
-        variant: "destructive",
-      });
+    if (file.size > (uploadType === 'profile' ? 5 : 10) * 1024 * 1024) {
+      toast({ title: "خطأ", description: uploadType === 'profile' ? "حجم الصورة يجب أن يكون أقل من 5 ميجابايت" : "حجم الغلاف يجب أن يكون أقل من 10 ميجابايت", variant: "destructive" });
       return;
     }
-
     try {
       setIsLoading(true);
-      
       const formData = new FormData();
       if (uploadType === 'profile') {
         formData.append('profileImage', file);
@@ -429,37 +445,19 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       if (currentUser?.id) {
         formData.append('userId', currentUser.id.toString());
       }
-
       const endpoint = uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        body: formData,
-      });
-
+      const response = await fetch(endpoint, { method: 'POST', body: formData });
       const result = await response.json();
-
       if (response.ok && result.success !== false) {
-        // إعادة جلب بيانات المستخدم بعد التحديث
-        const userRes = await fetch(`/api/users/${currentUser?.id}`);
-        const userData = await userRes.json();
-        updateUserData(userData);
-        
-        toast({
-          title: "نجح ✅",
-          description: uploadType === 'profile' ? "تم تحديث الصورة الشخصية" : "تم تحديث صورة الغلاف",
-        });
-        
+        await fetchAndUpdateUser(currentUser?.id!);
+        toast({ title: "نجح ✅", description: uploadType === 'profile' ? "تم تحديث الصورة الشخصية" : "تم تحديث صورة الغلاف" });
+        if (uploadType === 'profile') setPreviewProfile(null);
+        else setPreviewBanner(null);
       } else {
         throw new Error(result.error || 'فشل في رفع الصورة');
       }
     } catch (error) {
-      console.error('❌ خطأ في رفع الصورة:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في تحميل الصورة",
-        variant: "destructive",
-      });
+      toast({ title: "خطأ", description: "فشل في تحميل الصورة", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -468,70 +466,34 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   // حفظ تعديل البيانات - محسّن بدون إعادة تحميل
   const handleSaveEdit = async () => {
     if (!editValue.trim()) {
-      toast({
-        title: "خطأ",
-        description: "يرجى إدخال قيمة صحيحة",
-        variant: "destructive",
-      });
+      toast({ title: "خطأ", description: "يرجى إدخال قيمة صحيحة", variant: "destructive" });
       return;
     }
-
     setIsLoading(true);
     try {
       let fieldName = '';
       switch (currentEditType) {
-        case 'name':
-          fieldName = 'username';
-          break;
-        case 'status':
-          fieldName = 'status';
-          break;
-        case 'gender':
-          fieldName = 'gender';
-          break;
-        case 'country':
-          fieldName = 'country';
-          break;
-        case 'age':
-          fieldName = 'age';
-          break;
-        case 'socialStatus':
-          fieldName = 'relation';
-          break;
+        case 'name': fieldName = 'username'; break;
+        case 'status': fieldName = 'status'; break;
+        case 'gender': fieldName = 'gender'; break;
+        case 'country': fieldName = 'country'; break;
+        case 'age': fieldName = 'age'; break;
+        case 'socialStatus': fieldName = 'relation'; break;
       }
-
       const response = await apiRequest('/api/users/update-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          userId: currentUser?.id,
-          [fieldName]: editValue 
-        }),
+        body: JSON.stringify({ userId: currentUser?.id, [fieldName]: editValue }),
       });
-
       if (response.success) {
-        // إعادة جلب بيانات المستخدم بعد التحديث
-        const userRes = await fetch(`/api/users/${currentUser?.id}`);
-        const userData = await userRes.json();
-        updateUserData(userData);
-        
-        toast({
-          title: "نجح ✅",
-          description: "تم تحديث الملف الشخصي",
-        });
-        
+        await fetchAndUpdateUser(currentUser?.id!);
+        toast({ title: "نجح ✅", description: "تم تحديث الملف الشخصي" });
         closeEditModal();
-        
       } else {
         throw new Error(response.error || 'فشل في التحديث');
       }
     } catch (error) {
-      console.error('❌ خطأ في تحديث البروفايل:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في تحديث البيانات. تحقق من اتصال الإنترنت.",
-        variant: "destructive",
-      });
+      toast({ title: "خطأ", description: "فشل في تحديث البيانات. تحقق من اتصال الإنترنت.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -1887,14 +1849,14 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleFileUpload(e, 'banner')}
+                onChange={(e) => handlePreview(e, 'banner')}
                 disabled={isLoading}
               />
               <input
                 ref={avatarInputRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleFileUpload(e, 'profile')}
+                onChange={(e) => handlePreview(e, 'profile')}
                 disabled={isLoading}
               />
             </>
