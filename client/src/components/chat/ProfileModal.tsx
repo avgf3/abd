@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +26,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   const [isLoading, setIsLoading] = useState(false);
   const [currentEditType, setCurrentEditType] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+  
+  // حالة محلية للمستخدم للتحديث الفوري
+  const [localUser, setLocalUser] = useState<ChatUser | null>(user);
   const [selectedTheme, setSelectedTheme] = useState(user?.userTheme || 'theme-new-gradient');
   const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
 
@@ -38,7 +41,25 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     recipientName: string;
   }>({ show: false, points: 0, recipientName: '' });
 
-  if (!user) return null;
+  // تحديث الحالة المحلية عند تغيير المستخدم
+  useEffect(() => {
+    if (user) {
+      setLocalUser(user);
+      setSelectedTheme(user.userTheme || 'theme-new-gradient');
+      setSelectedEffect(user.profileEffect || 'none');
+    }
+  }, [user]);
+
+  if (!localUser) return null;
+
+  // تحديث المستخدم المحلي والخارجي
+  const updateUserData = (updates: Partial<ChatUser>) => {
+    const updatedUser = { ...localUser, ...updates };
+    setLocalUser(updatedUser);
+    if (onUpdate) {
+      onUpdate(updatedUser);
+    }
+  };
 
   // Complete themes collection from original code
   const themes = [
@@ -300,62 +321,54 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     }
   ];
 
-  // Profile image fallback
+  // Profile image fallback - محسّن
   const getProfileImageSrc = () => {
-    console.log('🖼️ Profile image data:', user?.profileImage);
+    console.log('🖼️ Profile image data:', localUser?.profileImage);
     
-    if (user?.profileImage) {
+    if (localUser?.profileImage && localUser.profileImage !== '/default_avatar.svg') {
       let imageSrc = '';
       
       // إذا كان المسار يبدأ بـ http أو https، استخدمه مباشرة
-      if (user.profileImage.startsWith('http')) {
-        imageSrc = user.profileImage;
+      if (localUser.profileImage.startsWith('http')) {
+        imageSrc = localUser.profileImage;
       }
       // إذا كان المسار يبدأ بـ /uploads، استخدمه مباشرة
-      else if (user.profileImage.startsWith('/uploads')) {
-        imageSrc = user.profileImage;
+      else if (localUser.profileImage.startsWith('/uploads')) {
+        imageSrc = localUser.profileImage;
       }
       // إذا كان اسم ملف فقط، أضف المسار الكامل
       else {
-        imageSrc = `/uploads/profiles/${user.profileImage}`;
+        imageSrc = `/uploads/profiles/${localUser.profileImage}`;
       }
-      
-      // إضافة timestamp لمنع cache
-      const timestamp = new Date().getTime();
-      imageSrc += `?t=${timestamp}`;
       
       console.log('🖼️ Final image src:', imageSrc);
       return imageSrc;
     }
     
-    const fallback = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user?.username || 'User')}`;
+    const fallback = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(localUser?.username || 'User')}`;
     console.log('🖼️ Using fallback:', fallback);
     return fallback;
   };
 
-  // Profile banner fallback
+  // Profile banner fallback - محسّن
   const getProfileBannerSrc = () => {
-    console.log('🏞️ Profile banner data:', user?.profileBanner);
+    console.log('🏞️ Profile banner data:', localUser?.profileBanner);
     
-    if (user?.profileBanner) {
+    if (localUser?.profileBanner) {
       let bannerSrc = '';
       
       // إذا كان المسار يبدأ بـ http أو https، استخدمه مباشرة
-      if (user.profileBanner.startsWith('http')) {
-        bannerSrc = user.profileBanner;
+      if (localUser.profileBanner.startsWith('http')) {
+        bannerSrc = localUser.profileBanner;
       }
       // إذا كان المسار يبدأ بـ /uploads، استخدمه مباشرة
-      else if (user.profileBanner.startsWith('/uploads')) {
-        bannerSrc = user.profileBanner;
+      else if (localUser.profileBanner.startsWith('/uploads')) {
+        bannerSrc = localUser.profileBanner;
       }
       // إذا كان اسم ملف فقط، أضف المسار الكامل
       else {
-        bannerSrc = `/uploads/banners/${user.profileBanner}`;
+        bannerSrc = `/uploads/banners/${localUser.profileBanner}`;
       }
-      
-      // إضافة timestamp لمنع cache
-      const timestamp = new Date().getTime();
-      bannerSrc += `?t=${timestamp}`;
       
       console.log('🏞️ Final banner src:', bannerSrc);
       return bannerSrc;
@@ -372,22 +385,22 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     
     switch (type) {
       case 'name':
-        setEditValue(user?.username || '');
+        setEditValue(localUser?.username || '');
         break;
       case 'status':
-        setEditValue(user?.status || '');
+        setEditValue(localUser?.status || '');
         break;
       case 'gender':
-        setEditValue(user?.gender || '');
+        setEditValue(localUser?.gender || '');
         break;
       case 'country':
-        setEditValue(user?.country || '');
+        setEditValue(localUser?.country || '');
         break;
       case 'age':
-        setEditValue(user?.age?.toString() || '');
+        setEditValue(localUser?.age?.toString() || '');
         break;
       case 'socialStatus':
-        setEditValue(user?.relation || '');
+        setEditValue(localUser?.relation || '');
         break;
     }
   };
@@ -397,7 +410,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     setEditValue('');
   };
 
-  // File upload handler
+  // File upload handler - محسّن بدون إعادة تحميل
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, uploadType: 'profile' | 'banner') => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -421,6 +434,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     }
 
     try {
+      setIsLoading(true);
+      
       const formData = new FormData();
       if (uploadType === 'profile') {
         formData.append('profileImage', file);
@@ -446,38 +461,32 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       if (response.ok && result.success !== false) {
         const imageUrl = result.imageUrl || result.bannerUrl;
         
-        // تحديث بيانات المستخدم في الواجهة فوراً
-        if (onUpdate && currentUser) {
-          const updatedUser = {
-            ...currentUser,
-            [uploadType === 'profile' ? 'profileImage' : 'profileBanner']: imageUrl
-          };
-          console.log('📤 تحديث بيانات المستخدم:', updatedUser);
-          onUpdate(updatedUser);
-        }
+        // تحديث فوري للبيانات بدون إعادة تحميل
+        updateUserData({
+          [uploadType === 'profile' ? 'profileImage' : 'profileBanner']: imageUrl
+        });
         
         toast({
-          title: "نجح",
+          title: "نجح ✅",
           description: uploadType === 'profile' ? "تم تحديث الصورة الشخصية" : "تم تحديث صورة الغلاف",
         });
         
-        // إعادة تحميل الصفحة لضمان ظهور الصورة
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
       } else {
         throw new Error(result.error || 'فشل في رفع الصورة');
       }
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ خطأ في رفع الصورة:', error);
       toast({
         title: "خطأ",
         description: "فشل في تحميل الصورة",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // حفظ تعديل البيانات - محسّن بدون إعادة تحميل
   const handleSaveEdit = async () => {
     if (!editValue.trim()) {
       toast({
@@ -526,23 +535,17 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       console.log('📝 استجابة تحديث البروفايل:', response);
 
       if (response.success) {
+        // تحديث فوري للبيانات
+        updateUserData({
+          [fieldName]: fieldName === 'age' ? parseInt(editValue) : editValue
+        });
+        
         toast({
-          title: "نجح",
+          title: "نجح ✅",
           description: "تم تحديث الملف الشخصي",
         });
         
         closeEditModal();
-        
-        // تحديث بيانات المستخدم في الواجهة
-        if (onUpdate && response.user) {
-          console.log('📝 تحديث بيانات المستخدم في الواجهة:', response.user);
-          onUpdate(response.user);
-        }
-        
-        // إعادة تحميل الصفحة بعد ثانية واحدة لضمان التحديث
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
         
       } else {
         throw new Error(response.error || 'فشل في التحديث');
@@ -551,7 +554,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       console.error('❌ خطأ في تحديث البروفايل:', error);
       toast({
         title: "خطأ",
-        description: "فشل في تحديث البيانات",
+        description: "فشل في تحديث البيانات. تحقق من اتصال الإنترنت.",
         variant: "destructive",
       });
     } finally {
@@ -559,10 +562,15 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     }
   };
 
+  // تحديث الثيم - محسّن
   const handleThemeChange = async (theme: string) => {
-    setSelectedTheme(theme);
     try {
-      await apiRequest('/api/users/update-background-color', {
+      setIsLoading(true);
+      setSelectedTheme(theme);
+      
+      console.log('🎨 تحديث الثيم:', { theme, userId: currentUser?.id });
+      
+      const response = await apiRequest('/api/users/update-background-color', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -570,54 +578,80 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           color: theme 
         }),
       });
-      toast({
-        title: "نجح",
-        description: "تم تحديث لون الخلفية",
-      });
+      
+      console.log('🎨 استجابة تحديث الثيم:', response);
+
+      if (response.success) {
+        // تحديث فوري للبيانات
+        updateUserData({
+          userTheme: theme,
+          profileBackgroundColor: theme
+        });
+        
+        toast({
+          title: "نجح ✅",
+          description: "تم تحديث لون الملف الشخصي",
+        });
+      } else {
+        throw new Error(response.error || 'فشل في تحديث اللون');
+      }
     } catch (error) {
-      console.error('Theme update error:', error);
+      console.error('❌ خطأ في تحديث الثيم:', error);
       toast({
         title: "خطأ",
-        description: "فشل في تحديث اللون",
+        description: "فشل في تحديث اللون. تحقق من اتصال الإنترنت.",
         variant: "destructive",
       });
+      // إرجاع الثيم للحالة السابقة
+      setSelectedTheme(localUser?.userTheme || 'theme-new-gradient');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // تحديث التأثير - محسّن
   const handleEffectChange = async (effect: string) => {
-    setSelectedEffect(effect);
-    
     try {
-      // حفظ التأثير في قاعدة البيانات
-      await apiRequest(`/api/users/${user.id}`, {
+      setIsLoading(true);
+      setSelectedEffect(effect);
+      
+      console.log('✨ تحديث التأثير:', { effect, userId: localUser?.id });
+      
+      const response = await apiRequest(`/api/users/${localUser?.id}`, {
         method: 'PUT',
         body: { 
           profileEffect: effect,
-          // ربط لون الاسم بالتأثير تلقائياً
           usernameColor: getEffectColor(effect)
         }
       });
 
-      // تحديث المستخدم في الواجهة
-      if (onUpdate) {
-        onUpdate({ 
-          ...user, 
+      console.log('✨ استجابة تحديث التأثير:', response);
+
+      if (response.success || response.id) {
+        // تحديث فوري للبيانات
+        updateUserData({ 
           profileEffect: effect,
           usernameColor: getEffectColor(effect)
         });
+        
+        toast({
+          title: "نجح ✅",
+          description: "تم تحديث التأثيرات ولون الاسم",
+        });
+      } else {
+        throw new Error('فشل في تحديث التأثيرات');
       }
-      
-      toast({
-        title: "نجح",
-        description: "تم تحديث التأثيرات ولون الاسم",
-      });
     } catch (error) {
-      console.error('Error updating profile effect:', error);
+      console.error('❌ خطأ في تحديث التأثير:', error);
       toast({
         title: "خطأ",
         description: "فشل في تحديث التأثيرات",
         variant: "destructive",
       });
+      // إرجاع التأثير للحالة السابقة
+      setSelectedEffect(localUser?.profileEffect || 'none');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -650,7 +684,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         method: 'POST',
         body: {
           senderId: currentUser?.id,
-          receiverId: user.id,
+          receiverId: localUser?.id,
           points: points,
           reason: `نقاط مُهداة من ${currentUser?.username}`
         }
@@ -661,14 +695,14 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         setPointsSentNotification({
           show: true,
           points: points,
-          recipientName: user.username
+          recipientName: localUser?.username || ''
         });
         
         setPointsToSend('');
         
         // Update current user points locally for immediate UI feedback
-        if (currentUser && window.updateUserPoints) {
-          window.updateUserPoints(currentUser.points - points);
+        if (currentUser && (window as any).updateUserPoints) {
+          (window as any).updateUserPoints(currentUser.points - points);
         }
         
         // إغلاق البروفايل بعد الإرسال الناجح
@@ -1763,61 +1797,61 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           <div className="profile-body">
             <div className="profile-info">
               <h3 
-                onClick={() => user.id === currentUser?.id && openEditModal('name')}
-                style={{ cursor: user.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => localUser?.id === currentUser?.id && openEditModal('name')}
+                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
               >
-                {user?.username || 'اسم المستخدم'}
+                {localUser?.username || 'اسم المستخدم'}
               </h3>
               <small 
-                onClick={() => user.id === currentUser?.id && openEditModal('status')}
-                style={{ cursor: user.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => localUser?.id === currentUser?.id && openEditModal('status')}
+                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
               >
-                {user?.status || 'اضغط لإضافة حالة'}
+                {localUser?.status || 'اضغط لإضافة حالة'}
               </small>
             </div>
 
-            {user.id !== currentUser?.id && (
+            {localUser?.id !== currentUser?.id && (
               <div className="profile-buttons">
                 <button>🚩 تبليغ</button>
-                <button onClick={() => onIgnoreUser?.(user.id)}>🚫 حظر</button>
-                <button onClick={() => onPrivateMessage?.(user)}>💬 محادثة</button>
-                <button onClick={() => onAddFriend?.(user)}>👥 اضافة صديق</button>
+                <button onClick={() => onIgnoreUser?.(localUser?.id || 0)}>🚫 حظر</button>
+                <button onClick={() => onPrivateMessage?.(localUser)}>💬 محادثة</button>
+                <button onClick={() => onAddFriend?.(localUser)}>👥 اضافة صديق</button>
               </div>
             )}
 
             <div className="profile-details">
               <p 
-                onClick={() => user.id === currentUser?.id && openEditModal('gender')}
-                style={{ cursor: user.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => localUser?.id === currentUser?.id && openEditModal('gender')}
+                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
               >
-                🧍‍♀️ الجنس: <span>{user?.gender || 'غير محدد'}</span>
+                🧍‍♀️ الجنس: <span>{localUser?.gender || 'غير محدد'}</span>
               </p>
               <p 
-                onClick={() => user.id === currentUser?.id && openEditModal('country')}
-                style={{ cursor: user.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => localUser?.id === currentUser?.id && openEditModal('country')}
+                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
               >
-                🌍 البلد: <span>{user?.country || 'غير محدد'}</span>
+                🌍 البلد: <span>{localUser?.country || 'غير محدد'}</span>
               </p>
               <p 
-                onClick={() => user.id === currentUser?.id && openEditModal('age')}
-                style={{ cursor: user.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => localUser?.id === currentUser?.id && openEditModal('age')}
+                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
               >
-                🎂 العمر: <span>{user?.age ? `${user.age} سنة` : 'غير محدد'}</span>
+                🎂 العمر: <span>{localUser?.age ? `${localUser.age} سنة` : 'غير محدد'}</span>
               </p>
               <p 
-                onClick={() => user.id === currentUser?.id && openEditModal('socialStatus')}
-                style={{ cursor: user.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => localUser?.id === currentUser?.id && openEditModal('socialStatus')}
+                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
               >
-                💍 الحالة الاجتماعية: <span>{user?.relation || 'غير محدد'}</span>
+                💍 الحالة الاجتماعية: <span>{localUser?.relation || 'غير محدد'}</span>
               </p>
               <p>
-                📅 تاريخ الإنضمام: <span>{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('ar-SA') : 'غير محدد'}</span>
+                📅 تاريخ الإنضمام: <span>{localUser?.createdAt ? new Date(localUser.createdAt).toLocaleDateString('ar-SA') : 'غير محدد'}</span>
               </p>
               <p>
-                🎁 نقاط الهدايا: <span>{user?.points || 0}</span>
+                🎁 نقاط الهدايا: <span>{localUser?.points || 0}</span>
               </p>
               {/* إرسال النقاط - يظهر فقط للمستخدمين الآخرين */}
-              {currentUser && currentUser.id !== user.id && (
+              {currentUser && currentUser.id !== localUser?.id && (
                 <p 
                   onClick={() => setCurrentEditType('sendPoints')}
                   style={{ cursor: 'pointer' }}
@@ -1826,40 +1860,52 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                 </p>
               )}
               <p>
-                🧾 الحالة: <span>{user?.isOnline ? 'متصل' : 'غير متصل'}</span>
+                🧾 الحالة: <span>{localUser?.isOnline ? 'متصل' : 'غير متصل'}</span>
               </p>
             </div>
 
 
 
-            {user.id === currentUser?.id && (
+            {localUser?.id === currentUser?.id && (
               <div className="additional-details">
                 <p>💬 عدد الرسائل: <span>0</span></p>
-                <p>⭐ مستوى العضو: <span>مستوى {user?.level || 1}</span></p>
-                <p onClick={() => setCurrentEditType('theme')}>
+                <p>⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span></p>
+                <p onClick={() => setCurrentEditType('theme')} style={{ cursor: 'pointer' }}>
                   🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
                 </p>
-                <p onClick={() => setCurrentEditType('effects')}>
+                <p onClick={() => setCurrentEditType('effects')} style={{ cursor: 'pointer' }}>
                   ✨ تأثيرات حركية: <span>اضغط للتغيير</span>
                 </p>
               </div>
             )}
           </div>
 
+          {/* مؤشر التحميل */}
+          {isLoading && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl z-30">
+              <div className="bg-white/90 backdrop-blur-md rounded-lg p-4 flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-gray-700 font-medium">جاري الحفظ...</span>
+              </div>
+            </div>
+          )}
+
           {/* Hidden File Inputs */}
-          {user.id === currentUser?.id && (
+          {localUser?.id === currentUser?.id && (
             <>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 onChange={(e) => handleFileUpload(e, 'banner')}
+                disabled={isLoading}
               />
               <input
                 ref={avatarInputRef}
                 type="file"
                 accept="image/*"
                 onChange={(e) => handleFileUpload(e, 'profile')}
+                disabled={isLoading}
               />
             </>
           )}

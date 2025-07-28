@@ -86,10 +86,7 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       // إخفاء المعاينة
       setPreview(null);
       
-      // إعادة تحميل الصفحة لضمان ظهور الصورة
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // لا حاجة لإعادة تحميل - التحديث فوري
 
     } catch (error: any) {
       console.error('❌ خطأ في رفع الصورة:', error);
