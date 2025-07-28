@@ -84,10 +84,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
         variant: "default",
       });
       
-      // إعادة تحميل الصفحة لضمان ظهور الصورة
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // لا حاجة لإعادة تحميل - التحديث فوري
 
     } catch (error) {
       console.error('Error uploading banner:', error);
