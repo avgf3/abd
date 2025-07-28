@@ -3,6 +3,7 @@ import { Camera, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { getBannerImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 
 interface ProfileBannerProps {
@@ -159,7 +160,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
           />
         ) : (currentUser?.profileBanner && currentUser.profileBanner !== '') ? (
           <img 
-            src={currentUser.profileBanner} 
+            src={getBannerImageSrc(currentUser.profileBanner)} 
             alt="صورة البانر" 
             className="w-full h-full object-cover"
           />

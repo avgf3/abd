@@ -10,6 +10,7 @@ import ProfileImage from './ProfileImage';
 import RoomsPanel from './RoomsPanel';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { getImageSrc } from '@/utils/imageUtils';
 
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
@@ -478,7 +479,7 @@ export default function UserSidebarWithWalls({
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                             {post.userProfileImage ? (
-                              <img src={post.userProfileImage} alt={post.username} className="w-full h-full object-cover" />
+                              <img src={getImageSrc(post.userProfileImage)} alt={post.username} className="w-full h-full object-cover" />
                             ) : (
                               <span className="text-xs">{post.username.charAt(0)}</span>
                             )}
