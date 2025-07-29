@@ -19,6 +19,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import bcrypt from "bcrypt";
+import sharp from "sharp";
 
 // إعداد multer لرفع الصور
 const storage_multer = multer.diskStorage({
@@ -3924,6 +3925,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // وظيفة ضغط الصور
+  const compressImage = async (filePath: string): Promise<void> => {
+    try {
+      const tempPath = filePath + '.tmp';
+      
+      await sharp(filePath)
+        .resize(1200, 1200, { 
+          fit: 'inside', 
+          withoutEnlargement: true 
+        })
+        .jpeg({ 
+          quality: 85, 
+          progressive: true 
+        })
+        .toFile(tempPath);
+      
+      // استبدال الملف الأصلي بالمضغوط
+      await fs.promises.rename(tempPath, filePath);
+      console.log('✅ تم ضغط الصورة:', filePath);
+    } catch (error) {
+      console.error('❌ فشل في ضغط الصورة:', error);
+      // حذف الملف المؤقت إن وجد
+      try {
+        await fs.promises.unlink(filePath + '.tmp');
+      } catch {}
+    }
+  };
+
   // إنشاء منشور جديد
   app.post('/api/wall/posts', wallUpload.single('image'), async (req, res) => {
     try {
@@ -3943,12 +3972,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: 'الضيوف لا يمكنهم النشر على الحائط' });
       }
 
-      if (!content?.trim() && !req.file) {
+      // تنظيف وتحقق من المحتوى
+      const cleanContent = content?.trim();
+      
+      if (!cleanContent && !req.file) {
         return res.status(400).json({ error: 'يجب إضافة محتوى أو صورة' });
       }
 
-      if (content && content.length > 500) {
+      if (cleanContent && cleanContent.length > 500) {
         return res.status(400).json({ error: 'النص طويل جداً (الحد الأقصى 500 حرف)' });
+      }
+
+      // فلترة المحتوى من النصوص الضارة
+      if (cleanContent) {
+        const sanitizedContent = sanitizeInput(cleanContent);
+        if (sanitizedContent !== cleanContent) {
+          console.warn('⚠️ تم تنظيف محتوى منشور من:', user.username);
+        }
+      }
+
+      // ضغط الصورة إن وجدت
+      if (req.file) {
+        const filePath = path.join(process.cwd(), 'client', 'public', 'uploads', 'wall', req.file.filename);
+        await compressImage(filePath);
       }
 
       // إعداد بيانات المنشور
@@ -3956,7 +4002,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: user.id,
         username: user.username,
         userRole: user.userType,
-        content: content?.trim() || '',
+        content: cleanContent ? sanitizeInput(cleanContent) : '',
         imageUrl: req.file ? `/uploads/wall/${req.file.filename}` : null,
         type: type || 'public',
         timestamp: new Date(),
@@ -3986,18 +4032,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { postId, type, userId } = req.body;
 
+      // التحقق من صحة البيانات
       if (!postId || !type || !userId) {
-        return res.status(400).json({ error: 'بيانات غير مكتملة' });
+        return res.status(400).json({ 
+          error: 'بيانات غير مكتملة',
+          required: ['postId', 'type', 'userId']
+        });
       }
 
-      const user = await storage.getUser(parseInt(userId));
+      // التحقق من صحة معرف المنشور
+      const postIdNum = parseInt(postId);
+      if (isNaN(postIdNum) || postIdNum <= 0) {
+        return res.status(400).json({ error: 'معرف المنشور غير صحيح' });
+      }
+
+      // التحقق من صحة معرف المستخدم
+      const userIdNum = parseInt(userId);
+      if (isNaN(userIdNum) || userIdNum <= 0) {
+        return res.status(400).json({ error: 'معرف المستخدم غير صحيح' });
+      }
+
+      const user = await storage.getUser(userIdNum);
       if (!user) {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
+      // التحقق من صحة نوع التفاعل
       const validReactionTypes = ['like', 'dislike', 'heart'];
       if (!validReactionTypes.includes(type)) {
-        return res.status(400).json({ error: 'نوع التفاعل غير صحيح' });
+        return res.status(400).json({ 
+          error: 'نوع التفاعل غير صحيح',
+          validTypes: validReactionTypes
+        });
+      }
+
+      // التحقق من وجود المنشور
+      const existingPost = await storage.getWallPost(postIdNum);
+      if (!existingPost) {
+        return res.status(404).json({ error: 'المنشور غير موجود' });
       }
 
       // إضافة أو تحديث التفاعل
@@ -4047,19 +4119,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'المنشور غير موجود' });
       }
 
-      // التحقق من الصلاحيات
-      const canDelete = post.userId === user.id || 
-                       ['admin', 'owner', 'moderator'].includes(user.userType);
+      // التحقق من الصلاحيات بدقة
+      const isOwner = post.userId === user.id;
+      const isAdmin = ['admin', 'owner'].includes(user.userType);
+      const isModerator = user.userType === 'moderator';
+      
+      // المالك يمكنه حذف منشوره، والإدمن يحذف أي منشور، والمشرف يحذف منشورات الأعضاء فقط
+      const canDelete = isOwner || isAdmin || (isModerator && !['admin', 'owner'].includes(post.userRole));
       
       if (!canDelete) {
-        return res.status(403).json({ error: 'ليس لديك صلاحية لحذف هذا المنشور' });
+        return res.status(403).json({ 
+          error: 'ليس لديك صلاحية لحذف هذا المنشور',
+          details: `نوع المستخدم: ${user.userType}, صاحب المنشور: ${post.userRole}`
+        });
       }
 
-      // حذف الصورة إن وجدت
+      // حذف الصورة إن وجدت مع معالجة أفضل للأخطاء
       if (post.imageUrl) {
-        const imagePath = path.join(process.cwd(), 'client', 'public', post.imageUrl);
-        if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath);
+        try {
+          const imagePath = path.join(process.cwd(), 'client', 'public', post.imageUrl);
+          if (fs.existsSync(imagePath)) {
+            // التحقق من أن الملف قابل للحذف
+            await fs.promises.access(imagePath, fs.constants.W_OK);
+            await fs.promises.unlink(imagePath);
+            console.log('✅ تم حذف الصورة:', imagePath);
+          }
+        } catch (fileError) {
+          console.warn('⚠️ فشل في حذف الصورة:', fileError);
+          // لا نوقف العملية، فقط نسجل التحذير
         }
       }
 

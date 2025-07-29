@@ -36,6 +36,13 @@
       "when": 1753076958977,
       "tag": "0004_add_rooms_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1753825590635,
+      "tag": "0005_panoramic_omega_sentinel",
+      "breakpoints": true
     }
   ]
 }

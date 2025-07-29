@@ -8,6 +8,8 @@ import {
   levelSettings,
   rooms,
   roomUsers,
+  wallPosts,
+  wallReactions,
   type User,
   type InsertUser,
   type Message,
@@ -16,6 +18,10 @@ import {
   type InsertFriend,
   type Notification,
   type InsertNotification,
+  type WallPost,
+  type InsertWallPost,
+  type WallReaction,
+  type InsertWallReaction,
 } from "../shared/schema";
 import { db } from "./database-adapter";
 import { eq, desc, and, sql, or, inArray } from "drizzle-orm";
@@ -349,22 +355,23 @@ export class PostgreSQLStorage implements IStorage {
   }
   
   // Wall post operations
-  async createWallPost(postData: any): Promise<any> {
+  async createWallPost(postData: InsertWallPost): Promise<WallPost> {
     try {
-      const post = {
-        id: Date.now(), // معرف مؤقت
-        ...postData,
-        reactions: [],
-        totalLikes: 0,
-        totalDislikes: 0,
-        totalHearts: 0
-      };
-      
-      // حفظ في الذاكرة المؤقتة
-      if (!global.wallPosts) {
-        global.wallPosts = [];
-      }
-      global.wallPosts.unshift(post);
+      const [post] = await db.insert(wallPosts)
+        .values({
+          userId: postData.userId,
+          username: postData.username,
+          userRole: postData.userRole,
+          content: postData.content || null,
+          imageUrl: postData.imageUrl || null,
+          type: postData.type || 'public',
+          userProfileImage: postData.userProfileImage || null,
+          usernameColor: postData.usernameColor || '#FFFFFF',
+          totalLikes: 0,
+          totalDislikes: 0,
+          totalHearts: 0
+        })
+        .returning();
       
       return post;
     } catch (error) {
@@ -373,43 +380,45 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
-  async getWallPosts(type: string): Promise<any[]> {
+  async getWallPosts(type: string): Promise<WallPost[]> {
     try {
-      if (!global.wallPosts) {
-        global.wallPosts = [];
-      }
+      const posts = await db.select()
+        .from(wallPosts)
+        .where(eq(wallPosts.type, type))
+        .orderBy(desc(wallPosts.timestamp));
       
-      return global.wallPosts
-        .filter(post => post.type === type)
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      return posts;
     } catch (error) {
       console.error('Error getting wall posts:', error);
       return [];
     }
   }
 
-  async getWallPostsByUsers(userIds: number[]): Promise<any[]> {
+  async getWallPostsByUsers(userIds: number[]): Promise<WallPost[]> {
     try {
-      if (!global.wallPosts) {
-        global.wallPosts = [];
+      if (userIds.length === 0) {
+        return [];
       }
       
-      return global.wallPosts
-        .filter(post => userIds.includes(post.userId))
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      const posts = await db.select()
+        .from(wallPosts)
+        .where(inArray(wallPosts.userId, userIds))
+        .orderBy(desc(wallPosts.timestamp));
+      
+      return posts;
     } catch (error) {
       console.error('Error getting wall posts by users:', error);
       return [];
     }
   }
 
-  async getWallPost(postId: number): Promise<any> {
+  async getWallPost(postId: number): Promise<WallPost | null> {
     try {
-      if (!global.wallPosts) {
-        global.wallPosts = [];
-      }
+      const [post] = await db.select()
+        .from(wallPosts)
+        .where(eq(wallPosts.id, postId));
       
-      return global.wallPosts.find(post => post.id === postId) || null;
+      return post || null;
     } catch (error) {
       console.error('Error getting wall post:', error);
       return null;
@@ -418,56 +427,104 @@ export class PostgreSQLStorage implements IStorage {
 
   async deleteWallPost(postId: number): Promise<void> {
     try {
-      if (!global.wallPosts) {
-        global.wallPosts = [];
-      }
+      // حذف جميع التفاعلات المرتبطة بالمنشور أولاً
+      await db.delete(wallReactions)
+        .where(eq(wallReactions.postId, postId));
       
-      global.wallPosts = global.wallPosts.filter(post => post.id !== postId);
+      // ثم حذف المنشور نفسه
+      await db.delete(wallPosts)
+        .where(eq(wallPosts.id, postId));
     } catch (error) {
       console.error('Error deleting wall post:', error);
+      throw error;
     }
   }
 
-  async addWallPostReaction(reactionData: any): Promise<any> {
+  async addWallReaction(reactionData: InsertWallReaction): Promise<WallPost | null> {
     try {
-      if (!global.wallPosts) {
-        global.wallPosts = [];
-      }
-      
-      const postIndex = global.wallPosts.findIndex(post => post.id === reactionData.postId);
-      if (postIndex === -1) {
+      // التحقق من وجود المنشور
+      const post = await this.getWallPost(reactionData.postId);
+      if (!post) {
         throw new Error('Post not found');
       }
       
-      const post = global.wallPosts[postIndex];
-      if (!post.reactions) {
-        post.reactions = [];
-      }
-      
       // إزالة التفاعل السابق للمستخدم إذا كان موجوداً
-      post.reactions = post.reactions.filter((r: any) => r.userId !== reactionData.userId);
+      await db.delete(wallReactions)
+        .where(and(
+          eq(wallReactions.postId, reactionData.postId),
+          eq(wallReactions.userId, reactionData.userId)
+        ));
       
       // إضافة التفاعل الجديد
-      post.reactions.push(reactionData);
+      await db.insert(wallReactions)
+        .values({
+          postId: reactionData.postId,
+          userId: reactionData.userId,
+          username: reactionData.username,
+          type: reactionData.type
+        });
       
-      // تحديث عدادات التفاعل
-      post.totalLikes = post.reactions.filter((r: any) => r.type === 'like').length;
-      post.totalDislikes = post.reactions.filter((r: any) => r.type === 'dislike').length;
-      post.totalHearts = post.reactions.filter((r: any) => r.type === 'heart').length;
+      // تحديث عدادات التفاعل في المنشور
+      const reactions = await db.select()
+        .from(wallReactions)
+        .where(eq(wallReactions.postId, reactionData.postId));
       
-      return post;
+      const totalLikes = reactions.filter(r => r.type === 'like').length;
+      const totalDislikes = reactions.filter(r => r.type === 'dislike').length;
+      const totalHearts = reactions.filter(r => r.type === 'heart').length;
+      
+      const [updatedPost] = await db.update(wallPosts)
+        .set({
+          totalLikes,
+          totalDislikes,
+          totalHearts,
+          updatedAt: new Date()
+        })
+        .where(eq(wallPosts.id, reactionData.postId))
+        .returning();
+      
+      return updatedPost;
     } catch (error) {
       console.error('Error adding wall post reaction:', error);
       throw error;
     }
   }
 
-  async getWallPostWithReactions(postId: number): Promise<any | null> {
+  async getWallPostWithReactions(postId: number): Promise<WallPost | null> {
     try {
-      return await this.getWallPost(postId);
+      const post = await this.getWallPost(postId);
+      if (!post) {
+        return null;
+      }
+      
+      // جلب التفاعلات مع المنشور
+      const reactions = await db.select()
+        .from(wallReactions)
+        .where(eq(wallReactions.postId, postId))
+        .orderBy(desc(wallReactions.timestamp));
+      
+      // إضافة التفاعلات للمنشور (للتوافق مع العميل)
+      return {
+        ...post,
+        reactions
+      } as any;
     } catch (error) {
       console.error('Error getting wall post with reactions:', error);
       return null;
+    }
+  }
+
+  async getWallPostReactions(postId: number): Promise<WallReaction[]> {
+    try {
+      const reactions = await db.select()
+        .from(wallReactions)
+        .where(eq(wallReactions.postId, postId))
+        .orderBy(desc(wallReactions.timestamp));
+      
+      return reactions;
+    } catch (error) {
+      console.error('Error getting wall post reactions:', error);
+      return [];
     }
   }
 

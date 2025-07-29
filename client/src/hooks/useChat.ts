@@ -442,6 +442,34 @@ export function useChat() {
           case 'kicked':
             dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
             break;
+
+          case 'newWallPost':
+            console.log('📌 منشور جديد على الحائط:', message.post);
+            // يمكن إضافة معالجة محددة هنا لتحديث قائمة المنشورات
+            // أو إرسال إشعار للمستخدم
+            if (message.post?.username !== user.username) {
+              // إشعار صوتي للمنشورات الجديدة
+              playNotificationSound();
+              
+              // إشعار مرئي في المتصفح
+              if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('منشور جديد على الحائط 📌', {
+                  body: `${message.post.username} نشر منشوراً جديداً`,
+                  icon: '/favicon.ico'
+                });
+              }
+            }
+            break;
+
+          case 'wallPostReaction':
+            console.log('👍 تفاعل جديد على منشور:', message.post);
+            // يمكن إضافة معالجة محددة هنا لتحديث التفاعلات
+            break;
+
+          case 'wallPostDeleted':
+            console.log('🗑️ تم حذف منشور:', message.postId);
+            // يمكن إضافة معالجة محددة هنا لإزالة المنشور من القائمة
+            break;
             
           case 'roomJoined':
             if (message.roomId) {
