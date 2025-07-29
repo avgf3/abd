@@ -137,6 +137,55 @@ export const roomUsersRelations = relations(roomUsers, ({ one }) => ({
   }),
 }));
 
+// جداول الحوائط
+export const wallPosts = pgTable("wall_posts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  username: text("username").notNull(),
+  userRole: text("user_role").notNull(),
+  content: text("content"),
+  imageUrl: text("image_url"),
+  type: text("type").notNull().default("public"), // 'public', 'friends'
+  timestamp: timestamp("timestamp").defaultNow(),
+  userProfileImage: text("user_profile_image"),
+  usernameColor: text("username_color").default('#FFFFFF'),
+  totalLikes: integer("total_likes").default(0),
+  totalDislikes: integer("total_dislikes").default(0),
+  totalHearts: integer("total_hearts").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const wallReactions = pgTable("wall_reactions", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull().references(() => wallPosts.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  username: text("username").notNull(),
+  type: text("type").notNull(), // 'like', 'dislike', 'heart'
+  timestamp: timestamp("timestamp").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// العلاقات للحوائط
+export const wallPostsRelations = relations(wallPosts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [wallPosts.userId],
+    references: [users.id],
+  }),
+  reactions: many(wallReactions),
+}));
+
+export const wallReactionsRelations = relations(wallReactions, ({ one }) => ({
+  post: one(wallPosts, {
+    fields: [wallReactions.postId],
+    references: [wallPosts.id],
+  }),
+  user: one(users, {
+    fields: [wallReactions.userId],
+    references: [users.id],
+  }),
+}));
+
 export const insertUserSchema = z.object({
   username: z.string(),
   password: z.string().optional(),
@@ -257,3 +306,27 @@ export type InsertRoom = z.infer<typeof insertRoomSchema>;
 export type Room = typeof rooms.$inferSelect;
 export type InsertRoomUser = z.infer<typeof insertRoomUserSchema>;
 export type RoomUser = typeof roomUsers.$inferSelect;
+
+// أنواع بيانات الحوائط
+export const insertWallPostSchema = z.object({
+  userId: z.number(),
+  username: z.string(),
+  userRole: z.string(),
+  content: z.string().optional(),
+  imageUrl: z.string().optional(),
+  type: z.string().default("public"),
+  userProfileImage: z.string().optional(),
+  usernameColor: z.string().optional(),
+});
+
+export const insertWallReactionSchema = z.object({
+  postId: z.number(),
+  userId: z.number(),
+  username: z.string(),
+  type: z.string(), // 'like', 'dislike', 'heart'
+});
+
+export type InsertWallPost = z.infer<typeof insertWallPostSchema>;
+export type WallPost = typeof wallPosts.$inferSelect;
+export type InsertWallReaction = z.infer<typeof insertWallReactionSchema>;
+export type WallReaction = typeof wallReactions.$inferSelect;

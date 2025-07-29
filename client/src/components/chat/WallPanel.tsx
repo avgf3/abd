@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { getImageSrc } from '@/utils/imageUtils';
 import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
+import { io, Socket } from 'socket.io-client';
 
 interface WallPanelProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const [imagePreview, setImagePreview] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+  const socket = useRef<Socket | null>(null);
 
   // جلب المنشورات
   const fetchPosts = async () => {
@@ -59,6 +61,43 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
     if (isOpen) {
       fetchPosts();
     }
+  }, [isOpen, activeTab]);
+
+  // إعداد Socket.IO للتحديثات الفورية
+  useEffect(() => {
+    if (isOpen && !socket.current) {
+      // الاتصال بالخادم
+      socket.current = io();
+      
+      // معالج المنشورات الجديدة
+      socket.current.on('message', (message: any) => {
+        if (message.type === 'newWallPost') {
+          // تحديث المنشورات إذا كان النوع مطابق
+          if (message.wallType === activeTab) {
+            setPosts(prevPosts => [message.post, ...prevPosts]);
+          }
+        } else if (message.type === 'wallPostReaction') {
+          // تحديث التفاعلات
+          setPosts(prevPosts => 
+            prevPosts.map(post => 
+              post.id === message.post.id ? message.post : post
+            )
+          );
+        } else if (message.type === 'wallPostDeleted') {
+          // إزالة المنشور المحذوف
+          setPosts(prevPosts => 
+            prevPosts.filter(post => post.id !== message.postId)
+          );
+        }
+      });
+    }
+
+    return () => {
+      if (socket.current) {
+        socket.current.disconnect();
+        socket.current = null;
+      }
+    };
   }, [isOpen, activeTab]);
 
   // معالجة اختيار الصورة مع تحسينات احترافية
