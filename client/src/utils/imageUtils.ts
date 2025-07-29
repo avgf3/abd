@@ -59,36 +59,96 @@ export function getProfileImageSrc(imageSrc: string | null | undefined, addTimes
 }
 
 /**
- * تحويل مصدر صورة البانر إلى URL صحيح
+ * تحويل مصدر صورة البانر إلى URL صحيح مع timestamp
  * @param bannerSrc - مصدر صورة البانر
+ * @param addTimestamp - إضافة timestamp أم لا
  * @param fallback - الصورة الافتراضية للبانر
  * @returns URL صحيح لصورة البانر
  */
-export function getBannerImageSrc(bannerSrc: string | null | undefined, fallback: string = 'https://i.imgur.com/rJKrUfs.jpeg'): string {
-  if (!bannerSrc || bannerSrc === '') {
-    return fallback;
+export function getBannerImageSrc(
+  bannerSrc: string | null | undefined, 
+  addTimestamp: boolean = false,
+  fallback: string = 'https://i.imgur.com/rJKrUfs.jpeg'
+): string {
+  const src = getImageSrc(bannerSrc, fallback);
+  
+  // لا نضيف timestamp للصور base64 أو URLs الخارجية أو الافتراضية
+  if (!addTimestamp || src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://') || src === fallback) {
+    return src;
   }
 
-  // إذا كانت الصورة base64 data URL
-  if (bannerSrc.startsWith('data:')) {
-    return bannerSrc;
+  // إضافة timestamp لتجنب cache
+  const timestamp = new Date().getTime();
+  const separator = src.includes('?') ? '&' : '?';
+  return `${src}${separator}t=${timestamp}`;
+}
+
+/**
+ * دالة موحدة لمعالجة جميع أنواع الصور مع timestamp
+ * @param imageSrc - مصدر الصورة
+ * @param options - خيارات التكوين
+ * @returns URL صحيح للصورة مع timestamp حسب الحاجة
+ */
+export function getImageUrl(
+  imageSrc: string | null | undefined,
+  options: {
+    type?: 'profile' | 'banner' | 'general';
+    addTimestamp?: boolean;
+    fallback?: string;
+    forceRefresh?: boolean;
+  } = {}
+): string {
+  const {
+    type = 'general',
+    addTimestamp = false,
+    fallback,
+    forceRefresh = false
+  } = options;
+
+  // تحديد الصورة الافتراضية حسب النوع
+  let defaultFallback = '/default_avatar.svg';
+  if (type === 'banner') {
+    defaultFallback = 'https://i.imgur.com/rJKrUfs.jpeg';
   }
 
-  // إذا كانت الصورة URL كامل (http/https)
-  if (bannerSrc.startsWith('http://') || bannerSrc.startsWith('https://')) {
-    return bannerSrc;
+  const finalFallback = fallback || defaultFallback;
+  const src = getImageSrc(imageSrc, finalFallback);
+
+  // تحديد متى نضيف timestamp
+  const shouldAddTimestamp = (addTimestamp || forceRefresh) && 
+    !src.startsWith('data:') && 
+    !src.startsWith('http://') && 
+    !src.startsWith('https://') && 
+    src !== finalFallback;
+
+  if (!shouldAddTimestamp) {
+    return src;
   }
 
-  // إذا كانت الصورة تبدأ بـ /uploads (مسار كامل)
-  if (bannerSrc.startsWith('/uploads/')) {
-    return bannerSrc;
-  }
+  // إضافة timestamp مناسب
+  const timestamp = forceRefresh ? Date.now() : Math.floor(Date.now() / (1000 * 60 * 5)); // تحديث كل 5 دقائق
+  const separator = src.includes('?') ? '&' : '?';
+  return `${src}${separator}t=${timestamp}`;
+}
 
-  // إذا كانت الصورة تبدأ بـ / (مسار من الجذر)
-  if (bannerSrc.startsWith('/')) {
-    return bannerSrc;
-  }
+/**
+ * دالة للحصول على timestamp موحد للصور
+ * @param refreshInterval - فترة التحديث بالدقائق (افتراضي: 5 دقائق)
+ * @returns timestamp موحد
+ */
+export function getImageTimestamp(refreshInterval: number = 5): number {
+  return Math.floor(Date.now() / (1000 * 60 * refreshInterval));
+}
 
-  // إذا كانت اسم ملف فقط، أضف المسار
-  return `/uploads/banners/${bannerSrc}`;
+/**
+ * دالة لإنشاء URL صورة مع إعادة تحميل فورية
+ * @param imageSrc - مصدر الصورة
+ * @param type - نوع الصورة
+ * @returns URL مع timestamp فوري
+ */
+export function refreshImageUrl(imageSrc: string | null | undefined, type: 'profile' | 'banner' | 'general' = 'general'): string {
+  return getImageUrl(imageSrc, {
+    type,
+    forceRefresh: true
+  });
 }
