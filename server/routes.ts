@@ -2229,6 +2229,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const sessionCleanupInterval = setInterval(async () => {
     try {
       const connectedSockets = await io.fetchSockets();
+      const connectedUserIds = new Set(connectedSockets.map(s => s.userId).filter(Boolean));
+      // جلب جميع المستخدمين الذين isOnline = true
+      const allOnlineUsers = await storage.getOnlineUsers();
+      for (const user of allOnlineUsers) {
+        if (!connectedUserIds.has(user.id)) {
+          // المستخدم ليس له socket متصل، نحدث حالته إلى غير متصل
+          await storage.setUserOnlineStatus(user.id, false);
+          console.log(`🟡 تم تعيين ${user.username} كغير متصل (تنظيف تلقائي)`);
+        }
+      }
       for (const socket of connectedSockets) {
         const customSocket = socket as any;
         if (customSocket.userId) {
