@@ -533,6 +533,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // تحديث بيانات المستخدم - للإصلاح
+  app.patch('/api/users/:userId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (!userId || isNaN(userId)) {
+        return res.status(400).json({ error: "معرف المستخدم مطلوب ويجب أن يكون رقم صحيح" });
+      }
+
+      // التحقق من وجود المستخدم
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "المستخدم غير موجود" });
+      }
+
+      // فلترة البيانات المسموح بتحديثها
+      const allowedUpdates = ['profileImage', 'profileBanner'];
+      const updateData = {};
+      
+      for (const key of allowedUpdates) {
+        if (req.body.hasOwnProperty(key)) {
+          updateData[key] = req.body[key];
+        }
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: "لا توجد بيانات للتحديث" });
+      }
+
+      // تحديث المستخدم
+      const updatedUser = await storage.updateUser(userId, updateData);
+      
+      if (!updatedUser) {
+        return res.status(500).json({ error: "فشل في تحديث بيانات المستخدم" });
+      }
+
+      console.log('✅ تم تحديث المستخدم:', {
+        userId,
+        username: user.username,
+        updates: Object.keys(updateData)
+      });
+
+      res.json({ 
+        success: true, 
+        message: "تم تحديث بيانات المستخدم بنجاح",
+        user: updatedUser 
+      });
+
+    } catch (error) {
+      console.error('❌ خطأ في تحديث المستخدم:', error);
+      res.status(500).json({ error: "خطأ في الخادم أثناء تحديث المستخدم" });
+    }
+  });
+
   // إدارة الإخفاء للإدمن والمالك
   app.post("/api/users/:userId/toggle-hidden", async (req, res) => {
     try {

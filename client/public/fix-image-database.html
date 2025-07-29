@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إصلاح قاعدة بيانات الصور</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #d32f2f;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #ffeaa7;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .section h2 {
+            color: #0066cc;
+            margin-top: 0;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        button.danger {
+            background: #d32f2f;
+        }
+        button.danger:hover {
+            background: #b71c1c;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .error { color: #dc3545; }
+        .success { color: #28a745; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+        .stat .number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0066cc;
+        }
+        .stat .label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #28a745;
+            width: 0%;
+            transition: width 0.3s ease;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 إصلاح قاعدة بيانات الصور</h1>
+        
+        <div class="warning">
+            <h3>⚠️ تحذير مهم</h3>
+            <p>هذه الأداة تقوم بتعديل قاعدة البيانات مباشرة. تأكد من أخذ نسخة احتياطية قبل المتابعة.</p>
+            <p>سيتم تحويل جميع مسارات الملفات إلى base64 أو صور افتراضية.</p>
+        </div>
+
+        <div class="section">
+            <h2>📊 حالة قاعدة البيانات الحالية</h2>
+            <button onclick="loadDatabaseStats()">تحديث الإحصائيات</button>
+            <button onclick="loadUsers()">عرض المستخدمين</button>
+            
+            <div class="stats" id="statsContainer">
+                <!-- سيتم ملء الإحصائيات هنا -->
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔧 عمليات الإصلاح</h2>
+            <button onclick="fixAllFilePathImages()" class="danger">إصلاح جميع مسارات الملفات</button>
+            <button onclick="cleanupMissingFiles()">تنظيف الملفات المفقودة</button>
+            <button onclick="convertToBase64()">تحويل الملفات الموجودة إلى base64</button>
+            
+            <div class="progress" style="display: none;" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>👥 قائمة المستخدمين والمشاكل</h2>
+            <div id="usersContainer">
+                <p>انقر على "عرض المستخدمين" لرؤية القائمة</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📋 سجل العمليات</h2>
+            <button onclick="clearLogs()">مسح السجلات</button>
+            <div class="log" id="logContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let allUsers = [];
+        let stats = {};
+
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function updateProgress(percent) {
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            
+            if (percent > 0) {
+                progressContainer.style.display = 'block';
+                progressBar.style.width = percent + '%';
+                progressBar.textContent = Math.round(percent) + '%';
+            } else {
+                progressContainer.style.display = 'none';
+            }
+        }
+
+        async function loadUsers() {
+            log('📋 جلب قائمة المستخدمين...', 'info');
+            
+            try {
+                const response = await fetch('/api/debug/images');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                allUsers = data.dbImages || [];
+                
+                log(`✅ تم جلب ${allUsers.length} مستخدم`, 'success');
+                displayUsers();
+                calculateStats();
+                
+            } catch (error) {
+                log(`❌ فشل في جلب المستخدمين: ${error.message}`, 'error');
+            }
+        }
+
+        function displayUsers() {
+            const container = document.getElementById('usersContainer');
+            
+            if (allUsers.length === 0) {
+                container.innerHTML = '<p>لا يوجد مستخدمون</p>';
+                return;
+            }
+
+            let html = '<div style="max-height: 400px; overflow-y: auto;">';
+            
+            allUsers.forEach(user => {
+                const issues = [];
+                
+                // فحص صورة البروفايل
+                if (user.profileImage && !user.profileImage.startsWith('data:') && user.profileImage !== '/default_avatar.svg') {
+                    issues.push('صورة البروفايل: مسار ملف');
+                }
+                
+                // فحص صورة البانر
+                if (user.profileBanner && !user.profileBanner.startsWith('data:') && !user.profileBanner.startsWith('http')) {
+                    issues.push('صورة البانر: مسار ملف');
+                }
+                
+                const issueClass = issues.length > 0 ? 'error' : 'success';
+                const issueText = issues.length > 0 ? issues.join(', ') : 'لا توجد مشاكل';
+                
+                html += `
+                    <div style="border: 1px solid #ddd; margin: 5px 0; padding: 10px; border-radius: 5px;">
+                        <strong>${user.username}</strong> (ID: ${user.id}) 
+                        <span class="${issueClass}">${issueText}</span>
+                        ${issues.length > 0 ? `<button onclick="fixUser(${user.id})" style="font-size: 12px; padding: 5px 10px;">إصلاح</button>` : ''}
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function calculateStats() {
+            stats = {
+                base64Profiles: 0,
+                defaultProfiles: 0,
+                filePathProfiles: 0,
+                base64Banners: 0,
+                externalBanners: 0,
+                nullBanners: 0,
+                filePathBanners: 0,
+                totalUsers: allUsers.length
+            };
+
+            allUsers.forEach(user => {
+                // إحصائيات صور البروفايل
+                if (user.profileImage) {
+                    if (user.profileImage.startsWith('data:')) {
+                        stats.base64Profiles++;
+                    } else if (user.profileImage === '/default_avatar.svg') {
+                        stats.defaultProfiles++;
+                    } else {
+                        stats.filePathProfiles++;
+                    }
+                }
+
+                // إحصائيات صور البانر
+                if (user.profileBanner) {
+                    if (user.profileBanner.startsWith('data:')) {
+                        stats.base64Banners++;
+                    } else if (user.profileBanner.startsWith('http')) {
+                        stats.externalBanners++;
+                    } else {
+                        stats.filePathBanners++;
+                    }
+                } else {
+                    stats.nullBanners++;
+                }
+            });
+
+            displayStats();
+        }
+
+        function displayStats() {
+            const container = document.getElementById('statsContainer');
+            const totalIssues = stats.filePathProfiles + stats.filePathBanners;
+            
+            container.innerHTML = `
+                <div class="stat">
+                    <div class="number">${stats.totalUsers}</div>
+                    <div class="label">إجمالي المستخدمين</div>
+                </div>
+                <div class="stat">
+                    <div class="number">${stats.base64Profiles}</div>
+                    <div class="label">صور البروفايل Base64</div>
+                </div>
+                <div class="stat">
+                    <div class="number">${stats.defaultProfiles}</div>
+                    <div class="label">صور البروفايل الافتراضية</div>
+                </div>
+                <div class="stat">
+                    <div class="number" style="color: ${stats.filePathProfiles > 0 ? '#dc3545' : '#28a745'}">${stats.filePathProfiles}</div>
+                    <div class="label">صور البروفايل (مشاكل)</div>
+                </div>
+                <div class="stat">
+                    <div class="number">${stats.base64Banners}</div>
+                    <div class="label">صور البانر Base64</div>
+                </div>
+                <div class="stat">
+                    <div class="number">${stats.externalBanners}</div>
+                    <div class="label">صور البانر الخارجية</div>
+                </div>
+                <div class="stat">
+                    <div class="number" style="color: ${stats.filePathBanners > 0 ? '#dc3545' : '#28a745'}">${stats.filePathBanners}</div>
+                    <div class="label">صور البانر (مشاكل)</div>
+                </div>
+                <div class="stat">
+                    <div class="number" style="color: ${totalIssues > 0 ? '#dc3545' : '#28a745'}">${totalIssues}</div>
+                    <div class="label">إجمالي المشاكل</div>
+                </div>
+            `;
+        }
+
+        async function loadDatabaseStats() {
+            await loadUsers();
+        }
+
+        async function fixUser(userId) {
+            log(`🔧 بدء إصلاح المستخدم ID: ${userId}`, 'info');
+            
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) {
+                log(`❌ المستخدم غير موجود: ${userId}`, 'error');
+                return;
+            }
+
+            const updateData = {};
+            let needsUpdate = false;
+
+            // إصلاح صورة البروفايل
+            if (user.profileImage && !user.profileImage.startsWith('data:') && user.profileImage !== '/default_avatar.svg') {
+                log(`  🔄 إصلاح صورة البروفايل للمستخدم ${user.username}`, 'info');
+                updateData.profileImage = '/default_avatar.svg';
+                needsUpdate = true;
+            }
+
+            // إصلاح صورة البانر
+            if (user.profileBanner && !user.profileBanner.startsWith('data:') && !user.profileBanner.startsWith('http')) {
+                log(`  🔄 إصلاح صورة البانر للمستخدم ${user.username}`, 'info');
+                updateData.profileBanner = null;
+                needsUpdate = true;
+            }
+
+            if (needsUpdate) {
+                try {
+                    const response = await fetch(`/api/users/${userId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(updateData)
+                    });
+
+                    if (response.ok) {
+                        log(`  ✅ تم إصلاح المستخدم ${user.username}`, 'success');
+                        // تحديث البيانات المحلية
+                        Object.assign(user, updateData);
+                        displayUsers();
+                        calculateStats();
+                    } else {
+                        log(`  ❌ فشل في إصلاح المستخدم ${user.username}: ${response.status}`, 'error');
+                    }
+                } catch (error) {
+                    log(`  ❌ خطأ في إصلاح المستخدم ${user.username}: ${error.message}`, 'error');
+                }
+            } else {
+                log(`  ✅ المستخدم ${user.username} لا يحتاج إصلاح`, 'success');
+            }
+        }
+
+        async function fixAllFilePathImages() {
+            if (!confirm('هل أنت متأكد من تحويل جميع مسارات الملفات إلى صور افتراضية؟\nهذا الإجراء لا يمكن التراجع عنه!')) {
+                return;
+            }
+
+            log('🔧 بدء إصلاح جميع مسارات الملفات...', 'info');
+
+            const problematicUsers = allUsers.filter(user => {
+                const hasProfileIssue = user.profileImage && !user.profileImage.startsWith('data:') && user.profileImage !== '/default_avatar.svg';
+                const hasBannerIssue = user.profileBanner && !user.profileBanner.startsWith('data:') && !user.profileBanner.startsWith('http');
+                return hasProfileIssue || hasBannerIssue;
+            });
+
+            if (problematicUsers.length === 0) {
+                log('✅ لا توجد مشاكل للإصلاح', 'success');
+                return;
+            }
+
+            log(`📊 تم العثور على ${problematicUsers.length} مستخدم يحتاج إصلاح`, 'info');
+
+            let fixed = 0;
+            let errors = 0;
+
+            for (let i = 0; i < problematicUsers.length; i++) {
+                const user = problematicUsers[i];
+                updateProgress((i / problematicUsers.length) * 100);
+
+                try {
+                    await fixUser(user.id);
+                    fixed++;
+                } catch (error) {
+                    errors++;
+                    log(`❌ فشل في إصلاح المستخدم ${user.username}: ${error.message}`, 'error');
+                }
+
+                // تأخير قصير لتجنب الضغط على الخادم
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            updateProgress(100);
+            setTimeout(() => updateProgress(0), 2000);
+
+            log(`✅ تم الانتهاء من الإصلاح. نجح: ${fixed}, فشل: ${errors}`, 'success');
+        }
+
+        function clearLogs() {
+            document.getElementById('logContainer').innerHTML = '';
+            log('🧹 تم مسح السجلات', 'info');
+        }
+
+        // تحميل البيانات عند بدء الصفحة
+        window.addEventListener('load', () => {
+            log('🚀 تم تحميل أداة إصلاح قاعدة البيانات', 'info');
+            loadDatabaseStats();
+        });
+    </script>
+</body>
+</html>
