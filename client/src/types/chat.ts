@@ -55,7 +55,9 @@ export interface WebSocketMessage {
         'userVisibilityChanged' | 'usernameColorChanged' | 'profileEffectChanged' | 'theme_update' | 'moderationAction' | 'notification' | 'systemMessage' | 'kicked' | 'blocked' | 
         'friendRequest' | 'friendRequestAccepted' | 'promotion' | 'pointsReceived' | 'pointsTransfer' | 'pointsAdded' | 'levelUp' |
         // أنواع جديدة للـ Broadcast Room
-        'micRequest' | 'micApproved' | 'micRejected' | 'micRemoved' | 'speakerAdded' | 'speakerRemoved' | 'broadcastUpdate';
+        'micRequest' | 'micApproved' | 'micRejected' | 'micRemoved' | 'speakerAdded' | 'speakerRemoved' | 'broadcastUpdate' |
+        // أنواع جديدة للغرف
+        'roomJoined' | 'userJoinedRoom';
   userId?: number;
   username?: string;
   content?: string;
@@ -190,10 +192,4 @@ export interface RoomWebSocketMessage extends WebSocketMessage {
   rooms?: ChatRoom[];
 }
 
-// API Response interface
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-}
+// API Response interface removed - using the one from @/types/api

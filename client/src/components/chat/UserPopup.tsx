@@ -38,11 +38,14 @@ export default function UserPopup({
     if (!currentUser) return;
     
     try {
-      await apiRequest('POST', '/api/moderation/mute', {
-        moderatorId: currentUser.id,
-        targetUserId: user.id,
-        reason: 'مكتوم',
-        duration: 0
+      await apiRequest('/api/moderation/mute', {
+        method: 'POST',
+        body: {
+          moderatorId: currentUser.id,
+          targetUserId: user.id,
+          reason: 'مكتوم',
+          duration: 0
+        }
       });
 
       toast({
@@ -65,11 +68,14 @@ export default function UserPopup({
     if (!currentUser) return;
     
     try {
-      await apiRequest('POST', '/api/moderation/ban', {
-        moderatorId: currentUser.id,
-        targetUserId: user.id,
-        reason: 'مطرود',
-        duration: 15
+      await apiRequest('/api/moderation/ban', {
+        method: 'POST',
+        body: {
+          moderatorId: currentUser.id,
+          targetUserId: user.id,
+          reason: 'مطرود',
+          duration: 15
+        }
       });
 
       toast({
@@ -92,12 +98,15 @@ export default function UserPopup({
     if (!currentUser || currentUser.userType !== 'owner') return;
     
     try {
-      await apiRequest('POST', '/api/moderation/block', {
-        moderatorId: currentUser.id,
-        targetUserId: user.id,
-        reason: 'محجوب نهائياً',
-        ipAddress: 'unknown',
-        deviceId: 'unknown'
+      await apiRequest('/api/moderation/block', {
+        method: 'POST',
+        body: {
+          moderatorId: currentUser.id,
+          targetUserId: user.id,
+          reason: 'محجوب نهائياً',
+          ipAddress: 'unknown',
+          deviceId: 'unknown'
+        }
       });
 
       toast({

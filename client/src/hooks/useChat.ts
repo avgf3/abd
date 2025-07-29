@@ -375,7 +375,7 @@ export function useChat() {
                 const chatMessage = message.message as ChatMessage;
                 // استخدام roomId من الرسالة مع fallback للغرفة العامة
                 const messageRoomId = (chatMessage as any).roomId || 'general';
-                console.log(`✅ إضافة رسالة للغرفة ${messageRoomId} (الغرفة الحالية: ${state.currentRoom})`);
+                console.log(`✅ إضافة رسالة للغرفة ${messageRoomId} (الغرفة الحالية: ${state.currentRoomId})`);
                 
                 dispatch({ 
                   type: 'ADD_ROOM_MESSAGE', 
@@ -383,7 +383,7 @@ export function useChat() {
                 });
                 
                 // تشغيل صوت الإشعار للرسائل من الآخرين في الغرفة الحالية فقط
-                if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoom) {
+                if (chatMessage.senderId !== state.currentUser?.id && messageRoomId === state.currentRoomId) {
                   playNotificationSound();
                 }
               } else {
@@ -504,7 +504,7 @@ export function useChat() {
     try {
       // إنشاء اتصال Socket.IO
       if (!socket.current) {
-        const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
+        const serverUrl = (import.meta as any).env?.VITE_SERVER_URL || 'http://localhost:5000';
         socket.current = io(serverUrl, {
           transports: ['websocket', 'polling'],
           timeout: 10000,
@@ -633,5 +633,9 @@ export function useChat() {
     sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId),
     handleTyping: () => sendTyping(),
     handlePrivateTyping: () => sendTyping(),
+    
+    // إضافة الخصائص المفقودة
+    kickNotification: null,
+    blockNotification: null,
   };
 }

@@ -1,5 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import type { ApiResponse } from "@/types/chat";
+import type { ApiResponse } from "@/types/api";
 
 // معالجة محسنة للأخطاء
 async function throwIfResNotOk(res: Response) {

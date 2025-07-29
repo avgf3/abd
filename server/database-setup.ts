@@ -17,7 +17,7 @@ export async function initializeDatabase(): Promise<boolean> {
     
     // Create tables for SQLite (PostgreSQL migrations are handled separately)
     if (dbType !== 'postgresql') {
-      await createTables();
+      await createTablesManually();
     }
     
     // Check and add missing columns
