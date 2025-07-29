@@ -414,7 +414,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClick={() => setShowMessages(true)}
             title="الرسائل"
           >
-            <span>✉️</span>
+            <span style={{ display: 'flex', alignItems: 'center' }}>
+              <svg width="24" height="18" viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+                <rect x="5" y="20" width="110" height="60" fill="white" stroke="#444" strokeWidth="1.5"/>
+                <polygon points="5,20 60,55 115,20" fill="white" stroke="#444" strokeWidth="1.5"/>
+                <line x1="5" y1="20" x2="60" y2="55" stroke="#555" strokeWidth="1"/>
+                <line x1="115" y1="20" x2="60" y2="55" stroke="#555" strokeWidth="1"/>
+              </svg>
+            </span>
             الرسائل
           </Button>
           
