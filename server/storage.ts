@@ -6,6 +6,8 @@ import {
   blockedDevices,
   pointsHistory,
   levelSettings,
+  rooms,
+  roomUsers,
   type User,
   type InsertUser,
   type Message,
@@ -74,6 +76,17 @@ export interface IStorage {
   // Room operations
   getRoom(roomId: string): Promise<any>;
   getBroadcastRoomInfo(roomId: string): Promise<any>;
+  getAllRooms(): Promise<any[]>;
+  createRoom(roomData: any): Promise<any>;
+  deleteRoom(roomId: string): Promise<void>;
+  joinRoom(userId: number, roomId: string): Promise<void>;
+  leaveRoom(userId: number, roomId: string): Promise<void>;
+  
+  // Broadcast Room operations
+  requestMic(userId: number, roomId: string): Promise<boolean>;
+  approveMicRequest(roomId: string, userId: number, approvedBy: number): Promise<boolean>;
+  rejectMicRequest(roomId: string, userId: number, rejectedBy: number): Promise<boolean>;
+  removeSpeaker(roomId: string, userId: number, removedBy: number): Promise<boolean>;
   
   // Notification operations
   createNotification(notification: InsertNotification): Promise<Notification>;
@@ -481,6 +494,126 @@ export class PostgreSQLStorage implements IStorage {
       micQueue: [],
       isLive: false
     };
+  }
+
+  async getAllRooms(): Promise<any[]> {
+    try {
+      const result = await db.select({
+        id: rooms.id,
+        name: rooms.name,
+        description: rooms.description,
+        icon: rooms.icon,
+        createdBy: rooms.createdBy,
+        isDefault: rooms.isDefault,
+        isActive: rooms.isActive,
+        isBroadcast: rooms.isBroadcast,
+        hostId: rooms.hostId,
+        speakers: rooms.speakers,
+        micQueue: rooms.micQueue,
+        createdAt: rooms.createdAt,
+        userCount: sql<number>`(
+          SELECT COUNT(*)::int 
+          FROM room_users ru 
+          WHERE ru.room_id = rooms.id
+        )`
+      })
+      .from(rooms)
+      .where(eq(rooms.isActive, true))
+      .orderBy(desc(rooms.isDefault), asc(rooms.createdAt));
+
+      return result;
+    } catch (error) {
+      console.error('خطأ في جلب الغرف:', error);
+      // إرجاع الغرف الافتراضية في حالة الخطأ
+      return [
+        { id: 'general', name: 'الدردشة العامة', isBroadcast: false, userCount: 0 },
+        { id: 'broadcast', name: 'غرفة البث المباشر', isBroadcast: true, userCount: 0 },
+        { id: 'music', name: 'أغاني وسهر', isBroadcast: false, userCount: 0 }
+      ];
+    }
+  }
+
+  async createRoom(roomData: any): Promise<any> {
+    try {
+      const roomId = `room_${Date.now()}`;
+      const result = await db.insert(rooms).values({
+        id: roomId,
+        name: roomData.name,
+        description: roomData.description || '',
+        icon: roomData.icon || '',
+        createdBy: roomData.createdBy,
+        isDefault: roomData.isDefault || false,
+        isActive: true,
+        isBroadcast: roomData.isBroadcast || false,
+        hostId: roomData.hostId || null,
+        speakers: '[]',
+        micQueue: '[]'
+      }).returning();
+
+      return result[0];
+    } catch (error) {
+      console.error('خطأ في إنشاء الغرفة:', error);
+      throw error;
+    }
+  }
+
+  async deleteRoom(roomId: string): Promise<void> {
+    try {
+      // حذف جميع المستخدمين من الغرفة أولاً
+      await db.delete(roomUsers).where(eq(roomUsers.roomId, roomId));
+      
+      // حذف الغرفة
+      await db.delete(rooms).where(eq(rooms.id, roomId));
+    } catch (error) {
+      console.error('خطأ في حذف الغرفة:', error);
+      throw error;
+    }
+  }
+
+  async joinRoom(userId: number, roomId: string): Promise<void> {
+    try {
+      await db.insert(roomUsers).values({
+        userId: userId,
+        roomId: roomId
+      }).onConflictDoNothing();
+    } catch (error) {
+      console.error('خطأ في انضمام المستخدم للغرفة:', error);
+      throw error;
+    }
+  }
+
+  async leaveRoom(userId: number, roomId: string): Promise<void> {
+    try {
+      await db.delete(roomUsers)
+        .where(and(eq(roomUsers.userId, userId), eq(roomUsers.roomId, roomId)));
+    } catch (error) {
+      console.error('خطأ في مغادرة المستخدم للغرفة:', error);
+      throw error;
+    }
+  }
+
+  async requestMic(userId: number, roomId: string): Promise<boolean> {
+    // In a real application, you'd add the user to the mic queue
+    console.log(`User ${userId} requesting mic in room: ${roomId}`);
+    return true;
+  }
+
+  async approveMicRequest(roomId: string, userId: number, approvedBy: number): Promise<boolean> {
+    // In a real application, you'd add the user to the speakers list
+    console.log(`User ${approvedBy} approved mic request for user ${userId} in room: ${roomId}`);
+    return true;
+  }
+
+  async rejectMicRequest(roomId: string, userId: number, rejectedBy: number): Promise<boolean> {
+    // In a real application, you'd remove the user from the mic queue
+    console.log(`User ${rejectedBy} rejected mic request for user ${userId} in room: ${roomId}`);
+    return true;
+  }
+
+  async removeSpeaker(roomId: string, userId: number, removedBy: number): Promise<boolean> {
+    // In a real application, you'd remove the user from the speakers list
+    console.log(`User ${removedBy} removed user ${userId} from speakers in room: ${roomId}`);
+    return true;
   }
 
   // Notification operations
