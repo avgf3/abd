@@ -9,78 +9,73 @@
  * @returns URL صحيح للصورة
  */
 export function getImageSrc(imageSrc: string | null | undefined, fallback: string = '/default_avatar.svg'): string {
+  console.log('🧐 getImageSrc - Processing:', { imageSrc, fallback });
+  
   // إذا لم تكن هناك صورة، استخدم الافتراضي
   if (!imageSrc || imageSrc === '' || imageSrc === '/default_avatar.svg') {
+    console.log('🧐 getImageSrc - Using fallback:', fallback);
     return fallback;
   }
 
   // إذا كانت الصورة base64 data URL
   if (imageSrc.startsWith('data:')) {
+    console.log('🧐 getImageSrc - Detected base64 data URL');
     return imageSrc;
   }
 
   // إذا كانت الصورة URL كامل (http/https)
   if (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) {
+    console.log('🧐 getImageSrc - Detected external URL');
     return imageSrc;
   }
 
   // إذا كانت الصورة تبدأ بـ /uploads (مسار كامل)
   if (imageSrc.startsWith('/uploads/')) {
+    console.log('🧐 getImageSrc - Detected uploads path');
     return imageSrc;
   }
 
   // إذا كانت الصورة تبدأ بـ / (مسار من الجذر)
   if (imageSrc.startsWith('/')) {
+    console.log('🧐 getImageSrc - Detected root path');
     return imageSrc;
   }
 
   // إذا كانت اسم ملف فقط، أضف المسار
-  return `/uploads/profiles/${imageSrc}`;
+  const finalPath = `/uploads/profiles/${imageSrc}`;
+  console.log('🧐 getImageSrc - Adding uploads path:', finalPath);
+  return finalPath;
 }
 
 /**
  * تحويل مصدر صورة البروفايل إلى URL صحيح مع timestamp لتجنب cache
  * @param imageSrc - مصدر الصورة
- * @param addTimestamp - إضافة timestamp أم لا
+ * @param fallback - الصورة الافتراضية (اختياري)
  * @returns URL صحيح للصورة
  */
-export function getProfileImageSrc(imageSrc: string | null | undefined, addTimestamp: boolean = false): string {
-  const src = getImageSrc(imageSrc);
+export function getProfileImageSrc(imageSrc: string | null | undefined, fallback: string = '/default_avatar.svg'): string {
+  console.log('🔍 getProfileImageSrc - Input:', imageSrc);
+  const src = getImageSrc(imageSrc, fallback);
+  console.log('🔍 getProfileImageSrc - Output:', src);
   
-  // لا نضيف timestamp للصور base64 أو URLs الخارجية
-  if (!addTimestamp || src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://') || src === '/default_avatar.svg') {
-    return src;
-  }
-
-  // إضافة timestamp لتجنب cache
-  const timestamp = new Date().getTime();
-  const separator = src.includes('?') ? '&' : '?';
-  return `${src}${separator}t=${timestamp}`;
+  // إرجاع الصورة كما هي - base64 أو مسار عادي
+  return src;
 }
 
 /**
- * تحويل مصدر صورة البانر إلى URL صحيح مع timestamp
+ * تحويل مصدر صورة البانر إلى URL صحيح
  * @param bannerSrc - مصدر صورة البانر
- * @param addTimestamp - إضافة timestamp أم لا
  * @param fallback - الصورة الافتراضية للبانر
  * @returns URL صحيح لصورة البانر
  */
 export function getBannerImageSrc(
   bannerSrc: string | null | undefined, 
-  addTimestamp: boolean = false,
   fallback: string = 'https://i.imgur.com/rJKrUfs.jpeg'
 ): string {
   const src = getImageSrc(bannerSrc, fallback);
   
-  // لا نضيف timestamp للصور base64 أو URLs الخارجية أو الافتراضية
-  if (!addTimestamp || src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://') || src === fallback) {
-    return src;
-  }
-
-  // إضافة timestamp لتجنب cache
-  const timestamp = new Date().getTime();
-  const separator = src.includes('?') ? '&' : '?';
-  return `${src}${separator}t=${timestamp}`;
+  // إرجاع الصورة كما هي - base64 أو مسار عادي
+  return src;
 }
 
 /**
