@@ -3,6 +3,7 @@ import cors from 'cors';
 import { fixedStorage } from './storage-fixed.js';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { developmentOnly, logDevelopmentEndpoint } from './middleware/development.js';
 
 const app = express();
 const server = createServer(app);
@@ -20,8 +21,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Test route
-app.get('/api/test', (req, res) => {
+// Test route - متاح في التطوير فقط
+app.get('/api/test', developmentOnly, (req, res) => {
+  logDevelopmentEndpoint('/api/test');
   res.json({ 
     message: 'الخادم يعمل بنجاح!', 
     status: 'fixed',

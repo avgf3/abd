@@ -1,10 +1,29 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import type { ApiResponse } from "@/types/chat";
 
+// معالجة محسنة للأخطاء
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    try {
+      const errorData = await res.json();
+      
+      // إذا كان الخطأ يحتوي على رسالة عربية، استخدمها
+      const message = errorData.message || errorData.error || res.statusText;
+      
+      const error = new Error(message) as any;
+      error.status = res.status;
+      error.code = errorData.code;
+      error.details = errorData.details;
+      error.timestamp = errorData.timestamp;
+      
+      throw error;
+    } catch (parseError) {
+      // إذا فشل في parse JSON، استخدم النص العادي
+      const text = await res.text() || res.statusText;
+      const error = new Error(text) as any;
+      error.status = res.status;
+      throw error;
+    }
   }
 }
 
@@ -53,12 +72,35 @@ export async function apiRequest<T = any>(
     }
     
     return await res.text() as any;
-  } catch (error) {
+  } catch (error: any) {
     clearTimeout(timeoutId);
     
-    // معالجة أخطاء timeout
+    // معالجة أخطاء مختلفة بطريقة أفضل
     if (error.name === 'AbortError') {
-      throw new Error('انتهت مهلة الطلب - يرجى المحاولة مرة أخرى');
+      const timeoutError = new Error('انتهت مهلة الطلب - يرجى المحاولة مرة أخرى') as any;
+      timeoutError.code = 'TIMEOUT';
+      timeoutError.status = 408;
+      throw timeoutError;
+    }
+    
+    if (!navigator.onLine) {
+      const networkError = new Error('لا يوجد اتصال بالإنترنت') as any;
+      networkError.code = 'NETWORK_ERROR';
+      networkError.status = 0;
+      throw networkError;
+    }
+    
+    // تحسين رسائل الأخطاء الشائعة
+    if (error.status === 401) {
+      error.message = 'يجب تسجيل الدخول للوصول لهذه الصفحة';
+    } else if (error.status === 403) {
+      error.message = 'ليس لديك صلاحية للوصول لهذا المحتوى';
+    } else if (error.status === 404) {
+      error.message = 'المورد المطلوب غير موجود';
+    } else if (error.status === 500) {
+      error.message = 'خطأ في الخادم - يرجى المحاولة لاحقاً';
+    } else if (error.status === 503) {
+      error.message = 'الخدمة غير متاحة حالياً - يرجى المحاولة لاحقاً';
     }
     
     throw error;
