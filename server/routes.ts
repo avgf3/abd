@@ -319,6 +319,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "فشل في تحديث صورة البروفايل في قاعدة البيانات" });
       }
 
+      // جلب البيانات المحدثة كاملة من قاعدة البيانات للتأكد
+      const fullUserData = await storage.getUser(userId);
+
       console.log('✅ تم رفع صورة البروفايل بنجاح:', {
         userId,
         filename: req.file.filename,
@@ -330,6 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'user_profile_image_updated',
         userId: userId,
         profileImage: imageUrl,
+        user: fullUserData,
         timestamp: new Date().toISOString()
       };
       broadcast(updateMessage);
@@ -339,7 +343,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "تم رفع الصورة بنجاح",
         imageUrl: imageUrl,
         filename: req.file.filename,
-        user: updatedUser
+        user: fullUserData,
+        timestamp: new Date().toISOString()
       });
 
     } catch (error) {
@@ -433,6 +438,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "فشل في تحديث صورة البانر في قاعدة البيانات" });
       }
 
+      // جلب البيانات المحدثة كاملة من قاعدة البيانات للتأكد
+      const fullUserData = await storage.getUser(userId);
+
       console.log('✅ تم رفع صورة البانر بنجاح:', {
         userId,
         filename: req.file.filename,
@@ -444,6 +452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'user_profile_banner_updated',
         userId: userId,
         profileBanner: bannerUrl,
+        user: fullUserData,
         timestamp: new Date().toISOString()
       };
       broadcast(updateMessage);
@@ -453,7 +462,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "تم رفع صورة البانر بنجاح",
         bannerUrl: bannerUrl,
         filename: req.file.filename,
-        user: updatedUser
+        user: fullUserData,
+        timestamp: new Date().toISOString()
       });
 
     } catch (error) {
@@ -1210,6 +1220,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ users });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // جلب بيانات مستخدم واحد بالمعرف - endpoint مفقود
+  app.get("/api/users/:id", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      if (!userId || isNaN(userId)) {
+        return res.status(400).json({ 
+          error: "معرف المستخدم غير صالح",
+          code: "INVALID_USER_ID"
+        });
+      }
+
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ 
+          error: "المستخدم غير موجود",
+          code: "USER_NOT_FOUND"
+        });
+      }
+
+      // إرجاع بيانات المستخدم كاملة مع timestamp للتحديث
+      res.json({
+        ...user,
+        _timestamp: Date.now(),
+        _lastUpdate: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error("خطأ في جلب بيانات المستخدم:", error);
+      res.status(500).json({ 
+        error: "خطأ في الخادم",
+        code: "INTERNAL_ERROR" 
+      });
     }
   });
 
@@ -3577,19 +3624,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('❌ فشل في تحديث قاعدة البيانات');
         return res.status(500).json({ error: 'فشل في تحديث البيانات في قاعدة البيانات' });
       }
+
+      // جلب البيانات المحدثة كاملة من قاعدة البيانات للتأكد
+      const fullUserData = await storage.getUser(userIdNum);
       
       console.log('✅ تم تحديث البروفايل بنجاح:', { userId: userIdNum, validatedUpdates });
       
       // إشعار المستخدمين الآخرين عبر WebSocket
       broadcast({
         type: 'user_profile_updated',
-        data: { userId: userIdNum, updates: validatedUpdates }
+        data: { 
+          userId: userIdNum, 
+          updates: validatedUpdates,
+          user: fullUserData
+        },
+        timestamp: new Date().toISOString()
       });
 
       res.json({ 
         success: true, 
         message: 'تم تحديث البروفايل بنجاح', 
-        user: updatedUser 
+        user: fullUserData,
+        updates: validatedUpdates,
+        timestamp: new Date().toISOString()
       });
     } catch (error) {
       console.error('❌ خطأ في تحديث البروفايل:', error);

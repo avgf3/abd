@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getEffectColor } from '@/utils/themeUtils';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
+import { useUser } from '@/contexts/UserContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
@@ -22,6 +23,7 @@ interface ProfileModalProps {
 
 export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser, onUpdate, onPrivateMessage, onAddFriend }: ProfileModalProps) {
   const { toast } = useToast();
+  const { updateUser: updateUserContext, refreshUser } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -58,12 +60,15 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     try {
       console.log('🔄 جلب بيانات المستخدم من السيرفر:', userId);
       
-      const res = await fetch(`/api/users/${userId}?t=${Date.now()}`); // إضافة timestamp لتجنب cache
-      if (!res.ok) {
-        throw new Error(`فشل في جلب بيانات المستخدم: ${res.status}`);
-      }
+      // استخدام apiRequest المحسّن مع معالجة أفضل للأخطاء
+      const userData = await apiRequest(`/api/users/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       
-      const userData = await res.json();
       console.log('📦 بيانات المستخدم المُحدثة:', userData);
       
       setLocalUser(userData);
@@ -75,6 +80,11 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       }
       if (userData.profileEffect) {
         setSelectedEffect(userData.profileEffect);
+      }
+      
+      // تحديث UserContext إذا كان هذا المستخدم الحالي
+      if (currentUser && currentUser.id === userId) {
+        updateUserContext(userData);
       }
       
     } catch (err: any) {
@@ -489,15 +499,27 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         throw new Error(result.error || 'فشل في رفع الصورة');
       }
       
-      // تحديث البيانات المحلية فوراً
-      if (uploadType === 'profile' && result.imageUrl) {
-        updateUserData({ profileImage: result.imageUrl });
-      } else if (uploadType === 'banner' && result.bannerUrl) {
-        updateUserData({ profileBanner: result.bannerUrl });
+              // تحديث البيانات المحلية باستخدام البيانات المُعادة من الخادم
+        if (result.user) {
+          console.log('🔄 تحديث البيانات من الخادم:', result.user);
+          setLocalUser(result.user);
+          if (onUpdate) onUpdate(result.user);
+          
+          // تحديث UserContext إذا كان هذا المستخدم الحالي
+          if (currentUser && currentUser.id === result.user.id) {
+            updateUserContext(result.user);
+          }
+        } else {
+        // في حالة عدم وجود user في الاستجابة، نحدث المحلية ونجلب من الخادم
+        if (uploadType === 'profile' && result.imageUrl) {
+          updateUserData({ profileImage: result.imageUrl });
+        } else if (uploadType === 'banner' && result.bannerUrl) {
+          updateUserData({ profileBanner: result.bannerUrl });
+        }
+        
+        // جلب البيانات المحدثة من السيرفر للتأكد
+        await fetchAndUpdateUser(currentUser?.id!);
       }
-      
-      // جلب البيانات المحدثة من السيرفر للتأكد
-      await fetchAndUpdateUser(currentUser?.id!);
       
       toast({ 
         title: "نجح ✅", 
@@ -546,7 +568,21 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         body: JSON.stringify({ userId: currentUser?.id, [fieldName]: editValue }),
       });
       if (response.success) {
-        await fetchAndUpdateUser(currentUser?.id!);
+        // تحديث البيانات المحلية باستخدام البيانات المُعادة من الخادم
+        if (response.user) {
+          console.log('🔄 تحديث البيانات من الخادم:', response.user);
+          setLocalUser(response.user);
+          if (onUpdate) onUpdate(response.user);
+          
+          // تحديث UserContext إذا كان هذا المستخدم الحالي
+          if (currentUser && currentUser.id === response.user.id) {
+            updateUserContext(response.user);
+          }
+        } else {
+          // كبديل، جلب من الخادم
+          await fetchAndUpdateUser(currentUser?.id!);
+        }
+        
         toast({ title: "نجح ✅", description: "تم تحديث الملف الشخصي" });
         closeEditModal();
       } else {
