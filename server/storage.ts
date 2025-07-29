@@ -81,6 +81,8 @@ export interface IStorage {
   deleteRoom(roomId: string): Promise<void>;
   joinRoom(userId: number, roomId: string): Promise<void>;
   leaveRoom(userId: number, roomId: string): Promise<void>;
+  getUserRooms(userId: number): Promise<string[]>;
+  getRoomUsers(roomId: string): Promise<number[]>;
   
   // Broadcast Room operations
   requestMic(userId: number, roomId: string): Promise<boolean>;
@@ -592,28 +594,144 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
+  async getUserRooms(userId: number): Promise<string[]> {
+    try {
+      const result = await db.select({ roomId: roomUsers.roomId })
+        .from(roomUsers)
+        .where(eq(roomUsers.userId, userId));
+      
+      return result.map(row => row.roomId);
+    } catch (error) {
+      console.error('خطأ في جلب غرف المستخدم:', error);
+      return ['general']; // إرجاع الغرفة العامة على الأقل
+    }
+  }
+
+  async getRoomUsers(roomId: string): Promise<number[]> {
+    try {
+      const result = await db.select({ userId: roomUsers.userId })
+        .from(roomUsers)
+        .where(eq(roomUsers.roomId, roomId));
+      
+      return result.map(row => row.userId);
+    } catch (error) {
+      console.error('خطأ في جلب مستخدمي الغرفة:', error);
+      return [];
+    }
+  }
+
   async requestMic(userId: number, roomId: string): Promise<boolean> {
-    // In a real application, you'd add the user to the mic queue
-    console.log(`User ${userId} requesting mic in room: ${roomId}`);
-    return true;
+    try {
+      // جلب معلومات الغرفة
+      const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).limit(1);
+      if (!room.length) return false;
+
+      // تحليل قائمة الانتظار الحالية
+      const currentMicQueue = JSON.parse(room[0].micQueue || '[]');
+      
+      // التحقق من أن المستخدم ليس في القائمة بالفعل
+      if (currentMicQueue.includes(userId)) {
+        return false; // المستخدم في القائمة بالفعل
+      }
+
+      // إضافة المستخدم للقائمة
+      currentMicQueue.push(userId);
+
+      // تحديث قاعدة البيانات
+      await db.update(rooms)
+        .set({ micQueue: JSON.stringify(currentMicQueue) })
+        .where(eq(rooms.id, roomId));
+
+      console.log(`✅ User ${userId} added to mic queue in room: ${roomId}`);
+      return true;
+    } catch (error) {
+      console.error('خطأ في طلب المايك:', error);
+      return false;
+    }
   }
 
   async approveMicRequest(roomId: string, userId: number, approvedBy: number): Promise<boolean> {
-    // In a real application, you'd add the user to the speakers list
-    console.log(`User ${approvedBy} approved mic request for user ${userId} in room: ${roomId}`);
-    return true;
+    try {
+      // جلب معلومات الغرفة
+      const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).limit(1);
+      if (!room.length) return false;
+
+      // تحليل القوائم الحالية
+      const currentMicQueue = JSON.parse(room[0].micQueue || '[]');
+      const currentSpeakers = JSON.parse(room[0].speakers || '[]');
+
+      // إزالة المستخدم من قائمة الانتظار
+      const updatedMicQueue = currentMicQueue.filter((id: number) => id !== userId);
+      
+      // إضافة المستخدم لقائمة المتحدثين (إذا لم يكن موجود)
+      if (!currentSpeakers.includes(userId)) {
+        currentSpeakers.push(userId);
+      }
+
+      // تحديث قاعدة البيانات
+      await db.update(rooms)
+        .set({
+          micQueue: JSON.stringify(updatedMicQueue),
+          speakers: JSON.stringify(currentSpeakers)
+        })
+        .where(eq(rooms.id, roomId));
+
+      console.log(`✅ User ${approvedBy} approved mic request for user ${userId} in room: ${roomId}`);
+      return true;
+    } catch (error) {
+      console.error('خطأ في الموافقة على طلب المايك:', error);
+      return false;
+    }
   }
 
   async rejectMicRequest(roomId: string, userId: number, rejectedBy: number): Promise<boolean> {
-    // In a real application, you'd remove the user from the mic queue
-    console.log(`User ${rejectedBy} rejected mic request for user ${userId} in room: ${roomId}`);
-    return true;
+    try {
+      // جلب معلومات الغرفة
+      const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).limit(1);
+      if (!room.length) return false;
+
+      // تحليل قائمة الانتظار الحالية
+      const currentMicQueue = JSON.parse(room[0].micQueue || '[]');
+
+      // إزالة المستخدم من قائمة الانتظار
+      const updatedMicQueue = currentMicQueue.filter((id: number) => id !== userId);
+
+      // تحديث قاعدة البيانات
+      await db.update(rooms)
+        .set({ micQueue: JSON.stringify(updatedMicQueue) })
+        .where(eq(rooms.id, roomId));
+
+      console.log(`❌ User ${rejectedBy} rejected mic request for user ${userId} in room: ${roomId}`);
+      return true;
+    } catch (error) {
+      console.error('خطأ في رفض طلب المايك:', error);
+      return false;
+    }
   }
 
   async removeSpeaker(roomId: string, userId: number, removedBy: number): Promise<boolean> {
-    // In a real application, you'd remove the user from the speakers list
-    console.log(`User ${removedBy} removed user ${userId} from speakers in room: ${roomId}`);
-    return true;
+    try {
+      // جلب معلومات الغرفة
+      const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).limit(1);
+      if (!room.length) return false;
+
+      // تحليل قائمة المتحدثين الحالية
+      const currentSpeakers = JSON.parse(room[0].speakers || '[]');
+
+      // إزالة المستخدم من قائمة المتحدثين
+      const updatedSpeakers = currentSpeakers.filter((id: number) => id !== userId);
+
+      // تحديث قاعدة البيانات
+      await db.update(rooms)
+        .set({ speakers: JSON.stringify(updatedSpeakers) })
+        .where(eq(rooms.id, roomId));
+
+      console.log(`🔇 User ${removedBy} removed user ${userId} from speakers in room: ${roomId}`);
+      return true;
+    } catch (error) {
+      console.error('خطأ في إزالة المتحدث:', error);
+      return false;
+    }
   }
 
   // Notification operations
