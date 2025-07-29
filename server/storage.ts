@@ -357,6 +357,15 @@ export class PostgreSQLStorage implements IStorage {
   // Wall post operations
   async createWallPost(postData: InsertWallPost): Promise<WallPost> {
     try {
+      console.log('🗄️ إدراج منشور في قاعدة البيانات PostgreSQL...');
+      console.log('🔍 بيانات الإدراج:', {
+        userId: postData.userId,
+        username: postData.username,
+        userRole: postData.userRole,
+        content: postData.content?.substring(0, 50) + '...',
+        type: postData.type || 'public'
+      });
+      
       const [post] = await db.insert(wallPosts)
         .values({
           userId: postData.userId,
@@ -373,23 +382,44 @@ export class PostgreSQLStorage implements IStorage {
         })
         .returning();
       
+      console.log('✅ تم إنشاء المنشور بنجاح في PostgreSQL:', {
+        id: post.id,
+        userId: post.userId,
+        username: post.username,
+        type: post.type,
+        timestamp: post.timestamp
+      });
+      
       return post;
     } catch (error) {
-      console.error('Error creating wall post:', error);
+      console.error('❌ خطأ في إنشاء المنشور في قاعدة البيانات:', error);
       throw error;
     }
   }
 
   async getWallPosts(type: string): Promise<WallPost[]> {
     try {
+      console.log(`🔍 جلب المنشورات من PostgreSQL للنوع: ${type}`);
+      
       const posts = await db.select()
         .from(wallPosts)
         .where(eq(wallPosts.type, type))
         .orderBy(desc(wallPosts.timestamp));
       
+      console.log(`📊 تم جلب ${posts.length} منشورات من قاعدة البيانات`);
+      
+      if (posts.length > 0) {
+        console.log('📝 أحدث منشور:', {
+          id: posts[0].id,
+          username: posts[0].username,
+          content: posts[0].content?.substring(0, 50) + '...',
+          timestamp: posts[0].timestamp
+        });
+      }
+      
       return posts;
     } catch (error) {
-      console.error('Error getting wall posts:', error);
+      console.error('❌ خطأ في جلب المنشورات من قاعدة البيانات:', error);
       return [];
     }
   }

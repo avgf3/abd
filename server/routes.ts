@@ -3918,7 +3918,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'نوع الحائط غير صحيح' });
       }
 
-      res.json({ posts: posts || [] });
+      console.log(`📊 إرجاع ${posts?.length || 0} منشورات للنوع: ${type}`);
+      res.json({ 
+        success: true,
+        posts: posts || [],
+        count: posts?.length || 0,
+        type: type
+      });
     } catch (error) {
       console.error('خطأ في جلب المنشورات:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
@@ -4010,17 +4016,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         usernameColor: user.usernameColor
       };
 
+      console.log('💾 حفظ المنشور في قاعدة البيانات...');
+      console.log('📝 بيانات المنشور:', postData);
+      
       // حفظ المنشور
       const post = await storage.createWallPost(postData);
+      console.log('✅ تم حفظ المنشور بنجاح:', post.id);
       
       // إرسال إشعار للمستخدمين المتصلين
-      io.emit('message', {
+      const messageData = {
         type: 'newWallPost',
         post,
-        wallType: type
+        wallType: type || 'public'
+      };
+      
+      console.log('📡 إرسال إشعار WebSocket:', messageData);
+      io.emit('message', messageData);
+      
+      console.log('✅ إرجاع استجابة النجاح');
+      res.json({ 
+        success: true,
+        post, 
+        message: 'تم نشر المنشور بنجاح' 
       });
-
-      res.json({ post, message: 'تم نشر المنشور بنجاح' });
     } catch (error) {
       console.error('خطأ في إنشاء المنشور:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
