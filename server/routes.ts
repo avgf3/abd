@@ -281,39 +281,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "المستخدم غير موجود" });
       }
 
-      // حل مشكلة Render: تحويل الصورة إلى base64 وحفظها في قاعدة البيانات
-      let imageUrl: string;
-      
-      try {
-        // قراءة الملف كـ base64
-        const fileBuffer = fs.readFileSync(req.file.path);
-        const base64Image = fileBuffer.toString('base64');
-        const mimeType = req.file.mimetype;
-        
-        // إنشاء data URL
-        imageUrl = `data:${mimeType};base64,${base64Image}`;
-        
-        console.log('✅ تم تحويل الصورة إلى base64 بحجم:', base64Image.length);
-        
-        // حذف الملف الأصلي
-        fs.unlinkSync(req.file.path);
-        
-      } catch (fileError) {
-        console.error('❌ خطأ في معالجة الملف:', fileError);
-        
-        // في حالة فشل base64، استخدم المسار العادي
-        imageUrl = `/uploads/profiles/${req.file.filename}`;
-        
-        // حاول التأكد من وجود المجلد
-        const uploadsDir = path.dirname(req.file.path);
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-      }
-      
+      // حفظ الصورة كملف فقط وعدم التحويل إلى base64
+      const imageUrl = `/uploads/profiles/${req.file.filename}`;
       // تحديث صورة البروفايل في قاعدة البيانات
       const updatedUser = await storage.updateUser(userId, { profileImage: imageUrl });
-      
       if (!updatedUser) {
         return res.status(500).json({ error: "فشل في تحديث صورة البروفايل في قاعدة البيانات" });
       }
