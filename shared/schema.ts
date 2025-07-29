@@ -1,6 +1,7 @@
 import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -101,6 +102,41 @@ export const levelSettings = pgTable("level_settings", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// جداول الغرف الجديدة
+export const rooms = pgTable("rooms", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  icon: text("icon"),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  isDefault: boolean("is_default").default(false),
+  isActive: boolean("is_active").default(true),
+  isBroadcast: boolean("is_broadcast").default(false),
+  hostId: integer("host_id").references(() => users.id),
+  speakers: text("speakers").default('[]'), // JSON string
+  micQueue: text("mic_queue").default('[]'), // JSON string
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const roomUsers = pgTable("room_users", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  roomId: text("room_id").notNull().references(() => rooms.id),
+  joinedAt: timestamp("joined_at").defaultNow(),
+});
+
+// إضافة unique constraint لـ room_users
+export const roomUsersRelations = relations(roomUsers, ({ one }) => ({
+  user: one(users, {
+    fields: [roomUsers.userId],
+    references: [users.id],
+  }),
+  room: one(rooms, {
+    fields: [roomUsers.roomId],
+    references: [rooms.id],
+  }),
+}));
+
 export const insertUserSchema = z.object({
   username: z.string(),
   password: z.string().optional(),
@@ -198,3 +234,26 @@ export type InsertPointsHistory = z.infer<typeof insertPointsHistorySchema>;
 export type PointsHistory = typeof pointsHistory.$inferSelect;
 export type InsertLevelSettings = z.infer<typeof insertLevelSettingsSchema>;
 export type LevelSettings = typeof levelSettings.$inferSelect;
+
+export const insertRoomSchema = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  icon: z.string().optional(),
+  createdBy: z.number(),
+  isDefault: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+  isBroadcast: z.boolean().optional(),
+  hostId: z.number().optional(),
+  speakers: z.string().optional(),
+  micQueue: z.string().optional(),
+});
+
+export const insertRoomUserSchema = z.object({
+  userId: z.number(),
+  roomId: z.string(),
+});
+
+export type InsertRoom = z.infer<typeof insertRoomSchema>;
+export type Room = typeof rooms.$inferSelect;
+export type InsertRoomUser = z.infer<typeof insertRoomUserSchema>;
+export type RoomUser = typeof roomUsers.$inferSelect;

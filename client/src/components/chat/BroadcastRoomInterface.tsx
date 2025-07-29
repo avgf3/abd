@@ -257,16 +257,10 @@ export default function BroadcastRoomInterface({
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageInput.trim()) return;
-    // تم إلغاء التحقق من canSpeak بناءً على طلب العميل
-    if (chat && chat.sendPublicMessage) {
-      const success = chat.sendPublicMessage(messageInput.trim());
-      if (success) {
-        setMessageInput('');
-      }
-    } else {
-      onSendMessage(messageInput.trim());
-      setMessageInput('');
-    }
+    
+    // استخدام onSendMessage مباشرة بدلاً من chat object
+    onSendMessage(messageInput.trim());
+    setMessageInput('');
   };
 
   // جلب معلومات المستخدم
