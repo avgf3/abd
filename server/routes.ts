@@ -3600,6 +3600,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user by ID - للحصول على بيانات المستخدم
+  app.get('/api/users/:id', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      if (!userId || isNaN(userId)) {
+        return res.status(400).json({ error: 'معرف المستخدم يجب أن يكون رقم صحيح' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      // إرجاع بيانات المستخدم بدون كلمة المرور
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+      
+    } catch (error) {
+      console.error('❌ خطأ في جلب بيانات المستخدم:', error);
+      res.status(500).json({ 
+        error: 'خطأ في الخادم',
+        details: error instanceof Error ? error.message : 'خطأ غير معروف'
+      });
+    }
+  });
+
   // Update profile background color
   app.post('/api/users/update-background-color', async (req, res) => {
     try {

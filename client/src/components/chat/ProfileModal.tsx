@@ -66,6 +66,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       const userData = await res.json();
       console.log('📦 بيانات المستخدم المُحدثة:', userData);
       
+      console.log('📝 تحديث localUser مع البيانات الجديدة:', userData.profileImage);
       setLocalUser(userData);
       if (onUpdate) onUpdate(userData);
       
@@ -372,13 +373,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   // Profile image fallback - محسّن للتعامل مع base64 و مشاكل الcache
   const getProfileImageSrcLocal = () => {
     console.log('🖼️ محاولة عرض صورة البروفايل:', localUser?.profileImage);
-    return getProfileImageSrc(localUser?.profileImage, '/default_avatar.svg');
+    return getProfileImageSrc(localUser?.profileImage);
   };
 
   // Profile banner fallback - محسّن للتعامل مع base64 و مشاكل الcache
   const getProfileBannerSrcLocal = () => {
     console.log('🎆 محاولة عرض صورة البانر:', localUser?.profileBanner);
-    return getBannerImageSrc(localUser?.profileBanner, 'https://i.imgur.com/rJKrUfs.jpeg');
+    return getBannerImageSrc(localUser?.profileBanner);
   };
 
   // Edit modal handlers
@@ -491,10 +492,15 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       
       // تحديث البيانات المحلية فوراً
       if (uploadType === 'profile' && result.imageUrl) {
+        console.log('🎯 تحديث صورة البروفايل محلياً:', result.imageUrl);
         updateUserData({ profileImage: result.imageUrl });
       } else if (uploadType === 'banner' && result.bannerUrl) {
+        console.log('🎯 تحديث صورة البانر محلياً:', result.bannerUrl);
         updateUserData({ profileBanner: result.bannerUrl });
       }
+      
+      // انتظار قصير للتأكد من التحديث المحلي
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // جلب البيانات المحدثة من السيرفر للتأكد
       await fetchAndUpdateUser(currentUser?.id!);
@@ -1915,14 +1921,14 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => handlePreview(e, 'banner')}
+                onChange={(e) => handleFileUpload(e, 'banner')}
                 disabled={isLoading}
               />
               <input
                 ref={avatarInputRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => handlePreview(e, 'profile')}
+                onChange={(e) => handleFileUpload(e, 'profile')}
                 disabled={isLoading}
               />
             </>
