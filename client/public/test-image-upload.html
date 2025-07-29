@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار رفع الصور - التشخيص</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .section h2 {
+            color: #0066cc;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .error { color: #dc3545; }
+        .success { color: #28a745; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #28a745;
+            width: 0%;
+            transition: width 0.3s ease;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            font-size: 12px;
+        }
+        .preview {
+            max-width: 300px;
+            max-height: 300px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            margin: 10px 0;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 أداة تشخيص رفع الصور</h1>
+        
+        <div class="section">
+            <h2>📤 اختبار رفع صور البروفايل</h2>
+            <div class="form-group">
+                <label for="profileImage">اختر صورة البروفايل:</label>
+                <input type="file" id="profileImage" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label for="userId">معرف المستخدم:</label>
+                <input type="number" id="userId" value="1" placeholder="أدخل معرف المستخدم">
+            </div>
+            <button onclick="uploadProfileImage()">رفع صورة البروفايل</button>
+            <div class="progress">
+                <div class="progress-bar" id="profileProgress"></div>
+            </div>
+            <div id="profilePreview"></div>
+        </div>
+
+        <div class="section">
+            <h2>🖼️ اختبار رفع صور البانر</h2>
+            <div class="form-group">
+                <label for="bannerImage">اختر صورة البانر:</label>
+                <input type="file" id="bannerImage" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label for="bannerUserId">معرف المستخدم:</label>
+                <input type="number" id="bannerUserId" value="1" placeholder="أدخل معرف المستخدم">
+            </div>
+            <button onclick="uploadBannerImage()">رفع صورة البانر</button>
+            <div class="progress">
+                <div class="progress-bar" id="bannerProgress"></div>
+            </div>
+            <div id="bannerPreview"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔍 أدوات التشخيص</h2>
+            <button onclick="checkServerStatus()">فحص حالة الخادم</button>
+            <button onclick="listImages()">عرض الصور الموجودة</button>
+            <button onclick="checkUser()">فحص بيانات المستخدم</button>
+            <button onclick="clearLogs()">مسح السجلات</button>
+        </div>
+
+        <div class="section">
+            <h2>📋 سجل العمليات</h2>
+            <div class="log" id="logContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function updateProgress(progressBarId, percent) {
+            const progressBar = document.getElementById(progressBarId);
+            progressBar.style.width = percent + '%';
+            progressBar.textContent = Math.round(percent) + '%';
+        }
+
+        function showPreview(previewId, file) {
+            const previewContainer = document.getElementById(previewId);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewContainer.innerHTML = `<img src="${e.target.result}" class="preview" alt="معاينة الصورة">`;
+                log(`تم إنشاء معاينة للصورة: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`, 'info');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function uploadProfileImage() {
+            const fileInput = document.getElementById('profileImage');
+            const userIdInput = document.getElementById('userId');
+            const file = fileInput.files[0];
+            const userId = userIdInput.value;
+
+            if (!file) {
+                log('❌ يرجى اختيار صورة أولاً', 'error');
+                return;
+            }
+
+            if (!userId) {
+                log('❌ يرجى إدخال معرف المستخدم', 'error');
+                return;
+            }
+
+            showPreview('profilePreview', file);
+            log(`📤 بدء رفع صورة البروفايل: ${file.name}`, 'info');
+
+            const formData = new FormData();
+            formData.append('profileImage', file);
+            formData.append('userId', userId);
+
+            try {
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const progress = (e.loaded / e.total) * 100;
+                        updateProgress('profileProgress', progress);
+                        log(`📊 تقدم الرفع: ${Math.round(progress)}%`, 'info');
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            log(`✅ تم رفع صورة البروفايل بنجاح!`, 'success');
+                            log(`📄 استجابة الخادم: ${JSON.stringify(response, null, 2)}`, 'success');
+                        } catch {
+                            log(`✅ تم رفع صورة البروفايل بنجاح! استجابة: ${xhr.responseText}`, 'success');
+                        }
+                        updateProgress('profileProgress', 100);
+                    } else {
+                        log(`❌ فشل في رفع الصورة: ${xhr.status} ${xhr.statusText}`, 'error');
+                        log(`📄 تفاصيل الخطأ: ${xhr.responseText}`, 'error');
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    log(`❌ خطأ في الشبكة أثناء رفع الصورة`, 'error');
+                });
+
+                log(`🌐 إرسال طلب إلى: /api/upload/profile-image`, 'info');
+                xhr.open('POST', '/api/upload/profile-image');
+                xhr.send(formData);
+
+            } catch (error) {
+                log(`❌ خطأ غير متوقع: ${error.message}`, 'error');
+            }
+        }
+
+        async function uploadBannerImage() {
+            const fileInput = document.getElementById('bannerImage');
+            const userIdInput = document.getElementById('bannerUserId');
+            const file = fileInput.files[0];
+            const userId = userIdInput.value;
+
+            if (!file) {
+                log('❌ يرجى اختيار صورة أولاً', 'error');
+                return;
+            }
+
+            if (!userId) {
+                log('❌ يرجى إدخال معرف المستخدم', 'error');
+                return;
+            }
+
+            showPreview('bannerPreview', file);
+            log(`📤 بدء رفع صورة البانر: ${file.name}`, 'info');
+
+            const formData = new FormData();
+            formData.append('banner', file);
+            formData.append('userId', userId);
+
+            try {
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const progress = (e.loaded / e.total) * 100;
+                        updateProgress('bannerProgress', progress);
+                        log(`📊 تقدم الرفع: ${Math.round(progress)}%`, 'info');
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            log(`✅ تم رفع صورة البانر بنجاح!`, 'success');
+                            log(`📄 استجابة الخادم: ${JSON.stringify(response, null, 2)}`, 'success');
+                        } catch {
+                            log(`✅ تم رفع صورة البانر بنجاح! استجابة: ${xhr.responseText}`, 'success');
+                        }
+                        updateProgress('bannerProgress', 100);
+                    } else {
+                        log(`❌ فشل في رفع الصورة: ${xhr.status} ${xhr.statusText}`, 'error');
+                        log(`📄 تفاصيل الخطأ: ${xhr.responseText}`, 'error');
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    log(`❌ خطأ في الشبكة أثناء رفع الصورة`, 'error');
+                });
+
+                log(`🌐 إرسال طلب إلى: /api/upload/profile-banner`, 'info');
+                xhr.open('POST', '/api/upload/profile-banner');
+                xhr.send(formData);
+
+            } catch (error) {
+                log(`❌ خطأ غير متوقع: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkServerStatus() {
+            log('🔍 فحص حالة الخادم...', 'info');
+            try {
+                const response = await fetch('/');
+                log(`✅ الخادم يعمل بحالة: ${response.status}`, 'success');
+            } catch (error) {
+                log(`❌ الخادم لا يعمل: ${error.message}`, 'error');
+            }
+        }
+
+        async function listImages() {
+            log('📋 جاري الحصول على قائمة الصور...', 'info');
+            try {
+                const response = await fetch('/api/debug/images');
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`📋 قائمة الصور: ${JSON.stringify(data, null, 2)}`, 'info');
+                } else {
+                    log(`❌ فشل في الحصول على قائمة الصور: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ خطأ في الحصول على قائمة الصور: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkUser() {
+            const userId = document.getElementById('userId').value;
+            if (!userId) {
+                log('❌ يرجى إدخال معرف المستخدم', 'error');
+                return;
+            }
+
+            log(`🔍 فحص بيانات المستخدم ${userId}...`, 'info');
+            try {
+                const response = await fetch(`/api/users/${userId}`);
+                if (response.ok) {
+                    const user = await response.json();
+                    log(`👤 بيانات المستخدم: ${JSON.stringify(user, null, 2)}`, 'info');
+                } else {
+                    log(`❌ فشل في الحصول على بيانات المستخدم: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ خطأ في الحصول على بيانات المستخدم: ${error.message}`, 'error');
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logContainer').innerHTML = '';
+            log('🧹 تم مسح السجلات', 'info');
+        }
+
+        // تسجيل معلومات التشخيص عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            log('🚀 تم تحميل أداة تشخيص الصور', 'info');
+            log(`🌐 عنوان الصفحة: ${window.location.href}`, 'info');
+            log(`📱 معرف المستخدم: ${navigator.userAgent}`, 'info');
+            checkServerStatus();
+        });
+    </script>
+</body>
+</html>
