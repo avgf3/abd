@@ -65,15 +65,28 @@ export default function UserSidebarWithWalls({
     if (!currentUser) return;
     setLoading(true);
     try {
-      const response = await apiRequest(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`, {
+      console.log(`🔄 UserSidebar: جاري جلب المنشورات للنوع: ${activeTab}, المستخدم: ${currentUser.id}`);
+      
+      const response = await fetch(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`, {
         method: 'GET',
       });
+      
+      console.log(`📡 UserSidebar: استجابة الخادم: ${response.status}`);
+      
       if (response.ok) {
         const data = await response.json();
-        setPosts(data.posts || []);
+        console.log('📄 UserSidebar: البيانات المستلمة:', data);
+        console.log(`📊 UserSidebar: عدد المنشورات: ${data.posts?.length || 0}`);
+        
+        const posts = data.posts || data.data || data || [];
+        setPosts(posts);
+        console.log('✅ UserSidebar: تم تحديث المنشورات في الواجهة');
+      } else {
+        const errorText = await response.text();
+        console.error('❌ UserSidebar: خطأ في جلب المنشورات:', response.status, errorText);
       }
     } catch (error) {
-      console.error('خطأ في جلب المنشورات:', error);
+      console.error('❌ UserSidebar: خطأ في الاتصال بالخادم:', error);
     } finally {
       setLoading(false);
     }
@@ -164,14 +177,26 @@ export default function UserSidebarWithWalls({
       });
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('✅ UserSidebar: استجابة النشر:', result);
+        
+        const newPost = result.post || result;
+        console.log('📝 UserSidebar: المنشور الجديد:', newPost);
+        
+        // إضافة المنشور للقائمة فوراً
+        setPosts(prev => [newPost, ...prev]);
+        console.log('✅ UserSidebar: تم إضافة المنشور للقائمة محلياً');
+        
         toast({
           title: "تم النشر",
           description: "تم نشر منشورك بنجاح",
         });
         setNewPostContent('');
         removeSelectedImage();
-        fetchPosts();
+        // fetchPosts(); // لا نحتاج لهذا لأننا أضفنا المنشور محلياً
       } else {
+        const errorText = await response.text();
+        console.error('❌ UserSidebar: خطأ في النشر:', response.status, errorText);
         throw new Error('فشل في نشر المنشور');
       }
     } catch (error) {

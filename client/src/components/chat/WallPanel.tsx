@@ -31,14 +31,26 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const fetchPosts = async () => {
     setLoading(true);
     try {
+      console.log(`🔄 جاري جلب المنشورات للنوع: ${activeTab}, المستخدم: ${currentUser.id}`);
+      
       const response = await fetch(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`, {
         method: 'GET',
       });
+      
+      console.log(`📡 استجابة الخادم: ${response.status}`);
+      
       if (response.ok) {
         const data = await response.json();
-        setPosts(data.posts || []);
+        console.log('📄 البيانات المستلمة:', data);
+        console.log(`📊 عدد المنشورات: ${data.posts?.length || 0}`);
+        
+        const posts = data.posts || data.data || data || [];
+        setPosts(posts);
+        
+        console.log('✅ تم تحديث المنشورات في الواجهة');
       } else {
-        console.error('خطأ في جلب المنشورات:', response.status);
+        const errorText = await response.text();
+        console.error('❌ خطأ في جلب المنشورات:', response.status, errorText);
         toast({
           title: "خطأ",
           description: "فشل في جلب المنشورات",
@@ -46,7 +58,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
         });
       }
     } catch (error) {
-      console.error('خطأ في جلب المنشورات:', error);
+      console.error('❌ خطأ في الاتصال بالخادم:', error);
       toast({
         title: "خطأ",
         description: "فشل في الاتصال بالخادم",
@@ -71,12 +83,29 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
       
       // معالج المنشورات الجديدة
       socket.current.on('message', (message: any) => {
+        console.log('📨 WebSocket message received:', message);
+        
         if (message.type === 'newWallPost') {
-          // تحديث المنشورات إذا كان النوع مطابق
-          if (message.wallType === activeTab) {
+          console.log('🆕 منشور جديد مستلم:', message.post);
+          console.log('📍 نوع المنشور:', message.wallType);
+          console.log('📍 النشاط الحالي:', activeTab);
+          
+          // تحديث المنشورات إذا كان النوع مطابق أو إذا كان المنشور عام
+          const postType = message.wallType || message.post?.type || 'public';
+          if (postType === activeTab) {
+            console.log('✅ إضافة المنشور للقائمة');
             setPosts(prevPosts => [message.post, ...prevPosts]);
+            
+            // إضافة إشعار للمستخدم
+            toast({
+              title: "منشور جديد ✨",
+              description: `منشور جديد من ${message.post.username}`,
+            });
+          } else {
+            console.log('⏭️ تم تجاهل المنشور - النوع غير مطابق');
           }
         } else if (message.type === 'wallPostReaction') {
+          console.log('👍 تفاعل جديد:', message);
           // تحديث التفاعلات
           setPosts(prevPosts => 
             prevPosts.map(post => 
@@ -84,6 +113,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
             )
           );
         } else if (message.type === 'wallPostDeleted') {
+          console.log('🗑️ حذف منشور:', message.postId);
           // إزالة المنشور المحذوف
           setPosts(prevPosts => 
             prevPosts.filter(post => post.id !== message.postId)
@@ -182,8 +212,16 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
       });
 
       if (response.ok) {
-        const newPost = await response.json();
-        setPosts(prev => [newPost.post, ...prev]);
+        const result = await response.json();
+        console.log('✅ استجابة النشر:', result);
+        
+        const newPost = result.post || result;
+        console.log('📝 المنشور الجديد:', newPost);
+        
+        // إضافة المنشور للقائمة فوراً
+        setPosts(prev => [newPost, ...prev]);
+        console.log('✅ تم إضافة المنشور للقائمة محلياً');
+        
         setNewPostContent('');
         removeSelectedImage();
         toast({
@@ -191,10 +229,19 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
           description: "تم نشر المنشور على الحائط",
         });
       } else {
-        const error = await response.json();
+        const errorText = await response.text();
+        console.error('❌ خطأ في النشر:', response.status, errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText };
+        }
+        
         toast({
           title: "فشل في النشر",
-          description: error.error || "حدث خطأ أثناء النشر",
+          description: errorData.error || "حدث خطأ أثناء النشر",
           variant: "destructive",
         });
       }
