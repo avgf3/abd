@@ -45,6 +45,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
     return true;
   };
 
+  // تحديث صورة البانر في الواجهة مباشرة بعد رفعها
   const handleFileSelect = async (file: File) => {
     if (!currentUser) {
       toast({
@@ -68,43 +69,28 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       reader.readAsDataURL(file);
 
       // رفع الصورة للخادم
-      console.log('📤 بدء رفع صورة البانر...');
-      
-      // إنشاء FormData لرفع الصورة
       const formData = new FormData();
       formData.append('banner', file);
       formData.append('userId', currentUser.id.toString());
 
-      // استخدام api.upload مع شريط التقدم
-      const result = await api.upload('/api/upload/profile-banner', formData, {
-        timeout: 60000, // دقيقة واحدة للصور
-        onProgress: (progress) => {
-          setUploadProgress(Math.round(progress));
-        }
-      });
+      // رفع الصورة
+      const result = await api.upload('/api/upload/profile-banner', formData);
 
-      console.log('✅ نتيجة رفع البانر:', result);
-      
       if (!result.success) {
         throw new Error(result.error || 'فشل في رفع صورة البانر');
       }
-      
-      // تحديث الواجهة فوراً
-      if (onBannerUpdate && result.bannerUrl) {
-        onBannerUpdate(result.bannerUrl);
-      }
 
+      // تحديث الصورة مباشرة في الواجهة مع timestamp لتجنب الكاش
+      if (onBannerUpdate && result.bannerUrl) {
+        onBannerUpdate(result.bannerUrl + '?t=' + Date.now());
+      }
+      setPreview(null);
       toast({
         title: "تم بنجاح",
         description: "تم تحديث صورة البانر",
         variant: "default",
       });
-      
-      // إخفاء المعاينة
-      setPreview(null);
-
     } catch (error: any) {
-      console.error('❌ خطأ في رفع البانر:', error);
       toast({
         title: "خطأ",
         description: error.message || "فشل في رفع صورة البانر، يرجى المحاولة مرة أخرى",
@@ -113,14 +99,8 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       setPreview(null);
     } finally {
       setUploading(false);
-      
-      // تنظيف input files
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      if (cameraInputRef.current) {
-        cameraInputRef.current.value = '';
-      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
     }
   };
 
@@ -156,7 +136,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
           />
         ) : (currentUser?.profileBanner && currentUser.profileBanner !== '') ? (
           <img 
-            src={getBannerImageSrc(currentUser.profileBanner)} 
+            src={getBannerImageSrc(currentUser.profileBanner) + '?t=' + Date.now()} 
             alt="صورة البانر" 
             className="w-full h-full object-cover"
           />
