@@ -373,16 +373,17 @@ export function useChat() {
               
               if (!state.ignoredUsers.has(message.message.senderId)) {
                 const chatMessage = message.message as ChatMessage;
+                // استخدام roomId من الرسالة مع fallback للغرفة العامة
                 const messageRoomId = (chatMessage as any).roomId || 'general';
-                console.log(`✅ إضافة رسالة للغرفة ${messageRoomId}`);
+                console.log(`✅ إضافة رسالة للغرفة ${messageRoomId} (الغرفة الحالية: ${state.currentRoom})`);
                 
                 dispatch({ 
                   type: 'ADD_ROOM_MESSAGE', 
                   payload: { roomId: messageRoomId, message: chatMessage }
                 });
                 
-                // تشغيل صوت الإشعار للرسائل من الآخرين
-                if (chatMessage.senderId !== user.id) {
+                // تشغيل صوت الإشعار للرسائل من الآخرين في الغرفة الحالية فقط
+                if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoom) {
                   playNotificationSound();
                 }
               } else {
@@ -441,6 +442,19 @@ export function useChat() {
           case 'kicked':
             dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
             break;
+            
+          case 'roomJoined':
+            if (message.roomId) {
+              console.log(`✅ تأكيد انضمام للغرفة: ${message.roomId}`);
+              dispatch({ type: 'SET_ROOM', payload: message.roomId });
+            }
+            break;
+            
+          case 'userJoinedRoom':
+            if (message.username && message.roomId) {
+              console.log(`👤 ${message.username} انضم للغرفة: ${message.roomId}`);
+            }
+            break;
 
           default:
             break;
@@ -482,6 +496,7 @@ export function useChat() {
 
   // Join room function
   const joinRoom = useCallback((roomId: string) => {
+    console.log(`🔄 انضمام للغرفة: ${roomId}`);
     dispatch({ type: 'SET_ROOM', payload: roomId });
     socket.current?.emit('joinRoom', { roomId });
   }, []);

@@ -62,16 +62,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           id: room.id,
           name: room.name,
           description: room.description || '',
-          isDefault: room.is_default,
-          createdBy: room.created_by,
-          createdAt: new Date(room.created_at),
-          isActive: room.is_active,
-          userCount: room.user_count || 0,
+          isDefault: room.isDefault || room.is_default || false,
+          createdBy: room.createdBy || room.created_by,
+          createdAt: new Date(room.createdAt || room.created_at),
+          isActive: room.isActive || room.is_active || true,
+          userCount: room.userCount || room.user_count || 0,
           icon: room.icon || '',
-          isBroadcast: room.is_broadcast || false,
-          hostId: room.host_id,
-          speakers: room.speakers ? JSON.parse(room.speakers) : [],
-          micQueue: room.mic_queue ? JSON.parse(room.mic_queue) : []
+          isBroadcast: room.isBroadcast || room.is_broadcast || false,
+          hostId: room.hostId || room.host_id,
+          speakers: room.speakers ? (typeof room.speakers === 'string' ? JSON.parse(room.speakers) : room.speakers) : [],
+          micQueue: room.micQueue ? (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue) : room.micQueue) : []
         }));
         setRooms(formattedRooms);
       }
@@ -90,8 +90,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   // دوال إدارة الغرف
   const handleRoomChange = async (roomId: string) => {
+    console.log(`🔄 تغيير الغرفة من ${currentRoomId} إلى ${roomId}`);
     setCurrentRoomId(roomId);
     chat.joinRoom(roomId);
+    
+    // انتظار قصير للتأكد من انضمام الغرفة
+    setTimeout(() => {
+      console.log(`✅ تم تحديث الغرفة الحالية إلى: ${roomId}`);
+    }, 100);
   };
 
   const handleAddRoom = async (roomData: { name: string; description: string; image: File | null }) => {
