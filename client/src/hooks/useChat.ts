@@ -621,30 +621,25 @@ export function useChat() {
     try {
       console.log('🔄 بدء جلب الغرف من الخادم...');
       dispatch({ type: 'SET_ROOMS_LOADING', payload: true });
-      const response = await apiRequest('/api/rooms', { method: 'GET' });
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📦 بيانات الغرف المستلمة:', data);
-        const formattedRooms = data.rooms.map((room: any) => ({
-          id: room.id,
-          name: room.name,
-          description: room.description || '',
-          isDefault: room.isDefault || room.is_default || false,
-          createdBy: room.createdBy || room.created_by,
-          createdAt: new Date(room.createdAt || room.created_at),
-          isActive: room.isActive || room.is_active || true,
-          userCount: room.userCount || room.user_count || 0,
-          icon: room.icon || '',
-          isBroadcast: room.isBroadcast || room.is_broadcast || false,
-          hostId: room.hostId || room.host_id,
-          speakers: room.speakers ? (typeof room.speakers === 'string' ? JSON.parse(room.speakers) : room.speakers) : [],
-          micQueue: room.micQueue ? (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue) : room.micQueue) : []
-        }));
-        console.log('✅ الغرف المنسقة:', formattedRooms);
-        dispatch({ type: 'SET_ROOMS', payload: formattedRooms });
-      } else {
-        console.error('❌ خطأ في API الغرف:', response.status, response.statusText);
-      }
+      const data = await apiRequest('/api/rooms', { method: 'GET' });
+      console.log('📦 بيانات الغرف المستلمة:', data);
+      const formattedRooms = data.rooms.map((room: any) => ({
+        id: room.id,
+        name: room.name,
+        description: room.description || '',
+        isDefault: room.isDefault || room.is_default || false,
+        createdBy: room.createdBy || room.created_by,
+        createdAt: new Date(room.createdAt || room.created_at),
+        isActive: room.isActive || room.is_active || true,
+        userCount: room.userCount || room.user_count || 0,
+        icon: room.icon || '',
+        isBroadcast: room.isBroadcast || room.is_broadcast || false,
+        hostId: room.hostId || room.host_id,
+        speakers: room.speakers ? (typeof room.speakers === 'string' ? JSON.parse(room.speakers) : room.speakers) : [],
+        micQueue: room.micQueue ? (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue) : room.micQueue) : []
+      }));
+      console.log('✅ الغرف المنسقة:', formattedRooms);
+      dispatch({ type: 'SET_ROOMS', payload: formattedRooms });
     } catch (error) {
       console.error('خطأ في جلب الغرف:', error);
       // استخدام غرف افتراضية في حالة الخطأ
@@ -674,15 +669,11 @@ export function useChat() {
       // استدعاء API للانضمام (إذا كان المستخدم مسجل دخول)
       if (state.currentUser) {
         try {
-          const response = await apiRequest(`/api/rooms/${roomId}/join`, {
+          await apiRequest(`/api/rooms/${roomId}/join`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: state.currentUser.id })
+            body: { userId: state.currentUser.id }
           });
-          
-          if (!response.ok) {
-            console.warn('⚠️ فشل في تسجيل الانضمام في قاعدة البيانات');
-          }
+          console.log('✅ تم تسجيل الانضمام في قاعدة البيانات');
         } catch (apiError) {
           console.warn('⚠️ خطأ في API انضمام الغرفة:', apiError);
         }
@@ -691,18 +682,16 @@ export function useChat() {
       // جلب رسائل الغرفة إذا لم تكن محملة من قبل
       if (!state.roomMessages[roomId]) {
         try {
-          const response = await apiRequest(`/api/messages/room/${roomId}`, { method: 'GET' });
-          if (response.ok) {
-            const data = await response.json();
-            const messages = data.messages || [];
-            // إضافة الرسائل للغرفة
-            messages.forEach((message: ChatMessage) => {
-              dispatch({ 
-                type: 'ADD_ROOM_MESSAGE', 
-                payload: { roomId, message }
-              });
+          const data = await apiRequest(`/api/messages/room/${roomId}`, { method: 'GET' });
+          const messages = data.messages || [];
+          // إضافة الرسائل للغرفة
+          messages.forEach((message: ChatMessage) => {
+            dispatch({ 
+              type: 'ADD_ROOM_MESSAGE', 
+              payload: { roomId, message }
             });
-          }
+          });
+          console.log(`✅ تم جلب ${messages.length} رسالة للغرفة ${roomId}`);
         } catch (error) {
           console.error('خطأ في جلب رسائل الغرفة:', error);
         }

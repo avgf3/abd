@@ -54,7 +54,11 @@ export async function apiRequest<T = any>(
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   
   try {
-    const res = await fetch(endpoint, {
+    // تحديد الرابط الكامل للـ API
+    const baseUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000';
+    const fullUrl = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;
+    
+    const res = await fetch(fullUrl, {
       method,
       headers: requestHeaders,
       body: requestBody,
