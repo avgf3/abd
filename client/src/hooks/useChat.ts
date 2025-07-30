@@ -274,9 +274,13 @@ export function useChat() {
       }
     });
 
-    socket.current.on('connected', (data) => {
-      console.log('✅ تم الاتصال بنجاح:', data.message);
+    socket.current.on('socketConnected', (data) => {
+      console.log('🔌 اتصال Socket:', data.message);
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+    });
+
+    socket.current.on('authenticated', (data) => {
+      console.log('✅ تم الاتصال بنجاح:', data.message);
       dispatch({ type: 'SET_CURRENT_USER', payload: data.user });
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
       
@@ -475,12 +479,49 @@ export function useChat() {
             if (message.roomId) {
               console.log(`✅ تأكيد انضمام للغرفة: ${message.roomId}`);
               dispatch({ type: 'SET_ROOM', payload: message.roomId });
+              
+              // تحديث قائمة المستخدمين المتصلين في الغرفة
+              if (message.users && Array.isArray(message.users)) {
+                console.log(`👥 تحديث قائمة مستخدمي الغرفة ${message.roomId}:`, message.users.length);
+                dispatch({ type: 'SET_ONLINE_USERS', payload: message.users });
+              }
+              
+              // طلب قائمة محدثة من المستخدمين المتصلين في الغرفة
+              setTimeout(() => {
+                if (socket.current?.connected) {
+                  socket.current.emit('requestOnlineUsers');
+                }
+              }, 200);
             }
             break;
             
           case 'userJoinedRoom':
             if (message.username && message.roomId) {
               console.log(`👤 ${message.username} انضم للغرفة: ${message.roomId}`);
+              
+              // إذا كانت الغرفة هي الغرفة الحالية، طلب تحديث قائمة المستخدمين
+              if (message.roomId === state.currentRoomId) {
+                setTimeout(() => {
+                  if (socket.current?.connected) {
+                    socket.current.emit('requestOnlineUsers');
+                  }
+                }, 100);
+              }
+            }
+            break;
+            
+          case 'userLeftRoom':
+            if (message.username && message.roomId) {
+              console.log(`👤 ${message.username} غادر الغرفة: ${message.roomId}`);
+              
+              // إذا كانت الغرفة هي الغرفة الحالية، طلب تحديث قائمة المستخدمين
+              if (message.roomId === state.currentRoomId) {
+                setTimeout(() => {
+                  if (socket.current?.connected) {
+                    socket.current.emit('requestOnlineUsers');
+                  }
+                }, 100);
+              }
             }
             break;
 
