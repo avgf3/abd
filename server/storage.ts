@@ -635,7 +635,7 @@ export class PostgreSQLStorage implements IStorage {
         micQueue: rooms.micQueue,
         createdAt: rooms.createdAt,
         userCount: sql<number>`(
-          SELECT COUNT(*)::int 
+          SELECT COUNT(DISTINCT ru.user_id)::int 
           FROM room_users ru 
           WHERE ru.room_id = rooms.id
         )`
@@ -643,6 +643,11 @@ export class PostgreSQLStorage implements IStorage {
       .from(rooms)
       .where(eq(rooms.isActive, true))
       .orderBy(desc(rooms.isDefault), asc(rooms.createdAt));
+
+      console.log(`📊 تم جلب ${result.length} غرفة من قاعدة البيانات`);
+      result.forEach(room => {
+        console.log(`  - ${room.name}: ${room.userCount} مستخدم`);
+      });
 
       return result;
     } catch (error) {
@@ -697,6 +702,22 @@ export class PostgreSQLStorage implements IStorage {
     try {
       console.log(`🔄 محاولة انضمام المستخدم ${userId} للغرفة ${roomId}`);
       
+      // التحقق من وجود المستخدم
+      const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (user.length === 0) {
+        throw new Error(`المستخدم ${userId} غير موجود`);
+      }
+      
+      // التحقق من وجود الغرفة
+      const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).limit(1);
+      if (room.length === 0) {
+        throw new Error(`الغرفة ${roomId} غير موجودة`);
+      }
+      
+      if (!room[0].isActive) {
+        throw new Error(`الغرفة ${roomId} غير نشطة`);
+      }
+      
       // التحقق من وجود المستخدم في الغرفة مسبقاً
       const existing = await db.select()
         .from(roomUsers)
@@ -709,6 +730,12 @@ export class PostgreSQLStorage implements IStorage {
           roomId: roomId
         });
         console.log(`✅ تم انضمام المستخدم ${userId} للغرفة ${roomId}`);
+        
+        // تحديث حالة المستخدم إلى متصل إذا لم يكن كذلك
+        if (!user[0].isOnline) {
+          await this.setUserOnlineStatus(userId, true);
+          console.log(`✅ تم تحديث حالة المستخدم ${userId} إلى متصل`);
+        }
       } else {
         console.log(`ℹ️ المستخدم ${userId} موجود بالفعل في الغرفة ${roomId}`);
       }
