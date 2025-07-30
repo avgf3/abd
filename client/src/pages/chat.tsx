@@ -12,12 +12,6 @@ export default function ChatPage() {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const chat = useChat();
 
-  // الغرف المتاحة
-  const rooms: ChatRoom[] = [
-    { id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 12, icon: '' },
-    { id: 'music', name: 'أغاني وسهر', description: 'غرفة للموسيقى والترفيه', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 8, icon: '' }
-  ];
-
   const handleUserLogin = (user: ChatUser) => {
     chat.connect(user);
     setShowWelcome(false);
@@ -42,7 +36,7 @@ export default function ChatPage() {
         <WelcomeScreen onUserLogin={handleUserLogin} />
       ) : showRoomSelector ? (
         <RoomSelector 
-          rooms={rooms} 
+          rooms={chat.rooms} 
           currentUser={chat.currentUser!} 
           onRoomSelect={handleRoomSelect} 
         />

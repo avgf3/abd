@@ -517,12 +517,24 @@ export function useChat() {
             if (message.roomId) {
               console.log(`✅ تأكيد انضمام للغرفة: ${message.roomId}`);
               dispatch({ type: 'SET_ROOM', payload: message.roomId });
+              // تحديث عدد المستخدمين في الغرف
+              fetchRooms();
             }
             break;
             
           case 'userJoinedRoom':
             if (message.username && message.roomId) {
               console.log(`👤 ${message.username} انضم للغرفة: ${message.roomId}`);
+              // تحديث عدد المستخدمين في الغرف
+              fetchRooms();
+            }
+            break;
+          
+          case 'userLeftRoom':
+            if (message.username && message.roomId) {
+              console.log(`👤 ${message.username} غادر الغرفة: ${message.roomId}`);
+              // تحديث عدد المستخدمين في الغرف
+              fetchRooms();
             }
             break;
           
@@ -557,10 +569,11 @@ export function useChat() {
           
           case 'roomUserCountUpdated':
             if (message.roomId && typeof message.userCount === 'number') {
-              console.log(`👥 تحديث عدد المستخدمين في الغرفة ${message.roomId}: ${message.userCount}`);
-              dispatch({ 
-                type: 'UPDATE_ROOM_USER_COUNT', 
-                payload: { roomId: message.roomId, count: message.userCount } 
+              console.log(`📊 تحديث عدد المستخدمين في الغرفة ${message.roomId}: ${message.userCount}`);
+              // تحديث عدد المستخدمين في الغرفة المحددة
+              dispatch({
+                type: 'UPDATE_ROOM_USER_COUNT',
+                payload: { roomId: message.roomId, count: message.userCount }
               });
             }
             break;
@@ -606,10 +619,12 @@ export function useChat() {
   // Fetch rooms function
   const fetchRooms = useCallback(async () => {
     try {
+      console.log('🔄 بدء جلب الغرف من الخادم...');
       dispatch({ type: 'SET_ROOMS_LOADING', payload: true });
       const response = await apiRequest('/api/rooms', { method: 'GET' });
       if (response.ok) {
         const data = await response.json();
+        console.log('📦 بيانات الغرف المستلمة:', data);
         const formattedRooms = data.rooms.map((room: any) => ({
           id: room.id,
           name: room.name,
@@ -625,16 +640,21 @@ export function useChat() {
           speakers: room.speakers ? (typeof room.speakers === 'string' ? JSON.parse(room.speakers) : room.speakers) : [],
           micQueue: room.micQueue ? (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue) : room.micQueue) : []
         }));
+        console.log('✅ الغرف المنسقة:', formattedRooms);
         dispatch({ type: 'SET_ROOMS', payload: formattedRooms });
+      } else {
+        console.error('❌ خطأ في API الغرف:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('خطأ في جلب الغرف:', error);
       // استخدام غرف افتراضية في حالة الخطأ
-      dispatch({ type: 'SET_ROOMS', payload: [
+      const fallbackRooms = [
         { id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] },
         { id: 'broadcast', name: 'غرفة البث المباشر', description: 'غرفة خاصة للبث المباشر مع نظام المايك', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: true, hostId: 1, speakers: [], micQueue: [] },
         { id: 'music', name: 'أغاني وسهر', description: 'غرفة للموسيقى والترفيه', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] }
-      ] });
+      ];
+      console.log('🔄 استخدام الغرف الافتراضية:', fallbackRooms);
+      dispatch({ type: 'SET_ROOMS', payload: fallbackRooms });
     } finally {
       dispatch({ type: 'SET_ROOMS_LOADING', payload: false });
     }
@@ -643,29 +663,55 @@ export function useChat() {
   // Join room function - محسنة
   const joinRoom = useCallback(async (roomId: string) => {
     console.log(`🔄 انضمام للغرفة: ${roomId}`);
-    dispatch({ type: 'SET_ROOM', payload: roomId });
-    socket.current?.emit('joinRoom', { roomId });
     
-    // جلب رسائل الغرفة إذا لم تكن محملة من قبل
-    if (!state.roomMessages[roomId]) {
-      try {
-        const response = await apiRequest(`/api/messages/room/${roomId}`, { method: 'GET' });
-        if (response.ok) {
-          const data = await response.json();
-          const messages = data.messages || [];
-          // إضافة الرسائل للغرفة
-          messages.forEach((message: ChatMessage) => {
-            dispatch({ 
-              type: 'ADD_ROOM_MESSAGE', 
-              payload: { roomId, message }
-            });
+    try {
+      // تحديث الغرفة الحالية فوراً
+      dispatch({ type: 'SET_ROOM', payload: roomId });
+      
+      // إرسال طلب الانضمام عبر Socket.IO
+      socket.current?.emit('joinRoom', { roomId });
+      
+      // استدعاء API للانضمام (إذا كان المستخدم مسجل دخول)
+      if (state.currentUser) {
+        try {
+          const response = await apiRequest(`/api/rooms/${roomId}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: state.currentUser.id })
           });
+          
+          if (!response.ok) {
+            console.warn('⚠️ فشل في تسجيل الانضمام في قاعدة البيانات');
+          }
+        } catch (apiError) {
+          console.warn('⚠️ خطأ في API انضمام الغرفة:', apiError);
         }
-      } catch (error) {
-        console.error('خطأ في جلب رسائل الغرفة:', error);
       }
+      
+      // جلب رسائل الغرفة إذا لم تكن محملة من قبل
+      if (!state.roomMessages[roomId]) {
+        try {
+          const response = await apiRequest(`/api/messages/room/${roomId}`, { method: 'GET' });
+          if (response.ok) {
+            const data = await response.json();
+            const messages = data.messages || [];
+            // إضافة الرسائل للغرفة
+            messages.forEach((message: ChatMessage) => {
+              dispatch({ 
+                type: 'ADD_ROOM_MESSAGE', 
+                payload: { roomId, message }
+              });
+            });
+          }
+        } catch (error) {
+          console.error('خطأ في جلب رسائل الغرفة:', error);
+        }
+      }
+      
+    } catch (error) {
+      console.error('خطأ في الانضمام للغرفة:', error);
     }
-  }, [state.roomMessages]);
+  }, [state.roomMessages, state.currentUser]);
 
   // Send message function - محسنة
   const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number) => {
@@ -732,9 +778,18 @@ export function useChat() {
   // جلب الغرف عند الاتصال الأولي
   useEffect(() => {
     if (state.isConnected && state.rooms.length === 0) {
+      console.log('🔄 جلب الغرف عند الاتصال الأولي...');
       fetchRooms();
     }
   }, [state.isConnected, state.rooms.length, fetchRooms]);
+
+  // جلب الغرف فور تسجيل الدخول
+  useEffect(() => {
+    if (state.currentUser && state.rooms.length === 0) {
+      console.log('🔄 جلب الغرف فور تسجيل الدخول...');
+      fetchRooms();
+    }
+  }, [state.currentUser, fetchRooms]);
 
   return {
     // State
