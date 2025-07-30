@@ -49,6 +49,7 @@ export interface IStorage {
   createMessage(message: InsertMessage): Promise<Message>;
   getPublicMessages(limit?: number): Promise<Message[]>;
   getPrivateMessages(userId1: number, userId2: number, limit?: number): Promise<Message[]>;
+  getRoomMessages(roomId: string, limit?: number): Promise<Message[]>;
 
   // Friend operations
   addFriend(userId: number, friendId: number): Promise<Friend>;
@@ -215,6 +216,19 @@ export class PostgreSQLStorage implements IStorage {
             and(eq(messages.senderId, userId1), eq(messages.receiverId, userId2)),
             and(eq(messages.senderId, userId2), eq(messages.receiverId, userId1))
           )
+        )
+      )
+      .orderBy(desc(messages.timestamp))
+      .limit(limit);
+  }
+
+  async getRoomMessages(roomId: string, limit: number = 50): Promise<Message[]> {
+    return await db.select()
+      .from(messages)
+      .where(
+        and(
+          eq(messages.isPrivate, false),
+          eq(messages.roomId, roomId)
         )
       )
       .orderBy(desc(messages.timestamp))
