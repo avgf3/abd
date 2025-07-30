@@ -1566,10 +1566,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             userRooms.push('general');
           }
           
-          // انضمام للغرف في Socket.IO
+          // انضمام للغرف في Socket.IO وتحديث عدد المستخدمين
           for (const roomId of userRooms) {
             socket.join(`room_${roomId}`);
             console.log(`🏠 المستخدم ${user.username} انضم للغرفة ${roomId}`);
+            
+            // تحديث عدد المستخدمين في الغرفة
+            const userCount = await storage.getRoomUserCount(roomId);
+            io.emit('message', {
+              type: 'roomUserCountUpdated',
+              roomId: roomId,
+              userCount: userCount
+            });
           }
           
           console.log(`✅ تم انضمام ${user.username} لجميع غرفه: ${userRooms.join(', ')}`);
@@ -1578,6 +1586,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // انضمام للغرفة العامة على الأقل
           socket.join('room_general');
           await storage.joinRoom(user.id, 'general');
+          
+          // تحديث عدد المستخدمين في الغرفة العامة
+          const generalUserCount = await storage.getRoomUserCount('general');
+          io.emit('message', {
+            type: 'roomUserCountUpdated',
+            roomId: 'general',
+            userCount: generalUserCount
+          });
         }
 
         console.log(`✅ تمت مصادقة المستخدم: ${user.username} (${user.userType})`);
@@ -2172,6 +2188,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // حفظ في قاعدة البيانات
         await storage.joinRoom(userId, roomId);
         
+        // حساب عدد المستخدمين الجديد
+        const userCount = await storage.getRoomUserCount(roomId);
+        
         // إرسال تأكيد الانضمام
         socket.emit('message', {
           type: 'roomJoined',
@@ -2184,6 +2203,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: socket.username,
           userId: userId,
           roomId: roomId
+        });
+        
+        // إرسال تحديث عدد المستخدمين لجميع العملاء
+        io.emit('message', {
+          type: 'roomUserCountUpdated',
+          roomId: roomId,
+          userCount: userCount
         });
         
         console.log(`✅ المستخدم ${socket.username} انضم للغرفة ${roomId} بنجاح`);
@@ -2213,6 +2239,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // حذف من قاعدة البيانات
         await storage.leaveRoom(userId, roomId);
         
+        // حساب عدد المستخدمين الجديد
+        const userCount = await storage.getRoomUserCount(roomId);
+        
         // إرسال تأكيد المغادرة
         socket.emit('message', {
           type: 'roomLeft',
@@ -2224,6 +2253,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'userLeftRoom',
           username: socket.username,
           roomId: roomId
+        });
+        
+        // إرسال تحديث عدد المستخدمين لجميع العملاء
+        io.emit('message', {
+          type: 'roomUserCountUpdated',
+          roomId: roomId,
+          userCount: userCount
         });
         
       } catch (error) {
@@ -2242,8 +2278,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // تحديث حالة المستخدم في قاعدة البيانات
           await storage.setUserOnlineStatus(socket.userId, false);
           
+          // جلب الغرف التي كان المستخدم فيها قبل إزالته
+          const userRooms = await storage.getUserRooms(socket.userId);
+          
           // إزالة المستخدم من جميع الغرف
           socket.leave(socket.userId.toString());
+          for (const roomId of userRooms) {
+            await storage.leaveRoom(socket.userId, roomId);
+            // تحديث عدد المستخدمين في كل غرفة
+            const userCount = await storage.getRoomUserCount(roomId);
+            io.emit('message', {
+              type: 'roomUserCountUpdated',
+              roomId: roomId,
+              userCount: userCount
+            });
+          }
           
           // إشعار جميع المستخدمين بالخروج (فقط إذا كان مصادق عليه)
           io.emit('message', {
@@ -4272,10 +4321,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const room = await storage.createRoom(roomData);
       
-      // إرسال إشعار بالغرفة الجديدة
+      // إرسال إشعار بالغرفة الجديدة لجميع العملاء
       io.emit('message', {
         type: 'roomCreated',
-        room
+        room: {
+          ...room,
+          user_count: 0, // الغرفة الجديدة فارغة
+          is_default: room.isDefault,
+          created_by: room.createdBy,
+          created_at: room.createdAt,
+          is_active: room.isActive,
+          is_broadcast: room.isBroadcast,
+          host_id: room.hostId,
+          mic_queue: room.micQueue
+        }
       });
 
       res.json({ room });
@@ -4558,6 +4617,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
+
+  // جلب رسائل غرفة معينة
+  app.get('/api/messages/room/:roomId', async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const limit = parseInt(req.query.limit as string) || 50;
+      
+      const messages = await storage.getRoomMessages(roomId, limit);
+      
+      res.json({ messages });
+    } catch (error) {
+      console.error('خطأ في جلب رسائل الغرفة:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // إنشاء الغرف الافتراضية عند بدء تشغيل الخادم
+  await storage.ensureDefaultRooms();
 
   return httpServer;
 }

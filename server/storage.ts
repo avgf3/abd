@@ -90,6 +90,8 @@ export interface IStorage {
   leaveRoom(userId: number, roomId: string): Promise<void>;
   getUserRooms(userId: number): Promise<string[]>;
   getRoomUsers(roomId: string): Promise<number[]>;
+  getRoomUserCount(roomId: string): Promise<number>;
+  ensureDefaultRooms(): Promise<void>;
   
   // Broadcast Room operations
   requestMic(userId: number, roomId: string): Promise<boolean>;
@@ -738,6 +740,82 @@ export class PostgreSQLStorage implements IStorage {
     } catch (error) {
       console.error('خطأ في جلب مستخدمي الغرفة:', error);
       return [];
+    }
+  }
+
+  async getRoomUserCount(roomId: string): Promise<number> {
+    try {
+      const result = await db.select({ count: sql<number>`COUNT(*)::int` })
+        .from(roomUsers)
+        .where(eq(roomUsers.roomId, roomId));
+      
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error('خطأ في جلب عدد مستخدمي الغرفة:', error);
+      return 0;
+    }
+  }
+
+  async ensureDefaultRooms(): Promise<void> {
+    try {
+      console.log('🏠 فحص وإنشاء الغرف الافتراضية...');
+      
+      const defaultRooms = [
+        {
+          id: 'general',
+          name: 'الدردشة العامة',
+          description: 'الغرفة الرئيسية للدردشة العامة',
+          isDefault: true,
+          isBroadcast: false
+        },
+        {
+          id: 'broadcast',
+          name: 'غرفة البث المباشر',
+          description: 'غرفة خاصة للبث المباشر مع نظام المايك',
+          isDefault: false,
+          isBroadcast: true
+        },
+        {
+          id: 'music',
+          name: 'أغاني وسهر',
+          description: 'غرفة للموسيقى والترفيه',
+          isDefault: false,
+          isBroadcast: false
+        }
+      ];
+
+      for (const roomData of defaultRooms) {
+        // فحص إذا كانت الغرفة موجودة
+        const existingRoom = await db.select()
+          .from(rooms)
+          .where(eq(rooms.id, roomData.id))
+          .limit(1);
+
+        if (existingRoom.length === 0) {
+          // إنشاء الغرفة
+          await db.insert(rooms).values({
+            id: roomData.id,
+            name: roomData.name,
+            description: roomData.description,
+            icon: '',
+            createdBy: 1, // افتراضياً المالك
+            isDefault: roomData.isDefault,
+            isActive: true,
+            isBroadcast: roomData.isBroadcast,
+            hostId: roomData.isBroadcast ? 1 : null, // المالك هو المضيف للبث المباشر
+            speakers: '[]',
+            micQueue: '[]'
+          });
+          
+          console.log(`✅ تم إنشاء الغرفة الافتراضية: ${roomData.name}`);
+        } else {
+          console.log(`ℹ️ الغرفة موجودة بالفعل: ${roomData.name}`);
+        }
+      }
+      
+      console.log('🏠 تم التأكد من وجود جميع الغرف الافتراضية');
+    } catch (error) {
+      console.error('❌ خطأ في إنشاء الغرف الافتراضية:', error);
     }
   }
 

@@ -46,58 +46,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showAdminReports, setShowAdminReports] = useState(false);
   const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms'>('users'); // إظهار المستخدمين افتراضياً
   
-  // حالة الغرف
-  const [rooms, setRooms] = useState<ChatRoom[]>([]);
-  const [currentRoomId, setCurrentRoomId] = useState('general');
-  const [roomsLoading, setRoomsLoading] = useState(true);
+  // استخدام الغرف من useChat بدلاً من إدارتها محلياً
+  const { rooms, roomsLoading, currentRoomId, fetchRooms } = chat;
 
-  // جلب الغرف من الخادم
-  const fetchRooms = async () => {
-    try {
-      setRoomsLoading(true);
-      const response = await apiRequest('/api/rooms', { method: 'GET' });
-      if (response.ok) {
-        const data = await response.json();
-        const formattedRooms = data.rooms.map((room: any) => ({
-          id: room.id,
-          name: room.name,
-          description: room.description || '',
-          isDefault: room.isDefault || room.is_default || false,
-          createdBy: room.createdBy || room.created_by,
-          createdAt: new Date(room.createdAt || room.created_at),
-          isActive: room.isActive || room.is_active || true,
-          userCount: room.userCount || room.user_count || 0,
-          icon: room.icon || '',
-          isBroadcast: room.isBroadcast || room.is_broadcast || false,
-          hostId: room.hostId || room.host_id,
-          speakers: room.speakers ? (typeof room.speakers === 'string' ? JSON.parse(room.speakers) : room.speakers) : [],
-          micQueue: room.micQueue ? (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue) : room.micQueue) : []
-        }));
-        setRooms(formattedRooms);
-      }
-    } catch (error) {
-      console.error('خطأ في جلب الغرف:', error);
-      // استخدام غرف افتراضية في حالة الخطأ
-      setRooms([
-        { id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] },
-        { id: 'broadcast', name: 'غرفة البث المباشر', description: 'غرفة خاصة للبث المباشر مع نظام المايك', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: true, hostId: 1, speakers: [], micQueue: [] },
-        { id: 'music', name: 'أغاني وسهر', description: 'غرفة للموسيقى والترفيه', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] }
-      ]);
-    } finally {
-      setRoomsLoading(false);
-    }
-  };
+
 
   // دوال إدارة الغرف
   const handleRoomChange = async (roomId: string) => {
     console.log(`🔄 تغيير الغرفة من ${currentRoomId} إلى ${roomId}`);
-    setCurrentRoomId(roomId);
-    chat.joinRoom(roomId);
-    
-    // انتظار قصير للتأكد من انضمام الغرفة
-    setTimeout(() => {
-      console.log(`✅ تم تحديث الغرفة الحالية إلى: ${roomId}`);
-    }, 100);
+    await chat.joinRoom(roomId);
+    console.log(`✅ تم تحديث الغرفة الحالية إلى: ${roomId}`);
   };
 
   const handleAddRoom = async (roomData: { name: string; description: string; image: File | null }) => {
@@ -119,18 +77,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       if (response.ok) {
         const data = await response.json();
-        const newRoom = {
-          id: data.room.id,
-          name: data.room.name,
-          description: data.room.description || '',
-          isDefault: data.room.is_default,
-          createdBy: data.room.created_by,
-          createdAt: new Date(data.room.created_at),
-          isActive: data.room.is_active,
-          userCount: 0,
-          icon: data.room.icon || ''
-        };
-        setRooms(prev => [...prev, newRoom]);
+        // تحديث قائمة الغرف
+        await fetchRooms();
         toast({
           title: "تم إنشاء الغرفة",
           description: `تم إنشاء غرفة "${roomData.name}" بنجاح`,
@@ -158,9 +106,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       });
 
       if (response.ok) {
-        setRooms(prev => prev.filter(room => room.id !== roomId));
+        // تحديث قائمة الغرف
+        await fetchRooms();
         if (currentRoomId === roomId) {
-          setCurrentRoomId('general'); // العودة للغرفة الرئيسية
+          await chat.joinRoom('general'); // العودة للغرفة الرئيسية
         }
         toast({
           title: "تم حذف الغرفة",
@@ -198,10 +147,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     sender: null,
   });
 
-  // جلب الغرف عند تحميل المكون
-  useEffect(() => {
-    fetchRooms();
-  }, []);
+
 
   // تفعيل التنبيه عند وصول رسالة جديدة
   useEffect(() => {
