@@ -149,6 +149,8 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
     
     case 'ADD_ROOM_MESSAGE':
       const { roomId, message: roomMessage } = action.payload;
+      console.log('🔄 إضافة رسالة للغرفة:', roomId, 'المرسل:', roomMessage.sender?.username);
+      
       const updatedRoomMessages = {
         ...state.roomMessages,
         [roomId]: [...(state.roomMessages[roomId] || []), roomMessage]
@@ -158,6 +160,8 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
       const updatedPublicMessages = roomId === state.currentRoomId
         ? [...state.publicMessages, roomMessage]
         : state.publicMessages;
+      
+      console.log('✅ تم إضافة الرسالة - عدد الرسائل في الغرفة:', updatedRoomMessages[roomId]?.length || 0);
       
       return {
         ...state,
@@ -220,14 +224,8 @@ export function useChat() {
     points: number;
   }>({ show: false, points: 0 });
 
-  // فلترة الرسائل غير الصالحة - محسنة
+  // فلترة الرسائل غير الصالحة - محسنة ومتساهلة
   const isValidMessage = useCallback((message: ChatMessage): boolean => {
-    // التأكد من وجود بيانات المرسل
-    if (!message.sender || !message.sender.username || message.sender.username === 'مستخدم') {
-      console.warn('رسالة مرفوضة - بيانات مرسل غير صالحة:', message);
-      return false;
-    }
-    
     // التأكد من وجود محتوى الرسالة
     if (!message.content || message.content.trim() === '') {
       console.warn('رسالة مرفوضة - محتوى فارغ:', message);
@@ -238,6 +236,45 @@ export function useChat() {
     if (!message.senderId || message.senderId <= 0) {
       console.warn('رسالة مرفوضة - معرف مرسل غير صالح:', message);
       return false;
+    }
+    
+    // التحقق من وجود بيانات المرسل - أكثر تساهلاً
+    if (!message.sender) {
+      console.warn('رسالة بدون بيانات مرسل - سيتم عرضها كرسالة نظام:', message);
+      // إضافة بيانات مرسل افتراضية
+      message.sender = {
+        id: message.senderId,
+        username: 'مستخدم',
+        userType: 'member',
+        role: 'member',
+        profileImage: undefined,
+        profileBanner: undefined,
+        profileBackgroundColor: '#ffffff',
+        isOnline: true,
+        isHidden: false,
+        lastSeen: null,
+        joinDate: new Date(),
+        createdAt: new Date(),
+        isMuted: false,
+        muteExpiry: null,
+        isBanned: false,
+        banExpiry: null,
+        isBlocked: false,
+        ignoredUsers: [],
+        usernameColor: '#000000',
+        userTheme: 'default',
+        profileEffect: 'none',
+        points: 0,
+        level: 1,
+        totalPoints: 0,
+        levelProgress: 0
+      };
+    }
+    
+    // إذا كان اسم المستخدم فارغ أو 'مستخدم'، استبدله باسم افتراضي
+    if (!message.sender.username || message.sender.username === 'مستخدم') {
+      message.sender.username = `مستخدم_${message.senderId}`;
+      console.log('🔧 تم إصلاح اسم المستخدم إلى:', message.sender.username);
     }
     
     return true;
@@ -307,8 +344,11 @@ export function useChat() {
       (socket.current as any).userListInterval = userListInterval;
     });
 
-    socket.current.on('message', (message: WebSocketMessage) => {
+    socket.current.on('message', (data: any) => {
       try {
+        // التعامل مع الرسائل المحمية بـ envelope
+        const message = data.envelope || data;
+        
         switch (message.type) {
           case 'error':
             console.error('خطأ من الخادم:', message.message);
@@ -366,28 +406,92 @@ export function useChat() {
           case 'newMessage':
             console.log('📨 استقبال رسالة جديدة:', message.message);
             if (message.message && typeof message.message === 'object' && !message.message.isPrivate) {
-              if (!isValidMessage(message.message as ChatMessage)) {
-                console.warn('رسالة مرفوضة من الخادم:', message.message);
+              // تحسين معالجة الرسائل
+              const chatMessage = message.message as ChatMessage;
+              console.log('📨 تفاصيل الرسالة المستلمة:', {
+                id: chatMessage.id,
+                senderId: chatMessage.senderId,
+                sender: chatMessage.sender,
+                content: chatMessage.content?.substring(0, 50),
+                roomId: (chatMessage as any).roomId
+              });
+              
+              // التأكد من وجود بيانات المرسل
+              if (!chatMessage.sender && chatMessage.senderId) {
+                console.log('🔧 إصلاح بيانات المرسل للرسالة:', chatMessage);
+                // البحث عن المستخدم في قائمة المستخدمين المتصلين
+                const senderUser = state.onlineUsers.find(u => u.id === chatMessage.senderId);
+                if (senderUser) {
+                  chatMessage.sender = senderUser;
+                  console.log('✅ تم العثور على المرسل في قائمة المستخدمين:', senderUser.username);
+                } else {
+                  // إنشاء بيانات مرسل افتراضية
+                  chatMessage.sender = {
+                    id: chatMessage.senderId,
+                    username: `مستخدم_${chatMessage.senderId}`,
+                    userType: 'member',
+                    role: 'member',
+                    profileImage: undefined,
+                    profileBanner: undefined,
+                    profileBackgroundColor: '#ffffff',
+                    isOnline: true,
+                    isHidden: false,
+                    lastSeen: null,
+                    joinDate: new Date(),
+                    createdAt: new Date(),
+                    isMuted: false,
+                    muteExpiry: null,
+                    isBanned: false,
+                    banExpiry: null,
+                    isBlocked: false,
+                    ignoredUsers: [],
+                    usernameColor: '#000000',
+                    userTheme: 'default',
+                    profileEffect: 'none',
+                    points: 0,
+                    level: 1,
+                    totalPoints: 0,
+                    levelProgress: 0
+                  };
+                  console.log('⚠️ تم إنشاء بيانات مرسل افتراضية:', chatMessage.sender.username);
+                }
+              }
+              
+              // التأكد من صحة الرسالة
+              if (!isValidMessage(chatMessage)) {
+                console.warn('رسالة مرفوضة من الخادم:', chatMessage);
                 break;
               }
               
-              if (!state.ignoredUsers.has(message.message.senderId)) {
-                const chatMessage = message.message as ChatMessage;
+              // تأكيد إضافي على وجود اسم المستخدم
+              if (chatMessage.sender && (!chatMessage.sender.username || chatMessage.sender.username === 'مستخدم')) {
+                chatMessage.sender.username = `مستخدم_${chatMessage.senderId}`;
+                console.log('🔧 تأكيد إصلاح اسم المستخدم:', chatMessage.sender.username);
+              }
+              
+              if (!state.ignoredUsers.has(chatMessage.senderId)) {
                 // استخدام roomId من الرسالة مع fallback للغرفة العامة
                 const messageRoomId = (chatMessage as any).roomId || 'general';
-                console.log(`✅ إضافة رسالة للغرفة ${messageRoomId} (الغرفة الحالية: ${state.currentRoom})`);
+                console.log(`✅ إضافة رسالة للغرفة ${messageRoomId} (الغرفة الحالية: ${state.currentRoomId})`);
+                console.log('👤 المرسل:', chatMessage.sender?.username);
+                console.log('📝 محتوى الرسالة:', chatMessage.content?.substring(0, 100));
                 
                 dispatch({ 
                   type: 'ADD_ROOM_MESSAGE', 
                   payload: { roomId: messageRoomId, message: chatMessage }
                 });
                 
+                // إضافة تأكيد إضافي
+                setTimeout(() => {
+                  console.log('🔍 تأكيد إضافة الرسالة - عدد الرسائل في الغرفة:', state.roomMessages[messageRoomId]?.length || 0);
+                }, 100);
+                
                 // تشغيل صوت الإشعار للرسائل من الآخرين في الغرفة الحالية فقط
-                if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoom) {
+                if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoomId) {
                   playNotificationSound();
                 }
               } else {
-                console.log('🚫 رسالة من مستخدم متجاهل:', message.message.senderId);
+                console.log('🚫 رسالة من مستخدم متجاهل:', chatMessage.senderId);
               }
             }
             break;
@@ -595,7 +699,7 @@ export function useChat() {
     // State
     currentUser: state.currentUser,
     onlineUsers: memoizedOnlineUsers,
-    publicMessages: state.publicMessages,
+    publicMessages: state.roomMessages[state.currentRoomId] || [],
     privateConversations: state.privateConversations,
     ignoredUsers: state.ignoredUsers,
     isConnected: state.isConnected,

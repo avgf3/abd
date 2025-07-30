@@ -47,11 +47,15 @@ export default function MessageArea({
   const validMessages = useMemo(() => 
     messages.filter(msg => 
       msg && 
-      msg.sender && 
-      msg.sender.username && 
       msg.content &&
       msg.content.trim() !== ''
-    ),
+    ).map(msg => {
+      // التأكد من وجود اسم المستخدم
+      if (msg.sender && (!msg.sender.username || msg.sender.username === 'مستخدم')) {
+        msg.sender.username = `مستخدم_${msg.senderId}`;
+      }
+      return msg;
+    }),
     [messages]
   );
 
@@ -274,11 +278,17 @@ export default function MessageArea({
             <p className="text-sm">ابدأ المحادثة بكتابة رسالتك الأولى</p>
           </div>
         ) : (
-          validMessages.map((message) => (
+          // إضافة معلومات تصحيح
+          <div className="mb-4 p-2 bg-blue-50 rounded text-xs text-blue-600">
+            عدد الرسائل: {validMessages.length} | آخر رسالة: {validMessages[validMessages.length - 1]?.sender?.username || 'غير معروف'}
+          </div>
+        ) && (
+          validMessages.map((message, index) => (
             <div
-              key={message.id}
+              key={`${message.id}-${index}`}
               className={`flex gap-3 p-3 rounded-lg border-r-4 ${getMessageBorderColor(message.sender?.userType)} 
                 bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
+              title={`رسالة ${index + 1} من ${validMessages.length}`}
             >
               {/* Profile Image */}
               {message.sender && (
@@ -300,8 +310,9 @@ export default function MessageArea({
                     onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
                     className="font-semibold hover:underline transition-colors duration-200"
                     style={{ color: getFinalUsernameColor(message.sender) }}
+                    title={`ID: ${message.senderId} | نوع: ${message.sender?.userType || 'غير معروف'} | اسم: ${message.sender?.username || 'غير معروف'}`}
                   >
-                    {message.sender?.username}
+                    {message.sender?.username || `مستخدم_${message.senderId}`}
                   </button>
                   
                                         {message.sender && <UserRoleBadge user={message.sender} />}

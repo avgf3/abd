@@ -1774,6 +1774,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const sender = await storage.getUser(socket.userId);
         console.log(`📤 إرسال رسالة من ${sender?.username} للغرفة ${roomId}`);
         console.log('📝 محتوى الرسالة:', sanitizedContent);
+        console.log('👤 بيانات المرسل:', sender);
+        
+        // التأكد من وجود بيانات المرسل
+        if (!sender) {
+          console.error('❌ لم يتم العثور على بيانات المرسل:', socket.userId);
+          socket.emit('message', { type: 'error', message: 'خطأ في بيانات المستخدم' });
+          return;
+        }
         
         // إرسال الرسالة فقط للمستخدمين في نفس الغرفة
         if (roomId === 'general') {
