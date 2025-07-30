@@ -24,7 +24,7 @@ import {
   type InsertWallReaction,
 } from "../shared/schema";
 import { db } from "./database-adapter";
-import { eq, desc, and, sql, or, inArray } from "drizzle-orm";
+import { eq, desc, asc, and, sql, or, inArray } from "drizzle-orm";
 
 // Global in-memory storage for wall posts
 declare global {
@@ -560,13 +560,33 @@ export class PostgreSQLStorage implements IStorage {
 
   // Room operations
   async getRoom(roomId: string): Promise<any> {
-    // For now, returning predefined rooms
-    const predefinedRooms = {
-      'general': { id: 'general', name: 'الدردشة العامة', is_broadcast: false },
-      'broadcast': { id: 'broadcast', name: 'غرفة البث المباشر', is_broadcast: true },
-      'music': { id: 'music', name: 'أغاني وسهر', is_broadcast: false }
-    };
-    return predefinedRooms[roomId as keyof typeof predefinedRooms] || null;
+    try {
+      const result = await db.select().from(rooms).where(eq(rooms.id, roomId));
+      if (result.length === 0) {
+        return null;
+      }
+      
+      const room = result[0];
+      return {
+        id: room.id,
+        name: room.name,
+        description: room.description,
+        icon: room.icon,
+        createdBy: room.createdBy,
+        isDefault: room.isDefault,
+        isActive: room.isActive,
+        isBroadcast: room.isBroadcast,
+        hostId: room.hostId,
+        speakers: room.speakers,
+        micQueue: room.micQueue,
+        createdAt: room.createdAt,
+        // For backward compatibility
+        is_broadcast: room.isBroadcast
+      };
+    } catch (error) {
+      console.error('خطأ في جلب الغرفة:', error);
+      return null;
+    }
   }
 
   async getBroadcastRoomInfo(roomId: string): Promise<any> {
