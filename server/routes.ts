@@ -1253,6 +1253,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // جلب رسائل الغرف
+  app.get("/api/messages/room/:roomId", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const limit = parseInt(req.query.limit as string) || 50;
+      
+      // جلب رسائل الغرفة
+      const messages = await storage.getRoomMessages(roomId, limit);
+      
+      // إضافة بيانات المرسلين
+      const messagesWithUsers = await Promise.all(
+        messages.map(async (msg) => {
+          const sender = msg.senderId ? await storage.getUser(msg.senderId) : null;
+          return { ...msg, sender };
+        })
+      );
+
+      res.json({ messages: messagesWithUsers });
+    } catch (error) {
+      console.error('خطأ في جلب رسائل الغرفة:', error);
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   app.get("/api/messages/private/:userId1/:userId2", async (req, res) => {
     try {
       const userId1 = parseInt(req.params.userId1);
@@ -1277,7 +1301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST endpoint for sending messages
   app.post("/api/messages", async (req, res) => {
     try {
-      const { senderId, receiverId, content, messageType = 'text', isPrivate = false } = req.body;
+      const { senderId, receiverId, content, messageType = 'text', isPrivate = false, roomId = 'general' } = req.body;
       
       if (!senderId || !content?.trim()) {
         return res.status(400).json({ error: "معرف المرسل والمحتوى مطلوبان" });
@@ -1308,7 +1332,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         receiverId: isPrivate ? receiverId : null,
         content: content.trim(),
         messageType,
-        isPrivate
+        isPrivate,
+        roomId: isPrivate ? null : roomId // للرسائل العامة فقط
       };
 
       const message = await storage.createMessage(messageData);
