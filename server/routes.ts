@@ -1490,7 +1490,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }, 30000);
     
     // إرسال رسالة ترحيب فورية
-    socket.emit('connected', { 
+    socket.emit('socketConnected', { 
       message: 'متصل بنجاح',
       socketId: socket.id,
       timestamp: new Date().toISOString()
@@ -1521,6 +1521,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }, 25000);
     };
 
+    // معالج المصادقة للضيوف
+    socket.on('authenticate', async (userData: { username: string; userType: string }) => {
+      try {
+        console.log('🔐 طلب مصادقة ضيف:', userData);
+        
+        if (!userData.username || !userData.userType) {
+          socket.emit('error', { message: 'بيانات المصادقة غير مكتملة' });
+          return;
+        }
+
+        // البحث عن المستخدم أو إنشاؤه
+        let user = await storage.getUserByUsername(userData.username);
+        
+        if (!user) {
+          // إنشاء مستخدم ضيف جديد
+          const newUser = {
+            username: userData.username,
+            userType: userData.userType,
+            role: userData.userType,
+            isOnline: true,
+            joinDate: new Date(),
+            createdAt: new Date()
+          };
+          
+          user = await storage.createUser(newUser);
+          console.log(`👤 تم إنشاء مستخدم ضيف جديد: ${user.username}`);
+        } else {
+          console.log(`👤 مستخدم موجود: ${user.username}`);
+        }
+
+        // تحديث معلومات Socket
+        (socket as CustomSocket).userId = user.id;
+        (socket as CustomSocket).username = user.username;
+        (socket as CustomSocket).userType = user.userType;
+        (socket as CustomSocket).isAuthenticated = true;
+        
+        console.log(`🔐 تم تعيين userId: ${user.id} للمستخدم ${user.username}`);
+
+        // تحديث حالة المستخدم إلى متصل
+        await storage.setUserOnlineStatus(user.id, true);
+        
+        // انضمام للغرفة العامة
+        await storage.joinRoom(user.id, 'general');
+        socket.join('room_general');
+        (socket as any).currentRoom = 'general';
+
+        // إرسال تأكيد المصادقة
+        socket.emit('authenticated', { 
+          message: 'تم الاتصال بنجاح',
+          user: user 
+        });
+
+        console.log(`✅ تمت مصادقة المستخدم: ${user.username} (${user.userType})`);
+
+      } catch (error) {
+        console.error('❌ خطأ في مصادقة الضيف:', error);
+        socket.emit('error', { message: 'خطأ في المصادقة' });
+      }
+    });
+
     // معالج المصادقة المحسن
     socket.on('auth', async (userData: { userId?: number; username?: string; userType?: string }) => {
       try {
@@ -1543,6 +1603,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (socket as CustomSocket).username = user.username;
         (socket as CustomSocket).userType = user.userType;
         (socket as CustomSocket).isAuthenticated = true;
+        
+        console.log(`🔐 تم تعيين userId: ${user.id} للمستخدم ${user.username}`);
 
         // تحديث حالة المستخدم إلى متصل
         try {
@@ -1587,46 +1649,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`✅ تمت مصادقة المستخدم: ${user.username} (${user.userType})`);
 
         // إرسال تأكيد المصادقة
-        socket.emit('connected', { 
+        socket.emit('authenticated', { 
           message: 'تم الاتصال بنجاح',
           user: user 
         });
 
-        // جلب وإرسال قائمة المستخدمين المتصلين - إصلاح محسن
-        console.log('📡 جلب قائمة المستخدمين المتصلين...');
-        const onlineUsers = await storage.getOnlineUsers();
-        console.log(`👥 عدد المستخدمين المتصلين قبل الإضافة: ${onlineUsers.length}`);
-        console.log(`👥 المستخدمون: ${onlineUsers.map(u => u.username).join(', ')}`);
+        // جلب وإرسال قائمة المستخدمين المتصلين في الغرفة الحالية
+        const currentRoom = (socket as any).currentRoom || 'general';
+        console.log(`📡 جلب قائمة المستخدمين المتصلين في الغرفة ${currentRoom}...`);
         
-        // التأكد من إضافة المستخدم الحالي للقائمة إذا لم يكن موجود
-        const userInList = onlineUsers.find(u => u.id === user.id);
-        if (!userInList) {
-          console.log(`➕ إضافة المستخدم ${user.username} للقائمة`);
-          onlineUsers.push(user);
-        }
+        // انتظار قصير للتأكد من تحديث قاعدة البيانات
+        await new Promise(resolve => setTimeout(resolve, 200));
         
-        console.log(`👥 عدد المستخدمين المتصلين بعد التحقق: ${onlineUsers.length}`);
+        const roomUsers = await storage.getOnlineUsersInRoom(currentRoom);
+        console.log(`👥 عدد المستخدمين المتصلين في الغرفة ${currentRoom}: ${roomUsers.length}`);
+        console.log(`👥 المستخدمون في الغرفة: ${roomUsers.map(u => u.username).join(', ')}`);
         
-        // إرسال قائمة المستخدمين للمستخدم الجديد
+        // إرسال قائمة المستخدمين في الغرفة للمستخدم الجديد
         socket.emit('message', { 
           type: 'onlineUsers', 
-          users: onlineUsers 
+          users: roomUsers 
         });
 
-        // إخبار باقي المستخدمين بانضمام مستخدم جديد
-        socket.broadcast.emit('message', {
-          type: 'userJoined',
-          user: user
+        // إخبار باقي المستخدمين في الغرفة بانضمام مستخدم جديد
+        socket.to(`room_${currentRoom}`).emit('message', {
+          type: 'userJoinedRoom',
+          username: user.username,
+          userId: user.id,
+          roomId: currentRoom
         });
 
-        // إرسال قائمة محدثة لجميع المستخدمين (INCLUDING المستخدم الحالي)
-        const updatedOnlineUsers = await storage.getOnlineUsers();
-        io.emit('message', {
+        // إرسال قائمة محدثة لجميع المستخدمين في الغرفة
+        const updatedRoomUsers = await storage.getOnlineUsersInRoom(currentRoom);
+        io.to(`room_${currentRoom}`).emit('message', {
           type: 'onlineUsers',
-          users: updatedOnlineUsers
+          users: updatedRoomUsers
         });
 
-        console.log(`📤 تم إرسال قائمة ${onlineUsers.length} مستخدم إلى ${user.username}`);
+        console.log(`📤 تم إرسال قائمة ${roomUsers.length} مستخدم في الغرفة ${currentRoom} إلى ${user.username}`);
 
       } catch (error) {
         console.error('❌ خطأ في المصادقة:', error);
@@ -2163,16 +2223,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     socket.on('joinRoom', async (data) => {
       try {
         const { roomId } = data;
-        const userId = socket.userId; // استخدام userId من الجلسة
+        const userId = (socket as CustomSocket).userId; // استخدام userId من الجلسة
+        const username = (socket as CustomSocket).username;
+        
+        console.log(`🔍 joinRoom: userId=${userId}, username=${username}, roomId=${roomId}`);
         
         if (!userId) {
+          console.log(`❌ لا يوجد userId في الجلسة`);
           socket.emit('message', { type: 'error', message: 'يجب تسجيل الدخول أولاً' });
           return;
         }
         
-        console.log(`🏠 المستخدم ${socket.username} ينضم للغرفة ${roomId}`);
+        console.log(`🏠 المستخدم ${username} ينضم للغرفة ${roomId}`);
         
-        // الانضمام للغرفة في Socket.IO
+        // مغادرة الغرفة السابقة إن وجدت
+        const previousRoom = (socket as any).currentRoom;
+        if (previousRoom && previousRoom !== roomId) {
+          console.log(`🚪 المستخدم ${username} يغادر الغرفة السابقة ${previousRoom}`);
+          socket.leave(`room_${previousRoom}`);
+          
+          // إشعار المستخدمين في الغرفة السابقة
+                      socket.to(`room_${previousRoom}`).emit('message', {
+              type: 'userLeftRoom',
+              username: username,
+              userId: userId,
+              roomId: previousRoom
+            });
+          
+          // إرسال قائمة محدثة للغرفة السابقة
+          const previousRoomUsers = await storage.getOnlineUsersInRoom(previousRoom);
+          io.to(`room_${previousRoom}`).emit('message', {
+            type: 'onlineUsers',
+            users: previousRoomUsers
+          });
+        }
+        
+        // الانضمام للغرفة الجديدة في Socket.IO
         socket.join(`room_${roomId}`);
         
         // حفظ الغرفة الحالية في الـ socket
@@ -2181,8 +2267,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // حفظ في قاعدة البيانات
         await storage.joinRoom(userId, roomId);
         
+        // انتظار قصير للتأكد من التحديث
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // جلب قائمة المستخدمين المتصلين في هذه الغرفة
         const roomUsers = await storage.getOnlineUsersInRoom(roomId);
+        
+        console.log(`👥 مستخدمو الغرفة ${roomId}: ${roomUsers.map(u => u.username).join(', ')}`);
         
         // إرسال تأكيد الانضمام مع قائمة المستخدمين
         socket.emit('message', {
@@ -2194,7 +2285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إشعار باقي المستخدمين في الغرفة
         socket.to(`room_${roomId}`).emit('message', {
           type: 'userJoinedRoom',
-          username: socket.username,
+          username: username,
           userId: userId,
           roomId: roomId
         });
@@ -2205,7 +2296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           users: roomUsers
         });
         
-        console.log(`✅ المستخدم ${socket.username} انضم للغرفة ${roomId} بنجاح`);
+        console.log(`✅ المستخدم ${username} انضم للغرفة ${roomId} بنجاح مع ${roomUsers.length} مستخدمين آخرين`);
         
       } catch (error) {
         console.error('خطأ في انضمام للغرفة:', error);
@@ -2217,14 +2308,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     socket.on('leaveRoom', async (data) => {
       try {
         const { roomId } = data;
-        const userId = socket.userId; // استخدام userId من الجلسة
+        const userId = (socket as CustomSocket).userId; // استخدام userId من الجلسة
+        const username = (socket as CustomSocket).username;
         
         if (!userId) {
           socket.emit('message', { type: 'error', message: 'يجب تسجيل الدخول أولاً' });
           return;
         }
         
-        console.log(`🚪 المستخدم ${socket.username} يغادر الغرفة ${roomId}`);
+        console.log(`🚪 المستخدم ${username} يغادر الغرفة ${roomId}`);
         
         // المغادرة من الغرفة في Socket.IO
         socket.leave(`room_${roomId}`);
@@ -2249,7 +2341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إشعار باقي المستخدمين في الغرفة
         socket.to(`room_${roomId}`).emit('message', {
           type: 'userLeftRoom',
-          username: socket.username,
+          username: username,
           roomId: roomId
         });
         
@@ -2270,22 +2362,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تنظيف جميع الموارد
       cleanup();
       
-      if (socket.userId && isAuthenticated) {
+      const customSocket = socket as CustomSocket;
+      if (customSocket.userId && isAuthenticated) {
         try {
           const currentRoom = (socket as any).currentRoom;
           
           // تحديث حالة المستخدم في قاعدة البيانات
-          await storage.setUserOnlineStatus(socket.userId, false);
+          await storage.setUserOnlineStatus(customSocket.userId, false);
           
           // إزالة المستخدم من جميع الغرف
-          socket.leave(socket.userId.toString());
+          socket.leave(customSocket.userId.toString());
           
           // إشعار المستخدمين في الغرفة الحالية بالخروج
           if (currentRoom) {
             io.to(`room_${currentRoom}`).emit('message', {
               type: 'userLeft',
-              userId: socket.userId,
-              username: socket.username,
+              userId: customSocket.userId,
+              username: customSocket.username,
               roomId: currentRoom,
               timestamp: new Date().toISOString()
             });
@@ -2299,19 +2392,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           } catch (error) {
-          console.error(`❌ خطأ في تنظيف جلسة ${socket.username}:`, error);
+          console.error(`❌ خطأ في تنظيف جلسة ${customSocket.username}:`, error);
         } finally {
           // تنظيف متغيرات الجلسة في جميع الأحوال
-          socket.userId = undefined;
-          socket.username = undefined;
-          socket.isAuthenticated = false;
+          customSocket.userId = undefined;
+          customSocket.username = undefined;
+          customSocket.isAuthenticated = false;
         }
       }
     });
     
     // معالج أخطاء Socket.IO
     socket.on('error', (error) => {
-      console.error(`❌ خطأ Socket.IO للمستخدم ${socket.username || socket.id}:`, error);
+      const customSocket = socket as CustomSocket;
+      console.error(`❌ خطأ Socket.IO للمستخدم ${customSocket.username || socket.id}:`, error);
       cleanup();
     });
     

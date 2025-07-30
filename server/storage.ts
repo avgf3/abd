@@ -695,10 +695,23 @@ export class PostgreSQLStorage implements IStorage {
 
   async joinRoom(userId: number, roomId: string): Promise<void> {
     try {
-      await db.insert(roomUsers).values({
-        userId: userId,
-        roomId: roomId
-      }).onConflictDoNothing();
+      console.log(`🔄 محاولة انضمام المستخدم ${userId} للغرفة ${roomId}`);
+      
+      // التحقق من وجود المستخدم في الغرفة مسبقاً
+      const existing = await db.select()
+        .from(roomUsers)
+        .where(and(eq(roomUsers.userId, userId), eq(roomUsers.roomId, roomId)))
+        .limit(1);
+      
+      if (existing.length === 0) {
+        await db.insert(roomUsers).values({
+          userId: userId,
+          roomId: roomId
+        });
+        console.log(`✅ تم انضمام المستخدم ${userId} للغرفة ${roomId}`);
+      } else {
+        console.log(`ℹ️ المستخدم ${userId} موجود بالفعل في الغرفة ${roomId}`);
+      }
     } catch (error) {
       console.error('خطأ في انضمام المستخدم للغرفة:', error);
       throw error;
@@ -743,6 +756,8 @@ export class PostgreSQLStorage implements IStorage {
 
   async getOnlineUsersInRoom(roomId: string): Promise<User[]> {
     try {
+      console.log(`🔍 جلب المستخدمين المتصلين في الغرفة ${roomId}`);
+      
       // جلب المستخدمين المتصلين والموجودين في الغرفة المحددة
       const result = await db.select()
         .from(users)
@@ -754,7 +769,10 @@ export class PostgreSQLStorage implements IStorage {
           )
         );
       
-      return result.map(row => row.users);
+      const users_list = result.map(row => row.users);
+      console.log(`👥 وجد ${users_list.length} مستخدمين متصلين في الغرفة ${roomId}: ${users_list.map(u => u.username).join(', ')}`);
+      
+      return users_list;
     } catch (error) {
       console.error('خطأ في جلب المستخدمين المتصلين في الغرفة:', error);
       return [];
