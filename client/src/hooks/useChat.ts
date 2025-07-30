@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation, Notification } from '@/types/chat';
+import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation, Notification, ChatRoom } from '@/types/chat';
 import { globalNotificationManager, MessageCacheManager, NetworkOptimizer } from '@/lib/chatOptimization';
 import { chatAnalytics } from '@/lib/chatAnalytics';
 import { apiRequest } from '@/lib/queryClient';
@@ -51,6 +51,8 @@ interface ChatState {
   currentRoomId: string;
   roomMessages: Record<string, ChatMessage[]>;
   showKickCountdown: boolean;
+  rooms: ChatRoom[];
+  roomsLoading: boolean;
 }
 
 // Action types
@@ -70,7 +72,12 @@ type ChatAction =
   | { type: 'ADD_ROOM_MESSAGE'; payload: { roomId: string; message: ChatMessage } }
   | { type: 'SET_SHOW_KICK_COUNTDOWN'; payload: boolean }
   | { type: 'IGNORE_USER'; payload: number }
-  | { type: 'UNIGNORE_USER'; payload: number };
+  | { type: 'UNIGNORE_USER'; payload: number }
+  | { type: 'SET_ROOMS'; payload: ChatRoom[] }
+  | { type: 'SET_ROOMS_LOADING'; payload: boolean }
+  | { type: 'ADD_ROOM'; payload: ChatRoom }
+  | { type: 'REMOVE_ROOM'; payload: string }
+  | { type: 'UPDATE_ROOM_USER_COUNT'; payload: { roomId: string; count: number } };
 
 // Initial state
 const initialState: ChatState = {
@@ -87,7 +94,9 @@ const initialState: ChatState = {
   notifications: [],
   currentRoomId: 'general',
   roomMessages: {},
-  showKickCountdown: false
+  showKickCountdown: false,
+  rooms: [],
+  roomsLoading: false
 };
 
 // Reducer function
@@ -179,6 +188,31 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
       newIgnoredUsers.delete(action.payload);
       return { ...state, ignoredUsers: newIgnoredUsers };
     
+    case 'SET_ROOMS':
+      return { ...state, rooms: action.payload };
+    
+    case 'SET_ROOMS_LOADING':
+      return { ...state, roomsLoading: action.payload };
+    
+    case 'ADD_ROOM':
+      return { ...state, rooms: [...state.rooms, action.payload] };
+    
+    case 'REMOVE_ROOM':
+      return { 
+        ...state, 
+        rooms: state.rooms.filter(room => room.id !== action.payload) 
+      };
+    
+    case 'UPDATE_ROOM_USER_COUNT':
+      return {
+        ...state,
+        rooms: state.rooms.map(room => 
+          room.id === action.payload.roomId 
+            ? { ...room, userCount: action.payload.count }
+            : room
+        )
+      };
+    
     default:
       return state;
   }
@@ -251,6 +285,14 @@ export function useChat() {
       console.log('🔗 متصل بالخادم');
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+      
+      // جلب الغرف عند الاتصال
+      fetchRooms();
+      
+      // الانضمام للغرفة العامة افتراضياً
+      setTimeout(() => {
+        socket.current?.emit('joinRoom', { roomId: 'general' });
+      }, 1000);
       
       // إرسال بيانات المصادقة
       socket.current?.emit('auth', {
@@ -375,7 +417,7 @@ export function useChat() {
                 const chatMessage = message.message as ChatMessage;
                 // استخدام roomId من الرسالة مع fallback للغرفة العامة
                 const messageRoomId = (chatMessage as any).roomId || 'general';
-                console.log(`✅ إضافة رسالة للغرفة ${messageRoomId} (الغرفة الحالية: ${state.currentRoom})`);
+                console.log(`✅ إضافة رسالة للغرفة ${messageRoomId} (الغرفة الحالية: ${state.currentRoomId})`);
                 
                 dispatch({ 
                   type: 'ADD_ROOM_MESSAGE', 
@@ -383,7 +425,7 @@ export function useChat() {
                 });
                 
                 // تشغيل صوت الإشعار للرسائل من الآخرين في الغرفة الحالية فقط
-                if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoom) {
+                if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoomId) {
                   playNotificationSound();
                 }
               } else {
@@ -483,6 +525,45 @@ export function useChat() {
               console.log(`👤 ${message.username} انضم للغرفة: ${message.roomId}`);
             }
             break;
+          
+          case 'roomCreated':
+            if (message.room) {
+              console.log('🏠 غرفة جديدة تم إنشاؤها:', message.room.name);
+              const newRoom = {
+                id: message.room.id,
+                name: message.room.name,
+                description: message.room.description || '',
+                isDefault: message.room.is_default || false,
+                createdBy: message.room.created_by,
+                createdAt: new Date(message.room.created_at),
+                isActive: message.room.is_active !== false,
+                userCount: message.room.user_count || 0,
+                icon: message.room.icon || '',
+                isBroadcast: message.room.is_broadcast || false,
+                hostId: message.room.host_id,
+                speakers: message.room.speakers ? (typeof message.room.speakers === 'string' ? JSON.parse(message.room.speakers) : message.room.speakers) : [],
+                micQueue: message.room.mic_queue ? (typeof message.room.mic_queue === 'string' ? JSON.parse(message.room.mic_queue) : message.room.mic_queue) : []
+              };
+              dispatch({ type: 'ADD_ROOM', payload: newRoom });
+            }
+            break;
+          
+          case 'roomDeleted':
+            if (message.roomId) {
+              console.log('🗑️ غرفة تم حذفها:', message.roomId);
+              dispatch({ type: 'REMOVE_ROOM', payload: message.roomId });
+            }
+            break;
+          
+          case 'roomUserCountUpdated':
+            if (message.roomId && typeof message.userCount === 'number') {
+              console.log(`👥 تحديث عدد المستخدمين في الغرفة ${message.roomId}: ${message.userCount}`);
+              dispatch({ 
+                type: 'UPDATE_ROOM_USER_COUNT', 
+                payload: { roomId: message.roomId, count: message.userCount } 
+              });
+            }
+            break;
 
           default:
             break;
@@ -522,12 +603,69 @@ export function useChat() {
     }
   }, [setupSocketListeners]);
 
-  // Join room function
-  const joinRoom = useCallback((roomId: string) => {
+  // Fetch rooms function
+  const fetchRooms = useCallback(async () => {
+    try {
+      dispatch({ type: 'SET_ROOMS_LOADING', payload: true });
+      const response = await apiRequest('/api/rooms', { method: 'GET' });
+      if (response.ok) {
+        const data = await response.json();
+        const formattedRooms = data.rooms.map((room: any) => ({
+          id: room.id,
+          name: room.name,
+          description: room.description || '',
+          isDefault: room.isDefault || room.is_default || false,
+          createdBy: room.createdBy || room.created_by,
+          createdAt: new Date(room.createdAt || room.created_at),
+          isActive: room.isActive || room.is_active || true,
+          userCount: room.userCount || room.user_count || 0,
+          icon: room.icon || '',
+          isBroadcast: room.isBroadcast || room.is_broadcast || false,
+          hostId: room.hostId || room.host_id,
+          speakers: room.speakers ? (typeof room.speakers === 'string' ? JSON.parse(room.speakers) : room.speakers) : [],
+          micQueue: room.micQueue ? (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue) : room.micQueue) : []
+        }));
+        dispatch({ type: 'SET_ROOMS', payload: formattedRooms });
+      }
+    } catch (error) {
+      console.error('خطأ في جلب الغرف:', error);
+      // استخدام غرف افتراضية في حالة الخطأ
+      dispatch({ type: 'SET_ROOMS', payload: [
+        { id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] },
+        { id: 'broadcast', name: 'غرفة البث المباشر', description: 'غرفة خاصة للبث المباشر مع نظام المايك', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: true, hostId: 1, speakers: [], micQueue: [] },
+        { id: 'music', name: 'أغاني وسهر', description: 'غرفة للموسيقى والترفيه', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] }
+      ] });
+    } finally {
+      dispatch({ type: 'SET_ROOMS_LOADING', payload: false });
+    }
+  }, []);
+
+  // Join room function - محسنة
+  const joinRoom = useCallback(async (roomId: string) => {
     console.log(`🔄 انضمام للغرفة: ${roomId}`);
     dispatch({ type: 'SET_ROOM', payload: roomId });
     socket.current?.emit('joinRoom', { roomId });
-  }, []);
+    
+    // جلب رسائل الغرفة إذا لم تكن محملة من قبل
+    if (!state.roomMessages[roomId]) {
+      try {
+        const response = await apiRequest(`/api/messages/room/${roomId}`, { method: 'GET' });
+        if (response.ok) {
+          const data = await response.json();
+          const messages = data.messages || [];
+          // إضافة الرسائل للغرفة
+          messages.forEach((message: ChatMessage) => {
+            dispatch({ 
+              type: 'ADD_ROOM_MESSAGE', 
+              payload: { roomId, message }
+            });
+          });
+        }
+      } catch (error) {
+        console.error('خطأ في جلب رسائل الغرفة:', error);
+      }
+    }
+  }, [state.roomMessages]);
 
   // Send message function - محسنة
   const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number) => {
@@ -591,6 +729,13 @@ export function useChat() {
     }
   }, []);
 
+  // جلب الغرف عند الاتصال الأولي
+  useEffect(() => {
+    if (state.isConnected && state.rooms.length === 0) {
+      fetchRooms();
+    }
+  }, [state.isConnected, state.rooms.length, fetchRooms]);
+
   return {
     // State
     currentUser: state.currentUser,
@@ -607,6 +752,8 @@ export function useChat() {
     currentRoomId: state.currentRoomId,
     roomMessages: state.roomMessages,
     showKickCountdown: state.showKickCountdown,
+    rooms: state.rooms,
+    roomsLoading: state.roomsLoading,
     
     // Notification states
     levelUpNotification,
@@ -621,6 +768,7 @@ export function useChat() {
     disconnect,
     sendMessage,
     joinRoom,
+    fetchRooms,
     ignoreUser,
     unignoreUser,
     sendTyping,
