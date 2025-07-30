@@ -741,6 +741,26 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
+  async getOnlineUsersInRoom(roomId: string): Promise<User[]> {
+    try {
+      // جلب المستخدمين المتصلين والموجودين في الغرفة المحددة
+      const result = await db.select()
+        .from(users)
+        .innerJoin(roomUsers, eq(users.id, roomUsers.userId))
+        .where(
+          and(
+            eq(roomUsers.roomId, roomId),
+            eq(users.isOnline, true)
+          )
+        );
+      
+      return result.map(row => row.users);
+    } catch (error) {
+      console.error('خطأ في جلب المستخدمين المتصلين في الغرفة:', error);
+      return [];
+    }
+  }
+
   async requestMic(userId: number, roomId: string): Promise<boolean> {
     try {
       // جلب معلومات الغرفة
