@@ -57,47 +57,31 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       console.log('🔄 جلب الغرف من الخادم...');
       setRoomsLoading(true);
       
-      const response = await fetch('/api/rooms', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const data = await apiRequest('/api/rooms');
+      console.log('📊 بيانات الغرف المُستلمة:', data);
       
-      console.log('📡 استجابة الخادم:', response.status, response.statusText);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📊 بيانات الغرف المُستلمة:', data);
+      if (data.rooms && Array.isArray(data.rooms)) {
+        const formattedRooms = data.rooms.map((room: any) => ({
+          id: room.id,
+          name: room.name,
+          description: room.description || '',
+          isDefault: room.isDefault || room.is_default || false,
+          createdBy: room.createdBy || room.created_by,
+          createdAt: new Date(room.createdAt || room.created_at),
+          isActive: room.isActive || room.is_active || true,
+          userCount: room.userCount || room.user_count || 0,
+          icon: room.icon || '',
+          isBroadcast: room.isBroadcast || room.is_broadcast || false,
+          hostId: room.hostId || room.host_id,
+          speakers: room.speakers ? (typeof room.speakers === 'string' ? JSON.parse(room.speakers) : room.speakers) : [],
+          micQueue: room.micQueue ? (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue) : room.micQueue) : []
+        }));
         
-        if (data.rooms && Array.isArray(data.rooms)) {
-          const formattedRooms = data.rooms.map((room: any) => ({
-            id: room.id,
-            name: room.name,
-            description: room.description || '',
-            isDefault: room.isDefault || room.is_default || false,
-            createdBy: room.createdBy || room.created_by,
-            createdAt: new Date(room.createdAt || room.created_at),
-            isActive: room.isActive || room.is_active || true,
-            userCount: room.userCount || room.user_count || 0,
-            icon: room.icon || '',
-            isBroadcast: room.isBroadcast || room.is_broadcast || false,
-            hostId: room.hostId || room.host_id,
-            speakers: room.speakers ? (typeof room.speakers === 'string' ? JSON.parse(room.speakers) : room.speakers) : [],
-            micQueue: room.micQueue ? (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue) : room.micQueue) : []
-          }));
-          
-          console.log('✅ تم تنسيق الغرف:', formattedRooms.length, 'غرفة');
-          setRooms(formattedRooms);
-        } else {
-          console.warn('⚠️ بيانات الغرف غير صحيحة:', data);
-          throw new Error('بيانات الغرف غير صحيحة');
-        }
+        console.log('✅ تم تنسيق الغرف:', formattedRooms.length, 'غرفة');
+        setRooms(formattedRooms);
       } else {
-        const errorText = await response.text();
-        console.error('❌ فشل في جلب الغرف:', response.status, errorText);
-        throw new Error(`فشل في جلب الغرف: ${response.status}`);
+        console.warn('⚠️ بيانات الغرف غير صحيحة:', data);
+        throw new Error('بيانات الغرف غير صحيحة');
       }
     } catch (error) {
       console.error('❌ خطأ في جلب الغرف:', error);
@@ -113,6 +97,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     }
   };
 
+  // جلب الغرف عند تحميل المكون
+  useEffect(() => {
+    fetchRooms();
+  }, []);
+
   // دوال إدارة الغرف
   const handleRoomChange = async (roomId: string) => {
     console.log(`🔄 تغيير الغرفة من ${currentRoomId} إلى ${roomId}`);
@@ -123,6 +112,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setTimeout(() => {
       console.log(`✅ تم تحديث الغرفة الحالية إلى: ${roomId}`);
     }, 100);
+  };
+
+  // دالة تحديث الغرف
+  const handleRefreshRooms = async () => {
+    console.log('🔄 تحديث الغرف...');
+    await fetchRooms();
   };
 
   const handleAddRoom = async (roomData: { name: string; description: string; image: File | null }) => {

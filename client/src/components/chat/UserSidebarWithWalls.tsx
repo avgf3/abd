@@ -597,7 +597,7 @@ export default function UserSidebarWithWalls({
       )}
 
       {/* Rooms View */}
-      {activeView === 'rooms' && onRoomChange && onAddRoom && onDeleteRoom && (
+      {activeView === 'rooms' && (
         <RoomsPanel
           currentUser={currentUser}
           rooms={rooms}
