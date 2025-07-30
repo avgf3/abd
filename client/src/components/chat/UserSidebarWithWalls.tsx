@@ -26,6 +26,7 @@ interface UserSidebarWithWallsProps {
   onRoomChange?: (roomId: string) => void;
   onAddRoom?: (roomData: { name: string; description: string; image: File | null }) => void;
   onDeleteRoom?: (roomId: string) => void;
+  onRefreshRooms?: () => void;
 }
 
 export default function UserSidebarWithWalls({ 
@@ -37,7 +38,8 @@ export default function UserSidebarWithWalls({
   currentRoomId = '',
   onRoomChange,
   onAddRoom,
-  onDeleteRoom
+  onDeleteRoom,
+  onRefreshRooms
 }: UserSidebarWithWallsProps) {
   const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms'>(propActiveView || 'users');
   const [searchTerm, setSearchTerm] = useState('');
@@ -603,6 +605,7 @@ export default function UserSidebarWithWalls({
           onRoomChange={onRoomChange}
           onAddRoom={onAddRoom}
           onDeleteRoom={onDeleteRoom}
+          onRefreshRooms={onRefreshRooms}
         />
       )}
     </aside>

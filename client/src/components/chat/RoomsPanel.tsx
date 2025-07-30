@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Users, Mic } from 'lucide-react';
+import { X, Plus, Users, Mic, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ interface RoomsPanelProps {
   onRoomChange: (roomId: string) => void;
   onAddRoom: (roomData: { name: string; description: string; image: File | null }) => void;
   onDeleteRoom: (roomId: string) => void;
+  onRefreshRooms?: () => void;
 }
 
 export default function RoomsPanel({
@@ -21,7 +22,8 @@ export default function RoomsPanel({
   currentRoomId,
   onRoomChange,
   onAddRoom,
-  onDeleteRoom
+  onDeleteRoom,
+  onRefreshRooms
 }: RoomsPanelProps) {
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
@@ -69,9 +71,22 @@ export default function RoomsPanel({
     <div className="h-full flex flex-col bg-background/95 backdrop-blur-sm">
       {/* Header */}
       <div className="p-4 border-b">
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-lg">الغرف</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-lg">الغرف</h3>
+          </div>
+          {onRefreshRooms && (
+            <Button
+              onClick={onRefreshRooms}
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-primary"
+              title="تحديث الغرف"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
 

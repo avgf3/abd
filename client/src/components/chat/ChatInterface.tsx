@@ -54,30 +54,55 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   // جلب الغرف من الخادم
   const fetchRooms = async () => {
     try {
+      console.log('🔄 جلب الغرف من الخادم...');
       setRoomsLoading(true);
-      const response = await apiRequest('/api/rooms', { method: 'GET' });
+      
+      const response = await fetch('/api/rooms', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('📡 استجابة الخادم:', response.status, response.statusText);
+      
       if (response.ok) {
         const data = await response.json();
-        const formattedRooms = data.rooms.map((room: any) => ({
-          id: room.id,
-          name: room.name,
-          description: room.description || '',
-          isDefault: room.isDefault || room.is_default || false,
-          createdBy: room.createdBy || room.created_by,
-          createdAt: new Date(room.createdAt || room.created_at),
-          isActive: room.isActive || room.is_active || true,
-          userCount: room.userCount || room.user_count || 0,
-          icon: room.icon || '',
-          isBroadcast: room.isBroadcast || room.is_broadcast || false,
-          hostId: room.hostId || room.host_id,
-          speakers: room.speakers ? (typeof room.speakers === 'string' ? JSON.parse(room.speakers) : room.speakers) : [],
-          micQueue: room.micQueue ? (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue) : room.micQueue) : []
-        }));
-        setRooms(formattedRooms);
+        console.log('📊 بيانات الغرف المُستلمة:', data);
+        
+        if (data.rooms && Array.isArray(data.rooms)) {
+          const formattedRooms = data.rooms.map((room: any) => ({
+            id: room.id,
+            name: room.name,
+            description: room.description || '',
+            isDefault: room.isDefault || room.is_default || false,
+            createdBy: room.createdBy || room.created_by,
+            createdAt: new Date(room.createdAt || room.created_at),
+            isActive: room.isActive || room.is_active || true,
+            userCount: room.userCount || room.user_count || 0,
+            icon: room.icon || '',
+            isBroadcast: room.isBroadcast || room.is_broadcast || false,
+            hostId: room.hostId || room.host_id,
+            speakers: room.speakers ? (typeof room.speakers === 'string' ? JSON.parse(room.speakers) : room.speakers) : [],
+            micQueue: room.micQueue ? (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue) : room.micQueue) : []
+          }));
+          
+          console.log('✅ تم تنسيق الغرف:', formattedRooms.length, 'غرفة');
+          setRooms(formattedRooms);
+        } else {
+          console.warn('⚠️ بيانات الغرف غير صحيحة:', data);
+          throw new Error('بيانات الغرف غير صحيحة');
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('❌ فشل في جلب الغرف:', response.status, errorText);
+        throw new Error(`فشل في جلب الغرف: ${response.status}`);
       }
     } catch (error) {
-      console.error('خطأ في جلب الغرف:', error);
+      console.error('❌ خطأ في جلب الغرف:', error);
       // استخدام غرف افتراضية في حالة الخطأ
+      console.log('🔄 استخدام الغرف الافتراضية...');
       setRooms([
         { id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] },
         { id: 'broadcast', name: 'غرفة البث المباشر', description: 'غرفة خاصة للبث المباشر مع نظام المايك', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: true, hostId: 1, speakers: [], micQueue: [] },
@@ -200,8 +225,25 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   // جلب الغرف عند تحميل المكون
   useEffect(() => {
+    console.log('🚀 تحميل مكون ChatInterface - جلب الغرف...');
     fetchRooms();
+    
+    // إعادة جلب الغرف كل 30 ثانية للتأكد من التحديث
+    const interval = setInterval(() => {
+      console.log('🔄 تحديث دوري للغرف...');
+      fetchRooms();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
+
+  // إضافة useEffect لمراقبة تغييرات الغرف
+  useEffect(() => {
+    console.log('📊 تم تحديث قائمة الغرف:', rooms.length, 'غرفة');
+    rooms.forEach((room, index) => {
+      console.log(`  ${index + 1}. ${room.name} (${room.id}) - مستخدمين: ${room.userCount}`);
+    });
+  }, [rooms]);
 
   // تفعيل التنبيه عند وصول رسالة جديدة
   useEffect(() => {
@@ -512,6 +554,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onRoomChange={handleRoomChange}
               onAddRoom={handleAddRoom}
               onDeleteRoom={handleDeleteRoom}
+              onRefreshRooms={fetchRooms}
             />
           </div>
         )}
