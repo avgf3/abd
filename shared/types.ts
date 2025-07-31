@@ -1,137 +1,435 @@
-export interface ChatUser {
+// أنواع موحدة للمشروع بأكمله
+export type UserRole = 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
+export type UserStatus = 'online' | 'offline' | 'away' | 'busy';
+export type Gender = 'ذكر' | 'أنثى' | '';
+export type MessageType = 'text' | 'image' | 'file' | 'sticker' | 'voice';
+export type MessageStatus = 'sent' | 'delivered' | 'read' | 'failed';
+export type NotificationType = 
+  | 'friend_request' 
+  | 'friend_accepted' 
+  | 'message' 
+  | 'mention' 
+  | 'system' 
+  | 'achievement' 
+  | 'level_up'
+  | 'warning'
+  | 'ban'
+  | 'unban';
+export type WebSocketMessageType = 
+  | 'auth'
+  | 'message'
+  | 'privateMessage'
+  | 'userJoined'
+  | 'userLeft'
+  | 'userUpdated'
+  | 'typing'
+  | 'stopTyping'
+  | 'notification'
+  | 'roomJoined'
+  | 'roomLeft'
+  | 'error'
+  | 'success'
+  | 'kicked'
+  | 'blocked'
+  | 'friendRequest'
+  | 'friendRequestAccepted'
+  | 'promotion'
+  | 'pointsReceived'
+  | 'pointsTransfer'
+  | 'pointsAdded'
+  | 'levelUp'
+  | 'micRequest'
+  | 'micApproved'
+  | 'micRejected'
+  | 'micRemoved'
+  | 'speakerAdded'
+  | 'speakerRemoved'
+  | 'broadcastUpdate';
+
+// أنواع المستخدم المحسّنة
+export interface UserBase {
   id: number;
   username: string;
-  userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
-  role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
+  email?: string;
+  userType: UserRole;
+  role: UserRole;
   profileImage?: string;
   profileBanner?: string;
   profileBackgroundColor: string;
   status?: string;
-  gender?: string;
+  gender?: Gender;
   age?: number;
   country?: string;
   relation?: string;
   bio?: string;
-  isOnline: boolean;
-  isHidden: boolean;
-  lastSeen: Date | null;
-  joinDate: Date;
   createdAt: Date;
+  updatedAt?: Date;
+}
+
+export interface UserPresence {
+  isOnline: boolean;
+  lastSeen: Date | null;
+  isHidden: boolean;
+}
+
+export interface UserModeration {
   isMuted: boolean;
   muteExpiry: Date | null;
   isBanned: boolean;
   banExpiry: Date | null;
   isBlocked: boolean;
   isKicked?: boolean;
-  ipAddress?: string;
-  deviceId?: string;
-  ignoredUsers: number[];
+}
+
+export interface UserGameification {
+  points: number;
+  level: number;
+  totalPoints: number;
+  levelProgress: number;
+  achievements?: Achievement[];
+}
+
+export interface UserPreferences {
   usernameColor: string;
   userTheme: string;
+  profileEffect: string;
+  notifications: NotificationSettings;
+  privacy: PrivacySettings;
 }
 
-export interface ChatMessage {
+export interface UserSecurity {
+  ipAddress?: string;
+  deviceId?: string;
+  lastLoginIp?: string;
+  lastLoginDate?: Date;
+  loginHistory?: LoginAttempt[];
+}
+
+// مستخدم كامل
+export interface FullUser extends UserBase, UserPresence, UserModeration, UserGameification, UserPreferences, UserSecurity {
+  ignoredUsers: number[];
+  friends?: Friend[];
+  blockedUsers?: number[];
+}
+
+// مستخدم مبسط للعرض
+export interface DisplayUser extends UserBase, UserPresence {
+  points: number;
+  level: number;
+  usernameColor: string;
+}
+
+// أنواع الرسائل
+export interface MessageBase {
   id: number;
   senderId: number;
-  receiverId?: number;
   content: string;
-  messageType: 'text' | 'image';
-  isPrivate: boolean;
+  messageType: MessageType;
   timestamp: Date;
-  sender?: ChatUser;
+  editedAt?: Date;
+  deletedAt?: Date;
 }
 
-export interface PrivateConversation {
-  [userId: number]: ChatMessage[];
+export interface PublicMessage extends MessageBase {
+  isPrivate: false;
+  roomId?: string;
+  sender: DisplayUser;
+  reactions?: MessageReaction[];
+  mentions?: number[];
 }
 
-export interface Notification {
-  id: number;
-  userId: number;
-  type: 'friend_request' | 'friend_accepted' | 'message' | 'system' | 'moderation';
-  title: string;
-  message: string;
+export interface PrivateMessage extends MessageBase {
+  isPrivate: true;
+  receiverId: number;
+  sender: DisplayUser;
+  receiver: DisplayUser;
+  status: MessageStatus;
   isRead: boolean;
-  timestamp: Date;
-  data?: any;
+  readAt?: Date;
 }
 
-export interface WebSocketMessage {
-  type: 'auth' | 'publicMessage' | 'privateMessage' | 'typing' | 'userJoined' | 
-        'userLeft' | 'newMessage' | 'onlineUsers' | 'userUpdated' | 'error' | 
-        'warning' | 'userVisibilityChanged' | 'usernameColorChanged' | 
-        'theme_update' | 'moderationAction' | 'notification' | 'systemMessage' | 
-        'kicked' | 'blocked' | 'friendRequest' | 'friendRequestAccepted' | 
-        'friendRequestDeclined' | 'promotion' | 'demotion' | 'ban' | 'unban' | 
-        'mute' | 'unmute';
-  userId?: number;
-  username?: string;
-  content?: string;
-  messageType?: 'text' | 'image';
-  receiverId?: number;
-  data?: any;
-  timestamp?: Date;
-  user?: ChatUser;
-  users?: ChatUser[];
-  message?: ChatMessage;
-  notification?: Notification;
-  reason?: string;
-  duration?: number;
-  targetUserId?: number;
-  targetUsername?: string;
-  moderatorId?: number;
-  moderatorUsername?: string;
-  newRole?: string;
-  oldRole?: string;
-  isPrivate?: boolean;
+export type ChatMessage = PublicMessage | PrivateMessage;
+
+// تفاعلات الرسائل
+export interface MessageReaction {
+  id: number;
+  messageId: number;
+  userId: number;
+  emoji: string;
+  timestamp: Date;
 }
+
+// أنواع الصداقة
+export type FriendRequestStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled';
 
 export interface FriendRequest {
   id: number;
   senderId: number;
   receiverId: number;
-  status: 'pending' | 'accepted' | 'declined';
+  status: FriendRequestStatus;
+  message?: string;
+  createdAt: Date;
+  respondedAt?: Date;
+  sender: DisplayUser;
+  receiver: DisplayUser;
+}
+
+export interface Friend {
+  id: number;
+  userId: number;
+  friendId: number;
+  friendshipDate: Date;
+  nickname?: string;
+  isFavorite: boolean;
+  user: DisplayUser;
+}
+
+// أنواع الإشعارات
+export interface Notification {
+  id: number;
+  userId: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data?: Record<string, any>;
+  isRead: boolean;
+  createdAt: Date;
+  readAt?: Date;
+  expiresAt?: Date;
+}
+
+export interface NotificationSettings {
+  friendRequests: boolean;
+  messages: boolean;
+  mentions: boolean;
+  system: boolean;
+  achievements: boolean;
+  sound: boolean;
+  desktop: boolean;
+  email: boolean;
+}
+
+// إعدادات الخصوصية
+export interface PrivacySettings {
+  showOnlineStatus: boolean;
+  allowDirectMessages: 'all' | 'friends' | 'none';
+  showProfileToGuests: boolean;
+  showLastSeen: boolean;
+  allowFriendRequests: boolean;
+}
+
+// أنواع الإنجازات
+export interface Achievement {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  points: number;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  unlockedAt?: Date;
+  progress?: number;
+  maxProgress?: number;
+}
+
+// محاولات تسجيل الدخول
+export interface LoginAttempt {
   timestamp: Date;
-  sender?: ChatUser;
-  receiver?: ChatUser;
+  success: boolean;
+  ip: string;
+  userAgent?: string;
+  location?: string;
 }
 
-export interface ChatState {
-  currentUser: ChatUser | null;
-  onlineUsers: ChatUser[];
-  publicMessages: ChatMessage[];
-  privateConversations: PrivateConversation;
-  notifications: Notification[];
-  isConnected: boolean;
-  isLoading: boolean;
-  typingUsers: Set<string>;
-  connectionError: string | null;
+// أنواع الغرف
+export type RoomType = 'public' | 'private' | 'broadcast';
+export type RoomPermission = 'view' | 'speak' | 'moderate' | 'admin';
+
+export interface Room {
+  id: string;
+  name: string;
+  description?: string;
+  type: RoomType;
+  ownerId: number;
+  maxUsers?: number;
+  currentUsers: number;
+  isPasswordProtected: boolean;
+  createdAt: Date;
+  updatedAt?: Date;
+  settings: RoomSettings;
 }
 
+export interface RoomSettings {
+  allowGuests: boolean;
+  requireApproval: boolean;
+  slowMode: number; // seconds
+  maxMessageLength: number;
+  allowImages: boolean;
+  allowFiles: boolean;
+}
+
+export interface RoomMember {
+  userId: number;
+  roomId: string;
+  permission: RoomPermission;
+  joinedAt: Date;
+  isMuted: boolean;
+  user: DisplayUser;
+}
+
+// أنواع الملفات
+export interface FileUpload {
+  id: string;
+  originalName: string;
+  filename: string;
+  mimetype: string;
+  size: number;
+  path: string;
+  url: string;
+  uploadedBy: number;
+  uploadedAt: Date;
+}
+
+// أنواع التقارير
+export type ReportReason = 
+  | 'spam'
+  | 'harassment'
+  | 'inappropriate_content'
+  | 'fake_profile'
+  | 'other';
+
+export interface Report {
+  id: number;
+  reporterId: number;
+  reportedUserId?: number;
+  reportedMessageId?: number;
+  reason: ReportReason;
+  description: string;
+  status: 'pending' | 'reviewing' | 'resolved' | 'dismissed';
+  createdAt: Date;
+  resolvedAt?: Date;
+  resolvedBy?: number;
+  reporter: DisplayUser;
+  reportedUser?: DisplayUser;
+}
+
+// إحصائيات النظام
+export interface SystemStats {
+  totalUsers: number;
+  onlineUsers: number;
+  totalMessages: number;
+  activeRooms: number;
+  systemLoad: number;
+  uptime: number;
+  lastUpdate: Date;
+}
+
+// أنواع WebSocket
+export interface WebSocketMessage<T = any> {
+  type: WebSocketMessageType;
+  data: T;
+  timestamp: Date;
+  userId?: number;
+}
+
+// أنواع FormData
+export interface LoginFormData {
+  username: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
+export interface RegisterFormData {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  acceptTerms: boolean;
+}
+
+export interface ProfileUpdateData {
+  username?: string;
+  bio?: string;
+  status?: string;
+  gender?: Gender;
+  age?: number;
+  country?: string;
+  relation?: string;
+}
+
+export interface PasswordChangeData {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+// أنواع التصفية والبحث
+export interface SearchParams {
+  query: string;
+  type?: 'users' | 'messages' | 'rooms';
+  filters?: Record<string, any>;
+  pagination?: PaginationParams;
+}
+
+export interface SearchResult<T> {
+  results: T[];
+  total: number;
+  query: string;
+  filters: Record<string, any>;
+  pagination: PaginationParams;
+}
+
+// أنواع pagination
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  offset?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
+// أنواع الأذونات
+export interface Permission {
+  name: string;
+  description: string;
+  category: string;
+  requiredRole: UserRole;
+}
+
+export interface RolePermissions {
+  role: UserRole;
+  permissions: Permission[];
+  inheritsFrom?: UserRole;
+}
+
+// API Response interface
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
-  error?: string;
   message?: string;
+  error?: string;
+  errors?: string[];
+  timestamp?: string;
+  code?: string;
 }
 
-export interface UserRegistration {
-  username: string;
-  password: string;
-  email?: string;
-  gender?: string;
-  age?: number;
-  country?: string;
-}
-
-export interface UserLogin {
-  username: string;
-  password: string;
-}
-
-export interface MessageInput {
-  content: string;
-  messageType: 'text' | 'image';
-  receiverId?: number;
-  isPrivate: boolean;
+// أنواع أخطاء API
+export interface ApiError {
+  error: boolean;
+  message: string;
+  code?: string;
+  details?: any;
+  timestamp: string;
+  status?: number;
 }

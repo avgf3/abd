@@ -1,128 +1,81 @@
-export interface ChatUser {
-  id: number;
-  username: string;
-  userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
-  role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
-  profileImage?: string;
-  profileBanner?: string;
-  profileBackgroundColor: string;
-  status?: string;
-  gender?: string;
-  age?: number;
-  country?: string;
-  relation?: string;
-  bio?: string;
-  isOnline: boolean;
-  isHidden: boolean;
-  lastSeen: Date | null;
-  joinDate: Date;
-  createdAt: Date;
-  isMuted: boolean;
-  muteExpiry: Date | null;
-  isBanned: boolean;
-  banExpiry: Date | null;
-  isBlocked: boolean;
-  isKicked?: boolean;
-  ipAddress?: string;
-  deviceId?: string;
-  ignoredUsers: number[];
-  usernameColor: string;
-  userTheme: string;
-  profileEffect: string;
-  points: number;
-  level: number;
-  totalPoints: number;
-  levelProgress: number;
+// استيراد الأنواع الموحدة من shared
+import type {
+  UserRole,
+  UserStatus,
+  Gender,
+  MessageType,
+  MessageStatus,
+  NotificationType,
+  WebSocketMessageType,
+  FriendRequestStatus,
+  RoomType,
+  RoomPermission,
+  ReportReason,
+  UserBase,
+  UserPresence,
+  UserModeration,
+  UserGameification,
+  UserPreferences,
+  UserSecurity,
+  FullUser,
+  DisplayUser,
+  MessageBase,
+  PublicMessage,
+  PrivateMessage,
+  ChatMessage,
+  MessageReaction,
+  FriendRequest,
+  Friend,
+  Notification,
+  NotificationSettings,
+  PrivacySettings,
+  Achievement,
+  LoginAttempt,
+  Room,
+  RoomSettings,
+  RoomMember,
+  FileUpload,
+  Report,
+  SystemStats,
+  WebSocketMessage,
+  LoginFormData,
+  RegisterFormData,
+  ProfileUpdateData,
+  PasswordChangeData,
+  SearchParams,
+  SearchResult,
+  PaginationParams,
+  PaginatedResponse,
+  Permission,
+  RolePermissions,
+  ApiResponse,
+  ApiError
+} from '../../shared/types';
+
+// إعادة تصدير الأنواع للتوافق مع الكود الموجود
+export type ChatUser = FullUser;
+export type ChatMessage = ChatMessage;
+export type PrivateConversation = Record<number, ChatMessage[]>;
+
+// أنواع إضافية للواجهة
+export interface ChatState {
+  currentUser: ChatUser | null;
+  onlineUsers: ChatUser[];
+  publicMessages: ChatMessage[];
+  privateConversations: PrivateConversation;
+  ignoredUsers: Set<number>;
+  isConnected: boolean;
+  typingUsers: Set<string>;
+  connectionError: string | null;
+  newMessageSender: ChatUser | null;
+  isLoading: boolean;
+  notifications: Notification[];
+  currentRoomId: string;
+  roomMessages: Record<string, ChatMessage[]>;
+  showKickCountdown: boolean;
 }
 
-export interface ChatMessage {
-  id: number;
-  senderId: number;
-  receiverId?: number;
-  content: string;
-  messageType: 'text' | 'image';
-  isPrivate: boolean;
-  timestamp?: Date;
-  sender?: ChatUser;
-}
-
-export interface PrivateConversation {
-  [userId: number]: ChatMessage[];
-}
-
-export interface WebSocketMessage {
-  type: 'auth' | 'publicMessage' | 'privateMessage' | 'typing' | 'userJoined' | 'userLeft' | 'newMessage' | 'onlineUsers' | 'userUpdated' | 'error' | 'warning' |
-        'userVisibilityChanged' | 'usernameColorChanged' | 'profileEffectChanged' | 'theme_update' | 'moderationAction' | 'notification' | 'systemMessage' | 'kicked' | 'blocked' | 
-        'friendRequest' | 'friendRequestAccepted' | 'promotion' | 'pointsReceived' | 'pointsTransfer' | 'pointsAdded' | 'levelUp' |
-        // أنواع جديدة للـ Broadcast Room
-        'micRequest' | 'micApproved' | 'micRejected' | 'micRemoved' | 'speakerAdded' | 'speakerRemoved' | 'broadcastUpdate';
-  userId?: number;
-  username?: string;
-  content?: string;
-  messageType?: string;
-  receiverId?: number;
-  isTyping?: boolean;
-  user?: ChatUser;
-  users?: ChatUser[];
-  message?: ChatMessage | string; // يمكن أن يكون string أيضاً
-  action?: string;
-  
-  // خصائص إضافية للوظائف المختلفة
-  isHidden?: boolean; // لرؤية المستخدم
-  color?: string; // لتغيير لون اسم المستخدم
-  usernameColor?: string; // لون اسم المستخدم الجديد
-  userTheme?: string; // لموضوع المستخدم
-  profileEffect?: string; // لتأثير البروفايل
-  targetUserId?: number; // للإجراءات المستهدفة
-  duration?: number; // مدة الإجراء (كيك، حظر، إلخ)
-  reason?: string; // سبب الإجراء
-  moderatorName?: string; // اسم المراقب
-  notificationType?: string; // نوع الإشعار
-  senderId?: number; // معرف المرسل
-  senderUsername?: string; // اسم المرسل
-  acceptedBy?: string; // من قبل الطلب
-  friendId?: number; // معرف الصديق
-  newRole?: string; // الدور الجديد للترقية
-  
-  // خصائص النقاط
-  points?: number; // عدد النقاط
-  senderName?: string; // اسم مرسل النقاط
-  receiverName?: string; // اسم مستقبل النقاط
-  oldLevel?: number; // المستوى القديم
-  newLevel?: number; // المستوى الجديد
-  levelInfo?: any; // معلومات المستوى
-  
-  // خصائص Broadcast Room الجديدة
-  roomId?: string; // معرف الغرفة
-  hostId?: number; // معرف المضيف
-  speakers?: number[]; // قائمة المتحدثين
-  micQueue?: number[]; // قائمة انتظار طلبات المايك
-  requestUserId?: number; // معرف المستخدم الذي طلب المايك
-  approvedBy?: number; // معرف من وافق على الطلب
-}
-
-export interface UserProfile {
-  name: string;
-  status: string;
-  gender: string;
-  age: string;
-  country: string;
-  relation: string;
-  bio?: string;
-  profileImage?: string;
-  profileBanner?: string;
-}
-
-export interface Notification {
-  id: number;
-  type: 'system' | 'friend' | 'moderation' | 'message';
-  username: string;
-  content: string;
-  timestamp: Date;
-  isRead?: boolean;
-}
-
-// أنواع بيانات الحوائط
+// أنواع بيانات الحوائط للتوافق مع الكود الموجود
 export interface WallPost {
   id: number;
   userId: number;
@@ -155,7 +108,7 @@ export interface CreateWallPostData {
   type: 'friends' | 'public';
 }
 
-// أنواع بيانات الروم الجديدة
+// أنواع بيانات الروم للتوافق مع الكود الموجود
 export interface ChatRoom {
   id: string;
   name: string;
@@ -190,10 +143,55 @@ export interface RoomWebSocketMessage extends WebSocketMessage {
   rooms?: ChatRoom[];
 }
 
-// API Response interface
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-}
+// تصدير جميع الأنواع
+export type {
+  UserRole,
+  UserStatus,
+  Gender,
+  MessageType,
+  MessageStatus,
+  NotificationType,
+  WebSocketMessageType,
+  FriendRequestStatus,
+  RoomType,
+  RoomPermission,
+  ReportReason,
+  UserBase,
+  UserPresence,
+  UserModeration,
+  UserGameification,
+  UserPreferences,
+  UserSecurity,
+  FullUser,
+  DisplayUser,
+  MessageBase,
+  PublicMessage,
+  PrivateMessage,
+  MessageReaction,
+  FriendRequest,
+  Friend,
+  Notification,
+  NotificationSettings,
+  PrivacySettings,
+  Achievement,
+  LoginAttempt,
+  Room,
+  RoomSettings,
+  RoomMember,
+  FileUpload,
+  Report,
+  SystemStats,
+  WebSocketMessage,
+  LoginFormData,
+  RegisterFormData,
+  ProfileUpdateData,
+  PasswordChangeData,
+  SearchParams,
+  SearchResult,
+  PaginationParams,
+  PaginatedResponse,
+  Permission,
+  RolePermissions,
+  ApiResponse,
+  ApiError
+};

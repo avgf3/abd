@@ -27,7 +27,11 @@
     "start-fixed": "NODE_ENV=production node server-fixed.js",
     "dev-fixed": "NODE_ENV=development tsx server/index-fixed.ts",
     "clean-logs": "node tools/remove-console-logs.js",
-    "build-production": "npm run clean-logs && npm run build"
+    "build-production": "npm run clean-logs && npm run build",
+    "audit": "npm audit",
+    "audit:fix": "npm audit fix",
+    "update-deps": "npm update",
+    "security-check": "npm audit --audit-level=moderate"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -127,7 +131,7 @@
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
     "cross-env": "^7.0.3",
-    "drizzle-kit": "^0.31.4",
+    "drizzle-kit": "^0.18.1",
     "esbuild": "^0.25.8",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
@@ -138,5 +142,12 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "overrides": {
+    "esbuild": "^0.25.8"
   }
 }

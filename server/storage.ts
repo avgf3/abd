@@ -1,980 +1,837 @@
-import {
-  users,
-  messages,
-  friends,
-  notifications,
-  blockedDevices,
-  pointsHistory,
-  levelSettings,
-  rooms,
-  roomUsers,
-  wallPosts,
-  wallReactions,
-  type User,
-  type InsertUser,
-  type Message,
-  type InsertMessage,
-  type Friend,
-  type InsertFriend,
-  type Notification,
-  type InsertNotification,
-  type WallPost,
-  type InsertWallPost,
-  type WallReaction,
-  type InsertWallReaction,
-} from "../shared/schema";
-import { db } from "./database-adapter";
-import { eq, desc, asc, and, sql, or, inArray } from "drizzle-orm";
+import { db } from './database-adapter';
+import { users, messages, friends, notifications, blockedDevices, pointsHistory, levelSettings, rooms, roomUsers, wallPosts, wallReactions } from '../shared/schema';
+import { eq, desc, and, or, sql } from 'drizzle-orm';
+import type { InsertUser, InsertMessage, InsertFriend, InsertNotification, InsertBlockedDevice, InsertPointsHistory, InsertLevelSettings, InsertRoom, InsertRoomUser, InsertWallPost, InsertWallReaction } from '../shared/schema';
+import type { ChatUser, ChatMessage, FriendRequest, Notification, WallPost, WallReaction, ChatRoom } from '../client/src/types/chat';
 
-// Global in-memory storage for wall posts
-declare global {
-  var wallPosts: any[] | undefined;
+// Helper function to check if database is connected
+function checkDatabase(): void {
+  if (!db) {
+    throw new Error('Database is not connected');
+  }
 }
 
-export interface IStorage {
-  // User operations
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
-  setUserOnlineStatus(id: number, isOnline: boolean): Promise<void>;
-  setUserHiddenStatus(id: number, isHidden: boolean): Promise<void>;
-  addIgnoredUser(userId: number, ignoredUserId: number): Promise<void>;
-  removeIgnoredUser(userId: number, ignoredUserId: number): Promise<void>;
-  getIgnoredUsers(userId: number): Promise<number[]>;
-  getOnlineUsers(): Promise<User[]>;
-  getAllUsers(): Promise<User[]>;
-
-  // Message operations
-  createMessage(message: InsertMessage): Promise<Message>;
-  getPublicMessages(limit?: number): Promise<Message[]>;
-  getPrivateMessages(userId1: number, userId2: number, limit?: number): Promise<Message[]>;
-  getRoomMessages(roomId: string, limit?: number): Promise<Message[]>;
-
-  // Friend operations
-  addFriend(userId: number, friendId: number): Promise<Friend>;
-  getFriends(userId: number): Promise<User[]>;
-  getUserFriends(userId: number): Promise<User[]>;
-  updateFriendStatus(userId: number, friendId: number, status: string): Promise<void>;
-  getBlockedUsers(userId: number): Promise<User[]>;
-  removeFriend(userId: number, friendId: number): Promise<boolean>;
-  getFriendship(userId1: number, userId2: number): Promise<Friend | undefined>;
-  
-  // Friend request operations
-  createFriendRequest(senderId: number, receiverId: number): Promise<any>;
-  getFriendRequest(senderId: number, receiverId: number): Promise<any>;
-  getFriendRequestById(requestId: number): Promise<any>;
-  getIncomingFriendRequests(userId: number): Promise<any[]>;
-  getOutgoingFriendRequests(userId: number): Promise<any[]>;
-  acceptFriendRequest(requestId: number): Promise<boolean>;
-  declineFriendRequest(requestId: number): Promise<boolean>;
-  ignoreFriendRequest(requestId: number): Promise<boolean>;
-  deleteFriendRequest(requestId: number): Promise<boolean>;
-  
-  // Wall post operations
-  createWallPost(postData: any): Promise<any>;
-  getWallPosts(type: string): Promise<any[]>;
-  getWallPostsByUsers(userIds: number[]): Promise<any[]>;
-  getWallPost(postId: number): Promise<any>;
-  deleteWallPost(postId: number): Promise<void>;
-  addWallPostReaction(reactionData: any): Promise<any>;
-  getWallPostWithReactions(postId: number): Promise<any | null>;
-  
-  // Room operations
-  getRoom(roomId: string): Promise<any>;
-  getBroadcastRoomInfo(roomId: string): Promise<any>;
-  getAllRooms(): Promise<any[]>;
-  createRoom(roomData: any): Promise<any>;
-  deleteRoom(roomId: string): Promise<void>;
-  joinRoom(userId: number, roomId: string): Promise<void>;
-  leaveRoom(userId: number, roomId: string): Promise<void>;
-  getUserRooms(userId: number): Promise<string[]>;
-  getRoomUsers(roomId: string): Promise<number[]>;
-  
-  // Broadcast Room operations
-  requestMic(userId: number, roomId: string): Promise<boolean>;
-  approveMicRequest(roomId: string, userId: number, approvedBy: number): Promise<boolean>;
-  rejectMicRequest(roomId: string, userId: number, rejectedBy: number): Promise<boolean>;
-  removeSpeaker(roomId: string, userId: number, removedBy: number): Promise<boolean>;
-  
-  // Notification operations
-  createNotification(notification: InsertNotification): Promise<Notification>;
-  getUserNotifications(userId: number, limit?: number): Promise<Notification[]>;
-  markNotificationAsRead(notificationId: number): Promise<boolean>;
-  markAllNotificationsAsRead(userId: number): Promise<boolean>;
-  deleteNotification(notificationId: number): Promise<boolean>;
-  getUnreadNotificationCount(userId: number): Promise<number>;
-  
-  // Blocked devices operations
-  createBlockedDevice(blockData: {
-    ipAddress: string;
-    deviceId: string;
-    userId: number;
-    reason: string;
-    blockedAt: Date;
-    blockedBy: number;
-  }): Promise<boolean>;
-  isDeviceBlocked(ipAddress: string, deviceId: string): Promise<boolean>;
-  getBlockedDevices(): Promise<Array<{ipAddress: string, deviceId: string}>>;
+// User operations
+export async function getUserById(id: number): Promise<ChatUser | null> {
+  try {
+    checkDatabase();
+    const result = await db!.select().from(users).where(eq(users.id, id));
+    return result[0] as ChatUser || null;
+  } catch (error) {
+    console.error('Error getting user by ID:', error);
+    return null;
+  }
 }
 
-export class PostgreSQLStorage implements IStorage {
-  
-  // User operations
-  async getUser(id: number): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id));
-    return result[0];
+export async function getUserByUsername(username: string): Promise<ChatUser | null> {
+  try {
+    checkDatabase();
+    const result = await db!.select().from(users).where(eq(users.username, username));
+    return result[0] as ChatUser || null;
+  } catch (error) {
+    console.error('Error getting user by username:', error);
+    return null;
   }
+}
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, username));
-    return result[0];
+export async function createUser(user: InsertUser): Promise<ChatUser | null> {
+  try {
+    checkDatabase();
+    const result = await db!.insert(users).values(user).returning();
+    return result[0] as ChatUser || null;
+  } catch (error) {
+    console.error('Error creating user:', error);
+    return null;
   }
+}
 
-  async createUser(user: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(user).returning();
-    return result[0];
+export async function updateUser(id: number, updates: Partial<InsertUser>): Promise<ChatUser | null> {
+  try {
+    checkDatabase();
+    const result = await db!.update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    return result[0] as ChatUser || null;
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return null;
   }
+}
 
-  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
-    try {
-      console.log(`🔄 تحديث المستخدم ${id}:`, updates);
-      
-      const result = await db.update(users)
-        .set(updates)
-        .where(eq(users.id, id))
-        .returning();
-      
-      console.log(`✅ تم تحديث المستخدم ${id} بنجاح:`, result[0]);
-      return result[0];
-    } catch (error) {
-      console.error(`❌ خطأ في تحديث المستخدم ${id}:`, error);
-      throw error;
-    }
-  }
-
-  async setUserOnlineStatus(id: number, isOnline: boolean): Promise<void> {
-    await db.update(users)
+export async function updateUserOnlineStatus(id: number, isOnline: boolean): Promise<void> {
+  try {
+    checkDatabase();
+    await db!.update(users)
       .set({ 
-        isOnline,
-        lastSeen: new Date()
+        isOnline, 
+        lastSeen: isOnline ? new Date() : new Date() 
       })
       .where(eq(users.id, id));
+  } catch (error) {
+    console.error('Error updating user online status:', error);
   }
+}
 
-  async setUserHiddenStatus(id: number, isHidden: boolean): Promise<void> {
-    await db.update(users)
-      .set({ isHidden })
+export async function updateUserLastSeen(id: number): Promise<void> {
+  try {
+    checkDatabase();
+    await db!.update(users)
+      .set({ lastSeen: new Date() })
       .where(eq(users.id, id));
+  } catch (error) {
+    console.error('Error updating user last seen:', error);
   }
+}
 
-  async addIgnoredUser(userId: number, ignoredUserId: number): Promise<void> {
-    const user = await this.getUser(userId);
-    if (user) {
-      const ignoredUsers = JSON.parse(user.ignoredUsers || '[]');
-      if (!ignoredUsers.includes(ignoredUserId)) {
-        ignoredUsers.push(ignoredUserId);
-        await this.updateUser(userId, { ignoredUsers: JSON.stringify(ignoredUsers) });
-      }
-    }
+export async function getOnlineUsers(): Promise<ChatUser[]> {
+  try {
+    checkDatabase();
+    return await db!.select().from(users).where(eq(users.isOnline, true));
+  } catch (error) {
+    console.error('Error getting online users:', error);
+    return [];
   }
+}
 
-  async removeIgnoredUser(userId: number, ignoredUserId: number): Promise<void> {
-    const user = await this.getUser(userId);
-    if (user) {
-      const ignoredUsers = JSON.parse(user.ignoredUsers || '[]');
-      const filteredUsers = ignoredUsers.filter((id: number) => id !== ignoredUserId);
-      await this.updateUser(userId, { ignoredUsers: JSON.stringify(filteredUsers) });
-    }
+export async function getAllUsers(): Promise<ChatUser[]> {
+  try {
+    checkDatabase();
+    return await db!.select().from(users).orderBy(desc(users.createdAt));
+  } catch (error) {
+    console.error('Error getting all users:', error);
+    return [];
   }
+}
 
-  async getIgnoredUsers(userId: number): Promise<number[]> {
-    const user = await this.getUser(userId);
-    return user ? JSON.parse(user.ignoredUsers || '[]') : [];
+// Message operations
+export async function createMessage(message: InsertMessage): Promise<ChatMessage | null> {
+  try {
+    checkDatabase();
+    const result = await db!.insert(messages).values(message).returning();
+    return result[0] as ChatMessage || null;
+  } catch (error) {
+    console.error('Error creating message:', error);
+    return null;
   }
+}
 
-  async getOnlineUsers(): Promise<User[]> {
-    return await db.select().from(users).where(eq(users.isOnline, true));
-  }
-
-  async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users).orderBy(desc(users.createdAt));
-  }
-
-  // Message operations
-  async createMessage(message: InsertMessage): Promise<Message> {
-    const result = await db.insert(messages).values(message).returning();
-    return result[0];
-  }
-
-  async getPublicMessages(limit: number = 50): Promise<Message[]> {
-    return await db.select()
+export async function getPublicMessages(): Promise<ChatMessage[]> {
+  try {
+    checkDatabase();
+    return await db!.select()
       .from(messages)
       .where(eq(messages.isPrivate, false))
-      .orderBy(desc(messages.timestamp))
-      .limit(limit);
+      .orderBy(desc(messages.timestamp));
+  } catch (error) {
+    console.error('Error getting public messages:', error);
+    return [];
   }
+}
 
-  async getPrivateMessages(userId1: number, userId2: number, limit: number = 50): Promise<Message[]> {
-    return await db.select()
+export async function getPrivateMessages(userId: number): Promise<ChatMessage[]> {
+  try {
+    checkDatabase();
+    return await db!.select()
       .from(messages)
       .where(
         and(
           eq(messages.isPrivate, true),
           or(
-            and(eq(messages.senderId, userId1), eq(messages.receiverId, userId2)),
-            and(eq(messages.senderId, userId2), eq(messages.receiverId, userId1))
+            eq(messages.senderId, userId),
+            eq(messages.receiverId, userId)
           )
         )
       )
-      .orderBy(desc(messages.timestamp))
-      .limit(limit);
+      .orderBy(desc(messages.timestamp));
+  } catch (error) {
+    console.error('Error getting private messages:', error);
+    return [];
   }
+}
 
-  async getRoomMessages(roomId: string, limit: number = 50): Promise<Message[]> {
-    return await db.select()
+export async function getMessagesByRoom(roomId: string): Promise<ChatMessage[]> {
+  try {
+    checkDatabase();
+    return await db!.select()
       .from(messages)
-      .where(
-        and(
-          eq(messages.isPrivate, false),
-          eq(messages.roomId, roomId)
-        )
-      )
-      .orderBy(desc(messages.timestamp))
-      .limit(limit);
+      .where(eq(messages.roomId, roomId))
+      .orderBy(desc(messages.timestamp));
+  } catch (error) {
+    console.error('Error getting messages by room:', error);
+    return [];
   }
+}
 
-  // Friend operations
-  async addFriend(userId: number, friendId: number): Promise<Friend> {
-    const result = await db.insert(friends).values({
-      userId,
-      friendId,
+// Friend operations
+export async function createFriendRequest(request: InsertFriend): Promise<FriendRequest | null> {
+  try {
+    checkDatabase();
+    const result = await db!.insert(friends).values({
+      userId: request.userId,
+      friendId: request.friendId,
       status: 'pending'
     }).returning();
-    return result[0];
+    return result[0] as FriendRequest || null;
+  } catch (error) {
+    console.error('Error creating friend request:', error);
+    return null;
   }
+}
 
-  async getFriends(userId: number): Promise<User[]> {
-    const friendsResult = await db.select()
+export async function getFriendRequests(userId: number): Promise<FriendRequest[]> {
+  try {
+    checkDatabase();
+    const friendsResult = await db!.select()
       .from(friends)
-      .leftJoin(users, eq(friends.friendId, users.id))
-      .where(and(eq(friends.userId, userId), eq(friends.status, 'accepted')));
-    
-    return friendsResult.map(f => f.users!).filter(Boolean);
+      .where(
+        and(
+          eq(friends.friendId, userId),
+          eq(friends.status, 'pending')
+        )
+      );
+    return friendsResult as FriendRequest[];
+  } catch (error) {
+    console.error('Error getting friend requests:', error);
+    return [];
   }
+}
 
-  async getUserFriends(userId: number): Promise<User[]> {
-    const friendsResult = await db.select()
+export async function getFriends(userId: number): Promise<FriendRequest[]> {
+  try {
+    checkDatabase();
+    const friendsResult = await db!.select()
       .from(friends)
-      .leftJoin(users, eq(friends.userId, users.id))
-      .where(and(eq(friends.friendId, userId), eq(friends.status, 'accepted')));
-    
-    return friendsResult.map(f => f.users!).filter(Boolean);
+      .where(
+        and(
+          or(
+            eq(friends.userId, userId),
+            eq(friends.friendId, userId)
+          ),
+          eq(friends.status, 'accepted')
+        )
+      );
+    return friendsResult as FriendRequest[];
+  } catch (error) {
+    console.error('Error getting friends:', error);
+    return [];
   }
+}
 
-  async updateFriendStatus(userId: number, friendId: number, status: string): Promise<void> {
-    await db.update(friends)
+export async function updateFriendRequestStatus(requestId: number, status: string): Promise<void> {
+  try {
+    checkDatabase();
+    await db!.update(friends)
       .set({ status })
-      .where(and(eq(friends.userId, userId), eq(friends.friendId, friendId)));
+      .where(eq(friends.id, requestId));
+  } catch (error) {
+    console.error('Error updating friend request status:', error);
   }
+}
 
-  async getBlockedUsers(userId: number): Promise<User[]> {
-    const blockedResult = await db.select()
+export async function getBlockedUsers(userId: number): Promise<number[]> {
+  try {
+    checkDatabase();
+    const blockedResult = await db!.select()
       .from(friends)
-      .leftJoin(users, eq(friends.friendId, users.id))
-      .where(and(eq(friends.userId, userId), eq(friends.status, 'blocked')));
-    
-    return blockedResult.map(f => f.users!).filter(Boolean);
+      .where(
+        and(
+          eq(friends.userId, userId),
+          eq(friends.status, 'blocked')
+        )
+      );
+    return blockedResult.map(f => f.friendId);
+  } catch (error) {
+    console.error('Error getting blocked users:', error);
+    return [];
   }
+}
 
-  async removeFriend(userId: number, friendId: number): Promise<boolean> {
-    const result = await db.delete(friends)
-      .where(and(eq(friends.userId, userId), eq(friends.friendId, friendId)));
-    return true;
+export async function deleteFriendRequest(requestId: number): Promise<void> {
+  try {
+    checkDatabase();
+    const result = await db!.delete(friends)
+      .where(eq(friends.id, requestId))
+      .returning();
+    console.log('Deleted friend request:', result);
+  } catch (error) {
+    console.error('Error deleting friend request:', error);
   }
+}
 
-  async getFriendship(userId1: number, userId2: number): Promise<Friend | undefined> {
-    const result = await db.select()
+export async function checkFriendshipStatus(userId: number, friendId: number): Promise<string | null> {
+  try {
+    checkDatabase();
+    const result = await db!.select()
       .from(friends)
       .where(
         or(
-          and(eq(friends.userId, userId1), eq(friends.friendId, userId2)),
-          and(eq(friends.userId, userId2), eq(friends.friendId, userId1))
+          and(eq(friends.userId, userId), eq(friends.friendId, friendId)),
+          and(eq(friends.userId, friendId), eq(friends.friendId, userId))
         )
       );
-    return result[0];
+    return result[0]?.status || null;
+  } catch (error) {
+    console.error('Error checking friendship status:', error);
+    return null;
   }
+}
 
-  // Friend request operations
-  async createFriendRequest(senderId: number, receiverId: number): Promise<any> {
-    const result = await db.insert(friends).values({
+export async function sendFriendRequest(senderId: number, receiverId: number): Promise<FriendRequest | null> {
+  try {
+    checkDatabase();
+    const result = await db!.insert(friends).values({
       userId: senderId,
       friendId: receiverId,
       status: 'pending'
     }).returning();
-    return result[0];
-  }
-
-  async getFriendRequest(senderId: number, receiverId: number): Promise<any> {
-    const result = await db.select()
-      .from(friends)
-      .where(
-        and(
-          eq(friends.userId, senderId),
-          eq(friends.friendId, receiverId),
-          eq(friends.status, 'pending')
-        )
-      );
-    return result[0];
-  }
-
-  async getFriendRequestById(requestId: number): Promise<any> {
-    const result = await db.select()
-      .from(friends)
-      .where(eq(friends.id, requestId));
-    return result[0];
-  }
-
-  async getIncomingFriendRequests(userId: number): Promise<any[]> {
-    const result = await db.select()
-      .from(friends)
-      .leftJoin(users, eq(friends.userId, users.id))
-      .where(and(eq(friends.friendId, userId), eq(friends.status, 'pending')));
-    return result.map(f => f.users!).filter(Boolean);
-  }
-
-  async getOutgoingFriendRequests(userId: number): Promise<any[]> {
-    const result = await db.select()
-      .from(friends)
-      .leftJoin(users, eq(friends.friendId, users.id))
-      .where(and(eq(friends.userId, userId), eq(friends.status, 'pending')));
-    return result.map(f => f.users!).filter(Boolean);
-  }
-
-  async acceptFriendRequest(requestId: number): Promise<boolean> {
-    const result = await db.update(friends)
-      .set({ status: 'accepted' })
-      .where(eq(friends.id, requestId));
-    return result.rowCount ? result.rowCount > 0 : false;
-  }
-
-  async declineFriendRequest(requestId: number): Promise<boolean> {
-    const result = await db.update(friends)
-      .set({ status: 'declined' })
-      .where(eq(friends.id, requestId));
-    return result.rowCount ? result.rowCount > 0 : false;
-  }
-
-  async ignoreFriendRequest(requestId: number): Promise<boolean> {
-    const result = await db.update(friends)
-      .set({ status: 'ignored' })
-      .where(eq(friends.id, requestId));
-    return result.rowCount ? result.rowCount > 0 : false;
-  }
-
-  async deleteFriendRequest(requestId: number): Promise<boolean> {
-    const result = await db.delete(friends).where(eq(friends.id, requestId));
-    return result.rowCount ? result.rowCount > 0 : false;
-  }
-  
-  // Wall post operations
-  async createWallPost(postData: InsertWallPost): Promise<WallPost> {
-    try {
-      console.log('🗄️ إدراج منشور في قاعدة البيانات PostgreSQL...');
-      console.log('🔍 بيانات الإدراج:', {
-        userId: postData.userId,
-        username: postData.username,
-        userRole: postData.userRole,
-        content: postData.content?.substring(0, 50) + '...',
-        type: postData.type || 'public'
-      });
-      
-      const [post] = await db.insert(wallPosts)
-        .values({
-          userId: postData.userId,
-          username: postData.username,
-          userRole: postData.userRole,
-          content: postData.content || null,
-          imageUrl: postData.imageUrl || null,
-          type: postData.type || 'public',
-          userProfileImage: postData.userProfileImage || null,
-          usernameColor: postData.usernameColor || '#FFFFFF',
-          totalLikes: 0,
-          totalDislikes: 0,
-          totalHearts: 0
-        })
-        .returning();
-      
-      console.log('✅ تم إنشاء المنشور بنجاح في PostgreSQL:', {
-        id: post.id,
-        userId: post.userId,
-        username: post.username,
-        type: post.type,
-        timestamp: post.timestamp
-      });
-      
-      return post;
-    } catch (error) {
-      console.error('❌ خطأ في إنشاء المنشور في قاعدة البيانات:', error);
-      throw error;
-    }
-  }
-
-  async getWallPosts(type: string): Promise<WallPost[]> {
-    try {
-      console.log(`🔍 جلب المنشورات من PostgreSQL للنوع: ${type}`);
-      
-      const posts = await db.select()
-        .from(wallPosts)
-        .where(eq(wallPosts.type, type))
-        .orderBy(desc(wallPosts.timestamp));
-      
-      console.log(`📊 تم جلب ${posts.length} منشورات من قاعدة البيانات`);
-      
-      if (posts.length > 0) {
-        console.log('📝 أحدث منشور:', {
-          id: posts[0].id,
-          username: posts[0].username,
-          content: posts[0].content?.substring(0, 50) + '...',
-          timestamp: posts[0].timestamp
-        });
-      }
-      
-      return posts;
-    } catch (error) {
-      console.error('❌ خطأ في جلب المنشورات من قاعدة البيانات:', error);
-      return [];
-    }
-  }
-
-  async getWallPostsByUsers(userIds: number[]): Promise<WallPost[]> {
-    try {
-      if (userIds.length === 0) {
-        return [];
-      }
-      
-      const posts = await db.select()
-        .from(wallPosts)
-        .where(inArray(wallPosts.userId, userIds))
-        .orderBy(desc(wallPosts.timestamp));
-      
-      return posts;
-    } catch (error) {
-      console.error('Error getting wall posts by users:', error);
-      return [];
-    }
-  }
-
-  async getWallPost(postId: number): Promise<WallPost | null> {
-    try {
-      const [post] = await db.select()
-        .from(wallPosts)
-        .where(eq(wallPosts.id, postId));
-      
-      return post || null;
-    } catch (error) {
-      console.error('Error getting wall post:', error);
-      return null;
-    }
-  }
-
-  async deleteWallPost(postId: number): Promise<void> {
-    try {
-      // حذف جميع التفاعلات المرتبطة بالمنشور أولاً
-      await db.delete(wallReactions)
-        .where(eq(wallReactions.postId, postId));
-      
-      // ثم حذف المنشور نفسه
-      await db.delete(wallPosts)
-        .where(eq(wallPosts.id, postId));
-    } catch (error) {
-      console.error('Error deleting wall post:', error);
-      throw error;
-    }
-  }
-
-  async addWallReaction(reactionData: InsertWallReaction): Promise<WallPost | null> {
-    try {
-      // التحقق من وجود المنشور
-      const post = await this.getWallPost(reactionData.postId);
-      if (!post) {
-        throw new Error('Post not found');
-      }
-      
-      // إزالة التفاعل السابق للمستخدم إذا كان موجوداً
-      await db.delete(wallReactions)
-        .where(and(
-          eq(wallReactions.postId, reactionData.postId),
-          eq(wallReactions.userId, reactionData.userId)
-        ));
-      
-      // إضافة التفاعل الجديد
-      await db.insert(wallReactions)
-        .values({
-          postId: reactionData.postId,
-          userId: reactionData.userId,
-          username: reactionData.username,
-          type: reactionData.type
-        });
-      
-      // تحديث عدادات التفاعل في المنشور
-      const reactions = await db.select()
-        .from(wallReactions)
-        .where(eq(wallReactions.postId, reactionData.postId));
-      
-      const totalLikes = reactions.filter(r => r.type === 'like').length;
-      const totalDislikes = reactions.filter(r => r.type === 'dislike').length;
-      const totalHearts = reactions.filter(r => r.type === 'heart').length;
-      
-      const [updatedPost] = await db.update(wallPosts)
-        .set({
-          totalLikes,
-          totalDislikes,
-          totalHearts,
-          updatedAt: new Date()
-        })
-        .where(eq(wallPosts.id, reactionData.postId))
-        .returning();
-      
-      return updatedPost;
-    } catch (error) {
-      console.error('Error adding wall post reaction:', error);
-      throw error;
-    }
-  }
-
-  async getWallPostWithReactions(postId: number): Promise<WallPost | null> {
-    try {
-      const post = await this.getWallPost(postId);
-      if (!post) {
-        return null;
-      }
-      
-      // جلب التفاعلات مع المنشور
-      const reactions = await db.select()
-        .from(wallReactions)
-        .where(eq(wallReactions.postId, postId))
-        .orderBy(desc(wallReactions.timestamp));
-      
-      // إضافة التفاعلات للمنشور (للتوافق مع العميل)
-      return {
-        ...post,
-        reactions
-      } as any;
-    } catch (error) {
-      console.error('Error getting wall post with reactions:', error);
-      return null;
-    }
-  }
-
-  async getWallPostReactions(postId: number): Promise<WallReaction[]> {
-    try {
-      const reactions = await db.select()
-        .from(wallReactions)
-        .where(eq(wallReactions.postId, postId))
-        .orderBy(desc(wallReactions.timestamp));
-      
-      return reactions;
-    } catch (error) {
-      console.error('Error getting wall post reactions:', error);
-      return [];
-    }
-  }
-
-  // Room operations
-  async getRoom(roomId: string): Promise<any> {
-    try {
-      const result = await db.select().from(rooms).where(eq(rooms.id, roomId));
-      if (result.length === 0) {
-        return null;
-      }
-      
-      const room = result[0];
-      return {
-        id: room.id,
-        name: room.name,
-        description: room.description,
-        icon: room.icon,
-        createdBy: room.createdBy,
-        isDefault: room.isDefault,
-        isActive: room.isActive,
-        isBroadcast: room.isBroadcast,
-        hostId: room.hostId,
-        speakers: room.speakers,
-        micQueue: room.micQueue,
-        createdAt: room.createdAt,
-        // For backward compatibility
-        is_broadcast: room.isBroadcast
-      };
-    } catch (error) {
-      console.error('خطأ في جلب الغرفة:', error);
-      return null;
-    }
-  }
-
-  async getBroadcastRoomInfo(roomId: string): Promise<any> {
-    const room = await this.getRoom(roomId);
-    if (!room || !room.is_broadcast) {
-      return null;
-    }
-    
-    // Return basic broadcast room info
-    return {
-      roomId: roomId,
-      hostId: 1, // Default host
-      speakers: [],
-      micQueue: [],
-      isLive: false
-    };
-  }
-
-  async getAllRooms(): Promise<any[]> {
-    try {
-      const result = await db.select({
-        id: rooms.id,
-        name: rooms.name,
-        description: rooms.description,
-        icon: rooms.icon,
-        createdBy: rooms.createdBy,
-        isDefault: rooms.isDefault,
-        isActive: rooms.isActive,
-        isBroadcast: rooms.isBroadcast,
-        hostId: rooms.hostId,
-        speakers: rooms.speakers,
-        micQueue: rooms.micQueue,
-        createdAt: rooms.createdAt,
-        userCount: sql<number>`(
-          SELECT COUNT(*)::int 
-          FROM room_users ru 
-          WHERE ru.room_id = rooms.id
-        )`
-      })
-      .from(rooms)
-      .where(eq(rooms.isActive, true))
-      .orderBy(desc(rooms.isDefault), asc(rooms.createdAt));
-
-      return result;
-    } catch (error) {
-      console.error('خطأ في جلب الغرف:', error);
-      // إرجاع الغرف الافتراضية في حالة الخطأ
-      return [
-        { id: 'general', name: 'الدردشة العامة', isBroadcast: false, userCount: 0 },
-        { id: 'broadcast', name: 'غرفة البث المباشر', isBroadcast: true, userCount: 0 },
-        { id: 'music', name: 'أغاني وسهر', isBroadcast: false, userCount: 0 }
-      ];
-    }
-  }
-
-  async createRoom(roomData: any): Promise<any> {
-    try {
-      const roomId = `room_${Date.now()}`;
-      const result = await db.insert(rooms).values({
-        id: roomId,
-        name: roomData.name,
-        description: roomData.description || '',
-        icon: roomData.icon || '',
-        createdBy: roomData.createdBy,
-        isDefault: roomData.isDefault || false,
-        isActive: true,
-        isBroadcast: roomData.isBroadcast || false,
-        hostId: roomData.hostId || null,
-        speakers: '[]',
-        micQueue: '[]'
-      }).returning();
-
-      return result[0];
-    } catch (error) {
-      console.error('خطأ في إنشاء الغرفة:', error);
-      throw error;
-    }
-  }
-
-  async deleteRoom(roomId: string): Promise<void> {
-    try {
-      // حذف جميع المستخدمين من الغرفة أولاً
-      await db.delete(roomUsers).where(eq(roomUsers.roomId, roomId));
-      
-      // حذف الغرفة
-      await db.delete(rooms).where(eq(rooms.id, roomId));
-    } catch (error) {
-      console.error('خطأ في حذف الغرفة:', error);
-      throw error;
-    }
-  }
-
-  async joinRoom(userId: number, roomId: string): Promise<void> {
-    try {
-      console.log(`🔄 محاولة انضمام المستخدم ${userId} للغرفة ${roomId}`);
-      
-      // التحقق من وجود المستخدم في الغرفة مسبقاً
-      const existing = await db.select()
-        .from(roomUsers)
-        .where(and(eq(roomUsers.userId, userId), eq(roomUsers.roomId, roomId)))
-        .limit(1);
-      
-      if (existing.length === 0) {
-        await db.insert(roomUsers).values({
-          userId: userId,
-          roomId: roomId
-        });
-        console.log(`✅ تم انضمام المستخدم ${userId} للغرفة ${roomId}`);
-      } else {
-        console.log(`ℹ️ المستخدم ${userId} موجود بالفعل في الغرفة ${roomId}`);
-      }
-    } catch (error) {
-      console.error('خطأ في انضمام المستخدم للغرفة:', error);
-      throw error;
-    }
-  }
-
-  async leaveRoom(userId: number, roomId: string): Promise<void> {
-    try {
-      await db.delete(roomUsers)
-        .where(and(eq(roomUsers.userId, userId), eq(roomUsers.roomId, roomId)));
-    } catch (error) {
-      console.error('خطأ في مغادرة المستخدم للغرفة:', error);
-      throw error;
-    }
-  }
-
-  async getUserRooms(userId: number): Promise<string[]> {
-    try {
-      const result = await db.select({ roomId: roomUsers.roomId })
-        .from(roomUsers)
-        .where(eq(roomUsers.userId, userId));
-      
-      return result.map(row => row.roomId);
-    } catch (error) {
-      console.error('خطأ في جلب غرف المستخدم:', error);
-      return ['general']; // إرجاع الغرفة العامة على الأقل
-    }
-  }
-
-  async getRoomUsers(roomId: string): Promise<number[]> {
-    try {
-      const result = await db.select({ userId: roomUsers.userId })
-        .from(roomUsers)
-        .where(eq(roomUsers.roomId, roomId));
-      
-      return result.map(row => row.userId);
-    } catch (error) {
-      console.error('خطأ في جلب مستخدمي الغرفة:', error);
-      return [];
-    }
-  }
-
-  async getOnlineUsersInRoom(roomId: string): Promise<User[]> {
-    try {
-      console.log(`🔍 جلب المستخدمين المتصلين في الغرفة ${roomId}`);
-      
-      // جلب المستخدمين المتصلين والموجودين في الغرفة المحددة
-      const result = await db.select()
-        .from(users)
-        .innerJoin(roomUsers, eq(users.id, roomUsers.userId))
-        .where(
-          and(
-            eq(roomUsers.roomId, roomId),
-            eq(users.isOnline, true)
-          )
-        );
-      
-      const users_list = result.map(row => row.users);
-      console.log(`👥 وجد ${users_list.length} مستخدمين متصلين في الغرفة ${roomId}: ${users_list.map(u => u.username).join(', ')}`);
-      
-      return users_list;
-    } catch (error) {
-      console.error('خطأ في جلب المستخدمين المتصلين في الغرفة:', error);
-      return [];
-    }
-  }
-
-  async requestMic(userId: number, roomId: string): Promise<boolean> {
-    try {
-      // جلب معلومات الغرفة
-      const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).limit(1);
-      if (!room.length) return false;
-
-      // تحليل قائمة الانتظار الحالية
-      const currentMicQueue = JSON.parse(room[0].micQueue || '[]');
-      
-      // التحقق من أن المستخدم ليس في القائمة بالفعل
-      if (currentMicQueue.includes(userId)) {
-        return false; // المستخدم في القائمة بالفعل
-      }
-
-      // إضافة المستخدم للقائمة
-      currentMicQueue.push(userId);
-
-      // تحديث قاعدة البيانات
-      await db.update(rooms)
-        .set({ micQueue: JSON.stringify(currentMicQueue) })
-        .where(eq(rooms.id, roomId));
-
-      console.log(`✅ User ${userId} added to mic queue in room: ${roomId}`);
-      return true;
-    } catch (error) {
-      console.error('خطأ في طلب المايك:', error);
-      return false;
-    }
-  }
-
-  async approveMicRequest(roomId: string, userId: number, approvedBy: number): Promise<boolean> {
-    try {
-      // جلب معلومات الغرفة
-      const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).limit(1);
-      if (!room.length) return false;
-
-      // تحليل القوائم الحالية
-      const currentMicQueue = JSON.parse(room[0].micQueue || '[]');
-      const currentSpeakers = JSON.parse(room[0].speakers || '[]');
-
-      // إزالة المستخدم من قائمة الانتظار
-      const updatedMicQueue = currentMicQueue.filter((id: number) => id !== userId);
-      
-      // إضافة المستخدم لقائمة المتحدثين (إذا لم يكن موجود)
-      if (!currentSpeakers.includes(userId)) {
-        currentSpeakers.push(userId);
-      }
-
-      // تحديث قاعدة البيانات
-      await db.update(rooms)
-        .set({
-          micQueue: JSON.stringify(updatedMicQueue),
-          speakers: JSON.stringify(currentSpeakers)
-        })
-        .where(eq(rooms.id, roomId));
-
-      console.log(`✅ User ${approvedBy} approved mic request for user ${userId} in room: ${roomId}`);
-      return true;
-    } catch (error) {
-      console.error('خطأ في الموافقة على طلب المايك:', error);
-      return false;
-    }
-  }
-
-  async rejectMicRequest(roomId: string, userId: number, rejectedBy: number): Promise<boolean> {
-    try {
-      // جلب معلومات الغرفة
-      const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).limit(1);
-      if (!room.length) return false;
-
-      // تحليل قائمة الانتظار الحالية
-      const currentMicQueue = JSON.parse(room[0].micQueue || '[]');
-
-      // إزالة المستخدم من قائمة الانتظار
-      const updatedMicQueue = currentMicQueue.filter((id: number) => id !== userId);
-
-      // تحديث قاعدة البيانات
-      await db.update(rooms)
-        .set({ micQueue: JSON.stringify(updatedMicQueue) })
-        .where(eq(rooms.id, roomId));
-
-      console.log(`❌ User ${rejectedBy} rejected mic request for user ${userId} in room: ${roomId}`);
-      return true;
-    } catch (error) {
-      console.error('خطأ في رفض طلب المايك:', error);
-      return false;
-    }
-  }
-
-  async removeSpeaker(roomId: string, userId: number, removedBy: number): Promise<boolean> {
-    try {
-      // جلب معلومات الغرفة
-      const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).limit(1);
-      if (!room.length) return false;
-
-      // تحليل قائمة المتحدثين الحالية
-      const currentSpeakers = JSON.parse(room[0].speakers || '[]');
-
-      // إزالة المستخدم من قائمة المتحدثين
-      const updatedSpeakers = currentSpeakers.filter((id: number) => id !== userId);
-
-      // تحديث قاعدة البيانات
-      await db.update(rooms)
-        .set({ speakers: JSON.stringify(updatedSpeakers) })
-        .where(eq(rooms.id, roomId));
-
-      console.log(`🔇 User ${removedBy} removed user ${userId} from speakers in room: ${roomId}`);
-      return true;
-    } catch (error) {
-      console.error('خطأ في إزالة المتحدث:', error);
-      return false;
-    }
-  }
-
-  // Notification operations
-  async createNotification(notification: InsertNotification): Promise<Notification> {
-    const result = await db.insert(notifications).values(notification).returning();
-    return result[0];
-  }
-
-  async getUserNotifications(userId: number, limit: number = 20): Promise<Notification[]> {
-    return await db.select()
-      .from(notifications)
-      .where(eq(notifications.userId, userId))
-      .orderBy(desc(notifications.createdAt))
-      .limit(limit);
-  }
-
-  async markNotificationAsRead(notificationId: number): Promise<boolean> {
-    await db.update(notifications)
-      .set({ isRead: true })
-      .where(eq(notifications.id, notificationId));
-    return true;
-  }
-
-  async markAllNotificationsAsRead(userId: number): Promise<boolean> {
-    await db.update(notifications)
-      .set({ isRead: true })
-      .where(eq(notifications.userId, userId));
-    return true;
-  }
-
-  async deleteNotification(notificationId: number): Promise<boolean> {
-    await db.delete(notifications).where(eq(notifications.id, notificationId));
-    return true;
-  }
-
-  async getUnreadNotificationCount(userId: number): Promise<number> {
-    const result = await db.select({ count: sql`count(*)` })
-      .from(notifications)
-      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
-    return Number(result[0]?.count || 0);
-  }
-
-  // Blocked devices operations
-  async createBlockedDevice(blockData: {
-    ipAddress: string;
-    deviceId: string;
-    userId: number;
-    reason: string;
-    blockedAt: Date;
-    blockedBy: number;
-  }): Promise<boolean> {
-    await db.insert(blockedDevices).values(blockData);
-    return true;
-  }
-
-  async isDeviceBlocked(ipAddress: string, deviceId: string): Promise<boolean> {
-    const result = await db.select()
-      .from(blockedDevices)
-      .where(
-        or(
-          eq(blockedDevices.ipAddress, ipAddress),
-          eq(blockedDevices.deviceId, deviceId)
-        )
-      );
-    return result.length > 0;
-  }
-
-  async getBlockedDevices(): Promise<Array<{ipAddress: string, deviceId: string}>> {
-    const result = await db.select({
-      ipAddress: blockedDevices.ipAddress,
-      deviceId: blockedDevices.deviceId
-    }).from(blockedDevices);
-    return result;
+    return result[0] as FriendRequest || null;
+  } catch (error) {
+    console.error('Error sending friend request:', error);
+    return null;
   }
 }
 
-// Export instance
-export const storage = new PostgreSQLStorage();
+export async function acceptFriendRequest(requestId: number): Promise<void> {
+  try {
+    checkDatabase();
+    const result = await db!.update(friends)
+      .set({ status: 'accepted' })
+      .where(eq(friends.id, requestId))
+      .returning();
+    console.log('Accepted friend request:', result);
+  } catch (error) {
+    console.error('Error accepting friend request:', error);
+  }
+}
+
+export async function declineFriendRequest(requestId: number): Promise<void> {
+  try {
+    checkDatabase();
+    const result = await db!.update(friends)
+      .set({ status: 'rejected' })
+      .where(eq(friends.id, requestId))
+      .returning();
+    console.log('Declined friend request:', result);
+  } catch (error) {
+    console.error('Error declining friend request:', error);
+  }
+}
+
+export async function blockUser(userId: number, blockedUserId: number): Promise<void> {
+  try {
+    checkDatabase();
+    const result = await db!.update(friends)
+      .set({ status: 'blocked' })
+      .where(
+        and(
+          eq(friends.userId, userId),
+          eq(friends.friendId, blockedUserId)
+        )
+      )
+      .returning();
+    console.log('Blocked user:', result);
+  } catch (error) {
+    console.error('Error blocking user:', error);
+  }
+}
+
+// Wall posts operations
+export async function createWallPost(postData: { content: string; userId: number; type?: string; imageUrl?: string }): Promise<WallPost | null> {
+  try {
+    checkDatabase();
+    const [post] = await db!.insert(wallPosts)
+      .values({
+        content: postData.content,
+        userId: postData.userId,
+        type: postData.type || 'public',
+        imageUrl: postData.imageUrl || null
+      })
+      .returning();
+
+    if (!post) return null;
+
+    // Get user info for the post
+    const user = await getUserById(postData.userId);
+    
+    return {
+      id: post.id,
+      userId: post.userId,
+      content: post.content,
+      imageUrl: post.imageUrl,
+      type: post.type as 'friends' | 'public',
+      timestamp: post.createdAt || new Date(),
+      reactions: [],
+      totalLikes: 0,
+      totalDislikes: 0,
+      totalHearts: 0,
+      userProfileImage: user?.profileImage,
+      usernameColor: user?.usernameColor || '#FFFFFF'
+    };
+  } catch (error) {
+    console.error('Error creating wall post:', error);
+    return null;
+  }
+}
+
+export async function getWallPosts(type: 'public' | 'friends' = 'public'): Promise<WallPost[]> {
+  try {
+    checkDatabase();
+    const posts = await db!.select()
+      .from(wallPosts)
+      .where(eq(wallPosts.type, type))
+      .orderBy(desc(wallPosts.createdAt));
+
+    return posts.map(post => ({
+      id: post.id,
+      userId: post.userId,
+      content: post.content,
+      imageUrl: post.imageUrl,
+      type: post.type as 'friends' | 'public',
+      timestamp: post.createdAt || new Date(),
+      reactions: [],
+      totalLikes: 0,
+      totalDislikes: 0,
+      totalHearts: 0
+    }));
+  } catch (error) {
+    console.error('Error getting wall posts:', error);
+    return [];
+  }
+}
+
+export async function getWallPostsByUser(userId: number): Promise<WallPost[]> {
+  try {
+    checkDatabase();
+    const posts = await db!.select()
+      .from(wallPosts)
+      .where(eq(wallPosts.userId, userId))
+      .orderBy(desc(wallPosts.createdAt));
+
+    return posts.map(post => ({
+      id: post.id,
+      userId: post.userId,
+      content: post.content,
+      imageUrl: post.imageUrl,
+      type: post.type as 'friends' | 'public',
+      timestamp: post.createdAt || new Date(),
+      reactions: [],
+      totalLikes: 0,
+      totalDislikes: 0,
+      totalHearts: 0
+    }));
+  } catch (error) {
+    console.error('Error getting wall posts by user:', error);
+    return [];
+  }
+}
+
+export async function deleteWallPost(postId: number): Promise<void> {
+  try {
+    checkDatabase();
+    // Delete reactions first
+    await db!.delete(wallReactions)
+      .where(eq(wallReactions.postId, postId));
+    
+    // Delete the post
+    await db!.delete(wallPosts)
+      .where(eq(wallPosts.id, postId));
+  } catch (error) {
+    console.error('Error deleting wall post:', error);
+  }
+}
+
+export async function addWallPostReaction(reactionData: { postId: number; userId: number; type: string }): Promise<void> {
+  try {
+    checkDatabase();
+    // Delete existing reaction by this user
+    await db!.delete(wallReactions)
+      .where(
+        and(
+          eq(wallReactions.postId, reactionData.postId),
+          eq(wallReactions.userId, reactionData.userId)
+        )
+      );
+
+    // Add new reaction
+    await db!.insert(wallReactions)
+      .values({
+        postId: reactionData.postId,
+        userId: reactionData.userId,
+        type: reactionData.type
+      });
+
+    // Update post reaction counts
+    const reactions = await db!.select()
+      .from(wallReactions)
+      .where(eq(wallReactions.postId, reactionData.postId));
+
+    const totalLikes = reactions.filter(r => r.type === 'like').length;
+    const totalDislikes = reactions.filter(r => r.type === 'dislike').length;
+    const totalHearts = reactions.filter(r => r.type === 'heart').length;
+
+    await db!.update(wallPosts)
+      .set({
+        // Note: These fields don't exist in the schema, so we'll skip this for now
+        // totalLikes,
+        // totalDislikes,
+        // totalHearts
+      })
+      .where(eq(wallPosts.id, reactionData.postId));
+  } catch (error) {
+    console.error('Error adding wall post reaction:', error);
+  }
+}
+
+export async function getWallPostReactions(postId: number): Promise<WallReaction[]> {
+  try {
+    checkDatabase();
+    const reactions = await db!.select()
+      .from(wallReactions)
+      .where(eq(wallReactions.postId, postId))
+      .orderBy(desc(wallReactions.createdAt));
+
+    return reactions.map(reaction => ({
+      id: reaction.id,
+      postId: reaction.postId,
+      userId: reaction.userId,
+      type: reaction.type as 'like' | 'dislike' | 'heart',
+      timestamp: reaction.createdAt || new Date()
+    }));
+  } catch (error) {
+    console.error('Error getting wall post reactions:', error);
+    return [];
+  }
+}
+
+export async function getWallPostReactionsByUser(userId: number): Promise<WallReaction[]> {
+  try {
+    checkDatabase();
+    const reactions = await db!.select()
+      .from(wallReactions)
+      .where(eq(wallReactions.userId, userId))
+      .orderBy(desc(wallReactions.createdAt));
+
+    return reactions.map(reaction => ({
+      id: reaction.id,
+      postId: reaction.postId,
+      userId: reaction.userId,
+      type: reaction.type as 'like' | 'dislike' | 'heart',
+      timestamp: reaction.createdAt || new Date()
+    }));
+  } catch (error) {
+    console.error('Error getting wall post reactions by user:', error);
+    return [];
+  }
+}
+
+// Room operations
+export async function getRoomById(roomId: string): Promise<ChatRoom | null> {
+  try {
+    checkDatabase();
+    const result = await db!.select().from(rooms).where(eq(rooms.id, roomId));
+    
+    if (!result[0]) return null;
+
+    const room = result[0];
+    return {
+      id: room.id,
+      name: room.name,
+      description: room.description,
+      isDefault: room.id === 'general',
+      createdBy: room.ownerId || 0,
+      createdAt: room.createdAt || new Date(),
+      isActive: true,
+      userCount: room.currentUsers || 0,
+      maxUsers: room.maxUsers,
+      type: room.type as 'public' | 'private' | 'broadcast',
+      isBroadcast: room.type === 'broadcast',
+      hostId: room.ownerId,
+      speakers: [],
+      micQueue: []
+    };
+  } catch (error) {
+    console.error('Error getting room by ID:', error);
+    return null;
+  }
+}
+
+export async function getAllRooms(): Promise<ChatRoom[]> {
+  try {
+    checkDatabase();
+    const result = await db!.select({
+      id: rooms.id,
+      name: rooms.name,
+      description: rooms.description,
+      type: rooms.type,
+      ownerId: rooms.ownerId,
+      maxUsers: rooms.maxUsers,
+      currentUsers: rooms.currentUsers,
+      createdAt: rooms.createdAt,
+      updatedAt: rooms.updatedAt,
+      settings: rooms.settings
+    })
+    .from(rooms)
+    .where(eq(rooms.type, 'public'))
+    .orderBy(desc(rooms.createdAt));
+
+    return result.map(room => ({
+      id: room.id,
+      name: room.name,
+      description: room.description,
+      isDefault: room.id === 'general',
+      createdBy: room.ownerId || 0,
+      createdAt: room.createdAt || new Date(),
+      isActive: true,
+      userCount: room.currentUsers || 0,
+      maxUsers: room.maxUsers,
+      type: room.type as 'public' | 'private' | 'broadcast',
+      isBroadcast: room.type === 'broadcast',
+      hostId: room.ownerId,
+      speakers: [],
+      micQueue: []
+    }));
+  } catch (error) {
+    console.error('Error getting all rooms:', error);
+    return [];
+  }
+}
+
+export async function createRoom(roomData: { id: string; name: string; description?: string; ownerId: number; type?: string }): Promise<ChatRoom | null> {
+  try {
+    checkDatabase();
+    const result = await db!.insert(rooms).values({
+      id: roomData.id,
+      name: roomData.name,
+      description: roomData.description,
+      type: roomData.type || 'public',
+      ownerId: roomData.ownerId,
+      currentUsers: 0,
+      isPasswordProtected: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      settings: {}
+    }).returning();
+
+    if (!result[0]) return null;
+
+    const room = result[0];
+    return {
+      id: room.id,
+      name: room.name,
+      description: room.description,
+      isDefault: room.id === 'general',
+      createdBy: room.ownerId || 0,
+      createdAt: room.createdAt || new Date(),
+      isActive: true,
+      userCount: room.currentUsers || 0,
+      maxUsers: room.maxUsers,
+      type: room.type as 'public' | 'private' | 'broadcast',
+      isBroadcast: room.type === 'broadcast',
+      hostId: room.ownerId,
+      speakers: [],
+      micQueue: []
+    };
+  } catch (error) {
+    console.error('Error creating room:', error);
+    return null;
+  }
+}
+
+export async function deleteRoom(roomId: string): Promise<void> {
+  try {
+    checkDatabase();
+    // Delete room users first
+    await db!.delete(roomUsers).where(eq(roomUsers.roomId, roomId));
+    
+    // Delete the room
+    await db!.delete(rooms).where(eq(rooms.id, roomId));
+  } catch (error) {
+    console.error('Error deleting room:', error);
+  }
+}
+
+export async function joinRoom(userId: number, roomId: string): Promise<void> {
+  try {
+    checkDatabase();
+    const existing = await db!.select()
+      .from(roomUsers)
+      .where(
+        and(
+          eq(roomUsers.userId, userId),
+          eq(roomUsers.roomId, roomId)
+        )
+      );
+
+    if (existing.length === 0) {
+      await db!.insert(roomUsers).values({
+        userId,
+        roomId,
+        permission: 'view',
+        joinedAt: new Date(),
+        isMuted: false
+      });
+    }
+  } catch (error) {
+    console.error('Error joining room:', error);
+  }
+}
+
+export async function leaveRoom(userId: number, roomId: string): Promise<void> {
+  try {
+    checkDatabase();
+    await db!.delete(roomUsers)
+      .where(
+        and(
+          eq(roomUsers.userId, userId),
+          eq(roomUsers.roomId, roomId)
+        )
+      );
+  } catch (error) {
+    console.error('Error leaving room:', error);
+  }
+}
+
+export async function getRoomUsers(roomId: string): Promise<number[]> {
+  try {
+    checkDatabase();
+    const result = await db!.select({ userId: roomUsers.userId })
+      .from(roomUsers)
+      .where(eq(roomUsers.roomId, roomId));
+    
+    return result.map(r => r.userId);
+  } catch (error) {
+    console.error('Error getting room users:', error);
+    return [];
+  }
+}
+
+export async function getUserRooms(userId: number): Promise<string[]> {
+  try {
+    checkDatabase();
+    const result = await db!.select({ roomId: roomUsers.roomId })
+      .from(roomUsers)
+      .where(eq(roomUsers.userId, userId));
+    
+    return result.map(r => r.roomId);
+  } catch (error) {
+    console.error('Error getting user rooms:', error);
+    return [];
+  }
+}
+
+// Notification operations
+export async function createNotification(notification: InsertNotification): Promise<Notification | null> {
+  try {
+    checkDatabase();
+    const result = await db!.insert(notifications).values(notification).returning();
+    return result[0] as Notification || null;
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    return null;
+  }
+}
+
+export async function getUserNotifications(userId: number): Promise<Notification[]> {
+  try {
+    checkDatabase();
+    return await db!.select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  } catch (error) {
+    console.error('Error getting user notifications:', error);
+    return [];
+  }
+}
+
+export async function markNotificationAsRead(notificationId: number): Promise<void> {
+  try {
+    checkDatabase();
+    await db!.update(notifications)
+      .set({ isRead: true, readAt: new Date() })
+      .where(eq(notifications.id, notificationId));
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+  }
+}
+
+export async function markAllNotificationsAsRead(userId: number): Promise<void> {
+  try {
+    checkDatabase();
+    await db!.update(notifications)
+      .set({ isRead: true, readAt: new Date() })
+      .where(eq(notifications.userId, userId));
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+  }
+}
+
+export async function deleteNotification(notificationId: number): Promise<void> {
+  try {
+    checkDatabase();
+    await db!.delete(notifications).where(eq(notifications.id, notificationId));
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+  }
+}
+
+export async function getUnreadNotificationCount(userId: number): Promise<number> {
+  try {
+    checkDatabase();
+    const result = await db!.select({ count: sql`count(*)` })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, false)
+        )
+      );
+    return Number(result[0]?.count || 0);
+  } catch (error) {
+    console.error('Error getting unread notification count:', error);
+    return 0;
+  }
+}
+
+// Blocked devices operations
+export async function blockDevice(blockData: InsertBlockedDevice): Promise<void> {
+  try {
+    checkDatabase();
+    await db!.insert(blockedDevices).values(blockData);
+  } catch (error) {
+    console.error('Error blocking device:', error);
+  }
+}
+
+export async function getBlockedDevices(): Promise<any[]> {
+  try {
+    checkDatabase();
+    return await db!.select()
+      .from(blockedDevices)
+      .orderBy(desc(blockedDevices.blockedAt));
+  } catch (error) {
+    console.error('Error getting blocked devices:', error);
+    return [];
+  }
+}
+
+export async function isDeviceBlocked(ipAddress: string, deviceId: string): Promise<boolean> {
+  try {
+    checkDatabase();
+    const result = await db!.select({
+      id: blockedDevices.id
+    })
+    .from(blockedDevices)
+    .where(
+      and(
+        eq(blockedDevices.ipAddress, ipAddress),
+        eq(blockedDevices.deviceId, deviceId)
+      )
+    );
+    return result.length > 0;
+  } catch (error) {
+    console.error('Error checking if device is blocked:', error);
+    return false;
+  }
+}
