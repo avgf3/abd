@@ -38,12 +38,12 @@ export default function UserPopup({
     if (!currentUser) return;
     
     try {
-      await apiRequest('POST', '/api/moderation/mute', {
+      await apiRequest('/api/moderation/mute', { method: 'POST', body: {
         moderatorId: currentUser.id,
         targetUserId: user.id,
         reason: 'مكتوم',
         duration: 0
-      });
+      } });
 
       toast({
         title: '🔇 تم الكتم',
@@ -65,12 +65,12 @@ export default function UserPopup({
     if (!currentUser) return;
     
     try {
-      await apiRequest('POST', '/api/moderation/ban', {
+      await apiRequest('/api/moderation/ban', { method: 'POST', body: {
         moderatorId: currentUser.id,
         targetUserId: user.id,
         reason: 'مطرود',
         duration: 15
-      });
+      } });
 
       toast({
         title: '⏰ تم الطرد',
@@ -92,13 +92,13 @@ export default function UserPopup({
     if (!currentUser || currentUser.userType !== 'owner') return;
     
     try {
-      await apiRequest('POST', '/api/moderation/block', {
+      await apiRequest('/api/moderation/block', { method: 'POST', body: {
         moderatorId: currentUser.id,
         targetUserId: user.id,
         reason: 'محجوب نهائياً',
         ipAddress: 'unknown',
         deviceId: 'unknown'
-      });
+      } });
 
       toast({
         title: '🚫 تم الحجب النهائي',

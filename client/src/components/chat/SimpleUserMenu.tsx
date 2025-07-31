@@ -38,12 +38,12 @@ export default function SimpleUserMenu({
 
   const handleMute = async () => {
     try {
-      await apiRequest('POST', '/api/moderation/mute', {
+      await apiRequest('/api/moderation/mute', { method: 'POST', body: {
         moderatorId: currentUser?.id || 0,
         targetUserId: targetUser.id,
         reason: 'مكتوم',
         duration: 0 // كتم دائم
-      });
+      } });
 
       toast({
         title: '🔇 تم الكتم',
@@ -63,12 +63,12 @@ export default function SimpleUserMenu({
 
   const handleKick = async () => {
     try {
-      await apiRequest('POST', '/api/moderation/ban', {
+      await apiRequest('/api/moderation/ban', { method: 'POST', body: {
         moderatorId: currentUser?.id || 0,
         targetUserId: targetUser.id,
         reason: 'مطرود',
         duration: 15
-      });
+      } });
 
       toast({
         title: '⏰ تم الطرد',
@@ -88,13 +88,13 @@ export default function SimpleUserMenu({
 
   const handleBlock = async () => {
     try {
-      await apiRequest('POST', '/api/moderation/block', {
+      await apiRequest('/api/moderation/block', { method: 'POST', body: {
         moderatorId: currentUser?.id || 0,
         targetUserId: targetUser.id,
         reason: 'محجوب',
         ipAddress: 'unknown',
         deviceId: 'unknown'
-      });
+      } });
 
       toast({
         title: '🚫 تم الحجب النهائي',

@@ -194,6 +194,10 @@ export function useChat() {
   // Socket connection
   const socket = useRef<Socket | null>(null);
   
+  // إضافة حالات الإشعارات المطلوبة
+  const [kickNotification, setKickNotification] = useState<{show: boolean, duration: number}>({show: false, duration: 0});
+  const [blockNotification, setBlockNotification] = useState<{show: boolean, reason: string}>({show: false, reason: ''});
+  
   // تحسين الأداء: مدراء التحسين
   const messageCache = useRef(new MessageCacheManager());
   
@@ -552,7 +556,7 @@ export function useChat() {
     try {
       // إنشاء اتصال Socket.IO
       if (!socket.current) {
-        const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
+        const serverUrl = (import.meta as any).env?.VITE_SERVER_URL || 'http://localhost:5000';
         socket.current = io(serverUrl, {
           transports: ['websocket', 'polling'],
           timeout: 10000,
@@ -753,6 +757,10 @@ export function useChat() {
     setAchievementNotification,
     dailyBonusNotification,
     setDailyBonusNotification,
+    kickNotification,
+    setKickNotification,
+    blockNotification,
+    setBlockNotification,
     
     // Actions
     connect,
@@ -769,7 +777,15 @@ export function useChat() {
     // إصلاح: دوال مطلوبة للمكونات
     sendPublicMessage: (content: string) => sendMessage(content, 'text'),
     sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId),
-    sendRoomMessage: (content: string, roomId: string) => sendRoomMessage(content, roomId),
+    sendRoomMessage: (content: string, roomId: string) => {
+      if (socket.current && state.isConnected) {
+        socket.current.emit('roomMessage', { 
+          roomId, 
+          content, 
+          messageType: 'text' 
+        });
+      }
+    },
     handleTyping: () => sendTyping(),
     handlePrivateTyping: () => sendTyping(),
   };

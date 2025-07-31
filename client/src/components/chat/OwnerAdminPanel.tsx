@@ -84,7 +84,7 @@ export default function OwnerAdminPanel({
     if (!currentUser) return;
     
     try {
-      const response = await apiRequest('GET', `/api/moderation/log?userId=${currentUser.id}`);
+      const response = await apiRequest(`/api/moderation/log?userId=${currentUser.id}`);
       setModerationLog(response.log || []);
     } catch (error) {
       console.error('Error fetching moderation log:', error);
@@ -129,10 +129,13 @@ export default function OwnerAdminPanel({
     if (!currentUser) return;
     
     try {
-      await apiRequest('POST', '/api/moderation/promote', {
-        moderatorId: currentUser.id,
-        targetUserId: targetUser.id,
-        role: 'member'
+      await apiRequest('/api/moderation/promote', {
+        method: 'POST',
+        body: {
+          moderatorId: currentUser.id,
+          targetUserId: targetUser.id,
+          role: 'member'
+        }
       });
       
       toast({

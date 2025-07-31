@@ -55,7 +55,9 @@ export interface WebSocketMessage {
         'userVisibilityChanged' | 'usernameColorChanged' | 'profileEffectChanged' | 'theme_update' | 'moderationAction' | 'notification' | 'systemMessage' | 'kicked' | 'blocked' | 
         'friendRequest' | 'friendRequestAccepted' | 'promotion' | 'pointsReceived' | 'pointsTransfer' | 'pointsAdded' | 'levelUp' |
         // أنواع جديدة للـ Broadcast Room
-        'micRequest' | 'micApproved' | 'micRejected' | 'micRemoved' | 'speakerAdded' | 'speakerRemoved' | 'broadcastUpdate';
+        'micRequest' | 'micApproved' | 'micRejected' | 'micRemoved' | 'speakerAdded' | 'speakerRemoved' | 'broadcastUpdate' |
+        // أنواع الحوائط والغرف
+        'newWallPost' | 'wallPostReaction' | 'wallPostDeleted' | 'roomJoined' | 'userJoinedRoom' | 'userLeftRoom';
   userId?: number;
   username?: string;
   content?: string;
@@ -99,6 +101,10 @@ export interface WebSocketMessage {
   micQueue?: number[]; // قائمة انتظار طلبات المايك
   requestUserId?: number; // معرف المستخدم الذي طلب المايك
   approvedBy?: number; // معرف من وافق على الطلب
+  
+  // خصائص الحوائط
+  post?: any; // بيانات المنشور
+  postId?: number; // معرف المنشور
 }
 
 export interface UserProfile {

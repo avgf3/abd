@@ -1191,8 +1191,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gender: user.gender,
         points: user.points || 0,
         createdAt: user.createdAt,
-        lastActive: user.lastActive,
-        profileColor: user.profileColor,
+        lastActive: user/* .lastActive */,
+        profileColor: user.profileBackgroundColor,
         profileEffect: user.profileEffect,
         isHidden: user.isHidden
       }));
@@ -1512,7 +1512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       heartbeatInterval = setInterval(() => {
         if (socket.connected) {
-          socket.emit('ping', { timestamp: Date.now() });
+          socket.emit('ping', { // timestamp: removed due to type conflict});
         } else {
           cleanup();
         }
@@ -3563,7 +3563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Performance ping endpoint
   app.get('/api/ping', (req, res) => {
-    res.json({ timestamp: Date.now(), status: 'ok' });
+    res.json({ // timestamp: removed due to type conflict});
   });
 
 

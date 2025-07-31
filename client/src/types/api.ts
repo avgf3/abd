@@ -352,7 +352,12 @@ export type WebSocketMessageType =
   | 'roomJoined'
   | 'roomLeft'
   | 'error'
-  | 'success';
+  | 'success'
+  | 'newWallPost'
+  | 'wallPostReaction'
+  | 'wallPostDeleted'
+  | 'userJoinedRoom'
+  | 'userLeftRoom';
 
 export interface WebSocketMessage<T = any> {
   type: WebSocketMessageType;
@@ -422,21 +427,5 @@ export interface RolePermissions {
   inheritsFrom?: UserRole;
 }
 
-// تصدير جميع الأنواع
-export type {
-  ApiResponse,
-  ApiError,
-  PaginationParams,
-  PaginatedResponse,
-  UserRole,
-  UserStatus,
-  Gender,
-  MessageType,
-  MessageStatus,
-  FriendRequestStatus,
-  NotificationType,
-  RoomType,
-  RoomPermission,
-  ReportReason,
-  WebSocketMessageType
-};
+// إعادة تصدير الأنواع من واجهات أخرى إذا لزم الأمر
+// (تم تعليق هذا القسم لتجنب تضارب التصدير)

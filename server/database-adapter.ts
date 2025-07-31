@@ -1,79 +1,35 @@
-import dotenv from 'dotenv';
-dotenv.config();
 
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
-import * as pgSchema from "../shared/schema";
-import type { NeonQueryResultHKT } from 'drizzle-orm/neon-serverless';
-import type { PgDatabase } from 'drizzle-orm/pg-core';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from '../shared/schema';
+import { eq } from 'drizzle-orm';
 
-// تعريف نوع قاعدة البيانات - PostgreSQL فقط
-export type DatabaseType = PgDatabase<NeonQueryResultHKT, typeof pgSchema>;
+// Database connection with optimizations
+const connectionString = process.env.DATABASE_URL || 'postgresql://localhost:5432/chat_db';
 
-// واجهة موحدة للعمليات
-export interface DatabaseAdapter {
-  db: DatabaseType | null;
-  type: 'postgresql';
-  close?: () => void;
-}
+const queryClient = postgres(connectionString, {
+  prepare: false,
+  max: 10,
+  idle_timeout: 20,
+  connect_timeout: 10,
+});
 
-// إنشاء محول قاعدة البيانات - PostgreSQL فقط
-export function createDatabaseAdapter(): DatabaseAdapter {
-  const databaseUrl = process.env.DATABASE_URL;
-  
-  // التحقق من وجود DATABASE_URL
-  if (!databaseUrl) {
-    throw new Error("❌ DATABASE_URL غير محدد! يجب إضافة رابط PostgreSQL في ملف .env");
-  }
-  
-  // التحقق من أن الرابط هو PostgreSQL
-  if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
-    throw new Error("❌ DATABASE_URL يجب أن يكون رابط PostgreSQL صحيح");
-  }
-  
+export const db = drizzle(queryClient, { schema });
+export const dbType = 'postgresql';
+
+// Connection test function
+export async function testConnection() {
   try {
-    // إعداد Neon للإنتاج
-    neonConfig.fetchConnectionCache = true;
-    
-    const pool = new Pool({ connectionString: databaseUrl });
-    const db = drizzleNeon({ client: pool, schema: pgSchema });
-    
-    return {
-      db: db as DatabaseType,
-      type: 'postgresql',
-      close: () => pool.end()
-    };
-  } catch (error) {
-    console.error("❌ فشل في الاتصال بـ PostgreSQL على Supabase:", error);
-    throw new Error(`فشل الاتصال بـ Supabase: ${error}`);
-  }
-}
-
-// إنشاء المحول الافتراضي
-export const dbAdapter = createDatabaseAdapter();
-export const db = dbAdapter.db;
-export const dbType = dbAdapter.type;
-
-// دالة للتحقق من حالة قاعدة البيانات
-export async function checkDatabaseHealth(): Promise<boolean> {
-  try {
-    if (!db) return false;
-    
-    // اختبار PostgreSQL
-    await db.execute('SELECT 1' as any);
+    await queryClient`SELECT 1`;
+    console.log('✅ Database connection successful');
     return true;
   } catch (error) {
-    console.error("❌ خطأ في فحص صحة قاعدة البيانات:", error);
+    console.error('❌ Database connection failed:', error);
     return false;
   }
 }
 
-// دالة للحصول على حالة قاعدة البيانات
-export function getDatabaseStatus() {
-  return {
-    connected: !!db,
-    type: 'PostgreSQL/Supabase',
-    url: process.env.DATABASE_URL ? '***محددة***' : 'غير محددة',
-    environment: process.env.NODE_ENV || 'development'
-  };
+// Graceful shutdown
+export function closeConnection() {
+  return queryClient.end();
 }
