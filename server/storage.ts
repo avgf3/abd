@@ -689,13 +689,57 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
+  // دالة للتأكد من وجود الغرفة العامة وإنشاؤها إذا لم تكن موجودة
+  async ensureGeneralRoom(): Promise<void> {
+    try {
+      const generalRoom = await this.getRoom('general');
+      if (!generalRoom) {
+        console.log('🏠 إنشاء الغرفة العامة...');
+        await db.insert(rooms).values({
+          id: 'general',
+          name: 'الدردشة العامة',
+          description: 'غرفة الدردشة العامة للجميع',
+          icon: '🌍',
+          createdBy: 1, // افتراض أن admin له id = 1
+          isDefault: true,
+          isActive: true,
+          isBroadcast: false,
+          hostId: null,
+          speakers: '[]',
+          micQueue: '[]'
+        });
+        console.log('✅ تم إنشاء الغرفة العامة بنجاح');
+      }
+    } catch (error) {
+      console.error('خطأ في التأكد من وجود الغرفة العامة:', error);
+    }
+  }
+
   async deleteRoom(roomId: string): Promise<void> {
     try {
-      // حذف جميع المستخدمين من الغرفة أولاً
-      await db.delete(roomUsers).where(eq(roomUsers.roomId, roomId));
+      console.log(`🗑️ بدء حذف الغرفة ${roomId} وجميع البيانات المرتبطة بها`);
       
-      // حذف الغرفة
-      await db.delete(rooms).where(eq(rooms.id, roomId));
+      // التحقق من أن الغرفة ليست الغرفة العامة
+      if (roomId === 'general') {
+        throw new Error('لا يمكن حذف الغرفة العامة');
+      }
+      
+      // حذف جميع الرسائل في الغرفة أولاً
+      const deletedMessages = await db.delete(messages)
+        .where(eq(messages.roomId, roomId));
+      console.log(`🗑️ تم حذف الرسائل من الغرفة ${roomId}`);
+      
+      // حذف جميع المستخدمين من الغرفة
+      const deletedUsers = await db.delete(roomUsers)
+        .where(eq(roomUsers.roomId, roomId));
+      console.log(`🗑️ تم حذف جميع المستخدمين من الغرفة ${roomId}`);
+      
+      // حذف الغرفة نفسها
+      const deletedRoom = await db.delete(rooms)
+        .where(eq(rooms.id, roomId));
+      console.log(`🗑️ تم حذف الغرفة ${roomId} من قاعدة البيانات`);
+      
+      console.log(`✅ تم حذف الغرفة ${roomId} بنجاح وجميع البيانات المرتبطة بها`);
     } catch (error) {
       console.error('خطأ في حذف الغرفة:', error);
       throw error;
@@ -706,6 +750,18 @@ export class PostgreSQLStorage implements IStorage {
     try {
       console.log(`🔄 محاولة انضمام المستخدم ${userId} للغرفة ${roomId}`);
       
+      // التحقق من وجود المستخدم أولاً
+      const user = await this.getUser(userId);
+      if (!user) {
+        throw new Error(`المستخدم ${userId} غير موجود`);
+      }
+      
+      // التحقق من وجود الغرفة
+      const room = await this.getRoom(roomId);
+      if (!room && roomId !== 'general') {
+        throw new Error(`الغرفة ${roomId} غير موجودة`);
+      }
+      
       // التحقق من وجود المستخدم في الغرفة مسبقاً
       const existing = await db.select()
         .from(roomUsers)
@@ -713,13 +769,15 @@ export class PostgreSQLStorage implements IStorage {
         .limit(1);
       
       if (existing.length === 0) {
+        // إدراج المستخدم في الغرفة
         await db.insert(roomUsers).values({
           userId: userId,
-          roomId: roomId
+          roomId: roomId,
+          joinedAt: new Date()
         });
-        console.log(`✅ تم انضمام المستخدم ${userId} للغرفة ${roomId}`);
+        console.log(`✅ تم انضمام المستخدم ${userId} (${user.username}) للغرفة ${roomId}`);
       } else {
-        console.log(`ℹ️ المستخدم ${userId} موجود بالفعل في الغرفة ${roomId}`);
+        console.log(`ℹ️ المستخدم ${userId} (${user.username}) موجود بالفعل في الغرفة ${roomId}`);
       }
     } catch (error) {
       console.error('خطأ في انضمام المستخدم للغرفة:', error);
