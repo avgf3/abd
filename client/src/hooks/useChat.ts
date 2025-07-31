@@ -571,11 +571,17 @@ export function useChat() {
   }, [setupSocketListeners]);
 
   // Join room function
-  const joinRoom = useCallback((roomId: string) => {
+  const joinRoom = useCallback(async (roomId: string) => {
     console.log(`🔄 انضمام للغرفة: ${roomId}`);
     dispatch({ type: 'SET_ROOM', payload: roomId });
     socket.current?.emit('joinRoom', { roomId });
-  }, []);
+    
+    // تحميل رسائل الغرفة إذا لم تكن محملة مسبقاً
+    if (!state.roomMessages[roomId] || state.roomMessages[roomId].length === 0) {
+      console.log(`📥 تحميل رسائل الغرفة ${roomId}...`);
+      await loadRoomMessages(roomId);
+    }
+  }, [state.roomMessages, loadRoomMessages]);
 
   // Send message function - محسنة
   const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number) => {
@@ -685,6 +691,51 @@ export function useChat() {
     }
   }, [state.currentRoomId]);
 
+  // تحميل رسائل غرفة محددة
+  const loadRoomMessages = useCallback(async (roomId: string) => {
+    try {
+      console.log(`📥 تحميل رسائل الغرفة ${roomId}...`);
+      
+      const response = await fetch(`/api/messages/room/${roomId}?limit=50`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.messages && Array.isArray(data.messages)) {
+          console.log(`✅ تم تحميل ${data.messages.length} رسالة من الغرفة ${roomId}`);
+          
+          // تحويل الرسائل إلى التنسيق المطلوب
+          const formattedMessages = data.messages.map((msg: any) => ({
+            id: msg.id,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp),
+            senderId: msg.senderId,
+            sender: msg.sender,
+            messageType: msg.messageType || 'text',
+            isPrivate: msg.isPrivate || false,
+            roomId: msg.roomId || roomId
+          }));
+          
+          // إضافة الرسائل للغرفة المحددة
+          dispatch({ 
+            type: 'ADD_ROOM_MESSAGE', 
+            payload: { 
+              roomId: roomId, 
+              message: formattedMessages 
+            }
+          });
+          
+          // تحديث الرسائل العامة إذا كانت الغرفة الحالية هي نفس الغرفة
+          if (state.currentRoomId === roomId) {
+            dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: formattedMessages });
+          }
+        }
+      } else {
+        console.error(`❌ فشل في تحميل رسائل الغرفة ${roomId}:`, response.status);
+      }
+    } catch (error) {
+      console.error(`❌ خطأ في تحميل رسائل الغرفة ${roomId}:`, error);
+    }
+  }, [state.currentRoomId]);
+
   return {
     // State
     currentUser: state.currentUser,
@@ -727,5 +778,9 @@ export function useChat() {
     sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId),
     handleTyping: () => sendTyping(),
     handlePrivateTyping: () => sendTyping(),
+    
+    // دوال إضافية للغرف
+    loadRoomMessages,
+    loadExistingMessages,
   };
 }
