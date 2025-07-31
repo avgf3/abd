@@ -5,11 +5,11 @@
  * يناير 2025
  */
 
-const axios = require('axios');
-const io = require('socket.io-client');
-const FormData = require('form-data');
-const fs = require('fs');
-const path = require('path');
+import axios from 'axios';
+import { io } from 'socket.io-client';
+import FormData from 'form-data';
+import fs from 'fs';
+import path from 'path';
 
 // إعدادات الاختبار
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5000';

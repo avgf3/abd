@@ -5,7 +5,7 @@
  * يناير 2025
  */
 
-const io = require('socket.io-client');
+import { io } from 'socket.io-client';
 
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5000';
 

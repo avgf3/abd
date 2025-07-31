@@ -5,7 +5,7 @@
  * يناير 2025
  */
 
-const axios = require('axios');
+import axios from 'axios';
 
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5000';
 

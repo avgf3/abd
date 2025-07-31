@@ -5,8 +5,8 @@
  * يناير 2025
  */
 
-const axios = require('axios');
-const io = require('socket.io-client');
+import axios from 'axios';
+import { io } from 'socket.io-client';
 
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5000';
 
