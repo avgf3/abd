@@ -100,10 +100,10 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
     if (!chat.currentUser) return;
     
     try {
-      await apiRequest('POST', '/api/friends', {
+      await apiRequest('/api/friends', { method: 'POST', body: {
         userId: chat.currentUser.id,
         friendId: user.id,
-      });
+      } });
       
       toast({
         title: "تم إرسال طلب الصداقة",
