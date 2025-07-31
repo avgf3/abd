@@ -67,7 +67,7 @@ type ChatAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'ADD_NOTIFICATION'; payload: Notification }
   | { type: 'SET_ROOM'; payload: string }
-  | { type: 'ADD_ROOM_MESSAGE'; payload: { roomId: string; message: ChatMessage } }
+  | { type: 'ADD_ROOM_MESSAGE'; payload: { roomId: string; message: ChatMessage | ChatMessage[] } }
   | { type: 'SET_SHOW_KICK_COUNTDOWN'; payload: boolean }
   | { type: 'IGNORE_USER'; payload: number }
   | { type: 'UNIGNORE_USER'; payload: number };
@@ -149,14 +149,18 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
     
     case 'ADD_ROOM_MESSAGE':
       const { roomId, message: roomMessage } = action.payload;
+      
+      // التحقق من نوع الرسالة - يمكن أن تكون رسالة واحدة أو مصفوفة
+      const messagesToAdd = Array.isArray(roomMessage) ? roomMessage : [roomMessage];
+      
       const updatedRoomMessages = {
         ...state.roomMessages,
-        [roomId]: [...(state.roomMessages[roomId] || []), roomMessage]
+        [roomId]: [...(state.roomMessages[roomId] || []), ...messagesToAdd]
       };
       
       // If it's the current room, also update public messages
       const updatedPublicMessages = roomId === state.currentRoomId
-        ? [...state.publicMessages, roomMessage]
+        ? [...state.publicMessages, ...messagesToAdd]
         : state.publicMessages;
       
       return {
@@ -284,6 +288,9 @@ export function useChat() {
       dispatch({ type: 'SET_CURRENT_USER', payload: data.user });
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
       
+      // تحميل الرسائل الموجودة من قاعدة البيانات
+      loadExistingMessages();
+      
       // طلب قائمة جميع المستخدمين (المتصلين وغير المتصلين)
       console.log('🔄 طلب قائمة جميع المستخدمين...');
       fetchAllUsers();
@@ -379,7 +386,7 @@ export function useChat() {
                 const chatMessage = message.message as ChatMessage;
                 // استخدام roomId من الرسالة مع fallback للغرفة العامة
                 const messageRoomId = (chatMessage as any).roomId || 'general';
-                console.log(`✅ إضافة رسالة للغرفة ${messageRoomId} (الغرفة الحالية: ${state.currentRoom})`);
+                console.log(`✅ إضافة رسالة للغرفة ${messageRoomId} (الغرفة الحالية: ${state.currentRoomId})`);
                 
                 dispatch({ 
                   type: 'ADD_ROOM_MESSAGE', 
@@ -387,7 +394,7 @@ export function useChat() {
                 });
                 
                 // تشغيل صوت الإشعار للرسائل من الآخرين في الغرفة الحالية فقط
-                if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoom) {
+                if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoomId) {
                   playNotificationSound();
                 }
               } else {
@@ -631,6 +638,52 @@ export function useChat() {
       socket.current.emit('typing', { isTyping: true });
     }
   }, []);
+
+  // تحميل الرسائل الموجودة من قاعدة البيانات
+  const loadExistingMessages = useCallback(async () => {
+    try {
+      console.log('📥 تحميل الرسائل الموجودة من قاعدة البيانات...');
+      
+      // تحميل رسائل الغرفة العامة
+      const response = await fetch('/api/messages/room/general?limit=50');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.messages && Array.isArray(data.messages)) {
+          console.log(`✅ تم تحميل ${data.messages.length} رسالة من الغرفة العامة`);
+          
+          // تحويل الرسائل إلى التنسيق المطلوب
+          const formattedMessages = data.messages.map((msg: any) => ({
+            id: msg.id,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp),
+            senderId: msg.senderId,
+            sender: msg.sender,
+            messageType: msg.messageType || 'text',
+            isPrivate: msg.isPrivate || false,
+            roomId: msg.roomId || 'general'
+          }));
+          
+          // إضافة الرسائل للغرفة العامة
+          dispatch({ 
+            type: 'ADD_ROOM_MESSAGE', 
+            payload: { 
+              roomId: 'general', 
+              message: formattedMessages 
+            }
+          });
+          
+          // تحديث الرسائل العامة إذا كانت الغرفة الحالية هي العامة
+          if (state.currentRoomId === 'general') {
+            dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: formattedMessages });
+          }
+        }
+      } else {
+        console.error('❌ فشل في تحميل الرسائل:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ خطأ في تحميل الرسائل:', error);
+    }
+  }, [state.currentRoomId]);
 
   return {
     // State
