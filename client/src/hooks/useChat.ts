@@ -578,11 +578,13 @@ export function useChat() {
   }, []);
 
   // Send message function - محسنة
-  const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number) => {
+  const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number, roomId?: string) => {
     if (!state.currentUser || !socket.current?.connected) {
       console.error('❌ لا يمكن إرسال الرسالة - المستخدم غير متصل');
       return;
     }
+
+    const targetRoomId = roomId || state.currentRoomId;
 
     const messageData = {
       senderId: state.currentUser.id,
@@ -590,7 +592,7 @@ export function useChat() {
       messageType,
       isPrivate: !!receiverId,
       receiverId,
-      roomId: state.currentRoomId
+      roomId: targetRoomId
     };
 
     console.log('📤 إرسال رسالة:', messageData);
@@ -603,6 +605,11 @@ export function useChat() {
       socket.current.emit('publicMessage', messageData);
     }
   }, [state.currentUser, state.currentRoomId]);
+
+  // دالة إرسال رسالة لغرفة محددة
+  const sendRoomMessage = useCallback((content: string, roomId: string, messageType: string = 'text') => {
+    return sendMessage(content, messageType, undefined, roomId);
+  }, [sendMessage]);
 
   // Disconnect function
   const disconnect = useCallback(() => {
@@ -645,14 +652,14 @@ export function useChat() {
       console.log('📥 تحميل الرسائل الموجودة من قاعدة البيانات...');
       
       // تحميل رسائل الغرفة العامة
-      const response = await fetch('/api/messages/room/general?limit=50');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.messages && Array.isArray(data.messages)) {
-          console.log(`✅ تم تحميل ${data.messages.length} رسالة من الغرفة العامة`);
+      const generalResponse = await fetch('/api/messages/room/general?limit=50');
+      if (generalResponse.ok) {
+        const generalData = await generalResponse.json();
+        if (generalData.messages && Array.isArray(generalData.messages)) {
+          console.log(`✅ تم تحميل ${generalData.messages.length} رسالة من الغرفة العامة`);
           
           // تحويل الرسائل إلى التنسيق المطلوب
-          const formattedMessages = data.messages.map((msg: any) => ({
+          const formattedMessages = generalData.messages.map((msg: any) => ({
             id: msg.id,
             content: msg.content,
             timestamp: new Date(msg.timestamp),
@@ -678,7 +685,44 @@ export function useChat() {
           }
         }
       } else {
-        console.error('❌ فشل في تحميل الرسائل:', response.status);
+        console.error('❌ فشل في تحميل رسائل الغرفة العامة:', generalResponse.status);
+      }
+
+      // تحميل رسائل الغرف الأخرى المتاحة
+      const rooms = ['music', 'broadcast', 'room_1753819014023']; // الغرف المعروفة
+      for (const roomId of rooms) {
+        try {
+          const response = await fetch(`/api/messages/room/${roomId}?limit=50`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.messages && Array.isArray(data.messages)) {
+              console.log(`✅ تم تحميل ${data.messages.length} رسالة من الغرفة ${roomId}`);
+              
+              // تحويل الرسائل إلى التنسيق المطلوب
+              const formattedMessages = data.messages.map((msg: any) => ({
+                id: msg.id,
+                content: msg.content,
+                timestamp: new Date(msg.timestamp),
+                senderId: msg.senderId,
+                sender: msg.sender,
+                messageType: msg.messageType || 'text',
+                isPrivate: msg.isPrivate || false,
+                roomId: msg.roomId || roomId
+              }));
+              
+              // إضافة الرسائل للغرفة
+              dispatch({ 
+                type: 'ADD_ROOM_MESSAGE', 
+                payload: { 
+                  roomId: roomId, 
+                  message: formattedMessages 
+                }
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`❌ خطأ في تحميل رسائل الغرفة ${roomId}:`, error);
+        }
       }
     } catch (error) {
       console.error('❌ خطأ في تحميل الرسائل:', error);
@@ -725,6 +769,7 @@ export function useChat() {
     // إصلاح: دوال مطلوبة للمكونات
     sendPublicMessage: (content: string) => sendMessage(content, 'text'),
     sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId),
+    sendRoomMessage: (content: string, roomId: string) => sendRoomMessage(content, roomId),
     handleTyping: () => sendTyping(),
     handlePrivateTyping: () => sendTyping(),
   };

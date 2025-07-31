@@ -563,7 +563,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 currentUser={chat.currentUser}
                 room={currentRoom}
                 onlineUsers={chat.onlineUsers}
-                onSendMessage={chat.sendPublicMessage}
+                onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
                 onTyping={chat.handleTyping}
                 typingUsers={Array.from(chat.typingUsers)}
                 onReportMessage={handleReportUser}
@@ -578,7 +578,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             <MessageArea 
               messages={chat.roomMessages[chat.currentRoomId] || chat.publicMessages}
               currentUser={chat.currentUser}
-              onSendMessage={chat.sendPublicMessage}
+              onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
               onTyping={chat.handleTyping}
               typingUsers={chat.typingUsers}
               onReportMessage={handleReportUser}
