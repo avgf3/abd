@@ -8,7 +8,7 @@
 import axios from 'axios';
 import { io } from 'socket.io-client';
 
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5000';
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
 
 console.log('⚡ اختبار سريع للإصلاحات');
 console.log(`📡 عنوان الخادم: ${SERVER_URL}`);
