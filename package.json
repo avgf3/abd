@@ -14,6 +14,7 @@
     "db:migrate": "npx drizzle-kit migrate",
     "db:push": "npx drizzle-kit push",
     "db:migrate-production": "node migrate-production.js",
+    "db:fix-migration": "node fix-migration-issues.js",
     "db:check-production": "node check-production-db.js",
     "db:fix": "node fix-database.js",
     "db:fix-sqlite": "node fix-sqlite-database.js",
