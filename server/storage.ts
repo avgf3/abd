@@ -137,11 +137,28 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
-    const result = await db.update(users)
-      .set(updates)
-      .where(eq(users.id, id))
-      .returning();
-    return result[0];
+    try {
+      console.log(`🔄 تحديث المستخدم ${id}:`, updates);
+      
+      const result = await db.update(users)
+        .set({
+          ...updates,
+          updatedAt: new Date() // إضافة timestamp للتحديث
+        })
+        .where(eq(users.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        console.error(`❌ لم يتم العثور على المستخدم ${id} للتحديث`);
+        return undefined;
+      }
+      
+      console.log(`✅ تم تحديث المستخدم ${id} بنجاح:`, result[0]);
+      return result[0];
+    } catch (error) {
+      console.error(`❌ خطأ في تحديث المستخدم ${id}:`, error);
+      throw error;
+    }
   }
 
   async setUserOnlineStatus(id: number, isOnline: boolean): Promise<void> {
