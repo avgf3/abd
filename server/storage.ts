@@ -137,11 +137,20 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
-    const result = await db.update(users)
-      .set(updates)
-      .where(eq(users.id, id))
-      .returning();
-    return result[0];
+    try {
+      console.log(`🔄 تحديث المستخدم ${id}:`, updates);
+      
+      const result = await db.update(users)
+        .set(updates)
+        .where(eq(users.id, id))
+        .returning();
+      
+      console.log(`✅ تم تحديث المستخدم ${id} بنجاح:`, result[0]);
+      return result[0];
+    } catch (error) {
+      console.error(`❌ خطأ في تحديث المستخدم ${id}:`, error);
+      throw error;
+    }
   }
 
   async setUserOnlineStatus(id: number, isOnline: boolean): Promise<void> {
