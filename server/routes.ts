@@ -983,7 +983,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // إعدادات CORS محسنة
     cors: { 
       origin: process.env.NODE_ENV === 'production' 
-        ? [process.env.RENDER_EXTERNAL_URL, "https://abd-gmva.onrender.com"].filter(Boolean)
+        ? [process.env.RENDER_EXTERNAL_URL, "https://abd-ylo2.onrender.com", "https://abd-gmva.onrender.com"].filter(Boolean)
         : "*",
       methods: ["GET", "POST"],
       credentials: true
@@ -3657,6 +3657,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Alternative endpoint with userId in query parameter (for client compatibility)
+  app.get("/api/notifications/unread-count", async (req, res) => {
+    try {
+      const userId = parseInt(req.query.userId as string);
+      if (!userId) {
+        return res.status(400).json({ error: "معرف المستخدم مطلوب" });
+      }
+      
+      const count = await storage.getUnreadNotificationCount(userId);
+      res.json({ count });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في جلب عدد الإشعارات" });
+    }
+  });
+
   // Update user profile - General endpoint - محسّن مع معالجة أفضل للأخطاء
   app.post('/api/users/update-profile', async (req, res) => {
     try {
@@ -4714,6 +4729,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: 'تم إزالة المتحدث بنجاح' });
     } catch (error) {
       console.error('خطأ في إزالة المتحدث:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // جلب معلومات أساسية عن الغرفة
+  app.get('/api/rooms/:roomId', async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      
+      // Return basic room info - this creates the room if it doesn't exist
+      const roomInfo = {
+        id: roomId,
+        name: roomId === 'general' ? 'الغرفة العامة' : `الغرفة ${roomId.replace('room_', '')}`,
+        userCount: 0,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      };
+      
+      res.json({ room: roomInfo });
+    } catch (error) {
+      console.error('خطأ في جلب معلومات الغرفة:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });

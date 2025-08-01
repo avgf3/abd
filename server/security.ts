@@ -185,10 +185,10 @@ export function setupSecurity(app: Express): void {
     res.setHeader('Content-Security-Policy', [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: https:",
       "connect-src 'self' ws: wss:",
-      "font-src 'self'",
+      "font-src 'self' https://fonts.gstatic.com",
       "object-src 'none'",
       "media-src 'self'",
       "frame-src 'none'"
@@ -202,6 +202,7 @@ export function setupSecurity(app: Express): void {
     const allowedOrigins = [
       'http://localhost:5173',
       'http://localhost:3000',
+      'https://abd-ylo2.onrender.com',
       process.env.FRONTEND_URL,
       process.env.RENDER_EXTERNAL_URL
     ].filter(Boolean);
@@ -209,6 +210,9 @@ export function setupSecurity(app: Express): void {
     const origin = req.headers.origin;
     if (origin && allowedOrigins.includes(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin);
+    } else if (!origin) {
+      // For same-origin requests (production)
+      res.setHeader('Access-Control-Allow-Origin', '*');
     }
     
     res.setHeader('Access-Control-Allow-Credentials', 'true');
