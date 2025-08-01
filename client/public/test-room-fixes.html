@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاحات نظام الغرف</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; direction: rtl; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .messages { height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+        .controls { margin: 10px 0; }
+        input, button, select { margin: 5px; padding: 8px; }
+        .status { font-weight: bold; color: #007bff; }
+        .error { color: #dc3545; }
+        .success { color: #28a745; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 اختبار إصلاحات نظام الغرف</h1>
+        
+        <div class="section">
+            <h3>📡 حالة الاتصال</h3>
+            <div id="connectionStatus" class="status">غير متصل</div>
+            <div id="currentRoom" class="status">الغرفة الحالية: غير محدد</div>
+            <div id="onlineUsers" class="status">المستخدمون المتصلون: 0</div>
+        </div>
+
+        <div class="section">
+            <h3>🔐 تسجيل الدخول</h3>
+            <div class="controls">
+                <input type="text" id="usernameInput" placeholder="اسم المستخدم" value="test_user">
+                <button onclick="login()">تسجيل الدخول</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🏠 إدارة الغرف</h3>
+            <div class="controls">
+                <select id="roomSelect">
+                    <option value="general">الغرفة العامة</option>
+                    <option value="music">غرفة الموسيقى</option>
+                    <option value="broadcast">غرفة البث</option>
+                </select>
+                <button onclick="joinRoom()">انضمام للغرفة</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>💬 الرسائل</h3>
+            <div id="messages" class="messages"></div>
+            <div class="controls">
+                <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()">إرسال</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>📊 سجل الأحداث</h3>
+            <div id="eventLog" class="messages"></div>
+            <button onclick="clearLog()">مسح السجل</button>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let currentUser = null;
+        let currentRoom = 'general';
+
+        function log(message, type = 'info') {
+            const eventLog = document.getElementById('eventLog');
+            const timestamp = new Date().toLocaleTimeString('ar');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            eventLog.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            eventLog.scrollTop = eventLog.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function updateStatus() {
+            document.getElementById('connectionStatus').textContent = 
+                socket?.connected ? 'متصل ✅' : 'غير متصل ❌';
+            document.getElementById('currentRoom').textContent = `الغرفة الحالية: ${currentRoom}`;
+        }
+
+        function addMessage(content, sender = 'النظام', type = 'system') {
+            const messages = document.getElementById('messages');
+            const timestamp = new Date().toLocaleTimeString('ar');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            messages.innerHTML += `<div class="${className}"><strong>[${timestamp}] ${sender}:</strong> ${content}</div>`;
+            messages.scrollTop = messages.scrollTop;
+        }
+
+        function login() {
+            const username = document.getElementById('usernameInput').value.trim();
+            if (!username) {
+                log('يرجى إدخال اسم المستخدم', 'error');
+                return;
+            }
+
+            if (socket) {
+                socket.disconnect();
+            }
+
+            socket = io();
+            setupSocketListeners();
+
+            socket.on('connect', () => {
+                log('تم الاتصال بالسيرفر', 'success');
+                updateStatus();
+                
+                // تسجيل الدخول كضيف
+                socket.emit('guestAuth', { username });
+                log(`محاولة تسجيل الدخول باسم: ${username}`);
+            });
+
+            socket.on('disconnect', () => {
+                log('تم قطع الاتصال', 'error');
+                updateStatus();
+            });
+        }
+
+        function setupSocketListeners() {
+            socket.on('authenticated', (data) => {
+                currentUser = data.user;
+                log(`تم تسجيل الدخول بنجاح: ${data.user.username}`, 'success');
+                addMessage(`مرحباً ${data.user.username}!`, 'النظام', 'success');
+            });
+
+            socket.on('message', (data) => {
+                log(`رسالة واردة: ${data.type}`, 'info');
+                
+                switch (data.type) {
+                    case 'roomJoined':
+                        currentRoom = data.roomId;
+                        log(`تم الانضمام للغرفة: ${data.roomId}`, 'success');
+                        addMessage(`تم الانضمام للغرفة: ${data.roomId}`, 'النظام', 'success');
+                        updateStatus();
+                        if (data.users) {
+                            document.getElementById('onlineUsers').textContent = 
+                                `المستخدمون المتصلون: ${data.users.length}`;
+                        }
+                        break;
+
+                    case 'onlineUsers':
+                        document.getElementById('onlineUsers').textContent = 
+                            `المستخدمون المتصلون: ${data.users.length}`;
+                        log(`تحديث قائمة المستخدمين: ${data.users.length} مستخدم`);
+                        break;
+
+                    case 'userJoinedRoom':
+                        log(`${data.username} انضم للغرفة: ${data.roomId}`);
+                        if (data.roomId === currentRoom) {
+                            addMessage(`${data.username} انضم للغرفة`, 'النظام');
+                        }
+                        break;
+
+                    case 'userLeftRoom':
+                        log(`${data.username} غادر الغرفة: ${data.roomId}`);
+                        if (data.roomId === currentRoom) {
+                            addMessage(`${data.username} غادر الغرفة`, 'النظام');
+                        }
+                        break;
+
+                    case 'error':
+                        log(`خطأ: ${data.message}`, 'error');
+                        addMessage(data.message, 'خطأ', 'error');
+                        break;
+                }
+
+                // معالجة الرسائل الجديدة
+                if (data.envelope && data.envelope.type === 'newMessage') {
+                    const msg = data.envelope.message;
+                    if (msg.roomId === currentRoom) {
+                        addMessage(msg.content, msg.sender?.username || 'مجهول');
+                        log(`رسالة جديدة من ${msg.sender?.username}: ${msg.content}`);
+                    }
+                }
+            });
+        }
+
+        function joinRoom() {
+            const roomId = document.getElementById('roomSelect').value;
+            if (!socket || !socket.connected) {
+                log('يجب تسجيل الدخول أولاً', 'error');
+                return;
+            }
+
+            log(`محاولة الانضمام للغرفة: ${roomId}`);
+            socket.emit('joinRoom', { roomId });
+        }
+
+        function sendMessage() {
+            const content = document.getElementById('messageInput').value.trim();
+            if (!content) return;
+
+            if (!socket || !socket.connected) {
+                log('يجب تسجيل الدخول أولاً', 'error');
+                return;
+            }
+
+            log(`إرسال رسالة للغرفة ${currentRoom}: ${content}`);
+            socket.emit('publicMessage', {
+                content,
+                roomId: currentRoom,
+                messageType: 'text'
+            });
+
+            document.getElementById('messageInput').value = '';
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('eventLog').innerHTML = '';
+        }
+
+        // تحديث الحالة كل ثانية
+        setInterval(updateStatus, 1000);
+    </script>
+</body>
+</html>

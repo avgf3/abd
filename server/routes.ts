@@ -1663,6 +1663,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`👥 عدد المستخدمين المتصلين في الغرفة ${currentRoom}: ${roomUsers.length}`);
         console.log(`👥 المستخدمون في الغرفة: ${roomUsers.map(u => u.username).join(', ')}`);
         
+        // إرسال تأكيد الانضمام للغرفة مع قائمة المستخدمين
+        socket.emit('message', {
+          type: 'roomJoined',
+          roomId: currentRoom,
+          users: roomUsers
+        });
+        
         // إرسال قائمة المستخدمين في الغرفة للمستخدم الجديد
         socket.emit('message', { 
           type: 'onlineUsers', 
@@ -1840,25 +1847,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('📝 محتوى الرسالة:', sanitizedContent);
         
         // إرسال الرسالة فقط للمستخدمين في نفس الغرفة
-        if (roomId === 'general') {
-          // للغرفة العامة، إرسال لجميع المستخدمين
-          console.log('📡 إرسال رسالة للغرفة العامة لجميع المستخدمين');
-          io.emit('message', { 
-            envelope: {
-              type: 'newMessage',
-              message: { ...newMessage, sender, roomId }
-            }
-          });
-        } else {
-          // للغرف الأخرى، إرسال فقط للمستخدمين في الغرفة
-          console.log(`📡 إرسال رسالة للغرفة ${roomId}`);
-          io.to(`room_${roomId}`).emit('message', { 
-            envelope: {
-              type: 'newMessage',
-              message: { ...newMessage, sender, roomId }
-            }
-          });
-        }
+        console.log(`📡 إرسال رسالة للغرفة ${roomId}`);
+        io.to(`room_${roomId}`).emit('message', { 
+          envelope: {
+            type: 'newMessage',
+            message: { ...newMessage, sender, roomId }
+          }
+        });
       } catch (error) {
         console.error('خطأ في إرسال الرسالة العامة:', error);
         socket.emit('message', { type: 'error', message: 'خطأ في إرسال الرسالة' });

@@ -487,6 +487,9 @@ export function useChat() {
               console.log(`✅ تأكيد انضمام للغرفة: ${message.roomId}`);
               dispatch({ type: 'SET_ROOM', payload: message.roomId });
               
+              // تحميل رسائل الغرفة
+              loadRoomMessages(message.roomId);
+              
               // تحديث قائمة المستخدمين المتصلين في الغرفة
               if (message.users && Array.isArray(message.users)) {
                 console.log(`👥 تحديث قائمة مستخدمي الغرفة ${message.roomId}:`, message.users.length);
@@ -570,10 +573,49 @@ export function useChat() {
     }
   }, [setupSocketListeners]);
 
+  // Load room messages function
+  const loadRoomMessages = useCallback(async (roomId: string) => {
+    try {
+      console.log(`📥 تحميل رسائل الغرفة: ${roomId}`);
+      const response = await fetch(`/api/messages/room/${roomId}?limit=50`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.messages && Array.isArray(data.messages)) {
+          console.log(`✅ تم تحميل ${data.messages.length} رسالة من الغرفة ${roomId}`);
+          
+          // تحويل الرسائل إلى التنسيق المطلوب
+          const formattedMessages = data.messages.map((msg: any) => ({
+            id: msg.id,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp),
+            senderId: msg.senderId,
+            sender: msg.sender,
+            messageType: msg.messageType || 'text',
+            isPrivate: msg.isPrivate || false,
+            roomId: msg.roomId || roomId
+          }));
+          
+          // إضافة الرسائل للغرفة
+          dispatch({ 
+            type: 'ADD_ROOM_MESSAGE', 
+            payload: { 
+              roomId: roomId, 
+              message: formattedMessages 
+            }
+          });
+        }
+      } else {
+        console.error(`❌ فشل في تحميل رسائل الغرفة ${roomId}:`, response.status);
+      }
+    } catch (error) {
+      console.error(`❌ خطأ في تحميل رسائل الغرفة ${roomId}:`, error);
+    }
+  }, []);
+
   // Join room function
   const joinRoom = useCallback((roomId: string) => {
     console.log(`🔄 انضمام للغرفة: ${roomId}`);
-    dispatch({ type: 'SET_ROOM', payload: roomId });
+    // لا نغير الغرفة الحالية حتى نتلقى تأكيد من السيرفر
     socket.current?.emit('joinRoom', { roomId });
   }, []);
 
@@ -688,42 +730,8 @@ export function useChat() {
         console.error('❌ فشل في تحميل رسائل الغرفة العامة:', generalResponse.status);
       }
 
-      // تحميل رسائل الغرف الأخرى المتاحة
-      const rooms = ['music', 'broadcast', 'room_1753819014023']; // الغرف المعروفة
-      for (const roomId of rooms) {
-        try {
-          const response = await fetch(`/api/messages/room/${roomId}?limit=50`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.messages && Array.isArray(data.messages)) {
-              console.log(`✅ تم تحميل ${data.messages.length} رسالة من الغرفة ${roomId}`);
-              
-              // تحويل الرسائل إلى التنسيق المطلوب
-              const formattedMessages = data.messages.map((msg: any) => ({
-                id: msg.id,
-                content: msg.content,
-                timestamp: new Date(msg.timestamp),
-                senderId: msg.senderId,
-                sender: msg.sender,
-                messageType: msg.messageType || 'text',
-                isPrivate: msg.isPrivate || false,
-                roomId: msg.roomId || roomId
-              }));
-              
-              // إضافة الرسائل للغرفة
-              dispatch({ 
-                type: 'ADD_ROOM_MESSAGE', 
-                payload: { 
-                  roomId: roomId, 
-                  message: formattedMessages 
-                }
-              });
-            }
-          }
-        } catch (error) {
-          console.error(`❌ خطأ في تحميل رسائل الغرفة ${roomId}:`, error);
-        }
-      }
+      // سيتم تحميل رسائل الغرف عند الانضمام إليها فقط
+      // بدلاً من تحميل غرف مُحددة مسبقاً
     } catch (error) {
       console.error('❌ خطأ في تحميل الرسائل:', error);
     }
@@ -770,6 +778,7 @@ export function useChat() {
     sendPublicMessage: (content: string) => sendMessage(content, 'text'),
     sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId),
     sendRoomMessage: (content: string, roomId: string) => sendRoomMessage(content, roomId),
+    loadRoomMessages,
     handleTyping: () => sendTyping(),
     handlePrivateTyping: () => sendTyping(),
   };
