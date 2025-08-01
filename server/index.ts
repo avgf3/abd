@@ -15,6 +15,18 @@ const app = express();
 // Setup security first
 setupSecurity(app);
 
+// Increase timeouts to prevent 502 errors
+app.use((req, res, next) => {
+  // Set timeout for all requests (2 minutes)
+  res.setTimeout(120000, () => {
+    log(`❌ Request timeout: ${req.method} ${req.path}`);
+    if (!res.headersSent) {
+      res.status(408).json({ error: 'Request timeout' });
+    }
+  });
+  next();
+});
+
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // خدمة الملفات الثابتة للصور المرفوعة - محسّنة لـ Render
@@ -62,6 +74,25 @@ app.use('/uploads', (req, res, next) => {
     // السماح بالوصول من أي domain
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
+  }
+}));
+
+// Add static file serving for SVGs and other assets
+app.use('/svgs', express.static(path.join(process.cwd(), 'client/public/svgs'), {
+  maxAge: '7d',
+  setHeaders: (res, path) => {
+    if (path.endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    }
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+}));
+
+app.use('/default_avatar.svg', express.static(path.join(process.cwd(), 'client/public/default_avatar.svg'), {
+  maxAge: '7d',
+  setHeaders: (res) => {
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
 }));
 

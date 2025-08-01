@@ -19,14 +19,24 @@ services:
         value: true
       - key: SOCKET_IO_POLLING_ONLY
         value: false
+      - key: SOCKET_IO_PING_TIMEOUT
+        value: 60000
+      - key: SOCKET_IO_PING_INTERVAL
+        value: 25000
       - key: DATABASE_URL
-        value: postgresql://postgres:your_actual_password@qzehjgmawnrihmepboca.supabase.co:5432/postgres?sslmode=require
+        value: postgresql://postgres:your_actual_password@qzehjgmawnrihmepboca.supabase.co:5432/postgres?sslmode=require&connect_timeout=30&pool_timeout=30
       - key: JWT_SECRET
         value: arabic-chat-secret-key-2025-production
       - key: SESSION_SECRET
         value: arabic-chat-session-secret-2025-production
       - key: CORS_ORIGIN
-        value: https://your-app-name.onrender.com
+        value: https://abd-ylo2.onrender.com
+      - key: MAX_REQUEST_TIMEOUT
+        value: 120000
+      - key: KEEP_ALIVE_TIMEOUT
+        value: 120000
+      - key: HEADERS_TIMEOUT
+        value: 121000
     healthCheckPath: /api/health
     numInstances: 1
     plan: free

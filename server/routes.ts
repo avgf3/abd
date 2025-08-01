@@ -990,27 +990,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
     path: "/socket.io/",
     
-    // إعدادات النقل محسنة للاستقرار
+    // إعدادات النقل محسنة للاستقرار على Render
     transports: ['websocket', 'polling'],
     allowEIO3: true,
     
-    // إعدادات الاتصال المحسنة
-    pingTimeout: 60000,
-    pingInterval: 25000,
-    upgradeTimeout: 10000,
+    // إعدادات الاتصال المحسنة لمنع 502 errors
+    pingTimeout: parseInt(process.env.SOCKET_IO_PING_TIMEOUT || '60000'),
+    pingInterval: parseInt(process.env.SOCKET_IO_PING_INTERVAL || '25000'),
+    upgradeTimeout: 30000, // زيادة timeout للارتقاء
     allowUpgrades: true,
+    connectTimeout: 45000, // timeout للاتصال الأولي
     
     // إعدادات الأمان
     cookie: false,
     serveClient: false,
     
-    // إعدادات الأداء
+    // إعدادات الأداء المحسنة
     maxHttpBufferSize: 1e6, // 1MB
+    compression: true,
+    httpCompression: true,
+    
+    // معالجة أفضل للطلبات
     allowRequest: (req, callback) => {
-      // فحص أمني بسيط للطلبات
-      const isOriginAllowed = process.env.NODE_ENV !== 'production' || 
-        req.headers.origin === process.env.RENDER_EXTERNAL_URL;
-      callback(null, isOriginAllowed);
+      try {
+        // فحص أمني بسيط للطلبات
+        const isOriginAllowed = process.env.NODE_ENV !== 'production' || 
+          !req.headers.origin ||
+          req.headers.origin === process.env.RENDER_EXTERNAL_URL ||
+          req.headers.origin === "https://abd-ylo2.onrender.com";
+        callback(null, isOriginAllowed);
+      } catch (error) {
+        console.error('خطأ في فحص الطلب:', error);
+        callback(null, false);
+      }
     }
   });
   
@@ -3660,15 +3672,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Alternative endpoint with userId in query parameter (for client compatibility)
   app.get("/api/notifications/unread-count", async (req, res) => {
     try {
-      const userId = parseInt(req.query.userId as string);
-      if (!userId) {
-        return res.status(400).json({ error: "معرف المستخدم مطلوب" });
+      const userIdParam = req.query.userId as string;
+      
+      // تحسين التحقق من صحة المعاملات
+      if (!userIdParam || userIdParam === 'undefined' || userIdParam === 'null') {
+        return res.status(400).json({ 
+          error: "معرف المستخدم مطلوب",
+          received: userIdParam,
+          message: "يرجى التأكد من تسجيل الدخول"
+        });
+      }
+      
+      const userId = parseInt(userIdParam);
+      if (isNaN(userId) || userId <= 0) {
+        return res.status(400).json({ 
+          error: "معرف المستخدم غير صحيح",
+          received: userIdParam
+        });
+      }
+      
+      // التحقق من وجود المستخدم
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ 
+          error: "المستخدم غير موجود",
+          userId 
+        });
       }
       
       const count = await storage.getUnreadNotificationCount(userId);
-      res.json({ count });
+      res.json({ count, userId });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في جلب عدد الإشعارات" });
+      console.error('خطأ في جلب عدد الإشعارات:', error);
+      res.status(500).json({ 
+        error: "خطأ في جلب عدد الإشعارات",
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
@@ -4768,6 +4807,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('خطأ في جلب معلومات غرفة البث:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // Alternative endpoint with userId in query parameter (for client compatibility)
+  app.get("/api/notifications/unread-count", async (req, res) => {
+    try {
+      const userIdParam = req.query.userId as string;
+      
+      // تحسين التحقق من صحة المعاملات
+      if (!userIdParam || userIdParam === 'undefined' || userIdParam === 'null') {
+        return res.status(400).json({ 
+          error: "معرف المستخدم مطلوب",
+          received: userIdParam,
+          message: "يرجى التأكد من تسجيل الدخول"
+        });
+      }
+      
+      const userId = parseInt(userIdParam);
+      if (isNaN(userId) || userId <= 0) {
+        return res.status(400).json({ 
+          error: "معرف المستخدم غير صحيح",
+          received: userIdParam
+        });
+      }
+      
+      // التحقق من وجود المستخدم
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ 
+          error: "المستخدم غير موجود",
+          userId 
+        });
+      }
+      
+      const count = await storage.getUnreadNotificationCount(userId);
+      res.json({ count, userId });
+    } catch (error) {
+      console.error('خطأ في جلب عدد الإشعارات:', error);
+      res.status(500).json({ 
+        error: "خطأ في جلب عدد الإشعارات",
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
