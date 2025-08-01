@@ -667,7 +667,9 @@ export class PostgreSQLStorage implements IStorage {
 
   async createRoom(roomData: any): Promise<any> {
     try {
-      const roomId = `room_${Date.now()}`;
+      // استخدام ID مخصص إذا تم توفيره، وإلا إنشاء ID آلي
+      const roomId = roomData.id || `room_${Date.now()}`;
+      
       const result = await db.insert(rooms).values({
         id: roomId,
         name: roomData.name,

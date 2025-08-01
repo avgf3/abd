@@ -89,7 +89,14 @@ export class RoomService extends EventEmitter {
       }
 
       const newRoom = await db.insert(rooms).values({
-        ...validated,
+        id: validated.id,
+        name: validated.name,
+        description: validated.description,
+        icon: validated.icon,
+        createdBy: validated.createdBy,
+        isDefault: validated.isDefault || false,
+        isBroadcast: validated.isBroadcast,
+        hostId: validated.hostId,
         speakers: JSON.stringify([]),
         micQueue: JSON.stringify([]),
         isActive: true,
