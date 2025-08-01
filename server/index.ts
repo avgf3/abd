@@ -26,6 +26,15 @@ app.use('/uploads', (req, res, next) => {
   const fullPath = path.join(uploadsPath, req.path);
   if (!fs.existsSync(fullPath)) {
     console.error('❌ الملف غير موجود:', fullPath);
+    
+    // Return default avatar for profile images
+    if (req.path.includes('profile-') || req.path.includes('/profiles/')) {
+      const defaultAvatarPath = path.join(process.cwd(), 'client/public/default_avatar.svg');
+      if (fs.existsSync(defaultAvatarPath)) {
+        return res.sendFile(defaultAvatarPath);
+      }
+    }
+    
     return res.status(404).json({ error: 'File not found' });
   }
   

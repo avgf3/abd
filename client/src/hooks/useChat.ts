@@ -555,13 +555,21 @@ export function useChat() {
     try {
       // إنشاء اتصال Socket.IO
       if (!socket.current) {
-        const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
+        // Use dynamic URL: production uses current origin, development uses localhost
+        const isDevelopment = import.meta.env.DEV;
+        const serverUrl = isDevelopment 
+          ? (import.meta.env.VITE_SERVER_URL || 'http://localhost:5000')
+          : window.location.origin;
+        
+        console.log('🔌 جاري الاتصال بـ Socket.IO على:', serverUrl);
         socket.current = io(serverUrl, {
           transports: ['websocket', 'polling'],
           timeout: 10000,
           reconnection: true,
           reconnectionAttempts: 5,
-          reconnectionDelay: 1000
+          reconnectionDelay: 1000,
+          autoConnect: true,
+          forceNew: false
         });
       }
 
