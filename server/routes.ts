@@ -12,6 +12,7 @@ import { databaseCleanup } from "./utils/database-cleanup";
 import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
 import securityApiRoutes from "./api-security";
 import apiRoutes from "./routes/index";
+import roomRoutes from "./routes/roomRoutes";
 import { pointsService } from "./services/pointsService";
 import { developmentOnly, logDevelopmentEndpoint } from "./middleware/development";
 import { z } from "zod";
@@ -3558,6 +3559,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Security API routes
   app.use('/api/security', securityApiRoutes);
   
+  // Room management routes
+  app.use('/api/rooms', roomRoutes);
+  
   // New Modular Routes - نظام المسارات المعاد تنظيمه
   app.use('/api/v2', apiRoutes);
   
@@ -4457,82 +4461,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===================
-  // APIs الغرف
+  // APIs الغرف - تم نقلها إلى roomRoutes.ts
   // ===================
 
-  // جلب جميع الغرف
-  app.get('/api/rooms', async (req, res) => {
-    try {
-      const rooms = await storage.getAllRooms();
-      res.json({ rooms });
-    } catch (error) {
-      console.error('خطأ في جلب الغرف:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
-  });
 
-  // إنشاء غرفة جديدة
-  app.post('/api/rooms', upload.single('image'), async (req, res) => {
-    try {
-      const { name, description, userId } = req.body;
 
-      if (!name || !userId) {
-        return res.status(400).json({ error: 'اسم الغرفة ومعرف المستخدم مطلوبان' });
-      }
-
-      const user = await storage.getUser(parseInt(userId));
-      if (!user) {
-        return res.status(404).json({ error: 'المستخدم غير موجود' });
-      }
-
-      // التحقق من الصلاحيات
-      if (!['admin', 'owner'].includes(user.userType)) {
-        return res.status(403).json({ error: 'ليس لديك صلاحية لإنشاء غرف' });
-      }
-
-      // معالجة الصورة
-      let icon = '';
-      if (req.file) {
-        const timestamp = Date.now();
-        const filename = `room_${timestamp}_${req.file.originalname}`;
-        const filepath = path.join(process.cwd(), 'client', 'public', 'uploads', 'rooms', filename);
-        
-        // إنشاء مجلد الغرف إذا لم يكن موجوداً
-        const roomsDir = path.dirname(filepath);
-        if (!fs.existsSync(roomsDir)) {
-          fs.mkdirSync(roomsDir, { recursive: true });
-        }
-        
-        fs.writeFileSync(filepath, req.file.buffer);
-        icon = `/uploads/rooms/${filename}`;
-      }
-
-      const roomData = {
-        name: name.trim(),
-        description: description?.trim() || '',
-        icon,
-        createdBy: user.id,
-        isDefault: false,
-        isActive: true
-      };
-
-      const room = await storage.createRoom(roomData);
-      
-      // إرسال إشعار بالغرفة الجديدة
-      io.emit('roomCreated', { room });
-      
-      // إرسال قائمة الغرف المحدثة لجميع المستخدمين
-      const updatedRooms = await storage.getAllRooms();
-      io.emit('roomsUpdated', { rooms: updatedRooms });
-
-      res.json({ room });
-    } catch (error) {
-      console.error('خطأ في إنشاء الغرفة:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
-  });
-
-  // حذف غرفة
+  // Original room APIs removed - now handled by roomRoutes.ts
+  /* 
+  // حذف غرفة (REMOVED)
   app.delete('/api/rooms/:roomId', async (req, res) => {
     try {
       const { roomId } = req.params;
@@ -4841,6 +4777,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
+  */
 
   return httpServer;
 }
