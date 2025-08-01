@@ -1,835 +1,325 @@
-import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation, Notification } from '@/types/chat';
-import { globalNotificationManager, MessageCacheManager, NetworkOptimizer } from '@/lib/chatOptimization';
-import { chatAnalytics } from '@/lib/chatAnalytics';
+import type { ChatUser, ChatMessage, ChatRoom } from '@/types/chat';
 import { apiRequest } from '@/lib/queryClient';
 
-// Audio notification function
+// تشغيل صوت الإشعار
 const playNotificationSound = () => {
   try {
     const audio = new Audio('/notification.mp3');
     audio.volume = 0.3;
     audio.play().catch(() => {
-      // Fallback: create a simple beep using Web Audio API
-      try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        
-        oscillator.connect(gain);
-        gain.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        gain.gain.setValueAtTime(0.1, audioContext.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
-      } catch (error) {
-        // Silent fail
-      }
+      // تجاهل الأخطاء
     });
   } catch (error) {
-    // Silent fail
+    // تجاهل الأخطاء
   }
 };
 
-// State interfaces
-interface ChatState {
-  currentUser: ChatUser | null;
-  onlineUsers: ChatUser[];
-  publicMessages: ChatMessage[];
-  privateConversations: PrivateConversation;
-  ignoredUsers: Set<number>;
-  isConnected: boolean;
-  typingUsers: Set<string>;
-  connectionError: string | null;
-  newMessageSender: ChatUser | null;
-  isLoading: boolean;
-  notifications: Notification[];
-  currentRoomId: string;
-  roomMessages: Record<string, ChatMessage[]>;
-  showKickCountdown: boolean;
-}
+export const useChat = () => {
+  // الحالات الأساسية
+  const [currentUser, setCurrentUser] = useState<ChatUser | null>(null);
+  const [onlineUsers, setOnlineUsers] = useState<ChatUser[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
+  const [currentRoomId, setCurrentRoomId] = useState<string>('general');
+  const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
 
-// Action types
-type ChatAction = 
-  | { type: 'SET_CURRENT_USER'; payload: ChatUser | null }
-  | { type: 'SET_ONLINE_USERS'; payload: ChatUser[] }
-  | { type: 'ADD_PUBLIC_MESSAGE'; payload: ChatMessage }
-  | { type: 'SET_PUBLIC_MESSAGES'; payload: ChatMessage[] }
-  | { type: 'ADD_PRIVATE_MESSAGE'; payload: { userId: number; message: ChatMessage } }
-  | { type: 'SET_CONNECTION_STATUS'; payload: boolean }
-  | { type: 'SET_TYPING_USERS'; payload: Set<string> }
-  | { type: 'SET_CONNECTION_ERROR'; payload: string | null }
-  | { type: 'SET_NEW_MESSAGE_SENDER'; payload: ChatUser | null }
-  | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'ADD_NOTIFICATION'; payload: Notification }
-  | { type: 'SET_ROOM'; payload: string }
-  | { type: 'ADD_ROOM_MESSAGE'; payload: { roomId: string; message: ChatMessage | ChatMessage[] } }
-  | { type: 'SET_SHOW_KICK_COUNTDOWN'; payload: boolean }
-  | { type: 'IGNORE_USER'; payload: number }
-  | { type: 'UNIGNORE_USER'; payload: number };
+  const socketRef = useRef<Socket | null>(null);
 
-// Initial state
-const initialState: ChatState = {
-  currentUser: null,
-  onlineUsers: [],
-  publicMessages: [],
-  privateConversations: {},
-  ignoredUsers: new Set(),
-  isConnected: false,
-  typingUsers: new Set(),
-  connectionError: null,
-  newMessageSender: null,
-  isLoading: false,
-  notifications: [],
-  currentRoomId: 'general',
-  roomMessages: {},
-  showKickCountdown: false
-};
+  // الاتصال بـ Socket.IO
+  const connectSocket = useCallback(() => {
+    if (socketRef.current?.connected) return;
 
-// Reducer function
-function chatReducer(state: ChatState, action: ChatAction): ChatState {
-  switch (action.type) {
-    case 'SET_CURRENT_USER':
-      return { ...state, currentUser: action.payload };
-    
-    case 'SET_ONLINE_USERS':
-      return { ...state, onlineUsers: action.payload };
-    
-    case 'ADD_PUBLIC_MESSAGE':
-      return { 
-        ...state, 
-        publicMessages: [...state.publicMessages, action.payload] 
-      };
-    
-    case 'SET_PUBLIC_MESSAGES':
-      return { ...state, publicMessages: action.payload };
-    
-    case 'ADD_PRIVATE_MESSAGE':
-      const { userId, message } = action.payload;
-      return {
-        ...state,
-        privateConversations: {
-          ...state.privateConversations,
-          [userId]: [...(state.privateConversations[userId] || []), message]
-        }
-      };
-    
-    case 'SET_CONNECTION_STATUS':
-      return { ...state, isConnected: action.payload };
-    
-    case 'SET_TYPING_USERS':
-      return { ...state, typingUsers: action.payload };
-    
-    case 'SET_CONNECTION_ERROR':
-      return { ...state, connectionError: action.payload };
-    
-    case 'SET_NEW_MESSAGE_SENDER':
-      return { ...state, newMessageSender: action.payload };
-    
-    case 'SET_LOADING':
-      return { ...state, isLoading: action.payload };
-    
-    case 'ADD_NOTIFICATION':
-      return { 
-        ...state, 
-        notifications: [...state.notifications, action.payload] 
-      };
-    
-    case 'SET_ROOM':
-      const currentMessages = state.roomMessages[action.payload] || [];
-      return { 
-        ...state, 
-        currentRoomId: action.payload,
-        publicMessages: currentMessages
-      };
-    
-    case 'ADD_ROOM_MESSAGE':
-      const { roomId, message: roomMessage } = action.payload;
-      
-      // التحقق من نوع الرسالة - يمكن أن تكون رسالة واحدة أو مصفوفة
-      const messagesToAdd = Array.isArray(roomMessage) ? roomMessage : [roomMessage];
-      
-      const updatedRoomMessages = {
-        ...state.roomMessages,
-        [roomId]: [...(state.roomMessages[roomId] || []), ...messagesToAdd]
-      };
-      
-      // If it's the current room, also update public messages
-      const updatedPublicMessages = roomId === state.currentRoomId
-        ? [...state.publicMessages, ...messagesToAdd]
-        : state.publicMessages;
-      
-      return {
-        ...state,
-        roomMessages: updatedRoomMessages,
-        publicMessages: updatedPublicMessages
-      };
-    
-    case 'SET_SHOW_KICK_COUNTDOWN':
-      return { ...state, showKickCountdown: action.payload };
-    
-    case 'IGNORE_USER':
-      return { 
-        ...state, 
-        ignoredUsers: new Set([...state.ignoredUsers, action.payload]) 
-      };
-    
-    case 'UNIGNORE_USER':
-      const newIgnoredUsers = new Set(state.ignoredUsers);
-      newIgnoredUsers.delete(action.payload);
-      return { ...state, ignoredUsers: newIgnoredUsers };
-    
-    default:
-      return state;
-  }
-}
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
 
-export function useChat() {
-  const [state, dispatch] = useReducer(chatReducer, initialState);
-  
-  // Socket connection
-  const socket = useRef<Socket | null>(null);
-  
-  // تحسين الأداء: مدراء التحسين
-  const messageCache = useRef(new MessageCacheManager());
-  
-  // Memoized values to prevent unnecessary re-renders - إصلاح المنطق
-  const memoizedOnlineUsers = useMemo(() => {
-    // عرض جميع المستخدمين بدون فلترة معقدة
-    return state.onlineUsers.filter(user => {
-      // إظهار جميع المستخدمين إلا المتجاهلين فقط
-      return !state.ignoredUsers.has(user.id);
+    socketRef.current = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3001', {
+      auth: { token },
+      transports: ['websocket', 'polling']
     });
-  }, [state.onlineUsers, state.ignoredUsers]);
 
-  // Notifications state
-  const [levelUpNotification, setLevelUpNotification] = useState<{
-    show: boolean;
-    oldLevel: number;
-    newLevel: number;
-    levelInfo?: any;
-  }>({ show: false, oldLevel: 1, newLevel: 1 });
-  
-  const [achievementNotification, setAchievementNotification] = useState<{
-    show: boolean;
-    message: string;
-  }>({ show: false, message: '' });
-  
-  const [dailyBonusNotification, setDailyBonusNotification] = useState<{
-    show: boolean;
-    points: number;
-  }>({ show: false, points: 0 });
+    const socket = socketRef.current;
 
-  // فلترة الرسائل غير الصالحة - محسنة
-  const isValidMessage = useCallback((message: ChatMessage): boolean => {
-    // التأكد من وجود بيانات المرسل
-    if (!message.sender || !message.sender.username || message.sender.username === 'مستخدم') {
-      console.warn('رسالة مرفوضة - بيانات مرسل غير صالحة:', message);
-      return false;
-    }
-    
-    // التأكد من وجود محتوى الرسالة
-    if (!message.content || message.content.trim() === '') {
-      console.warn('رسالة مرفوضة - محتوى فارغ:', message);
-      return false;
-    }
-    
-    // التأكد من وجود معرف المرسل
-    if (!message.senderId || message.senderId <= 0) {
-      console.warn('رسالة مرفوضة - معرف مرسل غير صالح:', message);
-      return false;
-    }
-    
-    return true;
-  }, []);
+    socket.on('connect', () => {
+      console.log('✅ Socket connected');
+      setIsConnected(true);
+    });
 
-  // Socket event handlers - مُحسّنة
-  const setupSocketListeners = useCallback((user: ChatUser) => {
-    if (!socket.current) return;
+    socket.on('disconnect', () => {
+      console.log('❌ Socket disconnected');
+      setIsConnected(false);
+    });
 
-    socket.current.on('connect', () => {
-      console.log('🔗 متصل بالخادم');
-      dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
-      dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
-      
-      // إرسال بيانات المصادقة
-      socket.current?.emit('auth', {
-        userId: user.id,
-        username: user.username,
-        userType: user.userType
+    socket.on('onlineUsers', (users: ChatUser[]) => {
+      setOnlineUsers(users);
+    });
+
+    socket.on('publicMessage', (message: ChatMessage) => {
+      setMessages(prev => [...prev, message]);
+      playNotificationSound();
+    });
+
+    socket.on('roomMessage', (data: { roomId: string; message: ChatMessage }) => {
+      if (data.roomId === currentRoomId) {
+        setMessages(prev => [...prev, data.message]);
+        playNotificationSound();
+      }
+    });
+
+    socket.on('userTyping', (data: { username: string; isTyping: boolean }) => {
+      setTypingUsers(prev => {
+        const newSet = new Set(prev);
+        if (data.isTyping) {
+          newSet.add(data.username);
+        } else {
+          newSet.delete(data.username);
+        }
+        return newSet;
       });
     });
 
-    socket.current.on('disconnect', (reason) => {
-      console.log('🔌 انقطع الاتصال:', reason);
-      dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
-      
-      // تنظيف الفترة الزمنية للتحديث الدوري
-      if ((socket.current as any)?.userListInterval) {
-        clearInterval((socket.current as any).userListInterval);
-      }
-      
-      if (reason === 'io server disconnect') {
-        socket.current?.connect();
-      }
+    socket.on('userJoined', (user: ChatUser) => {
+      setOnlineUsers(prev => {
+        const exists = prev.some(u => u.id === user.id);
+        return exists ? prev : [...prev, user];
+      });
     });
 
-    socket.current.on('socketConnected', (data) => {
-      console.log('🔌 اتصال Socket:', data.message);
-      dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+    socket.on('userLeft', (userId: number) => {
+      setOnlineUsers(prev => prev.filter(u => u.id !== userId));
     });
 
-    socket.current.on('authenticated', (data) => {
-      console.log('✅ تم الاتصال بنجاح:', data.message);
-      dispatch({ type: 'SET_CURRENT_USER', payload: data.user });
-      dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
-      
-      // تحميل الرسائل الموجودة من قاعدة البيانات
-      loadExistingMessages();
-      
-      // طلب قائمة جميع المستخدمين (المتصلين وغير المتصلين)
-      console.log('🔄 طلب قائمة جميع المستخدمين...');
-      fetchAllUsers();
-      
-      // إضافة طلب للمستخدمين المتصلين أيضاً
-      socket.current?.emit('requestOnlineUsers');
-      
-      // طلب إضافي بعد ثانية واحدة للتأكد
-      setTimeout(() => {
-        if (socket.current?.connected) {
-          console.log('🔄 طلب إضافي لقائمة المستخدمين...');
-          fetchAllUsers();
-          socket.current.emit('requestOnlineUsers');
-        }
-      }, 1000);
-      
-      // تحديث دوري لقائمة المستخدمين كل 30 ثانية
-      const userListInterval = setInterval(() => {
-        if (socket.current?.connected) {
-          socket.current.emit('requestOnlineUsers');
-        }
-      }, 30000);
-      
-      // حفظ معرف الفترة الزمنية للتنظيف لاحقاً
-      (socket.current as any).userListInterval = userListInterval;
-    });
+    return socket;
+  }, [currentRoomId]);
 
-    socket.current.on('message', (message: WebSocketMessage) => {
-      try {
-        switch (message.type) {
-          case 'error':
-            console.error('خطأ من الخادم:', message.message);
-            break;
-            
-          case 'warning':
-            console.warn('تحذير:', message.message);
-            break;
-            
-          case 'onlineUsers':
-            if (message.users) {
-              // تبسيط عرض المستخدمين - عرض الكل بدون فلترة معقدة
-              console.log('👥 تحديث قائمة المستخدمين:', message.users.length);
-              console.log('👥 المستخدمون:', message.users.map(u => u.username).join(', '));
-              console.log('👥 قبل التحديث كان لدينا:', state.onlineUsers.length, 'مستخدم');
-              dispatch({ type: 'SET_ONLINE_USERS', payload: message.users });
-              console.log('✅ تم تحديث قائمة المستخدمين بنجاح');
-            } else {
-              console.warn('⚠️ لم يتم استقبال قائمة مستخدمين');
-            }
-            break;
-            
-          case 'userJoined':
-            if (message.user) {
-              console.log('👤 مستخدم جديد انضم:', message.user.username);
-              // التحقق من عدم وجود المستخدم مسبقاً قبل إضافته
-              const userExists = state.onlineUsers.some(u => u.id === message.user.id);
-              if (!userExists) {
-                dispatch({ type: 'SET_ONLINE_USERS', payload: [...state.onlineUsers, message.user] });
-              } else {
-                // تحديث بيانات المستخدم الموجود
-                const updatedUsers = state.onlineUsers.map(u => 
-                  u.id === message.user.id ? message.user : u
-                );
-                dispatch({ type: 'SET_ONLINE_USERS', payload: updatedUsers });
-              }
-              
-              // طلب قائمة محدثة من الخادم للتأكد
-              setTimeout(() => {
-                if (socket.current?.connected) {
-                  socket.current.emit('requestOnlineUsers');
-                }
-              }, 500);
-            }
-            break;
-            
-          case 'userLeft':
-            if (message.userId) {
-              console.log('👤 مستخدم غادر:', message.userId);
-              const updatedUsers = state.onlineUsers.filter(u => u.id !== message.userId);
-              dispatch({ type: 'SET_ONLINE_USERS', payload: updatedUsers });
-            }
-            break;
-            
-          case 'newMessage':
-            console.log('📨 استقبال رسالة جديدة:', message.message);
-            if (message.message && typeof message.message === 'object' && !message.message.isPrivate) {
-              if (!isValidMessage(message.message as ChatMessage)) {
-                console.warn('رسالة مرفوضة من الخادم:', message.message);
-                break;
-              }
-              
-              if (!state.ignoredUsers.has(message.message.senderId)) {
-                const chatMessage = message.message as ChatMessage;
-                // استخدام roomId من الرسالة مع fallback للغرفة العامة
-                const messageRoomId = (chatMessage as any).roomId || 'general';
-                console.log(`✅ إضافة رسالة للغرفة ${messageRoomId} (الغرفة الحالية: ${state.currentRoomId})`);
-                
-                dispatch({ 
-                  type: 'ADD_ROOM_MESSAGE', 
-                  payload: { roomId: messageRoomId, message: chatMessage }
-                });
-                
-                // تشغيل صوت الإشعار للرسائل من الآخرين في الغرفة الحالية فقط
-                if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoomId) {
-                  playNotificationSound();
-                }
-              } else {
-                console.log('🚫 رسالة من مستخدم متجاهل:', message.message.senderId);
-              }
-            }
-            break;
-            
-          case 'privateMessage':
-            if (message.message && typeof message.message === 'object' && message.message.isPrivate) {
-              if (!isValidMessage(message.message as ChatMessage)) {
-                console.warn('رسالة خاصة مرفوضة من الخادم:', message.message);
-                break;
-              }
-              
-              const otherUserId = message.message.senderId === user.id 
-                ? message.message.receiverId! 
-                : message.message.senderId;
-              
-              if (!state.ignoredUsers.has(message.message.senderId)) {
-                dispatch({
-                  type: 'ADD_PRIVATE_MESSAGE',
-                  payload: { userId: otherUserId, message: message.message as ChatMessage }
-                });
-                
-                if (message.message.senderId !== user.id) {
-                  playNotificationSound();
-                  dispatch({ 
-                    type: 'SET_NEW_MESSAGE_SENDER', 
-                    payload: (message.message as ChatMessage).sender! 
-                  });
-                  
-                  // إشعار مرئي في المتصفح
-                  if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification('رسالة خاصة جديدة 📱', {
-                      body: `${(message.message as ChatMessage).sender?.username}: ${(message.message as ChatMessage).content.slice(0, 50)}...`,
-                      icon: '/favicon.ico'
-                    });
-                  }
-                }
-              }
-            }
-            break;
-
-          case 'typing':
-            if (message.username && message.isTyping !== undefined) {
-              dispatch({
-                type: 'SET_TYPING_USERS',
-                payload: message.isTyping 
-                  ? new Set([...state.typingUsers, message.username])
-                  : new Set([...state.typingUsers].filter(u => u !== message.username))
-              });
-            }
-            break;
-
-          case 'kicked':
-            dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
-            break;
-
-          case 'newWallPost':
-            console.log('📌 منشور جديد على الحائط:', message.post);
-            // يمكن إضافة معالجة محددة هنا لتحديث قائمة المنشورات
-            // أو إرسال إشعار للمستخدم
-            if (message.post?.username !== user.username) {
-              // إشعار صوتي للمنشورات الجديدة
-              playNotificationSound();
-              
-              // إشعار مرئي في المتصفح
-              if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('منشور جديد على الحائط 📌', {
-                  body: `${message.post.username} نشر منشوراً جديداً`,
-                  icon: '/favicon.ico'
-                });
-              }
-            }
-            break;
-
-          case 'wallPostReaction':
-            console.log('👍 تفاعل جديد على منشور:', message.post);
-            // يمكن إضافة معالجة محددة هنا لتحديث التفاعلات
-            break;
-
-          case 'wallPostDeleted':
-            console.log('🗑️ تم حذف منشور:', message.postId);
-            // يمكن إضافة معالجة محددة هنا لإزالة المنشور من القائمة
-            break;
-            
-          case 'roomJoined':
-            if (message.roomId) {
-              console.log(`✅ تأكيد انضمام للغرفة: ${message.roomId}`);
-              dispatch({ type: 'SET_ROOM', payload: message.roomId });
-              
-              // تحديث قائمة المستخدمين المتصلين في الغرفة
-              if (message.users && Array.isArray(message.users)) {
-                console.log(`👥 تحديث قائمة مستخدمي الغرفة ${message.roomId}:`, message.users.length);
-                dispatch({ type: 'SET_ONLINE_USERS', payload: message.users });
-              }
-              
-              // طلب قائمة محدثة من المستخدمين المتصلين في الغرفة
-              setTimeout(() => {
-                if (socket.current?.connected) {
-                  socket.current.emit('requestOnlineUsers');
-                }
-              }, 200);
-            }
-            break;
-            
-          case 'userJoinedRoom':
-            if (message.username && message.roomId) {
-              console.log(`👤 ${message.username} انضم للغرفة: ${message.roomId}`);
-              
-              // إذا كانت الغرفة هي الغرفة الحالية، طلب تحديث قائمة المستخدمين
-              if (message.roomId === state.currentRoomId) {
-                setTimeout(() => {
-                  if (socket.current?.connected) {
-                    socket.current.emit('requestOnlineUsers');
-                  }
-                }, 100);
-              }
-            }
-            break;
-            
-          case 'userLeftRoom':
-            if (message.username && message.roomId) {
-              console.log(`👤 ${message.username} غادر الغرفة: ${message.roomId}`);
-              
-              // إذا كانت الغرفة هي الغرفة الحالية، طلب تحديث قائمة المستخدمين
-              if (message.roomId === state.currentRoomId) {
-                setTimeout(() => {
-                  if (socket.current?.connected) {
-                    socket.current.emit('requestOnlineUsers');
-                  }
-                }, 100);
-              }
-            }
-            break;
-
-          default:
-            break;
-        }
-      } catch (error) {
-        console.error('خطأ في معالجة الرسالة:', error);
-      }
-    });
-  }, [state.ignoredUsers, state.typingUsers, state.onlineUsers, isValidMessage]);
-
-  // Connect function - محسنة
-  const connect = useCallback((user: ChatUser) => {
-    dispatch({ type: 'SET_CURRENT_USER', payload: user });
-    dispatch({ type: 'SET_LOADING', payload: true });
-    
-    // إضافة المستخدم الحالي للقائمة فوراً
-    dispatch({ type: 'SET_ONLINE_USERS', payload: [user] });
-
-    try {
-      // إنشاء اتصال Socket.IO
-      if (!socket.current) {
-        const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
-        socket.current = io(serverUrl, {
-          transports: ['websocket', 'polling'],
-          timeout: 10000,
-          reconnection: true,
-          reconnectionAttempts: 5,
-          reconnectionDelay: 1000
-        });
-      }
-
-      setupSocketListeners(user);
-
-    } catch (error) {
-      console.error('خطأ في الاتصال:', error);
-      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل في الاتصال بالخادم' });
+  // قطع الاتصال
+  const disconnectSocket = useCallback(() => {
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
+      setIsConnected(false);
     }
-  }, [setupSocketListeners]);
-
-  // Join room function
-  const joinRoom = useCallback((roomId: string) => {
-    if (!roomId || roomId.trim() === '') {
-      console.error('❌ معرف الغرفة غير صحيح');
-      return;
-    }
-    
-    console.log(`🔄 انضمام للغرفة: ${roomId}`);
-    dispatch({ type: 'SET_ROOM', payload: roomId });
-    socket.current?.emit('joinRoom', { roomId });
   }, []);
 
-  // Send message function - محسنة
-  const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number, roomId?: string) => {
-    if (!state.currentUser || !socket.current?.connected) {
-      console.error('❌ لا يمكن إرسال الرسالة - المستخدم غير متصل');
-      return;
+  // جلب الغرف
+  const fetchRooms = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiRequest('/api/rooms');
+      if (response.success) {
+        setRooms(response.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching rooms:', error);
+      // الغرف الافتراضية في حالة الخطأ
+      setRooms([
+        { id: 'general', name: 'الدردشة العامة', isBroadcast: false, userCount: 0 },
+        { id: 'broadcast', name: 'غرفة البث المباشر', isBroadcast: true, userCount: 0 }
+      ]);
+    } finally {
+      setIsLoading(false);
     }
+  }, []);
 
-    const targetRoomId = roomId || state.currentRoomId;
+  // انضمام لغرفة
+  const joinRoom = useCallback(async (roomId: string) => {
+    try {
+      if (!roomId || roomId === currentRoomId) return;
+
+      // ترك الغرفة الحالية
+      if (socketRef.current && currentRoomId) {
+        socketRef.current.emit('leaveRoom', { roomId: currentRoomId });
+      }
+
+      // انضمام للغرفة الجديدة
+      if (socketRef.current) {
+        socketRef.current.emit('joinRoom', { roomId });
+      }
+
+      // تحديث الحالة
+      setCurrentRoomId(roomId);
+      setMessages([]); // مسح الرسائل السابقة
+
+      // جلب رسائل الغرفة الجديدة
+      await fetchRoomMessages(roomId);
+
+      console.log(`✅ Joined room: ${roomId}`);
+    } catch (error) {
+      console.error('Error joining room:', error);
+    }
+  }, [currentRoomId]);
+
+  // مغادرة غرفة
+  const leaveRoom = useCallback((roomId: string) => {
+    if (roomId === 'general') return; // لا يمكن ترك الغرفة العامة
+    
+    if (socketRef.current) {
+      socketRef.current.emit('leaveRoom', { roomId });
+    }
+  }, []);
+
+  // جلب رسائل الغرفة
+  const fetchRoomMessages = useCallback(async (roomId: string) => {
+    try {
+      const response = await apiRequest(`/api/rooms/${roomId}/messages?limit=50`);
+      if (response.success) {
+        setMessages(response.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching room messages:', error);
+      setMessages([]);
+    }
+  }, []);
+
+  // إرسال رسالة عامة
+  const sendPublicMessage = useCallback((content: string, messageType: string = 'text') => {
+    if (!content.trim() || !socketRef.current || !currentUser) return;
 
     const messageData = {
-      senderId: state.currentUser.id,
-      content,
+      content: content.trim(),
       messageType,
-      isPrivate: !!receiverId,
-      receiverId,
-      roomId: targetRoomId
+      roomId: currentRoomId
     };
 
-    console.log('📤 إرسال رسالة:', messageData);
-    
-    if (receiverId) {
-      // رسالة خاصة
-      socket.current.emit('privateMessage', messageData);
-    } else {
-      // رسالة عامة
-      socket.current.emit('publicMessage', messageData);
-    }
-  }, [state.currentUser, state.currentRoomId]);
+    socketRef.current.emit('publicMessage', messageData);
+  }, [currentUser, currentRoomId]);
 
-  // Send typing notification
-  const sendTyping = useCallback(() => {
-    if (socket.current?.connected) {
-      socket.current.emit('typing', { userId: state.currentUser?.id });
-    }
-  }, [state.currentUser]);
-
-  // دالة إرسال رسالة لغرفة محددة
-  const sendRoomMessage = useCallback((content: string, roomId: string, messageType: string = 'text') => {
-    return sendMessage(content, messageType, undefined, roomId);
-  }, [sendMessage]);
-
-  // إضافة الدوال المفقودة المطلوبة
-  const sendPublicMessage = useCallback((content: string, messageType: string = 'text') => {
-    return sendMessage(content, messageType, undefined, state.currentRoomId);
-  }, [sendMessage, state.currentRoomId]);
-
+  // إرسال رسالة خاصة
   const sendPrivateMessage = useCallback((receiverId: number, content: string, messageType: string = 'text') => {
-    return sendMessage(content, messageType, receiverId);
-  }, [sendMessage]);
+    if (!content.trim() || !socketRef.current || !currentUser) return;
 
+    const messageData = {
+      receiverId,
+      content: content.trim(),
+      messageType
+    };
+
+    socketRef.current.emit('privateMessage', messageData);
+  }, [currentUser]);
+
+  // إشعار الكتابة
   const handleTyping = useCallback(() => {
-    return sendTyping();
-  }, [sendTyping]);
+    if (socketRef.current && currentUser) {
+      socketRef.current.emit('typing', { 
+        roomId: currentRoomId,
+        isTyping: true 
+      });
 
-  const handlePrivateTyping = useCallback(() => {
-    return sendTyping();
-  }, [sendTyping]);
-
-  const setNewMessageSender = useCallback((sender: ChatUser | null) => {
-    dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: sender });
-  }, []);
-
-  // دالة للحصول على رسائل الغرفة الحالية
-  const getCurrentRoomMessages = useCallback(() => {
-    const currentMessages = state.roomMessages[state.currentRoomId] || [];
-    // إذا كانت الغرفة العامة، ادمج مع publicMessages
-    if (state.currentRoomId === 'general') {
-      const combinedMessages = [...state.publicMessages, ...currentMessages];
-      // إزالة التكرار وترتيب حسب الوقت
-      const uniqueMessages = combinedMessages.filter((msg, index, arr) => 
-        arr.findIndex(m => m.id === msg.id) === index
-      ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-      return uniqueMessages;
-    }
-    return currentMessages;
-  }, [state.roomMessages, state.currentRoomId, state.publicMessages]);
-
-  // leaveRoom function
-  const leaveRoom = useCallback((roomId: string) => {
-    if (!roomId || roomId.trim() === '') {
-      console.error('❌ معرف الغرفة غير صحيح');
-      return;
-    }
-    
-    if (roomId === 'general') {
-      console.warn('⚠️ لا يمكن مغادرة الغرفة العامة');
-      return;
-    }
-    
-    console.log(`🚪 مغادرة الغرفة: ${roomId}`);
-    socket.current?.emit('leaveRoom', { roomId });
-  }, []);
-
-  // Disconnect function
-  const disconnect = useCallback(() => {
-    if (socket.current) {
-      socket.current.disconnect();
-      socket.current = null;
-    }
-    
-    dispatch({ type: 'SET_CURRENT_USER', payload: null });
-    dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
-    dispatch({ type: 'SET_ONLINE_USERS', payload: [] });
-    dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: [] });
-  }, []);
-
-  // Ignore/Unignore user functions
-  const ignoreUser = useCallback((userId: number) => {
-    dispatch({ type: 'IGNORE_USER', payload: userId });
-  }, []);
-
-  const unignoreUser = useCallback((userId: number) => {
-    dispatch({ type: 'UNIGNORE_USER', payload: userId });
-  }, []);
-
-  // إلغاء - لا نريد جلب جميع المستخدمين، فقط المتصلين
-  const fetchAllUsers = useCallback(async () => {
-    // لا نفعل شيء - نكتفي بالمستخدمين المتصلين من Socket
-    console.log('🔄 تم تجاهل fetchAllUsers - نكتفي بالمستخدمين المتصلين');
-  }, []);
-
-  // تحميل الرسائل الموجودة من قاعدة البيانات
-  const loadExistingMessages = useCallback(async () => {
-    try {
-      console.log('📥 تحميل الرسائل الموجودة من قاعدة البيانات...');
-      
-      // تحميل رسائل الغرفة العامة
-      const generalResponse = await fetch('/api/messages/room/general?limit=50');
-      if (generalResponse.ok) {
-        const generalData = await generalResponse.json();
-        if (generalData.messages && Array.isArray(generalData.messages)) {
-          console.log(`✅ تم تحميل ${generalData.messages.length} رسالة من الغرفة العامة`);
-          
-          // تحويل الرسائل إلى التنسيق المطلوب
-          const formattedMessages = generalData.messages.map((msg: any) => ({
-            id: msg.id,
-            content: msg.content,
-            timestamp: new Date(msg.timestamp),
-            senderId: msg.senderId,
-            sender: msg.sender,
-            messageType: msg.messageType || 'text',
-            isPrivate: msg.isPrivate || false,
-            roomId: msg.roomId || 'general'
-          }));
-          
-          // إضافة الرسائل للغرفة العامة
-          dispatch({ 
-            type: 'ADD_ROOM_MESSAGE', 
-            payload: { 
-              roomId: 'general', 
-              message: formattedMessages 
-            }
+      // إيقاف إشعار الكتابة بعد 3 ثوان
+      setTimeout(() => {
+        if (socketRef.current && currentUser) {
+          socketRef.current.emit('typing', { 
+            roomId: currentRoomId,
+            isTyping: false 
           });
-          
-          // تحديث الرسائل العامة إذا كانت الغرفة الحالية هي العامة
-          if (state.currentRoomId === 'general') {
-            dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: formattedMessages });
-          }
         }
-      } else {
-        console.error('❌ فشل في تحميل رسائل الغرفة العامة:', generalResponse.status);
-      }
+      }, 3000);
+    }
+  }, [currentUser, currentRoomId]);
 
-      // تحميل رسائل الغرف الأخرى المتاحة
-      const rooms = ['music', 'broadcast', 'room_1753819014023']; // الغرف المعروفة
-      for (const roomId of rooms) {
-        try {
-          const response = await fetch(`/api/messages/room/${roomId}?limit=50`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.messages && Array.isArray(data.messages)) {
-              console.log(`✅ تم تحميل ${data.messages.length} رسالة من الغرفة ${roomId}`);
-              
-              // تحويل الرسائل إلى التنسيق المطلوب
-              const formattedMessages = data.messages.map((msg: any) => ({
-                id: msg.id,
-                content: msg.content,
-                timestamp: new Date(msg.timestamp),
-                senderId: msg.senderId,
-                sender: msg.sender,
-                messageType: msg.messageType || 'text',
-                isPrivate: msg.isPrivate || false,
-                roomId: msg.roomId || roomId
-              }));
-              
-              // إضافة الرسائل للغرفة
-              dispatch({ 
-                type: 'ADD_ROOM_MESSAGE', 
-                payload: { 
-                  roomId: roomId, 
-                  message: formattedMessages 
-                }
-              });
-            }
-          }
-        } catch (error) {
-          console.error(`❌ خطأ في تحميل رسائل الغرفة ${roomId}:`, error);
-        }
+  // تسجيل الدخول
+  const login = useCallback(async (username: string, password?: string) => {
+    try {
+      setIsLoading(true);
+      
+      const response = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password })
+      });
+
+      if (response.success && response.user) {
+        setCurrentUser(response.user);
+        localStorage.setItem('authToken', response.user.id.toString());
+        
+        // الاتصال بـ Socket بعد تسجيل الدخول
+        connectSocket();
+        
+        // جلب الغرف
+        await fetchRooms();
+        
+        // انضمام للغرفة العامة
+        await joinRoom('general');
+        
+        return { success: true, user: response.user };
+      } else {
+        return { success: false, error: response.error || 'Login failed' };
       }
     } catch (error) {
-      console.error('❌ خطأ في تحميل الرسائل:', error);
+      console.error('Login error:', error);
+      return { success: false, error: 'Network error' };
+    } finally {
+      setIsLoading(false);
     }
-  }, [state.currentRoomId]);
+  }, [connectSocket, fetchRooms, joinRoom]);
 
+  // تسجيل الخروج
+  const logout = useCallback(() => {
+    disconnectSocket();
+    setCurrentUser(null);
+    setMessages([]);
+    setOnlineUsers([]);
+    setRooms([]);
+    setCurrentRoomId('general');
+    localStorage.removeItem('authToken');
+  }, [disconnectSocket]);
+
+  // التحقق من تسجيل الدخول عند تحميل الصفحة
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (token && !currentUser) {
+      // محاولة استرداد بيانات المستخدم
+      apiRequest('/api/auth/me')
+        .then(response => {
+          if (response.success && response.user) {
+            setCurrentUser(response.user);
+            connectSocket();
+            fetchRooms();
+            joinRoom('general');
+          } else {
+            localStorage.removeItem('authToken');
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem('authToken');
+        });
+    }
+  }, [connectSocket, fetchRooms, joinRoom, currentUser]);
+
+  // تنظيف الاتصال عند إلغاء تحميل المكون
+  useEffect(() => {
+    return () => {
+      disconnectSocket();
+    };
+  }, [disconnectSocket]);
+
+  // إرجاع الواجهة المبسطة
   return {
-    // State
-    currentUser: state.currentUser,
-    onlineUsers: memoizedOnlineUsers,
-    publicMessages: state.publicMessages,
-    privateConversations: state.privateConversations,
-    ignoredUsers: state.ignoredUsers,
-    isConnected: state.isConnected,
-    typingUsers: state.typingUsers,
-    connectionError: state.connectionError,
-    newMessageSender: state.newMessageSender,
-    isLoading: state.isLoading,
-    notifications: state.notifications,
-    currentRoomId: state.currentRoomId,
-    roomMessages: state.roomMessages,
-    showKickCountdown: state.showKickCountdown,
-    
-    // Notification states
-    levelUpNotification,
-    setLevelUpNotification,
-    achievementNotification,
-    setAchievementNotification,
-    dailyBonusNotification,
-    setDailyBonusNotification,
-    
-    // Actions
-    connect,
-    disconnect,
-    sendMessage,
-    joinRoom,
-    leaveRoom,
-    ignoreUser,
-    unignoreUser,
-    sendTyping,
-    fetchAllUsers,
-    setShowKickCountdown: (show: boolean) => dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: show }),
-    setNewMessageSender,
+    // البيانات
+    currentUser,
+    onlineUsers,
+    messages,
+    rooms,
+    currentRoomId,
+    isConnected,
+    isLoading,
+    typingUsers: Array.from(typingUsers),
 
-    // إضافة الدوال المطلوبة
+    // الوظائف
+    login,
+    logout,
     sendPublicMessage,
     sendPrivateMessage,
-    sendRoomMessage,
     handleTyping,
-    handlePrivateTyping,
-    getCurrentRoomMessages,
+    joinRoom,
+    leaveRoom,
+    fetchRooms,
+    
+    // وظائف مساعدة
+    getCurrentRoomMessages: () => messages,
+    getOnlineUsersCount: () => onlineUsers.length,
+    isUserOnline: (userId: number) => onlineUsers.some(u => u.id === userId),
   };
-}
+};
