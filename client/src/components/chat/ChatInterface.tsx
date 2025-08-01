@@ -48,8 +48,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   
   // حالة الغرف
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
-  const [currentRoomId, setCurrentRoomId] = useState('general');
   const [roomsLoading, setRoomsLoading] = useState(true);
+
+  // استخدام currentRoomId من chat hook بدلاً من الحالة المحلية
+  const currentRoomId = chat.currentRoomId;
 
   // جلب الغرف من الخادم
   const fetchRooms = async () => {
@@ -60,8 +62,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       const data = await apiRequest('/api/rooms');
       console.log('📊 بيانات الغرف المُستلمة:', data);
       
-      if (data.rooms && Array.isArray(data.rooms)) {
-        const formattedRooms = data.rooms.map((room: any) => ({
+      // التحقق من وجود البيانات في التنسيق الصحيح
+      const roomsData = data.rooms || data.data || data;
+      
+      if (roomsData && Array.isArray(roomsData)) {
+        const formattedRooms = roomsData.map((room: any) => ({
           id: room.id,
           name: room.name,
           description: room.description || '',
@@ -79,6 +84,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         
         console.log('✅ تم تنسيق الغرف:', formattedRooms.length, 'غرفة');
         setRooms(formattedRooms);
+        
+        // التأكد من وجود الغرفة الحالية في القائمة
+        const currentRoomExists = formattedRooms.some((room: any) => room.id === chat.currentRoomId);
+        if (!currentRoomExists && chat.currentRoomId !== 'general') {
+          console.warn(`⚠️ الغرفة الحالية ${chat.currentRoomId} غير موجودة، العودة للغرفة العامة`);
+          chat.joinRoom('general');
+        }
       } else {
         console.warn('⚠️ بيانات الغرف غير صحيحة:', data);
         throw new Error('بيانات الغرف غير صحيحة');
@@ -87,11 +99,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       console.error('❌ خطأ في جلب الغرف:', error);
       // استخدام غرف افتراضية في حالة الخطأ
       console.log('🔄 استخدام الغرف الافتراضية...');
-      setRooms([
+      const defaultRooms = [
         { id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] },
         { id: 'broadcast', name: 'غرفة البث المباشر', description: 'غرفة خاصة للبث المباشر مع نظام المايك', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: true, hostId: 1, speakers: [], micQueue: [] },
         { id: 'music', name: 'أغاني وسهر', description: 'غرفة للموسيقى والترفيه', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] }
-      ]);
+      ];
+      setRooms(defaultRooms);
+      
+      // التأكد من أن المستخدم في الغرفة العامة
+      if (chat.currentRoomId !== 'general') {
+        chat.joinRoom('general');
+      }
     } finally {
       setRoomsLoading(false);
     }
@@ -104,14 +122,45 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   // دوال إدارة الغرف
   const handleRoomChange = async (roomId: string) => {
-    console.log(`🔄 تغيير الغرفة من ${currentRoomId} إلى ${roomId}`);
-    setCurrentRoomId(roomId);
-    chat.joinRoom(roomId);
+    if (!roomId || roomId.trim() === '') {
+      console.error('❌ معرف غرفة غير صحيح');
+      return;
+    }
+
+    if (roomId === chat.currentRoomId) {
+      console.log('ℹ️ المستخدم بالفعل في هذه الغرفة');
+      return;
+    }
+
+    console.log(`🔄 تغيير الغرفة من ${chat.currentRoomId} إلى ${roomId}`);
     
-    // انتظار قصير للتأكد من انضمام الغرفة
-    setTimeout(() => {
-      console.log(`✅ تم تحديث الغرفة الحالية إلى: ${roomId}`);
-    }, 100);
+    // التحقق من وجود الغرفة في القائمة
+    const targetRoom = rooms.find(room => room.id === roomId);
+    if (!targetRoom && roomId !== 'general') {
+      console.error(`❌ الغرفة ${roomId} غير موجودة`);
+      toast({
+        title: "خطأ",
+        description: "الغرفة المطلوبة غير موجودة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      chat.joinRoom(roomId);
+      
+      // انتظار قصير للتأكد من انضمام الغرفة
+      setTimeout(() => {
+        console.log(`✅ تم تحديث الغرفة الحالية إلى: ${roomId}`);
+      }, 100);
+    } catch (error) {
+      console.error('❌ خطأ في تغيير الغرفة:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تغيير الغرفة",
+        variant: "destructive",
+      });
+    }
   };
 
   // دالة تحديث الغرف
@@ -180,7 +229,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       if (response.ok) {
         setRooms(prev => prev.filter(room => room.id !== roomId));
         if (currentRoomId === roomId) {
-          setCurrentRoomId('general'); // العودة للغرفة الرئيسية
+          chat.joinRoom('general'); // العودة للغرفة الرئيسية
         }
         toast({
           title: "تم حذف الغرفة",
@@ -545,7 +594,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               currentUser={chat.currentUser}
               activeView={activeView}
               rooms={rooms}
-              currentRoomId={currentRoomId}
+              currentRoomId={chat.currentRoomId}
               onRoomChange={handleRoomChange}
               onAddRoom={handleAddRoom}
               onDeleteRoom={handleDeleteRoom}
@@ -554,7 +603,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </div>
         )}
         {(() => {
-          const currentRoom = rooms.find(room => room.id === currentRoomId);
+          const currentRoom = rooms.find(room => room.id === chat.currentRoomId);
           
           // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
           if (currentRoom?.isBroadcast) {
@@ -568,7 +617,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 typingUsers={Array.from(chat.typingUsers)}
                 onReportMessage={handleReportUser}
                 onUserClick={handleUserClick}
-                chat={chat}
               />
             );
           }
@@ -578,13 +626,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             <MessageArea 
               messages={chat.roomMessages[chat.currentRoomId] || chat.publicMessages}
               currentUser={chat.currentUser}
-              onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+              onlineUsers={chat.onlineUsers}
+              onSendMessage={chat.sendPublicMessage}
               onTyping={chat.handleTyping}
-              typingUsers={chat.typingUsers}
+              typingUsers={Array.from(chat.typingUsers)}
               onReportMessage={handleReportUser}
               onUserClick={handleUserClick}
-              onlineUsers={chat.onlineUsers}
-              currentRoomName={currentRoom?.name || 'الدردشة العامة'}
             />
           );
         })()}
