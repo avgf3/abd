@@ -48,6 +48,23 @@ export async function runMigrations(): Promise<void> {
     const migrationClient = postgres(process.env.DATABASE_URL, { max: 1 });
     const migrationDb = drizzle(migrationClient);
     
+    // Check if tables already exist
+    try {
+      const result = await migrationClient`SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'users'
+      )`;
+      
+      if (result[0]?.exists) {
+        console.log('✅ Tables already exist, skipping migrations');
+        await migrationClient.end();
+        return;
+      }
+    } catch (checkError) {
+      console.log('⚠️ Could not check table existence, proceeding with migrations');
+    }
+    
     // Determine migrations folder path based on environment
     const fs = await import('fs');
     const path = await import('path');

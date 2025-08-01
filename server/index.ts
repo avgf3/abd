@@ -9,6 +9,7 @@ import { setupSecurity } from "./security";
 import path from "path";
 import fs from "fs";
 import { Server } from "http";
+import { initializeEnhancedRoomSystem } from './EnhancedRoomSystem';
 
 const app = express();
 
@@ -212,6 +213,17 @@ function setupGracefulShutdown(httpServer: Server) {
     await initializeDatabase();
     await createDefaultUsers();
     log('✅ تم إكمال تهيئة قاعدة البيانات');
+
+    // Initialize enhanced room system
+    try {
+      log('🚀 تهيئة النظام المحسن للغرف...');
+      const enhancedRoomSystem = initializeEnhancedRoomSystem(io);
+      await enhancedRoomSystem.initialize();
+      log('✅ تم تهيئة النظام المحسن للغرف بنجاح');
+    } catch (error) {
+      log('⚠️ فشل في تهيئة النظام المحسن للغرف:', error);
+      log('🔄 سيتم المتابعة بدون النظام المحسن...');
+    }
 
     // تحديد المنفذ المطلوب
     const preferredPort = process.env.PORT ? Number(process.env.PORT) : 5000;

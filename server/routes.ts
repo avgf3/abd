@@ -22,6 +22,9 @@ import fs from "fs";
 import bcrypt from "bcrypt";
 import sharp from "sharp";
 
+// Import enhanced room routes
+import enhancedRoomRoutes from "./routes/EnhancedRoomRoutes";
+
 // إعداد multer لرفع الصور
 const storage_multer = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -4778,6 +4781,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   */
+
+  // Add enhanced room routes
+  app.use("/api/enhanced-rooms", enhancedRoomRoutes);
 
   return httpServer;
 }
