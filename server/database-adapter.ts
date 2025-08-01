@@ -23,20 +23,36 @@ export function createDatabaseAdapter(): DatabaseAdapter {
   
   // التحقق من وجود DATABASE_URL
   if (!databaseUrl) {
-    throw new Error("❌ DATABASE_URL غير محدد! يجب إضافة رابط PostgreSQL في ملف .env");
+    console.error("❌ DATABASE_URL غير محدد! الخادم سيعمل بدون قاعدة بيانات");
+    return {
+      db: null,
+      type: 'postgresql'
+    };
   }
   
   // التحقق من أن الرابط هو PostgreSQL
   if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
-    throw new Error("❌ DATABASE_URL يجب أن يكون رابط PostgreSQL صحيح");
+    console.error("❌ DATABASE_URL يجب أن يكون رابط PostgreSQL صحيح");
+    return {
+      db: null,
+      type: 'postgresql'
+    };
   }
   
   try {
     // إعداد Neon للإنتاج
     neonConfig.fetchConnectionCache = true;
     
-    const pool = new Pool({ connectionString: databaseUrl });
+    const pool = new Pool({ 
+      connectionString: databaseUrl,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
+    });
+    
     const db = drizzleNeon({ client: pool, schema: pgSchema });
+    
+    console.log("✅ تم الاتصال بـ PostgreSQL بنجاح");
     
     return {
       db: db as DatabaseType,
@@ -44,8 +60,11 @@ export function createDatabaseAdapter(): DatabaseAdapter {
       close: () => pool.end()
     };
   } catch (error) {
-    console.error("❌ فشل في الاتصال بـ PostgreSQL على Supabase:", error);
-    throw new Error(`فشل الاتصال بـ Supabase: ${error}`);
+    console.error("❌ فشل في الاتصال بـ PostgreSQL:", error);
+    return {
+      db: null,
+      type: 'postgresql'
+    };
   }
 }
 

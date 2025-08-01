@@ -983,21 +983,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // إعدادات CORS محسنة
     cors: { 
       origin: process.env.NODE_ENV === 'production' 
-        ? [process.env.RENDER_EXTERNAL_URL, "https://abd-ylo2.onrender.com", "https://abd-gmva.onrender.com"].filter(Boolean)
+        ? ["https://abd-ylo2.onrender.com", "https://abd-gmva.onrender.com"].filter(Boolean)
         : "*",
       methods: ["GET", "POST"],
-      credentials: true
+      credentials: false
     },
     path: "/socket.io/",
     
-    // إعدادات النقل محسنة للاستقرار
-    transports: ['websocket', 'polling'],
+    // إعدادات النقل محسنة للاستقرار في Render
+    transports: process.env.SOCKET_IO_POLLING_ONLY === 'true' 
+      ? ['polling'] 
+      : ['websocket', 'polling'],
     allowEIO3: true,
     
-    // إعدادات الاتصال المحسنة
-    pingTimeout: 60000,
+    // إعدادات الاتصال المحسنة لـ Render
+    pingTimeout: 30000,
     pingInterval: 25000,
-    upgradeTimeout: 10000,
+    upgradeTimeout: 30000,
     allowUpgrades: true,
     
     // إعدادات الأمان
@@ -1006,23 +1008,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // إعدادات الأداء
     maxHttpBufferSize: 1e6, // 1MB
+    
+    // تبسيط فحص الأصل للإنتاج
     allowRequest: (req, callback) => {
-      // فحص أمني بسيط للطلبات
-      const isOriginAllowed = process.env.NODE_ENV !== 'production' || 
-        req.headers.origin === process.env.RENDER_EXTERNAL_URL;
-      callback(null, isOriginAllowed);
+      callback(null, true); // السماح لجميع الطلبات مؤقتاً لحل مشاكل الاتصال
     }
   });
   
-  // Health Check endpoint للمراقبة
-  app.get('/api/health', (req, res) => {
-    res.status(200).json({ 
-      status: 'ok', 
-              timestamp: new Date(),
-      env: process.env.NODE_ENV,
-      socketIO: 'enabled'
-    });
-  });
+  // Health Check endpoint للمراقبة (moved to index.ts)
+  // app.get('/api/health', (req, res) => {
+    //   res.status(200).json({ 
+  //     status: 'ok', 
+  //     timestamp: new Date(),
+  //     env: process.env.NODE_ENV,
+  //     socketIO: 'enabled'
+  //   });
+  // });
 
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);

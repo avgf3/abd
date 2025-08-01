@@ -9,6 +9,7 @@ import { setupSecurity } from "./security";
 import path from "path";
 import fs from "fs";
 import { Server } from "http";
+import { checkDatabaseHealth } from "./database-adapter";
 
 const app = express();
 
@@ -17,8 +18,43 @@ setupSecurity(app);
 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+// إضافة health check endpoint
+app.get('/api/health', async (req, res) => {
+  try {
+    const dbHealthy = await checkDatabaseHealth();
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      database: dbHealthy ? 'connected' : 'disconnected',
+      version: process.env.npm_package_version || '1.0.0'
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      database: 'error',
+      error: error.message
+    });
+  }
+});
+
 // خدمة الملفات الثابتة للصور المرفوعة - محسّنة لـ Render
 const uploadsPath = path.join(process.cwd(), 'client/public/uploads');
+
+// إنشاء مجلدات الرفع إذا لم تكن موجودة
+const createUploadDirs = () => {
+  const dirs = ['profiles', 'wall'];
+  dirs.forEach(dir => {
+    const fullPath = path.join(uploadsPath, dir);
+    if (!fs.existsSync(fullPath)) {
+      fs.mkdirSync(fullPath, { recursive: true });
+      console.log(`📁 تم إنشاء مجلد: ${fullPath}`);
+    }
+  });
+};
+
+createUploadDirs();
+
 app.use('/uploads', (req, res, next) => {
   console.log('📁 طلب ملف:', req.path, 'من:', uploadsPath);
   
@@ -200,27 +236,40 @@ function setupGracefulShutdown(httpServer: Server) {
       await setupVite(app, httpServer);
     }
 
-    // تشغيل migrations قاعدة البيانات
-    try {
-      log('🗄️ بدء تشغيل migrations قاعدة البيانات...');
-      await runMigrations();
-      log("✅ تم إكمال migrations قاعدة البيانات بنجاح");
-    } catch (error) {
-      log("⚠️ فشل في migrations، محاولة الدفع الطارئ:", error);
+    // فحص حالة قاعدة البيانات أولاً
+    const dbHealthy = await checkDatabaseHealth();
+    log(`🗄️ حالة قاعدة البيانات: ${dbHealthy ? 'متصلة' : 'غير متصلة'}`);
+    
+    if (dbHealthy) {
+      // تشغيل migrations قاعدة البيانات
       try {
-        await runDrizzlePush();
-        log("✅ تم إكمال الدفع الطارئ لقاعدة البيانات بنجاح");
-      } catch (pushError) {
-        log("❌ فشل الدفع الطارئ أيضاً:", pushError);
+        log('🗄️ بدء تشغيل migrations قاعدة البيانات...');
+        await runMigrations();
+        log("✅ تم إكمال migrations قاعدة البيانات بنجاح");
+      } catch (error) {
+        log("⚠️ فشل في migrations، محاولة الدفع الطارئ:", error);
+        try {
+          await runDrizzlePush();
+          log("✅ تم إكمال الدفع الطارئ لقاعدة البيانات بنجاح");
+        } catch (pushError) {
+          log("❌ فشل الدفع الطارئ أيضاً:", pushError);
+          log("🔄 سيتم المتابعة بدون قاعدة بيانات...");
+        }
+      }
+      
+      // تهيئة قاعدة البيانات
+      try {
+        log('🔄 تهيئة قاعدة البيانات...');
+        await initializeDatabase();
+        await createDefaultUsers();
+        log('✅ تم إكمال تهيئة قاعدة البيانات');
+      } catch (error) {
+        log("⚠️ فشل في تهيئة قاعدة البيانات:", error);
         log("🔄 سيتم المتابعة بدون قاعدة بيانات...");
       }
+    } else {
+      log("⚠️ قاعدة البيانات غير متاحة، سيعمل الخادم بدون قاعدة بيانات");
     }
-    
-    // تهيئة قاعدة البيانات
-    log('🔄 تهيئة قاعدة البيانات...');
-    await initializeDatabase();
-    await createDefaultUsers();
-    log('✅ تم إكمال تهيئة قاعدة البيانات');
 
     // تحديد المنفذ المطلوب
     const preferredPort = process.env.PORT ? Number(process.env.PORT) : 5000;

@@ -122,13 +122,31 @@ export class PostgreSQLStorage implements IStorage {
   
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id));
-    return result[0];
+    if (!db) {
+      console.log(`⚠️ قاعدة البيانات غير متاحة للبحث عن المستخدم ${id}`);
+      return undefined;
+    }
+    try {
+      const result = await db.select().from(users).where(eq(users.id, id));
+      return result[0];
+    } catch (error) {
+      console.error(`❌ خطأ في البحث عن المستخدم ${id}:`, error);
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, username));
-    return result[0];
+    if (!db) {
+      console.log(`⚠️ قاعدة البيانات غير متاحة للبحث عن المستخدم ${username}`);
+      return undefined;
+    }
+    try {
+      const result = await db.select().from(users).where(eq(users.username, username));
+      return result[0];
+    } catch (error) {
+      console.error(`❌ خطأ في البحث عن المستخدم ${username}:`, error);
+      return undefined;
+    }
   }
 
   async createUser(user: InsertUser): Promise<User> {
