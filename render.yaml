@@ -8,7 +8,7 @@ services:
     name: chat-app
     env: node
     region: oregon
-    buildCommand: npm install && npm run build && npm run db:migrate-production
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -19,8 +19,12 @@ services:
         value: true
       - key: SOCKET_IO_POLLING_ONLY
         value: false
+      - key: SOCKET_IO_TRANSPORTS
+        value: websocket,polling
       - key: DATABASE_URL
-        value: postgresql://postgres:your_actual_password@qzehjgmawnrihmepboca.supabase.co:5432/postgres?sslmode=require
+        fromDatabase:
+          name: chat-app-db
+          property: connectionString
       - key: JWT_SECRET
         value: arabic-chat-secret-key-2025-production
       - key: SESSION_SECRET
