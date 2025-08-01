@@ -572,6 +572,11 @@ export function useChat() {
 
   // Join room function
   const joinRoom = useCallback((roomId: string) => {
+    if (!roomId || roomId.trim() === '') {
+      console.error('❌ معرف الغرفة غير صحيح');
+      return;
+    }
+    
     console.log(`🔄 انضمام للغرفة: ${roomId}`);
     dispatch({ type: 'SET_ROOM', payload: roomId });
     socket.current?.emit('joinRoom', { roomId });
@@ -606,10 +611,69 @@ export function useChat() {
     }
   }, [state.currentUser, state.currentRoomId]);
 
+  // Send typing notification
+  const sendTyping = useCallback(() => {
+    if (socket.current?.connected) {
+      socket.current.emit('typing', { userId: state.currentUser?.id });
+    }
+  }, [state.currentUser]);
+
   // دالة إرسال رسالة لغرفة محددة
   const sendRoomMessage = useCallback((content: string, roomId: string, messageType: string = 'text') => {
     return sendMessage(content, messageType, undefined, roomId);
   }, [sendMessage]);
+
+  // إضافة الدوال المفقودة المطلوبة
+  const sendPublicMessage = useCallback((content: string, messageType: string = 'text') => {
+    return sendMessage(content, messageType, undefined, state.currentRoomId);
+  }, [sendMessage, state.currentRoomId]);
+
+  const sendPrivateMessage = useCallback((receiverId: number, content: string, messageType: string = 'text') => {
+    return sendMessage(content, messageType, receiverId);
+  }, [sendMessage]);
+
+  const handleTyping = useCallback(() => {
+    return sendTyping();
+  }, [sendTyping]);
+
+  const handlePrivateTyping = useCallback(() => {
+    return sendTyping();
+  }, [sendTyping]);
+
+  const setNewMessageSender = useCallback((sender: ChatUser | null) => {
+    dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: sender });
+  }, []);
+
+  // دالة للحصول على رسائل الغرفة الحالية
+  const getCurrentRoomMessages = useCallback(() => {
+    const currentMessages = state.roomMessages[state.currentRoomId] || [];
+    // إذا كانت الغرفة العامة، ادمج مع publicMessages
+    if (state.currentRoomId === 'general') {
+      const combinedMessages = [...state.publicMessages, ...currentMessages];
+      // إزالة التكرار وترتيب حسب الوقت
+      const uniqueMessages = combinedMessages.filter((msg, index, arr) => 
+        arr.findIndex(m => m.id === msg.id) === index
+      ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      return uniqueMessages;
+    }
+    return currentMessages;
+  }, [state.roomMessages, state.currentRoomId, state.publicMessages]);
+
+  // leaveRoom function
+  const leaveRoom = useCallback((roomId: string) => {
+    if (!roomId || roomId.trim() === '') {
+      console.error('❌ معرف الغرفة غير صحيح');
+      return;
+    }
+    
+    if (roomId === 'general') {
+      console.warn('⚠️ لا يمكن مغادرة الغرفة العامة');
+      return;
+    }
+    
+    console.log(`🚪 مغادرة الغرفة: ${roomId}`);
+    socket.current?.emit('leaveRoom', { roomId });
+  }, []);
 
   // Disconnect function
   const disconnect = useCallback(() => {
@@ -637,13 +701,6 @@ export function useChat() {
   const fetchAllUsers = useCallback(async () => {
     // لا نفعل شيء - نكتفي بالمستخدمين المتصلين من Socket
     console.log('🔄 تم تجاهل fetchAllUsers - نكتفي بالمستخدمين المتصلين');
-  }, []);
-
-  // Send typing indicator - محسنة مع throttling
-  const sendTyping = useCallback(() => {
-    if (socket.current?.connected) {
-      socket.current.emit('typing', { isTyping: true });
-    }
   }, []);
 
   // تحميل الرسائل الموجودة من قاعدة البيانات
@@ -759,18 +816,20 @@ export function useChat() {
     disconnect,
     sendMessage,
     joinRoom,
+    leaveRoom,
     ignoreUser,
     unignoreUser,
     sendTyping,
     fetchAllUsers,
     setShowKickCountdown: (show: boolean) => dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: show }),
-    setNewMessageSender: (sender: ChatUser | null) => dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: sender }),
+    setNewMessageSender,
 
-    // إصلاح: دوال مطلوبة للمكونات
-    sendPublicMessage: (content: string) => sendMessage(content, 'text'),
-    sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId),
-    sendRoomMessage: (content: string, roomId: string) => sendRoomMessage(content, roomId),
-    handleTyping: () => sendTyping(),
-    handlePrivateTyping: () => sendTyping(),
+    // إضافة الدوال المطلوبة
+    sendPublicMessage,
+    sendPrivateMessage,
+    sendRoomMessage,
+    handleTyping,
+    handlePrivateTyping,
+    getCurrentRoomMessages,
   };
 }

@@ -18,7 +18,6 @@ interface BroadcastRoomInterfaceProps {
   typingUsers: string[];
   onReportMessage: (user: ChatUser, messageContent?: string, messageId?: number) => void;
   onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
-  chat: any; // إضافة chat object للوصول إلى sendPublicMessage
 }
 
 interface BroadcastInfo {
@@ -36,7 +35,6 @@ export default function BroadcastRoomInterface({
   typingUsers,
   onReportMessage,
   onUserClick,
-  chat
 }: BroadcastRoomInterfaceProps) {
   const [broadcastInfo, setBroadcastInfo] = useState<BroadcastInfo | null>(null);
   const [messageInput, setMessageInput] = useState('');
