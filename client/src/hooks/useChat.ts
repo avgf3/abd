@@ -318,11 +318,52 @@ export function useChat() {
       (socket.current as any).userListInterval = userListInterval;
     });
 
+    // معالجة الأحداث الجديدة المحسنة
+    socket.current.on('onlineUsersUpdate', (data: { roomId: string; users: ChatUser[] }) => {
+      console.log(`👥 تحديث مباشر لقائمة المستخدمين في الغرفة ${data.roomId}:`, data.users.length);
+      if (data.roomId === state.currentRoomId) {
+        dispatch({ type: 'SET_ONLINE_USERS', payload: data.users });
+        console.log('✅ تم تحديث قائمة المستخدمين مباشرة');
+      }
+    });
+
+    socket.current.on('userJoinedRoom', (data: { userId: number; username: string; roomId: string }) => {
+      if (data.roomId === state.currentRoomId) {
+        console.log(`👤 ${data.username} انضم للغرفة الحالية`);
+        // طلب تحديث فوري للقائمة
+        if (socket.current?.connected) {
+          socket.current.emit('requestOnlineUsers');
+        }
+      }
+    });
+
+    socket.current.on('userLeftRoom', (data: { userId: number; username: string; roomId: string }) => {
+      if (data.roomId === state.currentRoomId) {
+        console.log(`👤 ${data.username} غادر الغرفة الحالية`);
+        const updatedUsers = state.onlineUsers.filter(u => u.id !== data.userId);
+        dispatch({ type: 'SET_ONLINE_USERS', payload: updatedUsers });
+      }
+    });
+
+    socket.current.on('roomJoined', (data: { roomId: string; users: ChatUser[]; success: boolean }) => {
+      if (data.success) {
+        console.log(`✅ تم الانضمام للغرفة ${data.roomId} مع ${data.users.length} مستخدمين`);
+        dispatch({ type: 'SET_ONLINE_USERS', payload: data.users });
+        dispatch({ type: 'SET_ROOM', payload: data.roomId });
+      }
+    });
+
+    socket.current.on('error', (data: { message: string }) => {
+      console.error('❌ خطأ من الخادم:', data.message);
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: data.message });
+    });
+
     socket.current.on('message', (message: WebSocketMessage) => {
       try {
         switch (message.type) {
           case 'error':
             console.error('خطأ من الخادم:', message.message);
+            dispatch({ type: 'SET_CONNECTION_ERROR', payload: message.message || 'خطأ غير معروف' });
             break;
             
           case 'warning':
@@ -339,6 +380,21 @@ export function useChat() {
               console.log('✅ تم تحديث قائمة المستخدمين بنجاح');
             } else {
               console.warn('⚠️ لم يتم استقبال قائمة مستخدمين');
+            }
+            break;
+
+          case 'onlineUsersUpdate':
+            if (message.users && message.roomId) {
+              console.log(`👥 تحديث محسن لقائمة المستخدمين في الغرفة ${message.roomId}:`, message.users.length);
+              console.log('👥 المستخدمون:', message.users.map(u => u.username).join(', '));
+              
+              // تحديث القائمة فقط إذا كانت الغرفة هي الغرفة الحالية
+              if (message.roomId === state.currentRoomId) {
+                dispatch({ type: 'SET_ONLINE_USERS', payload: message.users });
+                console.log('✅ تم تحديث قائمة المستخدمين للغرفة الحالية');
+              } else {
+                console.log(`ℹ️ تجاهل تحديث الغرفة ${message.roomId} (الغرفة الحالية: ${state.currentRoomId})`);
+              }
             }
             break;
             
@@ -371,6 +427,33 @@ export function useChat() {
               console.log('👤 مستخدم غادر:', message.userId);
               const updatedUsers = state.onlineUsers.filter(u => u.id !== message.userId);
               dispatch({ type: 'SET_ONLINE_USERS', payload: updatedUsers });
+            }
+            break;
+
+          case 'userJoinedRoom':
+            if (message.userId && message.roomId === state.currentRoomId) {
+              console.log(`👤 مستخدم ${message.username} انضم للغرفة ${message.roomId}`);
+              // طلب تحديث قائمة المستخدمين
+              if (socket.current?.connected) {
+                socket.current.emit('requestOnlineUsers');
+              }
+            }
+            break;
+
+          case 'userLeftRoom':
+            if (message.userId && message.roomId === state.currentRoomId) {
+              console.log(`👤 مستخدم ${message.username} غادر الغرفة ${message.roomId}`);
+              // إزالة المستخدم من القائمة فوراً
+              const updatedUsers = state.onlineUsers.filter(u => u.id !== message.userId);
+              dispatch({ type: 'SET_ONLINE_USERS', payload: updatedUsers });
+            }
+            break;
+
+          case 'roomJoined':
+            if (message.success && message.users) {
+              console.log(`✅ تم الانضمام للغرفة ${message.roomId} بنجاح مع ${message.users.length} مستخدمين`);
+              dispatch({ type: 'SET_ONLINE_USERS', payload: message.users });
+              dispatch({ type: 'SET_ROOM', payload: message.roomId });
             }
             break;
             
@@ -620,11 +703,30 @@ export function useChat() {
     }
   }, []);
 
-  // Join room function
+  // Join room function - محسنة
   const joinRoom = useCallback((roomId: string) => {
-    console.log(`🔄 انضمام للغرفة: ${roomId}`);
-    // لا نغير الغرفة الحالية حتى نتلقى تأكيد من السيرفر
-    socket.current?.emit('joinRoom', { roomId });
+    console.log(`🏠 محاولة الانضمام للغرفة: ${roomId}`);
+    
+    // تحديث الغرفة الحالية فوراً
+    dispatch({ type: 'SET_ROOM', payload: roomId });
+    
+    // مسح قائمة المستخدمين مؤقتاً لتجنب الالتباس
+    dispatch({ type: 'SET_ONLINE_USERS', payload: [] });
+    
+    // إرسال طلب الانضمام للخادم
+    if (socket.current?.connected) {
+      socket.current.emit('joinRoom', { roomId });
+      
+      // طلب قائمة المستخدمين بعد ثانية واحدة للتأكد
+      setTimeout(() => {
+        if (socket.current?.connected) {
+          socket.current.emit('requestOnlineUsers');
+        }
+      }, 1000);
+    } else {
+      console.error('❌ Socket غير متصل، لا يمكن الانضمام للغرفة');
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'انقطع الاتصال، جاري إعادة المحاولة...' });
+    }
   }, []);
 
   // Send message function - محسنة
@@ -661,16 +763,31 @@ export function useChat() {
     return sendMessage(content, messageType, undefined, roomId);
   }, [sendMessage]);
 
-  // Disconnect function
+  // Disconnect function - محسنة
   const disconnect = useCallback(() => {
+    console.log('🧹 قطع الاتصال وتنظيف الموارد...');
+    
     if (socket.current) {
+      // تنظيف الفترات الزمنية
+      if ((socket.current as any).userListInterval) {
+        clearInterval((socket.current as any).userListInterval);
+      }
+      
+      // إزالة جميع المعالجات
+      socket.current.removeAllListeners();
+      
+      // قطع الاتصال
       socket.current.disconnect();
       socket.current = null;
     }
     
+    // إعادة تعيين الحالة
     dispatch({ type: 'SET_CURRENT_USER', payload: null });
     dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
     dispatch({ type: 'SET_ONLINE_USERS', payload: [] });
+    dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+    
+    console.log('✅ تم قطع الاتصال وتنظيف الموارد بنجاح');
     dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: [] });
   }, []);
 

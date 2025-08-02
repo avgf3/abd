@@ -767,7 +767,42 @@ export class PostgreSQLStorage implements IStorage {
     try {
       console.log(`🔍 جلب المستخدمين المتصلين في الغرفة ${roomId}`);
       
-      // جلب المستخدمين المتصلين والموجودين في الغرفة المحددة
+      // الطريقة الجديدة: استخدام Socket.IO للحصول على المستخدمين المتصلين فعلياً
+      const io = (global as any).io;
+      if (io) {
+        const socketUsers = new Set<number>();
+        
+        // جلب المستخدمين المتصلين من Socket.IO
+        try {
+          const sockets = await io.in(`room_${roomId}`).fetchSockets();
+          sockets.forEach((socket: any) => {
+            const userId = socket.userId;
+            if (userId && typeof userId === 'number') {
+              socketUsers.add(userId);
+            }
+          });
+          
+          console.log(`🔌 Socket.IO: وجد ${socketUsers.size} مستخدمين متصلين في الغرفة ${roomId}`);
+          
+          if (socketUsers.size === 0) {
+            return [];
+          }
+          
+          // جلب بيانات المستخدمين من قاعدة البيانات
+          const userIds = Array.from(socketUsers);
+          const result = await db.select()
+            .from(users)
+            .where(inArray(users.id, userIds));
+          
+          console.log(`👥 تم جلب بيانات ${result.length} مستخدمين: ${result.map(u => u.username).join(', ')}`);
+          return result;
+          
+        } catch (socketError) {
+          console.warn('⚠️ خطأ في جلب المستخدمين من Socket.IO، استخدام الطريقة التقليدية:', socketError);
+        }
+      }
+      
+      // الطريقة التقليدية كـ fallback
       const result = await db.select()
         .from(users)
         .innerJoin(roomUsers, eq(users.id, roomUsers.userId))
@@ -779,7 +814,7 @@ export class PostgreSQLStorage implements IStorage {
         );
       
       const users_list = result.map(row => row.users);
-      console.log(`👥 وجد ${users_list.length} مستخدمين متصلين في الغرفة ${roomId}: ${users_list.map(u => u.username).join(', ')}`);
+      console.log(`👥 (تقليدي) وجد ${users_list.length} مستخدمين متصلين في الغرفة ${roomId}: ${users_list.map(u => u.username).join(', ')}`);
       
       return users_list;
     } catch (error) {
