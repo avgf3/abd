@@ -1,3 +1,8 @@
+
+// إضافة الأنظمة المحسّنة
+import { registerEnhancedRoutes, setupErrorHandling } from "./routes-enhanced";
+import { performanceOptimizer, errorHandler } from "./performance-optimizer";
+import { enhancedUserManager } from "./enhanced-user-system";
 import dotenv from "dotenv";
 dotenv.config();
 
