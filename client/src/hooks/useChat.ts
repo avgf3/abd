@@ -413,12 +413,10 @@ export function useChat() {
                 dispatch({ type: 'SET_ONLINE_USERS', payload: updatedUsers });
               }
               
-              // طلب قائمة محدثة من الخادم للتأكد
-              setTimeout(() => {
-                if (socket.current?.connected) {
-                  socket.current.emit('requestOnlineUsers');
-                }
-              }, 500);
+              // طلب قائمة محدثة من الخادم فوراً
+              if (socket.current?.connected) {
+                socket.current.emit('requestOnlineUsers');
+              }
             }
             break;
             
@@ -433,7 +431,7 @@ export function useChat() {
           case 'userJoinedRoom':
             if (message.userId && message.roomId === state.currentRoomId) {
               console.log(`👤 مستخدم ${message.username} انضم للغرفة ${message.roomId}`);
-              // طلب تحديث قائمة المستخدمين
+              // طلب تحديث قائمة المستخدمين فوراً
               if (socket.current?.connected) {
                 socket.current.emit('requestOnlineUsers');
               }
@@ -627,42 +625,79 @@ export function useChat() {
     });
   }, [state.ignoredUsers, state.typingUsers, state.onlineUsers, isValidMessage]);
 
-  // Connect function - محسنة
+  // Connect function - محسنة مع إعادة المحاولة
   const connect = useCallback((user: ChatUser) => {
-    dispatch({ type: 'SET_CURRENT_USER', payload: user });
-    dispatch({ type: 'SET_LOADING', payload: true });
+    console.log('🔌 محاولة الاتصال بـ Socket.IO...');
     
-    // إضافة المستخدم الحالي للقائمة فوراً
-    dispatch({ type: 'SET_ONLINE_USERS', payload: [user] });
-
-    try {
-      // إنشاء اتصال Socket.IO
-      if (!socket.current) {
-        // Use dynamic URL: production uses current origin, development uses localhost
-        const isDevelopment = import.meta.env.DEV;
-        const serverUrl = isDevelopment 
-          ? (import.meta.env.VITE_SERVER_URL || 'https://abd-ylo2.onrender.com')
-          : window.location.origin;
-        
-        console.log('🔌 جاري الاتصال بـ Socket.IO على:', serverUrl);
-        socket.current = io(serverUrl, {
-          transports: ['websocket', 'polling'],
-          timeout: 10000,
-          reconnection: true,
-          reconnectionAttempts: 5,
-          reconnectionDelay: 1000,
-          autoConnect: true,
-          forceNew: false
+    // Use dynamic URL: production uses current origin, development uses localhost
+    const isDevelopment = import.meta.env.DEV;
+    const serverUrl = isDevelopment 
+      ? (import.meta.env.VITE_SERVER_URL || 'https://abd-ylo2.onrender.com')
+      : window.location.origin;
+    
+    console.log('🔌 جاري الاتصال بـ Socket.IO على:', serverUrl);
+    
+    // إغلاق الاتصال السابق إذا كان موجود
+    if (socket.current) {
+      socket.current.disconnect();
+    }
+    
+    // إنشاء اتصال جديد مع إعدادات محسنة
+    socket.current = io(serverUrl, {
+      transports: ['websocket', 'polling'],
+      timeout: 10000,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      autoConnect: true,
+      forceNew: false
+    });
+    
+    // إعداد معالجات الأحداث
+    setupSocketListeners(user);
+    
+    // إضافة معالجات الأخطاء
+    socket.current.on('connect_error', (error) => {
+      console.error('❌ خطأ في الاتصال:', error);
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل في الاتصال، جاري إعادة المحاولة...' });
+    });
+    
+    socket.current.on('disconnect', (reason) => {
+      console.log('🔌 تم قطع الاتصال:', reason);
+      dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+      
+      if (reason === 'io server disconnect') {
+        // إعادة الاتصال يدوياً إذا تم قطع الاتصال من الخادم
+        socket.current?.connect();
+      }
+    });
+    
+    socket.current.on('reconnect', (attemptNumber) => {
+      console.log('✅ تم إعادة الاتصال بعد', attemptNumber, 'محاولات');
+      dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+      
+      // إعادة إرسال بيانات المستخدم بعد إعادة الاتصال
+      if (user) {
+        socket.current?.emit('authenticate', { 
+          userId: user.id, 
+          username: user.username,
+          userType: user.userType 
         });
       }
-
-      setupSocketListeners(user);
-
-    } catch (error) {
-      console.error('خطأ في الاتصال:', error);
-      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل في الاتصال بالخادم' });
-    }
-  }, [setupSocketListeners]);
+    });
+    
+    socket.current.on('reconnect_attempt', (attemptNumber) => {
+      console.log('🔄 محاولة إعادة الاتصال رقم:', attemptNumber);
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: `محاولة إعادة الاتصال ${attemptNumber}/5` });
+    });
+    
+    socket.current.on('reconnect_failed', () => {
+      console.error('❌ فشل في إعادة الاتصال');
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل في إعادة الاتصال، يرجى تحديث الصفحة' });
+    });
+    
+  }, []);
 
   // Load room messages function
   const loadRoomMessages = useCallback(async (roomId: string) => {
@@ -707,6 +742,12 @@ export function useChat() {
   const joinRoom = useCallback((roomId: string) => {
     console.log(`🏠 محاولة الانضمام للغرفة: ${roomId}`);
     
+    if (!socket.current?.connected) {
+      console.error('❌ Socket غير متصل، لا يمكن الانضمام للغرفة');
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'انقطع الاتصال، جاري إعادة المحاولة...' });
+      return;
+    }
+    
     // تحديث الغرفة الحالية فوراً
     dispatch({ type: 'SET_ROOM', payload: roomId });
     
@@ -714,20 +755,26 @@ export function useChat() {
     dispatch({ type: 'SET_ONLINE_USERS', payload: [] });
     
     // إرسال طلب الانضمام للخادم
-    if (socket.current?.connected) {
-      socket.current.emit('joinRoom', { roomId });
-      
-      // طلب قائمة المستخدمين بعد ثانية واحدة للتأكد
-      setTimeout(() => {
-        if (socket.current?.connected) {
-          socket.current.emit('requestOnlineUsers');
-        }
-      }, 1000);
-    } else {
-      console.error('❌ Socket غير متصل، لا يمكن الانضمام للغرفة');
-      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'انقطع الاتصال، جاري إعادة المحاولة...' });
+    socket.current.emit('joinRoom', { roomId });
+    
+    // طلب قائمة المستخدمين فوراً
+    socket.current.emit('requestOnlineUsers');
+    
+    // إعادة المحاولة بعد 2 ثانية إذا لم يتم التحديث
+    setTimeout(() => {
+      if (state.onlineUsers.length === 0) {
+        console.log('🔄 إعادة طلب قائمة المستخدمين...');
+        socket.current?.emit('requestOnlineUsers');
+      }
+    }, 2000);
+    
+    // حفظ الغرفة الحالية في localStorage
+    try {
+      localStorage.setItem('currentRoomId', roomId);
+    } catch (error) {
+      console.warn('⚠️ لا يمكن حفظ الغرفة في localStorage:', error);
     }
-  }, []);
+  }, [state.onlineUsers.length]);
 
   // Send message function - محسنة
   const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number, roomId?: string) => {
@@ -749,12 +796,17 @@ export function useChat() {
 
     console.log('📤 إرسال رسالة:', messageData);
     
-    if (receiverId) {
-      // رسالة خاصة
-      socket.current.emit('privateMessage', messageData);
-    } else {
-      // رسالة عامة
-      socket.current.emit('publicMessage', messageData);
+    try {
+      if (receiverId) {
+        // رسالة خاصة
+        socket.current.emit('privateMessage', messageData);
+      } else {
+        // رسالة عامة
+        socket.current.emit('publicMessage', messageData);
+      }
+    } catch (error) {
+      console.error('❌ خطأ في إرسال الرسالة:', error);
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'خطأ في إرسال الرسالة' });
     }
   }, [state.currentUser, state.currentRoomId]);
 
@@ -786,9 +838,16 @@ export function useChat() {
     dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
     dispatch({ type: 'SET_ONLINE_USERS', payload: [] });
     dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+    dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: [] });
+    
+    // مسح البيانات المحفوظة
+    try {
+      localStorage.removeItem('currentRoomId');
+    } catch (error) {
+      console.warn('⚠️ لا يمكن مسح البيانات من localStorage:', error);
+    }
     
     console.log('✅ تم قطع الاتصال وتنظيف الموارد بنجاح');
-    dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: [] });
   }, []);
 
   // Ignore/Unignore user functions

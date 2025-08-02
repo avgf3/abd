@@ -47,23 +47,70 @@ export default function RoomsPanel({
 
   const handleAddRoom = () => {
     if (newRoomName.trim()) {
-      onAddRoom({
-        name: newRoomName.trim(),
-        description: newRoomDescription.trim(),
-        image: roomImage
-      });
-      setNewRoomName('');
-      setNewRoomDescription('');
-      setRoomImage(null);
-      setImagePreview(null);
-      setShowAddRoom(false);
+      try {
+        // التحقق من صحة البيانات
+        if (newRoomName.trim().length < 3) {
+          alert('اسم الغرفة يجب أن يكون 3 أحرف على الأقل');
+          return;
+        }
+        
+        if (newRoomName.trim().length > 50) {
+          alert('اسم الغرفة يجب أن يكون أقل من 50 حرف');
+          return;
+        }
+        
+        // التحقق من نوع الملف إذا كان موجود
+        if (roomImage && !roomImage.type.startsWith('image/')) {
+          alert('يجب اختيار ملف صورة صحيح');
+          return;
+        }
+        
+        // التحقق من حجم الملف
+        if (roomImage && roomImage.size > 5 * 1024 * 1024) {
+          alert('حجم الصورة يجب أن يكون أقل من 5 ميجابايت');
+          return;
+        }
+        
+        onAddRoom({
+          name: newRoomName.trim(),
+          description: newRoomDescription.trim(),
+          image: roomImage
+        });
+        
+        // تنظيف النموذج
+        setNewRoomName('');
+        setNewRoomDescription('');
+        setRoomImage(null);
+        setImagePreview(null);
+        setShowAddRoom(false);
+        
+      } catch (error) {
+        console.error('خطأ في إضافة الغرفة:', error);
+        alert('حدث خطأ في إضافة الغرفة');
+      }
+    } else {
+      alert('يرجى إدخال اسم الغرفة');
     }
   };
 
   const handleDeleteRoom = (roomId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('هل أنت متأكد من حذف هذه الغرفة؟')) {
-      onDeleteRoom(roomId);
+    try {
+      if (confirm('هل أنت متأكد من حذف هذه الغرفة؟')) {
+        onDeleteRoom(roomId);
+      }
+    } catch (error) {
+      console.error('خطأ في حذف الغرفة:', error);
+      alert('حدث خطأ في حذف الغرفة');
+    }
+  };
+
+  const handleRoomChange = (roomId: string) => {
+    try {
+      onRoomChange(roomId);
+    } catch (error) {
+      console.error('خطأ في تغيير الغرفة:', error);
+      alert('حدث خطأ في تغيير الغرفة');
     }
   };
 
@@ -114,7 +161,7 @@ export default function RoomsPanel({
                   ? 'bg-primary/20 border border-primary/30'
                   : 'hover:bg-muted/80'
               }`}
-              onClick={() => onRoomChange(room.id)}
+              onClick={() => handleRoomChange(room.id)}
             >
               {/* Room Image */}
               <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-muted">

@@ -154,51 +154,107 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async setUserOnlineStatus(id: number, isOnline: boolean): Promise<void> {
-    await db.update(users)
-      .set({ 
-        isOnline,
-        lastSeen: new Date()
-      })
-      .where(eq(users.id, id));
+    try {
+      await db.update(users)
+        .set({ 
+          isOnline: isOnline ? 1 : 0,  // ✅ تحويل boolean إلى 0/1 لـ SQLite
+          lastSeen: new Date().toISOString()  // ✅ تحويل Date إلى ISO string
+        })
+        .where(eq(users.id, id));
+      
+      console.log(`✅ تم تحديث حالة المستخدم ${id}: ${isOnline ? 'متصل' : 'غير متصل'}`);
+    } catch (error) {
+      console.error('خطأ في تحديث حالة المستخدم:', error);
+      throw error;
+    }
   }
 
   async setUserHiddenStatus(id: number, isHidden: boolean): Promise<void> {
-    await db.update(users)
-      .set({ isHidden })
-      .where(eq(users.id, id));
+    try {
+      await db.update(users)
+        .set({ 
+          isHidden: isHidden ? 1 : 0,  // ✅ تحويل boolean إلى 0/1 لـ SQLite
+          lastSeen: new Date().toISOString()
+        })
+        .where(eq(users.id, id));
+    } catch (error) {
+      console.error('خطأ في تحديث حالة الإخفاء:', error);
+      throw error;
+    }
   }
 
   async addIgnoredUser(userId: number, ignoredUserId: number): Promise<void> {
-    const user = await this.getUser(userId);
-    if (user) {
-      const ignoredUsers = JSON.parse(user.ignoredUsers || '[]');
-      if (!ignoredUsers.includes(ignoredUserId)) {
-        ignoredUsers.push(ignoredUserId);
-        await this.updateUser(userId, { ignoredUsers: JSON.stringify(ignoredUsers) });
+    try {
+      const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!user.length) return;
+
+      const currentIgnored = JSON.parse(user[0].ignoredUsers || '[]');
+      if (!currentIgnored.includes(ignoredUserId)) {
+        currentIgnored.push(ignoredUserId);
+        await db.update(users)
+          .set({ ignoredUsers: JSON.stringify(currentIgnored) })  // ✅ تحويل array إلى JSON string
+          .where(eq(users.id, userId));
       }
+    } catch (error) {
+      console.error('خطأ في إضافة مستخدم متجاهل:', error);
+      throw error;
     }
   }
 
   async removeIgnoredUser(userId: number, ignoredUserId: number): Promise<void> {
-    const user = await this.getUser(userId);
-    if (user) {
-      const ignoredUsers = JSON.parse(user.ignoredUsers || '[]');
-      const filteredUsers = ignoredUsers.filter((id: number) => id !== ignoredUserId);
-      await this.updateUser(userId, { ignoredUsers: JSON.stringify(filteredUsers) });
+    try {
+      const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!user.length) return;
+
+      const currentIgnored = JSON.parse(user[0].ignoredUsers || '[]');
+      const updatedIgnored = currentIgnored.filter((id: number) => id !== ignoredUserId);
+      
+      await db.update(users)
+        .set({ ignoredUsers: JSON.stringify(updatedIgnored) })  // ✅ تحويل array إلى JSON string
+        .where(eq(users.id, userId));
+    } catch (error) {
+      console.error('خطأ في إزالة مستخدم متجاهل:', error);
+      throw error;
     }
   }
 
   async getIgnoredUsers(userId: number): Promise<number[]> {
-    const user = await this.getUser(userId);
-    return user ? JSON.parse(user.ignoredUsers || '[]') : [];
+    try {
+      const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!user.length) return [];
+      
+      return JSON.parse(user[0].ignoredUsers || '[]');  // ✅ تحليل JSON string إلى array
+    } catch (error) {
+      console.error('خطأ في جلب المستخدمين المتجاهلين:', error);
+      return [];
+    }
   }
 
   async getOnlineUsers(): Promise<User[]> {
-    return await db.select().from(users).where(eq(users.isOnline, true));
+    try {
+      return await db.select()
+        .from(users)
+        .where(and(
+          eq(users.isOnline, 1),  // ✅ استخدام 1 بدلاً من true
+          eq(users.isHidden, 0)   // ✅ استبعاد المستخدمين المخفيين
+        ))
+        .orderBy(desc(users.lastSeen));  // ✅ ترتيب حسب آخر نشاط
+    } catch (error) {
+      console.error('خطأ في جلب المستخدمين المتصلين:', error);
+      return [];
+    }
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users).orderBy(desc(users.createdAt));
+    try {
+      return await db.select()
+        .from(users)
+        .where(eq(users.isHidden, 0))  // ✅ استبعاد المستخدمين المخفيين
+        .orderBy(desc(users.lastSeen));  // ✅ ترتيب حسب آخر نشاط
+    } catch (error) {
+      console.error('خطأ في جلب جميع المستخدمين:', error);
+      return [];
+    }
   }
 
   // Message operations
@@ -706,20 +762,48 @@ export class PostgreSQLStorage implements IStorage {
     try {
       console.log(`🔄 محاولة انضمام المستخدم ${userId} للغرفة ${roomId}`);
       
-      // التحقق من وجود المستخدم في الغرفة مسبقاً
+      // التحقق من وجود الغرفة
+      const room = await this.getRoom(roomId);
+      if (!room) {
+        throw new Error('الغرفة غير موجودة');
+      }
+      
+      // التحقق من وجود المستخدم
+      const user = await this.getUser(userId);
+      if (!user) {
+        throw new Error('المستخدم غير موجود');
+      }
+      
+      // التحقق من عدم وجود المستخدم في الغرفة مسبقاً
       const existing = await db.select()
         .from(roomUsers)
         .where(and(eq(roomUsers.userId, userId), eq(roomUsers.roomId, roomId)))
         .limit(1);
       
       if (existing.length === 0) {
+        // الانضمام للغرفة
         await db.insert(roomUsers).values({
           userId: userId,
-          roomId: roomId
+          roomId: roomId,
+          joinedAt: new Date().toISOString()  // ✅ إضافة timestamp
         });
-        console.log(`✅ تم انضمام المستخدم ${userId} للغرفة ${roomId}`);
+        
+        // تحديث حالة المستخدم
+        await this.setUserOnlineStatus(userId, true);
+        
+        // إرسال إشعار للمستخدمين الآخرين
+        const io = (global as any).io;
+        if (io) {
+          io.to(`room_${roomId}`).emit('userJoinedRoom', {
+            userId: userId,
+            username: user.username,
+            roomId: roomId
+          });
+        }
+        
+        console.log(`✅ تم انضمام المستخدم ${user.username} للغرفة ${roomId}`);
       } else {
-        console.log(`ℹ️ المستخدم ${userId} موجود بالفعل في الغرفة ${roomId}`);
+        console.log(`ℹ️ المستخدم ${user.username} موجود بالفعل في الغرفة ${roomId}`);
       }
     } catch (error) {
       console.error('خطأ في انضمام المستخدم للغرفة:', error);
@@ -729,8 +813,36 @@ export class PostgreSQLStorage implements IStorage {
 
   async leaveRoom(userId: number, roomId: string): Promise<void> {
     try {
-      await db.delete(roomUsers)
-        .where(and(eq(roomUsers.userId, userId), eq(roomUsers.roomId, roomId)));
+      console.log(`🔄 محاولة مغادرة المستخدم ${userId} للغرفة ${roomId}`);
+      
+      // التحقق من وجود المستخدم في الغرفة
+      const existing = await db.select()
+        .from(roomUsers)
+        .where(and(eq(roomUsers.userId, userId), eq(roomUsers.roomId, roomId)))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        // جلب بيانات المستخدم قبل الحذف
+        const user = await this.getUser(userId);
+        
+        // حذف المستخدم من الغرفة
+        await db.delete(roomUsers)
+          .where(and(eq(roomUsers.userId, userId), eq(roomUsers.roomId, roomId)));
+        
+        // إرسال إشعار للمستخدمين الآخرين
+        const io = (global as any).io;
+        if (io && user) {
+          io.to(`room_${roomId}`).emit('userLeftRoom', {
+            userId: userId,
+            username: user.username,
+            roomId: roomId
+          });
+        }
+        
+        console.log(`✅ تم مغادرة المستخدم ${user?.username || userId} للغرفة ${roomId}`);
+      } else {
+        console.log(`ℹ️ المستخدم ${userId} غير موجود في الغرفة ${roomId}`);
+      }
     } catch (error) {
       console.error('خطأ في مغادرة المستخدم للغرفة:', error);
       throw error;
@@ -767,7 +879,7 @@ export class PostgreSQLStorage implements IStorage {
     try {
       console.log(`🔍 جلب المستخدمين المتصلين في الغرفة ${roomId}`);
       
-      // الطريقة الجديدة: استخدام Socket.IO للحصول على المستخدمين المتصلين فعلياً
+      // الطريقة المحسنة: استخدام Socket.IO للحصول على المستخدمين المتصلين فعلياً
       const io = (global as any).io;
       if (io) {
         const socketUsers = new Set<number>();
@@ -792,7 +904,11 @@ export class PostgreSQLStorage implements IStorage {
           const userIds = Array.from(socketUsers);
           const result = await db.select()
             .from(users)
-            .where(inArray(users.id, userIds));
+            .where(and(
+              inArray(users.id, userIds),
+              eq(users.isHidden, 0)  // ✅ استبعاد المستخدمين المخفيين
+            ))
+            .orderBy(desc(users.lastSeen));  // ✅ ترتيب حسب آخر نشاط
           
           console.log(`👥 تم جلب بيانات ${result.length} مستخدمين: ${result.map(u => u.username).join(', ')}`);
           return result;
@@ -802,16 +918,19 @@ export class PostgreSQLStorage implements IStorage {
         }
       }
       
-      // الطريقة التقليدية كـ fallback
+      // الطريقة التقليدية كـ fallback محسن
+      console.log(`🔄 استخدام الطريقة التقليدية للغرفة ${roomId}`);
       const result = await db.select()
         .from(users)
         .innerJoin(roomUsers, eq(users.id, roomUsers.userId))
         .where(
           and(
             eq(roomUsers.roomId, roomId),
-            eq(users.isOnline, true)
+            eq(users.isOnline, 1),  // ✅ استخدام 1 بدلاً من true
+            eq(users.isHidden, 0)   // ✅ استبعاد المستخدمين المخفيين
           )
-        );
+        )
+        .orderBy(desc(users.lastSeen));  // ✅ ترتيب حسب آخر نشاط
       
       const users_list = result.map(row => row.users);
       console.log(`👥 (تقليدي) وجد ${users_list.length} مستخدمين متصلين في الغرفة ${roomId}: ${users_list.map(u => u.username).join(', ')}`);

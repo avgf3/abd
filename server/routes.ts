@@ -1017,8 +1017,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // جعل io متاح عالمياً للاستخدام في storage
   (global as any).io = io;
 
-  // تحديث دوري لمزامنة قوائم المستخدمين في جميع الغرف
-  setInterval(async () => {
+  // تحديث دوري محسن لمزامنة قوائم المستخدمين في جميع الغرف
+  const roomUpdateCache = new Map<string, string>();
+
+  const updateRoomUsers = async () => {
     try {
       console.log('🔄 تحديث دوري لقوائم المستخدمين...');
       
@@ -1030,11 +1032,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const roomId of activeRoomIds) {
         try {
           const roomUsers = await storage.getOnlineUsersInRoom(roomId);
-          if (roomUsers.length > 0) {
+          
+          // إرسال التحديث فقط إذا كان هناك تغيير
+          const lastUpdate = roomUpdateCache.get(roomId);
+          const currentHash = JSON.stringify(roomUsers.map(u => u.id).sort());
+          
+          if (lastUpdate !== currentHash) {
             io.to(`room_${roomId}`).emit('onlineUsersUpdate', {
               roomId: roomId,
               users: roomUsers
             });
+            roomUpdateCache.set(roomId, currentHash);
             console.log(`✅ تم تحديث قائمة الغرفة ${roomId}: ${roomUsers.length} مستخدمين`);
           }
         } catch (roomError) {
@@ -1045,7 +1053,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('❌ خطأ في التحديث الدوري:', error);
     }
-  }, 60000); // كل دقيقة
+  };
+
+  // تحديث كل 30 ثانية بدلاً من 60
+  setInterval(updateRoomUsers, 30000);
   
   // Health Check endpoint للمراقبة
   app.get('/api/health', (req, res) => {
@@ -1689,9 +1700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const currentRoom = (socket as any).currentRoom || 'general';
         console.log(`📡 جلب قائمة المستخدمين المتصلين في الغرفة ${currentRoom}...`);
         
-        // انتظار قصير للتأكد من تحديث قاعدة البيانات
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
+        // إزالة التأخير غير الضروري
         const roomUsers = await storage.getOnlineUsersInRoom(currentRoom);
         console.log(`👥 عدد المستخدمين المتصلين في الغرفة ${currentRoom}: ${roomUsers.length}`);
         console.log(`👥 المستخدمون في الغرفة: ${roomUsers.map(u => u.username).join(', ')}`);
@@ -1700,12 +1709,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         socket.emit('message', {
           type: 'roomJoined',
           roomId: currentRoom,
+          success: true,
           users: roomUsers
         });
         
         // إرسال قائمة المستخدمين في الغرفة للمستخدم الجديد
-        socket.emit('message', { 
-          type: 'onlineUsers', 
+        socket.emit('onlineUsersUpdate', { 
+          roomId: currentRoom,
           users: roomUsers 
         });
 
@@ -1719,8 +1729,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // إرسال قائمة محدثة لجميع المستخدمين في الغرفة
         const updatedRoomUsers = await storage.getOnlineUsersInRoom(currentRoom);
-        io.to(`room_${currentRoom}`).emit('message', {
-          type: 'onlineUsers',
+        io.to(`room_${currentRoom}`).emit('onlineUsersUpdate', {
+          roomId: currentRoom,
           users: updatedRoomUsers
         });
 
@@ -1768,7 +1778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         if (!socket.userId) return;
         
-        // التحقق من حالة المستخدم بشكل بسيط
+        // التحقق من وجود المستخدم
         const user = await storage.getUser(socket.userId);
         console.log(`🔍 User ${socket.userId} (${user?.username}) sending message`);
         
@@ -1780,7 +1790,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
         
-        // فحص حالة الحظر أو الكتم فقط إذا كانت موجودة في قاعدة البيانات
+        // التحقق من وجود المستخدم في الغرفة
+        const roomId = data.roomId || 'general';
+        const userRooms = await storage.getUserRooms(socket.userId);
+        if (!userRooms.includes(roomId)) {
+          socket.emit('message', {
+            type: 'error',
+            message: 'أنت لست في هذه الغرفة'
+          });
+          return;
+        }
+        
+        // فحص حالة الحظر أو الكتم
         if (user.isBanned) {
           socket.emit('message', {
             type: 'error',
@@ -1814,8 +1835,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
 
-        const roomId = data.roomId || 'general';
-        
         // التحقق من صلاحيات البث المباشر (فقط للغرف غير العامة)
         if (roomId !== 'general') {
           const room = await storage.getRoom(roomId);
@@ -1844,59 +1863,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           roomId: roomId,
         });
         
-        // إضافة نقاط لإرسال رسالة
-        try {
-          const pointsResult = await pointsService.addMessagePoints(socket.userId);
-          
-          // التحقق من إنجاز أول رسالة
-          const achievementResult = await pointsService.checkAchievement(socket.userId, 'FIRST_MESSAGE');
-          
-          // إرسال إشعار ترقية المستوى إذا حدثت
-          if (pointsResult?.leveledUp) {
-            socket.emit('message', {
-              type: 'levelUp',
-              oldLevel: pointsResult.oldLevel,
-              newLevel: pointsResult.newLevel,
-              levelInfo: pointsResult.levelInfo,
-              message: `🎉 تهانينا! وصلت للمستوى ${pointsResult.newLevel}: ${pointsResult.levelInfo?.title}`
-            });
-          }
-          
-          // إرسال إشعار إنجاز أول رسالة
-          if (achievementResult?.leveledUp) {
-            socket.emit('message', {
-              type: 'achievement',
-              message: `🏆 إنجاز جديد: أول رسالة! حصلت على ${achievementResult.newPoints - pointsResult.newPoints} نقطة إضافية!`
-            });
-          }
-          
-          // تحديث بيانات المستخدم في الذاكرة والإرسال للعملاء
-          const updatedSender = await storage.getUser(socket.userId);
-          if (updatedSender) {
-            // إرسال البيانات المحدثة للمستخدم
-            socket.emit('message', {
-              type: 'userUpdated',
-              user: updatedSender
-            });
-          }
-        } catch (pointsError) {
-          console.error('خطأ في إضافة النقاط:', pointsError);
-        }
-        
-        const sender = await storage.getUser(socket.userId);
-        console.log(`📤 إرسال رسالة من ${sender?.username} للغرفة ${roomId}`);
-        console.log('📝 محتوى الرسالة:', sanitizedContent);
-        
-        // إرسال الرسالة فقط للمستخدمين في نفس الغرفة
-        console.log(`📡 إرسال رسالة للغرفة ${roomId}`);
-        io.to(`room_${roomId}`).emit('message', { 
-          envelope: {
-            type: 'newMessage',
-            message: { ...newMessage, sender, roomId }
-          }
+        // إرسال الرسالة لجميع المستخدمين في الغرفة
+        io.to(`room_${roomId}`).emit('message', {
+          type: 'newMessage',
+          message: newMessage
         });
+        
+        // تحديث آخر نشاط للمستخدم
+        await storage.setUserOnlineStatus(socket.userId, true);
+        
+        console.log(`✅ تم إرسال رسالة من ${user.username} في الغرفة ${roomId}`);
+        
       } catch (error) {
-        console.error('خطأ في إرسال الرسالة العامة:', error);
+        console.error('❌ خطأ في إرسال الرسالة:', error);
         socket.emit('message', { type: 'error', message: 'خطأ في إرسال الرسالة' });
       }
     });
