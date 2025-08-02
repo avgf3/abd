@@ -131,42 +131,8 @@ async function comprehensiveRoomsTest() {
     // 7. اختبار API endpoint
     console.log('7️⃣ اختبار API endpoint...');
     try {
-      const response = await fetch('http://localhost:3000/api/rooms');
+      console.log('🔍 اختبار API الغرف...');
+      const response = await fetch('https://abd-gmva.onrender.com/api/rooms');
       if (response.ok) {
         const data = await response.json();
-        console.log(`✅ API يعمل - عدد الغرف المُرجعة: ${data.rooms.length}`);
-        data.rooms.forEach(room => {
-          console.log(`   - API: ${room.name} (${room.id}) - ${room.userCount} مستخدم`);
-        });
-      } else {
-        console.log(`❌ API لا يعمل - Status: ${response.status}`);
-      }
-    } catch (error) {
-      console.log(`❌ خطأ في اتصال API:`, error.message);
-    }
-    console.log('');
-
-    // 8. تنظيف - حذف غرفة الاختبار
-    console.log('8️⃣ تنظيف - حذف غرفة الاختبار...');
-    await db.delete(roomUsers).where(eq(roomUsers.roomId, testRoomId));
-    await db.delete(rooms).where(eq(rooms.id, testRoomId));
-    console.log('✅ تم حذف غرفة الاختبار');
-    console.log('');
-
-    console.log('🎉 جميع الاختبارات نجحت! نظام الغرف يعمل بشكل صحيح.');
-    console.log('\n📋 ملخص الإصلاحات المطلوبة:');
-    console.log('1. ✅ قاعدة البيانات تعمل بشكل صحيح');
-    console.log('2. ✅ الغرف موجودة في قاعدة البيانات');
-    console.log('3. ✅ API endpoint يعمل');
-    console.log('4. ✅ انضمام المستخدمين للغرف يعمل');
-    console.log('5. 🔧 المشكلة في الواجهة الأمامية - تحتاج تحديث');
-
-  } catch (error) {
-    console.error('❌ خطأ في اختبار نظام الغرف:', error);
-  } finally {
-    await pool.end();
-  }
-}
-
-// تشغيل الاختبار
-comprehensiveRoomsTest();
+        console.log(`

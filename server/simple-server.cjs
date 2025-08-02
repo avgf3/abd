@@ -14,7 +14,7 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: process.env.CORS_ORIGIN || "https://abd-gmva.onrender.com",
     methods: ["GET", "POST"]
   }
 });
@@ -89,7 +89,7 @@ console.log('✅ قاعدة البيانات جاهزة');
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+  origin: process.env.CORS_ORIGIN || "https://abd-gmva.onrender.com",
   credentials: true
 }));
 app.use(express.json());

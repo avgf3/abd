@@ -381,7 +381,7 @@ app.use((err, req, res, next) => {
 
 // Start server
 server.listen(PORT, () => {
-  console.log(`✅ العربي Chat Server running on http://localhost:${PORT}`);
+  console.log(`✅ العربي Chat Server running on https://abd-gmva.onrender.com`);
   console.log('📡 Features enabled:');
   console.log('   ✓ User authentication (guest/member)');
   console.log('   ✓ Profile image upload');
@@ -389,7 +389,7 @@ server.listen(PORT, () => {
   console.log('   ✓ Wall posts with images');
   console.log('   ✓ Real-time chat');
   console.log('   ✓ Online users tracking');
-  console.log('🌐 Access the website at: http://localhost:3000');
+  console.log('🌐 Access the website at: https://abd-gmva.onrender.com');
 }).on('error', (err) => {
   console.error('❌ Server failed to start:', err.message);
   process.exit(1);

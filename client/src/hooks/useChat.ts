@@ -641,7 +641,7 @@ export function useChat() {
         // Use dynamic URL: production uses current origin, development uses localhost
         const isDevelopment = import.meta.env.DEV;
         const serverUrl = isDevelopment 
-          ? (import.meta.env.VITE_SERVER_URL || 'http://localhost:5000')
+          ? (import.meta.env.VITE_SERVER_URL || 'https://abd-gmva.onrender.com')
           : window.location.origin;
         
         console.log('🔌 جاري الاتصال بـ Socket.IO على:', serverUrl);
