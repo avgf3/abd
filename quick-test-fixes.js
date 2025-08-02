@@ -204,7 +204,7 @@ async function runTests() {
   log('\n🔧 تعليمات التشغيل:', 'bold');
   log('1. تشغيل قاعدة البيانات: npm run db:fix', 'cyan');
   log('2. تشغيل الخادم: npm run dev', 'cyan');
-  log('3. فتح المتصفح: http://localhost:5000', 'cyan');
+  log('3. فتح المتصفح: https://abd-ylo2.onrender.com', 'cyan');
   log('4. اختبار تسجيل الدخول كأونر: Username: Owner, Password: admin123', 'cyan');
   
   log('\n✨ الإصلاحات المُنجزة:', 'bold');

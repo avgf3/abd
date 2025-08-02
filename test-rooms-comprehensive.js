@@ -132,7 +132,7 @@ async function comprehensiveRoomsTest() {
     console.log('7️⃣ اختبار API endpoint...');
     try {
       console.log('🔍 اختبار API الغرف...');
-      const response = await fetch('https://abd-gmva.onrender.com/api/rooms');
+      const response = await fetch('https://abd-ylo2.onrender.com/api/rooms');
       if (response.ok) {
         const data = await response.json();
         console.log(`

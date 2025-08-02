@@ -131,7 +131,8 @@ async function comprehensiveRoomsTest() {
     // 7. اختبار API endpoint
     console.log('7️⃣ اختبار API endpoint...');
     try {
-      const response = await fetch('http://localhost:3000/api/rooms');
+      console.log('🔍 اختبار API الغرف...');
+      const response = await fetch('https://abd-ylo2.onrender.com/api/rooms');
       if (response.ok) {
         const data = await response.json();
         console.log(`✅ API يعمل - عدد الغرف المُرجعة: ${data.rooms.length}`);

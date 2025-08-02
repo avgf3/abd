@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const BASE_URL = process.env.BASE_URL || 'https://abd-ylo2.onrender.com';
 
 async function testAuthEndpoints() {
     console.log('🧪 اختبار نقاط النهاية للمصادقة...\n');

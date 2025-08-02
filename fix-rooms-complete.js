@@ -121,10 +121,10 @@ async function fixRoomsSystem() {
       }
     }
     
-    // 4. اختبار API
-    console.log('\n🌐 اختبار API للغرف...');
+    // اختبار API endpoint
+    console.log('🔍 اختبار API الغرف...');
     try {
-      const response = await fetch('http://localhost:3000/api/rooms');
+      const response = await fetch('https://abd-ylo2.onrender.com/api/rooms');
       if (response.ok) {
         const data = await response.json();
         console.log(`✅ API يعمل بنجاح - عدد الغرف: ${data.rooms.length}`);

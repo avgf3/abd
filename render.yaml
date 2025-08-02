@@ -26,13 +26,13 @@ services:
       - key: SESSION_SECRET
         value: arabic-chat-session-secret-2025-production
       - key: CORS_ORIGIN
-        value: https://abd-gmva.onrender.com
+        value: https://abd-ylo2.onrender.com
       - key: FRONTEND_URL
-        value: https://abd-gmva.onrender.com
+        value: https://abd-ylo2.onrender.com
       - key: RENDER_EXTERNAL_URL
-        value: https://abd-gmva.onrender.com
+        value: https://abd-ylo2.onrender.com
       - key: VITE_SERVER_URL
-        value: https://abd-gmva.onrender.com
+        value: https://abd-ylo2.onrender.com
     healthCheckPath: /api/health
     numInstances: 1
     plan: free

@@ -109,7 +109,7 @@ async function fixDatabase() {
     console.log('');
     console.log('📋 الخطوات التالية:');
     console.log('1. تشغيل الخادم: npm run dev');
-    console.log('2. فتح الموقع: http://localhost:5000');
+    console.log('2. فتح الموقع: https://abd-ylo2.onrender.com');
     console.log('3. تسجيل دخول كمالك: Owner / admin123');
 
   } catch (error) {

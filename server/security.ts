@@ -200,8 +200,8 @@ export function setupSecurity(app: Express): void {
   // CORS configuration
   app.use((req: Request, res: Response, next: NextFunction) => {
     const allowedOrigins = [
-      'https://abd-gmva.onrender.com',
       'https://abd-ylo2.onrender.com',
+      'https://abd-gmva.onrender.com',
       'http://localhost:5173',
       'http://localhost:3000',
       process.env.FRONTEND_URL,

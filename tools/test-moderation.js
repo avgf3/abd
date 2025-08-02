@@ -3,14 +3,15 @@ const testModeration = async () => {
   console.log('🛡️ اختبار نظام الإدارة المحسن');
 
   // اختبار 1: كتم مستخدم بواسطة المالك
-  const testMute = await fetch('http://localhost:5000/api/moderation/mute', {
+  const testMute = await fetch('https://abd-ylo2.onrender.com/api/moderation/mute', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
-      moderatorId: 1, // المالك
-      targetUserId: 1000, // مستخدم اختبار
-      reason: 'اختبار النظام المطور',
-      duration: 1 // دقيقة واحدة
+      userId: userId,
+      duration: 300, // 5 minutes
+      reason: 'Test mute'
     })
   });
 
@@ -18,12 +19,13 @@ const testModeration = async () => {
 
   // اختبار 2: إلغاء الكتم
   setTimeout(async () => {
-    const testUnmute = await fetch('http://localhost:5000/api/moderation/unmute', {
+    const testUnmute = await fetch('https://abd-ylo2.onrender.com/api/moderation/unmute', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        moderatorId: 1,
-        targetUserId: 1000
+        userId: userId
       })
     });
 
@@ -32,14 +34,15 @@ const testModeration = async () => {
 
   // اختبار 3: طرد مؤقت
   setTimeout(async () => {
-    const testBan = await fetch('http://localhost:5000/api/moderation/ban', {
+    const testBan = await fetch('https://abd-ylo2.onrender.com/api/moderation/ban', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        moderatorId: 1,
-        targetUserId: 1000,
-        reason: 'اختبار الطرد',
-        duration: 1
+        userId: userId,
+        duration: 3600, // 1 hour
+        reason: 'Test ban'
       })
     });
 
