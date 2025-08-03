@@ -23,12 +23,20 @@ export function createDatabaseAdapter(): DatabaseAdapter {
   
   // التحقق من وجود DATABASE_URL
   if (!databaseUrl) {
-    throw new Error("❌ DATABASE_URL غير محدد! يجب إضافة رابط PostgreSQL في ملف .env");
+    console.warn("⚠️ DATABASE_URL غير محدد! سيتم استخدام الذاكرة المؤقتة");
+    return {
+      db: null,
+      type: 'postgresql'
+    };
   }
   
   // التحقق من أن الرابط هو PostgreSQL
   if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
-    throw new Error("❌ DATABASE_URL يجب أن يكون رابط PostgreSQL صحيح");
+    console.warn("⚠️ DATABASE_URL يجب أن يكون رابط PostgreSQL صحيح");
+    return {
+      db: null,
+      type: 'postgresql'
+    };
   }
   
   try {
@@ -44,8 +52,11 @@ export function createDatabaseAdapter(): DatabaseAdapter {
       close: () => pool.end()
     };
   } catch (error) {
-    console.error("❌ فشل في الاتصال بـ PostgreSQL على Supabase:", error);
-    throw new Error(`فشل الاتصال بـ Supabase: ${error}`);
+    console.error("❌ فشل في الاتصال بـ PostgreSQL:", error);
+    return {
+      db: null,
+      type: 'postgresql'
+    };
   }
 }
 
@@ -60,7 +71,7 @@ export async function checkDatabaseHealth(): Promise<boolean> {
     if (!db) return false;
     
     // اختبار PostgreSQL
-    await db.execute('SELECT 1' as any);
+    await db.execute(sql`SELECT 1`);
     return true;
   } catch (error) {
     console.error("❌ خطأ في فحص صحة قاعدة البيانات:", error);
@@ -77,3 +88,6 @@ export function getDatabaseStatus() {
     environment: process.env.NODE_ENV || 'development'
   };
 }
+
+// إضافة import للـ sql
+import { sql } from 'drizzle-orm';

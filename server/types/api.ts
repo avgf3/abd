@@ -18,14 +18,19 @@ export interface AuthenticatedUser {
   id: number;
   username: string;
   userType: UserRole;
+  role: UserRole;
   isOnline: boolean;
   isBanned: boolean;
   isMuted: boolean;
   lastSeen: Date | null;
+  createdAt: Date;
 }
 
-// أنواع الأدوار
-export type UserRole = 'guest' | 'member' | 'moderator' | 'admin' | 'owner';
+// استيراد الأنواع المشتركة
+import type { UserRole } from '../../shared/types';
+
+// إعادة تصدير UserRole للاستخدام في الملفات الأخرى
+export type { UserRole };
 
 // أنواع استجابة API
 export interface ApiResponse<T = any> {
@@ -361,7 +366,7 @@ export interface BackupInfo {
 }
 
 // تصدير الأنواع المفيدة
-export {
+export type {
   Request as ExpressRequest,
   Response as ExpressResponse
 };

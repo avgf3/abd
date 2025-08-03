@@ -1,61 +1,17 @@
-export interface ChatUser {
-  id: number;
-  username: string;
-  userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
-  role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
-  profileImage?: string;
-  profileBanner?: string;
-  profileBackgroundColor: string;
-  status?: string;
-  gender?: string;
-  age?: number;
-  country?: string;
-  relation?: string;
-  bio?: string;
-  isOnline: boolean;
-  isHidden: boolean;
-  lastSeen: Date | null;
-  joinDate: Date;
-  createdAt: Date;
-  isMuted: boolean;
-  muteExpiry: Date | null;
-  isBanned: boolean;
-  banExpiry: Date | null;
-  isBlocked: boolean;
-  isKicked?: boolean;
-  ipAddress?: string;
-  deviceId?: string;
-  ignoredUsers: number[];
-  usernameColor: string;
-  userTheme: string;
-  profileEffect: string;
-  points: number;
-  level: number;
-  totalPoints: number;
-  levelProgress: number;
-}
+// استيراد الأنواع المشتركة
+import type { ChatUser, ChatMessage, PrivateConversation } from '../../../shared/types';
 
-export interface ChatMessage {
-  id: number;
-  senderId: number;
-  receiverId?: number;
-  content: string;
-  messageType: 'text' | 'image';
-  isPrivate: boolean;
-  timestamp?: Date;
-  sender?: ChatUser;
-}
-
-export interface PrivateConversation {
-  [userId: number]: ChatMessage[];
-}
+// إعادة تصدير الأنواع المشتركة للاستخدام في المكونات
+export type { ChatUser, ChatMessage, PrivateConversation, Notification };
 
 export interface WebSocketMessage {
   type: 'auth' | 'publicMessage' | 'privateMessage' | 'typing' | 'userJoined' | 'userLeft' | 'newMessage' | 'onlineUsers' | 'userUpdated' | 'error' | 'warning' |
         'userVisibilityChanged' | 'usernameColorChanged' | 'profileEffectChanged' | 'theme_update' | 'moderationAction' | 'notification' | 'systemMessage' | 'kicked' | 'blocked' | 
         'friendRequest' | 'friendRequestAccepted' | 'promotion' | 'pointsReceived' | 'pointsTransfer' | 'pointsAdded' | 'levelUp' |
         // أنواع جديدة للـ Broadcast Room
-        'micRequest' | 'micApproved' | 'micRejected' | 'micRemoved' | 'speakerAdded' | 'speakerRemoved' | 'broadcastUpdate';
+        'micRequest' | 'micApproved' | 'micRejected' | 'micRemoved' | 'speakerAdded' | 'speakerRemoved' | 'broadcastUpdate' |
+        // أنواع جديدة للحوائط والغرف
+        'newWallPost' | 'wallPostReaction' | 'wallPostDeleted' | 'roomJoined' | 'userJoinedRoom' | 'userLeftRoom';
   userId?: number;
   username?: string;
   content?: string;
@@ -99,6 +55,10 @@ export interface WebSocketMessage {
   micQueue?: number[]; // قائمة انتظار طلبات المايك
   requestUserId?: number; // معرف المستخدم الذي طلب المايك
   approvedBy?: number; // معرف من وافق على الطلب
+  
+  // خصائص الحوائط والغرف الجديدة
+  post?: any; // للرسائل المتعلقة بالحوائط
+  postId?: number; // لمعرف المنشور المحذوف
 }
 
 export interface UserProfile {
@@ -113,14 +73,8 @@ export interface UserProfile {
   profileBanner?: string;
 }
 
-export interface Notification {
-  id: number;
-  type: 'system' | 'friend' | 'moderation' | 'message';
-  username: string;
-  content: string;
-  timestamp: Date;
-  isRead?: boolean;
-}
+// استيراد أنواع الإشعارات المشتركة
+import type { Notification } from '../../../shared/types';
 
 // أنواع بيانات الحوائط
 export interface WallPost {
@@ -190,10 +144,5 @@ export interface RoomWebSocketMessage extends WebSocketMessage {
   rooms?: ChatRoom[];
 }
 
-// API Response interface
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-}
+// استيراد الأنواع المشتركة
+import type { ApiResponse } from '../../../shared/types';

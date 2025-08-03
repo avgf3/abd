@@ -799,10 +799,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
       {/* إشعار الحجب (block) */}
-      {chat.notifications && chat.notifications.some(n => n.type === 'moderation' && n.content.includes('حظر')) && (
+      {chat.notifications && chat.notifications.some(n => n.type === 'moderation' && n.message.includes('حظر')) && (
         <BlockNotification
           isVisible={true}
-          reason={chat.notifications.find(n => n.type === 'moderation' && n.content.includes('حظر'))?.content || ''}
+          reason={chat.notifications.find(n => n.type === 'moderation' && n.message.includes('حظر'))?.message || ''}
           onClose={() => {}}
         />
       )}

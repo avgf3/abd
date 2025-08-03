@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation, Notification } from '@/types/chat';
+import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation } from '@/types/chat';
+import type { Notification } from '../../../shared/types';
 import { globalNotificationManager, MessageCacheManager, NetworkOptimizer } from '@/lib/chatOptimization';
 import { chatAnalytics } from '@/lib/chatAnalytics';
 import { apiRequest } from '@/lib/queryClient';
