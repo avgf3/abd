@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation, Notification } from '@/types/chat';
+import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation } from '@/types/chat';
+import type { Notification } from '../../../shared/types';
 import { globalNotificationManager, MessageCacheManager, NetworkOptimizer } from '@/lib/chatOptimization';
 import { chatAnalytics } from '@/lib/chatAnalytics';
 import { apiRequest } from '@/lib/queryClient';
@@ -559,10 +560,10 @@ export function useChat() {
       // إنشاء اتصال Socket.IO
       if (!socket.current) {
         // Use dynamic URL: production uses current origin, development uses localhost
-        const isDevelopment = import.meta.env.DEV;
-        const serverUrl = isDevelopment 
-          ? (import.meta.env.VITE_SERVER_URL || 'http://localhost:5000')
-          : window.location.origin;
+        const isDevelopment = (import.meta as any).env?.DEV;
+                  const serverUrl = isDevelopment 
+            ? ((import.meta as any).env?.VITE_SERVER_URL || 'http://localhost:5000')
+            : window.location.origin;
         
         console.log('🔌 جاري الاتصال بـ Socket.IO على:', serverUrl);
         socket.current = io(serverUrl, {

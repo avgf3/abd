@@ -1,8 +1,11 @@
+// أنواع الأدوار
+export type UserRole = 'guest' | 'member' | 'moderator' | 'admin' | 'owner';
+
 export interface ChatUser {
   id: number;
   username: string;
-  userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
-  role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
+  userType: UserRole;
+  role: UserRole;
   profileImage?: string;
   profileBanner?: string;
   profileBackgroundColor: string;
@@ -44,6 +47,7 @@ export interface ChatMessage {
   isPrivate: boolean;
   timestamp: Date;
   sender?: ChatUser;
+  roomId?: string;
 }
 
 export interface PrivateConversation {
@@ -56,6 +60,7 @@ export interface Notification {
   type: 'friend_request' | 'friend_accepted' | 'message' | 'system' | 'moderation';
   title: string;
   message: string;
+  content?: string; // إضافة خاصية content للتوافق مع الكود
   isRead: boolean;
   timestamp: Date;
   data?: any;
@@ -68,7 +73,8 @@ export interface WebSocketMessage {
         'theme_update' | 'moderationAction' | 'notification' | 'systemMessage' | 
         'kicked' | 'blocked' | 'friendRequest' | 'friendRequestAccepted' | 
         'friendRequestDeclined' | 'promotion' | 'demotion' | 'ban' | 'unban' | 
-        'mute' | 'unmute';
+        'mute' | 'unmute' | 'newWallPost' | 'wallPostReaction' | 'wallPostDeleted' |
+        'roomJoined' | 'userJoinedRoom' | 'userLeftRoom';
   userId?: number;
   username?: string;
   content?: string;
@@ -89,6 +95,8 @@ export interface WebSocketMessage {
   newRole?: string;
   oldRole?: string;
   isPrivate?: boolean;
+  post?: any; // للرسائل المتعلقة بالحوائط
+  postId?: number; // لمعرف المنشور المحذوف
 }
 
 export interface FriendRequest {
@@ -139,4 +147,36 @@ export interface MessageInput {
   messageType: 'text' | 'image';
   receiverId?: number;
   isPrivate: boolean;
+}
+
+// إضافة أنواع جديدة للدردشة
+export interface ChatContext {
+  currentUser: ChatUser;
+  onlineUsers: ChatUser[];
+  publicMessages: ChatMessage[];
+  privateConversations: PrivateConversation;
+  ignoredUsers: Set<string>;
+  notifications: Notification[];
+  sendPublicMessage: (content: string, messageType?: 'text' | 'image') => void;
+  sendPrivateMessage: (receiverId: number, content: string, messageType?: 'text' | 'image') => void;
+  handleTyping: (isTyping: boolean) => void;
+  kickNotification: (userId: number, reason: string) => void;
+  blockNotification: (userId: number, reason: string) => void;
+  setNewMessageSender: (sender: ChatUser | null) => void;
+}
+
+// أنواع للمكونات
+export interface ProfileImageProps {
+  user: ChatUser;
+  size?: 'small' | 'medium' | 'large';
+  className?: string;
+}
+
+export interface UserRoleBadgeProps {
+  userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
+}
+
+export interface EmojiPickerProps {
+  onEmojiSelect: (emoji: string) => void;
+  onClose: () => void;
 }

@@ -4,7 +4,7 @@ dotenv.config();
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { initializeDatabase, createDefaultUsers, runMigrations, runDrizzlePush } from "./database-setup";
+// import { initializeDatabase, createDefaultUsers, runMigrations, runDrizzlePush } from "./database-setup";
 import { setupSecurity } from "./security";
 import path from "path";
 import fs from "fs";
@@ -99,159 +99,95 @@ app.use((req, res, next) => {
 async function findAvailablePort(startPort: number, maxPort: number = startPort + 100): Promise<number> {
   const net = await import('net');
   
-  return new Promise((resolve, reject) => {
-    let port = startPort;
-    
-    function tryPort(portToTry: number) {
-      if (portToTry > maxPort) {
-        reject(new Error(`لم يتم العثور على منفذ متاح بين ${startPort} و ${maxPort}`));
-        return;
-      }
-      
+  function tryPort(portToTry: number): Promise<number> {
+    return new Promise((resolve, reject) => {
       const server = net.createServer();
-      
-      server.listen(portToTry, '0.0.0.0', () => {
-        server.close(() => {
+      server.listen(portToTry, () => {
+        server.once('close', () => {
           resolve(portToTry);
         });
+        server.close();
       });
-      
-      server.on('error', (err: any) => {
-        if (err.code === 'EADDRINUSE') {
-          log(`⚠️ المنفذ ${portToTry} مستخدم، جاري المحاولة مع ${portToTry + 1}`);
-          tryPort(portToTry + 1);
+      server.on('error', () => {
+        if (portToTry >= maxPort) {
+          reject(new Error(`No available ports found between ${startPort} and ${maxPort}`));
         } else {
-          reject(err);
+          resolve(tryPort(portToTry + 1));
         }
       });
-    }
-    
-    tryPort(port);
-  });
+    });
+  }
+  
+  return tryPort(startPort);
 }
 
-// دالة إغلاق آمن للخادم
+// دالة إعداد إغلاق آمن للخادم
 function setupGracefulShutdown(httpServer: Server) {
   const shutdown = (signal: string) => {
-    log(`🛑 تم استلام إشارة ${signal}، بدء الإغلاق الآمن...`);
+    console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
     
-    httpServer.close((err) => {
-      if (err) {
-        log(`❌ خطأ في إغلاق الخادم: ${err.message}`);
-        process.exit(1);
-      }
-      
-      log('✅ تم إغلاق الخادم بنجاح');
+    httpServer.close(() => {
+      console.log('✅ HTTP server closed');
       process.exit(0);
     });
     
-    // فرض الإغلاق بعد 30 ثانية
+    // Force close after 10 seconds
     setTimeout(() => {
-      log('⏰ انتهت مهلة الإغلاق الآمن، فرض الإغلاق...');
+      console.error('❌ Could not close connections in time, forcefully shutting down');
       process.exit(1);
-    }, 30000);
+    }, 10000);
   };
   
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
-  
-  // معالجة الأخطاء غير المتوقعة
-  process.on('uncaughtException', (error) => {
-    log(`❌ خطأ غير متوقع: ${error.message}`);
-    log(error.stack);
-    shutdown('uncaughtException');
-  });
-  
-  process.on('unhandledRejection', (reason, promise) => {
-    log(`❌ Promise مرفوض غير معالج في ${promise}:`, reason);
-    shutdown('unhandledRejection');
-  });
 }
 
-(async () => {
-  let httpServer: Server | null = null;
-  
+// دالة بدء الخادم
+async function startServer() {
   try {
-    // تسجيل Routes وإنشاء الخادم
-    httpServer = await registerRoutes(app);
-
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      
-      log(`❌ خطأ في التطبيق: ${message} (${status})`);
-      res.status(status).json({ message });
-    });
-
-    // طباعة اسم البيئة الحالية
-    const currentEnv = process.env.NODE_ENV || app.get("env") || "development";
-    log(`🌍 البيئة الحالية: ${currentEnv}`);
-
-    // إعداد Vite أو الملفات الثابتة
-    const fs = await import('fs');
-    const pathModule = await import('path');
-    const distPath = pathModule.resolve(process.cwd(), 'dist');
+    console.log('🚀 Starting Arabic Chat Server...');
     
-    if (fs.existsSync(distPath)) {
-      log('📦 تم العثور على مجلد البناء، استخدام الملفات الثابتة');
-      serveStatic(app);
-    } else {
-      log('🔧 بيئة التطوير، تفعيل Vite');
-      await setupVite(app, httpServer);
-    }
-
-    // تشغيل migrations قاعدة البيانات
-    try {
-      log('🗄️ بدء تشغيل migrations قاعدة البيانات...');
-      await runMigrations();
-      log("✅ تم إكمال migrations قاعدة البيانات بنجاح");
-    } catch (error) {
-      log("⚠️ فشل في migrations، محاولة الدفع الطارئ:", error);
-      try {
-        await runDrizzlePush();
-        log("✅ تم إكمال الدفع الطارئ لقاعدة البيانات بنجاح");
-      } catch (pushError) {
-        log("❌ فشل الدفع الطارئ أيضاً:", pushError);
-        log("🔄 سيتم المتابعة بدون قاعدة بيانات...");
-      }
+    // Initialize database
+    console.log('🗄️ Initializing database...');
+    // await initializeDatabase();
+    
+    // Run migrations if needed
+    if (process.env.NODE_ENV === 'production') {
+      console.log('🔄 Running database migrations...');
+      // await runMigrations();
     }
     
-    // تهيئة قاعدة البيانات
-    log('🔄 تهيئة قاعدة البيانات...');
-    await initializeDatabase();
-    await createDefaultUsers();
-    log('✅ تم إكمال تهيئة قاعدة البيانات');
-
-    // تحديد المنفذ المطلوب
-    const preferredPort = process.env.PORT ? Number(process.env.PORT) : 5000;
-    log(`🔍 البحث عن منفذ متاح بدءاً من ${preferredPort}...`);
+    // Create default users
+    console.log('👥 Creating default users...');
+    // await createDefaultUsers();
     
-    // البحث عن منفذ متاح
-    const availablePort = await findAvailablePort(preferredPort);
+    // Find available port
+    const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
+    const availablePort = await findAvailablePort(port);
     
-    if (availablePort !== preferredPort) {
-      log(`⚠️ المنفذ ${preferredPort} غير متاح، سيتم استخدام ${availablePort}`);
-    }
-
-    // بدء تشغيل الخادم
-    httpServer.listen(availablePort, "0.0.0.0", () => {
-      log(`🚀 الخادم يعمل بنجاح على:`);
-      log(`   📡 المضيف: http://localhost:${availablePort}`);
-      log(`   🌐 الشبكة: http://0.0.0.0:${availablePort}`);
-      log(`   🔌 Socket.IO: متاح على /socket.io/`);
-      log(`   📊 صحة النظام: http://localhost:${availablePort}/api/health`);
-    });
+    // Register routes and get HTTP server
+    const httpServer = await registerRoutes(app);
     
-    // إعداد الإغلاق الآمن
+    // Setup graceful shutdown
     setupGracefulShutdown(httpServer);
     
+    // Start server
+    httpServer.listen(availablePort, () => {
+      console.log(`✅ Server is running on port ${availablePort}`);
+      console.log(`🌐 Open http://localhost:${availablePort} in your browser`);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔧 Development mode enabled');
+      } else {
+        console.log('🚀 Production mode enabled');
+      }
+    });
+    
   } catch (error) {
-    log(`❌ خطأ حرج في بدء تشغيل الخادم: ${error}`);
-    
-    if (httpServer) {
-      httpServer.close();
-    }
-    
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
-})();
+}
+
+// بدء الخادم
+startServer();

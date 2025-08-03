@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
+import type { AuthenticatedUser, UserRole } from '../types/api';
 
 // تمديد نوع Request لإضافة خاصية user
 declare global {
   namespace Express {
     interface Request {
-      user?: any;
+      user?: AuthenticatedUser;
     }
   }
 }
@@ -50,8 +51,18 @@ export const validateSession = async (req: Request, res: Response, next: NextFun
       });
     }
     
-    // إضافة بيانات المستخدم إلى الطلب
-    req.user = user;
+    // إضافة بيانات المستخدم إلى الطلب مع التحويل الصحيح للنوع
+    req.user = {
+      id: user.id,
+      username: user.username,
+      userType: user.userType as UserRole,
+      role: user.role as UserRole,
+      isOnline: user.isOnline,
+      isBanned: user.isBanned,
+      isMuted: user.isMuted,
+      lastSeen: user.lastSeen,
+      createdAt: user.createdAt,
+    };
     next();
     
   } catch (error) {
@@ -82,7 +93,17 @@ export const validateSessionOptional = async (req: Request, res: Response, next:
     
     const user = await storage.getUser(userIdNumber);
     if (user && user.isOnline) {
-      req.user = user;
+      req.user = {
+        id: user.id,
+        username: user.username,
+        userType: user.userType as UserRole,
+        role: user.role as UserRole,
+        isOnline: user.isOnline,
+        isBanned: user.isBanned,
+        isMuted: user.isMuted,
+        lastSeen: user.lastSeen,
+        createdAt: user.createdAt,
+      };
     }
     
     next();

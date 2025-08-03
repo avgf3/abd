@@ -37,10 +37,10 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
   const loadSecurityReport = async () => {
     setIsLoading(true);
     try {
-      const report = await apiRequest('GET', '/api/security/report');
+      const report = await apiRequest('/api/security/report', { method: 'GET' });
       setSecurityReport(report);
       
-      const blocked = await apiRequest('GET', '/api/security/blocked-ips');
+              const blocked = await apiRequest('/api/security/blocked-ips', { method: 'GET' });
       setBlockedIPs(blocked);
     } catch (error) {
       toast({
@@ -65,9 +65,12 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
     }
 
     try {
-      await apiRequest('POST', '/api/security/block-ip', {
-        ip: newBlockIP.trim(),
-        reason: blockReason.trim()
+      await apiRequest('/api/security/block-ip', {
+        method: 'POST',
+        body: {
+          ip: newBlockIP.trim(),
+          reason: blockReason.trim()
+        },
       });
 
       toast({
@@ -90,7 +93,10 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
   // إلغاء حظر IP
   const unblockIP = async (ip: string) => {
     try {
-      await apiRequest('POST', '/api/security/unblock-ip', { ip });
+      await apiRequest('/api/security/unblock-ip', {
+        method: 'POST',
+        body: { ip },
+      });
 
       toast({
         title: "تم بنجاح",

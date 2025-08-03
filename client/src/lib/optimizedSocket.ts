@@ -49,7 +49,6 @@ export class OptimizedSocketManager {
           reconnectionAttempts: this.maxReconnectionAttempts,
           reconnectionDelay: this.reconnectionDelay,
           reconnectionDelayMax: 5000,
-          maxReconnectionAttempts: this.maxReconnectionAttempts,
           autoConnect: true,
           forceNew: false,
           upgrade: true,

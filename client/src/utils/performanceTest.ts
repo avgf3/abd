@@ -1,3 +1,5 @@
+import { useCallback } from 'react';
+
 // أدوات اختبار الأداء لتطبيق الدردشة
 
 interface PerformanceMetrics {

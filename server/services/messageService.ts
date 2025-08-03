@@ -1,6 +1,7 @@
 import { eq, desc, and, or } from "drizzle-orm";
 import { db } from "../database-adapter";
 import { messages, users, type Message, type InsertMessage } from "../../shared/schema";
+import { sql } from "drizzle-orm";
 
 export class MessageService {
   // إنشاء رسالة جديدة
@@ -29,6 +30,7 @@ export class MessageService {
           content: messages.content,
           messageType: messages.messageType,
           isPrivate: messages.isPrivate,
+          roomId: messages.roomId,
           timestamp: messages.timestamp,
           // بيانات المرسل
           senderUsername: users.username,
@@ -51,6 +53,7 @@ export class MessageService {
         content: msg.content,
         messageType: msg.messageType,
         isPrivate: msg.isPrivate,
+        roomId: msg.roomId,
         timestamp: msg.timestamp,
         sender: msg.senderId ? {
           id: msg.senderId,
@@ -80,6 +83,7 @@ export class MessageService {
           content: messages.content,
           messageType: messages.messageType,
           isPrivate: messages.isPrivate,
+          roomId: messages.roomId,
           timestamp: messages.timestamp,
           // بيانات المرسل
           senderUsername: users.username,
@@ -110,6 +114,7 @@ export class MessageService {
         content: msg.content,
         messageType: msg.messageType,
         isPrivate: msg.isPrivate,
+        roomId: msg.roomId,
         timestamp: msg.timestamp,
         sender: msg.senderId ? {
           id: msg.senderId,
@@ -119,7 +124,7 @@ export class MessageService {
           profileImage: msg.senderProfileImage,
           usernameColor: msg.senderUsernameColor || '#FFFFFF',
           profileBackgroundColor: msg.senderProfileBackgroundColor || '#3c0d0d',
-          isOnline: false // سيتم تحديثها من مكان آخر
+          isOnline: false
         } : undefined
       })) as Message[];
     } catch (error) {
@@ -128,35 +133,73 @@ export class MessageService {
     }
   }
 
+  // الحصول على رسائل الغرفة
+  async getRoomMessages(roomId: string, limit: number = 50): Promise<Message[]> {
+    try {
+      const roomMessages = await db
+        .select({
+          id: messages.id,
+          senderId: messages.senderId,
+          receiverId: messages.receiverId,
+          content: messages.content,
+          messageType: messages.messageType,
+          isPrivate: messages.isPrivate,
+          roomId: messages.roomId,
+          timestamp: messages.timestamp,
+          // بيانات المرسل
+          senderUsername: users.username,
+          senderUserType: users.userType,
+          senderProfileImage: users.profileImage,
+          senderUsernameColor: users.usernameColor,
+          senderProfileBackgroundColor: users.profileBackgroundColor
+        })
+        .from(messages)
+        .leftJoin(users, eq(messages.senderId, users.id))
+        .where(eq(messages.roomId, roomId))
+        .orderBy(desc(messages.timestamp))
+        .limit(limit);
+
+      // تحويل النتائج إلى تنسيق Message مع بيانات المرسل
+      return roomMessages.map(msg => ({
+        id: msg.id,
+        senderId: msg.senderId,
+        receiverId: msg.receiverId,
+        content: msg.content,
+        messageType: msg.messageType,
+        isPrivate: msg.isPrivate,
+        roomId: msg.roomId,
+        timestamp: msg.timestamp,
+        sender: msg.senderId ? {
+          id: msg.senderId,
+          username: msg.senderUsername || 'مستخدم محذوف',
+          userType: msg.senderUserType || 'guest',
+          role: msg.senderUserType || 'guest',
+          profileImage: msg.senderProfileImage,
+          usernameColor: msg.senderUsernameColor || '#FFFFFF',
+          profileBackgroundColor: msg.senderProfileBackgroundColor || '#3c0d0d',
+          isOnline: false
+        } : undefined
+      })) as Message[];
+    } catch (error) {
+      console.error('خطأ في الحصول على رسائل الغرفة:', error);
+      return [];
+    }
+  }
+
   // حذف رسالة
   async deleteMessage(messageId: number, userId: number): Promise<boolean> {
     try {
-      // التحقق من أن المستخدم هو صاحب الرسالة أو مدير
-      const [message] = await db
+      // التحقق من أن المستخدم هو مرسل الرسالة
+      const message = await db
         .select()
         .from(messages)
         .where(eq(messages.id, messageId))
         .limit(1);
 
-      if (!message) {
-        return false;
+      if (!message[0] || message[0].senderId !== userId) {
+        return false; // المستخدم ليس مرسل الرسالة
       }
 
-      // التحقق من الصلاحيات
-      if (message.senderId !== userId) {
-        // يمكن للمديرين حذف أي رسالة
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, userId))
-          .limit(1);
-
-        if (!user || !['admin', 'owner', 'moderator'].includes(user.userType)) {
-          return false;
-        }
-      }
-
-      // حذف الرسالة
       await db.delete(messages).where(eq(messages.id, messageId));
       return true;
     } catch (error) {
@@ -168,11 +211,19 @@ export class MessageService {
   // الحصول على عدد الرسائل الخاصة غير المقروءة
   async getUnreadPrivateMessageCount(userId: number): Promise<number> {
     try {
-      // هذه وظيفة مستقبلية - نحتاج إلى إضافة حقل isRead للرسائل
-      // حالياً نعيد 0
-      return 0;
+      const result = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(messages)
+        .where(
+          and(
+            eq(messages.receiverId, userId),
+            eq(messages.isPrivate, true)
+          )
+        );
+      
+      return result[0]?.count || 0;
     } catch (error) {
-      console.error('خطأ في الحصول على عدد الرسائل غير المقروءة:', error);
+      console.error('خطأ في حساب الرسائل غير المقروءة:', error);
       return 0;
     }
   }
@@ -180,8 +231,18 @@ export class MessageService {
   // البحث في الرسائل
   async searchMessages(query: string, userId?: number, limit: number = 20): Promise<Message[]> {
     try {
-      // بحث بسيط في محتوى الرسائل
-      // يمكن تحسينه لاحقاً باستخدام full-text search
+      let whereCondition = sql`${messages.content} ILIKE ${`%${query}%`}`;
+      
+      if (userId) {
+        whereCondition = and(
+          sql`${messages.content} ILIKE ${`%${query}%`}`,
+          or(
+            eq(messages.senderId, userId),
+            eq(messages.receiverId, userId)
+          )
+        );
+      }
+
       const searchResults = await db
         .select({
           id: messages.id,
@@ -190,6 +251,7 @@ export class MessageService {
           content: messages.content,
           messageType: messages.messageType,
           isPrivate: messages.isPrivate,
+          roomId: messages.roomId,
           timestamp: messages.timestamp,
           // بيانات المرسل
           senderUsername: users.username,
@@ -200,16 +262,11 @@ export class MessageService {
         })
         .from(messages)
         .leftJoin(users, eq(messages.senderId, users.id))
-        .where(
-          and(
-            // البحث في المحتوى (يحتاج تحسين للعربية)
-            // يمكن استخدام LIKE أو مكتبة بحث متقدمة
-            eq(messages.isPrivate, false) // البحث فقط في الرسائل العامة حالياً
-          )
-        )
+        .where(whereCondition)
         .orderBy(desc(messages.timestamp))
         .limit(limit);
 
+      // تحويل النتائج إلى تنسيق Message مع بيانات المرسل
       return searchResults.map(msg => ({
         id: msg.id,
         senderId: msg.senderId,
@@ -217,6 +274,7 @@ export class MessageService {
         content: msg.content,
         messageType: msg.messageType,
         isPrivate: msg.isPrivate,
+        roomId: msg.roomId,
         timestamp: msg.timestamp,
         sender: msg.senderId ? {
           id: msg.senderId,
@@ -236,5 +294,5 @@ export class MessageService {
   }
 }
 
-// إنشاء مثيل واحد من الخدمة
+// إنشاء instance واحد للاستخدام
 export const messageService = new MessageService();

@@ -103,52 +103,142 @@ export class PointsService {
       levelProgress: user.levelProgress || 0,
       levelInfo,
       nextLevelInfo,
-      pointsToNext: nextLevelInfo ? nextLevelInfo.requiredPoints - (user.totalPoints || 0) : 0
+      pointsToNextLevel: nextLevelInfo ? nextLevelInfo.requiredPoints - (user.totalPoints || 0) : 0
     };
   }
 
-  // الحصول على تاريخ النقاط للمستخدم
+  // الحصول على سجل النقاط للمستخدم
   async getUserPointsHistory(userId: number, limit: number = 50) {
-    return storage.getPointsHistory(userId, limit);
+    return await storage.getPointsHistory(userId, limit);
   }
 
-  // الحصول على لوحة الصدارة
+  // الحصول على قائمة أفضل المستخدمين
   async getLeaderboard(limit: number = 20) {
-    return storage.getTopUsersByPoints(limit);
+    return await storage.getTopUsersByPoints(limit);
   }
 
-  // إعادة حساب نقاط مستخدم (للصيانة)
-  async recalculateUserPoints(userId: number) {
-    const user = await storage.getUser(userId);
-    if (!user) return null;
+  // إعادة حساب نقاط المستخدم
+  async recalculateUserPoints(userId: number): Promise<void> {
+    try {
+      const user = await storage.getUser(userId);
+      if (!user) return;
 
-    const totalPoints = user.totalPoints || 0;
-    const newLevel = calculateLevel(totalPoints);
-    const newLevelProgress = calculateLevelProgress(totalPoints);
+      // حساب عدد الرسائل
+      const messageCount = await storage.getUserMessageCount(userId);
+      
+      // حساب النقاط بناء على النشاط
+      const calculatedPoints = messageCount * DEFAULT_POINTS_CONFIG.MESSAGE_SENT;
+      
+      // حساب المستوى الجديد
+      const newLevel = calculateLevel(calculatedPoints);
+      const newLevelProgress = calculateLevelProgress(calculatedPoints);
 
-    await storage.updateUserPoints(userId, {
-      points: user.points || 0, // النقاط الحالية تبقى كما هي
-      level: newLevel,
-      totalPoints,
-      levelProgress: newLevelProgress
-    });
+      // تحديث النقاط
+      await storage.updateUserPoints(userId, {
+        points: calculatedPoints,
+        level: newLevel,
+        totalPoints: calculatedPoints,
+        levelProgress: newLevelProgress
+      });
 
-    return { level: newLevel, levelProgress: newLevelProgress };
-  }
-
-  // التحقق من إنجاز معين (مثل أول رسالة)
-  async checkAchievement(userId: number, achievementType: string) {
-    switch (achievementType) {
-      case 'FIRST_MESSAGE':
-        const messageCount = await storage.getUserMessageCount(userId);
-        if (messageCount === 1) {
-          return this.addPoints(userId, DEFAULT_POINTS_CONFIG.FIRST_MESSAGE, 'FIRST_MESSAGE');
-        }
-        break;
-      // يمكن إضافة إنجازات أخرى هنا
+      console.log(`✅ تم إعادة حساب نقاط المستخدم ${userId}: ${calculatedPoints} نقطة، المستوى ${newLevel}`);
+    } catch (error) {
+      console.error(`❌ خطأ في إعادة حساب نقاط المستخدم ${userId}:`, error);
     }
-    return null;
+  }
+
+  // التحقق من الإنجازات
+  async checkAchievement(userId: number, achievementType: string): Promise<boolean> {
+    try {
+      const user = await storage.getUser(userId);
+      if (!user) return false;
+
+      let earned = false;
+
+      switch (achievementType) {
+        case 'first_message':
+          if (user.totalPoints === DEFAULT_POINTS_CONFIG.FIRST_MESSAGE) {
+            earned = true;
+          }
+          break;
+        case 'profile_complete':
+          if (user.bio && user.age && user.country) {
+            earned = true;
+          }
+          break;
+        case 'friend_master':
+          const friends = await storage.getFriends(userId);
+          if (friends.length >= 10) {
+            earned = true;
+          }
+          break;
+        case 'message_master':
+          if ((user.totalPoints || 0) >= 100) {
+            earned = true;
+          }
+          break;
+      }
+
+      if (earned) {
+        // إضافة نقاط للإنجاز
+        await this.addPoints(userId, 10, `ACHIEVEMENT_${achievementType.toUpperCase()}`);
+      }
+
+      return earned;
+    } catch (error) {
+      console.error('خطأ في التحقق من الإنجاز:', error);
+      return false;
+    }
+  }
+
+  // إضافة نقاط للنشاط الأسبوعي
+  async addWeeklyActivityPoints(userId: number): Promise<any> {
+    return this.addPoints(userId, DEFAULT_POINTS_CONFIG.WEEKLY_ACTIVE, 'WEEKLY_ACTIVE');
+  }
+
+  // إضافة نقاط للنشاط الشهري
+  async addMonthlyActivityPoints(userId: number): Promise<any> {
+    return this.addPoints(userId, DEFAULT_POINTS_CONFIG.MONTHLY_ACTIVE, 'MONTHLY_ACTIVE');
+  }
+
+  // خصم نقاط (للعقوبات)
+  async deductPoints(userId: number, points: number, reason: string): Promise<any> {
+    return this.addPoints(userId, -Math.abs(points), reason);
+  }
+
+  // الحصول على إحصائيات النقاط
+  async getPointsStats(): Promise<{
+    totalUsers: number;
+    totalPoints: number;
+    averagePoints: number;
+    topUser: any;
+  }> {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const usersWithPoints = allUsers.filter(u => (u.points || 0) > 0);
+      
+      const totalPoints = usersWithPoints.reduce((sum, user) => sum + (user.points || 0), 0);
+      const averagePoints = usersWithPoints.length > 0 ? totalPoints / usersWithPoints.length : 0;
+      
+      const topUser = usersWithPoints.sort((a, b) => (b.points || 0) - (a.points || 0))[0];
+
+      return {
+        totalUsers: usersWithPoints.length,
+        totalPoints,
+        averagePoints: Math.round(averagePoints),
+        topUser
+      };
+    } catch (error) {
+      console.error('خطأ في الحصول على إحصائيات النقاط:', error);
+      return {
+        totalUsers: 0,
+        totalPoints: 0,
+        averagePoints: 0,
+        topUser: null
+      };
+    }
   }
 }
 
+// إنشاء instance واحد للاستخدام
 export const pointsService = new PointsService();

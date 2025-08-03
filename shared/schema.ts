@@ -201,6 +201,9 @@ export const insertUserSchema = z.object({
   relation: z.string().optional(),
   bio: z.string().optional(),
   // إضافة حقول الإدارة كاختيارية
+  isOnline: z.boolean().optional(),
+  isHidden: z.boolean().optional(),
+  lastSeen: z.date().optional(),
   isMuted: z.boolean().optional(),
   muteExpiry: z.date().optional(),
   isBanned: z.boolean().optional(),
@@ -208,6 +211,7 @@ export const insertUserSchema = z.object({
   isBlocked: z.boolean().optional(),
   ipAddress: z.string().optional(),
   deviceId: z.string().optional(),
+  ignoredUsers: z.string().optional(),
   usernameColor: z.string().optional(),
   userTheme: z.string().optional(),
   profileEffect: z.string().optional(),
@@ -317,6 +321,9 @@ export const insertWallPostSchema = z.object({
   type: z.string().default("public"),
   userProfileImage: z.string().optional(),
   usernameColor: z.string().optional(),
+  totalLikes: z.number().optional(),
+  totalDislikes: z.number().optional(),
+  totalHearts: z.number().optional(),
 });
 
 export const insertWallReactionSchema = z.object({

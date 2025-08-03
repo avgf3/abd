@@ -1,15 +1,7 @@
 // أنواع API الشاملة للمشروع
 
-// أنواع الاستجابة العامة
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-  errors?: string[];
-  timestamp?: string;
-  code?: string;
-}
+// استيراد الأنواع المشتركة
+import type { ApiResponse } from '../../../shared/types';
 
 // أنواع أخطاء API
 export interface ApiError {
@@ -43,7 +35,7 @@ export interface PaginatedResponse<T> {
 }
 
 // أنواع المستخدم المحسّنة
-export type UserRole = 'guest' | 'member' | 'moderator' | 'admin' | 'owner';
+import type { UserRole } from '../../../shared/types';
 export type UserStatus = 'online' | 'offline' | 'away' | 'busy';
 export type Gender = 'ذكر' | 'أنثى' | '';
 
@@ -338,28 +330,8 @@ export interface SystemStats {
   lastUpdate: Date;
 }
 
-// أنواع WebSocket
-export type WebSocketMessageType = 
-  | 'auth'
-  | 'message'
-  | 'privateMessage'
-  | 'userJoined'
-  | 'userLeft'
-  | 'userUpdated'
-  | 'typing'
-  | 'stopTyping'
-  | 'notification'
-  | 'roomJoined'
-  | 'roomLeft'
-  | 'error'
-  | 'success';
-
-export interface WebSocketMessage<T = any> {
-  type: WebSocketMessageType;
-  data: T;
-  timestamp: Date;
-  userId?: number;
-}
+// استيراد أنواع WebSocket المشتركة
+import type { WebSocketMessage } from '../../../shared/types';
 
 // أنواع FormData
 export interface LoginFormData {
@@ -422,21 +394,4 @@ export interface RolePermissions {
   inheritsFrom?: UserRole;
 }
 
-// تصدير جميع الأنواع
-export type {
-  ApiResponse,
-  ApiError,
-  PaginationParams,
-  PaginatedResponse,
-  UserRole,
-  UserStatus,
-  Gender,
-  MessageType,
-  MessageStatus,
-  FriendRequestStatus,
-  NotificationType,
-  RoomType,
-  RoomPermission,
-  ReportReason,
-  WebSocketMessageType
-};
+// تصدير الأنواع المحلية فقط - تم إزالة التكرارات

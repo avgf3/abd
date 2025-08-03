@@ -3,11 +3,14 @@ import { storage } from '../storage';
 import { createError, ERROR_MESSAGES } from './errorHandler';
 import { log } from '../utils/productionLogger';
 
+// استيراد نوع المستخدم المتحقق
+import type { AuthenticatedUser, UserRole } from '../types/api';
+
 // تمديد نوع Request
 declare global {
   namespace Express {
     interface Request {
-      user?: any;
+      user?: AuthenticatedUser;
       session?: any;
     }
   }
@@ -86,8 +89,18 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       throw createError.forbidden('حسابك محظور مؤقتاً');
     }
 
-    // إضافة بيانات المستخدم للطلب
-    req.user = user;
+    // إضافة بيانات المستخدم للطلب مع التحويل الصحيح للنوع
+    req.user = {
+      id: user.id,
+      username: user.username,
+      userType: user.userType as UserRole,
+      role: user.role as UserRole,
+      isOnline: user.isOnline,
+      isBanned: user.isBanned,
+      isMuted: user.isMuted,
+      lastSeen: user.lastSeen,
+      createdAt: user.createdAt,
+    };
     next();
 
   } catch (error) {
