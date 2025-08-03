@@ -792,11 +792,25 @@ export function useChat() {
     setNewMessageSender: (sender: ChatUser | null) => dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: sender }),
 
     // إصلاح: دوال مطلوبة للمكونات
-    sendPublicMessage: (content: string) => sendMessage(content, 'text'),
+    sendPublicMessage: (content: string, messageType?: string, roomId?: string) => {
+      if (roomId) {
+        return sendRoomMessage(content, roomId);
+      }
+      return sendMessage(content, messageType || 'text');
+    },
     sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId),
-    sendRoomMessage: (content: string, roomId: string) => sendRoomMessage(content, roomId),
+    sendRoomMessage,
     loadRoomMessages,
     handleTyping: () => sendTyping(),
     handlePrivateTyping: () => sendTyping(),
+    setCurrentRoom: (roomId: string) => {
+      dispatch({ type: 'SET_ROOM', payload: roomId });
+      // تحميل رسائل الغرفة الجديدة
+      loadRoomMessages(roomId);
+      // انضمام للغرفة عبر socket
+      if (socket.current?.connected) {
+        socket.current.emit('joinRoom', { roomId, userId: state.currentUser?.id });
+      }
+    },
   };
 }
