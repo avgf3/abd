@@ -18,7 +18,10 @@ interface BroadcastRoomInterfaceProps {
   typingUsers: string[];
   onReportMessage: (user: ChatUser, messageContent?: string, messageId?: number) => void;
   onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
-  chat: any; // إضافة chat object للوصول إلى sendPublicMessage
+  chat: {
+    sendPublicMessage?: (content: string) => void;
+    handleTyping?: () => void;
+  };
 }
 
 interface BroadcastInfo {

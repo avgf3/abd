@@ -109,16 +109,16 @@ app.get('/api/users', async (req, res) => {
 });
 
 // Socket.IO
-io.on('connection', (socket) => {
-  socket.on('join', (userData) => {
+io.on('connection', (socket: any) => {
+  socket.on('join', (userData: { userId: number; username: string }) => {
     socket.userId = userData.userId;
     socket.username = userData.username;
-    });
+  });
   
   socket.on('disconnect', async () => {
     if (socket.userId) {
       await fixedStorage.setUserOnlineStatus(socket.userId, false);
-      }
+    }
   });
 });
 

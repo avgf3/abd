@@ -287,7 +287,6 @@ export default function MessageArea({
                     user={message.sender} 
                     size="small"
                     className="cursor-pointer hover:scale-110 transition-transform duration-200"
-                    onClick={(e) => handleUsernameClick(e, message.sender!)}
                   />
                 </div>
               )}
@@ -304,7 +303,7 @@ export default function MessageArea({
                     {message.sender?.username}
                   </button>
                   
-                                        {message.sender && <UserRoleBadge user={message.sender} />}
+                                        {message.sender && <UserRoleBadge user={message.sender} showOnlyIcon={false} />}
                   
                   <span className="text-xs text-gray-500 mr-auto">
                     {formatTime(message.timestamp)}
