@@ -44,16 +44,24 @@ export default function MessageArea({
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Memoize filtered messages لتحسين الأداء
-  const validMessages = useMemo(() => 
-    messages.filter(msg => 
+  const validMessages = useMemo(() => {
+    if (!Array.isArray(messages)) return [];
+    
+    return messages.filter(msg => 
       msg && 
       msg.sender && 
       msg.sender.username && 
+      msg.sender.username !== 'مستخدم' &&
       msg.content &&
-      msg.content.trim() !== ''
-    ),
-    [messages]
-  );
+      msg.content.trim() !== '' &&
+      msg.senderId > 0
+    ).sort((a, b) => {
+      // ترتيب الرسائل حسب التوقيت
+      const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+      const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+      return timeA - timeB;
+    });
+  }, [messages]);
 
   // Scroll to bottom function - optimized
   const scrollToBottom = useCallback(() => {

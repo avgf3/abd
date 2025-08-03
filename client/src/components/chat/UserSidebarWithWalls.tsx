@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,7 +33,7 @@ export default function UserSidebarWithWalls({
   users, 
   onUserClick, 
   currentUser, 
-  activeView: propActiveView,
+  activeView: propActiveView = 'users',
   rooms = [],
   currentRoomId = '',
   onRoomChange,
@@ -41,7 +41,7 @@ export default function UserSidebarWithWalls({
   onDeleteRoom,
   onRefreshRooms
 }: UserSidebarWithWallsProps) {
-  const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms'>(propActiveView || 'users');
+  // استخدام activeView من الـ props مباشرة بدلاً من إنشاء حالة محلية
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'public' | 'friends'>('public');
   const [posts, setPosts] = useState<WallPost[]>([]);
@@ -52,121 +52,84 @@ export default function UserSidebarWithWalls({
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const filteredUsers = users.filter(user =>
-    user && user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // تصفية المستخدمين مع التحقق من وجودهم
+  const filteredUsers = useMemo(() => {
+    if (!Array.isArray(users)) return [];
+    return users.filter(user =>
+      user && 
+      user.username && 
+      typeof user.username === 'string' &&
+      user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
 
   // إضافة logging للتشخيص
-  React.useEffect(() => {
-    console.log('👥 UserSidebarWithWalls - عدد المستخدمين المستلمين:', users.length);
-    console.log('👥 UserSidebarWithWalls - أسماء المستخدمين:', users.map(u => u?.username || 'غير معروف').join(', '));
-  }, [users]);
+  useEffect(() => {
+    console.log('👥 UserSidebarWithWalls - عدد المستخدمين:', users?.length || 0);
+    console.log('👥 UserSidebarWithWalls - العرض النشط:', propActiveView);
+    console.log('👥 UserSidebarWithWalls - الغرف:', rooms?.length || 0);
+  }, [users, propActiveView, rooms]);
 
-  // جلب المنشورات
-  const fetchPosts = async () => {
-    if (!currentUser) return;
+  // جلب المنشورات مع التحسين
+  const fetchPosts = useCallback(async () => {
+    if (!currentUser || propActiveView !== 'walls') return;
+    
     setLoading(true);
     try {
-      console.log(`🔄 UserSidebar: جاري جلب المنشورات للنوع: ${activeTab}, المستخدم: ${currentUser.id}`);
+      console.log(`🔄 جلب المنشورات للنوع: ${activeTab}, المستخدم: ${currentUser.id}`);
       
       const response = await fetch(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`, {
         method: 'GET',
       });
       
-      console.log(`📡 UserSidebar: استجابة الخادم: ${response.status}`);
-      
       if (response.ok) {
         const data = await response.json();
-        console.log('📄 UserSidebar: البيانات المستلمة:', data);
-        console.log(`📊 UserSidebar: عدد المنشورات: ${data.posts?.length || 0}`);
-        
         const posts = data.posts || data.data || data || [];
         setPosts(posts);
-        console.log('✅ UserSidebar: تم تحديث المنشورات في الواجهة');
+        console.log('✅ تم تحديث المنشورات:', posts.length);
       } else {
-        const errorText = await response.text();
-        console.error('❌ UserSidebar: خطأ في جلب المنشورات:', response.status, errorText);
+        console.warn('⚠️ خطأ في جلب المنشورات:', response.status);
+        setPosts([]);
       }
     } catch (error) {
-      console.error('❌ UserSidebar: خطأ في الاتصال بالخادم:', error);
+      console.error('❌ خطأ في الاتصال:', error);
+      setPosts([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser, activeTab, propActiveView]);
 
+  // جلب المنشورات عند الحاجة فقط
   useEffect(() => {
-    if (activeView === 'walls' && currentUser) {
+    if (propActiveView === 'walls' && currentUser) {
       fetchPosts();
     }
-  }, [activeView, activeTab, currentUser]);
+  }, [propActiveView, currentUser, activeTab, fetchPosts]);
 
-  // تحديث activeView عند تغيير propActiveView
-  useEffect(() => {
-    if (propActiveView) {
-      setActiveView(propActiveView);
-    }
-  }, [propActiveView]);
-
-  // معالجة اختيار الصورة
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  // وظائف معالجة المنشورات
+  const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: "خطأ في نوع الملف",
-          description: "يرجى اختيار صورة صالحة فقط",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (file.size > 10 * 1024 * 1024) {
-        toast({
-          title: "حجم الملف كبير",
-          description: "حجم الصورة يجب أن يكون أقل من 10 ميجابايت",
-          variant: "destructive",
-        });
-        return;
-      }
-      
       setSelectedImage(file);
       const reader = new FileReader();
-      reader.onload = (e) => setImagePreview(e.target?.result as string);
+      reader.onload = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
     }
-  };
+  }, []);
 
-  // إزالة الصورة المختارة
-  const removeSelectedImage = () => {
+  const removeImage = useCallback(() => {
     setSelectedImage(null);
     setImagePreview('');
-  };
+  }, []);
 
-  // نشر منشور جديد
-  const handleCreatePost = async () => {
-    if (!newPostContent.trim() && !selectedImage) {
-      toast({
-        title: "محتوى مطلوب",
-        description: "يجب إضافة نص أو صورة على الأقل",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!currentUser || currentUser.userType === 'guest') {
-      toast({
-        title: "غير مسموح",
-        description: "الضيوف لا يمكنهم نشر المنشورات",
-        variant: "destructive",
-      });
-      return;
-    }
+  const submitPost = useCallback(async () => {
+    if (!newPostContent.trim() || !currentUser || submitting) return;
 
     setSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append('content', newPostContent);
-      formData.append('type', activeTab); // تم تغيير postType إلى type لمطابقة الخادم
+      formData.append('content', newPostContent.trim());
+      formData.append('type', activeTab);
       formData.append('userId', currentUser.id.toString());
       
       if (selectedImage) {
@@ -179,435 +142,572 @@ export default function UserSidebarWithWalls({
       });
 
       if (response.ok) {
-        const result = await response.json();
-        console.log('✅ UserSidebar: استجابة النشر:', result);
-        
-        const newPost = result.post || result;
-        console.log('📝 UserSidebar: المنشور الجديد:', newPost);
-        
-        // إضافة المنشور للقائمة فوراً
-        setPosts(prev => [newPost, ...prev]);
-        console.log('✅ UserSidebar: تم إضافة المنشور للقائمة محلياً');
-        
-        toast({
-          title: "تم النشر",
-          description: "تم نشر منشورك بنجاح",
-        });
         setNewPostContent('');
-        removeSelectedImage();
-        // fetchPosts(); // لا نحتاج لهذا لأننا أضفنا المنشور محلياً
+        removeImage();
+        await fetchPosts();
+        toast({
+          title: "تم نشر المنشور",
+          description: "تم نشر منشورك بنجاح",
+          duration: 3000,
+        });
       } else {
-        const errorText = await response.text();
-        console.error('❌ UserSidebar: خطأ في النشر:', response.status, errorText);
         throw new Error('فشل في نشر المنشور');
       }
     } catch (error) {
+      console.error('❌ خطأ في نشر المنشور:', error);
       toast({
-        title: "خطأ في النشر",
-        description: "حدث خطأ أثناء نشر المنشور",
+        title: "خطأ",
+        description: "فشل في نشر المنشور. حاول مرة أخرى.",
         variant: "destructive",
+        duration: 3000,
       });
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [newPostContent, currentUser, submitting, activeTab, selectedImage, removeImage, fetchPosts, toast]);
 
-  // معالجة الإعجاب
-  const handleLike = async (postId: number, type: 'like' | 'heart' | 'dislike') => {
+  // وظائف التفاعل مع المنشورات
+  const handleReaction = useCallback(async (postId: number, reactionType: 'like' | 'dislike' | 'heart') => {
     if (!currentUser) return;
-    
+
     try {
-      const response = await apiRequest('/api/wall/react', {
+      const response = await fetch('/api/wall/react', {
         method: 'POST',
-        body: {
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           postId,
           userId: currentUser.id,
-          type: type, // تم تغيير reactionType إلى type لمطابقة الخادم
-        }
+          type: reactionType,
+        }),
       });
 
       if (response.ok) {
-        fetchPosts();
+        await fetchPosts();
       }
     } catch (error) {
-      console.error('خطأ في التفاعل:', error);
+      console.error('❌ خطأ في التفاعل:', error);
     }
-  };
+  }, [currentUser, fetchPosts]);
 
-  // حذف منشور
-  const handleDeletePost = async (postId: number) => {
+  const deletePost = useCallback(async (postId: number) => {
     if (!currentUser) return;
-    
+
     try {
-      const response = await apiRequest(`/api/wall/posts/${postId}`, {
+      const response = await fetch(`/api/wall/posts/${postId}`, {
         method: 'DELETE',
-        body: { userId: currentUser.id }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id }),
       });
 
       if (response.ok) {
+        await fetchPosts();
         toast({
-          title: "تم الحذف",
+          title: "تم حذف المنشور",
           description: "تم حذف المنشور بنجاح",
+          duration: 3000,
         });
-        fetchPosts();
       }
     } catch (error) {
-      toast({
-        title: "خطأ في الحذف",
-        description: "لم نتمكن من حذف المنشور",
-        variant: "destructive",
-      });
+      console.error('❌ خطأ في حذف المنشور:', error);
     }
-  };
+  }, [currentUser, fetchPosts, toast]);
 
-  const formatTimeAgo = (timestamp: string) => {
+  // وظائف المساعدة
+  const getUserRankBadge = useCallback((user: ChatUser) => {
+    if (user.userType === 'owner') {
+      return <img src="/svgs/crown.svg" alt="owner" style={{width: 24, height: 24, display: 'inline'}} />;
+    }
+    if (user.userType === 'admin') {
+      return <span style={{fontSize: 24, display: 'inline'}}>⭐</span>;
+    }
+    if (user.userType === 'moderator') {
+      return <span style={{fontSize: 24, display: 'inline'}}>🛡️</span>;
+    }
+    // المزيد من الرتب...
+    return null;
+  }, []);
+
+  const formatLastSeen = useCallback((lastSeen?: Date) => {
+    if (!lastSeen) return 'غير معروف';
     const now = new Date();
-    const time = new Date(timestamp);
-    const diff = now.getTime() - time.getTime();
+    const diff = now.getTime() - lastSeen.getTime();
     const minutes = Math.floor(diff / 60000);
     
-    if (minutes < 1) return 'الآن';
+    if (minutes < 1) return 'متصل الآن';
     if (minutes < 60) return `قبل ${minutes} دقيقة`;
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `قبل ${hours} ساعة`;
     const days = Math.floor(hours / 24);
     return `قبل ${days} يوم`;
-  };
+  }, []);
 
   return (
-    <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col">
-      {/* Toggle Buttons - يظهر فقط إذا لم يتم التحكم خارجياً */}
-      {!propActiveView && (
-        <div className="flex border-b border-gray-200">
+    <aside className="h-full bg-white flex flex-col shadow-lg border-l border-gray-200">
+      {/* Header مع أزرار التبويب */}
+      <div className="p-3 border-b border-gray-200 bg-gray-50">
+        <div className="flex gap-1">
           <Button
-            variant={activeView === 'users' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'users' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
+            variant={propActiveView === 'users' ? 'default' : 'ghost'}
+            size="sm"
+            className={`flex-1 text-xs transition-all duration-200 ${
+              propActiveView === 'users' 
+                ? 'bg-blue-500 text-white shadow-md' 
+                : 'hover:bg-gray-100'
             }`}
-            onClick={() => setActiveView('users')}
+            onClick={() => {/* يتم التحكم من المكون الأب */}}
+            title="المستخدمون المتصلون"
           >
-            <Users className="w-4 h-4 ml-2" />
-            المستخدمون
+            <Users className="w-4 h-4 mr-1" />
+            المتصلون
           </Button>
+          
           <Button
-            variant={activeView === 'walls' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'walls' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
+            variant={propActiveView === 'walls' ? 'default' : 'ghost'}
+            size="sm"
+            className={`flex-1 text-xs transition-all duration-200 ${
+              propActiveView === 'walls'
+                ? 'bg-green-500 text-white shadow-md'
+                : 'hover:bg-gray-100'
             }`}
-            onClick={() => setActiveView('walls')}
+            onClick={() => {/* يتم التحكم من المكون الأب */}}
+            title="الحوائط"
           >
-            <Home className="w-4 h-4 ml-2" />
+            <Globe className="w-4 h-4 mr-1" />
             الحوائط
           </Button>
+          
           <Button
-            variant={activeView === 'rooms' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'rooms' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
+            variant={propActiveView === 'rooms' ? 'default' : 'ghost'}
+            size="sm"
+            className={`flex-1 text-xs transition-all duration-200 ${
+              propActiveView === 'rooms'
+                ? 'bg-purple-500 text-white shadow-md'
+                : 'hover:bg-gray-100'
             }`}
-            onClick={() => setActiveView('rooms')}
+            onClick={() => {/* يتم التحكم من المكون الأب */}}
+            title="الغرف"
           >
-            <Users className="w-4 h-4 ml-2" />
+            <Home className="w-4 h-4 mr-1" />
             الغرف
           </Button>
         </div>
-      )}
+      </div>
 
-      {/* Users View */}
-      {activeView === 'users' && (
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          <div className="relative">
-            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
-            <Input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="البحث عن المستخدمين..."
-              className="w-full pl-4 pr-10 py-2 rounded-lg bg-gray-50 border-gray-300 placeholder:text-gray-500 text-gray-900"
-            />
-          </div>
-          
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 font-bold text-green-600 text-base">
-              <span className="text-xs">●</span>
-              المتصلون الآن
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
-                {users.length}
-              </span>
+      {/* المحتوى حسب التبويب النشط */}
+      <div className="flex-1 overflow-hidden">
+        {propActiveView === 'users' && (
+          <div className="h-full flex flex-col">
+            {/* شريط البحث */}
+            <div className="p-3 border-b">
+              <div className="relative">
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="البحث عن المستخدمين..."
+                  className="w-full pl-4 pr-10 py-2 rounded-lg bg-gray-50 border-gray-300 text-sm"
+                />
+              </div>
             </div>
             
-            <ul className="space-y-1">
-              {filteredUsers.map((user) => (
-                <li key={user.id} className="relative">
-                  <SimpleUserMenu
-                    targetUser={user}
-                    currentUser={currentUser}
-                  >
-                    <div
-                      className={`flex items-center gap-2 p-2 rounded-lg transition-all duration-200 cursor-pointer w-full ${
-                        getUserThemeClasses(user)
-                      }`}
-                      style={{ 
-                        ...getUserThemeStyles(user)
-                      }}
-                      onClick={(e) => onUserClick(e, user)}
+            {/* قائمة المستخدمين */}
+            <div className="flex-1 overflow-y-auto p-3">
+              <div className="flex items-center gap-2 font-bold text-green-600 text-sm mb-3">
+                <span className="text-xs">●</span>
+                المتصلون الآن
+                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
+                  {filteredUsers.length}
+                </span>
+              </div>
+              
+              <div className="space-y-1">
+                {filteredUsers.map((user) => (
+                  <div key={user.id} className="relative">
+                    <SimpleUserMenu
+                      targetUser={user}
+                      currentUser={currentUser}
                     >
-                      <ProfileImage 
-                        user={user} 
-                        size="small" 
-                        className="transition-transform hover:scale-105"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span 
-                              className="text-sm font-medium transition-all duration-300"
-                              style={{ 
-                                color: user.usernameColor || getUserThemeTextColor(user),
-                                textShadow: user.usernameColor ? `0 0 10px ${user.usernameColor}40` : 'none',
-                                filter: user.usernameColor ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
-                              }}
-                              title={user.username}
-                            >
-                              {user.username}
-                            </span>
-                            {user.isMuted && (
-                              <span className="text-yellow-400 text-xs">🔇</span>
-                            )}
-                          </div>
-                          <div className="flex items-center">
-                            <UserRoleBadge user={user} />
+                      <div
+                        className={`flex items-center gap-2 p-2 rounded-lg transition-all duration-200 cursor-pointer w-full ${
+                          getUserThemeClasses(user)
+                        }`}
+                        style={{ 
+                          ...getUserThemeStyles(user)
+                        }}
+                        onClick={(e) => onUserClick(e, user)}
+                      >
+                        <ProfileImage 
+                          user={user} 
+                          size="small" 
+                          className="transition-transform hover:scale-105"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span 
+                                className="text-sm font-medium transition-all duration-300 truncate"
+                                style={{ 
+                                  color: user.usernameColor || getUserThemeTextColor(user),
+                                  textShadow: user.usernameColor ? `0 0 10px ${user.usernameColor}40` : 'none'
+                                }}
+                                title={user.username}
+                              >
+                                {user.username}
+                              </span>
+                              {getUserRankBadge(user)}
+                              {user.isMuted && (
+                                <span className="text-yellow-400 text-xs">🔇</span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </SimpleUserMenu>
-                </li>
-              ))}
-            </ul>
-            
-            {filteredUsers.length === 0 && (
-              <div className="text-center text-gray-500 py-8">
-                <div className="mb-3">
-                  {searchTerm ? '🔍' : '👥'}
-                </div>
-                <p className="text-sm">
-                  {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمون متصلون حالياً'}
-                </p>
-                {searchTerm && (
-                  <button 
-                    onClick={() => setSearchTerm('')}
-                    className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
-                  >
-                    مسح البحث
-                  </button>
-                )}
+                    </SimpleUserMenu>
+                  </div>
+                ))}
               </div>
-            )}
+              
+              {filteredUsers.length === 0 && (
+                <div className="text-center text-gray-500 py-6 text-sm">
+                  {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمون متصلون'}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Walls View */}
-      {activeView === 'walls' && (
-        <div className="flex-1 overflow-hidden flex flex-col">
-          {/* Wall Tabs */}
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-2 m-2">
-              <TabsTrigger value="public" className="flex items-center gap-2">
-                <Globe className="w-4 h-4" />
-                عام
-              </TabsTrigger>
-              <TabsTrigger value="friends" className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                الأصدقاء
-              </TabsTrigger>
-            </TabsList>
+        {propActiveView === 'walls' && (
+          <div className="h-full flex flex-col">
+            {/* تبويبات الحوائط */}
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col">
+              <TabsList className="grid w-full grid-cols-2 m-2">
+                <TabsTrigger value="public" className="text-xs">العامة</TabsTrigger>
+                <TabsTrigger value="friends" className="text-xs">الأصدقاء</TabsTrigger>
+              </TabsList>
 
-            <div className="flex-1 overflow-y-auto px-2">
-              {/* Post Creation */}
-              {currentUser && currentUser.userType !== 'guest' && (
-                <Card className="mb-4 border border-gray-200">
-                  <CardContent className="p-3">
-                    <Textarea
-                      value={newPostContent}
-                      onChange={(e) => setNewPostContent(e.target.value)}
-                      placeholder={`ما الذي تريد مشاركته مع ${activeTab === 'public' ? 'الجميع' : 'أصدقائك'}؟`}
-                      className="mb-3 min-h-[80px] resize-none text-sm"
-                      maxLength={500}
-                    />
-                    
-                    {imagePreview && (
-                      <div className="relative mb-3">
-                        <img src={imagePreview} alt="Preview" className="w-full max-h-40 object-cover rounded-lg" />
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="absolute top-2 left-2"
-                          onClick={removeSelectedImage}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+              {/* محتوى التبويبات */}
+              <div className="flex-1 overflow-hidden">
+                <TabsContent value="public" className="h-full m-0">
+                  <div className="h-full flex flex-col">
+                    {/* نموذج إضافة منشور */}
+                    {currentUser && (
+                      <div className="p-3 border-b bg-gray-50">
+                        <div className="space-y-2">
+                          <Textarea
+                            value={newPostContent}
+                            onChange={(e) => setNewPostContent(e.target.value)}
+                            placeholder="ما الذي تفكر فيه؟"
+                            className="resize-none text-sm"
+                            rows={2}
+                          />
+                          
+                          {imagePreview && (
+                            <div className="relative">
+                              <img 
+                                src={imagePreview} 
+                                alt="معاينة" 
+                                className="w-full h-32 object-cover rounded-lg border"
+                              />
+                              <Button
+                                onClick={removeImage}
+                                variant="destructive"
+                                size="sm"
+                                className="absolute top-2 right-2"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
+                          
+                          <div className="flex gap-2">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageSelect}
+                              className="hidden"
+                              id="wallImageInput"
+                            />
+                            <label htmlFor="wallImageInput">
+                              <Button variant="outline" size="sm" className="cursor-pointer" asChild>
+                                <span>
+                                  <ImageIcon className="w-4 h-4" />
+                                </span>
+                              </Button>
+                            </label>
+                            <Button 
+                              onClick={submitPost}
+                              disabled={!newPostContent.trim() || submitting}
+                              size="sm"
+                              className="flex-1"
+                            >
+                              {submitting ? 'جاري النشر...' : 'نشر'}
+                              <Send className="w-4 h-4 mr-1" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     )}
-                    
-                    <div className="flex justify-between items-center">
-                      <div className="flex gap-2">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageSelect}
-                          className="hidden"
-                          id="image-upload"
-                        />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => document.getElementById('image-upload')?.click()}
-                        >
-                          <ImageIcon className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      
-                      <Button
-                        size="sm"
-                        onClick={handleCreatePost}
-                        disabled={submitting || (!newPostContent.trim() && !selectedImage)}
-                        className="bg-blue-500 hover:bg-blue-600"
-                      >
-                        {submitting ? 'جاري النشر...' : (
-                          <>
-                            <Send className="w-4 h-4 ml-1" />
-                            نشر
-                          </>
-                        )}
-                      </Button>
+
+                    {/* قائمة المنشورات */}
+                    <div className="flex-1 overflow-y-auto p-3">
+                      {loading ? (
+                        <div className="text-center py-6">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                          <p className="text-sm text-gray-500 mt-2">جاري تحميل المنشورات...</p>
+                        </div>
+                      ) : posts.length > 0 ? (
+                        <div className="space-y-3">
+                          {posts.map((post) => (
+                            <Card key={post.id} className="text-sm">
+                              <CardHeader className="p-3 pb-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <ProfileImage 
+                                      user={{
+                                        id: post.userId,
+                                        username: post.username,
+                                        profileImage: post.userProfileImage,
+                                        profileBackgroundColor: '#f3f4f6',
+                                        userType: post.userRole as any,
+                                        role: post.userRole as any,
+                                        isOnline: false,
+                                        isHidden: false,
+                                        lastSeen: null,
+                                        joinDate: new Date(),
+                                        createdAt: new Date(),
+                                        isMuted: false,
+                                        muteExpiry: null,
+                                        isBanned: false,
+                                        banExpiry: null,
+                                        isBlocked: false,
+                                        ignoredUsers: [],
+                                        usernameColor: post.usernameColor || '',
+                                        userTheme: '',
+                                        profileEffect: '',
+                                        points: 0,
+                                        level: 1,
+                                        totalPoints: 0,
+                                        levelProgress: 0,
+                                      }}
+                                      size="small"
+                                    />
+                                    <div>
+                                      <div className="font-medium" style={{ color: post.usernameColor }}>
+                                        {post.username}
+                                        <UserRoleBadge userType={post.userRole as any} />
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {new Date(post.timestamp).toLocaleString('ar-EG')}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {currentUser?.id === post.userId && (
+                                    <Button
+                                      onClick={() => deletePost(post.id)}
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-red-500 hover:text-red-700"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </CardHeader>
+                              <CardContent className="p-3 pt-0">
+                                <p className="text-sm mb-2">{post.content}</p>
+                                {post.imageUrl && (
+                                  <img 
+                                    src={getImageSrc(post.imageUrl)} 
+                                    alt="منشور" 
+                                    className="w-full rounded-lg border max-h-48 object-cover"
+                                  />
+                                )}
+                                <div className="flex items-center gap-3 mt-3 pt-2 border-t">
+                                  <Button
+                                    onClick={() => handleReaction(post.id, 'like')}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="flex items-center gap-1 text-blue-500"
+                                  >
+                                    <ThumbsUp className="w-4 h-4" />
+                                    <span className="text-xs">{post.totalLikes}</span>
+                                  </Button>
+                                  <Button
+                                    onClick={() => handleReaction(post.id, 'heart')}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="flex items-center gap-1 text-red-500"
+                                  >
+                                    <Heart className="w-4 h-4" />
+                                    <span className="text-xs">{post.totalHearts}</span>
+                                  </Button>
+                                  <Button
+                                    onClick={() => handleReaction(post.id, 'dislike')}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="flex items-center gap-1 text-gray-500"
+                                  >
+                                    <ThumbsDown className="w-4 h-4" />
+                                    <span className="text-xs">{post.totalDislikes}</span>
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-6">
+                          <p className="text-sm text-gray-500">لا توجد منشورات بعد</p>
+                        </div>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Posts List */}
-              <TabsContent value={activeTab} className="mt-0 space-y-3">
-                {loading ? (
-                  <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
-                ) : posts.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    لا توجد منشورات حتى الآن
                   </div>
-                ) : (
-                  posts.map((post) => (
-                    <Card key={post.id} className="border border-gray-200">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                            {post.userProfileImage ? (
-                              <img src={getImageSrc(post.userProfileImage)} alt={post.username} className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-xs">{post.username.charAt(0)}</span>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span 
-                                className="font-medium text-sm"
-                                style={{ color: post.usernameColor || 'inherit' }}
-                              >
-                                {post.username}
-                              </span>
-                                                              {/* Post badge for user role */}
-                                {post.userRole === 'owner' && <span className="text-yellow-400">👑</span>}
-                                {post.userRole === 'admin' && <span className="text-blue-400">⭐</span>}
-                                {post.userRole === 'moderator' && <span className="text-green-400">🛡️</span>}
-                            </div>
-                            <p className="text-xs text-gray-500">{formatTimeAgo(post.timestamp.toString())}</p>
-                          </div>
-                          {(currentUser?.id === post.userId || 
-                            currentUser?.userType === 'owner' || 
-                            currentUser?.userType === 'admin') && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDeletePost(post.id)}
-                              className="text-red-500 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </CardHeader>
-                      
-                      <CardContent className="pt-0">
-                        {post.content && (
-                          <p className="text-sm mb-3 whitespace-pre-wrap">{post.content}</p>
-                        )}
-                        
-                        {post.imageUrl && (
-                          <img
-                            src={post.imageUrl}
-                            alt="Post image"
-                            className="w-full max-h-60 object-cover rounded-lg mb-3"
-                          />
-                        )}
-                        
-                        {/* Reactions */}
-                        <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleLike(post.id, 'like')}
-                            className="flex items-center gap-1 text-blue-600 hover:bg-blue-50"
-                          >
-                            <ThumbsUp className="w-4 h-4" />
-                            <span className="text-xs">{post.totalLikes || 0}</span>
-                          </Button>
-                          
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleLike(post.id, 'heart')}
-                            className="flex items-center gap-1 text-red-600 hover:bg-red-50"
-                          >
-                            <Heart className="w-4 h-4" />
-                            <span className="text-xs">{post.totalHearts || 0}</span>
-                          </Button>
-                          
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleLike(post.id, 'dislike')}
-                            className="flex items-center gap-1 text-gray-600 hover:bg-gray-50"
-                          >
-                            <ThumbsDown className="w-4 h-4" />
-                            <span className="text-xs">{post.totalDislikes || 0}</span>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </TabsContent>
-            </div>
-          </Tabs>
-        </div>
-      )}
+                </TabsContent>
 
-      {/* Rooms View */}
-      {activeView === 'rooms' && (
-        <RoomsPanel
-          currentUser={currentUser}
-          rooms={rooms}
-          currentRoomId={currentRoomId}
-          onRoomChange={onRoomChange}
-          onAddRoom={onAddRoom}
-          onDeleteRoom={onDeleteRoom}
-          onRefreshRooms={onRefreshRooms}
-        />
-      )}
+                <TabsContent value="friends" className="h-full m-0">
+                  {/* نفس المحتوى لكن للأصدقاء */}
+                  <div className="h-full flex flex-col">
+                    {/* نموذج إضافة منشور للأصدقاء */}
+                    {currentUser && (
+                      <div className="p-3 border-b bg-gray-50">
+                        <div className="space-y-2">
+                          <Textarea
+                            value={newPostContent}
+                            onChange={(e) => setNewPostContent(e.target.value)}
+                            placeholder="شارك شيئاً مع أصدقائك..."
+                            className="resize-none text-sm"
+                            rows={2}
+                          />
+                          
+                          <div className="flex gap-2">
+                            <Button 
+                              onClick={submitPost}
+                              disabled={!newPostContent.trim() || submitting}
+                              size="sm"
+                              className="flex-1"
+                            >
+                              {submitting ? 'جاري النشر...' : 'نشر للأصدقاء'}
+                              <Send className="w-4 h-4 mr-1" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* قائمة منشورات الأصدقاء */}
+                    <div className="flex-1 overflow-y-auto p-3">
+                      {loading ? (
+                        <div className="text-center py-6">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto"></div>
+                          <p className="text-sm text-gray-500 mt-2">جاري تحميل منشورات الأصدقاء...</p>
+                        </div>
+                      ) : posts.length > 0 ? (
+                        <div className="space-y-3">
+                          {posts.map((post) => (
+                            <Card key={post.id} className="text-sm border-green-200">
+                              {/* نفس تصميم المنشور لكن مع ألوان مختلفة للأصدقاء */}
+                              <CardHeader className="p-3 pb-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <ProfileImage 
+                                      user={{
+                                        id: post.userId,
+                                        username: post.username,
+                                        profileImage: post.userProfileImage,
+                                        profileBackgroundColor: '#f3f4f6',
+                                        userType: post.userRole as any,
+                                        role: post.userRole as any,
+                                        isOnline: false,
+                                        isHidden: false,
+                                        lastSeen: null,
+                                        joinDate: new Date(),
+                                        createdAt: new Date(),
+                                        isMuted: false,
+                                        muteExpiry: null,
+                                        isBanned: false,
+                                        banExpiry: null,
+                                        isBlocked: false,
+                                        ignoredUsers: [],
+                                        usernameColor: post.usernameColor || '',
+                                        userTheme: '',
+                                        profileEffect: '',
+                                        points: 0,
+                                        level: 1,
+                                        totalPoints: 0,
+                                        levelProgress: 0,
+                                      }}
+                                      size="small"
+                                    />
+                                    <div>
+                                      <div className="font-medium text-green-600">
+                                        {post.username}
+                                        <span className="text-xs bg-green-100 text-green-700 px-1 rounded mr-1">صديق</span>
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {new Date(post.timestamp).toLocaleString('ar-EG')}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="p-3 pt-0">
+                                <p className="text-sm mb-2">{post.content}</p>
+                                {post.imageUrl && (
+                                  <img 
+                                    src={getImageSrc(post.imageUrl)} 
+                                    alt="منشور" 
+                                    className="w-full rounded-lg border max-h-48 object-cover"
+                                  />
+                                )}
+                                <div className="flex items-center gap-3 mt-3 pt-2 border-t">
+                                  <Button
+                                    onClick={() => handleReaction(post.id, 'like')}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="flex items-center gap-1 text-blue-500"
+                                  >
+                                    <ThumbsUp className="w-4 h-4" />
+                                    <span className="text-xs">{post.totalLikes}</span>
+                                  </Button>
+                                  <Button
+                                    onClick={() => handleReaction(post.id, 'heart')}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="flex items-center gap-1 text-red-500"
+                                  >
+                                    <Heart className="w-4 h-4" />
+                                    <span className="text-xs">{post.totalHearts}</span>
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-6">
+                          <p className="text-sm text-gray-500">لا توجد منشورات من الأصدقاء بعد</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+              </div>
+            </Tabs>
+          </div>
+        )}
+
+        {propActiveView === 'rooms' && (
+          <RoomsPanel
+            currentUser={currentUser}
+            rooms={rooms}
+            currentRoomId={currentRoomId}
+            onRoomChange={onRoomChange}
+            onAddRoom={onAddRoom}
+            onDeleteRoom={onDeleteRoom}
+            onRefreshRooms={onRefreshRooms}
+          />
+        )}
+      </div>
     </aside>
   );
 }

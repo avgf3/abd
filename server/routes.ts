@@ -4771,5 +4771,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // إضافة معالجة أفضل للغرف في إعداد Socket.IO
+  const activeRoomConnections = new Map<string, Set<string>>();
+
+  // دالة لإضافة مستخدم لغرفة
+  function addUserToRoom(socketId: string, roomId: string, userId: number) {
+    if (!activeRoomConnections.has(roomId)) {
+      activeRoomConnections.set(roomId, new Set());
+    }
+    activeRoomConnections.get(roomId)!.add(socketId);
+    
+    console.log(`✅ أضيف المستخدم ${userId} (${socketId}) للغرفة ${roomId}`);
+    console.log(`👥 عدد المتصلين في الغرفة ${roomId}: ${activeRoomConnections.get(roomId)!.size}`);
+  }
+
+  // دالة لإزالة مستخدم من غرفة
+  function removeUserFromRoom(socketId: string, roomId: string) {
+    if (activeRoomConnections.has(roomId)) {
+      activeRoomConnections.get(roomId)!.delete(socketId);
+      
+      // إزالة الغرفة إذا لم يعد فيها أحد
+      if (activeRoomConnections.get(roomId)!.size === 0) {
+        activeRoomConnections.delete(roomId);
+      }
+      
+      console.log(`❌ أزيل المستخدم من الغرفة ${roomId}`);
+    }
+  }
+
+  // دالة للحصول على عدد المتصلين في غرفة
+  function getRoomUserCount(roomId: string): number {
+    return activeRoomConnections.get(roomId)?.size || 0;
+  }
+
   return httpServer;
 }

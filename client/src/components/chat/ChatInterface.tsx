@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import UserSidebarWithWalls from './UserSidebarWithWalls';
 import MessageArea from './MessageArea';
 import BroadcastRoomInterface from './BroadcastRoomInterface';
@@ -44,15 +44,30 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAdminReports, setShowAdminReports] = useState(false);
-  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms'>('users'); // إظهار المستخدمين افتراضياً
+  
+  // إدارة موحدة للعرض النشط
+  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms'>('users');
   
   // حالة الغرف
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [currentRoomId, setCurrentRoomId] = useState('general');
   const [roomsLoading, setRoomsLoading] = useState(true);
+  
+  // حالات أخرى
+  const [showModerationPanel, setShowModerationPanel] = useState(false);
+  const [showReportsLog, setShowReportsLog] = useState(false);
+  const [showActiveActions, setShowActiveActions] = useState(false);
+  const [showPromotePanel, setShowPromotePanel] = useState(false);
+  const [showOwnerPanel, setShowOwnerPanel] = useState(false);
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
+  const [showFriends, setShowFriends] = useState(false);
+  const [newMessageAlert, setNewMessageAlert] = useState<{ show: boolean; sender: ChatUser | null }>({ show: false, sender: null });
+
+  const { toast } = useToast();
 
   // جلب الغرف من الخادم
-  const fetchRooms = async () => {
+  const fetchRooms = useCallback(async () => {
     try {
       console.log('🔄 جلب الغرف من الخادم...');
       setRoomsLoading(true);
@@ -95,160 +110,148 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     } finally {
       setRoomsLoading(false);
     }
-  };
+  }, []);
 
   // جلب الغرف عند تحميل المكون
   useEffect(() => {
     fetchRooms();
-  }, []);
+  }, [fetchRooms]);
 
-  // دوال إدارة الغرف
-  const handleRoomChange = async (roomId: string) => {
-    console.log(`🔄 تغيير الغرفة من ${currentRoomId} إلى ${roomId}`);
+  // تحديد الغرفة الحالية في chat hook
+  useEffect(() => {
+    if (chat.setCurrentRoom) {
+      chat.setCurrentRoom(currentRoomId);
+    }
+  }, [currentRoomId, chat.setCurrentRoom]);
+
+  // معالجة تغيير الغرفة
+  const handleRoomChange = useCallback((roomId: string) => {
+    console.log('🔄 تغيير الغرفة إلى:', roomId);
     setCurrentRoomId(roomId);
-    chat.joinRoom(roomId);
     
-    // انتظار قصير للتأكد من انضمام الغرفة
-    setTimeout(() => {
-      console.log(`✅ تم تحديث الغرفة الحالية إلى: ${roomId}`);
-    }, 100);
-  };
-
-  // دالة تحديث الغرف
-  const handleRefreshRooms = async () => {
-    console.log('🔄 تحديث الغرف...');
-    await fetchRooms();
-  };
-
-  const handleAddRoom = async (roomData: { name: string; description: string; image: File | null }) => {
-    if (!chat.currentUser) return;
+    // تنظيف الرسائل وتحديث الغرفة في chat hook
+    if (chat.setCurrentRoom) {
+      chat.setCurrentRoom(roomId);
+    }
     
+    toast({
+      title: "تم تغيير الغرفة",
+      description: `تم الانتقال إلى ${rooms.find(r => r.id === roomId)?.name || roomId}`,
+      duration: 2000,
+    });
+  }, [chat.setCurrentRoom, rooms, toast]);
+
+  // معالجة إضافة غرفة جديدة
+  const handleAddRoom = useCallback(async (roomData: { name: string; description: string; image: File | null }) => {
     try {
+      console.log('🔄 إضافة غرفة جديدة:', roomData.name);
+      
       const formData = new FormData();
       formData.append('name', roomData.name);
       formData.append('description', roomData.description);
-      formData.append('userId', chat.currentUser.id.toString());
       if (roomData.image) {
         formData.append('image', roomData.image);
       }
 
-      const response = await fetch('/api/rooms', {
+      const response = await fetch('/api/rooms/create', {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       if (response.ok) {
-        const data = await response.json();
-        const newRoom = {
-          id: data.room.id,
-          name: data.room.name,
-          description: data.room.description || '',
-          isDefault: data.room.is_default,
-          createdBy: data.room.created_by,
-          createdAt: new Date(data.room.created_at),
-          isActive: data.room.is_active,
-          userCount: 0,
-          icon: data.room.icon || ''
-        };
-        setRooms(prev => [...prev, newRoom]);
+        const newRoom = await response.json();
+        console.log('✅ تم إنشاء الغرفة:', newRoom);
+        
+        // إعادة جلب قائمة الغرف لتحديثها
+        await fetchRooms();
+        
         toast({
           title: "تم إنشاء الغرفة",
           description: `تم إنشاء غرفة "${roomData.name}" بنجاح`,
+          duration: 3000,
         });
       } else {
-        const error = await response.json();
-        throw new Error(error.error || 'خطأ في إنشاء الغرفة');
+        throw new Error('فشل في إنشاء الغرفة');
       }
     } catch (error) {
+      console.error('❌ خطأ في إنشاء الغرفة:', error);
       toast({
-        title: "خطأ في إنشاء الغرفة",
-        description: error instanceof Error ? error.message : "حدث خطأ أثناء إنشاء الغرفة",
+        title: "خطأ",
+        description: "فشل في إنشاء الغرفة. حاول مرة أخرى.",
         variant: "destructive",
+        duration: 3000,
       });
     }
-  };
+  }, [fetchRooms, toast]);
 
-  const handleDeleteRoom = async (roomId: string) => {
-    if (!chat.currentUser) return;
-    
+  // معالجة حذف غرفة
+  const handleDeleteRoom = useCallback(async (roomId: string) => {
     try {
-      const response = await apiRequest(`/api/rooms/${roomId}`, {
+      console.log('🔄 حذف الغرفة:', roomId);
+      
+      const response = await fetch(`/api/rooms/${roomId}`, {
         method: 'DELETE',
-        body: { userId: chat.currentUser.id }
       });
 
       if (response.ok) {
-        setRooms(prev => prev.filter(room => room.id !== roomId));
+        console.log('✅ تم حذف الغرفة:', roomId);
+        
+        // إعادة جلب قائمة الغرف لتحديثها
+        await fetchRooms();
+        
+        // إذا كانت الغرفة المحذوفة هي الغرفة الحالية، انتقل للغرفة العامة
         if (currentRoomId === roomId) {
-          setCurrentRoomId('general'); // العودة للغرفة الرئيسية
+          setCurrentRoomId('general');
         }
+        
         toast({
           title: "تم حذف الغرفة",
           description: "تم حذف الغرفة بنجاح",
+          duration: 3000,
         });
       } else {
-        const error = await response.json();
-        throw new Error(error.error || 'خطأ في حذف الغرفة');
+        throw new Error('فشل في حذف الغرفة');
       }
     } catch (error) {
+      console.error('❌ خطأ في حذف الغرفة:', error);
       toast({
-        title: "خطأ في حذف الغرفة",
-        description: error instanceof Error ? error.message : "حدث خطأ أثناء حذف الغرفة",
+        title: "خطأ",
+        description: "فشل في حذف الغرفة. حاول مرة أخرى.",
         variant: "destructive",
+        duration: 3000,
       });
     }
-  };
+  }, [fetchRooms, currentRoomId, toast]);
 
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showFriends, setShowFriends] = useState(false);
-  const [showMessages, setShowMessages] = useState(false);
-  const [showModerationPanel, setShowModerationPanel] = useState(false);
-  const [showOwnerPanel, setShowOwnerPanel] = useState(false);
-  const [showReportsLog, setShowReportsLog] = useState(false);
-  const [showActiveActions, setShowActiveActions] = useState(false);
-  const [showPromotePanel, setShowPromotePanel] = useState(false);
-  const [showThemeSelector, setShowThemeSelector] = useState(false);
-
-
-  const [newMessageAlert, setNewMessageAlert] = useState<{
-    show: boolean;
-    sender: ChatUser | null;
-  }>({
-    show: false,
-    sender: null,
-  });
-
-  // جلب الغرف عند تحميل المكون
-  useEffect(() => {
-    console.log('🚀 تحميل مكون ChatInterface - جلب الغرف...');
-    fetchRooms();
-    
-    // إعادة جلب الغرف كل 30 ثانية للتأكد من التحديث
-    const interval = setInterval(() => {
-      console.log('🔄 تحديث دوري للغرف...');
-      fetchRooms();
-    }, 30000);
-    
-    return () => clearInterval(interval);
+  // معالجة النقر على المستخدم
+  const handleUserClick = useCallback((event: React.MouseEvent, user: ChatUser) => {
+    event.preventDefault();
+    setProfileUser(user);
+    setShowProfile(true);
   }, []);
 
-  // إضافة useEffect لمراقبة تغييرات الغرف
-  useEffect(() => {
-    console.log('📊 تم تحديث قائمة الغرف:', rooms.length, 'غرفة');
-    rooms.forEach((room, index) => {
-      console.log(`  ${index + 1}. ${room.name} (${room.id}) - مستخدمين: ${room.userCount}`);
-    });
-  }, [rooms]);
+  // دالة توحيد تبديل العرض
+  const toggleView = useCallback((view: 'users' | 'walls' | 'rooms') => {
+    setActiveView(prev => prev === view ? 'hidden' : view);
+  }, []);
 
-  // تفعيل التنبيه عند وصول رسالة جديدة
-  useEffect(() => {
-    if (chat.newMessageSender) {
-      setNewMessageAlert({
-        show: true,
-        sender: chat.newMessageSender,
-      });
+  // الحصول على الرسائل الحالية حسب الغرفة
+  const currentMessages = useMemo(() => {
+    if (chat.roomMessages && chat.roomMessages[currentRoomId]) {
+      return chat.roomMessages[currentRoomId];
     }
-  }, [chat.newMessageSender]);
+    // إرجاع الرسائل العامة كبديل إذا لم توجد رسائل خاصة بالغرفة
+    return chat.publicMessages || [];
+  }, [chat.roomMessages, chat.publicMessages, currentRoomId]);
+
+  // دالة إرسال الرسائل مع تحديد الغرفة
+  const handleSendMessage = useCallback((content: string, messageType?: string) => {
+    if (chat.sendPublicMessage) {
+      chat.sendPublicMessage(content, messageType, currentRoomId);
+    }
+  }, [chat.sendPublicMessage, currentRoomId]);
+
+  // حالات إضافية
   const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
   const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(null);
   const [userPopup, setUserPopup] = useState<{
@@ -262,30 +265,43 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     x: 0,
     y: 0,
   });
-  const { toast } = useToast();
 
-  const handleUserClick = (event: React.MouseEvent, user: ChatUser) => {
-    event.stopPropagation();
-    setUserPopup({
-      show: true,
-      user,
-      x: event.clientX,
-      y: event.clientY,
-    });
-  };
+  // تفعيل التنبيه عند وصول رسالة جديدة
+  useEffect(() => {
+    if (chat.newMessageSender) {
+      setNewMessageAlert({
+        show: true,
+        sender: chat.newMessageSender,
+      });
+      
+      // إخفاء التنبيه تلقائياً بعد 5 ثوانٍ
+      setTimeout(() => {
+        setNewMessageAlert({ show: false, sender: null });
+        if (chat.setNewMessageSender) {
+          chat.setNewMessageSender(null);
+        }
+      }, 5000);
+    }
+  }, [chat.newMessageSender, chat.setNewMessageSender]);
 
-  const closeUserPopup = () => {
+  const closeUserPopup = useCallback(() => {
     setUserPopup(prev => ({ ...prev, show: false }));
-  };
+  }, []);
 
-  const handlePrivateMessage = (user: ChatUser) => {
+  const handlePrivateMessage = useCallback((user: ChatUser) => {
     setSelectedPrivateUser(user);
     closeUserPopup();
-  };
+  }, [closeUserPopup]);
 
-  const closePrivateMessage = () => {
+  const closePrivateMessage = useCallback(() => {
     setSelectedPrivateUser(null);
-  };
+  }, []);
+
+  const handleReportUser = useCallback((user: ChatUser, messageContent: string, messageId: number) => {
+    setReportedUser(user);
+    setReportedMessage({ content: messageContent, id: messageId });
+    setShowReportModal(true);
+  }, []);
 
   const handleAddFriend = async (user: ChatUser) => {
     if (!chat.currentUser) return;
@@ -393,7 +409,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
               activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView(activeView === 'walls' ? 'hidden' : 'walls')}
+            onClick={() => toggleView('walls')}
             title="الحوائط"
           >
             <div className="flex flex-col gap-0.5">
@@ -409,7 +425,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
               activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView(activeView === 'users' ? 'hidden' : 'users')}
+            onClick={() => toggleView('users')}
             title="المستخدمون المتصلون"
           >
             <span>👥</span>
@@ -421,7 +437,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
               activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView(activeView === 'rooms' ? 'hidden' : 'rooms')}
+            onClick={() => toggleView('rooms')}
             title="الغرف"
           >
             <span>🏠</span>
@@ -540,8 +556,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         {activeView !== 'hidden' && (
           <div className={`${activeView === 'walls' ? 'w-96' : 'w-64'} transition-all duration-300`}>
             <UserSidebarWithWalls 
-              users={chat.onlineUsers}
-              onUserClick={handleUserClick}
+              users={chat.onlineUsers || []}
+              onUserClick={(event, user) => {
+                event.stopPropagation();
+                setUserPopup({
+                  show: true,
+                  user,
+                  x: event.clientX,
+                  y: event.clientY,
+                });
+              }}
               currentUser={chat.currentUser}
               activeView={activeView}
               rooms={rooms}
@@ -563,13 +587,21 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 currentUser={chat.currentUser}
                 room={currentRoom}
                 onlineUsers={chat.onlineUsers}
-                onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                onSendMessage={(content) => chat.sendRoomMessage(content, currentRoomId)}
                 onTyping={chat.handleTyping}
                 typingUsers={Array.from(chat.typingUsers)}
                 onReportMessage={handleReportUser}
-                onUserClick={handleUserClick}
+                onUserClick={(event, user) => {
+                  event.stopPropagation();
+                  setUserPopup({
+                    show: true,
+                    user,
+                    x: event.clientX,
+                    y: event.clientY,
+                  });
+                }}
                 chat={{
-                  sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
+                  sendPublicMessage: (content: string) => chat.sendRoomMessage(content, currentRoomId),
                   handleTyping: chat.handleTyping
                 }}
               />
@@ -579,9 +611,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           // وإلا استخدم MessageArea العادية
           return (
             <MessageArea 
-              messages={chat.roomMessages[chat.currentRoomId] || chat.publicMessages}
+              messages={currentMessages}
               currentUser={chat.currentUser}
-              onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+              onSendMessage={handleSendMessage}
               onTyping={chat.handleTyping}
               typingUsers={chat.typingUsers}
               onReportMessage={handleReportUser}
