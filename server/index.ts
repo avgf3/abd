@@ -4,7 +4,7 @@ dotenv.config();
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { initializeDatabase, createDefaultUsers, runMigrations, runDrizzlePush } from "./database-setup";
+// import { initializeDatabase, createDefaultUsers, runMigrations, runDrizzlePush } from "./database-setup";
 import { setupSecurity } from "./security";
 import path from "path";
 import fs from "fs";
@@ -149,17 +149,17 @@ async function startServer() {
     
     // Initialize database
     console.log('🗄️ Initializing database...');
-    await initializeDatabase();
+    // await initializeDatabase();
     
     // Run migrations if needed
     if (process.env.NODE_ENV === 'production') {
       console.log('🔄 Running database migrations...');
-      await runMigrations();
+      // await runMigrations();
     }
     
     // Create default users
     console.log('👥 Creating default users...');
-    await createDefaultUsers();
+    // await createDefaultUsers();
     
     // Find available port
     const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;

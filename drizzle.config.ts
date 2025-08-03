@@ -16,8 +16,9 @@ if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgre
 export default defineConfig({
   out: "./migrations",
   schema: "./shared/schema.ts", 
-  dialect: "postgresql",
+  // dialect: "postgresql", // Commented out as it's not a valid property
   dbCredentials: {
-    url: databaseUrl,
+    wranglerConfigPath: "./wrangler.toml",
+    dbName: "arabic-chat-db",
   },
 });

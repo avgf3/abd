@@ -242,8 +242,8 @@ export function useCacheCleanup() {
     if ('serviceWorker' in navigator) {
       const registrations = await navigator.serviceWorker.getRegistrations();
       for (const registration of registrations) {
-        const caches = await caches.keys();
-        for (const cacheName of caches) {
+        const cacheKeys = await caches.keys();
+                  for (const cacheName of cacheKeys) {
           if (cacheName.includes('chat') || cacheName.includes('v1')) {
             await caches.delete(cacheName);
           }

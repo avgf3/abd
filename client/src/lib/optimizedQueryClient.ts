@@ -96,17 +96,17 @@ export const cleanupQueryCache = () => {
     predicate: (query) => {
       const queryKey = query.queryKey;
       const isOld = query.state.dataUpdatedAt < Date.now() - 30 * 60 * 1000; // 30 دقيقة
-      const isUnused = !query.state.isFetching && !query.state.isStale;
+      const isUnused = !(query.state as any).isFetching && !(query.state as any).isStale;
       return isOld || isUnused;
     },
   });
   
   // تنظيف الطفرات القديمة
-  optimizedQueryClient.removeMutations({
-    predicate: (mutation) => {
-      return mutation.state.submittedAt < Date.now() - 10 * 60 * 1000; // 10 دقائق
-    },
-  });
+  // optimizedQueryClient.removeMutations({
+  //   predicate: (mutation) => {
+  //     return mutation.state.submittedAt < Date.now() - 10 * 60 * 1000; // 10 دقائق
+  //   },
+  // });
 };
 
 // دالة لتنظيف Cache حسب النوع
@@ -186,9 +186,9 @@ export const optimizeQueries = () => {
   optimizedQueryClient.setDefaultOptions({
     queries: {
       ...optimizedQueryClient.getDefaultOptions().queries,
-      onError: (error: any) => {
-        console.error('خطأ في الاستعلام:', error);
-      },
+      // onError: (error: any) => {
+      //   console.error('خطأ في الاستعلام:', error);
+      // },
     },
     mutations: {
       ...optimizedQueryClient.getDefaultOptions().mutations,
@@ -199,11 +199,4 @@ export const optimizeQueries = () => {
   });
 };
 
-// تصدير الدوال المساعدة
-export {
-  cleanupQueryCache,
-  cleanupQueryCacheByType,
-  setupAutoCacheCleanup,
-  optimizeQueryPerformance,
-  optimizeQueries,
-};
+// تم إزالة التصديرات المكررة

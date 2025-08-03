@@ -560,10 +560,10 @@ export function useChat() {
       // إنشاء اتصال Socket.IO
       if (!socket.current) {
         // Use dynamic URL: production uses current origin, development uses localhost
-        const isDevelopment = import.meta.env.DEV;
-        const serverUrl = isDevelopment 
-          ? (import.meta.env.VITE_SERVER_URL || 'http://localhost:5000')
-          : window.location.origin;
+        const isDevelopment = (import.meta as any).env?.DEV;
+                  const serverUrl = isDevelopment 
+            ? ((import.meta as any).env?.VITE_SERVER_URL || 'http://localhost:5000')
+            : window.location.origin;
         
         console.log('🔌 جاري الاتصال بـ Socket.IO على:', serverUrl);
         socket.current = io(serverUrl, {
