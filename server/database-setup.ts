@@ -78,8 +78,9 @@ export async function runMigrations(): Promise<void> {
       return;
     }
     
-    // للأخطاء الأخرى، لا ترمي الخطأ - استمر مع SQLite
-    console.log('⚠️ Falling back to SQLite mode');
+    // للأخطاء الأخرى، ارمي الخطأ بدلاً من التحويل إلى SQLite
+    console.error('❌ Migration failed - stopping application');
+    throw error; // ارمي الخطأ لإيقاف التطبيق بدلاً من استخدام SQLite
   }
 }
 
