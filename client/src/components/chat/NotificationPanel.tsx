@@ -49,7 +49,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     enabled: !!currentUser?.id && isOpen,
     refetchInterval: isOpen ? 30000 : false, // كل 30 ثانية بدلاً من 3 ثوانٍ عند فتح النافذة
     staleTime: 10000, // البيانات صالحة لمدة 10 ثوانٍ
-    gcTime: 5 * 60 * 1000, // حفظ في الكاش لمدة 5 دقائق
+    gcTime: 5 * 60 * 1000 // حفظ في الكاش لمدة 5 دقائق
   });
 
   // جلب عدد الإشعارات غير المقروءة - مُحسّن

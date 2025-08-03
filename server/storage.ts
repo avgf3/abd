@@ -116,6 +116,15 @@ export interface IStorage {
   }): Promise<boolean>;
   isDeviceBlocked(ipAddress: string, deviceId: string): Promise<boolean>;
   getBlockedDevices(): Promise<Array<{ipAddress: string, deviceId: string}>>;
+  
+  // Points system operations
+  updateUserPoints(userId: number, updates: { points?: number; level?: number; totalPoints?: number; levelProgress?: number }): Promise<void>;
+  addPointsHistory(userId: number, points: number, reason: string, action: 'earn' | 'spend'): Promise<void>;
+  getUserLastDailyLogin(userId: number): Promise<string | null>;
+  updateUserLastDailyLogin(userId: number, dateString: string): Promise<void>;
+  getPointsHistory(userId: number, limit?: number): Promise<any[]>;
+  getTopUsersByPoints(limit?: number): Promise<User[]>;
+  getUserMessageCount(userId: number): Promise<number>;
 }
 
 export class PostgreSQLStorage implements IStorage {
@@ -975,6 +984,180 @@ export class PostgreSQLStorage implements IStorage {
     return result;
   }
 }
+
+  // Points system operations
+  async updateUserPoints(userId: number, updates: { points?: number; level?: number; totalPoints?: number; levelProgress?: number }): Promise<void> {
+    try {
+      await db.update(users)
+        .set(updates)
+        .where(eq(users.id, userId));
+    } catch (error) {
+      console.error('خطأ في تحديث نقاط المستخدم:', error);
+      throw error;
+    }
+  }
+
+  async addPointsHistory(userId: number, points: number, reason: string, action: 'earn' | 'spend'): Promise<void> {
+    try {
+      await db.insert(pointsHistory).values({
+        userId,
+        points,
+        reason,
+        action
+      });
+    } catch (error) {
+      console.error('خطأ في إضافة سجل النقاط:', error);
+      throw error;
+    }
+  }
+
+  async getUserLastDailyLogin(userId: number): Promise<string | null> {
+    try {
+      const user = await this.getUser(userId);
+      return user?.lastSeen ? new Date(user.lastSeen).toDateString() : null;
+    } catch (error) {
+      console.error('خطأ في جلب آخر تسجيل دخول يومي:', error);
+      return null;
+    }
+  }
+
+  async updateUserLastDailyLogin(userId: number, dateString: string): Promise<void> {
+    try {
+      const date = new Date(dateString);
+      await db.update(users)
+        .set({ lastSeen: date })
+        .where(eq(users.id, userId));
+    } catch (error) {
+      console.error('خطأ في تحديث آخر تسجيل دخول يومي:', error);
+      throw error;
+    }
+  }
+
+  async getPointsHistory(userId: number, limit: number = 50): Promise<any[]> {
+    try {
+      return await db.select()
+        .from(pointsHistory)
+        .where(eq(pointsHistory.userId, userId))
+        .orderBy(desc(pointsHistory.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error('خطأ في جلب سجل النقاط:', error);
+      return [];
+    }
+  }
+
+  async getTopUsersByPoints(limit: number = 20): Promise<User[]> {
+    try {
+      return await db.select()
+        .from(users)
+        .orderBy(desc(users.totalPoints))
+        .limit(limit);
+    } catch (error) {
+      console.error('خطأ في جلب أفضل المستخدمين:', error);
+      return [];
+    }
+  }
+
+  async getUserMessageCount(userId: number): Promise<number> {
+    try {
+      const result = await db.select({ count: sql`count(*)` })
+        .from(messages)
+        .where(eq(messages.senderId, userId));
+      return Number(result[0]?.count || 0);
+    } catch (error) {
+      console.error('خطأ في جلب عدد رسائل المستخدم:', error);
+      return 0;
+    }
+  }
+
+  // Room operations - إضافة الدوال المفقودة
+  async joinRoom(userId: number, roomId: string): Promise<void> {
+    try {
+      // التحقق من وجود الغرفة
+      const room = await this.getRoom(roomId);
+      if (!room) {
+        throw new Error('الغرفة غير موجودة');
+      }
+
+      // إضافة المستخدم للغرفة
+      await db.insert(roomUsers).values({
+        roomId,
+        userId,
+        joinedAt: new Date()
+      }).onConflictDoNothing();
+
+      console.log(`👤 User ${userId} joined room: ${roomId}`);
+    } catch (error) {
+      console.error('خطأ في الانضمام للغرفة:', error);
+      throw error;
+    }
+  }
+
+  async leaveRoom(userId: number, roomId: string): Promise<void> {
+    try {
+      // إزالة المستخدم من الغرفة
+      await db.delete(roomUsers)
+        .where(and(eq(roomUsers.roomId, roomId), eq(roomUsers.userId, userId)));
+
+      console.log(`👤 User ${userId} left room: ${roomId}`);
+    } catch (error) {
+      console.error('خطأ في مغادرة الغرفة:', error);
+      throw error;
+    }
+  }
+
+  async getAllRooms(): Promise<any[]> {
+    try {
+      return await db.select().from(rooms).orderBy(asc(rooms.createdAt));
+    } catch (error) {
+      console.error('خطأ في جلب جميع الغرف:', error);
+      return [];
+    }
+  }
+
+  async createRoom(roomData: any): Promise<any> {
+    try {
+      const [newRoom] = await db.insert(rooms).values({
+        id: roomData.id || `room_${Date.now()}`,
+        name: roomData.name,
+        description: roomData.description || '',
+        isDefault: roomData.isDefault || false,
+        createdBy: roomData.createdBy || 1,
+        isActive: roomData.isActive !== false,
+        icon: roomData.icon || '',
+        isBroadcast: roomData.isBroadcast || false,
+        hostId: roomData.hostId || null,
+        speakers: roomData.speakers ? JSON.stringify(roomData.speakers) : '[]',
+        micQueue: roomData.micQueue ? JSON.stringify(roomData.micQueue) : '[]'
+      }).returning();
+
+      console.log(`🏠 Created new room: ${newRoom.name}`);
+      return newRoom;
+    } catch (error) {
+      console.error('خطأ في إنشاء الغرفة:', error);
+      throw error;
+    }
+  }
+
+  async deleteRoom(roomId: string): Promise<void> {
+    try {
+      // حذف جميع المستخدمين من الغرفة أولاً
+      await db.delete(roomUsers).where(eq(roomUsers.roomId, roomId));
+      
+      // حذف الغرفة
+      await db.delete(rooms).where(eq(rooms.id, roomId));
+
+      console.log(`🗑️ Deleted room: ${roomId}`);
+    } catch (error) {
+      console.error('خطأ في حذف الغرفة:', error);
+      throw error;
+    }
+  }
+
+  // Wall post operations - إصلاح اسم الدالة
+  async addWallReaction(reactionData: InsertWallReaction): Promise<WallPost | null> {
+    return this.addWallPostReaction(reactionData);
+  }
 
 // Export instance
 export const storage = new PostgreSQLStorage();

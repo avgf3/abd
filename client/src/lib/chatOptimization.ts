@@ -203,7 +203,7 @@ export function useOptimizedMessages(messages: ChatMessage[], containerRef: Reac
             ignoredUsers: [],
             usernameColor: '#666666',
             userTheme: 'default',
-            profileEffect: '',
+            profileEffect: 'none',
             points: 0,
             level: 1,
             totalPoints: 0,

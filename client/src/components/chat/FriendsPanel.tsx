@@ -111,8 +111,8 @@ export default function FriendsPanel({
         fetch(`/api/friend-requests/outgoing/${currentUser.id}`).catch(() => ({ ok: false }))
       ]);
       
-      const incoming = incomingResponse.ok && 'json' in incomingResponse ? await incomingResponse.json() : { requests: [] };
-      const outgoing = outgoingResponse.ok && 'json' in outgoingResponse ? await outgoingResponse.json() : { requests: [] };
+      const incoming = incomingResponse.ok && typeof incomingResponse.json === 'function' ? await incomingResponse.json() : { requests: [] };
+      const outgoing = outgoingResponse.ok && typeof outgoingResponse.json === 'function' ? await outgoingResponse.json() : { requests: [] };
       
       setFriendRequests({
         incoming: incoming.requests || [],

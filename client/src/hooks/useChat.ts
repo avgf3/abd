@@ -197,6 +197,9 @@ export function useChat() {
   // تحسين الأداء: مدراء التحسين
   const messageCache = useRef(new MessageCacheManager());
   
+  // إضافة متغير للوصول إلى import.meta.env
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
   // Memoized values to prevent unnecessary re-renders - إصلاح المنطق
   const memoizedOnlineUsers = useMemo(() => {
     // عرض جميع المستخدمين بدون فلترة معقدة

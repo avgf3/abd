@@ -1,5 +1,12 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import type { ApiResponse } from "@/types/chat";
+
+// تعريف ApiResponse محلي لتجنب مشاكل الاستيراد
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
 
 // معالجة محسنة للأخطاء
 async function throwIfResNotOk(res: Response) {
