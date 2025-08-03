@@ -36,7 +36,6 @@ export default function BroadcastRoomInterface({
   typingUsers,
   onReportMessage,
   onUserClick,
-  chat
 }: BroadcastRoomInterfaceProps) {
   const [broadcastInfo, setBroadcastInfo] = useState<BroadcastInfo | null>(null);
   const [messageInput, setMessageInput] = useState('');

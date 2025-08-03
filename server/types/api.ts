@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
 declare global {
   namespace Express {
     interface Request {
-      user?: AuthenticatedUser;
+      user?: any; // تم تغيير النوع لتجنب التضارب
       session?: any;
       fileValidationError?: string;
     }
@@ -361,7 +361,7 @@ export interface BackupInfo {
 }
 
 // تصدير الأنواع المفيدة
-export {
+export type {
   Request as ExpressRequest,
   Response as ExpressResponse
 };

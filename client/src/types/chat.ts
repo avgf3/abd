@@ -65,7 +65,6 @@ export interface WebSocketMessage {
   receiverId?: number;
   isTyping?: boolean;
   user?: ChatUser;
-  users?: ChatUser[];
   message?: ChatMessage | string; // يمكن أن يكون string أيضاً
   action?: string;
   

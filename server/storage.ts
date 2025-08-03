@@ -161,11 +161,11 @@ export class PostgreSQLStorage implements IStorage {
         country: user.country || null,
         relation: user.relation || null,
         bio: user.bio || null,
-        isOnline: user.isOnline || false,
-        isHidden: user.isHidden || false,
-        lastSeen: user.lastSeen || null,
-        joinDate: user.joinDate || new Date(),
-        createdAt: user.createdAt || new Date(),
+        isOnline: false, // سيتم تحديثه لاحقاً
+        isHidden: false, // سيتم تحديثه لاحقاً
+        lastSeen: null, // سيتم تحديثه لاحقاً
+        joinDate: new Date(),
+        createdAt: new Date(),
         isMuted: user.isMuted || false,
         muteExpiry: user.muteExpiry || null,
         isBanned: user.isBanned || false,
@@ -173,7 +173,7 @@ export class PostgreSQLStorage implements IStorage {
         isBlocked: user.isBlocked || false,
         ipAddress: user.ipAddress || null,
         deviceId: user.deviceId || null,
-        ignoredUsers: user.ignoredUsers || '[]',
+        ignoredUsers: '[]', // سيتم تحديثه لاحقاً
         usernameColor: user.usernameColor || '#FFFFFF',
         userTheme: user.userTheme || 'default',
         profileEffect: user.profileEffect || 'none',
@@ -270,7 +270,7 @@ export class PostgreSQLStorage implements IStorage {
         messageType: message.messageType || 'text',
         isPrivate: message.isPrivate || false,
         roomId: message.roomId || 'general',
-        timestamp: message.timestamp || new Date()
+        timestamp: new Date()
       }).returning();
       
       return result[0];
@@ -988,9 +988,9 @@ export class PostgreSQLStorage implements IStorage {
         type: notification.type,
         title: notification.title,
         message: notification.message,
-        isRead: notification.isRead || false,
+        isRead: false,
         data: notification.data || null,
-        createdAt: notification.createdAt || new Date()
+        createdAt: new Date()
       }).returning();
       
       return result[0];

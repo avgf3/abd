@@ -144,7 +144,7 @@ export class PointsService {
       case 'FIRST_MESSAGE':
         // هذه وظيفة مستقبلية - نحتاج إلى إضافة counting للرسائل
         const messageCount = 0;
-        if (messageCount === 1) {
+        if (messageCount > 0) {
           return this.addPoints(userId, DEFAULT_POINTS_CONFIG.FIRST_MESSAGE, 'FIRST_MESSAGE');
         }
         break;
