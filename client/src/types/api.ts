@@ -422,21 +422,4 @@ export interface RolePermissions {
   inheritsFrom?: UserRole;
 }
 
-// تصدير جميع الأنواع
-export type {
-  ApiResponse,
-  ApiError,
-  PaginationParams,
-  PaginatedResponse,
-  UserRole,
-  UserStatus,
-  Gender,
-  MessageType,
-  MessageStatus,
-  FriendRequestStatus,
-  NotificationType,
-  RoomType,
-  RoomPermission,
-  ReportReason,
-  WebSocketMessageType
-};
+// تم حذف التصدير المكرر لتجنب تضارب الأنواع

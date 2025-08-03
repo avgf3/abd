@@ -19,7 +19,8 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "types": [
-      "node"
+      "node",
+      "@types/node"
     ],
     "declaration": true,
     "outDir": "./dist",

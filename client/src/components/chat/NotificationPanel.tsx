@@ -58,8 +58,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     queryFn: async () => {
       if (!currentUser?.id) throw new Error('No user ID');
       const response = await apiRequest(`/api/notifications/unread-count?userId=${currentUser.id}`);
-      if (!response.ok) throw new Error('Failed to fetch unread count');
-      return response.json();
+      return response;
     },
     enabled: !!currentUser?.id,
     refetchInterval: 60000, // كل دقيقة بدلاً من ثانيتين

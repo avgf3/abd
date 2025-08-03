@@ -141,8 +141,53 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(user).returning();
-    return result[0];
+    try {
+      // التأكد من وجود الحقول المطلوبة
+      if (!user.username) {
+        throw new Error('Username is required');
+      }
+      
+      const result = await db.insert(users).values({
+        username: user.username,
+        password: user.password || null,
+        userType: user.userType || 'guest',
+        role: user.role || 'guest',
+        profileImage: user.profileImage || null,
+        profileBanner: user.profileBanner || null,
+        profileBackgroundColor: user.profileBackgroundColor || '#3c0d0d',
+        status: user.status || null,
+        gender: user.gender || null,
+        age: user.age || null,
+        country: user.country || null,
+        relation: user.relation || null,
+        bio: user.bio || null,
+        isOnline: user.isOnline || false,
+        isHidden: user.isHidden || false,
+        lastSeen: user.lastSeen || null,
+        joinDate: user.joinDate || new Date(),
+        createdAt: user.createdAt || new Date(),
+        isMuted: user.isMuted || false,
+        muteExpiry: user.muteExpiry || null,
+        isBanned: user.isBanned || false,
+        banExpiry: user.banExpiry || null,
+        isBlocked: user.isBlocked || false,
+        ipAddress: user.ipAddress || null,
+        deviceId: user.deviceId || null,
+        ignoredUsers: user.ignoredUsers || '[]',
+        usernameColor: user.usernameColor || '#FFFFFF',
+        userTheme: user.userTheme || 'default',
+        profileEffect: user.profileEffect || 'none',
+        points: user.points || 0,
+        level: user.level || 1,
+        totalPoints: user.totalPoints || 0,
+        levelProgress: user.levelProgress || 0
+      }).returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
@@ -212,8 +257,27 @@ export class PostgreSQLStorage implements IStorage {
 
   // Message operations
   async createMessage(message: InsertMessage): Promise<Message> {
-    const result = await db.insert(messages).values(message).returning();
-    return result[0];
+    try {
+      // التأكد من وجود الحقول المطلوبة
+      if (!message.content) {
+        throw new Error('Message content is required');
+      }
+      
+      const result = await db.insert(messages).values({
+        senderId: message.senderId || null,
+        receiverId: message.receiverId || null,
+        content: message.content,
+        messageType: message.messageType || 'text',
+        isPrivate: message.isPrivate || false,
+        roomId: message.roomId || 'general',
+        timestamp: message.timestamp || new Date()
+      }).returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating message:', error);
+      throw error;
+    }
   }
 
   async getPublicMessages(limit: number = 50): Promise<Message[]> {
@@ -502,7 +566,7 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
-  async addWallReaction(reactionData: InsertWallReaction): Promise<WallPost | null> {
+  async addWallPostReaction(reactionData: InsertWallReaction): Promise<WallPost | null> {
     try {
       // التحقق من وجود المنشور
       const post = await this.getWallPost(reactionData.postId);
@@ -913,8 +977,27 @@ export class PostgreSQLStorage implements IStorage {
 
   // Notification operations
   async createNotification(notification: InsertNotification): Promise<Notification> {
-    const result = await db.insert(notifications).values(notification).returning();
-    return result[0];
+    try {
+      // التأكد من وجود الحقول المطلوبة
+      if (!notification.userId || !notification.type || !notification.title || !notification.message) {
+        throw new Error('Missing required notification fields');
+      }
+      
+      const result = await db.insert(notifications).values({
+        userId: notification.userId,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        isRead: notification.isRead || false,
+        data: notification.data || null,
+        createdAt: notification.createdAt || new Date()
+      }).returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      throw error;
+    }
   }
 
   async getUserNotifications(userId: number, limit: number = 20): Promise<Notification[]> {

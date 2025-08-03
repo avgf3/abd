@@ -1191,8 +1191,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gender: user.gender,
         points: user.points || 0,
         createdAt: user.createdAt,
-        lastActive: user.lastActive,
-        profileColor: user.profileColor,
+        lastSeen: user.lastSeen,
+        usernameColor: user.usernameColor,
         profileEffect: user.profileEffect,
         isHidden: user.isHidden
       }));
