@@ -297,12 +297,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setSelectedPrivateUser(null);
   }, []);
 
-  const handleReportUser = useCallback((user: ChatUser, messageContent: string, messageId: number) => {
-    setReportedUser(user);
-    setReportedMessage({ content: messageContent, id: messageId });
-    setShowReportModal(true);
-  }, []);
-
   const handleAddFriend = async (user: ChatUser) => {
     if (!chat.currentUser) return;
     
