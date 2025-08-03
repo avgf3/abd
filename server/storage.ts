@@ -983,7 +983,6 @@ export class PostgreSQLStorage implements IStorage {
     }).from(blockedDevices);
     return result;
   }
-}
 
   // Points system operations
   async updateUserPoints(userId: number, updates: { points?: number; level?: number; totalPoints?: number; levelProgress?: number }): Promise<void> {
@@ -1069,95 +1068,7 @@ export class PostgreSQLStorage implements IStorage {
       return 0;
     }
   }
-
-  // Room operations - إضافة الدوال المفقودة
-  async joinRoom(userId: number, roomId: string): Promise<void> {
-    try {
-      // التحقق من وجود الغرفة
-      const room = await this.getRoom(roomId);
-      if (!room) {
-        throw new Error('الغرفة غير موجودة');
-      }
-
-      // إضافة المستخدم للغرفة
-      await db.insert(roomUsers).values({
-        roomId,
-        userId,
-        joinedAt: new Date()
-      }).onConflictDoNothing();
-
-      console.log(`👤 User ${userId} joined room: ${roomId}`);
-    } catch (error) {
-      console.error('خطأ في الانضمام للغرفة:', error);
-      throw error;
-    }
-  }
-
-  async leaveRoom(userId: number, roomId: string): Promise<void> {
-    try {
-      // إزالة المستخدم من الغرفة
-      await db.delete(roomUsers)
-        .where(and(eq(roomUsers.roomId, roomId), eq(roomUsers.userId, userId)));
-
-      console.log(`👤 User ${userId} left room: ${roomId}`);
-    } catch (error) {
-      console.error('خطأ في مغادرة الغرفة:', error);
-      throw error;
-    }
-  }
-
-  async getAllRooms(): Promise<any[]> {
-    try {
-      return await db.select().from(rooms).orderBy(asc(rooms.createdAt));
-    } catch (error) {
-      console.error('خطأ في جلب جميع الغرف:', error);
-      return [];
-    }
-  }
-
-  async createRoom(roomData: any): Promise<any> {
-    try {
-      const [newRoom] = await db.insert(rooms).values({
-        id: roomData.id || `room_${Date.now()}`,
-        name: roomData.name,
-        description: roomData.description || '',
-        isDefault: roomData.isDefault || false,
-        createdBy: roomData.createdBy || 1,
-        isActive: roomData.isActive !== false,
-        icon: roomData.icon || '',
-        isBroadcast: roomData.isBroadcast || false,
-        hostId: roomData.hostId || null,
-        speakers: roomData.speakers ? JSON.stringify(roomData.speakers) : '[]',
-        micQueue: roomData.micQueue ? JSON.stringify(roomData.micQueue) : '[]'
-      }).returning();
-
-      console.log(`🏠 Created new room: ${newRoom.name}`);
-      return newRoom;
-    } catch (error) {
-      console.error('خطأ في إنشاء الغرفة:', error);
-      throw error;
-    }
-  }
-
-  async deleteRoom(roomId: string): Promise<void> {
-    try {
-      // حذف جميع المستخدمين من الغرفة أولاً
-      await db.delete(roomUsers).where(eq(roomUsers.roomId, roomId));
-      
-      // حذف الغرفة
-      await db.delete(rooms).where(eq(rooms.id, roomId));
-
-      console.log(`🗑️ Deleted room: ${roomId}`);
-    } catch (error) {
-      console.error('خطأ في حذف الغرفة:', error);
-      throw error;
-    }
-  }
-
-  // Wall post operations - إصلاح اسم الدالة
-  async addWallReaction(reactionData: InsertWallReaction): Promise<WallPost | null> {
-    return this.addWallPostReaction(reactionData);
-  }
+}
 
 // Export instance
 export const storage = new PostgreSQLStorage();
