@@ -13,8 +13,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
+      # PORT يتم تعيينه تلقائياً بواسطة Render - لا تحدده هنا
       - key: ENABLE_WEBSOCKET
         value: true
       - key: SOCKET_IO_POLLING_ONLY
