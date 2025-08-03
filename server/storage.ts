@@ -252,6 +252,9 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
+    if (!db) {
+      throw new Error('قاعدة البيانات غير متصلة');
+    }
     return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 

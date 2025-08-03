@@ -84,23 +84,16 @@ router.get("/search", async (req, res) => {
     const limitNum = Math.min(parseInt(limit as string) || 20, 50); // حد أقصى 50
     const offset = (pageNum - 1) * limitNum;
     
-    // البحث في قاعدة البيانات مباشرة
-    const { db } = await import("../db");
-    const { users } = await import("../../shared/schema");
-    const { and, ilike, desc, sql } = await import("drizzle-orm");
+    // البحث في المستخدمين - استخدام storage
+    const allUsers = await storage.getAllUsers();
+    const searchTermLower = q.toLowerCase();
     
-    const searchResults = await db.select()
-      .from(users)
-      .where(ilike(users.username, `%${q.toLowerCase()}%`))
-      .orderBy(desc(users.createdAt))
-      .limit(limitNum)
-      .offset(offset);
+    const filteredUsers = allUsers.filter(user => 
+      user.username.toLowerCase().includes(searchTermLower)
+    );
     
-    // جلب العدد الإجمالي للنتائج
-    const totalCount = await db.select({ count: sql`count(*)` })
-      .from(users)
-      .where(ilike(users.username, `%${q.toLowerCase()}%`));
-    const total = totalCount[0]?.count || 0;
+    const total = filteredUsers.length;
+    const searchResults = filteredUsers.slice(offset, offset + limitNum);
     
     res.json({
       users: searchResults,

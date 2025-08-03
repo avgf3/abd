@@ -22,7 +22,6 @@ import bcrypt from "bcrypt";
 import sharp from "sharp";
 import { desc, sql, and, ne, ilike, or, isNotNull } from "drizzle-orm";
 import { users } from "../shared/schema";
-import { db } from "./db";
 
 // إعداد multer لرفع الصور
 const storage_multer = multer.diskStorage({
@@ -517,20 +516,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // جلب الصور من قاعدة البيانات - محسن مع حد أقصى
       try {
-        const usersWithImages = await db.select({
-          id: users.id,
-          username: users.username,
-          profileImage: users.profileImage,
-          profileBanner: users.profileBanner
-        })
-        .from(users)
-        .where(
-          or(
-            isNotNull(users.profileImage),
-            isNotNull(users.profileBanner)
-          )
-        )
-        .limit(50); // حد أقصى 50 مستخدم مع صور
+        const allUsers = await storage.getAllUsers();
+        const usersWithImages = allUsers
+          .filter(user => user.profileImage || user.profileBanner)
+          .slice(0, 50) // حد أقصى 50 مستخدم مع صور
+          .map(user => ({
+            id: user.id,
+            username: user.username,
+            profileImage: user.profileImage,
+            profileBanner: user.profileBanner
+          }));
         
         debugInfo.dbImages = usersWithImages;
       } catch (dbError) {
@@ -1192,19 +1187,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = parseInt(req.query.limit as string) || 20; // حد أقصى 20 مستخدم في كل مرة
       const offset = (page - 1) * limit;
       
-      // جلب المستخدمين مع pagination
-      const users = await db.select()
-        .from(users)
-        .orderBy(desc(users.createdAt))
-        .limit(limit)
-        .offset(offset);
+      // جلب المستخدمين مع pagination - استخدام storage
+      let allUsers;
+      try {
+        allUsers = await storage.getAllUsers();
+      } catch (error) {
+        console.error('خطأ في جلب المستخدمين:', error);
+        return res.status(500).json({ error: "خطأ في الاتصال بقاعدة البيانات" });
+      }
+      
+      const startIndex = offset;
+      const endIndex = startIndex + limit;
+      const paginatedUsers = allUsers.slice(startIndex, endIndex);
       
       // جلب العدد الإجمالي للمستخدمين
-      const totalCount = await db.select({ count: sql`count(*)` }).from(users);
-      const total = totalCount[0]?.count || 0;
+      const total = allUsers.length;
       
-      // إخفاء المعلومات الحساسة
-      const safeUsers = users.map(user => ({
+              // إخفاء المعلومات الحساسة
+        const safeUsers = paginatedUsers.map(user => ({
         id: user.id,
         username: user.username,
         userType: user.userType,
@@ -2526,29 +2526,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limitNum = Math.min(parseInt(limit as string) || 10, 20); // حد أقصى 20
       const offset = (pageNum - 1) * limitNum;
 
-      // البحث في قاعدة البيانات مباشرة بدلاً من جلب جميع المستخدمين
-      const searchResults = await db.select()
-        .from(users)
-        .where(
-          and(
-            ne(users.id, parseInt(userId as string)), // استبعاد المستخدم الحالي
-            ilike(users.username, `%${searchTerm}%`) // بحث في اسم المستخدم
-          )
-        )
-        .orderBy(desc(users.createdAt))
-        .limit(limitNum)
-        .offset(offset);
-
-      // جلب العدد الإجمالي للنتائج
-      const totalCount = await db.select({ count: sql`count(*)` })
-        .from(users)
-        .where(
-          and(
-            ne(users.id, parseInt(userId as string)),
-            ilike(users.username, `%${searchTerm}%`)
-          )
-        );
-      const total = totalCount[0]?.count || 0;
+      // البحث في المستخدمين - استخدام storage
+      const allUsers = await storage.getAllUsers();
+      const searchTermLower = searchTerm.toLowerCase();
+      
+      const filteredUsers = allUsers.filter(user => 
+        user.id !== parseInt(userId as string) && // استبعاد المستخدم الحالي
+        user.username.toLowerCase().includes(searchTermLower) // بحث في اسم المستخدم
+      );
+      
+      const total = filteredUsers.length;
+      const searchResults = filteredUsers.slice(offset, offset + limitNum);
 
       res.json({ 
         users: searchResults,
