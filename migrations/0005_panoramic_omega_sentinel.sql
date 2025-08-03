@@ -1,11 +1,11 @@
-CREATE TABLE "room_users" (
+CREATE TABLE IF NOT EXISTS "room_users" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
 	"room_id" text NOT NULL,
 	"joined_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE "rooms" (
+CREATE TABLE IF NOT EXISTS "rooms" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
@@ -20,7 +20,7 @@ CREATE TABLE "rooms" (
 	"created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE "wall_posts" (
+CREATE TABLE IF NOT EXISTS "wall_posts" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
 	"username" text NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE "wall_posts" (
 	"updated_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE "wall_reactions" (
+CREATE TABLE IF NOT EXISTS "wall_reactions" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"post_id" integer NOT NULL,
 	"user_id" integer NOT NULL,

@@ -637,11 +637,17 @@ export function useChat() {
       return;
     }
 
+    // التحقق من المحتوى
+    if (!content || content === 'undefined' || content.trim() === '') {
+      console.error('❌ لا يمكن إرسال رسالة فارغة');
+      return;
+    }
+
     const targetRoomId = roomId || state.currentRoomId;
 
     const messageData = {
       senderId: state.currentUser.id,
-      content,
+      content: content.trim(), // تنظيف المحتوى
       messageType,
       isPrivate: !!receiverId,
       receiverId,
