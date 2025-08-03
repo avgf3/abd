@@ -35,9 +35,10 @@ import type { ChatUser, ChatRoom } from '@/types/chat';
 interface ChatInterfaceProps {
   chat: ReturnType<typeof useChat>;
   onLogout: () => void;
+  roomId?: string | null;
 }
 
-export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
+export default function ChatInterface({ chat, onLogout, roomId }: ChatInterfaceProps) {
   const [showProfile, setShowProfile] = useState(false);
   const [profileUser, setProfileUser] = useState<ChatUser | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -47,6 +48,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   
   // إدارة موحدة للعرض النشط
   const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms'>('users');
+  
+  // الانضمام للغرفة عند التحميل
+  useEffect(() => {
+    if (roomId && chat.joinRoom) {
+      chat.joinRoom(roomId);
+    }
+  }, [roomId, chat]);
   
   // حالة الغرف
   const [rooms, setRooms] = useState<ChatRoom[]>([]);

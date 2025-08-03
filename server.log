@@ -1,6 +1,10 @@
-[dotenv@17.2.0] injecting env (10) from .env (tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' })
+
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+
+[dotenv@17.2.1] injecting env (5) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar
 The `fetchConnectionCache` option is deprecated (now always `true`)
-[dotenv@17.2.0] injecting env (0) from .env (tip: 🔐 encrypt with dotenvx: https://dotenvx.com)
+[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
 {
   severity_local: 'NOTICE',
   severity: 'NOTICE',
@@ -19,17 +23,44 @@ The `fetchConnectionCache` option is deprecated (now always `true`)
   line: '207',
   routine: 'transformCreateStmt'
 }
-❌ Error running migrations: DrizzleQueryError: Failed query: CREATE TABLE "level_settings" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"level" integer NOT NULL,
-	"required_points" integer NOT NULL,
-	"title" text NOT NULL,
-	"color" text DEFAULT '#FFFFFF',
-	"benefits" jsonb,
-	"created_at" timestamp DEFAULT now(),
-	CONSTRAINT "level_settings_level_unique" UNIQUE("level")
-);
-
+{
+  severity_local: 'NOTICE',
+  severity: 'NOTICE',
+  code: '42P07',
+  message: 'relation "room_users" already exists, skipping',
+  file: 'parse_utilcmd.c',
+  line: '207',
+  routine: 'transformCreateStmt'
+}
+{
+  severity_local: 'NOTICE',
+  severity: 'NOTICE',
+  code: '42P07',
+  message: 'relation "rooms" already exists, skipping',
+  file: 'parse_utilcmd.c',
+  line: '207',
+  routine: 'transformCreateStmt'
+}
+{
+  severity_local: 'NOTICE',
+  severity: 'NOTICE',
+  code: '42P07',
+  message: 'relation "wall_posts" already exists, skipping',
+  file: 'parse_utilcmd.c',
+  line: '207',
+  routine: 'transformCreateStmt'
+}
+{
+  severity_local: 'NOTICE',
+  severity: 'NOTICE',
+  code: '42P07',
+  message: 'relation "wall_reactions" already exists, skipping',
+  file: 'parse_utilcmd.c',
+  line: '207',
+  routine: 'transformCreateStmt'
+}
+❌ Error running migrations: DrizzleQueryError: Failed query: 
+ALTER TABLE "rooms" ADD CONSTRAINT "rooms_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
 params: 
     at PostgresJsPreparedQuery.queryWithCache (file:///workspace/node_modules/drizzle-orm/pg-core/session.js:42:15)
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
@@ -38,20 +69,12 @@ params:
     at async Function.begin (file:///workspace/node_modules/postgres/src/index.js:243:14)
     at async PgDialect.migrate (file:///workspace/node_modules/drizzle-orm/pg-core/dialect.js:60:5)
     at async migrate (file:///workspace/node_modules/drizzle-orm/postgres-js/migrator.js:4:3)
-    at async runMigrations (file:///workspace/dist/index.js:6064:5)
-    at async file:///workspace/dist/index.js:6515:7 {
-  query: 'CREATE TABLE "level_settings" (\n' +
-    '\t"id" serial PRIMARY KEY NOT NULL,\n' +
-    '\t"level" integer NOT NULL,\n' +
-    '\t"required_points" integer NOT NULL,\n' +
-    '\t"title" text NOT NULL,\n' +
-    `\t"color" text DEFAULT '#FFFFFF',\n` +
-    '\t"benefits" jsonb,\n' +
-    '\t"created_at" timestamp DEFAULT now(),\n' +
-    '\tCONSTRAINT "level_settings_level_unique" UNIQUE("level")\n' +
-    ');\n',
+    at async runMigrations (file:///workspace/dist/index.js:6491:5)
+    at async file:///workspace/dist/index.js:6983:7 {
+  query: '\n' +
+    'ALTER TABLE "rooms" ADD CONSTRAINT "rooms_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;',
   params: [],
-  cause: PostgresError: relation "level_settings" already exists
+  cause: PostgresError: constraint "rooms_created_by_users_id_fk" for relation "rooms" already exists
       at ErrorResponse (file:///workspace/node_modules/postgres/src/connection.js:794:26)
       at handle (file:///workspace/node_modules/postgres/src/connection.js:480:6)
       at Socket.data (file:///workspace/node_modules/postgres/src/connection.js:315:9)
@@ -62,10 +85,16 @@ params:
       at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
     severity_local: 'ERROR',
     severity: 'ERROR',
-    code: '42P07',
-    file: 'heap.c',
-    line: '1159',
-    routine: 'heap_create_with_catalog'
+    code: '42710',
+    file: 'tablecmds.c',
+    line: '9354',
+    routine: 'ATExecAddConstraint'
   }
 }
-[2025-07-25T13:48:25.291Z] INFO: 🔄 Initializing database tables...
+❌ Migration failed - stopping application
+✅ Manual table creation completed
+🔧 Checking for missing columns...
+✅ Added missing role column
+✅ Missing columns check completed
+✅ Owner already exists
+[2025-08-03T22:07:29.886Z] PROD: ✅ Database initialization completed successfully

@@ -273,7 +273,7 @@ async function createTablesManually(): Promise<void> {
           color TEXT DEFAULT '#FFFFFF',
           benefits JSONB,
           created_at TIMESTAMP DEFAULT NOW()
-        ) ON CONFLICT DO NOTHING
+        )
       `);
     }
     
