@@ -20,6 +20,9 @@ import path from "path";
 import fs from "fs";
 import bcrypt from "bcrypt";
 import sharp from "sharp";
+import { desc, sql, and, ne, ilike, or, isNotNull } from "drizzle-orm";
+import { users } from "../shared/schema";
+import { db } from "./db";
 
 // إعداد multer لرفع الصور
 const storage_multer = multer.diskStorage({
@@ -512,17 +515,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }));
       }
       
-      // جلب الصور من قاعدة البيانات
+      // جلب الصور من قاعدة البيانات - محسن مع حد أقصى
       try {
-        const users = await storage.getAllUsers();
-        debugInfo.dbImages = users
-          .filter(user => user.profileImage || user.profileBanner)
-          .map(user => ({
-            id: user.id,
-            username: user.username,
-            profileImage: user.profileImage,
-            profileBanner: user.profileBanner
-          }));
+        const usersWithImages = await db.select({
+          id: users.id,
+          username: users.username,
+          profileImage: users.profileImage,
+          profileBanner: users.profileBanner
+        })
+        .from(users)
+        .where(
+          or(
+            isNotNull(users.profileImage),
+            isNotNull(users.profileBanner)
+          )
+        )
+        .limit(50); // حد أقصى 50 مستخدم مع صور
+        
+        debugInfo.dbImages = usersWithImages;
       } catch (dbError) {
         debugInfo.dbImages = [`خطأ في قاعدة البيانات: ${(dbError as Error).message}`];
       }
@@ -1175,10 +1185,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User routes
-  // جلب جميع المستخدمين
+  // جلب جميع المستخدمين - محسن مع pagination
   app.get("/api/users", async (req, res) => {
     try {
-      const users = await storage.getAllUsers();
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20; // حد أقصى 20 مستخدم في كل مرة
+      const offset = (page - 1) * limit;
+      
+      // جلب المستخدمين مع pagination
+      const users = await db.select()
+        .from(users)
+        .orderBy(desc(users.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      // جلب العدد الإجمالي للمستخدمين
+      const totalCount = await db.select({ count: sql`count(*)` }).from(users);
+      const total = totalCount[0]?.count || 0;
+      
       // إخفاء المعلومات الحساسة
       const safeUsers = users.map(user => ({
         id: user.id,
@@ -1196,9 +1220,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileEffect: user.profileEffect,
         isHidden: user.isHidden
       }));
-      res.json({ users: safeUsers });
+      
+      res.json({ 
+        users: safeUsers,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page * limit < total,
+          hasPrev: page > 1
+        }
+      });
     } catch (error) {
-      console.error('خطأ في جلب جميع المستخدمين:', error);
+      console.error('خطأ في جلب المستخدمين:', error);
       res.status(500).json({ error: "خطأ في الخادم" });
     }
   });
@@ -2477,25 +2512,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Friend system APIs
   
-  // البحث عن المستخدمين
+  // البحث عن المستخدمين - محسن مع pagination
   app.get("/api/users/search", async (req, res) => {
     try {
-      const { q, userId } = req.query;
+      const { q, userId, page = 1, limit = 10 } = req.query;
       
       if (!q || !userId) {
         return res.status(400).json({ error: "معاملات البحث مطلوبة" });
       }
 
-      const allUsers = await storage.getAllUsers();
       const searchTerm = (q as string).toLowerCase();
-      
-      const filteredUsers = allUsers.filter(user => 
-        user.id !== parseInt(userId as string) && // استبعاد المستخدم الحالي
-        user.username.toLowerCase().includes(searchTerm)
-      ).slice(0, 10); // حد أقصى 10 نتائج
+      const pageNum = parseInt(page as string) || 1;
+      const limitNum = Math.min(parseInt(limit as string) || 10, 20); // حد أقصى 20
+      const offset = (pageNum - 1) * limitNum;
 
-      res.json({ users: filteredUsers });
+      // البحث في قاعدة البيانات مباشرة بدلاً من جلب جميع المستخدمين
+      const searchResults = await db.select()
+        .from(users)
+        .where(
+          and(
+            ne(users.id, parseInt(userId as string)), // استبعاد المستخدم الحالي
+            ilike(users.username, `%${searchTerm}%`) // بحث في اسم المستخدم
+          )
+        )
+        .orderBy(desc(users.createdAt))
+        .limit(limitNum)
+        .offset(offset);
+
+      // جلب العدد الإجمالي للنتائج
+      const totalCount = await db.select({ count: sql`count(*)` })
+        .from(users)
+        .where(
+          and(
+            ne(users.id, parseInt(userId as string)),
+            ilike(users.username, `%${searchTerm}%`)
+          )
+        );
+      const total = totalCount[0]?.count || 0;
+
+      res.json({ 
+        users: searchResults,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum),
+          hasNext: pageNum * limitNum < total,
+          hasPrev: pageNum > 1
+        }
+      });
     } catch (error) {
+      console.error('خطأ في البحث عن المستخدمين:', error);
       res.status(500).json({ error: "خطأ في الخادم" });
     }
   });

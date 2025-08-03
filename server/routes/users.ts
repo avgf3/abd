@@ -72,20 +72,47 @@ router.post("/:userId/stealth", async (req, res) => {
   }
 });
 
-// User search
+// User search - محسن مع pagination
 router.get("/search", async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, page = 1, limit = 20 } = req.query;
     if (!q || typeof q !== 'string') {
       return res.status(400).json({ error: "معطى البحث مطلوب" });
     }
     
-    const allUsers = await storage.getAllUsers();
-    const filteredUsers = allUsers.filter(user => 
-      user.username.toLowerCase().includes(q.toLowerCase())
-    );
+    const pageNum = parseInt(page as string) || 1;
+    const limitNum = Math.min(parseInt(limit as string) || 20, 50); // حد أقصى 50
+    const offset = (pageNum - 1) * limitNum;
     
-    res.json(filteredUsers);
+    // البحث في قاعدة البيانات مباشرة
+    const { db } = await import("../db");
+    const { users } = await import("../../shared/schema");
+    const { and, ilike, desc, sql } = await import("drizzle-orm");
+    
+    const searchResults = await db.select()
+      .from(users)
+      .where(ilike(users.username, `%${q.toLowerCase()}%`))
+      .orderBy(desc(users.createdAt))
+      .limit(limitNum)
+      .offset(offset);
+    
+    // جلب العدد الإجمالي للنتائج
+    const totalCount = await db.select({ count: sql`count(*)` })
+      .from(users)
+      .where(ilike(users.username, `%${q.toLowerCase()}%`));
+    const total = totalCount[0]?.count || 0;
+    
+    res.json({
+      users: searchResults,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+        hasNext: pageNum * limitNum < total,
+        hasPrev: pageNum > 1
+      }
+    });
   } catch (error) {
     console.error("Error searching users:", error);
     res.status(500).json({ error: "خطأ في الخادم" });
