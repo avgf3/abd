@@ -72,20 +72,40 @@ router.post("/:userId/stealth", async (req, res) => {
   }
 });
 
-// User search
+// User search - محسن مع pagination
 router.get("/search", async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, page = 1, limit = 20 } = req.query;
     if (!q || typeof q !== 'string') {
       return res.status(400).json({ error: "معطى البحث مطلوب" });
     }
     
+    const pageNum = parseInt(page as string) || 1;
+    const limitNum = Math.min(parseInt(limit as string) || 20, 50); // حد أقصى 50
+    const offset = (pageNum - 1) * limitNum;
+    
+    // البحث في المستخدمين - استخدام storage
     const allUsers = await storage.getAllUsers();
+    const searchTermLower = q.toLowerCase();
+    
     const filteredUsers = allUsers.filter(user => 
-      user.username.toLowerCase().includes(q.toLowerCase())
+      user.username.toLowerCase().includes(searchTermLower)
     );
     
-    res.json(filteredUsers);
+    const total = filteredUsers.length;
+    const searchResults = filteredUsers.slice(offset, offset + limitNum);
+    
+    res.json({
+      users: searchResults,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+        hasNext: pageNum * limitNum < total,
+        hasPrev: pageNum > 1
+      }
+    });
   } catch (error) {
     console.error("Error searching users:", error);
     res.status(500).json({ error: "خطأ في الخادم" });

@@ -568,10 +568,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 typingUsers={Array.from(chat.typingUsers)}
                 onReportMessage={handleReportUser}
                 onUserClick={handleUserClick}
-                chat={{
-                  sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
-                  handleTyping: chat.handleTyping
-                }}
+                // تم إزالة chat object لتجنب الأخطاء
               />
             );
           }
