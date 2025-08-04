@@ -148,24 +148,28 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
       };
     
     case 'ADD_ROOM_MESSAGE':
-      const { roomId, message: roomMessage } = action.payload;
+      const { roomId, message } = action.payload;
+      const newRoomMessages = { ...state.roomMessages };
       
-      // التحقق من نوع الرسالة - يمكن أن تكون رسالة واحدة أو مصفوفة
-      const messagesToAdd = Array.isArray(roomMessage) ? roomMessage : [roomMessage];
+      if (Array.isArray(message)) {
+        // إضافة عدة رسائل
+        newRoomMessages[roomId] = message;
+      } else {
+        // إضافة رسالة واحدة
+        if (!newRoomMessages[roomId]) {
+          newRoomMessages[roomId] = [];
+        }
+        newRoomMessages[roomId] = [...newRoomMessages[roomId], message];
+      }
       
-      const updatedRoomMessages = {
-        ...state.roomMessages,
-        [roomId]: [...(state.roomMessages[roomId] || []), ...messagesToAdd]
-      };
-      
-      // If it's the current room, also update public messages
+      // تحديث الرسائل العامة إذا كانت الغرفة هي الغرفة الحالية
       const updatedPublicMessages = roomId === state.currentRoomId
-        ? [...state.publicMessages, ...messagesToAdd]
+        ? newRoomMessages[roomId]
         : state.publicMessages;
       
       return {
         ...state,
-        roomMessages: updatedRoomMessages,
+        roomMessages: newRoomMessages,
         publicMessages: updatedPublicMessages
       };
     
@@ -387,7 +391,7 @@ export function useChat() {
               
               if (!state.ignoredUsers.has(message.message.senderId)) {
                 const chatMessage = message.message as ChatMessage;
-                // استخدام roomId من الرسالة مع fallback للغرفة العامة
+                // إضافة roomId من الرسالة مع fallback للغرفة العامة
                 const messageRoomId = (chatMessage as any).roomId || 'general';
                 console.log(`✅ إضافة رسالة للغرفة ${messageRoomId} (الغرفة الحالية: ${state.currentRoomId})`);
                 
@@ -399,6 +403,11 @@ export function useChat() {
                 // تشغيل صوت الإشعار للرسائل من الآخرين في الغرفة الحالية فقط
                 if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoomId) {
                   playNotificationSound();
+                }
+
+                // إظهار التنبيه فقط للرسائل في الغرفة الحالية
+                if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoomId) {
+                  dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: chatMessage.sender });
                 }
               } else {
                 console.log('🚫 رسالة من مستخدم متجاهل:', message.message.senderId);
@@ -487,25 +496,60 @@ export function useChat() {
             
           case 'roomJoined':
             if (message.roomId) {
-              console.log(`✅ تأكيد انضمام للغرفة: ${message.roomId}`);
+              console.log(`✅ تم الانضمام للغرفة: ${message.roomId}`);
               dispatch({ type: 'SET_ROOM', payload: message.roomId });
               
-              // تحميل رسائل الغرفة
+              // تحميل رسائل الغرفة الجديدة
               loadRoomMessages(message.roomId);
               
-              // تحديث قائمة المستخدمين المتصلين في الغرفة
-              if (message.users && Array.isArray(message.users)) {
-                console.log(`👥 تحديث قائمة مستخدمي الغرفة ${message.roomId}:`, message.users.length);
+              // تحديث قائمة المستخدمين في الغرفة
+              if (message.users) {
                 dispatch({ type: 'SET_ONLINE_USERS', payload: message.users });
               }
               
-              // طلب قائمة محدثة من المستخدمين المتصلين في الغرفة
-              setTimeout(() => {
-                if (socket.current?.connected) {
-                  socket.current.emit('requestOnlineUsers');
-                }
-              }, 200);
+              // إرسال رسالة ترحيب محلية (لا تُحفظ في قاعدة البيانات)
+              const welcomeMessage: ChatMessage = {
+                id: Date.now(),
+                content: `مرحباً بك في غرفة ${message.roomId}! 👋`,
+                timestamp: new Date(),
+                senderId: -1, // معرف خاص للنظام
+                sender: {
+                  id: -1,
+                  username: 'النظام',
+                  userType: 'moderator',
+                  role: 'system',
+                  level: 0,
+                  points: 0,
+                  achievements: [],
+                  lastSeen: new Date(),
+                  isOnline: true,
+                  isBanned: false,
+                  isActive: true,
+                  currentRoom: '',
+                  settings: {
+                    theme: 'default',
+                    language: 'ar',
+                    notifications: true,
+                    soundEnabled: true,
+                    privateMessages: true
+                  }
+                },
+                messageType: 'system',
+                isPrivate: false
+              };
+              
+              dispatch({ 
+                type: 'ADD_ROOM_MESSAGE', 
+                payload: { roomId: message.roomId, message: welcomeMessage }
+              });
             }
+            
+            // طلب قائمة محدثة من المستخدمين المتصلين في الغرفة
+            setTimeout(() => {
+              if (socket.current?.connected) {
+                socket.current.emit('requestOnlineUsers');
+              }
+            }, 200);
             break;
             
           case 'userJoinedRoom':

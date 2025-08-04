@@ -99,7 +99,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   // جلب الغرف عند تحميل المكون
   useEffect(() => {
+    console.log('🚀 تحميل مكون ChatInterface - جلب الغرف...');
     fetchRooms();
+    
+    // إعادة جلب الغرف كل 30 ثانية للتأكد من التحديث
+    const interval = setInterval(() => {
+      console.log('🔄 تحديث دوري للغرف...');
+      fetchRooms();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   // دوال إدارة الغرف
@@ -107,11 +116,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     console.log(`🔄 تغيير الغرفة من ${currentRoomId} إلى ${roomId}`);
     setCurrentRoomId(roomId);
     chat.joinRoom(roomId);
-    
-    // انتظار قصير للتأكد من انضمام الغرفة
-    setTimeout(() => {
-      console.log(`✅ تم تحديث الغرفة الحالية إلى: ${roomId}`);
-    }, 100);
   };
 
   // دالة تحديث الغرف
@@ -139,16 +143,20 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       if (response.ok) {
         const data = await response.json();
-        const newRoom = {
+        const newRoom: ChatRoom = {
           id: data.room.id,
           name: data.room.name,
           description: data.room.description || '',
-          isDefault: data.room.is_default,
+          isDefault: data.room.is_default || false,
           createdBy: data.room.created_by,
           createdAt: new Date(data.room.created_at),
-          isActive: data.room.is_active,
+          isActive: data.room.is_active || true,
           userCount: 0,
-          icon: data.room.icon || ''
+          icon: data.room.icon || '',
+          isBroadcast: data.room.is_broadcast || false,
+          hostId: data.room.host_id || null,
+          speakers: data.room.speakers || [],
+          micQueue: data.room.mic_queue || []
         };
         setRooms(prev => [...prev, newRoom]);
         toast({
@@ -180,7 +188,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       if (response.ok) {
         setRooms(prev => prev.filter(room => room.id !== roomId));
         if (currentRoomId === roomId) {
-          setCurrentRoomId('general'); // العودة للغرفة الرئيسية
+          setCurrentRoomId('general');
+          chat.joinRoom('general');
         }
         toast({
           title: "تم حذف الغرفة",
@@ -208,8 +217,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showActiveActions, setShowActiveActions] = useState(false);
   const [showPromotePanel, setShowPromotePanel] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
-
-
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
     sender: ChatUser | null;
@@ -217,20 +224,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     show: false,
     sender: null,
   });
-
-  // جلب الغرف عند تحميل المكون
-  useEffect(() => {
-    console.log('🚀 تحميل مكون ChatInterface - جلب الغرف...');
-    fetchRooms();
-    
-    // إعادة جلب الغرف كل 30 ثانية للتأكد من التحديث
-    const interval = setInterval(() => {
-      console.log('🔄 تحديث دوري للغرف...');
-      fetchRooms();
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
 
   // إضافة useEffect لمراقبة تغييرات الغرف
   useEffect(() => {
