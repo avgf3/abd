@@ -108,7 +108,7 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'SET_PUBLIC_MESSAGES':
       return { ...state, publicMessages: action.payload };
     
-    case 'ADD_PRIVATE_MESSAGE':
+    case 'ADD_PRIVATE_MESSAGE': {
       const { userId, message } = action.payload;
       return {
         ...state,
@@ -117,6 +117,7 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
           [userId]: [...(state.privateConversations[userId] || []), message]
         }
       };
+    }
     
     case 'SET_CONNECTION_STATUS':
       return { ...state, isConnected: action.payload };
@@ -139,15 +140,16 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
         notifications: [...state.notifications, action.payload] 
       };
     
-    case 'SET_ROOM':
+    case 'SET_ROOM': {
       const currentMessages = state.roomMessages[action.payload] || [];
       return { 
         ...state, 
         currentRoomId: action.payload,
         publicMessages: currentMessages
       };
+    }
     
-    case 'ADD_ROOM_MESSAGE':
+    case 'ADD_ROOM_MESSAGE': {
       const { roomId, message } = action.payload;
       const newRoomMessages = { ...state.roomMessages };
       
@@ -172,6 +174,7 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
         roomMessages: newRoomMessages,
         publicMessages: updatedPublicMessages
       };
+    }
     
     case 'SET_SHOW_KICK_COUNTDOWN':
       return { ...state, showKickCountdown: action.payload };
