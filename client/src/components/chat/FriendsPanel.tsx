@@ -73,7 +73,7 @@ export default function FriendsPanel({
     
     setLoading(true);
     try {
-      const response = await fetch(`/api/friends/${currentUser.id}`);
+      const response = await apiRequest(`/api/friends/${currentUser.id}`);
       if (response.ok) {
         const data = await response.json();
         if (data && Array.isArray(data.friends)) {
@@ -107,8 +107,8 @@ export default function FriendsPanel({
     
     try {
       const [incomingResponse, outgoingResponse] = await Promise.all([
-        fetch(`/api/friend-requests/incoming/${currentUser.id}`).catch(() => ({ ok: false })),
-        fetch(`/api/friend-requests/outgoing/${currentUser.id}`).catch(() => ({ ok: false }))
+        apiRequest(`/api/friend-requests/incoming/${currentUser.id}`),
+        apiRequest(`/api/friend-requests/outgoing/${currentUser.id}`)
       ]);
       
       const incoming = incomingResponse.ok && typeof incomingResponse.json === 'function' ? await incomingResponse.json() : { requests: [] };
@@ -132,17 +132,85 @@ export default function FriendsPanel({
     onClose();
   };
 
-  const handleAddFriend = async (username: string) => {
+  const handleAcceptRequest = async (requestId: number) => {
+    try {
+      const response = await apiRequest(`/api/friend-requests/${requestId}/accept`, {
+        method: 'POST'
+      });
+      
+      toast({
+        title: 'تم قبول الطلب',
+        description: 'تم قبول طلب الصداقة بنجاح',
+        variant: 'default'
+      });
+      
+      fetchFriendRequests(); // تحديث طلبات الصداقة
+    } catch (error) {
+      console.error('Accept friend request error:', error);
+      toast({
+        title: 'خطأ',
+        description: error instanceof Error ? error.message : 'فشل في قبول طلب الصداقة',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleRejectRequest = async (requestId: number) => {
+    try {
+      const response = await apiRequest(`/api/friend-requests/${requestId}/reject`, {
+        method: 'POST'
+      });
+      
+      toast({
+        title: 'تم رفض الطلب',
+        description: 'تم رفض طلب الصداقة بنجاح',
+        variant: 'default'
+      });
+      
+      fetchFriendRequests(); // تحديث طلبات الصداقة
+    } catch (error) {
+      console.error('Reject friend request error:', error);
+      toast({
+        title: 'خطأ',
+        description: error instanceof Error ? error.message : 'فشل في رفض طلب الصداقة',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleCancelRequest = async (requestId: number) => {
+    try {
+      const response = await apiRequest(`/api/friend-requests/${requestId}`, {
+        method: 'DELETE'
+      });
+      
+      toast({
+        title: 'تم إلغاء الطلب',
+        description: 'تم إلغاء طلب الصداقة بنجاح',
+        variant: 'default'
+      });
+      
+      fetchFriendRequests(); // تحديث طلبات الصداقة
+    } catch (error) {
+      console.error('Cancel friend request error:', error);
+      toast({
+        title: 'خطأ',
+        description: error instanceof Error ? error.message : 'فشل في إلغاء طلب الصداقة',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleAddFriend = async (userId: number) => {
     if (!currentUser) return;
     
     try {
-      await apiRequest('/api/friend-requests/by-username', {
+      const response = await apiRequest('/api/friend-requests', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          senderId: currentUser.id, 
-          targetUsername: username 
-        })
+        body: {
+          senderId: currentUser.id,
+          receiverId: userId
+        }
       });
       
       toast({
@@ -349,6 +417,10 @@ export default function FriendsPanel({
         isOpen={showFriendRequests}
         onClose={() => setShowFriendRequests(false)}
         currentUser={currentUser}
+        onAcceptRequest={handleAcceptRequest}
+        onRejectRequest={handleRejectRequest}
+        onCancelRequest={handleCancelRequest}
+        friendRequests={friendRequests}
       />
     </Dialog>
   );

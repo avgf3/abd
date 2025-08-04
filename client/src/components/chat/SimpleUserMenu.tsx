@@ -38,11 +38,14 @@ export default function SimpleUserMenu({
 
   const handleMute = async () => {
     try {
-      await apiRequest('POST', '/api/moderation/mute', {
-        moderatorId: currentUser?.id || 0,
-        targetUserId: targetUser.id,
-        reason: 'مكتوم',
-        duration: 0 // كتم دائم
+      await apiRequest('/api/moderation/mute', {
+        method: 'POST',
+        body: {
+          moderatorId: currentUser?.id || 0,
+          userId: targetUser.id,
+          reason: 'سلوك غير لائق',
+          duration: 0 // كتم دائم
+        }
       });
 
       toast({
@@ -63,11 +66,14 @@ export default function SimpleUserMenu({
 
   const handleKick = async () => {
     try {
-      await apiRequest('POST', '/api/moderation/ban', {
-        moderatorId: currentUser?.id || 0,
-        targetUserId: targetUser.id,
-        reason: 'مطرود',
-        duration: 15
+      await apiRequest('/api/moderation/ban', {
+        method: 'POST',
+        body: {
+          moderatorId: currentUser?.id || 0,
+          userId: targetUser.id,
+          reason: 'انتهاك قوانين الدردشة',
+          duration: 15
+        }
       });
 
       toast({
@@ -88,12 +94,15 @@ export default function SimpleUserMenu({
 
   const handleBlock = async () => {
     try {
-      await apiRequest('POST', '/api/moderation/block', {
-        moderatorId: currentUser?.id || 0,
-        targetUserId: targetUser.id,
-        reason: 'محجوب',
-        ipAddress: 'unknown',
-        deviceId: 'unknown'
+      await apiRequest('/api/moderation/block', {
+        method: 'POST',
+        body: {
+          moderatorId: currentUser?.id || 0,
+          userId: targetUser.id,
+          reason: 'محاولة تخريب النظام',
+          ipAddress: targetUser.ipAddress || 'unknown',
+          deviceId: 'unknown'
+        }
       });
 
       toast({
