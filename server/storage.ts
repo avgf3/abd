@@ -31,6 +31,58 @@ declare global {
   var wallPosts: any[] | undefined;
 }
 
+// إضافة cache للمستخدمين المتصلين لتقليل استعلامات قاعدة البيانات
+interface UserCache {
+  users: User[];
+  timestamp: number;
+  roomId?: string;
+}
+
+class StorageCache {
+  private onlineUsersCache: Map<string, UserCache> = new Map();
+  private readonly CACHE_DURATION = 15000; // 15 ثانية
+  
+  isValid(timestamp: number): boolean {
+    return Date.now() - timestamp < this.CACHE_DURATION;
+  }
+  
+  getOnlineUsers(roomId?: string): User[] | null {
+    const key = roomId || 'global';
+    const cached = this.onlineUsersCache.get(key);
+    if (cached && this.isValid(cached.timestamp)) {
+      return cached.users;
+    }
+    return null;
+  }
+  
+  setOnlineUsers(users: User[], roomId?: string): void {
+    const key = roomId || 'global';
+    this.onlineUsersCache.set(key, {
+      users,
+      timestamp: Date.now(),
+      roomId
+    });
+  }
+  
+  invalidateCache(roomId?: string): void {
+    if (roomId) {
+      this.onlineUsersCache.delete(roomId);
+    } else {
+      this.onlineUsersCache.clear();
+    }
+  }
+  
+  // تنظيف cache منتهي الصلاحية دورياً
+  cleanup(): void {
+    const now = Date.now();
+    for (const [key, cache] of this.onlineUsersCache.entries()) {
+      if (!this.isValid(cache.timestamp)) {
+        this.onlineUsersCache.delete(key);
+      }
+    }
+  }
+}
+
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
@@ -128,6 +180,14 @@ export interface IStorage {
 }
 
 export class PostgreSQLStorage implements IStorage {
+  private cache = new StorageCache();
+  
+  // تنظيف cache كل دقيقة
+  constructor() {
+    setInterval(() => {
+      this.cache.cleanup();
+    }, 60000);
+  }
   
   // User operations
   async getUser(id: number): Promise<User | undefined> {
@@ -169,6 +229,9 @@ export class PostgreSQLStorage implements IStorage {
         lastSeen: new Date()
       })
       .where(eq(users.id, id));
+    
+    // إبطال cache عند تغيير حالة الاتصال
+    this.cache.invalidateCache();
   }
 
   async setUserHiddenStatus(id: number, isHidden: boolean): Promise<void> {
@@ -203,7 +266,20 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async getOnlineUsers(): Promise<User[]> {
-    return await db.select().from(users).where(eq(users.isOnline, true));
+    // التحقق من cache أولاً
+    const cached = this.cache.getOnlineUsers();
+    if (cached) {
+      console.log('💾 استخدام cache للمستخدمين المتصلين');
+      return cached;
+    }
+    
+    console.log('🔍 جلب المستخدمين المتصلين من قاعدة البيانات');
+    const users = await db.select().from(users).where(eq(users.isOnline, true));
+    
+    // حفظ في cache
+    this.cache.setOnlineUsers(users);
+    
+    return users;
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -730,6 +806,9 @@ export class PostgreSQLStorage implements IStorage {
       } else {
         console.log(`ℹ️ المستخدم ${userId} موجود بالفعل في الغرفة ${roomId}`);
       }
+      
+      // إبطال cache للغرفة
+      this.cache.invalidateCache(roomId);
     } catch (error) {
       console.error('خطأ في انضمام المستخدم للغرفة:', error);
       throw error;
@@ -740,6 +819,9 @@ export class PostgreSQLStorage implements IStorage {
     try {
       await db.delete(roomUsers)
         .where(and(eq(roomUsers.userId, userId), eq(roomUsers.roomId, roomId)));
+      
+      // إبطال cache للغرفة
+      this.cache.invalidateCache(roomId);
     } catch (error) {
       console.error('خطأ في مغادرة المستخدم للغرفة:', error);
       throw error;
@@ -774,23 +856,70 @@ export class PostgreSQLStorage implements IStorage {
 
   async getOnlineUsersInRoom(roomId: string): Promise<User[]> {
     try {
-      console.log(`🔍 جلب المستخدمين المتصلين في الغرفة ${roomId}`);
+      // التحقق من cache أولاً
+      const cached = this.cache.getOnlineUsers(roomId);
+      if (cached) {
+        console.log(`💾 استخدام cache للمستخدمين المتصلين في الغرفة ${roomId}`);
+        return cached;
+      }
       
-      // جلب المستخدمين المتصلين والموجودين في الغرفة المحددة
-      const result = await db.select()
+      console.log(`🔍 جلب المستخدمين المتصلين في الغرفة ${roomId} من قاعدة البيانات`);
+      
+      // استعلام محسن مع فلترة أفضل
+      const result = await db.select({
+        id: users.id,
+        username: users.username,
+        userType: users.userType,
+        role: users.role,
+        isOnline: users.isOnline,
+        profileImage: users.profileImage,
+        level: users.level,
+        gender: users.gender,
+        points: users.points,
+        createdAt: users.createdAt,
+        lastSeen: users.lastSeen,
+        profileColor: users.profileColor,
+        profileEffect: users.profileEffect,
+        isHidden: users.isHidden,
+        usernameColor: users.usernameColor,
+        isBanned: users.isBanned,
+        isMuted: users.isMuted,
+        isActive: users.isActive
+      })
         .from(users)
         .innerJoin(roomUsers, eq(users.id, roomUsers.userId))
         .where(
           and(
             eq(roomUsers.roomId, roomId),
-            eq(users.isOnline, true)
+            eq(users.isOnline, true),
+            eq(users.isActive, true), // إضافة فلترة للمستخدمين النشطين فقط
+            or(
+              eq(users.isBanned, false),
+              sql`${users.isBanned} IS NULL`
+            )
           )
-        );
+        )
+        .orderBy(asc(users.username)); // ترتيب أبجدي
       
-      const users_list = result.map(row => row.users);
-      console.log(`👥 وجد ${users_list.length} مستخدمين متصلين في الغرفة ${roomId}: ${users_list.map(u => u.username).join(', ')}`);
+      const users_list = result as User[];
       
-      return users_list;
+      // فلترة إضافية في JavaScript لضمان البيانات الصحيحة
+      const validUsers = users_list.filter(user => 
+        user.username && 
+        user.username.trim() !== '' && 
+        user.username !== 'مستخدم' &&
+        user.isOnline === true
+      );
+      
+      console.log(`👥 وجد ${validUsers.length} مستخدمين متصلين صالحين في الغرفة ${roomId}`);
+      if (validUsers.length > 0) {
+        console.log(`👥 المستخدمون: ${validUsers.map(u => u.username).join(', ')}`);
+      }
+      
+      // حفظ في cache
+      this.cache.setOnlineUsers(validUsers, roomId);
+      
+      return validUsers;
     } catch (error) {
       console.error('خطأ في جلب المستخدمين المتصلين في الغرفة:', error);
       return [];

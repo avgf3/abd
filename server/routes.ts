@@ -1745,17 +1745,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const currentRoom = (socket as any).currentRoom || 'general';
+        
+        // تحسين: تجنب الطلبات المتكررة المتتالية
+        const now = Date.now();
+        const lastRequest = (socket as any).lastUserListRequest || 0;
+        const minInterval = 5000; // 5 ثوانٍ كحد أدنى بين الطلبات
+        
+        if (now - lastRequest < minInterval) {
+          console.log(`⏳ تجاهل طلب قائمة المستخدمين - آخر طلب كان منذ ${now - lastRequest}ms`);
+          return;
+        }
+        
+        (socket as any).lastUserListRequest = now;
+        
         console.log(`🔄 طلب تحديث قائمة المستخدمين للغرفة: ${currentRoom}`);
         
         const roomUsers = await storage.getOnlineUsersInRoom(currentRoom);
         console.log(`👥 إرسال ${roomUsers.length} مستخدم متصل في الغرفة ${currentRoom}`);
-        console.log(`👥 أسماء المستخدمين المتصلين: ${roomUsers.map(u => u.username).join(', ')}`);
         
-        // إرسال القائمة لجميع المستخدمين في الغرفة الحالية
-        io.to(`room_${currentRoom}`).emit('message', { 
+        // إرسال القائمة فقط للمستخدم الذي طلبها (تحسين الشبكة)
+        socket.emit('message', { 
           type: 'onlineUsers', 
           users: roomUsers 
         });
+        
+        // إرسال للغرفة فقط إذا كان هناك تغيير في العدد
+        const previousCount = (socket as any).lastUserCount || 0;
+        if (roomUsers.length !== previousCount) {
+          (socket as any).lastUserCount = roomUsers.length;
+          socket.to(`room_${currentRoom}`).emit('message', { 
+            type: 'onlineUsers', 
+            users: roomUsers 
+          });
+        }
       } catch (error) {
         console.error('❌ خطأ في جلب المستخدمين المتصلين:', error);
       }
@@ -2243,6 +2265,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
             break;
+
+
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
