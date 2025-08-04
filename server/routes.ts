@@ -1694,6 +1694,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         console.log(`📤 تم إرسال قائمة ${roomUsers.length} مستخدم في الغرفة ${currentRoom} إلى ${user.username}`);
 
+        // إرسال رسالة ترحيب في الغرفة
+        const welcomeMessage = {
+          id: Date.now(),
+          senderId: -1, // معرف خاص للنظام
+          content: `انضم ${user.username} إلى الغرفة 👋`,
+          messageType: 'system',
+          isPrivate: false,
+          roomId: currentRoom,
+          timestamp: new Date(),
+          sender: {
+            id: -1,
+            username: 'النظام',
+            userType: 'moderator',
+            role: 'system',
+            level: 0,
+            points: 0,
+            achievements: [],
+            lastSeen: new Date(),
+            isOnline: true,
+            isBanned: false,
+            isActive: true,
+            currentRoom: '',
+            settings: {
+              theme: 'default',
+              language: 'ar',
+              notifications: true,
+              soundEnabled: true,
+              privateMessages: true
+            }
+          }
+        };
+        
+        io.to(`room_${currentRoom}`).emit('message', {
+          type: 'newMessage',
+          message: welcomeMessage
+        });
+
       } catch (error) {
         console.error('❌ خطأ في المصادقة:', error);
         socket.emit('error', { message: 'خطأ في المصادقة' });
@@ -1850,10 +1887,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إرسال الرسالة فقط للمستخدمين في نفس الغرفة
         console.log(`📡 إرسال رسالة للغرفة ${roomId}`);
         io.to(`room_${roomId}`).emit('message', { 
-          envelope: {
-            type: 'newMessage',
-            message: { ...newMessage, sender, roomId }
-          }
+          type: 'newMessage',
+          message: { ...newMessage, sender, roomId }
         });
       } catch (error) {
         console.error('خطأ في إرسال الرسالة العامة:', error);
@@ -2237,13 +2272,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`🚪 المستخدم ${username} يغادر الغرفة السابقة ${previousRoom}`);
           socket.leave(`room_${previousRoom}`);
           
+          // إرسال رسالة وداع في الغرفة السابقة
+          const goodbyeMessage = {
+            id: Date.now(),
+            senderId: -1,
+            content: `غادر ${username} الغرفة 👋`,
+            messageType: 'system',
+            isPrivate: false,
+            roomId: previousRoom,
+            timestamp: new Date(),
+            sender: {
+              id: -1,
+              username: 'النظام',
+              userType: 'moderator',
+              role: 'system',
+              level: 0,
+              points: 0,
+              achievements: [],
+              lastSeen: new Date(),
+              isOnline: true,
+              isBanned: false,
+              isActive: true,
+              currentRoom: '',
+              settings: {
+                theme: 'default',
+                language: 'ar',
+                notifications: true,
+                soundEnabled: true,
+                privateMessages: true
+              }
+            }
+          };
+          
+          socket.to(`room_${previousRoom}`).emit('message', {
+            type: 'newMessage',
+            message: goodbyeMessage
+          });
+          
           // إشعار المستخدمين في الغرفة السابقة
-                      socket.to(`room_${previousRoom}`).emit('message', {
-              type: 'userLeftRoom',
-              username: username,
-              userId: userId,
-              roomId: previousRoom
-            });
+          socket.to(`room_${previousRoom}`).emit('message', {
+            type: 'userLeftRoom',
+            username: username,
+            userId: userId,
+            roomId: previousRoom
+          });
           
           // إرسال قائمة محدثة للغرفة السابقة
           const previousRoomUsers = await storage.getOnlineUsersInRoom(previousRoom);
@@ -2293,6 +2365,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`✅ المستخدم ${username} انضم للغرفة ${roomId} بنجاح مع ${roomUsers.length} مستخدمين آخرين`);
         
+        // إرسال رسالة ترحيب في الغرفة
+        const welcomeMessage = {
+          id: Date.now(),
+          senderId: -1, // معرف خاص للنظام
+          content: `انضم ${username} إلى الغرفة 👋`,
+          messageType: 'system',
+          isPrivate: false,
+          roomId: roomId,
+          timestamp: new Date(),
+          sender: {
+            id: -1,
+            username: 'النظام',
+            userType: 'moderator',
+            role: 'system',
+            level: 0,
+            points: 0,
+            achievements: [],
+            lastSeen: new Date(),
+            isOnline: true,
+            isBanned: false,
+            isActive: true,
+            currentRoom: '',
+            settings: {
+              theme: 'default',
+              language: 'ar',
+              notifications: true,
+              soundEnabled: true,
+              privateMessages: true
+            }
+          }
+        };
+        
+        io.to(`room_${roomId}`).emit('message', {
+          type: 'newMessage',
+          message: welcomeMessage
+        });
+
       } catch (error) {
         console.error('خطأ في انضمام للغرفة:', error);
         socket.emit('message', { type: 'error', message: 'خطأ في الانضمام للغرفة' });
