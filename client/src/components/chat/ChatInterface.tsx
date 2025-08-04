@@ -48,7 +48,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   
   // حالة الغرف
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
-  const [currentRoomId, setCurrentRoomId] = useState('general');
   const [roomsLoading, setRoomsLoading] = useState(true);
 
   // جلب الغرف من الخادم
@@ -113,8 +112,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   // دوال إدارة الغرف
   const handleRoomChange = async (roomId: string) => {
-    console.log(`🔄 تغيير الغرفة من ${currentRoomId} إلى ${roomId}`);
-    setCurrentRoomId(roomId);
+    console.log(`🔄 تغيير الغرفة من ${chat.currentRoomId} إلى ${roomId}`);
     chat.joinRoom(roomId);
   };
 
@@ -187,8 +185,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       if (response.ok) {
         setRooms(prev => prev.filter(room => room.id !== roomId));
-        if (currentRoomId === roomId) {
-          setCurrentRoomId('general');
+        if (chat.currentRoomId === roomId) {
           chat.joinRoom('general');
         }
         toast({
@@ -538,7 +535,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               currentUser={chat.currentUser}
               activeView={activeView}
               rooms={rooms}
-              currentRoomId={currentRoomId}
+              currentRoomId={chat.currentRoomId}
               onRoomChange={handleRoomChange}
               onAddRoom={handleAddRoom}
               onDeleteRoom={handleDeleteRoom}
@@ -547,7 +544,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </div>
         )}
         {(() => {
-          const currentRoom = rooms.find(room => room.id === currentRoomId);
+          const currentRoom = rooms.find(room => room.id === chat.currentRoomId);
           
           // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
           if (currentRoom?.isBroadcast) {
@@ -576,7 +573,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               currentUser={chat.currentUser}
               onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
               onTyping={chat.handleTyping}
-              typingUsers={chat.typingUsers}
+              typingUsers={Array.from(chat.typingUsers)}
               onReportMessage={handleReportUser}
               onUserClick={handleUserClick}
               onlineUsers={chat.onlineUsers}
