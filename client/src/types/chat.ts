@@ -1,62 +1,77 @@
 export interface ChatUser {
   id: number;
   username: string;
-  userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
-  role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
+  displayName?: string;
   profileImage?: string;
+  role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'system';
+  isOnline: boolean;
+  roomId?: string;
+  
+  // معلومات إضافية
   profileBanner?: string;
-  profileBackgroundColor: string;
+  profileBackgroundColor?: string;
+  profileColor?: string;
+  usernameColor?: string;
+  profileEffect?: string;
+  userTheme?: string;
   status?: string;
   gender?: string;
   age?: number;
   country?: string;
-  relation?: string;
+  city?: string;
   bio?: string;
-  isOnline: boolean;
-  isHidden: boolean;
-  lastSeen: Date | null;
-  joinDate: Date;
-  createdAt: Date;
-  isMuted: boolean;
-  muteExpiry: Date | null;
-  isBanned: boolean;
-  banExpiry: Date | null;
-  isBlocked: boolean;
-  isKicked?: boolean;
+  website?: string;
+  socialFacebook?: string;
+  socialTwitter?: string;
+  socialInstagram?: string;
+  socialYoutube?: string;
+  socialTiktok?: string;
+  messageSound?: boolean;
+  allowPrivateMessages?: boolean;
   ipAddress?: string;
-  deviceId?: string;
-  ignoredUsers: number[];
-  usernameColor: string;
-  userTheme: string;
-  profileEffect: string;
-  points: number;
-  level: number;
-  totalPoints: number;
-  levelProgress: number;
+  lastSeen?: Date;
+  isTyping?: boolean;
+  isHidden?: boolean;
+  points?: number;
+  level?: number;
+  roomColor?: string;
+  userType?: string;
+  
+  // تم إضافة خصائص جديدة
+  ignoredUsers?: number[];
+  blockedUsers?: number[];
 }
 
 export interface ChatMessage {
   id: number;
-  senderId: number;
-  receiverId?: number;
   content: string;
-  messageType: 'text' | 'image';
+  roomId?: string;
   isPrivate: boolean;
-  timestamp?: Date;
+  senderId: number;
+  timestamp: Date;
+  messageType: 'text' | 'image' | 'system';
+  receiverId?: number;
   sender?: ChatUser;
+  receiver?: ChatUser;
 }
 
 export interface PrivateConversation {
   [userId: number]: ChatMessage[];
 }
 
-export interface WebSocketMessage {
-  type: 'auth' | 'publicMessage' | 'privateMessage' | 'typing' | 'userJoined' | 'userLeft' | 'newMessage' | 'onlineUsers' | 'userUpdated' | 'error' | 'warning' |
-        'userVisibilityChanged' | 'usernameColorChanged' | 'profileEffectChanged' | 'theme_update' | 'moderationAction' | 'notification' | 'systemMessage' | 'kicked' | 'blocked' | 
-        'friendRequest' | 'friendRequestAccepted' | 'promotion' | 'pointsReceived' | 'pointsTransfer' | 'pointsAdded' | 'levelUp' |
-        // أنواع جديدة للـ Broadcast Room
-        'micRequest' | 'micApproved' | 'micRejected' | 'micRemoved' | 'speakerAdded' | 'speakerRemoved' | 'broadcastUpdate';
-  userId?: number;
+export type WebSocketMessage = {
+  type: 'publicMessage' | 'privateMessage' | 'typing' | 
+        'userJoined' | 'userLeft' | 'newMessage' | 
+        'onlineUsers' | 'userUpdated' | 'warning' | 'error' | 'auth' | 
+        'friendRequestReceived' | 'friendRequestAccepted' | 'friendRequestRejected' |
+        'userKicked' | 'userMuted' | 'userBanned' | 'userBlocked' |
+        'userPromoted' | 'kick' | 'points' | 'levelUp' | 'colorChanged' |
+        'userVisibilityChanged' | 'themeChanged' | 'effectChanged' |
+        'profileUpdated' | 'announcement' | 'roomUpdate' | 
+        'broadcastUpdate' | 'newWallPost' | 'wallPostReaction' | 'wallPostDeleted' |
+        'roomJoined' | 'userJoinedRoom' | 'userLeftRoom';
+  
+  // خصائص الرسالة الأساسية
   username?: string;
   content?: string;
   messageType?: string;
@@ -98,8 +113,14 @@ export interface WebSocketMessage {
   speakers?: number[]; // قائمة المتحدثين
   micQueue?: number[]; // قائمة انتظار طلبات المايك
   requestUserId?: number; // معرف المستخدم الذي طلب المايك
-  approvedBy?: number; // معرف من وافق على الطلب
-}
+  speakerId?: number; // معرف المتحدث
+  speakerAction?: 'add' | 'remove'; // نوع عملية المتحدث
+  queueAction?: 'join' | 'leave' | 'accept' | 'reject'; // نوع عملية طابور المايك
+  
+  // خصائص Wall Post
+  post?: any; // بيانات المنشور
+  postId?: number; // معرف المنشور
+};
 
 export interface UserProfile {
   name: string;

@@ -24,7 +24,9 @@ export default function FriendRequestBadge({ currentUser }: FriendRequestBadgePr
     if (!currentUser) return;
     
     try {
-      const response = await apiRequest('GET', `/api/friend-requests/${currentUser.id}`);
+      const response = await apiRequest(`/api/friend-requests/${currentUser.id}`, {
+        method: 'GET'
+      });
       const incoming = response.incoming || [];
       setPendingCount(incoming.length);
     } catch (error) {
