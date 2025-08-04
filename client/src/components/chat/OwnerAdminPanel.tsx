@@ -84,7 +84,7 @@ export default function OwnerAdminPanel({
     if (!currentUser) return;
     
     try {
-      const response = await apiRequest('GET', `/api/moderation/log?userId=${currentUser.id}`);
+      const response = await apiRequest(`/api/moderation/log?userId=${currentUser.id}`, { method: 'GET' });
       setModerationLog(response.log || []);
     } catch (error) {
       console.error('Error fetching moderation log:', error);

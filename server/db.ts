@@ -7,7 +7,7 @@ export {
   getDatabaseStatus,
   type DatabaseType,
   type DatabaseAdapter
-} from './database-adapter';
+} from './database-adapter-improved';
 
 // للتوافق مع الكود الموجود
 export const pool = null; // سيتم إزالته تدريجياً

@@ -342,6 +342,7 @@ export interface SystemStats {
 export type WebSocketMessageType = 
   | 'auth'
   | 'message'
+  | 'publicMessage'
   | 'privateMessage'
   | 'userJoined'
   | 'userLeft'
@@ -352,7 +353,33 @@ export type WebSocketMessageType =
   | 'roomJoined'
   | 'roomLeft'
   | 'error'
-  | 'success';
+  | 'success'
+  | 'warning'
+  | 'userVisibilityChanged'
+  | 'roomCreated'
+  | 'roomDeleted'
+  | 'roomUpdated'
+  | 'newMessage'
+  | 'onlineUsers'
+  | 'messageDeleted'
+  | 'userKicked'
+  | 'userBanned'
+  | 'roomsUpdated'
+  | 'friendRequestReceived'
+  | 'friendRequestAccepted'
+  | 'friendRequestRejected'
+  | 'friendRemoved'
+  | 'pointsUpdated'
+  | 'pointsTransferred'
+  | 'pointsReceived'
+  | 'achievementUnlocked'
+  | 'giftReceived'
+  | 'broadcastUpdate'
+  | 'newWallPost'
+  | 'wallPostReaction'
+  | 'wallPostDeleted'
+  | 'userJoinedRoom'
+  | 'userLeftRoom';
 
 export interface WebSocketMessage<T = any> {
   type: WebSocketMessageType;
@@ -422,21 +449,3 @@ export interface RolePermissions {
   inheritsFrom?: UserRole;
 }
 
-// تصدير جميع الأنواع
-export type {
-  ApiResponse,
-  ApiError,
-  PaginationParams,
-  PaginatedResponse,
-  UserRole,
-  UserStatus,
-  Gender,
-  MessageType,
-  MessageStatus,
-  FriendRequestStatus,
-  NotificationType,
-  RoomType,
-  RoomPermission,
-  ReportReason,
-  WebSocketMessageType
-};

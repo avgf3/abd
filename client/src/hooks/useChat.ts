@@ -196,6 +196,24 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
 }
 
 export function useChat() {
+  // Message deduplication
+  const messageIdsRef = useRef(new Set<string>());
+  const addMessageIfNotDuplicate = useCallback((message: any) => {
+    if (message.id && messageIdsRef.current.has(message.id)) {
+      console.log('🚫 منع رسالة مكررة:', message.id);
+      return false;
+    }
+    if (message.id) {
+      messageIdsRef.current.add(message.id);
+      // Keep only last 1000 message IDs
+      if (messageIdsRef.current.size > 1000) {
+        const ids = Array.from(messageIdsRef.current);
+        ids.slice(0, ids.length - 1000).forEach(id => messageIdsRef.current.delete(id));
+      }
+    }
+    return true;
+  }, []);
+
   const [state, dispatch] = useReducer(chatReducer, initialState);
   
   // Socket connection
@@ -204,7 +222,7 @@ export function useChat() {
   // تحسين الأداء: مدراء التحسين
   const messageCache = useRef(new MessageCacheManager());
   
-  // إضافة متغير للوصول إلى import.meta.env
+  // إضافة متغير للوصول إلى process.env
   const isDevelopment = process.env.NODE_ENV === 'development';
   
   // Memoized values to prevent unnecessary re-renders - إصلاح المنطق
