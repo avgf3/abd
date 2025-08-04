@@ -7,28 +7,36 @@ import * as pgSchema from "../shared/schema";
 import type { NeonQueryResultHKT } from 'drizzle-orm/neon-serverless';
 import type { PgDatabase } from 'drizzle-orm/pg-core';
 
-// تعريف نوع قاعدة البيانات - PostgreSQL فقط
-export type DatabaseType = PgDatabase<NeonQueryResultHKT, typeof pgSchema>;
+// تعريف نوع قاعدة البيانات
+export type DatabaseType = PgDatabase<NeonQueryResultHKT, typeof pgSchema> | null;
 
 // واجهة موحدة للعمليات
 export interface DatabaseAdapter {
-  db: DatabaseType | null;
-  type: 'postgresql';
+  db: DatabaseType;
+  type: 'postgresql' | 'disabled';
   close?: () => void;
 }
 
-// إنشاء محول قاعدة البيانات - PostgreSQL فقط
+// إنشاء محول آمن لقاعدة البيانات
 export function createDatabaseAdapter(): DatabaseAdapter {
   const databaseUrl = process.env.DATABASE_URL;
   
-  // التحقق من وجود DATABASE_URL
+  // التحقق من وجود DATABASE_URL - مع fallback آمن
   if (!databaseUrl) {
-    throw new Error("❌ DATABASE_URL غير محدد! يجب إضافة رابط PostgreSQL في ملف .env");
+    console.warn("⚠️ DATABASE_URL غير محدد! سيتم العمل في وضع آمن بدون قاعدة بيانات");
+    return {
+      db: null,
+      type: 'disabled'
+    };
   }
   
   // التحقق من أن الرابط هو PostgreSQL
   if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
-    throw new Error("❌ DATABASE_URL يجب أن يكون رابط PostgreSQL صحيح");
+    console.warn("⚠️ DATABASE_URL ليس رابط PostgreSQL صحيح، سيتم العمل في وضع آمن");
+    return {
+      db: null,
+      type: 'disabled'
+    };
   }
   
   try {
@@ -38,14 +46,20 @@ export function createDatabaseAdapter(): DatabaseAdapter {
     const pool = new Pool({ connectionString: databaseUrl });
     const db = drizzleNeon({ client: pool, schema: pgSchema });
     
+    console.log("✅ تم الاتصال بقاعدة البيانات PostgreSQL بنجاح");
+    
     return {
       db: db as DatabaseType,
       type: 'postgresql',
       close: () => pool.end()
     };
   } catch (error) {
-    console.error("❌ فشل في الاتصال بـ PostgreSQL على Supabase:", error);
-    throw new Error(`فشل الاتصال بـ Supabase: ${error}`);
+    console.error("❌ فشل في الاتصال بـ PostgreSQL:", error);
+    console.warn("🔄 سيتم العمل في وضع آمن بدون قاعدة بيانات");
+    return {
+      db: null,
+      type: 'disabled'
+    };
   }
 }
 
@@ -57,7 +71,9 @@ export const dbType = dbAdapter.type;
 // دالة للتحقق من حالة قاعدة البيانات
 export async function checkDatabaseHealth(): Promise<boolean> {
   try {
-    if (!db) return false;
+    if (!db || dbType === 'disabled') {
+      return false;
+    }
     
     // اختبار PostgreSQL
     await db.execute('SELECT 1' as any);
@@ -71,8 +87,8 @@ export async function checkDatabaseHealth(): Promise<boolean> {
 // دالة للحصول على حالة قاعدة البيانات
 export function getDatabaseStatus() {
   return {
-    connected: !!db,
-    type: 'PostgreSQL/Supabase',
+    connected: !!db && dbType !== 'disabled',
+    type: dbType === 'disabled' ? 'معطلة' : 'PostgreSQL/Supabase',
     url: process.env.DATABASE_URL ? '***محددة***' : 'غير محددة',
     environment: process.env.NODE_ENV || 'development'
   };

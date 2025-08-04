@@ -8,6 +8,7 @@ import { spamProtection } from "./spam-protection";
 import { moderationSystem } from "./moderation";
 import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter, friendRequestLimiter } from "./security";
 import { databaseCleanup } from "./utils/database-cleanup";
+import { db, dbType } from "./database-adapter";
 
 import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
 import securityApiRoutes from "./api-security";
@@ -3561,6 +3562,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Notifications API
   app.get("/api/notifications/:userId", async (req, res) => {
     try {
+      // Check database availability
+      if (!db || dbType === 'disabled') {
+        return res.json({ notifications: [] });
+      }
+      
       const userId = parseInt(req.params.userId);
       
       // التحقق من صحة userId
@@ -3579,6 +3585,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إضافة endpoint للإشعارات بدون userId (للحالات التي تستدعى بدون معامل)
   app.get("/api/notifications", async (req, res) => {
     try {
+      // Check database availability
+      if (!db || dbType === 'disabled') {
+        return res.json({ notifications: [] });
+      }
+      
       const { userId } = req.query;
       
       if (!userId || isNaN(parseInt(userId as string))) {
@@ -3649,6 +3660,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/notifications/:userId/unread-count", async (req, res) => {
     try {
+      // Check database availability
+      if (!db || dbType === 'disabled') {
+        return res.json({ count: 0 });
+      }
+      
       const userId = parseInt(req.params.userId);
       const count = await storage.getUnreadNotificationCount(userId);
       res.json({ count });
@@ -3660,6 +3676,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Alternative endpoint with userId in query parameter (for client compatibility)
   app.get("/api/notifications/unread-count", async (req, res) => {
     try {
+      // Check database availability
+      if (!db || dbType === 'disabled') {
+        return res.json({ count: 0 });
+      }
+      
       const userId = parseInt(req.query.userId as string);
       if (!userId) {
         return res.status(400).json({ error: "معرف المستخدم مطلوب" });
@@ -4071,6 +4092,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // جلب منشورات الحائط
   app.get('/api/wall/posts/:type', async (req, res) => {
     try {
+      // Check database availability
+      if (!db || dbType === 'disabled') {
+        return res.json([]);
+      }
+      
       const { type } = req.params; // 'public' أو 'friends'
       const { userId } = req.query;
 
@@ -4371,6 +4397,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // جلب جميع الغرف
   app.get('/api/rooms', async (req, res) => {
     try {
+      // Check database availability
+      if (!db || dbType === 'disabled') {
+        return res.json({ rooms: [] });
+      }
+      
       const rooms = await storage.getAllRooms();
       res.json({ rooms });
     } catch (error) {

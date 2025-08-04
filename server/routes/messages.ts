@@ -1,12 +1,18 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { sanitizeInput, validateMessageContent } from "../security";
+import { db, dbType } from "../database-adapter";
 
 const router = Router();
 
 // Get public messages
 router.get("/public", async (req, res) => {
   try {
+    // Check database availability
+    if (!db || dbType === 'disabled') {
+      return res.json([]);
+    }
+    
     const limit = parseInt(req.query.limit as string) || 50;
     const messages = await storage.getPublicMessages(limit);
     res.json(messages);
@@ -16,9 +22,32 @@ router.get("/public", async (req, res) => {
   }
 });
 
+// Get room messages
+router.get("/room/:roomId", async (req, res) => {
+  try {
+    // Check database availability
+    if (!db || dbType === 'disabled') {
+      return res.json([]);
+    }
+    
+    const roomId = req.params.roomId;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const messages = await storage.getRoomMessages(roomId, limit);
+    res.json(messages);
+  } catch (error) {
+    console.error("Error fetching room messages:", error);
+    res.status(500).json({ error: "خطأ في الخادم" });
+  }
+});
+
 // Get private messages between two users
 router.get("/private/:userId1/:userId2", async (req, res) => {
   try {
+    // Check database availability
+    if (!db || dbType === 'disabled') {
+      return res.json([]);
+    }
+    
     const userId1 = parseInt(req.params.userId1);
     const userId2 = parseInt(req.params.userId2);
     const limit = parseInt(req.query.limit as string) || 50;
@@ -38,6 +67,11 @@ router.get("/private/:userId1/:userId2", async (req, res) => {
 // Send message (this would typically be handled via WebSocket but kept for API compatibility)
 router.post("/send", async (req, res) => {
   try {
+    // Check database availability
+    if (!db || dbType === 'disabled') {
+      return res.status(503).json({ error: "قاعدة البيانات غير متاحة حالياً" });
+    }
+    
     const { senderId, receiverId, content, messageType, isPrivate } = req.body;
     
     if (!senderId || !content) {
