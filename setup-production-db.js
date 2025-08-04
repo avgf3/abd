@@ -1,4 +1,77 @@
-import dotenv from 'dotenv';
+import { config } from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+config();
+
+// Database configuration for production
+const setupProductionDatabase = () => {
+  console.log('🔧 إعداد قاعدة البيانات للإنتاج...\n');
+
+  // Check if we have a DATABASE_URL
+  if (!process.env.DATABASE_URL) {
+    console.log('⚠️  لم يتم العثور على DATABASE_URL في متغيرات البيئة');
+    console.log('📝 سنقوم بإنشاء ملف .env مع قاعدة بيانات SQLite للتطوير\n');
+
+    // Create .env file with SQLite configuration for development
+    const envContent = `# Database Configuration
+DATABASE_URL=sqlite://./data/chat.db
+
+# Server Configuration
+PORT=5000
+NODE_ENV=development
+
+# Session Secret
+SESSION_SECRET=your-super-secret-session-key-${Date.now()}
+
+# File Upload Configuration
+MAX_FILE_SIZE=10485760
+UPLOAD_DIR=./uploads
+
+# CORS Configuration
+CORS_ORIGIN=http://localhost:5173
+
+# Socket.IO Configuration
+SOCKET_TIMEOUT=30000
+`;
+
+    fs.writeFileSync(path.join(__dirname, '.env'), envContent);
+    console.log('✅ تم إنشاء ملف .env مع إعدادات SQLite للتطوير');
+    console.log('\n📌 للإنتاج، يجب عليك:');
+    console.log('1. إنشاء قاعدة بيانات PostgreSQL (Supabase, Neon, أو أي خدمة أخرى)');
+    console.log('2. تحديث DATABASE_URL في .env بعنوان قاعدة البيانات الخاصة بك');
+    console.log('3. تشغيل npm run db:migrate للإنتاج\n');
+  } else {
+    console.log('✅ تم العثور على DATABASE_URL');
+    console.log(`📊 نوع قاعدة البيانات: ${process.env.DATABASE_URL.includes('postgresql') ? 'PostgreSQL' : 'SQLite'}`);
+  }
+
+  // Create necessary directories
+  const directories = ['uploads', 'uploads/profiles', 'uploads/banners', 'data'];
+  
+  directories.forEach(dir => {
+    const dirPath = path.join(__dirname, dir);
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+      console.log(`📁 تم إنشاء مجلد: ${dir}`);
+    }
+  });
+
+  console.log('\n✅ إعداد قاعدة البيانات مكتمل!');
+  console.log('\n🚀 لبدء التطبيق:');
+  console.log('   - للتطوير: npm run dev');
+  console.log('   - للإنتاج: npm run build && npm start');
+};
+
+// Update database adapter to support SQLite
+const updateDatabaseAdapter = () => {
+  const adapterPath = path.join(__dirname, 'server', 'database-adapter-improved.ts');
+  
+  const improvedAdapter = `import dotenv from 'dotenv';
 dotenv.config();
 
 import { Pool, neonConfig } from '@neondatabase/serverless';
@@ -121,3 +194,12 @@ export function getDatabaseStatus() {
     environment: process.env.NODE_ENV || 'development'
   };
 }
+`;
+
+  fs.writeFileSync(adapterPath, improvedAdapter);
+  console.log('✅ تم تحديث database adapter لدعم SQLite و PostgreSQL');
+};
+
+// Run setup
+setupProductionDatabase();
+updateDatabaseAdapter();

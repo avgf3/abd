@@ -1,3 +1,4 @@
+import compression from 'compression';
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { Server as IOServer, Socket } from "socket.io";
@@ -1192,8 +1193,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gender: user.gender,
         points: user.points || 0,
         createdAt: user.createdAt,
-        lastActive: user.lastActive,
-        profileColor: user.profileColor,
+        lastActive: user.lastSeen || user.createdAt,
+        profileColor: user.usernameColor || '#FFFFFF',
         profileEffect: user.profileEffect,
         isHidden: user.isHidden
       }));
@@ -1725,6 +1726,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     socket.on('publicMessage', async (data) => {
+      // Check for duplicate message
+      if (socket.user && isDuplicateMessage(socket.user.id, data.content, data.roomId)) {
+        console.log('🚫 منع رسالة مكررة من:', socket.user.username);
+        return;
+      }
       try {
         if (!socket.userId) return;
         
@@ -2369,8 +2375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           socket.leave(customSocket.userId.toString());
           
           // إشعار جميع المستخدمين بخروج المستخدم
-          io.emit('message', {
-            type: 'userLeft',
+          io.emit('userLeft', { type: 'userLeft',
             userId: customSocket.userId,
             username: customSocket.username,
             timestamp: new Date().toISOString()
