@@ -2109,6 +2109,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                       type={currentEditType === 'age' ? 'number' : 'text'}
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
+                      min={currentEditType === 'age' ? 13 : undefined}
+                      max={currentEditType === 'age' ? 120 : undefined}
+                      placeholder={currentEditType === 'age' ? 'أدخل العمر (13-120)' : ''}
                       autoFocus
                     />
                   )}

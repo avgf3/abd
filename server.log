@@ -1,6 +1,11 @@
-[dotenv@17.2.0] injecting env (10) from .env (tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' })
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[dotenv@17.2.1] injecting env (3) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
 The `fetchConnectionCache` option is deprecated (now always `true`)
-[dotenv@17.2.0] injecting env (0) from .env (tip: 🔐 encrypt with dotenvx: https://dotenvx.com)
+✅ تم الاتصال بقاعدة البيانات PostgreSQL بنجاح
+[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 version env with Radar: https://dotenvx.com/radar
 {
   severity_local: 'NOTICE',
   severity: 'NOTICE',
@@ -19,39 +24,31 @@ The `fetchConnectionCache` option is deprecated (now always `true`)
   line: '207',
   routine: 'transformCreateStmt'
 }
-❌ Error running migrations: DrizzleQueryError: Failed query: CREATE TABLE "level_settings" (
+❌ Error running migrations: DrizzleQueryError: Failed query: CREATE TABLE "room_users" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"level" integer NOT NULL,
-	"required_points" integer NOT NULL,
-	"title" text NOT NULL,
-	"color" text DEFAULT '#FFFFFF',
-	"benefits" jsonb,
-	"created_at" timestamp DEFAULT now(),
-	CONSTRAINT "level_settings_level_unique" UNIQUE("level")
+	"user_id" integer NOT NULL,
+	"room_id" text NOT NULL,
+	"joined_at" timestamp DEFAULT now()
 );
 
 params: 
-    at PostgresJsPreparedQuery.queryWithCache (file:///workspace/node_modules/drizzle-orm/pg-core/session.js:42:15)
+    at PostgresJsPreparedQuery.queryWithCache (/workspace/node_modules/src/pg-core/session.ts:74:11)
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async file:///workspace/node_modules/drizzle-orm/pg-core/dialect.js:64:13
+    at async <anonymous> (/workspace/node_modules/src/pg-core/dialect.ts:102:7)
     at async scope (file:///workspace/node_modules/postgres/src/index.js:260:18)
     at async Function.begin (file:///workspace/node_modules/postgres/src/index.js:243:14)
-    at async PgDialect.migrate (file:///workspace/node_modules/drizzle-orm/pg-core/dialect.js:60:5)
-    at async migrate (file:///workspace/node_modules/drizzle-orm/postgres-js/migrator.js:4:3)
-    at async runMigrations (file:///workspace/dist/index.js:6064:5)
-    at async file:///workspace/dist/index.js:6515:7 {
-  query: 'CREATE TABLE "level_settings" (\n' +
+    at async PgDialect.migrate (/workspace/node_modules/src/pg-core/dialect.ts:95:3)
+    at async migrate (/workspace/node_modules/src/postgres-js/migrator.ts:10:2)
+    at async runMigrations (/workspace/server/database-setup.ts:63:5)
+    at async <anonymous> (/workspace/server/index.ts:206:7) {
+  query: 'CREATE TABLE "room_users" (\n' +
     '\t"id" serial PRIMARY KEY NOT NULL,\n' +
-    '\t"level" integer NOT NULL,\n' +
-    '\t"required_points" integer NOT NULL,\n' +
-    '\t"title" text NOT NULL,\n' +
-    `\t"color" text DEFAULT '#FFFFFF',\n` +
-    '\t"benefits" jsonb,\n' +
-    '\t"created_at" timestamp DEFAULT now(),\n' +
-    '\tCONSTRAINT "level_settings_level_unique" UNIQUE("level")\n' +
+    '\t"user_id" integer NOT NULL,\n' +
+    '\t"room_id" text NOT NULL,\n' +
+    '\t"joined_at" timestamp DEFAULT now()\n' +
     ');\n',
   params: [],
-  cause: PostgresError: relation "level_settings" already exists
+  cause: PostgresError: relation "room_users" already exists
       at ErrorResponse (file:///workspace/node_modules/postgres/src/connection.js:794:26)
       at handle (file:///workspace/node_modules/postgres/src/connection.js:480:6)
       at Socket.data (file:///workspace/node_modules/postgres/src/connection.js:315:9)
@@ -68,4 +65,9 @@ params:
     routine: 'heap_create_with_catalog'
   }
 }
-[2025-07-25T13:48:25.291Z] INFO: 🔄 Initializing database tables...
+⚠️ Falling back to SQLite mode
+[2025-08-04T22:22:25.372Z] INFO: 🔄 Initializing database tables...
+🔧 Checking for missing columns...
+✅ Added missing role column
+✅ Missing columns check completed
+✅ Owner already exists
