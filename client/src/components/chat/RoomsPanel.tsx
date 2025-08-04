@@ -138,7 +138,9 @@ export default function RoomsPanel({
                 <div className="font-medium text-sm truncate flex items-center gap-2">
                   {room.name}
                   {room.isBroadcast && (
-                    <Mic className="w-3 h-3 text-orange-500" title="غرفة بث مباشر" />
+                    <span title="غرفة بث مباشر">
+                      <Mic className="w-3 h-3 text-orange-500" />
+                    </span>
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground">

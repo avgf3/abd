@@ -661,6 +661,11 @@ export function useChat() {
               message: formattedMessages 
             }
           });
+          
+          // تحديث الرسائل العامة إذا كانت هذه هي الغرفة الحالية
+          if (roomId === state.currentRoomId) {
+            dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: formattedMessages });
+          }
         }
       } else {
         console.error(`❌ فشل في تحميل رسائل الغرفة ${roomId}:`, response.status);
@@ -832,12 +837,26 @@ export function useChat() {
     setShowKickCountdown: (show: boolean) => dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: show }),
     setNewMessageSender: (sender: ChatUser | null) => dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: sender }),
 
-    // إصلاح: دوال مطلوبة للمكونات
+    // دوال الرسائل المطلوبة للمكونات
     sendPublicMessage: (content: string) => sendMessage(content, 'text'),
     sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId),
-    sendRoomMessage: (content: string, roomId: string) => sendRoomMessage(content, roomId),
+    sendRoomMessage,
     loadRoomMessages,
-    handleTyping: () => sendTyping(),
-    handlePrivateTyping: () => sendTyping(),
+    handleTyping: sendTyping,
+    handlePrivateTyping: sendTyping,
+    
+    // دوال الغرف
+    getCurrentRoomMessages: () => state.roomMessages[state.currentRoomId] || [],
+    leaveRoom: (roomId: string) => {
+      console.log(`🚪 مغادرة الغرفة: ${roomId}`);
+      socket.current?.emit('leaveRoom', { roomId });
+    },
+    
+    // دالة إضافية لتحديث الغرفة يدوياً
+    switchToRoom: (roomId: string) => {
+      console.log(`🔄 التبديل للغرفة: ${roomId}`);
+      dispatch({ type: 'SET_ROOM', payload: roomId });
+      loadRoomMessages(roomId);
+    },
   };
 }
