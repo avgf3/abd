@@ -282,4 +282,12 @@ function setupGracefulShutdown(httpServer: Server) {
     }
     
   } catch (error) {
-    log(`
+    log(`❌ خطأ حرج في بدء تشغيل الخادم: ${error}`);
+    
+    if (httpServer) {
+      httpServer.close();
+    }
+    
+    process.exit(1);
+  }
+})();
