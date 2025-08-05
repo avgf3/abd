@@ -394,6 +394,7 @@ export function useChat() {
     socket.current.on('disconnect', (reason) => {
       console.log('🔌 انقطع الاتصال:', reason);
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+      dispatch({ type: 'SET_LOADING', payload: false }); // إيقاف التحميل عند انقطاع الاتصال
       
       // تنظيف الفترة الزمنية للتحديث الدوري
       if ((socket.current as any)?.userListInterval) {
@@ -405,6 +406,34 @@ export function useChat() {
       }
     });
 
+    // إضافة معالج أخطاء المصادقة
+    socket.current.on('authError', (error) => {
+      console.error('❌ خطأ في المصادقة:', error);
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: error.message || 'فشل في المصادقة' });
+      dispatch({ type: 'SET_LOADING', payload: false }); // إيقاف التحميل عند فشل المصادقة
+    });
+
+    // معالج خطأ عام
+    socket.current.on('error', (error) => {
+      console.error('❌ خطأ في Socket:', error);
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'خطأ في الاتصال' });
+      dispatch({ type: 'SET_LOADING', payload: false });
+    });
+
+    // timeout للاتصال
+    const connectionTimeout = setTimeout(() => {
+      if (!socket.current?.connected) {
+        console.error('❌ انتهت مهلة الاتصال');
+        dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'انتهت مهلة الاتصال' });
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
+    }, 15000); // 15 ثانية
+
+    // تنظيف timeout عند الاتصال
+    socket.current.on('connect', () => {
+      clearTimeout(connectionTimeout);
+    });
+
     socket.current.on('socketConnected', (data) => {
       console.log('🔌 اتصال Socket:', data.message);
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
@@ -414,6 +443,7 @@ export function useChat() {
       console.log('✅ تم الاتصال بنجاح:', data.message);
       dispatch({ type: 'SET_CURRENT_USER', payload: data.user });
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+      dispatch({ type: 'SET_LOADING', payload: false }); // إيقاف التحميل عند نجاح الاتصال
       
       // تحميل الرسائل الموجودة من قاعدة البيانات مرة واحدة فقط
       await loadExistingMessages();
@@ -685,17 +715,24 @@ export function useChat() {
       dispatch({ type: 'SET_MESSAGES_LOADED', payload: false });
       dispatch({ type: 'SET_INITIALIZED', payload: false });
       
-      const serverUrl = isDevelopment ? 'http://localhost:3001' : '';
+      // إعدادات الاتصال للإنتاج
+      const serverUrl = ''; // في الإنتاج نستخدم نفس النطاق
       
       if (!socket.current) {
         socket.current = io(serverUrl, {
           transports: ['websocket', 'polling'],
-          timeout: 10000,
+          timeout: 20000, // زيادة timeout
           reconnection: true,
-          reconnectionAttempts: 5,
-          reconnectionDelay: 1000,
+          reconnectionAttempts: 10, // زيادة محاولات إعادة الاتصال
+          reconnectionDelay: 2000, // زيادة التأخير
+          reconnectionDelayMax: 10000,
           autoConnect: true,
-          forceNew: false
+          forceNew: false,
+          // إعدادات إضافية للاستقرار
+          upgrade: true,
+          rememberUpgrade: true,
+          // تخصيص مسار socket.io
+          path: '/socket.io/',
         });
       }
 
@@ -705,9 +742,10 @@ export function useChat() {
       console.error('خطأ في الاتصال:', error);
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل في الاتصال بالخادم' });
     } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
+      // نحتفظ بـ loading حتى يتم الاتصال فعلياً
+      // dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [setupSocketListeners, isDevelopment]);
+  }, [setupSocketListeners]);
 
   // Load room messages function - محسنة مع cache
   const loadRoomMessages = useCallback(async (roomId: string) => {

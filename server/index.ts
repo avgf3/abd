@@ -283,7 +283,7 @@ function setupGracefulShutdown(httpServer: Server) {
     log('✅ تم إكمال تهيئة قاعدة البيانات');
 
     // تحديد المنفذ المطلوب - محسن لـ Render
-    const preferredPort = process.env.PORT ? Number(process.env.PORT) : (isProduction ? 10000 : 5000);
+    const preferredPort = process.env.PORT ? Number(process.env.PORT) : (isProduction ? 10000 : 3001);
     log(`🔍 تحديد المنفذ للخادم: ${preferredPort}...`);
     
     // البحث عن منفذ متاح
