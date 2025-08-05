@@ -9,6 +9,7 @@ import { setupSecurity } from "./security";
 import path from "path";
 import fs from "fs";
 import { Server } from "http";
+import fetch from "node-fetch";
 
 const app = express();
 
@@ -35,7 +36,19 @@ app.use('/uploads', (req, res, next) => {
       }
     }
     
-    return res.status(404).json({ error: 'File not found' });
+    // Return placeholder for wall images
+    if (req.path.includes('wall-') || req.path.includes('/wall/')) {
+      const placeholderPath = path.join(process.cwd(), 'client/public/placeholder.jpg');
+      if (fs.existsSync(placeholderPath)) {
+        return res.sendFile(placeholderPath);
+      }
+    }
+    
+    // Return a 1x1 transparent pixel as fallback
+    const transparentPixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+    res.set('Content-Type', 'image/png');
+    res.set('Cache-Control', 'public, max-age=86400');
+    return res.send(transparentPixel);
   }
   
   console.log('✅ الملف موجود:', fullPath);
@@ -245,13 +258,28 @@ function setupGracefulShutdown(httpServer: Server) {
     // إعداد الإغلاق الآمن
     setupGracefulShutdown(httpServer);
     
-  } catch (error) {
-    log(`❌ خطأ حرج في بدء تشغيل الخادم: ${error}`);
-    
-    if (httpServer) {
-      httpServer.close();
+    // إعداد keep-alive لمنع cold starts في Render
+    if (process.env.NODE_ENV === 'production') {
+      const keepAlive = () => {
+        const host = process.env.RENDER_EXTERNAL_URL || `http://localhost:${availablePort}`;
+        console.log(`🔄 Keep-alive ping to ${host}/api/health`);
+        
+        fetch(`${host}/api/health`)
+          .then(res => console.log(`✅ Keep-alive successful: ${res.status}`))
+          .catch(err => console.log(`⚠️ Keep-alive failed: ${err.message}`));
+      };
+      
+      // ping كل 14 دقيقة (قبل 15 دقيقة من sleep)
+      const intervalId = setInterval(keepAlive, 14 * 60 * 1000);
+      
+      // تنظيف عند الإغلاق
+      process.on('SIGTERM', () => {
+        clearInterval(intervalId);
+      });
+      
+      // بدء أول ping بعد دقيقة واحدة
+      setTimeout(keepAlive, 60000);
     }
     
-    process.exit(1);
-  }
-})();
+  } catch (error) {
+    log(`
