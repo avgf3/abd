@@ -84,6 +84,8 @@ export default function MessageAlert({ isOpen, sender, onClose, onOpenMessages }
               onClick={onClose}
               variant="ghost"
               className="text-white hover:bg-red-600 text-xs px-2 py-1"
+              aria-label="إغلاق التنبيه"
+              title="إغلاق"
             >
               ❌
             </Button>

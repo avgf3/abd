@@ -283,20 +283,34 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <Input
-              value={memberName}
-              onChange={(e) => setMemberName(e.target.value)}
-              placeholder="اسم المستخدم"
-              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
-            />
-            <Input
-              type="password"
-              value={memberPassword}
-              onChange={(e) => setMemberPassword(e.target.value)}
-              placeholder="كلمة المرور"
-              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
-              onKeyPress={(e) => e.key === 'Enter' && handleMemberLogin()}
-            />
+            <div>
+              <label htmlFor="member-username" className="block text-sm font-medium text-white mb-1">
+                اسم المستخدم
+              </label>
+              <Input
+                id="member-username"
+                value={memberName}
+                onChange={(e) => setMemberName(e.target.value)}
+                placeholder="اسم المستخدم"
+                className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+                aria-required="true"
+              />
+            </div>
+            <div>
+              <label htmlFor="member-password" className="block text-sm font-medium text-white mb-1">
+                كلمة المرور
+              </label>
+              <Input
+                id="member-password"
+                type="password"
+                value={memberPassword}
+                onChange={(e) => setMemberPassword(e.target.value)}
+                placeholder="كلمة المرور"
+                className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+                onKeyPress={(e) => e.key === 'Enter' && handleMemberLogin()}
+                aria-required="true"
+              />
+            </div>
             <Button 
               onClick={handleMemberLogin} 
               disabled={loading}
@@ -319,21 +333,41 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <Input
-              value={registerName}
-              onChange={(e) => setRegisterName(e.target.value)}
-              placeholder="اسم المستخدم الجديد"
-              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
-            />
-            <Input
-              type="password"
-              value={registerPassword}
-              onChange={(e) => setRegisterPassword(e.target.value)}
-              placeholder="كلمة المرور (6 أحرف على الأقل)"
-              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
-            />
-            <Input
-              type="password"
+            <div>
+              <label htmlFor="register-username" className="block text-sm font-medium text-white mb-1">
+                اسم المستخدم الجديد
+              </label>
+              <Input
+                id="register-username"
+                value={registerName}
+                onChange={(e) => setRegisterName(e.target.value)}
+                placeholder="اسم المستخدم الجديد"
+                className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+                aria-required="true"
+              />
+            </div>
+            <div>
+              <label htmlFor="register-password" className="block text-sm font-medium text-white mb-1">
+                كلمة المرور (6 أحرف على الأقل)
+              </label>
+              <Input
+                id="register-password"
+                type="password"
+                value={registerPassword}
+                onChange={(e) => setRegisterPassword(e.target.value)}
+                placeholder="كلمة المرور (6 أحرف على الأقل)"
+                className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+                aria-required="true"
+                minLength={6}
+              />
+            </div>
+            <div>
+              <label htmlFor="register-confirm-password" className="block text-sm font-medium text-white mb-1">
+                تأكيد كلمة المرور
+              </label>
+              <Input
+                id="register-confirm-password"
+                type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="تأكيد كلمة المرور"

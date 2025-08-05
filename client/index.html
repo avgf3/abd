@@ -3,7 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>دردشة عربية</title>
+  
+  <!-- SEO Meta Tags -->
+  <title>دردشة عربية - منصة التواصل الاجتماعي العربية</title>
+  <meta name="description" content="منصة دردشة عربية تفاعلية تتيح لك التواصل مع الأصدقاء، إرسال الرسائل، مشاركة الصور، وإنشاء غرف دردشة خاصة. تواصل بالعربية مع مجتمع نشط وآمن." />
+  <meta name="keywords" content="دردشة عربية, شات, تواصل اجتماعي, رسائل, صور, غرف دردشة, عربي, منصة تواصل" />
+  <meta name="author" content="دردشة عربية" />
+  <meta name="robots" content="index, follow" />
+  
+  <!-- Open Graph Meta Tags for Social Media -->
+  <meta property="og:title" content="دردشة عربية - منصة التواصل الاجتماعي العربية" />
+  <meta property="og:description" content="منصة دردشة عربية تفاعلية للتواصل مع الأصدقاء ومشاركة الرسائل والصور" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://abd-ylo2.onrender.com" />
+  <meta property="og:site_name" content="دردشة عربية" />
+  <meta property="og:locale" content="ar_SA" />
+  
+  <!-- Twitter Card Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="دردشة عربية - منصة التواصل الاجتماعي العربية" />
+  <meta name="twitter:description" content="منصة دردشة عربية تفاعلية للتواصل مع الأصدقاء ومشاركة الرسائل والصور" />
+  
+  <!-- Accessibility and Performance -->
+  <meta name="theme-color" content="#3498db" />
+  <meta name="color-scheme" content="light" />
+  
+  <!-- Preconnect to external domains for better performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+  <!-- DNS Prefetch for better performance -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  
   <style>
     body { 
       font-family: 'Cairo', Arial, sans-serif; 
@@ -42,7 +74,7 @@
   <div id="root">
     <div class="loading">
       <div>
-        <div class="spinner"></div>
+        <div class="spinner" role="status" aria-label="جاري التحميل"></div>
         <p style="margin-top: 20px; color: #666;">جاري تحميل الدردشة العربية...</p>
       </div>
     </div>
@@ -58,7 +90,9 @@
           <div style="text-align: center; padding: 50px; font-family: 'Cairo', Arial, sans-serif;">
             <h2 style="color: #e74c3c;">خطأ في تحميل التطبيق</h2>
             <p style="color: #666;">يرجى تحديث الصفحة أو المحاولة لاحقاً</p>
-            <button onclick="location.reload()" style="
+            <button onclick="location.reload()" 
+                    aria-label="تحديث الصفحة"
+                    style="
               background: #3498db; 
               color: white; 
               border: none; 

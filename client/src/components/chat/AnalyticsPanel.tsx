@@ -27,7 +27,13 @@ export default function AnalyticsPanel({ isOpen, onClose, currentUser }: Analyti
             >
               {isLoading ? '⏳' : '🔄'} تحديث
             </Button>
-            <Button onClick={onClose} variant="ghost" className="text-white">
+            <Button 
+              onClick={onClose} 
+              variant="ghost" 
+              className="text-white"
+              aria-label="إغلاق لوحة الإحصائيات"
+              title="إغلاق"
+            >
               ✕
             </Button>
           </div>

@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express, { type Request, Response, NextFunction } from "express";
+import compression from "compression";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase, createDefaultUsers, runMigrations, runDrizzlePush } from "./database-setup";
@@ -16,6 +17,27 @@ const app = express();
 // إعدادات خاصة بـ Render
 const isProduction = process.env.NODE_ENV === 'production';
 const isRender = process.env.RENDER === 'true' || process.env.RENDER_EXTERNAL_URL;
+
+// تفعيل الضغط للملفات (Gzip/Brotli) - يجب أن يكون قبل setupSecurity
+app.use(compression({
+  // ضغط الملفات أكبر من 1KB
+  threshold: 1024,
+  // مستوى الضغط (1-9, حيث 9 أقصى ضغط)
+  level: isProduction ? 6 : 1,
+  // أنواع الملفات المراد ضغطها
+  filter: (req, res) => {
+    // عدم ضغط الملفات المضغوطة مسبقاً
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    
+    const contentType = res.getHeader('content-type') as string;
+    if (!contentType) return false;
+    
+    // ضغط النصوص والـ JSON والـ CSS والـ JS
+    return /text|json|javascript|css|xml|svg/.test(contentType);
+  }
+}));
 
 // Setup security first
 setupSecurity(app);
@@ -89,11 +111,19 @@ app.use('/uploads', (req, res, next) => {
   console.log('✅ الملف موجود:', fullPath);
   next();
 }, express.static(uploadsPath, {
-  // إعدادات محسّنة للأداء
-  maxAge: isProduction ? '7d' : '1d', // cache أطول في الإنتاج
+  // إعدادات محسّنة للأداء والتخزين المؤقت
+  maxAge: isProduction ? '30d' : '1d', // cache أطول في الإنتاج - 30 يوم
   etag: true,
   lastModified: true,
+  immutable: isProduction, // الملفات غير قابلة للتغيير في الإنتاج
   setHeaders: (res, path) => {
+    // إعداد headers محسّنة للتخزين المؤقت
+    if (isProduction) {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable'); // 30 يوم
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // يوم واحد في التطوير
+    }
+    
     // إعداد headers مناسبة للصور
     if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
       res.setHeader('Content-Type', 'image/jpeg');

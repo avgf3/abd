@@ -142,6 +142,9 @@ export function unblockIP(ip: string): void {
 
 // Security middleware to prevent common attacks
 export function setupSecurity(app: Express): void {
+  // إزالة رأس X-Powered-By لإخفاء معلومات الخادم
+  app.disable('x-powered-by');
+  
   // Rate limiting for API endpoints
   const requestCounts = new Map<string, { count: number; resetTime: number }>();
   
@@ -167,37 +170,48 @@ export function setupSecurity(app: Express): void {
     }
   });
 
-  // Security headers
+  // Enhanced Security headers
   app.use((req: Request, res: Response, next: NextFunction) => {
-    // Prevent clickjacking
+    // HSTS - إجبار الاتصال الآمن عبر HTTPS
+    if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    }
+    
+    // Prevent clickjacking - استخدام CSP frame-ancestors بدلاً من X-Frame-Options
     res.setHeader('X-Frame-Options', 'DENY');
     
     // Prevent MIME type sniffing
     res.setHeader('X-Content-Type-Options', 'nosniff');
     
-    // XSS Protection
-    res.setHeader('X-XSS-Protection', '1; mode=block');
+    // إزالة X-XSS-Protection لأنه لم يعد مدعوماً في المتصفحات الحديثة
+    // res.setHeader('X-XSS-Protection', '1; mode=block');
     
     // Referrer Policy
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     
-    // Content Security Policy
+    // Permissions Policy - تقييد الصلاحيات
+    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    
+    // Enhanced Content Security Policy
     res.setHeader('Content-Security-Policy', [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // unsafe-eval مطلوب لـ Vite في التطوير
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "img-src 'self' data: https:",
-      "connect-src 'self' ws: wss:",
+      "img-src 'self' data: https: blob:",
+      "connect-src 'self' ws: wss: https:",
       "font-src 'self' https://fonts.gstatic.com",
       "object-src 'none'",
       "media-src 'self'",
-      "frame-src 'none'"
+      "frame-src 'none'",
+      "frame-ancestors 'none'", // حماية إضافية ضد Clickjacking
+      "base-uri 'self'",
+      "form-action 'self'"
     ].join('; '));
     
     next();
   });
 
-  // CORS configuration
+  // Improved CORS configuration
   app.use((req: Request, res: Response, next: NextFunction) => {
     const allowedOrigins = [
       'http://localhost:5173',
@@ -208,14 +222,21 @@ export function setupSecurity(app: Express): void {
     ].filter(Boolean);
 
     const origin = req.headers.origin;
+    
+    // تحسين إعدادات CORS - عدم السماح بـ * إلا في حالات محددة
     if (origin && allowedOrigins.includes(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin);
-    } else if (!origin) {
-      // For same-origin requests (production)
-      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    } else if (!origin && process.env.NODE_ENV === 'production') {
+      // في الإنتاج، السماح للطلبات same-origin فقط
+      res.setHeader('Access-Control-Allow-Origin', req.headers.host || 'localhost');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    } else if (process.env.NODE_ENV === 'development') {
+      // في التطوير، السماح المحدود
+      res.setHeader('Access-Control-Allow-Origin', origin || '*');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
     }
     
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     
