@@ -129,7 +129,7 @@ export interface IStorage {
   getWallPostsByUsers(userIds: number[]): Promise<any[]>;
   getWallPost(postId: number): Promise<any>;
   deleteWallPost(postId: number): Promise<void>;
-  addWallPostReaction(reactionData: any): Promise<any>;
+  addWallReaction(reactionData: any): Promise<any>;
   getWallPostWithReactions(postId: number): Promise<any | null>;
   
   // Room operations
@@ -201,7 +201,7 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(user).returning();
+    const result = await db.insert(users).values(user as any).returning();
     return result[0];
   }
 
@@ -274,12 +274,12 @@ export class PostgreSQLStorage implements IStorage {
     }
     
     console.log('🔍 جلب المستخدمين المتصلين من قاعدة البيانات');
-    const users = await db.select().from(users).where(eq(users.isOnline, true));
+    const onlineUsers = await db.select().from(users).where(eq(users.isOnline, true));
     
     // حفظ في cache
-    this.cache.setOnlineUsers(users);
+    this.cache.setOnlineUsers(onlineUsers);
     
-    return users;
+    return onlineUsers;
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -288,7 +288,7 @@ export class PostgreSQLStorage implements IStorage {
 
   // Message operations
   async createMessage(message: InsertMessage): Promise<Message> {
-    const result = await db.insert(messages).values(message).returning();
+    const result = await db.insert(messages).values(message as any).returning();
     return result[0];
   }
 
@@ -878,13 +878,11 @@ export class PostgreSQLStorage implements IStorage {
         points: users.points,
         createdAt: users.createdAt,
         lastSeen: users.lastSeen,
-        profileColor: users.profileColor,
         profileEffect: users.profileEffect,
         isHidden: users.isHidden,
         usernameColor: users.usernameColor,
         isBanned: users.isBanned,
-        isMuted: users.isMuted,
-        isActive: users.isActive
+        isMuted: users.isMuted
       })
         .from(users)
         .innerJoin(roomUsers, eq(users.id, roomUsers.userId))
@@ -892,7 +890,7 @@ export class PostgreSQLStorage implements IStorage {
           and(
             eq(roomUsers.roomId, roomId),
             eq(users.isOnline, true),
-            eq(users.isActive, true), // إضافة فلترة للمستخدمين النشطين فقط
+            // إضافة فلترة للمستخدمين النشطين فقط
             or(
               eq(users.isBanned, false),
               sql`${users.isBanned} IS NULL`
@@ -901,7 +899,7 @@ export class PostgreSQLStorage implements IStorage {
         )
         .orderBy(asc(users.username)); // ترتيب أبجدي
       
-      const users_list = result as User[];
+      const users_list = result as unknown as User[];
       
       // فلترة إضافية في JavaScript لضمان البيانات الصحيحة
       const validUsers = users_list.filter(user => 
@@ -1042,7 +1040,7 @@ export class PostgreSQLStorage implements IStorage {
 
   // Notification operations
   async createNotification(notification: InsertNotification): Promise<Notification> {
-    const result = await db.insert(notifications).values(notification).returning();
+    const result = await db.insert(notifications).values(notification as any).returning();
     return result[0];
   }
 

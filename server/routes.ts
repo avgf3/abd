@@ -1193,7 +1193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         points: user.points || 0,
         createdAt: user.createdAt,
         lastSeen: user.lastSeen,
-        profileColor: user.profileColor,
+        // profileColor removed - not in schema
         profileEffect: user.profileEffect,
         isHidden: user.isHidden
       }));

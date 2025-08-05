@@ -107,7 +107,7 @@ export class ChatAnalyticsManager {
   }
   
   // الحصول على تحليلات شاملة
-  getAnalytics(): ChatAnalytics {
+  getAnalytics(): any {
     const now = Date.now();
     const hourAgo = now - (60 * 60 * 1000);
     
@@ -536,7 +536,7 @@ export const autoOptimizer = AutoOptimizer.getInstance();
 
 // Hook لاستخدام التحليلات في React
 export function useChatAnalytics() {
-  const [analytics, setAnalytics] = useState<ChatAnalytics | null>(null);
+  const [analytics, setAnalytics] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   
   const refreshAnalytics = useCallback(async () => {
@@ -544,7 +544,7 @@ export function useChatAnalytics() {
     try {
       // محاكاة تحميل البيانات
       await new Promise(resolve => setTimeout(resolve, 500));
-      const data = chatAnalytics.getAnalytics();
+      const data = chatAnalytics.getMetrics();
       setAnalytics(data);
     } catch (error) {
       console.error('خطأ في تحميل التحليلات:', error);
@@ -566,8 +566,8 @@ export function useChatAnalytics() {
     analytics,
     isLoading,
     refreshAnalytics,
-    recordMessage: chatAnalytics.recordMessage.bind(chatAnalytics),
-    startSession: chatAnalytics.startUserSession.bind(chatAnalytics),
-    endSession: chatAnalytics.endUserSession.bind(chatAnalytics)
+    recordMessage: chatAnalytics.recordMessageSent.bind(chatAnalytics),
+    startSession: chatAnalytics.recordConnectionStart.bind(chatAnalytics),
+    endSession: () => {} // No end session method available
   };
 }

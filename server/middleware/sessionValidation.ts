@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
+import { AuthenticatedUser, UserRole } from '../types/api';
 
 // تمديد نوع Request لإضافة خاصية user
 declare global {
   namespace Express {
     interface Request {
-      user?: any;
+      user?: AuthenticatedUser;
     }
   }
 }
@@ -51,7 +52,10 @@ export const validateSession = async (req: Request, res: Response, next: NextFun
     }
     
     // إضافة بيانات المستخدم إلى الطلب
-    req.user = user;
+    req.user = {
+      ...user,
+      userType: user.userType as UserRole
+    };
     next();
     
   } catch (error) {
@@ -82,7 +86,10 @@ export const validateSessionOptional = async (req: Request, res: Response, next:
     
     const user = await storage.getUser(userIdNumber);
     if (user && user.isOnline) {
-      req.user = user;
+      req.user = {
+        ...user,
+        userType: user.userType as UserRole
+      };
     }
     
     next();

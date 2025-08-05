@@ -232,7 +232,7 @@ export default function MessageArea({
         <div className="flex-shrink-0">
           <ProfileImage 
             user={message.sender} 
-            size={40}
+            size="medium"
             onClick={(e) => onUserClick?.(e, message.sender!)}
             className="cursor-pointer hover:scale-110 transition-transform duration-200"
           />
@@ -283,7 +283,7 @@ export default function MessageArea({
               <div 
                 className="whitespace-pre-wrap break-words"
                 dangerouslySetInnerHTML={{ 
-                  __html: renderMessageWithMentions(message.content, onlineUsers) 
+                  __html: renderMessageWithMentions(message.content, currentUser, onlineUsers) 
                 }}
               />
             )}
@@ -336,7 +336,7 @@ export default function MessageArea({
             </div>
           </div>
         ) : (
-          displayMessages.map(MessageComponent)
+          displayMessages.map((message, index) => MessageComponent({ message }))
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -391,7 +391,7 @@ export default function MessageArea({
         {/* اختيار الإيموجي */}
         {showEmojiPicker && (
           <div className="absolute bottom-20 left-4 z-50">
-            <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+            <EmojiPicker onEmojiSelect={handleEmojiSelect} onClose={() => setShowEmojiPicker(false)} />
           </div>
         )}
         
