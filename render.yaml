@@ -8,8 +8,8 @@ services:
     name: chat-app
     env: node
     region: oregon
-    buildCommand: npm install && npm run build && npm run db:migrate-production
-    startCommand: npm start
+    buildCommand: npm run build:render
+    startCommand: npm run start:render
     envVars:
       - key: NODE_ENV
         value: production
