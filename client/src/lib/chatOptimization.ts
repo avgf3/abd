@@ -1,331 +1,272 @@
-// مكتبة تحسين الأداء للشات
-import { useCallback, useMemo, useRef, useEffect } from 'react';
-import type { ChatMessage, ChatUser } from '@/types/chat';
-
-// تحسين عرض الرسائل بـ Virtual Scrolling
-export class VirtualScrollManager {
-  private containerHeight = 0;
-  private itemHeight = 80; // ارتفاع الرسالة المقدر
-  private visibleStart = 0;
-  private visibleEnd = 0;
-  private totalItems = 0;
-  
-  constructor(containerHeight: number, itemHeight: number = 80) {
-    this.containerHeight = containerHeight;
-    this.itemHeight = itemHeight;
-  }
-  
-  calculateVisibleRange(scrollTop: number, totalItems: number) {
-    this.totalItems = totalItems;
-    this.visibleStart = Math.floor(scrollTop / this.itemHeight);
-    this.visibleEnd = Math.min(
-      this.visibleStart + Math.ceil(this.containerHeight / this.itemHeight) + 1,
-      totalItems
-    );
-    
-    return {
-      start: Math.max(0, this.visibleStart - 5), // buffer
-      end: Math.min(totalItems, this.visibleEnd + 5)
-    };
-  }
-  
-  getScrollHeight() {
-    return this.totalItems * this.itemHeight;
-  }
-}
-
-// مدير ذاكرة التخزين المؤقت للرسائل
+// تحسينات شاملة لنظام الدردشة
 export class MessageCacheManager {
-  private cache = new Map<string, ChatMessage[]>();
-  private userCache = new Map<number, ChatUser>();
-  private maxCacheSize = 1000;
-  private accessTimes = new Map<string, number>();
-  
-  // تخزين الرسائل مع LRU eviction
-  setMessages(key: string, messages: ChatMessage[]) {
+  private cache = new Map<string, { messages: any[]; timestamp: number; maxAge: number }>();
+  private maxCacheSize = 50; // عدد العناصر في cache
+
+  set(key: string, messages: any[], maxAge: number = 300000) { // 5 دقائق افتراضياً
+    // تنظيف cache إذا كان ممتلئ
     if (this.cache.size >= this.maxCacheSize) {
-      this.evictLeastRecentlyUsed();
-    }
-    
-    this.cache.set(key, messages);
-    this.accessTimes.set(key, Date.now());
-  }
-  
-  getMessages(key: string): ChatMessage[] | null {
-    const messages = this.cache.get(key);
-    if (messages) {
-      this.accessTimes.set(key, Date.now());
-      return messages;
-    }
-    return null;
-  }
-  
-  // حذف العناصر الأقل استخداماً
-  private evictLeastRecentlyUsed() {
-    let oldestKey = '';
-    let oldestTime = Infinity;
-    
-    for (const [key, time] of this.accessTimes) {
-      if (time < oldestTime) {
-        oldestTime = time;
-        oldestKey = key;
-      }
-    }
-    
-    if (oldestKey) {
+      const oldestKey = this.cache.keys().next().value;
       this.cache.delete(oldestKey);
-      this.accessTimes.delete(oldestKey);
     }
+
+    this.cache.set(key, {
+      messages,
+      timestamp: Date.now(),
+      maxAge
+    });
   }
-  
-  // تخزين بيانات المستخدمين
-  setUser(userId: number, user: ChatUser) {
-    this.userCache.set(userId, user);
+
+  get(key: string): any[] | null {
+    const item = this.cache.get(key);
+    if (!item) return null;
+
+    const isExpired = Date.now() - item.timestamp > item.maxAge;
+    if (isExpired) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return item.messages;
   }
-  
-  getUser(userId: number): ChatUser | null {
-    return this.userCache.get(userId) || null;
-  }
-  
+
   clear() {
     this.cache.clear();
-    this.userCache.clear();
-    this.accessTimes.clear();
+  }
+
+  size() {
+    return this.cache.size;
   }
 }
 
-// مدير تحسين الشبكة
 export class NetworkOptimizer {
-  private pendingRequests = new Map<string, Promise<any>>();
-  private requestQueue: Array<{ key: string; request: () => Promise<any> }> = [];
-  private isProcessing = false;
-  
+  private pendingRequests = new Set<string>();
+  private debounceTimers = new Map<string, NodeJS.Timeout>();
+  private requestCounts = new Map<string, number>();
+  private lastRequestTimes = new Map<string, number>();
+
   // منع الطلبات المتكررة
-  async deduplicateRequest<T>(key: string, requestFn: () => Promise<T>): Promise<T> {
-    if (this.pendingRequests.has(key)) {
-      return this.pendingRequests.get(key)!;
-    }
+  canMakeRequest(key: string, minInterval: number = 1000): boolean {
+    const lastTime = this.lastRequestTimes.get(key) || 0;
+    const now = Date.now();
     
-    const promise = requestFn();
-    this.pendingRequests.set(key, promise);
-    
-    try {
-      const result = await promise;
-      return result;
-    } finally {
-      this.pendingRequests.delete(key);
-    }
-  }
-  
-  // تجميع الطلبات المتتالية
-  async batchRequest(key: string, requestFn: () => Promise<any>) {
-    this.requestQueue.push({ key, request: requestFn });
-    
-    if (!this.isProcessing) {
-      this.processQueue();
-    }
-  }
-  
-  private async processQueue() {
-    this.isProcessing = true;
-    
-    // انتظار تجميع المزيد من الطلبات
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    const batch = this.requestQueue.splice(0);
-    const promises = batch.map(item => item.request());
-    
-    try {
-      await Promise.all(promises);
-    } catch (error) {
-      console.error('خطأ في معالجة دفعة الطلبات:', error);
-    }
-    
-    this.isProcessing = false;
-    
-    // معالجة أي طلبات جديدة
-    if (this.requestQueue.length > 0) {
-      this.processQueue();
-    }
-  }
-}
-
-// Hook لتحسين عرض الرسائل
-export function useOptimizedMessages(messages: ChatMessage[], containerRef: React.RefObject<HTMLElement>) {
-  const cacheManager = useRef(new MessageCacheManager());
-  const virtualScroll = useRef<VirtualScrollManager | null>(null);
-  
-  // تهيئة Virtual Scrolling
-  useEffect(() => {
-    if (containerRef.current) {
-      const height = containerRef.current.clientHeight;
-      virtualScroll.current = new VirtualScrollManager(height);
-    }
-  }, [containerRef]);
-  
-  // تجميع الرسائل حسب المرسل والوقت
-  const groupedMessages = useMemo(() => {
-    const groups: Array<{
-      sender: ChatUser;
-      messages: ChatMessage[];
-      timestamp: Date;
-    }> = [];
-    
-    let currentGroup: typeof groups[0] | null = null;
-    const timeThreshold = 5 * 60 * 1000; // 5 دقائق
-    
-    messages.forEach(message => {
-      const isSameSender = currentGroup?.sender.id === message.senderId;
-      const isWithinTimeThreshold = currentGroup && 
-        message.timestamp && currentGroup.timestamp &&
-        (new Date(message.timestamp).getTime() - currentGroup.timestamp.getTime()) < timeThreshold;
-      
-      if (isSameSender && isWithinTimeThreshold) {
-        currentGroup!.messages.push(message);
-      } else {
-        currentGroup = {
-          sender: message.sender || {
-            id: message.senderId || 0,
-            username: 'مستخدم محذوف',
-            userType: 'guest' as const,
-            role: 'guest' as const,
-            profileImage: '',
-            profileBackgroundColor: '#3c0d0d',
-            isOnline: false,
-            isHidden: false,
-            lastSeen: null,
-            joinDate: new Date(),
-            createdAt: new Date(),
-            points: 0,
-            level: 1,
-            totalPoints: 0,
-            levelProgress: 0,
-            profileEffect: '',
-            userTheme: 'default'
-          },
-          messages: [message],
-          timestamp: message.timestamp || new Date()
-        };
-        groups.push(currentGroup);
-      }
-    });
-    
-    return groups;
-  }, [messages]);
-  
-  // تحسين البحث في الرسائل
-  const searchMessages = useCallback((query: string) => {
-    if (!query.trim()) return messages;
-    
-    const lowerQuery = query.toLowerCase();
-    return messages.filter(message =>
-      message.content.toLowerCase().includes(lowerQuery) ||
-      message.sender?.username.toLowerCase().includes(lowerQuery)
-    );
-  }, [messages]);
-  
-  return {
-    groupedMessages,
-    searchMessages,
-    cacheManager: cacheManager.current,
-    virtualScroll: virtualScroll.current
-  };
-}
-
-// Hook لتحسين الأداء العام
-export function usePerformanceOptimization() {
-  const networkOptimizer = useRef(new NetworkOptimizer());
-  const renderCount = useRef(0);
-  const lastRenderTime = useRef(0);
-  
-  // مراقبة أداء الرسوم البيانية
-  useEffect(() => {
-    renderCount.current++;
-    const now = performance.now();
-    
-    if (lastRenderTime.current > 0) {
-      const renderTime = now - lastRenderTime.current;
-      if (renderTime > 100) { // إذا كان الرسم يستغرق أكثر من 100ms
-        console.warn(`رسم بطيء: ${renderTime.toFixed(2)}ms`);
-      }
-    }
-    
-    lastRenderTime.current = now;
-  });
-  
-  // تنظيف الذاكرة
-  const cleanupMemory = useCallback(() => {
-    // تنظيف event listeners
-    const events = ['resize', 'scroll', 'beforeunload'];
-    events.forEach(event => {
-      window.removeEventListener(event, () => {});
-    });
-    
-    // تنظيف timeouts and intervals
-    const highestTimeoutId = setTimeout(';');
-    for (let i = 0; i < highestTimeoutId; i++) {
-      clearTimeout(i);
-    }
-  }, []);
-  
-  return {
-    networkOptimizer: networkOptimizer.current,
-    renderCount: renderCount.current,
-    cleanupMemory
-  };
-}
-
-// مدير إشعارات متقدم
-export class NotificationManager {
-  private permission: NotificationPermission = 'default';
-  private soundEnabled = true;
-  private visualEnabled = true;
-  
-  async requestPermission(): Promise<boolean> {
-    if ('Notification' in window) {
-      this.permission = await Notification.requestPermission();
-      return this.permission === 'granted';
-    }
-    return false;
-  }
-  
-  async showNotification(title: string, options: {
-    body?: string;
-    icon?: string;
-    tag?: string;
-    sound?: boolean;
-    requireInteraction?: boolean;
-  } = {}) {
-    if (this.permission !== 'granted') {
+    if (now - lastTime < minInterval) {
       return false;
     }
-    
-    try {
-      const notification = new Notification(title, {
-        body: options.body,
-        icon: options.icon || '/favicon.ico',
-        tag: options.tag,
-        requireInteraction: options.requireInteraction || false,
-        silent: !this.soundEnabled
-      });
-      
-      // إغلاق تلقائي بعد 5 ثوان
-      setTimeout(() => notification.close(), 5000);
-      
-      return true;
-    } catch (error) {
-      console.warn('خطأ في إظهار الإشعار:', error);
-      return false;
+
+    this.lastRequestTimes.set(key, now);
+    return true;
+  }
+
+  // إضافة طلب معلق
+  addPendingRequest(key: string) {
+    this.pendingRequests.add(key);
+  }
+
+  // إزالة طلب معلق
+  removePendingRequest(key: string) {
+    this.pendingRequests.delete(key);
+  }
+
+  // التحقق من وجود طلب معلق
+  hasPendingRequest(key: string): boolean {
+    return this.pendingRequests.has(key);
+  }
+
+  // debounce للطلبات
+  debounce(key: string, fn: () => void, delay: number = 1000) {
+    if (this.debounceTimers.has(key)) {
+      clearTimeout(this.debounceTimers.get(key)!);
     }
+
+    const timer = setTimeout(() => {
+      fn();
+      this.debounceTimers.delete(key);
+    }, delay);
+
+    this.debounceTimers.set(key, timer);
   }
-  
-  toggleSound(enabled: boolean) {
-    this.soundEnabled = enabled;
-  }
-  
-  toggleVisual(enabled: boolean) {
-    this.visualEnabled = enabled;
+
+  // تنظيف timers
+  cleanup() {
+    this.debounceTimers.forEach(timer => clearTimeout(timer));
+    this.debounceTimers.clear();
   }
 }
 
-export const globalNotificationManager = new NotificationManager();
+export class globalNotificationManager {
+  private static instance: globalNotificationManager;
+  private notifications: any[] = [];
+  private maxNotifications = 10;
+
+  static getInstance(): globalNotificationManager {
+    if (!globalNotificationManager.instance) {
+      globalNotificationManager.instance = new globalNotificationManager();
+    }
+    return globalNotificationManager.instance;
+  }
+
+  addNotification(notification: any) {
+    this.notifications.push(notification);
+    
+    // إزالة الإشعارات القديمة
+    if (this.notifications.length > this.maxNotifications) {
+      this.notifications.shift();
+    }
+  }
+
+  getNotifications() {
+    return this.notifications;
+  }
+
+  clearNotifications() {
+    this.notifications = [];
+  }
+}
+
+// تحسينات الأداء
+export class PerformanceOptimizer {
+  private static instance: PerformanceOptimizer;
+  private renderCounts = new Map<string, number>();
+  private lastRenderTimes = new Map<string, number>();
+
+  static getInstance(): PerformanceOptimizer {
+    if (!PerformanceOptimizer.instance) {
+      PerformanceOptimizer.instance = new PerformanceOptimizer();
+    }
+    return PerformanceOptimizer.instance;
+  }
+
+  // تتبع عدد مرات التحديث
+  trackRender(componentName: string) {
+    const count = this.renderCounts.get(componentName) || 0;
+    this.renderCounts.set(componentName, count + 1);
+    
+    const now = Date.now();
+    this.lastRenderTimes.set(componentName, now);
+  }
+
+  // التحقق من الحاجة للتحديث
+  shouldUpdate(componentName: string, minInterval: number = 100): boolean {
+    const lastTime = this.lastRenderTimes.get(componentName) || 0;
+    const now = Date.now();
+    
+    return now - lastTime >= minInterval;
+  }
+
+  // إحصائيات الأداء
+  getPerformanceStats() {
+    return {
+      renderCounts: Object.fromEntries(this.renderCounts),
+      lastRenderTimes: Object.fromEntries(this.lastRenderTimes)
+    };
+  }
+}
+
+// تحسينات الذاكرة
+export class MemoryOptimizer {
+  private static instance: MemoryOptimizer;
+  private largeObjects = new Map<string, any>();
+  private objectSizes = new Map<string, number>();
+
+  static getInstance(): MemoryOptimizer {
+    if (!MemoryOptimizer.instance) {
+      MemoryOptimizer.instance = new MemoryOptimizer();
+    }
+    return MemoryOptimizer.instance;
+  }
+
+  // تخزين كائن كبير مع تتبع الحجم
+  storeLargeObject(key: string, obj: any) {
+    const size = this.estimateObjectSize(obj);
+    this.largeObjects.set(key, obj);
+    this.objectSizes.set(key, size);
+  }
+
+  // الحصول على كائن كبير
+  getLargeObject(key: string): any | null {
+    return this.largeObjects.get(key) || null;
+  }
+
+  // إزالة كائن كبير
+  removeLargeObject(key: string) {
+    this.largeObjects.delete(key);
+    this.objectSizes.delete(key);
+  }
+
+  // تقدير حجم الكائن
+  private estimateObjectSize(obj: any): number {
+    try {
+      return JSON.stringify(obj).length;
+    } catch {
+      return 0;
+    }
+  }
+
+  // تنظيف الكائنات الكبيرة
+  cleanupLargeObjects(maxSize: number = 1000000) { // 1MB
+    const entries = Array.from(this.objectSizes.entries());
+    entries.sort((a, b) => b[1] - a[1]); // ترتيب تنازلي حسب الحجم
+
+    let totalSize = 0;
+    for (const [key, size] of entries) {
+      totalSize += size;
+      if (totalSize > maxSize) {
+        this.removeLargeObject(key);
+      }
+    }
+  }
+}
+
+// تحسينات الاتصال
+export class ConnectionOptimizer {
+  private static instance: ConnectionOptimizer;
+  private connectionAttempts = new Map<string, number>();
+  private lastConnectionTime = 0;
+  private reconnectDelay = 1000;
+
+  static getInstance(): ConnectionOptimizer {
+    if (!ConnectionOptimizer.instance) {
+      ConnectionOptimizer.instance = new ConnectionOptimizer();
+    }
+    return ConnectionOptimizer.instance;
+  }
+
+  // تسجيل محاولة اتصال
+  recordConnectionAttempt(url: string) {
+    const attempts = this.connectionAttempts.get(url) || 0;
+    this.connectionAttempts.set(url, attempts + 1);
+    this.lastConnectionTime = Date.now();
+  }
+
+  // التحقق من إمكانية إعادة الاتصال
+  canReconnect(url: string, maxAttempts: number = 5): boolean {
+    const attempts = this.connectionAttempts.get(url) || 0;
+    const timeSinceLastAttempt = Date.now() - this.lastConnectionTime;
+    
+    return attempts < maxAttempts && timeSinceLastAttempt > this.reconnectDelay;
+  }
+
+  // إعادة تعيين محاولات الاتصال
+  resetConnectionAttempts(url: string) {
+    this.connectionAttempts.delete(url);
+  }
+
+  // زيادة تأخير إعادة الاتصال
+  increaseReconnectDelay() {
+    this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000); // أقصى 30 ثانية
+  }
+
+  // إعادة تعيين تأخير إعادة الاتصال
+  resetReconnectDelay() {
+    this.reconnectDelay = 1000;
+  }
+}
+
+// تصدير المدراء كـ singletons
+export const messageCache = new MessageCacheManager();
+export const networkOptimizer = new NetworkOptimizer();
+export const notificationManager = globalNotificationManager.getInstance();
+export const performanceOptimizer = PerformanceOptimizer.getInstance();
+export const memoryOptimizer = MemoryOptimizer.getInstance();
+export const connectionOptimizer = ConnectionOptimizer.getInstance();

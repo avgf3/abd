@@ -225,8 +225,314 @@ export class ChatAnalyticsManager {
   }
 }
 
-// مثيل عام لمدير التحليلات
-export const chatAnalytics = new ChatAnalyticsManager();
+// تحليلات أداء الدردشة
+export class ChatAnalytics {
+  private static instance: ChatAnalytics;
+  private metrics = {
+    messagesSent: 0,
+    messagesReceived: 0,
+    connectionTime: 0,
+    responseTime: 0,
+    errors: 0,
+    userActions: new Map<string, number>(),
+    performance: {
+      renderTime: 0,
+      memoryUsage: 0,
+      networkRequests: 0
+    }
+  };
+
+  private startTime = Date.now();
+  private connectionStartTime = 0;
+
+  static getInstance(): ChatAnalytics {
+    if (!ChatAnalytics.instance) {
+      ChatAnalytics.instance = new ChatAnalytics();
+    }
+    return ChatAnalytics.instance;
+  }
+
+  // تسجيل بداية الاتصال
+  recordConnectionStart() {
+    this.connectionStartTime = Date.now();
+  }
+
+  // تسجيل نجاح الاتصال
+  recordConnectionSuccess() {
+    if (this.connectionStartTime > 0) {
+      this.metrics.connectionTime = Date.now() - this.connectionStartTime;
+    }
+  }
+
+  // تسجيل رسالة مرسلة
+  recordMessageSent() {
+    this.metrics.messagesSent++;
+  }
+
+  // تسجيل رسالة مستلمة
+  recordMessageReceived() {
+    this.metrics.messagesReceived++;
+  }
+
+  // تسجيل خطأ
+  recordError(error: string) {
+    this.metrics.errors++;
+    console.error('Chat Analytics Error:', error);
+  }
+
+  // تسجيل إجراء مستخدم
+  recordUserAction(action: string) {
+    const count = this.metrics.userActions.get(action) || 0;
+    this.metrics.userActions.set(action, count + 1);
+  }
+
+  // تسجيل أداء الرسم
+  recordRenderTime(time: number) {
+    this.metrics.performance.renderTime = time;
+  }
+
+  // تسجيل استخدام الذاكرة
+  recordMemoryUsage(usage: number) {
+    this.metrics.performance.memoryUsage = usage;
+  }
+
+  // تسجيل طلب شبكة
+  recordNetworkRequest() {
+    this.metrics.performance.networkRequests++;
+  }
+
+  // الحصول على الإحصائيات
+  getMetrics() {
+    const uptime = Date.now() - this.startTime;
+    const messagesPerMinute = (this.metrics.messagesSent + this.metrics.messagesReceived) / (uptime / 60000);
+    
+    return {
+      ...this.metrics,
+      uptime,
+      messagesPerMinute,
+      errorRate: this.metrics.errors / (this.metrics.messagesSent + this.metrics.messagesReceived) || 0,
+      userActions: Object.fromEntries(this.metrics.userActions)
+    };
+  }
+
+  // تصدير البيانات
+  exportData() {
+    return {
+      timestamp: new Date().toISOString(),
+      metrics: this.getMetrics(),
+      userAgent: navigator.userAgent,
+      screenSize: `${window.screen.width}x${window.screen.height}`,
+      connectionType: (navigator as any).connection?.effectiveType || 'unknown'
+    };
+  }
+
+  // إعادة تعيين الإحصائيات
+  reset() {
+    this.metrics = {
+      messagesSent: 0,
+      messagesReceived: 0,
+      connectionTime: 0,
+      responseTime: 0,
+      errors: 0,
+      userActions: new Map<string, number>(),
+      performance: {
+        renderTime: 0,
+        memoryUsage: 0,
+        networkRequests: 0
+      }
+    };
+    this.startTime = Date.now();
+  }
+}
+
+// مدير مراقبة الأداء
+export class PerformanceMonitor {
+  private static instance: PerformanceMonitor;
+  private observers: Map<string, (data: any) => void> = new Map();
+  private isMonitoring = false;
+
+  static getInstance(): PerformanceMonitor {
+    if (!PerformanceMonitor.instance) {
+      PerformanceMonitor.instance = new PerformanceMonitor();
+    }
+    return PerformanceMonitor.instance;
+  }
+
+  // بدء المراقبة
+  startMonitoring() {
+    if (this.isMonitoring) return;
+    
+    this.isMonitoring = true;
+    
+    // مراقبة استخدام الذاكرة
+    if ('memory' in performance) {
+      setInterval(() => {
+        const memory = (performance as any).memory;
+        this.notifyObservers('memory', {
+          used: memory.usedJSHeapSize,
+          total: memory.totalJSHeapSize,
+          limit: memory.jsHeapSizeLimit
+        });
+      }, 5000);
+    }
+
+    // مراقبة أداء الشبكة
+    if ('connection' in navigator) {
+      const connection = (navigator as any).connection;
+      if (connection) {
+        connection.addEventListener('change', () => {
+          this.notifyObservers('network', {
+            effectiveType: connection.effectiveType,
+            downlink: connection.downlink,
+            rtt: connection.rtt
+          });
+        });
+      }
+    }
+
+    // مراقبة أداء الرسم
+    let lastFrameTime = performance.now();
+    const measureFrameTime = () => {
+      const currentTime = performance.now();
+      const frameTime = currentTime - lastFrameTime;
+      lastFrameTime = currentTime;
+      
+      this.notifyObservers('frameTime', frameTime);
+      
+      if (this.isMonitoring) {
+        requestAnimationFrame(measureFrameTime);
+      }
+    };
+    
+    requestAnimationFrame(measureFrameTime);
+  }
+
+  // إيقاف المراقبة
+  stopMonitoring() {
+    this.isMonitoring = false;
+  }
+
+  // إضافة مراقب
+  addObserver(event: string, callback: (data: any) => void) {
+    this.observers.set(event, callback);
+  }
+
+  // إزالة مراقب
+  removeObserver(event: string) {
+    this.observers.delete(event);
+  }
+
+  // إشعار المراقبين
+  private notifyObservers(event: string, data: any) {
+    const observer = this.observers.get(event);
+    if (observer) {
+      observer(data);
+    }
+  }
+}
+
+// مدير تحسين الأداء التلقائي
+export class AutoOptimizer {
+  private static instance: AutoOptimizer;
+  private analytics = ChatAnalytics.getInstance();
+  private monitor = PerformanceMonitor.getInstance();
+  private optimizationRules = new Map<string, () => void>();
+
+  static getInstance(): AutoOptimizer {
+    if (!AutoOptimizer.instance) {
+      AutoOptimizer.instance = new AutoOptimizer();
+    }
+    return AutoOptimizer.instance;
+  }
+
+  // إضافة قاعدة تحسين
+  addOptimizationRule(name: string, rule: () => void) {
+    this.optimizationRules.set(name, rule);
+  }
+
+  // تشغيل التحسينات التلقائية
+  startAutoOptimization() {
+    // مراقبة أداء الرسم
+    this.monitor.addObserver('frameTime', (frameTime: number) => {
+      if (frameTime > 16.67) { // أقل من 60fps
+        this.triggerOptimization('render');
+      }
+    });
+
+    // مراقبة استخدام الذاكرة
+    this.monitor.addObserver('memory', (memory: any) => {
+      const memoryUsage = memory.used / memory.limit;
+      if (memoryUsage > 0.8) { // أكثر من 80%
+        this.triggerOptimization('memory');
+      }
+    });
+
+    // مراقبة الشبكة
+    this.monitor.addObserver('network', (network: any) => {
+      if (network.effectiveType === 'slow-2g' || network.effectiveType === '2g') {
+        this.triggerOptimization('network');
+      }
+    });
+
+    this.monitor.startMonitoring();
+  }
+
+  // تشغيل تحسين محدد
+  private triggerOptimization(type: string) {
+    const rule = this.optimizationRules.get(type);
+    if (rule) {
+      console.log(`🔧 تشغيل تحسين ${type}`);
+      rule();
+    }
+  }
+
+  // تحسينات افتراضية
+  setupDefaultOptimizations() {
+    // تحسين الرسم
+    this.addOptimizationRule('render', () => {
+      // تقليل عدد العناصر المعروضة
+      const messageContainers = document.querySelectorAll('.message-container');
+      if (messageContainers.length > 100) {
+        // إزالة الرسائل القديمة
+        const oldMessages = Array.from(messageContainers).slice(0, 50);
+        oldMessages.forEach(msg => msg.remove());
+      }
+    });
+
+    // تحسين الذاكرة
+    this.addOptimizationRule('memory', () => {
+      // تنظيف الذاكرة
+      if ('gc' in window) {
+        (window as any).gc();
+      }
+      
+      // إزالة الصور غير المستخدمة
+      const images = document.querySelectorAll('img');
+      images.forEach(img => {
+        if (!img.offsetParent) {
+          img.remove();
+        }
+      });
+    });
+
+    // تحسين الشبكة
+    this.addOptimizationRule('network', () => {
+      // تقليل حجم الصور
+      const images = document.querySelectorAll('img');
+      images.forEach(img => {
+        if (img.width > 300 || img.height > 300) {
+          img.style.maxWidth = '300px';
+          img.style.maxHeight = '300px';
+        }
+      });
+    });
+  }
+}
+
+// تصدير المدراء
+export const chatAnalytics = ChatAnalytics.getInstance();
+export const performanceMonitor = PerformanceMonitor.getInstance();
+export const autoOptimizer = AutoOptimizer.getInstance();
 
 // Hook لاستخدام التحليلات في React
 export function useChatAnalytics() {
