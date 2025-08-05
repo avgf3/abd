@@ -54,6 +54,25 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*", "**/node_modules/**"],
     },
+    // إضافة proxy للاتصال بالخادم
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/socket.io': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
+      '/uploads': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      }
+    },
     // Security headers
     headers: process.env.NODE_ENV === 'production' ? {
       'X-Content-Type-Options': 'nosniff',

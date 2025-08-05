@@ -685,7 +685,7 @@ export function useChat() {
       dispatch({ type: 'SET_MESSAGES_LOADED', payload: false });
       dispatch({ type: 'SET_INITIALIZED', payload: false });
       
-      const serverUrl = isDevelopment ? 'http://localhost:3001' : '';
+      const serverUrl = isDevelopment ? '' : '';
       
       if (!socket.current) {
         socket.current = io(serverUrl, {
