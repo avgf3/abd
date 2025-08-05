@@ -715,8 +715,7 @@ export function useChat() {
       dispatch({ type: 'SET_MESSAGES_LOADED', payload: false });
       dispatch({ type: 'SET_INITIALIZED', payload: false });
       
-      // إعدادات الاتصال للإنتاج
-      const serverUrl = ''; // في الإنتاج نستخدم نفس النطاق
+      const serverUrl = isDevelopment ? '' : '';
       
       if (!socket.current) {
         socket.current = io(serverUrl, {

@@ -2,13 +2,13 @@
 > rest-express@1.0.0 dev
 > NODE_ENV=development tsx server/index.ts
 
-[dotenv@17.2.1] injecting env (3) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.2.1] injecting env (3) from .env -- tip: ⚙️  override existing env vars with { override: true }
 The `fetchConnectionCache` option is deprecated (now always `true`)
 ✅ تم الاتصال بقاعدة البيانات PostgreSQL بنجاح
-[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
-[7:09:35 PM] [express] 🌍 البيئة الحالية: development
-[7:09:35 PM] [express] 🔧 بيئة التطوير، تفعيل Vite
-[7:09:35 PM] [express] 🗄️ بدء تشغيل migrations قاعدة البيانات...
+[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[7:11:49 PM] [express] 🌍 البيئة الحالية: development
+[7:11:49 PM] [express] 🔧 بيئة التطوير، تفعيل Vite
+[7:11:49 PM] [express] 🗄️ بدء تشغيل migrations قاعدة البيانات...
 {
   severity_local: 'NOTICE',
   severity: 'NOTICE',
@@ -69,22 +69,19 @@ params:
   }
 }
 ⚠️ Falling back to SQLite mode
-[7:09:37 PM] [express] ✅ تم إكمال migrations قاعدة البيانات بنجاح
-[7:09:37 PM] [express] 🔄 تهيئة قاعدة البيانات...
-[2025-08-05T19:09:37.109Z] INFO: 🔄 Initializing database tables...
+[7:11:50 PM] [express] ✅ تم إكمال migrations قاعدة البيانات بنجاح
+[7:11:50 PM] [express] 🔄 تهيئة قاعدة البيانات...
+[2025-08-05T19:11:50.867Z] INFO: 🔄 Initializing database tables...
 🔧 Checking for missing columns...
 ✅ Added missing role column
 ✅ Missing columns check completed
 ✅ Owner already exists
-[7:09:39 PM] [express] ✅ تم إكمال تهيئة قاعدة البيانات
-[7:09:39 PM] [express] 🔍 تحديد المنفذ للخادم: 3000...
-[7:09:39 PM] [express] ⚠️ المنفذ 3000 مستخدم، جاري المحاولة مع 3001
-[7:09:39 PM] [express] ⚠️ المنفذ 3000 غير متاح، سيتم استخدام 3001
-[7:09:39 PM] [express] 🚀 الخادم يعمل بنجاح على:
-[7:09:39 PM] [express]    📡 المضيف: http://localhost:3001
-[7:09:39 PM] [express]    🌐 الشبكة: http://0.0.0.0:3001
-[7:09:39 PM] [express]    🔌 Socket.IO: متاح على /socket.io/
-[7:09:39 PM] [express]    📊 صحة النظام: http://localhost:3001/api/health
-[7:10:18 PM] [express] GET /api/messages/room/general 200 in 2037ms :: {"messages":[{"id":160,"senderI…
-[7:11:07 PM] [express] 🛑 تم استلام إشارة SIGTERM، بدء الإغلاق الآمن...
-[7:11:07 PM] [express] ✅ تم إغلاق الخادم بنجاح
+[7:11:53 PM] [express] ✅ تم إكمال تهيئة قاعدة البيانات
+[7:11:53 PM] [express] 🔍 تحديد المنفذ للخادم: 3000...
+[7:11:53 PM] [express] ⚠️ المنفذ 3000 مستخدم، جاري المحاولة مع 3001
+[7:11:53 PM] [express] ⚠️ المنفذ 3000 غير متاح، سيتم استخدام 3001
+[7:11:53 PM] [express] 🚀 الخادم يعمل بنجاح على:
+[7:11:53 PM] [express]    📡 المضيف: http://localhost:3001
+[7:11:53 PM] [express]    🌐 الشبكة: http://0.0.0.0:3001
+[7:11:53 PM] [express]    🔌 Socket.IO: متاح على /socket.io/
+[7:11:53 PM] [express]    📊 صحة النظام: http://localhost:3001/api/health
