@@ -110,62 +110,29 @@ class ErrorBoundary extends Component<
 function Router() {
   console.log("🛣️ تحميل Router...");
   
-  try {
-    return (
-      <Switch>
-        <Route path="/" component={ChatPage} />
-        <Route component={ChatPage} />
-      </Switch>
-    );
-  } catch (error) {
-    console.error("❌ خطأ في Router:", error);
-    throw error;
-  }
+  return (
+    <Switch>
+      <Route path="/" component={ChatPage} />
+      <Route component={ChatPage} />
+    </Switch>
+  );
 }
 
 function App() {
   console.log("🎯 تحميل مكون App الرئيسي...");
   
-  try {
-    return (
-      <ErrorBoundary>
-        <QueryClientProvider client={queryClient}>
-          <UserProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Router />
-            </TooltipProvider>
-          </UserProvider>
-        </QueryClientProvider>
-      </ErrorBoundary>
-    );
-  } catch (error) {
-    console.error("❌ خطأ في App:", error);
-    
-    // Fallback UI في حالة فشل كل شيء
-    return (
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100vh',
-        background: '#1e3a8a',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontFamily: 'Arial, sans-serif',
-        textAlign: 'center'
-      }}>
-        <div>
-          <h1>⚠️ خطأ في التطبيق</h1>
-          <p>يرجى إعادة تحميل الصفحة</p>
-          <button onClick={() => window.location.reload()}>إعادة تحميل</button>
-        </div>
-      </div>
-    );
-  }
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <UserProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </UserProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
 }
 
 export default App;

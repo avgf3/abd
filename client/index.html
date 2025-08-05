@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>دردشة عربية</title>
-  <!-- تحميل الخطوط مع fallback -->
+  
+  <!-- تحميل الخطوط -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   
   <style>
-    /* CSS احتياطي لضمان العرض حتى لو فشلت الخطوط */
     * {
       box-sizing: border-box;
     }
@@ -32,8 +32,8 @@
       position: relative;
     }
     
-    /* شاشة تحميل احتياطية */
-    .loading-fallback {
+    /* شاشة تحميل بسيطة */
+    .loading {
       position: fixed;
       top: 0;
       left: 0;
@@ -43,20 +43,19 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-direction: column;
       z-index: 9999;
       color: white;
       text-align: center;
     }
     
-    .loading-spinner {
-      width: 50px;
-      height: 50px;
-      border: 4px solid rgba(255,255,255,0.3);
-      border-top: 4px solid #fbbf24;
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top: 3px solid #fbbf24;
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
     
     @keyframes spin {
@@ -64,29 +63,19 @@
       100% { transform: rotate(360deg); }
     }
     
-    /* إخفاء شاشة التحميل بعد تحميل المحتوى */
-    .app-loaded .loading-fallback {
+    /* إخفاء شاشة التحميل عند تحميل المحتوى */
+    .loaded .loading {
       display: none;
-    }
-    
-    /* التأكد من عدم وجود تمرير غير مرغوب فيه */
-    html {
-      scroll-behavior: smooth;
-    }
-    
-    /* تحسين الأداء */
-    img {
-      max-width: 100%;
-      height: auto;
     }
   </style>
 </head>
 <body>
-  <!-- شاشة تحميل احتياطية -->
-  <div class="loading-fallback" id="loading-fallback">
-    <div class="loading-spinner"></div>
-    <h2 style="margin: 0; font-size: 1.5rem;">🚀 جاري تحميل الدردشة العربية</h2>
-    <p style="margin: 10px 0 0 0; opacity: 0.8;">يرجى الانتظار...</p>
+  <!-- شاشة تحميل بسيطة -->
+  <div class="loading" id="loading">
+    <div>
+      <div class="spinner"></div>
+      <h3>🚀 جاري التحميل...</h3>
+    </div>
   </div>
   
   <div id="root"></div>
@@ -95,45 +84,22 @@
     // إزالة شاشة التحميل بعد تحميل التطبيق
     window.addEventListener('load', function() {
       setTimeout(function() {
-        const loadingFallback = document.getElementById('loading-fallback');
+        const loading = document.getElementById('loading');
         const root = document.getElementById('root');
         
         // التحقق من وجود محتوى في root
         if (root && root.children.length > 0) {
-          document.body.classList.add('app-loaded');
+          document.body.classList.add('loaded');
         } else {
-          // إذا لم يتم تحميل المحتوى، أظهر رسالة خطأ بعد 10 ثوانٍ
+          // محاولة إزالة شاشة التحميل بعد 3 ثوانٍ في كل الأحوال
           setTimeout(function() {
-            if (root && root.children.length === 0) {
-              loadingFallback.innerHTML = `
-                <div style="text-align: center; max-width: 500px; padding: 20px;">
-                  <h2 style="color: #fbbf24; margin-bottom: 20px;">⚠️ مشكلة في التحميل</h2>
-                  <p style="margin-bottom: 20px; line-height: 1.6;">
-                    يبدو أن هناك مشكلة في تحميل التطبيق. يرجى المحاولة مرة أخرى.
-                  </p>
-                  <button onclick="window.location.reload()" style="
-                    background: #10b981; 
-                    color: white; 
-                    border: none; 
-                    padding: 12px 24px; 
-                    border-radius: 6px; 
-                    font-size: 1rem; 
-                    cursor: pointer;
-                    font-family: inherit;
-                  ">
-                    🔄 إعادة تحميل
-                  </button>
-                </div>
-              `;
+            if (loading) {
+              loading.style.display = 'none';
             }
-          }, 10000); // 10 ثوانٍ
+          }, 3000);
         }
-      }, 2000); // انتظار ثانيتين قبل إخفاء شاشة التحميل
+      }, 1000);
     });
-
-    // تسجيل معلومات التصحيح
-    console.log('📱 معلومات المتصفح:', navigator.userAgent);
-    console.log('🌐 حالة الاتصال:', navigator.onLine ? 'متصل' : 'غير متصل');
   </script>
   
   <script type="module" src="/src/main.tsx"></script>
