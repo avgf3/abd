@@ -229,7 +229,7 @@ export function useChat() {
   const debouncedRequests = useRef<Record<string, NodeJS.Timeout>>({});
   
   // إضافة متغير للوصول إلى import.meta.env
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isDevelopment = import.meta.env.DEV;
   
   // دالة مساعدة لمنع الطلبات المتكررة
   const debounceRequest = useCallback((key: string, fn: () => void, delay: number = 1000) => {
