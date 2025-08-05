@@ -73,22 +73,12 @@ export default function FriendsPanel({
     
     setLoading(true);
     try {
-      const response = await apiRequest(`/api/friends/${currentUser.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data && Array.isArray(data.friends)) {
-          setFriends(data.friends.map((friend: any) => ({
-            ...friend,
-            status: friend.isOnline ? 'online' : 'offline'
-          })));
-        }
-      } else {
-        console.error('Error fetching friends:', response.status);
-        toast({
-          title: "خطأ",
-          description: "فشل في جلب قائمة الأصدقاء",
-          variant: "destructive"
-        });
+      const data = await apiRequest(`/api/friends/${currentUser.id}`);
+      if (data && Array.isArray(data.friends)) {
+        setFriends(data.friends.map((friend: any) => ({
+          ...friend,
+          status: friend.isOnline ? 'online' : 'offline'
+        })));
       }
     } catch (error) {
       console.error('Error fetching friends:', error);
@@ -111,8 +101,9 @@ export default function FriendsPanel({
         apiRequest(`/api/friend-requests/outgoing/${currentUser.id}`)
       ]);
       
-      const incoming = incomingResponse.ok && typeof incomingResponse.json === 'function' ? await incomingResponse.json() : { requests: [] };
-      const outgoing = outgoingResponse.ok && typeof outgoingResponse.json === 'function' ? await outgoingResponse.json() : { requests: [] };
+      // apiRequest يعيد البيانات مباشرة، لا حاجة لاستخدام .json()
+      const incoming = incomingResponse || { requests: [] };
+      const outgoing = outgoingResponse || { requests: [] };
       
       setFriendRequests({
         incoming: incoming.requests || [],

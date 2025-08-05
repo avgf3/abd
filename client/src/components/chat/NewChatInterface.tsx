@@ -149,7 +149,7 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
 
   const closeMessageAlert = () => {
     setNewMessageAlert({ show: false, sender: null });
-    chat.setNewMessageSender(null);
+    // إزالة استدعاء setNewMessageSender لأنه غير موجود في chat object
   };
 
   const openMessagesPanel = () => {
@@ -271,7 +271,8 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
                     if (e.key === 'Enter') {
                       const input = e.target as HTMLInputElement;
                       if (input.value.trim()) {
-                        chat.sendPublicMessage(input.value);
+                        // استخدام sendRoomMessage بدلاً من sendPublicMessage
+                        chat.sendRoomMessage(input.value, chat.currentRoomId);
                         input.value = '';
                       }
                     }
@@ -341,7 +342,8 @@ export default function NewChatInterface({ chat, onLogout }: ChatInterfaceProps)
           onClose={closePrivateMessage}
           messages={chat.privateConversations[selectedPrivateUser.id] || []}
           onSendMessage={(content) => {
-            chat.sendPrivateMessage(selectedPrivateUser.id, content);
+            // استخدام الطريقة الصحيحة لإرسال رسالة خاصة
+            chat.sendMessage(content, 'text', selectedPrivateUser.id);
           }}
           currentUser={chat.currentUser}
         />

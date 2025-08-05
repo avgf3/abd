@@ -82,7 +82,6 @@ export default function RoomsPanel({
               variant="ghost"
               size="sm"
               className="text-muted-foreground hover:text-primary"
-              title="تحديث الغرف"
             >
               <RefreshCw className="w-4 h-4" />
             </Button>

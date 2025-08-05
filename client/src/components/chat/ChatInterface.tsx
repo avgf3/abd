@@ -622,7 +622,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           user={selectedPrivateUser}
           currentUser={chat.currentUser}
           messages={chat.privateConversations[selectedPrivateUser.id] || []}
-          onSendMessage={(content) => chat.sendPrivateMessage(selectedPrivateUser.id, content)}
+          onSendMessage={(content) => chat.sendMessage(content, 'text', selectedPrivateUser.id)}
           onClose={closePrivateMessage}
         />
       )}

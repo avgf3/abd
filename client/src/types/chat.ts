@@ -4,6 +4,7 @@ export interface ChatUser {
   displayName?: string;
   profileImage?: string;
   role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'system';
+  userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
   isOnline: boolean;
   roomId?: string;
   
@@ -29,13 +30,18 @@ export interface ChatUser {
   messageSound?: boolean;
   allowPrivateMessages?: boolean;
   ipAddress?: string;
-  lastSeen?: Date;
+  lastSeen?: Date | null;
+  joinDate?: Date;
+  createdAt?: Date;
   isTyping?: boolean;
   isHidden?: boolean;
+  isMuted?: boolean;
   points?: number;
   level?: number;
+  totalPoints?: number;
+  levelProgress?: number;
   roomColor?: string;
-  userType?: string;
+  relation?: string;
   
   // تم إضافة خصائص جديدة
   ignoredUsers?: number[];
@@ -65,7 +71,7 @@ export type WebSocketMessage = {
         'onlineUsers' | 'userUpdated' | 'warning' | 'error' | 'auth' | 
         'friendRequestReceived' | 'friendRequestAccepted' | 'friendRequestRejected' |
         'userKicked' | 'userMuted' | 'userBanned' | 'userBlocked' |
-        'userPromoted' | 'kick' | 'points' | 'levelUp' | 'colorChanged' |
+        'userPromoted' | 'kick' | 'kicked' | 'points' | 'levelUp' | 'colorChanged' |
         'userVisibilityChanged' | 'themeChanged' | 'effectChanged' |
         'profileUpdated' | 'announcement' | 'roomUpdate' | 
         'broadcastUpdate' | 'newWallPost' | 'wallPostReaction' | 'wallPostDeleted' |

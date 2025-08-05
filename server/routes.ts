@@ -1192,7 +1192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gender: user.gender,
         points: user.points || 0,
         createdAt: user.createdAt,
-        lastActive: user.lastActive,
+        lastSeen: user.lastSeen,
         profileColor: user.profileColor,
         profileEffect: user.profileEffect,
         isHidden: user.isHidden
@@ -4433,8 +4433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         postId: parseInt(postId),
         userId: user.id,
         username: user.username,
-        type,
-        timestamp: new Date()
+        type
       });
 
       // جلب المنشور المحدث مع التفاعلات

@@ -303,7 +303,7 @@ export default function MessageArea({
                     {message.sender?.username}
                   </button>
                   
-                                        {message.sender && <UserRoleBadge user={message.sender} showOnlyIcon={false} />}
+                  {message.sender && <UserRoleBadge user={message.sender} showOnlyIcon={false} />}
                   
                   <span className="text-xs text-gray-500 mr-auto">
                     {formatTime(message.timestamp)}
