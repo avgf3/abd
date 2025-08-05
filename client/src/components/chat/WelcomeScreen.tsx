@@ -374,6 +374,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
               className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
               onKeyPress={(e) => e.key === 'Enter' && handleRegister()}
             />
+            </div>
             <div className="space-y-2">
               <label className="text-white text-sm font-medium">الجنس:</label>
               <div className="flex gap-4">
@@ -443,6 +444,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           </div>
         </DialogContent>
       </Dialog>
+      
     </div>
   );
 }
