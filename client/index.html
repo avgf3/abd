@@ -4,22 +4,104 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>دردشة عربية</title>
+  
+  <!-- تحميل الخطوط -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  
   <style>
+    * {
+      box-sizing: border-box;
+    }
+    
     body { 
-      font-family: 'Cairo', Arial, sans-serif; 
-      background: #f5f5f5; 
+      font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background: #0f172a; 
+      color: #f8fafc;
       direction: rtl; 
       margin: 0;
       padding: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
     }
+    
     #root {
       width: 100%;
+      min-height: 100vh;
+      position: relative;
+    }
+    
+    /* شاشة تحميل بسيطة */
+    .loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
       height: 100vh;
+      background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      color: white;
+      text-align: center;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top: 3px solid #fbbf24;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* إخفاء شاشة التحميل عند تحميل المحتوى */
+    .loaded .loading {
+      display: none;
     }
   </style>
 </head>
 <body>
+  <!-- شاشة تحميل بسيطة -->
+  <div class="loading" id="loading">
+    <div>
+      <div class="spinner"></div>
+      <h3>🚀 جاري التحميل...</h3>
+    </div>
+  </div>
+  
   <div id="root"></div>
+  
+  <script>
+    // إزالة شاشة التحميل بعد تحميل التطبيق
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        const loading = document.getElementById('loading');
+        const root = document.getElementById('root');
+        
+        // التحقق من وجود محتوى في root
+        if (root && root.children.length > 0) {
+          document.body.classList.add('loaded');
+        } else {
+          // محاولة إزالة شاشة التحميل بعد 3 ثوانٍ في كل الأحوال
+          setTimeout(function() {
+            if (loading) {
+              loading.style.display = 'none';
+            }
+          }, 3000);
+        }
+      }, 1000);
+    });
+  </script>
+  
   <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
