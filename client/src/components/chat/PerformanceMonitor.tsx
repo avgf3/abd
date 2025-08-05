@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { usePerformanceOptimization } from '@/lib/chatOptimization';
+import { PerformanceOptimizer } from '@/lib/chatOptimization';
 
 interface PerformanceMetrics {
   fps: number;
@@ -22,7 +22,7 @@ export default function PerformanceMonitor({ isVisible }: PerformanceMonitorProp
     messagesPerSecond: 0
   });
 
-  const { networkOptimizer, renderCount } = usePerformanceOptimization();
+  const performanceOptimizer = PerformanceOptimizer.getInstance();
   const frameCount = useRef(0);
   const lastTime = useRef(performance.now());
   const messageCount = useRef(0);
@@ -154,7 +154,7 @@ export default function PerformanceMonitor({ isVisible }: PerformanceMonitorProp
         
         <div className="flex justify-between">
           <span>الرسوم:</span>
-          <span className="text-blue-400">{renderCount}</span>
+          <span className="text-blue-400">{performanceOptimizer.getPerformanceStats().renderCounts['PerformanceMonitor'] || 0}</span>
         </div>
         
         <div className="flex justify-between">

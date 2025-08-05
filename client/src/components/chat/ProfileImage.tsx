@@ -7,7 +7,7 @@ interface ProfileImageProps {
   user: ChatUser;
   size?: 'small' | 'medium' | 'large';
   className?: string;
-  onClick?: (e: any) => void;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
 export default function ProfileImage({ user, size = 'medium', className = '', onClick }: ProfileImageProps) {

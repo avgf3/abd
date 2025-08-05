@@ -361,7 +361,7 @@ export interface BackupInfo {
 }
 
 // تصدير الأنواع المفيدة
-export {
+export type {
   Request as ExpressRequest,
   Response as ExpressResponse
 };

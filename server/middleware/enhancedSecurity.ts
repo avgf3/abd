@@ -2,12 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
 import { createError, ERROR_MESSAGES } from './errorHandler';
 import { log } from '../utils/productionLogger';
+import { AuthenticatedUser, UserRole } from '../types/api';
 
 // تمديد نوع Request
 declare global {
   namespace Express {
     interface Request {
-      user?: any;
+      user?: AuthenticatedUser;
       session?: any;
     }
   }
@@ -87,7 +88,10 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     }
 
     // إضافة بيانات المستخدم للطلب
-    req.user = user;
+    req.user = {
+      ...user,
+      userType: user.userType as UserRole
+    };
     next();
 
   } catch (error) {
@@ -183,7 +187,7 @@ export const requireRecentAuth = (maxAgeMinutes: number = 30) => {
       }
 
       // التحقق من آخر مرة قام فيها المستخدم بتسجيل الدخول
-      const lastLoginTime = new Date(req.user.lastSeen || req.user.createdAt);
+      const lastLoginTime = new Date(req.user.lastSeen || new Date());
       const maxAge = maxAgeMinutes * 60 * 1000; // تحويل لميلي ثانية
       
       if (Date.now() - lastLoginTime.getTime() > maxAge) {
