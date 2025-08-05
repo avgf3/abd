@@ -767,11 +767,6 @@ export function useChat() {
   }, []);
 
   // إلغاء - لا نريد جلب جميع المستخدمين، فقط المتصلين
-  const fetchAllUsers = useCallback(() => {
-    // استخدام requestOnlineUsers بدلاً من الاستدعاء المباشر
-    requestOnlineUsers();
-  }, [requestOnlineUsers]);
-
   // طلب قائمة المستخدمين المحسن مع cache
   const requestOnlineUsers = useCallback(() => {
     // التحقق من cache أولاً
@@ -787,6 +782,11 @@ export function useChat() {
       }
     }, 500);
   }, [isCacheValid, debounceRequest]);
+
+  const fetchAllUsers = useCallback(() => {
+    // استخدام requestOnlineUsers بدلاً من الاستدعاء المباشر
+    requestOnlineUsers();
+  }, [requestOnlineUsers]);
 
   // تحميل الرسائل الموجودة من قاعدة البيانات - محسنة
   const loadExistingMessages = useCallback(async () => {
