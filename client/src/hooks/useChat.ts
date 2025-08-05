@@ -51,8 +51,13 @@ interface ChatState {
   currentRoomId: string;
   roomMessages: Record<string, ChatMessage[]>;
   showKickCountdown: boolean;
-  lastUserListUpdate: number; // إضافة تتبع آخر تحديث لقائمة المستخدمين
-  messageLoadingStates: Record<string, boolean>; // إضافة حالات تحميل الرسائل للغرف
+  lastUserListUpdate: number;
+  messageLoadingStates: Record<string, boolean>;
+  // تحسينات جديدة
+  isInitialized: boolean; // هل تم تهيئة النظام
+  autoJoinCompleted: boolean; // هل تم الانضمام التلقائي
+  messagesLoaded: boolean; // هل تم تحميل الرسائل
+  connectionAttempts: number; // عدد محاولات الاتصال
 }
 
 // Action types
@@ -74,7 +79,11 @@ type ChatAction =
   | { type: 'IGNORE_USER'; payload: number }
   | { type: 'UNIGNORE_USER'; payload: number }
   | { type: 'SET_LAST_USER_UPDATE'; payload: number }
-  | { type: 'SET_MESSAGE_LOADING'; payload: { roomId: string; loading: boolean } };
+  | { type: 'SET_MESSAGE_LOADING'; payload: { roomId: string; loading: boolean } }
+  | { type: 'SET_INITIALIZED'; payload: boolean }
+  | { type: 'SET_AUTO_JOIN_COMPLETED'; payload: boolean }
+  | { type: 'SET_MESSAGES_LOADED'; payload: boolean }
+  | { type: 'INCREMENT_CONNECTION_ATTEMPTS' };
 
 // Initial state
 const initialState: ChatState = {
@@ -93,7 +102,11 @@ const initialState: ChatState = {
   roomMessages: {},
   showKickCountdown: false,
   lastUserListUpdate: 0,
-  messageLoadingStates: {}
+  messageLoadingStates: {},
+  isInitialized: false,
+  autoJoinCompleted: false,
+  messagesLoaded: false,
+  connectionAttempts: 0
 };
 
 // Reducer function
@@ -148,47 +161,46 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
     
     case 'SET_ROOM': {
       const currentMessages = state.roomMessages[action.payload] || [];
-      return { 
-        ...state, 
+      return {
+        ...state,
         currentRoomId: action.payload,
-        publicMessages: currentMessages
+        roomMessages: {
+          ...state.roomMessages,
+          [action.payload]: currentMessages
+        }
       };
     }
     
     case 'ADD_ROOM_MESSAGE': {
       const { roomId, message } = action.payload;
-      const newRoomMessages = { ...state.roomMessages };
+      const currentMessages = state.roomMessages[roomId] || [];
       
       if (Array.isArray(message)) {
-        // إضافة عدة رسائل
-        newRoomMessages[roomId] = message;
+        return {
+          ...state,
+          roomMessages: {
+            ...state.roomMessages,
+            [roomId]: [...currentMessages, ...message]
+          }
+        };
       } else {
-        // إضافة رسالة واحدة
-        if (!newRoomMessages[roomId]) {
-          newRoomMessages[roomId] = [];
-        }
-        newRoomMessages[roomId] = [...newRoomMessages[roomId], message];
+        return {
+          ...state,
+          roomMessages: {
+            ...state.roomMessages,
+            [roomId]: [...currentMessages, message]
+          }
+        };
       }
-      
-      // تحديث الرسائل العامة إذا كانت الغرفة هي الغرفة الحالية
-      const updatedPublicMessages = roomId === state.currentRoomId
-        ? newRoomMessages[roomId]
-        : state.publicMessages;
-      
-      return {
-        ...state,
-        roomMessages: newRoomMessages,
-        publicMessages: updatedPublicMessages
-      };
     }
     
     case 'SET_SHOW_KICK_COUNTDOWN':
       return { ...state, showKickCountdown: action.payload };
     
     case 'IGNORE_USER':
-      return { 
-        ...state, 
-        ignoredUsers: new Set([...state.ignoredUsers, action.payload]) 
+      return {
+        ...state,
+        ignoredUsers: new Set([...state.ignoredUsers, action.payload])
       };
     
     case 'UNIGNORE_USER':
@@ -207,6 +219,18 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
           [action.payload.roomId]: action.payload.loading
         }
       };
+    
+    case 'SET_INITIALIZED':
+      return { ...state, isInitialized: action.payload };
+    
+    case 'SET_AUTO_JOIN_COMPLETED':
+      return { ...state, autoJoinCompleted: action.payload };
+    
+    case 'SET_MESSAGES_LOADED':
+      return { ...state, messagesLoaded: action.payload };
+    
+    case 'INCREMENT_CONNECTION_ATTEMPTS':
+      return { ...state, connectionAttempts: state.connectionAttempts + 1 };
     
     default:
       return state;
@@ -248,11 +272,9 @@ export function useChat() {
     return Date.now() - timestamp < maxAge;
   }, []);
 
-  // Memoized values to prevent unnecessary re-renders - إصلاح المنطق
+  // Memoized values to prevent unnecessary re-renders
   const memoizedOnlineUsers = useMemo(() => {
-    // عرض جميع المستخدمين بدون فلترة معقدة
     return state.onlineUsers.filter(user => {
-      // إظهار جميع المستخدمين إلا المتجاهلين فقط
       return !state.ignoredUsers.has(user.id);
     });
   }, [state.onlineUsers, state.ignoredUsers]);
@@ -275,21 +297,18 @@ export function useChat() {
     points: number;
   }>({ show: false, points: 0 });
 
-  // فلترة الرسائل غير الصالحة - محسنة
+  // فلترة الرسائل غير الصالحة
   const isValidMessage = useCallback((message: ChatMessage): boolean => {
-    // التأكد من وجود بيانات المرسل
     if (!message.sender || !message.sender.username || message.sender.username === 'مستخدم') {
       console.warn('رسالة مرفوضة - بيانات مرسل غير صالحة:', message);
       return false;
     }
     
-    // التأكد من وجود محتوى الرسالة
     if (!message.content || message.content.trim() === '') {
       console.warn('رسالة مرفوضة - محتوى فارغ:', message);
       return false;
     }
     
-    // التأكد من وجود معرف المرسل
     if (!message.senderId || message.senderId <= 0) {
       console.warn('رسالة مرفوضة - معرف مرسل غير صالح:', message);
       return false;
@@ -297,6 +316,63 @@ export function useChat() {
     
     return true;
   }, []);
+
+  // دالة تحميل الرسائل الموجودة - محسنة
+  const loadExistingMessages = useCallback(async () => {
+    if (state.messagesLoaded) {
+      console.log('💾 الرسائل محملة مسبقاً');
+      return;
+    }
+
+    try {
+      console.log('📥 تحميل الرسائل الموجودة...');
+      const response = await fetch('/api/messages/room/general?limit=50');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.messages && Array.isArray(data.messages)) {
+          const formattedMessages = data.messages.map((msg: any) => ({
+            id: msg.id,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp),
+            senderId: msg.senderId,
+            sender: msg.sender,
+            messageType: msg.messageType || 'text',
+            isPrivate: msg.isPrivate || false,
+            roomId: msg.roomId || 'general'
+          }));
+          
+          dispatch({ 
+            type: 'ADD_ROOM_MESSAGE', 
+            payload: { roomId: 'general', message: formattedMessages }
+          });
+          
+          console.log(`✅ تم تحميل ${formattedMessages.length} رسالة`);
+          dispatch({ type: 'SET_MESSAGES_LOADED', payload: true });
+        }
+      }
+    } catch (error) {
+      console.error('❌ خطأ في تحميل الرسائل:', error);
+    }
+  }, [state.messagesLoaded]);
+
+  // دالة الانضمام التلقائي للغرفة - محسنة
+  const autoJoinRoom = useCallback((roomId: string = 'general') => {
+    if (state.autoJoinCompleted) {
+      console.log('✅ تم الانضمام التلقائي مسبقاً');
+      return;
+    }
+
+    console.log(`🔄 الانضمام التلقائي للغرفة: ${roomId}`);
+    
+    // تحديث الغرفة الحالية
+    dispatch({ type: 'SET_ROOM', payload: roomId });
+    
+    // إرسال طلب الانضمام للخادم
+    if (socket.current?.connected) {
+      socket.current.emit('joinRoom', { roomId });
+      dispatch({ type: 'SET_AUTO_JOIN_COMPLETED', payload: true });
+    }
+  }, [state.autoJoinCompleted]);
 
   // Socket event handlers - محسّنة مع تقليل الطلبات المتكررة
   const setupSocketListeners = useCallback((user: ChatUser) => {
@@ -334,35 +410,41 @@ export function useChat() {
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
     });
 
-    socket.current.on('authenticated', (data) => {
+    socket.current.on('authenticated', async (data) => {
       console.log('✅ تم الاتصال بنجاح:', data.message);
       dispatch({ type: 'SET_CURRENT_USER', payload: data.user });
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
       
       // تحميل الرسائل الموجودة من قاعدة البيانات مرة واحدة فقط
-      loadExistingMessages();
+      await loadExistingMessages();
       
-      // طلب قائمة المستخدمين المتصلين مع debouncing
+      // الانضمام التلقائي للغرفة العامة
+      autoJoinRoom('general');
+      
+      // طلب قائمة المستخدمين المتصلين مع debouncing - تحسين
       console.log('🔄 طلب قائمة المستخدمين المتصلين...');
       debounceRequest('requestOnlineUsers', () => {
         if (socket.current?.connected) {
           socket.current.emit('requestOnlineUsers');
         }
-      }, 500);
+      }, 1000); // زيادة التأخير لتقليل الطلبات
       
-      // تحديث دوري للمستخدمين مع تقليل التكرار (كل دقيقة بدلاً من 30 ثانية)
+      // تحديث دوري للمستخدمين مع تقليل التكرار (كل دقيقتين بدلاً من دقيقة)
       const userListInterval = setInterval(() => {
         if (socket.current?.connected) {
           // فقط إذا لم يكن هناك تحديث حديث
           const timeSinceLastUpdate = Date.now() - (state.lastUserListUpdate || 0);
-          if (timeSinceLastUpdate > 45000) { // 45 ثانية
+          if (timeSinceLastUpdate > 90000) { // دقيقة ونصف
             socket.current.emit('requestOnlineUsers');
           }
         }
-      }, 60000); // كل دقيقة
+      }, 120000); // كل دقيقتين
       
       // حفظ معرف الفترة الزمنية للتنظيف لاحقاً
       (socket.current as any).userListInterval = userListInterval;
+      
+      // تم تهيئة النظام
+      dispatch({ type: 'SET_INITIALIZED', payload: true });
     });
 
     socket.current.on('message', (message: WebSocketMessage) => {
@@ -407,12 +489,12 @@ export function useChat() {
                 dispatch({ type: 'SET_ONLINE_USERS', payload: updatedUsers });
               }
               
-              // طلب قائمة محدثة من الخادم للتأكد
-              setTimeout(() => {
+              // طلب قائمة محدثة من الخادم للتأكد - تحسين
+              debounceRequest('updateUsersAfterJoin', () => {
                 if (socket.current?.connected) {
                   socket.current.emit('requestOnlineUsers');
                 }
-              }, 500);
+              }, 2000); // انتظار ثانيتين
             }
             break;
             
@@ -435,7 +517,6 @@ export function useChat() {
               
               if (!state.ignoredUsers.has(message.message.senderId)) {
                 const chatMessage = message.message as ChatMessage;
-                // إضافة roomId من الرسالة مع fallback للغرفة العامة
                 const messageRoomId = (chatMessage as any).roomId || 'general';
                 console.log(`✅ إضافة رسالة للغرفة ${messageRoomId} (الغرفة الحالية: ${state.currentRoomId})`);
                 
@@ -512,13 +593,9 @@ export function useChat() {
 
           case 'newWallPost':
             console.log('📌 منشور جديد على الحائط:', message.post);
-            // يمكن إضافة معالجة محددة هنا لتحديث قائمة المنشورات
-            // أو إرسال إشعار للمستخدم
             if (message.post?.username !== user.username) {
-              // إشعار صوتي للمنشورات الجديدة
               playNotificationSound();
               
-              // إشعار مرئي في المتصفح
               if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification('منشور جديد على الحائط 📌', {
                   body: `${message.post.username} نشر منشوراً جديداً`,
@@ -530,12 +607,10 @@ export function useChat() {
 
           case 'wallPostReaction':
             console.log('👍 تفاعل جديد على منشور:', message.post);
-            // يمكن إضافة معالجة محددة هنا لتحديث التفاعلات
             break;
 
           case 'wallPostDeleted':
             console.log('🗑️ تم حذف منشور:', message.postId);
-            // يمكن إضافة معالجة محددة هنا لإزالة المنشور من القائمة
             break;
             
           case 'roomJoined':
@@ -546,7 +621,7 @@ export function useChat() {
               // تحميل رسائل الغرفة الجديدة مع cache
               debounceRequest(`loadRoom_${message.roomId}`, () => {
                 loadRoomMessages(message.roomId);
-              }, 300);
+              }, 500);
               
               // تحديث قائمة المستخدمين في الغرفة
               if (message.users) {
@@ -559,37 +634,35 @@ export function useChat() {
             }
             break;
             
-                      case 'userJoinedRoom':
-              if (message.username && message.roomId) {
-                console.log(`👤 ${message.username} انضم للغرفة: ${message.roomId}`);
-                
-                // إذا كانت الغرفة هي الغرفة الحالية، تحديث محدود
-                if (message.roomId === state.currentRoomId) {
-                  // تحديث مؤجل لتجنب التحديثات المتكررة
-                  debounceRequest('updateUsersAfterJoin', () => {
-                    if (socket.current?.connected) {
-                      socket.current.emit('requestOnlineUsers');
-                    }
-                  }, 1000); // انتظار ثانية واحدة
-                }
-              }
-              break;
+          case 'userJoinedRoom':
+            if (message.username && message.roomId) {
+              console.log(`👤 ${message.username} انضم للغرفة: ${message.roomId}`);
               
-            case 'userLeftRoom':
-              if (message.username && message.roomId) {
-                console.log(`👤 ${message.username} غادر الغرفة: ${message.roomId}`);
-                
-                // إذا كانت الغرفة هي الغرفة الحالية، تحديث محدود
-                if (message.roomId === state.currentRoomId) {
-                  // تحديث مؤجل لتجنب التحديثات المتكررة
-                  debounceRequest('updateUsersAfterLeave', () => {
-                    if (socket.current?.connected) {
-                      socket.current.emit('requestOnlineUsers');
-                    }
-                  }, 1000); // انتظار ثانية واحدة
-                }
+              // إذا كانت الغرفة هي الغرفة الحالية، تحديث محدود
+              if (message.roomId === state.currentRoomId) {
+                debounceRequest('updateUsersAfterJoin', () => {
+                  if (socket.current?.connected) {
+                    socket.current.emit('requestOnlineUsers');
+                  }
+                }, 2000); // انتظار ثانيتين
               }
-              break;
+            }
+            break;
+            
+          case 'userLeftRoom':
+            if (message.username && message.roomId) {
+              console.log(`👤 ${message.username} غادر الغرفة: ${message.roomId}`);
+              
+              // إذا كانت الغرفة هي الغرفة الحالية، تحديث محدود
+              if (message.roomId === state.currentRoomId) {
+                debounceRequest('updateUsersAfterLeave', () => {
+                  if (socket.current?.connected) {
+                    socket.current.emit('requestOnlineUsers');
+                  }
+                }, 2000); // انتظار ثانيتين
+              }
+            }
+            break;
 
           default:
             break;
@@ -598,105 +671,23 @@ export function useChat() {
         console.error('خطأ في معالجة الرسالة:', error);
       }
     });
-  }, [state.lastUserListUpdate, debounceRequest]);
-
-  // تحميل الرسائل الموجودة من قاعدة البيانات - محسنة
-  const loadExistingMessages = useCallback(async () => {
-    // منع التحميل المتكرر
-    if (pendingRequests.current.has('loadExisting')) {
-      return;
-    }
-    
-    pendingRequests.current.add('loadExisting');
-    
-    try {
-      console.log('📥 تحميل الرسائل الموجودة من قاعدة البيانات...');
-      
-      // تحميل رسائل الغرفة العامة مع cache
-      const generalCached = roomMessageCache.current['general'];
-      if (generalCached && isCacheValid(generalCached.timestamp, 120000)) { // cache لمدتين
-        console.log('💾 استخدام cache للرسائل العامة');
-        dispatch({ 
-          type: 'ADD_ROOM_MESSAGE', 
-          payload: { roomId: 'general', message: generalCached.messages }
-        });
-        
-        if (state.currentRoomId === 'general') {
-          dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: generalCached.messages });
-        }
-        return;
-      }
-      
-      const generalResponse = await fetch('/api/messages/room/general?limit=50');
-      if (generalResponse.ok) {
-        const generalData = await generalResponse.json();
-        const generalMessages = generalData.messages || [];
-        
-        // تحديث cache
-        roomMessageCache.current['general'] = {
-          messages: generalMessages,
-          timestamp: Date.now()
-        };
-        
-        dispatch({ 
-          type: 'ADD_ROOM_MESSAGE', 
-          payload: { roomId: 'general', message: generalMessages }
-        });
-        
-        if (state.currentRoomId === 'general') {
-          dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: generalMessages });
-        }
-        
-        console.log(`✅ تم تحميل ${generalMessages.length} رسالة من الغرفة العامة`);
-      }
-      
-      // تحميل الرسائل الخاصة إذا كان المستخدم مسجل
-      if (state.currentUser && state.currentUser.userType === 'member') {
-        const privateResponse = await fetch(`/api/messages/private/${state.currentUser.id}?limit=100`);
-        if (privateResponse.ok) {
-          const privateData = await privateResponse.json();
-          const privateMessages = privateData.messages || [];
-          
-          // تنظيم الرسائل الخاصة حسب المحادثة
-          const conversations: PrivateConversation = {};
-          privateMessages.forEach((msg: ChatMessage) => {
-            const partnerId = msg.senderId === state.currentUser!.id ? msg.receiverId! : msg.senderId;
-            if (!conversations[partnerId]) {
-              conversations[partnerId] = [];
-            }
-            conversations[partnerId].push(msg);
-          });
-          
-          dispatch({ type: 'SET_PRIVATE_CONVERSATIONS', payload: conversations });
-          console.log(`✅ تم تحميل ${privateMessages.length} رسالة خاصة`);
-        }
-      }
-      
-    } catch (error) {
-      console.error('❌ خطأ في تحميل الرسائل:', error);
-    } finally {
-      pendingRequests.current.delete('loadExisting');
-    }
-  }, [state.currentUser, state.currentRoomId]);
+  }, [loadExistingMessages, autoJoinRoom, isValidMessage, debounceRequest, state.onlineUsers, state.ignoredUsers, state.currentRoomId, state.lastUserListUpdate, state.typingUsers]);
 
   // Connect function - محسنة
-  const connect = useCallback((user: ChatUser) => {
-    dispatch({ type: 'SET_CURRENT_USER', payload: user });
-    dispatch({ type: 'SET_LOADING', payload: true });
-    
-    // إضافة المستخدم الحالي للقائمة فوراً
-    dispatch({ type: 'SET_ONLINE_USERS', payload: [user] });
-
+  const connect = useCallback(async (user: ChatUser) => {
     try {
-      // إنشاء اتصال Socket.IO
+      console.log('🔗 بدء الاتصال للمستخدم:', user.username);
+      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: 'INCREMENT_CONNECTION_ATTEMPTS' });
+      
+      // إعادة تعيين الحالة
+      dispatch({ type: 'SET_AUTO_JOIN_COMPLETED', payload: false });
+      dispatch({ type: 'SET_MESSAGES_LOADED', payload: false });
+      dispatch({ type: 'SET_INITIALIZED', payload: false });
+      
+      const serverUrl = isDevelopment ? 'http://localhost:3001' : '';
+      
       if (!socket.current) {
-        // Use dynamic URL: production uses current origin, development uses localhost
-            const isDevelopment = import.meta.env?.DEV || false;
-    const serverUrl = isDevelopment 
-      ? (import.meta.env?.VITE_SERVER_URL || 'http://localhost:5000')
-          : window.location.origin;
-        
-        console.log('🔌 جاري الاتصال بـ Socket.IO على:', serverUrl);
         socket.current = io(serverUrl, {
           transports: ['websocket', 'polling'],
           timeout: 10000,
@@ -713,8 +704,10 @@ export function useChat() {
     } catch (error) {
       console.error('خطأ في الاتصال:', error);
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل في الاتصال بالخادم' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [setupSocketListeners]);
+  }, [setupSocketListeners, isDevelopment]);
 
   // Load room messages function - محسنة مع cache
   const loadRoomMessages = useCallback(async (roomId: string) => {
@@ -783,10 +776,14 @@ export function useChat() {
     }
   }, [isCacheValid]);
 
-  // Join room function
+  // Join room function - محسنة
   const joinRoom = useCallback((roomId: string) => {
     console.log(`🔄 انضمام للغرفة: ${roomId}`);
-    // لا نغير الغرفة الحالية حتى نتلقى تأكيد من السيرفر
+    
+    // تحديث الغرفة الحالية فوراً
+    dispatch({ type: 'SET_ROOM', payload: roomId });
+    
+    // إرسال طلب الانضمام للخادم
     socket.current?.emit('joinRoom', { roomId });
   }, []);
 
@@ -835,6 +832,9 @@ export function useChat() {
     dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
     dispatch({ type: 'SET_ONLINE_USERS', payload: [] });
     dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: [] });
+    dispatch({ type: 'SET_INITIALIZED', payload: false });
+    dispatch({ type: 'SET_AUTO_JOIN_COMPLETED', payload: false });
+    dispatch({ type: 'SET_MESSAGES_LOADED', payload: false });
   }, []);
 
   // Ignore/Unignore user functions
@@ -846,11 +846,10 @@ export function useChat() {
     dispatch({ type: 'UNIGNORE_USER', payload: userId });
   }, []);
 
-  // إلغاء - لا نريد جلب جميع المستخدمين، فقط المتصلين
   // طلب قائمة المستخدمين المحسن مع cache
   const requestOnlineUsers = useCallback(() => {
     // التحقق من cache أولاً
-    if (userListCache.current && isCacheValid(userListCache.current.timestamp, 15000)) {
+    if (userListCache.current && isCacheValid(userListCache.current.timestamp, 30000)) { // 30 ثانية
       console.log('💾 استخدام cache لقائمة المستخدمين');
       dispatch({ type: 'SET_ONLINE_USERS', payload: userListCache.current.users });
       return;
@@ -860,11 +859,10 @@ export function useChat() {
       if (socket.current?.connected) {
         socket.current.emit('requestOnlineUsers');
       }
-    }, 500);
+    }, 1000); // زيادة التأخير
   }, [isCacheValid, debounceRequest]);
 
   const fetchAllUsers = useCallback(() => {
-    // استخدام requestOnlineUsers بدلاً من الاستدعاء المباشر
     requestOnlineUsers();
   }, [requestOnlineUsers]);
 
@@ -891,6 +889,10 @@ export function useChat() {
     currentRoomId: state.currentRoomId,
     roomMessages: state.roomMessages,
     showKickCountdown: state.showKickCountdown,
+    isInitialized: state.isInitialized,
+    autoJoinCompleted: state.autoJoinCompleted,
+    messagesLoaded: state.messagesLoaded,
+    connectionAttempts: state.connectionAttempts,
     
     // Notification states
     levelUpNotification,
@@ -912,7 +914,7 @@ export function useChat() {
     setShowKickCountdown: (show: boolean) => dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: show }),
     setNewMessageSender: (sender: ChatUser | null) => dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: sender }),
 
-    // إصلاح: دوال مطلوبة للمكونات
+    // دوال مطلوبة للمكونات
     sendPublicMessage: (content: string) => sendMessage(content, 'text'),
     sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId),
     sendRoomMessage: (content: string, roomId: string) => sendRoomMessage(content, roomId),

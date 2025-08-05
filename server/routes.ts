@@ -1737,7 +1737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-    // طلب تحديث قائمة المستخدمين المتصلين
+    // طلب تحديث قائمة المستخدمين المتصلين - محسن
     socket.on('requestOnlineUsers', async () => {
       try {
         if (!(socket as CustomSocket).isAuthenticated) {
@@ -1749,7 +1749,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // تحسين: تجنب الطلبات المتكررة المتتالية
         const now = Date.now();
         const lastRequest = (socket as any).lastUserListRequest || 0;
-        const minInterval = 5000; // 5 ثوانٍ كحد أدنى بين الطلبات
+        const minInterval = 10000; // 10 ثوانٍ كحد أدنى بين الطلبات
         
         if (now - lastRequest < minInterval) {
           console.log(`⏳ تجاهل طلب قائمة المستخدمين - آخر طلب كان منذ ${now - lastRequest}ms`);
@@ -2273,11 +2273,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-    // معالجة انضمام للغرفة
+    // معالجة انضمام للغرفة - محسن
     socket.on('joinRoom', async (data) => {
       try {
         const { roomId } = data;
-        const userId = (socket as CustomSocket).userId; // استخدام userId من الجلسة
+        const userId = (socket as CustomSocket).userId;
         const username = (socket as CustomSocket).username;
         
         console.log(`🔍 joinRoom: userId=${userId}, username=${username}, roomId=${roomId}`);
@@ -2288,13 +2288,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
         
+        // تحسين: منع الانضمام المتكرر لنفس الغرفة
+        const currentRoom = (socket as any).currentRoom;
+        if (currentRoom === roomId) {
+          console.log(`✅ المستخدم ${username} موجود بالفعل في الغرفة ${roomId}`);
+          return;
+        }
+        
         console.log(`🏠 المستخدم ${username} ينضم للغرفة ${roomId}`);
         
         // مغادرة الغرفة السابقة إن وجدت
-        const previousRoom = (socket as any).currentRoom;
-        if (previousRoom && previousRoom !== roomId) {
-          console.log(`🚪 المستخدم ${username} يغادر الغرفة السابقة ${previousRoom}`);
-          socket.leave(`room_${previousRoom}`);
+        if (currentRoom && currentRoom !== roomId) {
+          console.log(`🚪 المستخدم ${username} يغادر الغرفة السابقة ${currentRoom}`);
+          socket.leave(`room_${currentRoom}`);
           
           // إرسال رسالة وداع في الغرفة السابقة
           const goodbyeMessage = {
@@ -2303,7 +2309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             content: `غادر ${username} الغرفة 👋`,
             messageType: 'system',
             isPrivate: false,
-            roomId: previousRoom,
+            roomId: currentRoom,
             timestamp: new Date(),
             sender: {
               id: -1,
@@ -2328,25 +2334,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           };
           
-          socket.to(`room_${previousRoom}`).emit('message', {
+          socket.to(`room_${currentRoom}`).emit('message', {
             type: 'newMessage',
             message: goodbyeMessage
           });
           
           // إشعار المستخدمين في الغرفة السابقة
-          socket.to(`room_${previousRoom}`).emit('message', {
+          socket.to(`room_${currentRoom}`).emit('message', {
             type: 'userLeftRoom',
             username: username,
             userId: userId,
-            roomId: previousRoom
+            roomId: currentRoom
           });
           
-          // إرسال قائمة محدثة للغرفة السابقة
-          const previousRoomUsers = await storage.getOnlineUsersInRoom(previousRoom);
-          io.to(`room_${previousRoom}`).emit('message', {
-            type: 'onlineUsers',
-            users: previousRoomUsers
-          });
+          // إرسال قائمة محدثة للغرفة السابقة - تحسين
+          setTimeout(async () => {
+            const previousRoomUsers = await storage.getOnlineUsersInRoom(currentRoom);
+            io.to(`room_${currentRoom}`).emit('message', {
+              type: 'onlineUsers',
+              users: previousRoomUsers
+            });
+          }, 1000);
         }
         
         // الانضمام للغرفة الجديدة في Socket.IO
@@ -2359,7 +2367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.joinRoom(userId, roomId);
         
         // انتظار قصير للتأكد من التحديث
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 200));
         
         // جلب قائمة المستخدمين المتصلين في هذه الغرفة
         const roomUsers = await storage.getOnlineUsersInRoom(roomId);
@@ -2381,18 +2389,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           roomId: roomId
         });
         
-        // إرسال قائمة محدثة للمستخدمين في الغرفة
-        io.to(`room_${roomId}`).emit('message', {
-          type: 'onlineUsers',
-          users: roomUsers
-        });
+        // إرسال قائمة محدثة للمستخدمين في الغرفة - تحسين
+        setTimeout(() => {
+          io.to(`room_${roomId}`).emit('message', {
+            type: 'onlineUsers',
+            users: roomUsers
+          });
+        }, 500);
         
         console.log(`✅ المستخدم ${username} انضم للغرفة ${roomId} بنجاح مع ${roomUsers.length} مستخدمين آخرين`);
         
         // إرسال رسالة ترحيب في الغرفة
         const welcomeMessage = {
           id: Date.now(),
-          senderId: -1, // معرف خاص للنظام
+          senderId: -1,
           content: `انضم ${username} إلى الغرفة 👋`,
           messageType: 'system',
           isPrivate: false,

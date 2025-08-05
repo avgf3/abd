@@ -17,8 +17,8 @@ interface MessageAreaProps {
   typingUsers: Set<string>;
   onReportMessage?: (user: ChatUser, messageContent: string, messageId: number) => void;
   onUserClick?: (event: React.MouseEvent, user: ChatUser) => void;
-  onlineUsers?: ChatUser[]; // إضافة قائمة المستخدمين المتصلين للمنشن
-  currentRoomName?: string; // اسم الغرفة الحالية
+  onlineUsers?: ChatUser[];
+  currentRoomName?: string;
 }
 
 export default function MessageArea({ 
@@ -42,6 +42,7 @@ export default function MessageArea({
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const lastTypingTime = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // Memoize filtered messages لتحسين الأداء
   const validMessages = useMemo(() => 
@@ -55,24 +56,31 @@ export default function MessageArea({
     [messages]
   );
 
+  // تحسين: عرض آخر 100 رسالة فقط لتحسين الأداء
+  const displayMessages = useMemo(() => {
+    return validMessages.slice(-100);
+  }, [validMessages]);
+
   // Scroll to bottom function - optimized
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ 
-      behavior: 'smooth',
-      block: 'end'
-    });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end'
+      });
+    }
   }, []);
 
-  // Auto scroll to bottom when new messages arrive
+  // Auto scroll to bottom when new messages arrive - محسن
   useEffect(() => {
     const timeout = setTimeout(scrollToBottom, 100);
     return () => clearTimeout(timeout);
-  }, [validMessages.length, scrollToBottom]);
+  }, [displayMessages.length, scrollToBottom]);
 
   // تشغيل صوت التنبيه عند استقبال منشن - محسن
   useEffect(() => {
-    if (validMessages.length > 0 && currentUser) {
-      const lastMessage = validMessages[validMessages.length - 1];
+    if (displayMessages.length > 0 && currentUser) {
+      const lastMessage = displayMessages[displayMessages.length - 1];
       
       // فحص إذا كانت الرسالة الأخيرة تحتوي على منشن للمستخدم الحالي
       // وليست من المستخدم الحالي نفسه
@@ -81,7 +89,7 @@ export default function MessageArea({
         playMentionSound();
       }
     }
-  }, [validMessages, currentUser]);
+  }, [displayMessages, currentUser]);
 
   // Throttled typing function - محسن
   const handleTypingThrottled = useCallback(() => {
@@ -198,236 +206,204 @@ export default function MessageArea({
   }, []);
 
   // Get message border color - محسن
-  const getMessageBorderColor = useCallback((userType?: string) => {
-    switch (userType) {
-      case 'owner':
-        return 'border-r-yellow-400';
-      case 'admin':
-        return 'border-r-red-400';
-      case 'moderator':
-        return 'border-r-purple-400';
-      case 'member':
-        return 'border-r-blue-400';
-      default:
-        return 'border-r-green-400';
-    }
+  const getMessageBorderColor = useCallback((message: ChatMessage) => {
+    if (!message.sender) return 'border-gray-300';
+    
+    const username = message.sender.username;
+    if (!username) return 'border-gray-300';
+    
+    const color = getFinalUsernameColor(username);
+    return `border-${color}-300`;
   }, []);
 
-  // Username click handler - معالج النقر على اسم المستخدم لإدراج المنشن
-  const handleUsernameClick = useCallback((event: React.MouseEvent, user: ChatUser) => {
-    event.stopPropagation();
+  // تحسين: مكون الرسالة المفردة
+  const MessageComponent = useCallback(({ message }: { message: ChatMessage }) => {
+    const isOwnMessage = message.sender?.id === currentUser?.id;
+    const borderColor = getMessageBorderColor(message);
     
-    // إدراج اسم المستخدم في مربع النص
-    const mention = `@${user.username} `;
-    setMessageText(prev => prev + mention);
-    
-    // التركيز على مربع النص
-    inputRef.current?.focus();
-    
-    // استدعاء callback إضافي إذا كان موجود
-    if (onUserClick) {
-      onUserClick(event, user);
-    }
-  }, [onUserClick]);
-
-  // Format typing users display
-  const typingDisplay = useMemo(() => {
-    const typingArray = Array.from(typingUsers);
-    if (typingArray.length === 0) return '';
-    if (typingArray.length === 1) return `${typingArray[0]} يكتب...`;
-    if (typingArray.length === 2) return `${typingArray[0]} و ${typingArray[1]} يكتبان...`;
-    return `${typingArray.length} أشخاص يكتبون...`;
-  }, [typingUsers]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  return (
-    <section className="flex-1 flex flex-col bg-white">
-      {/* Room Header */}
-      <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
-            <span className="text-primary font-bold">💬</span>
-          </div>
-          <div>
-            <h2 className="font-bold text-lg text-primary">{currentRoomName}</h2>
-            <p className="text-sm text-muted-foreground">
-              {validMessages.length} رسالة • {typingDisplay || 'جاهز للدردشة'}
-            </p>
-          </div>
+    return (
+      <div 
+        key={message.id} 
+        className={`flex gap-3 p-3 rounded-lg border-2 ${borderColor} bg-white/90 backdrop-blur-sm transition-all duration-200 hover:shadow-md ${
+          isOwnMessage ? 'ml-8' : 'mr-8'
+        }`}
+      >
+        {/* صورة الملف الشخصي */}
+        <div className="flex-shrink-0">
+          <ProfileImage 
+            user={message.sender} 
+            size={40}
+            onClick={(e) => onUserClick?.(e, message.sender!)}
+            className="cursor-pointer hover:scale-110 transition-transform duration-200"
+          />
         </div>
-      </div>
-      
-      {/* Messages Container */}
-      <div className="flex-1 p-6 overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white">
-        {validMessages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <div className="text-6xl mb-4">💬</div>
-            <p className="text-lg font-medium">أهلاً وسهلاً في {currentRoomName}</p>
-            <p className="text-sm">ابدأ المحادثة بكتابة رسالتك الأولى</p>
-          </div>
-        ) : (
-          validMessages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex gap-3 p-3 rounded-lg border-r-4 ${getMessageBorderColor(message.sender?.userType)} 
-                bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
-            >
-              {/* Profile Image */}
-              {message.sender && (
-                <div className="flex-shrink-0">
-                  <ProfileImage 
-                    user={message.sender} 
-                    size="small"
-                    className="cursor-pointer hover:scale-110 transition-transform duration-200"
-                  />
-                </div>
-              )}
-              
-              {/* Message Content */}
-              <div className="flex-1 min-w-0">
-                {/* Header */}
-                <div className="flex items-center gap-2 mb-1">
-                  <button
-                    onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                    className="font-semibold hover:underline transition-colors duration-200"
-                    style={{ color: getFinalUsernameColor(message.sender) }}
-                  >
-                    {message.sender?.username}
-                  </button>
-                  
-                  {message.sender && <UserRoleBadge user={message.sender} showOnlyIcon={false} />}
-                  
-                  <span className="text-xs text-gray-500 mr-auto">
-                    {formatTime(message.timestamp)}
-                  </span>
-                </div>
-                
-                {/* Message Content */}
-                <div className="text-gray-800 break-words">
-                  {message.messageType === 'image' ? (
-                    <img
-                      src={message.content}
-                      alt="صورة"
-                      className="max-w-xs max-h-64 rounded-lg shadow-sm cursor-pointer hover:shadow-lg transition-shadow duration-200"
-                      loading="lazy"
-                      onClick={() => {
-                        // فتح الصورة في نافذة جديدة
-                        window.open(message.content, '_blank');
-                      }}
-                    />
-                  ) : (
-                    <div className="leading-relaxed">
-                      {renderMessageWithMentions(message.content, currentUser, onlineUsers)}
-                    </div>
-                  )}
-                </div>
-                
-                {/* Message Actions */}
-                {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
-                  <div className="mt-2">
-                    <button
-                      onClick={() => onReportMessage(message.sender!, message.content, message.id)}
-                      className="text-xs text-red-500 hover:text-red-700 transition-colors duration-200"
-                    >
-                      🚨 إبلاغ
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))
-        )}
         
-        {/* Scroll anchor */}
-        <div ref={messagesEndRef} />
-      </div>
-      
-      {/* Message Input */}
-      <div className="p-4 bg-gray-50 border-t">
-        {/* Typing Indicator */}
-        {typingUsers.size > 0 && (
-          <div className="mb-2 text-xs text-gray-500 animate-pulse">
-            {typingDisplay}
-          </div>
-        )}
-        
-        <div className="flex gap-3 items-end">
-          {/* Emoji Picker */}
-          <div className="relative">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="aspect-square"
+        {/* محتوى الرسالة */}
+        <div className="flex-1 min-w-0">
+          {/* رأس الرسالة */}
+          <div className="flex items-center gap-2 mb-1">
+            <span 
+              className="font-semibold text-sm cursor-pointer hover:underline"
+              style={{ color: getFinalUsernameColor(message.sender?.username || '') }}
+              onClick={(e) => onUserClick?.(e, message.sender!)}
             >
-              <Smile className="w-4 h-4" />
-            </Button>
-            {showEmojiPicker && (
-              <div className="absolute bottom-full mb-2 z-10">
-                <EmojiPicker onEmojiSelect={handleEmojiSelect} onClose={() => setShowEmojiPicker(false)} />
-              </div>
+              {message.sender?.username || 'مستخدم'}
+            </span>
+            
+            <UserRoleBadge user={message.sender} />
+            
+            <span className="text-xs text-gray-500">
+              {formatTime(message.timestamp)}
+            </span>
+            
+            {/* زر الإبلاغ */}
+            {!isOwnMessage && onReportMessage && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                onClick={() => onReportMessage(message.sender!, message.content, message.id)}
+                title="إبلاغ عن الرسالة"
+              >
+                ⚠️
+              </Button>
             )}
           </div>
           
-          {/* File Upload */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            className="aspect-square"
-          >
-            <ImageIcon className="w-4 h-4" />
-          </Button>
-          
-          {/* Message Input */}
-          <Input
-            ref={inputRef}
-            value={messageText}
-            onChange={handleMessageChange}
-            onKeyPress={handleKeyPress}
-            placeholder="اكتب رسالتك هنا..."
-            className="flex-1 resize-none"
-            disabled={!currentUser}
-            maxLength={1000}
-            autoComplete="off"
-          />
-          
-          {/* Send Button */}
-          <Button
-            onClick={handleSendMessage}
-            disabled={!messageText.trim() || !currentUser}
-            className="aspect-square bg-primary hover:bg-primary/90"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
-          
-          {/* Hidden File Input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
+          {/* محتوى الرسالة */}
+          <div className="text-sm">
+            {message.messageType === 'image' ? (
+              <img 
+                src={message.content} 
+                alt="صورة" 
+                className="max-w-full max-h-64 rounded-lg cursor-pointer hover:scale-105 transition-transform duration-200"
+                onClick={() => window.open(message.content, '_blank')}
+              />
+            ) : (
+              <div 
+                className="whitespace-pre-wrap break-words"
+                dangerouslySetInnerHTML={{ 
+                  __html: renderMessageWithMentions(message.content, onlineUsers) 
+                }}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }, [currentUser, getMessageBorderColor, onUserClick, onReportMessage, formatTime, onlineUsers]);
+
+  return (
+    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50 to-purple-50">
+      {/* رأس منطقة الرسائل */}
+      <div className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm border-b border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className="text-2xl">💬</div>
+          <div>
+            <h2 className="font-bold text-lg">{currentRoomName}</h2>
+            <p className="text-sm text-gray-600">
+              {displayMessages.length} رسالة • {onlineUsers.length} متصل
+            </p>
+          </div>
         </div>
         
-        {/* Character Counter */}
-        {messageText.length > 800 && (
-          <div className="mt-1 text-xs text-gray-500 text-left">
-            {messageText.length}/1000 حرف
+        {/* مؤشر الكتابة */}
+        {typingUsers.size > 0 && (
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex gap-1">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            </div>
+            <span>
+              {Array.from(typingUsers).join(', ')} يكتب...
+            </span>
           </div>
         )}
       </div>
-    </section>
+
+      {/* منطقة الرسائل */}
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+      >
+        {displayMessages.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            <div className="text-center">
+              <div className="text-4xl mb-4">💬</div>
+              <p>لا توجد رسائل بعد</p>
+              <p className="text-sm">ابدأ المحادثة الآن!</p>
+            </div>
+          </div>
+        ) : (
+          displayMessages.map(MessageComponent)
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* منطقة إدخال الرسالة */}
+      <div className="p-4 bg-white/80 backdrop-blur-sm border-t border-gray-200">
+        <div className="flex gap-2">
+          {/* حقل النص */}
+          <div className="flex-1 relative">
+            <Input
+              ref={inputRef}
+              value={messageText}
+              onChange={handleMessageChange}
+              onKeyPress={handleKeyPress}
+              placeholder="اكتب رسالتك هنا..."
+              className="pr-12 pl-4 py-3 rounded-lg border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+              disabled={!currentUser}
+            />
+            
+            {/* زر الإيموجي */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 text-gray-500 hover:text-blue-500"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            >
+              <Smile size={16} />
+            </Button>
+          </div>
+          
+          {/* زر رفع الصورة */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="px-3 py-3 rounded-lg border-2 border-gray-300 hover:border-blue-500 transition-all duration-200"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={!currentUser}
+          >
+            <ImageIcon size={16} />
+          </Button>
+          
+          {/* زر الإرسال */}
+          <Button
+            onClick={handleSendMessage}
+            disabled={!messageText.trim() || !currentUser}
+            className="px-6 py-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Send size={16} />
+          </Button>
+        </div>
+        
+        {/* اختيار الإيموجي */}
+        {showEmojiPicker && (
+          <div className="absolute bottom-20 left-4 z-50">
+            <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+          </div>
+        )}
+        
+        {/* إدخال الملفات */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileUpload}
+          className="hidden"
+        />
+      </div>
+    </div>
   );
 }
