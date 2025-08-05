@@ -13,10 +13,45 @@ import fetch from "node-fetch";
 
 const app = express();
 
+// إعدادات خاصة بـ Render
+const isProduction = process.env.NODE_ENV === 'production';
+const isRender = process.env.RENDER === 'true' || process.env.RENDER_EXTERNAL_URL;
+
 // Setup security first
 setupSecurity(app);
 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// Trust proxy for Render
+if (isRender) {
+  app.set('trust proxy', 1);
+  log('🔧 Render environment detected - proxy trust enabled');
+}
+
+// Health check endpoint - مُحسّن لـ Render
+app.get('/api/health', (req, res) => {
+  const healthData = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    version: process.env.npm_package_version || '1.0.0',
+    memory: process.memoryUsage(),
+    platform: process.platform,
+    nodeVersion: process.version
+  };
+  
+  res.status(200).json(healthData);
+});
+
+// Render-specific keep-alive endpoint
+app.get('/api/keep-alive', (req, res) => {
+  res.status(200).json({
+    status: 'alive',
+    timestamp: new Date().toISOString(),
+    message: 'Server is running'
+  });
+});
 
 // خدمة الملفات الثابتة للصور المرفوعة - محسّنة لـ Render
 const uploadsPath = path.join(process.cwd(), 'client/public/uploads');
@@ -55,7 +90,7 @@ app.use('/uploads', (req, res, next) => {
   next();
 }, express.static(uploadsPath, {
   // إعدادات محسّنة للأداء
-  maxAge: '1d', // cache لمدة يوم واحد
+  maxAge: isProduction ? '7d' : '1d', // cache أطول في الإنتاج
   etag: true,
   lastModified: true,
   setHeaders: (res, path) => {
@@ -75,9 +110,15 @@ app.use('/uploads', (req, res, next) => {
     // السماح بالوصول من أي domain
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
+    
+    // إعدادات Render المحسنة
+    if (isRender) {
+      res.setHeader('X-Render-Cache', 'HIT');
+    }
   }
 }));
 
+// Request logging middleware - محسن للإنتاج
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -91,9 +132,9 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
+    if (path.startsWith("/api") && !path.includes('/health') && !path.includes('/keep-alive')) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
+      if (capturedJsonResponse && !isProduction) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
 
@@ -108,8 +149,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// دالة للبحث عن منفذ متاح
+// دالة للبحث عن منفذ متاح - محسنة لـ Render
 async function findAvailablePort(startPort: number, maxPort: number = startPort + 100): Promise<number> {
+  // في بيئة Render، استخدم المنفذ المحدد مباشرة
+  if (isRender || isProduction) {
+    log(`🎯 استخدام المنفذ المحدد للإنتاج: ${startPort}`);
+    return startPort;
+  }
+  
   const net = await import('net');
   
   return new Promise((resolve, reject) => {
@@ -117,7 +164,7 @@ async function findAvailablePort(startPort: number, maxPort: number = startPort 
     
     function tryPort(portToTry: number) {
       if (portToTry > maxPort) {
-        reject(new Error(`لم يتم العثور على منفذ متاح بين ${startPort} و ${maxPort}`));
+        reject(new Error(`لم يتم العثور على منفذ متاح بين ${String(startPort)} و ${String(maxPort)}`));
         return;
       }
       
@@ -235,22 +282,15 @@ function setupGracefulShutdown(httpServer: Server) {
     await createDefaultUsers();
     log('✅ تم إكمال تهيئة قاعدة البيانات');
 
-    // تحديد المنفذ المطلوب
-    const preferredPort = process.env.PORT ? Number(process.env.PORT) : (process.env.NODE_ENV === 'production' ? 10000 : 5000);
-    log(`🔍 البحث عن منفذ متاح بدءاً من ${preferredPort}...`);
+    // تحديد المنفذ المطلوب - محسن لـ Render
+    const preferredPort = process.env.PORT ? Number(process.env.PORT) : (isProduction ? 10000 : 5000);
+    log(`🔍 تحديد المنفذ للخادم: ${preferredPort}...`);
     
-    // في بيئة الإنتاج، استخدم المنفذ المحدد مباشرة
-    let availablePort = preferredPort;
+    // البحث عن منفذ متاح
+    const availablePort = await findAvailablePort(preferredPort);
     
-    if (process.env.NODE_ENV !== 'production') {
-      // البحث عن منفذ متاح فقط في بيئة التطوير
-      availablePort = await findAvailablePort(preferredPort);
-      
-      if (availablePort !== preferredPort) {
-        log(`⚠️ المنفذ ${preferredPort} غير متاح، سيتم استخدام ${availablePort}`);
-      }
-    } else {
-      log(`🎯 استخدام المنفذ المحدد للإنتاج: ${availablePort}`);
+    if (availablePort !== preferredPort && !isProduction) {
+      log(`⚠️ المنفذ ${preferredPort} غير متاح، سيتم استخدام ${availablePort}`);
     }
 
     // بدء تشغيل الخادم
@@ -265,27 +305,51 @@ function setupGracefulShutdown(httpServer: Server) {
     // إعداد الإغلاق الآمن
     setupGracefulShutdown(httpServer);
     
-    // إعداد keep-alive لمنع cold starts في Render
-    if (process.env.NODE_ENV === 'production') {
+    // إعداد keep-alive محسن لـ Render
+    if (isRender || isProduction) {
       const keepAlive = () => {
         const host = process.env.RENDER_EXTERNAL_URL || `http://localhost:${availablePort}`;
-        console.log(`🔄 Keep-alive ping to ${host}/api/health`);
+        log(`🔄 Keep-alive ping to ${host}/api/keep-alive`);
         
-        fetch(`${host}/api/health`)
-          .then(res => console.log(`✅ Keep-alive successful: ${res.status}`))
-          .catch(err => console.log(`⚠️ Keep-alive failed: ${err.message}`));
+        // Create AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        fetch(`${host}/api/keep-alive`, {
+          method: 'GET',
+          signal: controller.signal,
+        })
+          .then(res => {
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              log(`✅ Keep-alive successful: ${res.status}`);
+            } else {
+              log(`⚠️ Keep-alive warning: ${res.status}`);
+            }
+          })
+          .catch(err => {
+            clearTimeout(timeoutId);
+            log(`❌ Keep-alive failed: ${err.message}`);
+          });
       };
       
-      // ping كل 14 دقيقة (قبل 15 دقيقة من sleep)
-      const intervalId = setInterval(keepAlive, 14 * 60 * 1000);
+      // ping كل 10 دقائق لـ Render (أكثر تكراراً)
+      const keepAliveInterval = isRender ? 10 * 60 * 1000 : 14 * 60 * 1000;
+      const intervalId = setInterval(keepAlive, keepAliveInterval);
       
       // تنظيف عند الإغلاق
-      process.on('SIGTERM', () => {
+      const cleanup = () => {
+        log('🧹 تنظيف keep-alive interval');
         clearInterval(intervalId);
-      });
+      };
       
-      // بدء أول ping بعد دقيقة واحدة
-      setTimeout(keepAlive, 60000);
+      process.on('SIGTERM', cleanup);
+      process.on('SIGINT', cleanup);
+      
+      // بدء أول ping بعد 30 ثانية في Render
+      setTimeout(keepAlive, isRender ? 30000 : 60000);
+      
+      log(`⏰ Keep-alive مُفعّل: ping كل ${keepAliveInterval / 60000} دقيقة`);
     }
     
   } catch (error) {

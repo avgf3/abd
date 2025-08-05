@@ -229,7 +229,7 @@ export function useChat() {
   const debouncedRequests = useRef<Record<string, NodeJS.Timeout>>({});
   
   // إضافة متغير للوصول إلى import.meta.env
-  const isDevelopment = import.meta.env.DEV;
+  const isDevelopment = import.meta.env?.DEV || false;
   
   // دالة مساعدة لمنع الطلبات المتكررة
   const debounceRequest = useCallback((key: string, fn: () => void, delay: number = 1000) => {
@@ -417,9 +417,10 @@ export function useChat() {
             break;
             
           case 'userLeft':
-            if (message.userId) {
-              console.log('👤 مستخدم غادر:', message.userId);
-              const updatedUsers = state.onlineUsers.filter(u => u.id !== message.userId);
+            if (message.user?.id || message.targetUserId) {
+              const userId = message.user?.id || message.targetUserId;
+              console.log('👤 مستخدم غادر:', userId);
+              const updatedUsers = state.onlineUsers.filter(u => u.id !== userId);
               dispatch({ type: 'SET_ONLINE_USERS', payload: updatedUsers });
             }
             break;
@@ -597,7 +598,86 @@ export function useChat() {
         console.error('خطأ في معالجة الرسالة:', error);
       }
     });
-  }, [state.lastUserListUpdate, debounceRequest, loadExistingMessages]);
+  }, [state.lastUserListUpdate, debounceRequest]);
+
+  // تحميل الرسائل الموجودة من قاعدة البيانات - محسنة
+  const loadExistingMessages = useCallback(async () => {
+    // منع التحميل المتكرر
+    if (pendingRequests.current.has('loadExisting')) {
+      return;
+    }
+    
+    pendingRequests.current.add('loadExisting');
+    
+    try {
+      console.log('📥 تحميل الرسائل الموجودة من قاعدة البيانات...');
+      
+      // تحميل رسائل الغرفة العامة مع cache
+      const generalCached = roomMessageCache.current['general'];
+      if (generalCached && isCacheValid(generalCached.timestamp, 120000)) { // cache لمدتين
+        console.log('💾 استخدام cache للرسائل العامة');
+        dispatch({ 
+          type: 'ADD_ROOM_MESSAGE', 
+          payload: { roomId: 'general', message: generalCached.messages }
+        });
+        
+        if (state.currentRoomId === 'general') {
+          dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: generalCached.messages });
+        }
+        return;
+      }
+      
+      const generalResponse = await fetch('/api/messages/room/general?limit=50');
+      if (generalResponse.ok) {
+        const generalData = await generalResponse.json();
+        const generalMessages = generalData.messages || [];
+        
+        // تحديث cache
+        roomMessageCache.current['general'] = {
+          messages: generalMessages,
+          timestamp: Date.now()
+        };
+        
+        dispatch({ 
+          type: 'ADD_ROOM_MESSAGE', 
+          payload: { roomId: 'general', message: generalMessages }
+        });
+        
+        if (state.currentRoomId === 'general') {
+          dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: generalMessages });
+        }
+        
+        console.log(`✅ تم تحميل ${generalMessages.length} رسالة من الغرفة العامة`);
+      }
+      
+      // تحميل الرسائل الخاصة إذا كان المستخدم مسجل
+      if (state.currentUser && state.currentUser.userType === 'member') {
+        const privateResponse = await fetch(`/api/messages/private/${state.currentUser.id}?limit=100`);
+        if (privateResponse.ok) {
+          const privateData = await privateResponse.json();
+          const privateMessages = privateData.messages || [];
+          
+          // تنظيم الرسائل الخاصة حسب المحادثة
+          const conversations: PrivateConversation = {};
+          privateMessages.forEach((msg: ChatMessage) => {
+            const partnerId = msg.senderId === state.currentUser!.id ? msg.receiverId! : msg.senderId;
+            if (!conversations[partnerId]) {
+              conversations[partnerId] = [];
+            }
+            conversations[partnerId].push(msg);
+          });
+          
+          dispatch({ type: 'SET_PRIVATE_CONVERSATIONS', payload: conversations });
+          console.log(`✅ تم تحميل ${privateMessages.length} رسالة خاصة`);
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ خطأ في تحميل الرسائل:', error);
+    } finally {
+      pendingRequests.current.delete('loadExisting');
+    }
+  }, [state.currentUser, state.currentRoomId]);
 
   // Connect function - محسنة
   const connect = useCallback((user: ChatUser) => {
@@ -611,9 +691,9 @@ export function useChat() {
       // إنشاء اتصال Socket.IO
       if (!socket.current) {
         // Use dynamic URL: production uses current origin, development uses localhost
-        const isDevelopment = import.meta.env.DEV;
-        const serverUrl = isDevelopment 
-          ? (import.meta.env.VITE_SERVER_URL || 'http://localhost:5000')
+            const isDevelopment = import.meta.env?.DEV || false;
+    const serverUrl = isDevelopment 
+      ? (import.meta.env?.VITE_SERVER_URL || 'http://localhost:5000')
           : window.location.origin;
         
         console.log('🔌 جاري الاتصال بـ Socket.IO على:', serverUrl);
@@ -787,73 +867,6 @@ export function useChat() {
     // استخدام requestOnlineUsers بدلاً من الاستدعاء المباشر
     requestOnlineUsers();
   }, [requestOnlineUsers]);
-
-  // تحميل الرسائل الموجودة من قاعدة البيانات - محسنة
-  const loadExistingMessages = useCallback(async () => {
-    // منع التحميل المتكرر
-    if (pendingRequests.current.has('loadExisting')) {
-      return;
-    }
-    
-    pendingRequests.current.add('loadExisting');
-    
-    try {
-      console.log('📥 تحميل الرسائل الموجودة من قاعدة البيانات...');
-      
-      // تحميل رسائل الغرفة العامة مع cache
-      const generalCached = roomMessageCache.current['general'];
-      if (generalCached && isCacheValid(generalCached.timestamp, 120000)) { // cache لمدتين
-        console.log('💾 استخدام cache للرسائل العامة');
-        dispatch({ 
-          type: 'ADD_ROOM_MESSAGE', 
-          payload: { roomId: 'general', message: generalCached.messages }
-        });
-        
-        if (state.currentRoomId === 'general') {
-          dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: generalCached.messages });
-        }
-        return;
-      }
-      
-      const generalResponse = await fetch('/api/messages/room/general?limit=50');
-      if (generalResponse.ok) {
-        const generalData = await generalResponse.json();
-        if (generalData.messages && Array.isArray(generalData.messages)) {
-          console.log(`✅ تم تحميل ${generalData.messages.length} رسالة من الغرفة العامة`);
-          
-          const formattedMessages = generalData.messages.map((msg: any) => ({
-            id: msg.id,
-            content: msg.content,
-            timestamp: new Date(msg.timestamp),
-            senderId: msg.senderId,
-            sender: msg.sender,
-            messageType: msg.messageType || 'text',
-            isPrivate: msg.isPrivate || false,
-            roomId: msg.roomId || 'general'
-          }));
-          
-          // حفظ في cache
-          roomMessageCache.current['general'] = {
-            messages: formattedMessages,
-            timestamp: Date.now()
-          };
-          
-          dispatch({ 
-            type: 'ADD_ROOM_MESSAGE', 
-            payload: { roomId: 'general', message: formattedMessages }
-          });
-          
-          if (state.currentRoomId === 'general') {
-            dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: formattedMessages });
-          }
-        }
-      }
-    } catch (error) {
-      console.error('❌ خطأ في تحميل الرسائل:', error);
-    } finally {
-      pendingRequests.current.delete('loadExisting');
-    }
-  }, [state.currentRoomId, isCacheValid]);
 
   // Send typing indicator - محسنة مع throttling
   const sendTyping = useCallback(() => {

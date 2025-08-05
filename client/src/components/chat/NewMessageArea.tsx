@@ -63,26 +63,19 @@ export default function NewMessageArea({
             username: 'مستخدم محذوف',
             userType: 'guest' as const,
             role: 'guest' as const,
-            profileImage: '/default_avatar.svg',
-            profileBackgroundColor: '#3c0d0d',
+            profileImage: '',
+            profileBackgroundColor: '',
             isOnline: false,
             isHidden: false,
             lastSeen: null,
             joinDate: new Date(),
             createdAt: new Date(),
-            isMuted: false,
-            muteExpiry: null,
-            isBanned: false,
-            banExpiry: null,
-            isBlocked: false,
-            ignoredUsers: [],
-            usernameColor: '#666666',
-            userTheme: 'default',
-            profileEffect: '',
             points: 0,
             level: 1,
             totalPoints: 0,
-            levelProgress: 0
+            levelProgress: 0,
+            profileEffect: '',
+            userTheme: 'default'
           };
 
           return (

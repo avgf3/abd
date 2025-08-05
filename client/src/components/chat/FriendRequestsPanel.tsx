@@ -39,12 +39,20 @@ interface FriendRequestsPanelProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: ChatUser | null;
+  onAcceptRequest?: (requestId: number) => Promise<void>;
+  onRejectRequest?: (requestId: number) => Promise<void>;
+  onCancelRequest?: (requestId: number) => Promise<void>;
+  friendRequests?: { incoming: any[]; outgoing: any[] };
 }
 
 export default function FriendRequestsPanel({ 
   isOpen, 
   onClose, 
-  currentUser 
+  currentUser,
+  onAcceptRequest,
+  onRejectRequest,
+  onCancelRequest,
+  friendRequests
 }: FriendRequestsPanelProps) {
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<FriendRequest[]>([]);

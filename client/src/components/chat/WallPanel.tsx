@@ -33,30 +33,15 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
     try {
       console.log(`🔄 جاري جلب المنشورات للنوع: ${activeTab}, المستخدم: ${currentUser.id}`);
       
-      const response = await fetch(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`, {
-        method: 'GET',
-      });
+      const data = await apiRequest(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`);
       
-      console.log(`📡 استجابة الخادم: ${response.status}`);
+      console.log('📄 البيانات المستلمة:', data);
+      console.log(`📊 عدد المنشورات: ${data.posts?.length || 0}`);
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📄 البيانات المستلمة:', data);
-        console.log(`📊 عدد المنشورات: ${data.posts?.length || 0}`);
-        
-        const posts = data.posts || data.data || data || [];
-        setPosts(posts);
-        
-        console.log('✅ تم تحديث المنشورات في الواجهة');
-      } else {
-        const errorText = await response.text();
-        console.error('❌ خطأ في جلب المنشورات:', response.status, errorText);
-        toast({
-          title: "خطأ",
-          description: "فشل في جلب المنشورات",
-          variant: "destructive",
-        });
-      }
+      const posts = data.posts || data.data || data || [];
+      setPosts(posts);
+      
+      console.log('✅ تم تحديث المنشورات في الواجهة');
     } catch (error) {
       console.error('❌ خطأ في الاتصال بالخادم:', error);
       toast({

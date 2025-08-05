@@ -111,13 +111,13 @@ app.get('/api/users', async (req, res) => {
 // Socket.IO
 io.on('connection', (socket: any) => {
   socket.on('join', (userData: { userId: number; username: string }) => {
-    socket.userId = userData.userId;
-    socket.username = userData.username;
+    (socket as any).userId = userData.userId;
+    (socket as any).username = userData.username;
   });
   
   socket.on('disconnect', async () => {
-    if (socket.userId) {
-      await fixedStorage.setUserOnlineStatus(socket.userId, false);
+    if ((socket as any).userId) {
+      await fixedStorage.setUserOnlineStatus((socket as any).userId, false);
     }
   });
 });

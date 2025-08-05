@@ -5,7 +5,7 @@ databases:
 
 services:
   - type: web
-    name: chat-app
+    name: arabic-chat-app
     env: node
     region: oregon
     buildCommand: npm run build:render
@@ -15,6 +15,8 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: RENDER
+        value: true
       - key: ENABLE_WEBSOCKET
         value: true
       - key: SOCKET_IO_POLLING_ONLY
@@ -32,13 +34,21 @@ services:
     healthCheckPath: /api/health
     numInstances: 1
     plan: free
-    # إعدادات محسنة لـ Socket.IO
+    # إعدادات محسنة لـ Socket.IO و Render
     buildFilter:
       paths:
         - client/**
         - server/**
+        - shared/**
         - package.json
         - package-lock.json
         - tsconfig.json
         - vite.config.ts
         - render.yaml
+        - "!**/*.md"
+        - "!**/node_modules/**"
+    # إعدادات إضافية للأداء
+    disk:
+      name: chat-app-disk
+      mountPath: /opt/render/project/src/uploads
+      sizeGB: 1
