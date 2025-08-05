@@ -9,6 +9,7 @@ import { moderationSystem } from "./moderation";
 import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter, friendRequestLimiter } from "./security";
 import { databaseCleanup } from "./utils/database-cleanup";
 import { db, dbType } from "./database-adapter";
+import { AuthManager, authMiddleware, socketAuthMiddleware, checkRoomAccess, requireSocketAuth, type AuthenticatedSocket } from "./auth/authMiddleware";
 
 import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
 import securityApiRoutes from "./api-security";
@@ -21,6 +22,108 @@ import path from "path";
 import fs from "fs";
 import bcrypt from "bcrypt";
 import sharp from "sharp";
+
+/**
+ * مساعد آمن لإرسال الرسائل للغرف فقط - تم إضافته لحل مشاكل البث العالمي
+ */
+class SecureRoomManager {
+  
+  /**
+   * إرسال رسالة للمستخدمين في غرفة معينة فقط
+   */
+  static emitToRoom(io: IOServer, roomId: string, event: string, data: any) {
+    console.log(`📤 إرسال ${event} للغرفة ${roomId}`);
+    io.to(`room_${roomId}`).emit(event, { ...data, roomId });
+  }
+
+  /**
+   * إرسال رسالة لجميع الغرف التي ينتمي إليها المستخدم
+   */
+  static async emitToUserRooms(io: IOServer, userId: number, event: string, data: any) {
+    try {
+      const userRooms = await storage.getUserRooms(userId);
+      for (const roomId of userRooms) {
+        this.emitToRoom(io, roomId, event, data);
+      }
+    } catch (error) {
+      console.error('❌ خطأ في إرسال للغرف:', error);
+    }
+  }
+
+  /**
+   * إرسال تحديث المستخدمين في الغرفة
+   */
+  static async emitRoomUsersUpdate(io: IOServer, roomId: string) {
+    try {
+      const roomUsers = await storage.getOnlineUsersInRoom(roomId);
+      const usersWithStatus = await Promise.all(
+        roomUsers.map(async (user) => {
+          const status = await moderationSystem.checkUserStatus(user.id);
+          return {
+            ...user,
+            isMuted: status.isMuted,
+            isBlocked: status.isBlocked,
+            isBanned: status.isBanned
+          };
+        })
+      );
+      
+      this.emitToRoom(io, roomId, 'onlineUsers', { users: usersWithStatus });
+    } catch (error) {
+      console.error('❌ خطأ في تحديث قائمة المستخدمين:', error);
+    }
+  }
+
+  /**
+   * التحقق من صحة انتماء المستخدم للغرفة
+   */
+  static async validateUserInRoom(userId: number, roomId: string): Promise<boolean> {
+    try {
+      const userRooms = await storage.getUserRooms(userId);
+      return userRooms.includes(roomId);
+    } catch (error) {
+      console.error('❌ خطأ في التحقق من الغرفة:', error);
+      return false;
+    }
+  }
+
+  /**
+   * انضمام آمن للغرفة مع التحقق من الصلاحيات
+   */
+  static async secureJoinRoom(socket: any, roomId: string): Promise<boolean> {
+    try {
+      if (!socket.userId || !socket.username) {
+        socket.emit('error', { message: 'جلسة غير صالحة', code: 'INVALID_SESSION' });
+        return false;
+      }
+
+      // التحقق من إذن الوصول للغرفة
+      const hasAccess = await this.validateUserInRoom(socket.userId, roomId);
+      if (!hasAccess) {
+        // إضافة المستخدم للغرفة إذا كانت عامة
+        if (roomId === 'general') {
+          await storage.joinRoom(socket.userId, roomId);
+        } else {
+          socket.emit('error', { message: 'ليس لديك إذن للوصول لهذه الغرفة', code: 'ACCESS_DENIED' });
+          return false;
+        }
+      }
+
+      // انضمام للغرفة في Socket.IO
+      socket.join(`room_${roomId}`);
+      socket.currentRoom = roomId;
+
+      console.log(`✅ ${socket.username} انضم بأمان للغرفة ${roomId}`);
+      return true;
+    } catch (error) {
+      console.error('❌ خطأ في الانضمام الآمن للغرفة:', error);
+      socket.emit('error', { message: 'خطأ في الانضمام للغرفة', code: 'JOIN_ERROR' });
+      return false;
+    }
+  }
+}
+
+
 
 // إعداد multer لرفع الصور
 const storage_multer = multer.diskStorage({
@@ -176,7 +279,8 @@ interface CustomSocket extends Socket {
 // دالة broadcast للإرسال لجميع المستخدمين
 function broadcast(message: any) {
   if (io) {
-    io.emit('message', message);
+    const currentRoom = (socket as any)?.currentRoom || 'general';
+    SecureRoomManager.emitToRoom(io, currentRoom, 'message', message);
   }
 }
 
@@ -327,8 +431,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imageType: imageUrl.startsWith('data:') ? 'base64' : 'file'
       });
 
-      // إرسال إشعار للمستخدمين الآخرين عبر WebSocket
-      io.emit('user_profile_image_updated', {
+      // إرسال إشعار للمستخدمين في الغرف التي ينتمي لها المستخدم فقط
+      SecureRoomManager.emitToUserRooms(io, userId, 'user_profile_image_updated', {
         userId: userId,
         profileImage: imageUrl,
         user: updatedUser,
@@ -440,8 +544,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imageType: bannerUrl.startsWith('data:') ? 'base64' : 'file'
       });
 
-      // إرسال إشعار للمستخدمين الآخرين عبر WebSocket
-      io.emit('user_profile_banner_updated', {
+      // إرسال إشعار للمستخدمين في الغرف التي ينتمي لها المستخدم فقط
+      SecureRoomManager.emitToUserRooms(io, userId, 'user_profile_banner_updated', {
         userId: userId,
         profileBanner: bannerUrl,
         user: updatedUser,
@@ -858,7 +962,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.setUserHiddenStatus(userIdNum, isHidden);
       
       // إرسال إشعار WebSocket لتحديث قائمة المتصلين
-      io.emit('userVisibilityChanged', {
+      SecureRoomManager.emitToUserRooms(io, userId, 'userVisibilityChanged', {
         userId: userIdNum,
         isHidden: isHidden
       });
@@ -896,7 +1000,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUser(userIdNum, { usernameColor: color });
       
       // إرسال إشعار WebSocket لتحديث لون الاسم
-      io.emit('usernameColorChanged', {
+      SecureRoomManager.emitToUserRooms(io, userId, 'usernameColorChanged', {
         userId: userIdNum,
         color: color
       });
@@ -1224,7 +1328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Broadcast user update to all connected clients
-      io.emit('userUpdated', { user: user });
+      SecureRoomManager.emitToUserRooms(io, user.id, 'userUpdated', { user: user });
 
       res.json({ user });
     } catch (error) {
@@ -1355,8 +1459,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
       } else {
-        // رسالة عامة
-        io.emit('message', {
+        // رسالة عامة - بث للغرفة الحالية فقط
+        const currentRoom = (socket as any)?.currentRoom || 'general';
+        SecureRoomManager.emitToRoom(io, currentRoom, 'message', {
           envelope: {
             type: 'newMessage',
             message: { ...message, sender }
@@ -1406,7 +1511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Broadcast user update to all connected clients
-      io.emit('userUpdated', { user });
+      SecureRoomManager.emitToUserRooms(io, user.id, 'userUpdated', { user });
 
       res.json({ user, message: "تم تحديث الصورة الشخصية بنجاح" });
     } catch (error) {
@@ -1456,7 +1561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUser(userId, { usernameColor: color });
       
       // Broadcast the color change to all connected clients
-      io.emit('usernameColorChanged', {
+      SecureRoomManager.emitToUserRooms(io, userId, 'usernameColorChanged', {
         userId: userId,
         color: color,
         username: user.username
@@ -1573,6 +1678,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         console.log(`✅ تمت مصادقة المستخدم: ${user.username} (${user.userType})`);
+
+        // إرسال رسائل الغرفة فقط (بدلاً من كل الرسائل)
+        const roomMessages = await storage.getRecentMessages('general', 50);
+        socket.emit('roomMessages', {
+          roomId: 'general',
+          messages: roomMessages
+        });
+
+        // إرسال المستخدمين في الغرفة فقط (بدلاً من كل المستخدمين)
+        const roomUsers = await storage.getOnlineUsersInRoom('general');
+        socket.emit('roomUsers', {
+          roomId: 'general',
+          users: roomUsers
+        });
 
       } catch (error) {
         console.error('❌ خطأ في مصادقة الضيف:', error);
@@ -2004,11 +2123,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     socket.on('typing', (data) => {
       const { isTyping } = data;
-      socket.broadcast.emit('message', {
-        type: 'typing',
-        username: socket.username,
-        isTyping
-      });
+              const currentRoom = (socket as any).currentRoom || 'general';
+        // إرسال إشعار الكتابة لمستخدمي الغرفة فقط
+        socket.to(`room_${currentRoom}`).emit('message', {
+          type: 'typing',
+          username: socket.username,
+          isTyping,
+          roomId: currentRoom
+        });
     });
 
     socket.on('message', async (data) => {
@@ -2046,14 +2168,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             await storage.setUserOnlineStatus(message.userId, true);
             
-            // Broadcast user joined
+            // إخبار المستخدمين في الغرفة العامة بانضمام مستخدم جديد
             const joinedUser = await storage.getUser(message.userId);
-            io.emit('userJoined', { user: joinedUser });
+            socket.to('room_general').emit('userJoined', { user: joinedUser });
             
-            // Send online users list with moderation status to all clients
-            const onlineUsers = await storage.getOnlineUsers();
+            // إرسال قائمة المستخدمين في الغرفة فقط
+            const roomUsers = await storage.getOnlineUsersInRoom('general');
             const usersWithStatus = await Promise.all(
-              onlineUsers.map(async (user) => {
+              roomUsers.map(async (user) => {
                 const status = await moderationSystem.checkUserStatus(user.id);
                 return {
                   ...user,
@@ -2064,8 +2186,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               })
             );
             
-            // إرسال قائمة المستخدمين المحدثة لجميع العملاء
-            io.emit('onlineUsers', { users: usersWithStatus });
+            // إرسال قائمة المستخدمين المحدثة لجميع المستخدمين في الغرفة
+            io.to('room_general').emit('onlineUsers', { users: usersWithStatus });
             break;
 
           case 'publicMessage':
@@ -2174,7 +2296,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
               
               const sender = await storage.getUser(socket.userId);
-              io.emit('newMessage', { message: { ...newMessage, sender } });
+              const currentRoom = (socket as any).currentRoom || 'general';
+              
+              // بث الرسالة لمستخدمي الغرفة فقط بدلاً من الجميع
+              io.to(`room_${currentRoom}`).emit('newMessage', { 
+                message: { ...newMessage, sender },
+                roomId: currentRoom
+              });
             }
             break;
 
@@ -2258,11 +2386,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           case 'typing':
             if (socket.userId) {
-              io.emit('userTyping', {
-                userId: socket.userId,
-                username: socket.username,
-                isTyping: message.isTyping,
-              });
+              const currentRoom = (socket as any).currentRoom || 'general';
+      SecureRoomManager.emitToRoom(io, currentRoom, 'userTyping', {
+        userId: socket.userId,
+        username: socket.username,
+        isTyping: data.isTyping
+      });
             }
             break;
 
@@ -2512,12 +2641,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           socket.leave(customSocket.userId.toString());
           
           // إشعار جميع المستخدمين بخروج المستخدم
-          io.emit('message', {
-            type: 'userLeft',
-            userId: customSocket.userId,
-            username: customSocket.username,
-            timestamp: new Date().toISOString()
-          });
+          const currentRoom = (socket as any)?.currentRoom || 'general';
+    SecureRoomManager.emitToRoom(io, currentRoom, 'message', {
+            type: 'userLeft'});
           
           // إشعار المستخدمين في الغرفة الحالية بالخروج
           if (currentRoom) {
@@ -2539,7 +2665,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // إرسال قائمة محدثة للمستخدمين المتصلين لجميع العملاء
           const onlineUsers = await storage.getOnlineUsers();
-          io.emit('onlineUsers', { users: onlineUsers });
+          const currentRoom = (socket as any).currentRoom || 'general';
+      SecureRoomManager.emitRoomUsersUpdate(io, currentRoom);
           
           } catch (error) {
           console.error(`❌ خطأ في تنظيف جلسة ${customSocket.username}:`, error);
@@ -2571,7 +2698,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   function broadcast(message: any) {
-    io.emit(message.type || 'broadcast', message.data || message);
+    // بث آمن للرسائل حسب نوعها
+    const targetRoom = message.roomId || 'general';
+    SecureRoomManager.emitToRoom(io, targetRoom, message.type || 'broadcast', message.data || message);
   }
 
   // فحص دوري لتنظيف الجلسات المنتهية الصلاحية
@@ -3960,7 +4089,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('✅ تم تحديث البروفايل بنجاح:', { userId: userIdNum, validatedUpdates });
       
       // إشعار المستخدمين الآخرين عبر WebSocket
-      io.emit('user_profile_updated', {
+      SecureRoomManager.emitToUserRooms(io, user.id, 'user_profile_updated', {
         userId: userIdNum,
         updates: validatedUpdates,
         user: updatedUser
@@ -4174,8 +4303,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: `🎁 تم استلام ${points} نقطة من ${sender.username}`
       });
       
-      // إشعار في المحادثة العامة
-      io.emit('message', {
+      // إشعار في المحادثة العامة - للغرفة فقط
+      SecureRoomManager.emitToRoom(io, 'general', 'message', {
         type: 'pointsTransfer',
         senderName: sender.username,
         receiverName: receiver.username,
@@ -4379,7 +4508,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       console.log('📡 إرسال إشعار WebSocket:', messageData);
-      io.emit('message', messageData);
+      const currentRoom = (socket as any)?.currentRoom || 'general';
+    SecureRoomManager.emitToRoom(io, currentRoom, 'message', messageData);
       
       console.log('✅ إرجاع استجابة النجاح');
       res.json({ 
@@ -4450,12 +4580,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedPost = await storage.getWallPostWithReactions(parseInt(postId));
       
       // إرسال تحديث للمستخدمين المتصلين
-      io.emit('message', {
-        type: 'wallPostReaction',
-        post: updatedPost,
-        reactionType: type,
-        username: user.username
-      });
+      const currentRoom = (socket as any)?.currentRoom || 'general';
+    SecureRoomManager.emitToRoom(io, currentRoom, 'message', {
+        type: 'wallPostReaction'});
 
       res.json({ post: updatedPost });
     } catch (error) {
@@ -4519,11 +4646,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteWallPost(parseInt(postId));
       
       // إرسال إشعار بالحذف
-      io.emit('message', {
-        type: 'wallPostDeleted',
-        postId: parseInt(postId),
-        deletedBy: user.username
-      });
+      const currentRoom = (socket as any)?.currentRoom || 'general';
+    SecureRoomManager.emitToRoom(io, currentRoom, 'message', {
+        type: 'wallPostDeleted'});
 
       res.json({ message: 'تم حذف المنشور بنجاح' });
     } catch (error) {
@@ -4600,11 +4725,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const room = await storage.createRoom(roomData);
       
       // إرسال إشعار بالغرفة الجديدة
-      io.emit('roomCreated', { room });
+      // بث إنشاء الغرفة للمستخدمين المصرح لهم فقط
+    SecureRoomManager.emitToRoom(io, 'general', 'roomCreated', { room });
       
       // إرسال قائمة الغرف المحدثة لجميع المستخدمين
       const updatedRooms = await storage.getAllRooms();
-      io.emit('roomsUpdated', { rooms: updatedRooms });
+      // بث تحديث الغرف للمستخدمين المصرح لهم فقط
+    SecureRoomManager.emitToRoom(io, 'general', 'roomsUpdated', { rooms: updatedRooms });
 
       res.json({ room });
     } catch (error) {
@@ -4655,14 +4782,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteRoom(roomId);
 
       // إرسال إشعار بحذف الغرفة
-      io.emit('roomDeleted', { 
-        roomId,
-        deletedBy: user.username 
-      });
+      // بث حذف الغرفة للمستخدمين المصرح لهم فقط
+    SecureRoomManager.emitToRoom(io, 'general', 'roomDeleted', { roomId, deletedBy: userId });
       
       // إرسال قائمة الغرف المحدثة لجميع المستخدمين
       const updatedRooms = await storage.getAllRooms();
-      io.emit('roomsUpdated', { rooms: updatedRooms });
+      // بث تحديث الغرف للمستخدمين المصرح لهم فقط
+    SecureRoomManager.emitToRoom(io, 'general', 'roomsUpdated', { rooms: updatedRooms });
 
       res.json({ message: 'تم حذف الغرفة بنجاح' });
     } catch (error) {
@@ -4707,10 +4833,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // تحديث عدد المستخدمين في الغرفة
       const roomUsers = await storage.getRoomUsers(roomId);
-      io.emit('roomUserCountUpdated', {
-        roomId: roomId,
-        userCount: roomUsers.length
-      });
+      // بث تحديث عدد المستخدمين للغرفة نفسها
+    SecureRoomManager.emitToRoom(io, roomId, 'roomUserCountUpdated', { roomId, userCount });
 
       res.json({ message: 'تم الانضمام للغرفة بنجاح' });
     } catch (error) {
@@ -4743,10 +4867,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // تحديث عدد المستخدمين في الغرفة
         const roomUsers = await storage.getRoomUsers(roomId);
-        io.emit('roomUserCountUpdated', {
-          roomId: roomId,
-          userCount: roomUsers.length
-        });
+        // بث تحديث عدد المستخدمين للغرفة نفسها
+    SecureRoomManager.emitToRoom(io, roomId, 'roomUserCountUpdated', { roomId, userCount });
       }
 
       res.json({ message: 'تم مغادرة الغرفة بنجاح' });
@@ -4779,7 +4901,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const room = await storage.getRoom(roomId);
       const user = await storage.getUser(parseInt(userId));
       if (room && user) {
-        io.emit('message', {
+        // إرسال طلب المايك للغرفة المحددة فقط
+        SecureRoomManager.emitToRoom(io, roomId, 'message', {
           type: 'micRequest',
           roomId,
           requestUserId: parseInt(userId),
@@ -4810,11 +4933,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'لا يمكن الموافقة على طلب المايك' });
       }
 
-      // إرسال إشعار للجميع
+      // إرسال إشعار للغرفة المحددة فقط
       const user = await storage.getUser(parseInt(userId));
       const approver = await storage.getUser(parseInt(approvedBy));
       if (user && approver) {
-        io.emit('message', {
+        SecureRoomManager.emitToRoom(io, roomId, 'message', {
           type: 'micApproved',
           roomId,
           requestUserId: parseInt(userId),
@@ -4847,11 +4970,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'لا يمكن رفض طلب المايك' });
       }
 
-      // إرسال إشعار للجميع
+      // إرسال إشعار للغرفة المحددة فقط
       const user = await storage.getUser(parseInt(userId));
       const rejecter = await storage.getUser(parseInt(rejectedBy));
       if (user && rejecter) {
-        io.emit('message', {
+        SecureRoomManager.emitToRoom(io, roomId, 'message', {
           type: 'micRejected',
           roomId,
           requestUserId: parseInt(userId),
@@ -4884,11 +5007,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'لا يمكن إزالة المتحدث' });
       }
 
-      // إرسال إشعار للجميع
+      // إرسال إشعار للغرفة المحددة فقط
       const user = await storage.getUser(parseInt(userId));
       const remover = await storage.getUser(parseInt(removedBy));
       if (user && remover) {
-        io.emit('message', {
+        SecureRoomManager.emitToRoom(io, roomId, 'message', {
           type: 'speakerRemoved',
           roomId,
           requestUserId: parseInt(userId),
