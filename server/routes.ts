@@ -2632,7 +2632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const customSocket = socket as CustomSocket;
       if (customSocket.userId && isAuthenticated) {
         try {
-          const currentRoom = (socket as any).currentRoom;
+          const currentRoom = (socket as any)?.currentRoom || 'general';
           
           // تحديث حالة المستخدم في قاعدة البيانات
           await storage.setUserOnlineStatus(customSocket.userId, false);
@@ -2641,8 +2641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           socket.leave(customSocket.userId.toString());
           
           // إشعار جميع المستخدمين بخروج المستخدم
-          const currentRoom = (socket as any)?.currentRoom || 'general';
-    SecureRoomManager.emitToRoom(io, currentRoom, 'message', {
+          SecureRoomManager.emitToRoom(io, currentRoom, 'message', {
             type: 'userLeft'});
           
           // إشعار المستخدمين في الغرفة الحالية بالخروج
@@ -2665,8 +2664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // إرسال قائمة محدثة للمستخدمين المتصلين لجميع العملاء
           const onlineUsers = await storage.getOnlineUsers();
-          const currentRoom = (socket as any).currentRoom || 'general';
-      SecureRoomManager.emitRoomUsersUpdate(io, currentRoom);
+          SecureRoomManager.emitRoomUsersUpdate(io, currentRoom);
           
           } catch (error) {
           console.error(`❌ خطأ في تنظيف جلسة ${customSocket.username}:`, error);
