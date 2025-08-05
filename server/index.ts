@@ -236,14 +236,21 @@ function setupGracefulShutdown(httpServer: Server) {
     log('✅ تم إكمال تهيئة قاعدة البيانات');
 
     // تحديد المنفذ المطلوب
-    const preferredPort = process.env.PORT ? Number(process.env.PORT) : 5000;
+    const preferredPort = process.env.PORT ? Number(process.env.PORT) : (process.env.NODE_ENV === 'production' ? 10000 : 5000);
     log(`🔍 البحث عن منفذ متاح بدءاً من ${preferredPort}...`);
     
-    // البحث عن منفذ متاح
-    const availablePort = await findAvailablePort(preferredPort);
+    // في بيئة الإنتاج، استخدم المنفذ المحدد مباشرة
+    let availablePort = preferredPort;
     
-    if (availablePort !== preferredPort) {
-      log(`⚠️ المنفذ ${preferredPort} غير متاح، سيتم استخدام ${availablePort}`);
+    if (process.env.NODE_ENV !== 'production') {
+      // البحث عن منفذ متاح فقط في بيئة التطوير
+      availablePort = await findAvailablePort(preferredPort);
+      
+      if (availablePort !== preferredPort) {
+        log(`⚠️ المنفذ ${preferredPort} غير متاح، سيتم استخدام ${availablePort}`);
+      }
+    } else {
+      log(`🎯 استخدام المنفذ المحدد للإنتاج: ${availablePort}`);
     }
 
     // بدء تشغيل الخادم
