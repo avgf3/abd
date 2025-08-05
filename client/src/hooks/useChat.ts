@@ -715,8 +715,8 @@ export function useChat() {
       dispatch({ type: 'SET_MESSAGES_LOADED', payload: false });
       dispatch({ type: 'SET_INITIALIZED', payload: false });
       
-      // تحسين إعدادات الاتصال
-      const serverUrl = isDevelopment ? 'http://localhost:3001' : '';
+      // إعدادات الاتصال للإنتاج
+      const serverUrl = ''; // في الإنتاج نستخدم نفس النطاق
       
       if (!socket.current) {
         socket.current = io(serverUrl, {
@@ -745,7 +745,7 @@ export function useChat() {
       // نحتفظ بـ loading حتى يتم الاتصال فعلياً
       // dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [setupSocketListeners, isDevelopment]);
+  }, [setupSocketListeners]);
 
   // Load room messages function - محسنة مع cache
   const loadRoomMessages = useCallback(async (roomId: string) => {

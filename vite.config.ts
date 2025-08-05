@@ -54,25 +54,28 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*", "**/node_modules/**"],
     },
-    // إضافة proxy للاتصال بالخادم
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        secure: false,
+    // ملاحظة: في الإنتاج، الخادم والعميل يعملان على نفس المنفذ
+    // لذا لا نحتاج proxy - هذه الإعدادات للتطوير المحلي فقط
+    ...(process.env.NODE_ENV !== 'production' && {
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3001',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/socket.io': {
+          target: 'http://localhost:3001',
+          changeOrigin: true,
+          ws: true, // دعم WebSocket
+          secure: false,
+        },
+        '/uploads': {
+          target: 'http://localhost:3001',
+          changeOrigin: true,
+          secure: false,
+        },
       },
-      '/socket.io': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        ws: true, // دعم WebSocket
-        secure: false,
-      },
-      '/uploads': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        secure: false,
-      },
-    },
+    }),
     // Security headers
     headers: process.env.NODE_ENV === 'production' ? {
       'X-Content-Type-Options': 'nosniff',
