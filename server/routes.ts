@@ -1083,7 +1083,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   
-  // إعداد Socket.IO محسن مع أمان وثبات أفضل
+  // إعداد Socket.IO محسن مع أمان وثبات أفضل وتحسين الأداء
   io = new IOServer(httpServer, {
     // إعدادات CORS محسنة
     cors: { 
@@ -1095,22 +1095,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
     path: "/socket.io/",
     
-    // إعدادات النقل محسنة للاستقرار
+    // إعدادات النقل محسنة - إعطاء أولوية لـ WebSocket
     transports: ['websocket', 'polling'],
     allowEIO3: true,
     
-    // إعدادات الاتصال المحسنة
-    pingTimeout: 60000,
-    pingInterval: 25000,
-    upgradeTimeout: 10000,
+    // إعدادات الاتصال المحسنة للأداء
+    pingTimeout: 30000, // تقليل من 60 إلى 30 ثانية
+    pingInterval: 15000, // تقليل من 25 إلى 15 ثانية
+    upgradeTimeout: 5000, // تقليل من 10 إلى 5 ثواني
     allowUpgrades: true,
     
     // إعدادات الأمان
     cookie: false,
     serveClient: false,
     
-    // إعدادات الأداء
-    maxHttpBufferSize: 1e6, // 1MB
+    // إعدادات الأداء المحسنة
+    maxHttpBufferSize: 5e5, // تقليل من 1MB إلى 500KB
+    connectTimeout: 20000, // 20 ثانية للاتصال
+    
+    // تحسين إدارة الاتصالات
+    cleanupEmptyChildNamespaces: true,
+    
     allowRequest: (req, callback) => {
       // فحص أمني بسيط للطلبات
       const isOriginAllowed = process.env.NODE_ENV !== 'production' || 
@@ -4406,30 +4411,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // وظيفة ضغط الصور
+  // وظيفة ضغط الصور المحسنة مع دعم WebP
   const compressImage = async (filePath: string): Promise<void> => {
     try {
       const tempPath = filePath + '.tmp';
+      const webpPath = filePath.replace(/\.(jpg|jpeg|png)$/i, '.webp');
       
+      // الحصول على معلومات الصورة الأصلية
+      const imageInfo = await sharp(filePath).metadata();
+      const isLargeImage = (imageInfo.width || 0) > 800 || (imageInfo.height || 0) > 800;
+      
+      // تحديد الجودة بناءً على حجم الصورة
+      const quality = isLargeImage ? 75 : 85;
+      const maxSize = isLargeImage ? 1200 : 800;
+      
+      // إنشاء إصدار WebP محسن (أولوية)
       await sharp(filePath)
-        .resize(1200, 1200, { 
+        .resize(maxSize, maxSize, { 
+          fit: 'inside', 
+          withoutEnlargement: true 
+        })
+        .webp({ 
+          quality: quality,
+          effort: 6, // أقصى ضغط
+          smartSubsample: true
+        })
+        .toFile(webpPath);
+      
+      // إنشاء إصدار JPEG احتياطي للمتصفحات القديمة
+      await sharp(filePath)
+        .resize(maxSize, maxSize, { 
           fit: 'inside', 
           withoutEnlargement: true 
         })
         .jpeg({ 
-          quality: 85, 
-          progressive: true 
+          quality: quality, 
+          progressive: true,
+          mozjpeg: true // تحسين إضافي
         })
         .toFile(tempPath);
       
       // استبدال الملف الأصلي بالمضغوط
       await fs.promises.rename(tempPath, filePath);
-      console.log('✅ تم ضغط الصورة:', filePath);
+      
+      console.log(`✅ تم ضغط الصورة: ${filePath}`);
+      console.log(`✅ تم إنشاء إصدار WebP: ${webpPath}`);
+      
+      // إحصائيات الضغط
+      const originalSize = imageInfo.size || 0;
+      const compressedSize = (await fs.promises.stat(filePath)).size;
+      const webpSize = (await fs.promises.stat(webpPath)).size;
+      const jpegSavings = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
+      const webpSavings = ((originalSize - webpSize) / originalSize * 100).toFixed(1);
+      
+      console.log(`📊 توفير في الحجم - JPEG: ${jpegSavings}%, WebP: ${webpSavings}%`);
+      
     } catch (error) {
       console.error('❌ فشل في ضغط الصورة:', error);
-      // حذف الملف المؤقت إن وجد
+      // حذف الملفات المؤقتة إن وجدت
       try {
         await fs.promises.unlink(filePath + '.tmp');
+      } catch {}
+      try {
+        await fs.promises.unlink(filePath.replace(/\.(jpg|jpeg|png)$/i, '.webp'));
       } catch {}
     }
   };

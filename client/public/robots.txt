@@ -1,9 +1,19 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /uploads/profiles/
+Disallow: /uploads/wall/
+Disallow: /private/
+Disallow: /admin/
 
-# Disallow sensitive areas
-Disallow: /admin
-Disallow: /api
-Disallow: /uploads/private
+# Allow access to main pages
+Allow: /
+Allow: /about
+Allow: /terms
+Allow: /privacy
 
-Sitemap: /sitemap.xml
+# Crawl delay
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://abd-ylo2.onrender.com/sitemap.xml
