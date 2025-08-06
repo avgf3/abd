@@ -189,6 +189,19 @@ export class PostgreSQLStorage implements IStorage {
     }, 60000);
   }
   
+  // Cache methods for online users
+  getCachedOnlineUsers(roomId?: string): User[] | null {
+    return this.cache.getOnlineUsers(roomId);
+  }
+  
+  setCachedOnlineUsers(roomId: string | undefined, users: User[]): void {
+    this.cache.setOnlineUsers(users, roomId);
+  }
+  
+  invalidateUserCache(roomId?: string): void {
+    this.cache.invalidateCache(roomId);
+  }
+  
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id));
