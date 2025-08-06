@@ -270,10 +270,11 @@ export function useChat() {
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
       
       // إرسال بيانات المصادقة
-      socket.current?.emit('auth', {
+      socket.current?.emit('authenticate', {
         userId: user.id,
         username: user.username,
-        userType: user.userType
+        userType: user.userType,
+        authType: 'registered'
       });
     });
 
