@@ -33,6 +33,7 @@ export function createDatabaseAdapter(): DatabaseAdapter {
   // التحقق من أن الرابط هو PostgreSQL
   if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
     console.warn("⚠️ DATABASE_URL ليس رابط PostgreSQL صحيح، سيتم العمل في وضع آمن");
+    console.warn("📝 مطلوب: postgresql://user:password@host:6543/dbname?sslmode=require");
     return {
       db: null,
       type: 'disabled'

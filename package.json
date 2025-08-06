@@ -27,6 +27,7 @@
     "db:add-profile-effect": "node run-profile-effect-migration.js",
     "db:fix-issues": "node fix-database-issues.js",
     "test:supabase": "tsx test-supabase-connection.ts",
+    "verify-db": "node verify-database-connection.js",
     "fix-issues": "node fix-critical-issues.js",
     "check-fixed": "tsc --noEmit",
     "start-fixed": "NODE_ENV=production node server-fixed.js",

@@ -48,6 +48,8 @@ async function startServer() {
     if (!dbHealthy) {
       console.error('❌ فشل في الاتصال بقاعدة البيانات!');
       console.error('❌ تأكد من إعداد DATABASE_URL في متغيرات البيئة');
+      console.error('🔍 DATABASE_URL المطلوب: postgresql://user:password@host:6543/dbname?sslmode=require');
+      console.error('📝 تأكد من استخدام منفذ 6543 لـ Supabase pooler connections');
       process.exit(1);
     }
     
