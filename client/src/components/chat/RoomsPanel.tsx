@@ -105,19 +105,19 @@ export default function RoomsPanel({
         )}
 
         {/* Rooms List */}
-        <div className="space-y-1">
+        <div className="space-y-2">
           {rooms.map((room) => (
             <div
               key={room.id}
-              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors group ${
+              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 group ${
                 currentRoomId === room.id
-                  ? 'bg-primary/20 border border-primary/30'
-                  : 'hover:bg-muted/80'
+                  ? 'bg-primary/20 border border-primary/30 shadow-sm'
+                  : 'hover:bg-muted/80 hover:shadow-sm'
               }`}
               onClick={() => onRoomChange(room.id)}
             >
               {/* Room Image */}
-              <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+              <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
                 {room.icon ? (
                   <img
                     src={room.icon}
@@ -126,7 +126,7 @@ export default function RoomsPanel({
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-                    <span className="text-xs font-bold text-primary">
+                    <span className="text-sm font-bold text-primary">
                       {room.name.charAt(0)}
                     </span>
                   </div>
@@ -140,13 +140,34 @@ export default function RoomsPanel({
                   {room.isBroadcast && (
                     <Mic className="w-3 h-3 text-orange-500" />
                   )}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {room.userCount} متصل
-                  {room.isBroadcast && (
-                    <span className="text-orange-500 ml-1">• بث مباشر</span>
+                  {room.isDefault && (
+                    <span className="text-xs bg-green-100 text-green-800 px-1 py-0.5 rounded">
+                      افتراضي
+                    </span>
+                  )}
+                  {currentRoomId === room.id && (
+                    <span className="text-xs bg-primary text-primary-foreground px-1 py-0.5 rounded">
+                      نشط
+                    </span>
                   )}
                 </div>
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  <span className="flex items-center gap-1">
+                    <Users className="w-3 h-3" />
+                    {room.userCount || 0} متصل
+                  </span>
+                  {room.isBroadcast && (
+                    <span className="text-orange-500 flex items-center gap-1">
+                      <span>•</span>
+                      بث مباشر
+                    </span>
+                  )}
+                </div>
+                {room.description && (
+                  <div className="text-xs text-gray-400 truncate mt-1">
+                    {room.description}
+                  </div>
+                )}
               </div>
 
               {/* Delete Button for Admins */}
@@ -156,6 +177,7 @@ export default function RoomsPanel({
                   variant="ghost"
                   size="sm"
                   className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                  title="حذف الغرفة"
                 >
                   <X className="w-4 h-4" />
                 </Button>
