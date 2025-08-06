@@ -173,8 +173,7 @@ const connectedUsers = new Map<number, {
   lastSeen: Date
 }>();
 
-// Storage initialization
-const storage = new Storage();
+// Storage initialization - using imported storage instance
   
 // I/O interface
 let io: IOServer;
