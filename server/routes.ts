@@ -2,10 +2,14 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { Server as IOServer, Socket } from "socket.io";
 import { createRoomHandlers } from "./handlers/roomHandlers";
-import { authMiddleware, socketAuthMiddleware, type AuthenticatedSocket } from "./auth/authMiddleware";
+import { AuthManager, type AuthenticatedSocket } from "./auth/authMiddleware";
 import { db } from "./database-adapter";
 import { users } from "../shared/schema";
 import { eq } from "drizzle-orm";
+import authRoutes from "./routes/auth";
+import userRoutes from "./routes/users";
+import messageRoutes from "./routes/messages";
+import uploadRoutes from "./routes/uploads";
 
 /**
  * نظام الطرق المنظف والمحسن
@@ -16,14 +20,21 @@ export default function setupRoutes(app: Express): Server {
   const io = new IOServer(server, {
     cors: {
       origin: process.env.NODE_ENV === "production" 
-        ? ["https://your-domain.com"] 
+        ? ["https://abd-ylo2.onrender.com"] 
         : ["http://localhost:5173", "http://localhost:3000"],
       methods: ["GET", "POST"],
       credentials: true
     },
     pingTimeout: 60000,
-    pingInterval: 25000
+    pingInterval: 25000,
+    transports: ['websocket', 'polling']
   });
+
+  // إعداد المسارات API
+  app.use('/api/auth', authRoutes);
+  app.use('/api/users', userRoutes);
+  app.use('/api/messages', messageRoutes);
+  app.use('/api/uploads', uploadRoutes);
 
   // إنشاء معالجات الغرف
   const roomHandlers = createRoomHandlers(io);
@@ -32,63 +43,51 @@ export default function setupRoutes(app: Express): Server {
   io.on('connection', async (socket: Socket) => {
     console.log(`🔌 اتصال جديد: ${socket.id}`);
 
-    // تطبيق middleware المصادقة
-    const authResult = await socketAuthMiddleware(socket);
-    if (!authResult.success) {
-      console.log(`❌ فشل في المصادقة: ${authResult.error}`);
-      socket.emit('error', { 
-        message: 'فشل في المصادقة، يرجى تسجيل الدخول مرة أخرى',
-        code: 'AUTH_FAILED' 
-      });
-      socket.disconnect();
-      return;
-    }
-
-    const authenticatedSocket = socket as AuthenticatedSocket;
-    console.log(`✅ تم تأكيد هوية المستخدم: ${authenticatedSocket.username} (${authenticatedSocket.userId})`);
-
-    // تحديث حالة المستخدم كـ متصل
+    // تطبيق middleware المصادقة المحسن
     try {
-      await db.update(users)
-        .set({ 
-          isOnline: true, 
-          lastSeen: new Date() 
-        })
-        .where(eq(users.id, authenticatedSocket.userId!));
-    } catch (error) {
-      console.error('❌ خطأ في تحديث حالة الاتصال:', error);
-    }
-
-    // تسجيل معالجات الغرف
-    roomHandlers.registerHandlers(authenticatedSocket);
-
-    // الانضمام التلقائي للغرفة العامة
-    setTimeout(async () => {
-      try {
-        await roomHandlers.handleJoinRoom(authenticatedSocket, { roomId: 'general' });
-      } catch (error) {
-        console.error('❌ خطأ في الانضمام التلقائي للغرفة العامة:', error);
+      const authResult = await authenticateSocket(socket);
+      if (!authResult.success) {
+        console.log(`❌ فشل في المصادقة: ${authResult.error}`);
+        socket.emit('authError', { 
+          message: 'فشل في المصادقة، يرجى تسجيل الدخول مرة أخرى',
+          code: 'AUTH_FAILED' 
+        });
+        socket.disconnect(true);
+        return;
       }
-    }, 1000);
 
-    // معالجة قطع الاتصال
-    socket.on('disconnect', async () => {
-      try {
-        // تحديث حالة المستخدم كـ غير متصل
-        if (authenticatedSocket.userId) {
-          await db.update(users)
-            .set({ 
-              isOnline: false, 
-              lastSeen: new Date() 
-            })
-            .where(eq(users.id, authenticatedSocket.userId));
+      const authenticatedSocket = socket as AuthenticatedSocket;
+      console.log(`✅ تم تأكيد هوية المستخدم: ${authenticatedSocket.username} (${authenticatedSocket.userId})`);
+
+      // تحديث حالة المستخدم كـ متصل
+      await updateUserOnlineStatus(authenticatedSocket.userId!, true);
+
+      // تسجيل معالجات الغرف
+      roomHandlers.registerHandlers(authenticatedSocket);
+
+      // الانضمام التلقائي للغرفة العامة مع تأخير
+      setTimeout(async () => {
+        try {
+          await roomHandlers.handleJoinRoom(authenticatedSocket, { roomId: 'general' });
+        } catch (error) {
+          console.error('❌ خطأ في الانضمام التلقائي للغرفة العامة:', error);
         }
+      }, 1000);
 
-        console.log(`🔌 انقطع الاتصال: ${authenticatedSocket.username}`);
-      } catch (error) {
-        console.error('❌ خطأ في معالجة قطع الاتصال:', error);
-      }
-    });
+      // معالجة قطع الاتصال
+      socket.on('disconnect', async (reason) => {
+        console.log(`🔌 انقطع الاتصال: ${authenticatedSocket.username} - السبب: ${reason}`);
+        await handleDisconnection(authenticatedSocket);
+      });
+
+    } catch (error) {
+      console.error('❌ خطأ في معالجة الاتصال:', error);
+      socket.emit('error', { 
+        message: 'خطأ في الخادم',
+        code: 'SERVER_ERROR' 
+      });
+      socket.disconnect(true);
+    }
   });
 
   // Routes للواجهة البرمجية
@@ -96,11 +95,12 @@ export default function setupRoutes(app: Express): Server {
     res.json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
-      system: 'clean-room-system'
+      system: 'clean-room-system',
+      version: '2.1'
     });
   });
 
-  // معلومات الخادم
+  // معلومات الخادم المحسنة
   app.get('/api/server-info', (req, res) => {
     const connectedUsers = io.sockets.sockets.size;
     const rooms = Array.from(io.sockets.adapter.rooms.keys())
@@ -111,37 +111,94 @@ export default function setupRoutes(app: Express): Server {
       connectedUsers,
       activeRooms: rooms,
       serverTime: new Date().toISOString(),
-      version: '2.0-clean'
+      version: '2.1-enhanced',
+      environment: process.env.NODE_ENV || 'development'
     });
-  });
-
-  // Route للحصول على معلومات الغرف
-  app.get('/api/rooms', authMiddleware, async (req, res) => {
-    try {
-      const rooms = Array.from(io.sockets.adapter.rooms.keys())
-        .filter(room => room.startsWith('room_'))
-        .map(roomKey => {
-          const roomId = roomKey.replace('room_', '');
-          const userCount = io.sockets.adapter.rooms.get(roomKey)?.size || 0;
-          return {
-            id: roomId,
-            name: roomId === 'general' ? 'الغرفة العامة' : roomId,
-            userCount,
-            isActive: userCount > 0
-          };
-        });
-
-      res.json({ success: true, rooms });
-    } catch (error) {
-      console.error('❌ خطأ في جلب معلومات الغرف:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'خطأ في جلب معلومات الغرف' 
-      });
-    }
   });
 
   console.log('🚀 تم إعداد النظام المنظف للغرف والرسائل');
   
   return server;
+}
+
+/**
+ * مصادقة Socket محسنة
+ */
+async function authenticateSocket(socket: Socket): Promise<{ success: boolean; error?: string }> {
+  try {
+    // استخراج token من handshake
+    const token = socket.handshake.auth?.token || 
+                 socket.handshake.headers?.authorization?.replace('Bearer ', '') ||
+                 socket.handshake.query?.token as string;
+
+    if (!token) {
+      return { success: false, error: 'لا يوجد token' };
+    }
+
+    // التحقق من صحة token
+    const decoded = AuthManager.verifyToken(token);
+    
+    if (!decoded) {
+      return { success: false, error: 'token غير صالح' };
+    }
+
+    // التحقق من وجود المستخدم في قاعدة البيانات
+    const isValidUser = await AuthManager.validateUserInDatabase(decoded.userId);
+    
+    if (!isValidUser) {
+      return { success: false, error: 'المستخدم غير موجود' };
+    }
+
+    // الحصول على بيانات المستخدم الكاملة
+    const [user] = await db.select()
+      .from(users)
+      .where(eq(users.id, decoded.userId))
+      .limit(1);
+    
+    if (!user) {
+      return { success: false, error: 'فشل في جلب بيانات المستخدم' };
+    }
+
+    // إضافة بيانات المستخدم للSocket
+    const authenticatedSocket = socket as AuthenticatedSocket;
+    authenticatedSocket.userId = user.id;
+    authenticatedSocket.username = user.username;
+    authenticatedSocket.userType = user.userType;
+    authenticatedSocket.isAuthenticated = true;
+
+    return { success: true };
+    
+  } catch (error) {
+    console.error('❌ خطأ في مصادقة Socket:', error);
+    return { success: false, error: 'خطأ في الخادم' };
+  }
+}
+
+/**
+ * تحديث حالة الاتصال للمستخدم
+ */
+async function updateUserOnlineStatus(userId: number, isOnline: boolean): Promise<void> {
+  try {
+    await db.update(users)
+      .set({ 
+        isOnline, 
+        lastSeen: new Date() 
+      })
+      .where(eq(users.id, userId));
+  } catch (error) {
+    console.error('❌ خطأ في تحديث حالة الاتصال:', error);
+  }
+}
+
+/**
+ * معالجة قطع الاتصال
+ */
+async function handleDisconnection(socket: AuthenticatedSocket): Promise<void> {
+  try {
+    if (socket.userId) {
+      await updateUserOnlineStatus(socket.userId, false);
+    }
+  } catch (error) {
+    console.error('❌ خطأ في معالجة قطع الاتصال:', error);
+  }
 }
