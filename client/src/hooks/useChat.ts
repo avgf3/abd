@@ -75,6 +75,8 @@ type ChatAction =
   | { type: 'ADD_NOTIFICATION'; payload: Notification }
   | { type: 'SET_ROOM'; payload: string }
   | { type: 'ADD_ROOM_MESSAGE'; payload: { roomId: string; message: ChatMessage | ChatMessage[] } }
+  | { type: 'SET_ROOM_MESSAGES'; payload: string; messages: ChatMessage[] }
+  | { type: 'CLEAR_ROOM_MESSAGES'; payload: string }
   | { type: 'SET_SHOW_KICK_COUNTDOWN'; payload: boolean }
   | { type: 'IGNORE_USER'; payload: number }
   | { type: 'UNIGNORE_USER'; payload: number }
@@ -194,6 +196,25 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
       }
     }
     
+    case 'SET_ROOM_MESSAGES': {
+      return {
+        ...state,
+        roomMessages: {
+          ...state.roomMessages,
+          [action.payload]: action.messages
+        }
+      };
+    }
+    
+    case 'CLEAR_ROOM_MESSAGES': {
+      const updatedRoomMessages = { ...state.roomMessages };
+      delete updatedRoomMessages[action.payload];
+      return {
+        ...state,
+        roomMessages: updatedRoomMessages
+      };
+    }
+    
     case 'SET_SHOW_KICK_COUNTDOWN':
       return { ...state, showKickCountdown: action.payload };
     
@@ -255,17 +276,50 @@ export function useChat() {
   // إضافة متغير للوصول إلى import.meta.env
   const isDevelopment = import.meta.env?.DEV || false;
   
-  // دالة مساعدة لمنع الطلبات المتكررة
+  // دالة مساعدة لمنع الطلبات المتكررة - محسنة
   const debounceRequest = useCallback((key: string, fn: () => void, delay: number = 1000) => {
+    // تنظيف الطلب السابق
     if (debouncedRequests.current[key]) {
       clearTimeout(debouncedRequests.current[key]);
     }
     
     debouncedRequests.current[key] = setTimeout(() => {
-      fn();
-      delete debouncedRequests.current[key];
+      try {
+        fn();
+      } catch (error) {
+        console.error(`خطأ في تنفيذ debounced request ${key}:`, error);
+      } finally {
+        delete debouncedRequests.current[key];
+      }
     }, delay);
   }, []);
+  
+  // تنظيف شامل للـ cache
+  const cleanupCache = useCallback(() => {
+    const now = Date.now();
+    const cacheExpiry = 60000; // دقيقة واحدة
+    
+    // تنظيف cache الرسائل
+    Object.keys(roomMessageCache.current).forEach(roomId => {
+      const cache = roomMessageCache.current[roomId];
+      if (cache && now - cache.timestamp > cacheExpiry) {
+        delete roomMessageCache.current[roomId];
+        console.log(`🧹 تنظيف cache الرسائل للغرفة ${roomId}`);
+      }
+    });
+    
+    // تنظيف cache قائمة المستخدمين
+    if (userListCache.current && now - userListCache.current.timestamp > 30000) {
+      userListCache.current = null;
+      console.log('🧹 تنظيف cache قائمة المستخدمين');
+    }
+  }, []);
+  
+  // تنظيف cache كل دقيقة
+  useEffect(() => {
+    const cleanupInterval = setInterval(cleanupCache, 60000);
+    return () => clearInterval(cleanupInterval);
+  }, [cleanupCache]);
   
   // دالة للتحقق من صحة cache
   const isCacheValid = useCallback((timestamp: number, maxAge: number = 30000) => {
@@ -548,21 +602,39 @@ export function useChat() {
               if (!state.ignoredUsers.has(message.message.senderId)) {
                 const chatMessage = message.message as ChatMessage;
                 const messageRoomId = (chatMessage as any).roomId || 'general';
-                console.log(`✅ إضافة رسالة للغرفة ${messageRoomId} (الغرفة الحالية: ${state.currentRoomId})`);
                 
-                dispatch({ 
-                  type: 'ADD_ROOM_MESSAGE', 
-                  payload: { roomId: messageRoomId, message: chatMessage }
-                });
+                // التحقق من عدم وجود الرسالة مسبقاً لمنع التكرار
+                const existingMessages = state.roomMessages[messageRoomId] || [];
+                const messageExists = existingMessages.some(msg => msg.id === chatMessage.id);
                 
-                // تشغيل صوت الإشعار للرسائل من الآخرين في الغرفة الحالية فقط
-                if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoomId) {
-                  playNotificationSound();
-                }
-
-                // إظهار التنبيه فقط للرسائل في الغرفة الحالية
-                if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoomId) {
-                  dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: chatMessage.sender });
+                if (!messageExists) {
+                  console.log(`✅ إضافة رسالة جديدة للغرفة ${messageRoomId} (ID: ${chatMessage.id})`);
+                  
+                  // إضافة معرف الغرفة للرسالة
+                  const messageWithRoom = {
+                    ...chatMessage,
+                    roomId: messageRoomId,
+                    timestamp: new Date(chatMessage.timestamp)
+                  };
+                  
+                  dispatch({ 
+                    type: 'ADD_ROOM_MESSAGE', 
+                    payload: { roomId: messageRoomId, message: messageWithRoom }
+                  });
+                  
+                  // تحديث cache بالرسالة الجديدة
+                  if (roomMessageCache.current[messageRoomId]) {
+                    roomMessageCache.current[messageRoomId].messages.push(messageWithRoom);
+                    roomMessageCache.current[messageRoomId].timestamp = Date.now();
+                  }
+                  
+                  // تشغيل صوت الإشعار للرسائل من الآخرين في الغرفة الحالية فقط
+                  if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoomId) {
+                    playNotificationSound();
+                    dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: chatMessage.sender });
+                  }
+                } else {
+                  console.log(`⚠️ رسالة مكررة تم تجاهلها (ID: ${chatMessage.id})`);
                 }
               } else {
                 console.log('🚫 رسالة من مستخدم متجاهل:', message.message.senderId);
@@ -746,72 +818,97 @@ export function useChat() {
     }
   }, [setupSocketListeners]);
 
-  // Load room messages function - محسنة مع cache
+  // Load room messages function - محسنة مع cache متقدم ومنع التكرار
   const loadRoomMessages = useCallback(async (roomId: string) => {
-    // منع التحميل المتكرر
     const requestKey = `loadRoom_${roomId}`;
+    
+    // منع الطلبات المتكررة
     if (pendingRequests.current.has(requestKey)) {
       console.log(`⏳ طلب تحميل الغرفة ${roomId} قيد التنفيذ بالفعل`);
       return;
     }
     
-    // التحقق من cache
+    // التحقق من cache أولاً - تحسين: cache لمدة دقيقة كاملة
     const cached = roomMessageCache.current[roomId];
-    if (cached && isCacheValid(cached.timestamp, 60000)) { // cache لمدة دقيقة
-      console.log(`💾 استخدام cache للغرفة ${roomId}`);
-      dispatch({ 
-        type: 'ADD_ROOM_MESSAGE', 
-        payload: { roomId, message: cached.messages }
+    if (cached && isCacheValid(cached.timestamp, 60000)) {
+      console.log(`💾 استخدام cache للغرفة ${roomId} (${cached.messages.length} رسالة)`);
+      dispatch({
+        type: 'SET_ROOM_MESSAGES',
+        payload: roomId,
+        messages: cached.messages
       });
       return;
     }
-
-    // إظهار حالة التحميل
-    dispatch({ type: 'SET_MESSAGE_LOADING', payload: { roomId, loading: true } });
+    
     pendingRequests.current.add(requestKey);
-
+    dispatch({ type: 'SET_MESSAGE_LOADING', payload: { roomId, loading: true } });
+    
     try {
-      console.log(`📥 تحميل رسائل الغرفة: ${roomId}`);
-      const response = await fetch(`/api/messages/room/${roomId}?limit=50`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.messages && Array.isArray(data.messages)) {
-          console.log(`✅ تم تحميل ${data.messages.length} رسالة من الغرفة ${roomId}`);
-          
-          // تحويل الرسائل إلى التنسيق المطلوب
-          const formattedMessages = data.messages.map((msg: any) => ({
+      console.log(`🔄 تحميل رسائل الغرفة ${roomId} من قاعدة البيانات`);
+      const response = await apiRequest(`/api/messages/room/${roomId}?limit=50`);
+      
+      if (response?.messages && Array.isArray(response.messages)) {
+        const messages = response.messages;
+        
+        // تحويل الرسائل مع التحقق من صحتها
+        const formattedMessages = messages
+          .filter((msg: any) => msg && msg.id && msg.content) // فلترة الرسائل الفارغة
+          .map((msg: any) => ({
             id: msg.id,
             content: msg.content,
             timestamp: new Date(msg.timestamp),
             senderId: msg.senderId,
-            sender: msg.sender,
+            sender: msg.sender || { 
+              id: msg.senderId, 
+              username: msg.senderUsername || 'مستخدم',
+              userType: msg.senderUserType || 'user'
+            },
             messageType: msg.messageType || 'text',
             isPrivate: msg.isPrivate || false,
-            roomId: msg.roomId || roomId
-          }));
-          
-          // حفظ في cache
-          roomMessageCache.current[roomId] = {
-            messages: formattedMessages,
-            timestamp: Date.now()
-          };
-          
-          // إضافة الرسائل للغرفة
-          dispatch({ 
-            type: 'ADD_ROOM_MESSAGE', 
-            payload: { roomId, message: formattedMessages }
-          });
-        }
+            roomId: roomId // ربط واضح بالغرفة
+          }))
+          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()); // ترتيب زمني
+        
+        console.log(`✅ تم تحميل ${formattedMessages.length} رسالة صالحة للغرفة ${roomId}`);
+        
+        // حفظ في cache مع timestamp
+        roomMessageCache.current[roomId] = {
+          messages: formattedMessages,
+          timestamp: Date.now()
+        };
+        
+        // استبدال الرسائل بالكامل بدلاً من إضافتها
+        dispatch({
+          type: 'SET_ROOM_MESSAGES',
+          payload: roomId,
+          messages: formattedMessages
+        });
+        
+        console.log(`🎯 نجح تحميل وعرض رسائل الغرفة ${roomId}`);
+        
       } else {
-        console.error(`❌ فشل في تحميل رسائل الغرفة ${roomId}:`, response.status);
+        console.warn(`⚠️ لا توجد رسائل في الغرفة ${roomId} أو response فارغ`);
+        
+        // حفظ غرفة فارغة في cache لمنع إعادة الطلب
+        roomMessageCache.current[roomId] = {
+          messages: [],
+          timestamp: Date.now()
+        };
+        
+        dispatch({
+          type: 'SET_ROOM_MESSAGES',
+          payload: roomId,
+          messages: []
+        });
       }
     } catch (error) {
       console.error(`❌ خطأ في تحميل رسائل الغرفة ${roomId}:`, error);
+      // لا نحفظ في cache في حالة الخطأ لإعطاء فرصة لإعادة المحاولة
     } finally {
-      dispatch({ type: 'SET_MESSAGE_LOADING', payload: { roomId, loading: false } });
       pendingRequests.current.delete(requestKey);
+      dispatch({ type: 'SET_MESSAGE_LOADING', payload: { roomId, loading: false } });
     }
-  }, [isCacheValid]);
+  }, [apiRequest, isCacheValid]);
 
   // Join room function - محسنة
   const joinRoom = useCallback((roomId: string) => {
