@@ -1,14 +1,14 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
+import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import * as pgSchema from "../shared/schema";
-import type { NeonQueryResultHKT } from 'drizzle-orm/neon-serverless';
+import type { PostgresJsQueryResultHKT } from 'drizzle-orm/postgres-js';
 import type { PgDatabase } from 'drizzle-orm/pg-core';
 
 // تعريف نوع قاعدة البيانات
-export type DatabaseType = PgDatabase<NeonQueryResultHKT, typeof pgSchema> | null;
+export type DatabaseType = PgDatabase<PostgresJsQueryResultHKT, typeof pgSchema> | null;
 
 // واجهة موحدة للعمليات
 export interface DatabaseAdapter {
@@ -40,18 +40,22 @@ export function createDatabaseAdapter(): DatabaseAdapter {
   }
   
   try {
-    // إعداد Neon للإنتاج
-    neonConfig.fetchConnectionCache = true;
+    // إعداد postgres للإنتاج
+    const sql = postgres(databaseUrl, {
+      ssl: 'require',
+      connection: {
+        application_name: 'chat-app'
+      }
+    });
     
-    const pool = new Pool({ connectionString: databaseUrl });
-    const db = drizzleNeon({ client: pool, schema: pgSchema });
+    const db = drizzle(sql, { schema: pgSchema });
     
     console.log("✅ تم الاتصال بقاعدة البيانات PostgreSQL بنجاح");
     
     return {
       db: db as DatabaseType,
       type: 'postgresql',
-      close: () => pool.end()
+      close: () => sql.end()
     };
   } catch (error) {
     console.error("❌ فشل في الاتصال بـ PostgreSQL:", error);
