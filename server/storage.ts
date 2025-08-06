@@ -36,50 +36,77 @@ interface UserCache {
   users: User[];
   timestamp: number;
   roomId?: string;
+  duration?: number; // مدة صلاحية cache بالميلي ثانية
 }
 
 class StorageCache {
   private onlineUsersCache: Map<string, UserCache> = new Map();
-  private readonly CACHE_DURATION = 15000; // 15 ثانية
+  private readonly DEFAULT_CACHE_DURATION = 30000; // 30 ثانية افتراضي
+  private readonly SHORT_CACHE_DURATION = 15000; // 15 ثانية للطلبات المتكررة
   
-  isValid(timestamp: number): boolean {
-    return Date.now() - timestamp < this.CACHE_DURATION;
+  isValid(timestamp: number, customDuration?: number): boolean {
+    const duration = customDuration || this.DEFAULT_CACHE_DURATION;
+    return Date.now() - timestamp < duration;
   }
   
   getOnlineUsers(roomId?: string): User[] | null {
     const key = roomId || 'global';
     const cached = this.onlineUsersCache.get(key);
-    if (cached && this.isValid(cached.timestamp)) {
+    if (cached && this.isValid(cached.timestamp, cached.duration)) {
+      console.log(`💾 استخدام cache للغرفة ${key} (${cached.users.length} مستخدم، عمر: ${Date.now() - cached.timestamp}ms)`);
       return cached.users;
     }
     return null;
   }
   
-  setOnlineUsers(users: User[], roomId?: string): void {
+  setOnlineUsers(users: User[], roomId?: string, customDuration?: number): void {
     const key = roomId || 'global';
+    const duration = customDuration || this.DEFAULT_CACHE_DURATION;
     this.onlineUsersCache.set(key, {
       users,
       timestamp: Date.now(),
-      roomId
+      roomId,
+      duration: duration
     });
+    console.log(`💾 حفظ ${users.length} مستخدم في cache للغرفة ${key} لمدة ${duration}ms`);
   }
   
   invalidateCache(roomId?: string): void {
     if (roomId) {
       this.onlineUsersCache.delete(roomId);
+      console.log(`🗑️ تم حذف cache للغرفة ${roomId}`);
     } else {
       this.onlineUsersCache.clear();
+      console.log(`🗑️ تم مسح جميع cache`);
     }
   }
   
   // تنظيف cache منتهي الصلاحية دورياً
   cleanup(): void {
     const now = Date.now();
+    let cleanedCount = 0;
     for (const [key, cache] of this.onlineUsersCache.entries()) {
-      if (!this.isValid(cache.timestamp)) {
+      if (!this.isValid(cache.timestamp, cache.duration)) {
         this.onlineUsersCache.delete(key);
+        cleanedCount++;
       }
     }
+    if (cleanedCount > 0) {
+      console.log(`🧹 تم تنظيف ${cleanedCount} عنصر منتهي الصلاحية من cache`);
+    }
+  }
+
+  // alias للدالة cleanup
+  clearExpiredCache(): void {
+    this.cleanup();
+  }
+
+  // إحصائيات cache
+  getCacheStats(): { size: number, entries: string[] } {
+    return {
+      size: this.onlineUsersCache.size,
+      entries: Array.from(this.onlineUsersCache.keys())
+    };
   }
 }
 
@@ -181,6 +208,11 @@ export interface IStorage {
 
 export class PostgreSQLStorage implements IStorage {
   private cache = new StorageCache();
+
+  // Getter للوصول إلى cache من الخارج
+  get cacheManager() {
+    return this.cache;
+  }
   
   // تنظيف cache كل دقيقة
   constructor() {
@@ -841,6 +873,51 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
+  // دالة تنظيف المستخدمين غير المتصلين من جدول الغرف
+  async cleanupOfflineUsersFromRooms(): Promise<void> {
+    try {
+      const result = await db.delete(roomUsers)
+        .where(
+          sql`${roomUsers.userId} NOT IN (
+            SELECT id FROM ${users} 
+            WHERE ${users.isOnline} = true 
+            AND ${users.lastSeen} > datetime('now', '-10 minutes')
+          )`
+        );
+      
+      console.log(`🧹 تم تنظيف ${result.rowsAffected || 0} مستخدم غير متصل من جداول الغرف`);
+    } catch (error) {
+      console.error('خطأ في تنظيف المستخدمين غير المتصلين:', error);
+    }
+  }
+
+  // دالة تنظيف شاملة دورية
+  async performPeriodicCleanup(): Promise<void> {
+    try {
+      console.log('🔄 بدء التنظيف الدوري...');
+      
+      // تنظيف المستخدمين غير النشطين
+      await this.cleanupOfflineUsersFromRooms();
+      
+      // تحديث حالة المستخدمين غير النشطين
+      await db.update(users)
+        .set({ isOnline: false })
+        .where(
+          and(
+            eq(users.isOnline, true),
+            sql`${users.lastSeen} < datetime('now', '-15 minutes')`
+          )
+        );
+      
+      // تنظيف cache
+      this.cache.clearExpiredCache();
+      
+      console.log('✅ اكتمل التنظيف الدوري');
+    } catch (error) {
+      console.error('خطأ في التنظيف الدوري:', error);
+    }
+  }
+
   async getUserRooms(userId: number): Promise<string[]> {
     try {
       const result = await db.select({ roomId: roomUsers.roomId })
@@ -869,16 +946,19 @@ export class PostgreSQLStorage implements IStorage {
 
   async getOnlineUsersInRoom(roomId: string): Promise<User[]> {
     try {
-      // التحقق من cache أولاً
+      // التحقق من cache أولاً - cache قصير المدى فقط
       const cached = this.cache.getOnlineUsers(roomId);
       if (cached) {
-        console.log(`💾 استخدام cache للمستخدمين المتصلين في الغرفة ${roomId}`);
+        console.log(`💾 استخدام cache للمستخدمين المتصلين في الغرفة ${roomId} (${cached.length} مستخدم)`);
         return cached;
       }
       
-      console.log(`🔍 جلب المستخدمين المتصلين في الغرفة ${roomId} من قاعدة البيانات`);
+      console.log(`🔍 جلب المستخدمين المتصلين فعلياً في الغرفة ${roomId} من قاعدة البيانات`);
       
-      // استعلام محسن مع فلترة أفضل
+      // تنظيف المستخدمين غير المتصلين أولاً
+      await this.cleanupOfflineUsersFromRooms();
+      
+      // استعلام محسن يجلب المتصلين حالياً فقط
       const result = await db.select({
         id: users.id,
         username: users.username,
@@ -898,39 +978,55 @@ export class PostgreSQLStorage implements IStorage {
         isMuted: users.isMuted
       })
         .from(users)
-        .innerJoin(roomUsers, eq(users.id, roomUsers.userId))
         .where(
           and(
-            eq(roomUsers.roomId, roomId),
             eq(users.isOnline, true),
-            // إضافة فلترة للمستخدمين النشطين فقط
+            eq(users.isBanned, false),
             or(
-              eq(users.isBanned, false),
-              sql`${users.isBanned} IS NULL`
-            )
+              eq(users.isHidden, false),
+              sql`${users.isHidden} IS NULL`
+            ),
+            // التحقق من وجود المستخدم في الغرفة والاتصال النشط
+            sql`EXISTS (
+              SELECT 1 FROM ${roomUsers} 
+              WHERE ${roomUsers.userId} = ${users.id} 
+              AND ${roomUsers.roomId} = ${roomId}
+              AND ${users.lastSeen} > datetime('now', '-5 minutes')
+            )`
           )
         )
-        .orderBy(asc(users.username)); // ترتيب أبجدي
+        .orderBy(asc(users.username));
       
       const users_list = result as unknown as User[];
       
-      // فلترة إضافية في JavaScript لضمان البيانات الصحيحة
-      const validUsers = users_list.filter(user => 
-        user.username && 
-        user.username.trim() !== '' && 
-        user.username !== 'مستخدم' &&
-        user.isOnline === true
-      );
+      // فلترة صارمة للمستخدمين المتصلين فعلياً
+      const now = new Date();
+      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
       
-      console.log(`👥 وجد ${validUsers.length} مستخدمين متصلين صالحين في الغرفة ${roomId}`);
-      if (validUsers.length > 0) {
-        console.log(`👥 المستخدمون: ${validUsers.map(u => u.username).join(', ')}`);
+      const actuallyOnlineUsers = users_list.filter(user => {
+        // التحقق من الاتصال الحقيقي
+        const lastSeen = user.lastSeen ? new Date(user.lastSeen) : null;
+        const isRecentlyActive = lastSeen && lastSeen > fiveMinutesAgo;
+        
+        return (
+          user.username && 
+          user.username.trim() !== '' && 
+          user.username !== 'مستخدم' &&
+          user.isOnline === true &&
+          user.isBanned === false &&
+          isRecentlyActive
+        );
+      });
+      
+      console.log(`👥 وجد ${actuallyOnlineUsers.length} مستخدمين متصلين فعلياً في الغرفة ${roomId}`);
+      if (actuallyOnlineUsers.length > 0) {
+        console.log(`👥 المستخدمون المتصلون: ${actuallyOnlineUsers.map(u => u.username).join(', ')}`);
       }
       
-      // حفظ في cache
-      this.cache.setOnlineUsers(validUsers, roomId);
+      // حفظ في cache لمدة قصيرة فقط (30 ثانية)
+      this.cache.setOnlineUsers(actuallyOnlineUsers, roomId, 30000);
       
-      return validUsers;
+      return actuallyOnlineUsers;
     } catch (error) {
       console.error('خطأ في جلب المستخدمين المتصلين في الغرفة:', error);
       return [];

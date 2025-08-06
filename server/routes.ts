@@ -1874,7 +1874,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // تحسين: منع الطلبات المتكررة المفرطة
         const now = Date.now();
         const lastRequest = (socket as any).lastUserListRequest || 0;
-        const minInterval = 5000; // 5 ثوانٍ كحد أدنى بين الطلبات (مخفف من 10)
+        const minInterval = 10000; // 10 ثوانٍ كحد أدنى بين الطلبات (زيادة لتقليل الحمل)
         
         if (now - lastRequest < minInterval) {
           console.log(`⏳ تجاهل طلب قائمة المستخدمين - آخر طلب كان منذ ${now - lastRequest}ms`);
@@ -1885,14 +1885,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`🔄 طلب تحديث قائمة المستخدمين للغرفة: ${currentRoom} من المستخدم ${socket.userId}`);
         
-        // التحقق من cache أولاً
+        // التحقق من cache أولاً - مع إحصائيات
         const cachedUsers = storage.getCachedOnlineUsers(currentRoom);
         if (cachedUsers && cachedUsers.length >= 0) {
-          console.log(`💾 استخدام cache للمستخدمين المتصلين في الغرفة ${currentRoom}`);
+          const cacheStats = storage.cacheManager.getCacheStats();
+          console.log(`💾 استخدام cache للمستخدمين المتصلين في الغرفة ${currentRoom} (${cachedUsers.length} مستخدم, cache: ${cacheStats.size} عناصر)`);
           socket.emit('message', { 
             type: 'onlineUsers', 
             users: cachedUsers,
-            roomId: currentRoom
+            roomId: currentRoom,
+            cached: true,
+            timestamp: Date.now()
           });
           return;
         }
@@ -1914,11 +1917,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // حفظ في cache لتقليل الاستعلامات
         storage.setCachedOnlineUsers(currentRoom, activeUsers);
         
-        // إرسال القائمة للمستخدم الذي طلبها
+        // إرسال القائمة للمستخدم الذي طلبها مع معلومات إضافية
         socket.emit('message', { 
           type: 'onlineUsers', 
           users: activeUsers,
-          roomId: currentRoom
+          roomId: currentRoom,
+          cached: false,
+          timestamp: Date.now(),
+          source: 'database'
         });
         
         // إرسال تحديث للغرفة فقط إذا كان هناك تغيير جوهري
@@ -5191,6 +5197,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
+
+  // بدء التنظيف الدوري للمستخدمين غير المتصلين
+  console.log('🔄 بدء التنظيف الدوري للمستخدمين...');
+  
+  // تنظيف فوري عند البدء
+  storage.performPeriodicCleanup();
+  
+  // تنظيف دوري كل 5 دقائق
+  setInterval(() => {
+    storage.performPeriodicCleanup();
+  }, 5 * 60 * 1000); // 5 دقائق
+
+  // تنظيف cache كل دقيقة مع إحصائيات
+  setInterval(() => {
+    const stats = storage.cacheManager.getCacheStats();
+    console.log(`📊 إحصائيات Cache قبل التنظيف: ${stats.size} عناصر`);
+    storage.cacheManager.clearExpiredCache();
+    const newStats = storage.cacheManager.getCacheStats();
+    console.log(`📊 إحصائيات Cache بعد التنظيف: ${newStats.size} عناصر`);
+  }, 60 * 1000); // دقيقة واحدة
 
   return httpServer;
 }
