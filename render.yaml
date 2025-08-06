@@ -22,7 +22,7 @@ services:
       - key: SOCKET_IO_POLLING_ONLY
         value: false
       - key: DATABASE_URL
-        value: postgresql://postgres:your_actual_password@qzehjgmawnrihmepboca.supabase.co:5432/postgres?sslmode=require
+        value: postgresql://postgres.qzehjgmawnrihmepboca:abood22333a@aws-0-eu-west-3.pooler.supabase.com:6543/postgres
       - key: JWT_SECRET
         value: arabic-chat-secret-key-2025-production
       - key: SESSION_SECRET
