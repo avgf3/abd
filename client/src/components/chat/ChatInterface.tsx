@@ -113,7 +113,22 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   // دوال إدارة الغرف
   const handleRoomChange = async (roomId: string) => {
     console.log(`🔄 تغيير الغرفة من ${chat.currentRoomId} إلى ${roomId}`);
-    chat.joinRoom(roomId);
+    const targetRoom = rooms.find(room => room.id === roomId);
+    if (targetRoom) {
+      console.log('✅ تم العثور على الغرفة:', targetRoom.name);
+      chat.joinRoom(roomId);
+      toast({
+        title: "تم الانتقال للغرفة",
+        description: `مرحباً بك في ${targetRoom.name}`,
+      });
+    } else {
+      console.error('❌ لم يتم العثور على الغرفة:', roomId);
+      toast({
+        title: "خطأ",
+        description: "لم يتم العثور على الغرفة المطلوبة",
+        variant: "destructive",
+      });
+    }
   };
 
   // دالة تحديث الغرف
@@ -381,7 +396,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* زر الحوائط في الزاوية اليسرى */}
           <Button 
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+              activeView === 'walls' ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-accent'
             }`}
             onClick={() => setActiveView(activeView === 'walls' ? 'hidden' : 'walls')}
             title="الحوائط"
@@ -397,25 +412,25 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* زر المستخدمين */}
           <Button 
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+              activeView === 'users' ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-accent'
             }`}
             onClick={() => setActiveView(activeView === 'users' ? 'hidden' : 'users')}
             title="المستخدمون المتصلون"
           >
             <span>👥</span>
-                          المستخدمون ({chat.onlineUsers.length})
+            المستخدمون ({chat.onlineUsers.length})
           </Button>
 
           {/* زر الغرف */}
           <Button 
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+              activeView === 'rooms' ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-accent'
             }`}
             onClick={() => setActiveView(activeView === 'rooms' ? 'hidden' : 'rooms')}
-            title="الغرف"
+            title="الغرف ({rooms.length})"
           >
             <span>🏠</span>
-            الغرف
+            الغرف ({rooms.length})
           </Button>
 
           <div className="text-2xl">💬</div>
@@ -543,44 +558,77 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             />
           </div>
         )}
-        {(() => {
-          const currentRoom = rooms.find(room => room.id === chat.currentRoomId);
-          
-          // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
-          if (currentRoom?.isBroadcast) {
+        <div className="flex-1 flex flex-col">
+          {/* Current Room Header */}
+          {(() => {
+            const currentRoom = rooms.find(room => room.id === chat.currentRoomId);
             return (
-              <BroadcastRoomInterface
+              <div className="bg-gray-50 border-b p-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
+                    {currentRoom?.isBroadcast ? '📡' : '💬'}
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-lg">{currentRoom?.name || 'الدردشة العامة'}</h2>
+                    <p className="text-xs text-gray-500">
+                      {currentRoom?.description || 'الغرفة الرئيسية للدردشة العامة'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  {currentRoom?.isBroadcast && (
+                    <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">
+                      بث مباشر
+                    </span>
+                  )}
+                  <span className="bg-gray-100 px-2 py-1 rounded-full text-xs">
+                    {chat.onlineUsers.length} متصل
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+          
+          {/* Chat Content */}
+          {(() => {
+            const currentRoom = rooms.find(room => room.id === chat.currentRoomId);
+            
+            // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
+            if (currentRoom?.isBroadcast) {
+              return (
+                <BroadcastRoomInterface
+                  currentUser={chat.currentUser}
+                  room={currentRoom}
+                  onlineUsers={chat.onlineUsers}
+                  onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                  onTyping={chat.handleTyping}
+                  typingUsers={Array.from(chat.typingUsers)}
+                  onReportMessage={handleReportUser}
+                  onUserClick={handleUserClick}
+                  chat={{
+                    sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
+                    handleTyping: chat.handleTyping
+                  }}
+                />
+              );
+            }
+            
+            // وإلا استخدم MessageArea العادية
+            return (
+              <MessageArea 
+                messages={chat.roomMessages[chat.currentRoomId] || chat.publicMessages}
                 currentUser={chat.currentUser}
-                room={currentRoom}
-                onlineUsers={chat.onlineUsers}
                 onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
                 onTyping={chat.handleTyping}
-                typingUsers={Array.from(chat.typingUsers)}
+                typingUsers={chat.typingUsers}
                 onReportMessage={handleReportUser}
                 onUserClick={handleUserClick}
-                chat={{
-                  sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
-                  handleTyping: chat.handleTyping
-                }}
+                onlineUsers={chat.onlineUsers}
+                currentRoomName={currentRoom?.name || 'الدردشة العامة'}
               />
             );
-          }
-          
-          // وإلا استخدم MessageArea العادية
-          return (
-            <MessageArea 
-              messages={chat.roomMessages[chat.currentRoomId] || chat.publicMessages}
-              currentUser={chat.currentUser}
-              onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
-              onTyping={chat.handleTyping}
-              typingUsers={chat.typingUsers}
-              onReportMessage={handleReportUser}
-              onUserClick={handleUserClick}
-              onlineUsers={chat.onlineUsers}
-              currentRoomName={currentRoom?.name || 'الدردشة العامة'}
-            />
-          );
-        })()}
+          })()}
+        </div>
       </main>
 
       {/* Modals and Popups */}

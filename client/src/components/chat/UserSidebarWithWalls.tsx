@@ -41,7 +41,8 @@ export default function UserSidebarWithWalls({
   onDeleteRoom,
   onRefreshRooms
 }: UserSidebarWithWallsProps) {
-  const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms'>(propActiveView || 'users');
+  // استخدام activeView من الخاصيات مباشرة بدلاً من إنشاء state محلي
+  const activeView = propActiveView || 'users';
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'public' | 'friends'>('public');
   const [posts, setPosts] = useState<WallPost[]>([]);
@@ -100,12 +101,7 @@ export default function UserSidebarWithWalls({
     }
   }, [activeView, fetchPosts]);
 
-  // تحديث activeView عند تغيير propActiveView
-  useEffect(() => {
-    if (propActiveView) {
-      setActiveView(propActiveView);
-    }
-  }, [propActiveView]);
+  // تم إزالة useEffect لأننا نستخدم activeView مباشرة من الخاصيات
 
   // معالجة اختيار الصورة
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -283,71 +279,55 @@ export default function UserSidebarWithWalls({
 
   return (
     <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col">
-      {/* Toggle Buttons - يظهر فقط إذا لم يتم التحكم خارجياً */}
-      {!propActiveView && (
-        <div className="flex border-b border-gray-200">
-          <Button
-            variant={activeView === 'users' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'users' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            onClick={() => setActiveView('users')}
-          >
-            <Users className="w-4 h-4 ml-2" />
-            المستخدمون
-          </Button>
-          <Button
-            variant={activeView === 'walls' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'walls' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            onClick={() => setActiveView('walls')}
-          >
-            <Home className="w-4 h-4 ml-2" />
-            الحوائط
-          </Button>
-          <Button
-            variant={activeView === 'rooms' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'rooms' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            onClick={() => setActiveView('rooms')}
-          >
-            <Users className="w-4 h-4 ml-2" />
-            الغرف
-          </Button>
-        </div>
-      )}
+      {/* Header - عرض العنوان فقط للوضوح */}
+      <div className="p-3 border-b border-gray-200 bg-gray-50">
+        <h3 className="font-semibold text-lg text-gray-800 flex items-center gap-2">
+          {activeView === 'users' && (
+            <>
+              <Users className="w-5 h-5 text-primary" />
+              المستخدمون المتصلون ({users.length})
+            </>
+          )}
+          {activeView === 'walls' && (
+            <>
+              <Home className="w-5 h-5 text-primary" />
+              الحوائط
+            </>
+          )}
+          {activeView === 'rooms' && (
+            <>
+              <Users className="w-5 h-5 text-primary" />
+              الغرف ({rooms.length})
+            </>
+          )}
+        </h3>
+      </div>
 
       {/* Users View */}
       {activeView === 'users' && (
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className="relative">
             <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
             <Input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="البحث عن المستخدمين..."
-              className="w-full pl-4 pr-10 py-2 rounded-lg bg-gray-50 border-gray-300 placeholder:text-gray-500 text-gray-900"
+              className="w-full pl-4 pr-10 py-2 rounded-lg bg-gray-50 border-gray-300 placeholder:text-gray-500 text-gray-900 focus:ring-2 focus:ring-primary transition-all"
             />
           </div>
           
           <div className="space-y-3">
-            <div className="flex items-center gap-2 font-bold text-green-600 text-base">
-              <span className="text-xs">●</span>
-              المتصلون الآن
+            <div className="flex items-center justify-between gap-2 font-bold text-green-600 text-sm bg-green-50 p-3 rounded-lg">
+              <div className="flex items-center gap-2">
+                <span className="text-xs animate-pulse">●</span>
+                متصل الآن
+              </div>
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
-                {users.length}
+                {filteredUsers.length}{searchTerm && ` من ${users.length}`}
               </span>
             </div>
             
-            <ul className="space-y-1">
+            <ul className="space-y-2">
               {filteredUsers.map((user) => (
                 <li key={user.id} className="relative">
                   <SimpleUserMenu
@@ -355,7 +335,7 @@ export default function UserSidebarWithWalls({
                     currentUser={currentUser}
                   >
                     <div
-                      className={`flex items-center gap-2 p-2 rounded-lg transition-all duration-200 cursor-pointer w-full ${
+                      className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 cursor-pointer w-full hover:shadow-md border border-transparent hover:border-primary/20 ${
                         getUserThemeClasses(user)
                       }`}
                       style={{ 
@@ -383,11 +363,17 @@ export default function UserSidebarWithWalls({
                               {user.username}
                             </span>
                             {user.isMuted && (
-                              <span className="text-yellow-400 text-xs">🔇</span>
+                              <span className="text-yellow-400 text-xs" title="مكتوم">🔇</span>
                             )}
                           </div>
-                          <div className="flex items-center">
+                          <div className="flex items-center gap-1">
                             <UserRoleBadge user={user} />
+                            {/* مستوى المستخدم */}
+                            {user.level && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                {user.level}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -398,17 +384,23 @@ export default function UserSidebarWithWalls({
             </ul>
             
             {filteredUsers.length === 0 && (
-              <div className="text-center text-gray-500 py-8">
-                <div className="mb-3">
+              <div className="text-center text-gray-500 py-8 bg-gray-50 rounded-lg">
+                <div className="mb-4 text-4xl">
                   {searchTerm ? '🔍' : '👥'}
                 </div>
-                <p className="text-sm">
+                <p className="text-sm font-medium mb-2">
                   {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمون متصلون حالياً'}
+                </p>
+                <p className="text-xs text-gray-400 mb-3">
+                  {searchTerm 
+                    ? `البحث عن "${searchTerm}" لم يعطِ أية نتائج`
+                    : 'سيظهر المستخدمون هنا عند الاتصال'
+                  }
                 </p>
                 {searchTerm && (
                   <button 
                     onClick={() => setSearchTerm('')}
-                    className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
+                    className="text-blue-500 hover:text-blue-700 text-xs underline hover:no-underline transition-all bg-blue-50 px-3 py-1 rounded-full"
                   >
                     مسح البحث
                   </button>

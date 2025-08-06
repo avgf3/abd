@@ -40,6 +40,7 @@ export interface ChatUser {
   // تم إضافة خصائص جديدة
   ignoredUsers?: number[];
   blockedUsers?: number[];
+  isMuted?: boolean;
 }
 
 export interface ChatMessage {
