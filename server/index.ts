@@ -43,7 +43,14 @@ async function startServer() {
   try {
     // التحقق من اتصال قاعدة البيانات
     console.log('🔍 فحص اتصال قاعدة البيانات...');
-    await checkDatabaseHealth();
+    const dbHealthy = await checkDatabaseHealth();
+    
+    if (!dbHealthy) {
+      console.error('❌ فشل في الاتصال بقاعدة البيانات!');
+      console.error('❌ تأكد من إعداد DATABASE_URL في متغيرات البيئة');
+      process.exit(1);
+    }
+    
     console.log('✅ تم تأكيد اتصال قاعدة البيانات');
 
     // بدء الخادم

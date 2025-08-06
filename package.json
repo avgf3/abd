@@ -37,7 +37,8 @@
     "render-health": "curl -f $RENDER_EXTERNAL_URL/api/health || exit 1",
     "start:clean": "node server/index.js",
     "dev:clean": "tsx watch server/index.ts",
-    "migration:backup": "node clean-system-migration.mjs"
+    "migration:backup": "node clean-system-migration.mjs",
+    "check-env": "node server/check-env.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

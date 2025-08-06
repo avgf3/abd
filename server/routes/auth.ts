@@ -118,6 +118,14 @@ router.post("/register", authLimiter, async (req, res) => {
       });
     }
     
+    // التحقق من أخطاء قاعدة البيانات
+    if (error.message === 'قاعدة البيانات غير متاحة') {
+      return res.status(503).json({ 
+        success: false,
+        error: "قاعدة البيانات غير متاحة حالياً - يرجى المحاولة لاحقاً" 
+      });
+    }
+    
     // خطأ عام
     console.error("خطأ غير متوقع في التسجيل:", error);
     res.status(500).json({ 
@@ -180,6 +188,15 @@ router.post("/guest", async (req, res) => {
 
   } catch (error: any) {
     console.error("Guest login error:", error);
+    
+    // التحقق من أخطاء قاعدة البيانات
+    if (error.message === 'قاعدة البيانات غير متاحة') {
+      return res.status(503).json({ 
+        success: false,
+        error: "قاعدة البيانات غير متاحة حالياً - يرجى المحاولة لاحقاً" 
+      });
+    }
+    
     res.status(500).json({ 
       success: false,
       error: "خطأ في الخادم" 
@@ -260,6 +277,15 @@ router.post("/member", authLimiter, async (req, res) => {
 
   } catch (error: any) {
     console.error("Member login error:", error);
+    
+    // التحقق من أخطاء قاعدة البيانات
+    if (error.message === 'قاعدة البيانات غير متاحة') {
+      return res.status(503).json({ 
+        success: false,
+        error: "قاعدة البيانات غير متاحة حالياً - يرجى المحاولة لاحقاً" 
+      });
+    }
+    
     res.status(500).json({ 
       success: false,
       error: "خطأ في الخادم" 

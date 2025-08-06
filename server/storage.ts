@@ -247,6 +247,11 @@ export class PostgreSQLStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     try {
+      if (!db) {
+        console.error(`❌ قاعدة البيانات غير متصلة - لا يمكن البحث عن المستخدم ${username}`);
+        throw new Error('قاعدة البيانات غير متاحة');
+      }
+      
       const result = await db.select().from(users).where(eq(users.username, username));
       return result[0];
     } catch (error) {
@@ -258,6 +263,11 @@ export class PostgreSQLStorage implements IStorage {
   async createUser(user: InsertUser): Promise<User> {
     try {
       console.log('📝 إنشاء مستخدم جديد:', user.username);
+      
+      if (!db) {
+        console.error('❌ قاعدة البيانات غير متصلة - لا يمكن إنشاء المستخدم');
+        throw new Error('قاعدة البيانات غير متاحة');
+      }
       
       // التحقق من عدم تكرار اسم المستخدم
       const existingUser = await this.getUserByUsername(user.username);
