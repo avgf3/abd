@@ -3,7 +3,6 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import cors from "cors";
 import setupRoutes from "./routes";
-import { checkDatabaseHealth } from "./database-adapter";
 import authRoutes from "./routes/auth";
 import userRoutes from "./routes/users";
 import messageRoutes from "./routes/messages";
@@ -41,17 +40,10 @@ app.get('*', (req, res) => {
 // بدء الخادم
 async function startServer() {
   try {
-    // التحقق من اتصال قاعدة البيانات
-    console.log('🔍 فحص اتصال قاعدة البيانات...');
-    const dbHealthy = await checkDatabaseHealth();
+    // تعليق فحص قاعدة البيانات مؤقتاً للعمل بدون قاعدة بيانات
+    console.log('⚠️ تشغيل في وضع بدون قاعدة بيانات');
+    console.log('💡 لإضافة قاعدة بيانات، اتبع الدليل: setup-free-database.md');
     
-    if (!dbHealthy) {
-      console.warn('⚠️ قاعدة البيانات غير متاحة - سيتم العمل في وضع آمن');
-      console.log('💡 لإضافة قاعدة بيانات مجانية، اتبع الدليل: setup-free-database.md');
-    } else {
-      console.log('✅ تم تأكيد اتصال قاعدة البيانات');
-    }
-
     // بدء الخادم
     server.listen(PORT, () => {
       console.log('🚀 النظام المنظف للدردشة العربية يعمل الآن!');
@@ -59,16 +51,13 @@ async function startServer() {
       console.log('🏠 الغرفة الافتراضية: general');
       console.log('📝 نظام الرسائل: منظف ومحسن');
       console.log('👥 إدارة المستخدمين: مبسطة وفعالة');
-      
-      if (!dbHealthy) {
-        console.log('');
-        console.log('⚠️ ملاحظة: التطبيق يعمل بدون قاعدة بيانات');
-        console.log('💡 لإضافة قاعدة بيانات مجانية:');
-        console.log('   1. اذهب إلى [Neon.tech](https://neon.tech)');
-        console.log('   2. أنشئ قاعدة بيانات مجانية');
-        console.log('   3. أضف DATABASE_URL إلى متغيرات البيئة');
-        console.log('   4. أعد نشر التطبيق');
-      }
+      console.log('');
+      console.log('⚠️ ملاحظة: التطبيق يعمل بدون قاعدة بيانات');
+      console.log('💡 لإضافة قاعدة بيانات مجانية:');
+      console.log('   1. اذهب إلى [Neon.tech](https://neon.tech)');
+      console.log('   2. أنشئ قاعدة بيانات مجانية');
+      console.log('   3. أضف DATABASE_URL إلى متغيرات البيئة');
+      console.log('   4. أعد نشر التطبيق');
     });
 
   } catch (error) {
