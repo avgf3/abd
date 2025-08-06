@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { Server as IOServer, Socket } from "socket.io";
 import { createRoomHandlers } from "./handlers/roomHandlers";
 import { AuthManager, type AuthenticatedSocket } from "./auth/authMiddleware";
-import { db } from "./database-adapter";
+import { db, checkDatabaseHealth } from "./database-adapter";
 import { users } from "../shared/schema";
 import { eq } from "drizzle-orm";
 import authRoutes from "./routes/auth";
@@ -91,13 +91,28 @@ export default function setupRoutes(app: Express): Server {
   });
 
   // Routes للواجهة البرمجية
-  app.get('/api/health', (req, res) => {
-    res.json({ 
-      status: 'ok', 
-      timestamp: new Date().toISOString(),
-      system: 'clean-room-system',
-      version: '2.1'
-    });
+  app.get('/api/health', async (req, res) => {
+    try {
+      const dbHealthy = await checkDatabaseHealth();
+      
+      res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        system: 'clean-room-system',
+        version: '2.1',
+        database: dbHealthy ? 'connected' : 'disconnected',
+        environment: process.env.NODE_ENV || 'development'
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        system: 'clean-room-system',
+        version: '2.1',
+        database: 'error',
+        error: 'Health check failed'
+      });
+    }
   });
 
   // معلومات الخادم المحسنة
