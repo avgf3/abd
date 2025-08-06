@@ -21,8 +21,8 @@ import path from "path";
 import fs from "fs";
 import bcrypt from "bcrypt";
 import sharp from "sharp";
-import { trackClick } from "./middleware/analytics";
-import { enhancedModeration } from "./enhanced-moderation";
+// import { trackClick } from "./middleware/analytics";
+import { enhancedModerationSystem as enhancedModeration } from "./enhanced-moderation";
 
 // إعداد multer لرفع الصور
 const storage_multer = multer.diskStorage({
@@ -1715,14 +1715,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           roomId: currentRoom
         });
 
-        // إرسال قائمة محدثة لجميع المستخدمين في الغرفة
-        const updatedRoomUsers = await storage.getOnlineUsersInRoom(currentRoom);
+        // إرسال قائمة محدثة لجميع المستخدمين في الغرفة (استخدام connectedUsers الفعلي)
+        const updatedRoomUsers = Array.from(connectedUsers.values())
+          .filter(conn => conn.room === currentRoom)
+          .map(conn => conn.user);
+          
         io.to(`room_${currentRoom}`).emit('message', {
           type: 'onlineUsers',
           users: updatedRoomUsers
         });
 
-        console.log(`📤 تم إرسال قائمة ${roomUsers.length} مستخدم في الغرفة ${currentRoom} إلى ${user.username}`);
+        console.log(`📤 تم إرسال قائمة ${updatedRoomUsers.length} مستخدم في الغرفة ${currentRoom} إلى ${user.username}`);
 
         // إرسال رسالة ترحيب في الغرفة
         const welcomeMessage = {
@@ -2351,8 +2354,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             roomId: previousRoom
           });
           
-          // إرسال قائمة محدثة للغرفة السابقة
-          const previousRoomUsers = await storage.getOnlineUsersInRoom(previousRoom);
+          // إرسال قائمة محدثة للغرفة السابقة (استخدام connectedUsers الفعلي)
+          const previousRoomUsers = Array.from(connectedUsers.values())
+            .filter(conn => conn.room === previousRoom)
+            .map(conn => conn.user);
           io.to(`room_${previousRoom}`).emit('message', {
             type: 'onlineUsers',
             users: previousRoomUsers
@@ -2380,8 +2385,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // انتظار قصير للتأكد من التحديث
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        // جلب قائمة المستخدمين المتصلين في هذه الغرفة
-        const roomUsers = await storage.getOnlineUsersInRoom(roomId);
+        // جلب قائمة المستخدمين المتصلين في هذه الغرفة (استخدام connectedUsers الفعلي)
+        const roomUsers = Array.from(connectedUsers.values())
+          .filter(conn => conn.room === roomId)
+          .map(conn => conn.user);
         
         console.log(`👥 مستخدمو الغرفة ${roomId}: ${roomUsers.map(u => u.username).join(', ')}`);
         
@@ -2476,8 +2483,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           (socket as any).currentRoom = null;
         }
         
-        // جلب قائمة المستخدمين المحدثة في الغرفة
-        const updatedRoomUsers = await storage.getOnlineUsersInRoom(roomId);
+        // جلب قائمة المستخدمين المحدثة في الغرفة (استخدام connectedUsers الفعلي)
+        const updatedRoomUsers = Array.from(connectedUsers.values())
+          .filter(conn => conn.room === roomId)
+          .map(conn => conn.user);
         
         // إرسال تأكيد المغادرة
         socket.emit('message', {
@@ -4949,6 +4958,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
+
+  // تنظيف دوري لقاعدة البيانات كل 5 دقائق
+  setInterval(async () => {
+    try {
+      const onlineUserIds = Array.from(connectedUsers.keys());
+      console.log(`🧹 تنظيف قاعدة البيانات - المستخدمون المتصلون فعلياً: ${onlineUserIds.length}`);
+      
+      // تحديث حالة جميع المستخدمين في قاعدة البيانات
+      await storage.cleanupDisconnectedUsers(onlineUserIds);
+      
+    } catch (error) {
+      console.error('❌ خطأ في تنظيف قاعدة البيانات:', error);
+    }
+  }, 5 * 60 * 1000); // كل 5 دقائق
 
   return httpServer;
 }
