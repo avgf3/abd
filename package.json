@@ -1,6 +1,6 @@
 {
   "name": "rest-express",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -34,7 +34,10 @@
     "clean-logs": "node tools/remove-console-logs.js",
     "build-production": "npm run clean-logs && npm run build",
     "health-check": "curl -f http://localhost:10000/api/health || exit 1",
-    "render-health": "curl -f $RENDER_EXTERNAL_URL/api/health || exit 1"
+    "render-health": "curl -f $RENDER_EXTERNAL_URL/api/health || exit 1",
+    "start:clean": "node server/index.js",
+    "dev:clean": "tsx watch server/index.ts",
+    "migration:backup": "node clean-system-migration.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -148,5 +151,6 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
-  }
+  },
+  "description": "النظام المنظف للدردشة العربية - Clean Arabic Chat System"
 }
