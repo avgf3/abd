@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -28,7 +28,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const socket = useRef<Socket | null>(null);
 
   // جلب المنشورات
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
       console.log(`🔄 جاري جلب المنشورات للنوع: ${activeTab}, المستخدم: ${currentUser.id}`);
@@ -67,13 +67,13 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, currentUser.id, toast]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && currentUser) {
       fetchPosts();
     }
-  }, [isOpen, activeTab]);
+  }, [isOpen, fetchPosts]);
 
   // إعداد Socket.IO للتحديثات الفورية
   useEffect(() => {
@@ -124,11 +124,12 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
     return () => {
       if (socket.current) {
+        console.log('🔌 تنظيف اتصال Socket للحائط');
         socket.current.disconnect();
         socket.current = null;
       }
     };
-  }, [isOpen, activeTab]);
+  }, [isOpen, activeTab, toast]);
 
   // معالجة اختيار الصورة مع تحسينات احترافية
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
