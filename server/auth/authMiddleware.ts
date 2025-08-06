@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import { Request, Response, NextFunction } from 'express';
 import { Socket } from 'socket.io';
 import { storage } from '../storage';
@@ -23,8 +24,8 @@ interface AuthenticatedSocket extends Socket {
 }
 
 // Secret key للتوقيع - يجب أن يكون قوي في الإنتاج
-const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key-change-in-production';
-const JWT_EXPIRY = process.env.JWT_EXPIRY || '24h';
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-in-production-2024';
+const JWT_EXPIRY = process.env.JWT_EXPIRY || '7d'; // أسبوع كامل
 
 // Schema للتحقق من صحة البيانات
 const authDataSchema = z.object({
@@ -36,7 +37,32 @@ const authDataSchema = z.object({
 export class AuthManager {
   
   /**
-   * إنشاء JWT token للمستخدم
+   * تشفير كلمة المرور
+   */
+  static async hashPassword(password: string): Promise<string> {
+    try {
+      const saltRounds = 12; // قوة التشفير
+      return await bcrypt.hash(password, saltRounds);
+    } catch (error) {
+      console.error('❌ خطأ في تشفير كلمة المرور:', error);
+      throw new Error('فشل في تشفير كلمة المرور');
+    }
+  }
+
+  /**
+   * التحقق من كلمة المرور
+   */
+  static async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+    try {
+      return await bcrypt.compare(password, hashedPassword);
+    } catch (error) {
+      console.error('❌ خطأ في التحقق من كلمة المرور:', error);
+      return false;
+    }
+  }
+
+  /**
+   * إنشاء JWT token للمستخدم مع بيانات إضافية
    */
   static generateToken(user: { id: number; username: string; userType: string }): string {
     try {
@@ -45,7 +71,9 @@ export class AuthManager {
         username: user.username,
         userType: user.userType,
         iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 ساعة
+        exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 أيام
+        iss: 'arabic-chat-system', // مُصدر التوكن
+        aud: 'arabic-chat-users' // الجمهور المستهدف
       };
       
       return jwt.sign(payload, JWT_SECRET, { 
@@ -59,11 +87,15 @@ export class AuthManager {
   }
 
   /**
-   * التحقق من صحة JWT token
+   * التحقق من صحة JWT token مع فحص إضافي
    */
   static verifyToken(token: string): { userId: number; username: string; userType: string } | null {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const decoded = jwt.verify(token, JWT_SECRET, {
+        algorithms: ['HS256'],
+        issuer: 'arabic-chat-system',
+        audience: 'arabic-chat-users'
+      }) as any;
       
       // التحقق من صحة البنية
       const validationResult = authDataSchema.safeParse({
@@ -91,7 +123,23 @@ export class AuthManager {
   }
 
   /**
-   * استخراج token من request headers
+   * تجديد JWT token
+   */
+  static refreshToken(oldToken: string): string | null {
+    try {
+      const decoded = this.verifyToken(oldToken);
+      if (!decoded) return null;
+
+      // إنشاء token جديد بنفس البيانات
+      return this.generateToken(decoded);
+    } catch (error) {
+      console.error('❌ خطأ في تجديد JWT token:', error);
+      return null;
+    }
+  }
+
+  /**
+   * استخراج token من request headers مع طرق متعددة
    */
   static extractTokenFromRequest(req: Request): string | null {
     // البحث في Authorization header
@@ -106,9 +154,15 @@ export class AuthManager {
       return cookieToken;
     }
     
+    // البحث في custom header
+    const customHeader = req.headers['x-auth-token'] as string;
+    if (customHeader) {
+      return customHeader;
+    }
+    
     // البحث في query parameters (للاستخدام الخاص فقط)
     const queryToken = req.query?.token as string;
-    if (queryToken) {
+    if (queryToken && req.method === 'GET') {
       return queryToken;
     }
     
@@ -121,11 +175,29 @@ export class AuthManager {
   static async validateUserInDatabase(userId: number): Promise<boolean> {
     try {
       const user = await storage.getUser(userId);
-      return user !== null && user !== undefined;
+      return user !== null && user !== undefined && !user.isBanned;
     } catch (error) {
       console.error('❌ خطأ في التحقق من المستخدم في قاعدة البيانات:', error);
       return false;
     }
+  }
+
+  /**
+   * التحقق من صلاحيات المستخدم
+   */
+  static hasPermission(userType: string, requiredRole: string): boolean {
+    const roleHierarchy = {
+      'guest': 0,
+      'member': 1,
+      'moderator': 2,
+      'admin': 3,
+      'owner': 4
+    };
+
+    const userLevel = roleHierarchy[userType as keyof typeof roleHierarchy] || 0;
+    const requiredLevel = roleHierarchy[requiredRole as keyof typeof roleHierarchy] || 0;
+
+    return userLevel >= requiredLevel;
   }
 }
 
@@ -139,6 +211,7 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
     
     if (!token) {
       return res.status(401).json({ 
+        success: false,
         error: 'غير مخول - لا يوجد token',
         code: 'NO_TOKEN'
       });
@@ -149,7 +222,8 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
     
     if (!decoded) {
       return res.status(401).json({ 
-        error: 'غير مخول - token غير صالح',
+        success: false,
+        error: 'غير مخول - token غير صالح أو منتهي الصلاحية',
         code: 'INVALID_TOKEN'
       });
     }
@@ -159,7 +233,8 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
     
     if (!isValidUser) {
       return res.status(401).json({ 
-        error: 'غير مخول - المستخدم غير موجود',
+        success: false,
+        error: 'غير مخول - المستخدم غير موجود أو محظور',
         code: 'USER_NOT_FOUND'
       });
     }
@@ -169,6 +244,7 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
     
     if (!user) {
       return res.status(401).json({ 
+        success: false,
         error: 'غير مخول - فشل في جلب بيانات المستخدم',
         code: 'USER_FETCH_FAILED'
       });
@@ -188,6 +264,7 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
   } catch (error) {
     console.error('❌ خطأ في middleware التحقق من الهوية:', error);
     res.status(500).json({ 
+      success: false,
       error: 'خطأ في الخادم أثناء التحقق من الهوية',
       code: 'AUTH_SERVER_ERROR'
     });
@@ -195,57 +272,28 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
 };
 
 /**
- * التحقق من الهوية في Socket.IO connections
+ * Middleware للتحقق من الصلاحيات
  */
-export const socketAuthMiddleware = async (socket: AuthenticatedSocket, next: Function) => {
-  try {
-    // استخراج token من handshake
-    const token = socket.handshake.auth?.token || 
-                 socket.handshake.headers?.authorization?.replace('Bearer ', '') ||
-                 socket.handshake.query?.token as string;
-
-    if (!token) {
-      console.log('❌ Socket connection بدون token');
-      return next(new Error('غير مخول - لا يوجد token'));
+export const requireRole = (requiredRole: string) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'غير مخول',
+        code: 'NOT_AUTHENTICATED'
+      });
     }
 
-    // التحقق من صحة token
-    const decoded = AuthManager.verifyToken(token);
-    
-    if (!decoded) {
-      console.log('❌ Socket connection مع token غير صالح');
-      return next(new Error('غير مخول - token غير صالح'));
+    if (!AuthManager.hasPermission(req.user.userType, requiredRole)) {
+      return res.status(403).json({
+        success: false,
+        error: 'ليس لديك صلاحية للوصول لهذا المورد',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
     }
 
-    // التحقق من وجود المستخدم في قاعدة البيانات
-    const isValidUser = await AuthManager.validateUserInDatabase(decoded.userId);
-    
-    if (!isValidUser) {
-      console.log('❌ Socket connection مع مستخدم غير موجود');
-      return next(new Error('غير مخول - المستخدم غير موجود'));
-    }
-
-    // الحصول على بيانات المستخدم الكاملة
-    const user = await storage.getUser(decoded.userId);
-    
-    if (!user) {
-      console.log('❌ فشل في جلب بيانات المستخدم للSocket');
-      return next(new Error('فشل في التحقق من بيانات المستخدم'));
-    }
-
-    // إضافة بيانات المستخدم للSocket
-    socket.userId = user.id;
-    socket.username = user.username;
-    socket.userType = user.userType;
-    socket.isAuthenticated = true;
-
-    console.log(`✅ Socket authenticated: ${user.username} (${user.userType})`);
     next();
-    
-  } catch (error) {
-    console.error('❌ خطأ في Socket auth middleware:', error);
-    next(new Error('خطأ في الخادم أثناء التحقق من الهوية'));
-  }
+  };
 };
 
 /**
@@ -266,7 +314,7 @@ export const checkRoomAccess = async (userId: number, roomId: string): Promise<b
  */
 export const requireSocketAuth = (socket: AuthenticatedSocket): boolean => {
   if (!socket.isAuthenticated || !socket.userId || !socket.username) {
-    socket.emit('error', { 
+    socket.emit('authError', { 
       message: 'جلسة غير صالحة - يرجى إعادة تسجيل الدخول',
       code: 'INVALID_SESSION'
     });

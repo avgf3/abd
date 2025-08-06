@@ -236,30 +236,78 @@ export class PostgreSQLStorage implements IStorage {
   
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id));
-    return result[0];
+    try {
+      const result = await db.select().from(users).where(eq(users.id, id));
+      return result[0];
+    } catch (error) {
+      console.error(`❌ خطأ في جلب المستخدم ${id}:`, error);
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, username));
-    return result[0];
+    try {
+      const result = await db.select().from(users).where(eq(users.username, username));
+      return result[0];
+    } catch (error) {
+      console.error(`❌ خطأ في البحث عن المستخدم ${username}:`, error);
+      return undefined;
+    }
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(user as any).returning();
-    return result[0];
+    try {
+      console.log('📝 إنشاء مستخدم جديد:', user.username);
+      
+      // التحقق من عدم تكرار اسم المستخدم
+      const existingUser = await this.getUserByUsername(user.username);
+      if (existingUser) {
+        throw new Error('اسم المستخدم موجود بالفعل');
+      }
+
+      const result = await db.insert(users).values({
+        ...user,
+        joinDate: new Date(),
+        createdAt: new Date(),
+        points: 0,
+        totalPoints: 0,
+        level: 1,
+        levelProgress: 0
+      } as any).returning();
+      
+      console.log('✅ تم إنشاء المستخدم بنجاح:', result[0].username);
+      return result[0];
+    } catch (error) {
+      console.error('❌ خطأ في إنشاء المستخدم:', error);
+      throw error;
+    }
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
     try {
-      console.log(`🔄 تحديث المستخدم ${id}:`, updates);
+      console.log(`🔄 تحديث المستخدم ${id}:`, Object.keys(updates));
       
       const result = await db.update(users)
-        .set(updates)
+        .set({
+          ...updates,
+          // تحديث تاريخ آخر تعديل تلقائياً
+          lastSeen: new Date()
+        })
         .where(eq(users.id, id))
         .returning();
       
-      console.log(`✅ تم تحديث المستخدم ${id} بنجاح:`, result[0]);
+      if (result.length === 0) {
+        console.log(`⚠️ المستخدم ${id} غير موجود`);
+        return undefined;
+      }
+
+      console.log(`✅ تم تحديث المستخدم ${id} بنجاح`);
+      
+      // إبطال cache إذا كان التحديث يؤثر على حالة الاتصال
+      if ('isOnline' in updates || 'isHidden' in updates) {
+        this.cache.invalidateCache();
+      }
+      
       return result[0];
     } catch (error) {
       console.error(`❌ خطأ في تحديث المستخدم ${id}:`, error);
@@ -267,47 +315,455 @@ export class PostgreSQLStorage implements IStorage {
     }
   }
 
+  async deleteUser(id: number): Promise<boolean> {
+    try {
+      console.log(`🗑️ حذف المستخدم ${id}`);
+      
+      // حذف جميع الرسائل المرتبطة بالمستخدم
+      await db.delete(messages).where(
+        or(eq(messages.senderId, id), eq(messages.receiverId, id))
+      );
+      
+      // حذف جميع علاقات الصداقة
+      await db.delete(friends).where(
+        or(eq(friends.userId, id), eq(friends.friendId, id))
+      );
+      
+      // حذف الإشعارات
+      await db.delete(notifications).where(eq(notifications.userId, id));
+      
+      // حذف تاريخ النقاط
+      await db.delete(pointsHistory).where(eq(pointsHistory.userId, id));
+      
+      // حذف المستخدم نفسه
+      const result = await db.delete(users).where(eq(users.id, id));
+      
+      console.log(`✅ تم حذف المستخدم ${id} بنجاح`);
+      this.cache.invalidateCache();
+      
+      return true;
+    } catch (error) {
+      console.error(`❌ خطأ في حذف المستخدم ${id}:`, error);
+      return false;
+    }
+  }
+
   async setUserOnlineStatus(id: number, isOnline: boolean): Promise<void> {
-    await db.update(users)
-      .set({ 
-        isOnline,
-        lastSeen: new Date()
-      })
-      .where(eq(users.id, id));
-    
-    // إبطال cache عند تغيير حالة الاتصال
-    this.cache.invalidateCache();
+    try {
+      await db.update(users)
+        .set({ 
+          isOnline,
+          lastSeen: new Date()
+        })
+        .where(eq(users.id, id));
+      
+      // إبطال cache عند تغيير حالة الاتصال
+      this.cache.invalidateCache();
+      
+      console.log(`🔄 تم تحديث حالة الاتصال للمستخدم ${id}: ${isOnline ? 'متصل' : 'غير متصل'}`);
+    } catch (error) {
+      console.error(`❌ خطأ في تحديث حالة الاتصال للمستخدم ${id}:`, error);
+      throw error;
+    }
   }
 
   async setUserHiddenStatus(id: number, isHidden: boolean): Promise<void> {
-    await db.update(users)
-      .set({ isHidden })
-      .where(eq(users.id, id));
+    try {
+      await db.update(users)
+        .set({ isHidden })
+        .where(eq(users.id, id));
+      
+      this.cache.invalidateCache();
+      console.log(`👻 تم تحديث حالة الإخفاء للمستخدم ${id}: ${isHidden ? 'مخفي' : 'ظاهر'}`);
+    } catch (error) {
+      console.error(`❌ خطأ في تحديث حالة الإخفاء للمستخدم ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async banUser(userId: number, reason?: string, duration?: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      const banExpiry = duration ? new Date(Date.now() + duration * 1000) : null;
+      
+      await db.update(users)
+        .set({ 
+          isBanned: true,
+          banExpiry,
+          isOnline: false // قطع الاتصال فوراً
+        })
+        .where(eq(users.id, userId));
+
+      // إضافة إشعار للمستخدم
+      await db.insert(notifications).values({
+        userId,
+        type: 'system',
+        title: 'تم حظرك',
+        message: reason || 'تم حظرك من النظام',
+        data: { reason, duration, banExpiry }
+      });
+
+      console.log(`🚫 تم حظر المستخدم ${userId}. السبب: ${reason || 'غير محدد'}`);
+      this.cache.invalidateCache();
+      
+      return { success: true };
+    } catch (error) {
+      console.error(`❌ خطأ في حظر المستخدم ${userId}:`, error);
+      return { success: false, error: 'خطأ في الخادم' };
+    }
+  }
+
+  async unbanUser(userId: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      await db.update(users)
+        .set({ 
+          isBanned: false,
+          banExpiry: null
+        })
+        .where(eq(users.id, userId));
+
+      // إضافة إشعار للمستخدم
+      await db.insert(notifications).values({
+        userId,
+        type: 'system',
+        title: 'تم رفع الحظر',
+        message: 'تم رفع الحظر عنك، يمكنك استخدام النظام مرة أخرى',
+        data: { unbanDate: new Date() }
+      });
+
+      console.log(`✅ تم رفع الحظر عن المستخدم ${userId}`);
+      
+      return { success: true };
+    } catch (error) {
+      console.error(`❌ خطأ في رفع الحظر عن المستخدم ${userId}:`, error);
+      return { success: false, error: 'خطأ في الخادم' };
+    }
+  }
+
+  async blockUser(blockerId: number, blockedId: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (blockerId === blockedId) {
+        return { success: false, error: 'لا يمكنك حظر نفسك' };
+      }
+
+      const blocker = await this.getUser(blockerId);
+      if (!blocker) {
+        return { success: false, error: 'المستخدم الحاظر غير موجود' };
+      }
+
+      const blocked = await this.getUser(blockedId);
+      if (!blocked) {
+        return { success: false, error: 'المستخدم المحظور غير موجود' };
+      }
+
+      // إضافة المستخدم للقائمة السوداء
+      const ignoredUsers = JSON.parse(blocker.ignoredUsers || '[]');
+      if (!ignoredUsers.includes(blockedId)) {
+        ignoredUsers.push(blockedId);
+        await this.updateUser(blockerId, { ignoredUsers: JSON.stringify(ignoredUsers) });
+      }
+
+      console.log(`🚫 المستخدم ${blockerId} حظر المستخدم ${blockedId}`);
+      return { success: true };
+    } catch (error) {
+      console.error(`❌ خطأ في حظر المستخدم:`, error);
+      return { success: false, error: 'خطأ في الخادم' };
+    }
+  }
+
+  async unblockUser(blockerId: number, blockedId: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      const blocker = await this.getUser(blockerId);
+      if (!blocker) {
+        return { success: false, error: 'المستخدم غير موجود' };
+      }
+
+      const ignoredUsers = JSON.parse(blocker.ignoredUsers || '[]');
+      const filteredUsers = ignoredUsers.filter((id: number) => id !== blockedId);
+      await this.updateUser(blockerId, { ignoredUsers: JSON.stringify(filteredUsers) });
+
+      console.log(`✅ المستخدم ${blockerId} ألغى حظر المستخدم ${blockedId}`);
+      return { success: true };
+    } catch (error) {
+      console.error(`❌ خطأ في إلغاء حظر المستخدم:`, error);
+      return { success: false, error: 'خطأ في الخادم' };
+    }
+  }
+
+  async isUserBlocked(userId: number, targetId: number): Promise<boolean> {
+    try {
+      const user = await this.getUser(targetId);
+      if (!user) return false;
+
+      const ignoredUsers = JSON.parse(user.ignoredUsers || '[]');
+      return ignoredUsers.includes(userId);
+    } catch (error) {
+      console.error('❌ خطأ في فحص حالة الحظر:', error);
+      return false;
+    }
+  }
+
+  async searchUsers(query: string, limit: number = 20): Promise<User[]> {
+    try {
+      if (!query || query.trim().length < 2) {
+        return [];
+      }
+
+      const searchTerm = `%${query.trim().toLowerCase()}%`;
+      
+      const results = await db.select()
+        .from(users)
+        .where(
+          and(
+            sql`LOWER(${users.username}) LIKE ${searchTerm}`,
+            eq(users.isBanned, false),
+            eq(users.isHidden, false)
+          )
+        )
+        .orderBy(desc(users.isOnline), asc(users.username))
+        .limit(Math.min(limit, 50));
+
+      console.log(`🔍 البحث عن "${query}" أعطى ${results.length} نتيجة`);
+      return results;
+    } catch (error) {
+      console.error('❌ خطأ في البحث عن المستخدمين:', error);
+      return [];
+    }
+  }
+
+  async getUserRank(userId: number): Promise<number> {
+    try {
+      const user = await this.getUser(userId);
+      if (!user) return 0;
+
+      const higherRankedUsers = await db.select()
+        .from(users)
+        .where(
+          and(
+            sql`${users.totalPoints} > ${user.totalPoints}`,
+            eq(users.isBanned, false)
+          )
+        );
+
+      return higherRankedUsers.length + 1;
+    } catch (error) {
+      console.error(`❌ خطأ في حساب ترتيب المستخدم ${userId}:`, error);
+      return 0;
+    }
+  }
+
+  async getUserStatistics(userId: number) {
+    try {
+      const user = await this.getUser(userId);
+      if (!user) return null;
+
+      const [messagesCount, friendsCount, loginDays] = await Promise.all([
+        this.getUserMessageCount(userId),
+        this.getUserFriendCount(userId),
+        this.getUserLoginDays(userId)
+      ]);
+
+      return {
+        user: {
+          id: user.id,
+          username: user.username,
+          userType: user.userType,
+          level: user.level,
+          points: user.points,
+          totalPoints: user.totalPoints,
+          joinDate: user.joinDate,
+          lastSeen: user.lastSeen,
+          isOnline: user.isOnline
+        },
+        statistics: {
+          messagesCount,
+          friendsCount,
+          loginDays,
+          rank: await this.getUserRank(userId)
+        }
+      };
+    } catch (error) {
+      console.error(`❌ خطأ في جلب إحصائيات المستخدم ${userId}:`, error);
+      return null;
+    }
+  }
+
+  async getUserFriendCount(userId: number): Promise<number> {
+    try {
+      const result = await db.select()
+        .from(friends)
+        .where(
+          and(
+            or(eq(friends.userId, userId), eq(friends.friendId, userId)),
+            eq(friends.status, 'accepted')
+          )
+        );
+      
+      return result.length;
+    } catch (error) {
+      console.error(`❌ خطأ في حساب عدد أصدقاء المستخدم ${userId}:`, error);
+      return 0;
+    }
+  }
+
+  async getUserLoginDays(userId: number): Promise<number> {
+    try {
+      // هذا يحتاج لجدول منفصل لتتبع أيام تسجيل الدخول
+      // للآن سنستخدم حساب تقريبي بناءً على تاريخ الانضمام
+      const user = await this.getUser(userId);
+      if (!user || !user.joinDate) return 0;
+
+      const daysSinceJoin = Math.floor(
+        (Date.now() - new Date(user.joinDate).getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      // تقدير بسيط: افتراض أن المستخدم النشط يسجل دخول كل 3 أيام
+      return Math.min(daysSinceJoin, Math.floor(daysSinceJoin / 3));
+    } catch (error) {
+      console.error(`❌ خطأ في حساب أيام تسجيل الدخول للمستخدم ${userId}:`, error);
+      return 0;
+    }
+  }
+
+  async getUserMessageCountSince(userId: number, since: Date): Promise<number> {
+    try {
+      const result = await db.select()
+        .from(messages)
+        .where(
+          and(
+            eq(messages.senderId, userId),
+            sql`${messages.timestamp} >= ${since}`
+          )
+        );
+      
+      return result.length;
+    } catch (error) {
+      console.error(`❌ خطأ في حساب رسائل المستخدم منذ تاريخ معين:`, error);
+      return 0;
+    }
+  }
+
+  // إضافة المزيد من وظائف الإحصائيات
+  async getTotalPointsDistributed(): Promise<number> {
+    try {
+      const result = await db.select()
+        .from(pointsHistory)
+        .where(eq(pointsHistory.action, 'earn'));
+      
+      return result.reduce((total, record) => total + (record.points || 0), 0);
+    } catch (error) {
+      console.error('❌ خطأ في حساب إجمالي النقاط الموزعة:', error);
+      return 0;
+    }
+  }
+
+  async getActiveUsersToday(): Promise<number> {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const result = await db.select()
+        .from(users)
+        .where(
+          and(
+            sql`${users.lastSeen} >= ${today}`,
+            eq(users.isBanned, false)
+          )
+        );
+      
+      return result.length;
+    } catch (error) {
+      console.error('❌ خطأ في حساب المستخدمين النشطين اليوم:', error);
+      return 0;
+    }
+  }
+
+  async getTopEarnersThisWeek(): Promise<any[]> {
+    try {
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      
+      const result = await db.select({
+        userId: pointsHistory.userId,
+        username: users.username,
+        totalEarned: sql<number>`SUM(${pointsHistory.points})`
+      })
+        .from(pointsHistory)
+        .leftJoin(users, eq(pointsHistory.userId, users.id))
+        .where(
+          and(
+            sql`${pointsHistory.createdAt} >= ${weekAgo}`,
+            eq(pointsHistory.action, 'earn')
+          )
+        )
+        .groupBy(pointsHistory.userId, users.username)
+        .orderBy(sql`SUM(${pointsHistory.points}) DESC`)
+        .limit(10);
+      
+      return result;
+    } catch (error) {
+      console.error('❌ خطأ في جلب أفضل كاسبي النقاط هذا الأسبوع:', error);
+      return [];
+    }
+  }
+
+  async getPointsDistributionByReason(): Promise<any[]> {
+    try {
+      const result = await db.select({
+        reason: pointsHistory.reason,
+        totalPoints: sql<number>`SUM(${pointsHistory.points})`,
+        count: sql<number>`COUNT(*)`
+      })
+        .from(pointsHistory)
+        .where(eq(pointsHistory.action, 'earn'))
+        .groupBy(pointsHistory.reason)
+        .orderBy(sql`SUM(${pointsHistory.points}) DESC`);
+      
+      return result;
+    } catch (error) {
+      console.error('❌ خطأ في جلب توزيع النقاط حسب السبب:', error);
+      return [];
+    }
   }
 
   async addIgnoredUser(userId: number, ignoredUserId: number): Promise<void> {
-    const user = await this.getUser(userId);
-    if (user) {
-      const ignoredUsers = JSON.parse(user.ignoredUsers || '[]');
-      if (!ignoredUsers.includes(ignoredUserId)) {
-        ignoredUsers.push(ignoredUserId);
-        await this.updateUser(userId, { ignoredUsers: JSON.stringify(ignoredUsers) });
+    try {
+      const user = await this.getUser(userId);
+      if (user) {
+        const ignoredUsers = JSON.parse(user.ignoredUsers || '[]');
+        if (!ignoredUsers.includes(ignoredUserId)) {
+          ignoredUsers.push(ignoredUserId);
+          await this.updateUser(userId, { ignoredUsers: JSON.stringify(ignoredUsers) });
+          console.log(`🚫 المستخدم ${userId} تجاهل المستخدم ${ignoredUserId}`);
+        }
       }
+    } catch (error) {
+      console.error('❌ خطأ في إضافة مستخدم متجاهل:', error);
+      throw error;
     }
   }
 
   async removeIgnoredUser(userId: number, ignoredUserId: number): Promise<void> {
-    const user = await this.getUser(userId);
-    if (user) {
-      const ignoredUsers = JSON.parse(user.ignoredUsers || '[]');
-      const filteredUsers = ignoredUsers.filter((id: number) => id !== ignoredUserId);
-      await this.updateUser(userId, { ignoredUsers: JSON.stringify(filteredUsers) });
+    try {
+      const user = await this.getUser(userId);
+      if (user) {
+        const ignoredUsers = JSON.parse(user.ignoredUsers || '[]');
+        const filteredUsers = ignoredUsers.filter((id: number) => id !== ignoredUserId);
+        await this.updateUser(userId, { ignoredUsers: JSON.stringify(filteredUsers) });
+        console.log(`✅ المستخدم ${userId} ألغى تجاهل المستخدم ${ignoredUserId}`);
+      }
+    } catch (error) {
+      console.error('❌ خطأ في إزالة مستخدم متجاهل:', error);
+      throw error;
     }
   }
 
   async getIgnoredUsers(userId: number): Promise<number[]> {
-    const user = await this.getUser(userId);
-    return user ? JSON.parse(user.ignoredUsers || '[]') : [];
+    try {
+      const user = await this.getUser(userId);
+      return user ? JSON.parse(user.ignoredUsers || '[]') : [];
+    } catch (error) {
+      console.error('❌ خطأ في جلب المستخدمين المتجاهلين:', error);
+      return [];
+    }
   }
 
   async getOnlineUsers(): Promise<User[]> {

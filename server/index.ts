@@ -4,6 +4,10 @@ import { dirname, join } from "path";
 import cors from "cors";
 import setupRoutes from "./routes";
 import { checkDatabaseHealth } from "./database-adapter";
+import authRoutes from "./routes/auth";
+import userRoutes from "./routes/users";
+import messageRoutes from "./routes/messages";
+import uploadRoutes from "./routes/uploads";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

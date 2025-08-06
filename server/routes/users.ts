@@ -1,215 +1,538 @@
 import { Router } from "express";
 import { storage } from "../storage";
-import { sanitizeInput } from "../security";
+import { authMiddleware, requireRole } from "../auth/authMiddleware";
+import { pointsService } from "../services/pointsService";
+import { friendService } from "../services/friendService";
+import { notificationService } from "../services/notificationService";
 
 const router = Router();
 
-// ملاحظة: تم نقل APIs رفع الصور إلى server/routes.ts لتوحيد المسارات
-// جميع عمليات رفع الصور تتم عبر /api/upload/* الآن
-
-// Get online users
-router.get("/online", async (req, res) => {
+// Get current user profile
+router.get("/me", authMiddleware, async (req, res) => {
   try {
-    const users = await storage.getOnlineUsers();
-    res.json(users);
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: "غير مصرح",
+        code: "NOT_AUTHENTICATED"
+      });
+    }
+
+    const user = await storage.getUser(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "المستخدم غير موجود",
+        code: "USER_NOT_FOUND"
+      });
+    }
+
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.json({
+      success: true,
+      user: userWithoutPassword
+    });
+
   } catch (error) {
-    console.error("Error fetching online users:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
+    console.error("Get current user error:", error);
+    res.status(500).json({
+      success: false,
+      error: "خطأ في الخادم"
+    });
+  }
+});
+
+// Get user by ID
+router.get("/:id", authMiddleware, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: "معرف المستخدم غير صالح"
+      });
+    }
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "المستخدم غير موجود"
+      });
+    }
+
+    // Remove sensitive information
+    const { password: _, ipAddress: __, deviceId: ___, ...publicUser } = user;
+
+    res.json({
+      success: true,
+      user: publicUser
+    });
+
+  } catch (error) {
+    console.error("Get user by ID error:", error);
+    res.status(500).json({
+      success: false,
+      error: "خطأ في الخادم"
+    });
   }
 });
 
 // Update user profile
-router.put("/:id", async (req, res) => {
+router.put("/:id", authMiddleware, async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
-    const updates = req.body;
-    
-    // Sanitize inputs
-    if (updates.username) {
-      updates.username = sanitizeInput(updates.username);
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: "معرف المستخدم غير صالح"
+      });
     }
-    if (updates.bio) {
-      updates.bio = sanitizeInput(updates.bio);
+
+    // Check if user can update this profile
+    if (req.user!.id !== userId && !req.user!.userType.includes('admin')) {
+      return res.status(403).json({
+        success: false,
+        error: "ليس لديك صلاحية لتعديل هذا الملف الشخصي"
+      });
     }
-    
-    const user = await storage.updateUser(userId, updates);
-    if (!user) {
-      return res.status(404).json({ error: "المستخدم غير موجود" });
+
+    const allowedFields = [
+      'profileImage', 'profileBanner', 'profileBackgroundColor',
+      'status', 'bio', 'country', 'relation', 'usernameColor',
+      'userTheme', 'profileEffect'
+    ];
+
+    const updateData: any = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
     }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "لا توجد بيانات للتحديث"
+      });
+    }
+
+    const updatedUser = await storage.updateUser(userId, updateData);
     
-    res.json(user);
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = updatedUser;
+
+    res.json({
+      success: true,
+      user: userWithoutPassword,
+      message: "تم تحديث الملف الشخصي بنجاح"
+    });
+
   } catch (error) {
-    console.error("Error updating user:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
+    console.error("Update user profile error:", error);
+    res.status(500).json({
+      success: false,
+      error: "خطأ في الخادم"
+    });
   }
 });
 
-// Toggle user hidden status
-router.post("/:userId/toggle-hidden", async (req, res) => {
+// Get online users
+router.get("/online/list", authMiddleware, async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-    const { isHidden } = req.body;
-    
-    await storage.setUserHiddenStatus(userId, isHidden);
-    res.json({ message: "تم تحديث حالة الإخفاء" });
+    const roomId = req.query.roomId as string;
+    const users = await storage.getOnlineUsers(roomId);
+
+    // Remove sensitive information
+    const publicUsers = users.map(user => {
+      const { password: _, ipAddress: __, deviceId: ___, ...publicUser } = user;
+      return publicUser;
+    });
+
+    res.json({
+      success: true,
+      users: publicUsers,
+      count: publicUsers.length
+    });
+
   } catch (error) {
-    console.error("Error toggling hidden status:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
+    console.error("Get online users error:", error);
+    res.status(500).json({
+      success: false,
+      error: "خطأ في الخادم"
+    });
   }
 });
 
-// Toggle stealth mode
-router.post("/:userId/stealth", async (req, res) => {
+// Search users
+router.get("/search/:query", authMiddleware, async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-    const { isHidden } = req.body;
-    
-    await storage.setUserHiddenStatus(userId, isHidden);
-    res.json({ message: isHidden ? "تم تفعيل الوضع الخفي" : "تم إلغاء الوضع الخفي" });
-  } catch (error) {
-    console.error("Error toggling stealth mode:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
-  }
-});
-
-// User search
-router.get("/search", async (req, res) => {
-  try {
-    const { q } = req.query;
-    if (!q || typeof q !== 'string') {
-      return res.status(400).json({ error: "معطى البحث مطلوب" });
+    const query = req.params.query.trim();
+    if (query.length < 2) {
+      return res.status(400).json({
+        success: false,
+        error: "يجب أن يكون البحث على الأقل حرفين"
+      });
     }
+
+    const users = await storage.searchUsers(query);
     
-    const allUsers = await storage.getAllUsers();
-    const filteredUsers = allUsers.filter(user => 
-      user.username.toLowerCase().includes(q.toLowerCase())
+    // Remove sensitive information
+    const publicUsers = users.map(user => {
+      const { password: _, ipAddress: __, deviceId: ___, ...publicUser } = user;
+      return publicUser;
+    });
+
+    res.json({
+      success: true,
+      users: publicUsers,
+      count: publicUsers.length
+    });
+
+  } catch (error) {
+    console.error("Search users error:", error);
+    res.status(500).json({
+      success: false,
+      error: "خطأ في الخادم"
+    });
+  }
+});
+
+// Get user points and level
+router.get("/:id/points", authMiddleware, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: "معرف المستخدم غير صالح"
+      });
+    }
+
+    const pointsData = await pointsService.getUserPointsData(userId);
+    
+    res.json({
+      success: true,
+      points: pointsData
+    });
+
+  } catch (error) {
+    console.error("Get user points error:", error);
+    res.status(500).json({
+      success: false,
+      error: "خطأ في الخادم"
+    });
+  }
+});
+
+// Transfer points (admin only)
+router.post("/:id/points/transfer", authMiddleware, requireRole('admin'), async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const { points, reason } = req.body;
+
+    if (isNaN(userId) || isNaN(points)) {
+      return res.status(400).json({
+        success: false,
+        error: "البيانات المدخلة غير صالحة"
+      });
+    }
+
+    const result = await pointsService.transferPoints(
+      req.user!.id,
+      userId,
+      points,
+      reason || 'تحويل من الإدارة'
     );
-    
-    res.json(filteredUsers);
-  } catch (error) {
-    console.error("Error searching users:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
-  }
-});
 
-// Update username color
-router.post("/:userId/username-color", async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId);
-    const { color } = req.body;
-    
-    if (!color || !/^#[0-9A-F]{6}$/i.test(color)) {
-      return res.status(400).json({ error: "لون غير صالح" });
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error
+      });
     }
-    
-    const user = await storage.updateUser(userId, { usernameColor: color });
-    res.json({ user, message: "تم تحديث لون اسم المستخدم" });
+
+    res.json({
+      success: true,
+      message: "تم تحويل النقاط بنجاح"
+    });
+
   } catch (error) {
-    console.error("Error updating username color:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
+    console.error("Transfer points error:", error);
+    res.status(500).json({
+      success: false,
+      error: "خطأ في الخادم"
+    });
   }
 });
 
-// Update user color (alternative endpoint)
-router.post("/:userId/color", async (req, res) => {
+// Get user friends
+router.get("/:id/friends", authMiddleware, async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-    const { color } = req.body;
-    
-    if (!color || !/^#[0-9A-F]{6}$/i.test(color)) {
-      return res.status(400).json({ error: "لون غير صالح" });
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: "معرف المستخدم غير صالح"
+      });
     }
-    
-    const user = await storage.updateUser(userId, { usernameColor: color });
-    res.json({ user, message: "تم تحديث لون المستخدم" });
-  } catch (error) {
-    console.error("Error updating user color:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
-  }
-});
 
-// Update profile background color
-router.post("/update-background-color", async (req, res) => {
-  try {
-    const { userId, color } = req.body;
-    
-    if (!userId || !color) {
-      return res.status(400).json({ error: "معرف المستخدم واللون مطلوبان" });
+    // Check if user can view friends list
+    if (req.user!.id !== userId && !req.user!.userType.includes('admin')) {
+      return res.status(403).json({
+        success: false,
+        error: "ليس لديك صلاحية لعرض قائمة الأصدقاء"
+      });
     }
-    
-    if (!/^#[0-9A-F]{6}$/i.test(color)) {
-      return res.status(400).json({ error: "تنسيق اللون غير صالح" });
+
+    const friends = await friendService.getUserFriends(userId);
+
+    res.json({
+      success: true,
+      friends,
+      count: friends.length
+    });
+
+  } catch (error) {
+    console.error("Get user friends error:", error);
+    res.status(500).json({
+      success: false,
+      error: "خطأ في الخادم"
+    });
+  }
+});
+
+// Send friend request
+router.post("/:id/friends/request", authMiddleware, async (req, res) => {
+  try {
+    const targetUserId = parseInt(req.params.id);
+    if (isNaN(targetUserId)) {
+      return res.status(400).json({
+        success: false,
+        error: "معرف المستخدم غير صالح"
+      });
     }
-    
-    const user = await storage.updateUser(userId, { profileBackgroundColor: color });
-    res.json({ user, message: "تم تحديث لون خلفية الملف الشخصي" });
+
+    if (req.user!.id === targetUserId) {
+      return res.status(400).json({
+        success: false,
+        error: "لا يمكنك إرسال طلب صداقة لنفسك"
+      });
+    }
+
+    const result = await friendService.sendFriendRequest(req.user!.id, targetUserId);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "تم إرسال طلب الصداقة بنجاح"
+    });
+
   } catch (error) {
-    console.error("Error updating background color:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
+    console.error("Send friend request error:", error);
+    res.status(500).json({
+      success: false,
+      error: "خطأ في الخادم"
+    });
   }
 });
 
-// Ignore user
-router.post("/:userId/ignore/:targetId", async (req, res) => {
+// Accept/reject friend request
+router.put("/friends/:requestId", authMiddleware, async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-    const targetId = parseInt(req.params.targetId);
-    
-    await storage.addIgnoredUser(userId, targetId);
-    res.json({ message: "تم تجاهل المستخدم" });
+    const requestId = parseInt(req.params.requestId);
+    const { action } = req.body; // 'accept' or 'reject'
+
+    if (isNaN(requestId) || !['accept', 'reject'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        error: "البيانات المدخلة غير صالحة"
+      });
+    }
+
+    const result = action === 'accept' 
+      ? await friendService.acceptFriendRequest(requestId, req.user!.id)
+      : await friendService.rejectFriendRequest(requestId, req.user!.id);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error
+      });
+    }
+
+    res.json({
+      success: true,
+      message: action === 'accept' ? "تم قبول طلب الصداقة" : "تم رفض طلب الصداقة"
+    });
+
   } catch (error) {
-    console.error("Error ignoring user:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
+    console.error("Handle friend request error:", error);
+    res.status(500).json({
+      success: false,
+      error: "خطأ في الخادم"
+    });
   }
 });
 
-// Unignore user
-router.delete("/:userId/ignore/:targetId", async (req, res) => {
+// Get user notifications
+router.get("/:id/notifications", authMiddleware, async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-    const targetId = parseInt(req.params.targetId);
-    
-    await storage.removeIgnoredUser(userId, targetId);
-    res.json({ message: "تم إلغاء تجاهل المستخدم" });
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: "معرف المستخدم غير صالح"
+      });
+    }
+
+    // Check if user can view notifications
+    if (req.user!.id !== userId && !req.user!.userType.includes('admin')) {
+      return res.status(403).json({
+        success: false,
+        error: "ليس لديك صلاحية لعرض الإشعارات"
+      });
+    }
+
+    const notifications = await notificationService.getUserNotifications(userId);
+
+    res.json({
+      success: true,
+      notifications,
+      count: notifications.length
+    });
+
   } catch (error) {
-    console.error("Error unignoring user:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
+    console.error("Get user notifications error:", error);
+    res.status(500).json({
+      success: false,
+      error: "خطأ في الخادم"
+    });
   }
 });
 
-// Get ignored users
-router.get("/:userId/ignored", async (req, res) => {
+// Mark notification as read
+router.put("/notifications/:notificationId/read", authMiddleware, async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-    const ignoredUserIds = await storage.getIgnoredUsers(userId);
-    res.json(ignoredUserIds);
+    const notificationId = parseInt(req.params.notificationId);
+    if (isNaN(notificationId)) {
+      return res.status(400).json({
+        success: false,
+        error: "معرف الإشعار غير صالح"
+      });
+    }
+
+    const result = await notificationService.markAsRead(notificationId, req.user!.id);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "تم تحديد الإشعار كمقروء"
+    });
+
   } catch (error) {
-    console.error("Error fetching ignored users:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
+    console.error("Mark notification as read error:", error);
+    res.status(500).json({
+      success: false,
+      error: "خطأ في الخادم"
+    });
   }
 });
 
-// Get spam status
-router.get("/:userId/spam-status", async (req, res) => {
+// Block/unblock user
+router.post("/:id/block", authMiddleware, async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-    // This would integrate with spam protection system
-    res.json({ spamScore: 0, isBlocked: false });
+    const targetUserId = parseInt(req.params.id);
+    const { action } = req.body; // 'block' or 'unblock'
+
+    if (isNaN(targetUserId) || !['block', 'unblock'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        error: "البيانات المدخلة غير صالحة"
+      });
+    }
+
+    if (req.user!.id === targetUserId) {
+      return res.status(400).json({
+        success: false,
+        error: "لا يمكنك حظر نفسك"
+      });
+    }
+
+    const result = action === 'block'
+      ? await storage.blockUser(req.user!.id, targetUserId)
+      : await storage.unblockUser(req.user!.id, targetUserId);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error
+      });
+    }
+
+    res.json({
+      success: true,
+      message: action === 'block' ? "تم حظر المستخدم" : "تم إلغاء حظر المستخدم"
+    });
+
   } catch (error) {
-    console.error("Error fetching spam status:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
+    console.error("Block/unblock user error:", error);
+    res.status(500).json({
+      success: false,
+      error: "خطأ في الخادم"
+    });
   }
 });
 
-// Reset spam status
-router.post("/:userId/reset-spam", async (req, res) => {
+// Admin: Ban/unban user
+router.post("/:id/ban", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-    // This would integrate with spam protection system
-    res.json({ message: "تم إعادة تعيين حالة السبام" });
+    const targetUserId = parseInt(req.params.id);
+    const { action, reason, duration } = req.body; // 'ban' or 'unban'
+
+    if (isNaN(targetUserId) || !['ban', 'unban'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        error: "البيانات المدخلة غير صالحة"
+      });
+    }
+
+    const result = action === 'ban'
+      ? await storage.banUser(targetUserId, reason, duration)
+      : await storage.unbanUser(targetUserId);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error
+      });
+    }
+
+    res.json({
+      success: true,
+      message: action === 'ban' ? "تم حظر المستخدم" : "تم إلغاء حظر المستخدم"
+    });
+
   } catch (error) {
-    console.error("Error resetting spam status:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
+    console.error("Ban/unban user error:", error);
+    res.status(500).json({
+      success: false,
+      error: "خطأ في الخادم"
+    });
   }
 });
 
