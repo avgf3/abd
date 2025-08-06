@@ -23,7 +23,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // تقديم الملفات الثابتة
-app.use(express.static(join(__dirname, "../client/dist")));
+app.use(express.static(join(__dirname, "public")));
 app.use('/uploads', express.static(join(__dirname, 'uploads')));
 
 // إعداد النظام المنظف
@@ -31,7 +31,7 @@ const server = setupRoutes(app);
 
 // Route للصفحة الرئيسية
 app.get('*', (req, res) => {
-  res.sendFile(join(__dirname, "../client/dist/index.html"));
+  res.sendFile(join(__dirname, "public/index.html"));
 });
 
 // بدء الخادم
