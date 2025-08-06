@@ -3,7 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import cors from "cors";
 import setupRoutes from "./routes";
-import { checkDatabaseConnection } from "./database-adapter";
+import { checkDatabaseHealth } from "./database-adapter";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -39,7 +39,7 @@ async function startServer() {
   try {
     // التحقق من اتصال قاعدة البيانات
     console.log('🔍 فحص اتصال قاعدة البيانات...');
-    await checkDatabaseConnection();
+    await checkDatabaseHealth();
     console.log('✅ تم تأكيد اتصال قاعدة البيانات');
 
     // بدء الخادم
