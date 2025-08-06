@@ -6,6 +6,8 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase, createDefaultUsers, runMigrations, runDrizzlePush } from "./database-setup";
 import { setupSecurity } from "./security";
+import { initializeOptimizations } from "./utils/db-optimizations";
+import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import path from "path";
 import fs from "fs";
 import { Server } from "http";
@@ -175,13 +177,11 @@ function setupGracefulShutdown(httpServer: Server) {
     // تسجيل Routes وإنشاء الخادم
     httpServer = await registerRoutes(app);
 
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      
-      log(`❌ خطأ في التطبيق: ${message} (${status})`);
-      res.status(status).json({ message });
-    });
+    // معالج للمسارات غير الموجودة
+    app.use(notFoundHandler);
+    
+    // معالج الأخطاء العام المحسن
+    app.use(errorHandler);
 
     // طباعة اسم البيئة الحالية
     const currentEnv = process.env.NODE_ENV || app.get("env") || "development";
@@ -221,6 +221,10 @@ function setupGracefulShutdown(httpServer: Server) {
     await initializeDatabase();
     await createDefaultUsers();
     log('✅ تم إكمال تهيئة قاعدة البيانات');
+    
+    // تفعيل تحسينات قاعدة البيانات
+    await initializeOptimizations();
+    log('✅ تم تفعيل تحسينات قاعدة البيانات');
 
     // تحديد المنفذ المطلوب
     const preferredPort = process.env.PORT ? Number(process.env.PORT) : 5000;

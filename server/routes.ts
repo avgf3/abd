@@ -2922,16 +2922,7 @@ app.post("/api/friend-requests/:requestId/ignore", async (req, res) => {
   }
 });
 
-// الحصول على قائمة الأصدقاء
-app.get("/api/friends/:userId", async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId);
-    const friends = await storage.getFriends(userId);
-    res.json({ friends });
-  } catch (error) {
-    res.status(500).json({ error: "خطأ في الخادم" });
-  }
-});
+// تم حذف المسار المكرر لـ friends (نسخة 2)
 
 // إزالة صديق
 app.delete("/api/friends/:userId/:friendId", async (req, res) => {
@@ -3061,56 +3052,7 @@ app.get("/api/spam-stats", async (req, res) => {
   }
 });
 
-// Moderation routes
-app.post("/api/moderation/mute", async (req, res) => {
-  try {
-    const { moderatorId, targetUserId, reason, duration } = req.body;
-    const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
-    const deviceId = req.headers['user-agent'] || 'unknown';
-    
-    const success = await moderationSystem.muteUser(
-      moderatorId, 
-      targetUserId, 
-      reason, 
-      duration, 
-      clientIP, 
-      deviceId
-    );
-    
-    if (success) {
-      const moderator = await storage.getUser(moderatorId);
-      const target = await storage.getUser(targetUserId);
-      
-      // إرسال إشعار للدردشة العامة
-      const systemMessage = `🔇 تم كتم ${target?.username} من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`;
-      
-      broadcast({
-        type: 'moderationAction',
-        action: 'muted',
-        targetUserId: targetUserId,
-        message: systemMessage,
-        reason,
-        duration
-      });
-
-      // إرسال إشعار للمستخدم المكتوم
-      broadcast({
-        type: 'notification',
-        targetUserId: targetUserId,
-        notificationType: 'muted',
-        message: `تم كتمك من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`,
-        moderatorName: moderator?.username
-      });
-      
-      // لا يتم قطع الاتصال - المستخدم يبقى في الدردشة لكن مكتوم
-      res.json({ message: "تم كتم المستخدم بنجاح - يمكنه البقاء في الدردشة ولكن لا يمكنه التحدث في العام" });
-    } else {
-      res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
-    }
-  } catch (error) {
-    res.status(500).json({ error: "خطأ في الخادم" });
-  }
-});
+// Moderation routes - تم حذف المسار المكرر
 
 app.post("/api/moderation/unmute", async (req, res) => {
   try {
@@ -3298,21 +3240,7 @@ app.post("/api/moderation/promote", async (req, res) => {
   }
 });
 
-app.post("/api/moderation/unmute", async (req, res) => {
-  try {
-    const { moderatorId, targetUserId } = req.body;
-    
-    const success = await moderationSystem.unmuteUser(moderatorId, targetUserId);
-    
-    if (success) {
-      res.json({ message: "تم فك الكتم بنجاح" });
-    } else {
-      res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
-    }
-  } catch (error) {
-    res.status(500).json({ error: "خطأ في الخادم" });
-  }
-});
+// تم حذف المسار المكرر لـ unmute
 
 app.post("/api/moderation/unblock", async (req, res) => {
   try {

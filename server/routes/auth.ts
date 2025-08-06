@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { authLimiter } from "../security";
+import { SecurityManager } from "../auth/security";
 
 const router = Router();
 
@@ -38,9 +39,12 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: "اسم المستخدم موجود بالفعل" });
     }
 
+    // تشفير كلمة المرور
+    const hashedPassword = await SecurityManager.hashPassword(password);
+    
     const user = await storage.createUser({
       username,
-      password,
+      password: hashedPassword,
       userType: "member",
       role: "member",
       gender: gender || "male",
@@ -123,7 +127,9 @@ router.post("/member", authLimiter, async (req, res) => {
       return res.status(401).json({ error: "اسم المستخدم غير موجود" });
     }
 
-    if (user.password !== password) {
+    // التحقق من كلمة المرور المشفرة
+    const isPasswordValid = await SecurityManager.verifyPassword(password, user.password);
+    if (!isPasswordValid) {
       return res.status(401).json({ error: "كلمة المرور غير صحيحة" });
     }
 

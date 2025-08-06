@@ -58,12 +58,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     try {
       console.log('🔄 جلب بيانات المستخدم من السيرفر:', userId);
       
-      const res = await fetch(`/api/users/${userId}?t=${Date.now()}`); // إضافة timestamp لتجنب cache
-      if (!res.ok) {
-        throw new Error(`فشل في جلب بيانات المستخدم: ${res.status}`);
-      }
-      
-      const userData = await res.json();
+      const userData = await apiRequest(`/api/users/${userId}?t=${Date.now()}`); // إضافة timestamp لتجنب cache
       console.log('📦 بيانات المستخدم المُحدثة:', userData);
       
       console.log('📝 تحديث localUser مع البيانات الجديدة:', userData.profileImage);
