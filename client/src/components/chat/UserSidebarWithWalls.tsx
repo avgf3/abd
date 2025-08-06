@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -63,7 +63,7 @@ export default function UserSidebarWithWalls({
   }, [users]);
 
   // جلب المنشورات
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     if (!currentUser) return;
     setLoading(true);
     try {
@@ -92,13 +92,13 @@ export default function UserSidebarWithWalls({
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, currentUser]);
 
   useEffect(() => {
     if (activeView === 'walls' && currentUser) {
       fetchPosts();
     }
-  }, [activeView, activeTab, currentUser]);
+  }, [activeView, fetchPosts]);
 
   // تحديث activeView عند تغيير propActiveView
   useEffect(() => {
@@ -212,8 +212,8 @@ export default function UserSidebarWithWalls({
     }
   };
 
-  // معالجة الإعجاب
-  const handleLike = async (postId: number, type: 'like' | 'heart' | 'dislike') => {
+  // التفاعل مع منشور
+  const handleReaction = async (postId: number, type: 'like' | 'dislike' | 'heart') => {
     if (!currentUser) return;
     
     try {
@@ -227,7 +227,13 @@ export default function UserSidebarWithWalls({
       });
 
       if (response.ok) {
-        fetchPosts();
+        const data = await response.json();
+        // تحديث المنشور محلياً بدلاً من إعادة تحميل جميع المنشورات
+        setPosts(prevPosts => 
+          prevPosts.map(post => 
+            post.id === postId ? data.post : post
+          )
+        );
       }
     } catch (error) {
       console.error('خطأ في التفاعل:', error);
@@ -249,7 +255,8 @@ export default function UserSidebarWithWalls({
           title: "تم الحذف",
           description: "تم حذف المنشور بنجاح",
         });
-        fetchPosts();
+        // إزالة المنشور محلياً بدلاً من إعادة تحميل جميع المنشورات
+        setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
       }
     } catch (error) {
       toast({
@@ -559,7 +566,7 @@ export default function UserSidebarWithWalls({
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleLike(post.id, 'like')}
+                            onClick={() => handleReaction(post.id, 'like')}
                             className="flex items-center gap-1 text-blue-600 hover:bg-blue-50"
                           >
                             <ThumbsUp className="w-4 h-4" />
@@ -569,7 +576,7 @@ export default function UserSidebarWithWalls({
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleLike(post.id, 'heart')}
+                            onClick={() => handleReaction(post.id, 'heart')}
                             className="flex items-center gap-1 text-red-600 hover:bg-red-50"
                           >
                             <Heart className="w-4 h-4" />
@@ -579,7 +586,7 @@ export default function UserSidebarWithWalls({
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleLike(post.id, 'dislike')}
+                            onClick={() => handleReaction(post.id, 'dislike')}
                             className="flex items-center gap-1 text-gray-600 hover:bg-gray-50"
                           >
                             <ThumbsDown className="w-4 h-4" />

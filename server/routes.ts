@@ -21,6 +21,8 @@ import path from "path";
 import fs from "fs";
 import bcrypt from "bcrypt";
 import sharp from "sharp";
+import { trackClick } from "./middleware/analytics";
+import { enhancedModeration } from "./enhanced-moderation";
 
 // إعداد multer لرفع الصور
 const storage_multer = multer.diskStorage({
@@ -163,6 +165,18 @@ const bannerUpload = multer({
   }
 });
 
+// تتبع المستخدمين المتصلين حقاً عبر Socket
+const connectedUsers = new Map<number, {
+  user: any,
+  socketId: string,
+  room: string,
+  lastSeen: Date
+}>();
+
+// Storage initialization
+const storage = new Storage();
+  
+// I/O interface
 let io: IOServer;
 
 // تعريف Socket مخصص للطباعة
@@ -1558,9 +1572,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`🔐 تم تعيين userId: ${user.id} للمستخدم ${user.username}`);
 
-        // تحديث حالة المستخدم إلى متصل
-        await storage.setUserOnlineStatus(user.id, true);
-        
+        // إضافة المستخدم لقائمة المتصلين الفعليين
+        connectedUsers.set(user.id, {
+          user: user,
+          socketId: socket.id,
+          room: 'general',
+          lastSeen: new Date()
+        });
+        console.log(`👥 إضافة ${user.username} لقائمة المتصلين الفعليين`);
+
+        // تحديث حالة المستخدم إلى متصل في قاعدة البيانات
+        try {
+          await storage.setUserOnlineStatus(user.id, true);
+          console.log(`✅ تم تحديث حالة ${user.username} إلى متصل`);
+        } catch (updateError) {
+          console.error('خطأ في تحديث حالة المستخدم:', updateError);
+        }
+
         // انضمام للغرفة العامة
         await storage.joinRoom(user.id, 'general');
         socket.join('room_general');
@@ -1660,11 +1688,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // انتظار قصير للتأكد من تحديث قاعدة البيانات
         await new Promise(resolve => setTimeout(resolve, 200));
         
-        const roomUsers = await storage.getOnlineUsersInRoom(currentRoom);
-        console.log(`👥 عدد المستخدمين المتصلين في الغرفة ${currentRoom}: ${roomUsers.length}`);
-        console.log(`👥 المستخدمون في الغرفة: ${roomUsers.map(u => u.username).join(', ')}`);
+        // جلب قائمة المستخدمين المتصلين فعلياً في هذه الغرفة
+        const roomUsers = Array.from(connectedUsers.values())
+          .filter(conn => conn.room === currentRoom)
+          .map(conn => conn.user);
         
-        // إرسال تأكيد الانضمام للغرفة مع قائمة المستخدمين
+        console.log(`👥 مستخدمو الغرفة ${currentRoom}: ${roomUsers.map(u => u.username).join(', ')}`);
+        
+        // إرسال تأكيد الانضمام مع قائمة المستخدمين
         socket.emit('message', {
           type: 'roomJoined',
           roomId: currentRoom,
@@ -1747,8 +1778,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const currentRoom = (socket as any).currentRoom || 'general';
         console.log(`🔄 طلب تحديث قائمة المستخدمين للغرفة: ${currentRoom}`);
         
-        const roomUsers = await storage.getOnlineUsersInRoom(currentRoom);
-        console.log(`👥 إرسال ${roomUsers.length} مستخدم متصل في الغرفة ${currentRoom}`);
+        // الحصول على المستخدمين المتصلين فعلياً في هذه الغرفة
+        const roomUsers = Array.from(connectedUsers.values())
+          .filter(conn => conn.room === currentRoom)
+          .map(conn => conn.user);
+        
+        console.log(`👥 إرسال ${roomUsers.length} مستخدم متصل فعلياً في الغرفة ${currentRoom}`);
         console.log(`👥 أسماء المستخدمين المتصلين: ${roomUsers.map(u => u.username).join(', ')}`);
         
         // إرسال القائمة لجميع المستخدمين في الغرفة الحالية
@@ -2334,6 +2369,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // حفظ في قاعدة البيانات
         await storage.joinRoom(userId, roomId);
         
+        // تحديث الغرفة في قائمة المتصلين الفعليين
+        if (connectedUsers.has(userId)) {
+          const userConnection = connectedUsers.get(userId)!;
+          userConnection.room = roomId;
+          userConnection.lastSeen = new Date();
+          connectedUsers.set(userId, userConnection);
+          console.log(`👥 تحديث غرفة ${username} إلى ${roomId} في قائمة المتصلين`);
+        }
+        
         // انتظار قصير للتأكد من التحديث
         await new Promise(resolve => setTimeout(resolve, 100));
         
@@ -2471,6 +2515,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const currentRoom = (socket as any).currentRoom;
           
+          // إزالة المستخدم من قائمة المتصلين الفعليين
+          connectedUsers.delete(customSocket.userId);
+          console.log(`👥 إزالة ${customSocket.username} من قائمة المتصلين الفعليين`);
+          
           // تحديث حالة المستخدم في قاعدة البيانات
           await storage.setUserOnlineStatus(customSocket.userId, false);
           
@@ -2485,29 +2533,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             timestamp: new Date().toISOString()
           });
           
-          // إشعار المستخدمين في الغرفة الحالية بالخروج
+          // إرسال قائمة محدثة للمستخدمين المتصلين في الغرفة
           if (currentRoom) {
-            io.to(`room_${currentRoom}`).emit('message', {
-              type: 'userLeft',
-              userId: customSocket.userId,
-              username: customSocket.username,
-              roomId: currentRoom,
-              timestamp: new Date().toISOString()
-            });
+            const roomUsers = Array.from(connectedUsers.values())
+              .filter(conn => conn.room === currentRoom)
+              .map(conn => conn.user);
             
-            // إرسال قائمة محدثة للمستخدمين في الغرفة
-            const roomUsers = await storage.getOnlineUsersInRoom(currentRoom);
             io.to(`room_${currentRoom}`).emit('message', { 
               type: 'onlineUsers', 
               users: roomUsers 
             });
           }
           
-          // إرسال قائمة محدثة للمستخدمين المتصلين لجميع العملاء
-          const onlineUsers = await storage.getOnlineUsers();
-          io.emit('onlineUsers', { users: onlineUsers });
+          console.log(`🚪 ${customSocket.username} غادر الخادم. السبب: ${reason}`);
           
-          } catch (error) {
+        } catch (error) {
           console.error(`❌ خطأ في تنظيف جلسة ${customSocket.username}:`, error);
         } finally {
           // تنظيف متغيرات الجلسة في جميع الأحوال
@@ -2534,6 +2574,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // بدء heartbeat بعد الإعداد
     startHeartbeat();
+
+
   });
 
   function broadcast(message: any) {
@@ -2551,21 +2593,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // التحقق من وجود المستخدم في قاعدة البيانات
             const user = await storage.getUser(customSocket.userId);
             if (!user || !user.isOnline) {
+              console.log(`🔌 قطع اتصال جلسة منتهية الصلاحية: ${customSocket.username}`);
               socket.disconnect(true);
             }
           } catch (error) {
             console.error('خطأ في فحص الجلسة:', error);
-            socket.disconnect(true);
+            // لا نقطع الاتصال في حالة خطأ قاعدة البيانات
           }
-        } else {
-          // قطع الاتصال للجلسات بدون معرف مستخدم
-          socket.disconnect(true);
         }
       }
     } catch (error) {
       console.error('خطأ في تنظيف الجلسات:', error);
     }
-  }, 30000); // كل 30 ثانية
+  }, 120000); // كل دقيقتين بدلاً من 30 ثانية
 
   // بدء التنظيف الدوري لقاعدة البيانات
   const dbCleanupInterval = databaseCleanup.startPeriodicCleanup(6); // كل 6 ساعات
