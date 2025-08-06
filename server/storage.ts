@@ -24,7 +24,7 @@ import {
   type InsertWallReaction,
 } from "../shared/schema";
 import { db } from "./database-adapter";
-import { eq, desc, asc, and, sql, or, inArray } from "drizzle-orm";
+import { eq, desc, asc, and, sql, or, inArray, not } from "drizzle-orm";
 
 // Global in-memory storage for wall posts
 declare global {
@@ -1066,6 +1066,31 @@ export class PostgreSQLStorage implements IStorage {
     } catch (error) {
       console.error('خطأ في جلب عدد رسائل المستخدم:', error);
       return 0;
+    }
+  }
+
+  async cleanupDisconnectedUsers(onlineUserIds: number[]): Promise<void> {
+    try {
+      // تحديث جميع المستخدمين في قاعدة البيانات ليكونوا غير متصلين
+      await db.update(users)
+        .set({ isOnline: false })
+        .where(
+          onlineUserIds.length > 0 
+            ? not(inArray(users.id, onlineUserIds))
+            : undefined
+        );
+      
+      // تحديث المستخدمين المتصلين فعلياً ليكونوا متصلين
+      if (onlineUserIds.length > 0) {
+        await db.update(users)
+          .set({ isOnline: true })
+          .where(inArray(users.id, onlineUserIds));
+      }
+      
+      console.log(`🧹 تم تنظيف قاعدة البيانات - ${onlineUserIds.length} مستخدم متصل فعلياً`);
+    } catch (error) {
+      console.error('خطأ في تنظيف قاعدة البيانات:', error);
+      throw error;
     }
   }
 }
