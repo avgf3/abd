@@ -4,16 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import type { ChatRoom, ChatUser } from '@/types/chat';
+import type { ChatRoom, ChatUser, RoomManagementProps } from '@/types/chat';
 
-interface RoomsPanelProps {
-  currentUser: ChatUser | null;
-  rooms: ChatRoom[];
-  currentRoomId: string;
-  onRoomChange: (roomId: string) => void;
-  onAddRoom: (roomData: { name: string; description: string; image: File | null }) => void;
-  onDeleteRoom: (roomId: string) => void;
-  onRefreshRooms?: () => void;
+interface RoomsPanelProps extends RoomManagementProps {
+  // All props are now inherited from RoomManagementProps
+  // This ensures consistency across room-related components
 }
 
 export default function RoomsPanel({

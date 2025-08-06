@@ -3,8 +3,9 @@ export interface ChatUser {
   username: string;
   displayName?: string;
   profileImage?: string;
+  // Standardized role/userType - keeping both for backward compatibility but making them consistent
   role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'system';
-  userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator';
+  userType: 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'system'; // Made consistent with role
   isOnline: boolean;
   roomId?: string;
   
@@ -223,4 +224,36 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
   error?: string;
+}
+
+// Standardized prop interfaces for common patterns
+export interface BaseComponentProps {
+  currentUser: ChatUser | null;
+  className?: string;
+}
+
+export interface UserInteractionProps extends BaseComponentProps {
+  onUserClick?: (event: React.MouseEvent, user: ChatUser) => void;
+  users?: ChatUser[];
+}
+
+export interface RoomManagementProps extends BaseComponentProps {
+  rooms: ChatRoom[];
+  currentRoomId: string;
+  onRoomChange: (roomId: string) => void;
+  onAddRoom?: (roomData: { name: string; description: string; image: File | null }) => void;
+  onDeleteRoom?: (roomId: string) => void;
+  onRefreshRooms?: () => void;
+  roomsLoading?: boolean;
+}
+
+export interface ModalProps {
+  isOpen?: boolean;
+  onClose: () => void;
+  className?: string;
+}
+
+export interface LoadingStateProps {
+  loading?: boolean;
+  loadingText?: string;
 }

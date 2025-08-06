@@ -25,6 +25,7 @@ import StealthModeToggle from './StealthModeToggle';
 import WelcomeNotification from './WelcomeNotification';
 import ThemeSelector from './ThemeSelector';
 import RoomsPanel from './RoomsPanel';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -44,7 +45,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAdminReports, setShowAdminReports] = useState(false);
-  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms'>('users'); // إظهار المستخدمين افتراضياً
+  const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms'>('users'); // إظهار المستخدمين افتراضياً
+  const [sidebarVisible, setSidebarVisible] = useState(true); // Control sidebar visibility separately
   
   // حالة الغرف
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
@@ -60,30 +62,53 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       console.log('📊 بيانات الغرف المُستلمة:', data);
       
       if (data.rooms && Array.isArray(data.rooms)) {
-        const formattedRooms = data.rooms.map((room: any) => ({
-          id: room.id,
-          name: room.name,
-          description: room.description || '',
-          isDefault: room.isDefault || room.is_default || false,
-          createdBy: room.createdBy || room.created_by,
-          createdAt: new Date(room.createdAt || room.created_at),
-          isActive: room.isActive || room.is_active || true,
-          userCount: room.userCount || room.user_count || 0,
-          icon: room.icon || '',
-          isBroadcast: room.isBroadcast || room.is_broadcast || false,
-          hostId: room.hostId || room.host_id,
-          speakers: room.speakers ? (typeof room.speakers === 'string' ? JSON.parse(room.speakers) : room.speakers) : [],
-          micQueue: room.micQueue ? (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue) : room.micQueue) : []
-        }));
+        const formattedRooms = data.rooms.map((room: any) => {
+          // Helper function to safely parse JSON
+          const safeJsonParse = (value: any, fallback: any[] = []) => {
+            if (Array.isArray(value)) return value;
+            if (typeof value === 'string') {
+              try {
+                return JSON.parse(value);
+              } catch {
+                return fallback;
+              }
+            }
+            return fallback;
+          };
+
+          return {
+            id: room.id,
+            name: room.name || 'غرفة غير مسماة',
+            description: room.description || '',
+            isDefault: Boolean(room.isDefault || room.is_default),
+            createdBy: room.createdBy || room.created_by || 1,
+            createdAt: new Date(room.createdAt || room.created_at || Date.now()),
+            isActive: Boolean(room.isActive ?? room.is_active ?? true),
+            userCount: Number(room.userCount || room.user_count || 0),
+            icon: room.icon || '',
+            isBroadcast: Boolean(room.isBroadcast || room.is_broadcast),
+            hostId: room.hostId || room.host_id || null,
+            speakers: safeJsonParse(room.speakers),
+            micQueue: safeJsonParse(room.micQueue)
+          };
+        });
         
         console.log('✅ تم تنسيق الغرف:', formattedRooms.length, 'غرفة');
         setRooms(formattedRooms);
       } else {
         console.warn('⚠️ بيانات الغرف غير صحيحة:', data);
-        throw new Error('بيانات الغرف غير صحيحة');
+        throw new Error('تعذر تحميل الغرف من الخادم');
       }
     } catch (error) {
       console.error('❌ خطأ في جلب الغرف:', error);
+      
+      // Show user-friendly error message
+      toast({
+        title: "تعذر تحميل الغرف",
+        description: "سيتم استخدام الغرف الافتراضية مؤقتاً",
+        variant: "destructive",
+      });
+      
       // استخدام غرف افتراضية في حالة الخطأ
       console.log('🔄 استخدام الغرف الافتراضية...');
       setRooms([
@@ -101,11 +126,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     console.log('🚀 تحميل مكون ChatInterface - جلب الغرف...');
     fetchRooms();
     
-    // إعادة جلب الغرف كل 30 ثانية للتأكد من التحديث
+    // إعادة جلب الغرف كل 2 دقيقة بدلاً من 30 ثانية لتحسين الأداء
     const interval = setInterval(() => {
       console.log('🔄 تحديث دوري للغرف...');
       fetchRooms();
-    }, 30000);
+    }, 120000); // 2 minutes instead of 30 seconds
     
     return () => clearInterval(interval);
   }, []);
@@ -381,9 +406,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* زر الحوائط في الزاوية اليسرى */}
           <Button 
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+              sidebarVisible && activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView(activeView === 'walls' ? 'hidden' : 'walls')}
+            onClick={() => {
+              if (sidebarVisible && activeView === 'walls') {
+                setSidebarVisible(false);
+              } else {
+                setActiveView('walls');
+                setSidebarVisible(true);
+              }
+            }}
             title="الحوائط"
           >
             <div className="flex flex-col gap-0.5">
@@ -397,21 +429,35 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* زر المستخدمين */}
           <Button 
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+              sidebarVisible && activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView(activeView === 'users' ? 'hidden' : 'users')}
+            onClick={() => {
+              if (sidebarVisible && activeView === 'users') {
+                setSidebarVisible(false);
+              } else {
+                setActiveView('users');
+                setSidebarVisible(true);
+              }
+            }}
             title="المستخدمون المتصلون"
           >
             <span>👥</span>
-                          المستخدمون ({chat.onlineUsers.length})
+            المستخدمون ({chat.onlineUsers.length})
           </Button>
 
           {/* زر الغرف */}
           <Button 
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+              sidebarVisible && activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView(activeView === 'rooms' ? 'hidden' : 'rooms')}
+            onClick={() => {
+              if (sidebarVisible && activeView === 'rooms') {
+                setSidebarVisible(false);
+              } else {
+                setActiveView('rooms');
+                setSidebarVisible(true);
+              }
+            }}
             title="الغرف"
           >
             <span>🏠</span>
@@ -526,21 +572,25 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       
       {/* Main Content */}
       <main className="flex flex-1 overflow-hidden">
-        {/* الشريط الجانبي - يظهر فقط عندما يكون activeView ليس 'hidden' */}
-        {activeView !== 'hidden' && (
+        {/* الشريط الجانبي - يظهر فقط عندما يكون مرئياً */}
+        {sidebarVisible && (
           <div className={`${activeView === 'walls' ? 'w-96' : 'w-64'} transition-all duration-300`}>
-            <UserSidebarWithWalls 
-              users={chat.onlineUsers}
-              onUserClick={handleUserClick}
-              currentUser={chat.currentUser}
-              activeView={activeView}
-              rooms={rooms}
-              currentRoomId={chat.currentRoomId}
-              onRoomChange={handleRoomChange}
-              onAddRoom={handleAddRoom}
-              onDeleteRoom={handleDeleteRoom}
-              onRefreshRooms={fetchRooms}
-            />
+            <ErrorBoundary>
+              <UserSidebarWithWalls 
+                users={chat.onlineUsers}
+                onUserClick={handleUserClick}
+                currentUser={chat.currentUser}
+                activeView={activeView}
+                rooms={rooms}
+                currentRoomId={chat.currentRoomId}
+                onRoomChange={handleRoomChange}
+                onAddRoom={handleAddRoom}
+                onDeleteRoom={handleDeleteRoom}
+                onRefreshRooms={fetchRooms}
+                onActiveViewChange={(view) => setActiveView(view)}
+                roomsLoading={roomsLoading}
+              />
+            </ErrorBoundary>
           </div>
         )}
         {(() => {

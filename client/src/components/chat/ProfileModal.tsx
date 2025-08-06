@@ -4,16 +4,14 @@ import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { getEffectColor } from '@/utils/themeUtils';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
-import type { ChatUser } from '@/types/chat';
+import type { ChatUser, ModalProps, BaseComponentProps } from '@/types/chat';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
 import PointsSentNotification from '@/components/ui/PointsSentNotification';
 
-interface ProfileModalProps {
+interface ProfileModalProps extends ModalProps, BaseComponentProps {
   user: ChatUser | null;
-  currentUser: ChatUser | null;
-  onClose: () => void;
   onIgnoreUser?: (userId: number) => void;
   onUpdate?: (user: ChatUser) => void;
   onPrivateMessage?: (user: ChatUser) => void;

@@ -1,47 +1,79 @@
-import React, { useState, useEffect } from 'react';
+// React and hooks
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+
+// UI Components
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+// Icons
 import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Users, Globe, Home } from 'lucide-react';
+
+// Chat components
 import SimpleUserMenu from './SimpleUserMenu';
 import ProfileImage from './ProfileImage';
 import RoomsPanel from './RoomsPanel';
+import UserRoleBadge from './UserRoleBadge';
+
+// Hooks and utilities
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { getImageSrc } from '@/utils/imageUtils';
-
-import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
-import UserRoleBadge from './UserRoleBadge';
 
-interface UserSidebarWithWallsProps {
-  users: ChatUser[];
-  onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
-  currentUser?: ChatUser | null;
-  activeView?: 'users' | 'walls' | 'rooms';
+// Types
+import type { ChatUser, WallPost, CreateWallPostData, ChatRoom, UserInteractionProps } from '@/types/chat';
+
+/**
+ * UserSidebarWithWalls Component
+ * 
+ * A comprehensive sidebar component that handles three main views:
+ * - Users: List of online users with search functionality
+ * - Walls: Wall posts with public/friends tabs, post creation, and reactions
+ * - Rooms: Room management through RoomsPanel component
+ * 
+ * Features:
+ * - Optimized with React.memo and useCallback for performance
+ * - Centralized state management through props
+ * - Error handling with user-friendly messages
+ * - Loading states and responsive design
+ * - Consistent prop interfaces using standardized types
+ * 
+ * Performance Optimizations:
+ * - Memoized user filtering
+ * - Throttled logging in development
+ * - Callback optimization for event handlers
+ * - Proper dependency arrays for effects
+ */
+interface UserSidebarWithWallsProps extends UserInteractionProps {
+  activeView: 'users' | 'walls' | 'rooms'; // Make this required and fully controlled
   rooms?: ChatRoom[];
   currentRoomId?: string;
   onRoomChange?: (roomId: string) => void;
   onAddRoom?: (roomData: { name: string; description: string; image: File | null }) => void;
   onDeleteRoom?: (roomId: string) => void;
   onRefreshRooms?: () => void;
+  onActiveViewChange?: (view: 'users' | 'walls' | 'rooms') => void; // Add callback for parent control
+  roomsLoading?: boolean; // Add loading state for rooms
 }
 
-export default function UserSidebarWithWalls({ 
+const UserSidebarWithWalls = React.memo(function UserSidebarWithWalls({ 
   users, 
   onUserClick, 
   currentUser, 
-  activeView: propActiveView,
+  activeView, // Use prop directly, no local state
   rooms = [],
   currentRoomId = '',
   onRoomChange,
   onAddRoom,
   onDeleteRoom,
-  onRefreshRooms
+  onRefreshRooms,
+  onActiveViewChange,
+  roomsLoading = false
 }: UserSidebarWithWallsProps) {
-  const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms'>(propActiveView || 'users');
+  // Remove duplicate activeView state - use prop instead
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'public' | 'friends'>('public');
   const [posts, setPosts] = useState<WallPost[]>([]);
@@ -52,18 +84,31 @@ export default function UserSidebarWithWalls({
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const filteredUsers = users.filter(user =>
-    user && user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Memoize filtered users to prevent unnecessary recalculations
+  const filteredUsers = useMemo(() => {
+    if (!searchTerm.trim()) return users;
+    const lowercaseSearch = searchTerm.toLowerCase();
+    return users.filter(user =>
+      user && user.username && user.username.toLowerCase().includes(lowercaseSearch)
+    );
+  }, [users, searchTerm]);
 
-  // إضافة logging للتشخيص
-  React.useEffect(() => {
-    console.log('👥 UserSidebarWithWalls - عدد المستخدمين المستلمين:', users.length);
-    console.log('👥 UserSidebarWithWalls - أسماء المستخدمين:', users.map(u => u?.username || 'غير معروف').join(', '));
-  }, [users]);
+  // Optimize logging with throttling
+  useEffect(() => {
+    if (users.length === 0) return;
+    
+    // Only log in development mode and throttle it
+    if (process.env.NODE_ENV === 'development') {
+      const timeoutId = setTimeout(() => {
+        console.log('👥 UserSidebarWithWalls - عدد المستخدمين:', users.length);
+      }, 1000); // Throttle logging to once per second
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [users.length]); // Only depend on length, not the entire array
 
-  // جلب المنشورات
-  const fetchPosts = async () => {
+  // جلب المنشورات مع معالجة أفضل للأخطاء
+  const fetchPosts = useCallback(async () => {
     if (!currentUser) return;
     setLoading(true);
     try {
@@ -86,13 +131,25 @@ export default function UserSidebarWithWalls({
       } else {
         const errorText = await response.text();
         console.error('❌ UserSidebar: خطأ في جلب المنشورات:', response.status, errorText);
+        
+        toast({
+          title: "خطأ في تحميل المنشورات",
+          description: `تعذر تحميل منشورات ${activeTab === 'public' ? 'الحائط العام' : 'الأصدقاء'}`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('❌ UserSidebar: خطأ في الاتصال بالخادم:', error);
+      
+      toast({
+        title: "خطأ في الاتصال",
+        description: "تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser, activeTab, toast]);
 
   useEffect(() => {
     if (activeView === 'walls' && currentUser) {
@@ -102,13 +159,13 @@ export default function UserSidebarWithWalls({
 
   // تحديث activeView عند تغيير propActiveView
   useEffect(() => {
-    if (propActiveView) {
-      setActiveView(propActiveView);
+    if (activeView) {
+      // setActiveView(propActiveView); // This line is removed as per the new_code
     }
-  }, [propActiveView]);
+  }, [activeView]);
 
-  // معالجة اختيار الصورة
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // معالجة اختيار الصورة مع useCallback للتحسين
+  const handleImageSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
@@ -134,16 +191,16 @@ export default function UserSidebarWithWalls({
       reader.onload = (e) => setImagePreview(e.target?.result as string);
       reader.readAsDataURL(file);
     }
-  };
+  }, [toast]);
 
-  // إزالة الصورة المختارة
-  const removeSelectedImage = () => {
+  // إزالة الصورة المختارة مع useCallback
+  const removeSelectedImage = useCallback(() => {
     setSelectedImage(null);
     setImagePreview('');
-  };
+  }, []);
 
-  // نشر منشور جديد
-  const handleCreatePost = async () => {
+  // نشر منشور جديد مع useCallback للتحسين
+  const handleCreatePost = useCallback(async () => {
     if (!newPostContent.trim() && !selectedImage) {
       toast({
         title: "محتوى مطلوب",
@@ -210,7 +267,7 @@ export default function UserSidebarWithWalls({
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [newPostContent, selectedImage, currentUser, activeTab, toast, removeSelectedImage]);
 
   // معالجة الإعجاب
   const handleLike = async (postId: number, type: 'like' | 'heart' | 'dislike') => {
@@ -276,47 +333,14 @@ export default function UserSidebarWithWalls({
 
   return (
     <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col">
-      {/* Toggle Buttons - يظهر فقط إذا لم يتم التحكم خارجياً */}
-      {!propActiveView && (
-        <div className="flex border-b border-gray-200">
-          <Button
-            variant={activeView === 'users' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'users' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            onClick={() => setActiveView('users')}
-          >
-            <Users className="w-4 h-4 ml-2" />
-            المستخدمون
-          </Button>
-          <Button
-            variant={activeView === 'walls' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'walls' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            onClick={() => setActiveView('walls')}
-          >
-            <Home className="w-4 h-4 ml-2" />
-            الحوائط
-          </Button>
-          <Button
-            variant={activeView === 'rooms' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'rooms' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            onClick={() => setActiveView('rooms')}
-          >
-            <Users className="w-4 h-4 ml-2" />
-            الغرف
-          </Button>
-        </div>
-      )}
+      {/* Header with current view title */}
+      <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+        <h3 className="font-semibold text-gray-800">
+          {activeView === 'users' && 'المستخدمون المتصلون'}
+          {activeView === 'walls' && 'الحوائط'}
+          {activeView === 'rooms' && 'الغرف'}
+        </h3>
+      </div>
 
       {/* Users View */}
       {activeView === 'users' && (
@@ -598,16 +622,26 @@ export default function UserSidebarWithWalls({
 
       {/* Rooms View */}
       {activeView === 'rooms' && (
-        <RoomsPanel
-          currentUser={currentUser}
-          rooms={rooms}
-          currentRoomId={currentRoomId}
-          onRoomChange={onRoomChange}
-          onAddRoom={onAddRoom}
-          onDeleteRoom={onDeleteRoom}
-          onRefreshRooms={onRefreshRooms}
-        />
+        <div className="flex-1 flex flex-col">
+          {roomsLoading && (
+            <div className="flex items-center justify-center p-4 text-muted-foreground">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mr-2"></div>
+              جاري تحميل الغرف...
+            </div>
+          )}
+          <RoomsPanel
+            currentUser={currentUser}
+            rooms={rooms}
+            currentRoomId={currentRoomId}
+            onRoomChange={onRoomChange}
+            onAddRoom={onAddRoom}
+            onDeleteRoom={onDeleteRoom}
+            onRefreshRooms={onRefreshRooms}
+          />
+        </div>
       )}
     </aside>
   );
-}
+});
+
+export default UserSidebarWithWalls;
