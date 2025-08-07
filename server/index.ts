@@ -4,7 +4,7 @@ dotenv.config();
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { initializeDatabase, createDefaultUsers, runMigrations, runDrizzlePush } from "./database-setup";
+import { initializeSystem } from "./database-setup";
 import { setupSecurity } from "./security";
 import path from "path";
 import fs from "fs";
@@ -55,200 +55,126 @@ app.use('/uploads', (req, res, next) => {
     } else if (path.endsWith('.svg')) {
       res.setHeader('Content-Type', 'image/svg+xml');
     }
-    
-    // السماح بالوصول من أي domain
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
   }
 }));
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+// خدمة SVG icons
+const svgPath = path.join(process.cwd(), 'client/public/svgs');
+app.use('/svgs', express.static(svgPath, {
+  maxAge: '7d',
+  etag: true,
+  setHeaders: (res) => {
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=604800');
+  }
+}));
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
+// خدمة الصور والأيقونات
+app.use('/icons', express.static(path.join(process.cwd(), 'client/public/icons'), {
+  maxAge: '7d'
+}));
 
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
+// Health check endpoint - simple and fast
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
   });
-
-  next();
 });
 
-// دالة للبحث عن منفذ متاح
-async function findAvailablePort(startPort: number, maxPort: number = startPort + 100): Promise<number> {
-  const net = await import('net');
-  
-  return new Promise((resolve, reject) => {
-    let port = startPort;
-    
-    function tryPort(portToTry: number) {
-      if (portToTry > maxPort) {
-        reject(new Error(`لم يتم العثور على منفذ متاح بين ${startPort} و ${maxPort}`));
-        return;
-      }
-      
-      const server = net.createServer();
-      
-      server.listen(portToTry, '0.0.0.0', () => {
-        server.close(() => {
-          resolve(portToTry);
-        });
-      });
-      
-      server.on('error', (err: any) => {
-        if (err.code === 'EADDRINUSE') {
-          log(`⚠️ المنفذ ${portToTry} مستخدم، جاري المحاولة مع ${portToTry + 1}`);
-          tryPort(portToTry + 1);
-        } else {
-          reject(err);
-        }
-      });
-    }
-    
-    tryPort(port);
-  });
-}
-
-// دالة إغلاق آمن للخادم
-function setupGracefulShutdown(httpServer: Server) {
-  const shutdown = (signal: string) => {
-    log(`🛑 تم استلام إشارة ${signal}، بدء الإغلاق الآمن...`);
-    
-    httpServer.close((err) => {
-      if (err) {
-        log(`❌ خطأ في إغلاق الخادم: ${err.message}`);
-        process.exit(1);
-      }
-      
-      log('✅ تم إغلاق الخادم بنجاح');
-      process.exit(0);
-    });
-    
-    // فرض الإغلاق بعد 30 ثانية
-    setTimeout(() => {
-      log('⏰ انتهت مهلة الإغلاق الآمن، فرض الإغلاق...');
-      process.exit(1);
-    }, 30000);
-  };
-  
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
-  
-  // معالجة الأخطاء غير المتوقعة
-  process.on('uncaughtException', (error) => {
-    log(`❌ خطأ غير متوقع: ${error.message}`);
-    log(error.stack);
-    shutdown('uncaughtException');
-  });
-  
-  process.on('unhandledRejection', (reason, promise) => {
-    log(`❌ Promise مرفوض غير معالج في ${String(promise)}:`, String(reason));
-    shutdown('unhandledRejection');
-  });
-}
-
-(async () => {
-  let httpServer: Server | null = null;
-  
+// More detailed health endpoint  
+app.get('/api/health', async (req, res) => {
   try {
-    // تسجيل Routes وإنشاء الخادم
-    httpServer = await registerRoutes(app);
-
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      
-      log(`❌ خطأ في التطبيق: ${message} (${status})`);
-      res.status(status).json({ message });
-    });
-
-    // طباعة اسم البيئة الحالية
-    const currentEnv = process.env.NODE_ENV || app.get("env") || "development";
-    log(`🌍 البيئة الحالية: ${currentEnv}`);
-
-    // إعداد Vite أو الملفات الثابتة
-    const fs = await import('fs');
-    const pathModule = await import('path');
-    const distPath = pathModule.resolve(process.cwd(), 'dist');
+    const { checkDatabaseHealth, getDatabaseStatus } = await import('./database-adapter');
+    const dbHealth = await checkDatabaseHealth();
+    const dbStatus = getDatabaseStatus();
     
-    if (fs.existsSync(distPath)) {
-      log('📦 تم العثور على مجلد البناء، استخدام الملفات الثابتة');
-      serveStatic(app);
-    } else {
-      log('🔧 بيئة التطوير، تفعيل Vite');
-      await setupVite(app, httpServer);
-    }
-
-    // تشغيل migrations قاعدة البيانات
-    try {
-      log('🗄️ بدء تشغيل migrations قاعدة البيانات...');
-      await runMigrations();
-      log("✅ تم إكمال migrations قاعدة البيانات بنجاح");
-    } catch (error) {
-      log("⚠️ فشل في migrations، محاولة الدفع الطارئ:", error);
-      try {
-        await runDrizzlePush();
-        log("✅ تم إكمال الدفع الطارئ لقاعدة البيانات بنجاح");
-      } catch (pushError) {
-        log("❌ فشل الدفع الطارئ أيضاً:", pushError);
-        log("🔄 سيتم المتابعة بدون قاعدة بيانات...");
+    res.status(200).json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: Math.floor(process.uptime()),
+      database: {
+        connected: dbHealth,
+        type: dbStatus.type,
+        environment: dbStatus.environment
+      },
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
       }
-    }
-    
-    // تهيئة قاعدة البيانات
-    log('🔄 تهيئة قاعدة البيانات...');
-    await initializeDatabase();
-    await createDefaultUsers();
-    log('✅ تم إكمال تهيئة قاعدة البيانات');
-
-    // تحديد المنفذ المطلوب
-    const preferredPort = process.env.PORT ? Number(process.env.PORT) : 5000;
-    log(`🔍 البحث عن منفذ متاح بدءاً من ${preferredPort}...`);
-    
-    // البحث عن منفذ متاح
-    const availablePort = await findAvailablePort(preferredPort);
-    
-    if (availablePort !== preferredPort) {
-      log(`⚠️ المنفذ ${preferredPort} غير متاح، سيتم استخدام ${availablePort}`);
-    }
-
-    // بدء تشغيل الخادم
-    httpServer.listen(availablePort, "0.0.0.0", () => {
-      log(`🚀 الخادم يعمل بنجاح على:`);
-      log(`   📡 المضيف: http://localhost:${availablePort}`);
-      log(`   🌐 الشبكة: http://0.0.0.0:${availablePort}`);
-      log(`   🔌 Socket.IO: متاح على /socket.io/`);
-      log(`   📊 صحة النظام: http://localhost:${availablePort}/api/health`);
     });
-    
-    // إعداد الإغلاق الآمن
-    setupGracefulShutdown(httpServer);
-    
   } catch (error) {
-    log(`❌ خطأ حرج في بدء تشغيل الخادم: ${error}`);
+    console.error('Health check error:', error);
+    res.status(500).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      error: 'Health check failed'
+    });
+  }
+});
+
+// Initialize database and start server
+async function startServer() {
+  try {
+    // تهيئة النظام (قاعدة البيانات + البيانات الافتراضية)
+    console.log('🚀 بدء تهيئة الخادم...');
+    const systemInitialized = await initializeSystem();
     
-    if (httpServer) {
-      httpServer.close();
+    if (systemInitialized) {
+      console.log('✅ تم تهيئة النظام بنجاح');
+    } else {
+      console.warn('⚠️ تم بدء الخادم مع تحذيرات في تهيئة النظام');
     }
-    
+
+    // Register routes and get the server
+    const server = await registerRoutes(app);
+
+    // Setup Vite in development
+    const app2 = setupVite(app, server);
+
+    // Start the server
+    const PORT = process.env.PORT || 5000;
+    server.listen(PORT, '0.0.0.0', () => {
+      const mode = process.env.NODE_ENV;
+      log(`🚀 الخادم يعمل على المنفذ ${PORT} في وضع ${mode}`);
+      
+      if (mode === 'development') {
+        log(`📱 رابط التطبيق: http://localhost:${PORT}`);
+      }
+      
+      // إظهار معلومات قاعدة البيانات
+      const { getDatabaseStatus } = require('./database-adapter');
+      const dbStatus = getDatabaseStatus();
+      console.log('📊 حالة قاعدة البيانات:', {
+        متصلة: dbStatus.connected ? '✅ نعم' : '❌ لا',
+        النوع: dbStatus.type,
+        البيئة: dbStatus.environment
+      });
+    });
+
+    // Handle graceful shutdown
+    process.on('SIGTERM', () => {
+      console.log('⏹️ إغلاق الخادم...');
+      server.close(() => {
+        console.log('✅ تم إغلاق الخادم بنجاح');
+        process.exit(0);
+      });
+    });
+
+    process.on('SIGINT', () => {
+      console.log('⏹️ إغلاق الخادم...');
+      server.close(() => {
+        console.log('✅ تم إغلاق الخادم بنجاح');
+        process.exit(0);
+      });
+    });
+
+  } catch (error) {
+    console.error('💥 فشل في بدء الخادم:', error);
     process.exit(1);
   }
-})();
+}
+
+// Start the server
+startServer();
