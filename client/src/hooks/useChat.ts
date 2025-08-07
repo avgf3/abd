@@ -612,17 +612,69 @@ export function useChat() {
         transports: ['websocket', 'polling'],
         timeout: 20000,
         reconnection: true,
-        reconnectionAttempts: 10, // زيادة عدد المحاولات
-        reconnectionDelay: 1000, // تقليل التأخير بين المحاولات
-        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 15, // زيادة عدد المحاولات للتعامل مع 502 errors
+        reconnectionDelay: 2000, // زيادة التأخير للسماح للخادم بالتعافي
+        reconnectionDelayMax: 10000, // زيادة الحد الأقصى للتأخير
         randomizationFactor: 0.5,
         autoConnect: true,
-        forceNew: false, // عدم فرض اتصال جديد للسماح بإعادة الاتصال
+        forceNew: false,
+        upgrade: true, // السماح بالترقية من polling إلى websocket
+        rememberUpgrade: true, // تذكر الترقية للاتصالات المستقبلية
         query: {
           userId: user?.id,
           username: user?.username,
           userType: user?.userType
         }
+      });
+
+      // إضافة معالج أخطاء الاتصال المحسن
+      socket.current.on('connect_error', (error) => {
+        console.error('❌ خطأ اتصال Socket.IO:', error);
+        
+        // التعامل مع أخطاء 502 بشكل خاص
+        if (error.message.includes('502') || error.message.includes('Bad Gateway')) {
+          console.warn('🚨 خطأ 502 - الخادم غير متاح مؤقتاً');
+          dispatch({ 
+            type: 'SET_CONNECTION_ERROR', 
+            payload: 'الخادم غير متاح مؤقتاً. جاري المحاولة...' 
+          });
+        } else {
+          dispatch({ 
+            type: 'SET_CONNECTION_ERROR', 
+            payload: `خطأ في الاتصال: ${error.message}` 
+          });
+        }
+      });
+
+      // إضافة معالج لإعادة الاتصال
+      socket.current.on('reconnect_attempt', (attemptNumber) => {
+        console.log(`🔄 محاولة إعادة الاتصال #${attemptNumber}`);
+        dispatch({ 
+          type: 'SET_CONNECTION_ERROR', 
+          payload: `جاري إعادة الاتصال... (المحاولة ${attemptNumber})` 
+        });
+      });
+
+      // إضافة معالج لنجاح إعادة الاتصال
+      socket.current.on('reconnect', (attemptNumber) => {
+        console.log(`✅ تم إعادة الاتصال بنجاح بعد ${attemptNumber} محاولات`);
+        dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+        
+        // إعادة إرسال بيانات المصادقة عند إعادة الاتصال
+        socket.current?.emit('auth', {
+          userId: user.id,
+          username: user.username,
+          userType: user.userType
+        });
+      });
+
+      // إضافة معالج لفشل إعادة الاتصال
+      socket.current.on('reconnect_failed', () => {
+        console.error('❌ فشل في إعادة الاتصال نهائياً');
+        dispatch({ 
+          type: 'SET_CONNECTION_ERROR', 
+          payload: 'فشل في الاتصال بالخادم. يرجى تحديث الصفحة.' 
+        });
       });
 
       setupSocketListeners(user);

@@ -4258,32 +4258,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update profile background color
   app.post('/api/users/update-background-color', async (req, res) => {
     try {
+      console.log('🎨 طلب تحديث لون الخلفية:', req.body);
+      
       const { userId, profileBackgroundColor, color } = req.body;
       
       // دعم كلا من color و profileBackgroundColor
       const backgroundColorValue = profileBackgroundColor || color;
       
-      if (!userId || !backgroundColorValue) {
-        return res.status(400).json({ error: 'معرف المستخدم ولون الخلفية مطلوبان' });
+      // تحسين التحقق من صحة البيانات
+      if (!userId) {
+        console.error('❌ معرف المستخدم مفقود:', { userId, backgroundColorValue });
+        return res.status(400).json({ 
+          error: 'معرف المستخدم مطلوب',
+          details: 'userId is required'
+        });
+      }
+      
+      if (!backgroundColorValue) {
+        console.error('❌ لون الخلفية مفقود:', { userId, backgroundColorValue });
+        return res.status(400).json({ 
+          error: 'لون الخلفية مطلوب',
+          details: 'color or profileBackgroundColor is required'
+        });
       }
 
-      const user = await storage.getUser(userId);
+      // التحقق من صحة معرف المستخدم
+      const userIdNum = parseInt(userId);
+      if (isNaN(userIdNum) || userIdNum <= 0) {
+        console.error('❌ معرف المستخدم غير صحيح:', userId);
+        return res.status(400).json({ 
+          error: 'معرف المستخدم غير صحيح',
+          details: 'userId must be a valid positive number'
+        });
+      }
+
+      const user = await storage.getUser(userIdNum);
       if (!user) {
-        return res.status(404).json({ error: 'المستخدم غير موجود' });
+        console.error('❌ المستخدم غير موجود:', userIdNum);
+        return res.status(404).json({ 
+          error: 'المستخدم غير موجود',
+          details: `User with ID ${userIdNum} not found`
+        });
       }
 
-      await storage.updateUser(userId, { profileBackgroundColor: backgroundColorValue });
+      console.log('✅ تحديث لون الخلفية للمستخدم:', userIdNum, 'إلى:', backgroundColorValue);
+      await storage.updateUser(userIdNum, { profileBackgroundColor: backgroundColorValue });
       
       // إشعار المستخدمين الآخرين عبر WebSocket
-      broadcast({
-        type: 'user_background_updated',
-        data: { userId, profileBackgroundColor: backgroundColorValue }
-      });
+      try {
+        broadcast({
+          type: 'user_background_updated',
+          data: { userId: userIdNum, profileBackgroundColor: backgroundColorValue }
+        });
+        console.log('📡 تم إرسال إشعار تحديث اللون عبر WebSocket');
+      } catch (broadcastError) {
+        console.error('⚠️ فشل في إرسال إشعار WebSocket:', broadcastError);
+        // لا نفشل العملية بسبب فشل الإشعار
+      }
 
-      res.json({ success: true, message: 'تم تحديث لون خلفية البروفايل بنجاح' });
+      res.json({ 
+        success: true, 
+        message: 'تم تحديث لون خلفية البروفايل بنجاح',
+        data: { userId: userIdNum, profileBackgroundColor: backgroundColorValue }
+      });
     } catch (error) {
-      console.error('خطأ في تحديث لون الخلفية:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
+      console.error('❌ خطأ في تحديث لون الخلفية:', error);
+      res.status(500).json({ 
+        error: 'خطأ في الخادم',
+        details: error instanceof Error ? error.message : 'Unknown server error'
+      });
     }
   });
 
@@ -5190,6 +5233,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('خطأ في جلب معلومات غرفة البث:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // ========== صحة النظام والتشخيص ==========
+  
+  // نقطة فحص صحة النظام الشاملة
+  app.get('/api/health', async (req, res) => {
+    const healthCheck = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      pid: process.pid,
+      node_version: process.version,
+      environment: process.env.NODE_ENV || 'development',
+      services: {
+        database: 'unknown',
+        websocket: 'unknown',
+        static_files: 'unknown'
+      },
+      errors: []
+    };
+
+    try {
+      // فحص قاعدة البيانات
+      try {
+        const testUser = await storage.getUser(1);
+        healthCheck.services.database = 'healthy';
+      } catch (dbError) {
+        healthCheck.services.database = 'error';
+        healthCheck.errors.push(`Database: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`);
+      }
+
+      // فحص WebSocket/Socket.IO
+      try {
+        if (io && typeof io.emit === 'function') {
+          healthCheck.services.websocket = 'healthy';
+        } else {
+          healthCheck.services.websocket = 'not_initialized';
+          healthCheck.errors.push('WebSocket: Socket.IO server not properly initialized');
+        }
+      } catch (wsError) {
+        healthCheck.services.websocket = 'error';
+        healthCheck.errors.push(`WebSocket: ${wsError instanceof Error ? wsError.message : 'Unknown error'}`);
+      }
+
+      // فحص الملفات الثابتة
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const crownSvgPath = path.join(process.cwd(), 'svgs', 'crown.svg');
+        if (fs.existsSync(crownSvgPath)) {
+          healthCheck.services.static_files = 'healthy';
+        } else {
+          healthCheck.services.static_files = 'missing_files';
+          healthCheck.errors.push('Static Files: crown.svg not found');
+        }
+      } catch (fileError) {
+        healthCheck.services.static_files = 'error';
+        healthCheck.errors.push(`Static Files: ${fileError instanceof Error ? fileError.message : 'Unknown error'}`);
+      }
+
+      // تحديد الحالة العامة
+      if (healthCheck.errors.length > 0) {
+        healthCheck.status = 'degraded';
+      }
+
+      // إرسال الاستجابة
+      res.status(healthCheck.status === 'ok' ? 200 : 503).json(healthCheck);
+
+    } catch (error) {
+      console.error('❌ خطأ في فحص صحة النظام:', error);
+      res.status(500).json({
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Unknown health check error'
+      });
+    }
+  });
+
+  // نقطة فحص بسيطة للتحقق السريع
+  app.get('/api/ping', (req, res) => {
+    res.json({ 
+      status: 'pong', 
+      timestamp: new Date().toISOString(),
+      server: 'running'
+    });
+  });
+
+  // نقطة فحص Socket.IO
+  app.get('/api/socket-status', (req, res) => {
+    try {
+      const socketInfo = {
+        initialized: !!io,
+        connected_clients: io ? io.engine.clientsCount : 0,
+        transport_types: io ? Object.keys(io.engine.transports) : [],
+        status: io ? 'running' : 'not_initialized'
+      };
+      
+      res.json(socketInfo);
+    } catch (error) {
+      res.status(500).json({
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown socket error'
+      });
     }
   });
 

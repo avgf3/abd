@@ -571,11 +571,31 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       setIsLoading(true);
       setSelectedTheme(theme);
       
+      // التحقق من وجود معرف المستخدم
+      if (!currentUser?.id) {
+        toast({
+          title: "خطأ",
+          description: "لم يتم العثور على معرف المستخدم. يرجى تسجيل الدخول مرة أخرى.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // التحقق من صحة اللون
+      if (!theme || theme.trim() === '') {
+        toast({
+          title: "خطأ", 
+          description: "يرجى اختيار لون صحيح.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const response = await apiRequest('/api/users/update-background-color', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          userId: currentUser?.id,
+          userId: currentUser.id,
           color: theme 
         }),
       });
