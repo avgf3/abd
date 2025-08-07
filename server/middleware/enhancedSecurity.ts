@@ -3,15 +3,7 @@ import { storage } from '../storage';
 import { createError, ERROR_MESSAGES } from './errorHandler';
 import { log } from '../utils/productionLogger';
 
-// تمديد نوع Request
-declare global {
-  namespace Express {
-    interface Request {
-      user?: any;
-      session?: any;
-    }
-  }
-}
+// تمديد نوع Request - moved to server/types/api.ts
 
 // أنواع الحماية المختلفة
 export enum ProtectionLevel {
@@ -87,7 +79,16 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     }
 
     // إضافة بيانات المستخدم للطلب
-    req.user = user;
+          req.user = {
+        id: user.id,
+        username: user.username,
+        userType: user.userType as any,
+        isOnline: user.isOnline,
+        isBanned: user.isBanned,
+        isMuted: user.isMuted,
+        lastSeen: user.lastSeen,
+        createdAt: user.createdAt
+      };
     next();
 
   } catch (error) {

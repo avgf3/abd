@@ -37,6 +37,23 @@ export interface ChatUser {
   roomColor?: string;
   userType?: string;
   
+  // خصائص مفقودة - إضافة حديثة
+  joinDate?: Date;
+  createdAt?: Date;
+  relation?: string;
+  isMuted?: boolean;
+  isBanned?: boolean;
+  isBlocked?: boolean;
+  totalPoints?: number;
+  levelProgress?: number;
+  lastActive?: Date;
+  achievements?: any[];
+  isActive?: boolean;
+  muteExpiry?: Date | null;
+  banExpiry?: Date | null;
+  currentRoom?: string;
+  settings?: any;
+  
   // تم إضافة خصائص جديدة
   ignoredUsers?: number[];
   blockedUsers?: number[];
@@ -65,7 +82,7 @@ export type WebSocketMessage = {
         'onlineUsers' | 'userUpdated' | 'warning' | 'error' | 'auth' | 
         'friendRequestReceived' | 'friendRequestAccepted' | 'friendRequestRejected' |
         'userKicked' | 'userMuted' | 'userBanned' | 'userBlocked' |
-        'userPromoted' | 'kick' | 'points' | 'levelUp' | 'colorChanged' |
+        'userPromoted' | 'kick' | 'kicked' | 'points' | 'levelUp' | 'colorChanged' |
         'userVisibilityChanged' | 'themeChanged' | 'effectChanged' |
         'profileUpdated' | 'announcement' | 'roomUpdate' | 
         'broadcastUpdate' | 'newWallPost' | 'wallPostReaction' | 'wallPostDeleted' |

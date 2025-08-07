@@ -77,7 +77,7 @@ export interface IStorage {
   getWallPostsByUsers(userIds: number[]): Promise<any[]>;
   getWallPost(postId: number): Promise<any>;
   deleteWallPost(postId: number): Promise<void>;
-  addWallPostReaction(reactionData: any): Promise<any>;
+  addWallReaction(reactionData: any): Promise<any>;
   getWallPostWithReactions(postId: number): Promise<any | null>;
   
   // Room operations
@@ -141,7 +141,7 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(user).returning();
+    const result = await db.insert(users).values(user as any).returning();
     return result[0];
   }
 
@@ -209,7 +209,7 @@ export class PostgreSQLStorage implements IStorage {
 
   // Message operations
   async createMessage(message: InsertMessage): Promise<Message> {
-    const result = await db.insert(messages).values(message).returning();
+    const result = await db.insert(messages).values(message as any).returning();
     return result[0];
   }
 
@@ -871,7 +871,7 @@ export class PostgreSQLStorage implements IStorage {
 
   // Notification operations
   async createNotification(notification: InsertNotification): Promise<Notification> {
-    const result = await db.insert(notifications).values(notification).returning();
+    const result = await db.insert(notifications).values(notification as any).returning();
     return result[0];
   }
 

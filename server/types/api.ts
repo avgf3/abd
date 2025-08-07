@@ -22,6 +22,7 @@ export interface AuthenticatedUser {
   isBanned: boolean;
   isMuted: boolean;
   lastSeen: Date | null;
+  createdAt?: Date;
 }
 
 // أنواع الأدوار
@@ -361,7 +362,7 @@ export interface BackupInfo {
 }
 
 // تصدير الأنواع المفيدة
-export {
+export type {
   Request as ExpressRequest,
   Response as ExpressResponse
 };

@@ -2,13 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
 
 // تمديد نوع Request لإضافة خاصية user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: any;
-    }
-  }
-}
+// User type is now defined in server/types/api.ts
 
 /**
  * Middleware للتحقق من صحة الجلسة
@@ -51,7 +45,16 @@ export const validateSession = async (req: Request, res: Response, next: NextFun
     }
     
     // إضافة بيانات المستخدم إلى الطلب
-    req.user = user;
+    req.user = {
+      id: user.id,
+      username: user.username,
+      userType: user.userType as any,
+      isOnline: user.isOnline,
+      isBanned: user.isBanned,
+      isMuted: user.isMuted,
+      lastSeen: user.lastSeen,
+      createdAt: user.createdAt
+    };
     next();
     
   } catch (error) {
@@ -82,7 +85,16 @@ export const validateSessionOptional = async (req: Request, res: Response, next:
     
     const user = await storage.getUser(userIdNumber);
     if (user && user.isOnline) {
-      req.user = user;
+      req.user = {
+        id: user.id,
+        username: user.username,
+        userType: user.userType as any,
+        isOnline: user.isOnline,
+        isBanned: user.isBanned,
+        isMuted: user.isMuted,
+        lastSeen: user.lastSeen,
+        createdAt: user.createdAt
+      };
     }
     
     next();
