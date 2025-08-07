@@ -287,20 +287,71 @@ export function useChat() {
         (socket.current as any).userListInterval = null;
       }
       
-      // عدم إعادة الاتصال التلقائي في حالات معينة
+      // معالجة أسباب الانقطاع المختلفة
       if (reason === 'io server disconnect') {
-        // Server initiated disconnect - don't reconnect automatically
+        // Server initiated disconnect - إعادة الاتصال بعد تأخير
         console.log('❌ قطع الاتصال من قبل الخادم');
         dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'تم قطع الاتصال من قبل الخادم' });
-      } else if (reason === 'transport close' || reason === 'transport error') {
-        // Network issues - limited reconnection
-        console.log('🔄 مشكلة في الشبكة - إعادة محاولة الاتصال...');
+        // إعادة الاتصال بعد 2 ثانية
         setTimeout(() => {
-          if (!socket.current?.connected) {
+          if (!socket.current?.connected && user) {
+            console.log('🔄 محاولة إعادة الاتصال...');
             socket.current?.connect();
           }
-        }, 3000);
+        }, 2000);
+      } else if (reason === 'transport close' || reason === 'transport error') {
+        // Network issues - إعادة المحاولة سريعاً
+        console.log('🔄 مشكلة في الشبكة - إعادة محاولة الاتصال...');
+        dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'مشكلة في الاتصال بالشبكة' });
       }
+      // Socket.IO سيتولى إعادة الاتصال تلقائياً في معظم الحالات
+    });
+    
+    // معالج إعادة الاتصال
+    socket.current.on('reconnect', (attemptNumber) => {
+      console.log(`✅ تمت إعادة الاتصال بنجاح بعد ${attemptNumber} محاولة`);
+      dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+      
+      // إعادة المصادقة بعد إعادة الاتصال
+      if (user) {
+        console.log('🔐 إعادة المصادقة...');
+        if (user.userType === 'guest') {
+          socket.current?.emit('authenticate', {
+            username: user.username,
+            userType: user.userType
+          });
+        } else {
+          socket.current?.emit('auth', {
+            userId: user.id,
+            username: user.username,
+            userType: user.userType
+          });
+        }
+      }
+    });
+    
+    // معالج محاولة إعادة الاتصال
+    socket.current.on('reconnect_attempt', (attemptNumber) => {
+      console.log(`🔄 محاولة إعادة الاتصال رقم ${attemptNumber}...`);
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: `محاولة إعادة الاتصال (${attemptNumber})...` });
+    });
+    
+    // معالج فشل إعادة الاتصال
+    socket.current.on('reconnect_failed', () => {
+      console.log('❌ فشلت جميع محاولات إعادة الاتصال');
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل الاتصال بالخادم نهائياً' });
+    });
+    
+    // معالج خطأ إعادة الاتصال
+    socket.current.on('reconnect_error', (error) => {
+      console.log('❌ خطأ في إعادة الاتصال:', error.message);
+    });
+    
+    // معالج ping من الخادم
+    socket.current.on('ping', (data) => {
+      // الرد فوراً بـ pong
+      socket.current?.emit('pong', { timestamp: data.timestamp, receivedAt: Date.now() });
     });
 
     socket.current.on('socketConnected', (data) => {
@@ -561,10 +612,17 @@ export function useChat() {
         transports: ['websocket', 'polling'],
         timeout: 20000,
         reconnection: true,
-        reconnectionAttempts: 3,
-        reconnectionDelay: 2000,
+        reconnectionAttempts: 10, // زيادة عدد المحاولات
+        reconnectionDelay: 1000, // تقليل التأخير بين المحاولات
+        reconnectionDelayMax: 5000,
+        randomizationFactor: 0.5,
         autoConnect: true,
-        forceNew: true // فرض إنشاء اتصال جديد
+        forceNew: false, // عدم فرض اتصال جديد للسماح بإعادة الاتصال
+        query: {
+          userId: user?.id,
+          username: user?.username,
+          userType: user?.userType
+        }
       });
 
       setupSocketListeners(user);
