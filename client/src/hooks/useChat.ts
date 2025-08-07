@@ -545,12 +545,17 @@ export function useChat() {
               });
             }
             
-            // طلب قائمة محدثة من المستخدمين المتصلين في الغرفة
+            // طلب قائمة محدثة من المستخدمين - مع تقليل الطلبات المتكررة
             setTimeout(() => {
-              if (socket.current?.connected) {
+              if (socket.current?.connected && !isLoadingMessages.current) {
                 socket.current.emit('requestOnlineUsers');
+                isLoadingMessages.current = true;
+                // منع الطلبات المتكررة لمدة 5 ثوان
+                setTimeout(() => {
+                  isLoadingMessages.current = false;
+                }, 5000);
               }
-            }, 2000); // تقليل الطلبات أكثر - 2 ثانية
+            }, 3000); // زيادة التأخير لتجنب الطلبات المفرطة
             break;
             
           default:
@@ -571,10 +576,17 @@ export function useChat() {
     dispatch({ type: 'SET_ONLINE_USERS', payload: [user] });
 
     try {
-      // تنظيف الاتصال السابق إذا كان موجوداً
+      // تنظيف شامل للاتصال السابق لتجنب التضارب
       if (socket.current) {
+        // إزالة جميع المستمعين أولاً
+        socket.current.removeAllListeners();
+        // قطع الاتصال
         socket.current.disconnect();
+        // تنظيف المرجع
         socket.current = null;
+        
+        // انتظار قصير للتأكد من التنظيف الكامل
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       // إنشاء اتصال Socket.IO جديد
@@ -585,20 +597,21 @@ export function useChat() {
       
       socket.current = io(serverUrl, {
         transports: ['websocket', 'polling'],
-        timeout: 20000,
+        timeout: 30000, // زيادة timeout لتجنب انقطاع الاتصال السريع
         reconnection: true,
-        reconnectionAttempts: 15, // زيادة عدد المحاولات للتعامل مع 502 errors
-        reconnectionDelay: 2000, // زيادة التأخير للسماح للخادم بالتعافي
-        reconnectionDelayMax: 10000, // زيادة الحد الأقصى للتأخير
-        randomizationFactor: 0.5,
+        reconnectionAttempts: 5, // تقليل المحاولات لتجنب الطلبات المفرطة
+        reconnectionDelay: 3000, // زيادة التأخير لإعطاء الخادم وقت أكثر
+        reconnectionDelayMax: 15000, // زيادة الحد الأقصى
+        randomizationFactor: 0.3, // تقليل العشوائية لاتصال أكثر استقراراً
         autoConnect: true,
-        forceNew: false,
-        upgrade: true, // السماح بالترقية من polling إلى websocket
-        rememberUpgrade: true, // تذكر الترقية للاتصالات المستقبلية
+        forceNew: true, // إجبار إنشاء اتصال جديد لتجنب التضارب
+        upgrade: true,
+        rememberUpgrade: true,
         query: {
           userId: user?.id,
           username: user?.username,
-          userType: user?.userType
+          userType: user?.userType,
+          timestamp: Date.now() // إضافة timestamp لتجنب التخزين المؤقت
         }
       });
 
@@ -621,32 +634,44 @@ export function useChat() {
         }
       });
 
-      // إضافة معالج لإعادة الاتصال
+      // معالج إعادة الاتصال المحسن - يقلل من الطلبات المتكررة
+      let reconnectAttempts = 0;
+      const maxReconnectAttempts = 3;
+      
       socket.current.on('reconnect_attempt', (attemptNumber) => {
-        dispatch({ 
-          type: 'SET_CONNECTION_ERROR', 
-          payload: `جاري إعادة الاتصال... (المحاولة ${attemptNumber})` 
-        });
+        reconnectAttempts = attemptNumber;
+        if (attemptNumber <= maxReconnectAttempts) {
+          dispatch({ 
+            type: 'SET_CONNECTION_ERROR', 
+            payload: `إعادة الاتصال... (${attemptNumber}/${maxReconnectAttempts})` 
+          });
+        }
       });
 
-      // إضافة معالج لنجاح إعادة الاتصال
-      socket.current.on('reconnect', (attemptNumber) => {
+      // معالج نجاح إعادة الاتصال - مع تأخير لتجنب الطلبات المتكررة
+      socket.current.on('reconnect', () => {
         dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+        reconnectAttempts = 0;
         
-        // إعادة إرسال بيانات المصادقة عند إعادة الاتصال
-        socket.current?.emit('auth', {
-          userId: user.id,
-          username: user.username,
-          userType: user.userType
-        });
+        // تأخير إرسال المصادقة لتجنب التضارب
+        setTimeout(() => {
+          if (socket.current?.connected && user) {
+            socket.current.emit('auth', {
+              userId: user.id,
+              username: user.username,
+              userType: user.userType,
+              reconnect: true
+            });
+          }
+        }, 1000);
       });
 
-      // إضافة معالج لفشل إعادة الاتصال
+      // معالج فشل إعادة الاتصال النهائي
       socket.current.on('reconnect_failed', () => {
-        console.error('❌ فشل في إعادة الاتصال نهائياً');
+        console.warn('⚠️ فشل في إعادة الاتصال بعد عدة محاولات');
         dispatch({ 
           type: 'SET_CONNECTION_ERROR', 
-          payload: 'فشل في الاتصال بالخادم. يرجى تحديث الصفحة.' 
+          payload: 'فقدان الاتصال. يرجى إعادة تحميل الصفحة.' 
         });
       });
 
@@ -738,17 +763,27 @@ export function useChat() {
     return sendMessage(content, messageType, undefined, roomId);
   }, [sendMessage]);
 
-  // Disconnect function
+  // Disconnect function - محسنة لتجنب التضارب
   const disconnect = useCallback(() => {
     if (socket.current) {
+      // إزالة جميع المستمعين أولاً لتجنب التداخل
+      socket.current.removeAllListeners();
+      // قطع الاتصال
       socket.current.disconnect();
+      // تنظيف المرجع
       socket.current = null;
     }
     
+    // إعادة تعيين الحالة بالكامل
     dispatch({ type: 'SET_CURRENT_USER', payload: null });
     dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+    dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
     dispatch({ type: 'SET_ONLINE_USERS', payload: [] });
     dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: [] });
+    dispatch({ type: 'SET_LOADING', payload: false });
+    
+    // تنظيف متغيرات التحكم
+    isLoadingMessages.current = false;
   }, []);
 
   // Ignore/Unignore user functions

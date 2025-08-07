@@ -1364,13 +1364,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let heartbeatInterval: NodeJS.Timeout | null = null;
     let connectionTimeout: NodeJS.Timeout | null = null;
     
-    // إعداد timeout للمصادقة (30 ثانية)
+    // إعداد timeout للمصادقة (60 ثانية - زيادة المهلة لتجنب قطع الاتصال المفرط)
     connectionTimeout = setTimeout(() => {
       if (!isAuthenticated) {
+        console.warn(`⚠️ انتهت مهلة المصادقة للاتصال ${socket.id}`);
         socket.emit('message', { type: 'error', message: 'انتهت مهلة المصادقة' });
         socket.disconnect(true);
       }
-    }, 30000);
+    }, 60000); // زيادة المهلة إلى 60 ثانية
     
     // إرسال رسالة ترحيب فورية
     socket.emit('socketConnected', { 
@@ -1401,6 +1402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       heartbeatInterval = setInterval(() => {
         if (socket.connected) {
           if (missedPongs >= maxMissedPongs) {
+            console.warn(`⚠️ فقدان الاتصال مع ${socket.id} بعد ${maxMissedPongs} محاولات`);
             socket.disconnect(true);
             cleanup();
             return;
@@ -1411,7 +1413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           cleanup();
         }
-      }, 20000); // كل 20 ثانية
+      }, 30000); // تقليل التكرار إلى كل 30 ثانية
       
       // إعادة تعيين العداد عند استلام pong
       socket.on('pong', (data) => {
@@ -1427,132 +1429,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     };
 
-    // معالج المصادقة للضيوف
-    socket.on('authenticate', async (userData: { username: string; userType: string }) => {
+    // معالج المصادقة الموحد - يدعم الضيوف والمستخدمين المسجلين
+    socket.on('auth', async (userData: { userId?: number; username?: string; userType?: string; reconnect?: boolean }) => {
       try {
-        if (!userData.username || !userData.userType) {
-          socket.emit('error', { message: 'بيانات المصادقة غير مكتملة' });
+        // منع المصادقة المتكررة
+        if (isAuthenticated && !userData.reconnect) {
+          console.warn(`⚠️ محاولة مصادقة متكررة من ${socket.id}`);
           return;
         }
-
-        // البحث عن المستخدم أو إنشاؤه
-        let user = await storage.getUserByUsername(userData.username);
         
-        if (!user) {
-          // إنشاء مستخدم ضيف جديد
-          const newUser = {
-            username: userData.username,
-            userType: userData.userType,
-            role: userData.userType,
-            isOnline: true,
-            joinDate: new Date(),
-            createdAt: new Date()
-          };
+        let user;
+        
+        // إذا كان هناك userId، فهو مستخدم مسجل
+        if (userData.userId) {
+          user = await storage.getUser(userData.userId);
+          if (!user) {
+            socket.emit('error', { message: 'المستخدم غير موجود' });
+            return;
+          }
+        } 
+        // إذا كان هناك username فقط، فهو ضيف
+        else if (userData.username && userData.userType) {
+          // البحث عن المستخدم أو إنشاؤه
+          user = await storage.getUserByUsername(userData.username);
           
-          user = await storage.createUser(newUser);
-          } else {
+          if (!user) {
+            // إنشاء مستخدم ضيف جديد
+            const newUser = {
+              username: userData.username,
+              userType: userData.userType,
+              role: userData.userType,
+              isOnline: true,
+              joinDate: new Date(),
+              createdAt: new Date()
+            };
+            
+            user = await storage.createUser(newUser);
           }
-
-        // تحديث معلومات Socket
-        (socket as CustomSocket).userId = user.id;
-        (socket as CustomSocket).username = user.username;
-        (socket as CustomSocket).userType = user.userType;
-        (socket as CustomSocket).isAuthenticated = true;
-        
-        // إضافة المستخدم لقائمة المتصلين الفعليين
-        connectedUsers.set(user.id, {
-          user: user,
-          socketId: socket.id,
-          room: 'general',
-          lastSeen: new Date()
-        });
-        // تحديث حالة المستخدم إلى متصل في قاعدة البيانات
-        try {
-          await storage.setUserOnlineStatus(user.id, true);
-          } catch (updateError) {
-          console.error('خطأ في تحديث حالة المستخدم:', updateError);
-        }
-
-        // جلب غرف المستخدم
-        const userRooms = await storage.getUserRooms(user.id);
-        // التأكد من الانضمام للغرفة العامة
-        if (!userRooms.includes('general')) {
-          await storage.joinRoom(user.id, 'general');
-          }
-        
-        // الانضمام للغرفة العامة في Socket.IO
-        socket.join('room_general');
-        (socket as any).currentRoom = 'general';
-        // انضمام للغرف الأخرى إن وجدت
-        for (const roomId of userRooms) {
-          if (roomId !== 'general') {
-            socket.join(`room_${roomId}`);
-            }
-        }
-        
-        // إرسال تأكيد المصادقة
-        socket.emit('authenticated', { 
-          message: 'تم الاتصال بنجاح',
-          user: user 
-        });
-
-        // انتظار قصير للتأكد من التحديث
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        // جلب وإرسال قائمة المستخدمين المتصلين في الغرفة العامة
-        // جلب قائمة المستخدمين المتصلين فعلياً من connectedUsers
-        const roomUsers = Array.from(connectedUsers.values())
-          .filter(conn => conn.room === 'general')
-          .map(conn => conn.user);
-        
-        // إرسال رسالة انضمام للغرفة
-        socket.emit('message', {
-          type: 'roomJoined',
-          roomId: 'general',
-          users: roomUsers
-        });
-        
-        // جلب المستخدمين من قاعدة البيانات أيضاً
-        const dbUsers = await storage.getOnlineUsersInRoom('general');
-        
-        // دمج القوائم وإزالة التكرارات
-        const allUsers = [...roomUsers];
-        for (const dbUser of dbUsers) {
-          if (!allUsers.find(u => u.id === dbUser.id)) {
-            allUsers.push(dbUser);
-          }
-        }
-        
-        // إرسال قائمة المستخدمين الكاملة
-        socket.emit('message', { 
-          type: 'onlineUsers', 
-          users: allUsers
-        });
-        
-        // إخبار باقي المستخدمين بانضمام مستخدم جديد
-        socket.to('room_general').emit('message', {
-          type: 'userJoinedRoom',
-          username: user.username,
-          userId: user.id,
-          roomId: 'general'
-        });
-        
-        // إرسال قائمة محدثة لجميع المستخدمين في الغرفة
-        io.to('room_general').emit('message', {
-          type: 'onlineUsers',
-          users: allUsers
-        });
-        
-        } catch (error) {
-        console.error('❌ خطأ في مصادقة الضيف:', error);
-        socket.emit('error', { message: 'خطأ في المصادقة' });
-      }
-    });
-
-    // معالج المصادقة المحسن
-    socket.on('auth', async (userData: { userId?: number; username?: string; userType?: string }) => {
-      try {
-        if (!userData.userId) {
+        } else {
           socket.emit('error', { message: 'بيانات المصادقة غير مكتملة' });
           return;
         }
@@ -1569,6 +1483,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (socket as CustomSocket).username = user.username;
         (socket as CustomSocket).userType = user.userType;
         (socket as CustomSocket).isAuthenticated = true;
+        isAuthenticated = true;
+        
+        // تنظيف timeout المصادقة
+        if (connectionTimeout) {
+          clearTimeout(connectionTimeout);
+          connectionTimeout = null;
+        }
+        
+        // بدء heartbeat
+        startHeartbeat();
         
         // إضافة المستخدم لقائمة المتصلين الفعليين
         connectedUsers.set(user.id, {
@@ -1717,35 +1641,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-    // طلب تحديث قائمة المستخدمين المتصلين
+    // طلب تحديث قائمة المستخدمين المتصلين - مع حماية من الطلبات المفرطة
+    let lastUserListRequest = 0;
+    const USER_LIST_THROTTLE = 3000; // 3 ثوان بين الطلبات
+    
     socket.on('requestOnlineUsers', async () => {
       try {
         if (!(socket as CustomSocket).isAuthenticated) {
           return;
         }
 
+        // منع الطلبات المتكررة
+        const now = Date.now();
+        if (now - lastUserListRequest < USER_LIST_THROTTLE) {
+          console.warn(`⚠️ طلب متكرر للمستخدمين من ${socket.id} - تم تجاهله`);
+          return;
+        }
+        lastUserListRequest = now;
+
         const currentRoom = (socket as any).currentRoom || 'general';
-        // الحصول على المستخدمين المتصلين فعلياً في هذه الغرفة من connectedUsers
+        
+        // استخدام connectedUsers فقط لتحسين الأداء
         const roomUsers = Array.from(connectedUsers.values())
           .filter(conn => conn.room === currentRoom)
           .map(conn => conn.user);
         
-        // جلب المستخدمين من قاعدة البيانات أيضاً
-        const dbUsers = await storage.getOnlineUsersInRoom(currentRoom);
-        
-        // دمج القوائم وإزالة التكرارات
-        const allUsers = [...roomUsers];
-        for (const dbUser of dbUsers) {
-          if (!allUsers.find(u => u.id === dbUser.id)) {
-            allUsers.push(dbUser);
-          }
-        }
-        
-        // إرسال القائمة المدمجة للمستخدم الذي طلبها
+        // إرسال قائمة المستخدمين المتصلين فعلياً
         socket.emit('message', { 
           type: 'onlineUsers', 
-          users: allUsers 
+          users: roomUsers 
         });
+        
+        console.log(`📋 تم إرسال قائمة ${roomUsers.length} مستخدم للغرفة ${currentRoom} إلى ${socket.id}`);
       } catch (error) {
         console.error('❌ خطأ في جلب المستخدمين المتصلين:', error);
       }
@@ -2558,14 +2485,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
             
-            // إرسال قائمة محدثة للمستخدمين في الغرفة
+            // إرسال قائمة محدثة للمستخدمين في الغرفة فقط (تقليل الطلبات)
             io.to(`room_${currentRoom}`).emit('message', { 
-              type: 'onlineUsers', 
-              users: allUsers 
-            });
-            
-            // إرسال أيضاً لجميع المستخدمين المتصلين (للتأكد)
-            io.emit('message', { 
               type: 'onlineUsers', 
               users: allUsers 
             });
@@ -2629,7 +2550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('خطأ في تنظيف الجلسات:', error);
     }
-  }, 120000); // كل دقيقتين بدلاً من 30 ثانية
+  }, 300000); // كل 5 دقائق لتقليل الضغط على الخادم
 
   // بدء التنظيف الدوري لقاعدة البيانات
   const dbCleanupInterval = databaseCleanup.startPeriodicCleanup(6); // كل 6 ساعات
