@@ -2701,6 +2701,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // تحديث حالة المستخدم في قاعدة البيانات
           await storage.setUserOnlineStatus(userId, false);
           
+          // إزالة المستخدم من جميع الغرف في قاعدة البيانات
+          await storage.leaveRoom(userId, currentRoom);
+          
           // إزالة المستخدم من جميع الغرف
           socket.leave(userId.toString());
           
@@ -2774,6 +2777,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // إرسال قائمة محدثة للمستخدمين في الغرفة
             io.to(`room_${currentRoom}`).emit('message', { 
+              type: 'onlineUsers', 
+              users: allUsers 
+            });
+            
+            // إرسال أيضاً لجميع المستخدمين المتصلين (للتأكد)
+            io.emit('message', { 
               type: 'onlineUsers', 
               users: allUsers 
             });

@@ -39,12 +39,23 @@ interface FriendRequestsPanelProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: ChatUser | null;
+  onAcceptRequest?: (requestId: number) => void;
+  onRejectRequest?: (requestId: number) => void;
+  onCancelRequest?: (requestId: number) => void;
+  friendRequests?: {
+    incoming: any[];
+    outgoing: any[];
+  };
 }
 
 export default function FriendRequestsPanel({ 
   isOpen, 
   onClose, 
-  currentUser 
+  currentUser,
+  onAcceptRequest,
+  onRejectRequest,
+  onCancelRequest,
+  friendRequests
 }: FriendRequestsPanelProps) {
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<FriendRequest[]>([]);
@@ -54,9 +65,17 @@ export default function FriendRequestsPanel({
 
   useEffect(() => {
     if (isOpen && currentUser) {
-      fetchFriendRequests();
+      if (friendRequests) {
+        // استخدام البيانات الممررة من المكون الأب
+        setIncomingRequests(friendRequests.incoming || []);
+        setOutgoingRequests(friendRequests.outgoing || []);
+        setLoading(false);
+      } else {
+        // جلب البيانات إذا لم تكن ممررة
+        fetchFriendRequests();
+      }
     }
-  }, [isOpen, currentUser]);
+  }, [isOpen, currentUser, friendRequests]);
 
   const fetchFriendRequests = async () => {
     if (!currentUser) return;
@@ -84,20 +103,25 @@ export default function FriendRequestsPanel({
   };
 
   const handleAcceptRequest = async (request: FriendRequest) => {
-    try {
-      await apiRequest(`/api/friend-requests/${request.id}/accept`, {
-        method: 'POST',
-        body: { userId: currentUser?.id }
-      });
-      
-      toast({
-        title: 'تم قبول الطلب',
-        description: `تم قبول طلب صداقة ${request.user.username}`,
-        variant: 'default'
-      });
-      
-      fetchFriendRequests();
-    } catch (error) {
+    if (onAcceptRequest) {
+      // استخدام الدالة الممررة من المكون الأب
+      onAcceptRequest(request.id);
+    } else {
+      // الطريقة التقليدية
+      try {
+        await apiRequest(`/api/friend-requests/${request.id}/accept`, {
+          method: 'POST',
+          body: { userId: currentUser?.id }
+        });
+        
+        toast({
+          title: 'تم قبول الطلب',
+          description: `تم قبول طلب صداقة ${request.user.username}`,
+          variant: 'default'
+        });
+        
+        fetchFriendRequests();
+      } catch (error) {
       console.error('Accept request error:', error);
       toast({
         title: 'خطأ',
@@ -108,20 +132,25 @@ export default function FriendRequestsPanel({
   };
 
   const handleDeclineRequest = async (request: FriendRequest) => {
-    try {
-      await apiRequest(`/api/friend-requests/${request.id}/decline`, {
-        method: 'POST',
-        body: { userId: currentUser?.id }
-      });
-      
-      toast({
-        title: 'تم رفض الطلب',
-        description: `تم رفض طلب صداقة ${request.user.username}`,
-        variant: 'default'
-      });
-      
-      fetchFriendRequests();
-    } catch (error) {
+    if (onRejectRequest) {
+      // استخدام الدالة الممررة من المكون الأب
+      onRejectRequest(request.id);
+    } else {
+      // الطريقة التقليدية
+      try {
+        await apiRequest(`/api/friend-requests/${request.id}/decline`, {
+          method: 'POST',
+          body: { userId: currentUser?.id }
+        });
+        
+        toast({
+          title: 'تم رفض الطلب',
+          description: `تم رفض طلب صداقة ${request.user.username}`,
+          variant: 'default'
+        });
+        
+        fetchFriendRequests();
+      } catch (error) {
       console.error('Decline request error:', error);
       toast({
         title: 'خطأ',
