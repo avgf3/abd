@@ -371,12 +371,12 @@ export function useChat() {
       // طلب قائمة المستخدمين المتصلين مرة واحدة
       socket.current?.emit('requestOnlineUsers');
       
-      // تحديث دوري محدود لقائمة المستخدمين كل دقيقة
+      // تحديث دوري محدود لقائمة المستخدمين كل 3 دقائق فقط
       const userListInterval = setInterval(() => {
         if (socket.current?.connected) {
           socket.current.emit('requestOnlineUsers');
         }
-      }, 60000); // كل دقيقة بدلاً من 30 ثانية
+      }, 180000); // كل 3 دقائق بدلاً من دقيقة واحدة
       
       // حفظ معرف الفترة الزمنية للتنظيف لاحقاً
       (socket.current as any).userListInterval = userListInterval;
@@ -574,7 +574,7 @@ export function useChat() {
               if (socket.current?.connected) {
                 socket.current.emit('requestOnlineUsers');
               }
-            }, 500); // زيادة التأخير لتقليل الطلبات
+            }, 2000); // تقليل الطلبات أكثر - 2 ثانية
             break;
             
           default:

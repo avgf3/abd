@@ -52,6 +52,33 @@ export default function FriendsPanel({
     }
   }, [isOpen, currentUser]);
 
+  // تحديث طلبات الصداقة عند وصول إشعارات جديدة
+  useEffect(() => {
+    const handleStorageChange = () => {
+      if (isOpen && currentUser) {
+        fetchFriendRequests();
+      }
+    };
+
+    // استمع لتغييرات في localStorage (للإشعارات)
+    window.addEventListener('storage', handleStorageChange);
+    
+    // تحديث دوري كل 30 ثانية عندما تكون النافذة مفتوحة
+    let interval: NodeJS.Timeout | null = null;
+    if (isOpen && currentUser) {
+      interval = setInterval(() => {
+        fetchFriendRequests();
+      }, 30000);
+    }
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isOpen, currentUser]);
+
   // تحديث حالة الاتصال للأصدقاء
   useEffect(() => {
     if (friends.length > 0) {
@@ -135,8 +162,16 @@ export default function FriendsPanel({
   const handleAcceptRequest = async (requestId: number) => {
     try {
       const response = await apiRequest(`/api/friend-requests/${requestId}/accept`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId: currentUser?.id })
       });
+      
+      if (!response.ok) {
+        throw new Error('فشل في قبول طلب الصداقة');
+      }
       
       toast({
         title: 'تم قبول الطلب',
@@ -145,6 +180,7 @@ export default function FriendsPanel({
       });
       
       fetchFriendRequests(); // تحديث طلبات الصداقة
+      fetchFriends(); // تحديث قائمة الأصدقاء
     } catch (error) {
       console.error('Accept friend request error:', error);
       toast({
@@ -157,9 +193,17 @@ export default function FriendsPanel({
 
   const handleRejectRequest = async (requestId: number) => {
     try {
-      const response = await apiRequest(`/api/friend-requests/${requestId}/reject`, {
-        method: 'POST'
+      const response = await apiRequest(`/api/friend-requests/${requestId}/decline`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId: currentUser?.id })
       });
+      
+      if (!response.ok) {
+        throw new Error('فشل في رفض طلب الصداقة');
+      }
       
       toast({
         title: 'تم رفض الطلب',
@@ -180,9 +224,17 @@ export default function FriendsPanel({
 
   const handleCancelRequest = async (requestId: number) => {
     try {
-      const response = await apiRequest(`/api/friend-requests/${requestId}`, {
-        method: 'DELETE'
+      const response = await apiRequest(`/api/friend-requests/${requestId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId: currentUser?.id })
       });
+      
+      if (!response.ok) {
+        throw new Error('فشل في إلغاء طلب الصداقة');
+      }
       
       toast({
         title: 'تم إلغاء الطلب',

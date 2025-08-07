@@ -220,7 +220,7 @@ export class PostgreSQLStorage implements IStorage {
     return await db.select()
       .from(messages)
       .where(eq(messages.isPrivate, false))
-      .orderBy(desc(messages.timestamp))
+      .orderBy(asc(messages.timestamp))
       .limit(limit);
   }
 
@@ -236,7 +236,7 @@ export class PostgreSQLStorage implements IStorage {
           )
         )
       )
-      .orderBy(desc(messages.timestamp))
+      .orderBy(asc(messages.timestamp))
       .limit(limit);
   }
 
@@ -249,7 +249,7 @@ export class PostgreSQLStorage implements IStorage {
           eq(messages.roomId, roomId)
         )
       )
-      .orderBy(desc(messages.timestamp))
+      .orderBy(asc(messages.timestamp))
       .limit(limit);
   }
 
