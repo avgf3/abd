@@ -1632,6 +1632,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`🔐 تم تعيين userId: ${user.id} للمستخدم ${user.username}`);
 
+        // إضافة المستخدم لقائمة المتصلين الفعليين
+        connectedUsers.set(user.id, {
+          user: user,
+          socketId: socket.id,
+          room: 'general',
+          lastSeen: new Date()
+        });
+        console.log(`👥 إضافة ${user.username} لقائمة المتصلين الفعليين`);
+
         // تحديث حالة المستخدم إلى متصل
         try {
           await storage.setUserOnlineStatus(user.id, true);
@@ -1661,7 +1670,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           // تعيين الغرفة الحالية (آخر غرفة أو العامة)
-          (socket as any).currentRoom = userRooms.length > 0 ? userRooms[userRooms.length - 1] : 'general';
+          const currentRoom = userRooms.length > 0 ? userRooms[userRooms.length - 1] : 'general';
+          (socket as any).currentRoom = currentRoom;
+          
+          // تحديث الغرفة في connectedUsers
+          if (connectedUsers.has(user.id)) {
+            const userConnection = connectedUsers.get(user.id)!;
+            userConnection.room = currentRoom;
+            connectedUsers.set(user.id, userConnection);
+          }
           
           console.log(`✅ تم انضمام ${user.username} لجميع غرفه: ${userRooms.join(', ')}`);
         } catch (roomError) {
@@ -1670,6 +1687,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           socket.join('room_general');
           await storage.joinRoom(user.id, 'general');
           (socket as any).currentRoom = 'general';
+          
+          // تحديث الغرفة في connectedUsers
+          if (connectedUsers.has(user.id)) {
+            const userConnection = connectedUsers.get(user.id)!;
+            userConnection.room = 'general';
+            connectedUsers.set(user.id, userConnection);
+          }
         }
 
         console.log(`✅ تمت مصادقة المستخدم: ${user.username} (${user.userType})`);
