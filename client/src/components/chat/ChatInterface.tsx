@@ -9,7 +9,7 @@ import SettingsMenu from './SettingsMenu';
 import ReportModal from './ReportModal';
 import AdminReportsPanel from './AdminReportsPanel';
 import NotificationPanel from './NotificationPanel';
-import FriendsPanel from './FriendsPanelSimple';
+import FriendsPanel from './FriendsPanel';
 import FriendRequestBadge from './FriendRequestBadge';
 import MessagesPanel from './MessagesPanel';
 import MessageAlert from './MessageAlert';
