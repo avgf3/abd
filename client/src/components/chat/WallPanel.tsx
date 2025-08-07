@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { getImageSrc } from '@/utils/imageUtils';
 import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
+import { io, Socket } from 'socket.io-client';
 interface WallPanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -22,6 +23,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
+  const socket = useRef<Socket | null>(null);
   const { toast } = useToast();
 
   // جلب المنشورات

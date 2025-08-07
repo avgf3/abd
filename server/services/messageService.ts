@@ -29,6 +29,7 @@ export class MessageService {
           content: messages.content,
           messageType: messages.messageType,
           isPrivate: messages.isPrivate,
+          roomId: messages.roomId,
           timestamp: messages.timestamp,
           // بيانات المرسل
           senderUsername: users.username,
@@ -51,6 +52,7 @@ export class MessageService {
         content: msg.content,
         messageType: msg.messageType,
         isPrivate: msg.isPrivate,
+        roomId: msg.roomId || 'general',
         timestamp: msg.timestamp,
         sender: msg.senderId ? {
           id: msg.senderId,
@@ -80,6 +82,7 @@ export class MessageService {
           content: messages.content,
           messageType: messages.messageType,
           isPrivate: messages.isPrivate,
+          roomId: messages.roomId,
           timestamp: messages.timestamp,
           // بيانات المرسل
           senderUsername: users.username,
@@ -110,6 +113,7 @@ export class MessageService {
         content: msg.content,
         messageType: msg.messageType,
         isPrivate: msg.isPrivate,
+        roomId: msg.roomId || 'general',
         timestamp: msg.timestamp,
         sender: msg.senderId ? {
           id: msg.senderId,
@@ -190,6 +194,7 @@ export class MessageService {
           content: messages.content,
           messageType: messages.messageType,
           isPrivate: messages.isPrivate,
+          roomId: messages.roomId,
           timestamp: messages.timestamp,
           // بيانات المرسل
           senderUsername: users.username,
@@ -217,6 +222,7 @@ export class MessageService {
         content: msg.content,
         messageType: msg.messageType,
         isPrivate: msg.isPrivate,
+        roomId: msg.roomId || 'general',
         timestamp: msg.timestamp,
         sender: msg.senderId ? {
           id: msg.senderId,

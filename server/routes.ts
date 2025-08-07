@@ -21,8 +21,8 @@ import path from "path";
 import fs from "fs";
 import bcrypt from "bcrypt";
 import sharp from "sharp";
-import { trackClick } from "./middleware/analytics";
-import { enhancedModeration } from "./enhanced-moderation";
+// import { trackClick } from "./middleware/analytics"; // commented out as file doesn't exist
+import { enhancedModerationSystem as enhancedModeration } from "./enhanced-moderation";
 
 // إعداد multer موحد لرفع الصور
 const createMulterConfig = (destination: string, prefix: string, maxSize: number = 5 * 1024 * 1024) => {
@@ -1076,8 +1076,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gender: user.gender,
         points: user.points || 0,
         createdAt: user.createdAt,
-        lastActive: user.lastActive,
-        profileColor: user.profileColor,
+        lastActive: user.lastSeen || user.createdAt,
+        profileColor: user.profileBackgroundColor,
         profileEffect: user.profileEffect,
         isHidden: user.isHidden
       }));
@@ -2326,7 +2326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         // جلب آخر الرسائل في الغرفة الجديدة
-        const recentMessages = await storage.getRecentMessages(roomId, 50);
+        const recentMessages = await storage.getRoomMessages(roomId, 50);
         socket.emit('message', {
           type: 'roomMessages',
           messages: recentMessages
@@ -4405,8 +4405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         postId: parseInt(postId),
         userId: user.id,
         username: user.username,
-        type,
-        timestamp: new Date()
+        type
       });
 
       // جلب المنشور المحدث مع التفاعلات
@@ -4998,7 +4997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const socketInfo = {
         initialized: !!io,
         connected_clients: io ? io.engine.clientsCount : 0,
-        transport_types: io ? Object.keys(io.engine.transports) : [],
+        transport_types: io ? ['websocket', 'polling'] : [],
         status: io ? 'running' : 'not_initialized'
       };
       
