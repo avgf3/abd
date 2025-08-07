@@ -1471,13 +1471,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
 
-        // الحصول على بيانات المستخدم
-        const user = await storage.getUser(userData.userId);
-        if (!user) {
-          socket.emit('error', { message: 'المستخدم غير موجود' });
-          return;
-        }
-
         // تحديث معلومات Socket
         (socket as CustomSocket).userId = user.id;
         (socket as CustomSocket).username = user.username;

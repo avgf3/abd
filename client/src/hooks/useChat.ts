@@ -585,8 +585,10 @@ export function useChat() {
         // تنظيف المرجع
         socket.current = null;
         
-        // انتظار قصير للتأكد من التنظيف الكامل
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // انتظار قصير للتأكد من التنظيف الكامل (بدون await)
+        setTimeout(() => {
+          // التنظيف مكتمل، لا حاجة لفعل شيء إضافي
+        }, 500);
       }
 
       // إنشاء اتصال Socket.IO جديد
