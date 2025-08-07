@@ -36,7 +36,7 @@ export default function FriendsPanel({
   onlineUsers,
   onStartPrivateChat 
 }: FriendsPanelProps) {
-  const [friends, setFriends] = useState<Friend[]>([]);
+  const [friends, setFriends] = useState<Friend[]>(() => []);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'online' | 'requests'>('all');
   const [friendRequests, setFriendRequests] = useState({ incoming: [], outgoing: [] });

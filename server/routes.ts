@@ -24,146 +24,51 @@ import sharp from "sharp";
 import { trackClick } from "./middleware/analytics";
 import { enhancedModeration } from "./enhanced-moderation";
 
-// إعداد multer لرفع الصور
-const storage_multer = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'profiles');
-    
-    // التأكد من وجود المجلد
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+// إعداد multer موحد لرفع الصور
+const createMulterConfig = (destination: string, prefix: string, maxSize: number = 5 * 1024 * 1024) => {
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', destination);
+      
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const ext = path.extname(file.originalname);
+      cb(null, `${prefix}-${uniqueSuffix}${ext}`);
     }
-    
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, `profile-${uniqueSuffix}${ext}`);
-  }
-});
+  });
 
-const upload = multer({
-  storage: storage_multer,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
-    files: 1 // ملف واحد فقط
-  },
-  fileFilter: (req, file, cb) => {
-    // التحقق من نوع الملف - دعم شامل للصور
-    const allowedMimes = [
-      'image/jpeg', 
-      'image/jpg', 
-      'image/png', 
-      'image/gif', 
-      'image/webp',
-      'image/svg+xml',
-      'image/bmp',
-      'image/tiff'
-    ];
-    
-    if (allowedMimes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      console.log('❌ نوع ملف مرفوض:', file.mimetype);
-      cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`));
+  return multer({
+    storage,
+    limits: {
+      fileSize: maxSize,
+      files: 1
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedMimes = [
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
+        'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff'
+      ];
+      
+      if (allowedMimes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`));
+      }
     }
-  }
-});
+  });
+};
 
-// إعداد multer لرفع صور الحوائط
-const wallStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'wall');
-    
-    // التأكد من وجود المجلد
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, `wall-${uniqueSuffix}${ext}`);
-  }
-});
+// إعداد multer للصور المختلفة
+const upload = createMulterConfig('profiles', 'profile', 5 * 1024 * 1024);
+const wallUpload = createMulterConfig('wall', 'wall', 10 * 1024 * 1024);
 
-const wallUpload = multer({
-  storage: wallStorage,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
-    files: 1
-  },
-  fileFilter: (req, file, cb) => {
-    // التحقق من نوع الملف - دعم شامل للصور
-    const allowedMimes = [
-      'image/jpeg', 
-      'image/jpg', 
-      'image/png', 
-      'image/gif', 
-      'image/webp',
-      'image/svg+xml',
-      'image/bmp',
-      'image/tiff'
-    ];
-    
-    if (allowedMimes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      console.log('❌ نوع ملف مرفوض:', file.mimetype);
-      cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`));
-    }
-  }
-});
-
-// إعداد multer لرفع صور البانر
-const bannerStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'banners');
-    
-    // التأكد من وجود المجلد
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, `banner-${uniqueSuffix}${ext}`);
-  }
-});
-
-const bannerUpload = multer({
-  storage: bannerStorage,
-  limits: {
-    fileSize: 8 * 1024 * 1024, // 8MB
-    files: 1
-  },
-  fileFilter: (req, file, cb) => {
-    // التحقق من نوع الملف - دعم شامل للصور
-    const allowedMimes = [
-      'image/jpeg', 
-      'image/jpg', 
-      'image/png', 
-      'image/gif', 
-      'image/webp',
-      'image/svg+xml',
-      'image/bmp',
-      'image/tiff'
-    ];
-    
-    if (allowedMimes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      console.log('❌ نوع ملف مرفوض:', file.mimetype);
-      cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`));
-    }
-  }
-});
+const bannerUpload = createMulterConfig('banners', 'banner', 8 * 1024 * 1024);
 
 // تتبع المستخدمين المتصلين حقاً عبر Socket
 const connectedUsers = new Map<number, {
@@ -262,12 +167,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // رفع صور البروفايل - محسّن مع حل مشكلة Render
   app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
     try {
-      console.log('📤 رفع صورة بروفايل:', {
-        file: req.file ? 'موجود' : 'غير موجود',
-        body: req.body,
-        headers: req.headers['content-type']
-      });
-
       if (!req.file) {
         return res.status(400).json({ 
           error: "لم يتم رفع أي ملف",
@@ -309,8 +208,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إنشاء data URL
         imageUrl = `data:${mimeType};base64,${base64Image}`;
         
-        console.log('✅ تم تحويل الصورة إلى base64 بحجم:', base64Image.length);
-        
         // حذف الملف الأصلي
         fs.unlinkSync(req.file.path);
         
@@ -333,12 +230,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedUser) {
         return res.status(500).json({ error: "فشل في تحديث صورة البروفايل في قاعدة البيانات" });
       }
-
-      console.log('✅ تم رفع صورة البروفايل بنجاح:', {
-        userId,
-        filename: req.file.filename,
-        imageType: imageUrl.startsWith('data:') ? 'base64' : 'file'
-      });
 
       // إرسال إشعار للمستخدمين الآخرين عبر WebSocket
       io.emit('user_profile_image_updated', {
@@ -378,11 +269,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إصلاح رفع صورة البانر - محسّن مع حل مشكلة Render
   app.post('/api/upload/profile-banner', bannerUpload.single('banner'), async (req, res) => {
     try {
-      console.log('📤 رفع صورة بانر:', {
-        file: req.file ? 'موجود' : 'غير موجود',
-        body: req.body
-      });
-
       if (!req.file) {
         return res.status(400).json({ 
           error: "لم يتم رفع أي ملف",
@@ -423,8 +309,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إنشاء data URL
         bannerUrl = `data:${mimeType};base64,${base64Image}`;
         
-        console.log('✅ تم تحويل البانر إلى base64 بحجم:', base64Image.length);
-        
         // حذف الملف الأصلي
         fs.unlinkSync(req.file.path);
         
@@ -446,12 +330,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedUser) {
         return res.status(500).json({ error: "فشل في تحديث صورة البانر في قاعدة البيانات" });
       }
-
-      console.log('✅ تم رفع صورة البانر بنجاح:', {
-        userId,
-        filename: req.file.filename,
-        imageType: bannerUrl.startsWith('data:') ? 'base64' : 'file'
-      });
 
       // إرسال إشعار للمستخدمين الآخرين عبر WebSocket
       io.emit('user_profile_banner_updated', {
@@ -585,12 +463,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedUser) {
         return res.status(500).json({ error: "فشل في تحديث بيانات المستخدم" });
       }
-
-      console.log('✅ تم تحديث المستخدم:', {
-        userId,
-        username: user.username,
-        updates: Object.keys(updateData)
-      });
 
       res.json({ 
         success: true, 
@@ -1176,8 +1048,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تحديث حالة المستخدم إلى متصل
       try {
         await storage.setUserOnlineStatus(user.id, true);
-        console.log(`✅ تم تحديث حالة ${user.username} إلى متصل`);
-      } catch (updateError) {
+        } catch (updateError) {
         console.error('خطأ في تحديث حالة المستخدم:', updateError);
       }
 
@@ -1530,7 +1401,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       heartbeatInterval = setInterval(() => {
         if (socket.connected) {
           if (missedPongs >= maxMissedPongs) {
-            console.log(`⚠️ لم يستجب المستخدم ${(socket as CustomSocket).username || socket.id} لـ ${missedPongs} ping متتالية`);
             socket.disconnect(true);
             cleanup();
             return;
@@ -1560,8 +1430,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // معالج المصادقة للضيوف
     socket.on('authenticate', async (userData: { username: string; userType: string }) => {
       try {
-        console.log('🔐 طلب مصادقة:', userData);
-        
         if (!userData.username || !userData.userType) {
           socket.emit('error', { message: 'بيانات المصادقة غير مكتملة' });
           return;
@@ -1582,10 +1450,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           
           user = await storage.createUser(newUser);
-          console.log(`👤 تم إنشاء مستخدم ضيف جديد: ${user.username}`);
-        } else {
-          console.log(`👤 مستخدم موجود: ${user.username}`);
-        }
+          } else {
+          }
 
         // تحديث معلومات Socket
         (socket as CustomSocket).userId = user.id;
@@ -1593,8 +1459,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (socket as CustomSocket).userType = user.userType;
         (socket as CustomSocket).isAuthenticated = true;
         
-        console.log(`🔐 تم تعيين userId: ${user.id} للمستخدم ${user.username}`);
-
         // إضافة المستخدم لقائمة المتصلين الفعليين
         connectedUsers.set(user.id, {
           user: user,
@@ -1602,62 +1466,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
           room: 'general',
           lastSeen: new Date()
         });
-        console.log(`👥 إضافة ${user.username} لقائمة المتصلين الفعليين`);
-
         // تحديث حالة المستخدم إلى متصل في قاعدة البيانات
         try {
           await storage.setUserOnlineStatus(user.id, true);
-          console.log(`✅ تم تحديث حالة ${user.username} إلى متصل`);
-        } catch (updateError) {
+          } catch (updateError) {
           console.error('خطأ في تحديث حالة المستخدم:', updateError);
         }
 
         // جلب غرف المستخدم
         const userRooms = await storage.getUserRooms(user.id);
-        console.log(`📂 غرف المستخدم ${user.username}: ${userRooms.join(', ')}`);
-        
         // التأكد من الانضمام للغرفة العامة
         if (!userRooms.includes('general')) {
-          console.log(`🔄 محاولة انضمام المستخدم ${user.id} للغرفة general`);
           await storage.joinRoom(user.id, 'general');
-          console.log(`✅ تم انضمام المستخدم ${user.id} للغرفة general`);
-        }
+          }
         
         // الانضمام للغرفة العامة في Socket.IO
         socket.join('room_general');
         (socket as any).currentRoom = 'general';
-        console.log(`🏠 المستخدم ${user.username} انضم للغرفة general`);
-        
         // انضمام للغرف الأخرى إن وجدت
         for (const roomId of userRooms) {
           if (roomId !== 'general') {
             socket.join(`room_${roomId}`);
-            console.log(`🏠 المستخدم ${user.username} انضم أيضاً للغرفة ${roomId}`);
-          }
+            }
         }
         
-        console.log(`✅ تم انضمام ${user.username} لجميع غرفه: general`);
-
         // إرسال تأكيد المصادقة
         socket.emit('authenticated', { 
           message: 'تم الاتصال بنجاح',
           user: user 
         });
 
-        console.log(`✅ تمت مصادقة المستخدم: ${user.username} (${user.userType})`);
-        
         // انتظار قصير للتأكد من التحديث
         await new Promise(resolve => setTimeout(resolve, 200));
         
         // جلب وإرسال قائمة المستخدمين المتصلين في الغرفة العامة
-        console.log(`📡 جلب قائمة المستخدمين المتصلين في الغرفة general...`);
-        
         // جلب قائمة المستخدمين المتصلين فعلياً من connectedUsers
         const roomUsers = Array.from(connectedUsers.values())
           .filter(conn => conn.room === 'general')
           .map(conn => conn.user);
-        
-        console.log(`👥 مستخدمو الغرفة general: ${roomUsers.map(u => u.username).join(', ')}`);
         
         // إرسال رسالة انضمام للغرفة
         socket.emit('message', {
@@ -1667,7 +1513,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         // جلب المستخدمين من قاعدة البيانات أيضاً
-        console.log(`🔍 جلب المستخدمين المتصلين في الغرفة general`);
         const dbUsers = await storage.getOnlineUsersInRoom('general');
         
         // دمج القوائم وإزالة التكرارات
@@ -1679,10 +1524,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // إرسال قائمة المستخدمين الكاملة
-        console.log(`🔄 طلب تحديث قائمة المستخدمين للغرفة: general`);
-        console.log(`👥 إرسال ${allUsers.length} مستخدم متصل فعلياً في الغرفة general`);
-        console.log(`👥 أسماء المستخدمين المتصلين: ${allUsers.map(u => u.username).join(', ')}`);
-        
         socket.emit('message', { 
           type: 'onlineUsers', 
           users: allUsers
@@ -1702,9 +1543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           users: allUsers
         });
         
-        console.log(`📤 تم إرسال قائمة ${allUsers.length} مستخدم في الغرفة general إلى ${user.username}`);
-
-      } catch (error) {
+        } catch (error) {
         console.error('❌ خطأ في مصادقة الضيف:', error);
         socket.emit('error', { message: 'خطأ في المصادقة' });
       }
@@ -1713,8 +1552,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // معالج المصادقة المحسن
     socket.on('auth', async (userData: { userId?: number; username?: string; userType?: string }) => {
       try {
-        console.log('🔐 طلب مصادقة:', userData);
-        
         if (!userData.userId) {
           socket.emit('error', { message: 'بيانات المصادقة غير مكتملة' });
           return;
@@ -1733,8 +1570,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (socket as CustomSocket).userType = user.userType;
         (socket as CustomSocket).isAuthenticated = true;
         
-        console.log(`🔐 تم تعيين userId: ${user.id} للمستخدم ${user.username}`);
-
         // إضافة المستخدم لقائمة المتصلين الفعليين
         connectedUsers.set(user.id, {
           user: user,
@@ -1742,13 +1577,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           room: 'general', // البدء بالغرفة العامة دائماً
           lastSeen: new Date()
         });
-        console.log(`👥 إضافة ${user.username} لقائمة المتصلين الفعليين`);
-
         // تحديث حالة المستخدم إلى متصل
         try {
           await storage.setUserOnlineStatus(user.id, true);
-          console.log(`✅ تم تحديث حالة ${user.username} إلى متصل`);
-          
           // انتظار قصير للتأكد من التحديث في قاعدة البيانات
           await new Promise(resolve => setTimeout(resolve, 100));
         } catch (updateError) {
@@ -1758,8 +1589,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // جلب غرف المستخدم وانضمام إليها
         try {
           const userRooms = await storage.getUserRooms(user.id);
-          console.log(`📂 غرف المستخدم ${user.username}: ${userRooms.join(', ')}`);
-          
           // التأكد من انضمام للغرفة العامة
           if (!userRooms.includes('general')) {
             await storage.joinRoom(user.id, 'general');
@@ -1769,18 +1598,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // الانضمام للغرفة العامة أولاً في Socket.IO
           socket.join('room_general');
           (socket as any).currentRoom = 'general';
-          console.log(`🏠 المستخدم ${user.username} انضم للغرفة general`);
-          
           // انضمام للغرف الأخرى في Socket.IO
           for (const roomId of userRooms) {
             if (roomId !== 'general') {
               socket.join(`room_${roomId}`);
-              console.log(`🏠 المستخدم ${user.username} انضم للغرفة ${roomId}`);
-            }
+              }
           }
           
-          console.log(`✅ تم انضمام ${user.username} لجميع غرفه: ${userRooms.join(', ')}`);
-        } catch (roomError) {
+          } catch (roomError) {
           console.error('خطأ في انضمام للغرف:', roomError);
           // انضمام للغرفة العامة على الأقل
           socket.join('room_general');
@@ -1795,8 +1620,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        console.log(`✅ تمت مصادقة المستخدم: ${user.username} (${user.userType})`);
-
         // إرسال تأكيد المصادقة
         socket.emit('authenticated', { 
           message: 'تم الاتصال بنجاح',
@@ -1805,8 +1628,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // جلب وإرسال قائمة المستخدمين المتصلين في الغرفة العامة
         const currentRoom = 'general'; // دائماً نبدأ بالغرفة العامة
-        console.log(`📡 جلب قائمة المستخدمين المتصلين في الغرفة ${currentRoom}...`);
-        
         // انتظار قصير للتأكد من تحديث قاعدة البيانات
         await new Promise(resolve => setTimeout(resolve, 200));
         
@@ -1814,8 +1635,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const roomUsers = Array.from(connectedUsers.values())
           .filter(conn => conn.room === currentRoom)
           .map(conn => conn.user);
-        
-        console.log(`👥 مستخدمو الغرفة ${currentRoom}: ${roomUsers.map(u => u.username).join(', ')}`);
         
         // جلب المستخدمين من قاعدة البيانات أيضاً
         const dbUsers = await storage.getOnlineUsersInRoom(currentRoom);
@@ -1827,8 +1646,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             allUsers.push(dbUser);
           }
         }
-        
-        console.log(`👥 وجد ${allUsers.length} مستخدمين متصلين في الغرفة ${currentRoom}: ${allUsers.map(u => u.username).join(', ')}`);
         
         // إرسال تأكيد الانضمام مع قائمة المستخدمين
         socket.emit('message', {
@@ -1856,8 +1673,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'onlineUsers',
           users: allUsers
         });
-
-        console.log(`📤 تم إرسال قائمة ${allUsers.length} مستخدم في الغرفة ${currentRoom} إلى ${user.username}`);
 
         // إرسال رسالة ترحيب في الغرفة
         const welcomeMessage = {
@@ -1910,15 +1725,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const currentRoom = (socket as any).currentRoom || 'general';
-        console.log(`🔄 طلب تحديث قائمة المستخدمين للغرفة: ${currentRoom}`);
-        
         // الحصول على المستخدمين المتصلين فعلياً في هذه الغرفة من connectedUsers
         const roomUsers = Array.from(connectedUsers.values())
           .filter(conn => conn.room === currentRoom)
           .map(conn => conn.user);
-        
-        console.log(`👥 إرسال ${roomUsers.length} مستخدم متصل فعلياً في الغرفة ${currentRoom}`);
-        console.log(`👥 أسماء المستخدمين المتصلين: ${roomUsers.map(u => u.username).join(', ')}`);
         
         // جلب المستخدمين من قاعدة البيانات أيضاً
         const dbUsers = await storage.getOnlineUsersInRoom(currentRoom);
@@ -1930,8 +1740,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             allUsers.push(dbUser);
           }
         }
-        
-        console.log(`👥 إجمالي المستخدمين المتصلين في الغرفة ${currentRoom}: ${allUsers.length}`);
         
         // إرسال القائمة المدمجة للمستخدم الذي طلبها
         socket.emit('message', { 
@@ -1949,8 +1757,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // التحقق من حالة المستخدم بشكل بسيط
         const user = await storage.getUser(socket.userId);
-        console.log(`🔍 User ${socket.userId} (${user?.username}) sending message`);
-        
         if (!user) {
           socket.emit('message', {
             type: 'error',
@@ -2063,11 +1869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         const sender = await storage.getUser(socket.userId);
-        console.log(`📤 إرسال رسالة من ${sender?.username} للغرفة ${roomId}`);
-        console.log('📝 محتوى الرسالة:', sanitizedContent);
-        
         // إرسال الرسالة فقط للمستخدمين في نفس الغرفة
-        console.log(`📡 إرسال رسالة للغرفة ${roomId}`);
         io.to(`room_${roomId}`).emit('message', { 
           type: 'newMessage',
           message: { ...newMessage, sender, roomId }
@@ -2438,20 +2240,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const userId = (socket as CustomSocket).userId; // استخدام userId من الجلسة
         const username = (socket as CustomSocket).username;
         
-        console.log(`🔍 joinRoom: userId=${userId}, username=${username}, roomId=${roomId}`);
-        
         if (!userId) {
-          console.log(`❌ لا يوجد userId في الجلسة`);
           socket.emit('message', { type: 'error', message: 'يجب تسجيل الدخول أولاً' });
           return;
         }
         
-        console.log(`🏠 المستخدم ${username} ينضم للغرفة ${roomId}`);
-        
         // مغادرة الغرفة السابقة إن وجدت
         const previousRoom = (socket as any).currentRoom;
         if (previousRoom && previousRoom !== roomId) {
-          console.log(`🚪 المستخدم ${username} يغادر الغرفة السابقة ${previousRoom}`);
           socket.leave(`room_${previousRoom}`);
           
           // إرسال رسالة وداع في الغرفة السابقة
@@ -2533,8 +2329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userConnection.room = roomId;
           userConnection.lastSeen = new Date();
           connectedUsers.set(userId, userConnection);
-          console.log(`👥 تحديث غرفة ${username} إلى ${roomId} في قائمة المتصلين`);
-        }
+          }
         
         // انتظار قصير للتأكد من التحديث
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -2551,8 +2346,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             allUsers.push(dbUser);
           }
         }
-        
-        console.log(`👥 مستخدمو الغرفة ${roomId}: ${allUsers.map(u => u.username).join(', ')}`);
         
         // إرسال تأكيد الانضمام مع قائمة المستخدمين
         socket.emit('message', {
@@ -2574,8 +2367,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'onlineUsers',
           users: allUsers
         });
-        
-        console.log(`✅ المستخدم ${username} انضم للغرفة ${roomId} بنجاح مع ${allUsers.length} مستخدمين آخرين`);
         
         // إرسال رسالة ترحيب في الغرفة
         const welcomeMessage = {
@@ -2639,8 +2430,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
         
-        console.log(`🚪 المستخدم ${username} يغادر الغرفة ${roomId}`);
-        
         // المغادرة من الغرفة في Socket.IO
         socket.leave(`room_${roomId}`);
         
@@ -2692,12 +2481,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const userId = customSocket.userId;
           const username = customSocket.username;
           
-          console.log(`🚪 ${username} غادر الخادم. السبب: ${reason}`);
-          
           // إزالة المستخدم من قائمة المتصلين الفعليين أولاً
           connectedUsers.delete(userId);
-          console.log(`👥 إزالة ${username} من قائمة المتصلين الفعليين`);
-          
           // تحديث حالة المستخدم في قاعدة البيانات
           await storage.setUserOnlineStatus(userId, false);
           
@@ -2773,8 +2558,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
             
-            console.log(`👥 المستخدمون المتبقون في الغرفة ${currentRoom}: ${allUsers.map(u => u.username).join(', ')}`);
-            
             // إرسال قائمة محدثة للمستخدمين في الغرفة
             io.to(`room_${currentRoom}`).emit('message', { 
               type: 'onlineUsers', 
@@ -2835,7 +2618,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // التحقق من وجود المستخدم في قاعدة البيانات
             const user = await storage.getUser(customSocket.userId);
             if (!user || !user.isOnline) {
-              console.log(`🔌 قطع اتصال جلسة منتهية الصلاحية: ${customSocket.username}`);
               socket.disconnect(true);
             }
           } catch (error) {
@@ -4087,15 +3869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user profile - General endpoint - محسّن مع معالجة أفضل للأخطاء
   app.post('/api/users/update-profile', async (req, res) => {
     try {
-      console.log('📥 طلب تحديث البروفايل:', {
-        body: req.body,
-        headers: req.headers['content-type'],
-        method: req.method
-      });
-      
       const { userId, ...updates } = req.body;
-      
-      console.log('🔄 تحديث البروفايل:', { userId, updates });
       
       if (!userId) {
         console.error('❌ معرف المستخدم مفقود');
@@ -4195,8 +3969,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedUpdates.bio = updates.bio.trim();
       }
 
-      console.log('✅ البيانات صحيحة:', validatedUpdates);
-
       // تحديث البيانات
       const updatedUser = await storage.updateUser(userIdNum, validatedUpdates);
       
@@ -4204,8 +3976,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('❌ فشل في تحديث قاعدة البيانات');
         return res.status(500).json({ error: 'فشل في تحديث البيانات في قاعدة البيانات' });
       }
-      
-      console.log('✅ تم تحديث البروفايل بنجاح:', { userId: userIdNum, validatedUpdates });
       
       // إشعار المستخدمين الآخرين عبر WebSocket
       io.emit('user_profile_updated', {
@@ -4258,8 +4028,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update profile background color
   app.post('/api/users/update-background-color', async (req, res) => {
     try {
-      console.log('🎨 طلب تحديث لون الخلفية:', req.body);
-      
       const { userId, profileBackgroundColor, color } = req.body;
       
       // دعم كلا من color و profileBackgroundColor
@@ -4301,7 +4069,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      console.log('✅ تحديث لون الخلفية للمستخدم:', userIdNum, 'إلى:', backgroundColorValue);
       await storage.updateUser(userIdNum, { profileBackgroundColor: backgroundColorValue });
       
       // إشعار المستخدمين الآخرين عبر WebSocket
@@ -4310,8 +4077,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'user_background_updated',
           data: { userId: userIdNum, profileBackgroundColor: backgroundColorValue }
         });
-        console.log('📡 تم إرسال إشعار تحديث اللون عبر WebSocket');
-      } catch (broadcastError) {
+        } catch (broadcastError) {
         console.error('⚠️ فشل في إرسال إشعار WebSocket:', broadcastError);
         // لا نفشل العملية بسبب فشل الإشعار
       }
@@ -4557,7 +4323,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'نوع الحائط غير صحيح' });
       }
 
-      console.log(`📊 إرجاع ${posts?.length || 0} منشورات للنوع: ${type}`);
       res.json({ 
         success: true,
         posts: posts || [],
@@ -4588,8 +4353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // استبدال الملف الأصلي بالمضغوط
       await fs.promises.rename(tempPath, filePath);
-      console.log('✅ تم ضغط الصورة:', filePath);
-    } catch (error) {
+      } catch (error) {
       console.error('❌ فشل في ضغط الصورة:', error);
       // حذف الملف المؤقت إن وجد
       try {
@@ -4655,13 +4419,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         usernameColor: user.usernameColor
       };
 
-      console.log('💾 حفظ المنشور في قاعدة البيانات...');
-      console.log('📝 بيانات المنشور:', postData);
-      
       // حفظ المنشور
       const post = await storage.createWallPost(postData);
-      console.log('✅ تم حفظ المنشور بنجاح:', post.id);
-      
       // إرسال إشعار للمستخدمين المتصلين
       const messageData = {
         type: 'newWallPost',
@@ -4669,10 +4428,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         wallType: type || 'public'
       };
       
-      console.log('📡 إرسال إشعار WebSocket:', messageData);
       io.emit('message', messageData);
       
-      console.log('✅ إرجاع استجابة النجاح');
       res.json({ 
         success: true,
         post, 
@@ -4799,8 +4556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // التحقق من أن الملف قابل للحذف
             await fs.promises.access(imagePath, fs.constants.W_OK);
             await fs.promises.unlink(imagePath);
-            console.log('✅ تم حذف الصورة:', imagePath);
-          }
+            }
         } catch (fileError) {
           console.warn('⚠️ فشل في حذف الصورة:', fileError);
           // لا نوقف العملية، فقط نسجل التحذير

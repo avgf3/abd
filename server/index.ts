@@ -20,8 +20,6 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // خدمة الملفات الثابتة للصور المرفوعة - محسّنة لـ Render
 const uploadsPath = path.join(process.cwd(), 'client/public/uploads');
 app.use('/uploads', (req, res, next) => {
-  console.log('📁 طلب ملف:', req.path, 'من:', uploadsPath);
-  
   // التحقق من وجود الملف
   const fullPath = path.join(uploadsPath, req.path);
   if (!fs.existsSync(fullPath)) {
@@ -38,7 +36,6 @@ app.use('/uploads', (req, res, next) => {
     return res.status(404).json({ error: 'File not found' });
   }
   
-  console.log('✅ الملف موجود:', fullPath);
   next();
 }, express.static(uploadsPath, {
   // إعدادات محسّنة للأداء

@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { ChatUser } from '../../types/chat';
 
 interface UserRoleBadgeProps {

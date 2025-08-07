@@ -46,8 +46,6 @@ export function createDatabaseAdapter(): DatabaseAdapter {
     const pool = new Pool({ connectionString: databaseUrl });
     const db = drizzleNeon({ client: pool, schema: pgSchema });
     
-    console.log("✅ تم الاتصال بقاعدة البيانات PostgreSQL بنجاح");
-    
     return {
       db: db as DatabaseType,
       type: 'postgresql',

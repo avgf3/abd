@@ -71,8 +71,6 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     if (!currentUser?.id) return;
 
     const handleNotificationReceived = (event: CustomEvent) => {
-      console.log('📬 إشعار جديد مستلم:', event.detail);
-      
       // تحديث فوري للبيانات
       queryClient.invalidateQueries({
         queryKey: ['/api/notifications', currentUser.id]
@@ -85,8 +83,6 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     };
 
     const handleFriendRequestReceived = (event: CustomEvent) => {
-      console.log('👥 طلب صداقة جديد:', event.detail);
-      
       // تحديث فوري
       queryClient.invalidateQueries({
         queryKey: ['/api/notifications', currentUser.id]
@@ -103,8 +99,6 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     };
 
     const handleFriendRequestAccepted = (event: CustomEvent) => {
-      console.log('✅ تم قبول طلب صداقة:', event.detail);
-      
       queryClient.invalidateQueries({
         queryKey: ['/api/notifications', currentUser.id]
       });

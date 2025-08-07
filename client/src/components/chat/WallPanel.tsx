@@ -8,8 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { getImageSrc } from '@/utils/imageUtils';
 import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
-import { io, Socket } from 'socket.io-client';
-
 interface WallPanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -18,37 +16,28 @@ interface WallPanelProps {
 
 export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelProps) {
   const [activeTab, setActiveTab] = useState<'public' | 'friends'>('public');
-  const [posts, setPosts] = useState<WallPost[]>([]);
+  const [posts, setPosts] = useState<WallPost[]>(() => []);
   const [loading, setLoading] = useState(false);
   const [newPostContent, setNewPostContent] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
-  const socket = useRef<Socket | null>(null);
 
   // جلب المنشورات
   const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
-      console.log(`🔄 جاري جلب المنشورات للنوع: ${activeTab}, المستخدم: ${currentUser.id}`);
-      
       const response = await fetch(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`, {
         method: 'GET',
       });
       
-      console.log(`📡 استجابة الخادم: ${response.status}`);
-      
       if (response.ok) {
         const data = await response.json();
-        console.log('📄 البيانات المستلمة:', data);
-        console.log(`📊 عدد المنشورات: ${data.posts?.length || 0}`);
-        
         const posts = data.posts || data.data || data || [];
         setPosts(posts);
         
-        console.log('✅ تم تحديث المنشورات في الواجهة');
-      } else {
+        } else {
         const errorText = await response.text();
         console.error('❌ خطأ في جلب المنشورات:', response.status, errorText);
         toast({
@@ -83,17 +72,10 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
       
       // معالج المنشورات الجديدة
       socket.current.on('message', (message: any) => {
-        console.log('📨 WebSocket message received:', message);
-        
         if (message.type === 'newWallPost') {
-          console.log('🆕 منشور جديد مستلم:', message.post);
-          console.log('📍 نوع المنشور:', message.wallType);
-          console.log('📍 النشاط الحالي:', activeTab);
-          
           // تحديث المنشورات إذا كان النوع مطابق أو إذا كان المنشور عام
           const postType = message.wallType || message.post?.type || 'public';
           if (postType === activeTab) {
-            console.log('✅ إضافة المنشور للقائمة');
             setPosts(prevPosts => [message.post, ...prevPosts]);
             
             // إضافة إشعار للمستخدم
@@ -102,10 +84,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
               description: `منشور جديد من ${message.post.username}`,
             });
           } else {
-            console.log('⏭️ تم تجاهل المنشور - النوع غير مطابق');
-          }
+            }
         } else if (message.type === 'wallPostReaction') {
-          console.log('👍 تفاعل جديد:', message);
           // تحديث التفاعلات
           setPosts(prevPosts => 
             prevPosts.map(post => 
@@ -113,7 +93,6 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
             )
           );
         } else if (message.type === 'wallPostDeleted') {
-          console.log('🗑️ حذف منشور:', message.postId);
           // إزالة المنشور المحذوف
           setPosts(prevPosts => 
             prevPosts.filter(post => post.id !== message.postId)
@@ -124,7 +103,6 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
     return () => {
       if (socket.current) {
-        console.log('🔌 تنظيف اتصال Socket للحائط');
         socket.current.disconnect();
         socket.current = null;
       }
@@ -214,15 +192,9 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ استجابة النشر:', result);
-        
         const newPost = result.post || result;
-        console.log('📝 المنشور الجديد:', newPost);
-        
         // إضافة المنشور للقائمة فوراً
         setPosts(prev => [newPost, ...prev]);
-        console.log('✅ تم إضافة المنشور للقائمة محلياً');
-        
         setNewPostContent('');
         removeSelectedImage();
         toast({

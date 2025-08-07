@@ -200,11 +200,18 @@ export function setupSecurity(app: Express): void {
   // CORS configuration
   app.use((req: Request, res: Response, next: NextFunction) => {
     const allowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:3000',
+      // Development origins
+      ...(process.env.NODE_ENV === 'development' ? [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:3000'
+      ] : []),
+      // Production origins
       'https://abd-ylo2.onrender.com',
       process.env.FRONTEND_URL,
-      process.env.RENDER_EXTERNAL_URL
+      process.env.RENDER_EXTERNAL_URL,
+      process.env.CORS_ORIGIN
     ].filter(Boolean);
 
     const origin = req.headers.origin;

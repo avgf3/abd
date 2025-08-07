@@ -58,8 +58,6 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       reader.readAsDataURL(file);
 
       // رفع الصورة للخادم باستخدام API الموحد
-      console.log('📤 بدء رفع صورة البروفايل...');
-      
       // إنشاء FormData لرفع الصورة
       const formData = new FormData();
       formData.append('profileImage', file);
@@ -73,8 +71,6 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
         }
       });
 
-      console.log('✅ نتيجة رفع الصورة:', result);
-      
       if (!result.success) {
         throw new Error(result.error || 'فشل في رفع الصورة');
       }
