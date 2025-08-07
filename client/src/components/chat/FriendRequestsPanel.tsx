@@ -129,6 +129,7 @@ export default function FriendRequestsPanel({
         variant: 'destructive'
       });
     }
+    }
   };
 
   const handleDeclineRequest = async (request: FriendRequest) => {
@@ -157,6 +158,7 @@ export default function FriendRequestsPanel({
         description: error instanceof Error ? error.message : 'فشل في رفض الطلب',
         variant: 'destructive'
       });
+    }
     }
   };
 
