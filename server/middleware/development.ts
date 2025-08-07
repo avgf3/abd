@@ -19,6 +19,5 @@ export const isProduction = (): boolean => {
 // دالة لتسجيل endpoints التطوير
 export const logDevelopmentEndpoint = (endpoint: string) => {
   if (!isProduction()) {
-    console.log(`🔧 [DEV] Endpoint ${endpoint} متاح في بيئة التطوير فقط`);
-  }
+    }
 };

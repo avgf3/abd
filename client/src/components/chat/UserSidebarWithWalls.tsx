@@ -58,32 +58,22 @@ export default function UserSidebarWithWalls({
 
   // إضافة logging للتشخيص
   React.useEffect(() => {
-    console.log('👥 UserSidebarWithWalls - عدد المستخدمين المستلمين:', users.length);
-    console.log('👥 UserSidebarWithWalls - أسماء المستخدمين:', users.map(u => u?.username || 'غير معروف').join(', '));
-  }, [users]);
+    }, [users]);
 
   // جلب المنشورات
   const fetchPosts = useCallback(async () => {
     if (!currentUser) return;
     setLoading(true);
     try {
-      console.log(`🔄 UserSidebar: جاري جلب المنشورات للنوع: ${activeTab}, المستخدم: ${currentUser.id}`);
-      
       const response = await fetch(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`, {
         method: 'GET',
       });
       
-      console.log(`📡 UserSidebar: استجابة الخادم: ${response.status}`);
-      
       if (response.ok) {
         const data = await response.json();
-        console.log('📄 UserSidebar: البيانات المستلمة:', data);
-        console.log(`📊 UserSidebar: عدد المنشورات: ${data.posts?.length || 0}`);
-        
         const posts = data.posts || data.data || data || [];
         setPosts(posts);
-        console.log('✅ UserSidebar: تم تحديث المنشورات في الواجهة');
-      } else {
+        } else {
         const errorText = await response.text();
         console.error('❌ UserSidebar: خطأ في جلب المنشورات:', response.status, errorText);
       }
@@ -180,15 +170,9 @@ export default function UserSidebarWithWalls({
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ UserSidebar: استجابة النشر:', result);
-        
         const newPost = result.post || result;
-        console.log('📝 UserSidebar: المنشور الجديد:', newPost);
-        
         // إضافة المنشور للقائمة فوراً
         setPosts(prev => [newPost, ...prev]);
-        console.log('✅ UserSidebar: تم إضافة المنشور للقائمة محلياً');
-        
         toast({
           title: "تم النشر",
           description: "تم نشر منشورك بنجاح",

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getImageSrc } from '@/utils/imageUtils';
+import UserRoleBadge from './UserRoleBadge';
 import {
   Dialog,
   DialogContent,
@@ -44,18 +45,7 @@ export default function ModerationPanel({
     user.id !== currentUser?.id
   );
 
-  const getUserRoleBadge = (userType: string) => {
-    switch (userType) {
-      case 'owner':
-        return <Badge variant="destructive">مالك</Badge>;
-      case 'admin':
-        return <Badge variant="secondary">مشرف</Badge>;
-      case 'member':
-        return <Badge variant="outline">عضو</Badge>;
-      default:
-        return <Badge variant="outline">ضيف</Badge>;
-    }
-  };
+
 
   const canModerateUser = (target: ChatUser) => {
     if (!currentUser) return false;
@@ -302,7 +292,7 @@ export default function ModerationPanel({
                             <span style={{ color: user.usernameColor || '#000000' }}>
                               {user.username}
                             </span>
-                            {getUserRoleBadge(user.userType)}
+                            <UserRoleBadge user={user} />
                           </div>
                           <div className="text-sm text-gray-600">
                             {user.status || 'بدون حالة'}

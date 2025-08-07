@@ -265,7 +265,6 @@ export function useChat() {
     if (!socket.current) return;
 
     socket.current.on('connect', () => {
-      console.log('🔗 متصل بالخادم');
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
       
@@ -278,7 +277,6 @@ export function useChat() {
     });
 
     socket.current.on('disconnect', (reason) => {
-      console.log('🔌 انقطع الاتصال:', reason);
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
       
       // تنظيف الفترة الزمنية للتحديث الدوري
@@ -290,18 +288,15 @@ export function useChat() {
       // معالجة أسباب الانقطاع المختلفة
       if (reason === 'io server disconnect') {
         // Server initiated disconnect - إعادة الاتصال بعد تأخير
-        console.log('❌ قطع الاتصال من قبل الخادم');
         dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'تم قطع الاتصال من قبل الخادم' });
         // إعادة الاتصال بعد 2 ثانية
         setTimeout(() => {
           if (!socket.current?.connected && user) {
-            console.log('🔄 محاولة إعادة الاتصال...');
             socket.current?.connect();
           }
         }, 2000);
       } else if (reason === 'transport close' || reason === 'transport error') {
         // Network issues - إعادة المحاولة سريعاً
-        console.log('🔄 مشكلة في الشبكة - إعادة محاولة الاتصال...');
         dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'مشكلة في الاتصال بالشبكة' });
       }
       // Socket.IO سيتولى إعادة الاتصال تلقائياً في معظم الحالات
@@ -309,13 +304,11 @@ export function useChat() {
     
     // معالج إعادة الاتصال
     socket.current.on('reconnect', (attemptNumber) => {
-      console.log(`✅ تمت إعادة الاتصال بنجاح بعد ${attemptNumber} محاولة`);
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
       
       // إعادة المصادقة بعد إعادة الاتصال
       if (user) {
-        console.log('🔐 إعادة المصادقة...');
         if (user.userType === 'guest') {
           socket.current?.emit('authenticate', {
             username: user.username,
@@ -333,20 +326,17 @@ export function useChat() {
     
     // معالج محاولة إعادة الاتصال
     socket.current.on('reconnect_attempt', (attemptNumber) => {
-      console.log(`🔄 محاولة إعادة الاتصال رقم ${attemptNumber}...`);
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: `محاولة إعادة الاتصال (${attemptNumber})...` });
     });
     
     // معالج فشل إعادة الاتصال
     socket.current.on('reconnect_failed', () => {
-      console.log('❌ فشلت جميع محاولات إعادة الاتصال');
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل الاتصال بالخادم نهائياً' });
     });
     
     // معالج خطأ إعادة الاتصال
     socket.current.on('reconnect_error', (error) => {
-      console.log('❌ خطأ في إعادة الاتصال:', error.message);
-    });
+      });
     
     // معالج ping من الخادم
     socket.current.on('ping', (data) => {
@@ -355,12 +345,10 @@ export function useChat() {
     });
 
     socket.current.on('socketConnected', (data) => {
-      console.log('🔌 اتصال Socket:', data.message);
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
     });
 
     socket.current.on('authenticated', (data) => {
-      console.log('✅ تم الاتصال بنجاح:', data.message);
       dispatch({ type: 'SET_CURRENT_USER', payload: data.user });
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -396,18 +384,13 @@ export function useChat() {
           case 'onlineUsers':
             if (message.users) {
               // تبسيط عرض المستخدمين - عرض الكل بدون فلترة معقدة
-              console.log('👥 تحديث قائمة المستخدمين:', message.users.length);
-              console.log('👥 المستخدمون:', message.users.map(u => u.username).join(', '));
-              console.log('👥 قبل التحديث كان لدينا:', state.onlineUsers.length, 'مستخدم');
               dispatch({ type: 'SET_ONLINE_USERS', payload: message.users });
-              console.log('✅ تم تحديث قائمة المستخدمين بنجاح');
-            } else {
+              } else {
               console.warn('⚠️ لم يتم استقبال قائمة مستخدمين');
             }
             break;
             
           case 'newMessage':
-            console.log('📨 استقبال رسالة جديدة:', message.message);
             if (message.message && typeof message.message === 'object' && !message.message.isPrivate) {
               if (!isValidMessage(message.message as ChatMessage)) {
                 console.warn('رسالة مرفوضة من الخادم:', message.message);
@@ -418,8 +401,6 @@ export function useChat() {
                 const chatMessage = message.message as ChatMessage;
                 // إضافة roomId من الرسالة مع fallback للغرفة العامة
                 const messageRoomId = (chatMessage as any).roomId || 'general';
-                console.log(`✅ إضافة رسالة للغرفة ${messageRoomId} (الغرفة الحالية: ${state.currentRoomId})`);
-                
                 dispatch({ 
                   type: 'ADD_ROOM_MESSAGE', 
                   payload: { roomId: messageRoomId, message: chatMessage }
@@ -435,8 +416,7 @@ export function useChat() {
                   dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: chatMessage.sender });
                 }
               } else {
-                console.log('🚫 رسالة من مستخدم متجاهل:', message.message.senderId);
-              }
+                }
             }
             break;
             
@@ -492,7 +472,6 @@ export function useChat() {
             break;
 
           case 'newWallPost':
-            console.log('📌 منشور جديد على الحائط:', message.post);
             // يمكن إضافة معالجة محددة هنا لتحديث قائمة المنشورات
             // أو إرسال إشعار للمستخدم
             if (message.post?.username !== user.username) {
@@ -510,18 +489,15 @@ export function useChat() {
             break;
 
           case 'wallPostReaction':
-            console.log('👍 تفاعل جديد على منشور:', message.post);
             // يمكن إضافة معالجة محددة هنا لتحديث التفاعلات
             break;
 
           case 'wallPostDeleted':
-            console.log('🗑️ تم حذف منشور:', message.postId);
             // يمكن إضافة معالجة محددة هنا لإزالة المنشور من القائمة
             break;
             
           case 'roomJoined':
             if (message.roomId) {
-              console.log(`✅ تم الانضمام للغرفة: ${message.roomId}`);
               dispatch({ type: 'SET_ROOM', payload: message.roomId });
               
               // تحميل رسائل الغرفة الجديدة
@@ -607,7 +583,6 @@ export function useChat() {
         ? (import.meta.env.VITE_SERVER_URL || 'http://localhost:5000')
         : window.location.origin;
       
-      console.log('🔌 جاري الاتصال بـ Socket.IO على:', serverUrl);
       socket.current = io(serverUrl, {
         transports: ['websocket', 'polling'],
         timeout: 20000,
@@ -648,7 +623,6 @@ export function useChat() {
 
       // إضافة معالج لإعادة الاتصال
       socket.current.on('reconnect_attempt', (attemptNumber) => {
-        console.log(`🔄 محاولة إعادة الاتصال #${attemptNumber}`);
         dispatch({ 
           type: 'SET_CONNECTION_ERROR', 
           payload: `جاري إعادة الاتصال... (المحاولة ${attemptNumber})` 
@@ -657,7 +631,6 @@ export function useChat() {
 
       // إضافة معالج لنجاح إعادة الاتصال
       socket.current.on('reconnect', (attemptNumber) => {
-        console.log(`✅ تم إعادة الاتصال بنجاح بعد ${attemptNumber} محاولات`);
         dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
         
         // إعادة إرسال بيانات المصادقة عند إعادة الاتصال
@@ -690,18 +663,14 @@ export function useChat() {
   const loadRoomMessages = useCallback(async (roomId: string) => {
     // منع التحميل المتعدد للغرفة نفسها
     if (state.roomMessages[roomId] && state.roomMessages[roomId].length > 0) {
-      console.log(`✅ رسائل الغرفة ${roomId} محملة مسبقاً`);
       return;
     }
     
     try {
-      console.log(`📥 تحميل رسائل الغرفة: ${roomId}`);
       const response = await fetch(`/api/messages/room/${roomId}?limit=50`);
       if (response.ok) {
         const data = await response.json();
         if (data.messages && Array.isArray(data.messages)) {
-          console.log(`✅ تم تحميل ${data.messages.length} رسالة من الغرفة ${roomId}`);
-          
           // تحويل الرسائل إلى التنسيق المطلوب
           const formattedMessages = data.messages.map((msg: any) => ({
             id: msg.id,
@@ -733,7 +702,6 @@ export function useChat() {
 
   // Join room function
   const joinRoom = useCallback((roomId: string) => {
-    console.log(`🔄 انضمام للغرفة: ${roomId}`);
     // لا نغير الغرفة الحالة حتى نتلقى تأكيد من السيرفر
     socket.current?.emit('joinRoom', { roomId });
   }, []);
@@ -756,8 +724,6 @@ export function useChat() {
       roomId: targetRoomId
     };
 
-    console.log('📤 إرسال رسالة:', messageData);
-    
     if (receiverId) {
       // رسالة خاصة
       socket.current.emit('privateMessage', messageData);
@@ -805,28 +771,22 @@ export function useChat() {
   const loadExistingMessages = useCallback(async () => {
     // منع التحميل المتعدد
     if (isLoadingMessages.current) {
-      console.log('⏸️ تحميل الرسائل قيد التقدم بالفعل...');
       return;
     }
     
     // تحقق من وجود رسائل محملة مسبقاً للغرفة العامة
     if (state.roomMessages['general'] && state.roomMessages['general'].length > 0) {
-      console.log('✅ رسائل الغرفة العامة محملة مسبقاً');
       return;
     }
     
     isLoadingMessages.current = true;
     
     try {
-      console.log('📥 تحميل الرسائل الموجودة من قاعدة البيانات...');
-      
       // تحميل رسائل الغرفة العامة
       const generalResponse = await fetch('/api/messages/room/general?limit=50');
       if (generalResponse.ok) {
         const generalData = await generalResponse.json();
         if (generalData.messages && Array.isArray(generalData.messages)) {
-          console.log(`✅ تم تحميل ${generalData.messages.length} رسالة من الغرفة العامة`);
-          
           // تحويل الرسائل إلى التنسيق المطلوب
           const formattedMessages = generalData.messages.map((msg: any) => ({
             id: msg.id,

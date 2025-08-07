@@ -147,14 +147,11 @@ export class PostgreSQLStorage implements IStorage {
 
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
     try {
-      console.log(`🔄 تحديث المستخدم ${id}:`, updates);
-      
       const result = await db.update(users)
         .set(updates)
         .where(eq(users.id, id))
         .returning();
       
-      console.log(`✅ تم تحديث المستخدم ${id} بنجاح:`, result[0]);
       return result[0];
     } catch (error) {
       console.error(`❌ خطأ في تحديث المستخدم ${id}:`, error);
@@ -389,15 +386,6 @@ export class PostgreSQLStorage implements IStorage {
   // Wall post operations
   async createWallPost(postData: InsertWallPost): Promise<WallPost> {
     try {
-      console.log('🗄️ إدراج منشور في قاعدة البيانات PostgreSQL...');
-      console.log('🔍 بيانات الإدراج:', {
-        userId: postData.userId,
-        username: postData.username,
-        userRole: postData.userRole,
-        content: postData.content?.substring(0, 50) + '...',
-        type: postData.type || 'public'
-      });
-      
       const [post] = await db.insert(wallPosts)
         .values({
           userId: postData.userId,
@@ -414,14 +402,6 @@ export class PostgreSQLStorage implements IStorage {
         })
         .returning();
       
-      console.log('✅ تم إنشاء المنشور بنجاح في PostgreSQL:', {
-        id: post.id,
-        userId: post.userId,
-        username: post.username,
-        type: post.type,
-        timestamp: post.timestamp
-      });
-      
       return post;
     } catch (error) {
       console.error('❌ خطأ في إنشاء المنشور في قاعدة البيانات:', error);
@@ -431,23 +411,13 @@ export class PostgreSQLStorage implements IStorage {
 
   async getWallPosts(type: string): Promise<WallPost[]> {
     try {
-      console.log(`🔍 جلب المنشورات من PostgreSQL للنوع: ${type}`);
-      
       const posts = await db.select()
         .from(wallPosts)
         .where(eq(wallPosts.type, type))
         .orderBy(desc(wallPosts.timestamp));
       
-      console.log(`📊 تم جلب ${posts.length} منشورات من قاعدة البيانات`);
-      
       if (posts.length > 0) {
-        console.log('📝 أحدث منشور:', {
-          id: posts[0].id,
-          username: posts[0].username,
-          content: posts[0].content?.substring(0, 50) + '...',
-          timestamp: posts[0].timestamp
-        });
-      }
+        }
       
       return posts;
     } catch (error) {
@@ -713,8 +683,6 @@ export class PostgreSQLStorage implements IStorage {
 
   async joinRoom(userId: number, roomId: string): Promise<void> {
     try {
-      console.log(`🔄 محاولة انضمام المستخدم ${userId} للغرفة ${roomId}`);
-      
       // التحقق من وجود المستخدم في الغرفة مسبقاً
       const existing = await db.select()
         .from(roomUsers)
@@ -726,10 +694,8 @@ export class PostgreSQLStorage implements IStorage {
           userId: userId,
           roomId: roomId
         });
-        console.log(`✅ تم انضمام المستخدم ${userId} للغرفة ${roomId}`);
-      } else {
-        console.log(`ℹ️ المستخدم ${userId} موجود بالفعل في الغرفة ${roomId}`);
-      }
+        } else {
+        }
     } catch (error) {
       console.error('خطأ في انضمام المستخدم للغرفة:', error);
       throw error;
@@ -774,8 +740,6 @@ export class PostgreSQLStorage implements IStorage {
 
   async getOnlineUsersInRoom(roomId: string): Promise<User[]> {
     try {
-      console.log(`🔍 جلب المستخدمين المتصلين في الغرفة ${roomId}`);
-      
       // جلب المستخدمين المتصلين والموجودين في الغرفة المحددة
       const result = await db.select()
         .from(users)
@@ -788,8 +752,6 @@ export class PostgreSQLStorage implements IStorage {
         );
       
       const users_list = result.map(row => row.users);
-      console.log(`👥 وجد ${users_list.length} مستخدمين متصلين في الغرفة ${roomId}: ${users_list.map(u => u.username).join(', ')}`);
-      
       return users_list;
     } catch (error) {
       console.error('خطأ في جلب المستخدمين المتصلين في الغرفة:', error);
@@ -819,7 +781,6 @@ export class PostgreSQLStorage implements IStorage {
         .set({ micQueue: JSON.stringify(currentMicQueue) })
         .where(eq(rooms.id, roomId));
 
-      console.log(`✅ User ${userId} added to mic queue in room: ${roomId}`);
       return true;
     } catch (error) {
       console.error('خطأ في طلب المايك:', error);
@@ -853,7 +814,6 @@ export class PostgreSQLStorage implements IStorage {
         })
         .where(eq(rooms.id, roomId));
 
-      console.log(`✅ User ${approvedBy} approved mic request for user ${userId} in room: ${roomId}`);
       return true;
     } catch (error) {
       console.error('خطأ في الموافقة على طلب المايك:', error);
@@ -878,7 +838,6 @@ export class PostgreSQLStorage implements IStorage {
         .set({ micQueue: JSON.stringify(updatedMicQueue) })
         .where(eq(rooms.id, roomId));
 
-      console.log(`❌ User ${rejectedBy} rejected mic request for user ${userId} in room: ${roomId}`);
       return true;
     } catch (error) {
       console.error('خطأ في رفض طلب المايك:', error);
@@ -903,7 +862,6 @@ export class PostgreSQLStorage implements IStorage {
         .set({ speakers: JSON.stringify(updatedSpeakers) })
         .where(eq(rooms.id, roomId));
 
-      console.log(`🔇 User ${removedBy} removed user ${userId} from speakers in room: ${roomId}`);
       return true;
     } catch (error) {
       console.error('خطأ في إزالة المتحدث:', error);

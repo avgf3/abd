@@ -9,42 +9,33 @@
  * @returns URL صحيح للصورة
  */
 export function getImageSrc(imageSrc: string | null | undefined, fallback: string = '/default_avatar.svg'): string {
-  console.log('🧐 getImageSrc - Processing:', { imageSrc, fallback });
-  
   // إذا لم تكن هناك صورة، استخدم الافتراضي
   if (!imageSrc || imageSrc === '' || imageSrc === '/default_avatar.svg') {
-    console.log('🧐 getImageSrc - Using fallback:', fallback);
     return fallback;
   }
 
   // إذا كانت الصورة base64 data URL
   if (imageSrc.startsWith('data:')) {
-    console.log('🧐 getImageSrc - Detected base64 data URL');
     return imageSrc;
   }
 
   // إذا كانت الصورة URL كامل (http/https)
   if (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) {
-    console.log('🧐 getImageSrc - Detected external URL');
     return imageSrc;
   }
 
   // إذا كانت الصورة تبدأ بـ /uploads (مسار كامل)
   if (imageSrc.startsWith('/uploads/')) {
-    console.log('🧐 getImageSrc - Detected uploads path');
     return imageSrc;
   }
 
   // إذا كانت الصورة تبدأ بـ / (مسار من الجذر)
   if (imageSrc.startsWith('/')) {
-    console.log('🧐 getImageSrc - Detected root path');
     return imageSrc;
   }
 
   // إذا كانت اسم ملف فقط، أضف المسار
-  const finalPath = `/uploads/profiles/${imageSrc}`;
-  console.log('🧐 getImageSrc - Adding uploads path:', finalPath);
-  return finalPath;
+  return `/uploads/profiles/${imageSrc}`;
 }
 
 /**
@@ -54,12 +45,7 @@ export function getImageSrc(imageSrc: string | null | undefined, fallback: strin
  * @returns URL صحيح للصورة
  */
 export function getProfileImageSrc(imageSrc: string | null | undefined, fallback: string = '/default_avatar.svg'): string {
-  console.log('🔍 getProfileImageSrc - Input:', imageSrc);
-  const src = getImageSrc(imageSrc, fallback);
-  console.log('🔍 getProfileImageSrc - Output:', src);
-  
-  // إرجاع الصورة كما هي - base64 أو مسار عادي
-  return src;
+  return getImageSrc(imageSrc, fallback);
 }
 
 /**

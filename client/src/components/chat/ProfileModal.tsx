@@ -56,17 +56,12 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   // دالة موحدة لجلب بيانات المستخدم من السيرفر وتحديث الحالة المحلية - محسّنة
   const fetchAndUpdateUser = async (userId: number) => {
     try {
-      console.log('🔄 جلب بيانات المستخدم من السيرفر:', userId);
-      
       const res = await fetch(`/api/users/${userId}?t=${Date.now()}`); // إضافة timestamp لتجنب cache
       if (!res.ok) {
         throw new Error(`فشل في جلب بيانات المستخدم: ${res.status}`);
       }
       
       const userData = await res.json();
-      console.log('📦 بيانات المستخدم المُحدثة:', userData);
-      
-      console.log('📝 تحديث localUser مع البيانات الجديدة:', userData.profileImage);
       setLocalUser(userData);
       if (onUpdate) onUpdate(userData);
       
@@ -90,8 +85,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
   // تحديث المستخدم المحلي والخارجي - محسّن
   const updateUserData = (updates: Partial<ChatUser>) => {
-    console.log('🔄 تحديث بيانات المستخدم محلياً:', updates);
-    
     const updatedUser = { ...localUser, ...updates };
     setLocalUser(updatedUser);
     
@@ -107,8 +100,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       setSelectedEffect(updates.profileEffect);
     }
     
-    console.log('✅ تم تحديث البيانات المحلية:', updatedUser);
-  };
+    };
 
   // Complete themes collection from original code
   const themes = [
@@ -372,13 +364,11 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
   // Profile image fallback - محسّن للتعامل مع base64 و مشاكل الcache
   const getProfileImageSrcLocal = () => {
-    console.log('🖼️ محاولة عرض صورة البروفايل:', localUser?.profileImage);
     return getProfileImageSrc(localUser?.profileImage);
   };
 
   // Profile banner fallback - محسّن للتعامل مع base64 و مشاكل الcache
   const getProfileBannerSrcLocal = () => {
-    console.log('🎆 محاولة عرض صورة البانر:', localUser?.profileBanner);
     return getBannerImageSrc(localUser?.profileBanner);
   };
 
@@ -460,8 +450,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     try {
       setIsLoading(true);
       
-      console.log(`📤 بدء رفع ${uploadType === 'profile' ? 'صورة البروفايل' : 'صورة البانر'}...`);
-      
       const formData = new FormData();
       if (uploadType === 'profile') {
         formData.append('profileImage', file);
@@ -476,26 +464,20 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       const endpoint = uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
       const response = await fetch(endpoint, { method: 'POST', body: formData });
       
-      console.log(`📡 استجابة ${uploadType}:`, response.status);
-      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'فشل في رفع الصورة' }));
         throw new Error(errorData.error || errorData.details || 'فشل في رفع الصورة');
       }
       
       const result = await response.json();
-      console.log(`✅ نتيجة رفع ${uploadType}:`, result);
-      
       if (!result.success) {
         throw new Error(result.error || 'فشل في رفع الصورة');
       }
       
       // تحديث البيانات المحلية فوراً
       if (uploadType === 'profile' && result.imageUrl) {
-        console.log('🎯 تحديث صورة البروفايل محلياً:', result.imageUrl);
         updateUserData({ profileImage: result.imageUrl });
       } else if (uploadType === 'banner' && result.bannerUrl) {
-        console.log('🎯 تحديث صورة البانر محلياً:', result.bannerUrl);
         updateUserData({ profileBanner: result.bannerUrl });
       }
       
@@ -1810,13 +1792,10 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                   transform: 'translateZ(0)'
                 }}
                 onLoad={(e) => {
-                  console.log('✅ تم تحميل صورة البروفايل بنجاح:', (e.target as HTMLImageElement).src);
-                }}
+                  }}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   console.error('❌ فشل في تحميل صورة البروفايل:', target.src);
-                  console.log('🔄 محاولة تحميل الصورة الافتراضية...');
-                  
                   // منع إعادة التحميل المستمر عند الخطأ
                   if (target.src !== '/default_avatar.svg' && !target.src.includes('default_avatar.svg')) {
                     target.src = '/default_avatar.svg';

@@ -18,8 +18,7 @@ export async function initializeDatabase(): Promise<boolean> {
     // Create tables for SQLite (PostgreSQL migrations are handled separately)
     if (dbType !== 'postgresql') {
       // تم إزالة استدعاء createTables() لأنه غير محدد
-      console.log('⚠️ Skipping createTables() - function not defined');
-    }
+      }
     
     // Check and add missing columns
     await addMissingColumns();
@@ -41,7 +40,6 @@ export async function initializeDatabase(): Promise<boolean> {
 export async function runMigrations(): Promise<void> {
   try {
     if (!process.env.DATABASE_URL) {
-      console.log("⚠️ DATABASE_URL غير محدد - تخطي المايقريشن");
       return;
     }
 
@@ -65,8 +63,7 @@ export async function runMigrations(): Promise<void> {
     // Close migration connection
     await migrationClient.end();
     
-    console.log('✅ Migrations completed successfully');
-  } catch (error: any) {
+    } catch (error: any) {
     console.error('❌ Error running migrations:', error);
     
     // إذا كانت المشكلة أن الجدول موجود بالفعل، استمر
@@ -74,13 +71,11 @@ export async function runMigrations(): Promise<void> {
         error.code === '42P07' || 
         error.message?.includes('relation') ||
         error.message?.includes('constraint')) {
-      console.log('⚠️ Migration skipped - tables already exist');
       return;
     }
     
     // للأخطاء الأخرى، لا ترمي الخطأ - استمر مع SQLite
-    console.log('⚠️ Falling back to SQLite mode');
-  }
+    }
 }
 
 // إنشاء المالك الافتراضي
@@ -92,8 +87,6 @@ export async function createDefaultOwner(): Promise<void> {
     const existingOwner = await db.select().from(users).where(sql`user_type = 'owner'`).limit(1);
     
     if (existingOwner.length === 0) {
-      console.log('🔑 Creating default owner...');
-      
       const bcrypt = await import('bcrypt');
       const hashedPassword = await bcrypt.hash('admin123', 12);
       
@@ -120,11 +113,8 @@ export async function createDefaultOwner(): Promise<void> {
         ignoredUsers: '[]'
       });
       
-      console.log('✅ Default owner created successfully');
-      console.log('👑 Owner credentials: Username: Owner, Password: admin123');
-    } else {
-      console.log('✅ Owner already exists');
-    }
+      } else {
+      }
   } catch (error) {
     console.error('❌ Error creating default owner:', error);
   }
@@ -149,13 +139,11 @@ export async function runDrizzlePush(): Promise<void> {
         error.code === '42P07' || 
         error.message?.includes('relation') ||
         error.message?.includes('constraint')) {
-      console.log('⚠️ Emergency push skipped - tables already exist');
       return;
     }
     
     // للأخطاء الأخرى، لا ترمي الخطأ
-    console.log('⚠️ Emergency push failed, continuing...');
-  }
+    }
 }
 
 // إنشاء الجداول يدوياً
@@ -276,8 +264,7 @@ async function createTablesManually(): Promise<void> {
       `);
     }
     
-    console.log('✅ Manual table creation completed');
-  } catch (error) {
+    } catch (error) {
     console.error('❌ Error creating tables manually:', error);
   }
 }
@@ -287,8 +274,6 @@ async function addMissingColumns(): Promise<void> {
   if (!db) return;
 
   try {
-    console.log('🔧 Checking for missing columns...');
-    
     // إضافة عمود role إذا كان مفقود
     try {
       if (dbType === 'postgresql') {
@@ -306,8 +291,7 @@ async function addMissingColumns(): Promise<void> {
           ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'guest'
         `);
       }
-      console.log('✅ Added missing role column');
-    } catch (error: any) {
+      } catch (error: any) {
       if (!error.message?.includes('already exists') && !error.message?.includes('duplicate')) {
         console.error('❌ Error adding role column:', error);
       }
@@ -339,8 +323,7 @@ async function addMissingColumns(): Promise<void> {
       }
     }
 
-    console.log('✅ Missing columns check completed');
-  } catch (error) {
+    } catch (error) {
     console.error('❌ Error checking missing columns:', error);
   }
 }
