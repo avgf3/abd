@@ -253,59 +253,57 @@ export default function UserSidebarWithWalls({
 
   return (
     <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col">
-      {/* Toggle Buttons - يظهر فقط إذا لم يتم التحكم خارجياً */}
-      {!propActiveView && (
-        <div className="flex border-b border-gray-200">
-          <Button
-            variant={activeView === 'users' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'users' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            onClick={() => setActiveView('users')}
-          >
-            <Users className="w-4 h-4 ml-2" />
-            المستخدمون
-          </Button>
-          <Button
-            variant={activeView === 'walls' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'walls' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            onClick={() => setActiveView('walls')}
-          >
-            <Home className="w-4 h-4 ml-2" />
-            الحوائط
-          </Button>
-          <Button
-            variant={activeView === 'rooms' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'rooms' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            onClick={() => setActiveView('rooms')}
-          >
-            <Users className="w-4 h-4 ml-2" />
-            الغرف
-          </Button>
-          <Button
-            variant={activeView === 'friends' ? 'default' : 'ghost'}
-            className={`flex-1 rounded-none py-3 ${
-              activeView === 'friends' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            onClick={() => setActiveView('friends')}
-          >
-            <UserPlus className="w-4 h-4 ml-2" />
-            الأصدقاء
-          </Button>
-        </div>
-      )}
+      {/* Toggle Buttons - always visible now */}
+      <div className="flex border-b border-gray-200">
+        <Button
+          variant={activeView === 'users' ? 'default' : 'ghost'}
+          className={`flex-1 rounded-none py-3 ${
+            activeView === 'users' 
+              ? 'bg-blue-500 text-white' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+          onClick={() => setActiveView('users')}
+        >
+          <Users className="w-4 h-4 ml-2" />
+          المستخدمون
+        </Button>
+        <Button
+          variant={activeView === 'walls' ? 'default' : 'ghost'}
+          className={`flex-1 rounded-none py-3 ${
+            activeView === 'walls' 
+              ? 'bg-blue-500 text-white' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+          onClick={() => setActiveView('walls')}
+        >
+          <Home className="w-4 h-4 ml-2" />
+          الحوائط
+        </Button>
+        <Button
+          variant={activeView === 'rooms' ? 'default' : 'ghost'}
+          className={`flex-1 rounded-none py-3 ${
+            activeView === 'rooms' 
+              ? 'bg-blue-500 text-white' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+          onClick={() => setActiveView('rooms')}
+        >
+          <Users className="w-4 h-4 ml-2" />
+          الغرف
+        </Button>
+        <Button
+          variant={activeView === 'friends' ? 'default' : 'ghost'}
+          className={`flex-1 rounded-none py-3 ${
+            activeView === 'friends' 
+              ? 'bg-blue-500 text-white' 
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+          onClick={() => setActiveView('friends')}
+        >
+          <UserPlus className="w-4 h-4 ml-2" />
+          الأصدقاء
+        </Button>
+      </div>
 
       {/* Users View */}
       {activeView === 'users' && (

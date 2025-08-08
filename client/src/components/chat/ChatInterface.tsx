@@ -9,8 +9,7 @@ import SettingsMenu from './SettingsMenu';
 import ReportModal from './ReportModal';
 import AdminReportsPanel from './AdminReportsPanel';
 import NotificationPanel from './NotificationPanel';
-import FriendsPanel from './FriendsPanel';
-import FriendRequestBadge from './FriendRequestBadge';
+
 import MessagesPanel from './MessagesPanel';
 import MessageAlert from './MessageAlert';
 import ModerationPanel from './ModerationPanel';
@@ -193,7 +192,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showFriends, setShowFriends] = useState(false);
+
   const [showMessages, setShowMessages] = useState(false);
   const [showModerationPanel, setShowModerationPanel] = useState(false);
   const [showOwnerPanel, setShowOwnerPanel] = useState(false);
@@ -446,15 +445,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             إشعارات
           </Button>
           
-          <Button 
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
-            onClick={() => setShowFriends(true)}
-          >
-            <span>👥</span>
-            الأصدقاء
-            {/* تنبيه طلبات الصداقة */}
-            <FriendRequestBadge currentUser={chat.currentUser} />
-          </Button>
+
 
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
@@ -706,18 +697,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
-      {showFriends && (
-        <FriendsPanel
-          isOpen={showFriends}
-          onClose={() => setShowFriends(false)}
-          currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
-          onStartPrivateChat={(friend) => {
-            setSelectedPrivateUser(friend);
-            setShowFriends(false);
-          }}
-        />
-      )}
+
 
       {showMessages && (
         <MessagesPanel
