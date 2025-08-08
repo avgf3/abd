@@ -624,3 +624,6 @@ export const storage: LegacyStorage = {
 
 // Export the database service for direct access if needed
 export { databaseService };
+
+// Public interface type for storage consumers
+export type IStorage = typeof storage;

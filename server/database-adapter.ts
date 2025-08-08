@@ -257,7 +257,7 @@ export function createDatabaseAdapter(): DatabaseAdapter {
 
 // إنشاء المحول الافتراضي
 export const dbAdapter = createDatabaseAdapter();
-export const db = dbAdapter.db;
+export const db: any = dbAdapter.db;
 export const dbType = dbAdapter.type;
 
 // دالة للتحقق من حالة قاعدة البيانات
