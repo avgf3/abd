@@ -77,11 +77,11 @@ export class FriendService {
 
       return incomingRequests.map(req => ({
         id: req.id,
-        senderId: req.userId,
-        receiverId: req.friendId,
+        userId: req.userId,
+        friendId: req.friendId,
         status: req.status,
         createdAt: req.createdAt,
-        sender: {
+        user: {
           id: req.userId,
           username: req.senderUsername,
           profileImage: req.senderProfileImage,
@@ -123,11 +123,11 @@ export class FriendService {
 
       return outgoingRequests.map(req => ({
         id: req.id,
-        senderId: req.userId,
-        receiverId: req.friendId,
+        userId: req.userId,
+        friendId: req.friendId,
         status: req.status,
         createdAt: req.createdAt,
-        receiver: {
+        user: {
           id: req.friendId,
           username: req.receiverUsername,
           profileImage: req.receiverProfileImage,
