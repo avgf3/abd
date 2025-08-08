@@ -44,7 +44,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAdminReports, setShowAdminReports] = useState(false);
-  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms'>('users'); // إظهار المستخدمين افتراضياً
+  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>('users'); // إظهار المستخدمين افتراضياً
   
   // حالة الغرف
   const [rooms, setRooms] = useState<ChatRoom[]>(() => []);
@@ -223,6 +223,36 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       });
     }
   }, [chat.newMessageSender]);
+
+  // مراقبة إشعارات قبول طلبات الصداقة للتبديل التلقائي لتبويب الأصدقاء
+  useEffect(() => {
+    const handleFriendRequestAccepted = (event: CustomEvent) => {
+      // التبديل التلقائي إلى تبويب الأصدقاء
+      setActiveView('friends');
+      
+      toast({
+        title: "تم قبول طلب الصداقة",
+        description: `${event.detail.friendName} قبل طلب صداقتك - يمكنك الآن العثور عليه في تبويب الأصدقاء`,
+      });
+    };
+
+    const handleFriendRequestReceived = (event: CustomEvent) => {
+      toast({
+        title: "طلب صداقة جديد",
+        description: `${event.detail.senderName} يريد إضافتك كصديق - اضغط على تبويب الأصدقاء لإدارة الطلبات`,
+      });
+    };
+
+    // إضافة مستمعي الأحداث
+    window.addEventListener('friendRequestAccepted', handleFriendRequestAccepted as EventListener);
+    window.addEventListener('friendRequestReceived', handleFriendRequestReceived as EventListener);
+
+    // تنظيف المستمعين
+    return () => {
+      window.removeEventListener('friendRequestAccepted', handleFriendRequestAccepted as EventListener);
+      window.removeEventListener('friendRequestReceived', handleFriendRequestReceived as EventListener);
+    };
+  }, [toast]);
   const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
   const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(null);
   const [userPopup, setUserPopup] = useState<{
@@ -512,7 +542,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       <main className="flex flex-1 overflow-hidden">
         {/* الشريط الجانبي - يظهر فقط عندما يكون activeView ليس 'hidden' */}
         {activeView !== 'hidden' && (
-          <div className={`${activeView === 'walls' ? 'w-96' : 'w-64'} transition-all duration-300`}>
+          <div className={`${activeView === 'walls' ? 'w-96' : activeView === 'friends' ? 'w-80' : 'w-64'} transition-all duration-300`}>
             <UserSidebarWithWalls 
               users={chat.onlineUsers}
               onUserClick={handleUserClick}
@@ -524,6 +554,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onAddRoom={handleAddRoom}
               onDeleteRoom={handleDeleteRoom}
               onRefreshRooms={fetchRooms}
+              onStartPrivateChat={setSelectedPrivateUser}
             />
           </div>
         )}
