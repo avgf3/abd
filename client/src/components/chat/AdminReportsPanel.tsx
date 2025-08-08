@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 
 interface Report {
@@ -47,18 +48,12 @@ export default function AdminReportsPanel({ isOpen, onClose, currentUser }: Admi
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/moderation/reports?userId=${currentUser.id}`);
-      const data = await response.json();
-      
-      if (response.ok) {
-        setReports(data.reports || []);
-      } else {
-        throw new Error(data.error || 'خطأ في تحميل التبليغات');
-      }
+      const data = await apiRequest(`/api/moderation/reports?userId=${currentUser.id}`);
+      setReports((data as any).reports || []);
     } catch (error) {
       toast({
         title: 'خطأ',
-        description: error instanceof Error ? error.message : 'خطأ في تحميل التبليغات',
+        description: (error as Error)?.message || 'خطأ في تحميل التبليغات',
         variant: 'destructive'
       });
     } finally {
@@ -70,12 +65,8 @@ export default function AdminReportsPanel({ isOpen, onClose, currentUser }: Admi
     if (!currentUser) return;
 
     try {
-      const response = await fetch(`/api/spam-stats?userId=${currentUser.id}`);
-      const data = await response.json();
-      
-      if (response.ok) {
-        setStats(data.stats);
-      }
+      const data = await apiRequest(`/api/spam-stats?userId=${currentUser.id}`);
+      setStats((data as any).stats);
     } catch (error) {
       console.error('خطأ في تحميل الإحصائيات:', error);
     }
@@ -85,36 +76,21 @@ export default function AdminReportsPanel({ isOpen, onClose, currentUser }: Admi
     if (!currentUser) return;
 
     try {
-      const response = await fetch(`/api/reports/${reportId}`, {
+      await apiRequest(`/api/reports/${reportId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action,
-          userId: currentUser.id
-        }),
+        body: { action, userId: currentUser.id }
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: 'تم',
-          description: `تم ${action === 'approved' ? 'قبول' : 'رفض'} التبليغ`,
-          variant: 'default'
-        });
-        
-        // Remove the reviewed report from the list
-        setReports(prev => prev.filter(r => r.id !== reportId));
-        loadStats(); // Refresh stats
-      } else {
-        throw new Error(data.error || 'خطأ في مراجعة التبليغ');
-      }
+      toast({
+        title: 'تم',
+        description: `تم ${action === 'approved' ? 'قبول' : 'رفض'} التبليغ`,
+        variant: 'default'
+      });
+      setReports(prev => prev.filter(r => r.id !== reportId));
+      loadStats();
     } catch (error) {
       toast({
         title: 'خطأ',
-        description: error instanceof Error ? error.message : 'خطأ في مراجعة التبليغ',
+        description: (error as Error)?.message || 'خطأ في مراجعة التبليغ',
         variant: 'destructive'
       });
     }

@@ -30,29 +30,14 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`, {
-        method: 'GET',
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const posts = data.posts || data.data || data || [];
-        setPosts(posts);
-        
-        } else {
-        const errorText = await response.text();
-        console.error('❌ خطأ في جلب المنشورات:', response.status, errorText);
-        toast({
-          title: "خطأ",
-          description: "فشل في جلب المنشورات",
-          variant: "destructive",
-        });
-      }
+      const data = await apiRequest(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`);
+      const posts = (data as any).posts || (data as any).data || data || [];
+      setPosts(posts);
     } catch (error) {
       console.error('❌ خطأ في الاتصال بالخادم:', error);
       toast({
         title: "خطأ",
-        description: "فشل في الاتصال بالخادم",
+        description: "فشل في جلب المنشورات",
         variant: "destructive",
       });
     } finally {
@@ -187,14 +172,14 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
         formData.append('image', selectedImage);
       }
 
-      const response = await fetch('/api/wall/posts', {
+      const result = await apiRequest('/api/wall/posts', {
         method: 'POST',
         body: formData,
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        const newPost = result.post || result;
+      const data = result as any;
+      if (data?.post) {
+        const newPost = data.post || data;
         // إضافة المنشور للقائمة فوراً
         setPosts(prev => [newPost, ...prev]);
         setNewPostContent('');
@@ -204,8 +189,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
           description: "تم نشر المنشور على الحائط",
         });
       } else {
-        const errorText = await response.text();
-        console.error('❌ خطأ في النشر:', response.status, errorText);
+        const errorText = result.error || result.message || 'Unknown error';
+        console.error('❌ خطأ في النشر:', result.status, errorText);
         
         let errorData;
         try {
@@ -235,20 +220,17 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   // التفاعل مع المنشور
   const handleReaction = async (postId: number, reactionType: 'like' | 'dislike' | 'heart') => {
     try {
-      const response = await apiRequest('/api/wall/react', {
+      const result = await apiRequest('/api/wall/react', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+        body: {
           postId,
           type: reactionType,
           userId: currentUser.id,
-        }),
+        },
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      const data = result as any;
+      if (data?.post) {
         setPosts(prev => prev.map(post => 
           post.id === postId ? data.post : post
         ));
@@ -263,23 +245,18 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
     if (!confirm('هل أنت متأكد من حذف هذا المنشور؟\nلا يمكن التراجع عن هذا الإجراء.')) return;
 
     try {
-      const response = await apiRequest(`/api/wall/posts/${postId}`, {
+      await apiRequest(`/api/wall/posts/${postId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+        body: {
           userId: currentUser.id,
-        }),
+        },
       });
 
-      if (response.ok) {
-        setPosts(prev => prev.filter(post => post.id !== postId));
-        toast({
-          title: "تم الحذف",
-          description: "تم حذف المنشور بنجاح",
-        });
-      }
+      setPosts(prev => prev.filter(post => post.id !== postId));
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف المنشور بنجاح",
+      });
     } catch (error) {
       console.error('خطأ في الحذف:', error);
       toast({

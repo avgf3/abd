@@ -515,7 +515,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   const handleSaveEdit = async () => {
     if (!editValue.trim()) {
       toast({ title: "خطأ", description: "يرجى إدخال قيمة صحيحة", variant: "destructive" });
-      return;
+    return;
     }
     setIsLoading(true);
     try {
@@ -530,15 +530,14 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       }
       const response = await apiRequest('/api/users/update-profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser?.id, [fieldName]: editValue }),
+        body: { userId: currentUser?.id, [fieldName]: editValue }
       });
-      if (response.success) {
+      if ((response as any).success) {
         await fetchAndUpdateUser(currentUser?.id!);
         toast({ title: "نجح ✅", description: "تم تحديث الملف الشخصي" });
         closeEditModal();
       } else {
-        throw new Error(response.error || 'فشل في التحديث');
+        throw new Error((response as any).error || 'فشل في التحديث');
       }
     } catch (error) {
       toast({ title: "خطأ", description: "فشل في تحديث البيانات. تحقق من اتصال الإنترنت.", variant: "destructive" });
@@ -553,7 +552,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       setIsLoading(true);
       setSelectedTheme(theme);
       
-      // التحقق من وجود معرف المستخدم
       if (!currentUser?.id) {
         toast({
           title: "خطأ",
@@ -563,7 +561,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         return;
       }
 
-      // التحقق من صحة اللون
       if (!theme || theme.trim() === '') {
         toast({
           title: "خطأ", 
@@ -573,17 +570,16 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         return;
       }
       
-      const response = await apiRequest('/api/users/update-background-color', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          userId: currentUser.id,
-          color: theme 
-        }),
+      // تحديث userTheme و profileBackgroundColor معاً ليتوافق مع الواجهة
+      const result = await apiRequest(`/api/users/${currentUser.id}`, {
+        method: 'PUT',
+        body: { 
+          userTheme: theme,
+          profileBackgroundColor: theme
+        }
       });
 
-      if (response.success) {
-        // تحديث فوري للبيانات
+      if ((result as any)?.user) {
         updateUserData({
           userTheme: theme,
           profileBackgroundColor: theme
@@ -594,7 +590,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           description: "تم تحديث لون الملف الشخصي",
         });
       } else {
-        throw new Error(response.error || 'فشل في تحديث اللون');
+        throw new Error('فشل في تحديث اللون');
       }
     } catch (error) {
       console.error('❌ خطأ في تحديث الثيم:', error);
@@ -603,7 +599,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         description: "فشل في تحديث اللون. تحقق من اتصال الإنترنت.",
         variant: "destructive",
       });
-      // إرجاع الثيم للحالة السابقة
       setSelectedTheme(localUser?.userTheme || 'theme-new-gradient');
     } finally {
       setIsLoading(false);
@@ -616,7 +611,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       setIsLoading(true);
       setSelectedEffect(effect);
       
-      const response = await apiRequest(`/api/users/${localUser?.id}`, {
+      const result = await apiRequest(`/api/users/${localUser?.id}`, {
         method: 'PUT',
         body: { 
           profileEffect: effect,
@@ -624,8 +619,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         }
       });
 
-      if (response.success || response.id) {
-        // تحديث فوري للبيانات
+      const updated = (result as any)?.user;
+      if (updated) {
         updateUserData({ 
           profileEffect: effect,
           usernameColor: getEffectColor(effect)

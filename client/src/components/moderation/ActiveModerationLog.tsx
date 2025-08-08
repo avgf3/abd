@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Shield, UserX, Ban, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { ChatUser } from '@/types/chat';
+import { apiRequest } from '@/lib/apiRequest';
 
 interface ActiveModerationAction {
   id: string;
@@ -41,13 +42,9 @@ export default function ActiveModerationLog({ currentUser, isVisible, onClose }:
   const loadActiveActions = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/moderation/actions?userId=${currentUser.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        // فلترة الإجراءات النشطة فقط
-        const activeActions = (data.actions || []).filter((action: any) => action.isActive);
-        setActiveActions(activeActions);
-      }
+      const data = await apiRequest(`/api/moderation/actions?userId=${currentUser.id}`);
+      const onlyActive = ((data as any).actions || []).filter((action: any) => action.isActive);
+      setActiveActions(onlyActive);
     } catch (error) {
       console.error('خطأ في تحميل الإجراءات النشطة:', error);
     } finally {
@@ -58,35 +55,21 @@ export default function ActiveModerationLog({ currentUser, isVisible, onClose }:
   const handleRemoveAction = async (actionId: string, type: 'mute' | 'block', targetUserId: number) => {
     try {
       const endpoint = type === 'mute' ? '/api/moderation/unmute' : '/api/moderation/unblock';
-      const response = await fetch(endpoint, {
+      await apiRequest(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          moderatorId: currentUser.id, 
-          targetUserId: targetUserId 
-        })
+        body: { moderatorId: currentUser.id, targetUserId }
       });
-      
-      if (response.ok) {
-        toast({
-          title: "تم بنجاح",
-          description: type === 'mute' ? "تم إلغاء الكتم" : "تم إلغاء الحجب",
-          variant: "default"
-        });
-        await loadActiveActions(); // إعادة تحميل القائمة
-      } else {
-        const error = await response.json();
-        toast({
-          title: "خطأ",
-          description: error.error || "فشل في تنفيذ العملية",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
+      toast({
+        title: "تم بنجاح",
+        description: type === 'mute' ? "تم إلغاء الكتم" : "تم إلغاء الحجب",
+        variant: "default"
+      });
+      await loadActiveActions();
+    } catch (error: any) {
       console.error('خطأ في إزالة الإجراء:', error);
       toast({
         title: "خطأ",
-        description: "حدث خطأ في الاتصال",
+        description: error?.message || "حدث خطأ في الاتصال",
         variant: "destructive"
       });
     }

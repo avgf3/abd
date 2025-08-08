@@ -652,33 +652,28 @@ export function useChat() {
     }
     
     try {
-      const response = await fetch(`/api/messages/room/${roomId}?limit=50`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.messages && Array.isArray(data.messages)) {
-          // تحويل الرسائل إلى التنسيق المطلوب
-          const formattedMessages = data.messages.map((msg: any) => ({
-            id: msg.id,
-            content: msg.content,
-            timestamp: new Date(msg.timestamp),
-            senderId: msg.senderId,
-            sender: msg.sender,
-            messageType: msg.messageType || 'text',
-            isPrivate: msg.isPrivate || false,
-            roomId: msg.roomId || roomId
-          }));
-          
-          // إضافة الرسائل للغرفة
-          dispatch({ 
-            type: 'ADD_ROOM_MESSAGE', 
-            payload: { 
-              roomId: roomId, 
-              message: formattedMessages 
-            }
-          });
-        }
-      } else {
-        console.error(`❌ فشل في تحميل رسائل الغرفة ${roomId}:`, response.status);
+      const data = await apiRequest(`/api/messages/room/${roomId}?limit=50`);
+      if ((data as any).messages && Array.isArray((data as any).messages)) {
+        // تحويل الرسائل إلى التنسيق المطلوب
+        const formattedMessages = (data as any).messages.map((msg: any) => ({
+          id: msg.id,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp),
+          senderId: msg.senderId,
+          sender: msg.sender,
+          messageType: msg.messageType || 'text',
+          isPrivate: msg.isPrivate || false,
+          roomId: msg.roomId || roomId
+        }));
+        
+        // إضافة الرسائل للغرفة
+        dispatch({ 
+          type: 'ADD_ROOM_MESSAGE', 
+          payload: { 
+            roomId: roomId, 
+            message: formattedMessages 
+          }
+        });
       }
     } catch (error) {
       console.error(`❌ خطأ في تحميل رسائل الغرفة ${roomId}:`, error);
@@ -778,42 +773,34 @@ export function useChat() {
     
     try {
       // تحميل رسائل الغرفة العامة
-      const generalResponse = await fetch('/api/messages/room/general?limit=50');
-      if (generalResponse.ok) {
-        const generalData = await generalResponse.json();
-        if (generalData.messages && Array.isArray(generalData.messages)) {
-          // تحويل الرسائل إلى التنسيق المطلوب
-          const formattedMessages = generalData.messages.map((msg: any) => ({
-            id: msg.id,
-            content: msg.content,
-            timestamp: new Date(msg.timestamp),
-            senderId: msg.senderId,
-            sender: msg.sender,
-            messageType: msg.messageType || 'text',
-            isPrivate: msg.isPrivate || false,
-            roomId: msg.roomId || 'general'
-          }));
-          
-          // إضافة الرسائل للغرفة العامة
-          dispatch({ 
-            type: 'ADD_ROOM_MESSAGE', 
-            payload: { 
-              roomId: 'general', 
-              message: formattedMessages 
-            }
-          });
-          
-          // تحديث الرسائل العامة إذا كانت الغرفة الحالية هي العامة
-          if (state.currentRoomId === 'general') {
-            dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: formattedMessages });
+      const generalData = await apiRequest('/api/messages/room/general?limit=50');
+      if ((generalData as any).messages && Array.isArray((generalData as any).messages)) {
+        // تحويل الرسائل إلى التنسيق المطلوب
+        const formattedMessages = (generalData as any).messages.map((msg: any) => ({
+          id: msg.id,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp),
+          senderId: msg.senderId,
+          sender: msg.sender,
+          messageType: msg.messageType || 'text',
+          isPrivate: msg.isPrivate || false,
+          roomId: msg.roomId || 'general'
+        }));
+        
+        // إضافة الرسائل للغرفة العامة
+        dispatch({ 
+          type: 'ADD_ROOM_MESSAGE', 
+          payload: { 
+            roomId: 'general', 
+            message: formattedMessages 
           }
+        });
+        
+        // تحديث الرسائل العامة إذا كانت الغرفة الحالية هي العامة
+        if (state.currentRoomId === 'general') {
+          dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: formattedMessages });
         }
-      } else {
-        console.error('❌ فشل في تحميل رسائل الغرفة العامة:', generalResponse.status);
       }
-
-      // سيتم تحميل رسائل الغرف عند الانضمام إليها فقط
-      // بدلاً من تحميل غرف مُحددة مسبقاً
     } catch (error) {
       console.error('❌ خطأ في تحميل الرسائل:', error);
     } finally {

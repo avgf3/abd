@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, User, FileText, Clock } from 'lucide-react';
 import type { ChatUser } from '@/types/chat';
+import { apiRequest } from '@/lib/apiRequest';
 
 interface ReportData {
   id: number;
@@ -38,11 +39,8 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
   const loadReports = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/moderation/reports?userId=${currentUser.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setReports(data.reports || []);
-      }
+      const data = await apiRequest(`/api/moderation/reports?userId=${currentUser.id}`);
+      setReports((data as any).reports || []);
     } catch (error) {
       console.error('خطأ في تحميل البلاغات:', error);
     } finally {
@@ -52,15 +50,11 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
 
   const handleReportAction = async (reportId: number, action: 'reviewed' | 'dismissed') => {
     try {
-      const response = await fetch(`/api/reports/${reportId}/review`, {
+      await apiRequest(`/api/reports/${reportId}/review`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, moderatorId: currentUser.id })
+        body: { action, moderatorId: currentUser.id }
       });
-      
-      if (response.ok) {
-        await loadReports(); // إعادة تحميل البلاغات
-      }
+      await loadReports();
     } catch (error) {
       console.error('خطأ في معالجة البلاغ:', error);
     }

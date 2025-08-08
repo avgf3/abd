@@ -42,9 +42,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     queryKey: ['/api/notifications', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) throw new Error('No user ID');
-      const response = await apiRequest(`/api/notifications?userId=${currentUser.id}&after=${lastChecked}`);
-      if (!response.ok) throw new Error('Failed to fetch notifications');
-      return response.json();
+      return await apiRequest(`/api/notifications?userId=${currentUser.id}&after=${lastChecked}`);
     },
     enabled: !!currentUser?.id && isOpen,
     refetchInterval: isOpen ? 30000 : false, // كل 30 ثانية بدلاً من 3 ثوانٍ عند فتح النافذة
@@ -57,9 +55,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     queryKey: ['/api/notifications/unread-count', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) throw new Error('No user ID');
-      const response = await apiRequest(`/api/notifications/unread-count?userId=${currentUser.id}`);
-      if (!response.ok) throw new Error('Failed to fetch unread count');
-      return response.json();
+      return await apiRequest(`/api/notifications/unread-count?userId=${currentUser.id}`);
     },
     enabled: !!currentUser?.id,
     refetchInterval: 60000, // كل دقيقة بدلاً من ثانيتين
@@ -128,11 +124,9 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
   // تحديد إشعار كمقروء - محسن
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: number) => {
-      const response = await apiRequest(`/api/notifications/${notificationId}/read`, {
+      return await apiRequest(`/api/notifications/${notificationId}/read`, {
         method: 'PUT'
       });
-      if (!response.ok) throw new Error('Failed to mark as read');
-      return response.json();
     },
     onSuccess: () => {
       // تحديث فوري وذكي للكاش
@@ -170,11 +164,9 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
   // تحديد جميع الإشعارات كمقروءة - محسن
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(`/api/notifications/user/${currentUser?.id}/read-all`, {
+      return await apiRequest(`/api/notifications/user/${currentUser?.id}/read-all`, {
         method: 'PUT'
       });
-      if (!response.ok) throw new Error('Failed to mark all as read');
-      return response.json();
     },
     onSuccess: () => {
       // تحديث فوري للكاش
@@ -213,11 +205,9 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
   // حذف إشعار - محسن
   const deleteNotificationMutation = useMutation({
     mutationFn: async (notificationId: number) => {
-      const response = await apiRequest(`/api/notifications/${notificationId}`, {
+      return await apiRequest(`/api/notifications/${notificationId}`, {
         method: 'DELETE'
       });
-      if (!response.ok) throw new Error('Failed to delete notification');
-      return response.json();
     },
     onSuccess: (_, notificationId) => {
       // تحديث فوري للكاش

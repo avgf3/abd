@@ -169,28 +169,23 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     if (!chat.currentUser) return;
     
     try {
-      const response = await apiRequest(`/api/rooms/${roomId}`, {
+      await apiRequest(`/api/rooms/${roomId}`, {
         method: 'DELETE',
         body: { userId: chat.currentUser.id }
       });
 
-      if (response.ok) {
-        setRooms(prev => prev.filter(room => room.id !== roomId));
-        if (chat.currentRoomId === roomId) {
-          chat.joinRoom('general');
-        }
-        toast({
-          title: "تم حذف الغرفة",
-          description: "تم حذف الغرفة بنجاح",
-        });
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || 'خطأ في حذف الغرفة');
+      setRooms(prev => prev.filter(room => room.id !== roomId));
+      if (chat.currentRoomId === roomId) {
+        chat.joinRoom('general');
       }
-    } catch (error) {
+      toast({
+        title: "تم حذف الغرفة",
+        description: "تم حذف الغرفة بنجاح",
+      });
+    } catch (error: any) {
       toast({
         title: "خطأ في حذف الغرفة",
-        description: error instanceof Error ? error.message : "حدث خطأ أثناء حذف الغرفة",
+        description: error?.message || "حدث خطأ أثناء حذف الغرفة",
         variant: "destructive",
       });
     }

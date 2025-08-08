@@ -49,10 +49,9 @@ export default function BroadcastRoomInterface({
   // جلب معلومات غرفة البث
   const fetchBroadcastInfo = async () => {
     try {
-      const response = await apiRequest(`/api/rooms/${room.id}/broadcast-info`, { method: 'GET' });
-      if (response.ok) {
-        const data = await response.json();
-        setBroadcastInfo(data.info);
+      const data = await apiRequest(`/api/rooms/${room.id}/broadcast-info`, { method: 'GET' });
+      if ((data as any)?.info) {
+        setBroadcastInfo((data as any).info);
       }
     } catch (error) {
       console.error('خطأ في جلب معلومات غرفة البث:', error);
@@ -114,30 +113,20 @@ export default function BroadcastRoomInterface({
 
     try {
       setIsLoading(true);
-      const response = await apiRequest(`/api/rooms/${room.id}/request-mic`, {
+      await apiRequest(`/api/rooms/${room.id}/request-mic`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser.id })
+        body: { userId: currentUser.id }
       });
 
-      if (response.ok) {
-        toast({
-          title: 'تم إرسال الطلب',
-          description: 'تم إرسال طلب المايك للمضيف',
-        });
-        fetchBroadcastInfo();
-      } else {
-        const error = await response.json();
-        toast({
-          title: 'خطأ',
-          description: error.error || 'حدث خطأ في إرسال الطلب',
-          variant: 'destructive'
-        });
-      }
-    } catch (error) {
+      toast({
+        title: 'تم إرسال الطلب',
+        description: 'تم إرسال طلب المايك للمضيف',
+      });
+      fetchBroadcastInfo();
+    } catch (error: any) {
       toast({
         title: 'خطأ',
-        description: 'حدث خطأ في إرسال الطلب',
+        description: error?.message || 'حدث خطأ في إرسال الطلب',
         variant: 'destructive'
       });
     } finally {
@@ -151,30 +140,20 @@ export default function BroadcastRoomInterface({
 
     try {
       setIsLoading(true);
-      const response = await apiRequest(`/api/rooms/${room.id}/approve-mic/${userId}`, {
+      await apiRequest(`/api/rooms/${room.id}/approve-mic/${userId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approvedBy: currentUser.id })
+        body: { approvedBy: currentUser.id }
       });
 
-      if (response.ok) {
-        toast({
-          title: 'تمت الموافقة',
-          description: 'تمت الموافقة على طلب المايك',
-        });
-        fetchBroadcastInfo();
-      } else {
-        const error = await response.json();
-        toast({
-          title: 'خطأ',
-          description: error.error || 'حدث خطأ في الموافقة',
-          variant: 'destructive'
-        });
-      }
-    } catch (error) {
+      toast({
+        title: 'تمت الموافقة',
+        description: 'تمت الموافقة على طلب المايك',
+      });
+      fetchBroadcastInfo();
+    } catch (error: any) {
       toast({
         title: 'خطأ',
-        description: 'حدث خطأ في الموافقة',
+        description: error?.message || 'حدث خطأ في الموافقة',
         variant: 'destructive'
       });
     } finally {
@@ -188,30 +167,20 @@ export default function BroadcastRoomInterface({
 
     try {
       setIsLoading(true);
-      const response = await apiRequest(`/api/rooms/${room.id}/reject-mic/${userId}`, {
+      await apiRequest(`/api/rooms/${room.id}/reject-mic/${userId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rejectedBy: currentUser.id })
+        body: { rejectedBy: currentUser.id }
       });
 
-      if (response.ok) {
-        toast({
-          title: 'تم الرفض',
-          description: 'تم رفض طلب المايك',
-        });
-        fetchBroadcastInfo();
-      } else {
-        const error = await response.json();
-        toast({
-          title: 'خطأ',
-          description: error.error || 'حدث خطأ في الرفض',
-          variant: 'destructive'
-        });
-      }
-    } catch (error) {
+      toast({
+        title: 'تم الرفض',
+        description: 'تم رفض طلب المايك',
+      });
+      fetchBroadcastInfo();
+    } catch (error: any) {
       toast({
         title: 'خطأ',
-        description: 'حدث خطأ في الرفض',
+        description: error?.message || 'حدث خطأ في الرفض',
         variant: 'destructive'
       });
     } finally {
@@ -225,30 +194,20 @@ export default function BroadcastRoomInterface({
 
     try {
       setIsLoading(true);
-      const response = await apiRequest(`/api/rooms/${room.id}/remove-speaker/${userId}`, {
+      await apiRequest(`/api/rooms/${room.id}/remove-speaker/${userId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ removedBy: currentUser.id })
+        body: { removedBy: currentUser.id }
       });
 
-      if (response.ok) {
-        toast({
-          title: 'تم الإزالة',
-          description: 'تم إزالة المتحدث بنجاح',
-        });
-        fetchBroadcastInfo();
-      } else {
-        const error = await response.json();
-        toast({
-          title: 'خطأ',
-          description: error.error || 'حدث خطأ في الإزالة',
-          variant: 'destructive'
-        });
-      }
-    } catch (error) {
+      toast({
+        title: 'تم الإزالة',
+        description: 'تم إزالة المتحدث بنجاح',
+      });
+      fetchBroadcastInfo();
+    } catch (error: any) {
       toast({
         title: 'خطأ',
-        description: 'حدث خطأ في الإزالة',
+        description: error?.message || 'حدث خطأ في الإزالة',
         variant: 'destructive'
       });
     } finally {
