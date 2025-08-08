@@ -60,7 +60,7 @@ export default function MessagesPanel({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[500px] bg-white border shadow-lg rounded-lg">
+      <DialogContent className="max-w-md max-h-[450px] bg-white border shadow-lg rounded-lg">
         <DialogHeader className="border-b pb-4">
           <DialogTitle className="text-2xl font-semibold text-center text-foreground">
             ✉️ ارسال رسالة
