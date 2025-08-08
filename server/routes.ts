@@ -1298,26 +1298,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Friend routes
-  app.get("/api/friends/:userId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const friends = await storage.getFriends(userId);
-      res.json({ friends });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
-
-  app.post("/api/friends", async (req, res) => {
-    try {
-      const { userId, friendId } = req.body;
-      const friendship = await storage.addFriend(userId, friendId);
-      res.json({ friendship });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
 
 
 
@@ -2843,15 +2823,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // الحصول على قائمة الأصدقاء
-  app.get("/api/friends/:userId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const friends = await storage.getFriends(userId);
-      res.json({ friends });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
 
   // إزالة صديق
   app.delete("/api/friends/:userId/:friendId", async (req, res) => {

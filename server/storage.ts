@@ -39,8 +39,7 @@ export async function addPoints(userId: number, points: number, reason: string):
     // Add to points history
     await databaseService.addPointsHistory(userId, points, reason, 'earn');
     
-    console.log(`✅ Added ${points} points to user ${userId} for: ${reason}`);
-  } catch (error) {
+    } catch (error) {
     console.error('Error adding points:', error);
   }
 }
@@ -380,9 +379,41 @@ export const storage: LegacyStorage = {
   },
 
   async addFriend(userId: number, friendId: number) {
-    const request = await databaseService.sendFriendRequest(userId, friendId);
-    if (!request) throw new Error('Failed to send friend request');
-    return request;
+    // إنشاء صداقة مقبولة مباشرة (يستخدم في أماكن تحتاج إضافة مباشرة)
+    const { db, dbType } = await import('./database-adapter');
+    const { friends } = dbType === 'postgresql' ? await import('../shared/schema') : await import('../shared/sqlite-schema');
+    const { and, or, eq } = await import('drizzle-orm');
+
+    // لا تنشئ تكرار
+    const existing = await (db as any)
+      .select()
+      .from((friends as any))
+      .where(
+        and(
+          or(
+            and(eq((friends as any).userId, userId as any), eq((friends as any).friendId, friendId as any)),
+            and(eq((friends as any).userId, friendId as any), eq((friends as any).friendId, userId as any))
+          )
+        )
+      )
+      .limit(1);
+    if (Array.isArray(existing) && existing.length > 0) return existing[0] as any;
+
+    if (dbType === 'postgresql') {
+      const result = await (db as any).insert((friends as any)).values({ userId, friendId, status: 'accepted', createdAt: new Date() }).returning();
+      return result?.[0] as any;
+    } else {
+      const result = await (db as any).insert((friends as any)).values({ userId, friendId, status: 'accepted', createdAt: new Date().toISOString() });
+      if ((result as any).lastInsertRowid) {
+        const rows = await (db as any)
+          .select()
+          .from((friends as any))
+          .where(eq((friends as any).id, Number((result as any).lastInsertRowid)))
+          .limit(1);
+        return rows?.[0] as any;
+      }
+      return null as any;
+    }
   },
 
   async getFriends(userId: number) {
@@ -513,6 +544,14 @@ export const storage: LegacyStorage = {
 
   async getFriendship(userId1: number, userId2: number) {
     return await friendService.getFriendship(userId1, userId2);
+  },
+
+  async getFriendRequest(senderId: number, receiverId: number) {
+    return await friendService.getFriendRequest(senderId, receiverId);
+  },
+
+  async getFriendRequestById(requestId: number) {
+    return await friendService.getFriendRequestById(requestId);
   },
 
   async sendFriendRequest(senderId: number, receiverId: number) {
