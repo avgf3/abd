@@ -100,17 +100,13 @@ export default function FriendsPanel({
     
     setLoading(true);
     try {
-      const response = await apiRequest(`/api/friends/${currentUser.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data && Array.isArray(data.friends)) {
-          setFriends(data.friends.map((friend: any) => ({
-            ...friend,
-            status: friend.isOnline ? 'online' : 'offline'
-          })));
-        }
+      const data = await apiRequest(`/api/friends/${currentUser.id}`);
+      if (data && Array.isArray((data as any).friends)) {
+        setFriends((data as any).friends.map((friend: any) => ({
+          ...friend,
+          status: friend.isOnline ? 'online' : 'offline'
+        })));
       } else {
-        console.error('Error fetching friends:', response.status);
         toast({
           title: "خطأ",
           description: "فشل في جلب قائمة الأصدقاء",
@@ -133,21 +129,15 @@ export default function FriendsPanel({
     if (!currentUser) return;
     
     try {
-      const [incomingResponse, outgoingResponse] = await Promise.all([
-        apiRequest(`/api/friend-requests/incoming/${currentUser.id}`),
-        apiRequest(`/api/friend-requests/outgoing/${currentUser.id}`)
-      ]);
-      
-      const incoming = incomingResponse.ok && typeof incomingResponse.json === 'function' ? await incomingResponse.json() : { requests: [] };
-      const outgoing = outgoingResponse.ok && typeof outgoingResponse.json === 'function' ? await outgoingResponse.json() : { requests: [] };
+      const incoming = await apiRequest(`/api/friend-requests/incoming/${currentUser.id}`);
+      const outgoing = await apiRequest(`/api/friend-requests/outgoing/${currentUser.id}`);
       
       setFriendRequests({
-        incoming: incoming.requests || [],
-        outgoing: outgoing.requests || []
+        incoming: (incoming as any)?.requests || [],
+        outgoing: (outgoing as any)?.requests || []
       });
     } catch (error) {
       console.error('Error fetching friend requests:', error);
-      // التعامل بهدوء مع الأخطاء
       setFriendRequests({ incoming: [], outgoing: [] });
     }
   };
@@ -161,17 +151,13 @@ export default function FriendsPanel({
 
   const handleAcceptRequest = async (requestId: number) => {
     try {
-      const response = await apiRequest(`/api/friend-requests/${requestId}/accept`, {
+      await apiRequest(`/api/friend-requests/${requestId}/accept`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ userId: currentUser?.id })
       });
-      
-      if (!response.ok) {
-        throw new Error('فشل في قبول طلب الصداقة');
-      }
       
       toast({
         title: 'تم قبول الطلب',
@@ -179,13 +165,13 @@ export default function FriendsPanel({
         variant: 'default'
       });
       
-      fetchFriendRequests(); // تحديث طلبات الصداقة
-      fetchFriends(); // تحديث قائمة الأصدقاء
-    } catch (error) {
+      fetchFriendRequests();
+      fetchFriends();
+    } catch (error: any) {
       console.error('Accept friend request error:', error);
       toast({
         title: 'خطأ',
-        description: error instanceof Error ? error.message : 'فشل في قبول طلب الصداقة',
+        description: error?.message || 'فشل في قبول طلب الصداقة',
         variant: 'destructive'
       });
     }
@@ -193,17 +179,13 @@ export default function FriendsPanel({
 
   const handleRejectRequest = async (requestId: number) => {
     try {
-      const response = await apiRequest(`/api/friend-requests/${requestId}/decline`, {
+      await apiRequest(`/api/friend-requests/${requestId}/decline`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ userId: currentUser?.id })
       });
-      
-      if (!response.ok) {
-        throw new Error('فشل في رفض طلب الصداقة');
-      }
       
       toast({
         title: 'تم رفض الطلب',
@@ -211,12 +193,12 @@ export default function FriendsPanel({
         variant: 'default'
       });
       
-      fetchFriendRequests(); // تحديث طلبات الصداقة
-    } catch (error) {
+      fetchFriendRequests();
+    } catch (error: any) {
       console.error('Reject friend request error:', error);
       toast({
         title: 'خطأ',
-        description: error instanceof Error ? error.message : 'فشل في رفض طلب الصداقة',
+        description: error?.message || 'فشل في رفض طلب الصداقة',
         variant: 'destructive'
       });
     }
@@ -224,7 +206,7 @@ export default function FriendsPanel({
 
   const handleCancelRequest = async (requestId: number) => {
     try {
-      const response = await apiRequest(`/api/friend-requests/${requestId}/cancel`, {
+      await apiRequest(`/api/friend-requests/${requestId}/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -232,22 +214,18 @@ export default function FriendsPanel({
         body: JSON.stringify({ userId: currentUser?.id })
       });
       
-      if (!response.ok) {
-        throw new Error('فشل في إلغاء طلب الصداقة');
-      }
-      
       toast({
         title: 'تم إلغاء الطلب',
         description: 'تم إلغاء طلب الصداقة بنجاح',
         variant: 'default'
       });
       
-      fetchFriendRequests(); // تحديث طلبات الصداقة
-    } catch (error) {
+      fetchFriendRequests();
+    } catch (error: any) {
       console.error('Cancel friend request error:', error);
       toast({
         title: 'خطأ',
-        description: error instanceof Error ? error.message : 'فشل في إلغاء طلب الصداقة',
+        description: error?.message || 'فشل في إلغاء طلب الصداقة',
         variant: 'destructive'
       });
     }
