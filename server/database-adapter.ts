@@ -200,6 +200,12 @@ function createSQLiteTables(sqlite: Database.Database) {
 function createPostgreSQLAdapter(): DatabaseAdapter {
   const databaseUrl = process.env.DATABASE_URL;
   
+  // Use PostgreSQL only in production with a valid URL; fallback otherwise
+  const isProduction = (process.env.NODE_ENV || 'development') === 'production';
+  if (!isProduction) {
+    return { db: null, type: 'disabled' };
+  }
+
   if (!databaseUrl || (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://'))) {
     console.warn("⚠️ DATABASE_URL غير محدد أو غير صحيح");
     return { db: null, type: 'disabled' };
@@ -222,7 +228,7 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
           const migrationsPath = path.join(process.cwd(), 'migrations');
           if (fs.existsSync(migrationsPath)) {
             await migratePostgres(db as PostgreSQLDatabase, { migrationsFolder: 'migrations' });
-            }
+          }
         } catch (error: any) {
           // تجاهل أخطاء الجداول الموجودة
           if (!error.message?.includes('already exists') && error.code !== '42P07') {
@@ -270,7 +276,8 @@ export async function checkDatabaseHealth(): Promise<boolean> {
     if (dbType === 'postgresql') {
       await (db as PostgreSQLDatabase).execute('SELECT 1' as any);
     } else if (dbType === 'sqlite') {
-      (db as any).exec('SELECT 1');
+      // Run a lightweight select to verify the connection works
+      await (db as SQLiteDatabase).select().from(sqliteSchema.users).limit(1);
     }
     
     return true;
