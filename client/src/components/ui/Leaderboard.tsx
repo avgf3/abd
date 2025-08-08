@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Award, Crown } from 'lucide-react';
 import { getLevelInfo, getLevelIcon, getLevelColor, formatPoints } from '@/utils/pointsUtils';
 import type { ChatUser } from '@/types/chat';
+import { apiRequest } from '@/lib/queryClient';
 
 interface LeaderboardProps {
   currentUser?: ChatUser;
@@ -24,10 +25,7 @@ export function Leaderboard({ currentUser, onClose }: LeaderboardProps) {
   const fetchLeaderboard = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/points/leaderboard?limit=20');
-      if (!response.ok) throw new Error('فشل في جلب لوحة الصدارة');
-      
-      const data = await response.json();
+      const data = await apiRequest('/api/points/leaderboard?limit=20');
       const rankedData = data.map((user: ChatUser, index: number) => ({
         ...user,
         rank: index + 1
