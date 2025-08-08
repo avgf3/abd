@@ -60,9 +60,9 @@ export default function MessagesPanel({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[500px] bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-2xl">
-        <DialogHeader className="border-b border-blue-200 pb-4">
-          <DialogTitle className="text-2xl font-bold text-center text-blue-800">
+      <DialogContent className="max-w-md max-h-[500px] bg-white border shadow-lg rounded-lg">
+        <DialogHeader className="border-b pb-4">
+          <DialogTitle className="text-2xl font-semibold text-center text-foreground">
             ✉️ ارسال رسالة
           </DialogTitle>
         </DialogHeader>
@@ -70,20 +70,20 @@ export default function MessagesPanel({
         <ScrollArea className="h-[350px] w-full">
           <div className="space-y-4 p-4">
             {conversationUsers.length === 0 ? (
-              <div className="text-center py-12 text-blue-400">
+              <div className="text-center py-12 text-muted-foreground">
                 <div className="text-6xl mb-6">✉️</div>
-                <h3 className="text-lg font-semibold text-blue-700 mb-2">لا توجد رسائل</h3>
+                <h3 className="text-lg font-semibold mb-2">لا توجد رسائل</h3>
                 <p className="text-sm">انقر على أي مستخدم لارسال رسالة</p>
               </div>
             ) : (
               <div className="space-y-3">
-                <h4 className="font-bold text-blue-700 text-lg mb-3 border-b border-blue-200 pb-2">
+                <h4 className="font-bold text-lg mb-3 border-b pb-2">
                   ✉️ ارسال رسالة ({conversationUsers.length})
                 </h4>
                 {conversationUsers.map(({ user, lastMessage, unreadCount }) => (
                   <div 
                     key={user!.id} 
-                    className="cursor-pointer hover:bg-purple-50 transition-all duration-200 p-2 rounded-lg"
+                    className="cursor-pointer hover:bg-muted/80 transition-all duration-200 p-2 rounded-lg"
                     onClick={() => {
                       onStartPrivateChat(user!);
                       onClose();
@@ -93,7 +93,7 @@ export default function MessagesPanel({
                       <img
                         src={getImageSrc(user!.profileImage)}
                         alt="صورة المستخدم"
-                        className="w-10 h-10 rounded-full border-2 border-purple-400 ring-1 ring-purple-200 shadow-sm object-cover"
+                        className="w-10 h-10 rounded-full border border-gray-300 shadow-sm object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = '/default_avatar.svg';
@@ -101,7 +101,7 @@ export default function MessagesPanel({
                       />
                       
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 text-sm">
+                        <h3 className="font-medium text-foreground text-sm">
                           {user!.username}
                         </h3>
                         {unreadCount > 0 && (
@@ -120,11 +120,11 @@ export default function MessagesPanel({
           </div>
         </ScrollArea>
 
-        <div className="flex justify-center pt-6 border-t border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
+        <div className="flex justify-center pt-6 border-t bg-background/50">
           <Button 
             onClick={onClose} 
             variant="outline" 
-            className="w-full bg-white border-purple-300 text-purple-700 hover:bg-purple-100 font-medium"
+            className="w-full"
           >
             ✖️ إغلاق
           </Button>
