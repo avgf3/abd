@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, User, FileText, Clock } from 'lucide-react';
 import type { ChatUser } from '@/types/chat';
-import { apiRequest } from '@/lib/apiRequest';
+import { apiRequest } from '@/lib/queryClient';
 
 interface ReportData {
   id: number;
