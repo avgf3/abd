@@ -600,7 +600,10 @@ export const storage: LegacyStorage = {
         const users: any[] = [];
         for (const id of userIds) {
           const u = await databaseService.getUserById(id);
-          if (u) users.push(u as any);
+          // تضمين فقط المستخدمين المتصلين فعلياً وغير المخفيين
+          if (u && u.isOnline && !(u as any).isHidden) {
+            users.push(u as any);
+          }
         }
         return users;
       }
