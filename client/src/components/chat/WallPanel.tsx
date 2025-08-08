@@ -288,7 +288,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" dir="rtl">
-      <div className="bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/50 w-[95vw] h-[92vh] flex flex-col overflow-hidden">
+      <div className="bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/50 w-[85vw] h-[92vh] flex flex-col overflow-hidden">
         {/* رأس النافذة المحسن */}
         <div className="flex items-center justify-between p-6 border-b border-border/50 bg-gradient-to-l from-primary/5 to-transparent">
           <div className="flex items-center gap-3">
@@ -306,8 +306,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          {/* منطقة الحائط - أكثر من الثلث قليلاً */}
-          <div className="w-2/5 border-l border-border/50 p-6 flex flex-col bg-gradient-to-b from-muted/20 to-transparent">
+          {/* منطقة الحائط - مع تقليل العرض */}
+          <div className="w-1/3 border-l border-border/50 p-4 flex flex-col bg-gradient-to-b from-muted/20 to-transparent">
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col">
               <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50 backdrop-blur-sm rounded-xl p-1">
                 <TabsTrigger value="public" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2">
@@ -322,18 +322,18 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
               {/* نموذج النشر المحسن */}
               {currentUser.userType !== 'guest' && (
-                <Card className="mb-6 border-0 shadow-lg bg-background/80 backdrop-blur-sm">
-                  <CardContent className="p-6">
+                <Card className="mb-4 border-0 shadow-lg bg-background/80 backdrop-blur-sm">
+                  <CardContent className="p-4">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
                         {currentUser.profileImage ? (
                           <img 
                             src={getImageSrc(currentUser.profileImage)} 
                             alt={currentUser.username}
-                            className="w-10 h-10 rounded-full object-cover"
+                            className="w-8 h-8 rounded-full object-cover"
                           />
                         ) : (
-                          <span className="text-sm font-bold text-primary">
+                          <span className="text-xs font-bold text-primary">
                             {currentUser.username.charAt(0)}
                           </span>
                         )}
@@ -443,15 +443,15 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="relative">
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-primary/10">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-primary/10">
                                 {post.userProfileImage ? (
                                   <img 
                                     src={getImageSrc(post.userProfileImage)} 
                                     alt={post.username}
-                                    className="w-12 h-12 rounded-full object-cover"
+                                    className="w-10 h-10 rounded-full object-cover"
                                   />
                                 ) : (
-                                  <span className="text-lg font-bold text-primary">
+                                  <span className="text-sm font-bold text-primary">
                                     {post.username.charAt(0)}
                                   </span>
                                 )}
@@ -563,8 +563,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
             </Tabs>
           </div>
 
-          {/* منطقة الشات - أقل من الثلثين قليلاً */}
-          <div className="w-3/5 p-6">
+          {/* منطقة الشات - مع زيادة العرض */}
+          <div className="w-2/3 p-6">
             <div className="h-full bg-gradient-to-br from-muted/10 to-muted/20 rounded-2xl flex items-center justify-center text-muted-foreground border border-dashed border-border/50">
               <div className="text-center">
                 <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">

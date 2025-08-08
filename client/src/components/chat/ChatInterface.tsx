@@ -388,15 +388,134 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   return (
       <div className="h-screen flex flex-col" onClick={closeUserPopup}>
-      {/* Header - بدون التبويبات الأربعة */}
+      {/* Header - with tabs moved to left and logo moved to right */}
       <header className="bg-secondary py-4 px-6 flex justify-between items-center shadow-2xl border-b border-accent">
+        <div className="flex gap-3">
+          {/* التبويبات المنقولة إلى اليسار */}
+          <Button 
+            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            }`}
+            onClick={() => setActiveView(activeView === 'walls' ? 'hidden' : 'walls')}
+            title="الحوائط"
+          >
+            <div className="flex flex-col gap-0.5">
+              <div className="w-4 h-0.5 bg-current"></div>
+              <div className="w-4 h-0.5 bg-current"></div>
+              <div className="w-4 h-0.5 bg-current"></div>
+            </div>
+            الحوائط
+          </Button>
+          
+          <Button 
+            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            }`}
+            onClick={() => setActiveView(activeView === 'users' ? 'hidden' : 'users')}
+            title="المستخدمون المتصلون"
+          >
+            <span>👥</span>
+            المستخدمون ({chat.onlineUsers?.length ?? 0})
+          </Button>
+
+          <Button 
+            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            }`}
+            onClick={() => setActiveView(activeView === 'rooms' ? 'hidden' : 'rooms')}
+            title="الغرف"
+          >
+            <span>🏠</span>
+            الغرف
+          </Button>
+
+          <Button 
+            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              activeView === 'friends' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            }`}
+            onClick={() => setActiveView(activeView === 'friends' ? 'hidden' : 'friends')}
+            title="الأصدقاء"
+          >
+            <span>👨‍👩‍👧‍👦</span>
+            الأصدقاء
+          </Button>
+        </div>
         <div className="flex items-center gap-3">
+          {/* Logo moved to the right */}
           <div className="text-2xl">💬</div>
           <div className="text-2xl font-bold text-white">
             Arabic<span className="text-primary">Chat</span>
           </div>
         </div>
+      </header>
+      
+      {/* Main Content */}
+      <main className="flex flex-1 overflow-hidden">
+        {(() => {
+          const currentRoom = rooms.find(room => room.id === chat.currentRoomId);
+          
+          // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
+          if (currentRoom?.isBroadcast) {
+            return (
+              <BroadcastRoomInterface
+                currentUser={chat.currentUser}
+                room={currentRoom}
+                onlineUsers={chat.onlineUsers}
+                onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                onTyping={chat.handleTyping}
+                typingUsers={Array.from(chat.typingUsers)}
+                onReportMessage={handleReportUser}
+                onUserClick={handleUserClick}
+                chat={{
+                  sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
+                  handleTyping: chat.handleTyping
+                }}
+              />
+            );
+          }
+          
+          // وإلا استخدم MessageArea العادية
+          return (
+            <MessageArea 
+              messages={chat.roomMessages[chat.currentRoomId] || chat.publicMessages}
+              currentUser={chat.currentUser}
+              onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+              onTyping={chat.handleTyping}
+              typingUsers={chat.typingUsers}
+              onReportMessage={handleReportUser}
+              onUserClick={handleUserClick}
+              onlineUsers={chat.onlineUsers}
+              currentRoomName={currentRoom?.name || 'الدردشة العامة'}
+            />
+          );
+        })()}
+        {/* الشريط الجانبي - منقول إلى اليمين ويظهر فقط عندما يكون activeView ليس 'hidden' */}
+        {activeView !== 'hidden' && (
+          <div className={`${activeView === 'walls' ? 'w-80' : activeView === 'friends' ? 'w-72' : 'w-56'} transition-all duration-300`}>
+            <UserSidebarWithWalls 
+              users={chat.onlineUsers}
+              onUserClick={handleUserClick}
+              currentUser={chat.currentUser}
+              activeView={activeView}
+              rooms={rooms}
+              currentRoomId={chat.currentRoomId}
+              onRoomChange={handleRoomChange}
+              onAddRoom={handleAddRoom}
+              onDeleteRoom={handleDeleteRoom}
+              onRefreshRooms={fetchRooms}
+              onStartPrivateChat={setSelectedPrivateUser}
+            />
+          </div>
+        )}
+      </main>
+
+      {/* Footer - with notification, messages, and settings tabs moved here */}
+      <footer className="bg-secondary py-4 px-6 flex justify-between items-center shadow-2xl border-t border-accent">
+        <div className="flex items-center gap-3">
+          {/* مساحة فارغة في اليسار */}
+        </div>
         <div className="flex gap-3">
+          {/* التبويبات المنقولة من الـ header */}
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
             onClick={() => setShowNotifications(true)}
@@ -480,123 +599,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           >
             <span>⚙️</span>
             إعدادات
-          </Button>
-        </div>
-      </header>
-      
-      {/* Main Content */}
-      <main className="flex flex-1 overflow-hidden">
-        {/* الشريط الجانبي - يظهر فقط عندما يكون activeView ليس 'hidden' */}
-        {activeView !== 'hidden' && (
-          <div className={`${activeView === 'walls' ? 'w-96' : activeView === 'friends' ? 'w-80' : 'w-64'} transition-all duration-300`}>
-            <UserSidebarWithWalls 
-              users={chat.onlineUsers}
-              onUserClick={handleUserClick}
-              currentUser={chat.currentUser}
-              activeView={activeView}
-              rooms={rooms}
-              currentRoomId={chat.currentRoomId}
-              onRoomChange={handleRoomChange}
-              onAddRoom={handleAddRoom}
-              onDeleteRoom={handleDeleteRoom}
-              onRefreshRooms={fetchRooms}
-              onStartPrivateChat={setSelectedPrivateUser}
-            />
-          </div>
-        )}
-        {(() => {
-          const currentRoom = rooms.find(room => room.id === chat.currentRoomId);
-          
-          // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
-          if (currentRoom?.isBroadcast) {
-            return (
-              <BroadcastRoomInterface
-                currentUser={chat.currentUser}
-                room={currentRoom}
-                onlineUsers={chat.onlineUsers}
-                onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
-                onTyping={chat.handleTyping}
-                typingUsers={Array.from(chat.typingUsers)}
-                onReportMessage={handleReportUser}
-                onUserClick={handleUserClick}
-                chat={{
-                  sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
-                  handleTyping: chat.handleTyping
-                }}
-              />
-            );
-          }
-          
-          // وإلا استخدم MessageArea العادية
-          return (
-            <MessageArea 
-              messages={chat.roomMessages[chat.currentRoomId] || chat.publicMessages}
-              currentUser={chat.currentUser}
-              onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
-              onTyping={chat.handleTyping}
-              typingUsers={chat.typingUsers}
-              onReportMessage={handleReportUser}
-              onUserClick={handleUserClick}
-              onlineUsers={chat.onlineUsers}
-              currentRoomName={currentRoom?.name || 'الدردشة العامة'}
-            />
-          );
-        })()}
-      </main>
-
-      {/* Footer - مع التبويبات الأربعة المنقولة */}
-      <footer className="bg-secondary py-4 px-6 flex justify-between items-center shadow-2xl border-t border-accent">
-        <div className="flex items-center gap-3">
-          {/* مساحة فارغة في اليسار */}
-        </div>
-        <div className="flex gap-3">
-          {/* التبويبات الأربعة المنقولة من الـ header */}
-          <Button 
-            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-            }`}
-            onClick={() => setActiveView(activeView === 'walls' ? 'hidden' : 'walls')}
-            title="الحوائط"
-          >
-            <div className="flex flex-col gap-0.5">
-              <div className="w-4 h-0.5 bg-current"></div>
-              <div className="w-4 h-0.5 bg-current"></div>
-              <div className="w-4 h-0.5 bg-current"></div>
-            </div>
-            الحوائط
-          </Button>
-          
-          <Button 
-            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-            }`}
-            onClick={() => setActiveView(activeView === 'users' ? 'hidden' : 'users')}
-            title="المستخدمون المتصلون"
-          >
-            <span>👥</span>
-            المستخدمون ({chat.onlineUsers?.length ?? 0})
-          </Button>
-
-          <Button 
-            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-            }`}
-            onClick={() => setActiveView(activeView === 'rooms' ? 'hidden' : 'rooms')}
-            title="الغرف"
-          >
-            <span>🏠</span>
-            الغرف
-          </Button>
-
-          <Button 
-            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'friends' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-            }`}
-            onClick={() => setActiveView(activeView === 'friends' ? 'hidden' : 'friends')}
-            title="الأصدقاء"
-          >
-            <span>👨‍👩‍👧‍👦</span>
-            الأصدقاء
           </Button>
         </div>
       </footer>
