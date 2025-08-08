@@ -249,7 +249,7 @@ export async function createDefaultRooms(): Promise<void> {
               speakers: '[]',
               micQueue: '[]',
               createdAt: new Date(),
-            });
+            }).onConflictDoNothing();
           }
         } else if (dbType === 'sqlite') {
           const existing = await (db as any).select().from(sqliteSchema.rooms).where(sql`name = ${room.name}`).limit(1);

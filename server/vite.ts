@@ -16,7 +16,13 @@ export function log(message: string, source = "express") {
     hour12: true,
   });
 
+  const line = `[${formattedTime}] [${source}] ${message}`;
+  if (viteLogger) {
+    viteLogger.info(line);
+  } else {
+    console.log(line);
   }
+}
 
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {

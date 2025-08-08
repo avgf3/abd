@@ -30,6 +30,14 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
   const fallbackSrc = '/default_avatar.svg';
   const { src: finalSrc, isLoading } = useImageLoader({ src: imageSrc, fallback: fallbackSrc });
 
+  // معالج خطأ الصورة - يستخدمه الاختبار أيضاً
+  function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
+    const target = e.currentTarget as HTMLImageElement;
+    if (target.src !== fallbackSrc) {
+      target.src = fallbackSrc;
+    }
+  }
+
   return (
     <div className="relative inline-block" onClick={onClick}>
       {/* الصورة الأساسية */}
@@ -44,6 +52,7 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
           display: 'block'
         }}
         loading="lazy"
+        onError={handleImageError}
       />
       
       {/* مؤشر التحميل */}
