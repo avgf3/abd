@@ -89,55 +89,40 @@ export default function PrivateMessageBox({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[450px] bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-2xl">
-        <DialogHeader className="border-b border-purple-200 pb-3">
-          <DialogTitle className="text-lg font-bold text-center text-purple-800 flex items-center justify-center gap-3">
+      {/* Simplify and neutralize the dialog styling to match other lists */}
+      <DialogContent className="max-w-md max-h-[450px] bg-white border shadow-lg rounded-lg">
+        {/* Header */}
+        <DialogHeader className="border-b pb-3">
+          <DialogTitle className="text-lg font-semibold text-center text-foreground flex items-center justify-center gap-3">
             <div className="relative">
               <img
                 src={getImageSrc(user.profileImage)}
                 alt="صورة المستخدم"
-                className="w-12 h-12 rounded-full border-2 border-purple-300 shadow-md"
+                className="w-12 h-12 rounded-full border border-gray-300 shadow-sm"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = '/default_avatar.svg';
                 }}
               />
               {user.isOnline && (
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full animate-pulse"></div>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
               )}
             </div>
             <div className="text-center">
-              <div 
-                className={`inline-block px-6 py-4 rounded-xl transition-all duration-300 min-w-[160px] text-center ${
-                  user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
-                }`}
-                style={{
-                  ...(user.userType === 'owner' && {
-                    animation: 'golden-glow 2s ease-in-out infinite',
-                    boxShadow: '0 0 30px rgba(255, 215, 0, 0.9)'
-                  })
-                }}
-              >
-                <p className="font-bold text-lg" style={{ 
-                  color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#7C3AED') 
-                }}>
-                  {user.userType === 'owner' ? '👑' : user.userType === 'admin' ? '⭐' : ''} {user.username}
-                </p>
-              </div>
-              <p className="text-sm text-purple-600 font-medium">
-                {user.userType === 'owner' && '👑 مالك'}
-                {user.userType === 'admin' && '⭐ إدمن'}
-                {user.userType === 'moderator' && '🛡️ مشرف'}
-                {user.userType === 'member' && ''}
-                {user.userType === 'guest' && ''}
+              <p className="font-bold text-base text-foreground">{user.username}</p>
+              <p className="text-xs text-muted-foreground font-medium">
+                {user.userType === 'owner' && 'مالك'}
+                {user.userType === 'admin' && 'إدمن'}
+                {user.userType === 'moderator' && 'مشرف'}
               </p>
-              <p className={`text-xs font-medium ${user.isOnline ? 'text-green-600' : 'text-gray-500'}`}>
-                {user.isOnline ? '🟢 متصل الآن' : '⚫ غير متصل'}
+              <p className={`text-xs font-medium ${user.isOnline ? 'text-green-600' : 'text-muted-foreground'}`}>
+                {user.isOnline ? 'متصل الآن' : 'غير متصل'}
               </p>
             </div>
           </DialogTitle>
         </DialogHeader>
 
+        {/* Messages */}
         <ScrollArea className="h-[250px] w-full p-4">
           <div className="space-y-3">
             {messages.map((message, index) => (
@@ -145,10 +130,10 @@ export default function PrivateMessageBox({
                 key={`${message.id}-${message.senderId}-${index}`}
                 className={`flex ${message.senderId === currentUser?.id ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[80%] p-3 rounded-xl shadow-sm ${
+                <div className={`max-w-[80%] p-3 rounded-lg shadow-sm ${
                   message.senderId === currentUser?.id 
-                    ? 'bg-purple-500 text-white rounded-br-sm' 
-                    : 'bg-white text-gray-800 rounded-bl-sm border border-purple-200'
+                    ? 'bg-muted text-foreground rounded-br-sm border'
+                    : 'bg-white text-foreground rounded-bl-sm border'
                 }`}>
                   {message.senderId !== currentUser?.id && (
                     <div className="flex items-center gap-2 mb-2">
@@ -162,8 +147,8 @@ export default function PrivateMessageBox({
                         }}
                       />
                       <span 
-                        className="text-xs font-medium text-gray-600"
-                        style={{ color: message.sender?.usernameColor || '#000000' }}
+                        className="text-xs font-medium text-muted-foreground"
+                        style={{ color: message.sender?.usernameColor || undefined }}
                       >
                         {message.sender?.username || 'مجهول'}
                       </span>
@@ -172,9 +157,7 @@ export default function PrivateMessageBox({
                   <div className="text-sm font-medium mb-1">
                     {message.content}
                   </div>
-                  <div className={`text-xs ${
-                    message.senderId === currentUser?.id ? 'text-purple-100' : 'text-gray-500'
-                  }`}>
+                  <div className="text-xs text-muted-foreground">
                     {formatTime(message.timestamp)}
                   </div>
                 </div>
@@ -182,7 +165,7 @@ export default function PrivateMessageBox({
             ))}
             
             {messages.length === 0 && (
-              <div className="text-center py-8 text-purple-400">
+              <div className="text-center py-8 text-muted-foreground">
                 <div className="text-4xl mb-3">✉️</div>
                 <p className="text-lg font-medium">لا توجد رسائل</p>
                 <p className="text-sm">ابدأ محادثة جديدة!</p>
@@ -192,7 +175,8 @@ export default function PrivateMessageBox({
           </div>
         </ScrollArea>
 
-        <div className="flex gap-2 p-4 border-t border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
+        {/* Composer */}
+        <div className="flex gap-2 p-4 border-t bg-background/50">
           <FileUploadButton 
             onFileSelect={handleFileSelect}
             disabled={false}
@@ -201,7 +185,8 @@ export default function PrivateMessageBox({
           <div className="relative">
             <Button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="bg-purple-100 hover:bg-purple-200 text-purple-600 px-3 py-2 rounded-lg"
+              variant="outline"
+              size="sm"
               title="الرموز التعبيرية"
             >
               😊
@@ -219,25 +204,24 @@ export default function PrivateMessageBox({
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="✉️ ارسال رسالة..."
-            className="flex-1 bg-white border-purple-300 text-gray-800 placeholder:text-purple-400 focus:border-purple-500"
+            placeholder="اكتب رسالة..."
+            className="flex-1"
           />
           <Button
             onClick={handleSendMessage}
             disabled={!messageText.trim()}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium"
           >
-            ✉️ ارسال
+            ارسال
           </Button>
         </div>
         
         <div className="flex justify-center pt-2 pb-4">
           <Button 
             onClick={onClose} 
-            variant="outline" 
-            className="bg-white border-purple-300 text-purple-700 hover:bg-purple-100 font-medium px-6"
+            variant="outline"
+            className="px-6"
           >
-            ✖️ إغلاق
+            إغلاق
           </Button>
         </div>
       </DialogContent>
