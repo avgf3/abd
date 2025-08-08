@@ -10,21 +10,9 @@ import { apiRequest } from '@/lib/queryClient';
 import ProfileImage from './ProfileImage';
 import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
+import type { Friend, FriendRequest } from '@/../../shared/types';
 
-interface Friend extends ChatUser {
-  status: 'online' | 'offline' | 'away';
-  lastMessage?: string;
-  unreadCount?: number;
-}
-
-interface FriendRequest {
-  id: number;
-  userId: number;
-  friendId: number;
-  status: 'pending' | 'accepted' | 'declined' | 'ignored';
-  createdAt: Date;
-  user: ChatUser;
-}
+// Using shared types for Friend and FriendRequest
 
 interface FriendsTabPanelProps {
   currentUser: ChatUser | null;
