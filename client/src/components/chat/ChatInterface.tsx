@@ -743,15 +743,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
-      {showModerationPanel && (
-        <ModerationPanel 
-          isOpen={showModerationPanel}
-          onClose={() => setShowModerationPanel(false)}
-          currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
-        />
-      )}
-
       {showReportsLog && (
         <ReportsLog 
           isVisible={showReportsLog}

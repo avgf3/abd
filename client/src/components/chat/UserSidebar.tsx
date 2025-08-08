@@ -6,6 +6,20 @@ import ProfileImage from './ProfileImage';
 import type { ChatUser } from '@/types/chat';
 import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 
+function normalizeUsers(users: ChatUser[]): ChatUser[] {
+  const byId = new Map<number, ChatUser>();
+  for (const u of users) {
+    if (!byId.has(u.id)) byId.set(u.id, u);
+  }
+  const roleOrder: Record<string, number> = { owner: 0, admin: 1, moderator: 2, member: 3, guest: 4 };
+  return Array.from(byId.values()).sort((a, b) => {
+    const ra = roleOrder[a.userType] ?? 99;
+    const rb = roleOrder[b.userType] ?? 99;
+    if (ra !== rb) return ra - rb;
+    return (a.username || '').localeCompare(b.username || '', 'ar');
+  });
+}
+
 interface UserSidebarProps {
   users: ChatUser[];
   onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
@@ -17,7 +31,7 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
 
   // تحسين الأداء: استخدام useMemo للتصفية
   const filteredUsers = useMemo(() => {
-    return users.filter(user => {
+    return normalizeUsers(users).filter(user => {
       // التحقق من وجود اسم المستخدم قبل التصفية
       if (!user.username) return false;
       return user.username.toLowerCase().includes(searchTerm.toLowerCase());
