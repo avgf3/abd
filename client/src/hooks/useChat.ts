@@ -497,17 +497,12 @@ export function useChat() {
               // دون إرسال طلبات إضافية
             }
             
-            // طلب قائمة محدثة من المستخدمين - مع تقليل الطلبات المتكررة
-            setTimeout(() => {
-              if (socket.current?.connected && !isLoadingMessages.current) {
-                socket.current.emit('requestOnlineUsers');
-                isLoadingMessages.current = true;
-                // منع الطلبات المتكررة لمدة 5 ثوان
-                setTimeout(() => {
-                  isLoadingMessages.current = false;
-                }, 5000);
-              }
-            }, 3000); // زيادة التأخير لتجنب الطلبات المفرطة
+            // طلب قائمة محدثة من المستخدمين - بدون تأخير إضافي وبنفس حماية التكرار
+            if (socket.current?.connected && !isLoadingMessages.current) {
+              socket.current.emit('requestOnlineUsers');
+              isLoadingMessages.current = true;
+              setTimeout(() => { isLoadingMessages.current = false; }, 3000);
+            }
             break;
             
           default:
@@ -524,8 +519,8 @@ export function useChat() {
     dispatch({ type: 'SET_CURRENT_USER', payload: user });
     dispatch({ type: 'SET_LOADING', payload: true });
     
-    // إضافة المستخدم الحالي للقائمة فوراً
-    dispatch({ type: 'SET_ONLINE_USERS', payload: [user] });
+    // عدم تعيين قائمة مؤقتة لتفادي الوميض؛ ستأتي القائمة من الخادم حسب الغرفة
+    // dispatch({ type: 'SET_ONLINE_USERS', payload: [user] });
 
     try {
       // تنظيف شامل للاتصال السابق لتجنب التضارب

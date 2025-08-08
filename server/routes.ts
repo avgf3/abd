@@ -1907,8 +1907,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               })
             );
             
-            // إرسال قائمة المستخدمين المحدثة لجميع العملاء عبر رسالة موحدة
-            io.emit('message', { type: 'onlineUsers', users: usersWithStatus });
+            // إزالة البث العالمي لقائمة المستخدمين لتفادي وميض القائمة
+            // سيتم إرسال قوائم المستخدمين حسب الغرفة فقط عبر أحداث roomJoined/room switches وrequestOnlineUsers
             break;
 
           case 'publicMessage':
