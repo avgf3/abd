@@ -93,12 +93,18 @@ export interface WebSocketMessage {
 
 export interface FriendRequest {
   id: number;
-  senderId: number;
-  receiverId: number;
-  status: 'pending' | 'accepted' | 'declined';
-  timestamp: Date;
-  sender?: ChatUser;
-  receiver?: ChatUser;
+  userId: number;
+  friendId: number;
+  status: 'pending' | 'accepted' | 'declined' | 'ignored';
+  createdAt: Date;
+  user: ChatUser;
+}
+
+export interface Friend extends ChatUser {
+  status: 'online' | 'offline' | 'away';
+  lastMessage?: string;
+  unreadCount?: number;
+  friendshipDate?: Date;
 }
 
 export interface ChatState {

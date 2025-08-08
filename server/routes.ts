@@ -542,25 +542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API endpoints للإدارة
-  app.get("/api/moderation/actions", async (req, res) => {
-    try {
-      // فحص صلاحيات الإدمن
-      const { userId } = req.query;
-      if (!userId) {
-        return res.status(401).json({ error: "غير مسموح - للإدمن والمالك فقط" });
-      }
-      
-      const user = await storage.getUser(parseInt(userId as string));
-      if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
-        return res.status(403).json({ error: "غير مسموح - للإدمن والمالك فقط" });
-      }
-      
-      const actions = moderationSystem.getModerationLog();
-      res.json({ actions });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في جلب سجل الإدارة" });
-    }
-  });
+  // Removed duplicate moderation actions endpoint - kept the more detailed one below
 
   app.get("/api/moderation/reports", async (req, res) => {
     try {
@@ -2570,9 +2552,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إرسال طلب صداقة
   app.post("/api/friend-requests", async (req, res) => {
     try {
+      console.log('📝 Friend request received:', req.body);
       const { senderId, receiverId } = req.body;
       
       if (!senderId || !receiverId) {
+        console.log('❌ Missing senderId or receiverId:', { senderId, receiverId });
         return res.status(400).json({ error: "معلومات المرسل والمستقبل مطلوبة" });
       }
 
@@ -2580,19 +2564,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "لا يمكنك إرسال طلب صداقة لنفسك" });
       }
 
+      console.log('🔍 Checking for existing request between:', senderId, receiverId);
+      
       // التحقق من وجود طلب سابق
       const existingRequest = await storage.getFriendRequest(senderId, receiverId);
       if (existingRequest) {
+        console.log('⚠️ Friend request already exists:', existingRequest);
         return res.status(400).json({ error: "طلب الصداقة موجود بالفعل" });
       }
 
       // التحقق من الصداقة الموجودة
       const friendship = await storage.getFriendship(senderId, receiverId);
       if (friendship) {
+        console.log('⚠️ Friendship already exists:', friendship);
         return res.status(400).json({ error: "أنتما أصدقاء بالفعل" });
       }
 
+      console.log('✅ Creating friend request...');
       const request = await storage.createFriendRequest(senderId, receiverId);
+      console.log('✅ Friend request created:', request);
       
       // إرسال إشعار عبر WebSocket
       const sender = await storage.getUser(senderId);
@@ -2614,7 +2604,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ message: "تم إرسال طلب الصداقة", request });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      console.error('❌ Friend request error:', error);
+      console.error('Stack trace:', (error as Error).stack);
+      res.status(500).json({ error: "خطأ في الخادم", details: (error as Error).message });
     }
   });
 
@@ -2823,19 +2815,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // الحصول على قائمة الأصدقاء
-
-  // إزالة صديق
-  app.delete("/api/friends/:userId/:friendId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const friendId = parseInt(req.params.friendId);
-      
-      await storage.removeFriend(userId, friendId);
-      res.json({ message: "تم إزالة الصديق" });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
 
   // API routes for spam protection and reporting
   
@@ -3238,38 +3217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // إضافة endpoint سجل الإجراءات للإدمن
-  app.get("/api/moderation/actions", async (req, res) => {
-    try {
-      const userId = parseInt(req.query.userId as string);
-      const user = await storage.getUser(userId);
-      
-      // للإدمن والمالك فقط
-      if (!user || (user.userType !== 'owner' && user.userType !== 'admin')) {
-        return res.status(403).json({ error: "غير مسموح - للإدمن والمالك فقط" });
-      }
-
-      const actions = moderationSystem.getModerationLog()
-        .map(action => ({
-          ...action,
-          moderatorName: '', 
-          targetName: '' 
-        }));
-      
-      // إضافة أسماء المستخدمين للإجراءات
-      for (const action of actions) {
-        const moderator = await storage.getUser(action.moderatorId);
-        const target = await storage.getUser(action.targetUserId);
-        action.moderatorName = moderator?.username || 'مجهول';
-        action.targetName = target?.username || 'مجهول';
-      }
-
-      res.json(actions);
-    } catch (error) {
-      console.error("خطأ في الحصول على سجل الإجراءات:", error);
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
+  // Removed second duplicate moderation actions endpoint - kept the more complete one
 
   // Friends routes
   app.get("/api/friends/:userId", async (req, res) => {
