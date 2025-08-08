@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import SimpleUserMenu from './SimpleUserMenu';
 import ProfileImage from './ProfileImage';
@@ -15,9 +15,12 @@ interface UserSidebarProps {
 export default function UserSidebar({ users, onUserClick, currentUser }: UserSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredUsers = users.filter(user =>
-    user.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // استخدم useMemo لتحسين الأداء عند القوائم الكبيرة
+  const filteredUsers = useMemo(() => {
+    return users.filter(user =>
+      (user.username || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
 
   const getUserRankBadge = (user: ChatUser) => {
     // منطق اختيار الأيقونة حسب الدور والمستوى والجنس
@@ -56,12 +59,16 @@ export default function UserSidebar({ users, onUserClick, currentUser }: UserSid
     return null;
   };
 
-  const formatLastSeen = (lastSeen?: Date) => {
-    if (!lastSeen) return 'غير معروف';
+  // دعم كلٍ من Date وسلسلة ISO لتفادي أخطاء getTime()
+  const formatLastSeen = (last?: string | Date) => {
+    if (!last) return 'غير معروف';
+    const lastDate = last instanceof Date ? last : new Date(last);
+    if (isNaN(lastDate.getTime())) return 'غير معروف';
+
     const now = new Date();
-    const diff = now.getTime() - lastSeen.getTime();
+    const diff = now.getTime() - lastDate.getTime();
     const minutes = Math.floor(diff / 60000);
-    
+
     if (minutes < 1) return 'متصل الآن';
     if (minutes < 60) return `قبل ${minutes} دقيقة`;
     const hours = Math.floor(minutes / 60);

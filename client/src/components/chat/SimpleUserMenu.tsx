@@ -24,6 +24,9 @@ export default function SimpleUserMenu({
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const { toast } = useToast();
 
+  // صلاحيات المراقبة
+  const hasModRights = !!currentUser && ['owner', 'admin', 'moderator'].includes(currentUser.userType as string);
+
   // لا تظهر القائمة لنفس المستخدم
   if (targetUser.id === currentUser?.id) {
     return <>{children}</>;
@@ -174,35 +177,39 @@ export default function SimpleUserMenu({
                 👥 إضافة صديق
               </Button>
 
-              <div className="border-t-2 border-gray-200 my-2" />
+              {hasModRights && (
+                <>
+                  <div className="border-t-2 border-gray-200 my-2" />
 
-              {/* خيارات الإدارة */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start text-yellow-600 hover:bg-yellow-50 font-bold py-2"
-                onClick={handleMute}
-              >
-                🔇 كتم
-              </Button>
+                  {/* خيارات الإدارة */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start text-yellow-600 hover:bg-yellow-50 font-bold py-2"
+                    onClick={handleMute}
+                  >
+                    🔇 كتم
+                  </Button>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start text-orange-600 hover:bg-orange-50 font-bold py-2"
-                onClick={handleKick}
-              >
-                ⏰ طرد 15 دقيقة
-              </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start text-orange-600 hover:bg-orange-50 font-bold py-2"
+                    onClick={handleKick}
+                  >
+                    ⏰ طرد 15 دقيقة
+                  </Button>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start text-red-600 hover:bg-red-50 font-bold py-2"
-                onClick={handleBlock}
-              >
-                🚫 حجب نهائي
-              </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start text-red-600 hover:bg-red-50 font-bold py-2"
+                    onClick={handleBlock}
+                  >
+                    🚫 حجب نهائي
+                  </Button>
+                </>
+              )}
 
               {messageId && (
                 <>

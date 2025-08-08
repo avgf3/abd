@@ -387,7 +387,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             title="المستخدمون المتصلون"
           >
             <span>👥</span>
-                          المستخدمون ({chat.onlineUsers.length})
+            المستخدمون ({chat.onlineUsers?.length ?? 0})
           </Button>
 
           {/* زر الغرف */}
