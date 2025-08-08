@@ -8,7 +8,6 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password"),
   userType: text("user_type").notNull().default("guest"), // 'guest', 'member', 'owner'
-  role: text("role").notNull().default("guest"), // نفس userType للتوافق مع ChatUser
   profileImage: text("profile_image"),
   profileBanner: text("profile_banner"),
   profileBackgroundColor: text("profile_background_color").default('#3c0d0d'), // لون خلفية البروفايل
@@ -21,8 +20,7 @@ export const users = pgTable("users", {
   isOnline: boolean("is_online").default(false),
   isHidden: boolean("is_hidden").default(false), // خاصية الإخفاء للمراقبة
   lastSeen: timestamp("last_seen"),
-  joinDate: timestamp("join_date").defaultNow(),
-  createdAt: timestamp("created_at").defaultNow(), // تاريخ الإنشاء للتوافق مع ChatUser
+  createdAt: timestamp("created_at").defaultNow(),
   isMuted: boolean("is_muted").default(false),
   muteExpiry: timestamp("mute_expiry"),
   isBanned: boolean("is_banned").default(false),
