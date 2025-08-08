@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { UserCheck, Crown, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 
 interface PromoteUserPanelProps {
@@ -43,35 +44,28 @@ export default function PromoteUserPanel({
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/moderation/promote', {
+      await apiRequest('/api/moderation/promote', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           moderatorId: currentUser.id,
           targetUserId: parseInt(selectedUser),
           role: selectedRole
-        })
+        }
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        const roleDisplay = selectedRole === 'admin' ? 'إدمن ⭐' : 'مشرف 🛡️';
-        toast({
-          title: 'تم ترقية المستخدم بنجاح',
-          description: `تمت ترقية المستخدم إلى ${roleDisplay}`,
-          variant: 'default'
-        });
-        setSelectedUser('');
-        setSelectedRole('');
-        onClose();
-      } else {
-        throw new Error(data.error || 'فشل في ترقية المستخدم');
-      }
+      const roleDisplay = selectedRole === 'admin' ? 'إدمن ⭐' : 'مشرف 🛡️';
+      toast({
+        title: 'تم ترقية المستخدم بنجاح',
+        description: `تمت ترقية المستخدم إلى ${roleDisplay}`,
+        variant: 'default'
+      });
+      setSelectedUser('');
+      setSelectedRole('');
+      onClose();
     } catch (error) {
       toast({
         title: 'خطأ',
-        description: error instanceof Error ? error.message : 'حدث خطأ',
+        description: (error as Error)?.message || 'حدث خطأ',
         variant: 'destructive'
       });
     } finally {
