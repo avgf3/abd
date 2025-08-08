@@ -388,49 +388,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   return (
       <div className="h-screen flex flex-col" onClick={closeUserPopup}>
-      {/* Header */}
+      {/* Header - بدون التبويبات الأربعة */}
       <header className="bg-secondary py-4 px-6 flex justify-between items-center shadow-2xl border-b border-accent">
         <div className="flex items-center gap-3">
-          {/* زر الحوائط في الزاوية اليسرى */}
-          <Button 
-            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-            }`}
-            onClick={() => setActiveView(activeView === 'walls' ? 'hidden' : 'walls')}
-            title="الحوائط"
-          >
-            <div className="flex flex-col gap-0.5">
-              <div className="w-4 h-0.5 bg-current"></div>
-              <div className="w-4 h-0.5 bg-current"></div>
-              <div className="w-4 h-0.5 bg-current"></div>
-            </div>
-            الحوائط
-          </Button>
-          
-          {/* زر المستخدمين */}
-          <Button 
-            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-            }`}
-            onClick={() => setActiveView(activeView === 'users' ? 'hidden' : 'users')}
-            title="المستخدمون المتصلون"
-          >
-            <span>👥</span>
-                          المستخدمون ({chat.onlineUsers?.length ?? 0})
-          </Button>
-
-          {/* زر الغرف */}
-          <Button 
-            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-            }`}
-            onClick={() => setActiveView(activeView === 'rooms' ? 'hidden' : 'rooms')}
-            title="الغرف"
-          >
-            <span>🏠</span>
-            الغرف
-          </Button>
-
           <div className="text-2xl">💬</div>
           <div className="text-2xl font-bold text-white">
             Arabic<span className="text-primary">Chat</span>
@@ -445,8 +405,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             إشعارات
           </Button>
           
-
-
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowMessages(true)}
@@ -523,9 +481,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             <span>⚙️</span>
             إعدادات
           </Button>
-
-
-
         </div>
       </header>
       
@@ -588,6 +543,63 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           );
         })()}
       </main>
+
+      {/* Footer - مع التبويبات الأربعة المنقولة */}
+      <footer className="bg-secondary py-4 px-6 flex justify-between items-center shadow-2xl border-t border-accent">
+        <div className="flex items-center gap-3">
+          {/* مساحة فارغة في اليسار */}
+        </div>
+        <div className="flex gap-3">
+          {/* التبويبات الأربعة المنقولة من الـ header */}
+          <Button 
+            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            }`}
+            onClick={() => setActiveView(activeView === 'walls' ? 'hidden' : 'walls')}
+            title="الحوائط"
+          >
+            <div className="flex flex-col gap-0.5">
+              <div className="w-4 h-0.5 bg-current"></div>
+              <div className="w-4 h-0.5 bg-current"></div>
+              <div className="w-4 h-0.5 bg-current"></div>
+            </div>
+            الحوائط
+          </Button>
+          
+          <Button 
+            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            }`}
+            onClick={() => setActiveView(activeView === 'users' ? 'hidden' : 'users')}
+            title="المستخدمون المتصلون"
+          >
+            <span>👥</span>
+            المستخدمون ({chat.onlineUsers?.length ?? 0})
+          </Button>
+
+          <Button 
+            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            }`}
+            onClick={() => setActiveView(activeView === 'rooms' ? 'hidden' : 'rooms')}
+            title="الغرف"
+          >
+            <span>🏠</span>
+            الغرف
+          </Button>
+
+          <Button 
+            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              activeView === 'friends' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            }`}
+            onClick={() => setActiveView(activeView === 'friends' ? 'hidden' : 'friends')}
+            title="الأصدقاء"
+          >
+            <span>👨‍👩‍👧‍👦</span>
+            الأصدقاء
+          </Button>
+        </div>
+      </footer>
 
       {/* Modals and Popups */}
       {showProfile && (
