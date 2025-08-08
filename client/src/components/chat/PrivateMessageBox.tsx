@@ -132,7 +132,7 @@ export default function PrivateMessageBox({
               >
                 <div className={`max-w-[80%] p-3 rounded-lg shadow-sm ${
                   message.senderId === currentUser?.id 
-                    ? 'bg-muted text-foreground rounded-br-sm border'
+                    ? 'bg-primary/10 text-foreground rounded-br-sm border border-primary/20'
                     : 'bg-white text-foreground rounded-bl-sm border'
                 }`}>
                   {message.senderId !== currentUser?.id && (
@@ -176,7 +176,7 @@ export default function PrivateMessageBox({
         </ScrollArea>
 
         {/* Composer */}
-        <div className="flex gap-2 p-4 border-t bg-background/50">
+        <div className="flex gap-2 p-4 border-t bg-white">
           <FileUploadButton 
             onFileSelect={handleFileSelect}
             disabled={false}

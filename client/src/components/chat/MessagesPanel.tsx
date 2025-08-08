@@ -83,7 +83,7 @@ export default function MessagesPanel({
                 {conversationUsers.map(({ user, lastMessage, unreadCount }) => (
                   <div 
                     key={user!.id} 
-                    className="cursor-pointer hover:bg-muted/80 transition-all duration-200 p-2 rounded-lg"
+                    className="cursor-pointer hover:bg-accent/10 transition-all duration-200 p-2 rounded-lg"
                     onClick={() => {
                       onStartPrivateChat(user!);
                       onClose();
