@@ -72,7 +72,7 @@ export interface Notification {
 }
 
 export interface Room {
-  id: number;
+  id: string | number;
   name: string;
   description?: string;
   type: string;
@@ -82,6 +82,15 @@ export interface Room {
   password?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  // Cross-DB optional fields (PostgreSQL schema)
+  createdBy?: number;
+  isDefault?: boolean;
+  isActive?: boolean;
+  isBroadcast?: boolean;
+  hostId?: number | null;
+  speakers?: string | any[];
+  micQueue?: string | any[];
+  icon?: string | null;
 }
 
 // Blocked device type for moderation persistence
