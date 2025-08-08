@@ -558,13 +558,13 @@ export const storage: LegacyStorage = {
   },
 
   async addFriend(userId: number, friendId: number) {
-    const friend = await sendFriendRequest(userId, friendId);
+    const friend = await databaseService.sendFriendRequest(userId, friendId);
     if (!friend) throw new Error('Failed to add friend');
     return friend;
   },
 
   async getFriends(userId: number) {
-    const friends = await getFriends(userId);
+    const friends = await databaseService.getFriends(userId);
     return friends as any[]; // Cast to maintain compatibility
   },
 

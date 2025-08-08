@@ -462,14 +462,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       }
       
       const endpoint = uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
-      const response = await fetch(endpoint, { method: 'POST', body: formData });
+      const result = await apiRequest(endpoint, { method: 'POST', body: formData });
       
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'فشل في رفع الصورة' }));
-        throw new Error(errorData.error || errorData.details || 'فشل في رفع الصورة');
-      }
-      
-      const result = await response.json();
       if (!result.success) {
         throw new Error(result.error || 'فشل في رفع الصورة');
       }
