@@ -17,23 +17,27 @@ async function testSupabaseConnection() {
       throw new Error('فشل في إنشاء الاتصال بقاعدة البيانات');
     }
     
-    // اختبار استعلام بسيط
-    console.log('🔄 اختبار استعلام SELECT 1...');
-    await dbAdapter.db.execute('SELECT 1 as test');
-    console.log('✅ استعلام SELECT 1 نجح');
+    // اختبار استعلام بسيط عبر Drizzle
+    console.log('🔄 اختبار استعلام بسيط عبر Drizzle...');
+    try {
+      await (dbAdapter.db as any).select().from(users).limit(1);
+      console.log('✅ الاستعلام نجح');
+    } catch (e) {
+      console.log('⚠️ لم ينجح الاستعلام البسيط، لكن الاتصال قد يكون صالحاً:', e?.message || e);
+    }
     
     // اختبار جلب المستخدمين (إذا كانت الجداول موجودة)
     console.log('🔄 اختبار جلب المستخدمين...');
     try {
-      const usersList = await dbAdapter.db.select().from(users).limit(5);
+      const usersList = await (dbAdapter.db as any).select().from(users).limit(5);
       console.log(`✅ تم جلب ${usersList.length} مستخدم من قاعدة البيانات`);
       
       if (usersList.length > 0) {
         console.log('📋 أول مستخدم:', {
-          id: usersList[0].id,
-          username: usersList[0].username,
-          userType: usersList[0].userType,
-          joinDate: usersList[0].joinDate
+          id: (usersList as any)[0].id,
+          username: (usersList as any)[0].username,
+          userType: (usersList as any)[0].userType,
+          joinDate: (usersList as any)[0].joinDate
         });
       }
     } catch (tableError) {

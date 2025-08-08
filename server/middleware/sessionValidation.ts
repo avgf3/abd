@@ -52,8 +52,8 @@ export const validateSession = async (req: Request, res: Response, next: NextFun
       isOnline: user.isOnline,
       isBanned: user.isBanned,
       isMuted: user.isMuted,
-      lastSeen: user.lastSeen,
-      createdAt: user.createdAt
+      lastSeen: user.lastSeen ? new Date(user.lastSeen as any) : null,
+      createdAt: user.createdAt ? new Date(user.createdAt as any) : undefined
     };
     next();
     
@@ -92,8 +92,8 @@ export const validateSessionOptional = async (req: Request, res: Response, next:
         isOnline: user.isOnline,
         isBanned: user.isBanned,
         isMuted: user.isMuted,
-        lastSeen: user.lastSeen,
-        createdAt: user.createdAt
+        lastSeen: user.lastSeen ? new Date(user.lastSeen as any) : null,
+        createdAt: user.createdAt ? new Date(user.createdAt as any) : undefined
       };
     }
     

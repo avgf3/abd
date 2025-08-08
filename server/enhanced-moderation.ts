@@ -1,5 +1,5 @@
 import { storage } from './storage';
-import type { User } from '../shared/schema';
+import type { User } from './services/databaseService';
 
 export interface EnhancedModerationAction {
   id: string;

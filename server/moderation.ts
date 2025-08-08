@@ -1,5 +1,5 @@
 import { storage } from './storage';
-import type { User } from '../shared/schema';
+import type { User } from './services/databaseService';
 import { spamProtection } from './spam-protection';
 
 export interface ModerationAction {
@@ -300,9 +300,16 @@ export class ModerationSystem {
       };
     }
 
+    // Helpers
+    const toDate = (d?: Date | string | null): Date | null => {
+      if (!d) return null;
+      return d instanceof Date ? d : new Date(d);
+    };
+
     // التحقق من الطرد
-    if (user.isBanned && user.banExpiry && user.banExpiry > now) {
-      const timeLeft = Math.ceil((user.banExpiry.getTime() - now.getTime()) / 60000);
+    const banExpiry = toDate(user.banExpiry as any);
+    if (user.isBanned && banExpiry && banExpiry.getTime() > now.getTime()) {
+      const timeLeft = Math.ceil((banExpiry.getTime() - now.getTime()) / 60000);
       return { 
         canChat: false, 
         canJoin: false, 
@@ -315,8 +322,9 @@ export class ModerationSystem {
     }
 
     // التحقق من الكتم
-    if (user.isMuted && user.muteExpiry && user.muteExpiry > now) {
-      const timeLeft = Math.ceil((user.muteExpiry.getTime() - now.getTime()) / 60000);
+    const muteExpiry = toDate(user.muteExpiry as any);
+    if (user.isMuted && muteExpiry && muteExpiry.getTime() > now.getTime()) {
+      const timeLeft = Math.ceil((muteExpiry.getTime() - now.getTime()) / 60000);
       return { 
         canChat: false, 
         canJoin: true, 
@@ -329,11 +337,11 @@ export class ModerationSystem {
     }
 
     // تنظيف الحالات المنتهية الصلاحية
-    if (user.isBanned && user.banExpiry && user.banExpiry <= now) {
+    if (user.isBanned && banExpiry && banExpiry.getTime() <= now.getTime()) {
       await storage.updateUser(userId, { isBanned: false, banExpiry: null });
     }
 
-    if (user.isMuted && user.muteExpiry && user.muteExpiry <= now) {
+    if (user.isMuted && muteExpiry && muteExpiry.getTime() <= now.getTime()) {
       await storage.updateUser(userId, { isMuted: false, muteExpiry: null });
     }
 

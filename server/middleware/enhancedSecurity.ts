@@ -79,16 +79,16 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     }
 
     // إضافة بيانات المستخدم للطلب
-          req.user = {
-        id: user.id,
-        username: user.username,
-        userType: user.userType as any,
-        isOnline: user.isOnline,
-        isBanned: user.isBanned,
-        isMuted: user.isMuted,
-        lastSeen: user.lastSeen,
-        createdAt: user.createdAt
-      };
+    req.user = {
+      id: user.id,
+      username: user.username,
+      userType: user.userType as any,
+      isOnline: user.isOnline,
+      isBanned: user.isBanned,
+      isMuted: user.isMuted,
+      lastSeen: user.lastSeen ? new Date(user.lastSeen as any) : null,
+      createdAt: user.createdAt ? new Date(user.createdAt as any) : undefined
+    };
     next();
 
   } catch (error) {

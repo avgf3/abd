@@ -1,6 +1,7 @@
 import { SecurityManager } from '../auth/security';
 import type { IStorage } from '../storage';
-import type { InsertUser, User } from '../../shared/schema';
+import type { InsertUser } from '../../shared/schema';
+import type { User } from './databaseService';
 
 /**
  * خدمة المصادقة المحسنة مع الأمان
@@ -141,6 +142,6 @@ export class AuthService {
    */
   isSessionValid(user: User): boolean {
     if (!user.lastSeen) return false;
-    return SecurityManager.isSessionValid(user.lastSeen);
+    return SecurityManager.isSessionValid(new Date(user.lastSeen as any));
   }
 }
