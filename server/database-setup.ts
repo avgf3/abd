@@ -1,6 +1,6 @@
 import { db, dbType, initializeDatabase as initDB } from './database-adapter';
 import { sql } from 'drizzle-orm';
-import { users, messages, friends, notifications, blockedDevices } from '../shared/schema';
+import { users, messages, friends, notifications, blockedDevices, levelSettings, rooms } from '../shared/schema';
 import * as sqliteSchema from '../shared/sqlite-schema';
 import bcrypt from 'bcrypt';
 
@@ -11,11 +11,8 @@ export { initializeDatabase } from './database-adapter';
 export async function createDefaultOwner(): Promise<void> {
   try {
     if (!db) {
-      console.log('📄 Database disabled - skipping owner creation');
       return;
     }
-
-    console.log(`🔄 Creating default owner for ${dbType} database...`);
 
     if (dbType === 'postgresql') {
       // البحث عن مالك موجود في PostgreSQL
@@ -42,11 +39,9 @@ export async function createDefaultOwner(): Promise<void> {
           joinDate: new Date(),
           createdAt: new Date(),
           lastSeen: new Date(),
-        });
-        console.log('✅ تم إنشاء المالك في PostgreSQL');
-      } else {
-        console.log('✅ المالك موجود بالفعل في PostgreSQL');
-      }
+        }).onConflictDoNothing();
+        } else {
+        }
     } else if (dbType === 'sqlite') {
       // البحث عن مالك موجود في SQLite
       const existingOwner = await (db as any).select().from(sqliteSchema.users).where(sql`user_type = 'owner'`).limit(1);
@@ -73,10 +68,8 @@ export async function createDefaultOwner(): Promise<void> {
           createdAt: new Date().toISOString(),
           lastSeen: new Date().toISOString(),
         });
-        console.log('✅ تم إنشاء المالك في SQLite');
-      } else {
-        console.log('✅ المالك موجود بالفعل في SQLite');
-      }
+        } else {
+        }
     }
   } catch (error) {
     console.error('❌ خطأ في إنشاء المالك الافتراضي:', error);
@@ -87,11 +80,8 @@ export async function createDefaultOwner(): Promise<void> {
 export async function createDefaultUsers(): Promise<void> {
   try {
     if (!db) {
-      console.log('📄 Database disabled - skipping default users creation');
       return;
     }
-
-    console.log(`🔄 Creating default users for ${dbType} database...`);
 
     const defaultUsers = [
       {
@@ -145,8 +135,7 @@ export async function createDefaultUsers(): Promise<void> {
               createdAt: new Date(),
               lastSeen: new Date(),
             });
-            console.log(`✅ تم إنشاء المستخدم ${user.username} في PostgreSQL`);
-          }
+            }
         } else if (dbType === 'sqlite') {
           const existing = await (db as any).select().from(sqliteSchema.users).where(sql`username = ${user.username}`).limit(1);
           if (existing.length === 0) {
@@ -156,8 +145,7 @@ export async function createDefaultUsers(): Promise<void> {
               createdAt: new Date().toISOString(),
               lastSeen: new Date().toISOString(),
             });
-            console.log(`✅ تم إنشاء المستخدم ${user.username} في SQLite`);
-          }
+            }
         }
       } catch (error: any) {
         if (!error.message?.includes('UNIQUE') && !error.message?.includes('unique')) {
@@ -191,7 +179,7 @@ export async function createDefaultLevelSettings(): Promise<void> {
     for (const levelSetting of levelData) {
       try {
         if (dbType === 'postgresql') {
-          await (db as any).insert(users).values({
+          await (db as any).insert(levelSettings).values({
             ...levelSetting,
             createdAt: new Date(),
           }).onConflictDoNothing();
@@ -209,8 +197,7 @@ export async function createDefaultLevelSettings(): Promise<void> {
       }
     }
 
-    console.log('✅ تم إنشاء إعدادات المستويات الافتراضية');
-  } catch (error) {
+    } catch (error) {
     console.error('❌ خطأ في إنشاء إعدادات المستويات:', error);
   }
 }
@@ -247,19 +234,34 @@ export async function createDefaultRooms(): Promise<void> {
     for (const room of defaultRooms) {
       try {
         if (dbType === 'postgresql') {
-          const existing = await (db as any).select().from(users).where(sql`name = ${room.name}`).limit(1);
+          const existing = await (db as any).select().from(rooms).where(sql`name = ${room.name}`).limit(1);
           if (existing.length === 0) {
-            await (db as any).insert(users).values({
-              ...room,
+            await (db as any).insert(rooms).values({
+              id: room.name === 'العامة' ? 'general' : undefined,
+              name: room.name,
+              description: room.description,
+              icon: null,
+              createdBy: 1,
+              isDefault: room.name === 'العامة' || room.name === 'الترحيب',
+              isActive: true,
+              isBroadcast: room.name !== 'العامة' ? false : false,
+              hostId: null,
+              speakers: '[]',
+              micQueue: '[]',
               createdAt: new Date(),
-              updatedAt: new Date(),
             });
           }
         } else if (dbType === 'sqlite') {
           const existing = await (db as any).select().from(sqliteSchema.rooms).where(sql`name = ${room.name}`).limit(1);
           if (existing.length === 0) {
             await (db as any).insert(sqliteSchema.rooms).values({
-              ...room,
+              name: room.name,
+              description: room.description,
+              type: room.type,
+              ownerId: 1,
+              maxUsers: room.maxUsers,
+              isPrivate: room.isPrivate,
+              password: null,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             });
@@ -272,8 +274,7 @@ export async function createDefaultRooms(): Promise<void> {
       }
     }
 
-    console.log('✅ تم إنشاء الغرف الافتراضية');
-  } catch (error) {
+    } catch (error) {
     console.error('❌ خطأ في إنشاء الغرف الافتراضية:', error);
   }
 }
@@ -281,8 +282,6 @@ export async function createDefaultRooms(): Promise<void> {
 // دالة شاملة لتهيئة النظام
 export async function initializeSystem(): Promise<boolean> {
   try {
-    console.log('🚀 بدء تهيئة النظام...');
-    
     // تهيئة قاعدة البيانات
     const dbInitialized = await initDB();
     if (!dbInitialized) {
@@ -296,7 +295,6 @@ export async function initializeSystem(): Promise<boolean> {
     await createDefaultLevelSettings();
     await createDefaultRooms();
 
-    console.log('✅ تم تهيئة النظام بنجاح');
     return true;
   } catch (error) {
     console.error('❌ فشل في تهيئة النظام:', error);
@@ -307,15 +305,12 @@ export async function initializeSystem(): Promise<boolean> {
 // للتوافق مع الكود الموجود
 export async function runMigrations(): Promise<void> {
   // يتم التعامل مع migrations في database-adapter الآن
-  console.log('ℹ️ Migrations are handled by the database adapter');
-}
+  }
 
 export async function runDrizzlePush(): Promise<void> {
   // لا نحتاج هذا مع النظام الجديد
-  console.log('ℹ️ Schema is automatically managed by the database adapter');
-}
+  }
 
 export async function addMissingColumns(): Promise<void> {
   // يتم التعامل مع هذا تلقائياً في إنشاء الجداول
-  console.log('ℹ️ Missing columns are handled during table creation');
-}
+  }

@@ -1665,8 +1665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           users: roomUsers 
         });
         
-        console.log(`📋 تم إرسال قائمة ${roomUsers.length} مستخدم للغرفة ${currentRoom} إلى ${socket.id}`);
-      } catch (error) {
+        } catch (error) {
         console.error('❌ خطأ في جلب المستخدمين المتصلين:', error);
       }
     });
