@@ -17,6 +17,21 @@ import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/c
 import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 import UserRoleBadge from './UserRoleBadge';
 
+// Normalize users (dedupe + stable order)
+function normalizeUsers(users: ChatUser[]): ChatUser[] {
+  const byId = new Map<number, ChatUser>();
+  for (const u of users) {
+    if (!byId.has(u.id)) byId.set(u.id, u);
+  }
+  const roleOrder: Record<string, number> = { owner: 0, admin: 1, moderator: 2, member: 3, guest: 4 };
+  return Array.from(byId.values()).sort((a, b) => {
+    const ra = roleOrder[a.userType] ?? 99;
+    const rb = roleOrder[b.userType] ?? 99;
+    if (ra !== rb) return ra - rb;
+    return (a.username || '').localeCompare(b.username || '', 'ar');
+  });
+}
+
 interface UserSidebarWithWallsProps {
   users: ChatUser[];
   onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
@@ -58,6 +73,7 @@ export default function UserSidebarWithWalls({
   const filteredUsers = users.filter(user =>
     user && user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const normalizedUsers = normalizeUsers(filteredUsers);
 
   // إضافة logging للتشخيص
   React.useEffect(() => {
@@ -328,7 +344,7 @@ export default function UserSidebarWithWalls({
             </div>
             
             <ul className="space-y-1">
-              {filteredUsers.map((user) => (
+              {normalizedUsers.map((user) => (
                 <li key={user.id} className="relative">
                   <SimpleUserMenu
                     targetUser={user}
@@ -377,7 +393,7 @@ export default function UserSidebarWithWalls({
               ))}
             </ul>
             
-            {filteredUsers.length === 0 && (
+            {normalizedUsers.length === 0 && (
               <div className="text-center text-gray-500 py-8">
                 <div className="mb-3">
                   {searchTerm ? '🔍' : '👥'}

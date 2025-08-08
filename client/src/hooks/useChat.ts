@@ -5,6 +5,39 @@ import { globalNotificationManager, MessageCacheManager, NetworkOptimizer } from
 import { chatAnalytics } from '@/lib/chatAnalytics';
 import { apiRequest } from '@/lib/queryClient';
 
+// Helper: normalize room messages (dedupe by id, sort ascending by timestamp)
+function normalizeRoomMessages(messages: ChatMessage[]): ChatMessage[] {
+  const seenIds = new Set<number>();
+  const unique: ChatMessage[] = [];
+  for (const msg of messages) {
+    if (msg && typeof msg.id === 'number' && !seenIds.has(msg.id)) {
+      seenIds.add(msg.id);
+      unique.push(msg);
+    }
+  }
+  unique.sort((a, b) => {
+    const ta = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp as any).getTime();
+    const tb = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp as any).getTime();
+    return ta - tb; // oldest first
+  });
+  return unique;
+}
+
+// Helper: normalize users (dedupe and stable sort by role then username)
+function normalizeUsersList(users: ChatUser[]): ChatUser[] {
+  const byId = new Map<number, ChatUser>();
+  for (const u of users) {
+    if (!byId.has(u.id)) byId.set(u.id, u);
+  }
+  const roleOrder: Record<string, number> = { owner: 0, admin: 1, moderator: 2, member: 3, guest: 4 };
+  return Array.from(byId.values()).sort((a, b) => {
+    const ra = roleOrder[a.userType] ?? 99;
+    const rb = roleOrder[b.userType] ?? 99;
+    if (ra !== rb) return ra - rb;
+    return (a.username || '').localeCompare(b.username || '', 'ar');
+  });
+}
+
 // Audio notification function
 const playNotificationSound = () => {
   try {
@@ -154,17 +187,19 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
       const newRoomMessages = { ...state.roomMessages };
       
       if (Array.isArray(message)) {
-        // إضافة عدة رسائل
-        newRoomMessages[roomId] = message;
+        // Replace with normalized list
+        newRoomMessages[roomId] = normalizeRoomMessages(message as ChatMessage[]);
       } else {
-        // إضافة رسالة واحدة
+        // Append then normalize
         if (!newRoomMessages[roomId]) {
           newRoomMessages[roomId] = [];
         }
-        newRoomMessages[roomId] = [...newRoomMessages[roomId], message];
+        newRoomMessages[roomId] = normalizeRoomMessages([
+          ...newRoomMessages[roomId],
+          message as ChatMessage,
+        ]);
       }
       
-      // تحديث الرسائل العامة إذا كانت الغرفة هي الغرفة الحالية
       const updatedPublicMessages = roomId === state.currentRoomId
         ? newRoomMessages[roomId]
         : state.publicMessages;
@@ -362,82 +397,71 @@ export function useChat() {
 
     socket.current.on('message', (message: WebSocketMessage) => {
       try {
-        switch (message.type) {
+        const incoming: any = (message as any)?.envelope ? (message as any).envelope : message;
+        switch (incoming.type) {
           case 'error':
-            console.error('خطأ من الخادم:', message.message);
+            console.error('خطأ من الخادم:', incoming.message);
             break;
             
           case 'warning':
-            console.warn('تحذير:', message.message);
+            console.warn('تحذير:', incoming.message);
             break;
             
           case 'onlineUsers':
-            if (message.users) {
-              // تبسيط عرض المستخدمين - عرض الكل بدون فلترة معقدة
-              dispatch({ type: 'SET_ONLINE_USERS', payload: message.users });
-              } else {
+            if (incoming.users) {
+              const normalized = normalizeUsersList(incoming.users as ChatUser[]);
+              dispatch({ type: 'SET_ONLINE_USERS', payload: normalized });
+            } else {
               console.warn('⚠️ لم يتم استقبال قائمة مستخدمين');
             }
             break;
             
           case 'newMessage':
-            if (message.message && typeof message.message === 'object' && !message.message.isPrivate) {
-              if (!isValidMessage(message.message as ChatMessage)) {
-                console.warn('رسالة مرفوضة من الخادم:', message.message);
+            if (incoming.message && typeof incoming.message === 'object' && !incoming.message.isPrivate) {
+              if (!isValidMessage(incoming.message as ChatMessage)) {
+                console.warn('رسالة مرفوضة من الخادم:', incoming.message);
                 break;
               }
               
-              if (!state.ignoredUsers.has(message.message.senderId)) {
-                const chatMessage = message.message as ChatMessage;
-                // إضافة roomId من الرسالة مع fallback للغرفة العامة
+              if (!state.ignoredUsers.has(incoming.message.senderId)) {
+                const chatMessage = incoming.message as ChatMessage;
                 const messageRoomId = (chatMessage as any).roomId || 'general';
                 dispatch({ 
                   type: 'ADD_ROOM_MESSAGE', 
                   payload: { roomId: messageRoomId, message: chatMessage }
                 });
                 
-                // تشغيل صوت الإشعار للرسائل من الآخرين في الغرفة الحالية فقط
                 if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoomId) {
                   playNotificationSound();
-                }
-
-                // إظهار التنبيه فقط للرسائل في الغرفة الحالية
-                if (chatMessage.senderId !== user.id && messageRoomId === state.currentRoomId) {
                   dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: chatMessage.sender });
                 }
-              } else {
-                }
+              }
             }
             break;
             
           case 'privateMessage':
-            if (message.message && typeof message.message === 'object' && message.message.isPrivate) {
-              if (!isValidMessage(message.message as ChatMessage)) {
-                console.warn('رسالة خاصة مرفوضة من الخادم:', message.message);
+            if (incoming.message && typeof incoming.message === 'object' && incoming.message.isPrivate) {
+              if (!isValidMessage(incoming.message as ChatMessage)) {
+                console.warn('رسالة خاصة مرفوضة من الخادم:', incoming.message);
                 break;
               }
               
-              const otherUserId = message.message.senderId === user.id 
-                ? message.message.receiverId! 
-                : message.message.senderId;
+              const otherUserId = incoming.message.senderId === user.id 
+                ? incoming.message.receiverId! 
+                : incoming.message.senderId;
               
-              if (!state.ignoredUsers.has(message.message.senderId)) {
+              if (!state.ignoredUsers.has(incoming.message.senderId)) {
                 dispatch({
                   type: 'ADD_PRIVATE_MESSAGE',
-                  payload: { userId: otherUserId, message: message.message as ChatMessage }
+                  payload: { userId: otherUserId, message: incoming.message as ChatMessage }
                 });
                 
-                if (message.message.senderId !== user.id) {
+                if (incoming.message.senderId !== user.id) {
                   playNotificationSound();
-                  dispatch({ 
-                    type: 'SET_NEW_MESSAGE_SENDER', 
-                    payload: (message.message as ChatMessage).sender! 
-                  });
-                  
-                  // إشعار مرئي في المتصفح
+                  dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: (incoming.message as ChatMessage).sender! });
                   if ('Notification' in window && Notification.permission === 'granted') {
                     new Notification('رسالة خاصة جديدة 📱', {
-                      body: `${(message.message as ChatMessage).sender?.username}: ${(message.message as ChatMessage).content.slice(0, 50)}...`,
+                      body: `${(incoming.message as ChatMessage).sender?.username}: ${(incoming.message as ChatMessage).content.slice(0, 50)}...`,
                       icon: '/favicon.ico'
                     });
                   }
@@ -447,12 +471,12 @@ export function useChat() {
             break;
 
           case 'typing':
-            if (message.username && message.isTyping !== undefined) {
+            if (incoming.username && incoming.isTyping !== undefined) {
               dispatch({
                 type: 'SET_TYPING_USERS',
-                payload: message.isTyping 
-                  ? new Set([...state.typingUsers, message.username])
-                  : new Set([...state.typingUsers].filter(u => u !== message.username))
+                payload: incoming.isTyping 
+                  ? new Set([...state.typingUsers, incoming.username])
+                  : new Set([...state.typingUsers].filter(u => u !== incoming.username))
               });
             }
             break;
@@ -462,16 +486,11 @@ export function useChat() {
             break;
 
           case 'newWallPost':
-            // يمكن إضافة معالجة محددة هنا لتحديث قائمة المنشورات
-            // أو إرسال إشعار للمستخدم
-            if (message.post?.username !== user.username) {
-              // إشعار صوتي للمنشورات الجديدة
+            if (incoming.post?.username !== user.username) {
               playNotificationSound();
-              
-              // إشعار مرئي في المتصفح
               if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification('منشور جديد على الحائط 📌', {
-                  body: `${message.post.username} نشر منشوراً جديداً`,
+                  body: `${incoming.post.username} نشر منشوراً جديداً`,
                   icon: '/favicon.ico'
                 });
               }
@@ -487,27 +506,11 @@ export function useChat() {
             break;
             
           case 'roomJoined':
-            if (message.roomId) {
-              dispatch({ type: 'SET_ROOM', payload: message.roomId });
-              
-              // تحميل رسائل الغرفة الجديدة
-              loadRoomMessages(message.roomId);
-              
-              // تحديث قائمة المستخدمين تتم عبر أحداث الخادم فقط
-              // دون إرسال طلبات إضافية
+            if (incoming.roomId) {
+              dispatch({ type: 'SET_ROOM', payload: incoming.roomId });
+              loadRoomMessages(incoming.roomId);
+              // لا ترسل أي طلبات إضافية لقائمة المستخدمين هنا لتجنب التكرار
             }
-            
-            // طلب قائمة محدثة من المستخدمين - مع تقليل الطلبات المتكررة
-            setTimeout(() => {
-              if (socket.current?.connected && !isLoadingMessages.current) {
-                socket.current.emit('requestOnlineUsers');
-                isLoadingMessages.current = true;
-                // منع الطلبات المتكررة لمدة 5 ثوان
-                setTimeout(() => {
-                  isLoadingMessages.current = false;
-                }, 5000);
-              }
-            }, 3000); // زيادة التأخير لتجنب الطلبات المفرطة
             break;
             
           default:
@@ -666,12 +669,12 @@ export function useChat() {
           roomId: msg.roomId || roomId
         }));
         
-        // إضافة الرسائل للغرفة
+        // إضافة الرسائل للغرفة (normalized)
         dispatch({ 
           type: 'ADD_ROOM_MESSAGE', 
           payload: { 
             roomId: roomId, 
-            message: formattedMessages 
+            message: normalizeRoomMessages(formattedMessages)
           }
         });
       }
@@ -787,18 +790,19 @@ export function useChat() {
           roomId: msg.roomId || 'general'
         }));
         
-        // إضافة الرسائل للغرفة العامة
+        // إضافة الرسائل للغرفة العامة (normalized)
+        const normalized = normalizeRoomMessages(formattedMessages);
         dispatch({ 
           type: 'ADD_ROOM_MESSAGE', 
           payload: { 
             roomId: 'general', 
-            message: formattedMessages 
+            message: normalized 
           }
         });
         
         // تحديث الرسائل العامة إذا كانت الغرفة الحالية هي العامة
         if (state.currentRoomId === 'general') {
-          dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: formattedMessages });
+          dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: normalized });
         }
       }
     } catch (error) {
