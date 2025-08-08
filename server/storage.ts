@@ -502,6 +502,27 @@ export const storage: LegacyStorage = {
     return await friendService.deleteFriendRequest(requestId);
   },
 
+  // إضافة الطرق المفقودة لطلبات الصداقة
+  async getIncomingFriendRequests(userId: number) {
+    return await friendService.getIncomingFriendRequests(userId);
+  },
+
+  async getOutgoingFriendRequests(userId: number) {
+    return await friendService.getOutgoingFriendRequests(userId);
+  },
+
+  async getFriendship(userId1: number, userId2: number) {
+    return await friendService.getFriendship(userId1, userId2);
+  },
+
+  async sendFriendRequest(senderId: number, receiverId: number) {
+    return await friendService.createFriendRequest(senderId, receiverId);
+  },
+
+  async removeFriend(userId: number, friendId: number) {
+    return await friendService.removeFriend(userId, friendId);
+  },
+
   // ========= Room helpers exposed on storage =========
   async getRooms() {
     return await databaseService.getRooms();
