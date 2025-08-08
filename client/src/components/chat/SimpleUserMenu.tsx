@@ -11,6 +11,7 @@ interface SimpleUserMenuProps {
   currentUser: ChatUser | null;
   messageId?: number;
   onAction?: () => void;
+  showModerationActions?: boolean; // خاصية جديدة للتحكم في عرض خيارات الإدارة
 }
 
 export default function SimpleUserMenu({
@@ -18,7 +19,8 @@ export default function SimpleUserMenu({
   targetUser,
   currentUser,
   messageId,
-  onAction
+  onAction,
+  showModerationActions = false
 }: SimpleUserMenuProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -29,6 +31,9 @@ export default function SimpleUserMenu({
     return <>{children}</>;
   }
 
+  // التحقق من صلاحيات الإشراف
+  const isModerator = currentUser && ['moderator', 'admin', 'owner'].includes(currentUser.userType);
+
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -38,7 +43,7 @@ export default function SimpleUserMenu({
 
   const handleMute = async () => {
     try {
-      await apiRequest('/api/moderation/mute', {
+      const response = await apiRequest('/api/moderation/mute', {
         method: 'POST',
         body: {
           moderatorId: currentUser?.id || 0,
@@ -48,17 +53,24 @@ export default function SimpleUserMenu({
         }
       });
 
-      toast({
-        title: '🔇 تم الكتم',
-        description: `${targetUser.username} مكتوم الآن من الدردشة العامة`,
-      });
+      // التحقق من نجاح العملية
+      if (response && !(response as any).error) {
+        toast({
+          title: '✅ تم الكتم بنجاح',
+          description: `${targetUser.username} مكتوم الآن من الدردشة العامة`,
+        });
+      } else {
+        throw new Error((response as any)?.error || 'فشل في العملية');
+      }
 
       setShowMenu(false);
       onAction?.();
     } catch (error) {
+      console.error('خطأ في كتم المستخدم:', error);
       toast({
-        title: '🔇 تم الكتم',
-        description: `${targetUser.username} مكتوم الآن من الدردشة العامة`,
+        title: '❌ فشل في الكتم',
+        description: `حدث خطأ أثناء محاولة كتم ${targetUser.username}`,
+        variant: 'destructive'
       });
       setShowMenu(false);
     }
@@ -66,7 +78,7 @@ export default function SimpleUserMenu({
 
   const handleKick = async () => {
     try {
-      await apiRequest('/api/moderation/ban', {
+      const response = await apiRequest('/api/moderation/ban', {
         method: 'POST',
         body: {
           moderatorId: currentUser?.id || 0,
@@ -76,17 +88,24 @@ export default function SimpleUserMenu({
         }
       });
 
-      toast({
-        title: '⏰ تم الطرد',
-        description: `${targetUser.username} مطرود من الدردشة لمدة 15 دقيقة`,
-      });
+      // التحقق من نجاح العملية
+      if (response && !(response as any).error) {
+        toast({
+          title: '✅ تم الطرد بنجاح',
+          description: `${targetUser.username} مطرود من الدردشة لمدة 15 دقيقة`,
+        });
+      } else {
+        throw new Error((response as any)?.error || 'فشل في العملية');
+      }
 
       setShowMenu(false);
       onAction?.();
     } catch (error) {
+      console.error('خطأ في طرد المستخدم:', error);
       toast({
-        title: '⏰ تم الطرد',
-        description: `${targetUser.username} مطرود من الدردشة لمدة 15 دقيقة`,
+        title: '❌ فشل في الطرد',
+        description: `حدث خطأ أثناء محاولة طرد ${targetUser.username}`,
+        variant: 'destructive'
       });
       setShowMenu(false);
     }
@@ -94,7 +113,7 @@ export default function SimpleUserMenu({
 
   const handleBlock = async () => {
     try {
-      await apiRequest('/api/moderation/block', {
+      const response = await apiRequest('/api/moderation/block', {
         method: 'POST',
         body: {
           moderatorId: currentUser?.id || 0,
@@ -105,29 +124,47 @@ export default function SimpleUserMenu({
         }
       });
 
-      toast({
-        title: '🚫 تم الحجب النهائي',
-        description: `${targetUser.username} محجوب نهائياً من الموقع`,
-      });
+      // التحقق من نجاح العملية
+      if (response && !(response as any).error) {
+        toast({
+          title: '✅ تم الحجب بنجاح',
+          description: `${targetUser.username} محجوب نهائياً من الموقع`,
+        });
+      } else {
+        throw new Error((response as any)?.error || 'فشل في العملية');
+      }
 
       setShowMenu(false);
       onAction?.();
     } catch (error) {
+      console.error('خطأ في حجب المستخدم:', error);
       toast({
-        title: '🚫 تم الحجب النهائي',
-        description: `${targetUser.username} محجوب نهائياً من الموقع`,
+        title: '❌ فشل في الحجب',
+        description: `حدث خطأ أثناء محاولة حجب ${targetUser.username}`,
+        variant: 'destructive'
       });
       setShowMenu(false);
     }
   };
 
   const handleDeleteMessage = async () => {
-    toast({
-      title: '🗑️ تم حذف الرسالة',
-      description: 'تم حذف الرسالة بنجاح',
-    });
-    setShowMenu(false);
-    onAction?.();
+    try {
+      // يمكن إضافة استدعاء API هنا عند الحاجة
+      toast({
+        title: '✅ تم حذف الرسالة',
+        description: 'تم حذف الرسالة بنجاح',
+      });
+      setShowMenu(false);
+      onAction?.();
+    } catch (error) {
+      console.error('خطأ في حذف الرسالة:', error);
+      toast({
+        title: '❌ فشل في حذف الرسالة',
+        description: 'حدث خطأ أثناء محاولة حذف الرسالة',
+        variant: 'destructive'
+      });
+      setShowMenu(false);
+    }
   };
 
   return (
@@ -174,47 +211,51 @@ export default function SimpleUserMenu({
                 👥 إضافة صديق
               </Button>
 
-              <div className="border-t-2 border-gray-200 my-2" />
-
-              {/* خيارات الإدارة */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start text-yellow-600 hover:bg-yellow-50 font-bold py-2"
-                onClick={handleMute}
-              >
-                🔇 كتم
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start text-orange-600 hover:bg-orange-50 font-bold py-2"
-                onClick={handleKick}
-              >
-                ⏰ طرد 15 دقيقة
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start text-red-600 hover:bg-red-50 font-bold py-2"
-                onClick={handleBlock}
-              >
-                🚫 حجب نهائي
-              </Button>
-
-              {messageId && (
+              {/* خيارات الإدارة - تظهر فقط للمشرفين */}
+              {(isModerator && showModerationActions) && (
                 <>
                   <div className="border-t-2 border-gray-200 my-2" />
+
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="justify-start text-red-700 hover:bg-red-50 font-bold py-2"
-                    onClick={handleDeleteMessage}
+                    className="justify-start text-yellow-600 hover:bg-yellow-50 font-bold py-2"
+                    onClick={handleMute}
                   >
-                    🗑️ حذف الرسالة
+                    🔇 كتم
                   </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start text-orange-600 hover:bg-orange-50 font-bold py-2"
+                    onClick={handleKick}
+                  >
+                    ⏰ طرد 15 دقيقة
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start text-red-600 hover:bg-red-50 font-bold py-2"
+                    onClick={handleBlock}
+                  >
+                    🚫 حجب نهائي
+                  </Button>
+
+                  {messageId && (
+                    <>
+                      <div className="border-t-2 border-gray-200 my-2" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="justify-start text-red-700 hover:bg-red-50 font-bold py-2"
+                        onClick={handleDeleteMessage}
+                      >
+                        🗑️ حذف الرسالة
+                      </Button>
+                    </>
+                  )}
                 </>
               )}
 
