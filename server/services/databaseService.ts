@@ -84,6 +84,17 @@ export interface Room {
   updatedAt?: Date | string;
 }
 
+// Blocked device type for moderation persistence
+export interface BlockedDevice {
+  id: number;
+  ipAddress: string;
+  deviceId: string;
+  userId: number;
+  reason: string;
+  blockedAt: Date | string;
+  blockedBy: number;
+}
+
 // Database Service Class
 export class DatabaseService {
   private get db() {
@@ -455,6 +466,68 @@ export class DatabaseService {
     } catch (error) {
       console.error('Error getting rooms:', error);
       return [];
+    }
+  }
+
+  // Blocked devices operations
+  async getBlockedDevices(): Promise<BlockedDevice[]> {
+    if (!this.isConnected()) return [];
+
+    try {
+      if (this.type === 'postgresql') {
+        return await (this.db as any)
+          .select()
+          .from(pgSchema.blockedDevices)
+          .orderBy(desc(pgSchema.blockedDevices.blockedAt));
+      } else {
+        return await (this.db as any)
+          .select()
+          .from(sqliteSchema.blockedDevices);
+      }
+    } catch (error) {
+      console.error('Error getting blocked devices:', error);
+      return [];
+    }
+  }
+
+  async createBlockedDevice(data: Partial<BlockedDevice>): Promise<BlockedDevice | null> {
+    if (!this.isConnected()) return null;
+
+    try {
+      if (this.type === 'postgresql') {
+        const payload = {
+          ipAddress: data.ipAddress!,
+          deviceId: data.deviceId!,
+          userId: data.userId!,
+          reason: data.reason || 'unspecified',
+          blockedAt: data.blockedAt instanceof Date ? data.blockedAt : new Date(),
+          blockedBy: data.blockedBy!,
+        } as any;
+        const result = await (this.db as any).insert(pgSchema.blockedDevices).values(payload).returning();
+        return result[0] || null;
+      } else {
+        const payload = {
+          ipAddress: data.ipAddress!,
+          deviceId: data.deviceId!,
+          userId: data.userId!,
+          reason: data.reason || 'unspecified',
+          blockedAt: (data.blockedAt instanceof Date ? data.blockedAt.toISOString() : new Date().toISOString()),
+          blockedBy: data.blockedBy!,
+        } as any;
+        const result = await (this.db as any).insert(sqliteSchema.blockedDevices).values(payload);
+        if ((result as any).lastInsertRowid) {
+          const rows = await (this.db as any)
+            .select()
+            .from(sqliteSchema.blockedDevices)
+            .where(eq(sqliteSchema.blockedDevices.id, Number((result as any).lastInsertRowid)))
+            .limit(1);
+          return rows[0] || null;
+        }
+        return null;
+      }
+    } catch (error) {
+      console.error('Error creating blocked device:', error);
+      return null;
     }
   }
 

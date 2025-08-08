@@ -118,20 +118,23 @@ app.get('/api/health', async (req, res) => {
 async function startServer() {
   try {
     // تهيئة النظام (قاعدة البيانات + البيانات الافتراضية)
-    console.log('🚀 بدء تهيئة الخادم...');
     const systemInitialized = await initializeSystem();
     
     if (systemInitialized) {
-      console.log('✅ تم تهيئة النظام بنجاح');
-    } else {
+      } else {
       console.warn('⚠️ تم بدء الخادم مع تحذيرات في تهيئة النظام');
     }
 
     // Register routes and get the server
     const server = await registerRoutes(app);
 
-    // Setup Vite in development
-    const app2 = setupVite(app, server);
+    // Setup client handling
+    if (process.env.NODE_ENV === 'development') {
+      setupVite(app, server);
+    } else {
+      // Serve built static files in production
+      serveStatic(app);
+    }
 
     // Start the server
     const PORT = process.env.PORT || 5000;
@@ -146,26 +149,17 @@ async function startServer() {
       // إظهار معلومات قاعدة البيانات
       const { getDatabaseStatus } = require('./database-adapter');
       const dbStatus = getDatabaseStatus();
-      console.log('📊 حالة قاعدة البيانات:', {
-        متصلة: dbStatus.connected ? '✅ نعم' : '❌ لا',
-        النوع: dbStatus.type,
-        البيئة: dbStatus.environment
       });
-    });
 
     // Handle graceful shutdown
     process.on('SIGTERM', () => {
-      console.log('⏹️ إغلاق الخادم...');
       server.close(() => {
-        console.log('✅ تم إغلاق الخادم بنجاح');
         process.exit(0);
       });
     });
 
     process.on('SIGINT', () => {
-      console.log('⏹️ إغلاق الخادم...');
       server.close(() => {
-        console.log('✅ تم إغلاق الخادم بنجاح');
         process.exit(0);
       });
     });

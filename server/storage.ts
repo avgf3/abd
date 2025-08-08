@@ -115,14 +115,45 @@ export async function createRoom(roomData: Partial<Room>): Promise<Room | null> 
   return await databaseService.createRoom(roomData);
 }
 
-export async function deleteRoom(roomId: number): Promise<boolean> {
+// Helper: fetch single room by id (supports string/number ids)
+export async function getRoom(id: string | number): Promise<any | null> {
+  const rooms = await databaseService.getRooms();
+  const match = rooms.find((r: any) => String(r.id) === String(id)) || null;
+  if (!match) return null;
+  // Ensure backward-compat field
+  return {
+    ...match,
+    is_broadcast: (match as any).is_broadcast ?? (match as any).isBroadcast ?? false,
+  };
+}
+
+// Broadcast info derived from room record (fallback implementation)
+export async function getBroadcastRoomInfo(roomId: string): Promise<{
+  roomId: string;
+  isBroadcast: boolean;
+  hostId: number | null;
+  speakers: any[];
+  micQueue: any[];
+} | null> {
+  const room = await getRoom(roomId);
+  if (!room) return null;
+  const speakersRaw = (room as any).speakers ?? '[]';
+  const micQueueRaw = (room as any).micQueue ?? '[]';
+  return {
+    roomId: String(roomId),
+    isBroadcast: Boolean((room as any).isBroadcast ?? (room as any).is_broadcast ?? false),
+    hostId: (room as any).hostId ?? null,
+    speakers: typeof speakersRaw === 'string' ? safeParseJsonArray(speakersRaw) : Array.isArray(speakersRaw) ? speakersRaw : [],
+    micQueue: typeof micQueueRaw === 'string' ? safeParseJsonArray(micQueueRaw) : Array.isArray(micQueueRaw) ? micQueueRaw : [],
+  };
+}
+
+function safeParseJsonArray(value: string): any[] {
   try {
-    // This would need custom implementation for deletion
-    // For now, return true
-    return true;
-  } catch (error) {
-    console.error('Error deleting room:', error);
-    return false;
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
   }
 }
 
@@ -459,6 +490,26 @@ export const storage: LegacyStorage = {
 
   async getAllUsers() {
     return await getAllUsers();
+  },
+
+  // Added for moderation persistence
+  async getBlockedDevices() {
+    return await databaseService.getBlockedDevices();
+  },
+
+  async createBlockedDevice(data: any) {
+    const created = await databaseService.createBlockedDevice(data);
+    if (!created) throw new Error('Failed to create blocked device');
+    return created as any;
+  },
+
+  // Added for rooms compatibility
+  async getRoom(roomId: string) {
+    return await getRoom(roomId);
+  },
+
+  async getBroadcastRoomInfo(roomId: string) {
+    return await getBroadcastRoomInfo(roomId);
   }
 };
 

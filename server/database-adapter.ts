@@ -32,15 +32,11 @@ export interface DatabaseAdapter {
 function createSQLiteAdapter(): DatabaseAdapter {
   try {
     const dbPath = path.join(process.cwd(), 'chat.db');
-    console.log('🔄 محاولة الاتصال بـ SQLite:', dbPath);
-    
     const sqlite = new Database(dbPath);
     const db = drizzleSQLite(sqlite, { schema: sqliteSchema });
     
     // إنشاء الجداول إذا لم تكن موجودة
     createSQLiteTables(sqlite);
-    
-    console.log('✅ تم الاتصال بـ SQLite بنجاح');
     
     return {
       db: db as DatabaseType,
@@ -48,8 +44,7 @@ function createSQLiteAdapter(): DatabaseAdapter {
       close: () => sqlite.close(),
       migrate: async () => {
         // SQLite migrations are handled by createSQLiteTables
-        console.log('✅ SQLite schema is up to date');
-      }
+        }
     };
   } catch (error) {
     console.error("❌ فشل في الاتصال بـ SQLite:", error);
@@ -196,8 +191,7 @@ function createSQLiteTables(sqlite: Database.Database) {
       )
     `);
 
-    console.log('✅ تم إنشاء جداول SQLite بنجاح');
-  } catch (error) {
+    } catch (error) {
     console.error('❌ خطأ في إنشاء جداول SQLite:', error);
   }
 }
@@ -218,8 +212,6 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
     const pool = new Pool({ connectionString: databaseUrl });
     const db = drizzleNeon({ client: pool, schema: pgSchema });
     
-    console.log('✅ تم الاتصال بـ PostgreSQL بنجاح');
-    
     return {
       db: db as DatabaseType,
       type: 'postgresql',
@@ -230,8 +222,7 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
           const migrationsPath = path.join(process.cwd(), 'migrations');
           if (fs.existsSync(migrationsPath)) {
             await migratePostgres(db as PostgreSQLDatabase, { migrationsFolder: 'migrations' });
-            console.log('✅ تم تطبيق PostgreSQL migrations بنجاح');
-          }
+            }
         } catch (error: any) {
           // تجاهل أخطاء الجداول الموجودة
           if (!error.message?.includes('already exists') && error.code !== '42P07') {
@@ -253,8 +244,6 @@ export function createDatabaseAdapter(): DatabaseAdapter {
   if (pgAdapter.db && pgAdapter.type !== 'disabled') {
     return pgAdapter;
   }
-  
-  console.log('🔄 PostgreSQL غير متاح، التبديل إلى SQLite...');
   
   // fallback إلى SQLite
   const sqliteAdapter = createSQLiteAdapter();
@@ -306,18 +295,14 @@ export function getDatabaseStatus() {
 export async function initializeDatabase(): Promise<boolean> {
   try {
     if (!db || dbType === 'disabled') {
-      console.log('📄 Database disabled - running in memory mode');
       return true;
     }
 
-    console.log(`🔄 Initializing ${dbType} database...`);
-    
     // تشغيل migrations
     if (dbAdapter.migrate) {
       await dbAdapter.migrate();
     }
     
-    console.log('✅ Database initialization completed successfully');
     return true;
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
