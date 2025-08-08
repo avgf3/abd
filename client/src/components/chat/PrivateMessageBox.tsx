@@ -89,91 +89,94 @@ export default function PrivateMessageBox({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[450px] bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-2xl">
-        <DialogHeader className="border-b border-purple-200 pb-3">
-          <DialogTitle className="text-lg font-bold text-center text-purple-800 flex items-center justify-center gap-3">
+      <DialogContent className="max-w-lg max-h-[500px] bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 border-2 border-cyan-500/30 shadow-2xl backdrop-blur-sm">
+        <DialogHeader className="border-b border-cyan-500/20 pb-4">
+          <DialogTitle className="text-xl font-bold text-center text-cyan-100 flex items-center justify-center gap-4">
             <div className="relative">
               <img
                 src={getImageSrc(user.profileImage)}
                 alt="صورة المستخدم"
-                className="w-12 h-12 rounded-full border-2 border-purple-300 shadow-md"
+                className="w-14 h-14 rounded-full border-3 border-cyan-400/50 shadow-lg ring-2 ring-cyan-500/30"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = '/default_avatar.svg';
                 }}
               />
               {user.isOnline && (
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full animate-pulse"></div>
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 border-2 border-slate-900 rounded-full animate-pulse shadow-lg"></div>
               )}
             </div>
             <div className="text-center">
               <div 
-                className={`inline-block px-6 py-4 rounded-xl transition-all duration-300 min-w-[160px] text-center ${
-                  user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
+                className={`inline-block px-6 py-3 rounded-xl transition-all duration-300 min-w-[180px] text-center backdrop-blur-sm ${
+                  user.userType === 'owner' 
+                    ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-xl border border-yellow-300' 
+                    : 'bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-500/30'
                 }`}
                 style={{
                   ...(user.userType === 'owner' && {
                     animation: 'golden-glow 2s ease-in-out infinite',
-                    boxShadow: '0 0 30px rgba(255, 215, 0, 0.9)'
+                    boxShadow: '0 0 30px rgba(255, 215, 0, 0.6)'
                   })
                 }}
               >
                 <p className="font-bold text-lg" style={{ 
-                  color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#7C3AED') 
+                  color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#67E8F9') 
                 }}>
                   {user.userType === 'owner' ? '👑' : user.userType === 'admin' ? '⭐' : ''} {user.username}
                 </p>
               </div>
-              <p className="text-sm text-purple-600 font-medium">
-                {user.userType === 'owner' && '👑 مالك'}
+              <p className="text-sm text-cyan-300 font-medium mt-2">
+                {user.userType === 'owner' && '👑 مالك الموقع'}
                 {user.userType === 'admin' && '⭐ إدمن'}
                 {user.userType === 'moderator' && '🛡️ مشرف'}
-                {user.userType === 'member' && ''}
-                {user.userType === 'guest' && ''}
+                {user.userType === 'member' && '💬 عضو'}
+                {user.userType === 'guest' && '👤 زائر'}
               </p>
-              <p className={`text-xs font-medium ${user.isOnline ? 'text-green-600' : 'text-gray-500'}`}>
-                {user.isOnline ? '🟢 متصل الآن' : '⚫ غير متصل'}
+              <p className={`text-sm font-medium flex items-center justify-center gap-2 mt-1 ${user.isOnline ? 'text-green-400' : 'text-gray-400'}`}>
+                <div className={`w-2 h-2 rounded-full ${user.isOnline ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`}></div>
+                {user.isOnline ? 'متصل الآن' : 'غير متصل'}
               </p>
             </div>
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="h-[250px] w-full p-4">
-          <div className="space-y-3">
+        <ScrollArea className="h-[280px] w-full p-4 bg-gradient-to-b from-slate-900/50 to-blue-950/50 rounded-lg">
+          <div className="space-y-4">
             {messages.map((message, index) => (
               <div 
                 key={`${message.id}-${message.senderId}-${index}`}
                 className={`flex ${message.senderId === currentUser?.id ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[80%] p-3 rounded-xl shadow-sm ${
+                <div className={`max-w-[85%] p-4 rounded-2xl shadow-lg backdrop-blur-sm transition-all duration-200 hover:shadow-xl ${
                   message.senderId === currentUser?.id 
-                    ? 'bg-purple-500 text-white rounded-br-sm' 
-                    : 'bg-white text-gray-800 rounded-bl-sm border border-purple-200'
+                    ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-br-md border border-cyan-400/30' 
+                    : 'bg-gradient-to-r from-slate-800/80 to-slate-700/80 text-cyan-50 rounded-bl-md border border-slate-600/50'
                 }`}>
                   {message.senderId !== currentUser?.id && (
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-3 mb-3 pb-2 border-b border-slate-600/30">
                       <img
                         src={getImageSrc(message.sender?.profileImage)}
                         alt={message.sender?.username || 'User'}
-                        className="w-6 h-6 rounded-full object-cover border border-gray-300"
+                        className="w-7 h-7 rounded-full object-cover border-2 border-cyan-400/40 shadow-md"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = '/default_avatar.svg';
                         }}
                       />
                       <span 
-                        className="text-xs font-medium text-gray-600"
-                        style={{ color: message.sender?.usernameColor || '#000000' }}
+                        className="text-sm font-semibold"
+                        style={{ color: message.sender?.usernameColor || '#67E8F9' }}
                       >
                         {message.sender?.username || 'مجهول'}
                       </span>
                     </div>
                   )}
-                  <div className="text-sm font-medium mb-1">
+                  <div className="text-sm font-medium mb-2 leading-relaxed">
                     {message.content}
                   </div>
-                  <div className={`text-xs ${
-                    message.senderId === currentUser?.id ? 'text-purple-100' : 'text-gray-500'
+                  <div className={`text-xs font-medium ${
+                    message.senderId === currentUser?.id ? 'text-cyan-100/80' : 'text-slate-400'
                   }`}>
                     {formatTime(message.timestamp)}
                   </div>
@@ -182,17 +185,17 @@ export default function PrivateMessageBox({
             ))}
             
             {messages.length === 0 && (
-              <div className="text-center py-8 text-purple-400">
-                <div className="text-4xl mb-3">✉️</div>
-                <p className="text-lg font-medium">لا توجد رسائل</p>
-                <p className="text-sm">ابدأ محادثة جديدة!</p>
+              <div className="text-center py-12 text-cyan-300">
+                <div className="text-5xl mb-4 opacity-60">💬</div>
+                <p className="text-xl font-bold mb-2">لا توجد رسائل</p>
+                <p className="text-sm text-slate-400">ابدأ محادثة خاصة جديدة!</p>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
 
-        <div className="flex gap-2 p-4 border-t border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
+        <div className="flex gap-3 p-4 border-t border-cyan-500/20 bg-gradient-to-r from-slate-900/60 to-blue-950/60 backdrop-blur-sm">
           <FileUploadButton 
             onFileSelect={handleFileSelect}
             disabled={false}
@@ -201,7 +204,7 @@ export default function PrivateMessageBox({
           <div className="relative">
             <Button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="bg-purple-100 hover:bg-purple-200 text-purple-600 px-3 py-2 rounded-lg"
+              className="bg-slate-700/80 hover:bg-slate-600/80 text-cyan-300 border border-cyan-500/30 px-3 py-2 rounded-lg backdrop-blur-sm transition-all duration-200 hover:border-cyan-400/50"
               title="الرموز التعبيرية"
             >
               😊
@@ -219,25 +222,25 @@ export default function PrivateMessageBox({
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="✉️ ارسال رسالة..."
-            className="flex-1 bg-white border-purple-300 text-gray-800 placeholder:text-purple-400 focus:border-purple-500"
+            placeholder="✉️ اكتب رسالتك هنا..."
+            className="flex-1 bg-slate-800/60 border-cyan-500/30 text-cyan-50 placeholder:text-cyan-300/60 focus:border-cyan-400 focus:ring-cyan-400/20 backdrop-blur-sm"
           />
           <Button
             onClick={handleSendMessage}
             disabled={!messageText.trim()}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium"
+            className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-5 py-2 rounded-lg font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
-            ✉️ ارسال
+            ✉️ إرسال
           </Button>
         </div>
         
-        <div className="flex justify-center pt-2 pb-4">
+        <div className="flex justify-center pb-4">
           <Button 
             onClick={onClose} 
             variant="outline" 
-            className="bg-white border-purple-300 text-purple-700 hover:bg-purple-100 font-medium px-6"
+            className="bg-slate-800/60 border-slate-600/50 text-cyan-300 hover:bg-slate-700/60 hover:border-cyan-500/40 font-semibold px-8 py-2 backdrop-blur-sm transition-all duration-200"
           >
-            ✖️ إغلاق
+            ✖️ إغلاق المحادثة
           </Button>
         </div>
       </DialogContent>
