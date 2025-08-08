@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 
 interface ReportModalProps {
@@ -94,38 +95,29 @@ export default function ReportModal({
 
     try {
       const finalReason = reason === 'other' ? customReason : reason;
-      const response = await fetch('/api/moderation/report', {
+      await apiRequest('/api/moderation/report', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+        body: {
           reporterId: currentUser.id,
           reportedUserId: reportedUser.id,
           reason: finalReason,
           content: messageContent || 'تبليغ عام على المستخدم',
           messageId: messageId
-        }),
+        }
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: 'تم الإرسال',
-          description: 'تم إرسال التبليغ بنجاح. سيتم مراجعته من قبل المشرفين.',
-          variant: 'default'
-        });
-        onClose();
-        setReason('');
-        setCustomReason('');
-      } else {
-        throw new Error(data.error || 'خطأ في إرسال التبليغ');
-      }
+      toast({
+        title: 'تم الإرسال',
+        description: 'تم إرسال التبليغ بنجاح. سيتم مراجعته من قبل المشرفين.',
+        variant: 'default'
+      });
+      onClose();
+      setReason('');
+      setCustomReason('');
     } catch (error) {
       toast({
         title: 'خطأ',
-        description: error instanceof Error ? error.message : 'خطأ في إرسال التبليغ',
+        description: (error as Error)?.message || 'خطأ في إرسال التبليغ',
         variant: 'destructive'
       });
     } finally {

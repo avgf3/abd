@@ -147,18 +147,11 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
     setSelectedTheme(themeId);
 
     try {
-      const response = await apiRequest(`/api/users/${currentUser.id}`, {
+      const result = await apiRequest(`/api/users/${currentUser.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ userTheme: themeId })
+        body: { userTheme: themeId }
       });
 
-      if (!response.ok) {
-        throw new Error('فشل في حفظ الثيم');
-      }
-      
       if (onThemeUpdate) {
         onThemeUpdate(themeId);
       }
@@ -168,12 +161,10 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
         description: `تم تطبيق ثيم ${themes.find(t => t.id === themeId)?.name}`,
       });
 
-      // إغلاق النافذة بعد تأخير قصير
       setTimeout(() => {
         onClose();
       }, 1000);
     } catch (error: any) {
-      // إذا فشل في الحفظ، أعد الثيم السابق
       const previousTheme = currentUser.userTheme || 'default';
       applyThemeVariables(previousTheme);
       setSelectedTheme(previousTheme);

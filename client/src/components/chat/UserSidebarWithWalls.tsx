@@ -65,18 +65,9 @@ export default function UserSidebarWithWalls({
     if (!currentUser) return;
     setLoading(true);
     try {
-      const response = await fetch(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`, {
-        method: 'GET',
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const posts = data.posts || data.data || data || [];
-        setPosts(posts);
-        } else {
-        const errorText = await response.text();
-        console.error('❌ UserSidebar: خطأ في جلب المنشورات:', response.status, errorText);
-      }
+      const data = await apiRequest(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`);
+      const posts = (data as any).posts || (data as any).data || data || [];
+      setPosts(posts);
     } catch (error) {
       console.error('❌ UserSidebar: خطأ في الاتصال بالخادم:', error);
     } finally {
@@ -163,15 +154,14 @@ export default function UserSidebarWithWalls({
         formData.append('image', selectedImage);
       }
 
-      const response = await fetch('/api/wall/posts', {
+      const result = await apiRequest('/api/wall/posts', {
         method: 'POST',
         body: formData,
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        const newPost = result.post || result;
-        // إضافة المنشور للقائمة فوراً
+      const data = result as any;
+      if (data?.post) {
+        const newPost = data.post || data;
         setPosts(prev => [newPost, ...prev]);
         toast({
           title: "تم النشر",
@@ -179,10 +169,7 @@ export default function UserSidebarWithWalls({
         });
         setNewPostContent('');
         removeSelectedImage();
-        // fetchPosts(); // لا نحتاج لهذا لأننا أضفنا المنشور محلياً
       } else {
-        const errorText = await response.text();
-        console.error('❌ UserSidebar: خطأ في النشر:', response.status, errorText);
         throw new Error('فشل في نشر المنشور');
       }
     } catch (error) {
@@ -201,7 +188,7 @@ export default function UserSidebarWithWalls({
     if (!currentUser) return;
     
     try {
-      const response = await apiRequest('/api/wall/react', {
+      const result = await apiRequest('/api/wall/react', {
         method: 'POST',
         body: {
           postId,
@@ -210,9 +197,8 @@ export default function UserSidebarWithWalls({
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        // تحديث المنشور محلياً بدلاً من إعادة تحميل جميع المنشورات
+      const data = result as any;
+      if (data?.post) {
         setPosts(prevPosts => 
           prevPosts.map(post => 
             post.id === postId ? data.post : post
@@ -229,19 +215,16 @@ export default function UserSidebarWithWalls({
     if (!currentUser) return;
     
     try {
-      const response = await apiRequest(`/api/wall/posts/${postId}`, {
+      await apiRequest(`/api/wall/posts/${postId}`, {
         method: 'DELETE',
         body: { userId: currentUser.id }
       });
 
-      if (response.ok) {
-        toast({
-          title: "تم الحذف",
-          description: "تم حذف المنشور بنجاح",
-        });
-        // إزالة المنشور محلياً بدلاً من إعادة تحميل جميع المنشورات
-        setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
-      }
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف المنشور بنجاح",
+      });
+      setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
     } catch (error) {
       toast({
         title: "خطأ في الحذف",
