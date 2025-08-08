@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Shield, Clock, Ban, UserX } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 
 interface ModerationAction {
@@ -39,11 +40,8 @@ export default function ModerationPanel({ currentUser, isVisible, onClose }: Mod
   const loadModerationActions = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/moderation/actions?userId=${currentUser.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setActions(data);
-      }
+      const data = await apiRequest(`/api/moderation/actions?userId=${currentUser.id}`);
+      setActions((data as any).actions || data || []);
     } catch (error) {
       console.error('خطأ في تحميل إجراءات الإدارة:', error);
     } finally {
