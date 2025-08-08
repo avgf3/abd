@@ -16,7 +16,9 @@ export function log(message: string, source = "express") {
     hour12: true,
   });
 
-  }
+  const prefix = `[${formattedTime}] [${source}]`;
+  console.log(`${prefix} ${message}`);
+}
 
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {

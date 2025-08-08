@@ -6,6 +6,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeSystem } from "./database-setup";
 import { setupSecurity } from "./security";
+import { getDatabaseStatus } from './database-adapter';
 import path from "path";
 import fs from "fs";
 import { Server } from "http";
@@ -147,7 +148,6 @@ async function startServer() {
       }
       
       // إظهار معلومات قاعدة البيانات
-      const { getDatabaseStatus } = require('./database-adapter');
       const dbStatus = getDatabaseStatus();
       });
 

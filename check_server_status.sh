@@ -11,6 +11,8 @@ NC='\033[0m' # No Color
 REQUIRED_VARS=("DATABASE_URL")
 MISSING=0
 
+PORT_TO_CHECK=${PORT:-5000}
+
 echo -e "${YELLOW}--- فحص متغيرات البيئة ---${NC}"
 for VAR in "${REQUIRED_VARS[@]}"; do
   if [[ -z "${!VAR}" ]]; then
@@ -49,10 +51,9 @@ nohup npm run start > server.log 2>&1 &
 SERVER_PID=$!
 sleep 3
 
-# فحص إذا السيرفر يعمل على المنفذ 5000
-curl -s http://localhost:5000 > /dev/null
-if [[ $? -eq 0 ]]; then
-  echo -e "${GREEN}✔ السيرفر يعمل على http://localhost:5000${NC}"
+# فحص إذا السيرفر يعمل على المنفذ المحدد
+if curl -s "http://localhost:${PORT_TO_CHECK}/health" > /dev/null; then
+  echo -e "${GREEN}✔ السيرفر يعمل على http://localhost:${PORT_TO_CHECK}${NC}"
 else
   echo -e "${RED}❌ السيرفر لا يعمل أو لم يبدأ بعد.${NC}"
   echo -e "${YELLOW}--- آخر 20 سطر من سجل السيرفر ---${NC}"

@@ -224,8 +224,10 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
             await migratePostgres(db as PostgreSQLDatabase, { migrationsFolder: 'migrations' });
             }
         } catch (error: any) {
-          // تجاهل أخطاء الجداول الموجودة
-          if (!error.message?.includes('already exists') && error.code !== '42P07') {
+          // تجاهل أخطاء الجداول الموجودة بشكل موثوق
+          const combinedMessage = `${error?.message ?? ''} ${error?.cause?.message ?? ''}`;
+          const isAlreadyExists = combinedMessage.includes('already exists') || error?.code === '42P07';
+          if (!isAlreadyExists) {
             console.error('❌ خطأ في PostgreSQL migrations:', error);
           }
         }
