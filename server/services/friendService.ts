@@ -49,6 +49,46 @@ export class FriendService {
     }
   }
 
+  // الحصول على طلب صداقة (بين مستخدمين) بحالة pending
+  async getFriendRequest(senderId: number, receiverId: number): Promise<Friend | undefined> {
+    try {
+      const [request] = await db
+        .select()
+        .from(friends)
+        .where(
+          and(
+            or(
+              and(eq(friends.userId, senderId), eq(friends.friendId, receiverId)),
+              and(eq(friends.userId, receiverId), eq(friends.friendId, senderId))
+            ),
+            eq(friends.status, 'pending')
+          )
+        )
+        .limit(1);
+
+      return request;
+    } catch (error) {
+      console.error('خطأ في الحصول على طلب الصداقة:', error);
+      return undefined;
+    }
+  }
+
+  // الحصول على طلب صداقة بواسطة المعرف
+  async getFriendRequestById(requestId: number): Promise<Friend | undefined> {
+    try {
+      const [request] = await db
+        .select()
+        .from(friends)
+        .where(eq(friends.id, requestId))
+        .limit(1);
+
+      return request;
+    } catch (error) {
+      console.error('خطأ في الحصول على طلب الصداقة بالمعرف:', error);
+      return undefined;
+    }
+  }
+
   // الحصول على طلبات الصداقة الواردة
   async getIncomingFriendRequests(userId: number): Promise<any[]> {
     try {
