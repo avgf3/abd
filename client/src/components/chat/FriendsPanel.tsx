@@ -304,11 +304,12 @@ export default function FriendsPanel({
     }
   };
 
-  const formatLastSeen = (lastSeen?: Date) => {
+  const formatLastSeen = (lastSeen?: string | Date) => {
     if (!lastSeen) return '';
     
     const now = Date.now();
-    const diff = now - lastSeen.getTime();
+    const date = typeof lastSeen === 'string' ? new Date(lastSeen) : lastSeen;
+    const diff = now - date.getTime();
     
     if (diff < 60000) return 'منذ لحظات';
     if (diff < 3600000) return `منذ ${Math.floor(diff / 60000)} دقيقة`;

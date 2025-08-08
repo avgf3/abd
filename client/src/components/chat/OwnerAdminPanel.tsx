@@ -48,7 +48,7 @@ interface StaffMember {
   userType: 'moderator' | 'admin' | 'owner';
   profileImage?: string;
   joinDate?: Date;
-  lastSeen?: Date;
+  lastSeen?: string | Date;
   isOnline: boolean;
 }
 
