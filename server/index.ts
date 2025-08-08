@@ -146,9 +146,10 @@ async function startServer() {
         log(`📱 رابط التطبيق: http://localhost:${PORT}`);
       }
       
-      // إظهار معلومات قاعدة البيانات
-      const { getDatabaseStatus } = require('./database-adapter');
-      const dbStatus = getDatabaseStatus();
+      // إظهار معلومات قاعدة البيانات (اختياري)
+      import('./database-adapter').then(({ getDatabaseStatus }) => {
+        try { getDatabaseStatus(); } catch {}
+      }).catch(() => {});
       });
 
     // Handle graceful shutdown

@@ -126,6 +126,14 @@ export const usersRelations = relations(users, ({ many }) => ({
   ownedRooms: many(rooms),
 }));
 
+// إضافة جدول عضويات الغرف لتتبع المستخدمين داخل الغرف
+export const roomUsers = sqliteTable("room_users", {
+  id: integer("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  roomId: text("room_id").notNull(),
+  joinedAt: text("joined_at"), // ISO string في SQLite
+});
+
 export const messagesRelations = relations(messages, ({ one }) => ({
   sender: one(users, {
     fields: [messages.senderId],

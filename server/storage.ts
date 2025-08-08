@@ -324,34 +324,127 @@ export async function getUserCount(): Promise<number> {
 }
 
 // Room membership functions (simplified)
-export async function joinRoom(userId: number, roomId: number): Promise<boolean> {
-  // This would need custom implementation with room_users table
-  // For now, return true
-  return true;
+export async function joinRoom(userId: number, roomId: number | string): Promise<boolean> {
+  try {
+    const status = databaseService.getStatus();
+    if (!status.connected) return true; // لا تفشل الاتصال بسبب عدم توفر القاعدة
+
+    // تأكد من وجود الغرفة (وفي PG تكون id نصية)
+    const room = await getRoom(roomId);
+    if (!room) {
+      // أنشئ غرفة عامة تلقائياً عند الحاجة
+      if (String(roomId) === 'general') {
+        await databaseService.createRoom({ id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', createdBy: 1, isDefault: true, isActive: true });
+      } else {
+        return false;
+      }
+    }
+
+    // حفظ العضوية في جدول room_users إن توفر
+    const { db, dbType } = await import('./database-adapter');
+    const { roomUsers } = dbType === 'postgresql' ? await import('../shared/schema') : await import('../shared/sqlite-schema');
+    const { eq, and } = await import('drizzle-orm');
+
+    // احذف أي سجل سابق لنفس المستخدم/الغرفة لضمان التفرد ثم أدرجه
+    if (db && dbType !== 'disabled') {
+      // تحقق إن كان السجل موجوداً
+      const existing = await (db as any)
+        .select()
+        .from((roomUsers as any))
+        .where(and(eq((roomUsers as any).userId, userId as any), eq((roomUsers as any).roomId, String(roomId) as any)))
+        .limit(1);
+      if (Array.isArray(existing) && existing.length === 0) {
+        await (db as any).insert((roomUsers as any)).values({ userId, roomId: String(roomId), joinedAt: dbType === 'sqlite' ? new Date().toISOString() : new Date() });
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error('Error joinRoom:', error);
+    return false;
+  }
 }
 
-export async function leaveRoom(userId: number, roomId: number): Promise<boolean> {
-  // This would need custom implementation with room_users table
-  // For now, return true
-  return true;
+export async function leaveRoom(userId: number, roomId: number | string): Promise<boolean> {
+  try {
+    const status = databaseService.getStatus();
+    if (!status.connected) return true;
+    const { db, dbType } = await import('./database-adapter');
+    const { roomUsers } = dbType === 'postgresql' ? await import('../shared/schema') : await import('../shared/sqlite-schema');
+    const { eq, and } = await import('drizzle-orm');
+    if (db && dbType !== 'disabled') {
+      await (db as any)
+        .delete((roomUsers as any))
+        .where(and(eq((roomUsers as any).userId, userId as any), eq((roomUsers as any).roomId, String(roomId) as any)));
+    }
+    return true;
+  } catch (error) {
+    console.error('Error leaveRoom:', error);
+    return false;
+  }
 }
 
-export async function getRoomUsers(roomId: number): Promise<number[]> {
-  // This would need custom implementation with room_users table
-  // For now, return empty array
-  return [];
+export async function getRoomUsers(roomId: number | string): Promise<number[]> {
+  try {
+    const status = databaseService.getStatus();
+    if (!status.connected) return [];
+    const { db, dbType } = await import('./database-adapter');
+    const { roomUsers } = dbType === 'postgresql' ? await import('../shared/schema') : await import('../shared/sqlite-schema');
+    const { eq } = await import('drizzle-orm');
+    if (db && dbType !== 'disabled') {
+      const rows = await (db as any)
+        .select({ userId: (roomUsers as any).userId })
+        .from((roomUsers as any))
+        .where(eq((roomUsers as any).roomId, String(roomId) as any));
+      return (rows || []).map((r: any) => r.userId);
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getRoomUsers:', error);
+    return [];
+  }
 }
 
-export async function getUserRooms(userId: number): Promise<number[]> {
-  // This would need custom implementation with room_users table
-  // For now, return empty array
-  return [];
+export async function getUserRooms(userId: number): Promise<string[]> {
+  try {
+    const status = databaseService.getStatus();
+    if (!status.connected) return [];
+    const { db, dbType } = await import('./database-adapter');
+    const { roomUsers } = dbType === 'postgresql' ? await import('../shared/schema') : await import('../shared/sqlite-schema');
+    const { eq } = await import('drizzle-orm');
+    if (db && dbType !== 'disabled') {
+      const rows = await (db as any)
+        .select({ roomId: (roomUsers as any).roomId })
+        .from((roomUsers as any))
+        .where(eq((roomUsers as any).userId, userId as any));
+      return (rows || []).map((r: any) => String(r.roomId));
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getUserRooms:', error);
+    return [];
+  }
 }
 
-export async function isUserInRoom(userId: number, roomId: number): Promise<boolean> {
-  // This would need custom implementation with room_users table
-  // For now, return true
-  return true;
+export async function isUserInRoom(userId: number, roomId: number | string): Promise<boolean> {
+  try {
+    const status = databaseService.getStatus();
+    if (!status.connected) return true;
+    const { db, dbType } = await import('./database-adapter');
+    const { roomUsers } = dbType === 'postgresql' ? await import('../shared/schema') : await import('../shared/sqlite-schema');
+    const { eq, and } = await import('drizzle-orm');
+    if (db && dbType !== 'disabled') {
+      const rows = await (db as any)
+        .select({ id: (roomUsers as any).id })
+        .from((roomUsers as any))
+        .where(and(eq((roomUsers as any).userId, userId as any), eq((roomUsers as any).roomId, String(roomId) as any)))
+        .limit(1);
+      return Array.isArray(rows) && rows.length > 0;
+    }
+    return true;
+  } catch (error) {
+    console.error('Error isUserInRoom:', error);
+    return true;
+  }
 }
 
 // Wall post functions (placeholder - these tables may not exist yet)
@@ -595,8 +688,30 @@ export const storage: LegacyStorage = {
   },
 
   async getOnlineUsersInRoom(roomId: string) {
-    // Fallback: not implemented yet, return empty list
-    return [] as any[];
+    try {
+      const status = databaseService.getStatus();
+      if (!status.connected) return [];
+      const { db, dbType } = await import('./database-adapter');
+      const { roomUsers } = dbType === 'postgresql' ? await import('../shared/schema') : await import('../shared/sqlite-schema');
+      const { eq } = await import('drizzle-orm');
+      if (db && dbType !== 'disabled') {
+        const rows = await (db as any)
+          .select({ userId: (roomUsers as any).userId })
+          .from((roomUsers as any))
+          .where(eq((roomUsers as any).roomId, String(roomId) as any));
+        const userIds = (rows || []).map((r: any) => r.userId);
+        const users: any[] = [];
+        for (const id of userIds) {
+          const u = await databaseService.getUserById(id);
+          if (u) users.push(u as any);
+        }
+        return users;
+      }
+      return [] as any[];
+    } catch (error) {
+      console.error('Error getOnlineUsersInRoom:', error);
+      return [] as any[];
+    }
   },
 
   // ========= User helpers (stealth/ignore list) =========

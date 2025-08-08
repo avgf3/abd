@@ -191,7 +191,18 @@ function createSQLiteTables(sqlite: Database.Database) {
       )
     `);
 
-    } catch (error) {
+    // إنشاء جدول room_users لتتبع عضوية الغرف
+    sqlite.exec(`
+      CREATE TABLE IF NOT EXISTS room_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        room_id TEXT NOT NULL,
+        joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, room_id)
+      )
+    `);
+
+  } catch (error) {
     console.error('❌ خطأ في إنشاء جداول SQLite:', error);
   }
 }
