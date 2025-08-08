@@ -356,18 +356,8 @@ export function useChat() {
       // تحميل الرسائل مرة واحدة فقط
       loadExistingMessages();
       
-      // طلب قائمة المستخدمين المتصلين مرة واحدة
-      socket.current?.emit('requestOnlineUsers');
-      
-      // تحديث دوري محدود لقائمة المستخدمين كل 3 دقائق فقط
-      const userListInterval = setInterval(() => {
-        if (socket.current?.connected) {
-          socket.current.emit('requestOnlineUsers');
-        }
-      }, 180000); // كل 3 دقائق بدلاً من دقيقة واحدة
-      
-      // حفظ معرف الفترة الزمنية للتنظيف لاحقاً
-      (socket.current as any).userListInterval = userListInterval;
+      // لم نعد نطلب قائمة المستخدمين بشكل دوري لتقليل التحميل
+      // سيتم تحديث القائمة عبر أحداث الانضمام/المغادرة من الخادم
     });
 
     socket.current.on('message', (message: WebSocketMessage) => {
@@ -503,46 +493,8 @@ export function useChat() {
               // تحميل رسائل الغرفة الجديدة
               loadRoomMessages(message.roomId);
               
-              // تحديث قائمة المستخدمين في الغرفة
-              if (message.users) {
-                dispatch({ type: 'SET_ONLINE_USERS', payload: message.users });
-              }
-              
-              // إرسال رسالة ترحيب محلية (لا تُحفظ في قاعدة البيانات)
-              const welcomeMessage: ChatMessage = {
-                id: Date.now(),
-                content: `مرحباً بك في غرفة ${message.roomId}! 👋`,
-                timestamp: new Date(),
-                senderId: -1, // معرف خاص للنظام
-                sender: {
-                  id: -1,
-                  username: 'النظام',
-                  userType: 'moderator',
-                  role: 'system',
-                  level: 0,
-                  points: 0,
-                  achievements: [],
-                  lastSeen: new Date(),
-                  isOnline: true,
-                  isBanned: false,
-                  isActive: true,
-                  currentRoom: '',
-                  settings: {
-                    theme: 'default',
-                    language: 'ar',
-                    notifications: true,
-                    soundEnabled: true,
-                    privateMessages: true
-                  }
-                },
-                messageType: 'system',
-                isPrivate: false
-              };
-              
-              dispatch({ 
-                type: 'ADD_ROOM_MESSAGE', 
-                payload: { roomId: message.roomId, message: welcomeMessage }
-              });
+              // تحديث قائمة المستخدمين تتم عبر أحداث الخادم فقط
+              // دون إرسال طلبات إضافية
             }
             
             // طلب قائمة محدثة من المستخدمين - مع تقليل الطلبات المتكررة
@@ -597,23 +549,29 @@ export function useChat() {
         ? (import.meta.env.VITE_SERVER_URL || 'http://localhost:5000')
         : window.location.origin;
       
+      // تجنب إنشاء اتصال جديد إذا كان الاتصال الحالي قائمًا
+      if (socket.current && socket.current.connected) {
+        setupSocketListeners(user);
+        return;
+      }
+
       socket.current = io(serverUrl, {
         transports: ['websocket', 'polling'],
-        timeout: 30000, // زيادة timeout لتجنب انقطاع الاتصال السريع
+        timeout: 30000,
         reconnection: true,
-        reconnectionAttempts: 5, // تقليل المحاولات لتجنب الطلبات المفرطة
-        reconnectionDelay: 3000, // زيادة التأخير لإعطاء الخادم وقت أكثر
-        reconnectionDelayMax: 15000, // زيادة الحد الأقصى
-        randomizationFactor: 0.3, // تقليل العشوائية لاتصال أكثر استقراراً
+        reconnectionAttempts: 5,
+        reconnectionDelay: 3000,
+        reconnectionDelayMax: 15000,
+        randomizationFactor: 0.3,
         autoConnect: true,
-        forceNew: true, // إجبار إنشاء اتصال جديد لتجنب التضارب
+        forceNew: false, // اتصال واحد مستقر
         upgrade: true,
         rememberUpgrade: true,
         query: {
           userId: user?.id,
           username: user?.username,
           userType: user?.userType,
-          timestamp: Date.now() // إضافة timestamp لتجنب التخزين المؤقت
+          timestamp: Date.now()
         }
       });
 

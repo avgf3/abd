@@ -199,6 +199,134 @@ export class DatabaseService {
     }
   }
 
+  async updateUserPoints(userId: number, updates: Partial<User>): Promise<User | null> {
+    if (!this.isConnected()) return null;
+    try {
+      return await this.updateUser(userId, updates);
+    } catch (error) {
+      console.error('Error updating user points:', error);
+      return null;
+    }
+  }
+
+  async addPointsHistory(userId: number, points: number, reason: string, action: 'earn' | 'spend'): Promise<void> {
+    if (!this.isConnected()) return;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any).insert(pgSchema.pointsHistory).values({
+          userId, points, reason, action,
+          createdAt: new Date(),
+        });
+      } else {
+        await (this.db as any).insert(sqliteSchema.pointsHistory).values({
+          userId, points, reason, action,
+          createdAt: new Date().toISOString(),
+        });
+      }
+    } catch (error) {
+      console.error('Error adding points history:', error);
+    }
+  }
+
+  async getUserPointsHistory(userId: number, limit: number = 50): Promise<any[]> {
+    if (!this.isConnected()) return [];
+    try {
+      if (this.type === 'postgresql') {
+        return await (this.db as any)
+          .select()
+          .from(pgSchema.pointsHistory)
+          .where(eq(pgSchema.pointsHistory.userId, userId))
+          .orderBy(desc(pgSchema.pointsHistory.createdAt))
+          .limit(limit);
+      } else {
+        return await (this.db as any)
+          .select()
+          .from(sqliteSchema.pointsHistory)
+          .where(eq(sqliteSchema.pointsHistory.userId, userId))
+          .orderBy(desc(sqliteSchema.pointsHistory.createdAt))
+          .limit(limit);
+      }
+    } catch (error) {
+      console.error('Error getting points history:', error);
+      return [];
+    }
+  }
+
+  async getLatestPointsHistoryByReason(userId: number, reason: string): Promise<{ createdAt: Date | string } | null> {
+    if (!this.isConnected()) return null;
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any)
+          .select()
+          .from(pgSchema.pointsHistory)
+          .where(and(eq(pgSchema.pointsHistory.userId, userId), eq(pgSchema.pointsHistory.reason, reason)))
+          .orderBy(desc(pgSchema.pointsHistory.createdAt))
+          .limit(1);
+        return rows[0] || null;
+      } else {
+        const rows = await (this.db as any)
+          .select()
+          .from(sqliteSchema.pointsHistory)
+          .where(and(eq(sqliteSchema.pointsHistory.userId, userId), eq(sqliteSchema.pointsHistory.reason, reason)))
+          .orderBy(desc(sqliteSchema.pointsHistory.createdAt))
+          .limit(1);
+        return rows[0] || null;
+      }
+    } catch (error) {
+      console.error('Error getting latest points history by reason:', error);
+      return null;
+    }
+  }
+
+  async getUserMessageCount(userId: number): Promise<number> {
+    if (!this.isConnected()) return 0;
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any)
+          .select({ c: count() })
+          .from(pgSchema.messages)
+          .where(eq(pgSchema.messages.senderId, userId));
+        return Number(rows?.[0]?.c || 0);
+      } else {
+        const rows = await (this.db as any)
+          .select({ c: count() })
+          .from(sqliteSchema.messages)
+          .where(eq(sqliteSchema.messages.senderId, userId));
+        return Number(rows?.[0]?.c || 0);
+      }
+    } catch (error) {
+      console.error('Error counting user messages:', error);
+      return 0;
+    }
+  }
+
+  async getTopUsersByPoints(limit: number = 20): Promise<User[]> {
+    if (!this.isConnected()) return [];
+    try {
+      if (this.type === 'postgresql') {
+        return await (this.db as any)
+          .select()
+          .from(pgSchema.users)
+          .orderBy(desc(pgSchema.users.totalPoints))
+          .limit(limit);
+      } else {
+        return await (this.db as any)
+          .select()
+          .from(sqliteSchema.users)
+          .orderBy(desc(sqliteSchema.users.totalPoints))
+          .limit(limit);
+      }
+    } catch (error) {
+      console.error('Error getting leaderboard:', error);
+      return [];
+    }
+  }
+
+  async updateUserLastDailyLogin(_userId: number, _today: string): Promise<void> {
+    // نستخدم points_history كمرجع لآخر دخول يومي، لا حاجة لتحديث users
+    return;
+  }
+
   async getAllUsers(): Promise<User[]> {
     if (!this.isConnected()) return [];
 

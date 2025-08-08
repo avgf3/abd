@@ -1945,8 +1945,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               })
             );
             
-            // إرسال قائمة المستخدمين المحدثة لجميع العملاء
-            io.emit('onlineUsers', { users: usersWithStatus });
+            // إرسال قائمة المستخدمين المحدثة لجميع العملاء عبر رسالة موحدة
+            io.emit('message', { type: 'onlineUsers', users: usersWithStatus });
             break;
 
           case 'publicMessage':
@@ -4313,10 +4313,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // ضغط الصورة إن وجدت
+      // إعداد رابط الصورة (مع دعم Render عبر base64)
+      let computedImageUrl: string | null = null;
+
       if (req.file) {
-        const filePath = path.join(process.cwd(), 'client', 'public', 'uploads', 'wall', req.file.filename);
-        await compressImage(filePath);
+        try {
+          // ضغط الصورة أولاً إلى JPEG مناسب (إن أمكن)
+          const filePath = path.join(process.cwd(), 'client', 'public', 'uploads', 'wall', req.file.filename);
+          await compressImage(filePath);
+
+          // قراءة الملف المضغوط وتحويله إلى base64
+          const buffer = await fs.promises.readFile(filePath);
+          // استخدم mimetype القادِم من multer وإلا فـ image/jpeg
+          const mimeType = req.file.mimetype || 'image/jpeg';
+          const base64 = buffer.toString('base64');
+          computedImageUrl = `data:${mimeType};base64,${base64}`;
+
+          // حذف الملف الفيزيائي لتجنب مشاكل نظام الملفات المؤقت على Render
+          try { await fs.promises.unlink(filePath); } catch {}
+        } catch (imgErr) {
+          console.error('❌ فشل في تحويل صورة الحائط إلى base64، سيتم استخدام المسار المحلي كبديل:', imgErr);
+          // مسار احتياطي في حالة فشل التحويل
+          computedImageUrl = `/uploads/wall/${req.file.filename}`;
+        }
       }
 
       // إعداد بيانات المنشور
@@ -4325,7 +4344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: user.username,
         userRole: user.userType,
         content: cleanContent ? sanitizeInput(cleanContent) : '',
-        imageUrl: req.file ? `/uploads/wall/${req.file.filename}` : null,
+        imageUrl: computedImageUrl,
         type: type || 'public',
         timestamp: new Date(),
         userProfileImage: user.profileImage,
@@ -4333,7 +4352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // حفظ المنشور
-      const post = await storage.createWallPost(postData);
+      const post = await storage.createWallPost(postData as any);
       // إرسال إشعار للمستخدمين المتصلين
       const messageData = {
         type: 'newWallPost',
@@ -4951,7 +4970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const fs = require('fs');
         const path = require('path');
-        const crownSvgPath = path.join(process.cwd(), 'svgs', 'crown.svg');
+        const crownSvgPath = path.join(process.cwd(), 'client', 'public', 'svgs', 'crown.svg');
         if (fs.existsSync(crownSvgPath)) {
           healthCheck.services.static_files = 'healthy';
         } else {
