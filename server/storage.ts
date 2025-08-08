@@ -619,6 +619,28 @@ export const storage: LegacyStorage = {
   // ========= Notifications helpers =========
   async getUnreadNotificationCount(userId: number) {
     return await notificationService.getUnreadNotificationCount(userId);
+  },
+  // نقاط ومهام إضافية
+  async updateUserPoints(userId: number, updates: Partial<User>) {
+    return await databaseService.updateUserPoints(userId, updates);
+  },
+  async addPointsHistory(userId: number, points: number, reason: string, action: 'earn' | 'spend') {
+    await databaseService.addPointsHistory(userId, points, reason, action);
+  },
+  async getUserPointsHistory(userId: number, limit?: number) {
+    return await databaseService.getUserPointsHistory(userId, limit);
+  },
+  async getTopUsersByPoints(limit?: number) {
+    return await getTopUsersByPoints(limit);
+  },
+  async getUserMessageCount(userId: number) {
+    return await databaseService.getUserMessageCount(userId);
+  },
+  async getUserLastDailyLogin(userId: number) {
+    return await databaseService.getLatestPointsHistoryByReason(userId, 'DAILY_LOGIN');
+  },
+  async updateUserLastDailyLogin(userId: number, today: string) {
+    await databaseService.updateUserLastDailyLogin(userId, today);
   }
 };
 
