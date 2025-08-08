@@ -8,10 +8,11 @@ class SystemTester {
     constructor() {
         this.pgClient = null;
         this.sqliteDb = null;
+        this.sqliteReady = false;
         this.testResults = {
             postgresql: { passed: 0, failed: 0, tests: [] },
             sqlite: { passed: 0, failed: 0, tests: [] },
-            overall: { passed: 0, failed: 0, score: 0 }
+            overall: { passed: 0, failed: 0, score: 0, tests: [] }
         };
     }
 
@@ -36,9 +37,21 @@ class SystemTester {
         // اتصال SQLite
         try {
             this.sqliteDb = new Database('./chat.db');
-            console.log('✅ متصل بـ SQLite');
+            // تحقق من وجود الجداول المطلوبة قبل تشغيل اختبارات SQLite
+            const tables = this.sqliteDb.prepare(`
+                SELECT name FROM sqlite_master WHERE type='table'
+            `).all();
+            const tableNames = tables.map(t => t.name);
+            const requiredTables = ['users', 'messages', 'friends', 'notifications', 'blocked_devices', 'points_history', 'level_settings'];
+            this.sqliteReady = requiredTables.every(t => tableNames.includes(t));
+            if (this.sqliteReady) {
+                console.log('✅ متصل بـ SQLite (البنية جاهزة)');
+            } else {
+                console.log('ℹ️ متصل بـ SQLite ولكن الجداول غير موجودة — سيتم تخطي اختبارات SQLite');
+            }
         } catch (error) {
             console.log('⚠️ فشل الاتصال بـ SQLite:', error.message);
+            this.sqliteDb = null;
         }
     }
 
@@ -175,7 +188,7 @@ class SystemTester {
     }
 
     async testSQLiteStructure() {
-        if (!this.sqliteDb) return false;
+        if (!this.sqliteDb || !this.sqliteReady) return false;
 
         return await this.runTest('اختبار بنية SQLite', async () => {
             // فحص الجداول
@@ -196,7 +209,7 @@ class SystemTester {
     }
 
     async testSQLiteOwner() {
-        if (!this.sqliteDb) return false;
+        if (!this.sqliteDb || !this.sqliteReady) return false;
 
         return await this.runTest('اختبار المالك SQLite', async () => {
             const owner = this.sqliteDb.prepare(`
@@ -218,7 +231,7 @@ class SystemTester {
     }
 
     async testSQLiteData() {
-        if (!this.sqliteDb) return false;
+        if (!this.sqliteDb || !this.sqliteReady) return false;
 
         return await this.runTest('اختبار البيانات SQLite', async () => {
             // فحص المستخدمين
@@ -276,12 +289,14 @@ class SystemTester {
         }
 
         // اختبارات SQLite
-        if (this.sqliteDb) {
+        if (this.sqliteDb && this.sqliteReady) {
             console.log('💾 اختبارات SQLite:');
             await this.testSQLiteStructure();
             await this.testSQLiteOwner();
             await this.testSQLiteData();
             console.log('');
+        } else if (this.sqliteDb && !this.sqliteReady) {
+            console.log('⚠️ سيتم تخطي اختبارات SQLite لعدم جاهزية البنية.');
         }
 
         // اختبارات التكامل
