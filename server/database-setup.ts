@@ -249,7 +249,7 @@ export async function createDefaultRooms(): Promise<void> {
               speakers: '[]',
               micQueue: '[]',
               createdAt: new Date(),
-            });
+            }).onConflictDoNothing();
           }
         } else if (dbType === 'sqlite') {
           const existing = await (db as any).select().from(sqliteSchema.rooms).where(sql`name = ${room.name}`).limit(1);
@@ -264,7 +264,7 @@ export async function createDefaultRooms(): Promise<void> {
               password: null,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
-            });
+            }).onConflictDoNothing();
           }
         }
       } catch (error: any) {
