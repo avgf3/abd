@@ -2570,9 +2570,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إرسال طلب صداقة
   app.post("/api/friend-requests", async (req, res) => {
     try {
+      console.log('📝 Friend request received:', req.body);
       const { senderId, receiverId } = req.body;
       
       if (!senderId || !receiverId) {
+        console.log('❌ Missing senderId or receiverId:', { senderId, receiverId });
         return res.status(400).json({ error: "معلومات المرسل والمستقبل مطلوبة" });
       }
 
@@ -2580,19 +2582,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "لا يمكنك إرسال طلب صداقة لنفسك" });
       }
 
+      console.log('🔍 Checking for existing request between:', senderId, receiverId);
+      
       // التحقق من وجود طلب سابق
       const existingRequest = await storage.getFriendRequest(senderId, receiverId);
       if (existingRequest) {
+        console.log('⚠️ Friend request already exists:', existingRequest);
         return res.status(400).json({ error: "طلب الصداقة موجود بالفعل" });
       }
 
       // التحقق من الصداقة الموجودة
       const friendship = await storage.getFriendship(senderId, receiverId);
       if (friendship) {
+        console.log('⚠️ Friendship already exists:', friendship);
         return res.status(400).json({ error: "أنتما أصدقاء بالفعل" });
       }
 
+      console.log('✅ Creating friend request...');
       const request = await storage.createFriendRequest(senderId, receiverId);
+      console.log('✅ Friend request created:', request);
       
       // إرسال إشعار عبر WebSocket
       const sender = await storage.getUser(senderId);
@@ -2614,7 +2622,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ message: "تم إرسال طلب الصداقة", request });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      console.error('❌ Friend request error:', error);
+      console.error('Stack trace:', (error as Error).stack);
+      res.status(500).json({ error: "خطأ في الخادم", details: (error as Error).message });
     }
   });
 

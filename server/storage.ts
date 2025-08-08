@@ -558,6 +558,10 @@ export const storage: LegacyStorage = {
     return await friendService.createFriendRequest(senderId, receiverId);
   },
 
+  async createFriendRequest(senderId: number, receiverId: number) {
+    return await friendService.createFriendRequest(senderId, receiverId);
+  },
+
   async removeFriend(userId: number, friendId: number) {
     return await friendService.removeFriend(userId, friendId);
   },
