@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Users, Globe, Home } from 'lucide-react';
+import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Users, Globe, Home, UserPlus } from 'lucide-react';
 import SimpleUserMenu from './SimpleUserMenu';
 import ProfileImage from './ProfileImage';
 import RoomsPanel from './RoomsPanel';
+import FriendsTabPanel from './FriendsTabPanel';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { getImageSrc } from '@/utils/imageUtils';
@@ -20,13 +21,14 @@ interface UserSidebarWithWallsProps {
   users: ChatUser[];
   onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
   currentUser?: ChatUser | null;
-  activeView?: 'users' | 'walls' | 'rooms';
+  activeView?: 'users' | 'walls' | 'rooms' | 'friends';
   rooms?: ChatRoom[];
   currentRoomId?: string;
   onRoomChange?: (roomId: string) => void;
   onAddRoom?: (roomData: { name: string; description: string; image: File | null }) => void;
   onDeleteRoom?: (roomId: string) => void;
   onRefreshRooms?: () => void;
+  onStartPrivateChat?: (friend: ChatUser) => void;
 }
 
 export default function UserSidebarWithWalls({ 
@@ -39,9 +41,10 @@ export default function UserSidebarWithWalls({
   onRoomChange,
   onAddRoom,
   onDeleteRoom,
-  onRefreshRooms
+  onRefreshRooms,
+  onStartPrivateChat
 }: UserSidebarWithWallsProps) {
-  const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms'>(propActiveView || 'users');
+  const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms' | 'friends'>(propActiveView || 'users');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'public' | 'friends'>('public');
   const [posts, setPosts] = useState<WallPost[]>([]);
@@ -288,6 +291,18 @@ export default function UserSidebarWithWalls({
           >
             <Users className="w-4 h-4 ml-2" />
             الغرف
+          </Button>
+          <Button
+            variant={activeView === 'friends' ? 'default' : 'ghost'}
+            className={`flex-1 rounded-none py-3 ${
+              activeView === 'friends' 
+                ? 'bg-blue-500 text-white' 
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+            onClick={() => setActiveView('friends')}
+          >
+            <UserPlus className="w-4 h-4 ml-2" />
+            الأصدقاء
           </Button>
         </div>
       )}
@@ -580,6 +595,15 @@ export default function UserSidebarWithWalls({
           onAddRoom={onAddRoom}
           onDeleteRoom={onDeleteRoom}
           onRefreshRooms={onRefreshRooms}
+        />
+      )}
+
+      {/* Friends View */}
+      {activeView === 'friends' && (
+        <FriendsTabPanel
+          currentUser={currentUser}
+          onlineUsers={users}
+          onStartPrivateChat={onStartPrivateChat || (() => {})}
         />
       )}
     </aside>
