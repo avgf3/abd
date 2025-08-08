@@ -1,5 +1,11 @@
 import { databaseService, type User, type Message, type Friend, type Notification, type Room } from './services/databaseService';
 import bcrypt from 'bcrypt';
+import { friendService } from './services/friendService';
+import { userService } from './services/userService';
+import { notificationService } from './services/notificationService';
+import { db } from './database-adapter';
+import { friends as friendsTable } from '../shared/schema';
+import { eq } from 'drizzle-orm';
 
 // User-related functions
 export async function getUserById(id: number): Promise<User | null> {
@@ -510,6 +516,109 @@ export const storage: LegacyStorage = {
 
   async getBroadcastRoomInfo(roomId: string) {
     return await getBroadcastRoomInfo(roomId);
+  },
+
+  // ========= Friends API (delegating to friendService) =========
+  async getIncomingFriendRequests(userId: number) {
+    return await friendService.getIncomingFriendRequests(userId);
+  },
+
+  async getOutgoingFriendRequests(userId: number) {
+    return await friendService.getOutgoingFriendRequests(userId);
+  },
+
+  async createFriendRequest(senderId: number, receiverId: number) {
+    return await friendService.createFriendRequest(senderId, receiverId);
+  },
+
+  async getFriendship(userId1: number, userId2: number) {
+    return await friendService.getFriendship(userId1, userId2);
+  },
+
+  async getFriendRequest(senderId: number, receiverId: number) {
+    return await friendService.getFriendship(senderId, receiverId);
+  },
+
+  async getFriendRequestById(requestId: number) {
+    if (!db) return undefined;
+    try {
+      const rows = await (db as any)
+        .select()
+        .from(friendsTable)
+        .where(eq(friendsTable.id as any, requestId))
+        .limit(1);
+      const row = Array.isArray(rows) ? rows[0] : undefined;
+      if (!row) return undefined;
+      return {
+        id: row.id,
+        senderId: row.userId,
+        receiverId: row.friendId,
+        status: row.status,
+        createdAt: row.createdAt
+      };
+    } catch {
+      return undefined;
+    }
+  },
+
+  async acceptFriendRequest(requestId: number) {
+    return await friendService.acceptFriendRequest(requestId);
+  },
+
+  async declineFriendRequest(requestId: number) {
+    return await friendService.declineFriendRequest(requestId);
+  },
+
+  async ignoreFriendRequest(requestId: number) {
+    return await friendService.ignoreFriendRequest(requestId);
+  },
+
+  async deleteFriendRequest(requestId: number) {
+    return await friendService.deleteFriendRequest(requestId);
+  },
+
+  // ========= Room helpers exposed on storage =========
+  async getAllRooms() {
+    return await getAllRooms();
+  },
+
+  async joinRoom(userId: number, roomId: number | string) {
+    return await joinRoom(userId, roomId as any);
+  },
+
+  async leaveRoom(userId: number, roomId: number | string) {
+    return await leaveRoom(userId, roomId as any);
+  },
+
+  async getUserRooms(userId: number) {
+    return await getUserRooms(userId);
+  },
+
+  async getOnlineUsersInRoom(roomId: string) {
+    // Fallback: not implemented yet, return empty list
+    return [] as any[];
+  },
+
+  // ========= User helpers (stealth/ignore list) =========
+  async setUserHiddenStatus(id: number, isHidden: boolean) {
+    return await userService.setUserHiddenStatus(id, isHidden);
+  },
+
+  async addIgnoredUser(userId: number, ignoredUserId: number) {
+    return await userService.addIgnoredUser(userId, ignoredUserId);
+  },
+
+  async removeIgnoredUser(userId: number, ignoredUserId: number) {
+    return await userService.removeIgnoredUser(userId, ignoredUserId);
+  },
+
+  async getIgnoredUsers(userId: number) {
+    return await userService.getIgnoredUsers(userId);
+  },
+
+  // ========= Notifications helpers =========
+  async getUnreadNotificationCount(userId: number) {
+    return await notificationService.getUnreadNotificationCount(userId);
   }
 };
 
