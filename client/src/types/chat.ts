@@ -7,7 +7,7 @@ export interface ChatUser {
   isOnline: boolean;
   roomId?: string;
   
-  // معلومات إضافية
+  // معلومات إضافية - تحسين type safety
   profileBanner?: string;
   profileBackgroundColor?: string;
   profileColor?: string;
@@ -15,7 +15,7 @@ export interface ChatUser {
   profileEffect?: string;
   userTheme?: string;
   status?: string;
-  gender?: string;
+  gender: 'male' | 'female'; // جعل الجنس مطلوب مع قيم محددة
   age?: number;
   country?: string;
   city?: string;
@@ -29,13 +29,13 @@ export interface ChatUser {
   messageSound?: boolean;
   allowPrivateMessages?: boolean;
   ipAddress?: string;
-  lastSeen?: Date;
+  lastSeen?: string | Date; // دعم النوعين string و Date
   isTyping?: boolean;
   isHidden?: boolean;
   points?: number;
-  level?: number;
+  level: number; // جعل المستوى مطلوب
   roomColor?: string;
-  userType?: string;
+  userType: string; // جعل نوع المستخدم مطلوب
   
   // خصائص مفقودة - إضافة حديثة
   joinDate?: Date;
