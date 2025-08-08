@@ -189,6 +189,7 @@ export function useOptimizedMessages(messages: ChatMessage[], containerRef: Reac
             username: 'مستخدم محذوف',
             userType: 'guest' as const,
             role: 'guest' as const,
+            gender: 'male' as const,
             profileBackgroundColor: '#3c0d0d',
             isOnline: false,
             isHidden: false,

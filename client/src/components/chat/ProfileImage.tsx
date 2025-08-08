@@ -18,7 +18,7 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
   };
 
   // تحديد لون الإطار حسب الجنس
-  const borderColor = user.gender === 'أنثى' || user.gender === 'female'
+  const borderColor = user.gender === 'female'
     ? 'border-pink-400 ring-pink-200' 
     : 'border-blue-400 ring-blue-200';
 

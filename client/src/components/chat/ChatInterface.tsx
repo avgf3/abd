@@ -38,6 +38,7 @@ interface ChatInterfaceProps {
 }
 
 export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
+  const { toast } = useToast();
   const [showProfile, setShowProfile] = useState(false);
   const [profileUser, setProfileUser] = useState<ChatUser | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -266,7 +267,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     x: 0,
     y: 0,
   });
-  const { toast } = useToast();
 
   const handleUserClick = (event: React.MouseEvent, user: ChatUser) => {
     event.stopPropagation();
