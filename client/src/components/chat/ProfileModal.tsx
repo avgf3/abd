@@ -654,7 +654,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       return;
     }
 
-    if (points > (currentUser?.points || 0)) {
+    if (!((currentUser?.userType === 'owner') || (currentUser?.role === 'owner')) && points > (currentUser?.points || 0)) {
       toast({
         title: "نقاط غير كافية",
         description: `لديك ${currentUser?.points || 0} نقطة فقط`,
@@ -688,7 +688,11 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         
         // Update current user points locally for immediate UI feedback
         if (currentUser && (window as any).updateUserPoints) {
-          (window as any).updateUserPoints(currentUser.points - points);
+          if ((currentUser?.userType === 'owner') || (currentUser?.role === 'owner')) {
+            (window as any).updateUserPoints(currentUser.points);
+          } else {
+            (window as any).updateUserPoints(currentUser.points - points);
+          }
         }
         
         // إغلاق البروفايل بعد الإرسال الناجح
@@ -1994,7 +1998,11 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                   border: '1px solid rgba(255,255,255,0.1)'
                 }}>
                   <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '8px' }}>
-                    نقاطك الحالية: {formatPoints(currentUser?.points || 0)}
+                    {currentUser?.userType === 'owner' || currentUser?.role === 'owner' ? (
+                      <>نقاطك الحالية: غير محدودة للمالك</>
+                    ) : (
+                      <>نقاطك الحالية: {formatPoints(currentUser?.points || 0)}</>
+                    )}
                   </div>
                   
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
@@ -2013,7 +2021,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                         fontSize: '12px'
                       }}
                       min="1"
-                      max={currentUser?.points || 0}
+                      {...((currentUser?.userType === 'owner' || currentUser?.role === 'owner') ? {} : { max: currentUser?.points || 0 })}
                       disabled={sendingPoints}
                       autoFocus
                     />
@@ -2037,7 +2045,11 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                   </div>
                   
                   <div style={{ fontSize: '10px', color: '#aaa' }}>
-                    💡 سيتم خصم النقاط من رصيدك وإضافتها للمستخدم
+                    {currentUser?.userType === 'owner' || currentUser?.role === 'owner' ? (
+                      <>💡 لن يتم خصم النقاط من رصيدك، كونك المالك</>
+                    ) : (
+                      <>💡 سيتم خصم النقاط من رصيدك وإضافتها للمستخدم</>
+                    )}
                   </div>
                 </div>
                 
