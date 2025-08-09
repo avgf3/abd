@@ -23,7 +23,7 @@ import ProfileImage from './ProfileImage';
 import StealthModeToggle from './StealthModeToggle';
 import WelcomeNotification from './WelcomeNotification';
 import ThemeSelector from './ThemeSelector';
-import RoomComponent from './RoomComponent';
+// import RoomComponent from './RoomComponent';
 import { useRoomManager } from '@/hooks/useRoomManager';
 
 import { Button } from '@/components/ui/button';
@@ -61,10 +61,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     chat.joinRoom(roomId);
   };
 
-  // دالة تحديث الغرف
-  const handleRefreshRooms = async () => {
-    await fetchRooms();
-  };
+
 
   const handleAddRoom = async (roomData: { name: string; description: string; image: File | null }) => {
     if (!chat.currentUser) return;
@@ -102,11 +99,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     sender: null,
   });
 
-  // إضافة useEffect لمراقبة تغييرات الغرف
-  useEffect(() => {
-    rooms.forEach((room, index) => {
-      });
-  }, [rooms]);
+
 
   // تفعيل التنبيه عند وصول رسالة جديدة
   useEffect(() => {
@@ -372,22 +365,23 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
           if (currentRoom?.isBroadcast) {
             return (
-              <BroadcastRoomInterface
-                currentUser={chat.currentUser}
-                room={currentRoom}
-                onlineUsers={chat.onlineUsers}
-                onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
-                onTyping={chat.handleTyping}
-                typingUsers={Array.from(chat.typingUsers)}
-                onReportMessage={handleReportUser}
-                onUserClick={handleUserClick}
-                chat={{
-                  sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
-                  handleTyping: chat.handleTyping,
-                  addBroadcastMessageHandler: chat.addBroadcastMessageHandler,
-                  removeBroadcastMessageHandler: chat.removeBroadcastMessageHandler
-                }}
-              />
+                            <BroadcastRoomInterface
+                 currentUser={chat.currentUser}
+                 room={currentRoom}
+                 onlineUsers={chat.onlineUsers}
+                 onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                 onTyping={chat.handleTyping}
+                 typingUsers={Array.from(chat.typingUsers)}
+                 onReportMessage={handleReportUser}
+                 onUserClick={handleUserClick}
+                 messages={chat.getCurrentRoomMessages()}
+                 chat={{
+                   sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
+                   handleTyping: chat.handleTyping,
+                   addBroadcastMessageHandler: chat.addBroadcastMessageHandler,
+                   removeBroadcastMessageHandler: chat.removeBroadcastMessageHandler
+                 }}
+               />
             );
           }
           

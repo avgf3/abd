@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Mic, MicOff, Users, Crown, Clock, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import type { ChatUser, ChatRoom, WebSocketMessage } from '@/types/chat';
+import type { ChatUser, ChatRoom, WebSocketMessage, ChatMessage } from '@/types/chat';
 import { normalizeBroadcastInfo } from '@/utils/roomUtils';
+import MessageArea from './MessageArea';
 
 interface BroadcastRoomInterfaceProps {
   currentUser: ChatUser | null;
@@ -19,6 +20,7 @@ interface BroadcastRoomInterfaceProps {
   typingUsers: string[];
   onReportMessage: (user: ChatUser, messageContent?: string, messageId?: number) => void;
   onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
+  messages: ChatMessage[];
   chat: {
     sendPublicMessage?: (content: string) => void;
     handleTyping?: () => void;
@@ -42,10 +44,10 @@ export default function BroadcastRoomInterface({
   typingUsers,
   onReportMessage,
   onUserClick,
+  messages,
   chat
 }: BroadcastRoomInterfaceProps) {
   const [broadcastInfo, setBroadcastInfo] = useState<BroadcastInfo | null>(null);
-  const [messageInput, setMessageInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -310,16 +312,7 @@ export default function BroadcastRoomInterface({
     }
   };
 
-  // إرسال رسالة
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!messageInput.trim()) return;
-    
-    // استخدام onSendMessage مباشرة بدلاً من chat object
-    onSendMessage(messageInput.trim());
-    setMessageInput('');
-  };
-
+  // إرسال رسالة - تمت إزالته لصالح MessageArea
   // جلب معلومات المستخدم
   const getUserById = (userId: number) => {
     return onlineUsers.find(user => user.id === userId);
@@ -469,34 +462,19 @@ export default function BroadcastRoomInterface({
 
       <Separator className="my-4" />
 
-      {/* منطقة الرسائل - نفس التصميم العادي */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        {/* هنا سيتم عرض الرسائل من MessageArea */}
-        <div className="text-center text-muted-foreground">
-          الرسائل ستظهر هنا
-        </div>
-      </div>
-
-      {/* منطقة إرسال الرسائل */}
-      <div className="p-4 border-t">
-        <form onSubmit={handleSendMessage} className="flex gap-2">
-          <Input
-            type="text"
-            value={messageInput}
-            onChange={(e) => setMessageInput(e.target.value)}
-            placeholder={"اكتب رسالتك..."}
-            disabled={false}
-            className="flex-1"
-          />
-          <Button
-            type="submit"
-            disabled={!messageInput.trim() || isLoading}
-            className="flex items-center gap-2"
-          >
-            <Mic className="w-4 h-4" />
-            إرسال
-          </Button>
-        </form>
+      {/* منطقة الرسائل الموحدة */}
+      <div className="flex-1 min-h-0">
+        <MessageArea
+          messages={messages}
+          currentUser={currentUser}
+          onSendMessage={(content) => onSendMessage(content)}
+          onTyping={() => onTyping(true)}
+          typingUsers={new Set(typingUsers)}
+          onReportMessage={(u, c, id) => onReportMessage(u, c, id)}
+          onUserClick={onUserClick}
+          onlineUsers={onlineUsers}
+          currentRoomName={room?.name || 'غرفة البث'}
+        />
       </div>
     </div>
   );

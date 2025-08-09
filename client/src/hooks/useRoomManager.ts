@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatRoom } from '@/types/chat';
-import { mapApiRooms, dedupeRooms } from '@/utils/roomUtils';
+import { mapApiRooms, dedupeRooms, mapApiRoom } from '@/utils/roomUtils';
 
 interface UseRoomManagerOptions {
   autoRefresh?: boolean;
@@ -198,21 +198,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       }
 
       const data = await response.json();
-      const newRoom: ChatRoom = {
-        id: data.room.id,
-        name: data.room.name,
-        description: data.room.description || '',
-        isDefault: false,
-        createdBy: data.room.created_by || data.room.createdBy,
-        createdAt: new Date(data.room.created_at || data.room.createdAt),
-        isActive: true,
-        userCount: 0,
-        icon: data.room.icon || '',
-        isBroadcast: data.room.is_broadcast || data.room.isBroadcast || false,
-        hostId: data.room.host_id || data.room.hostId || null,
-        speakers: [],
-        micQueue: []
-      };
+      const newRoom: ChatRoom = mapApiRoom(data.room);
 
       // تحديث الحالة المحلية مع إزالة التكرار
       setRooms(prev => dedupeRooms([newRoom, ...prev]));
