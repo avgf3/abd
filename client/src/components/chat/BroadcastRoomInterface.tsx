@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -107,6 +107,7 @@ export default function BroadcastRoomInterface({
     const updateBroadcastInfo = (data: any) => {
       if (data.broadcastInfo) {
         setBroadcastInfo(normalizeBroadcastInfo(data.broadcastInfo));
+      }
       // 🗑️ حذف fetchBroadcastInfo المكرر - سيتم التحديث تلقائياً
     };
 
