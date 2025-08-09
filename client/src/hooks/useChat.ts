@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation, Notification } from '@/types/chat';
-import { globalNotificationManager, MessageCacheManager, NetworkOptimizer } from '@/lib/chatOptimization';
-import { chatAnalytics } from '@/lib/chatAnalytics';
+// 🗑️ حذف جميع imports غير المستخدمة
 import { apiRequest } from '@/lib/queryClient';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
 
@@ -211,13 +210,7 @@ export function useChat() {
   // Socket connection
   const socket = useRef<Socket | null>(null);
   
-  // تحسين الأداء: مدراء التحسين
-  const messageCache = useRef(new MessageCacheManager());
-  
-  // 🗑️ حذف isLoadingMessages - لم تعد مطلوبة
-  
-  // إضافة متغير للوصول إلى import.meta.env
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  // 🗑️ حذف MessageCacheManager غير المستخدم
   
   // تتبع آخر غرفة طُلب الانضمام لها لمنع تبديل غير مقصود
   const lastRequestedRoomId = useRef<string>('general');
@@ -998,14 +991,13 @@ export function useChat() {
     setShowKickCountdown: (show: boolean) => dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: show }),
     setNewMessageSender: (sender: ChatUser | null) => dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: sender }),
 
-    // إصلاح: دوال مطلوبة للمكونات
-    sendPublicMessage: (content: string) => sendMessage(content, 'text'),
+    // 🚀 دوال محسنة بدون تكرار
+    sendPublicMessage: (content: string) => sendRoomMessage(content, state.currentRoomId),
     sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId),
-    sendRoomMessage: (content: string, roomId: string) => sendRoomMessage(content, roomId),
+    sendRoomMessage,
     getCurrentRoomMessages,
     loadRoomMessages,
-    handleTyping: () => sendTyping(),
-    handlePrivateTyping: () => sendTyping(),
+    handleTyping: sendTyping,
     
     // دعم غرفة البث
     addBroadcastMessageHandler,

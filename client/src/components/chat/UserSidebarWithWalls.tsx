@@ -127,9 +127,7 @@ export default function UnifiedSidebar({
     currentUser && ['moderator', 'admin', 'owner'].includes(currentUser.userType)
   , [currentUser]);
 
-  // إضافة logging للتشخيص المحسن
-  React.useEffect(() => {
-    }, [users]);
+  // 🗑️ حذف useEffect فارغ
 
   // جلب المنشورات
   const fetchPosts = useCallback(async () => {

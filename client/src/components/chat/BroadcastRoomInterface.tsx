@@ -107,9 +107,7 @@ export default function BroadcastRoomInterface({
     const updateBroadcastInfo = (data: any) => {
       if (data.broadcastInfo) {
         setBroadcastInfo(normalizeBroadcastInfo(data.broadcastInfo));
-      } else {
-        fetchBroadcastInfo();
-      }
+      // 🗑️ حذف fetchBroadcastInfo المكرر - سيتم التحديث تلقائياً
     };
 
     const showToast = (title: string, description: string, variant?: 'default' | 'destructive') => {

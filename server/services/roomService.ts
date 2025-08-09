@@ -176,9 +176,7 @@ class RoomService {
         if (currentRoomId === roomId) {
           this.userRooms.set(uId, 'general');
         }
-      }
-
-      } catch (error) {
+          } catch (error) {
       console.error('خطأ في حذف الغرفة:', error);
       throw error;
     }
@@ -410,8 +408,8 @@ class RoomService {
       await storage.removeFromMicQueue(roomId, userId);
       await storage.addSpeaker(roomId, userId);
 
-      const user = await storage.getUser(userId);
-      } catch (error) {
+      console.log(`✅ تمت الموافقة على ميكروفون المستخدم ${userId} في الغرفة ${roomId}`);
+    } catch (error) {
       console.error('خطأ في الموافقة على الميكروفون:', error);
       throw error;
     }
@@ -440,8 +438,8 @@ class RoomService {
 
       await storage.removeFromMicQueue(roomId, userId);
 
-      const user = await storage.getUser(userId);
-      } catch (error) {
+      console.log(`✅ تم رفض ميكروفون المستخدم ${userId} في الغرفة ${roomId}`);
+    } catch (error) {
       console.error('خطأ في رفض الميكروفون:', error);
       throw error;
     }
@@ -470,8 +468,8 @@ class RoomService {
 
       await storage.removeSpeaker(roomId, userId);
 
-      const user = await storage.getUser(userId);
-      } catch (error) {
+      console.log(`✅ تم إزالة المتحدث ${userId} من الغرفة ${roomId}`);
+    } catch (error) {
       console.error('خطأ في إزالة المتحدث:', error);
       throw error;
     }

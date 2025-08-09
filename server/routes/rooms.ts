@@ -126,11 +126,12 @@ router.post('/', upload.single('image'), async (req, res) => {
 
     const room = await roomService.createRoom(roomData);
     
-    // إرسال إشعار بالغرفة الجديدة عبر Socket (سيتم تحديثه في الخطوة التالية)
-    req.app.get('io')?.emit('roomCreated', { room });
-    
-    const updatedRooms = await roomService.getAllRooms();
-    req.app.get('io')?.emit('roomsUpdated', { rooms: updatedRooms });
+    // 🚀 إشعار واحد محسن للغرفة الجديدة
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('roomCreated', { room });
+      // 🗑️ حذف roomsUpdated المكرر - يتم التحديث تلقائياً
+    }
 
     res.json({ room });
   } catch (error: any) {
@@ -164,11 +165,12 @@ router.delete('/:roomId', async (req, res) => {
 
     await roomService.deleteRoom(roomId, parseInt(userId));
 
-    // إرسال إشعار بحذف الغرفة
-    req.app.get('io')?.emit('roomDeleted', { roomId });
-    
-    const updatedRooms = await roomService.getAllRooms();
-    req.app.get('io')?.emit('roomsUpdated', { rooms: updatedRooms });
+    // 🚀 إشعار واحد محسن لحذف الغرفة
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('roomDeleted', { roomId });
+      // 🗑️ حذف roomsUpdated المكرر - يتم التحديث تلقائياً
+    }
 
     res.json({ message: 'تم حذف الغرفة بنجاح' });
   } catch (error: any) {
