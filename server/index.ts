@@ -22,17 +22,35 @@ const uploadsPath = path.join(process.cwd(), 'client/public/uploads');
 app.use('/uploads', (req, res, next) => {
   // التحقق من وجود الملف
   const fullPath = path.join(uploadsPath, req.path);
+
+  const isProfile = req.path.includes('profile-') || req.path.includes('/profiles/');
+  const isWall = req.path.includes('/wall/');
+  const isBanner = req.path.includes('/banners/');
+
   if (!fs.existsSync(fullPath)) {
-    console.error('❌ الملف غير موجود:', fullPath);
-    
+    // تجنب إغراق السجلات لصور الحائط أو البانرات المفقودة
+    if (!isWall && !isBanner) {
+      console.error('❌ الملف غير موجود:', fullPath);
+    }
+
     // Return default avatar for profile images
-    if (req.path.includes('profile-') || req.path.includes('/profiles/')) {
+    if (isProfile) {
       const defaultAvatarPath = path.join(process.cwd(), 'client/public/default_avatar.svg');
       if (fs.existsSync(defaultAvatarPath)) {
         return res.sendFile(defaultAvatarPath);
       }
     }
-    
+
+    // لصور الحائط/البانرات: أعد بكسل شفاف 1x1 لتجنب كسر الواجهة
+    if (isWall || isBanner) {
+      const transparentPngBase64 =
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
+      const buffer = Buffer.from(transparentPngBase64, 'base64');
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=60');
+      return res.status(200).end(buffer);
+    }
+
     return res.status(404).json({ error: 'File not found' });
   }
   
