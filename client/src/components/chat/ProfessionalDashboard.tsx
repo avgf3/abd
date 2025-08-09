@@ -4,6 +4,7 @@ import AnalyticsPanel from './AnalyticsPanel';
 import SecurityPanel from './SecurityPanel';
 import PerformanceMonitor from './PerformanceMonitor';
 import type { ChatUser } from '@/types/chat';
+import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 
 interface ProfessionalDashboardProps {
   currentUser: ChatUser | null;
@@ -34,8 +35,7 @@ export default function ProfessionalDashboard({ currentUser, isVisible, onClose 
         <div className="glass-effect p-4 rounded-lg mb-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold">
-              {currentUser?.userType === 'owner' ? '👑' : 
-               currentUser?.userType === 'admin' ? '🛡️' : '👤'}
+              {currentUser ? getUserLevelIcon(currentUser, 20) : '👤'}
             </div>
             <div>
               <div className="text-white font-bold">{currentUser?.username}</div>

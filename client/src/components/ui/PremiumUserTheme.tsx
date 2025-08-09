@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import type { ChatUser } from '@/types/chat';
+import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 
 interface PremiumUserThemeProps {
   user: ChatUser | null;
@@ -110,7 +111,7 @@ export default function PremiumUserTheme({ user, children, size = 'medium', show
     <div className="inline-block" style={getFrameStyles()}>
       <div className="flex items-center gap-1">
         <span className="text-base">
-          {user.userType === 'owner' ? '👑' : '⭐'}
+          {getUserLevelIcon(user, 16)}
         </span>
         
         <div className="flex items-center gap-1">

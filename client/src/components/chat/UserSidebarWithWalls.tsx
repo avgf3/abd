@@ -15,7 +15,7 @@ import { getImageSrc } from '@/utils/imageUtils';
 
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
-import UserRoleBadge, { getUserLevelIcon, getUserRoleIcon } from './UserRoleBadge';
+import UserRoleBadge from './UserRoleBadge';
 
 interface UnifiedSidebarProps {
   users: ChatUser[];
@@ -584,16 +584,16 @@ export default function UnifiedSidebar({
                               >
                                 {post.username}
                               </span>
-                                                              {/* Post badge for user role */}
-                                {getUserRoleIcon(post.userRole) && (
-                                  <span className={
-                                    post.userRole === 'owner' ? 'text-yellow-400' :
-                                    post.userRole === 'admin' ? 'text-blue-400' : 
-                                    'text-green-400'
-                                  }>
-                                    {getUserRoleIcon(post.userRole)}
-                                  </span>
-                                )}
+                              {/* شارة الرتبة حسب النظام الجديد */}
+                              {post.userRole === 'owner' && (
+                                <img src="/svgs/crown.svg" alt="owner" className="w-4 h-4 inline-block" />
+                              )}
+                              {post.userRole === 'admin' && (
+                                <span className="inline-block text-yellow-500">⭐</span>
+                              )}
+                              {post.userRole === 'moderator' && (
+                                <span className="inline-block">🛡️</span>
+                              )}
                             </div>
                             <p className="text-xs text-gray-500">{formatTimeAgo(post.timestamp.toString())}</p>
                           </div>

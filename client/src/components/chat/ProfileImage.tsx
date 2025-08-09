@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useImageLoader } from '@/hooks/useImageLoader';
 import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
+import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -58,12 +59,10 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
       )}
       
-      {/* مؤشر الدور (للمالك والإدمن) */}
-      {(user.userType === 'owner' || user.userType === 'admin') && (
-        <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 border-2 border-white rounded-full flex items-center justify-center">
-          <span className="text-xs text-white">
-            {user.userType === 'owner' ? '👑' : '⭐'}
-          </span>
+      {/* مؤشر الدور統一 */}
+      {(user.userType === 'owner' || user.userType === 'admin' || user.userType === 'moderator') && (
+        <div className="absolute -top-1 -right-1 w-5 h-5 bg-white border-2 border-white rounded-full flex items-center justify-center overflow-hidden">
+          <span className="scale-90">{getUserLevelIcon(user, 14)}</span>
         </div>
       )}
     </div>
