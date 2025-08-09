@@ -87,44 +87,6 @@ export default function UnifiedSidebar({
     });
   }, [validUsers, searchTerm]);
 
-  // 🚀 تحسين: دالة getUserRankBadge محسنة ومنظمة
-  const getUserRankBadge = useCallback((user: ChatUser) => {
-    if (!user) return null;
-    
-    // تحويل المستوى بطريقة آمنة
-    const userLevel = typeof user.level === 'string' ? parseInt(user.level, 10) : user.level;
-    const level = isNaN(userLevel) ? 0 : userLevel;
-    
-    // استخدام switch للوضوح والأداء
-    switch (user.userType) {
-      case 'owner':
-        return <img src="/svgs/crown.svg" alt="owner" style={{width: 24, height: 24, display: 'inline'}} />;
-      case 'admin':
-        return <span style={{fontSize: 24, display: 'inline'}}>⭐</span>;
-      case 'moderator':
-        return <span style={{fontSize: 24, display: 'inline'}}>🛡️</span>;
-      case 'member':
-        if (level >= 1 && level <= 10) {
-          return user.gender === 'male' 
-            ? <img src="/svgs/blue_arrow.svg" alt="male-lvl1-10" style={{width: 24, height: 24, display: 'inline'}} />
-            : <img src="/svgs/pink_medal.svg" alt="female-lvl1-10" style={{width: 24, height: 24, display: 'inline'}} />;
-        }
-        if (level > 10 && level <= 20) {
-          return <img src="/svgs/white.svg" alt="lvl10-20" style={{width: 24, height: 24, display: 'inline'}} />;
-        }
-        if (level > 20 && level <= 30) {
-          return <img src="/svgs/emerald.svg" alt="lvl20-30" style={{width: 24, height: 24, display: 'inline'}} />;
-        }
-        if (level > 30 && level <= 40) {
-          return <img src="/svgs/orange_shine.svg" alt="lvl30-40" style={{width: 24, height: 24, display: 'inline'}} />;
-        }
-        break;
-      default:
-        return null;
-    }
-    return null;
-  }, []);
-
   // 🚀 تحسين: دالة formatLastSeen محسنة
   const formatLastSeen = useCallback((lastSeen?: string | Date) => {
     if (!lastSeen) return 'غير معروف';
@@ -471,7 +433,7 @@ export default function UnifiedSidebar({
                                 }}
                                 title={user.username}
                               >
-                                {user.username} {getUserRankBadge(user)}
+                                {user.username} <UserRoleBadge user={user} />
                               </span>
                               {/* إشارة المكتوم */}
                               {user.isMuted && (
