@@ -369,7 +369,40 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
         </div>
       </header>
-      
+      {/* New: Tabs directly under the header */}
+      <div className="bg-secondary/70 border-b border-accent px-2">
+        <div className="max-w-full mx-auto grid grid-cols-4 gap-2 p-2">
+          <Button
+            variant={activeView === 'users' ? 'default' : 'ghost'}
+            className={`rounded-md py-2 ${activeView === 'users' ? 'bg-primary text-primary-foreground' : 'text-white hover:bg-white/10'}`}
+            onClick={() => setActiveView('users')}
+          >
+            المستخدمون
+          </Button>
+          <Button
+            variant={activeView === 'walls' ? 'default' : 'ghost'}
+            className={`rounded-md py-2 ${activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'text-white hover:bg-white/10'}`}
+            onClick={() => setActiveView('walls')}
+          >
+            الحوائط
+          </Button>
+          <Button
+            variant={activeView === 'rooms' ? 'default' : 'ghost'}
+            className={`rounded-md py-2 ${activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'text-white hover:bg-white/10'}`}
+            onClick={() => setActiveView('rooms')}
+          >
+            الغرف
+          </Button>
+          <Button
+            variant={activeView === 'friends' ? 'default' : 'ghost'}
+            className={`rounded-md py-2 ${activeView === 'friends' ? 'bg-primary text-primary-foreground' : 'text-white hover:bg-white/10'}`}
+            onClick={() => setActiveView('friends')}
+          >
+            الأصدقاء
+          </Button>
+        </div>
+      </div>
+
       {/* Main Content */}
       <main className="flex flex-1 overflow-hidden">
         {/* الشريط الجانبي - يظهر فقط عندما يكون activeView ليس 'hidden' */}
