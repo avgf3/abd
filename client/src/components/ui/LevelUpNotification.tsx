@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { getLevelInfo, getLevelColor } from '@/utils/pointsUtils';
-import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
+
+// دالة لعرض أيقونة المستوى
+function getLevelIcon(level: number): string {
+  if (level >= 1 && level <= 2) return '🔰'; // مبتدئ
+  if (level >= 3 && level <= 4) return '⭐'; // متميز
+  if (level >= 5 && level <= 6) return '🏆'; // محترف  
+  if (level >= 7 && level <= 8) return '👑'; // أسطورة
+  if (level >= 9 && level <= 10) return '💎'; // إمبراطور
+  return '🔰'; // افتراضي
+}
 
 interface LevelUpNotificationProps {
   oldLevel: number;
@@ -30,7 +39,7 @@ export function LevelUpNotification({ oldLevel, newLevel, user, levelInfo, onClo
   const newLevelInfo = levelInfo || getLevelInfo(newLevel);
   // إنشاء user object مؤقت بالمستوى الجديد لعرض الأيقونة الصحيحة
   const userWithNewLevel = { ...user, level: newLevel };
-  const newLevelIcon = getUserLevelIcon(userWithNewLevel, 32);
+  const newLevelIcon = getLevelIcon(newLevel);
   const newLevelColor = getLevelColor(newLevel);
 
   return (
@@ -44,7 +53,7 @@ export function LevelUpNotification({ oldLevel, newLevel, user, levelInfo, onClo
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3 rtl:space-x-reverse">
             <div className="text-4xl animate-bounce">
-              {newLevelIcon}
+              <span>{newLevelIcon}</span>
             </div>
             <div className="text-white">
               <h3 className="font-bold text-lg">ترقية مستوى! 🎉</h3>

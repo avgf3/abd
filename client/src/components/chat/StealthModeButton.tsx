@@ -5,7 +5,6 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ChatUser } from "@/types/chat";
 import { EyeIcon, EyeOff } from "lucide-react";
-import { getUserRoleIcon } from "./UserRoleBadge";
 
 interface StealthModeButtonProps {
   user: ChatUser;
@@ -62,9 +61,9 @@ export function StealthModeButton({ user, onToggle }: StealthModeButtonProps) {
           {isHidden ? "🔒 مخفي" : "👁️ ظاهر"}
         </Badge>
         {(user.userType === 'owner' || user.userType === 'admin') && (
-          <Badge variant="default" className="text-xs">
-            {getUserRoleIcon(user.userType)}
-          </Badge>
+                      <Badge variant="default" className="text-xs">
+              {user.userType === 'owner' ? '👑 مالك' : user.userType === 'admin' ? '⭐ إدمن' : user.userType}
+            </Badge>
         )}
       </div>
       

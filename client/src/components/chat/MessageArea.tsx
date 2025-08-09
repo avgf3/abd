@@ -7,7 +7,7 @@ import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { findMentions, playMentionSound, renderMessageWithMentions, insertMention } from '@/utils/mentionUtils';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import { Send, Image as ImageIcon, Smile } from "lucide-react";
-import UserRoleBadge from './UserRoleBadge';
+import { LevelBadge } from '@/components/ui/LevelBadge';
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -303,7 +303,7 @@ export default function MessageArea({
                     {message.sender?.username}
                   </button>
                   
-                                        {message.sender && <UserRoleBadge user={message.sender} showOnlyIcon={false} />}
+                                        {message.sender && <LevelBadge user={message.sender} />}
                   
                   <span className="text-xs text-gray-500 mr-auto">
                     {formatTime(message.timestamp)}

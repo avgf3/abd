@@ -1,7 +1,16 @@
 import React from 'react';
 import { getLevelInfo, getLevelColor, formatPoints, getPointsToNextLevel } from '@/utils/pointsUtils';
-import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
+
+// دالة محلية لعرض أيقونة المستوى بدلاً من النظام القديم
+function getLevelIcon(level: number, size: number = 20): string {
+  if (level >= 1 && level <= 2) return '🔰'; // مبتدئ
+  if (level >= 3 && level <= 4) return '⭐'; // متميز
+  if (level >= 5 && level <= 6) return '🏆'; // محترف  
+  if (level >= 7 && level <= 8) return '👑'; // أسطورة
+  if (level >= 9 && level <= 10) return '💎'; // إمبراطور
+  return '🔰'; // افتراضي
+}
 
 interface LevelProgressBarProps {
   user: ChatUser;
@@ -11,14 +20,14 @@ interface LevelProgressBarProps {
 
 export function LevelProgressBar({ user, showDetails = true, compact = false }: LevelProgressBarProps) {
   const levelInfo = getLevelInfo(user.level || 1);
-  const levelIcon = getUserLevelIcon(user, compact ? 14 : 24);
+  const levelIcon = getLevelIcon(user.level || 1, compact ? 14 : 24);
   const levelColor = getLevelColor(user.level || 1);
   const pointsToNext = getPointsToNextLevel(user.totalPoints || 0);
 
   if (compact) {
     return (
       <div className="flex items-center gap-2 text-xs">
-        {levelIcon}
+        <span style={{fontSize: compact ? 14 : 24}}>{levelIcon}</span>
         <div className="flex-1 bg-gray-200 rounded-full h-1.5">
           <div
             className="h-1.5 rounded-full transition-all duration-300"
@@ -109,7 +118,7 @@ interface MiniLevelBadgeProps {
 }
 
 export function MiniLevelBadge({ user, onClick }: MiniLevelBadgeProps) {
-  const levelIcon = getUserLevelIcon(user, 16);
+  const levelIcon = getLevelIcon(user.level || 1, 16);
   const levelColor = getLevelColor(user.level || 1);
 
   return (
@@ -122,7 +131,7 @@ export function MiniLevelBadge({ user, onClick }: MiniLevelBadgeProps) {
         border: `1px solid ${levelColor}40`
       }}
     >
-      {levelIcon}
+      <span style={{fontSize: 16}}>{levelIcon}</span>
       <span>{user.level || 1}</span>
       <span className="text-xs opacity-80">{formatPoints(user.points || 0)}</span>
     </button>
