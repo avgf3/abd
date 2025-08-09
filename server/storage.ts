@@ -452,8 +452,8 @@ export const storage: LegacyStorage = {
     return await databaseService.getPrivateMessages(userId1, userId2, limit);
   },
 
-  async getRoomMessages(roomId: string, limit = 50) {
-    return await databaseService.getMessages(roomId, limit);
+  async getRoomMessages(roomId: string, limit = 50, offset = 0) {
+    return await databaseService.getMessages(roomId, limit, offset);
   },
 
   // Friends
@@ -512,6 +512,29 @@ export const storage: LegacyStorage = {
   // ========= Room helpers exposed on storage =========
   async getRooms() {
     return await databaseService.getRooms();
+  },
+
+  // ========= Room messages stats/search exposed on storage =========
+  async getRoomMessageCount(roomId: string) {
+    return await databaseService.getRoomMessageCount(roomId);
+  },
+  async getRoomMessageCountSince(roomId: string, since: Date) {
+    return await databaseService.getRoomMessageCountSince(roomId, since);
+  },
+  async getRoomActiveUserCount(roomId: string, since: Date) {
+    return await databaseService.getRoomActiveUserCount(roomId, since);
+  },
+  async getLastRoomMessage(roomId: string) {
+    return await databaseService.getLastRoomMessage(roomId);
+  },
+  async searchRoomMessages(roomId: string, searchQuery: string, limit?: number, offset?: number) {
+    return await databaseService.searchRoomMessages(roomId, searchQuery, limit ?? 20, offset ?? 0);
+  },
+  async countSearchRoomMessages(roomId: string, searchQuery: string) {
+    return await databaseService.countSearchRoomMessages(roomId, searchQuery);
+  },
+  async deleteOldRoomMessages(roomId: string, cutoffDate: Date) {
+    return await databaseService.deleteOldRoomMessages(roomId, cutoffDate);
   },
 
   // Alias to match routes usage

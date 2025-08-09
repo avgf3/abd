@@ -1,7 +1,7 @@
 import { dbAdapter, dbType } from '../database-adapter';
 import * as pgSchema from '../../shared/schema';
 import * as sqliteSchema from '../../shared/sqlite-schema';
-import { sql, eq, desc, asc, and, or, like, count, isNull } from 'drizzle-orm';
+import { sql, eq, desc, asc, and, or, like, count, isNull, gte, lt } from 'drizzle-orm';
 
 // Type definitions for database operations
 export interface User {
@@ -399,7 +399,7 @@ export class DatabaseService {
     }
   }
 
-  async getMessages(roomId: string, limit: number = 50): Promise<Message[]> {
+  async getMessages(roomId: string, limit: number = 50, offset: number = 0): Promise<Message[]> {
     if (!this.isConnected()) return [];
 
     try {
@@ -409,14 +409,16 @@ export class DatabaseService {
           .from(pgSchema.messages)
           .where(and(eq(pgSchema.messages.roomId, roomId), isNull(pgSchema.messages.deletedAt)))
           .orderBy(desc(pgSchema.messages.timestamp))
-          .limit(limit);
+          .limit(limit)
+          .offset(offset);
       } else {
         return await (this.db as any)
           .select()
           .from(sqliteSchema.messages)
           .where(eq(sqliteSchema.messages.roomId, roomId))
           .orderBy(desc(sqliteSchema.messages.timestamp))
-          .limit(limit);
+          .limit(limit)
+          .offset(offset);
       }
     } catch (error) {
       console.error('Error getting messages:', error);
@@ -462,6 +464,210 @@ export class DatabaseService {
     } catch (error) {
       console.error('Error getting private messages:', error);
       return [];
+    }
+  }
+
+  // ===================== Room message helpers (counts/search/stats) =====================
+  async getRoomMessageCount(roomId: string): Promise<number> {
+    if (!this.isConnected()) return 0;
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any)
+          .select({ c: count() })
+          .from(pgSchema.messages)
+          .where(and(eq(pgSchema.messages.roomId, roomId), isNull(pgSchema.messages.deletedAt)));
+        return Number(rows?.[0]?.c || 0);
+      } else {
+        const rows = await (this.db as any)
+          .select({ c: count() })
+          .from(sqliteSchema.messages)
+          .where(eq(sqliteSchema.messages.roomId, roomId));
+        return Number(rows?.[0]?.c || 0);
+      }
+    } catch (error) {
+      console.error('Error getRoomMessageCount:', error);
+      return 0;
+    }
+  }
+
+  async getRoomMessageCountSince(roomId: string, since: Date): Promise<number> {
+    if (!this.isConnected()) return 0;
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any)
+          .select({ c: count() })
+          .from(pgSchema.messages)
+          .where(and(
+            eq(pgSchema.messages.roomId, roomId),
+            isNull(pgSchema.messages.deletedAt),
+            gte(pgSchema.messages.timestamp, since as any)
+          ));
+        return Number(rows?.[0]?.c || 0);
+      } else {
+        const sinceIso = since.toISOString();
+        const rows = await (this.db as any)
+          .select({ c: count() })
+          .from(sqliteSchema.messages)
+          .where(and(
+            eq(sqliteSchema.messages.roomId, roomId),
+            sql`${sqliteSchema.messages.timestamp} >= ${sinceIso}`
+          ));
+        return Number(rows?.[0]?.c || 0);
+      }
+    } catch (error) {
+      console.error('Error getRoomMessageCountSince:', error);
+      return 0;
+    }
+  }
+
+  async getRoomActiveUserCount(roomId: string, since: Date): Promise<number> {
+    if (!this.isConnected()) return 0;
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any)
+          .select({ c: sql<number>`count(distinct ${pgSchema.messages.senderId})` })
+          .from(pgSchema.messages)
+          .where(and(
+            eq(pgSchema.messages.roomId, roomId),
+            isNull(pgSchema.messages.deletedAt),
+            gte(pgSchema.messages.timestamp, since as any)
+          ));
+        return Number(rows?.[0]?.c || 0);
+      } else {
+        const sinceIso = since.toISOString();
+        const rows = await (this.db as any)
+          .select({ c: sql<number>`count(distinct ${sqliteSchema.messages.senderId})` })
+          .from(sqliteSchema.messages)
+          .where(and(
+            eq(sqliteSchema.messages.roomId, roomId),
+            sql`${sqliteSchema.messages.timestamp} >= ${sinceIso}`
+          ));
+        return Number(rows?.[0]?.c || 0);
+      }
+    } catch (error) {
+      console.error('Error getRoomActiveUserCount:', error);
+      return 0;
+    }
+  }
+
+  async getLastRoomMessage(roomId: string): Promise<Message | null> {
+    if (!this.isConnected()) return null;
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any)
+          .select()
+          .from(pgSchema.messages)
+          .where(and(eq(pgSchema.messages.roomId, roomId), isNull(pgSchema.messages.deletedAt)))
+          .orderBy(desc(pgSchema.messages.timestamp))
+          .limit(1);
+        return rows?.[0] || null;
+      } else {
+        const rows = await (this.db as any)
+          .select()
+          .from(sqliteSchema.messages)
+          .where(eq(sqliteSchema.messages.roomId, roomId))
+          .orderBy(desc(sqliteSchema.messages.timestamp))
+          .limit(1);
+        return rows?.[0] || null;
+      }
+    } catch (error) {
+      console.error('Error getLastRoomMessage:', error);
+      return null;
+    }
+  }
+
+  async searchRoomMessages(roomId: string, searchQuery: string, limit: number = 20, offset: number = 0): Promise<Message[]> {
+    if (!this.isConnected()) return [];
+    const pattern = `%${searchQuery}%`;
+    try {
+      if (this.type === 'postgresql') {
+        return await (this.db as any)
+          .select()
+          .from(pgSchema.messages)
+          .where(and(
+            eq(pgSchema.messages.roomId, roomId),
+            isNull(pgSchema.messages.deletedAt),
+            like(pgSchema.messages.content, pattern)
+          ))
+          .orderBy(desc(pgSchema.messages.timestamp))
+          .limit(limit)
+          .offset(offset);
+      } else {
+        return await (this.db as any)
+          .select()
+          .from(sqliteSchema.messages)
+          .where(and(
+            eq(sqliteSchema.messages.roomId, roomId),
+            like(sqliteSchema.messages.content, pattern)
+          ))
+          .orderBy(desc(sqliteSchema.messages.timestamp))
+          .limit(limit)
+          .offset(offset);
+      }
+    } catch (error) {
+      console.error('Error searchRoomMessages:', error);
+      return [];
+    }
+  }
+
+  async countSearchRoomMessages(roomId: string, searchQuery: string): Promise<number> {
+    if (!this.isConnected()) return 0;
+    const pattern = `%${searchQuery}%`;
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any)
+          .select({ c: count() })
+          .from(pgSchema.messages)
+          .where(and(
+            eq(pgSchema.messages.roomId, roomId),
+            isNull(pgSchema.messages.deletedAt),
+            like(pgSchema.messages.content, pattern)
+          ));
+        return Number(rows?.[0]?.c || 0);
+      } else {
+        const rows = await (this.db as any)
+          .select({ c: count() })
+          .from(sqliteSchema.messages)
+          .where(and(
+            eq(sqliteSchema.messages.roomId, roomId),
+            like(sqliteSchema.messages.content, pattern)
+          ));
+        return Number(rows?.[0]?.c || 0);
+      }
+    } catch (error) {
+      console.error('Error countSearchRoomMessages:', error);
+      return 0;
+    }
+  }
+
+  async deleteOldRoomMessages(roomId: string, cutoffDate: Date): Promise<number> {
+    if (!this.isConnected()) return 0;
+    try {
+      if (this.type === 'postgresql') {
+        const updated = await (this.db as any)
+          .update(pgSchema.messages)
+          .set({ deletedAt: new Date() })
+          .where(and(
+            eq(pgSchema.messages.roomId, roomId),
+            lt(pgSchema.messages.timestamp, cutoffDate as any)
+          ))
+          .returning({ id: pgSchema.messages.id });
+        return Array.isArray(updated) ? updated.length : 0;
+      } else {
+        const cutoffIso = cutoffDate.toISOString();
+        const deleted = await (this.db as any)
+          .delete(sqliteSchema.messages)
+          .where(and(
+            eq(sqliteSchema.messages.roomId, roomId),
+            sql`${sqliteSchema.messages.timestamp} < ${cutoffIso}`
+          ));
+        // Drizzle for SQLite returns number of changes on run/run? Fallback to 0 if unknown
+        // Attempt to read changes count if available
+        return Number((deleted?.rowsAffected ?? deleted?.changes ?? 0) as any);
+      }
+    } catch (error) {
+      console.error('Error deleteOldRoomMessages:', error);
+      return 0;
     }
   }
 
@@ -847,5 +1053,5 @@ export class DatabaseService {
   }
 }
 
-// Export singleton instance
+// Export the database service for direct access if needed
 export const databaseService = new DatabaseService();
