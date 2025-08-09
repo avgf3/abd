@@ -65,7 +65,7 @@ export interface ChatMessage {
   roomId?: string;
   isPrivate: boolean;
   senderId: number;
-  timestamp: Date;
+  timestamp: Date | string | number;
   messageType: 'text' | 'image' | 'system';
   receiverId?: number;
   sender?: ChatUser;

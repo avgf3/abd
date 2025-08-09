@@ -16,9 +16,11 @@ export function formatTimeAgo(input: string | Date): string {
   return `قبل ${days} يوم`;
 }
 
-export function formatTime(date?: Date): string {
-  if (!date) return '';
-  return date.toLocaleTimeString('ar-SA', {
+export function formatTime(date?: Date | string | number): string {
+  if (date == null) return '';
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('ar-SA', {
     hour: '2-digit',
     minute: '2-digit'
   });
