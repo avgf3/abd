@@ -87,10 +87,10 @@ export default function UnifiedSidebar({
     });
   }, [validUsers, searchTerm]);
 
-  // 🚀 تحسين: استخدام دالة getUserLevelIcon المركزية
-  const getUserRankBadge = useCallback((user: ChatUser) => {
+  // 🚀 تحسين: استخدام مكون UserRoleBadge المركزي
+  const renderUserBadge = useCallback((user: ChatUser) => {
     if (!user) return null;
-    return getUserLevelIcon(user, 24);
+    return <UserRoleBadge user={user} size={20} />;
   }, []);
 
   // 🚀 تحسين: دالة formatLastSeen محسنة
@@ -439,7 +439,7 @@ export default function UnifiedSidebar({
                                 }}
                                 title={user.username}
                               >
-                                {user.username} {getUserRankBadge(user)}
+                                {user.username} {renderUserBadge(user)}
                               </span>
                               {/* إشارة المكتوم */}
                               {user.isMuted && (
