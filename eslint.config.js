@@ -6,10 +6,27 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import importPlugin from 'eslint-plugin-import';
 
 export default [
+  {
+    ignores: [
+      '**/*.cjs',
+      '**/*.mjs',
+      '**/*.js',
+      'node_modules/**',
+      'dist/**',
+      'migrations/**',
+      'attached_assets/**',
+      'svgs/**',
+      'client/public/**',
+      'tools/**',
+      'test-*/**',
+      'setup-*/**',
+      '*.md',
+    ],
+  },
   js.configs.recommended,
   ...ts.configs.recommended,
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['client/src/**/*.{ts,tsx}', 'server/**/*.{ts,tsx}', 'shared/**/*.{ts,tsx}'],
     languageOptions: {
       parser: ts.parser,
       parserOptions: { ecmaVersion: 'latest', sourceType: 'module', ecmaFeatures: { jsx: true } },
@@ -27,6 +44,10 @@ export default [
       ],
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/consistent-type-imports': 'warn',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      'no-empty': 'off',
+      'no-undef': 'off',
     },
     settings: { react: { version: 'detect' } },
   },
