@@ -11,25 +11,28 @@ export interface ApiResponse<T = any> {
 // معالجة محسنة للأخطاء
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    // استخدم clone() لمحاولة قراءة JSON بدون استهلاك الجسم الأصلي
     try {
-      const errorData = await res.json();
-      
-      // إذا كان الخطأ يحتوي على رسالة عربية، استخدمها
+      const errorData = await res.clone().json();
       const message = errorData.message || errorData.error || res.statusText;
-      
       const error = new Error(message) as any;
       error.status = res.status;
       error.code = errorData.code;
       error.details = errorData.details;
       error.timestamp = errorData.timestamp;
-      
       throw error;
-    } catch (parseError) {
-      // إذا فشل في parse JSON، استخدم النص العادي
-      const text = await res.text() || res.statusText;
-      const error = new Error(text) as any;
-      error.status = res.status;
-      throw error;
+    } catch {
+      // في حال فشل JSON، اقرأ النص من الجسم الأصلي مرة واحدة فقط
+      try {
+        const text = (await res.text()) || res.statusText;
+        const error = new Error(text) as any;
+        error.status = res.status;
+        throw error;
+      } catch {
+        const error = new Error(res.statusText) as any;
+        error.status = res.status;
+        throw error;
+      }
     }
   }
 }
