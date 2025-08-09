@@ -2739,41 +2739,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.body;
       
       const request = await storage.getFriendRequestById(requestId);
-      if (!request || request.receiverId !== userId) {
+      if (!request || request.friendId !== userId) {
         return res.status(403).json({ error: "غير مسموح" });
       }
 
       // قبول طلب الصداقة وإضافة الصداقة
       await storage.acceptFriendRequest(requestId);
-      await storage.addFriend(request.senderId, request.receiverId);
+      await storage.addFriend(request.userId, request.friendId);
       
       // الحصول على بيانات المستخدمين
       const receiver = await storage.getUser(userId);
-      const sender = await storage.getUser(request.senderId);
+      const sender = await storage.getUser(request.userId);
       
       // إرسال إشعار WebSocket لتحديث قوائم الأصدقاء
       broadcast({
         type: 'friendAdded',
-        targetUserId: request.senderId,
-        friendId: request.receiverId,
+        targetUserId: request.userId,
+        friendId: request.friendId,
         friendName: receiver?.username
       });
       
       broadcast({
         type: 'friendAdded', 
-        targetUserId: request.receiverId,
-        friendId: request.senderId,
+        targetUserId: request.friendId,
+        friendId: request.userId,
         friendName: sender?.username
       });
       broadcast({
         type: 'friendRequestAccepted',
-        targetUserId: request.senderId,
+        targetUserId: request.userId,
         senderName: receiver?.username
       });
 
       // إنشاء إشعار حقيقي في قاعدة البيانات
       await storage.createNotification({
-        userId: request.senderId,
+        userId: request.userId,
         type: 'friendAccepted',
         title: '✅ تم قبول طلب الصداقة',
         message: `قبل ${receiver?.username} طلب صداقتك`,
@@ -2794,7 +2794,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.body;
       
       const request = await storage.getFriendRequestById(requestId);
-      if (!request || request.receiverId !== userId) {
+      if (!request || request.friendId !== userId) {
         return res.status(403).json({ error: "غير مسموح" });
       }
 
@@ -2812,7 +2812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.body;
       
       const request = await storage.getFriendRequestById(requestId);
-      if (!request || request.senderId !== userId) {
+      if (!request || request.userId !== userId) {
         return res.status(403).json({ error: "غير مسموح" });
       }
 
@@ -2830,7 +2830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.body;
       
       const request = await storage.getFriendRequestById(requestId);
-      if (!request || request.receiverId !== userId) {
+      if (!request || request.friendId !== userId) {
         return res.status(403).json({ error: "غير مسموح" });
       }
 
