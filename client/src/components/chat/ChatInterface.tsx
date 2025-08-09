@@ -434,12 +434,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       </main>
 
       {/* Footer - مع التبويبات الأربعة المنقولة */}
-      <footer className="bg-secondary py-4 px-6 flex justify-between items-center shadow-2xl border-t border-accent">
-        <div className="flex items-center gap-3">
-          {/* مساحة فارغة في اليسار */}
-        </div>
+      <footer className="bg-secondary py-4 px-6 flex justify-end items-center shadow-2xl border-t border-accent">
         <div className="flex gap-3">
-          {/* التبويبات الأربعة المنقولة من الـ header */}
+          {/* الحوائط */}
           <Button 
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
               activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
@@ -447,14 +444,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClick={() => setActiveView(activeView === 'walls' ? 'hidden' : 'walls')}
             title="الحوائط"
           >
-            <div className="flex flex-col gap-0.5">
-              <div className="w-4 h-0.5 bg-current"></div>
-              <div className="w-4 h-0.5 bg-current"></div>
-              <div className="w-4 h-0.5 bg-current"></div>
-            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Walls">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
             الحوائط
           </Button>
           
+          {/* المستخدمون */}
           <Button 
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
               activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
@@ -462,10 +460,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClick={() => setActiveView(activeView === 'users' ? 'hidden' : 'users')}
             title="المستخدمون المتصلون"
           >
-            <span>👥</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Users">
+              <circle cx="9" cy="7" r="3"></circle>
+              <path d="M2 21c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"></path>
+              <circle cx="17" cy="7" r="3"></circle>
+              <path d="M14 21c0-1.657 1.343-3 3-3h1c1.657 0 3 1.343 3 3"></path>
+            </svg>
             المستخدمون ({chat.onlineUsers?.length ?? 0})
           </Button>
 
+          {/* الغرف */}
           <Button 
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
               activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
@@ -473,10 +477,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClick={() => setActiveView(activeView === 'rooms' ? 'hidden' : 'rooms')}
             title="الغرف"
           >
-            <span>🏠</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Rooms">
+              <path d="M3 11l9-8 9 8"></path>
+              <path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"></path>
+              <path d="M9 21v-6h6v6"></path>
+            </svg>
             الغرف
           </Button>
 
+          {/* الأصدقاء */}
           <Button 
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
               activeView === 'friends' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
@@ -484,7 +493,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClick={() => setActiveView(activeView === 'friends' ? 'hidden' : 'friends')}
             title="الأصدقاء"
           >
-            <span>👨‍👩‍👧‍👦</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Friends">
+              <circle cx="9" cy="7" r="3"></circle>
+              <path d="M2 21c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"></path>
+              <path d="M19 8v6"></path>
+              <path d="M16 11h6"></path>
+            </svg>
             الأصدقاء
           </Button>
         </div>
