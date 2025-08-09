@@ -17,9 +17,28 @@ setupSecurity(app);
 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+// خدمة ملفات الحائط المرفوعة أولاً مع fallback عند عدم وجود الملف
+const wallUploadsPath = path.join(process.cwd(), 'client', 'public', 'uploads', 'wall');
+app.use('/uploads/wall', (req, res, next) => {
+  const fullPath = path.join(wallUploadsPath, req.path);
+  if (!fs.existsSync(fullPath)) {
+    // أعد نقطة شفافة 1x1 لتجنب كسر الواجهة ورسائل الخطأ
+    const transparentPngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMBAoY9rH8AAAAASUVORK5CYII=';
+    const buffer = Buffer.from(transparentPngBase64, 'base64');
+    res.setHeader('Content-Type', 'image/png');
+    return res.status(200).send(buffer);
+  }
+  next();
+}, express.static(wallUploadsPath, { maxAge: '1d', etag: true }));
+
 // خدمة الملفات الثابتة للصور المرفوعة - محسّنة لـ Render
 const uploadsPath = path.join(process.cwd(), 'client/public/uploads');
 app.use('/uploads', (req, res, next) => {
+  // تجاهل مجلد الحائط هنا لأنه عولج مسبقاً
+  if (req.path.startsWith('/wall/')) {
+    return next();
+  }
+
   // التحقق من وجود الملف
   const fullPath = path.join(uploadsPath, req.path);
   if (!fs.existsSync(fullPath)) {
@@ -68,10 +87,6 @@ app.use('/svgs', express.static(svgPath, {
     res.setHeader('Cache-Control', 'public, max-age=604800');
   }
 }));
-
-// خدمة ملفات الحائط المرفوعة (بدون بدائل)
-const wallUploadsPath = path.join(process.cwd(), 'client', 'public', 'uploads', 'wall');
-app.use('/uploads/wall', express.static(wallUploadsPath, { maxAge: '1d', etag: true }));
 
 // خدمة الصور والأيقونات
 app.use('/icons', express.static(path.join(process.cwd(), 'client/public/icons'), {
