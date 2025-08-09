@@ -52,17 +52,29 @@ export default function BroadcastRoomInterface({
   const { toast } = useToast();
 
   // جلب معلومات غرفة البث
-  const fetchBroadcastInfo = async () => {
+  // 🚀 جلب معلومات البث مع منع التكرار
+  const fetchBroadcastInfo = useCallback(async () => {
     if (!room?.id) {
       console.warn('⚠️ لا يمكن جلب معلومات البث - معرف الغرفة غير صحيح');
       return;
     }
 
+    // 🚫 منع الطلبات المتكررة
+    const fetchKey = `broadcast_${room.id}`;
+    if ((fetchBroadcastInfo as any).loading === fetchKey) {
+      console.log('⚠️ جلب معلومات البث قيد التنفيذ بالفعل');
+      return;
+    }
+
+    (fetchBroadcastInfo as any).loading = fetchKey;
+
     try {
+      console.log(`🔄 جلب معلومات بث الغرفة ${room.id}...`);
       const data = await apiRequest(`/api/rooms/${room.id}/broadcast-info`, { method: 'GET' });
       if (data?.info) {
         setBroadcastInfo(normalizeBroadcastInfo(data.info));
-        } else {
+        console.log('✅ تم تحديث معلومات البث');
+      } else {
         console.warn('⚠️ لم يتم استلام معلومات غرفة البث صحيحة من الخادم');
         setBroadcastInfo({ hostId: null, speakers: [], micQueue: [] });
       }
@@ -70,14 +82,19 @@ export default function BroadcastRoomInterface({
       console.error('❌ خطأ في جلب معلومات غرفة البث:', error);
       // fallback آمن بدون قيم افتراضية خاطئة
       setBroadcastInfo({ hostId: null, speakers: [], micQueue: [] });
-      // للأخطاء الأخرى، عرض toast تحذيري
-      toast({
-        title: 'تحذير',
-        description: 'تعذر جلب آخر تحديثات غرفة البث. سيتم استخدام البيانات المحفوظة.',
-        variant: 'default'
-      });
+      
+      // عرض toast تحذيري فقط للأخطاء المهمة
+      if (error.status !== 404) {
+        toast({
+          title: 'تحذير',
+          description: 'تعذر جلب آخر تحديثات غرفة البث. سيتم استخدام البيانات المحفوظة.',
+          variant: 'default'
+        });
+      }
+    } finally {
+      delete (fetchBroadcastInfo as any).loading;
     }
-  };
+  }, [room?.id, toast]);
 
   useEffect(() => {
     if (room.isBroadcast) {
@@ -90,9 +107,7 @@ export default function BroadcastRoomInterface({
     const updateBroadcastInfo = (data: any) => {
       if (data.broadcastInfo) {
         setBroadcastInfo(normalizeBroadcastInfo(data.broadcastInfo));
-      } else {
-        fetchBroadcastInfo();
-      }
+      // 🗑️ حذف fetchBroadcastInfo المكرر - سيتم التحديث تلقائياً
     };
 
     const showToast = (title: string, description: string, variant?: 'default' | 'destructive') => {

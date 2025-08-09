@@ -24,6 +24,7 @@ interface RoomStats {
   lastUpdate: Date;
 }
 
+// 🚀 إدارة موحدة للغرف مع منع التكرار والتحسين الشامل
 export function useRoomManager(options: UseRoomManagerOptions = {}) {
   const {
     autoRefresh = false,
@@ -38,13 +39,14 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  // الذاكرة المؤقتة والمراجع
+  // الذاكرة المؤقتة والمراجع لمنع التكرار
   const cacheRef = useRef<RoomCache | null>(null);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const fetchingRef = useRef<boolean>(false); // منع الطلبات المتعددة
+  const fetchingRef = useRef<boolean>(false); // 🔒 منع الطلبات المتعددة
+  const lastFetchTimeRef = useRef<number>(0); // تتبع وقت آخر طلب
 
-  // تنظيف الذاكرة عند إلغاء التحميل
+  // 🧹 تنظيف الذاكرة عند إلغاء التحميل
   useEffect(() => {
     return () => {
       if (refreshTimeoutRef.current) {
@@ -56,7 +58,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     };
   }, []);
 
-  // إحصائيات الغرف المحسوبة
+  // 📊 إحصائيات الغرف المحسوبة
   const roomStats = useMemo((): RoomStats => {
     const totalRooms = rooms.length;
     const activeRooms = rooms.filter(room => (room.userCount || 0) > 0).length;
@@ -72,35 +74,45 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     };
   }, [rooms, lastUpdate]);
 
-  // التحقق من صحة الذاكرة المؤقتة
+  // ✅ التحقق من صحة الذاكرة المؤقتة
   const isCacheValid = useCallback(() => {
     if (!cacheRef.current) return false;
     const now = Date.now();
     return (now - cacheRef.current.timestamp) < cacheTimeout;
   }, [cacheTimeout]);
 
-  // جلب الغرف من API مع منع التكرار
+  // 🚀 جلب الغرف من API مع منع التكرار الكامل
   const fetchRooms = useCallback(async (force: boolean = false): Promise<ChatRoom[]> => {
-    // منع الطلبات المتعددة المتزامنة
+    const now = Date.now();
+    
+    // 🚫 منع الطلبات المتكررة (أقل من ثانية واحدة)
+    if (!force && (now - lastFetchTimeRef.current) < 1000) {
+      console.log('⚠️ منع طلب متكرر - استخدام البيانات الحالية');
+      return rooms;
+    }
+
+    // 🚫 منع الطلبات المتعددة المتزامنة
     if (fetchingRef.current && !force) {
       console.log('⚠️ طلب جلب الغرف قيد التنفيذ بالفعل');
       return rooms;
     }
 
-    // استخدام الذاكرة المؤقتة إذا كانت صالحة وليس إجبارياً
+    // 💾 استخدام الذاكرة المؤقتة إذا كانت صالحة وليس إجبارياً
     if (!force && isCacheValid() && cacheRef.current) {
       console.log('✅ استخدام الذاكرة المؤقتة للغرف');
+      setRooms(cacheRef.current.data);
       return cacheRef.current.data;
     }
 
-    // إلغاء الطلب السابق إذا كان قيد التنفيذ
+    // 🔄 إلغاء الطلب السابق إذا كان قيد التنفيذ
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
 
-    // إنشاء controller جديد
+    // 🆕 إنشاء controller جديد
     abortControllerRef.current = new AbortController();
     fetchingRef.current = true;
+    lastFetchTimeRef.current = now;
 
     try {
       setLoading(true);
@@ -116,19 +128,20 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
         throw new Error('استجابة غير صالحة من الخادم');
       }
 
-      // استخدام أدوات المساعدة: تحويل + إزالة التكرار + ترتيب
+      // 🔧 استخدام أدوات المساعدة: تحويل + إزالة التكرار + ترتيب
       const mappedRooms: ChatRoom[] = mapApiRooms(response.rooms);
+      const uniqueRooms = dedupeRooms(mappedRooms);
 
-      // تحديث الذاكرة المؤقتة
+      // 💾 تحديث الذاكرة المؤقتة
       cacheRef.current = {
-        data: mappedRooms,
+        data: uniqueRooms,
         timestamp: Date.now(),
         version: (cacheRef.current?.version || 0) + 1
       };
 
-      // تحديد حجم الذاكرة المؤقتة
-      if (mappedRooms.length > maxCachedRooms) {
-        cacheRef.current.data = mappedRooms.slice(0, maxCachedRooms);
+      // 📏 تحديد حجم الذاكرة المؤقتة
+      if (uniqueRooms.length > maxCachedRooms) {
+        cacheRef.current.data = uniqueRooms.slice(0, maxCachedRooms);
         console.warn(`⚠️ تم تحديد الغرف المحفوظة إلى ${maxCachedRooms} غرفة`);
       }
 
@@ -149,7 +162,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       const errorMessage = err.message || 'خطأ في جلب الغرف';
       setError(errorMessage);
 
-      // استخدام الذاكرة المؤقتة في حالة الخطأ إذا كانت متوفرة
+      // 💾 استخدام الذاكرة المؤقتة في حالة الخطأ إذا كانت متوفرة
       if (cacheRef.current) {
         console.log('⚠️ استخدام الذاكرة المؤقتة بسبب الخطأ');
         setRooms(cacheRef.current.data);
@@ -164,7 +177,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     }
   }, [isCacheValid, maxCachedRooms, rooms]);
 
-  // إضافة غرفة جديدة
+  // ➕ إضافة غرفة جديدة مع التحسينات
   const addRoom = useCallback(async (roomData: {
     name: string;
     description: string;
@@ -200,15 +213,19 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       const data = await response.json();
       const newRoom: ChatRoom = mapApiRoom(data.room);
 
-      // تحديث الحالة المحلية مع إزالة التكرار
-      setRooms(prev => dedupeRooms([newRoom, ...prev]));
-
-      // تحديث الذاكرة المؤقتة
-      if (cacheRef.current) {
-        cacheRef.current.data = dedupeRooms([newRoom, ...cacheRef.current.data]);
-        cacheRef.current.timestamp = Date.now();
-        cacheRef.current.version += 1;
-      }
+      // 🔄 تحديث الحالة المحلية مع إزالة التكرار
+      setRooms(prev => {
+        const updatedRooms = dedupeRooms([newRoom, ...prev]);
+        
+        // تحديث الذاكرة المؤقتة
+        if (cacheRef.current) {
+          cacheRef.current.data = updatedRooms;
+          cacheRef.current.timestamp = Date.now();
+          cacheRef.current.version += 1;
+        }
+        
+        return updatedRooms;
+      });
 
       setLastUpdate(new Date());
       return newRoom;
@@ -222,7 +239,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     }
   }, []);
 
-  // حذف غرفة
+  // ❌ حذف غرفة مع التحسينات
   const deleteRoom = useCallback(async (roomId: string, userId: number): Promise<boolean> => {
     try {
       setLoading(true);
@@ -237,15 +254,19 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
         throw new Error('فشل في حذف الغرفة');
       }
 
-      // تحديث الحالة المحلية
-      setRooms(prev => prev.filter(room => room.id !== roomId));
-
-      // تحديث الذاكرة المؤقتة
-      if (cacheRef.current) {
-        cacheRef.current.data = cacheRef.current.data.filter(room => room.id !== roomId);
-        cacheRef.current.timestamp = Date.now();
-        cacheRef.current.version += 1;
-      }
+      // 🔄 تحديث الحالة المحلية
+      setRooms(prev => {
+        const updatedRooms = prev.filter(room => room.id !== roomId);
+        
+        // تحديث الذاكرة المؤقتة
+        if (cacheRef.current) {
+          cacheRef.current.data = updatedRooms;
+          cacheRef.current.timestamp = Date.now();
+          cacheRef.current.version += 1;
+        }
+        
+        return updatedRooms;
+      });
 
       setLastUpdate(new Date());
       return true;
@@ -259,25 +280,26 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     }
   }, []);
 
-  // تحديث عدد المستخدمين في غرفة
+  // 🔢 تحديث عدد المستخدمين في غرفة
   const updateRoomUserCount = useCallback((roomId: string, userCount: number) => {
-    setRooms(prev => prev.map(room => 
-      room.id === roomId 
-        ? { ...room, userCount: Math.max(0, userCount) }
-        : room
-    ));
-
-    // تحديث الذاكرة المؤقتة
-    if (cacheRef.current) {
-      cacheRef.current.data = cacheRef.current.data.map(room => 
+    setRooms(prev => {
+      const updatedRooms = prev.map(room => 
         room.id === roomId 
           ? { ...room, userCount: Math.max(0, userCount) }
           : room
       );
-    }
+
+      // تحديث الذاكرة المؤقتة
+      if (cacheRef.current) {
+        cacheRef.current.data = updatedRooms;
+        cacheRef.current.timestamp = Date.now();
+      }
+
+      return updatedRooms;
+    });
   }, []);
 
-  // البحث في الغرف
+  // 🔍 البحث في الغرف
   const searchRooms = useCallback((query: string): ChatRoom[] => {
     if (!query.trim()) return rooms;
 
@@ -288,7 +310,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     );
   }, [rooms]);
 
-  // فلترة الغرف
+  // 🎛️ فلترة الغرف
   const filterRooms = useCallback((filters: {
     showBroadcast?: boolean;
     showEmpty?: boolean;
@@ -308,7 +330,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     });
   }, [rooms]);
 
-  // تحديث تلقائي
+  // 🔄 تحديث تلقائي محسن
   useEffect(() => {
     if (!autoRefresh || refreshInterval <= 0) return;
 
@@ -318,9 +340,14 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       }
 
       refreshTimeoutRef.current = setTimeout(() => {
-        fetchRooms(false).then(() => {
-          scheduleRefresh(); // جدولة التحديث التالي
-        });
+        // تحديث فقط إذا لم يكن هناك طلب قيد التنفيذ
+        if (!fetchingRef.current) {
+          fetchRooms(false).then(() => {
+            scheduleRefresh(); // جدولة التحديث التالي
+          });
+        } else {
+          scheduleRefresh(); // إعادة المحاولة لاحقاً
+        }
       }, refreshInterval);
     };
 
@@ -333,12 +360,13 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     };
   }, [autoRefresh, refreshInterval, fetchRooms]);
 
-  // مسح الذاكرة المؤقتة
+  // 🧹 مسح الذاكرة المؤقتة
   const clearCache = useCallback(() => {
     cacheRef.current = null;
-    }, []);
+    lastFetchTimeRef.current = 0;
+  }, []);
 
-  // الحصول على إحصائيات الذاكرة المؤقتة
+  // 📊 الحصول على إحصائيات الذاكرة المؤقتة
   const getCacheStats = useCallback(() => {
     if (!cacheRef.current) {
       return {
@@ -358,20 +386,23 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     };
   }, [isCacheValid]);
 
-  // التحديث الأولي
+  // 🚀 التحديث الأولي المحسن
   useEffect(() => {
-    fetchRooms(false);
-  }, [fetchRooms]);
+    // تحميل فقط إذا لم تكن هناك غرف محملة
+    if (rooms.length === 0) {
+      fetchRooms(false);
+    }
+  }, []); // التشغيل مرة واحدة فقط
 
   return {
-    // البيانات
+    // 📊 البيانات
     rooms,
     loading,
     error,
     lastUpdate,
     roomStats,
 
-    // الوظائف
+    // 🔧 الوظائف الأساسية
     fetchRooms,
     addRoom,
     deleteRoom,
@@ -381,9 +412,12 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     clearCache,
     getCacheStats,
 
-    // الحالات المحسوبة
+    // 📈 الحالات المحسوبة
     hasRooms: rooms.length > 0,
     isEmpty: rooms.length === 0 && !loading,
-    isRefreshing: loading && rooms.length > 0
+    isRefreshing: loading && rooms.length > 0,
+    
+    // 🚫 منع التكرار
+    isFetching: fetchingRef.current
   };
 }

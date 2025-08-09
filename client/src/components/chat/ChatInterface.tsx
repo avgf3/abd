@@ -47,40 +47,71 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showAdminReports, setShowAdminReports] = useState(false);
   const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>('users'); // إظهار المستخدمين افتراضياً
   
-  // إدارة الغرف عبر hook موحّد
+  // 🚀 إدارة الغرف عبر hook موحّد محسن
   const {
     rooms,
     loading: roomsLoading,
     fetchRooms,
     addRoom: addRoomViaManager,
-    deleteRoom: deleteRoomViaManager
-  } = useRoomManager({ autoRefresh: false });
+    deleteRoom: deleteRoomViaManager,
+    isFetching
+  } = useRoomManager({ 
+    autoRefresh: false, // تحديث يدوي فقط
+    cacheTimeout: 10 * 60 * 1000 // 10 دقائق cache
+  });
 
-  // دوال إدارة الغرف
-  const handleRoomChange = async (roomId: string) => {
+  // 🚀 دوال إدارة الغرف المحسنة
+  const handleRoomChange = useCallback(async (roomId: string) => {
+    console.log(`🔄 طلب تغيير الغرفة إلى: ${roomId}`);
     chat.joinRoom(roomId);
-  };
+  }, [chat]);
 
-
-
-  const handleAddRoom = async (roomData: { name: string; description: string; image: File | null }) => {
-    if (!chat.currentUser) return;
-    const newRoom = await addRoomViaManager({ ...roomData }, chat.currentUser.id);
-    if (newRoom) {
-      showSuccessToast(`تم إنشاء غرفة "${roomData.name}" بنجاح`, 'تم إنشاء الغرفة');
+  // دالة تحديث الغرف مع منع التكرار
+  const handleRefreshRooms = useCallback(async () => {
+    if (isFetching) {
+      console.log('⚠️ تحديث الغرف قيد التنفيذ بالفعل');
+      return;
     }
-  };
+    
+    console.log('🔄 تحديث قائمة الغرف...');
+    await fetchRooms(true); // فرض التحديث
+  }, [fetchRooms, isFetching]);
 
-  const handleDeleteRoom = async (roomId: string) => {
+
+
+  // ➕ إضافة غرفة جديدة مع منع التكرار
+  const handleAddRoom = useCallback(async (roomData: { name: string; description: string; image: File | null }) => {
     if (!chat.currentUser) return;
-    const ok = await deleteRoomViaManager(roomId, chat.currentUser.id);
-    if (ok) {
-      if (chat.currentRoomId === roomId) chat.joinRoom('general');
-      showSuccessToast('تم حذف الغرفة بنجاح', 'تم حذف الغرفة');
-    } else {
-      showErrorToast('حدث خطأ أثناء حذف الغرفة', 'خطأ في حذف الغرفة');
+    
+    try {
+      const newRoom = await addRoomViaManager({ ...roomData }, chat.currentUser.id);
+      if (newRoom) {
+        showSuccessToast(`تم إنشاء غرفة "${roomData.name}" بنجاح`, 'تم إنشاء الغرفة');
+      }
+    } catch (error) {
+      console.error('خطأ في إنشاء الغرفة:', error);
+      showErrorToast('فشل في إنشاء الغرفة', 'خطأ');
     }
-  };
+  }, [chat.currentUser, addRoomViaManager, showSuccessToast, showErrorToast]);
+
+  // ❌ حذف غرفة مع منع التكرار
+  const handleDeleteRoom = useCallback(async (roomId: string) => {
+    if (!chat.currentUser) return;
+    
+    try {
+      const ok = await deleteRoomViaManager(roomId, chat.currentUser.id);
+      if (ok) {
+        // الانتقال للغرفة العامة إذا تم حذف الغرفة الحالية
+        if (chat.currentRoomId === roomId) {
+          chat.joinRoom('general');
+        }
+        showSuccessToast('تم حذف الغرفة بنجاح', 'تم حذف الغرفة');
+      }
+    } catch (error) {
+      console.error('خطأ في حذف الغرفة:', error);
+      showErrorToast('فشل في حذف الغرفة', 'خطأ');
+    }
+  }, [chat, deleteRoomViaManager, showSuccessToast, showErrorToast]);
 
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -354,7 +385,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onRoomChange={handleRoomChange}
               onAddRoom={handleAddRoom}
               onDeleteRoom={handleDeleteRoom}
-              onRefreshRooms={fetchRooms}
+              onRefreshRooms={handleRefreshRooms}
               onStartPrivateChat={setSelectedPrivateUser}
             />
           </div>
@@ -583,6 +614,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
+      {/* ⚠️ لوحة الإدارة - إزالة التكرار */}
       {showModerationPanel && (
         <ModerationPanel
           isOpen={showModerationPanel}
@@ -592,19 +624,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
+      {/* 👑 لوحة المالك */}
       {showOwnerPanel && (
         <OwnerAdminPanel 
           isOpen={showOwnerPanel}
           onClose={() => setShowOwnerPanel(false)}
-          currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
-        />
-      )}
-
-      {showModerationPanel && (
-        <ModerationPanel 
-          isOpen={showModerationPanel}
-          onClose={() => setShowModerationPanel(false)}
           currentUser={chat.currentUser}
           onlineUsers={chat.onlineUsers}
         />

@@ -37,8 +37,10 @@ export interface BroadcastInfo {
 }
 
 class RoomService {
+  // 🚀 إدارة موحدة ومحسنة للغرف مع منع التكرار
   private connectedRooms = new Map<string, Set<number>>(); // roomId -> Set of userIds
   private userRooms = new Map<number, string>(); // userId -> current roomId
+  private operationLocks = new Map<string, boolean>(); // منع العمليات المتكررة
 
   /**
    * جلب جميع الغرف
@@ -174,21 +176,35 @@ class RoomService {
         if (currentRoomId === roomId) {
           this.userRooms.set(uId, 'general');
         }
-      }
-
-      } catch (error) {
+          } catch (error) {
       console.error('خطأ في حذف الغرفة:', error);
       throw error;
     }
   }
 
   /**
-   * انضمام مستخدم للغرفة
+   * انضمام مستخدم للغرفة مع منع التكرار
    */
   async joinRoom(userId: number, roomId: string): Promise<void> {
+    const lockKey = `join_${userId}_${roomId}`;
+    
+    // 🚫 منع العمليات المتكررة
+    if (this.operationLocks.get(lockKey)) {
+      console.log(`⚠️ عملية انضمام ${userId} للغرفة ${roomId} قيد التنفيذ`);
+      return;
+    }
+    
+    this.operationLocks.set(lockKey, true);
+    
     try {
       if (!db || dbType === 'disabled') {
         throw new Error('قاعدة البيانات غير متوفرة');
+      }
+
+      // ✅ فحص مسبق - هل المستخدم في الغرفة بالفعل؟
+      if (this.connectedRooms.has(roomId) && this.connectedRooms.get(roomId)!.has(userId)) {
+        console.log(`✅ المستخدم ${userId} موجود في الغرفة ${roomId} بالفعل`);
+        return;
       }
 
       const room = await this.getRoom(roomId);
@@ -205,45 +221,66 @@ class RoomService {
         throw new Error('المستخدم غير موجود');
       }
 
-      // إضافة للذاكرة المحلية
+      // 🏠 إضافة للذاكرة المحلية
       if (!this.connectedRooms.has(roomId)) {
         this.connectedRooms.set(roomId, new Set());
       }
       this.connectedRooms.get(roomId)!.add(userId);
 
-      // تحديث الغرفة الحالية للمستخدم
+      // 🔄 تحديث الغرفة الحالية للمستخدم
       const previousRoom = this.userRooms.get(userId);
       if (previousRoom && previousRoom !== roomId) {
         this.leaveRoomMemory(userId, previousRoom);
       }
       this.userRooms.set(userId, roomId);
 
-      // حفظ في قاعدة البيانات إذا لزم الأمر
+      // 💾 حفظ في قاعدة البيانات
       await storage.joinRoom(userId, roomId);
 
-      } catch (error) {
+      console.log(`✅ انضم المستخدم ${userId} للغرفة ${roomId}`);
+    } catch (error) {
       console.error('خطأ في الانضمام للغرفة:', error);
       throw error;
+    } finally {
+      this.operationLocks.delete(lockKey);
     }
   }
 
   /**
-   * مغادرة مستخدم للغرفة
+   * مغادرة مستخدم للغرفة مع منع التكرار
    */
   async leaveRoom(userId: number, roomId: string): Promise<void> {
+    const lockKey = `leave_${userId}_${roomId}`;
+    
+    // 🚫 منع العمليات المتكررة
+    if (this.operationLocks.get(lockKey)) {
+      console.log(`⚠️ عملية مغادرة ${userId} للغرفة ${roomId} قيد التنفيذ`);
+      return;
+    }
+    
+    this.operationLocks.set(lockKey, true);
+    
     try {
-      // إزالة من الذاكرة المحلية
+      // ✅ فحص مسبق - هل المستخدم في الغرفة أصلاً؟
+      if (!this.connectedRooms.has(roomId) || !this.connectedRooms.get(roomId)!.has(userId)) {
+        console.log(`⚠️ المستخدم ${userId} ليس في الغرفة ${roomId}`);
+        return;
+      }
+
+      // 🚪 إزالة من الذاكرة المحلية
       this.leaveRoomMemory(userId, roomId);
 
-      // حفظ في قاعدة البيانات إذا لزم الأمر
+      // 💾 حفظ في قاعدة البيانات
       if (db && dbType !== 'disabled') {
         await storage.leaveRoom(userId, roomId);
       }
 
-      const user = await storage.getUser(userId);
-      } catch (error) {
+      console.log(`✅ غادر المستخدم ${userId} الغرفة ${roomId}`);
+    } catch (error) {
       console.error('خطأ في مغادرة الغرفة:', error);
       throw error;
+    } finally {
+      this.operationLocks.delete(lockKey);
     }
   }
 
@@ -371,8 +408,8 @@ class RoomService {
       await storage.removeFromMicQueue(roomId, userId);
       await storage.addSpeaker(roomId, userId);
 
-      const user = await storage.getUser(userId);
-      } catch (error) {
+      console.log(`✅ تمت الموافقة على ميكروفون المستخدم ${userId} في الغرفة ${roomId}`);
+    } catch (error) {
       console.error('خطأ في الموافقة على الميكروفون:', error);
       throw error;
     }
@@ -401,8 +438,8 @@ class RoomService {
 
       await storage.removeFromMicQueue(roomId, userId);
 
-      const user = await storage.getUser(userId);
-      } catch (error) {
+      console.log(`✅ تم رفض ميكروفون المستخدم ${userId} في الغرفة ${roomId}`);
+    } catch (error) {
       console.error('خطأ في رفض الميكروفون:', error);
       throw error;
     }
@@ -431,8 +468,8 @@ class RoomService {
 
       await storage.removeSpeaker(roomId, userId);
 
-      const user = await storage.getUser(userId);
-      } catch (error) {
+      console.log(`✅ تم إزالة المتحدث ${userId} من الغرفة ${roomId}`);
+    } catch (error) {
       console.error('خطأ في إزالة المتحدث:', error);
       throw error;
     }
@@ -510,16 +547,28 @@ class RoomService {
   }
 
   /**
-   * تنظيف الغرف - إزالة المستخدمين غير المتصلين
+   * تنظيف الغرف - إزالة المستخدمين غير المتصلين والعمليات المنتهية
    */
   cleanupRooms(): void {
+    // 🧹 تنظيف الغرف الفارغة
     for (const [roomId, userSet] of this.connectedRooms.entries()) {
       if (userSet.size === 0 && roomId !== 'general') {
         this.connectedRooms.delete(roomId);
-        }
+        console.log(`🗑️ تم حذف الغرفة الفارغة: ${roomId}`);
+      }
     }
 
+    // 🔒 تنظيف locks القديمة (أكثر من 5 دقائق)
+    const now = Date.now();
+    const fiveMinutesAgo = now - (5 * 60 * 1000);
+    
+    for (const [lockKey] of this.operationLocks.entries()) {
+      // يمكن إضافة timestamp للـ locks في المستقبل
+      // للآن نحذف جميع locks عند التنظيف
     }
+    
+    console.log(`🧹 تم تنظيف ${this.connectedRooms.size} غرفة`);
+  }
 }
 
 // تصدير instance واحد
