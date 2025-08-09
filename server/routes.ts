@@ -4843,5 +4843,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint: جلب إعدادات المستويات
+  app.get('/api/level-settings', async (req, res) => {
+    try {
+      const { levelSettings: pgLevelSettings } = await import('../shared/schema');
+      const sqliteSchema = await import('../shared/sqlite-schema');
+      const { db, dbType } = await import('./database-adapter');
+      const { DEFAULT_LEVELS } = await import('../shared/points-system');
+
+      let levels: any[] = [];
+      if (db && dbType === 'postgresql') {
+        try {
+          // @ts-ignore drizzle typed
+          levels = await (db as any).select().from(pgLevelSettings);
+        } catch {}
+      } else if (db && dbType === 'sqlite') {
+        try {
+          // @ts-ignore drizzle typed
+          levels = await (db as any).select().from(sqliteSchema.levelSettings);
+        } catch {}
+      }
+
+      if (!levels || levels.length === 0) {
+        // fallback إلى الإعدادات الثابتة
+        levels = DEFAULT_LEVELS.map(l => ({
+          level: l.level,
+          requiredPoints: l.requiredPoints,
+          title: l.title,
+          color: l.color,
+          badge: null,
+        }));
+      }
+
+      return res.json({ levels });
+    } catch (error) {
+      res.status(500).json({ error: 'فشل في جلب إعدادات المستويات' });
+    }
+  });
+
   return httpServer;
 }

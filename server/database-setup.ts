@@ -164,16 +164,16 @@ export async function createDefaultLevelSettings(): Promise<void> {
     if (!db) return;
 
     const levelData = [
-      { level: 1, requiredPoints: 0, title: 'مبتدئ', color: '#CCCCCC', badge: '🆕' },
-      { level: 2, requiredPoints: 100, title: 'نشيط', color: '#4A90E2', badge: '⭐' },
-      { level: 3, requiredPoints: 300, title: 'متقدم', color: '#7ED321', badge: '🌟' },
-      { level: 4, requiredPoints: 600, title: 'خبير', color: '#F5A623', badge: '💎' },
-      { level: 5, requiredPoints: 1000, title: 'محترف', color: '#D0021B', badge: '🏆' },
-      { level: 6, requiredPoints: 1500, title: 'ماهر', color: '#9013FE', badge: '👑' },
-      { level: 7, requiredPoints: 2500, title: 'أسطوري', color: '#FF6F00', badge: '🔥' },
-      { level: 8, requiredPoints: 5000, title: 'بطل', color: '#00BCD4', badge: '⚡' },
-      { level: 9, requiredPoints: 10000, title: 'أسطورة', color: '#E91E63', badge: '🚀' },
-      { level: 10, requiredPoints: 25000, title: 'إله', color: '#FFD700', badge: '✨' },
+      { level: 1, requiredPoints: 0, title: 'مبتدئ', color: '#8B4513', badge: '🆕', benefits: { dailyBonus: 10 } },
+      { level: 2, requiredPoints: 50, title: 'عضو نشط', color: '#CD853F', badge: '⭐', benefits: { dailyBonus: 12 } },
+      { level: 3, requiredPoints: 150, title: 'عضو متميز', color: '#DAA520', badge: '🌟', benefits: { dailyBonus: 14 } },
+      { level: 4, requiredPoints: 300, title: 'عضو خبير', color: '#FFD700', badge: '💎', benefits: { dailyBonus: 16 } },
+      { level: 5, requiredPoints: 500, title: 'عضو محترف', color: '#FF8C00', badge: '🏆', benefits: { dailyBonus: 18 } },
+      { level: 6, requiredPoints: 750, title: 'خبير متقدم', color: '#FF6347', badge: '👑', benefits: { dailyBonus: 20 } },
+      { level: 7, requiredPoints: 1000, title: 'خبير النخبة', color: '#DC143C', badge: '🔥', benefits: { dailyBonus: 22 } },
+      { level: 8, requiredPoints: 1500, title: 'أسطورة', color: '#8A2BE2', badge: '⚡', benefits: { dailyBonus: 24 } },
+      { level: 9, requiredPoints: 2000, title: 'أسطورة النخبة', color: '#4B0082', badge: '🚀', benefits: { dailyBonus: 26 } },
+      { level: 10, requiredPoints: 3000, title: 'إمبراطور', color: '#000080', badge: '✨', benefits: { dailyBonus: 28 } },
     ];
 
     for (const levelSetting of levelData) {
@@ -197,7 +197,7 @@ export async function createDefaultLevelSettings(): Promise<void> {
       }
     }
 
-    } catch (error) {
+  } catch (error) {
     console.error('❌ خطأ في إنشاء إعدادات المستويات:', error);
   }
 }
