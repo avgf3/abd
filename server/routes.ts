@@ -98,6 +98,25 @@ function broadcast(message: any) {
   }
 }
 
+// الدالة الموحدة الوحيدة لإرسال قائمة المستخدمين المتصلين
+function sendRoomUsers(roomId: string) {
+  const roomUsers = Array.from(connectedUsers.values())
+    .filter(conn => conn.room === roomId && 
+                   conn.user && 
+                   conn.user.id && 
+                   conn.user.username && 
+                   conn.user.userType)
+    .map(conn => conn.user);
+    
+  io.to(`room_${roomId}`).emit('message', {
+    type: 'onlineUsers',
+    users: roomUsers,
+    roomId: roomId
+  });
+  
+  console.log(`✅ تم إرسال قائمة ${roomUsers.length} مستخدم للغرفة ${roomId}`);
+}
+
 // إنشاء خدمات محسنة ومنظمة
 const authService = new (class AuthService {
   async login(username: string, password: string) {
@@ -1510,33 +1529,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // انتظار قصير للتأكد من تحديث قاعدة البيانات
         await new Promise(resolve => setTimeout(resolve, 200));
         
-        // جلب قائمة المستخدمين المتصلين فعلياً في هذه الغرفة
+        // جلب قائمة المستخدمين المتصلين فعلياً في هذه الغرفة من الذاكرة فقط
         const roomUsers = Array.from(connectedUsers.values())
           .filter(conn => conn.room === currentRoom)
           .map(conn => conn.user);
-        
-        // جلب المستخدمين من قاعدة البيانات أيضاً
-        const dbUsers = await storage.getOnlineUsersInRoom(currentRoom);
-        
-        // دمج القوائم وإزالة التكرارات
-        const allUsers = [...roomUsers];
-        for (const dbUser of dbUsers) {
-          if (!allUsers.find(u => u.id === dbUser.id)) {
-            allUsers.push(dbUser);
-          }
-        }
         
         // إرسال تأكيد الانضمام مع قائمة المستخدمين
         socket.emit('message', {
           type: 'roomJoined',
           roomId: currentRoom,
-          users: allUsers
+          users: roomUsers
         });
         
         // إرسال قائمة المستخدمين في الغرفة للمستخدم الجديد
         socket.emit('message', { 
           type: 'onlineUsers', 
-          users: allUsers 
+          users: Array.from(connectedUsers.values())
+            .filter(conn => conn.room === currentRoom)
+            .map(conn => conn.user)
         });
 
         // إخبار باقي المستخدمين في الغرفة بانضمام مستخدم جديد
@@ -1548,10 +1558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         // إرسال قائمة محدثة لجميع المستخدمين في الغرفة
-        io.to(`room_${currentRoom}`).emit('message', {
-          type: 'onlineUsers',
-          users: allUsers
-        });
+        sendRoomUsers(currentRoom);
 
         // إرسال رسالة ترحيب في الغرفة
         const welcomeMessage = {
@@ -1628,7 +1635,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })
           .map(conn => conn.user);
         
-        // إرسال للمستخدم الطالب فقط (وليس broadcast للكل)
         socket.emit('message', { 
           type: 'onlineUsers', 
           users: roomUsers 
@@ -2186,22 +2192,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
           // إرسال قائمة محدثة للغرفة السابقة
-          const previousRoomUsers = Array.from(connectedUsers.values())
-            .filter(conn => conn.room === previousRoom)
-            .map(conn => conn.user);
           
-          const previousDbUsers = await storage.getOnlineUsersInRoom(previousRoom);
-          const allPreviousUsers = [...previousRoomUsers];
-          for (const dbUser of previousDbUsers) {
-            if (!allPreviousUsers.find(u => u.id === dbUser.id) && dbUser.id !== userId) {
-              allPreviousUsers.push(dbUser);
-            }
-          }
-          
-          io.to(`room_${previousRoom}`).emit('message', {
-            type: 'onlineUsers',
-            users: allPreviousUsers
-          });
+          sendRoomUsers(previousRoom);
         }
         
         // الانضمام للغرفة الجديدة في Socket.IO
@@ -2224,24 +2216,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // انتظار قصير للتأكد من التحديث
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        // جلب قائمة المستخدمين المتصلين في الغرفة الجديدة
+        // جلب قائمة المستخدمين المتصلين في الغرفة الجديدة من الذاكرة فقط
         const roomUsers = Array.from(connectedUsers.values())
           .filter(conn => conn.room === roomId)
           .map(conn => conn.user);
-        
-        const dbUsers = await storage.getOnlineUsersInRoom(roomId);
-        const allUsers = [...roomUsers];
-        for (const dbUser of dbUsers) {
-          if (!allUsers.find(u => u.id === dbUser.id)) {
-            allUsers.push(dbUser);
-          }
-        }
         
         // إرسال تأكيد الانضمام مع قائمة المستخدمين
         socket.emit('message', {
           type: 'roomJoined',
           roomId: roomId,
-          users: allUsers
+          users: roomUsers
         });
         
         // إشعار باقي المستخدمين في الغرفة
@@ -2253,10 +2237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         // إرسال قائمة محدثة للمستخدمين في الغرفة
-        io.to(`room_${roomId}`).emit('message', {
-          type: 'onlineUsers',
-          users: allUsers
-        });
+        sendRoomUsers(roomId);
         
         // إرسال رسالة ترحيب في الغرفة
         const welcomeMessage = {
@@ -2331,8 +2312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           (socket as any).currentRoom = null;
         }
         
-        // جلب قائمة المستخدمين المحدثة في الغرفة
-        const updatedRoomUsers = await storage.getOnlineUsersInRoom(roomId);
+        // لا حاجة لجلب من قاعدة البيانات - sendRoomUsers ستتولى الأمر
         
         // إرسال تأكيد المغادرة
         socket.emit('message', {
@@ -2348,10 +2328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         // إرسال قائمة محدثة للمستخدمين المتبقين في الغرفة
-        io.to(`room_${roomId}`).emit('message', {
-          type: 'onlineUsers',
-          users: updatedRoomUsers
-        });
+        sendRoomUsers(roomId);
         
       } catch (error) {
         console.error('خطأ في مغادرة الغرفة:', error);
@@ -2394,6 +2371,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             roomId: currentRoom,
             timestamp: new Date().toISOString()
           });
+          
+          // 6. إرسال قائمة محدثة فوراً بعد الانقطاع
+          setTimeout(() => {
+            sendRoomUsers(currentRoom);
+          }, 50);
           
           // إشعار المستخدمين في الغرفة الحالية بخروج المستخدم
           if (currentRoom) {
@@ -2458,15 +2440,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   .map(conn => conn.user);
                 
                 // إرسال القائمة المحدثة لجميع المستخدمين في الغرفة
-                io.to(`room_${currentRoom}`).emit('message', { 
-                  type: 'onlineUsers', 
-                  users: activeUsers,
-                  roomId: currentRoom,
-                  source: 'disconnect_cleanup',
-                  timestamp: new Date().toISOString()
-                });
+                sendRoomUsers(currentRoom);
                 
-                console.log(`✅ تم تحديث قائمة المتصلين: ${activeUsers.length} مستخدم في الغرفة ${currentRoom}`);
+                console.log(`✅ تم تحديث قائمة المتصلين في الغرفة ${currentRoom}`);
               } catch (updateError) {
                 console.error('❌ خطأ في تحديث قائمة المتصلين:', updateError);
               }
@@ -2548,16 +2524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إرسال قائمة محدثة لجميع الغرف
         const rooms = ['general']; // يمكن إضافة غرف أخرى
         for (const roomId of rooms) {
-          const roomUsers = Array.from(connectedUsers.values())
-            .filter(conn => conn.room === roomId)
-            .map(conn => conn.user);
-          
-          io.to(`room_${roomId}`).emit('message', {
-            type: 'onlineUsers',
-            users: roomUsers,
-            roomId: roomId,
-            source: 'periodic_cleanup'
-          });
+          sendRoomUsers(roomId);
         }
       }
       
