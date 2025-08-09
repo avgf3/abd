@@ -123,8 +123,7 @@ export default function FriendsTabPanel({
     try {
       await apiRequest(`/api/friend-requests/${requestId}/accept`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser?.id })
+        body: { userId: currentUser?.id }
       });
       
       toast({
@@ -151,8 +150,7 @@ export default function FriendsTabPanel({
     try {
       await apiRequest(`/api/friend-requests/${requestId}/decline`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser?.id })
+        body: { userId: currentUser?.id }
       });
       
       toast({
