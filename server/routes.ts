@@ -3840,12 +3840,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
+      // إعادة حساب المستوى والتقدم بناءً على النقاط الإجمالية الحالية
+      const { calculateLevel, calculateLevelProgress } = await import('../shared/points-system');
+      const totalPoints = user.totalPoints || 0;
+      const correctLevel = calculateLevel(totalPoints);
+      const correctLevelProgress = calculateLevelProgress(totalPoints);
+
+      // تحديث البيانات إذا كانت غير صحيحة
+      if (user.level !== correctLevel || user.levelProgress !== correctLevelProgress) {
+        console.log(`🔄 تصحيح مستوى المستخدم ${user.username}: ${user.level} → ${correctLevel}`);
+        await storage.updateUserPoints(userId, {
+          level: correctLevel,
+          levelProgress: correctLevelProgress
+        });
+        
+        // تحديث البيانات المحلية
+        user.level = correctLevel;
+        user.levelProgress = correctLevelProgress;
+      }
+
       // إرجاع بيانات المستخدم بدون كلمة المرور
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
       
     } catch (error) {
       console.error('❌ خطأ في جلب بيانات المستخدم:', error);
+      res.status(500).json({ 
+        error: 'خطأ في الخادم',
+        details: error instanceof Error ? error.message : 'خطأ غير معروف'
+      });
+    }
+  });
+
+  // إصلاح مستوى مستخدم واحد
+  app.post('/api/users/:id/fix-level', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      if (!userId || isNaN(userId)) {
+        return res.status(400).json({ error: 'معرف المستخدم يجب أن يكون رقم صحيح' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      // إعادة حساب المستوى والتقدم
+      const { calculateLevel, calculateLevelProgress } = await import('../shared/points-system');
+      const totalPoints = user.totalPoints || 0;
+      const correctLevel = calculateLevel(totalPoints);
+      const correctLevelProgress = calculateLevelProgress(totalPoints);
+
+      // تحديث البيانات
+      await storage.updateUserPoints(userId, {
+        level: correctLevel,
+        levelProgress: correctLevelProgress
+      });
+
+      console.log(`🔧 تم إصلاح مستوى ${user.username}: ${user.level} → ${correctLevel} (${totalPoints} نقطة)`);
+
+      res.json({
+        success: true,
+        message: `تم إصلاح مستوى ${user.username}`,
+        oldLevel: user.level,
+        newLevel: correctLevel,
+        totalPoints,
+        levelProgress: correctLevelProgress
+      });
+      
+    } catch (error) {
+      console.error('❌ خطأ في إصلاح مستوى المستخدم:', error);
+      res.status(500).json({ 
+        error: 'خطأ في الخادم',
+        details: error instanceof Error ? error.message : 'خطأ غير معروف'
+      });
+    }
+  });
+
+  // إصلاح مستويات جميع المستخدمين (للمديرين فقط)
+  app.post('/api/admin/fix-all-levels', async (req, res) => {
+    try {
+      const { adminUserId } = req.body;
+      
+      if (!adminUserId) {
+        return res.status(400).json({ error: 'معرف المدير مطلوب' });
+      }
+      
+      // التحقق من صلاحيات المدير
+      const admin = await storage.getUser(adminUserId);
+      if (!admin || (admin.userType !== 'owner' && admin.userType !== 'admin')) {
+        return res.status(403).json({ error: 'غير مصرح لك بهذا الإجراء' });
+      }
+      
+      console.log('🔄 بدء إصلاح مستويات جميع المستخدمين...');
+      
+      // استيراد دوال حساب المستوى
+      const { calculateLevel, calculateLevelProgress } = await import('../shared/points-system');
+      
+      // جلب جميع المستخدمين
+      const allUsers = await storage.getAllUsers();
+      
+      let fixedCount = 0;
+      let totalCount = allUsers.length;
+      
+      console.log(`📊 وجدت ${totalCount} مستخدم للفحص...`);
+      
+      for (const user of allUsers) {
+        const totalPoints = user.totalPoints || 0;
+        const correctLevel = calculateLevel(totalPoints);
+        const correctLevelProgress = calculateLevelProgress(totalPoints);
+        
+        // التحقق إذا كان المستوى غير صحيح
+        if (user.level !== correctLevel || user.levelProgress !== correctLevelProgress) {
+          console.log(`🔧 إصلاح مستوى ${user.username}: المستوى ${user.level} → ${correctLevel} (${totalPoints} نقطة)`);
+          
+          await storage.updateUserPoints(user.id, {
+            level: correctLevel,
+            levelProgress: correctLevelProgress
+          });
+          
+          fixedCount++;
+        }
+      }
+      
+      console.log(`✅ تم إصلاح ${fixedCount} من أصل ${totalCount} مستخدم`);
+      
+      res.json({ 
+        success: true, 
+        message: `تم إصلاح ${fixedCount} من أصل ${totalCount} مستخدم`,
+        fixedCount,
+        totalCount 
+      });
+      
+    } catch (error) {
+      console.error('❌ خطأ في إصلاح المستويات:', error);
       res.status(500).json({ 
         error: 'خطأ في الخادم',
         details: error instanceof Error ? error.message : 'خطأ غير معروف'
