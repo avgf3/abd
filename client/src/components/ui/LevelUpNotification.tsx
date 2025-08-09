@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { getLevelInfo, getLevelIcon, getLevelColor } from '@/utils/pointsUtils';
+import { getLevelInfo, getLevelColor } from '@/utils/pointsUtils';
+import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
+import type { ChatUser } from '@/types/chat';
 
 interface LevelUpNotificationProps {
   oldLevel: number;
   newLevel: number;
+  user: ChatUser; // إضافة user object للحصول على معلومات المستوى والجنس
   levelInfo?: any;
   onClose: () => void;
 }
 
-export function LevelUpNotification({ oldLevel, newLevel, levelInfo, onClose }: LevelUpNotificationProps) {
+export function LevelUpNotification({ oldLevel, newLevel, user, levelInfo, onClose }: LevelUpNotificationProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -25,7 +28,9 @@ export function LevelUpNotification({ oldLevel, newLevel, levelInfo, onClose }: 
   }, [onClose]);
 
   const newLevelInfo = levelInfo || getLevelInfo(newLevel);
-  const newLevelIcon = getLevelIcon(newLevel);
+  // إنشاء user object مؤقت بالمستوى الجديد لعرض الأيقونة الصحيحة
+  const userWithNewLevel = { ...user, level: newLevel };
+  const newLevelIcon = getUserLevelIcon(userWithNewLevel, 32);
   const newLevelColor = getLevelColor(newLevel);
 
   return (

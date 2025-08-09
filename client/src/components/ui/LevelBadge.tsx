@@ -1,5 +1,6 @@
 import React from 'react';
-import { getLevelInfo, getLevelIcon, getLevelColor, formatPoints, getPointsToNextLevel } from '@/utils/pointsUtils';
+import { getLevelInfo, getLevelColor, formatPoints, getPointsToNextLevel } from '@/utils/pointsUtils';
+import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
 
 interface LevelBadgeProps {
@@ -11,7 +12,7 @@ interface LevelBadgeProps {
 
 export function LevelBadge({ user, showProgress = false, showPoints = false, compact = false }: LevelBadgeProps) {
   const levelInfo = getLevelInfo(user.level || 1);
-  const levelIcon = getLevelIcon(user.level || 1);
+  const levelIcon = getUserLevelIcon(user, compact ? 16 : 20);
   const levelColor = getLevelColor(user.level || 1);
   const pointsToNext = getPointsToNextLevel(user.totalPoints || 0);
 
@@ -25,7 +26,7 @@ export function LevelBadge({ user, showProgress = false, showPoints = false, com
           border: `1px solid ${levelColor}40`
         }}
       >
-        <span>{levelIcon}</span>
+        {levelIcon}
         <span>{levelInfo.title}</span>
         {showPoints && (
           <span className="text-xs opacity-80">
@@ -37,9 +38,9 @@ export function LevelBadge({ user, showProgress = false, showPoints = false, com
   }
 
   return (
-    <div className="level-badge-container">
+          <div className="level-badge-container">
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-xl">{levelIcon}</span>
+        <span className="text-xl">{getUserLevelIcon(user, 24)}</span>
         <div>
           <div 
             className="font-bold text-sm"
@@ -88,7 +89,7 @@ interface PointsDisplayProps {
 
 export function PointsDisplay({ user, type = 'both' }: PointsDisplayProps) {
   const levelInfo = getLevelInfo(user.level || 1);
-  const levelIcon = getLevelIcon(user.level || 1);
+  const levelIcon = getUserLevelIcon(user, 16);
   const levelColor = getLevelColor(user.level || 1);
 
   if (type === 'gift') {

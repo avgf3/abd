@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Award, Crown } from 'lucide-react';
-import { getLevelInfo, getLevelIcon, getLevelColor, formatPoints } from '@/utils/pointsUtils';
+import { getLevelInfo, getLevelColor, formatPoints } from '@/utils/pointsUtils';
+import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -120,7 +121,7 @@ export function Leaderboard({ currentUser, onClose }: LeaderboardProps) {
       <div className="max-h-96 overflow-y-auto">
         {leaderboard.map((user) => {
           const levelInfo = getLevelInfo(user.level || 1);
-          const levelIcon = getLevelIcon(user.level || 1);
+          const levelIcon = getUserLevelIcon(user, 20);
           const levelColor = getLevelColor(user.level || 1);
           const isCurrentUser = user.id === currentUser?.id;
 
@@ -147,7 +148,7 @@ export function Leaderboard({ currentUser, onClose }: LeaderboardProps) {
                         {user.username}
                         {isCurrentUser && <span className="text-blue-500 text-xs">(أنت)</span>}
                       </span>
-                      <span>{levelIcon}</span>
+                      {levelIcon}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-600">
                       <span style={{ color: levelColor }}>
