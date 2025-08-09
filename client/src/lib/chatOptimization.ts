@@ -175,10 +175,11 @@ export function useOptimizedMessages(messages: ChatMessage[], containerRef: Reac
     const timeThreshold = 5 * 60 * 1000; // 5 دقائق
     
     messages.forEach(message => {
-      const isSameSender = currentGroup?.sender.id === message.senderId;
-      const isWithinTimeThreshold = currentGroup && 
+      const isSameSender =
+        currentGroup && message.senderId === (currentGroup.sender?.id || currentGroup.messages[0]?.senderId);
+      const isWithinTimeThreshold =
         message.timestamp && currentGroup.timestamp &&
-        (new Date(message.timestamp).getTime() - currentGroup.timestamp.getTime()) < timeThreshold;
+        (new Date(message.timestamp as any).getTime() - currentGroup.timestamp.getTime()) < timeThreshold;
       
       if (isSameSender && isWithinTimeThreshold) {
         currentGroup!.messages.push(message);
@@ -211,7 +212,7 @@ export function useOptimizedMessages(messages: ChatMessage[], containerRef: Reac
             levelProgress: 0
           },
           messages: [message],
-          timestamp: message.timestamp || new Date()
+          timestamp: (message.timestamp instanceof Date) ? message.timestamp : new Date(message.timestamp as any)
         };
         groups.push(currentGroup);
       }
