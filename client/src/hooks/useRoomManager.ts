@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatRoom } from '@/types/chat';
+import { mapApiRooms, dedupeRooms } from '@/utils/roomUtils';
 
 interface UseRoomManagerOptions {
   autoRefresh?: boolean;
@@ -107,51 +108,28 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
         throw new Error('استجابة غير صالحة من الخادم');
       }
 
-      // تنسيق الغرف
-      const formattedRooms: ChatRoom[] = response.rooms.map((room: any) => ({
-        id: room.id,
-        name: room.name || 'غرفة بدون اسم',
-        description: room.description || '',
-        isDefault: room.isDefault || room.is_default || false,
-        createdBy: room.createdBy || room.created_by,
-        createdAt: new Date(room.createdAt || room.created_at || Date.now()),
-        isActive: room.isActive !== false && room.is_active !== false,
-        userCount: Math.max(0, room.userCount || room.user_count || 0),
-        icon: room.icon || '',
-        isBroadcast: room.isBroadcast || room.is_broadcast || false,
-        hostId: room.hostId || room.host_id || null,
-        speakers: Array.isArray(room.speakers) ? room.speakers : 
-                  (typeof room.speakers === 'string' ? JSON.parse(room.speakers || '[]') : []),
-        micQueue: Array.isArray(room.micQueue) ? room.micQueue : 
-                  (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue || '[]') : [])
-      }));
-
-      // ترتيب الغرف (الافتراضية أولاً، ثم حسب عدد المستخدمين)
-      const sortedRooms = formattedRooms.sort((a, b) => {
-        if (a.isDefault && !b.isDefault) return -1;
-        if (!a.isDefault && b.isDefault) return 1;
-        return (b.userCount || 0) - (a.userCount || 0);
-      });
+      // استخدام أدوات المساعدة: تحويل + إزالة التكرار + ترتيب
+      const mappedRooms: ChatRoom[] = mapApiRooms(response.rooms);
 
       // تحديث الذاكرة المؤقتة
       cacheRef.current = {
-        data: sortedRooms,
+        data: mappedRooms,
         timestamp: Date.now(),
         version: (cacheRef.current?.version || 0) + 1
       };
 
       // تحديد حجم الذاكرة المؤقتة
-      if (sortedRooms.length > maxCachedRooms) {
-        cacheRef.current.data = sortedRooms.slice(0, maxCachedRooms);
+      if (mappedRooms.length > maxCachedRooms) {
+        cacheRef.current.data = mappedRooms.slice(0, maxCachedRooms);
         console.warn(`⚠️ تم تحديد الغرف المحفوظة إلى ${maxCachedRooms} غرفة`);
       }
 
-      setRooms(sortedRooms);
+      setRooms(cacheRef.current.data);
       setLastUpdate(new Date());
       setError(null);
 
-      console.log(`✅ تم جلب ${sortedRooms.length} غرفة بنجاح`);
-      return sortedRooms;
+      console.log(`✅ تم جلب ${cacheRef.current.data.length} غرفة (بدون تكرار)`);
+      return cacheRef.current.data;
 
     } catch (err: any) {
       if (err.name === 'AbortError') {
@@ -224,12 +202,12 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
         micQueue: []
       };
 
-      // تحديث الحالة المحلية
-      setRooms(prev => [newRoom, ...prev]);
+      // تحديث الحالة المحلية مع إزالة التكرار
+      setRooms(prev => dedupeRooms([newRoom, ...prev]));
 
       // تحديث الذاكرة المؤقتة
       if (cacheRef.current) {
-        cacheRef.current.data = [newRoom, ...cacheRef.current.data];
+        cacheRef.current.data = dedupeRooms([newRoom, ...cacheRef.current.data]);
         cacheRef.current.timestamp = Date.now();
         cacheRef.current.version += 1;
       }

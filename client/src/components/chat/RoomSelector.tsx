@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Users, MessageCircle } from 'lucide-react';
 import type { ChatRoom, ChatUser } from '@/types/chat';
+import { dedupeRooms } from '@/utils/roomUtils';
 
 interface RoomSelectorProps {
   rooms: ChatRoom[];
@@ -11,6 +12,7 @@ interface RoomSelectorProps {
 }
 
 export default function RoomSelector({ rooms, currentUser, onRoomSelect }: RoomSelectorProps) {
+  const uniqueRooms = dedupeRooms(rooms);
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl mx-auto">
@@ -25,7 +27,7 @@ export default function RoomSelector({ rooms, currentUser, onRoomSelect }: RoomS
 
         {/* Rooms Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {rooms.map((room) => (
+          {uniqueRooms.map((room) => (
             <Card 
               key={room.id}
               className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-primary/50"
