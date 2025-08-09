@@ -1043,6 +1043,214 @@ export class DatabaseService {
     }
   }
 
+  // Alias methods for compatibility
+  async getUser(id: number): Promise<User | null> {
+    return await this.getUserById(id);
+  }
+
+  async getMessage(messageId: number): Promise<Message | null> {
+    if (!this.isConnected()) return null;
+
+    try {
+      if (this.type === 'postgresql') {
+        const result = await (this.db as any)
+          .select()
+          .from(pgSchema.messages)
+          .where(eq(pgSchema.messages.id, messageId))
+          .limit(1);
+        return result[0] || null;
+      } else {
+        const result = await (this.db as any)
+          .select()
+          .from(sqliteSchema.messages)
+          .where(eq(sqliteSchema.messages.id, messageId))
+          .limit(1);
+        return result[0] || null;
+      }
+    } catch (error) {
+      console.error('Error getting message by ID:', error);
+      return null;
+    }
+  }
+
+  async deleteMessage(messageId: number): Promise<void> {
+    if (!this.isConnected()) return;
+
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any)
+          .update(pgSchema.messages)
+          .set({ deletedAt: new Date() })
+          .where(eq(pgSchema.messages.id, messageId));
+      } else {
+        await (this.db as any)
+          .delete(sqliteSchema.messages)
+          .where(eq(sqliteSchema.messages.id, messageId));
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      throw error;
+    }
+  }
+
+  // Alias for getMessages with roomId parameter
+  async getRoomMessages(roomId: string, limit: number = 50, offset: number = 0): Promise<Message[]> {
+    return await this.getMessages(roomId, limit, offset);
+  }
+
+  // Room membership methods
+  async joinRoom(userId: number, roomId: string): Promise<void> {
+    if (!this.isConnected()) return;
+
+    try {
+      // For now, we'll just log the join operation
+      // In a full implementation, this would update a room_members table
+      console.log(`User ${userId} joined room ${roomId}`);
+    } catch (error) {
+      console.error('Error joining room:', error);
+      throw error;
+    }
+  }
+
+  async leaveRoom(userId: number, roomId: string): Promise<void> {
+    if (!this.isConnected()) return;
+
+    try {
+      // For now, we'll just log the leave operation
+      // In a full implementation, this would update a room_members table
+      console.log(`User ${userId} left room ${roomId}`);
+    } catch (error) {
+      console.error('Error leaving room:', error);
+      throw error;
+    }
+  }
+
+  async getRoomUsers(roomId: string): Promise<any[]> {
+    if (!this.isConnected()) return [];
+
+    try {
+      // For now, return empty array
+      // In a full implementation, this would query room_members table
+      return [];
+    } catch (error) {
+      console.error('Error getting room users:', error);
+      return [];
+    }
+  }
+
+  async updateRoomUserCount(roomId: string, count: number): Promise<void> {
+    if (!this.isConnected()) return;
+
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any)
+          .update(pgSchema.rooms)
+          .set({ userCount: count })
+          .where(eq(pgSchema.rooms.id, roomId));
+      }
+      // SQLite doesn't have userCount field in schema
+    } catch (error) {
+      console.error('Error updating room user count:', error);
+    }
+  }
+
+  // Broadcast room methods
+  async addToMicQueue(roomId: string, userId: number): Promise<void> {
+    if (!this.isConnected()) return;
+
+    try {
+      if (this.type === 'postgresql') {
+        const room = await this.getRoomById(roomId);
+        if (room) {
+          const currentQueue = Array.isArray(room.micQueue) ? room.micQueue : 
+                              (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue || '[]') : []);
+          
+          if (!currentQueue.includes(userId)) {
+            currentQueue.push(userId);
+            await (this.db as any)
+              .update(pgSchema.rooms)
+              .set({ micQueue: JSON.stringify(currentQueue) })
+              .where(eq(pgSchema.rooms.id, roomId));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error adding to mic queue:', error);
+      throw error;
+    }
+  }
+
+  async removeFromMicQueue(roomId: string, userId: number): Promise<void> {
+    if (!this.isConnected()) return;
+
+    try {
+      if (this.type === 'postgresql') {
+        const room = await this.getRoomById(roomId);
+        if (room) {
+          const currentQueue = Array.isArray(room.micQueue) ? room.micQueue : 
+                              (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue || '[]') : []);
+          
+          const updatedQueue = currentQueue.filter((id: number) => id !== userId);
+          await (this.db as any)
+            .update(pgSchema.rooms)
+            .set({ micQueue: JSON.stringify(updatedQueue) })
+            .where(eq(pgSchema.rooms.id, roomId));
+        }
+      }
+    } catch (error) {
+      console.error('Error removing from mic queue:', error);
+      throw error;
+    }
+  }
+
+  async addSpeaker(roomId: string, userId: number): Promise<void> {
+    if (!this.isConnected()) return;
+
+    try {
+      if (this.type === 'postgresql') {
+        const room = await this.getRoomById(roomId);
+        if (room) {
+          const currentSpeakers = Array.isArray(room.speakers) ? room.speakers : 
+                                 (typeof room.speakers === 'string' ? JSON.parse(room.speakers || '[]') : []);
+          
+          if (!currentSpeakers.includes(userId)) {
+            currentSpeakers.push(userId);
+            await (this.db as any)
+              .update(pgSchema.rooms)
+              .set({ speakers: JSON.stringify(currentSpeakers) })
+              .where(eq(pgSchema.rooms.id, roomId));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error adding speaker:', error);
+      throw error;
+    }
+  }
+
+  async removeSpeaker(roomId: string, userId: number): Promise<void> {
+    if (!this.isConnected()) return;
+
+    try {
+      if (this.type === 'postgresql') {
+        const room = await this.getRoomById(roomId);
+        if (room) {
+          const currentSpeakers = Array.isArray(room.speakers) ? room.speakers : 
+                                 (typeof room.speakers === 'string' ? JSON.parse(room.speakers || '[]') : []);
+          
+          const updatedSpeakers = currentSpeakers.filter((id: number) => id !== userId);
+          await (this.db as any)
+            .update(pgSchema.rooms)
+            .set({ speakers: JSON.stringify(updatedSpeakers) })
+            .where(eq(pgSchema.rooms.id, roomId));
+        }
+      }
+    } catch (error) {
+      console.error('Error removing speaker:', error);
+      throw error;
+    }
+  }
+
   // Status method
   getStatus() {
     return {
