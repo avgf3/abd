@@ -8,6 +8,8 @@ export {
   type PointsAction
 } from '../../../shared/points-system';
 
+import { getLevelInfo as _getLevelInfo } from '../../../shared/points-system';
+
 // دوال مساعدة خاصة بالعميل فقط
 export interface LevelInfo {
   level: number;
@@ -29,6 +31,6 @@ export function formatPoints(points: number): string {
 
 // دالة الحصول على لون المستوى
 export function getLevelColor(level: number): string {
-  const levelInfo = getLevelInfo(level);
+  const levelInfo = _getLevelInfo(level);
   return levelInfo.color;
 }

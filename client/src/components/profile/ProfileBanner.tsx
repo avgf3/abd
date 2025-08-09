@@ -33,7 +33,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       return;
     }
 
-    const validation = validateFile(file, 'banner_image');
+    const validation = validateFile(file, 'profile_banner');
     if (!validation.isValid) {
       toast({
         title: "خطأ",
