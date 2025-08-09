@@ -15,6 +15,7 @@ export default function ChatPage() {
   // الغرف المتاحة
   const rooms: ChatRoom[] = [
     { id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 12, icon: '' },
+    { id: 'welcome', name: 'غرفة الترحيب', description: 'غرفة الترحيب بالأعضاء الجدد', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 3, icon: '' },
     { id: 'music', name: 'أغاني وسهر', description: 'غرفة للموسيقى والترفيه', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 8, icon: '' }
   ];
 

@@ -42,9 +42,10 @@ export async function apiRequest<T = any>(
     body?: any;
     headers?: Record<string, string>;
     timeout?: number;
+    signal?: AbortSignal;
   }
 ): Promise<T> {
-  const { method = 'GET', body, headers = {}, timeout = 30000 } = options || {};
+  const { method = 'GET', body, headers = {}, timeout = 30000, signal } = options || {};
   
   // تحديد نوع المحتوى والجسم بناءً على نوع البيانات
   let requestHeaders: Record<string, string> = { ...headers };
@@ -56,9 +57,17 @@ export async function apiRequest<T = any>(
     requestBody = body ? JSON.stringify(body) : undefined;
   }
   
-  // إضافة timeout للطلبات
+  // إضافة timeout للطلبات مع دعم signal خارجي
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const combinedSignal = signal
+    ? new AbortController()
+    : null;
+  
+  if (combinedSignal && signal) {
+    const onAbort = () => combinedSignal.abort();
+    signal.addEventListener('abort', onAbort, { once: true });
+  }
   
   try {
     const res = await fetch(endpoint, {
@@ -66,7 +75,7 @@ export async function apiRequest<T = any>(
       headers: requestHeaders,
       body: requestBody,
       credentials: "include",
-      signal: controller.signal,
+      signal: combinedSignal ? combinedSignal.signal : controller.signal,
     });
 
     clearTimeout(timeoutId);

@@ -66,10 +66,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       }
     } catch (error) {
       console.error('❌ خطأ في جلب الغرف:', error);
-      // استخدام غرف افتراضية في حالة الخطأ
+      // استخدام غرف افتراضية في حالة الخطأ (بدون غرفة بث افتراضية لمنع طلبات 502)
       setRooms([
         { id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] },
-        { id: 'broadcast', name: 'غرفة البث المباشر', description: 'غرفة خاصة للبث المباشر مع نظام المايك', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: true, hostId: 1, speakers: [], micQueue: [] },
         { id: 'music', name: 'أغاني وسهر', description: 'غرفة للموسيقى والترفيه', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] }
       ]);
     } finally {

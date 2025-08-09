@@ -220,6 +220,9 @@ export function useChat() {
   // إضافة متغير للوصول إلى import.meta.env
   const isDevelopment = process.env.NODE_ENV === 'development';
   
+  // تتبع آخر غرفة طُلب الانضمام لها لمنع تبديل غير مقصود
+  const lastRequestedRoomId = useRef<string>('general');
+  
   // 🚀 تحسين: فلترة محسنة للمستخدمين المعروضين
   const memoizedOnlineUsers = useMemo(() => {
     return state.onlineUsers.filter(user => {
@@ -549,16 +552,18 @@ export function useChat() {
             
           case 'roomJoined':
             if (message.roomId) {
-              // تأكيد تغيير الغرفة من السيرفر
-              dispatch({ type: 'SET_ROOM', payload: message.roomId });
-              
+              // تجاهل أي تأكيد ليس للغرفة المطلوبة أو الحالية لتفادي القفز بين الغرف
+              const target = String(message.roomId);
+              const accept = target === lastRequestedRoomId.current || target === state.currentRoomId;
+              if (!accept) break;
+              dispatch({ type: 'SET_ROOM', payload: target });
               // تحميل رسائل الغرفة الجديدة بقوة لضمان الحصول على أحدث الرسائل
-              loadRoomMessages(message.roomId, true);
+              loadRoomMessages(target, true);
               
               // تحديث الرسائل العامة لتعكس الغرفة الجديدة
               dispatch({ 
                 type: 'SET_PUBLIC_MESSAGES', 
-                payload: state.roomMessages[message.roomId] || [] 
+                payload: state.roomMessages[target] || [] 
               });
               
               }
@@ -780,6 +785,7 @@ export function useChat() {
   const joinRoom = useCallback((roomId: string) => {
     // تغيير الغرفة الحالية فوراً للاستجابة السريعة
     dispatch({ type: 'SET_ROOM', payload: roomId });
+    lastRequestedRoomId.current = roomId;
     
     // تحميل رسائل الغرفة المحفوظة محلياً أولاً
     const existingMessages = state.roomMessages[roomId] || [];
