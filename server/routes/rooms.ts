@@ -46,12 +46,30 @@ const upload = multer({
 
 /**
  * GET /api/rooms
- * جلب جميع الغرف
+ * جلب جميع الغرف مع تحسينات الأداء
  */
 router.get('/', async (req, res) => {
   try {
+    // 🚀 إضافة رؤوس التخزين المؤقت لتحسين الأداء
+    res.set({
+      'Cache-Control': 'public, max-age=30', // 30 ثانية cache
+      'ETag': `rooms-${Date.now()}` // ETag للتحقق من التغييرات
+    });
+
     const rooms = await roomService.getAllRooms();
-    res.json({ rooms });
+    
+    // 📊 إضافة إحصائيات مفيدة
+    const response = {
+      rooms,
+      meta: {
+        total: rooms.length,
+        broadcast: rooms.filter(r => r.isBroadcast).length,
+        active: rooms.filter(r => r.isActive).length,
+        timestamp: new Date().toISOString()
+      }
+    };
+    
+    res.json(response);
   } catch (error) {
     console.error('خطأ في جلب الغرف:', error);
     res.status(500).json({ error: 'خطأ في الخادم' });
@@ -161,7 +179,7 @@ router.delete('/:roomId', async (req, res) => {
 
 /**
  * POST /api/rooms/:roomId/join
- * الانضمام لغرفة
+ * الانضمام لغرفة مع منع التكرار
  */
 router.post('/:roomId/join', async (req, res) => {
   try {
@@ -172,31 +190,45 @@ router.post('/:roomId/join', async (req, res) => {
       return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
     }
 
-    // التحقق من أن المستخدم ليس في الغرفة بالفعل
+    // 🔍 التحقق من أن المستخدم ليس في الغرفة بالفعل
     const roomUsers = await roomService.getRoomUsers(roomId);
     const isAlreadyInRoom = roomUsers.some(user => user.id === parseInt(userId));
     
     if (isAlreadyInRoom) {
-      return res.json({ message: 'أنت موجود في الغرفة بالفعل' });
+      console.log(`⚠️ المستخدم ${userId} موجود في الغرفة ${roomId} بالفعل`);
+      return res.json({ 
+        message: 'أنت موجود في الغرفة بالفعل',
+        alreadyJoined: true 
+      });
     }
 
     await roomService.joinRoom(parseInt(userId), roomId);
 
-    // إرسال إشعار بانضمام المستخدم (مرة واحدة فقط)
+    // 📡 إرسال إشعار بانضمام المستخدم (مرة واحدة فقط)
     const io = req.app.get('io');
     if (io) {
+      // إشعار للغرفة فقط (وليس لجميع الغرف)
       io.to(`room_${roomId}`).emit('userJoinedRoom', {
         userId: parseInt(userId),
         roomId: roomId,
         timestamp: new Date().toISOString()
       });
       
-      // تحديث عدد المستخدمين (مرة واحدة فقط)
-      const userCount = await roomService.updateRoomUserCount(roomId);
-      io.emit('roomUserCountUpdated', { roomId, userCount });
+      // 🔢 تحديث عدد المستخدمين بشكل محسن
+      try {
+        const userCount = await roomService.updateRoomUserCount(roomId);
+        io.emit('roomUserCountUpdated', { roomId, userCount });
+        console.log(`✅ تم تحديث عدد مستخدمي الغرفة ${roomId}: ${userCount}`);
+      } catch (countError) {
+        console.warn('⚠️ خطأ في تحديث عدد المستخدمين:', countError);
+      }
     }
 
-    res.json({ message: 'تم الانضمام للغرفة بنجاح' });
+    res.json({ 
+      message: 'تم الانضمام للغرفة بنجاح',
+      roomId,
+      joined: true 
+    });
   } catch (error: any) {
     console.error('خطأ في الانضمام للغرفة:', error);
     res.status(400).json({ error: error.message || 'خطأ في الانضمام للغرفة' });

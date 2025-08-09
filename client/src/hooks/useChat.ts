@@ -552,21 +552,26 @@ export function useChat() {
             
           case 'roomJoined':
             if (message.roomId) {
-              // تجاهل أي تأكيد ليس للغرفة المطلوبة أو الحالية لتفادي القفز بين الغرف
+              // 🔍 فحص دقيق لتأكيد الانضمام للغرفة الصحيحة
               const target = String(message.roomId);
-              const accept = target === lastRequestedRoomId.current || target === state.currentRoomId;
-              if (!accept) break;
-              dispatch({ type: 'SET_ROOM', payload: target });
-              // تحميل رسائل الغرفة الجديدة بقوة لضمان الحصول على أحدث الرسائل
-              loadRoomMessages(target, true);
+              const lastRequest = (lastRequestedRoomId.current as any);
+              const accept = (lastRequest?.id === target) || target === state.currentRoomId;
               
-              // تحديث الرسائل العامة لتعكس الغرفة الجديدة
-              dispatch({ 
-                type: 'SET_PUBLIC_MESSAGES', 
-                payload: state.roomMessages[target] || [] 
-              });
-              
+              if (!accept) {
+                console.log(`⚠️ تم تجاهل تأكيد roomJoined للغرفة ${target} - لم يتم طلبها`);
+                break;
               }
+              
+              console.log(`✅ تأكيد الانضمام للغرفة: ${target}`);
+              
+              // تحديث الغرفة الحالية فقط إذا لزم الأمر
+              if (state.currentRoomId !== target) {
+                dispatch({ type: 'SET_ROOM', payload: target });
+              }
+              
+              // 🔄 تحميل رسائل الغرفة الجديدة بقوة لضمان الحصول على أحدث الرسائل
+              loadRoomMessages(target, true);
+            }
             break;
 
           case 'roomMessages':
@@ -755,19 +760,32 @@ export function useChat() {
     }
   }, [setupSocketListeners]);
 
-  // Load room messages function
+  // Load room messages function محسنة
   const loadRoomMessages = useCallback(async (roomId: string, forceReload: boolean = false) => {
-    // السماح بإعادة التحميل عند forceReload أو عدم وجود رسائل
-    if (!forceReload && state.roomMessages[roomId] && state.roomMessages[roomId].length > 0) {
+    // تجنب التحميل المتكرر للغرفة نفسها
+    const existingMessages = state.roomMessages[roomId];
+    if (!forceReload && existingMessages && existingMessages.length > 0) {
+      console.log(`✅ استخدام رسائل الغرفة ${roomId} المحفوظة محلياً`);
       return;
     }
     
+    // تجنب التحميل المتزامن للغرفة نفسها
+    const loadingKey = `loading_${roomId}`;
+    if ((loadRoomMessages as any)[loadingKey] && !forceReload) {
+      console.log(`⚠️ تحميل رسائل الغرفة ${roomId} قيد التنفيذ بالفعل`);
+      return;
+    }
+    
+    (loadRoomMessages as any)[loadingKey] = true;
+    
     try {
+      console.log(`🔄 تحميل رسائل الغرفة ${roomId} من السيرفر...`);
+      
       const data = await apiRequest(`/api/messages/room/${roomId}?limit=50`);
       if ((data as any).messages && Array.isArray((data as any).messages)) {
         const formattedMessages = mapDbMessagesToChatMessages((data as any).messages, roomId);
         
-        // إضافة الرسائل للغرفة (استبدال إذا كان forceReload)
+        // ✅ إضافة الرسائل للغرفة (استبدال كامل إذا كان forceReload)
         dispatch({ 
           type: 'ADD_ROOM_MESSAGE', 
           payload: { 
@@ -775,48 +793,74 @@ export function useChat() {
             message: formattedMessages 
           }
         });
+        
+        // تحديث الرسائل العامة إذا كانت للغرفة الحالية
+        if (roomId === state.currentRoomId) {
+          dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: formattedMessages });
+        }
+        
+        console.log(`✅ تم تحميل ${formattedMessages.length} رسالة للغرفة ${roomId}`);
+      } else {
+        console.log(`⚠️ لا توجد رسائل في الغرفة ${roomId}`);
       }
     } catch (error) {
       console.error(`❌ خطأ في تحميل رسائل الغرفة ${roomId}:`, error);
+    } finally {
+      delete (loadRoomMessages as any)[loadingKey];
     }
-  }, [state.roomMessages]);
+  }, [state.roomMessages, state.currentRoomId]);
 
   // Join room function
   const joinRoom = useCallback((roomId: string) => {
-    // تجنب الانضمام لنفس الغرفة مرة أخرى
+    // 🚫 تجنب الانضمام لنفس الغرفة مرة أخرى
     if (state.currentRoomId === roomId) {
       console.log(`✅ أنت موجود في الغرفة ${roomId} بالفعل`);
       return;
     }
 
-    // تجنب الطلبات المتكررة
+    // 🚫 تجنب الطلبات المتكررة السريعة
     if (lastRequestedRoomId.current === roomId) {
-      console.log(`⚠️ تم طلب الانضمام للغرفة ${roomId} مؤخراً`);
-      return;
+      const timeSinceLastRequest = Date.now() - (lastRequestedRoomId.current as any).timestamp;
+      if (timeSinceLastRequest < 2000) { // أقل من ثانيتين
+        console.log(`⚠️ تم طلب الانضمام للغرفة ${roomId} مؤخراً`);
+        return;
+      }
     }
 
     console.log(`🔄 الانضمام للغرفة: ${roomId}`);
     
-    // تغيير الغرفة الحالية فوراً للاستجابة السريعة
-    dispatch({ type: 'SET_ROOM', payload: roomId });
-    lastRequestedRoomId.current = roomId;
+    // تسجيل وقت الطلب لمنع التكرار
+    (lastRequestedRoomId.current as any) = { 
+      id: roomId, 
+      timestamp: Date.now() 
+    };
     
-    // تحميل رسائل الغرفة المحفوظة محلياً أولاً
+    // 🚀 تغيير الغرفة الحالية فوراً للاستجابة السريعة
+    dispatch({ type: 'SET_ROOM', payload: roomId });
+    
+    // 💾 تحميل رسائل الغرفة المحفوظة محلياً أولاً
     const existingMessages = state.roomMessages[roomId] || [];
     if (existingMessages.length > 0) {
       dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: existingMessages });
+    } else {
+      // مسح الرسائل إذا لم تكن هناك رسائل محفوظة
+      dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: [] });
     }
     
-    // تحميل رسائل الغرفة من السيرفر
+    // 🔄 تحميل رسائل الغرفة من السيرفر (عملية مستقلة)
     loadRoomMessages(roomId);
     
-    // إرسال طلب الانضمام للسيرفر (سيرسل تأكيد roomJoined)
+    // 📡 إرسال طلب الانضمام للسيرفر (بدون انتظار استجابة)
     if (socket.current?.connected) {
-      socket.current.emit('joinRoom', { roomId });
+      socket.current.emit('joinRoom', { 
+        roomId,
+        userId: state.currentUser?.id,
+        timestamp: Date.now() 
+      });
     } else {
       console.error('❌ Socket غير متصل، لا يمكن الانضمام للغرفة');
     }
-  }, [loadRoomMessages, state.roomMessages, state.currentRoomId]);
+  }, [loadRoomMessages, state.roomMessages, state.currentRoomId, state.currentUser]);
 
   // Send message function - محسنة
   const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number, roomId?: string) => {
@@ -825,15 +869,21 @@ export function useChat() {
       return;
     }
 
+    if (!content.trim()) {
+      console.warn('⚠️ محتوى الرسالة فارغ');
+      return;
+    }
+
     const targetRoomId = roomId || state.currentRoomId;
 
     const messageData = {
       senderId: state.currentUser.id,
-      content,
+      content: content.trim(),
       messageType,
       isPrivate: !!receiverId,
       receiverId,
-      roomId: targetRoomId
+      roomId: targetRoomId,
+      timestamp: Date.now() // إضافة timestamp لتجنب التكرار
     };
 
     if (receiverId) {
@@ -845,12 +895,17 @@ export function useChat() {
     }
   }, [state.currentUser, state.currentRoomId]);
 
-  // دالة إرسال رسالة لغرفة محددة
+  // دالة إرسال رسالة لغرفة محددة محسنة
   const sendRoomMessage = useCallback((content: string, roomId: string, messageType: string = 'text') => {
+    if (!content.trim()) {
+      console.warn('⚠️ محتوى الرسالة فارغ');
+      return;
+    }
+    
     return sendMessage(content, messageType, undefined, roomId);
   }, [sendMessage]);
 
-  // دالة للحصول على رسائل الغرفة الحالية
+  // دالة للحصول على رسائل الغرفة الحالية محسنة
   const getCurrentRoomMessages = useCallback(() => {
     return state.roomMessages[state.currentRoomId] || [];
   }, [state.roomMessages, state.currentRoomId]);

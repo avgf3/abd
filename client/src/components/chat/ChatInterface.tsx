@@ -47,19 +47,35 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showAdminReports, setShowAdminReports] = useState(false);
   const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>('users'); // إظهار المستخدمين افتراضياً
   
-  // إدارة الغرف عبر hook موحّد
+  // 🚀 إدارة الغرف عبر hook موحّد محسن
   const {
     rooms,
     loading: roomsLoading,
     fetchRooms,
     addRoom: addRoomViaManager,
-    deleteRoom: deleteRoomViaManager
-  } = useRoomManager({ autoRefresh: false });
+    deleteRoom: deleteRoomViaManager,
+    isFetching
+  } = useRoomManager({ 
+    autoRefresh: false, // تحديث يدوي فقط
+    cacheTimeout: 10 * 60 * 1000 // 10 دقائق cache
+  });
 
-  // دوال إدارة الغرف
-  const handleRoomChange = async (roomId: string) => {
+  // 🚀 دوال إدارة الغرف المحسنة
+  const handleRoomChange = useCallback(async (roomId: string) => {
+    console.log(`🔄 طلب تغيير الغرفة إلى: ${roomId}`);
     chat.joinRoom(roomId);
-  };
+  }, [chat]);
+
+  // دالة تحديث الغرف مع منع التكرار
+  const handleRefreshRooms = useCallback(async () => {
+    if (isFetching) {
+      console.log('⚠️ تحديث الغرف قيد التنفيذ بالفعل');
+      return;
+    }
+    
+    console.log('🔄 تحديث قائمة الغرف...');
+    await fetchRooms(true); // فرض التحديث
+  }, [fetchRooms, isFetching]);
 
 
 
@@ -354,7 +370,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onRoomChange={handleRoomChange}
               onAddRoom={handleAddRoom}
               onDeleteRoom={handleDeleteRoom}
-              onRefreshRooms={fetchRooms}
+              onRefreshRooms={handleRefreshRooms}
               onStartPrivateChat={setSelectedPrivateUser}
             />
           </div>
