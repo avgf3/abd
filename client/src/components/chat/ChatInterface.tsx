@@ -26,7 +26,7 @@ import ThemeSelector from './ThemeSelector';
 import RoomsPanel from './RoomsPanel';
 
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { useChat } from '@/hooks/useChat';
 import type { ChatUser, ChatRoom } from '@/types/chat';
@@ -37,7 +37,7 @@ interface ChatInterfaceProps {
 }
 
 export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
-  const { toast } = useToast();
+  const { showSuccessToast, showErrorToast } = useNotificationManager(chat.currentUser);
   const [showProfile, setShowProfile] = useState(false);
   const [profileUser, setProfileUser] = useState<ChatUser | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -148,20 +148,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           micQueue: data.room.mic_queue || []
         };
         setRooms(prev => [...prev, newRoom]);
-        toast({
-          title: "تم إنشاء الغرفة",
-          description: `تم إنشاء غرفة "${roomData.name}" بنجاح`,
-        });
+        showSuccessToast(`تم إنشاء غرفة "${roomData.name}" بنجاح`, "تم إنشاء الغرفة");
       } else {
         const error = await response.json();
         throw new Error(error.error || 'خطأ في إنشاء الغرفة');
       }
     } catch (error) {
-      toast({
-        title: "خطأ في إنشاء الغرفة",
-        description: error instanceof Error ? error.message : "حدث خطأ أثناء إنشاء الغرفة",
-        variant: "destructive",
-      });
+      showErrorToast(error instanceof Error ? error.message : "حدث خطأ أثناء إنشاء الغرفة", "خطأ في إنشاء الغرفة");
     }
   };
 
@@ -178,16 +171,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       if (chat.currentRoomId === roomId) {
         chat.joinRoom('general');
       }
-      toast({
-        title: "تم حذف الغرفة",
-        description: "تم حذف الغرفة بنجاح",
-      });
+      showSuccessToast("تم حذف الغرفة بنجاح", "تم حذف الغرفة");
     } catch (error: any) {
-      toast({
-        title: "خطأ في حذف الغرفة",
-        description: error?.message || "حدث خطأ أثناء حذف الغرفة",
-        variant: "destructive",
-      });
+      showErrorToast(error?.message || "حدث خطأ أثناء حذف الغرفة", "خطأ في حذف الغرفة");
     }
   };
 
@@ -224,35 +210,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     }
   }, [chat.newMessageSender]);
 
-  // مراقبة إشعارات قبول طلبات الصداقة للتبديل التلقائي لتبويب الأصدقاء
+  // Auto-switch to friends tab when friend request is accepted
   useEffect(() => {
     const handleFriendRequestAccepted = (event: CustomEvent) => {
-      // التبديل التلقائي إلى تبويب الأصدقاء
       setActiveView('friends');
-      
-      toast({
-        title: "تم قبول طلب الصداقة",
-        description: `${event.detail.friendName} قبل طلب صداقتك - يمكنك الآن العثور عليه في تبويب الأصدقاء`,
-      });
     };
 
-    const handleFriendRequestReceived = (event: CustomEvent) => {
-      toast({
-        title: "طلب صداقة جديد",
-        description: `${event.detail.senderName} يريد إضافتك كصديق - اضغط على تبويب الأصدقاء لإدارة الطلبات`,
-      });
-    };
-
-    // إضافة مستمعي الأحداث
     window.addEventListener('friendRequestAccepted', handleFriendRequestAccepted as EventListener);
-    window.addEventListener('friendRequestReceived', handleFriendRequestReceived as EventListener);
-
-    // تنظيف المستمعين
     return () => {
       window.removeEventListener('friendRequestAccepted', handleFriendRequestAccepted as EventListener);
-      window.removeEventListener('friendRequestReceived', handleFriendRequestReceived as EventListener);
     };
-  }, [toast]);
+  }, []);
   const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
   const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(null);
   const [userPopup, setUserPopup] = useState<{
@@ -302,27 +270,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         }
       });
       
-      toast({
-        title: "تمت الإضافة",
-        description: `تم إرسال طلب صداقة إلى ${user.username}`,
-      });
+      showSuccessToast(`تم إرسال طلب صداقة إلى ${user.username}`, "تمت الإضافة");
     } catch (error) {
       console.error('Friend request error:', error);
-      toast({
-        title: "خطأ",
-        description: error instanceof Error ? error.message : "لم نتمكن من إرسال طلب الصداقة",
-        variant: "destructive",
-      });
+      showErrorToast(error instanceof Error ? error.message : "لم نتمكن من إرسال طلب الصداقة", "خطأ");
     }
     closeUserPopup();
   };
 
   const handleIgnoreUser = (user: ChatUser) => {
     chat.ignoreUser(user.id);
-    toast({
-      title: "تم التجاهل",
-      description: `تم تجاهل المستخدم ${user.username} - لن ترى رسائله بعد الآن`,
-    });
+    showSuccessToast(`تم تجاهل المستخدم ${user.username} - لن ترى رسائله بعد الآن`, "تم التجاهل");
     closeUserPopup();
   };
 
@@ -341,11 +299,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       setProfileUser(user);
       setShowProfile(true);
     } else {
-      toast({
-        title: "مستخدم غير موجود",
-        description: "لم نتمكن من العثور على هذا المستخدم",
-        variant: "destructive"
-      });
+      showErrorToast("لم نتمكن من العثور على هذا المستخدم", "مستخدم غير موجود");
     }
   };
 

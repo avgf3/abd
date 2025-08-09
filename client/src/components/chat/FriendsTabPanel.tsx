@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RefreshCw, Users, UserPlus, MessageCircle, Trash2, Check, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { apiRequest } from '@/lib/queryClient';
 import ProfileImage from './ProfileImage';
 import { getImageSrc } from '@/utils/imageUtils';
@@ -33,7 +33,7 @@ export default function FriendsTabPanel({
     outgoing: []
   });
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const { showErrorToast, showSuccessToast, updateFriendQueries } = useNotificationManager(currentUser);
 
   // مراقبة إشعارات طلبات الصداقة للتبديل التلقائي للطلبات
   useEffect(() => {
@@ -64,11 +64,7 @@ export default function FriendsTabPanel({
       }
     } catch (error) {
       console.error('Error fetching friends:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في جلب قائمة الأصدقاء",
-        variant: "destructive"
-      });
+      showErrorToast("فشل في جلب قائمة الأصدقاء");
     } finally {
       setLoading(false);
     }
@@ -127,22 +123,15 @@ export default function FriendsTabPanel({
         body: JSON.stringify({ userId: currentUser?.id })
       });
       
-      toast({
-        title: 'تم قبول الطلب',
-        description: 'تم قبول طلب الصداقة بنجاح',
-        variant: 'default'
-      });
+      showSuccessToast('تم قبول طلب الصداقة بنجاح', 'تم قبول الطلب');
       
       // تحديث البيانات
       fetchFriendRequests();
       fetchFriends();
+      updateFriendQueries();
     } catch (error: any) {
       console.error('Accept friend request error:', error);
-      toast({
-        title: 'خطأ',
-        description: error?.message || 'فشل في قبول طلب الصداقة',
-        variant: 'destructive'
-      });
+      showErrorToast(error?.message || 'فشل في قبول طلب الصداقة');
     }
   };
 
@@ -155,20 +144,13 @@ export default function FriendsTabPanel({
         body: JSON.stringify({ userId: currentUser?.id })
       });
       
-      toast({
-        title: 'تم رفض الطلب',
-        description: 'تم رفض طلب الصداقة بنجاح',
-        variant: 'default'
-      });
+      showSuccessToast('تم رفض طلب الصداقة بنجاح', 'تم رفض الطلب');
       
       fetchFriendRequests();
+      updateFriendQueries();
     } catch (error: any) {
       console.error('Reject friend request error:', error);
-      toast({
-        title: 'خطأ',
-        description: error?.message || 'فشل في رفض طلب الصداقة',
-        variant: 'destructive'
-      });
+      showErrorToast(error?.message || 'فشل في رفض طلب الصداقة');
     }
   };
 
@@ -181,20 +163,13 @@ export default function FriendsTabPanel({
         method: 'DELETE'
       });
       
-      toast({
-        title: 'تم الحذف',
-        description: 'تم حذف الصديق من قائمتك',
-        variant: 'default'
-      });
+      showSuccessToast('تم حذف الصديق من قائمتك', 'تم الحذف');
       
       // إزالة الصديق من القائمة فوراً
       setFriends(prev => prev.filter(f => f.id !== friendId));
+      updateFriendQueries();
     } catch (error) {
-      toast({
-        title: 'خطأ',
-        description: 'فشل في حذف الصديق',
-        variant: 'destructive'
-      });
+      showErrorToast('فشل في حذف الصديق');
     }
   };
 
