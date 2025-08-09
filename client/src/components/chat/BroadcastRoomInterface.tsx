@@ -62,19 +62,16 @@ export default function BroadcastRoomInterface({
     // 🚫 منع الطلبات المتكررة
     const fetchKey = `broadcast_${room.id}`;
     if ((fetchBroadcastInfo as any).loading === fetchKey) {
-      console.log('⚠️ جلب معلومات البث قيد التنفيذ بالفعل');
       return;
     }
 
     (fetchBroadcastInfo as any).loading = fetchKey;
 
     try {
-      console.log(`🔄 جلب معلومات بث الغرفة ${room.id}...`);
       const data = await apiRequest(`/api/rooms/${room.id}/broadcast-info`, { method: 'GET' });
       if (data?.info) {
         setBroadcastInfo(normalizeBroadcastInfo(data.info));
-        console.log('✅ تم تحديث معلومات البث');
-      } else {
+        } else {
         console.warn('⚠️ لم يتم استلام معلومات غرفة البث صحيحة من الخادم');
         setBroadcastInfo({ hostId: null, speakers: [], micQueue: [] });
       }

@@ -191,7 +191,6 @@ class RoomService {
     
     // 🚫 منع العمليات المتكررة
     if (this.operationLocks.get(lockKey)) {
-      console.log(`⚠️ عملية انضمام ${userId} للغرفة ${roomId} قيد التنفيذ`);
       return;
     }
     
@@ -204,7 +203,6 @@ class RoomService {
 
       // ✅ فحص مسبق - هل المستخدم في الغرفة بالفعل؟
       if (this.connectedRooms.has(roomId) && this.connectedRooms.get(roomId)!.has(userId)) {
-        console.log(`✅ المستخدم ${userId} موجود في الغرفة ${roomId} بالفعل`);
         return;
       }
 
@@ -238,8 +236,7 @@ class RoomService {
       // 💾 حفظ في قاعدة البيانات
       await storage.joinRoom(userId, roomId);
 
-      console.log(`✅ انضم المستخدم ${userId} للغرفة ${roomId}`);
-    } catch (error) {
+      } catch (error) {
       console.error('خطأ في الانضمام للغرفة:', error);
       throw error;
     } finally {
@@ -255,7 +252,6 @@ class RoomService {
     
     // 🚫 منع العمليات المتكررة
     if (this.operationLocks.get(lockKey)) {
-      console.log(`⚠️ عملية مغادرة ${userId} للغرفة ${roomId} قيد التنفيذ`);
       return;
     }
     
@@ -264,7 +260,6 @@ class RoomService {
     try {
       // ✅ فحص مسبق - هل المستخدم في الغرفة أصلاً؟
       if (!this.connectedRooms.has(roomId) || !this.connectedRooms.get(roomId)!.has(userId)) {
-        console.log(`⚠️ المستخدم ${userId} ليس في الغرفة ${roomId}`);
         return;
       }
 
@@ -276,8 +271,7 @@ class RoomService {
         await storage.leaveRoom(userId, roomId);
       }
 
-      console.log(`✅ غادر المستخدم ${userId} الغرفة ${roomId}`);
-    } catch (error) {
+      } catch (error) {
       console.error('خطأ في مغادرة الغرفة:', error);
       throw error;
     } finally {
@@ -409,8 +403,7 @@ class RoomService {
       await storage.removeFromMicQueue(roomId, userId);
       await storage.addSpeaker(roomId, userId);
 
-      console.log(`✅ تمت الموافقة على ميكروفون المستخدم ${userId} في الغرفة ${roomId}`);
-    } catch (error) {
+      } catch (error) {
       console.error('خطأ في الموافقة على الميكروفون:', error);
       throw error;
     }
@@ -439,8 +432,7 @@ class RoomService {
 
       await storage.removeFromMicQueue(roomId, userId);
 
-      console.log(`✅ تم رفض ميكروفون المستخدم ${userId} في الغرفة ${roomId}`);
-    } catch (error) {
+      } catch (error) {
       console.error('خطأ في رفض الميكروفون:', error);
       throw error;
     }
@@ -469,8 +461,7 @@ class RoomService {
 
       await storage.removeSpeaker(roomId, userId);
 
-      console.log(`✅ تم إزالة المتحدث ${userId} من الغرفة ${roomId}`);
-    } catch (error) {
+      } catch (error) {
       console.error('خطأ في إزالة المتحدث:', error);
       throw error;
     }
@@ -555,8 +546,7 @@ class RoomService {
     for (const [roomId, userSet] of this.connectedRooms.entries()) {
       if (userSet.size === 0 && roomId !== 'general') {
         this.connectedRooms.delete(roomId);
-        console.log(`🗑️ تم حذف الغرفة الفارغة: ${roomId}`);
-      }
+        }
     }
 
     // 🔒 تنظيف locks القديمة (أكثر من 5 دقائق)
@@ -568,8 +558,7 @@ class RoomService {
       // للآن نحذف جميع locks عند التنظيف
     }
     
-    console.log(`🧹 تم تنظيف ${this.connectedRooms.size} غرفة`);
-  }
+    }
 }
 
 // تصدير instance واحد

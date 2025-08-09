@@ -197,7 +197,6 @@ router.post('/:roomId/join', async (req, res) => {
     const isAlreadyInRoom = roomUsers.some(user => user.id === parseInt(userId));
     
     if (isAlreadyInRoom) {
-      console.log(`⚠️ المستخدم ${userId} موجود في الغرفة ${roomId} بالفعل`);
       return res.json({ 
         message: 'أنت موجود في الغرفة بالفعل',
         alreadyJoined: true 
@@ -220,8 +219,7 @@ router.post('/:roomId/join', async (req, res) => {
       try {
         const userCount = await roomService.updateRoomUserCount(roomId);
         io.emit('roomUserCountUpdated', { roomId, userCount });
-        console.log(`✅ تم تحديث عدد مستخدمي الغرفة ${roomId}: ${userCount}`);
-      } catch (countError) {
+        } catch (countError) {
         console.warn('⚠️ خطأ في تحديث عدد المستخدمين:', countError);
       }
     }
@@ -255,7 +253,6 @@ router.post('/:roomId/leave', async (req, res) => {
     const isInRoom = roomUsers.some(user => user.id === parseInt(userId));
     
     if (!isInRoom) {
-      console.log(`⚠️ المستخدم ${userId} ليس في الغرفة ${roomId}`);
       return res.json({ 
         message: 'أنت لست في هذه الغرفة',
         notInRoom: true 
@@ -278,8 +275,7 @@ router.post('/:roomId/leave', async (req, res) => {
       try {
         const userCount = await roomService.updateRoomUserCount(roomId);
         io.emit('roomUserCountUpdated', { roomId, userCount });
-        console.log(`✅ تم تحديث عدد مستخدمي الغرفة ${roomId}: ${userCount}`);
-      } catch (countError) {
+        } catch (countError) {
         console.warn('⚠️ خطأ في تحديث عدد المستخدمين:', countError);
       }
     }

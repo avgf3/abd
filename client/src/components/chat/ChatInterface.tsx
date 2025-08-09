@@ -62,18 +62,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   // 🚀 دوال إدارة الغرف المحسنة
   const handleRoomChange = useCallback(async (roomId: string) => {
-    console.log(`🔄 طلب تغيير الغرفة إلى: ${roomId}`);
     chat.joinRoom(roomId);
   }, [chat]);
 
   // دالة تحديث الغرف مع منع التكرار
   const handleRefreshRooms = useCallback(async () => {
     if (isFetching) {
-      console.log('⚠️ تحديث الغرف قيد التنفيذ بالفعل');
       return;
     }
     
-    console.log('🔄 تحديث قائمة الغرف...');
     await fetchRooms(true); // فرض التحديث
   }, [fetchRooms, isFetching]);
 
@@ -434,7 +431,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       </main>
 
       {/* Footer - مع التبويبات الأربعة المنقولة */}
-      <footer className="bg-secondary py-4 px-6 flex justify-end items-center shadow-2xl border-t border-accent">
+      <footer className="bg-secondary py-4 px-6 flex justify-start items-center shadow-2xl border-t border-accent">
         <div className="flex gap-3">
           {/* الحوائط */}
           <Button 
