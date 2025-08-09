@@ -15,6 +15,7 @@ import { getImageSrc } from '@/utils/imageUtils';
 
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
+import { formatTimeAgo } from '@/utils/timeUtils';
 import UserRoleBadge from './UserRoleBadge';
 
 interface UnifiedSidebarProps {

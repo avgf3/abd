@@ -15,7 +15,7 @@ export interface ChatUser {
   profileEffect?: string;
   userTheme?: string;
   status?: string;
-  gender: 'male' | 'female'; // جعل الجنس مطلوب مع قيم محددة
+  gender?: string; // تغيير: جعل النوع اختيارياً وقابلاً لأي نص لضمان التوافق
   age?: number;
   country?: string;
   city?: string;
@@ -33,7 +33,7 @@ export interface ChatUser {
   isTyping?: boolean;
   isHidden?: boolean;
   points?: number;
-  level: number; // جعل المستوى مطلوب
+  level?: number; // جعل المستوى اختيارياً للتوافق بين الأنواع
   roomColor?: string;
   userType: string; // جعل نوع المستخدم مطلوب
   
@@ -86,7 +86,7 @@ export type WebSocketMessage = {
         'userVisibilityChanged' | 'themeChanged' | 'effectChanged' |
         'profileUpdated' | 'announcement' | 'roomUpdate' | 
         'broadcastUpdate' | 'newWallPost' | 'wallPostReaction' | 'wallPostDeleted' |
-        'roomJoined' | 'userJoinedRoom' | 'userLeftRoom';
+        'roomJoined' | 'userJoinedRoom' | 'userLeftRoom' | 'userDisconnected'; // إضافة userDisconnected
   
   // خصائص الرسالة الأساسية
   username?: string;
@@ -115,6 +115,10 @@ export type WebSocketMessage = {
   acceptedBy?: string; // من قبل الطلب
   friendId?: number; // معرف الصديق
   newRole?: string; // الدور الجديد للترقية
+  
+  // خصائص إضافية مفقودة للتوافق مع الاستخدامات
+  userId?: number; // إضافة: معرف المستخدم
+  source?: string; // إضافة: مصدر الرسالة لأغراض السجلات
   
   // خصائص النقاط
   points?: number; // عدد النقاط
