@@ -74,15 +74,7 @@ export function formatPoints(points: number): string {
   }
 }
 
-// دالة الحصول على أيقونة المستوى
-export function getLevelIcon(level: number): string {
-  if (level >= 10) return "👑"; // إمبراطور
-  if (level >= 8) return "⭐"; // أسطورة
-  if (level >= 6) return "💎"; // خبير متقدم
-  if (level >= 4) return "🏆"; // عضو خبير
-  if (level >= 2) return "🌟"; // عضو نشط
-  return "🔰"; // مبتدئ
-}
+// تم حذف دالة getLevelIcon - الآن نستخدم UserRoleBadge للأيقونات
 
 // دالة الحصول على لون المستوى
 export function getLevelColor(level: number): string {

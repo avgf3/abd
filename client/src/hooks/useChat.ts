@@ -227,6 +227,7 @@ export function useChat() {
     show: boolean;
     oldLevel: number;
     newLevel: number;
+    user?: any;
     levelInfo?: any;
   }>({ show: false, oldLevel: 1, newLevel: 1 });
   
