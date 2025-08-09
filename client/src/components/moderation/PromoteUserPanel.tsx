@@ -49,7 +49,7 @@ export default function PromoteUserPanel({
         body: {
           moderatorId: currentUser.id,
           targetUserId: parseInt(selectedUser),
-          role: selectedRole
+          newRole: selectedRole
         }
       });
 
