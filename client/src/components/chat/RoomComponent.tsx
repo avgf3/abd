@@ -53,7 +53,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
   onSelect,
   onDelete
 }) => {
-  const isAdmin = currentUser && ['owner', 'admin'].includes(currentUser.role);
+  const isAdmin = currentUser && ['owner', 'admin'].includes(currentUser.userType);
   const canDelete = isAdmin && !room.isDefault && onDelete;
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -283,7 +283,7 @@ export default function RoomComponent({
   const [searchQuery, setSearchQuery] = useState('');
 
   // التحقق من الصلاحيات
-  const isAdmin = currentUser && ['owner', 'admin'].includes(currentUser.role);
+  const isAdmin = currentUser && ['owner', 'admin'].includes(currentUser.userType);
   const canCreateRooms = isAdmin && allowCreate && onAddRoom;
   const canDeleteRooms = isAdmin && allowDelete && onDeleteRoom;
 
