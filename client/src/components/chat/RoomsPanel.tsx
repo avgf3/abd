@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, Plus, Users, Mic, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { ChatRoom, ChatUser } from '@/types/chat';
+import { dedupeRooms } from '@/utils/roomUtils';
 
 interface RoomsPanelProps {
   currentUser: ChatUser | null;
@@ -32,6 +33,7 @@ export default function RoomsPanel({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const isAdmin = currentUser && ['owner', 'admin'].includes(currentUser.role);
+  const uniqueRooms = useMemo(() => dedupeRooms(rooms), [rooms]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -106,7 +108,7 @@ export default function RoomsPanel({
 
         {/* Rooms List */}
         <div className="space-y-1">
-          {rooms.map((room) => (
+          {uniqueRooms.map((room) => (
             <div
               key={room.id}
               className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors group ${

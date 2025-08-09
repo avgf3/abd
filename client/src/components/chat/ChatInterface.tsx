@@ -30,6 +30,7 @@ import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { useChat } from '@/hooks/useChat';
 import type { ChatUser, ChatRoom } from '@/types/chat';
+import { mapApiRooms, dedupeRooms } from '@/utils/roomUtils';
 
 interface ChatInterfaceProps {
   chat: ReturnType<typeof useChat>;
@@ -57,23 +58,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       
       const data = await apiRequest('/api/rooms');
       if (data.rooms && Array.isArray(data.rooms)) {
-        const formattedRooms = data.rooms.map((room: any) => ({
-          id: room.id,
-          name: room.name,
-          description: room.description || '',
-          isDefault: room.isDefault || room.is_default || false,
-          createdBy: room.createdBy || room.created_by,
-          createdAt: new Date(room.createdAt || room.created_at),
-          isActive: room.isActive || room.is_active || true,
-          userCount: room.userCount || room.user_count || 0,
-          icon: room.icon || '',
-          isBroadcast: room.isBroadcast || room.is_broadcast || false,
-          hostId: room.hostId || room.host_id,
-          speakers: room.speakers ? (typeof room.speakers === 'string' ? JSON.parse(room.speakers) : room.speakers) : [],
-          micQueue: room.micQueue ? (typeof room.micQueue === 'string' ? JSON.parse(room.micQueue) : room.micQueue) : []
-        }));
-        
-        setRooms(formattedRooms);
+        const mapped = mapApiRooms(data.rooms);
+        setRooms(mapped);
       } else {
         console.warn('⚠️ بيانات الغرف غير صحيحة:', data);
         throw new Error('بيانات الغرف غير صحيحة');
@@ -147,7 +133,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           speakers: data.room.speakers || [],
           micQueue: data.room.mic_queue || []
         };
-        setRooms(prev => [...prev, newRoom]);
+        setRooms(prev => dedupeRooms([...prev, newRoom]));
         showSuccessToast(`تم إنشاء غرفة "${roomData.name}" بنجاح`, "تم إنشاء الغرفة");
       } else {
         const error = await response.json();

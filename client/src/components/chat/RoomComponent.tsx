@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ChatRoom, ChatUser } from '@/types/chat';
+import { dedupeRooms } from '@/utils/roomUtils';
 
 interface RoomComponentProps {
   // بيانات أساسية
@@ -288,10 +289,11 @@ export default function RoomComponent({
 
   // تصفية الغرف حسب البحث
   const filteredRooms = useMemo(() => {
-    if (!searchQuery.trim()) return rooms;
+    const uniqueRooms = dedupeRooms(rooms);
+    if (!searchQuery.trim()) return uniqueRooms;
     
     const query = searchQuery.toLowerCase();
-    return rooms.filter(room => 
+    return uniqueRooms.filter(room => 
       room.name.toLowerCase().includes(query) ||
       room.description?.toLowerCase().includes(query)
     );
@@ -299,10 +301,11 @@ export default function RoomComponent({
 
   // إحصائيات الغرف
   const roomStats = useMemo(() => {
-    const totalRooms = rooms.length;
-    const broadcastRooms = rooms.filter(r => r.isBroadcast).length;
-    const totalUsers = rooms.reduce((sum, room) => sum + (room.userCount || 0), 0);
-    const activeRooms = rooms.filter(r => (room.userCount || 0) > 0).length;
+    const uniqueRooms = dedupeRooms(rooms);
+    const totalRooms = uniqueRooms.length;
+    const broadcastRooms = uniqueRooms.filter(r => r.isBroadcast).length;
+    const totalUsers = uniqueRooms.reduce((sum, r) => sum + (r.userCount || 0), 0);
+    const activeRooms = uniqueRooms.filter(r => (r.userCount || 0) > 0).length;
 
     return { totalRooms, broadcastRooms, totalUsers, activeRooms };
   }, [rooms]);
