@@ -528,15 +528,7 @@ export const storage: LegacyStorage = {
       }
       
       // جلب قائمة انتظار المايك
-      let micQueue: number[] = [];
-      if (room.mic_queue) {
-        try {
-          micQueue = typeof room.mic_queue === 'string' ? 
-            JSON.parse(room.mic_queue) : room.mic_queue;
-        } catch (e) {
-          micQueue = [];
-        }
-      }
+      let micQueue = this.parseMicQueue(room.mic_queue);
       
       return {
         hostId: room.host_id,
@@ -697,7 +689,28 @@ export const storage: LegacyStorage = {
 
   // ========= Broadcast Room / Mic Management =========
   
-  // دالة مساعدة للتحقق من صحة غرفة البث
+  // دوال مساعدة لتحليل JSON - لتجنب تكرار الكود
+  parseMicQueue(micQueueData: any): number[] {
+    if (!micQueueData) return [];
+    try {
+      return typeof micQueueData === 'string' ? JSON.parse(micQueueData) : micQueueData;
+    } catch (e) {
+      console.error('خطأ في تحليل قائمة انتظار المايك:', e);
+      return [];
+    }
+  },
+
+  parseSpeakers(speakersData: any): number[] {
+    if (!speakersData) return [];
+    try {
+      return typeof speakersData === 'string' ? JSON.parse(speakersData) : speakersData;
+    } catch (e) {
+      console.error('خطأ في تحليل قائمة المتحدثين:', e);
+      return [];
+    }
+  },
+
+  // دالة مساعدة للتحقق من صحة غرفة البث - محدثة للسماح للمشرفين والإدمن
   async validateBroadcastRoom(roomId: string, actionBy?: number) {
     const status = databaseService.getStatus();
     if (!status.connected) {
@@ -711,10 +724,23 @@ export const storage: LegacyStorage = {
       return { isValid: false, error: 'الغرفة ليست غرفة بث مباشر' };
     }
     
-    // التحقق من صلاحيات المضيف إذا تم تمرير actionBy
-    if (actionBy !== undefined && room.host_id !== actionBy) {
-      console.log(`User ${actionBy} is not the host of room ${roomId}`);
-      return { isValid: false, error: 'المستخدم ليس مضيف الغرفة' };
+    // التحقق من صلاحيات المستخدم إذا تم تمرير actionBy
+    if (actionBy !== undefined) {
+      const user = await this.getUser(actionBy);
+      if (!user) {
+        return { isValid: false, error: 'المستخدم غير موجود' };
+      }
+
+      // السماح للمضيف والمشرفين والإدمن بإدارة المايك
+      const isHost = room.host_id === actionBy;
+      const isAdmin = user.userType === 'admin';
+      const isModerator = user.userType === 'moderator';
+      const isOwner = user.userType === 'owner';
+
+      if (!isHost && !isAdmin && !isModerator && !isOwner) {
+        console.log(`User ${actionBy} does not have permission to manage mic in room ${roomId}`);
+        return { isValid: false, error: 'المستخدم ليس لديه صلاحية لإدارة المايك في هذه الغرفة' };
+      }
     }
     
     return { isValid: true, room };
@@ -738,26 +764,10 @@ export const storage: LegacyStorage = {
       }
       
       // جلب قائمة الانتظار الحالية
-      let micQueue: number[] = [];
-      if (room.mic_queue) {
-        try {
-          micQueue = typeof room.mic_queue === 'string' ? 
-            JSON.parse(room.mic_queue) : room.mic_queue;
-        } catch (e) {
-          micQueue = [];
-        }
-      }
+      let micQueue = this.parseMicQueue(room.mic_queue);
       
       // جلب قائمة المتحدثين الحالية
-      let speakers: number[] = [];
-      if (room.speakers) {
-        try {
-          speakers = typeof room.speakers === 'string' ? 
-            JSON.parse(room.speakers) : room.speakers;
-        } catch (e) {
-          speakers = [];
-        }
-      }
+      let speakers = this.parseSpeakers(room.speakers);
       
       // التحقق من أن المستخدم ليس مضيف أو متحدث أو في قائمة الانتظار
       if (room.host_id === userId) {
@@ -811,26 +821,10 @@ export const storage: LegacyStorage = {
       const room = validation.room;
       
       // جلب قائمة الانتظار الحالية
-      let micQueue: number[] = [];
-      if (room.mic_queue) {
-        try {
-          micQueue = typeof room.mic_queue === 'string' ? 
-            JSON.parse(room.mic_queue) : room.mic_queue;
-        } catch (e) {
-          micQueue = [];
-        }
-      }
+      let micQueue = this.parseMicQueue(room.mic_queue);
       
       // جلب قائمة المتحدثين الحالية
-      let speakers: number[] = [];
-      if (room.speakers) {
-        try {
-          speakers = typeof room.speakers === 'string' ? 
-            JSON.parse(room.speakers) : room.speakers;
-        } catch (e) {
-          speakers = [];
-        }
-      }
+      let speakers = this.parseSpeakers(room.speakers);
       
       // التحقق من وجود المستخدم في قائمة الانتظار
       const queueIndex = micQueue.indexOf(userId);
@@ -879,15 +873,7 @@ export const storage: LegacyStorage = {
       const room = validation.room;
       
       // جلب قائمة الانتظار الحالية
-      let micQueue: number[] = [];
-      if (room.mic_queue) {
-        try {
-          micQueue = typeof room.mic_queue === 'string' ? 
-            JSON.parse(room.mic_queue) : room.mic_queue;
-        } catch (e) {
-          micQueue = [];
-        }
-      }
+      let micQueue = this.parseMicQueue(room.mic_queue);
       
       // التحقق من وجود المستخدم في قائمة الانتظار
       const queueIndex = micQueue.indexOf(userId);
@@ -938,15 +924,7 @@ export const storage: LegacyStorage = {
       }
       
       // جلب قائمة المتحدثين الحالية
-      let speakers: number[] = [];
-      if (room.speakers) {
-        try {
-          speakers = typeof room.speakers === 'string' ? 
-            JSON.parse(room.speakers) : room.speakers;
-        } catch (e) {
-          speakers = [];
-        }
-      }
+      let speakers = this.parseSpeakers(room.speakers);
       
       // التحقق من وجود المستخدم في قائمة المتحدثين
       const speakerIndex = speakers.indexOf(userId);
