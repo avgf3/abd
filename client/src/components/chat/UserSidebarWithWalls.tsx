@@ -15,7 +15,7 @@ import { getImageSrc } from '@/utils/imageUtils';
 
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
-import UserRoleBadge from './UserRoleBadge';
+import UserRoleBadge, { getUserLevelIcon, getUserRoleIcon } from './UserRoleBadge';
 
 interface UnifiedSidebarProps {
   users: ChatUser[];
@@ -87,42 +87,10 @@ export default function UnifiedSidebar({
     });
   }, [validUsers, searchTerm]);
 
-  // 🚀 تحسين: دالة getUserRankBadge محسنة ومنظمة
+  // 🚀 تحسين: استخدام دالة getUserLevelIcon المركزية
   const getUserRankBadge = useCallback((user: ChatUser) => {
     if (!user) return null;
-    
-    // تحويل المستوى بطريقة آمنة
-    const userLevel = typeof user.level === 'string' ? parseInt(user.level, 10) : user.level;
-    const level = isNaN(userLevel) ? 0 : userLevel;
-    
-    // استخدام switch للوضوح والأداء
-    switch (user.userType) {
-      case 'owner':
-        return <img src="/svgs/crown.svg" alt="owner" style={{width: 24, height: 24, display: 'inline'}} />;
-      case 'admin':
-        return <span style={{fontSize: 24, display: 'inline'}}>⭐</span>;
-      case 'moderator':
-        return <span style={{fontSize: 24, display: 'inline'}}>🛡️</span>;
-      case 'member':
-        if (level >= 1 && level <= 10) {
-          return user.gender === 'male' 
-            ? <img src="/svgs/blue_arrow.svg" alt="male-lvl1-10" style={{width: 24, height: 24, display: 'inline'}} />
-            : <img src="/svgs/pink_medal.svg" alt="female-lvl1-10" style={{width: 24, height: 24, display: 'inline'}} />;
-        }
-        if (level > 10 && level <= 20) {
-          return <img src="/svgs/white.svg" alt="lvl10-20" style={{width: 24, height: 24, display: 'inline'}} />;
-        }
-        if (level > 20 && level <= 30) {
-          return <img src="/svgs/emerald.svg" alt="lvl20-30" style={{width: 24, height: 24, display: 'inline'}} />;
-        }
-        if (level > 30 && level <= 40) {
-          return <img src="/svgs/orange_shine.svg" alt="lvl30-40" style={{width: 24, height: 24, display: 'inline'}} />;
-        }
-        break;
-      default:
-        return null;
-    }
-    return null;
+    return getUserLevelIcon(user, 24);
   }, []);
 
   // 🚀 تحسين: دالة formatLastSeen محسنة
@@ -617,9 +585,15 @@ export default function UnifiedSidebar({
                                 {post.username}
                               </span>
                                                               {/* Post badge for user role */}
-                                {post.userRole === 'owner' && <span className="text-yellow-400">👑</span>}
-                                {post.userRole === 'admin' && <span className="text-blue-400">⭐</span>}
-                                {post.userRole === 'moderator' && <span className="text-green-400">🛡️</span>}
+                                {getUserRoleIcon(post.userRole) && (
+                                  <span className={
+                                    post.userRole === 'owner' ? 'text-yellow-400' :
+                                    post.userRole === 'admin' ? 'text-blue-400' : 
+                                    'text-green-400'
+                                  }>
+                                    {getUserRoleIcon(post.userRole)}
+                                  </span>
+                                )}
                             </div>
                             <p className="text-xs text-gray-500">{formatTimeAgo(post.timestamp.toString())}</p>
                           </div>

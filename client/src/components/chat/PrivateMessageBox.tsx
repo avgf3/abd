@@ -7,6 +7,7 @@ import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import FileUploadButton from './FileUploadButton';
 import EmojiPicker from './EmojiPicker';
+import { getUserRoleIcon } from './UserRoleBadge';
 
 
 interface PrivateMessageBoxProps {
@@ -121,13 +122,13 @@ export default function PrivateMessageBox({
                 <p className="font-bold text-lg" style={{ 
                   color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#7C3AED') 
                 }}>
-                  {user.userType === 'owner' ? '👑' : user.userType === 'admin' ? '⭐' : ''} {user.username}
+                  {getUserRoleIcon(user.userType)} {user.username}
                 </p>
               </div>
               <p className="text-sm text-purple-600 font-medium">
-                {user.userType === 'owner' && '👑 مالك'}
-                {user.userType === 'admin' && '⭐ إدمن'}
-                {user.userType === 'moderator' && '🛡️ مشرف'}
+                {user.userType === 'owner' && `${getUserRoleIcon(user.userType)} مالك`}
+                {user.userType === 'admin' && `${getUserRoleIcon(user.userType)} إدمن`}
+                {user.userType === 'moderator' && `${getUserRoleIcon(user.userType)} مشرف`}
                 {user.userType === 'member' && ''}
                 {user.userType === 'guest' && ''}
               </p>

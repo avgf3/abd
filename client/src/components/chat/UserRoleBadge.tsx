@@ -8,6 +8,33 @@ interface UserRoleBadgeProps {
   size?: number;
 }
 
+/**
+ * نظام الشعارات الموحد للموقع
+ * 
+ * المالك (owner): تاج من client/public/svgs/crown.svg
+ * المشرف العام (admin): ⭐
+ * المراقب (moderator): 🛡️
+ * العضو (ذكر) مستوى 1–10: سهم أزرق client/public/svgs/blue_arrow.svg
+ * العضو (أنثى) مستوى 1–10: ميدالية وردية client/public/svgs/pink_medal.svg
+ * العضو مستوى 11–20: ألماسة بيضاء client/public/svgs/white.svg
+ * العضو مستوى 21–30: ألماسة خضراء client/public/svgs/emerald.svg
+ * العضو مستوى 31–40: ألماسة برتقالية لامعة client/public/svgs/orange_shine.svg
+ */
+
+// دالة للحصول على أيقونة الدور فقط (بدون مستوى)
+export function getUserRoleIcon(userType: string): string {
+  switch (userType) {
+    case 'owner':
+      return '👑';
+    case 'admin':
+      return '⭐';
+    case 'moderator':
+      return '🛡️';
+    default:
+      return '';
+  }
+}
+
 // دالة مساعدة للحصول على أيقونة المستوى/الدور
 export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element {
   // owner: تاج SVG
@@ -36,17 +63,17 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
     if (level >= 1 && level <= 10 && gender === 'female') {
       return <img src="/svgs/pink_medal.svg" alt="female-lvl1-10" style={{width: size, height: size, display: 'inline'}} />;
     }
-    // عضو لفل 10-20: ألماسة بيضاء
-    if (level > 10 && level <= 20) {
-      return <img src="/svgs/white.svg" alt="lvl10-20" style={{width: size, height: size, display: 'inline'}} />;
+    // عضو لفل 11-20: ألماسة بيضاء
+    if (level >= 11 && level <= 20) {
+      return <img src="/svgs/white.svg" alt="lvl11-20" style={{width: size, height: size, display: 'inline'}} />;
     }
-    // عضو لفل 20-30: ألماسة خضراء
-    if (level > 20 && level <= 30) {
-      return <img src="/svgs/emerald.svg" alt="lvl20-30" style={{width: size, height: size, display: 'inline'}} />;
+    // عضو لفل 21-30: ألماسة خضراء
+    if (level >= 21 && level <= 30) {
+      return <img src="/svgs/emerald.svg" alt="lvl21-30" style={{width: size, height: size, display: 'inline'}} />;
     }
-    // عضو لفل 30-40: ألماسة برتقالية مضيئة
-    if (level > 30 && level <= 40) {
-      return <img src="/svgs/orange_shine.svg" alt="lvl30-40" style={{width: size, height: size, display: 'inline'}} />;
+    // عضو لفل 31-40: ألماسة برتقالية مضيئة
+    if (level >= 31 && level <= 40) {
+      return <img src="/svgs/orange_shine.svg" alt="lvl31-40" style={{width: size, height: size, display: 'inline'}} />;
     }
   }
   
