@@ -86,7 +86,9 @@ export type WebSocketMessage = {
         'userVisibilityChanged' | 'themeChanged' | 'effectChanged' |
         'profileUpdated' | 'announcement' | 'roomUpdate' | 
         'broadcastUpdate' | 'newWallPost' | 'wallPostReaction' | 'wallPostDeleted' |
-        'roomJoined' | 'userJoinedRoom' | 'userLeftRoom' | 'userDisconnected'; // إضافة userDisconnected
+        'roomJoined' | 'userJoinedRoom' | 'userLeftRoom' | 'userDisconnected' |
+        // أحداث إضافية تستخدم في النظام
+        'roomMessages' | 'micRequest' | 'micApproved' | 'micRejected' | 'speakerRemoved' | 'broadcastRoomUpdate';
   
   // خصائص الرسالة الأساسية
   username?: string;
@@ -97,6 +99,8 @@ export type WebSocketMessage = {
   user?: ChatUser;
   users?: ChatUser[];
   message?: ChatMessage | string; // يمكن أن يكون string أيضاً
+  messages?: ChatMessage[]; // للرسائل المجمّعة مثل roomMessages
+  broadcastInfo?: any; // معلومات غرفة البث المرفقة مع الحدث
   action?: string;
   
   // خصائص إضافية للوظائف المختلفة

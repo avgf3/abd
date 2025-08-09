@@ -508,7 +508,7 @@ export const storage: LegacyStorage = {
       }
       
       const room = await this.getRoom(roomId);
-      if (!room || !room.is_broadcast) {
+      if (!room || !room.isBroadcast) {
         return { 
           hostId: null, 
           speakers: [], 
@@ -521,17 +521,17 @@ export const storage: LegacyStorage = {
       if (room.speakers) {
         try {
           speakers = typeof room.speakers === 'string' ? 
-            JSON.parse(room.speakers) : room.speakers;
+            JSON.parse(room.speakers) : (room.speakers as any[]);
         } catch (e) {
           speakers = [];
         }
       }
       
       // جلب قائمة انتظار المايك
-      let micQueue = this.parseMicQueue(room.mic_queue);
+      let micQueue = this.parseMicQueue((room as any).micQueue ?? (room as any).mic_queue);
       
       return {
-        hostId: room.host_id,
+        hostId: (room as any).hostId ?? null,
         speakers: speakers,
         micQueue: micQueue
       };
@@ -719,7 +719,7 @@ export const storage: LegacyStorage = {
     
     // التحقق من وجود الغرفة وأنها غرفة بث
     const room = await this.getRoom(roomId);
-    if (!room || !room.is_broadcast) {
+    if (!room || !(room as any).isBroadcast) {
       console.log(`Room ${roomId} is not a broadcast room`);
       return { isValid: false, error: 'الغرفة ليست غرفة بث مباشر' };
     }
@@ -732,7 +732,7 @@ export const storage: LegacyStorage = {
       }
 
       // السماح للمضيف والمشرفين والإدمن بإدارة المايك
-      const isHost = room.host_id === actionBy;
+      const isHost = (room as any).hostId === actionBy;
       const isAdmin = user.userType === 'admin';
       const isModerator = user.userType === 'moderator';
       const isOwner = user.userType === 'owner';
@@ -764,13 +764,13 @@ export const storage: LegacyStorage = {
       }
       
       // جلب قائمة الانتظار الحالية
-      let micQueue = this.parseMicQueue(room.mic_queue);
+      let micQueue = this.parseMicQueue((room as any).micQueue ?? (room as any).mic_queue);
       
       // جلب قائمة المتحدثين الحالية
-      let speakers = this.parseSpeakers(room.speakers);
+      let speakers = this.parseSpeakers((room as any).speakers);
       
       // التحقق من أن المستخدم ليس مضيف أو متحدث أو في قائمة الانتظار
-      if (room.host_id === userId) {
+      if ((room as any).hostId === userId) {
         console.log(`User ${userId} is already the host`);
         return false;
       }
@@ -789,16 +789,13 @@ export const storage: LegacyStorage = {
       micQueue.push(userId);
       
       // تحديث قاعدة البيانات
-      if (status.usingPostgres) {
-        await db.update(rooms).set({
-          mic_queue: JSON.stringify(micQueue)
-        }).where(eq(rooms.id, roomId));
-      } else {
-        const sqliteDb = getDirectSqliteConnection();
-        if (sqliteDb) {
-          const stmt = sqliteDb.prepare(`UPDATE rooms SET mic_queue = ? WHERE id = ?`);
-          stmt.run(JSON.stringify(micQueue), roomId);
-        }
+      const { db, dbType } = await import('./database-adapter');
+      if (db && dbType === 'postgresql') {
+        const { rooms } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        await (db as any).update(rooms).set({ micQueue: JSON.stringify(micQueue) }).where(eq((rooms as any).id, roomId as any));
+      } else if (db && dbType === 'sqlite') {
+        (db as any).run?.("UPDATE rooms SET mic_queue = ? WHERE id = ?", [JSON.stringify(micQueue), roomId]);
       }
       
       console.log(`User ${userId} added to mic queue for room ${roomId}`);
@@ -821,10 +818,10 @@ export const storage: LegacyStorage = {
       const room = validation.room;
       
       // جلب قائمة الانتظار الحالية
-      let micQueue = this.parseMicQueue(room.mic_queue);
+      let micQueue = this.parseMicQueue((room as any).micQueue ?? (room as any).mic_queue);
       
       // جلب قائمة المتحدثين الحالية
-      let speakers = this.parseSpeakers(room.speakers);
+      let speakers = this.parseSpeakers((room as any).speakers);
       
       // التحقق من وجود المستخدم في قائمة الانتظار
       const queueIndex = micQueue.indexOf(userId);
@@ -840,17 +837,13 @@ export const storage: LegacyStorage = {
       }
       
       // تحديث قاعدة البيانات
-      if (status.usingPostgres) {
-        await db.update(rooms).set({
-          mic_queue: JSON.stringify(micQueue),
-          speakers: JSON.stringify(speakers)
-        }).where(eq(rooms.id, roomId));
-      } else {
-        const sqliteDb = getDirectSqliteConnection();
-        if (sqliteDb) {
-          const stmt = sqliteDb.prepare(`UPDATE rooms SET mic_queue = ?, speakers = ? WHERE id = ?`);
-          stmt.run(JSON.stringify(micQueue), JSON.stringify(speakers), roomId);
-        }
+      const { db, dbType } = await import('./database-adapter');
+      if (db && dbType === 'postgresql') {
+        const { rooms } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        await (db as any).update(rooms).set({ micQueue: JSON.stringify(micQueue), speakers: JSON.stringify(speakers) }).where(eq((rooms as any).id, roomId as any));
+      } else if (db && dbType === 'sqlite') {
+        (db as any).run?.("UPDATE rooms SET mic_queue = ?, speakers = ? WHERE id = ?", [JSON.stringify(micQueue), JSON.stringify(speakers), roomId]);
       }
       
       console.log(`User ${userId} approved as speaker in room ${roomId} by ${approvedBy}`);
@@ -873,7 +866,7 @@ export const storage: LegacyStorage = {
       const room = validation.room;
       
       // جلب قائمة الانتظار الحالية
-      let micQueue = this.parseMicQueue(room.mic_queue);
+      let micQueue = this.parseMicQueue((room as any).micQueue ?? (room as any).mic_queue);
       
       // التحقق من وجود المستخدم في قائمة الانتظار
       const queueIndex = micQueue.indexOf(userId);
@@ -886,16 +879,13 @@ export const storage: LegacyStorage = {
       micQueue.splice(queueIndex, 1);
       
       // تحديث قاعدة البيانات
-      if (status.usingPostgres) {
-        await db.update(rooms).set({
-          mic_queue: JSON.stringify(micQueue)
-        }).where(eq(rooms.id, roomId));
-      } else {
-        const sqliteDb = getDirectSqliteConnection();
-        if (sqliteDb) {
-          const stmt = sqliteDb.prepare(`UPDATE rooms SET mic_queue = ? WHERE id = ?`);
-          stmt.run(JSON.stringify(micQueue), roomId);
-        }
+      const { db, dbType } = await import('./database-adapter');
+      if (db && dbType === 'postgresql') {
+        const { rooms } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        await (db as any).update(rooms).set({ micQueue: JSON.stringify(micQueue) }).where(eq((rooms as any).id, roomId as any));
+      } else if (db && dbType === 'sqlite') {
+        (db as any).run?.("UPDATE rooms SET mic_queue = ? WHERE id = ?", [JSON.stringify(micQueue), roomId]);
       }
       
       console.log(`User ${userId} rejected from mic queue in room ${roomId} by ${rejectedBy}`);
@@ -918,13 +908,13 @@ export const storage: LegacyStorage = {
       const room = validation.room;
       
       // التحقق من أن المستخدم المراد إزالته ليس المضيف نفسه
-      if (room.host_id === userId) {
+      if ((room as any).hostId === userId) {
         console.log(`Cannot remove host ${userId} from speakers`);
         return false;
       }
       
       // جلب قائمة المتحدثين الحالية
-      let speakers = this.parseSpeakers(room.speakers);
+      let speakers = this.parseSpeakers((room as any).speakers);
       
       // التحقق من وجود المستخدم في قائمة المتحدثين
       const speakerIndex = speakers.indexOf(userId);
@@ -937,16 +927,13 @@ export const storage: LegacyStorage = {
       speakers.splice(speakerIndex, 1);
       
       // تحديث قاعدة البيانات
-      if (status.usingPostgres) {
-        await db.update(rooms).set({
-          speakers: JSON.stringify(speakers)
-        }).where(eq(rooms.id, roomId));
-      } else {
-        const sqliteDb = getDirectSqliteConnection();
-        if (sqliteDb) {
-          const stmt = sqliteDb.prepare(`UPDATE rooms SET speakers = ? WHERE id = ?`);
-          stmt.run(JSON.stringify(speakers), roomId);
-        }
+      const { db, dbType } = await import('./database-adapter');
+      if (db && dbType === 'postgresql') {
+        const { rooms } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        await (db as any).update(rooms).set({ speakers: JSON.stringify(speakers) }).where(eq((rooms as any).id, roomId as any));
+      } else if (db && dbType === 'sqlite') {
+        (db as any).run?.("UPDATE rooms SET speakers = ? WHERE id = ?", [JSON.stringify(speakers), roomId]);
       }
       
       console.log(`User ${userId} removed from speakers in room ${roomId} by ${removedBy}`);
