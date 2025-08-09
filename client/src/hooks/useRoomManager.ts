@@ -42,6 +42,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
   const cacheRef = useRef<RoomCache | null>(null);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const fetchingRef = useRef<boolean>(false); // منع الطلبات المتعددة
 
   // تنظيف الذاكرة عند إلغاء التحميل
   useEffect(() => {
@@ -78,10 +79,17 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     return (now - cacheRef.current.timestamp) < cacheTimeout;
   }, [cacheTimeout]);
 
-  // جلب الغرف من API
+  // جلب الغرف من API مع منع التكرار
   const fetchRooms = useCallback(async (force: boolean = false): Promise<ChatRoom[]> => {
+    // منع الطلبات المتعددة المتزامنة
+    if (fetchingRef.current && !force) {
+      console.log('⚠️ طلب جلب الغرف قيد التنفيذ بالفعل');
+      return rooms;
+    }
+
     // استخدام الذاكرة المؤقتة إذا كانت صالحة وليس إجبارياً
     if (!force && isCacheValid() && cacheRef.current) {
+      console.log('✅ استخدام الذاكرة المؤقتة للغرف');
       return cacheRef.current.data;
     }
 
@@ -92,11 +100,13 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
 
     // إنشاء controller جديد
     abortControllerRef.current = new AbortController();
+    fetchingRef.current = true;
 
     try {
       setLoading(true);
       setError(null);
 
+      console.log('🔄 جلب الغرف من API...');
       const response = await apiRequest('/api/rooms', {
         method: 'GET',
         signal: abortControllerRef.current.signal
@@ -126,10 +136,12 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       setLastUpdate(new Date());
       setError(null);
 
+      console.log(`✅ تم جلب ${cacheRef.current.data.length} غرفة بنجاح`);
       return cacheRef.current.data;
 
     } catch (err: any) {
       if (err.name === 'AbortError') {
+        console.log('⚠️ تم إلغاء طلب جلب الغرف');
         return rooms; // إرجاع الغرف الحالية
       }
 
@@ -139,6 +151,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
 
       // استخدام الذاكرة المؤقتة في حالة الخطأ إذا كانت متوفرة
       if (cacheRef.current) {
+        console.log('⚠️ استخدام الذاكرة المؤقتة بسبب الخطأ');
         setRooms(cacheRef.current.data);
         return cacheRef.current.data;
       }
@@ -147,6 +160,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     } finally {
       setLoading(false);
       abortControllerRef.current = null;
+      fetchingRef.current = false;
     }
   }, [isCacheValid, maxCachedRooms, rooms]);
 

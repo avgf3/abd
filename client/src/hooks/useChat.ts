@@ -783,6 +783,20 @@ export function useChat() {
 
   // Join room function
   const joinRoom = useCallback((roomId: string) => {
+    // تجنب الانضمام لنفس الغرفة مرة أخرى
+    if (state.currentRoomId === roomId) {
+      console.log(`✅ أنت موجود في الغرفة ${roomId} بالفعل`);
+      return;
+    }
+
+    // تجنب الطلبات المتكررة
+    if (lastRequestedRoomId.current === roomId) {
+      console.log(`⚠️ تم طلب الانضمام للغرفة ${roomId} مؤخراً`);
+      return;
+    }
+
+    console.log(`🔄 الانضمام للغرفة: ${roomId}`);
+    
     // تغيير الغرفة الحالية فوراً للاستجابة السريعة
     dispatch({ type: 'SET_ROOM', payload: roomId });
     lastRequestedRoomId.current = roomId;
@@ -797,8 +811,12 @@ export function useChat() {
     loadRoomMessages(roomId);
     
     // إرسال طلب الانضمام للسيرفر (سيرسل تأكيد roomJoined)
-    socket.current?.emit('joinRoom', { roomId });
-  }, [loadRoomMessages, state.roomMessages]);
+    if (socket.current?.connected) {
+      socket.current.emit('joinRoom', { roomId });
+    } else {
+      console.error('❌ Socket غير متصل، لا يمكن الانضمام للغرفة');
+    }
+  }, [loadRoomMessages, state.roomMessages, state.currentRoomId]);
 
   // Send message function - محسنة
   const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number, roomId?: string) => {
