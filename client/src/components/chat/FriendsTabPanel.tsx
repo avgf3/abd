@@ -11,6 +11,7 @@ import ProfileImage from './ProfileImage';
 import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 import type { Friend, FriendRequest } from '@/../../shared/types';
+import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
 
 // Using shared types for Friend and FriendRequest
 
@@ -68,7 +69,7 @@ export default function FriendsTabPanel({
     } finally {
       setLoading(false);
     }
-  }, [currentUser, toast]);
+  }, [currentUser]);
 
   // جلب طلبات الصداقة
   const fetchFriendRequests = useCallback(async () => {
@@ -178,28 +179,9 @@ export default function FriendsTabPanel({
     friend.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-green-500';
-      case 'away': return 'bg-yellow-500';
-      case 'offline': return 'bg-gray-400';
-      default: return 'bg-gray-400';
-    }
-  };
 
-  const formatTimeAgo = (timestamp: string) => {
-    const now = new Date();
-    const time = new Date(timestamp);
-    const diff = now.getTime() - time.getTime();
-    const minutes = Math.floor(diff / 60000);
-    
-    if (minutes < 1) return 'الآن';
-    if (minutes < 60) return `قبل ${minutes} دقيقة`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `قبل ${hours} ساعة`;
-    const days = Math.floor(hours / 24);
-    return `قبل ${days} يوم`;
-  };
+
+
 
   return (
     <div className="h-full flex flex-col bg-background/95 backdrop-blur-sm">

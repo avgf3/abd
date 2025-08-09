@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Shield, Clock, Ban, UserX } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import ModerationList from './ModerationList';
 
 interface ModerationAction {
   id: string;
@@ -138,59 +139,41 @@ export default function ModerationPanel({ currentUser, isVisible, onClose }: Mod
             </Button>
           </div>
 
-          <ScrollArea className="h-[50vh]">
-            {actions.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>لا توجد إجراءات إدارية بعد</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {actions.map((action) => (
-                  <Card key={action.id} className="bg-gray-800/50 border-gray-600">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3 flex-1">
-                          {getActionIcon(action.type)}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-gray-200">
-                                {action.moderatorName}
-                              </span>
-                              <span className="text-gray-400">قام بـ</span>
-                              <span className="text-orange-400">
-                                {getActionText(action)}
-                              </span>
-                            </div>
-                            
-                            <p className="text-sm text-gray-400 mb-2">
-                              السبب: {action.reason}
-                            </p>
-                            
-                            {action.duration && (
-                              <Badge variant="outline" className="text-xs">
-                                المدة: {action.duration} دقيقة
-                              </Badge>
-                            )}
-                            
-                            {action.ipAddress && (
-                              <div className="mt-2 text-xs text-gray-500">
-                                IP: {action.ipAddress.substring(0, 15)}...
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="text-xs text-gray-500 text-left">
-                          {formatTimestamp(action.timestamp)}
-                        </div>
+          <ModerationList
+            items={actions}
+            loading={loading}
+            emptyText="لا توجد إجراءات إدارية بعد"
+            renderItem={(action) => (
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3 flex-1">
+                  {getActionIcon(action.type)}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-gray-200">
+                        {action.moderatorName}
+                      </span>
+                      <span className="text-gray-400">قام بـ</span>
+                      <span className="text-orange-400">
+                        {getActionText(action as any)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-400 mb-2">السبب: {action.reason}</p>
+                    {(action as any).duration && (
+                      <Badge variant="outline" className="text-xs">
+                        المدة: {(action as any).duration} دقيقة
+                      </Badge>
+                    )}
+                    {(action as any).ipAddress && (
+                      <div className="mt-2 text-xs text-gray-500">
+                        IP: {(action as any).ipAddress.substring(0, 15)}...
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                    )}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 text-left">{formatTimestamp((action as any).timestamp)}</div>
               </div>
             )}
-          </ScrollArea>
+          />
 
           <div className="mt-6 pt-4 border-t border-gray-700">
             <div className="grid grid-cols-3 gap-4 text-center">
