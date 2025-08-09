@@ -15,6 +15,7 @@ import securityApiRoutes from "./api-security";
 import apiRoutes from "./routes/index";
 import { pointsService } from "./services/pointsService";
 import { developmentOnly, logDevelopmentEndpoint } from "./middleware/development";
+import { createFriendRequestNotification, createFriendAcceptedNotification } from "./utils/notificationHelpers";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -2649,13 +2650,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // إنشاء إشعار حقيقي في قاعدة البيانات
-      await storage.createNotification({
-        userId: receiverId,
-        type: 'friendRequest',
-        title: '👫 طلب صداقة جديد',
-        message: `أرسل ${sender?.username} طلب صداقة إليك`,
-        data: { requestId: request.id, senderId: senderId, senderName: sender?.username }
-      });
+      await createFriendRequestNotification(
+        receiverId,
+        sender?.username || 'مستخدم مجهول',
+        senderId,
+        request.id
+      );
 
       res.json({ message: "تم إرسال طلب الصداقة", request });
     } catch (error) {
@@ -2708,13 +2708,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // إنشاء إشعار حقيقي في قاعدة البيانات
-      await storage.createNotification({
-        userId: targetUser.id,
-        type: 'friendRequest',
-        title: '👫 طلب صداقة جديد',
-        message: `أرسل ${sender?.username} طلب صداقة إليك`,
-        data: { requestId: request.id, senderId: senderId, senderName: sender?.username }
-      });
+      await createFriendRequestNotification(
+        targetUser.id,
+        sender?.username || 'مستخدم مجهول',
+        senderId,
+        request.id
+      );
 
       res.json({ message: "تم إرسال طلب الصداقة", request });
     } catch (error) {
@@ -2800,13 +2799,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // إنشاء إشعار حقيقي في قاعدة البيانات
-      await storage.createNotification({
-        userId: request.userId,
-        type: 'friendAccepted',
-        title: '✅ تم قبول طلب الصداقة',
-        message: `قبل ${receiver?.username} طلب صداقتك`,
-        data: { friendId: userId, friendName: receiver?.username }
-      });
+      await createFriendAcceptedNotification(
+        request.userId,
+        receiver?.username || 'مستخدم مجهول',
+        userId
+      );
 
       res.json({ message: "تم قبول طلب الصداقة" });
     } catch (error) {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -9,10 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Bell, X, Check, Trash2, Users } from 'lucide-react';
+import { useNotificationManager } from '@/hooks/useNotificationManager';
 import type { ChatUser } from '@/types/chat';
 
 interface Notification {
@@ -33,9 +33,9 @@ interface NotificationPanelProps {
 }
 
 export default function NotificationPanel({ isOpen, onClose, currentUser }: NotificationPanelProps) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [lastChecked, setLastChecked] = useState<number>(Date.now());
+  const { showErrorToast, showSuccessToast } = useNotificationManager(currentUser);
 
   // جلب الإشعارات - polling محسن
   const { data: notificationsData, isLoading, refetch } = useQuery<{ notifications: Notification[] }>({
@@ -62,64 +62,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     staleTime: 30000, // البيانات صالحة لمدة 30 ثانية
   });
 
-  // Real-time notifications via Socket.IO (مُحسّن)
-  useEffect(() => {
-    if (!currentUser?.id) return;
-
-    const handleNotificationReceived = (event: CustomEvent) => {
-      // تحديث فوري للبيانات
-      queryClient.invalidateQueries({
-        queryKey: ['/api/notifications', currentUser.id]
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['/api/notifications/unread-count', currentUser.id]
-      });
-      
-      setLastChecked(Date.now());
-    };
-
-    const handleFriendRequestReceived = (event: CustomEvent) => {
-      // تحديث فوري
-      queryClient.invalidateQueries({
-        queryKey: ['/api/notifications', currentUser.id]
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['/api/notifications/unread-count', currentUser.id]
-      });
-      
-      // عرض toast notification
-      toast({
-        title: "طلب صداقة جديد",
-        description: `${event.detail.senderName} يريد إضافتك كصديق`,
-      });
-    };
-
-    const handleFriendRequestAccepted = (event: CustomEvent) => {
-      queryClient.invalidateQueries({
-        queryKey: ['/api/notifications', currentUser.id]
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['/api/notifications/unread-count', currentUser.id]
-      });
-      
-      toast({
-        title: "تم قبول طلب الصداقة",
-        description: `${event.detail.friendName} قبل طلب صداقتك`,
-      });
-    };
-
-    // إضافة مستمعي الأحداث مع cleanup محسن
-    window.addEventListener('notificationReceived', handleNotificationReceived as EventListener);
-    window.addEventListener('friendRequestReceived', handleFriendRequestReceived as EventListener);
-    window.addEventListener('friendRequestAccepted', handleFriendRequestAccepted as EventListener);
-
-    // تنظيف المستمعين
-    return () => {
-      window.removeEventListener('notificationReceived', handleNotificationReceived as EventListener);
-      window.removeEventListener('friendRequestReceived', handleFriendRequestReceived as EventListener);
-      window.removeEventListener('friendRequestAccepted', handleFriendRequestAccepted as EventListener);
-    };
-  }, [currentUser?.id, queryClient, toast]);
+  // Real-time notifications are now handled by useNotificationManager hook
 
   // تحديد إشعار كمقروء - محسن
   const markAsReadMutation = useMutation({
@@ -153,11 +96,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
       );
     },
     onError: (error) => {
-      toast({
-        title: "خطأ",
-        description: "فشل في تحديد الإشعار كمقروء",
-        variant: "destructive"
-      });
+      showErrorToast("فشل في تحديد الإشعار كمقروء");
     }
   });
 
@@ -189,16 +128,10 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
         { count: 0 }
       );
       
-      toast({
-        title: "تم تحديد جميع الإشعارات كمقروءة",
-      });
+      showSuccessToast("تم تحديد جميع الإشعارات كمقروءة");
     },
     onError: () => {
-      toast({
-        title: "خطأ",
-        description: "فشل في تحديد الإشعارات كمقروءة",
-        variant: "destructive"
-      });
+      showErrorToast("فشل في تحديد الإشعارات كمقروءة");
     }
   });
 
@@ -222,16 +155,10 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
         }
       );
       
-      toast({
-        title: "تم حذف الإشعار",
-      });
+      showSuccessToast("تم حذف الإشعار");
     },
     onError: () => {
-      toast({
-        title: "خطأ",
-        description: "فشل في حذف الإشعار",
-        variant: "destructive"
-      });
+      showErrorToast("فشل في حذف الإشعار");
     }
   });
 
