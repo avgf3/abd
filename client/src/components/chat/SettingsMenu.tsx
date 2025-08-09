@@ -7,7 +7,8 @@ import {
   Shield, 
   LogOut, 
   Settings,
-  Palette
+  Palette,
+  Brush
 } from 'lucide-react';
 
 interface SettingsMenuProps {
@@ -16,10 +17,11 @@ interface SettingsMenuProps {
   onClose: () => void;
   onOpenReports?: () => void;
   onOpenThemeSelector?: () => void;
+  onOpenUsernameColorPicker?: () => void;
   currentUser?: any;
 }
 
-export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenReports, onOpenThemeSelector, currentUser }: SettingsMenuProps) {
+export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenReports, onOpenThemeSelector, onOpenUsernameColorPicker, currentUser }: SettingsMenuProps) {
   const handleLogout = () => {
     if (confirm('🤔 هل أنت متأكد من تسجيل الخروج؟')) {
       onLogout();
@@ -61,6 +63,16 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
           >
             <Palette className="w-4 h-4 text-primary" />
             اختيار الثيم
+          </Button>
+
+          <Button
+            onClick={onOpenUsernameColorPicker}
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+          >
+            <Brush className="w-4 h-4 text-primary" />
+            لون الاسم
           </Button>
         </div>
 

@@ -9,6 +9,7 @@ import SettingsMenu from './SettingsMenu';
 import ReportModal from './ReportModal';
 import AdminReportsPanel from './AdminReportsPanel';
 import NotificationPanel from './NotificationPanel';
+import UsernameColorPicker from '@/components/profile/UsernameColorPicker';
 
 import MessagesPanel from './MessagesPanel';
 import MessageAlert from './MessageAlert';
@@ -122,6 +123,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showActiveActions, setShowActiveActions] = useState(false);
   const [showPromotePanel, setShowPromotePanel] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [showUsernameColorPicker, setShowUsernameColorPicker] = useState(false);
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
     sender: ChatUser | null;
@@ -580,6 +582,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               setShowThemeSelector(true);
               setShowSettings(false);
             }}
+            onOpenUsernameColorPicker={() => {
+              setShowUsernameColorPicker(true);
+              setShowSettings(false);
+            }}
             currentUser={chat.currentUser}
           />
         )}
@@ -681,6 +687,27 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           onThemeUpdate={(theme) => {
             }}
         />
+      )}
+
+      {showUsernameColorPicker && chat.currentUser && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-md w-full">
+            <button
+              onClick={() => setShowUsernameColorPicker(false)}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 text-xl"
+            >
+              ✕ إغلاق
+            </button>
+            <UsernameColorPicker
+              currentUser={chat.currentUser}
+              onColorUpdate={(color) => {
+                // تحديث اللون محلياً
+                chat.updateCurrentUser({ ...chat.currentUser, usernameColor: color });
+                setShowUsernameColorPicker(false);
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {/* إشعارات الطرد والحجب */}
