@@ -6,7 +6,7 @@ import { notificationService } from './services/notificationService';
 import { db } from './database-adapter';
 import { friends as friendsTable } from '../shared/schema';
 import { eq } from 'drizzle-orm';
-import { Security } from './auth/security';
+import { SecurityManager } from './auth/security';
 
 // Helper function
 function safeParseJsonArray(value: string): any[] {
@@ -128,7 +128,7 @@ export async function validateUserCredentials(username: string, password: string
 }
 
 // تم نقل دالة hashPassword إلى auth/security.ts لتجنب التكرار
-export const hashPassword = Security.hashPassword;
+export const hashPassword = SecurityManager.hashPassword;
 
 export function getDatabaseStatus() {
   return databaseService.getStatus();
@@ -1343,82 +1343,6 @@ export const storage: LegacyStorage = {
     }
   },
 
-  // Per-room moderation helpers (PostgreSQL only)
-  async muteUserInRoom(roomId: string, targetUserId: number, minutes: number): Promise<boolean> {
-    try {
-      const { db, dbType } = await import('./database-adapter');
-      if (db && dbType === 'postgresql') {
-        const { roomMembers } = await import('../shared/schema');
-        const { eq, and } = await import('drizzle-orm');
-        await (db as any)
-          .update((roomMembers as any))
-          .set({ mutedUntil: new Date(Date.now() + minutes * 60000) } as any)
-          .where(and(eq((roomMembers as any).roomId, roomId as any), eq((roomMembers as any).userId, targetUserId as any)));
-        return true;
-      }
-      return false;
-    } catch (e) {
-      console.error('muteUserInRoom error:', e);
-      return false;
-    }
-  },
-
-  async unmuteUserInRoom(roomId: string, targetUserId: number): Promise<boolean> {
-    try {
-      const { db, dbType } = await import('./database-adapter');
-      if (db && dbType === 'postgresql') {
-        const { roomMembers } = await import('../shared/schema');
-        const { eq, and } = await import('drizzle-orm');
-        await (db as any)
-          .update((roomMembers as any))
-          .set({ mutedUntil: null } as any)
-          .where(and(eq((roomMembers as any).roomId, roomId as any), eq((roomMembers as any).userId, targetUserId as any)));
-        return true;
-      }
-      return false;
-    } catch (e) {
-      console.error('unmuteUserInRoom error:', e);
-      return false;
-    }
-  },
-
-  async banUserInRoom(roomId: string, targetUserId: number, minutes: number): Promise<boolean> {
-    try {
-      const { db, dbType } = await import('./database-adapter');
-      if (db && dbType === 'postgresql') {
-        const { roomMembers } = await import('../shared/schema');
-        const { eq, and } = await import('drizzle-orm');
-        await (db as any)
-          .update((roomMembers as any))
-          .set({ bannedUntil: new Date(Date.now() + minutes * 60000) } as any)
-          .where(and(eq((roomMembers as any).roomId, roomId as any), eq((roomMembers as any).userId, targetUserId as any)));
-        return true;
-      }
-      return false;
-    } catch (e) {
-      console.error('banUserInRoom error:', e);
-      return false;
-    }
-  },
-
-  async unbanUserInRoom(roomId: string, targetUserId: number): Promise<boolean> {
-    try {
-      const { db, dbType } = await import('./database-adapter');
-      if (db && dbType === 'postgresql') {
-        const { roomMembers } = await import('../shared/schema');
-        const { eq, and } = await import('drizzle-orm');
-        await (db as any)
-          .update((roomMembers as any))
-          .set({ bannedUntil: null } as any)
-          .where(and(eq((roomMembers as any).roomId, roomId as any), eq((roomMembers as any).userId, targetUserId as any)));
-        return true;
-      }
-      return false;
-    } catch (e) {
-      console.error('unbanUserInRoom error:', e);
-      return false;
-    }
-  }
 };
 
 // Export the database service for direct access if needed
