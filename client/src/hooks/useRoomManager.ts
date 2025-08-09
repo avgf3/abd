@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatRoom } from '@/types/chat';
-import { mapApiRooms, dedupeRooms } from '@/utils/roomUtils';
+import { mapApiRooms, dedupeRooms, mapApiRoom } from '@/utils/roomUtils';
 
 interface UseRoomManagerOptions {
   autoRefresh?: boolean;
