@@ -697,17 +697,38 @@ export const storage: LegacyStorage = {
 
   // ========= Broadcast Room / Mic Management =========
   
+  // دالة مساعدة للتحقق من صحة غرفة البث
+  async validateBroadcastRoom(roomId: string, actionBy?: number) {
+    const status = databaseService.getStatus();
+    if (!status.connected) {
+      return { isValid: false, error: 'قاعدة البيانات غير متصلة' };
+    }
+    
+    // التحقق من وجود الغرفة وأنها غرفة بث
+    const room = await this.getRoom(roomId);
+    if (!room || !room.is_broadcast) {
+      console.log(`Room ${roomId} is not a broadcast room`);
+      return { isValid: false, error: 'الغرفة ليست غرفة بث مباشر' };
+    }
+    
+    // التحقق من صلاحيات المضيف إذا تم تمرير actionBy
+    if (actionBy !== undefined && room.host_id !== actionBy) {
+      console.log(`User ${actionBy} is not the host of room ${roomId}`);
+      return { isValid: false, error: 'المستخدم ليس مضيف الغرفة' };
+    }
+    
+    return { isValid: true, room };
+  },
+  
   async requestMic(userId: number, roomId: string) {
     try {
-      const status = databaseService.getStatus();
-      if (!status.connected) return false;
-      
-      // التحقق من وجود الغرفة وأنها غرفة بث
-      const room = await this.getRoom(roomId);
-      if (!room || !room.is_broadcast) {
-        console.log(`Room ${roomId} is not a broadcast room`);
+      // استخدام الدالة المساعدة للتحقق
+      const validation = await this.validateBroadcastRoom(roomId);
+      if (!validation.isValid) {
         return false;
       }
+      
+      const room = validation.room;
       
       // التحقق من وجود المستخدم
       const user = await databaseService.getUserById(userId);
@@ -781,21 +802,13 @@ export const storage: LegacyStorage = {
 
   async approveMicRequest(roomId: string, userId: number, approvedBy: number) {
     try {
-      const status = databaseService.getStatus();
-      if (!status.connected) return false;
-      
-      // التحقق من وجود الغرفة وأنها غرفة بث
-      const room = await this.getRoom(roomId);
-      if (!room || !room.is_broadcast) {
-        console.log(`Room ${roomId} is not a broadcast room`);
+      // استخدام الدالة المساعدة للتحقق
+      const validation = await this.validateBroadcastRoom(roomId, approvedBy);
+      if (!validation.isValid) {
         return false;
       }
       
-      // التحقق من صلاحيات الموافق (يجب أن يكون المضيف)
-      if (room.host_id !== approvedBy) {
-        console.log(`User ${approvedBy} is not authorized to approve mic requests`);
-        return false;
-      }
+      const room = validation.room;
       
       // جلب قائمة الانتظار الحالية
       let micQueue: number[] = [];
@@ -857,21 +870,13 @@ export const storage: LegacyStorage = {
 
   async rejectMicRequest(roomId: string, userId: number, rejectedBy: number) {
     try {
-      const status = databaseService.getStatus();
-      if (!status.connected) return false;
-      
-      // التحقق من وجود الغرفة وأنها غرفة بث
-      const room = await this.getRoom(roomId);
-      if (!room || !room.is_broadcast) {
-        console.log(`Room ${roomId} is not a broadcast room`);
+      // استخدام الدالة المساعدة للتحقق
+      const validation = await this.validateBroadcastRoom(roomId, rejectedBy);
+      if (!validation.isValid) {
         return false;
       }
       
-      // التحقق من صلاحيات الرافض (يجب أن يكون المضيف)
-      if (room.host_id !== rejectedBy) {
-        console.log(`User ${rejectedBy} is not authorized to reject mic requests`);
-        return false;
-      }
+      const room = validation.room;
       
       // جلب قائمة الانتظار الحالية
       let micQueue: number[] = [];
@@ -918,21 +923,13 @@ export const storage: LegacyStorage = {
 
   async removeSpeaker(roomId: string, userId: number, removedBy: number) {
     try {
-      const status = databaseService.getStatus();
-      if (!status.connected) return false;
-      
-      // التحقق من وجود الغرفة وأنها غرفة بث
-      const room = await this.getRoom(roomId);
-      if (!room || !room.is_broadcast) {
-        console.log(`Room ${roomId} is not a broadcast room`);
+      // استخدام الدالة المساعدة للتحقق
+      const validation = await this.validateBroadcastRoom(roomId, removedBy);
+      if (!validation.isValid) {
         return false;
       }
       
-      // التحقق من صلاحيات المزيل (يجب أن يكون المضيف)
-      if (room.host_id !== removedBy) {
-        console.log(`User ${removedBy} is not authorized to remove speakers`);
-        return false;
-      }
+      const room = validation.room;
       
       // التحقق من أن المستخدم المراد إزالته ليس المضيف نفسه
       if (room.host_id === userId) {
