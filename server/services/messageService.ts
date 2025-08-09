@@ -40,7 +40,7 @@ export class MessageService {
         })
         .from(messages)
         .leftJoin(users, eq(messages.senderId, users.id))
-        .where(eq(messages.isPrivate, false))
+        .where(and(eq(messages.isPrivate, false), eq(messages.deletedAt as any, null as any)))
         .orderBy(desc(messages.timestamp))
         .limit(limit);
 
@@ -102,6 +102,7 @@ export class MessageService {
             )
           )
         )
+        .where(and(eq(messages.isPrivate, true), eq(messages.deletedAt as any, null as any)))
         .orderBy(desc(messages.timestamp))
         .limit(limit);
 
@@ -160,8 +161,11 @@ export class MessageService {
         }
       }
 
-      // حذف الرسالة
-      await db.delete(messages).where(eq(messages.id, messageId));
+      // حذف منطقي للرسالة
+      await db
+        .update(messages)
+        .set({ deletedAt: new Date() } as any)
+        .where(eq(messages.id, messageId));
       return true;
     } catch (error) {
       console.error('خطأ في حذف الرسالة:', error);
@@ -207,9 +211,8 @@ export class MessageService {
         .leftJoin(users, eq(messages.senderId, users.id))
         .where(
           and(
-            // البحث في المحتوى (يحتاج تحسين للعربية)
-            // يمكن استخدام LIKE أو مكتبة بحث متقدمة
-            eq(messages.isPrivate, false) // البحث فقط في الرسائل العامة حالياً
+            eq(messages.isPrivate, false),
+            eq(messages.deletedAt as any, null as any)
           )
         )
         .orderBy(desc(messages.timestamp))

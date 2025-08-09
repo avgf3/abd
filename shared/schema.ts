@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -48,6 +48,9 @@ export const messages = pgTable("messages", {
   messageType: text("message_type").notNull().default("text"), // 'text', 'image'
   isPrivate: boolean("is_private").default(false),
   roomId: text("room_id").default("general"), // معرف الغرفة
+  attachments: jsonb("attachments").default([]),
+  editedAt: timestamp("edited_at"),
+  deletedAt: timestamp("deleted_at"),
   timestamp: timestamp("timestamp").defaultNow(),
 });
 
@@ -115,6 +118,9 @@ export const rooms = pgTable("rooms", {
   hostId: integer("host_id").references(() => users.id),
   speakers: text("speakers").default('[]'), // JSON string
   micQueue: text("mic_queue").default('[]'), // JSON string
+  slug: text("slug"),
+  deletedAt: timestamp("deleted_at"),
+  lastMessageAt: timestamp("last_message_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -124,6 +130,18 @@ export const roomUsers = pgTable("room_users", {
   roomId: text("room_id").notNull().references(() => rooms.id),
   joinedAt: timestamp("joined_at").defaultNow(),
 });
+
+// New: room_members pivot with per-room moderation
+export const roomMembers = pgTable("room_members", {
+  roomId: text("room_id").notNull().references(() => rooms.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  role: text("role").notNull().default('member'),
+  mutedUntil: timestamp("muted_until"),
+  bannedUntil: timestamp("banned_until"),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.roomId, t.userId] }),
+}));
 
 // إضافة unique constraint لـ room_users
 export const roomUsersRelations = relations(roomUsers, ({ one }) => ({

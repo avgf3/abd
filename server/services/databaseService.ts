@@ -407,7 +407,7 @@ export class DatabaseService {
         return await (this.db as any)
           .select()
           .from(pgSchema.messages)
-          .where(eq(pgSchema.messages.roomId, roomId))
+          .where(and(eq(pgSchema.messages.roomId, roomId), isNull(pgSchema.messages.deletedAt)))
           .orderBy(desc(pgSchema.messages.timestamp))
           .limit(limit);
       } else {
@@ -596,13 +596,42 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
-        return await (this.db as any).select().from(pgSchema.rooms).orderBy(asc(pgSchema.rooms.name));
+        // ignore soft-deleted rooms when column exists
+        return await (this.db as any)
+          .select()
+          .from(pgSchema.rooms)
+          .where(or(isNull(pgSchema.rooms.deletedAt), eq(pgSchema.rooms.deletedAt as any, null as any)))
+          .orderBy(asc(pgSchema.rooms.name));
       } else {
         return await (this.db as any).select().from(sqliteSchema.rooms).orderBy(asc(sqliteSchema.rooms.name));
       }
     } catch (error) {
       console.error('Error getting rooms:', error);
       return [];
+    }
+  }
+
+  // Helper: check room membership and moderation status
+  async canSendInRoom(roomId: string, userId: number): Promise<{ allowed: boolean; reason?: string }> {
+    if (!this.isConnected()) return { allowed: true };
+
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any).execute(
+          `SELECT 1 FROM room_members rm JOIN rooms r ON r.id = rm.room_id AND (r.deleted_at IS NULL)
+           WHERE rm.room_id = $1 AND rm.user_id = $2
+             AND (rm.banned_until IS NULL OR rm.banned_until < now())
+             AND (rm.muted_until  IS NULL OR rm.muted_until  < now()) LIMIT 1`,
+          [roomId, userId]
+        );
+        const found = Array.isArray(rows) ? rows.length > 0 : (rows?.rowCount || 0) > 0;
+        return { allowed: found };
+      }
+      // SQLite has no per-room moderation implemented
+      return { allowed: true };
+    } catch (error) {
+      console.error('Error canSendInRoom:', error);
+      return { allowed: false, reason: 'error' };
     }
   }
 
