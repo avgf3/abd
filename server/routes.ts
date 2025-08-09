@@ -1505,30 +1505,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch {}
           // التأكد من انضمام للغرفة العامة (مرة واحدة فقط)
           if (!userRooms.includes('general')) {
-            await storage.joinRoom(user.id, 'general');
+            await roomService.joinRoom(user.id, 'general');
             userRooms.push('general');
           }
           
-          // الانضمام للغرفة العامة فقط في Socket.IO (إزالة التكرار)
-          socket.join('room_general');
-          (socket as any).currentRoom = 'general';
+          // الانضمام للغرفة العامة عبر الدالة الموحدة لضمان إرسال الرسائل وقوائم المستخدمين
+          await handleRoomJoin(socket as CustomSocket, user.id, user.username, 'general');
           
           } catch (roomError) {
           console.error('خطأ في انضمام للغرف:', roomError);
           // انضمام للغرفة العامة على الأقل (مرة واحدة فقط)
-          socket.join('room_general');
-          const roomsSafe = Array.isArray((globalThis as any).tmpUserRooms) ? (globalThis as any).tmpUserRooms as string[] : [];
-          if (!roomsSafe.includes('general')) {
-            await storage.joinRoom(user.id, 'general');
-          }
-          (socket as any).currentRoom = 'general';
-          
-          // تحديث الغرفة في connectedUsers
-          if (connectedUsers.has(user.id)) {
-            const userConnection = connectedUsers.get(user.id)!;
-            userConnection.room = 'general';
-            connectedUsers.set(user.id, userConnection);
-          }
+          await handleRoomJoin(socket as CustomSocket, user.id, user.username, 'general');
         }
 
         // إرسال تأكيد المصادقة
@@ -1548,67 +1535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .map(conn => conn.user);
         
         // إرسال تأكيد الانضمام مع قائمة المستخدمين
-        socket.emit('message', {
-          type: 'roomJoined',
-          roomId: currentRoom,
-          users: roomUsers
-        });
-        
-        // إرسال قائمة المستخدمين في الغرفة للمستخدم الجديد
-        socket.emit('message', { 
-          type: 'onlineUsers', 
-          users: Array.from(connectedUsers.values())
-            .filter(conn => conn.room === currentRoom)
-            .map(conn => conn.user)
-        });
-
-        // إخبار باقي المستخدمين في الغرفة بانضمام مستخدم جديد
-        socket.to(`room_${currentRoom}`).emit('message', {
-          type: 'userJoinedRoom',
-          username: user.username,
-          userId: user.id,
-          roomId: currentRoom
-        });
-
-        // إرسال قائمة محدثة لجميع المستخدمين في الغرفة
-        sendRoomUsers(currentRoom);
-
-        // إرسال رسالة ترحيب في الغرفة
-        const welcomeMessage = {
-          id: Date.now(),
-          senderId: -1, // معرف خاص للنظام
-          content: `انضم ${user.username} إلى الغرفة 👋`,
-          messageType: 'system',
-          isPrivate: false,
-          roomId: currentRoom,
-          timestamp: new Date(),
-          sender: {
-            id: -1,
-            username: 'النظام',
-            userType: 'moderator',
-            role: 'system',
-            level: 0,
-            points: 0,
-            achievements: [],
-            lastSeen: new Date(),
-            isOnline: true,
-            isBanned: false,
-            isActive: true,
-            currentRoom: '',
-            settings: {
-              theme: 'default',
-              language: 'ar',
-              notifications: true,
-              soundEnabled: true,
-              privateMessages: true
-            }
-          }
-        };
-        
-        io.to(`room_${currentRoom}`).emit('message', {
-          type: 'newMessage',
-          message: welcomeMessage
-        });
+        // تم الانضمام للغرفة العامة عبر handleRoomJoin؛ لا حاجة لإرسال أحداث مكررة هنا
 
       } catch (error) {
         console.error('❌ خطأ في المصادقة:', error);
@@ -2087,7 +2014,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (socket as any).currentRoom = roomId;
         
         // حفظ في قاعدة البيانات (مرة واحدة فقط)
-        await storage.joinRoom(userId, roomId);
+        await roomService.joinRoom(userId, roomId);
         
         // تحديث الغرفة في قائمة المتصلين الفعليين
         if (connectedUsers.has(userId)) {
@@ -2143,8 +2070,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: welcomeMessage
         });
         
-        // جلب آخر الرسائل في الغرفة الجديدة
-        const recentMessages = await storage.getRoomMessages(roomId, 50);
+        // جلب آخر 20 رسالة في الغرفة الجديدة فقط
+        const recentMessages = await storage.getRoomMessages(roomId, 20);
         socket.emit('message', {
           type: 'roomMessages',
           messages: recentMessages
@@ -2163,7 +2090,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         socket.leave(`room_${roomId}`);
         
         // حذف من قاعدة البيانات (مرة واحدة فقط)
-        await storage.leaveRoom(userId, roomId);
+        await roomService.leaveRoom(userId, roomId);
         
         // إدارة غرف البث - إعادة تعيين المضيف إذا لزم الأمر
         await handleBroadcastHostReassignment(roomId, userId);

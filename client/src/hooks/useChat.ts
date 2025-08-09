@@ -362,8 +362,7 @@ export function useChat() {
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
       dispatch({ type: 'SET_LOADING', payload: false });
       
-      // 🚀 تحميل رسائل الغرفة العامة عند المصادقة
-      loadRoomMessages('general');
+      // ✅ سيتم استلام رسائل الغرفة العامة تلقائياً بعد الانضمام من الخادم
       
       // 🚀 تحسين: إزالة الطلبات الدورية للمستخدمين
       // سيتم تحديث القائمة عبر WebSocket events فقط
@@ -561,8 +560,8 @@ export function useChat() {
                 dispatch({ type: 'SET_ROOM', payload: target });
               }
               
-              // 🔄 تحميل رسائل الغرفة الجديدة بقوة لضمان الحصول على أحدث الرسائل
-              loadRoomMessages(target, true);
+              // ❌ إزالة التحميل الإجباري المكرر - السيرفر يرسل roomMessages تلقائياً
+              // loadRoomMessages(target, true);
             }
             break;
 
@@ -773,7 +772,7 @@ export function useChat() {
     try {
       console.log(`🔄 تحميل رسائل الغرفة ${roomId} من السيرفر...`);
       
-      const data = await apiRequest(`/api/messages/room/${roomId}?limit=50`);
+      const data = await apiRequest(`/api/messages/room/${roomId}?limit=20`);
       if ((data as any).messages && Array.isArray((data as any).messages)) {
         const formattedMessages = mapDbMessagesToChatMessages((data as any).messages, roomId);
         
@@ -840,7 +839,7 @@ export function useChat() {
     }
     
     // 🔄 تحميل رسائل الغرفة من السيرفر (عملية مستقلة)
-    loadRoomMessages(roomId);
+    // سيتم استقبال الرسائل مباشرة من الخادم عبر حدث roomMessages بعد الانضمام
     
     // 📡 إرسال طلب الانضمام للسيرفر (بدون انتظار استجابة)
     if (socket.current?.connected) {
