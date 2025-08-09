@@ -78,3 +78,24 @@ export function dedupeRooms(rooms: ChatRoom[]): ChatRoom[] {
 export function mapApiRooms(apiRooms: any[]): ChatRoom[] {
   return dedupeRooms((apiRooms || []).map(mapApiRoom));
 }
+
+export function normalizeBroadcastInfo(info: any): { hostId: number | null; speakers: number[]; micQueue: number[] } {
+  const toNumberArray = (val: any): number[] => {
+    try {
+      if (Array.isArray(val)) return val.map((v) => Number(v)).filter((n) => Number.isFinite(n));
+      if (typeof val === 'string') {
+        const parsed = JSON.parse(val || '[]');
+        return Array.isArray(parsed) ? parsed.map((v) => Number(v)).filter((n) => Number.isFinite(n)) : [];
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  };
+
+  return {
+    hostId: info?.hostId ?? info?.host_id ?? null,
+    speakers: Array.from(new Set(toNumberArray(info?.speakers))),
+    micQueue: Array.from(new Set(toNumberArray(info?.micQueue ?? info?.mic_queue)))
+  };
+}

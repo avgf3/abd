@@ -8,6 +8,7 @@ import { Mic, MicOff, Users, Crown, Clock, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom, WebSocketMessage } from '@/types/chat';
+import { normalizeBroadcastInfo } from '@/utils/roomUtils';
 
 interface BroadcastRoomInterfaceProps {
   currentUser: ChatUser | null;
@@ -58,7 +59,7 @@ export default function BroadcastRoomInterface({
     try {
       const data = await apiRequest(`/api/rooms/${room.id}/broadcast-info`, { method: 'GET' });
       if (data?.info) {
-        setBroadcastInfo(data.info);
+        setBroadcastInfo(normalizeBroadcastInfo(data.info));
         } else {
         console.warn('⚠️ لم يتم استلام معلومات غرفة البث صحيحة من الخادم');
         setBroadcastInfo({ hostId: null, speakers: [], micQueue: [] });
@@ -86,7 +87,7 @@ export default function BroadcastRoomInterface({
   useEffect(() => {
     const updateBroadcastInfo = (data: any) => {
       if (data.broadcastInfo) {
-        setBroadcastInfo(data.broadcastInfo);
+        setBroadcastInfo(normalizeBroadcastInfo(data.broadcastInfo));
       } else {
         fetchBroadcastInfo();
       }
@@ -144,13 +145,15 @@ export default function BroadcastRoomInterface({
   }, [room.id, chat, toast, currentUser?.id, currentUser?.userType]);
 
   // التحقق من صلاحيات المستخدم
+  const speakers = Array.isArray(broadcastInfo?.speakers) ? broadcastInfo!.speakers : [];
+  const micQueue = Array.isArray(broadcastInfo?.micQueue) ? broadcastInfo!.micQueue : [];
   const isHost = !!currentUser && broadcastInfo?.hostId != null && broadcastInfo.hostId === currentUser.id;
   const isAdmin = !!currentUser && currentUser.userType === 'admin';
   const isModerator = !!currentUser && currentUser.userType === 'moderator';
   const isOwner = !!currentUser && currentUser.userType === 'owner';
   const canManageMic = isHost || isAdmin || isModerator || isOwner;
-  const isSpeaker = !!currentUser && !!broadcastInfo && broadcastInfo.speakers.includes(currentUser.id);
-  const isInQueue = !!currentUser && !!broadcastInfo && broadcastInfo.micQueue.includes(currentUser.id);
+  const isSpeaker = !!currentUser && speakers.includes(currentUser.id);
+  const isInQueue = !!currentUser && micQueue.includes(currentUser.id);
   const canSpeak = isHost || isSpeaker;
   const canRequestMic = !!currentUser && !isHost && !isSpeaker && !isInQueue;
 
@@ -349,7 +352,7 @@ export default function BroadcastRoomInterface({
             <Mic className="w-4 h-4 text-green-500" />
             <span className="font-medium">المتحدثون:</span>
             <div className="flex gap-1 flex-wrap">
-              {broadcastInfo?.speakers.map(userId => {
+              {speakers.map(userId => {
                 const user = getUserById(userId);
                 return user ? (
                   <Badge key={userId} variant="outline" className="flex items-center gap-1">
@@ -368,19 +371,19 @@ export default function BroadcastRoomInterface({
                   </Badge>
                 ) : null;
               })}
-              {broadcastInfo?.speakers.length === 0 && (
+              {speakers.length === 0 && (
                 <span className="text-muted-foreground text-sm">لا يوجد متحدثون</span>
               )}
             </div>
           </div>
 
           {/* قائمة الانتظار */}
-          {broadcastInfo?.micQueue.length > 0 && (
+          {micQueue.length > 0 && (
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-orange-500" />
               <span className="font-medium">قائمة الانتظار:</span>
               <div className="flex gap-1 flex-wrap">
-                {broadcastInfo.micQueue.map(userId => {
+                {micQueue.map(userId => {
                   const user = getUserById(userId);
                   return user ? (
                     <Badge key={userId} variant="outline" className="flex items-center gap-1">
@@ -399,7 +402,7 @@ export default function BroadcastRoomInterface({
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-4 w-4 p-0 text-destructive hover:text-destructive"
+                            className="h-4 w-4 p-0 text-red-600 hover:text-red-600"
                             onClick={() => handleRejectMic(userId)}
                             disabled={isLoading}
                           >
@@ -420,8 +423,8 @@ export default function BroadcastRoomInterface({
             <span className="font-medium">المستمعون:</span>
             <Badge variant="secondary">
               {onlineUsers.filter(user => 
-                !broadcastInfo?.speakers.includes(user.id) && 
-                !broadcastInfo?.micQueue.includes(user.id) &&
+                !speakers.includes(user.id) && 
+                !micQueue.includes(user.id) &&
                 broadcastInfo?.hostId !== user.id
               ).length}
             </Badge>
@@ -456,10 +459,10 @@ export default function BroadcastRoomInterface({
           </Button>
         )}
 
-        {canManageMic && broadcastInfo?.micQueue && broadcastInfo.micQueue.length > 0 && (
+        {canManageMic && micQueue.length > 0 && (
           <Badge variant="secondary" className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            {broadcastInfo.micQueue.length} في الانتظار
+            {micQueue.length} في الانتظار
           </Badge>
         )}
       </div>

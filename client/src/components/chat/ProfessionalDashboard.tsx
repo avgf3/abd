@@ -5,6 +5,7 @@ import SecurityPanel from './SecurityPanel';
 import PerformanceMonitor from './PerformanceMonitor';
 import type { ChatUser } from '@/types/chat';
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
+import { formatTime } from '@/utils/timeUtils';
 
 interface ProfessionalDashboardProps {
   currentUser: ChatUser | null;
@@ -46,7 +47,7 @@ export default function ProfessionalDashboard({ currentUser, isVisible, onClose 
             </div>
             <div className="mr-auto">
               <div className="text-xs text-gray-400">وقت الدخول</div>
-              <div className="text-sm text-green-400">{new Date().toLocaleTimeString('ar-SA')}</div>
+              <div className="text-sm text-green-400">{formatTime(new Date())}</div>
             </div>
           </div>
         </div>

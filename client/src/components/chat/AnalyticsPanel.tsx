@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useChatAnalytics } from '@/lib/chatAnalytics';
 import type { ChatUser } from '@/types/chat';
+import { formatTime } from '@/utils/timeUtils';
 
 interface AnalyticsPanelProps {
   isOpen: boolean;
@@ -139,7 +140,7 @@ export default function AnalyticsPanel({ isOpen, onClose, currentUser }: Analyti
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="text-gray-300">
-                  📅 آخر تحديث: {new Date().toLocaleTimeString('ar-SA')}
+                  📅 آخر تحديث: {formatTime(new Date())}
                 </div>
                 <div className="text-gray-300">
                   🎯 فترة التحليل: آخر 24 ساعة
