@@ -214,12 +214,19 @@ class RoomService {
       // تحديث الغرفة الحالية للمستخدم
       const previousRoom = this.userRooms.get(userId);
       if (previousRoom && previousRoom !== roomId) {
+        // اخرج المستخدم من الغرفة السابقة بالكامل (ذاكرة وقاعدة البيانات)
         this.leaveRoomMemory(userId, previousRoom);
+        await storage.leaveRoom(userId, previousRoom);
+        // تحديث عداد المستخدمين في الغرفة السابقة
+        await this.updateRoomUserCount(previousRoom);
       }
       this.userRooms.set(userId, roomId);
 
       // حفظ في قاعدة البيانات إذا لزم الأمر
       await storage.joinRoom(userId, roomId);
+
+      // تحديث عداد الغرفة الحالية
+      await this.updateRoomUserCount(roomId);
 
       } catch (error) {
       console.error('خطأ في الانضمام للغرفة:', error);
@@ -239,6 +246,9 @@ class RoomService {
       if (db && dbType !== 'disabled') {
         await storage.leaveRoom(userId, roomId);
       }
+
+      // تحديث عداد المستخدمين بعد المغادرة
+      await this.updateRoomUserCount(roomId);
 
       const user = await storage.getUser(userId);
       } catch (error) {
