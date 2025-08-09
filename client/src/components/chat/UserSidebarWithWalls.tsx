@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Users, Globe, Home, UserPlus } from 'lucide-react';
 import SimpleUserMenu from './SimpleUserMenu';
 import ProfileImage from './ProfileImage';
-import RoomsPanel from './RoomsPanel';
+import RoomComponent from './RoomComponent';
 import FriendsTabPanel from './FriendsTabPanel';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -670,7 +670,7 @@ export default function UnifiedSidebar({
 
       {/* Rooms View */}
       {activeView === 'rooms' && (
-        <RoomsPanel
+        <RoomComponent
           currentUser={currentUser}
           rooms={rooms}
           currentRoomId={currentRoomId}
@@ -678,6 +678,9 @@ export default function UnifiedSidebar({
           onAddRoom={onAddRoom}
           onDeleteRoom={onDeleteRoom}
           onRefreshRooms={onRefreshRooms}
+          viewMode="list"
+          showSearch={true}
+          compact={true}
         />
       )}
 

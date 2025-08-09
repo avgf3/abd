@@ -13,7 +13,11 @@ import { db, dbType } from "./database-adapter";
 import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
 import securityApiRoutes from "./api-security";
 import apiRoutes from "./routes/index";
+import roomRoutes from "./routes/rooms";
+import messageRoutes from "./routes/messages";
 import { pointsService } from "./services/pointsService";
+import { roomService } from "./services/roomService";
+import { roomMessageService } from "./services/roomMessageService";
 import { developmentOnly, logDevelopmentEndpoint } from "./middleware/development";
 import { createFriendRequestNotification, createFriendAcceptedNotification } from "./utils/notificationHelpers";
 import { z } from "zod";
@@ -184,6 +188,12 @@ const friendService = new (class FriendService {
 })();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // استخدام مسارات الغرف المنفصلة
+  app.use('/api/rooms', roomRoutes);
+  
+  // استخدام مسارات الرسائل المنفصلة والمحسنة
+  app.use('/api/messages', messageRoutes);
+  
   // رفع صور البروفايل - محسّن مع حل مشكلة Render
   app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
     try {
@@ -4395,419 +4405,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===================
-  // APIs الغرف
+  // APIs الغرف - تمت إزالتها واستبدالها بمسارات منفصلة محسنة
   // ===================
 
-  // جلب جميع الغرف
-  app.get('/api/rooms', async (req, res) => {
-    try {
-      // Check database availability
-      if (!db || dbType === 'disabled') {
-        return res.json({ rooms: [] });
-      }
-      
-      const rooms = await storage.getAllRooms();
-      res.json({ rooms });
-    } catch (error) {
-      console.error('خطأ في جلب الغرف:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
-  });
+  // تمت إزالة مسارات الغرف المكررة
 
-  // إنشاء غرفة جديدة
-  app.post('/api/rooms', upload.single('image'), async (req, res) => {
-    try {
-      const { name, description, userId } = req.body;
+  // رفع صور البروفايل يتم في ملف منفصل الآن
+  
+  // جعل IO متاحاً للمسارات الجديدة
+  app.set('io', io);
 
-      if (!name || !userId) {
-        return res.status(400).json({ error: 'اسم الغرفة ومعرف المستخدم مطلوبان' });
-      }
-
-      const user = await storage.getUser(parseInt(userId));
-      if (!user) {
-        return res.status(404).json({ error: 'المستخدم غير موجود' });
-      }
-
-      // التحقق من الصلاحيات
-      if (!['admin', 'owner'].includes(user.userType)) {
-        return res.status(403).json({ error: 'ليس لديك صلاحية لإنشاء غرف' });
-      }
-
-      // معالجة الصورة
-      let icon = '';
-      if (req.file) {
-        const timestamp = Date.now();
-        const filename = `room_${timestamp}_${req.file.originalname}`;
-        const filepath = path.join(process.cwd(), 'client', 'public', 'uploads', 'rooms', filename);
-        
-        // إنشاء مجلد الغرف إذا لم يكن موجوداً
-        const roomsDir = path.dirname(filepath);
-        if (!fs.existsSync(roomsDir)) {
-          fs.mkdirSync(roomsDir, { recursive: true });
-        }
-        
-        fs.writeFileSync(filepath, req.file.buffer);
-        icon = `/uploads/rooms/${filename}`;
-      }
-
-      const roomData = {
-        name: name.trim(),
-        description: description?.trim() || '',
-        icon,
-        createdBy: user.id,
-        isDefault: false,
-        isActive: true
-      };
-
-      const room = await storage.createRoom(roomData);
-      
-      // إرسال إشعار بالغرفة الجديدة
-      io.emit('roomCreated', { room });
-      
-      // إرسال قائمة الغرف المحدثة لجميع المستخدمين
-      const updatedRooms = await storage.getAllRooms();
-      io.emit('roomsUpdated', { rooms: updatedRooms });
-
-      res.json({ room });
-    } catch (error) {
-      console.error('خطأ في إنشاء الغرفة:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
-  });
-
-  // حذف غرفة
-  app.delete('/api/rooms/:roomId', async (req, res) => {
-    try {
-      const { roomId } = req.params;
-      const { userId } = req.body;
-
-      if (!userId) {
-        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
-      }
-
-      const user = await storage.getUser(parseInt(userId));
-      if (!user) {
-        return res.status(404).json({ error: 'المستخدم غير موجود' });
-      }
-
-      const room = await storage.getRoom(roomId);
-      if (!room) {
-        return res.status(404).json({ error: 'الغرفة غير موجودة' });
-      }
-
-      // لا يمكن حذف الغرفة الافتراضية
-      if (room.isDefault) {
-        return res.status(400).json({ error: 'لا يمكن حذف الغرفة الافتراضية' });
-      }
-
-      // التحقق من الصلاحيات
-      const canDelete = room.createdBy === user.id || ['admin', 'owner'].includes(user.userType);
-      if (!canDelete) {
-        return res.status(403).json({ error: 'ليس لديك صلاحية لحذف هذه الغرفة' });
-      }
-
-      // حذف صورة الغرفة إن وجدت
-      if (room.icon) {
-        const imagePath = path.join(process.cwd(), 'client', 'public', room.icon);
-        if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath);
-        }
-      }
-
-      await storage.deleteRoom(roomId);
-
-      // إرسال إشعار بحذف الغرفة
-      io.emit('roomDeleted', { 
-        roomId,
-        deletedBy: user.username 
-      });
-      
-      // إرسال قائمة الغرف المحدثة لجميع المستخدمين
-      const updatedRooms = await storage.getAllRooms();
-      io.emit('roomsUpdated', { rooms: updatedRooms });
-
-      res.json({ message: 'تم حذف الغرفة بنجاح' });
-    } catch (error) {
-      console.error('خطأ في حذف الغرفة:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
-  });
-
-  // الانضمام لغرفة
-  app.post('/api/rooms/:roomId/join', async (req, res) => {
-    try {
-      const { roomId } = req.params;
-      const { userId } = req.body;
-
-      if (!userId) {
-        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
-      }
-
-      const user = await storage.getUser(parseInt(userId));
-      if (!user) {
-        return res.status(404).json({ error: 'المستخدم غير موجود' });
-      }
-
-      const room = await storage.getRoom(roomId);
-      if (!room) {
-        return res.status(404).json({ error: 'الغرفة غير موجودة' });
-      }
-
-      if (!room.isActive) {
-        return res.status(400).json({ error: 'الغرفة غير نشطة' });
-      }
-
-      await storage.joinRoom(userId, roomId);
-
-      // إرسال إشعار بانضمام المستخدم للغرفة
-      io.to(`room_${roomId}`).emit('userJoinedRoom', {
-        userId: user.id,
-        username: user.username,
-        roomId: roomId,
-        timestamp: new Date().toISOString()
-      });
-      
-      // تحديث عدد المستخدمين في الغرفة
-      const roomUsers = await storage.getRoomUsers(roomId);
-      io.emit('roomUserCountUpdated', {
-        roomId: roomId,
-        userCount: roomUsers.length
-      });
-
-      res.json({ message: 'تم الانضمام للغرفة بنجاح' });
-    } catch (error) {
-      console.error('خطأ في الانضمام للغرفة:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
-  });
-
-  // مغادرة غرفة
-  app.post('/api/rooms/:roomId/leave', async (req, res) => {
-    try {
-      const { roomId } = req.params;
-      const { userId } = req.body;
-
-      if (!userId) {
-        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
-      }
-
-      const user = await storage.getUser(parseInt(userId));
-      await storage.leaveRoom(userId, roomId);
-
-      // إرسال إشعار بمغادرة المستخدم للغرفة
-      if (user) {
-        io.to(`room_${roomId}`).emit('userLeftRoom', {
-          userId: user.id,
-          username: user.username,
-          roomId: roomId,
-          timestamp: new Date().toISOString()
-        });
-        
-        // تحديث عدد المستخدمين في الغرفة
-        const roomUsers = await storage.getRoomUsers(roomId);
-        io.emit('roomUserCountUpdated', {
-          roomId: roomId,
-          userCount: roomUsers.length
-        });
-      }
-
-      res.json({ message: 'تم مغادرة الغرفة بنجاح' });
-    } catch (error) {
-      console.error('خطأ في مغادرة الغرفة:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
-  });
-
-  // ===================
-  // Broadcast Room API Routes
-  // ===================
-
-  // دالة مساعدة لإرسال تحديثات غرفة البث
-  async function broadcastRoomUpdate(roomId: string, type: string, data: any) {
-    if (io) {
-      const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
-      io.to(`room_${roomId}`).emit('message', {
-        type,
-        roomId,
-        broadcastInfo,
-        ...data
-      });
-      return broadcastInfo;
-    }
-    return null;
-  }
-
-  // طلب المايك
-  app.post('/api/rooms/:roomId/request-mic', async (req, res) => {
-    try {
-      const { roomId } = req.params;
-      const { userId } = req.body;
-
-      if (!userId) {
-        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
-      }
-
-      const success = await storage.requestMic(parseInt(userId), roomId);
-      if (!success) {
-        return res.status(400).json({ error: 'لا يمكن طلب المايك في هذه الغرفة' });
-      }
-
-      // إرسال إشعار للـ Host وتحديث معلومات الغرفة
-      const room = await storage.getRoom(roomId);
-      const user = await storage.getUser(parseInt(userId));
-      
-      const broadcastInfo = await broadcastRoomUpdate(roomId, 'micRequest', {
-        requestUserId: parseInt(userId),
-        username: user?.username,
-        content: `${user?.username} يطلب المايك`
-      });
-
-      res.json({ message: 'تم إرسال طلب المايك بنجاح', broadcastInfo });
-    } catch (error) {
-      console.error('خطأ في طلب المايك:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
-  });
-
-  // الموافقة على طلب المايك
-  app.post('/api/rooms/:roomId/approve-mic/:userId', async (req, res) => {
-    try {
-      const { roomId, userId } = req.params;
-      const { approvedBy } = req.body;
-
-      if (!approvedBy) {
-        return res.status(400).json({ error: 'معرف الموافق مطلوب' });
-      }
-
-      const success = await storage.approveMicRequest(roomId, parseInt(userId), parseInt(approvedBy));
-      if (!success) {
-        return res.status(400).json({ error: 'لا يمكن الموافقة على طلب المايك' });
-      }
-
-      // إرسال إشعار للجميع وتحديث معلومات الغرفة
-      const user = await storage.getUser(parseInt(userId));
-      const approver = await storage.getUser(parseInt(approvedBy));
-      
-      const broadcastInfo = await broadcastRoomUpdate(roomId, 'micApproved', {
-        requestUserId: parseInt(userId),
-        approvedBy: parseInt(approvedBy),
-        username: user?.username,
-        approverName: approver?.username,
-        content: `${approver?.username} وافق على طلب ${user?.username} للمايك`
-      });
-
-      res.json({ message: 'تم الموافقة على طلب المايك بنجاح', broadcastInfo });
-    } catch (error) {
-      console.error('خطأ في الموافقة على طلب المايك:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
-  });
-
-  // رفض طلب المايك
-  app.post('/api/rooms/:roomId/reject-mic/:userId', async (req, res) => {
-    try {
-      const { roomId, userId } = req.params;
-      const { rejectedBy } = req.body;
-
-      if (!rejectedBy) {
-        return res.status(400).json({ error: 'معرف الرافض مطلوب' });
-      }
-
-      const success = await storage.rejectMicRequest(roomId, parseInt(userId), parseInt(rejectedBy));
-      if (!success) {
-        return res.status(400).json({ error: 'لا يمكن رفض طلب المايك' });
-      }
-
-      // إرسال إشعار للجميع وتحديث معلومات الغرفة
-      const user = await storage.getUser(parseInt(userId));
-      const rejecter = await storage.getUser(parseInt(rejectedBy));
-      
-      const broadcastInfo = await broadcastRoomUpdate(roomId, 'micRejected', {
-        requestUserId: parseInt(userId),
-        rejectedBy: parseInt(rejectedBy),
-        username: user?.username,
-        rejecterName: rejecter?.username,
-        content: `${rejecter?.username} رفض طلب ${user?.username} للمايك`
-      });
-
-      res.json({ message: 'تم رفض طلب المايك بنجاح', broadcastInfo });
-    } catch (error) {
-      console.error('خطأ في رفض طلب المايك:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
-  });
-
-  // إزالة متحدث
-  app.post('/api/rooms/:roomId/remove-speaker/:userId', async (req, res) => {
-    try {
-      const { roomId, userId } = req.params;
-      const { removedBy } = req.body;
-
-      if (!removedBy) {
-        return res.status(400).json({ error: 'معرف المزيل مطلوب' });
-      }
-
-      const success = await storage.removeSpeaker(roomId, parseInt(userId), parseInt(removedBy));
-      if (!success) {
-        return res.status(400).json({ error: 'لا يمكن إزالة المتحدث' });
-      }
-
-      // إرسال إشعار للجميع وتحديث معلومات الغرفة
-      const user = await storage.getUser(parseInt(userId));
-      const remover = await storage.getUser(parseInt(removedBy));
-      
-      const broadcastInfo = await broadcastRoomUpdate(roomId, 'speakerRemoved', {
-        requestUserId: parseInt(userId),
-        removedBy: parseInt(removedBy),
-        username: user?.username,
-        removerName: remover?.username,
-        content: `${remover?.username} أزال ${user?.username} من المتحدثين`
-      });
-
-      res.json({ message: 'تم إزالة المتحدث بنجاح', broadcastInfo });
-    } catch (error) {
-      console.error('خطأ في إزالة المتحدث:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
-  });
-
-  // جلب معلومات أساسية عن الغرفة
-  app.get('/api/rooms/:roomId', async (req, res) => {
-    try {
-      const { roomId } = req.params;
-      
-      // Return basic room info - this creates the room if it doesn't exist
-      const roomInfo = {
-        id: roomId,
-        name: roomId === 'general' ? 'الغرفة العامة' : `الغرفة ${roomId.replace('room_', '')}`,
-        userCount: 0,
-        isActive: true,
-        createdAt: new Date().toISOString()
-      };
-      
-      res.json({ room: roomInfo });
-    } catch (error) {
-      console.error('خطأ في جلب معلومات الغرفة:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
-  });
-
-  // جلب معلومات غرفة البث
-  app.get('/api/rooms/:roomId/broadcast-info', async (req, res) => {
-    try {
-      const { roomId } = req.params;
-      const info = await storage.getBroadcastRoomInfo(roomId);
-      
-      if (!info) {
-        return res.status(404).json({ error: 'غرفة البث غير موجودة' });
-      }
-
-      res.json({ info });
-    } catch (error) {
-      console.error('خطأ في جلب معلومات غرفة البث:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
-  });
+  // تمت إزالة مسارات الغرف المكررة - انتقل إلى ملف منفصل
+  
+  // تمت إزالة جميع المسارات المكررة ونقلها لملف منفصل محسن
+  */
 
   // ========== صحة النظام والتشخيص ==========
   
