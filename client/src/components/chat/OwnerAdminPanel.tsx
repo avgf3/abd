@@ -101,27 +101,36 @@ export default function OwnerAdminPanel({
   const fetchStaffMembers = async () => {
     setLoading(true);
     try {
-      // جلب جميع المستخدمين وتصفية الإداريين
-      const allUsers = onlineUsers.concat(
-        // يمكن إضافة مستخدمين آخرين من قاعدة البيانات
-      );
+      // جلب جميع المستخدمين من قاعدة البيانات (متصلين وغير متصلين)
+      const response = await apiRequest('/api/users', {
+        method: 'GET'
+      });
       
-      const staff = allUsers.filter(user => 
+      const allUsers = response.users || [];
+      
+      // تصفية المشرفين والإداريين
+      const staff = allUsers.filter((user: any) => 
         user.userType === 'moderator' || 
         user.userType === 'admin' || 
         user.userType === 'owner'
-      ).map(user => ({
+      ).map((user: any) => ({
         id: user.id,
         username: user.username,
         userType: user.userType as 'moderator' | 'admin' | 'owner',
         profileImage: user.profileImage,
         joinDate: user.joinDate,
         lastSeen: user.lastSeen,
-        isOnline: true
+        isOnline: onlineUsers.some(onlineUser => onlineUser.id === user.id)
       }));
+      
       setStaffMembers(staff);
     } catch (error) {
       console.error('Error fetching staff:', error);
+      toast({
+        title: 'خطأ',
+        description: 'فشل في جلب قائمة المشرفين',
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
