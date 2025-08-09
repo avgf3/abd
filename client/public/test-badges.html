@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الشارات والمستويات</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+            direction: rtl;
+        }
+        .badge-test {
+            background: white;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .svg-icon {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>اختبار الشارات والمستويات</h1>
+    
+    <div class="badge-test">
+        <img src="/svgs/crown.svg" alt="تاج المالك" class="svg-icon" id="crown-test">
+        <span>تاج المالك (owner)</span>
+        <span class="status" id="crown-status">جاري الاختبار...</span>
+    </div>
+    
+    <div class="badge-test">
+        <img src="/svgs/blue_arrow.svg" alt="سهم أزرق" class="svg-icon" id="arrow-test">
+        <span>سهم أزرق (عضو ذكر 1-10)</span>
+        <span class="status" id="arrow-status">جاري الاختبار...</span>
+    </div>
+    
+    <div class="badge-test">
+        <img src="/svgs/pink_medal.svg" alt="ميدالية وردية" class="svg-icon" id="medal-test">
+        <span>ميدالية وردية (عضو أنثى 1-10)</span>
+        <span class="status" id="medal-status">جاري الاختبار...</span>
+    </div>
+    
+    <div class="badge-test">
+        <img src="/svgs/white.svg" alt="ألماسة بيضاء" class="svg-icon" id="white-test">
+        <span>ألماسة بيضاء (مستوى 11-20)</span>
+        <span class="status" id="white-status">جاري الاختبار...</span>
+    </div>
+    
+    <div class="badge-test">
+        <img src="/svgs/emerald.svg" alt="ألماسة خضراء" class="svg-icon" id="emerald-test">
+        <span>ألماسة خضراء (مستوى 21-30)</span>
+        <span class="status" id="emerald-status">جاري الاختبار...</span>
+    </div>
+    
+    <div class="badge-test">
+        <img src="/svgs/orange_shine.svg" alt="ألماسة برتقالية" class="svg-icon" id="orange-test">
+        <span>ألماسة برتقالية مضيئة (مستوى 31-40)</span>
+        <span class="status" id="orange-status">جاري الاختبار...</span>
+    </div>
+
+    <script>
+        // اختبار تحميل الصور
+        function testImage(imgId, statusId) {
+            const img = document.getElementById(imgId);
+            const status = document.getElementById(statusId);
+            
+            img.onload = function() {
+                status.textContent = "✅ يعمل بشكل صحيح";
+                status.className = "status success";
+            };
+            
+            img.onerror = function() {
+                status.textContent = "❌ فشل في التحميل";
+                status.className = "status error";
+            };
+        }
+        
+        // اختبار جميع الصور
+        testImage('crown-test', 'crown-status');
+        testImage('arrow-test', 'arrow-status');
+        testImage('medal-test', 'medal-status');
+        testImage('white-test', 'white-status');
+        testImage('emerald-test', 'emerald-status');
+        testImage('orange-test', 'orange-status');
+    </script>
+</body>
+</html>
