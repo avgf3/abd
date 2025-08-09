@@ -2065,6 +2065,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إرسال قائمة محدثة للمستخدمين في الغرفة
         sendRoomUsers(roomId);
         
+        // 🔢 تحديث عداد المستخدمين فوراً
+        try {
+          const userCount = await roomService.updateRoomUserCount(roomId);
+          io.to(`room_${roomId}`).emit('roomUserCountUpdated', { roomId, userCount });
+          console.log(`✅ تم تحديث عدد مستخدمي الغرفة ${roomId}: ${userCount}`);
+        } catch (countError) {
+          console.warn('⚠️ خطأ في تحديث عدد المستخدمين:', countError);
+        }
+        
         // إرسال رسالة ترحيب واحدة فقط
         const welcomeMessage = {
           id: Date.now(),
@@ -2147,6 +2156,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // إرسال قائمة محدثة للمستخدمين المتبقين في الغرفة
         sendRoomUsers(roomId);
+        
+        // 🔢 تحديث عداد المستخدمين فوراً
+        try {
+          const userCount = await roomService.updateRoomUserCount(roomId);
+          io.to(`room_${roomId}`).emit('roomUserCountUpdated', { roomId, userCount });
+          console.log(`✅ تم تحديث عدد مستخدمي الغرفة ${roomId}: ${userCount}`);
+        } catch (countError) {
+          console.warn('⚠️ خطأ في تحديث عدد المستخدمين:', countError);
+        }
         
       } catch (error) {
         console.error('خطأ في handleRoomLeave:', error);
