@@ -9,7 +9,7 @@ interface UserRoleBadgeProps {
 }
 
 // دالة مساعدة للحصول على أيقونة المستوى/الدور
-export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element {
+export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element | null {
   // owner: تاج SVG
   if (user.userType === 'owner') {
     return <img src="/svgs/crown.svg" alt="owner" style={{width: size, height: size, display: 'inline'}} />;
@@ -36,27 +36,22 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
     if (level >= 1 && level <= 10 && gender === 'female') {
       return <img src="/svgs/pink_medal.svg" alt="female-lvl1-10" style={{width: size, height: size, display: 'inline'}} />;
     }
-    // عضو لفل 10-20: ألماسة بيضاء
+    // عضو لفل 11-20: ألماسة بيضاء
     if (level > 10 && level <= 20) {
-      return <img src="/svgs/white.svg" alt="lvl10-20" style={{width: size, height: size, display: 'inline'}} />;
+      return <img src="/svgs/white.svg" alt="lvl11-20" style={{width: size, height: size, display: 'inline'}} />;
     }
-    // عضو لفل 20-30: ألماسة خضراء
+    // عضو لفل 21-30: ألماسة خضراء
     if (level > 20 && level <= 30) {
-      return <img src="/svgs/emerald.svg" alt="lvl20-30" style={{width: size, height: size, display: 'inline'}} />;
+      return <img src="/svgs/emerald.svg" alt="lvl21-30" style={{width: size, height: size, display: 'inline'}} />;
     }
-    // عضو لفل 30-40: ألماسة برتقالية مضيئة
+    // عضو لفل 31-40: ألماسة برتقالية مضيئة
     if (level > 30 && level <= 40) {
-      return <img src="/svgs/orange_shine.svg" alt="lvl30-40" style={{width: size, height: size, display: 'inline'}} />;
+      return <img src="/svgs/orange_shine.svg" alt="lvl31-40" style={{width: size, height: size, display: 'inline'}} />;
     }
   }
   
-  // للضيوف - نقطة خضراء بسيطة
-  if (user.userType === 'guest') {
-    return <span style={{color: '#10b981', fontSize: size * 0.8}}>●</span>;
-  }
-  
-  // افتراضي لأي حالة أخرى
-  return <span style={{color: '#10b981', fontSize: size * 0.8}}>●</span>;
+  // غير ذلك: لا شارة
+  return null;
 }
 
 export default function UserRoleBadge({ user, showOnlyIcon = false, size = 20 }: UserRoleBadgeProps) {
