@@ -376,13 +376,56 @@ export function useChat() {
             
           case 'onlineUsers':
             if (message.users && Array.isArray(message.users)) {
-              // 🚀 تحسين: فلترة المستخدمين الصالحين فقط
-              const validUsers = message.users.filter(user => 
-                user && user.id && user.username && user.userType
-              );
+              // فلترة صارمة للمستخدمين الصالحين فقط
+              const validUsers = message.users.filter(user => {
+                // التحقق من صحة بيانات المستخدم
+                if (!user || !user.id || !user.username || !user.userType) {
+                  console.warn('🚫 مستخدم بيانات غير صالحة:', user);
+                  return false;
+                }
+                
+                // التحقق من عدم وجود اسم "مستخدم" العام
+                if (user.username === 'مستخدم' || user.username === 'User') {
+                  console.warn('🚫 اسم مستخدم عام مرفوض:', user.username);
+                  return false;
+                }
+                
+                // التحقق من عدم وجود معرف سالب أو صفر
+                if (user.id <= 0) {
+                  console.warn('🚫 معرف مستخدم غير صالح:', user.id);
+                  return false;
+                }
+                
+                return true;
+              });
+              
+              console.log(`✅ تحديث قائمة المتصلين: ${validUsers.length} مستخدم صالح من أصل ${message.users.length} (مصدر: ${message.source || 'unknown'})`);
               dispatch({ type: 'SET_ONLINE_USERS', payload: validUsers });
             } else {
               console.warn('⚠️ لم يتم استقبال قائمة مستخدمين صحيحة');
+              // لا نقوم بمسح القائمة، نبقيها كما هي
+            }
+            break;
+            
+          case 'userDisconnected':
+            // إزالة المستخدم المنقطع فوراً من القائمة
+            if (message.userId) {
+              dispatch({ 
+                type: 'SET_ONLINE_USERS', 
+                payload: state.onlineUsers.filter(user => user.id !== message.userId)
+              });
+              console.log(`👋 المستخدم ${message.username} غادر الدردشة`);
+            }
+            break;
+            
+          case 'userJoined':
+            // إضافة المستخدم الجديد إذا لم يكن موجوداً
+            if (message.user && !state.onlineUsers.find(u => u.id === message.user.id)) {
+              dispatch({ 
+                type: 'SET_ONLINE_USERS', 
+                payload: [...state.onlineUsers, message.user]
+              });
+              console.log(`👋 المستخدم ${message.user.username} انضم للدردشة`);
             }
             break;
             

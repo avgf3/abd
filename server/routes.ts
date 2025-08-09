@@ -2371,16 +2371,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const userId = customSocket.userId;
           const username = customSocket.username;
           
-          // إزالة المستخدم من قائمة المتصلين الفعليين أولاً
+          console.log(`🔌 المستخدم ${username} (ID: ${userId}) قطع الاتصال: ${reason}`);
+          
+          // 1. إزالة المستخدم من قائمة المتصلين الفعليين فوراً
           connectedUsers.delete(userId);
-          // تحديث حالة المستخدم في قاعدة البيانات
+          
+          // 2. تحديث حالة المستخدم في قاعدة البيانات
           await storage.setUserOnlineStatus(userId, false);
           
-          // إزالة المستخدم من جميع الغرف في قاعدة البيانات
+          // 3. إزالة المستخدم من جميع الغرف في قاعدة البيانات
           await storage.leaveRoom(userId, currentRoom);
           
-          // إزالة المستخدم من جميع الغرف
+          // 4. إزالة المستخدم من جميع الغرف
           socket.leave(userId.toString());
+          socket.leave(`room_${currentRoom}`);
+          
+          // 5. إشعار فوري لجميع المستخدمين في الغرفة
+          io.to(`room_${currentRoom}`).emit('message', {
+            type: 'userDisconnected',
+            userId: userId,
+            username: username,
+            roomId: currentRoom,
+            timestamp: new Date().toISOString()
+          });
           
           // إشعار المستخدمين في الغرفة الحالية بخروج المستخدم
           if (currentRoom) {
@@ -2429,30 +2442,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
               roomId: currentRoom
             });
             
-            // انتظار قصير للتأكد من التحديث
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
-            // جلب قائمة المستخدمين المحدثة من connectedUsers
-            const roomUsers = Array.from(connectedUsers.values())
-              .filter(conn => conn.room === currentRoom)
-              .map(conn => conn.user);
-            
-            // جلب المستخدمين من قاعدة البيانات أيضاً
-            const dbUsers = await storage.getOnlineUsersInRoom(currentRoom);
-            
-            // دمج القوائم وإزالة التكرارات والمستخدم الذي غادر
-            const allUsers = [...roomUsers];
-            for (const dbUser of dbUsers) {
-              if (!allUsers.find(u => u.id === dbUser.id) && dbUser.id !== userId) {
-                allUsers.push(dbUser);
+            // 6. تحديث قائمة المتصلين فوراً
+            setTimeout(async () => {
+              try {
+                // جلب المستخدمين المتصلين فعلياً فقط
+                const activeUsers = Array.from(connectedUsers.values())
+                  .filter(conn => {
+                    // التحقق من صحة الاتصال
+                    return conn.room === currentRoom && 
+                           conn.user && 
+                           conn.user.id && 
+                           conn.user.username &&
+                           conn.user.id !== userId; // استبعاد المستخدم المنقطع
+                  })
+                  .map(conn => conn.user);
+                
+                // إرسال القائمة المحدثة لجميع المستخدمين في الغرفة
+                io.to(`room_${currentRoom}`).emit('message', { 
+                  type: 'onlineUsers', 
+                  users: activeUsers,
+                  roomId: currentRoom,
+                  source: 'disconnect_cleanup',
+                  timestamp: new Date().toISOString()
+                });
+                
+                console.log(`✅ تم تحديث قائمة المتصلين: ${activeUsers.length} مستخدم في الغرفة ${currentRoom}`);
+              } catch (updateError) {
+                console.error('❌ خطأ في تحديث قائمة المتصلين:', updateError);
               }
-            }
-            
-            // إرسال قائمة محدثة للمستخدمين في الغرفة فقط (تقليل الطلبات)
-            io.to(`room_${currentRoom}`).emit('message', { 
-              type: 'onlineUsers', 
-              users: allUsers 
-            });
+            }, 100); // تأخير قصير لضمان التنظيف الكامل
           }
           
           // إشعار جميع المستخدمين بخروج المستخدم
@@ -2491,29 +2509,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     io.emit(message.type || 'broadcast', message.data || message);
   }
 
-  // فحص دوري لتنظيف الجلسات المنتهية الصلاحية
+  // فحص دوري محسن لتنظيف الجلسات المنتهية الصلاحية
   const sessionCleanupInterval = setInterval(async () => {
     try {
+      console.log('🧹 بدء تنظيف الجلسات المنتهية الصلاحية...');
+      
       const connectedSockets = await io.fetchSockets();
+      const activeSocketUsers = new Set();
+      
+      // جمع معرفات المستخدمين المتصلين فعلياً
       for (const socket of connectedSockets) {
         const customSocket = socket as any;
-        if (customSocket.userId) {
+        if (customSocket.userId && customSocket.isAuthenticated) {
+          activeSocketUsers.add(customSocket.userId);
+        }
+      }
+      
+      // تنظيف connectedUsers من المستخدمين غير المتصلين
+      const disconnectedUsers = [];
+      for (const [userId, connection] of connectedUsers.entries()) {
+        if (!activeSocketUsers.has(userId)) {
+          disconnectedUsers.push({ userId, username: connection.user?.username });
+          connectedUsers.delete(userId);
+          
+          // تحديث قاعدة البيانات
           try {
-            // التحقق من وجود المستخدم في قاعدة البيانات
-            const user = await storage.getUser(customSocket.userId);
-            if (!user || !user.isOnline) {
-              socket.disconnect(true);
-            }
-          } catch (error) {
-            console.error('خطأ في فحص الجلسة:', error);
-            // لا نقطع الاتصال في حالة خطأ قاعدة البيانات
+            await storage.setUserOnlineStatus(userId, false);
+          } catch (dbError) {
+            console.error(`خطأ في تحديث حالة المستخدم ${userId}:`, dbError);
           }
         }
       }
+      
+      if (disconnectedUsers.length > 0) {
+        console.log(`🧹 تم تنظيف ${disconnectedUsers.length} مستخدم منقطع:`, 
+                    disconnectedUsers.map(u => u.username).join(', '));
+        
+        // إرسال قائمة محدثة لجميع الغرف
+        const rooms = ['general']; // يمكن إضافة غرف أخرى
+        for (const roomId of rooms) {
+          const roomUsers = Array.from(connectedUsers.values())
+            .filter(conn => conn.room === roomId)
+            .map(conn => conn.user);
+          
+          io.to(`room_${roomId}`).emit('message', {
+            type: 'onlineUsers',
+            users: roomUsers,
+            roomId: roomId,
+            source: 'periodic_cleanup'
+          });
+        }
+      }
+      
     } catch (error) {
-      console.error('خطأ في تنظيف الجلسات:', error);
+      console.error('❌ خطأ في تنظيف الجلسات:', error);
     }
-  }, 300000); // كل 5 دقائق لتقليل الضغط على الخادم
+  }, 120000); // كل دقيقتين بدلاً من 5 دقائق لتحسين التنظيف
 
   // بدء التنظيف الدوري لقاعدة البيانات
   const dbCleanupInterval = databaseCleanup.startPeriodicCleanup(6); // كل 6 ساعات
