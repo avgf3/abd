@@ -15,7 +15,7 @@ import { getImageSrc } from '@/utils/imageUtils';
 
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
-import UserRoleBadge, { getUserLevelIcon, getUserRoleIcon } from './UserRoleBadge';
+import { LevelBadge } from '@/components/ui/LevelBadge';
 
 interface UnifiedSidebarProps {
   users: ChatUser[];
@@ -87,10 +87,10 @@ export default function UnifiedSidebar({
     });
   }, [validUsers, searchTerm]);
 
-  // 🚀 تحسين: استخدام مكون UserRoleBadge المركزي
+  // 🚀 تحسين: استخدام مكون LevelBadge المتقدم
   const renderUserBadge = useCallback((user: ChatUser) => {
     if (!user) return null;
-    return <UserRoleBadge user={user} size={20} />;
+    return <LevelBadge user={user} compact={true} />;
   }, []);
 
   // 🚀 تحسين: دالة formatLastSeen محسنة
@@ -584,16 +584,7 @@ export default function UnifiedSidebar({
                               >
                                 {post.username}
                               </span>
-                                                              {/* Post badge for user role */}
-                                {getUserRoleIcon(post.userRole) && (
-                                  <span className={
-                                    post.userRole === 'owner' ? 'text-yellow-400' :
-                                    post.userRole === 'admin' ? 'text-blue-400' : 
-                                    'text-green-400'
-                                  }>
-                                    {getUserRoleIcon(post.userRole)}
-                                  </span>
-                                )}
+                                {/* نظام الشعارات الجديد LevelBadge مطبق الآن */}
                             </div>
                             <p className="text-xs text-gray-500">{formatTimeAgo(post.timestamp.toString())}</p>
                           </div>

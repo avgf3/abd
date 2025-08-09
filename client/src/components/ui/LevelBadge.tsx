@@ -1,7 +1,45 @@
+/**
+ * نظام الشعارات الثاني (المتقدم) - LevelBadge
+ * 
+ * نظام متقدم يعتمد على:
+ * 1. المستويات (1-10) مع ألوان متدرجة
+ * 2. النقاط والتقدم في المستوى
+ * 3. أسماء مستويات جذابة (مبتدئ، خبير، أسطورة، إمبراطور)
+ * 4. أولوية للأدوار الإدارية (مالك، مشرف، مراقب)
+ * 5. شريط تقدم ومعلومات تفصيلية
+ * 
+ * يحل محل نظام UserRoleBadge القديم البسيط
+ */
+
 import React from 'react';
 import { getLevelInfo, getLevelColor, formatPoints, getPointsToNextLevel } from '@/utils/pointsUtils';
-import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
+
+// دالة لعرض أيقونة المستوى بناءً على مستوى ونوع المستخدم
+function getLevelIcon(user: ChatUser, size: number = 20): JSX.Element {
+  const level = user.level || 1;
+  const userType = user.userType;
+  
+  // أولويات العرض: نوع المستخدم ثم المستوى
+  if (userType === 'owner') {
+    return <span style={{fontSize: size}}>👑</span>; // تاج المالك
+  }
+  if (userType === 'admin') {
+    return <span style={{fontSize: size}}>⭐</span>; // نجمة المشرف
+  }
+  if (userType === 'moderator') {
+    return <span style={{fontSize: size}}>🛡️</span>; // درع المراقب
+  }
+  
+  // للأعضاء العاديين - حسب المستوى
+  if (level >= 1 && level <= 2) return <span style={{fontSize: size}}>🔰</span>; // مبتدئ
+  if (level >= 3 && level <= 4) return <span style={{fontSize: size}}>⭐</span>; // متميز
+  if (level >= 5 && level <= 6) return <span style={{fontSize: size}}>🏆</span>; // محترف  
+  if (level >= 7 && level <= 8) return <span style={{fontSize: size}}>👑</span>; // أسطورة
+  if (level >= 9 && level <= 10) return <span style={{fontSize: size}}>💎</span>; // إمبراطور
+  
+  return <span style={{fontSize: size}}>🔰</span>; // افتراضي
+}
 
 interface LevelBadgeProps {
   user: ChatUser;
@@ -12,7 +50,7 @@ interface LevelBadgeProps {
 
 export function LevelBadge({ user, showProgress = false, showPoints = false, compact = false }: LevelBadgeProps) {
   const levelInfo = getLevelInfo(user.level || 1);
-  const levelIcon = getUserLevelIcon(user, compact ? 16 : 20);
+  const levelIcon = getLevelIcon(user, compact ? 16 : 20);
   const levelColor = getLevelColor(user.level || 1);
   const pointsToNext = getPointsToNextLevel(user.totalPoints || 0);
 
@@ -40,7 +78,7 @@ export function LevelBadge({ user, showProgress = false, showPoints = false, com
   return (
           <div className="level-badge-container">
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-xl">{getUserLevelIcon(user, 24)}</span>
+        <span className="text-xl">{getLevelIcon(user, 24)}</span>
         <div>
           <div 
             className="font-bold text-sm"
@@ -89,7 +127,7 @@ interface PointsDisplayProps {
 
 export function PointsDisplay({ user, type = 'both' }: PointsDisplayProps) {
   const levelInfo = getLevelInfo(user.level || 1);
-  const levelIcon = getUserLevelIcon(user, 16);
+  const levelIcon = getLevelIcon(user, 16);
   const levelColor = getLevelColor(user.level || 1);
 
   if (type === 'gift') {

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getImageSrc } from '@/utils/imageUtils';
-import UserRoleBadge from './UserRoleBadge';
+import { LevelBadge } from '@/components/ui/LevelBadge';
 import {
   Dialog,
   DialogContent,
@@ -292,7 +292,7 @@ export default function ModerationPanel({
                             <span style={{ color: user.usernameColor || '#000000' }}>
                               {user.username}
                             </span>
-                            <UserRoleBadge user={user} />
+                            <LevelBadge user={user} />
                           </div>
                           <div className="text-sm text-gray-600">
                             {user.status || 'بدون حالة'}

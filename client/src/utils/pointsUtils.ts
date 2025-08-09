@@ -74,7 +74,7 @@ export function formatPoints(points: number): string {
   }
 }
 
-// تم حذف دالة getLevelIcon - الآن نستخدم UserRoleBadge للأيقونات
+// تم حذف دالة getLevelIcon - الآن نستخدم LevelBadge للأيقونات والمستويات
 
 // دالة الحصول على لون المستوى
 export function getLevelColor(level: number): string {

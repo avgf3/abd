@@ -7,7 +7,7 @@ import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import FileUploadButton from './FileUploadButton';
 import EmojiPicker from './EmojiPicker';
-import { getUserRoleIcon } from './UserRoleBadge';
+import { LevelBadge } from '@/components/ui/LevelBadge';
 
 
 interface PrivateMessageBoxProps {
@@ -122,16 +122,12 @@ export default function PrivateMessageBox({
                 <p className="font-bold text-lg" style={{ 
                   color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#7C3AED') 
                 }}>
-                  {getUserRoleIcon(user.userType)} {user.username}
+                  {user.username}
                 </p>
               </div>
-              <p className="text-sm text-purple-600 font-medium">
-                {user.userType === 'owner' && `${getUserRoleIcon(user.userType)} مالك`}
-                {user.userType === 'admin' && `${getUserRoleIcon(user.userType)} إدمن`}
-                {user.userType === 'moderator' && `${getUserRoleIcon(user.userType)} مشرف`}
-                {user.userType === 'member' && ''}
-                {user.userType === 'guest' && ''}
-              </p>
+                              <div className="text-sm text-purple-600 font-medium">
+                  <LevelBadge user={user} compact={true} />
+                </div>
               <p className={`text-xs font-medium ${user.isOnline ? 'text-green-600' : 'text-gray-500'}`}>
                 {user.isOnline ? '🟢 متصل الآن' : '⚫ غير متصل'}
               </p>
