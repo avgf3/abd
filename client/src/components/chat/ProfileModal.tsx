@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
 import PointsSentNotification from '@/components/ui/PointsSentNotification';
+import UsernameColorPicker from '@/components/profile/UsernameColorPicker';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -1892,6 +1893,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                 <p onClick={() => setCurrentEditType('effects')} style={{ cursor: 'pointer' }}>
                   ✨ تأثيرات حركية: <span>اضغط للتغيير</span>
                 </p>
+                <p onClick={() => setCurrentEditType('usernameColor')} style={{ cursor: 'pointer' }}>
+                  🎨 لون اسم المستخدم: <span style={{ color: localUser?.usernameColor || '#000000' }}>اضغط للتغيير</span>
+                </p>
               </div>
             )}
           </div>
@@ -1941,6 +1945,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               {currentEditType === 'socialStatus' && 'تعديل الحالة الاجتماعية'}
               {currentEditType === 'theme' && '🎨 اختيار لون الملف الشخصي'}
               {currentEditType === 'effects' && '✨ تعديل التأثيرات الحركية'}
+              {currentEditType === 'usernameColor' && '🎨 لون اسم المستخدم'}
               {currentEditType === 'sendPoints' && '💰 إرسال النقاط'}
             </h3>
             
@@ -1988,6 +1993,16 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : currentEditType === 'usernameColor' ? (
+              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                <UsernameColorPicker 
+                  currentUser={localUser!} 
+                  onColorUpdate={(color) => {
+                    updateUserData({ usernameColor: color });
+                    fetchAndUpdateUser(localUser?.id!);
+                  }} 
+                />
               </div>
             ) : currentEditType === 'sendPoints' ? (
               <div>
@@ -2124,7 +2139,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               </>
             )}
 
-            {(currentEditType === 'theme' || currentEditType === 'effects') && (
+            {(currentEditType === 'theme' || currentEditType === 'effects' || currentEditType === 'usernameColor') && (
               <div className="edit-buttons">
                 <button className="cancel-btn" onClick={closeEditModal}>
                   ❌ إغلاق

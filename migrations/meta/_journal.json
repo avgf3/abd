@@ -43,6 +43,13 @@
       "when": 1753825590635,
       "tag": "0005_panoramic_omega_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1754743046687,
+      "tag": "0006_flaky_leopardon",
+      "breakpoints": true
     }
   ]
 }

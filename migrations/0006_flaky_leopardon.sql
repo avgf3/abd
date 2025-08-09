@@ -1,0 +1,1 @@
+ALTER TABLE "users" ALTER COLUMN "username_color" SET DEFAULT '#000000';

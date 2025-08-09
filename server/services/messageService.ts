@@ -60,7 +60,7 @@ export class MessageService {
           userType: msg.senderUserType || 'guest',
           role: msg.senderUserType || 'guest',
           profileImage: msg.senderProfileImage,
-          usernameColor: msg.senderUsernameColor || '#FFFFFF',
+          usernameColor: msg.senderUsernameColor || '#000000',
           profileBackgroundColor: msg.senderProfileBackgroundColor || '#3c0d0d',
           isOnline: false // سيتم تحديثها من مكان آخر
         } : undefined
@@ -121,7 +121,7 @@ export class MessageService {
           userType: msg.senderUserType || 'guest',
           role: msg.senderUserType || 'guest',
           profileImage: msg.senderProfileImage,
-          usernameColor: msg.senderUsernameColor || '#FFFFFF',
+          usernameColor: msg.senderUsernameColor || '#000000',
           profileBackgroundColor: msg.senderProfileBackgroundColor || '#3c0d0d',
           isOnline: false // سيتم تحديثها من مكان آخر
         } : undefined
@@ -230,7 +230,7 @@ export class MessageService {
           userType: msg.senderUserType || 'guest',
           role: msg.senderUserType || 'guest',
           profileImage: msg.senderProfileImage,
-          usernameColor: msg.senderUsernameColor || '#FFFFFF',
+          usernameColor: msg.senderUsernameColor || '#000000',
           profileBackgroundColor: msg.senderProfileBackgroundColor || '#3c0d0d',
           isOnline: false
         } : undefined

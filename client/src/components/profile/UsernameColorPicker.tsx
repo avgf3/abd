@@ -12,6 +12,7 @@ interface UsernameColorPickerProps {
 
 // 30 لون جميل ومتنوع
 const USERNAME_COLORS = [
+  { name: 'أسود', value: '#000000', bg: 'bg-black' },
   { name: 'أبيض', value: '#FFFFFF', bg: 'bg-white' },
   { name: 'أحمر', value: '#FF4444', bg: 'bg-red-500' },
   { name: 'أحمر فاتح', value: '#FF6B6B', bg: 'bg-red-400' },
@@ -45,7 +46,7 @@ const USERNAME_COLORS = [
 ];
 
 export default function UsernameColorPicker({ currentUser, onColorUpdate }: UsernameColorPickerProps) {
-  const [selectedColor, setSelectedColor] = useState(currentUser.usernameColor || '#FFFFFF');
+  const [selectedColor, setSelectedColor] = useState(currentUser.usernameColor || '#000000');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -103,7 +104,8 @@ export default function UsernameColorPicker({ currentUser, onColorUpdate }: User
               `}
               style={{ 
                 backgroundColor: colorOption.value,
-                color: colorOption.value === '#FFFFFF' || colorOption.value === '#F1C40F' || colorOption.value === '#FFD700' ? '#000' : '#FFF'
+                color: colorOption.value === '#FFFFFF' || colorOption.value === '#F1C40F' || colorOption.value === '#FFD700' ? '#000' : '#FFF',
+                border: colorOption.value === '#000000' ? '2px solid #444' : 'none'
               }}
               onClick={() => handleColorSelect(colorOption.value)}
               disabled={isLoading}

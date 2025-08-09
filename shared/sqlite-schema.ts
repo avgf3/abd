@@ -31,7 +31,7 @@ export const users = sqliteTable("users", {
   ipAddress: text("ip_address"),
   deviceId: text("device_id"),
   ignoredUsers: text("ignored_users").default('[]'), // قائمة المستخدمين المتجاهلين - JSON string
-  usernameColor: text("username_color").default('#FFFFFF'), // لون اسم المستخدم
+  usernameColor: text("username_color").default('#000000'), // لون اسم المستخدم
   userTheme: text("user_theme").default('default'), // ثيم المستخدم
   profileEffect: text("profile_effect").default('none'), // تأثير البروفايل
   points: integer("points").default(0), // نقاط المستخدم الحالية
