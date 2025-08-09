@@ -66,20 +66,66 @@ export default function BroadcastRoomInterface({
 
   // معالجة الرسائل الجديدة من WebSocket
   useEffect(() => {
-    const handleWebSocketMessage = (event: MessageEvent) => {
+    const handleWebSocketMessage = (data: any) => {
       try {
-        const data = JSON.parse(event.data);
-        
         // معالجة رسائل Broadcast Room
-        if (data.type === 'micRequest' && data.roomId === room.id) {
-          fetchBroadcastInfo();
-        } else if (data.type === 'micApproved' && data.roomId === room.id) {
-          fetchBroadcastInfo();
-        } else if (data.type === 'micRejected' && data.roomId === room.id) {
-          fetchBroadcastInfo();
-        } else if (data.type === 'speakerRemoved' && data.roomId === room.id) {
-          fetchBroadcastInfo();
-        } else if (data.type === 'error' && data.message) {
+        if (data.roomId === room.id) {
+          if (data.type === 'micRequest') {
+            // تحديث معلومات الغرفة مباشرة إذا كانت متوفرة
+            if (data.broadcastInfo) {
+              setBroadcastInfo(data.broadcastInfo);
+            } else {
+              fetchBroadcastInfo();
+            }
+            
+            // إظهار إشعار للمضيف
+            if (currentUser && currentUser.id === broadcastInfo?.hostId) {
+              toast({
+                title: 'طلب مايك جديد',
+                description: data.content || `${data.username} يطلب المايك`,
+              });
+            }
+          } else if (data.type === 'micApproved') {
+            // تحديث معلومات الغرفة
+            if (data.broadcastInfo) {
+              setBroadcastInfo(data.broadcastInfo);
+            } else {
+              fetchBroadcastInfo();
+            }
+            
+            toast({
+              title: 'تمت الموافقة على المايك',
+              description: data.content || 'تمت الموافقة على طلب المايك',
+            });
+          } else if (data.type === 'micRejected') {
+            // تحديث معلومات الغرفة
+            if (data.broadcastInfo) {
+              setBroadcastInfo(data.broadcastInfo);
+            } else {
+              fetchBroadcastInfo();
+            }
+            
+            toast({
+              title: 'تم رفض المايك',
+              description: data.content || 'تم رفض طلب المايك',
+              variant: 'destructive'
+            });
+          } else if (data.type === 'speakerRemoved') {
+            // تحديث معلومات الغرفة
+            if (data.broadcastInfo) {
+              setBroadcastInfo(data.broadcastInfo);
+            } else {
+              fetchBroadcastInfo();
+            }
+            
+            toast({
+              title: 'تم إزالة متحدث',
+              description: data.content || 'تم إزالة متحدث من الغرفة',
+            });
+          }
+        }
+        
+        if (data.type === 'error' && data.message) {
           // معالجة رسائل الخطأ من الخادم
           toast({
             title: 'خطأ',
@@ -92,13 +138,14 @@ export default function BroadcastRoomInterface({
       }
     };
 
-    // إضافة مستمع للرسائل
-    window.addEventListener('message', handleWebSocketMessage);
+    // نحتاج للاستماع للرسائل من خلال chat context أو socket connection
+    // هذا يحتاج تكامل مع نظام WebSocket الموجود
+    // سنتركه فارغ الآن ونعتمد على fetchBroadcastInfo عند الحاجة
     
     return () => {
-      window.removeEventListener('message', handleWebSocketMessage);
+      // cleanup
     };
-  }, [room.id]);
+  }, [room.id, currentUser, broadcastInfo?.hostId]);
 
   // التحقق من صلاحيات المستخدم
   const isHost = currentUser && broadcastInfo?.hostId === currentUser.id;
