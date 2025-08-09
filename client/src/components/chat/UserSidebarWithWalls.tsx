@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,7 +17,7 @@ import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/c
 import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 import UserRoleBadge from './UserRoleBadge';
 
-interface UserSidebarWithWallsProps {
+interface UnifiedSidebarProps {
   users: ChatUser[];
   onUserClick: (event: React.MouseEvent, user: ChatUser) => void;
   currentUser?: ChatUser | null;
@@ -31,7 +31,7 @@ interface UserSidebarWithWallsProps {
   onStartPrivateChat?: (friend: ChatUser) => void;
 }
 
-export default function UserSidebarWithWalls({ 
+export default function UnifiedSidebar({ 
   users, 
   onUserClick, 
   currentUser, 
@@ -43,7 +43,7 @@ export default function UserSidebarWithWalls({
   onDeleteRoom,
   onRefreshRooms,
   onStartPrivateChat
-}: UserSidebarWithWallsProps) {
+}: UnifiedSidebarProps) {
   const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms' | 'friends'>(propActiveView || 'users');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'public' | 'friends'>('public');
@@ -55,9 +55,87 @@ export default function UserSidebarWithWalls({
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const filteredUsers = users.filter(user =>
-    user && user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // 🚀 تحسين: استخدام useMemo لفلترة المستخدمين لتحسين الأداء
+  const filteredUsers = useMemo(() => {
+    if (!searchTerm.trim()) return users;
+    
+    return users.filter(user => {
+      // التحقق من وجود اسم المستخدم قبل التصفية
+      if (!user?.username) return false;
+      return user.username.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+  }, [users, searchTerm]);
+
+  // 🚀 تحسين: دالة getUserRankBadge محسنة ومنظمة
+  const getUserRankBadge = useCallback((user: ChatUser) => {
+    if (!user) return null;
+    
+    // تحويل المستوى بطريقة آمنة
+    const userLevel = typeof user.level === 'string' ? parseInt(user.level, 10) : user.level;
+    const level = isNaN(userLevel) ? 0 : userLevel;
+    
+    // استخدام switch للوضوح والأداء
+    switch (user.userType) {
+      case 'owner':
+        return <img src="/svgs/crown.svg" alt="owner" style={{width: 24, height: 24, display: 'inline'}} />;
+      case 'admin':
+        return <span style={{fontSize: 24, display: 'inline'}}>⭐</span>;
+      case 'moderator':
+        return <span style={{fontSize: 24, display: 'inline'}}>🛡️</span>;
+      case 'member':
+        if (level >= 1 && level <= 10) {
+          return user.gender === 'male' 
+            ? <img src="/svgs/blue_arrow.svg" alt="male-lvl1-10" style={{width: 24, height: 24, display: 'inline'}} />
+            : <img src="/svgs/pink_medal.svg" alt="female-lvl1-10" style={{width: 24, height: 24, display: 'inline'}} />;
+        }
+        if (level > 10 && level <= 20) {
+          return <img src="/svgs/white.svg" alt="lvl10-20" style={{width: 24, height: 24, display: 'inline'}} />;
+        }
+        if (level > 20 && level <= 30) {
+          return <img src="/svgs/emerald.svg" alt="lvl20-30" style={{width: 24, height: 24, display: 'inline'}} />;
+        }
+        if (level > 30 && level <= 40) {
+          return <img src="/svgs/orange_shine.svg" alt="lvl30-40" style={{width: 24, height: 24, display: 'inline'}} />;
+        }
+        break;
+      default:
+        return null;
+    }
+    return null;
+  }, []);
+
+  // 🚀 تحسين: دالة formatLastSeen محسنة
+  const formatLastSeen = useCallback((lastSeen?: string | Date) => {
+    if (!lastSeen) return 'غير معروف';
+    
+    const lastSeenDate = lastSeen instanceof Date ? lastSeen : new Date(lastSeen);
+    
+    if (isNaN(lastSeenDate.getTime())) {
+      return 'غير معروف';
+    }
+    
+    const now = new Date();
+    const diff = now.getTime() - lastSeenDate.getTime();
+    const minutes = Math.floor(diff / 60000);
+    
+    if (minutes < 1) return 'متصل الآن';
+    if (minutes < 60) return `قبل ${minutes} دقيقة`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `قبل ${hours} ساعة`;
+    const days = Math.floor(hours / 24);
+    return `قبل ${days} يوم`;
+  }, []);
+
+  // معالج النقر مع إيقاف انتشار الحدث
+  const handleUserClick = useCallback((e: React.MouseEvent, user: ChatUser) => {
+    e.stopPropagation();
+    onUserClick(e, user);
+  }, [onUserClick]);
+
+  // التحقق من صلاحيات الإشراف
+  const isModerator = useMemo(() => 
+    currentUser && ['moderator', 'admin', 'owner'].includes(currentUser.userType)
+  , [currentUser]);
 
   // إضافة logging للتشخيص
   React.useEffect(() => {
@@ -328,53 +406,59 @@ export default function UserSidebarWithWalls({
             </div>
             
             <ul className="space-y-1">
-              {filteredUsers.map((user) => (
-                <li key={user.id} className="relative">
-                  <SimpleUserMenu
-                    targetUser={user}
-                    currentUser={currentUser}
-                  >
-                    <div
-                      className={`flex items-center gap-2 p-2 rounded-lg transition-all duration-200 cursor-pointer w-full ${
-                        getUserThemeClasses(user)
-                      }`}
-                      style={{ 
-                        ...getUserThemeStyles(user)
-                      }}
-                      onClick={(e) => onUserClick(e, user)}
+              {filteredUsers.map((user) => {
+                // 🚀 تحسين: التحقق من وجود البيانات المطلوبة
+                if (!user?.username || !user?.userType) {
+                  return null;
+                }
+                
+                return (
+                  <li key={user.id} className="relative -mx-4">
+                    <SimpleUserMenu
+                      targetUser={user}
+                      currentUser={currentUser}
+                      showModerationActions={isModerator}
                     >
-                      <ProfileImage 
-                        user={user} 
-                        size="small" 
-                        className="transition-transform hover:scale-105"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span 
-                              className="text-sm font-medium transition-all duration-300"
-                              style={{ 
-                                color: user.usernameColor || getUserThemeTextColor(user),
-                                textShadow: user.usernameColor ? `0 0 10px ${user.usernameColor}40` : 'none',
-                                filter: user.usernameColor ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
-                              }}
-                              title={user.username}
-                            >
-                              {user.username}
-                            </span>
-                            {user.isMuted && (
-                              <span className="text-yellow-400 text-xs">🔇</span>
-                            )}
-                          </div>
-                          <div className="flex items-center">
-                            <UserRoleBadge user={user} />
+                      <div
+                        className={`flex items-center gap-2 p-2 px-4 rounded-lg transition-all duration-200 cursor-pointer w-full ${
+                          getUserThemeClasses(user)
+                        }`}
+                        style={{ 
+                          ...getUserThemeStyles(user)
+                        }}
+                        onClick={(e) => handleUserClick(e, user)}
+                      >
+                        <ProfileImage 
+                          user={user} 
+                          size="small" 
+                          className="transition-transform hover:scale-105"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span 
+                                className="text-base font-medium transition-all duration-300"
+                                style={{ 
+                                  color: user.usernameColor || getUserThemeTextColor(user),
+                                  textShadow: user.usernameColor ? `0 0 10px ${user.usernameColor}40` : 'none',
+                                  filter: user.usernameColor ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                                }}
+                                title={user.username}
+                              >
+                                {user.username} {getUserRankBadge(user)}
+                              </span>
+                              {/* إشارة المكتوم */}
+                              {user.isMuted && (
+                                <span className="text-yellow-400 text-xs">🔇</span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </SimpleUserMenu>
-                </li>
-              ))}
+                    </SimpleUserMenu>
+                  </li>
+                );
+              })}
             </ul>
             
             {filteredUsers.length === 0 && (

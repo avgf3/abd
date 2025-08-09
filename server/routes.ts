@@ -1596,36 +1596,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-    // طلب تحديث قائمة المستخدمين المتصلين - مع حماية من الطلبات المفرطة
+    // 🚀 تحسين: تقليل استدعاءات المستخدمين - زيادة الفترة الزمنية
     let lastUserListRequest = 0;
-    const USER_LIST_THROTTLE = 3000; // 3 ثوان بين الطلبات
+    const USER_LIST_THROTTLE = 5000; // زيادة إلى 5 ثوان لتقليل التحميل
     
     socket.on('requestOnlineUsers', async () => {
       try {
         if (!(socket as CustomSocket).isAuthenticated) {
+          console.warn('⚠️ طلب قائمة مستخدمين من مستخدم غير مصادق');
           return;
         }
 
-        // منع الطلبات المتكررة
+        // 🚀 تحسين: حماية أقوى من الطلبات المتكررة
         const now = Date.now();
         if (now - lastUserListRequest < USER_LIST_THROTTLE) {
-          console.warn(`⚠️ طلب متكرر للمستخدمين من ${socket.id} - تم تجاهله`);
+          console.log(`🔄 تجاهل طلب متكرر للمستخدمين من ${socket.id}`);
           return;
         }
         lastUserListRequest = now;
 
         const currentRoom = (socket as any).currentRoom || 'general';
         
-        // استخدام connectedUsers فقط لتحسين الأداء
+        // 🚀 تحسين: فلترة وتنظيف بيانات المستخدمين
         const roomUsers = Array.from(connectedUsers.values())
-          .filter(conn => conn.room === currentRoom)
+          .filter(conn => {
+            return conn.room === currentRoom && 
+                   conn.user && 
+                   conn.user.id && 
+                   conn.user.username && 
+                   conn.user.userType;
+          })
           .map(conn => conn.user);
         
-        // إرسال قائمة المستخدمين المتصلين فعلياً
+        // إرسال للمستخدم الطالب فقط (وليس broadcast للكل)
         socket.emit('message', { 
           type: 'onlineUsers', 
           users: roomUsers 
         });
+        
+        console.log(`✅ تم إرسال قائمة ${roomUsers.length} مستخدم للغرفة ${currentRoom}`);
         
         } catch (error) {
         console.error('❌ خطأ في جلب المستخدمين المتصلين:', error);
