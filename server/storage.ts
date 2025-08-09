@@ -316,15 +316,46 @@ export async function createWallPost(userId: number, content: string): Promise<a
 }
 
 export async function getWallPosts(userId: number, limit: number = 10): Promise<any[]> {
-  // This would need custom implementation with wall_posts table
-  // For now, return empty array
-  return [];
+  try {
+    const { db, dbType } = await import('./database-adapter');
+    if (!db || dbType === 'disabled') return [];
+    if (dbType === 'postgresql') {
+      const { wallPosts } = await import('../shared/schema');
+      const { desc } = await import('drizzle-orm');
+      const rows = await (db as any)
+        .select()
+        .from((wallPosts as any))
+        .orderBy(desc((wallPosts as any).timestamp))
+        .limit(limit);
+      return rows || [];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getWallPosts:', error);
+    return [];
+  }
 }
 
-export async function getUserWallPosts(userId: number, targetUserId: number, limit: number = 10): Promise<any[]> {
-  // This would need custom implementation with wall_posts table
-  // For now, return empty array
-  return [];
+export async function getWallPostsByUsers(userIds: number[], limit: number = 10): Promise<any[]> {
+  try {
+    const { db, dbType } = await import('./database-adapter');
+    if (!db || dbType === 'disabled') return [];
+    if (dbType === 'postgresql') {
+      const { wallPosts } = await import('../shared/schema');
+      const { inArray, desc } = await import('drizzle-orm');
+      const rows = await (db as any)
+        .select()
+        .from((wallPosts as any))
+        .where(inArray((wallPosts as any).userId, userIds as any))
+        .orderBy(desc((wallPosts as any).timestamp))
+        .limit(limit);
+      return rows || [];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getWallPostsByUsers:', error);
+    return [];
+  }
 }
 
 export async function deleteWallPost(postId: number, userId: number): Promise<boolean> {
@@ -425,82 +456,28 @@ export const storage: LegacyStorage = {
     return await databaseService.getMessages(roomId, limit);
   },
 
+  // Friends
   async addFriend(userId: number, friendId: number) {
-    // إنشاء صداقة مقبولة مباشرة (يستخدم في أماكن تحتاج إضافة مباشرة)
-    const { db, dbType } = await import('./database-adapter');
-    const { friends } = dbType === 'postgresql' ? await import('../shared/schema') : await import('../shared/sqlite-schema');
-    const { and, or, eq } = await import('drizzle-orm');
-
-    // لا تنشئ تكرار
-    const existing = await (db as any)
-      .select()
-      .from((friends as any))
-      .where(
-        and(
-          or(
-            and(eq((friends as any).userId, userId as any), eq((friends as any).friendId, friendId as any)),
-            and(eq((friends as any).userId, friendId as any), eq((friends as any).friendId, userId as any))
-          )
-        )
-      )
-      .limit(1);
-    if (Array.isArray(existing) && existing.length > 0) return existing[0] as any;
-
-    if (dbType === 'postgresql') {
-      const result = await (db as any).insert((friends as any)).values({ userId, friendId, status: 'accepted', createdAt: new Date() }).returning();
-      return result?.[0] as any;
-    } else {
-      const result = await (db as any).insert((friends as any)).values({ userId, friendId, status: 'accepted', createdAt: new Date().toISOString() });
-      if ((result as any).lastInsertRowid) {
-        const rows = await (db as any)
-          .select()
-          .from((friends as any))
-          .where(eq((friends as any).id, Number((result as any).lastInsertRowid)))
-          .limit(1);
-        return rows?.[0] as any;
-      }
-      return null as any;
-    }
+    return await friendService.addFriend(userId, friendId);
   },
 
   async getFriends(userId: number) {
-    try {
-      const friends = await databaseService.getFriends(userId);
-      const friendUsers: User[] = [];
-      
-      for (const friendship of friends) {
-        const friendId = friendship.userId === userId ? friendship.friendId : friendship.userId;
-        const friendUser = await databaseService.getUserById(friendId);
-        if (friendUser) {
-          friendUsers.push(friendUser);
-        }
-      }
-      
-      return friendUsers;
-    } catch (error) {
-      console.error('Error getting friends:', error);
-      return [];
-    }
+    return await friendService.getFriends(userId);
   },
 
+  // Notifications
   async createNotification(notification: any) {
-    const newNotification = await databaseService.createNotification(notification);
-    if (!newNotification) throw new Error('Failed to create notification');
-    return newNotification;
+    const result = await notificationService.createNotification(notification);
+    if (!result) throw new Error('Failed to create notification');
+    return result;
   },
 
   async getUserNotifications(userId: number, limit = 50) {
-    return await databaseService.getNotifications(userId);
+    return await notificationService.getUserNotifications(userId, limit);
   },
 
   async markNotificationAsRead(notificationId: number) {
-    try {
-      // This functionality needs to be implemented in databaseService
-      console.warn('markNotificationAsRead not implemented in databaseService');
-      return true;
-    } catch {
-      return false;
-    }
+    return await notificationService.markNotificationAsRead(notificationId);
   },
 
   async getOnlineUsers() {
@@ -511,136 +488,25 @@ export const storage: LegacyStorage = {
     return await databaseService.getAllUsers();
   },
 
-  // Additional room-related methods
-  async getRoomById(roomId: number) {
-    const rooms = await databaseService.getRooms();
-    return rooms.find(room => room.id === roomId) || null;
-  },
-
-  async getAllRooms() {
-    return await databaseService.getRooms();
-  },
-
-  async createRoom(roomData: Partial<Room>) {
-    return await databaseService.createRoom(roomData);
-  },
-
-  async getRoom(id: string | number) {
-    try {
-      const status = databaseService.getStatus();
-      if (!status.connected) return null;
-      
-      if (typeof id === 'string') {
-        const rooms = await databaseService.getRooms();
-        return rooms.find((r: any) => r.id === id || r.name === id) || null;
-      } else {
-        const rooms = await databaseService.getRooms();
-        return rooms.find(room => room.id === id) || null;
-      }
-    } catch (error) {
-      console.error('Error getting room:', error);
-      return null;
+  // Wall posts APIs expected by routes
+  async getWallPosts(typeOrUser: any) {
+    if (typeOrUser === 'public') {
+      return await (await import('./storage')).getWallPosts(0, 50);
     }
-  },
-
-  async getBroadcastRoomInfo(roomId: string) {
-    try {
-      const status = databaseService.getStatus();
-      if (!status.connected) {
-        return { 
-          hostId: null, 
-          speakers: [], 
-          micQueue: [] 
-        };
-      }
-      
-      const room = await this.getRoom(roomId);
-      if (!room || !room.isBroadcast) {
-        return { 
-          hostId: null, 
-          speakers: [], 
-          micQueue: [] 
-        };
-      }
-      
-      // جلب قائمة المتحدثين
-      let speakers: number[] = [];
-      if (room.speakers) {
-        try {
-          speakers = typeof room.speakers === 'string' ? 
-            JSON.parse(room.speakers) : (room.speakers as any[]);
-        } catch (e) {
-          speakers = [];
-        }
-      }
-      
-      // جلب قائمة انتظار المايك
-      let micQueue = this.parseMicQueue((room as any).micQueue ?? (room as any).mic_queue);
-      
-      return {
-        hostId: (room as any).hostId ?? null,
-        speakers: speakers,
-        micQueue: micQueue
-      };
-    } catch (error) {
-      console.error('Error getting broadcast room info:', error);
-      return { 
-        hostId: null, 
-        speakers: [], 
-        micQueue: [] 
-      };
+    // If array of user IDs passed, delegate to by-users path
+    if (Array.isArray(typeOrUser)) {
+      return await (await import('./storage')).getWallPostsByUsers(typeOrUser, 50);
     }
+    return [];
   },
 
-  // Friend request methods
-  async acceptFriendRequest(requestId: number) {
-    return await friendService.acceptFriendRequest(requestId);
+  async getWallPostsByUsers(userIds: number[]) {
+    return await (await import('./storage')).getWallPostsByUsers(userIds, 50);
   },
 
-  async declineFriendRequest(requestId: number) {
-    return await friendService.declineFriendRequest(requestId);
-  },
-
-  async ignoreFriendRequest(requestId: number) {
-    return await friendService.ignoreFriendRequest(requestId);
-  },
-
-  async deleteFriendRequest(requestId: number) {
-    return await friendService.deleteFriendRequest(requestId);
-  },
-
-  // إضافة الطرق المفقودة لطلبات الصداقة
-  async getIncomingFriendRequests(userId: number) {
-    return await friendService.getIncomingFriendRequests(userId);
-  },
-
-  async getOutgoingFriendRequests(userId: number) {
-    return await friendService.getOutgoingFriendRequests(userId);
-  },
-
-  async getFriendship(userId1: number, userId2: number) {
-    return await friendService.getFriendship(userId1, userId2);
-  },
-
-  async getFriendRequest(senderId: number, receiverId: number) {
-    return await friendService.getFriendRequest(senderId, receiverId);
-  },
-
-  async getFriendRequestById(requestId: number) {
-    return await friendService.getFriendRequestById(requestId);
-  },
-
-  async createFriendRequest(senderId: number, receiverId: number) {
-    return await friendService.createFriendRequest(senderId, receiverId);
-  },
-
-  async sendFriendRequest(senderId: number, receiverId: number) {
-    // Alias for createFriendRequest for backward compatibility
-    return await this.createFriendRequest(senderId, receiverId);
-  },
-
-  async removeFriend(userId: number, friendId: number) {
-    return await friendService.removeFriend(userId, friendId);
+  // Provide blocked devices for moderation bootstrap
+  async getBlockedDevices() {
+    return await databaseService.getBlockedDevices();
   },
 
   // ========= Room helpers exposed on storage =========

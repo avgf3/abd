@@ -233,12 +233,130 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
           const migrationsPath = path.join(process.cwd(), 'migrations');
           if (fs.existsSync(migrationsPath)) {
             await migratePostgres(db as PostgreSQLDatabase, { migrationsFolder: 'migrations' });
-            }
+          }
         } catch (error: any) {
-          // تجاهل أخطاء الجداول الموجودة
-          if (!error.message?.includes('already exists') && error.code !== '42P07') {
+          // تجاهل أخطاء الجداول الموجودة للمتابعة في ضمان المخطط
+          const msg: string = error?.message || '';
+          const code: string | undefined = (error && (error.code || error?.cause?.code)) as any;
+          if (!(msg.includes('already exists') || code === '42P07')) {
             console.error('❌ خطأ في PostgreSQL migrations:', error);
           }
+        }
+
+        // ضمان وجود المخطط المطلوب بشكل idempotent حتى لو فشلت بعض الـ migrations
+        try {
+          // Enable citext for slug if available
+          await (db as any).execute(`CREATE EXTENSION IF NOT EXISTS citext;`).catch(() => {});
+
+          // Ensure rooms optional columns
+          await (db as any).execute(`
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'rooms' AND column_name = 'deleted_at'
+              ) THEN
+                ALTER TABLE rooms ADD COLUMN deleted_at TIMESTAMPTZ;
+              END IF;
+            END $$;
+          `);
+          await (db as any).execute(`
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'rooms' AND column_name = 'last_message_at'
+              ) THEN
+                ALTER TABLE rooms ADD COLUMN last_message_at TIMESTAMPTZ;
+              END IF;
+            END $$;
+          `);
+          await (db as any).execute(`
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'rooms' AND column_name = 'slug'
+              ) THEN
+                ALTER TABLE rooms ADD COLUMN slug CITEXT;
+                UPDATE rooms SET slug = COALESCE(NULLIF(id, ''), NULLIF(name, ''))::citext WHERE slug IS NULL;
+              END IF;
+            END $$;
+          `);
+          await (db as any).execute(`
+            CREATE UNIQUE INDEX IF NOT EXISTS uniq_rooms_slug_active
+            ON rooms (slug) WHERE deleted_at IS NULL AND slug IS NOT NULL;
+          `);
+          await (db as any).execute(`
+            CREATE INDEX IF NOT EXISTS idx_rooms_active ON rooms (deleted_at) WHERE deleted_at IS NULL;
+          `);
+
+          // Ensure room_members pivot with moderation fields
+          await (db as any).execute(`
+            CREATE TABLE IF NOT EXISTS room_members (
+              room_id       TEXT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+              user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+              role          TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('owner','admin','moderator','member')),
+              muted_until   TIMESTAMPTZ,
+              banned_until  TIMESTAMPTZ,
+              joined_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+              PRIMARY KEY (room_id, user_id)
+            );
+          `);
+          await (db as any).execute(`CREATE INDEX IF NOT EXISTS idx_room_members_roles ON room_members (room_id, role);`);
+          await (db as any).execute(`CREATE INDEX IF NOT EXISTS idx_room_members_user ON room_members (user_id);`);
+          await (db as any).execute(`CREATE INDEX IF NOT EXISTS idx_room_members_mute ON room_members (room_id, muted_until) WHERE muted_until IS NOT NULL;`);
+          await (db as any).execute(`CREATE INDEX IF NOT EXISTS idx_room_members_ban  ON room_members (room_id, banned_until) WHERE banned_until IS NOT NULL;`);
+          await (db as any).execute(`
+            CREATE UNIQUE INDEX IF NOT EXISTS uniq_room_owner ON room_members (room_id) WHERE role = 'owner';
+          `);
+          // Backfill owner membership when missing
+          await (db as any).execute(`
+            INSERT INTO room_members (room_id, user_id, role)
+            SELECT r.id, r.created_by, 'owner'
+            FROM rooms r
+            LEFT JOIN room_members rm ON rm.room_id = r.id AND rm.role = 'owner'
+            WHERE r.created_by IS NOT NULL AND rm.room_id IS NULL
+          `).catch(() => {});
+
+          // Ensure messages optional columns
+          await (db as any).execute(`
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'messages' AND column_name = 'deleted_at'
+              ) THEN
+                ALTER TABLE messages ADD COLUMN deleted_at TIMESTAMPTZ;
+              END IF;
+            END $$;
+          `);
+          await (db as any).execute(`
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'messages' AND column_name = 'edited_at'
+              ) THEN
+                ALTER TABLE messages ADD COLUMN edited_at TIMESTAMPTZ;
+              END IF;
+            END $$;
+          `);
+          await (db as any).execute(`
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'messages' AND column_name = 'attachments'
+              ) THEN
+                ALTER TABLE messages ADD COLUMN attachments JSONB;
+              END IF;
+            END $$;
+          `);
+          await (db as any).execute(`ALTER TABLE messages ALTER COLUMN attachments SET DEFAULT '[]'::jsonb;`).catch(() => {});
+
+          // Helpful index for room messages
+          await (db as any).execute(`
+            CREATE INDEX IF NOT EXISTS idx_messages_room_time
+            ON messages (room_id, "timestamp" DESC)
+            WHERE deleted_at IS NULL;
+          `);
+        } catch (ensureError) {
+          console.error('⚠️ فشل في ضمان المخطط بعد الـ migrations:', ensureError);
         }
       }
     };
