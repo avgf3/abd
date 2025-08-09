@@ -549,11 +549,8 @@ export function useChat() {
               const accept = (lastRequest?.id === target) || target === state.currentRoomId;
               
               if (!accept) {
-                console.log(`⚠️ تم تجاهل تأكيد roomJoined للغرفة ${target} - لم يتم طلبها`);
                 break;
               }
-              
-              console.log(`✅ تأكيد الانضمام للغرفة: ${target}`);
               
               // تحديث الغرفة الحالية فقط إذا لزم الأمر
               if (state.currentRoomId !== target) {
@@ -756,22 +753,18 @@ export function useChat() {
     // تجنب التحميل المتكرر للغرفة نفسها
     const existingMessages = state.roomMessages[roomId];
     if (!forceReload && existingMessages && existingMessages.length > 0) {
-      console.log(`✅ استخدام رسائل الغرفة ${roomId} المحفوظة محلياً`);
       return;
     }
     
     // تجنب التحميل المتزامن للغرفة نفسها
     const loadingKey = `loading_${roomId}`;
     if ((loadRoomMessages as any)[loadingKey] && !forceReload) {
-      console.log(`⚠️ تحميل رسائل الغرفة ${roomId} قيد التنفيذ بالفعل`);
       return;
     }
     
     (loadRoomMessages as any)[loadingKey] = true;
     
     try {
-      console.log(`🔄 تحميل رسائل الغرفة ${roomId} من السيرفر...`);
-      
       const data = await apiRequest(`/api/messages/room/${roomId}?limit=20`);
       if ((data as any).messages && Array.isArray((data as any).messages)) {
         const formattedMessages = mapDbMessagesToChatMessages((data as any).messages, roomId);
@@ -790,10 +783,8 @@ export function useChat() {
           dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: formattedMessages });
         }
         
-        console.log(`✅ تم تحميل ${formattedMessages.length} رسالة للغرفة ${roomId}`);
-      } else {
-        console.log(`⚠️ لا توجد رسائل في الغرفة ${roomId}`);
-      }
+        } else {
+        }
     } catch (error) {
       console.error(`❌ خطأ في تحميل رسائل الغرفة ${roomId}:`, error);
     } finally {
@@ -805,7 +796,6 @@ export function useChat() {
   const joinRoom = useCallback((roomId: string) => {
     // 🚫 تجنب الانضمام لنفس الغرفة مرة أخرى
     if (state.currentRoomId === roomId) {
-      console.log(`✅ أنت موجود في الغرفة ${roomId} بالفعل`);
       return;
     }
 
@@ -813,13 +803,10 @@ export function useChat() {
     if (lastRequestedRoomId.current === roomId) {
       const timeSinceLastRequest = Date.now() - (lastRequestedRoomId.current as any).timestamp;
       if (timeSinceLastRequest < 2000) { // أقل من ثانيتين
-        console.log(`⚠️ تم طلب الانضمام للغرفة ${roomId} مؤخراً`);
         return;
       }
     }
 
-    console.log(`🔄 الانضمام للغرفة: ${roomId}`);
-    
     // تسجيل وقت الطلب لمنع التكرار
     (lastRequestedRoomId.current as any) = { 
       id: roomId, 
