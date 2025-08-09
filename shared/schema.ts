@@ -98,6 +98,7 @@ export const levelSettings = pgTable("level_settings", {
   requiredPoints: integer("required_points").notNull(), // النقاط المطلوبة للوصول لهذا المستوى
   title: text("title").notNull(), // لقب المستوى (مبتدئ، متقدم، خبير، إلخ)
   color: text("color").default('#FFFFFF'), // لون خاص بالمستوى
+  badge: text("badge"), // توحيد مع SQLite: رمز/شارة المستوى
   benefits: jsonb("benefits"), // مزايا المستوى (JSON)
   createdAt: timestamp("created_at").defaultNow(),
 });
