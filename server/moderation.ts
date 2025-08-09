@@ -1,5 +1,6 @@
 import { storage } from './storage';
 import type { User } from './services/databaseService';
+import { databaseService } from './services/databaseService';
 import { spamProtection } from './spam-protection';
 
 export interface ModerationAction {
@@ -23,15 +24,21 @@ export class ModerationSystem {
     this.actions = new Map();
     this.blockedIPs = new Set();
     this.blockedDevices = new Set();
-    
-    // تحميل الأجهزة المحجوبة من قاعدة البيانات عند بدء التشغيل
-    this.loadBlockedDevices();
+    // ملاحظة: سنؤخر التحميل لتجنب مشاكل التهيئة المبكرة
+  }
+
+  private blockedLoaded = false;
+  private async ensureBlockedLoaded() {
+    if (!this.blockedLoaded) {
+      await this.loadBlockedDevices();
+      this.blockedLoaded = true;
+    }
   }
 
   // تحميل الأجهزة المحجوبة من قاعدة البيانات
   private async loadBlockedDevices() {
     try {
-      const blockedDevices = await storage.getBlockedDevices();
+      const blockedDevices = await databaseService.getBlockedDevices();
       for (const device of blockedDevices) {
         this.blockedIPs.add(device.ipAddress);
         this.blockedDevices.add(device.deviceId);
@@ -75,6 +82,7 @@ export class ModerationSystem {
 
   // كتم المستخدم (المشرف)
   async muteUser(moderatorId: number, targetUserId: number, reason: string, durationMinutes: number = 30, ipAddress?: string, deviceId?: string): Promise<boolean> {
+    await this.ensureBlockedLoaded();
     const moderator = await storage.getUser(moderatorId);
     const target = await storage.getUser(targetUserId);
 
@@ -115,6 +123,7 @@ export class ModerationSystem {
 
   // طرد المستخدم (الأدمن - 15 دقيقة)
   async banUser(moderatorId: number, targetUserId: number, reason: string, durationMinutes: number = 15, ipAddress?: string, deviceId?: string): Promise<boolean> {
+    await this.ensureBlockedLoaded();
     const moderator = await storage.getUser(moderatorId);
     const target = await storage.getUser(targetUserId);
 
@@ -155,6 +164,7 @@ export class ModerationSystem {
 
   // حجب المستخدم (المالك - حجب كامل ونهائي)
   async blockUser(moderatorId: number, targetUserId: number, reason: string, ipAddress?: string, deviceId?: string): Promise<boolean> {
+    await this.ensureBlockedLoaded();
     const moderator = await storage.getUser(moderatorId);
     const target = await storage.getUser(targetUserId);
 

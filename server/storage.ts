@@ -635,6 +635,11 @@ export const storage: LegacyStorage = {
   async getUnreadNotificationCount(userId: number) {
     return await notificationService.getUnreadNotificationCount(userId);
   },
+  
+  // ========= Blocked devices helpers =========
+  async getBlockedDevices() {
+    return await databaseService.getBlockedDevices();
+  },
   // نقاط ومهام إضافية
   async updateUserPoints(userId: number, updates: Partial<User>) {
     return await databaseService.updateUserPoints(userId, updates);
