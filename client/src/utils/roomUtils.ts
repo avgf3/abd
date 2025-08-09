@@ -36,34 +36,18 @@ function safeParseArray(jsonLike: string): number[] {
   }
 }
 
-// يزيل أي تكرار حسب id ويقوم بدمج أفضل البيانات ثم يرتب الافتراضي أولاً ثم حسب عدد المتصلين
+// إزالة تكرار صارمة: نحتفظ بأول ظهور لكل id ونحذف ما عداه، ثم نرتب
 export function dedupeRooms(rooms: ChatRoom[]): ChatRoom[] {
-  const idToRoom = new Map<string, ChatRoom>();
+  const seen = new Set<string>();
+  const unique: ChatRoom[] = [];
 
-  for (const raw of rooms || []) {
-    if (!raw || !raw.id) continue;
-    const id = String(raw.id);
-    const existing = idToRoom.get(id);
-    if (!existing) {
-      idToRoom.set(id, raw);
-      continue;
-    }
-
-    // دمج ذكي: نأخذ الأفضل من القيم
-    const merged: ChatRoom = {
-      ...existing,
-      ...raw,
-      isDefault: Boolean(existing.isDefault || raw.isDefault),
-      isBroadcast: Boolean(existing.isBroadcast || raw.isBroadcast),
-      userCount: Math.max(existing.userCount || 0, raw.userCount || 0),
-      speakers: Array.from(new Set([...(existing.speakers || []), ...(raw.speakers || [])])),
-      micQueue: Array.from(new Set([...(existing.micQueue || []), ...(raw.micQueue || [])]))
-    };
-
-    idToRoom.set(id, merged);
+  for (const r of rooms || []) {
+    if (!r || !r.id) continue;
+    const id = String(r.id);
+    if (seen.has(id)) continue; // حذف التكرار بدون دمج
+    seen.add(id);
+    unique.push(r);
   }
-
-  const unique = Array.from(idToRoom.values()).filter(r => r && r.id && r.name);
 
   unique.sort((a, b) => {
     if (a.isDefault && !b.isDefault) return -1;
