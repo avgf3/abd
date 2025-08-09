@@ -679,15 +679,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/moderation/promote", async (req, res) => {
     try {
+      console.log(`[PROMOTE_ENDPOINT] طلب ترقية جديد:`, req.body);
       const { moderatorId, targetUserId, newRole } = req.body;
       
+      // التحقق من وجود المعاملات المطلوبة
+      if (!moderatorId || !targetUserId || !newRole) {
+        console.log(`[PROMOTE_ENDPOINT] فشل - معاملات ناقصة:`, { moderatorId, targetUserId, newRole });
+        return res.status(400).json({ error: "معاملات ناقصة" });
+      }
+      
+      console.log(`[PROMOTE_ENDPOINT] استدعاء moderationSystem.promoteUser`);
       const success = await moderationSystem.promoteUser(moderatorId, targetUserId, newRole);
+      
       if (success) {
+        console.log(`[PROMOTE_ENDPOINT] نجحت الترقية`);
+        
+        // إرسال إشعار عبر WebSocket
+        const target = await storage.getUser(targetUserId);
+        const moderator = await storage.getUser(moderatorId);
+        
+        if (target && moderator) {
+          const promotionMessage = {
+            type: 'systemNotification',
+            message: `🎉 تم ترقية ${target.username} إلى ${newRole === 'admin' ? 'إدمن' : 'مشرف'} بواسطة ${moderator.username}`,
+            timestamp: new Date().toISOString()
+          };
+          
+          broadcast(promotionMessage);
+          console.log(`[PROMOTE_ENDPOINT] تم إرسال إشعار WebSocket`);
+        }
+        
         res.json({ message: "تم ترقية المستخدم بنجاح" });
       } else {
+        console.log(`[PROMOTE_ENDPOINT] فشلت الترقية`);
         res.status(400).json({ error: "فشل في ترقية المستخدم" });
       }
     } catch (error) {
+      console.error("[PROMOTE_ENDPOINT] خطأ في ترقية المستخدم:", error);
       res.status(500).json({ error: "خطأ في ترقية المستخدم" });
     }
   });
@@ -3140,58 +3168,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/moderation/promote", async (req, res) => {
     try {
-      const { moderatorId, targetUserId, role } = req.body;
+      console.log(`[PROMOTE_ENDPOINT] طلب ترقية جديد:`, req.body);
+      const { moderatorId, targetUserId, newRole } = req.body;
       
-      // التحقق من أن المتقدم بالطلب هو المالك فقط
-      const moderator = await storage.getUser(moderatorId);
-      if (!moderator || moderator.userType !== 'owner') {
-        return res.status(403).json({ error: "هذه الميزة للمالك فقط" });
-      }
-
-      // التحقق من أن المستخدم المراد ترقيته عضو وليس زائر
-      const target = await storage.getUser(targetUserId);
-      if (!target || target.userType !== 'member') {
-        return res.status(400).json({ error: "يمكن ترقية الأعضاء فقط" });
+      // التحقق من وجود المعاملات المطلوبة
+      if (!moderatorId || !targetUserId || !newRole) {
+        console.log(`[PROMOTE_ENDPOINT] فشل - معاملات ناقصة:`, { moderatorId, targetUserId, newRole });
+        return res.status(400).json({ error: "معاملات ناقصة" });
       }
       
-      // التأكد من أن الرتبة صحيحة (إدمن أو مشرف فقط)
-      if (!['admin', 'moderator'].includes(role)) {
-        return res.status(400).json({ error: "رتبة غير صالحة - يمكن الترقية لإدمن أو مشرف فقط" });
+      console.log(`[PROMOTE_ENDPOINT] استدعاء moderationSystem.promoteUser`);
+      const success = await moderationSystem.promoteUser(moderatorId, targetUserId, newRole);
+      
+      if (success) {
+        console.log(`[PROMOTE_ENDPOINT] نجحت الترقية`);
+        
+        // إرسال إشعار عبر WebSocket
+        const target = await storage.getUser(targetUserId);
+        const moderator = await storage.getUser(moderatorId);
+        
+        if (target && moderator) {
+          const promotionMessage = {
+            type: 'systemNotification',
+            message: `🎉 تم ترقية ${target.username} إلى ${newRole === 'admin' ? 'إدمن' : 'مشرف'} بواسطة ${moderator.username}`,
+            timestamp: new Date().toISOString()
+          };
+          
+          broadcast(promotionMessage);
+          console.log(`[PROMOTE_ENDPOINT] تم إرسال إشعار WebSocket`);
+        }
+        
+        res.json({ message: "تم ترقية المستخدم بنجاح" });
+      } else {
+        console.log(`[PROMOTE_ENDPOINT] فشلت الترقية`);
+        res.status(400).json({ error: "فشل في ترقية المستخدم" });
       }
-      
-      // تحديث المستخدم في قاعدة البيانات
-      await storage.updateUser(targetUserId, { userType: role });
-      const updatedUser = await storage.getUser(targetUserId);
-      
-      const roleDisplay = role === 'admin' ? 'إدمن ⭐' : 'مشرف 🛡️';
-      const rolePermissions = role === 'admin' ? 'يمكنه كتم وطرد المستخدمين' : 'يمكنه كتم المستخدمين فقط';
-      
-      // إرسال إشعار للمستخدم المرقى
-      io.to(targetUserId.toString()).emit('promotion', {
-        newRole: role,
-        message: `تهانينا! تمت ترقيتك إلى ${roleDisplay} - ${rolePermissions}`
-      });
-      
-      // إشعار جميع المستخدمين بالترقية
-      broadcast({
-        type: 'userUpdated',
-        user: updatedUser
-      });
-
-      // إشعار عام في الدردشة
-      broadcast({
-        type: 'systemNotification',
-        message: `🎉 تم ترقية ${target.username} إلى ${roleDisplay}`,
-        timestamp: new Date().toISOString()
-      });
-      
-      res.json({ 
-        success: true,
-        message: `تمت ترقية ${target.username} إلى ${roleDisplay}`,
-        user: updatedUser
-      });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      console.error("[PROMOTE_ENDPOINT] خطأ في ترقية المستخدم:", error);
+      res.status(500).json({ error: "خطأ في ترقية المستخدم" });
     }
   });
 
@@ -3200,7 +3214,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { moderatorId, targetUserId } = req.body;
       
       const success = await moderationSystem.unmuteUser(moderatorId, targetUserId);
-      
       if (success) {
         res.json({ message: "تم فك الكتم بنجاح" });
       } else {
@@ -3404,48 +3417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // إضافة endpoint لترقية المستخدمين
-  app.post("/api/moderation/promote", async (req, res) => {
-    try {
-      const { moderatorId, targetUserId, newRole } = req.body;
-      
-      const moderator = await storage.getUser(moderatorId);
-      const target = await storage.getUser(targetUserId);
-      
-      if (!moderator || moderator.userType !== 'owner') {
-        return res.status(403).json({ error: "فقط المالك يمكنه ترقية المستخدمين" });
-      }
-      
-      if (!target) {
-        return res.status(404).json({ error: "المستخدم غير موجود" });
-      }
-      
-      if (target.userType !== 'member') {
-        return res.status(400).json({ error: "يمكن ترقية الأعضاء فقط" });
-      }
-      
-      if (!['admin', 'owner'].includes(newRole)) {
-        return res.status(400).json({ error: "رتبة غير صالحة" });
-      }
-      
-      // تحديث نوع المستخدم
-      await storage.updateUser(targetUserId, { userType: newRole as any });
-      
-      // إرسال إشعار عبر WebSocket
-      const promotionMessage = {
-        type: 'systemNotification',
-        message: `🎉 تم ترقية ${target.username} إلى ${newRole === 'admin' ? 'مشرف' : 'مالك'} بواسطة ${moderator.username}`,
-        timestamp: new Date().toISOString()
-      };
-      
-      broadcast(promotionMessage);
-      
-      res.json({ message: `تم ترقية ${target.username} إلى ${newRole === 'admin' ? 'مشرف' : 'مالك'} بنجاح` });
-    } catch (error) {
-      console.error("خطأ في ترقية المستخدم:", error);
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
+
 
   // إضافة endpoint للإجراءات النشطة
   app.get("/api/moderation/active-actions", async (req, res) => {

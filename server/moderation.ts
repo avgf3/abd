@@ -200,27 +200,65 @@ export class ModerationSystem {
   }
 
   // ترقية المستخدم (المالك فقط)
-  async promoteUser(moderatorId: number, targetUserId: number, newRole: 'admin' | 'owner'): Promise<boolean> {
+  async promoteUser(moderatorId: number, targetUserId: number, newRole: 'admin' | 'moderator'): Promise<boolean> {
+    console.log(`[PROMOTE] محاولة ترقية - Moderator: ${moderatorId}, Target: ${targetUserId}, NewRole: ${newRole}`);
+    
     const moderator = await storage.getUser(moderatorId);
     const target = await storage.getUser(targetUserId);
 
-    if (!moderator || !target) return false;
-    if (!this.canModerate(moderator, target, 'promote')) return false;
+    if (!moderator || !target) {
+      console.log(`[PROMOTE] فشل - مستخدم غير موجود. Moderator: ${!!moderator}, Target: ${!!target}`);
+      return false;
+    }
+    
+    console.log(`[PROMOTE] بيانات المستخدمين - Moderator: ${moderator.username} (${moderator.userType}), Target: ${target.username} (${target.userType})`);
+    
+    if (!this.canModerate(moderator, target, 'promote')) {
+      console.log(`[PROMOTE] فشل - لا توجد صلاحية للترقية`);
+      return false;
+    }
+    
+    // التحقق من صحة الرتبة الجديدة
+    if (!['admin', 'moderator'].includes(newRole)) {
+      console.log(`[PROMOTE] فشل - رتبة غير صالحة: ${newRole}`);
+      return false;
+    }
+    
+    // التحقق من أن المستخدم المستهدف عضو عادي
+    if (target.userType !== 'member') {
+      console.log(`[PROMOTE] فشل - يمكن ترقية الأعضاء فقط. نوع المستخدم الحالي: ${target.userType}`);
+      return false;
+    }
 
-    await storage.updateUser(targetUserId, {
-      userType: newRole
-    });
+    try {
+      console.log(`[PROMOTE] تحديث المستخدم ${target.username} من ${target.userType} إلى ${newRole}`);
+      
+      const updateResult = await storage.updateUser(targetUserId, {
+        userType: newRole as any
+      });
+      
+      if (!updateResult) {
+        console.log(`[PROMOTE] فشل - تحديث قاعدة البيانات فشل`);
+        return false;
+      }
+      
+      console.log(`[PROMOTE] نجح تحديث قاعدة البيانات للمستخدم ${target.username}`);
 
-    this.recordAction({
-      id: `promote_${Date.now()}`,
-      type: 'promote',
-      targetUserId,
-      moderatorId,
-      reason: `ترقية إلى ${newRole}`,
-      timestamp: Date.now()
-    });
-
-    return true;
+      this.recordAction({
+        id: `promote_${Date.now()}`,
+        type: 'promote',
+        targetUserId,
+        moderatorId,
+        reason: `ترقية إلى ${newRole}`,
+        timestamp: Date.now()
+      });
+      
+      console.log(`[PROMOTE] تم تسجيل الإجراء بنجاح`);
+      return true;
+    } catch (error) {
+      console.error(`[PROMOTE] خطأ في تحديث المستخدم:`, error);
+      return false;
+    }
   }
 
   // فك الكتم
