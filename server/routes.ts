@@ -693,27 +693,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const success = await moderationSystem.promoteUser(moderatorId, targetUserId, newRole);
       
       if (success) {
-        console.log(`[PROMOTE_ENDPOINT] نجحت الترقية`);
+        console.log(`[PROMOTE_ENDPOINT] نجحت العملية`);
         
         // إرسال إشعار عبر WebSocket
         const target = await storage.getUser(targetUserId);
         const moderator = await storage.getUser(moderatorId);
         
         if (target && moderator) {
-          const promotionMessage = {
+          let notificationMessage = '';
+          let successMessage = '';
+          
+          if (newRole === 'member') {
+            // إزالة الإشراف
+            notificationMessage = `⚠️ تم إلغاء إشراف ${target.username} بواسطة ${moderator.username}`;
+            successMessage = "تم إلغاء الإشراف بنجاح";
+          } else {
+            // ترقية
+            notificationMessage = `🎉 تم ترقية ${target.username} إلى ${newRole === 'admin' ? 'إدمن' : 'مشرف'} بواسطة ${moderator.username}`;
+            successMessage = "تم ترقية المستخدم بنجاح";
+          }
+          
+          const systemMessage = {
             type: 'systemNotification',
-            message: `🎉 تم ترقية ${target.username} إلى ${newRole === 'admin' ? 'إدمن' : 'مشرف'} بواسطة ${moderator.username}`,
+            message: notificationMessage,
             timestamp: new Date().toISOString()
           };
           
-          broadcast(promotionMessage);
+          broadcast(systemMessage);
           console.log(`[PROMOTE_ENDPOINT] تم إرسال إشعار WebSocket`);
+          
+          res.json({ message: successMessage });
+        } else {
+          res.json({ message: newRole === 'member' ? "تم إلغاء الإشراف بنجاح" : "تم ترقية المستخدم بنجاح" });
         }
-        
-        res.json({ message: "تم ترقية المستخدم بنجاح" });
       } else {
-        console.log(`[PROMOTE_ENDPOINT] فشلت الترقية`);
-        res.status(400).json({ error: "فشل في ترقية المستخدم" });
+        console.log(`[PROMOTE_ENDPOINT] فشلت العملية`);
+        res.status(400).json({ error: newRole === 'member' ? "فشل في إلغاء الإشراف" : "فشل في ترقية المستخدم" });
       }
     } catch (error) {
       console.error("[PROMOTE_ENDPOINT] خطأ في ترقية المستخدم:", error);
@@ -3071,27 +3086,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const success = await moderationSystem.promoteUser(moderatorId, targetUserId, newRole);
       
       if (success) {
-        console.log(`[PROMOTE_ENDPOINT] نجحت الترقية`);
+        console.log(`[PROMOTE_ENDPOINT] نجحت العملية`);
         
         // إرسال إشعار عبر WebSocket
         const target = await storage.getUser(targetUserId);
         const moderator = await storage.getUser(moderatorId);
         
         if (target && moderator) {
-          const promotionMessage = {
+          let notificationMessage = '';
+          let successMessage = '';
+          
+          if (newRole === 'member') {
+            // إزالة الإشراف
+            notificationMessage = `⚠️ تم إلغاء إشراف ${target.username} بواسطة ${moderator.username}`;
+            successMessage = "تم إلغاء الإشراف بنجاح";
+          } else {
+            // ترقية
+            notificationMessage = `🎉 تم ترقية ${target.username} إلى ${newRole === 'admin' ? 'إدمن' : 'مشرف'} بواسطة ${moderator.username}`;
+            successMessage = "تم ترقية المستخدم بنجاح";
+          }
+          
+          const systemMessage = {
             type: 'systemNotification',
-            message: `🎉 تم ترقية ${target.username} إلى ${newRole === 'admin' ? 'إدمن' : 'مشرف'} بواسطة ${moderator.username}`,
+            message: notificationMessage,
             timestamp: new Date().toISOString()
           };
           
-          broadcast(promotionMessage);
+          broadcast(systemMessage);
           console.log(`[PROMOTE_ENDPOINT] تم إرسال إشعار WebSocket`);
+          
+          res.json({ message: successMessage });
+        } else {
+          res.json({ message: newRole === 'member' ? "تم إلغاء الإشراف بنجاح" : "تم ترقية المستخدم بنجاح" });
         }
-        
-        res.json({ message: "تم ترقية المستخدم بنجاح" });
       } else {
-        console.log(`[PROMOTE_ENDPOINT] فشلت الترقية`);
-        res.status(400).json({ error: "فشل في ترقية المستخدم" });
+        console.log(`[PROMOTE_ENDPOINT] فشلت العملية`);
+        res.status(400).json({ error: newRole === 'member' ? "فشل في إلغاء الإشراف" : "فشل في ترقية المستخدم" });
       }
     } catch (error) {
       console.error("[PROMOTE_ENDPOINT] خطأ في ترقية المستخدم:", error);
