@@ -611,6 +611,60 @@ export class DatabaseService {
     }
   }
 
+  // Fetch single room by id
+  async getRoomById(roomId: string): Promise<Room | null> {
+    if (!this.isConnected()) return null;
+
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any)
+          .select()
+          .from(pgSchema.rooms)
+          .where(and(eq(pgSchema.rooms.id, roomId), isNull(pgSchema.rooms.deletedAt)))
+          .limit(1);
+        return rows[0] || null;
+      } else {
+        // SQLite uses numeric id; try to parse and fetch
+        const maybeId = Number(roomId);
+        if (!Number.isFinite(maybeId)) return null;
+        const rows = await (this.db as any)
+          .select()
+          .from(sqliteSchema.rooms)
+          .where(eq(sqliteSchema.rooms.id, maybeId))
+          .limit(1);
+        return rows[0] || null;
+      }
+    } catch (error) {
+      console.error('Error getting room by id:', error);
+      return null;
+    }
+  }
+
+  // Soft-delete in PostgreSQL, hard-delete in SQLite
+  async deleteRoom(roomId: string): Promise<boolean> {
+    if (!this.isConnected()) return false;
+
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any)
+          .update(pgSchema.rooms)
+          .set({ deletedAt: new Date() })
+          .where(eq(pgSchema.rooms.id, roomId));
+        return true;
+      } else {
+        const maybeId = Number(roomId);
+        if (!Number.isFinite(maybeId)) return false;
+        await (this.db as any)
+          .delete(sqliteSchema.rooms)
+          .where(eq(sqliteSchema.rooms.id, maybeId));
+        return true;
+      }
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      return false;
+    }
+  }
+
   // Helper: check room membership and moderation status
   async canSendInRoom(roomId: string, userId: number): Promise<{ allowed: boolean; reason?: string }> {
     if (!this.isConnected()) return { allowed: true };
