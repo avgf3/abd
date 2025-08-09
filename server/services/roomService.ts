@@ -448,10 +448,23 @@ class RoomService {
         return null;
       }
 
+      const toArray = (val: any): number[] => {
+        try {
+          if (Array.isArray(val)) return val.map((v) => Number(v)).filter((n) => Number.isFinite(n));
+          if (typeof val === 'string') {
+            const parsed = JSON.parse(val || '[]');
+            return Array.isArray(parsed) ? parsed.map((v) => Number(v)).filter((n) => Number.isFinite(n)) : [];
+          }
+          return [];
+        } catch {
+          return [];
+        }
+      };
+
       return {
         hostId: room.hostId || null,
-        speakers: room.speakers || [],
-        micQueue: room.micQueue || []
+        speakers: Array.from(new Set(toArray((room as any).speakers))),
+        micQueue: Array.from(new Set(toArray((room as any).micQueue ?? (room as any).mic_queue)))
       };
     } catch (error) {
       console.error(`خطأ في جلب معلومات البث للغرفة ${roomId}:`, error);
