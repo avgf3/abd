@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { formatTimestamp } from '@/utils/timeUtils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Shield, Clock, Ban, UserX } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
@@ -70,16 +71,7 @@ export default function ModerationPanel({ currentUser, isVisible, onClose }: Mod
     }
   };
 
-  const formatTimestamp = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString('ar-SA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // تم نقل دالة formatTimestamp إلى utils/timeUtils.ts
 
   if (!isVisible) return null;
 

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getImageSrc } from '@/utils/imageUtils';
+import { formatTime } from '@/utils/timeUtils';
 import {
   Dialog,
   DialogContent,
@@ -42,14 +43,7 @@ export default function MessagesPanel({
     };
   }).filter(item => item.user);
 
-  const formatTime = (date?: Date) => {
-    if (!date) return '';
-    return new Date(date).toLocaleString('ar-SA', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
+
 
   const formatLastMessage = (content: string) => {
     if (content.length > 30) {

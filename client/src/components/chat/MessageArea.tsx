@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { formatTime } from '@/utils/timeUtils';
 import { Input } from '@/components/ui/input';
 import ProfileImage from './ProfileImage';
 import EmojiPicker from './EmojiPicker';
@@ -182,20 +183,7 @@ export default function MessageArea({
     }
   }, [onSendMessage]);
 
-  // Format time function - محسن
-  const formatTime = useCallback((date?: Date) => {
-    if (!date) return '';
-    
-    try {
-      return new Date(date).toLocaleString('ar-SA', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-    } catch (error) {
-      return '';
-    }
-  }, []);
+  // تم نقل دالة formatTime إلى utils/timeUtils.ts لتجنب التكرار
 
   // Get message border color - محسن
   const getMessageBorderColor = useCallback((userType?: string) => {

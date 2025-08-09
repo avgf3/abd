@@ -6,6 +6,7 @@ import { notificationService } from './services/notificationService';
 import { db } from './database-adapter';
 import { friends as friendsTable } from '../shared/schema';
 import { eq } from 'drizzle-orm';
+import { Security } from './auth/security';
 
 // Helper function
 function safeParseJsonArray(value: string): any[] {
@@ -126,9 +127,8 @@ export async function validateUserCredentials(username: string, password: string
   }
 }
 
-export async function hashPassword(password: string): Promise<string> {
-  return await bcrypt.hash(password, 10);
-}
+// تم نقل دالة hashPassword إلى auth/security.ts لتجنب التكرار
+export const hashPassword = Security.hashPassword;
 
 export function getDatabaseStatus() {
   return databaseService.getStatus();

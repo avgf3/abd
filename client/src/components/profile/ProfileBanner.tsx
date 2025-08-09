@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/queryClient';
 import { getBannerImageSrc } from '@/utils/imageUtils';
+import { validateFile, formatFileSize } from '@/lib/uploadConfig';
 import type { ChatUser } from '@/types/chat';
 
 interface ProfileBannerProps {
@@ -19,31 +20,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // التحقق من صحة الملف
-  const validateFile = (file: File): boolean => {
-    // التحقق من حجم الملف (10MB max للبانر)
-    if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: "خطأ",
-        description: "حجم صورة البانر يجب أن يكون أقل من 10 ميجابايت",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    // التحقق من نوع الملف
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-    if (!allowedTypes.includes(file.type)) {
-      toast({
-        title: "خطأ",
-        description: "يرجى اختيار ملف صورة صحيح (JPG, PNG, GIF, WebP, SVG)",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    return true;
-  };
+  // استخدام دالة التحقق الموحدة من uploadConfig
 
   // تحديث صورة البانر في الواجهة مباشرة بعد رفعها
   const handleFileSelect = async (file: File) => {
@@ -56,7 +33,15 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       return;
     }
 
-    if (!validateFile(file)) return;
+    const validation = validateFile(file, 'banner_image');
+    if (!validation.isValid) {
+      toast({
+        title: "خطأ",
+        description: validation.error || "الملف غير صحيح",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setUploading(true);
 
