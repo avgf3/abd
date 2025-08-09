@@ -71,7 +71,19 @@ const createMulterConfig = (destination: string, prefix: string, maxSize: number
 
 // إعداد multer للصور المختلفة
 const upload = createMulterConfig('profiles', 'profile', 5 * 1024 * 1024);
-const wallUpload = createMulterConfig('wall', 'wall', 10 * 1024 * 1024);
+// نستخدم التخزين بالذاكرة لمنشورات الحائط لتجنب مشاكل نظام الملفات على Render
+const wallUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
+      'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff'
+    ];
+    if (allowedMimes.includes(file.mimetype)) return cb(null, true);
+    cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`));
+  }
+});
 
 const bannerUpload = createMulterConfig('banners', 'banner', 8 * 1024 * 1024);
 
@@ -4171,23 +4183,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (req.file) {
         try {
-          // ضغط الصورة أولاً إلى JPEG مناسب (إن أمكن)
-          const filePath = path.join(process.cwd(), 'client', 'public', 'uploads', 'wall', req.file.filename);
-          await compressImage(filePath);
+          // ضغط الصورة وتحويلها إلى base64 في الذاكرة لتجنب مشاكل نظام الملفات على Render
+          const inputBuffer = (req.file as any).buffer as Buffer | undefined;
 
-          // قراءة الملف المضغوط وتحويله إلى base64
-          const buffer = await fs.promises.readFile(filePath);
-          // استخدم mimetype القادِم من multer وإلا فـ image/jpeg
-          const mimeType = req.file.mimetype || 'image/jpeg';
-          const base64 = buffer.toString('base64');
-          computedImageUrl = `data:${mimeType};base64,${base64}`;
+          if (inputBuffer) {
+            const compressedBuffer = await sharp(inputBuffer)
+              .resize(1200, 1200, { 
+                fit: 'inside', 
+                withoutEnlargement: true 
+              })
+              .jpeg({ 
+                quality: 85, 
+                progressive: true 
+              })
+              .toBuffer();
 
-          // حذف الملف الفيزيائي لتجنب مشاكل نظام الملفات المؤقت على Render
-          try { await fs.promises.unlink(filePath); } catch {}
+            const mimeType = 'image/jpeg';
+            const base64 = compressedBuffer.toString('base64');
+            computedImageUrl = `data:${mimeType};base64,${base64}`;
+          } else {
+            // في حال لم يكن التخزين بالذاكرة متاحاً، ارجع للمسار المحلي كحل أخير
+            if (req.file && (req.file as any).filename) {
+              computedImageUrl = `/uploads/wall/${(req.file as any).filename}`;
+            }
+          }
         } catch (imgErr) {
-          console.error('❌ فشل في تحويل صورة الحائط إلى base64، سيتم استخدام المسار المحلي كبديل:', imgErr);
-          // مسار احتياطي في حالة فشل التحويل
-          computedImageUrl = `/uploads/wall/${req.file.filename}`;
+          console.error('❌ فشل في معالجة صورة الحائط في الذاكرة، سيتم استخدام المسار المحلي كبديل:', imgErr);
+          if (req.file && (req.file as any).filename) {
+            computedImageUrl = `/uploads/wall/${(req.file as any).filename}`;
+          }
         }
       }
 
@@ -4218,11 +4242,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true,
         post, 
-        message: 'تم نشر المنشور بنجاح' 
+        message: 'تم نشر المنشور بنجاح'
       });
     } catch (error) {
-      console.error('خطأ في إنشاء المنشور:', error);
-      res.status(500).json({ error: 'خطأ في الخادم' });
+      console.error('❌ خطأ في إنشاء منشور الحائط:', error);
+      res.status(500).json({ error: 'حدث خطأ أثناء نشر المنشور' });
     }
   });
 
