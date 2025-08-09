@@ -594,7 +594,33 @@ export function useChat() {
             }
             break;
             
+          // معالجة رسائل غرفة البث
+          case 'micRequest':
+          case 'micApproved':
+          case 'micRejected':
+          case 'speakerRemoved':
+          case 'broadcastRoomUpdate':
+            // إرسال الرسالة لجميع معالجات البث المسجلة
+            broadcastHandlers.current.forEach(handler => {
+              try {
+                handler(message);
+              } catch (error) {
+                console.error('خطأ في معالج رسائل البث:', error);
+              }
+            });
+            break;
+            
           default:
+            // التحقق إذا كانت الرسالة تحتوي على بيانات بث
+            if (message.broadcastInfo || message.type?.includes('broadcast') || message.type?.includes('mic')) {
+              broadcastHandlers.current.forEach(handler => {
+                try {
+                  handler(message);
+                } catch (error) {
+                  console.error('خطأ في معالج رسائل البث:', error);
+                }
+              });
+            }
             break;
         }
       } catch (error) {
@@ -832,6 +858,19 @@ export function useChat() {
     
     // تنظيف متغيرات التحكم
     isLoadingMessages.current = false;
+    // تنظيف معالجات البث
+    broadcastHandlers.current = [];
+  }, []);
+
+  // إدارة معالجات رسائل البث
+  const broadcastHandlers = useRef<Array<(data: any) => void>>([]);
+
+  const addBroadcastMessageHandler = useCallback((handler: (data: any) => void) => {
+    broadcastHandlers.current.push(handler);
+  }, []);
+
+  const removeBroadcastMessageHandler = useCallback((handler: (data: any) => void) => {
+    broadcastHandlers.current = broadcastHandlers.current.filter(h => h !== handler);
   }, []);
 
   // Ignore/Unignore user functions
@@ -935,5 +974,9 @@ export function useChat() {
     loadRoomMessages,
     handleTyping: () => sendTyping(),
     handlePrivateTyping: () => sendTyping(),
+    
+    // دعم غرفة البث
+    addBroadcastMessageHandler,
+    removeBroadcastMessageHandler,
   };
 }

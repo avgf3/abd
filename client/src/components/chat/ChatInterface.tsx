@@ -475,7 +475,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 onUserClick={handleUserClick}
                 chat={{
                   sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
-                  handleTyping: chat.handleTyping
+                  handleTyping: chat.handleTyping,
+                  addBroadcastMessageHandler: chat.addBroadcastMessageHandler,
+                  removeBroadcastMessageHandler: chat.removeBroadcastMessageHandler
                 }}
               />
             );
