@@ -23,7 +23,7 @@ import ProfileImage from './ProfileImage';
 import StealthModeToggle from './StealthModeToggle';
 import WelcomeNotification from './WelcomeNotification';
 import ThemeSelector from './ThemeSelector';
-import RoomsPanel from './RoomsPanel';
+import RoomComponent from './RoomComponent';
 
 import { Button } from '@/components/ui/button';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
