@@ -4555,7 +4555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   async function broadcastRoomUpdate(roomId: string, type: string, data: any) {
     if (io) {
       const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
-      io.to(roomId).emit('message', {
+      io.to(`room_${roomId}`).emit('message', {
         type,
         roomId,
         broadcastInfo,
