@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import UserSidebarWithWalls from './UserSidebarWithWalls';
+import UnifiedSidebar from './UserSidebarWithWalls';
 import MessageArea from './MessageArea';
 import BroadcastRoomInterface from './BroadcastRoomInterface';
 import ProfileModal from './ProfileModal';
@@ -91,16 +91,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     }
   };
 
-  // جلب الغرف عند تحميل المكون
+  // 🚀 تحسين: جلب الغرف عند التحميل فقط
   useEffect(() => {
     fetchRooms();
     
-    // إعادة جلب الغرف كل 30 ثانية للتأكد من التحديث
-    const interval = setInterval(() => {
-      fetchRooms();
-    }, 30000);
+    // 🚀 إزالة التحديث الدوري - سيتم التحديث عبر WebSocket events
+    // const interval = setInterval(() => {
+    //   fetchRooms();
+    // }, 30000);
     
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, []);
 
   // دوال إدارة الغرف
@@ -489,7 +489,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         {/* الشريط الجانبي - يظهر فقط عندما يكون activeView ليس 'hidden' */}
         {activeView !== 'hidden' && (
           <div className={`${activeView === 'walls' ? 'w-96' : activeView === 'friends' ? 'w-80' : 'w-64'} transition-all duration-300`}>
-            <UserSidebarWithWalls 
+            <UnifiedSidebar 
               users={chat.onlineUsers}
               onUserClick={handleUserClick}
               currentUser={chat.currentUser}

@@ -210,11 +210,14 @@ export function useChat() {
   // إضافة متغير للوصول إلى import.meta.env
   const isDevelopment = process.env.NODE_ENV === 'development';
   
-  // Memoized values to prevent unnecessary re-renders - إصلاح المنطق
+  // 🚀 تحسين: فلترة محسنة للمستخدمين المعروضين
   const memoizedOnlineUsers = useMemo(() => {
-    // عرض جميع المستخدمين بدون فلترة معقدة
     return state.onlineUsers.filter(user => {
-      // إظهار جميع المستخدمين إلا المتجاهلين فقط
+      // التحقق من صحة بيانات المستخدم
+      if (!user?.id || !user?.username || !user?.userType) {
+        return false;
+      }
+      // إخفاء المستخدمين المتجاهلين
       return !state.ignoredUsers.has(user.id);
     });
   }, [state.onlineUsers, state.ignoredUsers]);
@@ -353,11 +356,11 @@ export function useChat() {
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
       dispatch({ type: 'SET_LOADING', payload: false });
       
-      // تحميل الرسائل مرة واحدة فقط
+      // 🚀 تحسين: تحميل الرسائل مرة واحدة فقط
       loadExistingMessages();
       
-      // لم نعد نطلب قائمة المستخدمين بشكل دوري لتقليل التحميل
-      // سيتم تحديث القائمة عبر أحداث الانضمام/المغادرة من الخادم
+      // 🚀 تحسين: إزالة الطلبات الدورية للمستخدمين
+      // سيتم تحديث القائمة عبر WebSocket events فقط
     });
 
     socket.current.on('message', (message: WebSocketMessage) => {
@@ -372,11 +375,14 @@ export function useChat() {
             break;
             
           case 'onlineUsers':
-            if (message.users) {
-              // تبسيط عرض المستخدمين - عرض الكل بدون فلترة معقدة
-              dispatch({ type: 'SET_ONLINE_USERS', payload: message.users });
-              } else {
-              console.warn('⚠️ لم يتم استقبال قائمة مستخدمين');
+            if (message.users && Array.isArray(message.users)) {
+              // 🚀 تحسين: فلترة المستخدمين الصالحين فقط
+              const validUsers = message.users.filter(user => 
+                user && user.id && user.username && user.userType
+              );
+              dispatch({ type: 'SET_ONLINE_USERS', payload: validUsers });
+            } else {
+              console.warn('⚠️ لم يتم استقبال قائمة مستخدمين صحيحة');
             }
             break;
             
@@ -497,12 +503,8 @@ export function useChat() {
               // دون إرسال طلبات إضافية
             }
             
-            // طلب قائمة محدثة من المستخدمين - بدون تأخير إضافي وبنفس حماية التكرار
-            if (socket.current?.connected && !isLoadingMessages.current) {
-              socket.current.emit('requestOnlineUsers');
-              isLoadingMessages.current = true;
-              setTimeout(() => { isLoadingMessages.current = false; }, 3000);
-            }
+            // 🚀 تحسين: إزالة الطلب المتكرر للمستخدمين
+            // القائمة ستأتي تلقائياً مع roomJoined event
             break;
             
           default:
