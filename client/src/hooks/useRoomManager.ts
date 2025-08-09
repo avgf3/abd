@@ -170,7 +170,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     description: string;
     image: File | null;
     isBroadcast?: boolean;
-  }): Promise<ChatRoom | null> => {
+  }, userId?: number): Promise<ChatRoom | null> => {
     try {
       setLoading(true);
       setError(null);
@@ -179,6 +179,9 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       formData.append('name', roomData.name.trim());
       formData.append('description', roomData.description.trim());
       formData.append('isBroadcast', roomData.isBroadcast ? 'true' : 'false');
+      if (userId != null) {
+        formData.append('userId', String(userId));
+      }
 
       if (roomData.image) {
         formData.append('image', roomData.image);
@@ -234,14 +237,14 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
   }, []);
 
   // حذف غرفة
-  const deleteRoom = useCallback(async (roomId: string): Promise<boolean> => {
+  const deleteRoom = useCallback(async (roomId: string, userId: number): Promise<boolean> => {
     try {
       setLoading(true);
       setError(null);
 
       const response = await apiRequest(`/api/rooms/${roomId}`, {
         method: 'DELETE',
-        body: { userId: null } // سيتم التحقق من الصلاحيات في الخادم
+        body: { userId }
       });
 
       if (!response) {
