@@ -56,15 +56,36 @@ export default function UnifiedSidebar({
   const { toast } = useToast();
 
   // 🚀 تحسين: استخدام useMemo لفلترة المستخدمين لتحسين الأداء
-  const filteredUsers = useMemo(() => {
-    if (!searchTerm.trim()) return users;
-    
+  const validUsers = useMemo(() => {
     return users.filter(user => {
-      // التحقق من وجود اسم المستخدم قبل التصفية
-      if (!user?.username) return false;
+      // فلترة صارمة للمستخدمين الصالحين
+      if (!user?.id || !user?.username || !user?.userType) {
+        console.warn('🚫 مستخدم بيانات غير صالحة في القائمة:', user);
+        return false;
+      }
+      
+      // رفض الأسماء العامة
+      if (user.username === 'مستخدم' || user.username === 'User' || user.username.trim() === '') {
+        return false;
+      }
+      
+      // رفض المعرفات غير الصالحة
+      if (user.id <= 0) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [users]);
+
+  const filteredUsers = useMemo(() => {
+    // تطبيق البحث على المستخدمين الصالحين فقط
+    if (!searchTerm.trim()) return validUsers;
+    
+    return validUsers.filter(user => {
       return user.username.toLowerCase().includes(searchTerm.toLowerCase());
     });
-  }, [users, searchTerm]);
+  }, [validUsers, searchTerm]);
 
   // 🚀 تحسين: دالة getUserRankBadge محسنة ومنظمة
   const getUserRankBadge = useCallback((user: ChatUser) => {
@@ -137,9 +158,14 @@ export default function UnifiedSidebar({
     currentUser && ['moderator', 'admin', 'owner'].includes(currentUser.userType)
   , [currentUser]);
 
-  // إضافة logging للتشخيص
+  // إضافة logging للتشخيص المحسن
   React.useEffect(() => {
-    }, [users]);
+    console.log(`📊 قائمة المتصلين تحديث: ${users.length} مستخدم`, users.map(u => ({
+      id: u.id,
+      username: u.username,
+      userType: u.userType
+    })));
+  }, [users]);
 
   // جلب المنشورات
   const fetchPosts = useCallback(async () => {
@@ -401,7 +427,7 @@ export default function UnifiedSidebar({
               <span className="text-xs">●</span>
               المتصلون الآن
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
-                {users.length}
+                {validUsers.length}
               </span>
             </div>
             
