@@ -484,7 +484,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           // وإلا استخدم MessageArea العادية
           return (
             <MessageArea 
-              messages={chat.roomMessages[chat.currentRoomId] || chat.publicMessages}
+              messages={chat.getCurrentRoomMessages()}
               currentUser={chat.currentUser}
               onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
               onTyping={chat.handleTyping}
