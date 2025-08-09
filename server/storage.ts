@@ -710,6 +710,27 @@ export const storage: LegacyStorage = {
     }
   },
 
+  // تعيين/تحديث مضيف غرفة البث
+  async setRoomHost(roomId: string, hostId: number | null): Promise<boolean> {
+    try {
+      const { db, dbType } = await import('./database-adapter');
+      if (!db) return false;
+
+      if (dbType === 'postgresql') {
+        const { rooms } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        await (db as any).update(rooms).set({ hostId }).where(eq((rooms as any).id, roomId as any));
+      } else if (dbType === 'sqlite') {
+        (db as any).run?.("UPDATE rooms SET host_id = ? WHERE id = ?", [hostId, roomId]);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error setting room host:', error);
+      return false;
+    }
+  },
+
   // دالة مساعدة للتحقق من صحة غرفة البث - محدثة للسماح للمشرفين والإدمن
   async validateBroadcastRoom(roomId: string, actionBy?: number) {
     const status = databaseService.getStatus();

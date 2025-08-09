@@ -2127,6 +2127,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // حفظ في قاعدة البيانات
         await storage.joinRoom(userId, roomId);
         
+        // إذا كانت الغرفة غرفة بث والمضيف غير معين، عيّن أول إدمن/مشرف/مالك يدخل كمضيف
+        try {
+          const roomData = await storage.getRoom(roomId);
+          const isBroadcastRoom = (roomData as any)?.isBroadcast || (roomData as any)?.is_broadcast;
+          const currentHostId = (roomData as any)?.hostId ?? (roomData as any)?.host_id ?? null;
+          const privilegedRoles = ['owner', 'admin', 'moderator'];
+          if (isBroadcastRoom && (currentHostId == null)) {
+            // إذا المستخدم الحالي لديه صلاحية، عيّنه مباشرة
+            const userObj = (connectedUsers.get(userId) || {}).user;
+            if (userObj && privilegedRoles.includes(userObj.userType)) {
+              const ok = await storage.setRoomHost(roomId, userId);
+              if (ok) {
+                await broadcastRoomUpdate(roomId, 'hostChanged', { hostId: userId });
+              }
+            } else {
+              // وإلا ابحث عن أي مستخدم ذو صلاحية موجود حالياً في الغرفة وعيّنه
+              const candidate = Array.from(connectedUsers.values())
+                .filter(conn => conn.room === roomId && conn.user && privilegedRoles.includes(conn.user.userType))
+                .map(conn => conn.user)[0];
+              if (candidate) {
+                const ok = await storage.setRoomHost(roomId, candidate.id);
+                if (ok) {
+                  await broadcastRoomUpdate(roomId, 'hostChanged', { hostId: candidate.id });
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('⚠️ Host auto-assign skipped:', e);
+        }
+        
         // تحديث الغرفة في قائمة المتصلين الفعليين
         if (connectedUsers.has(userId)) {
           const userConnection = connectedUsers.get(userId)!;
@@ -2229,6 +2260,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // حذف من قاعدة البيانات
         await storage.leaveRoom(userId, roomId);
         
+        // إذا كانت غرفة بث وكان المغادر هو المضيف، أعِد التعيين لأقدم إدمن/مشرف/مالك متصل في الغرفة، أو أزل المضيف
+        try {
+          const roomData = await storage.getRoom(roomId);
+          const isBroadcastRoom = (roomData as any)?.isBroadcast || (roomData as any)?.is_broadcast;
+          const currentHostId = (roomData as any)?.hostId ?? (roomData as any)?.host_id ?? null;
+          if (isBroadcastRoom && currentHostId === userId) {
+            const privilegedRoles = ['owner', 'admin', 'moderator'];
+            const candidate = Array.from(connectedUsers.values())
+              .filter(conn => conn.room === roomId && conn.user && privilegedRoles.includes(conn.user.userType) && conn.user.id !== userId)
+              .map(conn => conn.user)[0];
+            const newHostId = candidate ? candidate.id : null;
+            const ok = await storage.setRoomHost(roomId, newHostId);
+            if (ok) {
+              await broadcastRoomUpdate(roomId, 'hostChanged', { hostId: newHostId });
+            }
+          }
+        } catch (e) {
+          console.warn('⚠️ Host reassignment on leave skipped:', e);
+        }
+        
         // مسح الغرفة الحالية من الـ socket
         if ((socket as any).currentRoom === roomId) {
           (socket as any).currentRoom = null;
@@ -2280,6 +2331,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // 3. إزالة المستخدم من جميع الغرف في قاعدة البيانات
           await storage.leaveRoom(userId, currentRoom);
+          
+          // إذا كانت غرفة بث وكان الخارج هو المضيف، إعادة التعيين كما في leaveRoom
+          try {
+            const roomData = await storage.getRoom(currentRoom);
+            const isBroadcastRoom = (roomData as any)?.isBroadcast || (roomData as any)?.is_broadcast;
+            const currentHostId = (roomData as any)?.hostId ?? (roomData as any)?.host_id ?? null;
+            if (isBroadcastRoom && currentHostId === userId) {
+              const privilegedRoles = ['owner', 'admin', 'moderator'];
+              const candidate = Array.from(connectedUsers.values())
+                .filter(conn => conn.room === currentRoom && conn.user && privilegedRoles.includes(conn.user.userType) && conn.user.id !== userId)
+                .map(conn => conn.user)[0];
+              const newHostId = candidate ? candidate.id : null;
+              const ok = await storage.setRoomHost(currentRoom, newHostId);
+              if (ok) {
+                await broadcastRoomUpdate(currentRoom, 'hostChanged', { hostId: newHostId });
+              }
+            }
+          } catch (e) {
+            console.warn('⚠️ Host reassignment on disconnect skipped:', e);
+          }
           
           // 4. إزالة المستخدم من جميع الغرف
           socket.leave(userId.toString());
