@@ -695,7 +695,6 @@ export const storage: LegacyStorage = {
     // التحقق من وجود الغرفة وأنها غرفة بث
     const room = await this.getRoom(roomId);
     if (!room || !(room as any).isBroadcast) {
-      console.log(`Room ${roomId} is not a broadcast room`);
       return { isValid: false, error: 'الغرفة ليست غرفة بث مباشر' };
     }
     
@@ -713,7 +712,6 @@ export const storage: LegacyStorage = {
       const isOwner = user.userType === 'owner';
 
       if (!isHost && !isAdmin && !isModerator && !isOwner) {
-        console.log(`User ${actionBy} does not have permission to manage mic in room ${roomId}`);
         return { isValid: false, error: 'المستخدم ليس لديه صلاحية لإدارة المايك في هذه الغرفة' };
       }
     }
@@ -734,7 +732,6 @@ export const storage: LegacyStorage = {
       // التحقق من وجود المستخدم
       const user = await databaseService.getUserById(userId);
       if (!user) {
-        console.log(`User ${userId} not found`);
         return false;
       }
       
@@ -746,17 +743,14 @@ export const storage: LegacyStorage = {
       
       // التحقق من أن المستخدم ليس مضيف أو متحدث أو في قائمة الانتظار
       if ((room as any).hostId === userId) {
-        console.log(`User ${userId} is already the host`);
         return false;
       }
       
       if (speakers.includes(userId)) {
-        console.log(`User ${userId} is already a speaker`);
         return false;
       }
       
       if (micQueue.includes(userId)) {
-        console.log(`User ${userId} is already in mic queue`);
         return false;
       }
       
@@ -773,7 +767,6 @@ export const storage: LegacyStorage = {
         (db as any).run?.("UPDATE rooms SET mic_queue = ? WHERE id = ?", [JSON.stringify(micQueue), roomId]);
       }
       
-      console.log(`User ${userId} added to mic queue for room ${roomId}`);
       return true;
       
     } catch (error) {
@@ -801,7 +794,6 @@ export const storage: LegacyStorage = {
       // التحقق من وجود المستخدم في قائمة الانتظار
       const queueIndex = micQueue.indexOf(userId);
       if (queueIndex === -1) {
-        console.log(`User ${userId} is not in mic queue`);
         return false;
       }
       
@@ -821,7 +813,6 @@ export const storage: LegacyStorage = {
         (db as any).run?.("UPDATE rooms SET mic_queue = ?, speakers = ? WHERE id = ?", [JSON.stringify(micQueue), JSON.stringify(speakers), roomId]);
       }
       
-      console.log(`User ${userId} approved as speaker in room ${roomId} by ${approvedBy}`);
       return true;
       
     } catch (error) {
@@ -846,7 +837,6 @@ export const storage: LegacyStorage = {
       // التحقق من وجود المستخدم في قائمة الانتظار
       const queueIndex = micQueue.indexOf(userId);
       if (queueIndex === -1) {
-        console.log(`User ${userId} is not in mic queue`);
         return false;
       }
       
@@ -863,7 +853,6 @@ export const storage: LegacyStorage = {
         (db as any).run?.("UPDATE rooms SET mic_queue = ? WHERE id = ?", [JSON.stringify(micQueue), roomId]);
       }
       
-      console.log(`User ${userId} rejected from mic queue in room ${roomId} by ${rejectedBy}`);
       return true;
       
     } catch (error) {
@@ -884,7 +873,6 @@ export const storage: LegacyStorage = {
       
       // التحقق من أن المستخدم المراد إزالته ليس المضيف نفسه
       if ((room as any).hostId === userId) {
-        console.log(`Cannot remove host ${userId} from speakers`);
         return false;
       }
       
@@ -894,7 +882,6 @@ export const storage: LegacyStorage = {
       // التحقق من وجود المستخدم في قائمة المتحدثين
       const speakerIndex = speakers.indexOf(userId);
       if (speakerIndex === -1) {
-        console.log(`User ${userId} is not a speaker`);
         return false;
       }
       
@@ -911,7 +898,6 @@ export const storage: LegacyStorage = {
         (db as any).run?.("UPDATE rooms SET speakers = ? WHERE id = ?", [JSON.stringify(speakers), roomId]);
       }
       
-      console.log(`User ${userId} removed from speakers in room ${roomId} by ${removedBy}`);
       return true;
       
     } catch (error) {
@@ -1118,7 +1104,6 @@ export const storage: LegacyStorage = {
     // التحقق من وجود الغرفة وأنها غرفة بث
     const room = await this.getRoom(roomId);
     if (!room || !(room as any).isBroadcast) {
-      console.log(`Room ${roomId} is not a broadcast room`);
       return { isValid: false, error: 'الغرفة ليست غرفة بث مباشر' };
     }
     
@@ -1136,7 +1121,6 @@ export const storage: LegacyStorage = {
       const isOwner = user.userType === 'owner';
 
       if (!isHost && !isAdmin && !isModerator && !isOwner) {
-        console.log(`User ${actionBy} does not have permission to manage mic in room ${roomId}`);
         return { isValid: false, error: 'المستخدم ليس لديه صلاحية لإدارة المايك في هذه الغرفة' };
       }
     }
@@ -1157,7 +1141,6 @@ export const storage: LegacyStorage = {
       // التحقق من وجود المستخدم
       const user = await databaseService.getUserById(userId);
       if (!user) {
-        console.log(`User ${userId} not found`);
         return false;
       }
       
@@ -1169,17 +1152,14 @@ export const storage: LegacyStorage = {
       
       // التحقق من أن المستخدم ليس مضيف أو متحدث أو في قائمة الانتظار
       if ((room as any).hostId === userId) {
-        console.log(`User ${userId} is already the host`);
         return false;
       }
       
       if (speakers.includes(userId)) {
-        console.log(`User ${userId} is already a speaker`);
         return false;
       }
       
       if (micQueue.includes(userId)) {
-        console.log(`User ${userId} is already in mic queue`);
         return false;
       }
       
@@ -1196,7 +1176,6 @@ export const storage: LegacyStorage = {
         (db as any).run?.("UPDATE rooms SET mic_queue = ? WHERE id = ?", [JSON.stringify(micQueue), roomId]);
       }
       
-      console.log(`User ${userId} added to mic queue for room ${roomId}`);
       return true;
       
     } catch (error) {
@@ -1224,7 +1203,6 @@ export const storage: LegacyStorage = {
       // التحقق من وجود المستخدم في قائمة الانتظار
       const queueIndex = micQueue.indexOf(userId);
       if (queueIndex === -1) {
-        console.log(`User ${userId} is not in mic queue`);
         return false;
       }
       
@@ -1244,7 +1222,6 @@ export const storage: LegacyStorage = {
         (db as any).run?.("UPDATE rooms SET mic_queue = ?, speakers = ? WHERE id = ?", [JSON.stringify(micQueue), JSON.stringify(speakers), roomId]);
       }
       
-      console.log(`User ${userId} approved as speaker in room ${roomId} by ${approvedBy}`);
       return true;
       
     } catch (error) {
@@ -1269,7 +1246,6 @@ export const storage: LegacyStorage = {
       // التحقق من وجود المستخدم في قائمة الانتظار
       const queueIndex = micQueue.indexOf(userId);
       if (queueIndex === -1) {
-        console.log(`User ${userId} is not in mic queue`);
         return false;
       }
       
@@ -1286,7 +1262,6 @@ export const storage: LegacyStorage = {
         (db as any).run?.("UPDATE rooms SET mic_queue = ? WHERE id = ?", [JSON.stringify(micQueue), roomId]);
       }
       
-      console.log(`User ${userId} rejected from mic queue in room ${roomId} by ${rejectedBy}`);
       return true;
       
     } catch (error) {
@@ -1307,7 +1282,6 @@ export const storage: LegacyStorage = {
       
       // التحقق من أن المستخدم المراد إزالته ليس المضيف نفسه
       if ((room as any).hostId === userId) {
-        console.log(`Cannot remove host ${userId} from speakers`);
         return false;
       }
       
@@ -1317,7 +1291,6 @@ export const storage: LegacyStorage = {
       // التحقق من وجود المستخدم في قائمة المتحدثين
       const speakerIndex = speakers.indexOf(userId);
       if (speakerIndex === -1) {
-        console.log(`User ${userId} is not a speaker`);
         return false;
       }
       
@@ -1334,11 +1307,91 @@ export const storage: LegacyStorage = {
         (db as any).run?.("UPDATE rooms SET speakers = ? WHERE id = ?", [JSON.stringify(speakers), roomId]);
       }
       
-      console.log(`User ${userId} removed from speakers in room ${roomId} by ${removedBy}`);
       return true;
       
     } catch (error) {
       console.error('Error in removeSpeaker:', error);
+      return false;
+    }
+  },
+
+  // ========= Broadcast Room helpers (queue/speakers) =========
+  async addToMicQueue(roomId: string, userId: number) {
+    try {
+      const status = databaseService.getStatus();
+      if (!status.connected) return false;
+      const { db, dbType } = await import('./database-adapter');
+      if (dbType === 'postgresql') {
+        const { rooms } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        // Read current queue
+        const rows = await (db as any).select({ micQueue: (rooms as any).micQueue }).from((rooms as any)).where(eq((rooms as any).id, roomId as any)).limit(1);
+        const current = rows?.[0]?.micQueue ? (typeof rows[0].micQueue === 'string' ? JSON.parse(rows[0].micQueue) : rows[0].micQueue) : [];
+        if (!current.includes(userId)) current.push(userId);
+        await (db as any).update(rooms).set({ micQueue: JSON.stringify(current) }).where(eq((rooms as any).id, roomId as any));
+        return true;
+      } else if (dbType === 'sqlite') {
+        (db as any).run?.("UPDATE rooms SET mic_queue = json_insert(COALESCE(mic_queue, '[]'), '$[#]', ?) WHERE id = ?", [userId, roomId]);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error addToMicQueue:', error);
+      return false;
+    }
+  },
+
+  async removeFromMicQueue(roomId: string, userId: number) {
+    try {
+      const status = databaseService.getStatus();
+      if (!status.connected) return false;
+      const { db, dbType } = await import('./database-adapter');
+      if (dbType === 'postgresql') {
+        const { rooms } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        const rows = await (db as any).select({ micQueue: (rooms as any).micQueue }).from((rooms as any)).where(eq((rooms as any).id, roomId as any)).limit(1);
+        const current = rows?.[0]?.micQueue ? (typeof rows[0].micQueue === 'string' ? JSON.parse(rows[0].micQueue) : rows[0].micQueue) : [];
+        const next = current.filter((id: number) => id !== userId);
+        await (db as any).update(rooms).set({ micQueue: JSON.stringify(next) }).where(eq((rooms as any).id, roomId as any));
+        return true;
+      } else if (dbType === 'sqlite') {
+        // Fallback: read, modify, write
+        const row = (db as any).prepare?.("SELECT mic_queue FROM rooms WHERE id = ?").get?.(roomId);
+        const current: number[] = row?.mic_queue ? JSON.parse(row.mic_queue) : [];
+        const next = current.filter((id: number) => id !== userId);
+        (db as any).prepare?.("UPDATE rooms SET mic_queue = ? WHERE id = ?").run?.(JSON.stringify(next), roomId);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error removeFromMicQueue:', error);
+      return false;
+    }
+  },
+
+  async addSpeaker(roomId: string, userId: number) {
+    try {
+      const status = databaseService.getStatus();
+      if (!status.connected) return false;
+      const { db, dbType } = await import('./database-adapter');
+      if (dbType === 'postgresql') {
+        const { rooms } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        const rows = await (db as any).select({ speakers: (rooms as any).speakers }).from((rooms as any)).where(eq((rooms as any).id, roomId as any)).limit(1);
+        const current = rows?.[0]?.speakers ? (typeof rows[0].speakers === 'string' ? JSON.parse(rows[0].speakers) : rows[0].speakers) : [];
+        if (!current.includes(userId)) current.push(userId);
+        await (db as any).update(rooms).set({ speakers: JSON.stringify(current) }).where(eq((rooms as any).id, roomId as any));
+        return true;
+      } else if (dbType === 'sqlite') {
+        const row = (db as any).prepare?.("SELECT speakers FROM rooms WHERE id = ?").get?.(roomId);
+        const current: number[] = row?.speakers ? JSON.parse(row.speakers) : [];
+        if (!current.includes(userId)) current.push(userId);
+        (db as any).prepare?.("UPDATE rooms SET speakers = ? WHERE id = ?").run?.(JSON.stringify(current), roomId);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error addSpeaker:', error);
       return false;
     }
   },

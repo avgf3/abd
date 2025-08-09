@@ -69,6 +69,20 @@ app.use('/svgs', express.static(svgPath, {
   }
 }));
 
+// خدمة ملفات الحائط المرفوعة مع بديل افتراضي لتجنب 404 في Render
+const wallUploadsPath = path.join(process.cwd(), 'client', 'public', 'uploads', 'wall');
+app.use('/uploads/wall', (req, res, next) => {
+  const fullPath = path.join(wallUploadsPath, req.path);
+  if (!fs.existsSync(fullPath)) {
+    const fallback = path.join(process.cwd(), 'client/public/default_wall.png');
+    if (fs.existsSync(fallback)) {
+      return res.sendFile(fallback);
+    }
+    return res.status(404).json({ error: 'File not found' });
+  }
+  next();
+}, express.static(wallUploadsPath, { maxAge: '1d', etag: true }));
+
 // خدمة الصور والأيقونات
 app.use('/icons', express.static(path.join(process.cwd(), 'client/public/icons'), {
   maxAge: '7d'

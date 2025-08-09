@@ -114,7 +114,6 @@ class RoomService {
         hostId: roomData.hostId || null
       });
 
-      console.log(`✅ تم إنشاء الغرفة: ${room.name} (${room.id})`);
       return room;
     } catch (error) {
       console.error('خطأ في إنشاء الغرفة:', error);
@@ -158,8 +157,7 @@ class RoomService {
         if (fs.existsSync(imagePath)) {
           try {
             fs.unlinkSync(imagePath);
-            console.log(`🗑️ تم حذف صورة الغرفة: ${room.icon}`);
-          } catch (err) {
+            } catch (err) {
             console.warn(`⚠️ تعذر حذف صورة الغرفة: ${err}`);
           }
         }
@@ -178,8 +176,7 @@ class RoomService {
         }
       }
 
-      console.log(`🗑️ تم حذف الغرفة: ${room.name} (${roomId})`);
-    } catch (error) {
+      } catch (error) {
       console.error('خطأ في حذف الغرفة:', error);
       throw error;
     }
@@ -224,8 +221,7 @@ class RoomService {
       // حفظ في قاعدة البيانات إذا لزم الأمر
       await storage.joinRoom(userId, roomId);
 
-      console.log(`🏠 المستخدم ${user.username} انضم للغرفة ${room.name}`);
-    } catch (error) {
+      } catch (error) {
       console.error('خطأ في الانضمام للغرفة:', error);
       throw error;
     }
@@ -245,8 +241,7 @@ class RoomService {
       }
 
       const user = await storage.getUser(userId);
-      console.log(`🚪 المستخدم ${user?.username} غادر الغرفة ${roomId}`);
-    } catch (error) {
+      } catch (error) {
       console.error('خطأ في مغادرة الغرفة:', error);
       throw error;
     }
@@ -346,8 +341,7 @@ class RoomService {
       }
 
       await storage.addToMicQueue(roomId, userId);
-      console.log(`🎤 المستخدم ${user.username} طلب الميكروفون في غرفة ${room.name}`);
-    } catch (error) {
+      } catch (error) {
       console.error('خطأ في طلب الميكروفون:', error);
       throw error;
     }
@@ -378,8 +372,7 @@ class RoomService {
       await storage.addSpeaker(roomId, userId);
 
       const user = await storage.getUser(userId);
-      console.log(`✅ تمت الموافقة على ميكروفون ${user?.username} في غرفة ${room.name}`);
-    } catch (error) {
+      } catch (error) {
       console.error('خطأ في الموافقة على الميكروفون:', error);
       throw error;
     }
@@ -409,8 +402,7 @@ class RoomService {
       await storage.removeFromMicQueue(roomId, userId);
 
       const user = await storage.getUser(userId);
-      console.log(`❌ تم رفض ميكروفون ${user?.username} في غرفة ${room.name}`);
-    } catch (error) {
+      } catch (error) {
       console.error('خطأ في رفض الميكروفون:', error);
       throw error;
     }
@@ -440,8 +432,7 @@ class RoomService {
       await storage.removeSpeaker(roomId, userId);
 
       const user = await storage.getUser(userId);
-      console.log(`🔇 تم إزالة ${user?.username} من المتحدثين في غرفة ${room.name}`);
-    } catch (error) {
+      } catch (error) {
       console.error('خطأ في إزالة المتحدث:', error);
       throw error;
     }
@@ -509,17 +500,13 @@ class RoomService {
    * تنظيف الغرف - إزالة المستخدمين غير المتصلين
    */
   cleanupRooms(): void {
-    console.log('🧹 تنظيف الغرف...');
-    
     for (const [roomId, userSet] of this.connectedRooms.entries()) {
       if (userSet.size === 0 && roomId !== 'general') {
         this.connectedRooms.delete(roomId);
-        console.log(`🗑️ تم حذف الغرفة الفارغة ${roomId} من الذاكرة`);
-      }
+        }
     }
 
-    console.log(`✅ تنظيف الغرف مكتمل. الغرف النشطة: ${this.connectedRooms.size}`);
-  }
+    }
 }
 
 // تصدير instance واحد

@@ -119,8 +119,7 @@ function sendRoomUsers(roomId: string) {
     roomId: roomId
   });
   
-  console.log(`✅ تم إرسال قائمة ${roomUsers.length} مستخدم للغرفة ${roomId}`);
-}
+  }
 
 // إنشاء خدمات محسنة ومنظمة
 const authService = new (class AuthService {
@@ -690,21 +689,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/moderation/promote", async (req, res) => {
     try {
-      console.log(`[PROMOTE_ENDPOINT] طلب ترقية جديد:`, req.body);
       const { moderatorId, targetUserId, newRole } = req.body;
       
       // التحقق من وجود المعاملات المطلوبة
       if (!moderatorId || !targetUserId || !newRole) {
-        console.log(`[PROMOTE_ENDPOINT] فشل - معاملات ناقصة:`, { moderatorId, targetUserId, newRole });
         return res.status(400).json({ error: "معاملات ناقصة" });
       }
       
-      console.log(`[PROMOTE_ENDPOINT] استدعاء moderationSystem.promoteUser`);
       const success = await moderationSystem.promoteUser(moderatorId, targetUserId, newRole);
       
       if (success) {
-        console.log(`[PROMOTE_ENDPOINT] نجحت الترقية`);
-        
         // إرسال إشعار عبر WebSocket
         const target = await storage.getUser(targetUserId);
         const moderator = await storage.getUser(moderatorId);
@@ -717,12 +711,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           
           broadcast(promotionMessage);
-          console.log(`[PROMOTE_ENDPOINT] تم إرسال إشعار WebSocket`);
-        }
+          }
         
         res.json({ message: "تم ترقية المستخدم بنجاح" });
       } else {
-        console.log(`[PROMOTE_ENDPOINT] فشلت الترقية`);
         res.status(400).json({ error: "فشل في ترقية المستخدم" });
       }
     } catch (error) {
@@ -1656,7 +1648,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // 🚀 تحسين: حماية أقوى من الطلبات المتكررة
         const now = Date.now();
         if (now - lastUserListRequest < USER_LIST_THROTTLE) {
-          console.log(`🔄 تجاهل طلب متكرر للمستخدمين من ${socket.id}`);
           return;
         }
         lastUserListRequest = now;
@@ -1678,8 +1669,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'onlineUsers', 
           users: roomUsers 
         });
-        
-        console.log(`✅ تم إرسال قائمة ${roomUsers.length} مستخدم للغرفة ${currentRoom}`);
         
         } catch (error) {
         console.error('❌ خطأ في جلب المستخدمين المتصلين:', error);
@@ -2331,8 +2320,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const userId = customSocket.userId;
           const username = customSocket.username;
           
-          console.log(`🔌 المستخدم ${username} (ID: ${userId}) قطع الاتصال: ${reason}`);
-          
           // 1. إزالة المستخدم من قائمة المتصلين الفعليين فوراً
           connectedUsers.delete(userId);
           
@@ -2445,8 +2432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // إرسال القائمة المحدثة لجميع المستخدمين في الغرفة
                 sendRoomUsers(currentRoom);
                 
-                console.log(`✅ تم تحديث قائمة المتصلين في الغرفة ${currentRoom}`);
-              } catch (updateError) {
+                } catch (updateError) {
                 console.error('❌ خطأ في تحديث قائمة المتصلين:', updateError);
               }
             }, 100); // تأخير قصير لضمان التنظيف الكامل
@@ -2491,8 +2477,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // فحص دوري محسن لتنظيف الجلسات المنتهية الصلاحية
   const sessionCleanupInterval = setInterval(async () => {
     try {
-      console.log('🧹 بدء تنظيف الجلسات المنتهية الصلاحية...');
-      
       const connectedSockets = await io.fetchSockets();
       const activeSocketUsers = new Set();
       
@@ -2521,9 +2505,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (disconnectedUsers.length > 0) {
-        console.log(`🧹 تم تنظيف ${disconnectedUsers.length} مستخدم منقطع:`, 
-                    disconnectedUsers.map(u => u.username).join(', '));
-        
         // إرسال قائمة محدثة لجميع الغرف
         const rooms = ['general']; // يمكن إضافة غرف أخرى
         for (const roomId of rooms) {
@@ -2582,11 +2563,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إرسال طلب صداقة
   app.post("/api/friend-requests", async (req, res) => {
     try {
-      console.log('📝 Friend request received:', req.body);
       const { senderId, receiverId } = req.body;
       
       if (!senderId || !receiverId) {
-        console.log('❌ Missing senderId or receiverId:', { senderId, receiverId });
         return res.status(400).json({ error: "معلومات المرسل والمستقبل مطلوبة" });
       }
 
@@ -2594,26 +2573,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "لا يمكنك إرسال طلب صداقة لنفسك" });
       }
 
-      console.log('🔍 Checking for existing request between:', senderId, receiverId);
-      
       // التحقق من وجود طلب سابق
       const existingRequest = await storage.getFriendRequest(senderId, receiverId);
       if (existingRequest) {
-        console.log('⚠️ Friend request already exists:', existingRequest);
         return res.status(400).json({ error: "طلب الصداقة موجود بالفعل" });
       }
 
       // التحقق من الصداقة الموجودة
       const friendship = await storage.getFriendship(senderId, receiverId);
       if (friendship) {
-        console.log('⚠️ Friendship already exists:', friendship);
         return res.status(400).json({ error: "أنتما أصدقاء بالفعل" });
       }
 
-      console.log('✅ Creating friend request...');
       const request = await storage.createFriendRequest(senderId, receiverId);
-      console.log('✅ Friend request created:', request);
-      
       // إرسال إشعار عبر WebSocket
       const sender = await storage.getUser(senderId);
       broadcast({
@@ -3139,21 +3111,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/moderation/promote", async (req, res) => {
     try {
-      console.log(`[PROMOTE_ENDPOINT] طلب ترقية جديد:`, req.body);
       const { moderatorId, targetUserId, newRole } = req.body;
       
       // التحقق من وجود المعاملات المطلوبة
       if (!moderatorId || !targetUserId || !newRole) {
-        console.log(`[PROMOTE_ENDPOINT] فشل - معاملات ناقصة:`, { moderatorId, targetUserId, newRole });
         return res.status(400).json({ error: "معاملات ناقصة" });
       }
       
-      console.log(`[PROMOTE_ENDPOINT] استدعاء moderationSystem.promoteUser`);
       const success = await moderationSystem.promoteUser(moderatorId, targetUserId, newRole);
       
       if (success) {
-        console.log(`[PROMOTE_ENDPOINT] نجحت الترقية`);
-        
         // إرسال إشعار عبر WebSocket
         const target = await storage.getUser(targetUserId);
         const moderator = await storage.getUser(moderatorId);
@@ -3166,12 +3133,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           
           broadcast(promotionMessage);
-          console.log(`[PROMOTE_ENDPOINT] تم إرسال إشعار WebSocket`);
-        }
+          }
         
         res.json({ message: "تم ترقية المستخدم بنجاح" });
       } else {
-        console.log(`[PROMOTE_ENDPOINT] فشلت الترقية`);
         res.status(400).json({ error: "فشل في ترقية المستخدم" });
       }
     } catch (error) {
