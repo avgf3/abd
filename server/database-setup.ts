@@ -236,8 +236,14 @@ export async function createDefaultRooms(): Promise<void> {
         if (dbType === 'postgresql') {
           const existing = await (db as any).select().from(rooms).where(sql`name = ${room.name}`).limit(1);
           if (existing.length === 0) {
+            // اشتقاق معرف نصي ثابت للغرفة
+            const derivedId = room.name === 'العامة'
+              ? 'general'
+              : room.name === 'الترحيب'
+                ? 'welcome'
+                : room.name.toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '') || 'room';
             await (db as any).insert(rooms).values({
-              id: room.name === 'العامة' ? 'general' : undefined,
+              id: derivedId,
               name: room.name,
               description: room.description,
               icon: null,
@@ -249,7 +255,7 @@ export async function createDefaultRooms(): Promise<void> {
               speakers: '[]',
               micQueue: '[]',
               createdAt: new Date(),
-            });
+            }).onConflictDoNothing();
           }
         } else if (dbType === 'sqlite') {
           const existing = await (db as any).select().from(sqliteSchema.rooms).where(sql`name = ${room.name}`).limit(1);
