@@ -108,7 +108,7 @@ class RoomMessageService {
    */
   async getRoomMessages(
     roomId: string, 
-    limit: number = 50, 
+    limit: number = 20, 
     offset: number = 0,
     useCache: boolean = true
   ): Promise<MessagePagination> {
@@ -117,15 +117,19 @@ class RoomMessageService {
         throw new Error('معرف الغرفة مطلوب');
       }
 
+      // ضبط الحد الأقصى إلى 20 لتفادي التحميل الزائد
+      const safeLimit = Math.min(20, Math.max(1, Number(limit) || 20));
+      const safeOffset = Math.max(0, Number(offset) || 0);
+
       // محاولة الحصول على الرسائل من الذاكرة المؤقتة أولاً
-      if (useCache && offset === 0 && this.messageCache.has(roomId)) {
+      if (useCache && safeOffset === 0 && this.messageCache.has(roomId)) {
         const cachedMessages = this.messageCache.get(roomId)!;
-        const slicedMessages = cachedMessages.slice(0, limit);
+        const slicedMessages = cachedMessages.slice(0, safeLimit);
         
         return {
           messages: slicedMessages,
           totalCount: cachedMessages.length,
-          hasMore: cachedMessages.length > limit,
+          hasMore: cachedMessages.length > safeLimit,
           nextOffset: slicedMessages.length
         };
       }
@@ -139,7 +143,7 @@ class RoomMessageService {
       }
 
       // جلب الرسائل من قاعدة البيانات
-      const dbMessages = await storage.getRoomMessages(roomId, limit, offset);
+      const dbMessages = await storage.getRoomMessages(roomId, safeLimit, safeOffset);
       const totalCount = await storage.getRoomMessageCount(roomId);
 
       // تحويل الرسائل للتنسيق المطلوب
@@ -167,15 +171,15 @@ class RoomMessageService {
       }
 
       // إضافة الرسائل للذاكرة المؤقتة (إذا كان offset = 0)
-      if (offset === 0 && messages.length > 0) {
+      if (safeOffset === 0 && messages.length > 0) {
         this.updateCache(roomId, messages);
       }
 
       return {
         messages,
         totalCount,
-        hasMore: (offset + messages.length) < totalCount,
-        nextOffset: offset + messages.length
+        hasMore: (safeOffset + messages.length) < totalCount,
+        nextOffset: safeOffset + messages.length
       };
 
     } catch (error) {
@@ -193,7 +197,7 @@ class RoomMessageService {
    */
   async getLatestRoomMessages(roomId: string, limit: number = 20): Promise<RoomMessage[]> {
     try {
-      const result = await this.getRoomMessages(roomId, limit, 0, true);
+      const result = await this.getRoomMessages(roomId, Math.min(20, Math.max(1, Number(limit) || 20)), 0, true);
       return result.messages;
     } catch (error) {
       console.error(`خطأ في جلب أحدث رسائل الغرفة ${roomId}:`, error);

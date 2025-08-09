@@ -12,7 +12,7 @@ const router = Router();
 router.get('/room/:roomId', async (req, res) => {
   try {
     const { roomId } = req.params;
-    const { limit = 50, offset = 0, useCache = 'true' } = req.query;
+    const { limit = 20, offset = 0, useCache = 'true' } = req.query;
 
     if (!roomId?.trim()) {
       return res.status(400).json({ error: 'معرف الغرفة مطلوب' });
@@ -24,10 +24,13 @@ router.get('/room/:roomId', async (req, res) => {
       return res.status(404).json({ error: 'الغرفة غير موجودة' });
     }
 
+    const limitValue = Math.min(20, Math.max(1, parseInt(limit as string)));
+    const offsetValue = Math.max(0, parseInt(offset as string));
+
     const result = await roomMessageService.getRoomMessages(
       roomId,
-      parseInt(limit as string),
-      parseInt(offset as string),
+      limitValue,
+      offsetValue,
       useCache === 'true'
     );
 
