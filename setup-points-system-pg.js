@@ -133,31 +133,8 @@ async function setupPointsSystemPG() {
   }
 }
 
-// دالة حساب المستوى (نسخة مبسطة)
-function calculateLevel(totalPoints) {
-  for (let i = DEFAULT_LEVELS.length - 1; i >= 0; i--) {
-    if (totalPoints >= DEFAULT_LEVELS[i].requiredPoints) {
-      return DEFAULT_LEVELS[i].level;
-    }
-  }
-  return 1;
-}
-
-// دالة حساب تقدم المستوى (نسخة مبسطة)
-function calculateLevelProgress(totalPoints) {
-  const currentLevel = calculateLevel(totalPoints);
-  const currentLevelData = DEFAULT_LEVELS.find(l => l.level === currentLevel);
-  const nextLevelData = DEFAULT_LEVELS.find(l => l.level === currentLevel + 1);
-  
-  if (!currentLevelData || !nextLevelData) {
-    return 100; // إذا كان في المستوى الأخير
-  }
-  
-  const pointsInCurrentLevel = totalPoints - currentLevelData.requiredPoints;
-  const pointsNeededForNextLevel = nextLevelData.requiredPoints - currentLevelData.requiredPoints;
-  
-  return Math.min(100, Math.floor((pointsInCurrentLevel / pointsNeededForNextLevel) * 100));
-}
+// استخدام الدوال من الملف المشترك لتجنب التكرار
+const { calculateLevel, calculateLevelProgress } = require('./shared/points-system');
 
 // تشغيل السكريبت
 if (import.meta.url === `file://${process.argv[1]}`) {

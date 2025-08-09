@@ -29,6 +29,7 @@ const colors = {
   bold: '\x1b[1m'
 };
 
+// استخدام console.log مباشرة مع الألوان (ملف اختبار مؤقت)
 function log(message, color = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`);
 }

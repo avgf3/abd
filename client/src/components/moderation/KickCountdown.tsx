@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Clock, AlertTriangle } from 'lucide-react';
+import { formatCountdownTime } from '@/utils/timeUtils';
 
 interface KickCountdownProps {
   isVisible: boolean;
@@ -34,11 +35,7 @@ export default function KickCountdown({ isVisible, onClose, durationMinutes }: K
     return () => clearInterval(timer);
   }, [isVisible, onClose]);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  // تم نقل دالة formatTime إلى utils/timeUtils.ts كـ formatCountdownTime
 
   if (!isVisible) return null;
 
@@ -59,7 +56,7 @@ export default function KickCountdown({ isVisible, onClose, durationMinutes }: K
               <span className="text-red-200">الوقت المتبقي:</span>
             </div>
             <div className="text-3xl font-bold text-red-400 font-mono">
-              {formatTime(timeLeft)}
+              {formatCountdownTime(timeLeft)}
             </div>
           </div>
           

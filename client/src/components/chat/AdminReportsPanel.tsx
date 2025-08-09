@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { formatDate } from '@/utils/timeUtils';
 import type { ChatUser } from '@/types/chat';
 
 interface Report {
@@ -96,15 +97,7 @@ export default function AdminReportsPanel({ isOpen, onClose, currentUser }: Admi
     }
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('ar-SA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // تم نقل دالة formatDate إلى utils/timeUtils.ts
 
   if (currentUser?.userType !== 'owner') {
     return null;

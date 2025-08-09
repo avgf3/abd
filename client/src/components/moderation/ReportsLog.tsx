@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { formatTimestamp } from '@/utils/timeUtils';
 import { AlertTriangle, User, FileText, Clock } from 'lucide-react';
 import type { ChatUser } from '@/types/chat';
 import { apiRequest } from '@/lib/queryClient';
@@ -60,16 +61,7 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
     }
   };
 
-  const formatTimestamp = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString('ar-SA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // تم نقل دالة formatTimestamp إلى utils/timeUtils.ts
 
   const getStatusBadge = (status: string) => {
     switch (status) {

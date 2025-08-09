@@ -19,6 +19,7 @@ const colors = {
   white: '\x1b[37m'
 };
 
+// دالة تسجيل بسيطة لملف الاختبار (ملف مؤقت)
 function log(message, color = 'white') {
   console.log(`${colors[color]}${message}${colors.reset}`);
 }
