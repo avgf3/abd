@@ -18,7 +18,7 @@ import path from 'path';
 // تعريف أنواع قواعد البيانات
 export type PostgreSQLDatabase = PgDatabase<NeonQueryResultHKT, typeof pgSchema>;
 export type SQLiteDatabase = BetterSQLite3Database<typeof sqliteSchema>;
-export type DatabaseType = PostgreSQLDatabase | SQLiteDatabase | null;
+export type DatabaseType = PostgreSQLDatabase | null;
 
 // واجهة موحدة للعمليات
 export interface DatabaseAdapter {
@@ -30,29 +30,7 @@ export interface DatabaseAdapter {
 
 // إنشاء محول SQLite
 function createSQLiteAdapter(): DatabaseAdapter {
-  try {
-    const dbPath = path.join(process.cwd(), 'chat.db');
-    const sqlite = new Database(dbPath);
-    const db = drizzleSQLite(sqlite, { schema: sqliteSchema });
-    
-    // إنشاء الجداول إذا لم تكن موجودة
-    createSQLiteTables(sqlite);
-    
-    return {
-      db: db as DatabaseType,
-      type: 'sqlite',
-      close: () => sqlite.close(),
-      migrate: async () => {
-        // SQLite migrations are handled by createSQLiteTables
-        }
-    };
-  } catch (error) {
-    console.error("❌ فشل في الاتصال بـ SQLite:", error);
-    return {
-      db: null,
-      type: 'disabled'
-    };
-  }
+  throw new Error("SQLite adapter is disabled in production build");
 }
 
 // إنشاء جداول SQLite
@@ -368,20 +346,13 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
 
 // إنشاء محول قاعدة البيانات مع fallback
 export function createDatabaseAdapter(): DatabaseAdapter {
-  // محاولة PostgreSQL أولاً
   const pgAdapter = createPostgreSQLAdapter();
   if (pgAdapter.db && pgAdapter.type !== 'disabled') {
     return pgAdapter;
   }
-  
-  // fallback إلى SQLite
-  const sqliteAdapter = createSQLiteAdapter();
-  if (sqliteAdapter.db && sqliteAdapter.type !== 'disabled') {
-    return sqliteAdapter;
-  }
-  
-  console.warn('⚠️ كلا من PostgreSQL و SQLite غير متاحين، العمل في وضع معطل');
-  return { db: null, type: 'disabled' };
+  // No SQLite fallback
+  console.error('DATABASE_URL is missing or invalid. PostgreSQL is required.');
+  return { db: null, type: 'disabled' } as any;
 }
 
 // إنشاء المحول الافتراضي

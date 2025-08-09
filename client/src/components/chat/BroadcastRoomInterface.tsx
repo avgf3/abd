@@ -59,8 +59,7 @@ export default function BroadcastRoomInterface({
       const data = await apiRequest(`/api/rooms/${room.id}/broadcast-info`, { method: 'GET' });
       if (data?.info) {
         setBroadcastInfo(data.info);
-        console.log('✅ تم جلب معلومات غرفة البث بنجاح');
-      } else {
+        } else {
         console.warn('⚠️ لم يتم استلام معلومات غرفة البث صحيحة من الخادم');
         setBroadcastInfo({ hostId: null, speakers: [], micQueue: [] });
       }

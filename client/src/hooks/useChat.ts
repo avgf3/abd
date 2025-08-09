@@ -410,7 +410,6 @@ export function useChat() {
                 return true;
               });
               
-              console.log(`✅ تحديث قائمة المتصلين: ${validUsers.length} مستخدم صالح من أصل ${message.users.length} (مصدر: ${message.source || 'unknown'})`);
               dispatch({ type: 'SET_ONLINE_USERS', payload: validUsers });
             } else {
               console.warn('⚠️ لم يتم استقبال قائمة مستخدمين صحيحة');
@@ -425,8 +424,7 @@ export function useChat() {
                 type: 'SET_ONLINE_USERS', 
                 payload: state.onlineUsers.filter(user => user.id !== message.userId)
               });
-              console.log(`👋 المستخدم ${message.username} غادر الدردشة`);
-            }
+              }
             break;
             
           case 'userJoined':
@@ -436,8 +434,7 @@ export function useChat() {
                 type: 'SET_ONLINE_USERS', 
                 payload: [...state.onlineUsers, message.user]
               });
-              console.log(`👋 المستخدم ${message.user.username} انضم للدردشة`);
-            }
+              }
             break;
             
           case 'newMessage':
@@ -564,8 +561,7 @@ export function useChat() {
                 payload: state.roomMessages[message.roomId] || [] 
               });
               
-              console.log(`✅ انضممت بنجاح للغرفة: ${message.roomId}`);
-            }
+              }
             break;
 
           case 'roomMessages':
@@ -782,8 +778,6 @@ export function useChat() {
 
   // Join room function
   const joinRoom = useCallback((roomId: string) => {
-    console.log(`🏠 محاولة الانضمام للغرفة: ${roomId}`);
-    
     // تغيير الغرفة الحالية فوراً للاستجابة السريعة
     dispatch({ type: 'SET_ROOM', payload: roomId });
     

@@ -95,7 +95,6 @@ class RoomMessageService {
       // إضافة الرسالة للذاكرة المؤقتة
       this.addToCache(messageData.roomId, roomMessage);
 
-      console.log(`📨 رسالة جديدة في الغرفة ${messageData.roomId} من ${sender.username}`);
       return roomMessage;
 
     } catch (error) {
@@ -234,9 +233,7 @@ class RoomMessageService {
       // إزالة الرسالة من الذاكرة المؤقتة
       this.removeFromCache(roomId, messageId);
 
-      console.log(`🗑️ تم حذف الرسالة ${messageId} من الغرفة ${roomId} بواسطة ${user.username}`);
-
-    } catch (error) {
+      } catch (error) {
       console.error('خطأ في حذف الرسالة:', error);
       throw error;
     }
@@ -371,7 +368,6 @@ class RoomMessageService {
       // تنظيف الذاكرة المؤقتة أيضاً
       this.clearCache(roomId);
 
-      console.log(`🧹 تم حذف ${deletedCount} رسالة قديمة من الغرفة ${roomId}`);
       return deletedCount;
 
     } catch (error) {
@@ -481,8 +477,7 @@ class RoomMessageService {
    */
   clearAllCache(): void {
     this.messageCache.clear();
-    console.log('🧹 تم مسح جميع ذاكرة الرسائل المؤقتة');
-  }
+    }
 }
 
 // تصدير instance واحد

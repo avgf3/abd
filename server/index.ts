@@ -69,6 +69,10 @@ app.use('/svgs', express.static(svgPath, {
   }
 }));
 
+// خدمة ملفات الحائط المرفوعة (بدون بدائل)
+const wallUploadsPath = path.join(process.cwd(), 'client', 'public', 'uploads', 'wall');
+app.use('/uploads/wall', express.static(wallUploadsPath, { maxAge: '1d', etag: true }));
+
 // خدمة الصور والأيقونات
 app.use('/icons', express.static(path.join(process.cwd(), 'client/public/icons'), {
   maxAge: '7d'

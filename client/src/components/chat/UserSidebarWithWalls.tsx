@@ -129,12 +129,7 @@ export default function UnifiedSidebar({
 
   // إضافة logging للتشخيص المحسن
   React.useEffect(() => {
-    console.log(`📊 قائمة المتصلين تحديث: ${users.length} مستخدم`, users.map(u => ({
-      id: u.id,
-      username: u.username,
-      userType: u.userType
-    })));
-  }, [users]);
+    }, [users]);
 
   // جلب المنشورات
   const fetchPosts = useCallback(async () => {

@@ -173,17 +173,7 @@ export async function joinRoom(userId: number, roomId: number | string): Promise
       }
       return true;
     }
-    // fallback to legacy room_users for sqlite
-    const { roomUsers } = await import('../shared/sqlite-schema');
-    const { eq, and } = await import('drizzle-orm');
-    const existing = await (db as any)
-      .select({ id: (roomUsers as any).id })
-      .from((roomUsers as any))
-      .where(and(eq((roomUsers as any).userId, userId as any), eq((roomUsers as any).roomId, String(roomId) as any)))
-      .limit(1);
-    if (!existing || existing.length === 0) {
-      await (db as any).insert((roomUsers as any)).values({ userId: userId as any, roomId: String(roomId) as any, joinedAt: new Date() as any });
-    }
+    // No SQLite fallback in production
     return true;
   } catch (error) {
     console.error('Error joinRoom:', error);
@@ -204,11 +194,6 @@ export async function leaveRoom(userId: number, roomId: number | string): Promis
         .where(and(eq((roomMembers as any).roomId, String(roomId) as any), eq((roomMembers as any).userId, userId as any)));
       return true;
     }
-    const { roomUsers } = await import('../shared/sqlite-schema');
-    const { eq, and } = await import('drizzle-orm');
-    await (db as any)
-      .delete((roomUsers as any))
-      .where(and(eq((roomUsers as any).userId, userId as any), eq((roomUsers as any).roomId, String(roomId) as any)));
     return true;
   } catch (error) {
     console.error('Error leaveRoom:', error);
@@ -228,15 +213,6 @@ export async function getRoomUsers(roomId: number | string): Promise<number[]> {
         .select({ userId: (roomMembers as any).userId })
         .from((roomMembers as any))
         .where(eq((roomMembers as any).roomId, String(roomId) as any));
-      return (rows || []).map((r: any) => r.userId);
-    }
-    const { roomUsers } = await import('../shared/sqlite-schema');
-    const { eq } = await import('drizzle-orm');
-    if (db && dbType !== 'disabled') {
-      const rows = await (db as any)
-        .select({ userId: (roomUsers as any).userId })
-        .from((roomUsers as any))
-        .where(eq((roomUsers as any).roomId, String(roomId) as any));
       return (rows || []).map((r: any) => r.userId);
     }
     return [];
@@ -260,15 +236,6 @@ export async function getUserRooms(userId: number): Promise<string[]> {
         .where(eq((roomMembers as any).userId, userId as any));
       return (rows || []).map((r: any) => String(r.roomId));
     }
-    const { roomUsers } = await import('../shared/sqlite-schema');
-    const { eq } = await import('drizzle-orm');
-    if (db && dbType !== 'disabled') {
-      const rows = await (db as any)
-        .select({ roomId: (roomUsers as any).roomId })
-        .from((roomUsers as any))
-        .where(eq((roomUsers as any).userId, userId as any));
-      return (rows || []).map((r: any) => String(r.roomId));
-    }
     return [];
   } catch (error) {
     console.error('Error getUserRooms:', error);
@@ -288,16 +255,6 @@ export async function isUserInRoom(userId: number, roomId: number | string): Pro
         .select({ uid: (roomMembers as any).userId })
         .from((roomMembers as any))
         .where(and(eq((roomMembers as any).userId, userId as any), eq((roomMembers as any).roomId, String(roomId) as any)))
-        .limit(1);
-      return Array.isArray(rows) && rows.length > 0;
-    }
-    const { roomUsers } = await import('../shared/sqlite-schema');
-    const { eq, and } = await import('drizzle-orm');
-    if (db && dbType !== 'disabled') {
-      const rows = await (db as any)
-        .select({ id: (roomUsers as any).id })
-        .from((roomUsers as any))
-        .where(and(eq((roomUsers as any).userId, userId as any), eq((roomUsers as any).roomId, String(roomId) as any)))
         .limit(1);
       return Array.isArray(rows) && rows.length > 0;
     }
@@ -617,23 +574,6 @@ export const storage: LegacyStorage = {
         }
         return users;
       }
-      const { roomUsers } = await import('../shared/sqlite-schema');
-      const { eq } = await import('drizzle-orm');
-      if (db && dbType !== 'disabled') {
-        const rows = await (db as any)
-          .select({ userId: (roomUsers as any).userId })
-          .from((roomUsers as any))
-          .where(eq((roomUsers as any).roomId, String(roomId) as any));
-        const userIds = (rows || []).map((r: any) => r.userId);
-        const users: any[] = [];
-        for (const id of userIds) {
-          const u = await databaseService.getUserById(id);
-          if (u && u.isOnline && !(u as any).isHidden) {
-            users.push(u as any);
-          }
-        }
-        return users;
-      }
       return [] as any[];
     } catch (error) {
       console.error('Error getOnlineUsersInRoom:', error);
@@ -643,282 +583,7 @@ export const storage: LegacyStorage = {
 
   // ========= Broadcast Room / Mic Management =========
   
-  // دوال مساعدة لتحليل JSON - لتجنب تكرار الكود
-  parseMicQueue(micQueueData: any): number[] {
-    if (!micQueueData) return [];
-    try {
-      return typeof micQueueData === 'string' ? JSON.parse(micQueueData) : micQueueData;
-    } catch (e) {
-      console.error('خطأ في تحليل قائمة انتظار المايك:', e);
-      return [];
-    }
-  },
-
-  parseSpeakers(speakersData: any): number[] {
-    if (!speakersData) return [];
-    try {
-      return typeof speakersData === 'string' ? JSON.parse(speakersData) : speakersData;
-    } catch (e) {
-      console.error('خطأ في تحليل قائمة المتحدثين:', e);
-      return [];
-    }
-  },
-
-  // تعيين/تحديث مضيف غرفة البث
-  async setRoomHost(roomId: string, hostId: number | null): Promise<boolean> {
-    try {
-      const { db, dbType } = await import('./database-adapter');
-      if (!db) return false;
-
-      if (dbType === 'postgresql') {
-        const { rooms } = await import('../shared/schema');
-        const { eq } = await import('drizzle-orm');
-        await (db as any).update(rooms).set({ hostId }).where(eq((rooms as any).id, roomId as any));
-      } else if (dbType === 'sqlite') {
-        (db as any).run?.("UPDATE rooms SET host_id = ? WHERE id = ?", [hostId, roomId]);
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error setting room host:', error);
-      return false;
-    }
-  },
-
-  // دالة مساعدة للتحقق من صحة غرفة البث - محدثة للسماح للمشرفين والإدمن
-  async validateBroadcastRoom(roomId: string, actionBy?: number) {
-    const status = databaseService.getStatus();
-    if (!status.connected) {
-      return { isValid: false, error: 'قاعدة البيانات غير متصلة' };
-    }
-    
-    // التحقق من وجود الغرفة وأنها غرفة بث
-    const room = await this.getRoom(roomId);
-    if (!room || !(room as any).isBroadcast) {
-      console.log(`Room ${roomId} is not a broadcast room`);
-      return { isValid: false, error: 'الغرفة ليست غرفة بث مباشر' };
-    }
-    
-    // التحقق من صلاحيات المستخدم إذا تم تمرير actionBy
-    if (actionBy !== undefined) {
-      const user = await this.getUser(actionBy);
-      if (!user) {
-        return { isValid: false, error: 'المستخدم غير موجود' };
-      }
-
-      // السماح للمضيف والمشرفين والإدمن بإدارة المايك
-      const isHost = (room as any).hostId === actionBy;
-      const isAdmin = user.userType === 'admin';
-      const isModerator = user.userType === 'moderator';
-      const isOwner = user.userType === 'owner';
-
-      if (!isHost && !isAdmin && !isModerator && !isOwner) {
-        console.log(`User ${actionBy} does not have permission to manage mic in room ${roomId}`);
-        return { isValid: false, error: 'المستخدم ليس لديه صلاحية لإدارة المايك في هذه الغرفة' };
-      }
-    }
-    
-    return { isValid: true, room };
-  },
-  
-  async requestMic(userId: number, roomId: string) {
-    try {
-      // استخدام الدالة المساعدة للتحقق
-      const validation = await this.validateBroadcastRoom(roomId);
-      if (!validation.isValid) {
-        return false;
-      }
-      
-      const room = validation.room;
-      
-      // التحقق من وجود المستخدم
-      const user = await databaseService.getUserById(userId);
-      if (!user) {
-        console.log(`User ${userId} not found`);
-        return false;
-      }
-      
-      // جلب قائمة الانتظار الحالية
-      let micQueue = this.parseMicQueue((room as any).micQueue ?? (room as any).mic_queue);
-      
-      // جلب قائمة المتحدثين الحالية
-      let speakers = this.parseSpeakers((room as any).speakers);
-      
-      // التحقق من أن المستخدم ليس مضيف أو متحدث أو في قائمة الانتظار
-      if ((room as any).hostId === userId) {
-        console.log(`User ${userId} is already the host`);
-        return false;
-      }
-      
-      if (speakers.includes(userId)) {
-        console.log(`User ${userId} is already a speaker`);
-        return false;
-      }
-      
-      if (micQueue.includes(userId)) {
-        console.log(`User ${userId} is already in mic queue`);
-        return false;
-      }
-      
-      // إضافة المستخدم لقائمة الانتظار
-      micQueue.push(userId);
-      
-      // تحديث قاعدة البيانات
-      const { db, dbType } = await import('./database-adapter');
-      if (db && dbType === 'postgresql') {
-        const { rooms } = await import('../shared/schema');
-        const { eq } = await import('drizzle-orm');
-        await (db as any).update(rooms).set({ micQueue: JSON.stringify(micQueue) }).where(eq((rooms as any).id, roomId as any));
-      } else if (db && dbType === 'sqlite') {
-        (db as any).run?.("UPDATE rooms SET mic_queue = ? WHERE id = ?", [JSON.stringify(micQueue), roomId]);
-      }
-      
-      console.log(`User ${userId} added to mic queue for room ${roomId}`);
-      return true;
-      
-    } catch (error) {
-      console.error('Error in requestMic:', error);
-      return false;
-    }
-  },
-
-  async approveMicRequest(roomId: string, userId: number, approvedBy: number) {
-    try {
-      // استخدام الدالة المساعدة للتحقق
-      const validation = await this.validateBroadcastRoom(roomId, approvedBy);
-      if (!validation.isValid) {
-        return false;
-      }
-      
-      const room = validation.room;
-      
-      // جلب قائمة الانتظار الحالية
-      let micQueue = this.parseMicQueue((room as any).micQueue ?? (room as any).mic_queue);
-      
-      // جلب قائمة المتحدثين الحالية
-      let speakers = this.parseSpeakers((room as any).speakers);
-      
-      // التحقق من وجود المستخدم في قائمة الانتظار
-      const queueIndex = micQueue.indexOf(userId);
-      if (queueIndex === -1) {
-        console.log(`User ${userId} is not in mic queue`);
-        return false;
-      }
-      
-      // إزالة المستخدم من قائمة الانتظار وإضافته للمتحدثين
-      micQueue.splice(queueIndex, 1);
-      if (!speakers.includes(userId)) {
-        speakers.push(userId);
-      }
-      
-      // تحديث قاعدة البيانات
-      const { db, dbType } = await import('./database-adapter');
-      if (db && dbType === 'postgresql') {
-        const { rooms } = await import('../shared/schema');
-        const { eq } = await import('drizzle-orm');
-        await (db as any).update(rooms).set({ micQueue: JSON.stringify(micQueue), speakers: JSON.stringify(speakers) }).where(eq((rooms as any).id, roomId as any));
-      } else if (db && dbType === 'sqlite') {
-        (db as any).run?.("UPDATE rooms SET mic_queue = ?, speakers = ? WHERE id = ?", [JSON.stringify(micQueue), JSON.stringify(speakers), roomId]);
-      }
-      
-      console.log(`User ${userId} approved as speaker in room ${roomId} by ${approvedBy}`);
-      return true;
-      
-    } catch (error) {
-      console.error('Error in approveMicRequest:', error);
-      return false;
-    }
-  },
-
-  async rejectMicRequest(roomId: string, userId: number, rejectedBy: number) {
-    try {
-      // استخدام الدالة المساعدة للتحقق
-      const validation = await this.validateBroadcastRoom(roomId, rejectedBy);
-      if (!validation.isValid) {
-        return false;
-      }
-      
-      const room = validation.room;
-      
-      // جلب قائمة الانتظار الحالية
-      let micQueue = this.parseMicQueue((room as any).micQueue ?? (room as any).mic_queue);
-      
-      // التحقق من وجود المستخدم في قائمة الانتظار
-      const queueIndex = micQueue.indexOf(userId);
-      if (queueIndex === -1) {
-        console.log(`User ${userId} is not in mic queue`);
-        return false;
-      }
-      
-      // إزالة المستخدم من قائمة الانتظار
-      micQueue.splice(queueIndex, 1);
-      
-      // تحديث قاعدة البيانات
-      const { db, dbType } = await import('./database-adapter');
-      if (db && dbType === 'postgresql') {
-        const { rooms } = await import('../shared/schema');
-        const { eq } = await import('drizzle-orm');
-        await (db as any).update(rooms).set({ micQueue: JSON.stringify(micQueue) }).where(eq((rooms as any).id, roomId as any));
-      } else if (db && dbType === 'sqlite') {
-        (db as any).run?.("UPDATE rooms SET mic_queue = ? WHERE id = ?", [JSON.stringify(micQueue), roomId]);
-      }
-      
-      console.log(`User ${userId} rejected from mic queue in room ${roomId} by ${rejectedBy}`);
-      return true;
-      
-    } catch (error) {
-      console.error('Error in rejectMicRequest:', error);
-      return false;
-    }
-  },
-
-  async removeSpeaker(roomId: string, userId: number, removedBy: number) {
-    try {
-      // استخدام الدالة المساعدة للتحقق
-      const validation = await this.validateBroadcastRoom(roomId, removedBy);
-      if (!validation.isValid) {
-        return false;
-      }
-      
-      const room = validation.room;
-      
-      // التحقق من أن المستخدم المراد إزالته ليس المضيف نفسه
-      if ((room as any).hostId === userId) {
-        console.log(`Cannot remove host ${userId} from speakers`);
-        return false;
-      }
-      
-      // جلب قائمة المتحدثين الحالية
-      let speakers = this.parseSpeakers((room as any).speakers);
-      
-      // التحقق من وجود المستخدم في قائمة المتحدثين
-      const speakerIndex = speakers.indexOf(userId);
-      if (speakerIndex === -1) {
-        console.log(`User ${userId} is not a speaker`);
-        return false;
-      }
-      
-      // إزالة المستخدم من قائمة المتحدثين
-      speakers.splice(speakerIndex, 1);
-      
-      // تحديث قاعدة البيانات
-      const { db, dbType } = await import('./database-adapter');
-      if (db && dbType === 'postgresql') {
-        const { rooms } = await import('../shared/schema');
-        const { eq } = await import('drizzle-orm');
-        await (db as any).update(rooms).set({ speakers: JSON.stringify(speakers) }).where(eq((rooms as any).id, roomId as any));
-      } else if (db && dbType === 'sqlite') {
-        (db as any).run?.("UPDATE rooms SET speakers = ? WHERE id = ?", [JSON.stringify(speakers), roomId]);
-      }
-      
-      console.log(`User ${userId} removed from speakers in room ${roomId} by ${removedBy}`);
-      return true;
-      
-    } catch (error) {
-      console.error('Error in removeSpeaker:', error);
-      return false;
-    }
-  },
+  // تمت إزالة التكرار هنا. انظر القسم الأعلى لتعريفات البث الموحدة.
 
   // Per-room moderation helpers (PostgreSQL only)
   async muteUserInRoom(roomId: string, targetUserId: number, minutes: number): Promise<boolean> {
@@ -1066,279 +731,69 @@ export const storage: LegacyStorage = {
 
   // ========= Broadcast Room / Mic Management =========
   
-  // دوال مساعدة لتحليل JSON - لتجنب تكرار الكود
-  parseMicQueue(micQueueData: any): number[] {
-    if (!micQueueData) return [];
-    try {
-      return typeof micQueueData === 'string' ? JSON.parse(micQueueData) : micQueueData;
-    } catch (e) {
-      console.error('خطأ في تحليل قائمة انتظار المايك:', e);
-      return [];
-    }
-  },
+  // تمت إزالة التكرار هنا. انظر القسم الأعلى لتعريفات البث الموحدة.
 
-  parseSpeakers(speakersData: any): number[] {
-    if (!speakersData) return [];
+  // ========= Broadcast Room helpers (queue/speakers) =========
+  async addToMicQueue(roomId: string, userId: number) {
     try {
-      return typeof speakersData === 'string' ? JSON.parse(speakersData) : speakersData;
-    } catch (e) {
-      console.error('خطأ في تحليل قائمة المتحدثين:', e);
-      return [];
-    }
-  },
-
-  // تعيين/تحديث مضيف غرفة البث
-  async setRoomHost(roomId: string, hostId: number | null): Promise<boolean> {
-    try {
+      const status = databaseService.getStatus();
+      if (!status.connected) return false;
       const { db, dbType } = await import('./database-adapter');
-      if (!db) return false;
-
       if (dbType === 'postgresql') {
         const { rooms } = await import('../shared/schema');
         const { eq } = await import('drizzle-orm');
-        await (db as any).update(rooms).set({ hostId }).where(eq((rooms as any).id, roomId as any));
-      } else if (dbType === 'sqlite') {
-        (db as any).run?.("UPDATE rooms SET host_id = ? WHERE id = ?", [hostId, roomId]);
+        // Read current queue
+        const rows = await (db as any).select({ micQueue: (rooms as any).micQueue }).from((rooms as any)).where(eq((rooms as any).id, roomId as any)).limit(1);
+        const current = rows?.[0]?.micQueue ? (typeof rows[0].micQueue === 'string' ? JSON.parse(rows[0].micQueue) : rows[0].micQueue) : [];
+        if (!current.includes(userId)) current.push(userId);
+        await (db as any).update(rooms).set({ micQueue: JSON.stringify(current) }).where(eq((rooms as any).id, roomId as any));
+        return true;
       }
-
-      return true;
+      return false;
     } catch (error) {
-      console.error('Error setting room host:', error);
+      console.error('Error addToMicQueue:', error);
       return false;
     }
   },
 
-  // دالة مساعدة للتحقق من صحة غرفة البث - محدثة للسماح للمشرفين والإدمن
-  async validateBroadcastRoom(roomId: string, actionBy?: number) {
-    const status = databaseService.getStatus();
-    if (!status.connected) {
-      return { isValid: false, error: 'قاعدة البيانات غير متصلة' };
-    }
-    
-    // التحقق من وجود الغرفة وأنها غرفة بث
-    const room = await this.getRoom(roomId);
-    if (!room || !(room as any).isBroadcast) {
-      console.log(`Room ${roomId} is not a broadcast room`);
-      return { isValid: false, error: 'الغرفة ليست غرفة بث مباشر' };
-    }
-    
-    // التحقق من صلاحيات المستخدم إذا تم تمرير actionBy
-    if (actionBy !== undefined) {
-      const user = await this.getUser(actionBy);
-      if (!user) {
-        return { isValid: false, error: 'المستخدم غير موجود' };
-      }
-
-      // السماح للمضيف والمشرفين والإدمن بإدارة المايك
-      const isHost = (room as any).hostId === actionBy;
-      const isAdmin = user.userType === 'admin';
-      const isModerator = user.userType === 'moderator';
-      const isOwner = user.userType === 'owner';
-
-      if (!isHost && !isAdmin && !isModerator && !isOwner) {
-        console.log(`User ${actionBy} does not have permission to manage mic in room ${roomId}`);
-        return { isValid: false, error: 'المستخدم ليس لديه صلاحية لإدارة المايك في هذه الغرفة' };
-      }
-    }
-    
-    return { isValid: true, room };
-  },
-  
-  async requestMic(userId: number, roomId: string) {
+  async removeFromMicQueue(roomId: string, userId: number) {
     try {
-      // استخدام الدالة المساعدة للتحقق
-      const validation = await this.validateBroadcastRoom(roomId);
-      if (!validation.isValid) {
-        return false;
-      }
-      
-      const room = validation.room;
-      
-      // التحقق من وجود المستخدم
-      const user = await databaseService.getUserById(userId);
-      if (!user) {
-        console.log(`User ${userId} not found`);
-        return false;
-      }
-      
-      // جلب قائمة الانتظار الحالية
-      let micQueue = this.parseMicQueue((room as any).micQueue ?? (room as any).mic_queue);
-      
-      // جلب قائمة المتحدثين الحالية
-      let speakers = this.parseSpeakers((room as any).speakers);
-      
-      // التحقق من أن المستخدم ليس مضيف أو متحدث أو في قائمة الانتظار
-      if ((room as any).hostId === userId) {
-        console.log(`User ${userId} is already the host`);
-        return false;
-      }
-      
-      if (speakers.includes(userId)) {
-        console.log(`User ${userId} is already a speaker`);
-        return false;
-      }
-      
-      if (micQueue.includes(userId)) {
-        console.log(`User ${userId} is already in mic queue`);
-        return false;
-      }
-      
-      // إضافة المستخدم لقائمة الانتظار
-      micQueue.push(userId);
-      
-      // تحديث قاعدة البيانات
+      const status = databaseService.getStatus();
+      if (!status.connected) return false;
       const { db, dbType } = await import('./database-adapter');
-      if (db && dbType === 'postgresql') {
+      if (dbType === 'postgresql') {
         const { rooms } = await import('../shared/schema');
         const { eq } = await import('drizzle-orm');
-        await (db as any).update(rooms).set({ micQueue: JSON.stringify(micQueue) }).where(eq((rooms as any).id, roomId as any));
-      } else if (db && dbType === 'sqlite') {
-        (db as any).run?.("UPDATE rooms SET mic_queue = ? WHERE id = ?", [JSON.stringify(micQueue), roomId]);
+        const rows = await (db as any).select({ micQueue: (rooms as any).micQueue }).from((rooms as any)).where(eq((rooms as any).id, roomId as any)).limit(1);
+        const current = rows?.[0]?.micQueue ? (typeof rows[0].micQueue === 'string' ? JSON.parse(rows[0].micQueue) : rows[0].micQueue) : [];
+        const next = current.filter((id: number) => id !== userId);
+        await (db as any).update(rooms).set({ micQueue: JSON.stringify(next) }).where(eq((rooms as any).id, roomId as any));
+        return true;
       }
-      
-      console.log(`User ${userId} added to mic queue for room ${roomId}`);
-      return true;
-      
+      return false;
     } catch (error) {
-      console.error('Error in requestMic:', error);
+      console.error('Error removeFromMicQueue:', error);
       return false;
     }
   },
 
-  async approveMicRequest(roomId: string, userId: number, approvedBy: number) {
+  async addSpeaker(roomId: string, userId: number) {
     try {
-      // استخدام الدالة المساعدة للتحقق
-      const validation = await this.validateBroadcastRoom(roomId, approvedBy);
-      if (!validation.isValid) {
-        return false;
-      }
-      
-      const room = validation.room;
-      
-      // جلب قائمة الانتظار الحالية
-      let micQueue = this.parseMicQueue((room as any).micQueue ?? (room as any).mic_queue);
-      
-      // جلب قائمة المتحدثين الحالية
-      let speakers = this.parseSpeakers((room as any).speakers);
-      
-      // التحقق من وجود المستخدم في قائمة الانتظار
-      const queueIndex = micQueue.indexOf(userId);
-      if (queueIndex === -1) {
-        console.log(`User ${userId} is not in mic queue`);
-        return false;
-      }
-      
-      // إزالة المستخدم من قائمة الانتظار وإضافته للمتحدثين
-      micQueue.splice(queueIndex, 1);
-      if (!speakers.includes(userId)) {
-        speakers.push(userId);
-      }
-      
-      // تحديث قاعدة البيانات
+      const status = databaseService.getStatus();
+      if (!status.connected) return false;
       const { db, dbType } = await import('./database-adapter');
-      if (db && dbType === 'postgresql') {
+      if (dbType === 'postgresql') {
         const { rooms } = await import('../shared/schema');
         const { eq } = await import('drizzle-orm');
-        await (db as any).update(rooms).set({ micQueue: JSON.stringify(micQueue), speakers: JSON.stringify(speakers) }).where(eq((rooms as any).id, roomId as any));
-      } else if (db && dbType === 'sqlite') {
-        (db as any).run?.("UPDATE rooms SET mic_queue = ?, speakers = ? WHERE id = ?", [JSON.stringify(micQueue), JSON.stringify(speakers), roomId]);
+        const rows = await (db as any).select({ speakers: (rooms as any).speakers }).from((rooms as any)).where(eq((rooms as any).id, roomId as any)).limit(1);
+        const current = rows?.[0]?.speakers ? (typeof rows[0].speakers === 'string' ? JSON.parse(rows[0].speakers) : rows[0].speakers) : [];
+        if (!current.includes(userId)) current.push(userId);
+        await (db as any).update(rooms).set({ speakers: JSON.stringify(current) }).where(eq((rooms as any).id, roomId as any));
+        return true;
       }
-      
-      console.log(`User ${userId} approved as speaker in room ${roomId} by ${approvedBy}`);
-      return true;
-      
-    } catch (error) {
-      console.error('Error in approveMicRequest:', error);
       return false;
-    }
-  },
-
-  async rejectMicRequest(roomId: string, userId: number, rejectedBy: number) {
-    try {
-      // استخدام الدالة المساعدة للتحقق
-      const validation = await this.validateBroadcastRoom(roomId, rejectedBy);
-      if (!validation.isValid) {
-        return false;
-      }
-      
-      const room = validation.room;
-      
-      // جلب قائمة الانتظار الحالية
-      let micQueue = this.parseMicQueue((room as any).micQueue ?? (room as any).mic_queue);
-      
-      // التحقق من وجود المستخدم في قائمة الانتظار
-      const queueIndex = micQueue.indexOf(userId);
-      if (queueIndex === -1) {
-        console.log(`User ${userId} is not in mic queue`);
-        return false;
-      }
-      
-      // إزالة المستخدم من قائمة الانتظار
-      micQueue.splice(queueIndex, 1);
-      
-      // تحديث قاعدة البيانات
-      const { db, dbType } = await import('./database-adapter');
-      if (db && dbType === 'postgresql') {
-        const { rooms } = await import('../shared/schema');
-        const { eq } = await import('drizzle-orm');
-        await (db as any).update(rooms).set({ micQueue: JSON.stringify(micQueue) }).where(eq((rooms as any).id, roomId as any));
-      } else if (db && dbType === 'sqlite') {
-        (db as any).run?.("UPDATE rooms SET mic_queue = ? WHERE id = ?", [JSON.stringify(micQueue), roomId]);
-      }
-      
-      console.log(`User ${userId} rejected from mic queue in room ${roomId} by ${rejectedBy}`);
-      return true;
-      
     } catch (error) {
-      console.error('Error in rejectMicRequest:', error);
-      return false;
-    }
-  },
-
-  async removeSpeaker(roomId: string, userId: number, removedBy: number) {
-    try {
-      // استخدام الدالة المساعدة للتحقق
-      const validation = await this.validateBroadcastRoom(roomId, removedBy);
-      if (!validation.isValid) {
-        return false;
-      }
-      
-      const room = validation.room;
-      
-      // التحقق من أن المستخدم المراد إزالته ليس المضيف نفسه
-      if ((room as any).hostId === userId) {
-        console.log(`Cannot remove host ${userId} from speakers`);
-        return false;
-      }
-      
-      // جلب قائمة المتحدثين الحالية
-      let speakers = this.parseSpeakers((room as any).speakers);
-      
-      // التحقق من وجود المستخدم في قائمة المتحدثين
-      const speakerIndex = speakers.indexOf(userId);
-      if (speakerIndex === -1) {
-        console.log(`User ${userId} is not a speaker`);
-        return false;
-      }
-      
-      // إزالة المستخدم من قائمة المتحدثين
-      speakers.splice(speakerIndex, 1);
-      
-      // تحديث قاعدة البيانات
-      const { db, dbType } = await import('./database-adapter');
-      if (db && dbType === 'postgresql') {
-        const { rooms } = await import('../shared/schema');
-        const { eq } = await import('drizzle-orm');
-        await (db as any).update(rooms).set({ speakers: JSON.stringify(speakers) }).where(eq((rooms as any).id, roomId as any));
-      } else if (db && dbType === 'sqlite') {
-        (db as any).run?.("UPDATE rooms SET speakers = ? WHERE id = ?", [JSON.stringify(speakers), roomId]);
-      }
-      
-      console.log(`User ${userId} removed from speakers in room ${roomId} by ${removedBy}`);
-      return true;
-      
-    } catch (error) {
-      console.error('Error in removeSpeaker:', error);
+      console.error('Error addSpeaker:', error);
       return false;
     }
   },

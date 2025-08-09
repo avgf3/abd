@@ -4,11 +4,11 @@ export function mapDbMessageToChatMessage(msg: any, fallbackRoomId?: string): Ch
   return {
     id: msg.id,
     content: msg.content,
-    timestamp: new Date(msg.timestamp),
+    timestamp: msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp ?? Date.now()),
     senderId: msg.senderId,
     sender: msg.sender,
     messageType: msg.messageType || 'text',
-    isPrivate: msg.isPrivate || false,
+    isPrivate: Boolean(msg.isPrivate),
     roomId: msg.roomId || fallbackRoomId,
   } as ChatMessage;
 }

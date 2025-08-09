@@ -82,7 +82,6 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
   const fetchRooms = useCallback(async (force: boolean = false): Promise<ChatRoom[]> => {
     // استخدام الذاكرة المؤقتة إذا كانت صالحة وليس إجبارياً
     if (!force && isCacheValid() && cacheRef.current) {
-      console.log('🎯 استخدام الغرف من الذاكرة المؤقتة');
       return cacheRef.current.data;
     }
 
@@ -98,7 +97,6 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       setLoading(true);
       setError(null);
 
-      console.log('🔄 جلب الغرف من الخادم...');
       const response = await apiRequest('/api/rooms', {
         method: 'GET',
         signal: abortControllerRef.current.signal
@@ -128,12 +126,10 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       setLastUpdate(new Date());
       setError(null);
 
-      console.log(`✅ تم جلب ${cacheRef.current.data.length} غرفة (بدون تكرار)`);
       return cacheRef.current.data;
 
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        console.log('🚫 تم إلغاء طلب جلب الغرف');
         return rooms; // إرجاع الغرف الحالية
       }
 
@@ -143,7 +139,6 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
 
       // استخدام الذاكرة المؤقتة في حالة الخطأ إذا كانت متوفرة
       if (cacheRef.current) {
-        console.log('🔄 استخدام الغرف من الذاكرة المؤقتة بعد الخطأ');
         setRooms(cacheRef.current.data);
         return cacheRef.current.data;
       }
@@ -213,7 +208,6 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       }
 
       setLastUpdate(new Date());
-      console.log(`✅ تم إنشاء الغرفة "${newRoom.name}" بنجاح`);
       return newRoom;
 
     } catch (err: any) {
@@ -251,7 +245,6 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       }
 
       setLastUpdate(new Date());
-      console.log(`🗑️ تم حذف الغرفة ${roomId} بنجاح`);
       return true;
 
     } catch (err: any) {
@@ -340,8 +333,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
   // مسح الذاكرة المؤقتة
   const clearCache = useCallback(() => {
     cacheRef.current = null;
-    console.log('🧹 تم مسح ذاكرة الغرف المؤقتة');
-  }, []);
+    }, []);
 
   // الحصول على إحصائيات الذاكرة المؤقتة
   const getCacheStats = useCallback(() => {

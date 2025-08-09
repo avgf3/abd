@@ -877,15 +877,15 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
-        const rows = await (this.db as any).execute(
-          `SELECT 1 FROM room_members rm JOIN rooms r ON r.id = rm.room_id AND (r.deleted_at IS NULL)
-           WHERE rm.room_id = $1 AND rm.user_id = $2
-             AND (rm.banned_until IS NULL OR rm.banned_until < now())
-             AND (rm.muted_until  IS NULL OR rm.muted_until  < now()) LIMIT 1`,
-          [roomId, userId]
-        );
-        const found = Array.isArray(rows) ? rows.length > 0 : (rows?.rowCount || 0) > 0;
-        return { allowed: found };
+        // Bind parameters correctly and return a count for robust checking
+        const result = await (this.db as any).execute(sql`SELECT count(*)::int AS c
+          FROM room_members rm
+          JOIN rooms r ON r.id = rm.room_id AND (r.deleted_at IS NULL)
+          WHERE rm.room_id = ${roomId} AND rm.user_id = ${userId}
+            AND (rm.banned_until IS NULL OR rm.banned_until < now())
+            AND (rm.muted_until  IS NULL OR rm.muted_until  < now())`);
+        const countVal = (result?.rows?.[0]?.c ?? result?.[0]?.c ?? 0) as number;
+        return { allowed: Number(countVal) > 0 };
       }
       // SQLite has no per-room moderation implemented
       return { allowed: true };
