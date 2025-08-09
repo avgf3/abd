@@ -1510,21 +1510,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // انتظار قصير للتأكد من تحديث قاعدة البيانات
         await new Promise(resolve => setTimeout(resolve, 200));
         
-        // جلب قائمة المستخدمين المتصلين فعلياً في هذه الغرفة
+        // جلب قائمة المستخدمين المتصلين فعلياً فقط من الذاكرة
         const roomUsers = Array.from(connectedUsers.values())
-          .filter(conn => conn.room === currentRoom)
+          .filter(conn => {
+            return conn.room === currentRoom && 
+                   conn.user && 
+                   conn.user.id && 
+                   conn.user.username &&
+                   conn.user.userType;
+          })
           .map(conn => conn.user);
         
-        // جلب المستخدمين من قاعدة البيانات أيضاً
-        const dbUsers = await storage.getOnlineUsersInRoom(currentRoom);
-        
-        // دمج القوائم وإزالة التكرارات
+        // استخدام المستخدمين من الذاكرة فقط (المتصلين فعلياً)
         const allUsers = [...roomUsers];
-        for (const dbUser of dbUsers) {
-          if (!allUsers.find(u => u.id === dbUser.id)) {
-            allUsers.push(dbUser);
-          }
-        }
         
         // إرسال تأكيد الانضمام مع قائمة المستخدمين
         socket.emit('message', {
@@ -2564,7 +2562,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('❌ خطأ في تنظيف الجلسات:', error);
     }
-  }, 120000); // كل دقيقتين بدلاً من 5 دقائق لتحسين التنظيف
+  }, 30000); // كل 30 ثانية لحل مشكلة المستخدمين المعلقين
 
   // بدء التنظيف الدوري لقاعدة البيانات
   const dbCleanupInterval = databaseCleanup.startPeriodicCleanup(6); // كل 6 ساعات
