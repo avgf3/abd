@@ -176,7 +176,8 @@ class RoomService {
         if (currentRoomId === roomId) {
           this.userRooms.set(uId, 'general');
         }
-          } catch (error) {
+      }
+    } catch (error) {
       console.error('خطأ في حذف الغرفة:', error);
       throw error;
     }
