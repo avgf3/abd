@@ -600,7 +600,7 @@ export class DatabaseService {
         return await (this.db as any)
           .select()
           .from(pgSchema.rooms)
-          .where(or(isNull(pgSchema.rooms.deletedAt), eq(pgSchema.rooms.deletedAt as any, null as any)))
+          .where(isNull(pgSchema.rooms.deletedAt))
           .orderBy(asc(pgSchema.rooms.name));
       } else {
         return await (this.db as any).select().from(sqliteSchema.rooms).orderBy(asc(sqliteSchema.rooms.name));
