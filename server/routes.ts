@@ -4566,20 +4566,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'لا يمكن طلب المايك في هذه الغرفة' });
       }
 
-      // إرسال إشعار للـ Host
+      // إرسال إشعار للـ Host وتحديث معلومات الغرفة
       const room = await storage.getRoom(roomId);
       const user = await storage.getUser(parseInt(userId));
-      if (room && user) {
-        io.emit('message', {
+      const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
+      
+      if (room && user && io) {
+        io.to(roomId).emit('message', {
           type: 'micRequest',
           roomId,
           requestUserId: parseInt(userId),
           username: user.username,
-          content: `${user.username} يطلب المايك`
+          content: `${user.username} يطلب المايك`,
+          broadcastInfo
         });
       }
 
-      res.json({ message: 'تم إرسال طلب المايك بنجاح' });
+      res.json({ message: 'تم إرسال طلب المايك بنجاح', broadcastInfo });
     } catch (error) {
       console.error('خطأ في طلب المايك:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
@@ -4601,22 +4604,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'لا يمكن الموافقة على طلب المايك' });
       }
 
-      // إرسال إشعار للجميع
+      // إرسال إشعار للجميع وتحديث معلومات الغرفة
       const user = await storage.getUser(parseInt(userId));
       const approver = await storage.getUser(parseInt(approvedBy));
-      if (user && approver) {
-        io.emit('message', {
+      const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
+      
+      if (user && approver && io) {
+        io.to(roomId).emit('message', {
           type: 'micApproved',
           roomId,
           requestUserId: parseInt(userId),
           approvedBy: parseInt(approvedBy),
           username: user.username,
           approverName: approver.username,
-          content: `${approver.username} وافق على طلب ${user.username} للمايك`
+          content: `${approver.username} وافق على طلب ${user.username} للمايك`,
+          broadcastInfo
         });
       }
 
-      res.json({ message: 'تم الموافقة على طلب المايك بنجاح' });
+      res.json({ message: 'تم الموافقة على طلب المايك بنجاح', broadcastInfo });
     } catch (error) {
       console.error('خطأ في الموافقة على طلب المايك:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
@@ -4638,22 +4644,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'لا يمكن رفض طلب المايك' });
       }
 
-      // إرسال إشعار للجميع
+      // إرسال إشعار للجميع وتحديث معلومات الغرفة
       const user = await storage.getUser(parseInt(userId));
       const rejecter = await storage.getUser(parseInt(rejectedBy));
-      if (user && rejecter) {
-        io.emit('message', {
+      const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
+      
+      if (user && rejecter && io) {
+        io.to(roomId).emit('message', {
           type: 'micRejected',
           roomId,
           requestUserId: parseInt(userId),
           rejectedBy: parseInt(rejectedBy),
           username: user.username,
           rejecterName: rejecter.username,
-          content: `${rejecter.username} رفض طلب ${user.username} للمايك`
+          content: `${rejecter.username} رفض طلب ${user.username} للمايك`,
+          broadcastInfo
         });
       }
 
-      res.json({ message: 'تم رفض طلب المايك بنجاح' });
+      res.json({ message: 'تم رفض طلب المايك بنجاح', broadcastInfo });
     } catch (error) {
       console.error('خطأ في رفض طلب المايك:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
@@ -4675,22 +4684,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'لا يمكن إزالة المتحدث' });
       }
 
-      // إرسال إشعار للجميع
+      // إرسال إشعار للجميع وتحديث معلومات الغرفة
       const user = await storage.getUser(parseInt(userId));
       const remover = await storage.getUser(parseInt(removedBy));
-      if (user && remover) {
-        io.emit('message', {
+      const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
+      
+      if (user && remover && io) {
+        io.to(roomId).emit('message', {
           type: 'speakerRemoved',
           roomId,
           requestUserId: parseInt(userId),
           removedBy: parseInt(removedBy),
           username: user.username,
           removerName: remover.username,
-          content: `${remover.username} أزال ${user.username} من المتحدثين`
+          content: `${remover.username} أزال ${user.username} من المتحدثين`,
+          broadcastInfo
         });
       }
 
-      res.json({ message: 'تم إزالة المتحدث بنجاح' });
+      res.json({ message: 'تم إزالة المتحدث بنجاح', broadcastInfo });
     } catch (error) {
       console.error('خطأ في إزالة المتحدث:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });

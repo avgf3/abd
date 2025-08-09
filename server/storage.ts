@@ -499,20 +499,57 @@ export const storage: LegacyStorage = {
   async getBroadcastRoomInfo(roomId: string) {
     try {
       const status = databaseService.getStatus();
-      if (!status.connected) return { room: null, participants: [], micQueue: [] };
+      if (!status.connected) {
+        return { 
+          hostId: null, 
+          speakers: [], 
+          micQueue: [] 
+        };
+      }
       
       const room = await this.getRoom(roomId);
-      if (!room) return { room: null, participants: [], micQueue: [] };
+      if (!room || !room.is_broadcast) {
+        return { 
+          hostId: null, 
+          speakers: [], 
+          micQueue: [] 
+        };
+      }
       
-      const participants = await getRoomUsers(roomId);
+      // جلب قائمة المتحدثين
+      let speakers: number[] = [];
+      if (room.speakers) {
+        try {
+          speakers = typeof room.speakers === 'string' ? 
+            JSON.parse(room.speakers) : room.speakers;
+        } catch (e) {
+          speakers = [];
+        }
+      }
+      
+      // جلب قائمة انتظار المايك
+      let micQueue: number[] = [];
+      if (room.mic_queue) {
+        try {
+          micQueue = typeof room.mic_queue === 'string' ? 
+            JSON.parse(room.mic_queue) : room.mic_queue;
+        } catch (e) {
+          micQueue = [];
+        }
+      }
+      
       return {
-        room,
-        participants: participants || [],
-        micQueue: [] // Placeholder for mic queue functionality
+        hostId: room.host_id,
+        speakers: speakers,
+        micQueue: micQueue
       };
     } catch (error) {
       console.error('Error getting broadcast room info:', error);
-      return { room: null, participants: [], micQueue: [] };
+      return { 
+        hostId: null, 
+        speakers: [], 
+        micQueue: [] 
+      };
     }
   },
 
@@ -656,6 +693,294 @@ export const storage: LegacyStorage = {
   },
   async updateUserLastDailyLogin(userId: number, today: string) {
     await databaseService.updateUserLastDailyLogin(userId, today);
+  },
+
+  // ========= Broadcast Room / Mic Management =========
+  
+  async requestMic(userId: number, roomId: string) {
+    try {
+      const status = databaseService.getStatus();
+      if (!status.connected) return false;
+      
+      // التحقق من وجود الغرفة وأنها غرفة بث
+      const room = await this.getRoom(roomId);
+      if (!room || !room.is_broadcast) {
+        console.log(`Room ${roomId} is not a broadcast room`);
+        return false;
+      }
+      
+      // التحقق من وجود المستخدم
+      const user = await databaseService.getUserById(userId);
+      if (!user) {
+        console.log(`User ${userId} not found`);
+        return false;
+      }
+      
+      // جلب قائمة الانتظار الحالية
+      let micQueue: number[] = [];
+      if (room.mic_queue) {
+        try {
+          micQueue = typeof room.mic_queue === 'string' ? 
+            JSON.parse(room.mic_queue) : room.mic_queue;
+        } catch (e) {
+          micQueue = [];
+        }
+      }
+      
+      // جلب قائمة المتحدثين الحالية
+      let speakers: number[] = [];
+      if (room.speakers) {
+        try {
+          speakers = typeof room.speakers === 'string' ? 
+            JSON.parse(room.speakers) : room.speakers;
+        } catch (e) {
+          speakers = [];
+        }
+      }
+      
+      // التحقق من أن المستخدم ليس مضيف أو متحدث أو في قائمة الانتظار
+      if (room.host_id === userId) {
+        console.log(`User ${userId} is already the host`);
+        return false;
+      }
+      
+      if (speakers.includes(userId)) {
+        console.log(`User ${userId} is already a speaker`);
+        return false;
+      }
+      
+      if (micQueue.includes(userId)) {
+        console.log(`User ${userId} is already in mic queue`);
+        return false;
+      }
+      
+      // إضافة المستخدم لقائمة الانتظار
+      micQueue.push(userId);
+      
+      // تحديث قاعدة البيانات
+      if (status.usingPostgres) {
+        await db.update(rooms).set({
+          mic_queue: JSON.stringify(micQueue)
+        }).where(eq(rooms.id, roomId));
+      } else {
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          const stmt = sqliteDb.prepare(`UPDATE rooms SET mic_queue = ? WHERE id = ?`);
+          stmt.run(JSON.stringify(micQueue), roomId);
+        }
+      }
+      
+      console.log(`User ${userId} added to mic queue for room ${roomId}`);
+      return true;
+      
+    } catch (error) {
+      console.error('Error in requestMic:', error);
+      return false;
+    }
+  },
+
+  async approveMicRequest(roomId: string, userId: number, approvedBy: number) {
+    try {
+      const status = databaseService.getStatus();
+      if (!status.connected) return false;
+      
+      // التحقق من وجود الغرفة وأنها غرفة بث
+      const room = await this.getRoom(roomId);
+      if (!room || !room.is_broadcast) {
+        console.log(`Room ${roomId} is not a broadcast room`);
+        return false;
+      }
+      
+      // التحقق من صلاحيات الموافق (يجب أن يكون المضيف)
+      if (room.host_id !== approvedBy) {
+        console.log(`User ${approvedBy} is not authorized to approve mic requests`);
+        return false;
+      }
+      
+      // جلب قائمة الانتظار الحالية
+      let micQueue: number[] = [];
+      if (room.mic_queue) {
+        try {
+          micQueue = typeof room.mic_queue === 'string' ? 
+            JSON.parse(room.mic_queue) : room.mic_queue;
+        } catch (e) {
+          micQueue = [];
+        }
+      }
+      
+      // جلب قائمة المتحدثين الحالية
+      let speakers: number[] = [];
+      if (room.speakers) {
+        try {
+          speakers = typeof room.speakers === 'string' ? 
+            JSON.parse(room.speakers) : room.speakers;
+        } catch (e) {
+          speakers = [];
+        }
+      }
+      
+      // التحقق من وجود المستخدم في قائمة الانتظار
+      const queueIndex = micQueue.indexOf(userId);
+      if (queueIndex === -1) {
+        console.log(`User ${userId} is not in mic queue`);
+        return false;
+      }
+      
+      // إزالة المستخدم من قائمة الانتظار وإضافته للمتحدثين
+      micQueue.splice(queueIndex, 1);
+      if (!speakers.includes(userId)) {
+        speakers.push(userId);
+      }
+      
+      // تحديث قاعدة البيانات
+      if (status.usingPostgres) {
+        await db.update(rooms).set({
+          mic_queue: JSON.stringify(micQueue),
+          speakers: JSON.stringify(speakers)
+        }).where(eq(rooms.id, roomId));
+      } else {
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          const stmt = sqliteDb.prepare(`UPDATE rooms SET mic_queue = ?, speakers = ? WHERE id = ?`);
+          stmt.run(JSON.stringify(micQueue), JSON.stringify(speakers), roomId);
+        }
+      }
+      
+      console.log(`User ${userId} approved as speaker in room ${roomId} by ${approvedBy}`);
+      return true;
+      
+    } catch (error) {
+      console.error('Error in approveMicRequest:', error);
+      return false;
+    }
+  },
+
+  async rejectMicRequest(roomId: string, userId: number, rejectedBy: number) {
+    try {
+      const status = databaseService.getStatus();
+      if (!status.connected) return false;
+      
+      // التحقق من وجود الغرفة وأنها غرفة بث
+      const room = await this.getRoom(roomId);
+      if (!room || !room.is_broadcast) {
+        console.log(`Room ${roomId} is not a broadcast room`);
+        return false;
+      }
+      
+      // التحقق من صلاحيات الرافض (يجب أن يكون المضيف)
+      if (room.host_id !== rejectedBy) {
+        console.log(`User ${rejectedBy} is not authorized to reject mic requests`);
+        return false;
+      }
+      
+      // جلب قائمة الانتظار الحالية
+      let micQueue: number[] = [];
+      if (room.mic_queue) {
+        try {
+          micQueue = typeof room.mic_queue === 'string' ? 
+            JSON.parse(room.mic_queue) : room.mic_queue;
+        } catch (e) {
+          micQueue = [];
+        }
+      }
+      
+      // التحقق من وجود المستخدم في قائمة الانتظار
+      const queueIndex = micQueue.indexOf(userId);
+      if (queueIndex === -1) {
+        console.log(`User ${userId} is not in mic queue`);
+        return false;
+      }
+      
+      // إزالة المستخدم من قائمة الانتظار
+      micQueue.splice(queueIndex, 1);
+      
+      // تحديث قاعدة البيانات
+      if (status.usingPostgres) {
+        await db.update(rooms).set({
+          mic_queue: JSON.stringify(micQueue)
+        }).where(eq(rooms.id, roomId));
+      } else {
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          const stmt = sqliteDb.prepare(`UPDATE rooms SET mic_queue = ? WHERE id = ?`);
+          stmt.run(JSON.stringify(micQueue), roomId);
+        }
+      }
+      
+      console.log(`User ${userId} rejected from mic queue in room ${roomId} by ${rejectedBy}`);
+      return true;
+      
+    } catch (error) {
+      console.error('Error in rejectMicRequest:', error);
+      return false;
+    }
+  },
+
+  async removeSpeaker(roomId: string, userId: number, removedBy: number) {
+    try {
+      const status = databaseService.getStatus();
+      if (!status.connected) return false;
+      
+      // التحقق من وجود الغرفة وأنها غرفة بث
+      const room = await this.getRoom(roomId);
+      if (!room || !room.is_broadcast) {
+        console.log(`Room ${roomId} is not a broadcast room`);
+        return false;
+      }
+      
+      // التحقق من صلاحيات المزيل (يجب أن يكون المضيف)
+      if (room.host_id !== removedBy) {
+        console.log(`User ${removedBy} is not authorized to remove speakers`);
+        return false;
+      }
+      
+      // التحقق من أن المستخدم المراد إزالته ليس المضيف نفسه
+      if (room.host_id === userId) {
+        console.log(`Cannot remove host ${userId} from speakers`);
+        return false;
+      }
+      
+      // جلب قائمة المتحدثين الحالية
+      let speakers: number[] = [];
+      if (room.speakers) {
+        try {
+          speakers = typeof room.speakers === 'string' ? 
+            JSON.parse(room.speakers) : room.speakers;
+        } catch (e) {
+          speakers = [];
+        }
+      }
+      
+      // التحقق من وجود المستخدم في قائمة المتحدثين
+      const speakerIndex = speakers.indexOf(userId);
+      if (speakerIndex === -1) {
+        console.log(`User ${userId} is not a speaker`);
+        return false;
+      }
+      
+      // إزالة المستخدم من قائمة المتحدثين
+      speakers.splice(speakerIndex, 1);
+      
+      // تحديث قاعدة البيانات
+      if (status.usingPostgres) {
+        await db.update(rooms).set({
+          speakers: JSON.stringify(speakers)
+        }).where(eq(rooms.id, roomId));
+      } else {
+        const sqliteDb = getDirectSqliteConnection();
+        if (sqliteDb) {
+          const stmt = sqliteDb.prepare(`UPDATE rooms SET speakers = ? WHERE id = ?`);
+          stmt.run(JSON.stringify(speakers), roomId);
+        }
+      }
+      
+      console.log(`User ${userId} removed from speakers in room ${roomId} by ${removedBy}`);
+      return true;
+      
+    } catch (error) {
+      console.error('Error in removeSpeaker:', error);
+      return false;
+    }
   }
 };
 
