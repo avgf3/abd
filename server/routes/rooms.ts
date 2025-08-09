@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { roomService } from '../services/roomService';
+import { connectionManager } from '../services/connectionManager';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -216,11 +217,11 @@ router.post('/:roomId/join', async (req, res) => {
         timestamp: new Date().toISOString()
       });
       
-      // 🔢 تحديث عدد المستخدمين بشكل محسن
+      // 🔢 تحديث عدد المستخدمين من مدير الاتصالات
       try {
-        const userCount = await roomService.updateRoomUserCount(roomId);
-        io.emit('roomUserCountUpdated', { roomId, userCount });
-        console.log(`✅ تم تحديث عدد مستخدمي الغرفة ${roomId}: ${userCount}`);
+        const roomStats = connectionManager.getRoomStats(roomId);
+        io.emit('roomUserCountUpdated', { roomId, userCount: roomStats.userCount });
+        console.log(`✅ تم تحديث عدد مستخدمي الغرفة ${roomId}: ${roomStats.userCount}`);
       } catch (countError) {
         console.warn('⚠️ خطأ في تحديث عدد المستخدمين:', countError);
       }
@@ -274,11 +275,11 @@ router.post('/:roomId/leave', async (req, res) => {
         timestamp: new Date().toISOString()
       });
       
-      // 🔢 تحديث عدد المستخدمين بشكل محسن
+      // 🔢 تحديث عدد المستخدمين من مدير الاتصالات
       try {
-        const userCount = await roomService.updateRoomUserCount(roomId);
-        io.emit('roomUserCountUpdated', { roomId, userCount });
-        console.log(`✅ تم تحديث عدد مستخدمي الغرفة ${roomId}: ${userCount}`);
+        const roomStats = connectionManager.getRoomStats(roomId);
+        io.emit('roomUserCountUpdated', { roomId, userCount: roomStats.userCount });
+        console.log(`✅ تم تحديث عدد مستخدمي الغرفة ${roomId}: ${roomStats.userCount}`);
       } catch (countError) {
         console.warn('⚠️ خطأ في تحديث عدد المستخدمين:', countError);
       }

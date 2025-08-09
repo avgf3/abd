@@ -28,6 +28,7 @@ import bcrypt from "bcrypt";
 import sharp from "sharp";
 // import { trackClick } from "./middleware/analytics"; // commented out as file doesn't exist
 import { enhancedModerationSystem as enhancedModeration } from "./enhanced-moderation";
+import { connectionManager, type ConnectedUser } from "./services/connectionManager";
 
 // إعداد multer موحد لرفع الصور
 const createMulterConfig = (destination: string, prefix: string, maxSize: number = 5 * 1024 * 1024) => {
@@ -87,18 +88,23 @@ const wallUpload = multer({
 
 const bannerUpload = createMulterConfig('banners', 'banner', 8 * 1024 * 1024);
 
-// تتبع المستخدمين المتصلين حقاً عبر Socket
-const connectedUsers = new Map<number, {
-  user: any,
-  socketId: string,
-  room: string,
-  lastSeen: Date
-}>();
+// ⚠️ تم استبدال connectedUsers بـ connectionManager الموحد
+// const connectedUsers = new Map<number, {
+//   user: any,
+//   socketId: string,
+//   room: string,
+//   lastSeen: Date
+// }>();
 
 // Storage initialization - using imported storage instance
   
 // I/O interface
 let io: IOServer;
+
+// 🧹 تنظيف دوري لمدير الاتصالات (كل 5 دقائق)
+setInterval(() => {
+  connectionManager.cleanup();
+}, 5 * 60 * 1000);
 
 // تعريف Socket مخصص للطباعة
 interface CustomSocket extends Socket {
@@ -115,19 +121,19 @@ function broadcast(message: any) {
   }
 }
 
-// الدالة الموحدة الوحيدة لإرسال قائمة المستخدمين المتصلين
+// الدالة الموحدة لإرسال قائمة المستخدمين المتصلين (محدثة لاستخدام connectionManager)
 function sendRoomUsers(roomId: string) {
-  const roomUsers = Array.from(connectedUsers.values())
-    .filter(conn => conn.room === roomId && 
-                   conn.user && 
-                   conn.user.id && 
-                   conn.user.username && 
-                   conn.user.userType)
-    .map(conn => conn.user);
+  const roomUsers = connectionManager.getRoomUsers(roomId);
+  const userList = roomUsers.map(user => ({
+    id: user.id,
+    username: user.username,
+    userType: user.userType,
+    isOnline: user.isOnline
+  }));
     
   io.to(`room_${roomId}`).emit('message', {
     type: 'onlineUsers',
-    users: roomUsers,
+    users: userList,
     roomId: roomId
   });
 }
@@ -1493,12 +1499,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // بدء heartbeat
         startHeartbeat();
         
-        // إضافة المستخدم لقائمة المتصلين الفعليين
-        connectedUsers.set(user.id, {
-          user: user,
-          socketId: socket.id,
-          room: 'general', // البدء بالغرفة العامة دائماً
-          lastSeen: new Date()
+        // إضافة المستخدم باستخدام مدير الاتصالات الموحد
+        await connectionManager.addUser(socket, {
+          id: user.id,
+          username: user.username,
+          userType: user.userType
         });
         // تحديث حالة المستخدم إلى متصل
         try {
@@ -1541,10 +1546,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // انتظار قصير للتأكد من تحديث قاعدة البيانات
         await new Promise(resolve => setTimeout(resolve, 200));
         
-        // جلب قائمة المستخدمين المتصلين فعلياً في هذه الغرفة من الذاكرة فقط
-        const roomUsers = Array.from(connectedUsers.values())
-          .filter(conn => conn.room === currentRoom)
-          .map(conn => conn.user);
+        // جلب قائمة المستخدمين المتصلين فعلياً في هذه الغرفة من مدير الاتصالات
+        const roomUsers = connectionManager.getRoomUsers(currentRoom).map(user => ({
+          id: user.id,
+          username: user.username,
+          userType: user.userType,
+          isOnline: user.isOnline
+        }));
         
         // إرسال تأكيد الانضمام مع قائمة المستخدمين
         // تم الانضمام للغرفة العامة عبر handleRoomJoin؛ لا حاجة لإرسال أحداث مكررة هنا
@@ -2016,7 +2024,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-    // دالة مساعدة للانضمام للغرفة
+    // دالة مساعدة للانضمام للغرفة (محدثة لاستخدام مدير الاتصالات)
     async function handleRoomJoin(socket: CustomSocket, userId: number, username: string, roomId: string) {
       try {
         // الانضمام للغرفة في Socket.IO
@@ -2025,16 +2033,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // حفظ الغرفة الحالية في الـ socket
         (socket as any).currentRoom = roomId;
         
-        // حفظ في قاعدة البيانات (مرة واحدة فقط)
-        await roomService.joinRoom(userId, roomId);
+        // 🎯 استخدام مدير الاتصالات الموحد للانضمام
+        const joinResult = await connectionManager.joinRoom(userId, roomId);
         
-        // تحديث الغرفة في قائمة المتصلين الفعليين
-        if (connectedUsers.has(userId)) {
-          const userConnection = connectedUsers.get(userId)!;
-          userConnection.room = roomId;
-          userConnection.lastSeen = new Date();
-          connectedUsers.set(userId, userConnection);
-        }
+        // 💾 حفظ في قاعدة البيانات أيضاً (للبقاء متزامناً مع قاعدة البيانات)
+        await roomService.joinRoom(userId, roomId);
         
         // إدارة غرف البث - تعيين مضيف إذا لم يكن موجود
         await handleBroadcastHostAssignment(roomId, userId);
@@ -2042,10 +2045,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // انتظار قصير للتأكد من التحديث
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        // جلب قائمة المستخدمين المتصلين في الغرفة الجديدة من الذاكرة فقط
-        const roomUsers = Array.from(connectedUsers.values())
-          .filter(conn => conn.room === roomId)
-          .map(conn => conn.user);
+        // 📋 جلب قائمة المستخدمين من مدير الاتصالات الموحد
+        const roomUsers = joinResult.roomUsers.map(user => ({
+          id: user.id,
+          username: user.username,
+          userType: user.userType,
+          isOnline: user.isOnline
+        }));
         
         // إرسال تأكيد الانضمام مع قائمة المستخدمين
         socket.emit('message', {
@@ -2064,6 +2070,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // إرسال قائمة محدثة للمستخدمين في الغرفة
         sendRoomUsers(roomId);
+        
+        // 🔢 تحديث عداد المستخدمين فوراً من مدير الاتصالات
+        try {
+          const roomStats = connectionManager.getRoomStats(roomId);
+          io.to(`room_${roomId}`).emit('roomUserCountUpdated', { 
+            roomId, 
+            userCount: roomStats.userCount 
+          });
+          console.log(`✅ تم تحديث عدد مستخدمي الغرفة ${roomId}: ${roomStats.userCount}`);
+        } catch (countError) {
+          console.warn('⚠️ خطأ في تحديث عدد المستخدمين:', countError);
+        }
         
         // إرسال رسالة ترحيب واحدة فقط
         const welcomeMessage = {
@@ -2095,13 +2113,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
 
-    // دالة مساعدة لمغادرة الغرفة
+    // دالة مساعدة لمغادرة الغرفة (محدثة لاستخدام مدير الاتصالات)
     async function handleRoomLeave(socket: CustomSocket, userId: number, username: string, roomId: string, sendConfirmation = true) {
       try {
         // المغادرة من الغرفة في Socket.IO
         socket.leave(`room_${roomId}`);
         
-        // حذف من قاعدة البيانات (مرة واحدة فقط)
+        // 🎯 استخدام مدير الاتصالات الموحد للمغادرة
+        const leaveResult = await connectionManager.leaveRoom(userId, roomId);
+        
+        // 💾 حذف من قاعدة البيانات أيضاً (للبقاء متزامناً مع قاعدة البيانات)
         await roomService.leaveRoom(userId, roomId);
         
         // إدارة غرف البث - إعادة تعيين المضيف إذا لزم الأمر
@@ -2147,6 +2168,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // إرسال قائمة محدثة للمستخدمين المتبقين في الغرفة
         sendRoomUsers(roomId);
+        
+        // 🔢 تحديث عداد المستخدمين فوراً من مدير الاتصالات
+        try {
+          io.to(`room_${roomId}`).emit('roomUserCountUpdated', { 
+            roomId, 
+            userCount: leaveResult.userCount 
+          });
+          console.log(`✅ تم تحديث عدد مستخدمي الغرفة ${roomId}: ${leaveResult.userCount}`);
+        } catch (countError) {
+          console.warn('⚠️ خطأ في تحديث عدد المستخدمين:', countError);
+        }
         
       } catch (error) {
         console.error('خطأ في handleRoomLeave:', error);
@@ -2272,33 +2304,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
            const userId = customSocket.userId;
            const username = customSocket.username;
            
-           // 1. إزالة المستخدم من قائمة المتصلين الفعليين فوراً
-           connectedUsers.delete(userId);
+           // 1. 🎯 إزالة المستخدم من جميع الغرف باستخدام مدير الاتصالات
+           const affectedRooms = await connectionManager.removeUserFromAllRooms(userId);
            
            // 2. تحديث حالة المستخدم في قاعدة البيانات
            await storage.setUserOnlineStatus(userId, false);
            
-           // 3. معالجة مغادرة الغرفة باستخدام الدالة المساعدة
-           if (currentRoom) {
-             await handleRoomLeave(socket, userId, username, currentRoom, false);
+           // 3. معالجة إزالة المستخدم من قاعدة البيانات أيضاً
+           for (const roomId of affectedRooms) {
+             try {
+               await roomService.leaveRoom(userId, roomId);
+             } catch (error) {
+               console.warn(`⚠️ خطأ في إزالة المستخدم ${userId} من قاعدة بيانات الغرفة ${roomId}:`, error);
+             }
            }
            
            // 4. إزالة المستخدم من جميع الغرف في Socket.IO
            socket.leave(userId.toString());
            
-           // 5. إشعار فوري لجميع المستخدمين في الغرفة (مرة واحدة فقط)
-           if (currentRoom) {
-             io.to(`room_${currentRoom}`).emit('message', {
+           // 5. إشعار فوري لجميع الغرف المتأثرة
+           for (const roomId of affectedRooms) {
+             io.to(`room_${roomId}`).emit('message', {
                type: 'userDisconnected',
                userId: userId,
                username: username,
-               roomId: currentRoom,
+               roomId: roomId,
                timestamp: new Date().toISOString()
              });
              
-             // إرسال قائمة محدثة بعد انتظار قصير
+             // إرسال قائمة محدثة وعداد المستخدمين
              setTimeout(() => {
-               sendRoomUsers(currentRoom);
+               sendRoomUsers(roomId);
+               const roomStats = connectionManager.getRoomStats(roomId);
+               io.to(`room_${roomId}`).emit('roomUserCountUpdated', { 
+                 roomId, 
+                 userCount: roomStats.userCount 
+               });
              }, 100);
            }
            
