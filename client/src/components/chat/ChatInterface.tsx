@@ -24,13 +24,13 @@ import StealthModeToggle from './StealthModeToggle';
 import WelcomeNotification from './WelcomeNotification';
 import ThemeSelector from './ThemeSelector';
 import RoomComponent from './RoomComponent';
+import { useRoomManager } from '@/hooks/useRoomManager';
 
 import { Button } from '@/components/ui/button';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { useChat } from '@/hooks/useChat';
 import type { ChatUser, ChatRoom } from '@/types/chat';
-import { mapApiRooms, dedupeRooms } from '@/utils/roomUtils';
 
 interface ChatInterfaceProps {
   chat: ReturnType<typeof useChat>;
@@ -47,46 +47,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showAdminReports, setShowAdminReports] = useState(false);
   const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>('users'); // إظهار المستخدمين افتراضياً
   
-  // حالة الغرف
-  const [rooms, setRooms] = useState<ChatRoom[]>(() => []);
-  const [roomsLoading, setRoomsLoading] = useState(true);
-
-  // جلب الغرف من الخادم
-  const fetchRooms = async () => {
-    try {
-      setRoomsLoading(true);
-      
-      const data = await apiRequest('/api/rooms');
-      if (data.rooms && Array.isArray(data.rooms)) {
-        const mapped = mapApiRooms(data.rooms);
-        setRooms(mapped);
-      } else {
-        console.warn('⚠️ بيانات الغرف غير صحيحة:', data);
-        throw new Error('بيانات الغرف غير صحيحة');
-      }
-    } catch (error) {
-      console.error('❌ خطأ في جلب الغرف:', error);
-      // استخدام غرف افتراضية في حالة الخطأ (بدون غرفة بث افتراضية لمنع طلبات 502)
-      setRooms([
-        { id: 'general', name: 'الدردشة العامة', description: 'الغرفة الرئيسية للدردشة', isDefault: true, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] },
-        { id: 'music', name: 'أغاني وسهر', description: 'غرفة للموسيقى والترفيه', isDefault: false, createdBy: 1, createdAt: new Date(), isActive: true, userCount: 0, icon: '', isBroadcast: false, hostId: null, speakers: [], micQueue: [] }
-      ]);
-    } finally {
-      setRoomsLoading(false);
-    }
-  };
-
-  // 🚀 تحسين: جلب الغرف عند التحميل فقط
-  useEffect(() => {
-    fetchRooms();
-    
-    // 🚀 إزالة التحديث الدوري - سيتم التحديث عبر WebSocket events
-    // const interval = setInterval(() => {
-    //   fetchRooms();
-    // }, 30000);
-    
-    // return () => clearInterval(interval);
-  }, []);
+  // إدارة الغرف عبر hook موحّد
+  const {
+    rooms,
+    loading: roomsLoading,
+    fetchRooms,
+    addRoom: addRoomViaManager,
+    deleteRoom: deleteRoomViaManager
+  } = useRoomManager({ autoRefresh: false });
 
   // دوال إدارة الغرف
   const handleRoomChange = async (roomId: string) => {
@@ -100,65 +68,20 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   const handleAddRoom = async (roomData: { name: string; description: string; image: File | null }) => {
     if (!chat.currentUser) return;
-    
-    try {
-      const formData = new FormData();
-      formData.append('name', roomData.name);
-      formData.append('description', roomData.description);
-      formData.append('userId', chat.currentUser.id.toString());
-      if (roomData.image) {
-        formData.append('image', roomData.image);
-      }
-
-      const response = await fetch('/api/rooms', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const newRoom: ChatRoom = {
-          id: data.room.id,
-          name: data.room.name,
-          description: data.room.description || '',
-          isDefault: data.room.is_default || false,
-          createdBy: data.room.created_by,
-          createdAt: new Date(data.room.created_at),
-          isActive: data.room.is_active || true,
-          userCount: 0,
-          icon: data.room.icon || '',
-          isBroadcast: data.room.is_broadcast || false,
-          hostId: data.room.host_id || null,
-          speakers: data.room.speakers || [],
-          micQueue: data.room.mic_queue || []
-        };
-        setRooms(prev => dedupeRooms([...prev, newRoom]));
-        showSuccessToast(`تم إنشاء غرفة "${roomData.name}" بنجاح`, "تم إنشاء الغرفة");
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || 'خطأ في إنشاء الغرفة');
-      }
-    } catch (error) {
-      showErrorToast(error instanceof Error ? error.message : "حدث خطأ أثناء إنشاء الغرفة", "خطأ في إنشاء الغرفة");
+    const newRoom = await addRoomViaManager({ ...roomData }, chat.currentUser.id);
+    if (newRoom) {
+      showSuccessToast(`تم إنشاء غرفة "${roomData.name}" بنجاح`, 'تم إنشاء الغرفة');
     }
   };
 
   const handleDeleteRoom = async (roomId: string) => {
     if (!chat.currentUser) return;
-    
-    try {
-      await apiRequest(`/api/rooms/${roomId}`, {
-        method: 'DELETE',
-        body: { userId: chat.currentUser.id }
-      });
-
-      setRooms(prev => prev.filter(room => room.id !== roomId));
-      if (chat.currentRoomId === roomId) {
-        chat.joinRoom('general');
-      }
-      showSuccessToast("تم حذف الغرفة بنجاح", "تم حذف الغرفة");
-    } catch (error: any) {
-      showErrorToast(error?.message || "حدث خطأ أثناء حذف الغرفة", "خطأ في حذف الغرفة");
+    const ok = await deleteRoomViaManager(roomId, chat.currentUser.id);
+    if (ok) {
+      if (chat.currentRoomId === roomId) chat.joinRoom('general');
+      showSuccessToast('تم حذف الغرفة بنجاح', 'تم حذف الغرفة');
+    } else {
+      showErrorToast('حدث خطأ أثناء حذف الغرفة', 'خطأ في حذف الغرفة');
     }
   };
 
