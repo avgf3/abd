@@ -4,6 +4,7 @@ import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation, Noti
 import { globalNotificationManager, MessageCacheManager, NetworkOptimizer } from '@/lib/chatOptimization';
 import { chatAnalytics } from '@/lib/chatAnalytics';
 import { apiRequest } from '@/lib/queryClient';
+import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
 
 // Audio notification function
 const playNotificationSound = () => {
@@ -695,17 +696,7 @@ export function useChat() {
     try {
       const data = await apiRequest(`/api/messages/room/${roomId}?limit=50`);
       if ((data as any).messages && Array.isArray((data as any).messages)) {
-        // تحويل الرسائل إلى التنسيق المطلوب
-        const formattedMessages = (data as any).messages.map((msg: any) => ({
-          id: msg.id,
-          content: msg.content,
-          timestamp: new Date(msg.timestamp),
-          senderId: msg.senderId,
-          sender: msg.sender,
-          messageType: msg.messageType || 'text',
-          isPrivate: msg.isPrivate || false,
-          roomId: msg.roomId || roomId
-        }));
+        const formattedMessages = mapDbMessagesToChatMessages((data as any).messages, roomId);
         
         // إضافة الرسائل للغرفة
         dispatch({ 
@@ -816,17 +807,7 @@ export function useChat() {
       // تحميل رسائل الغرفة العامة
       const generalData = await apiRequest('/api/messages/room/general?limit=50');
       if ((generalData as any).messages && Array.isArray((generalData as any).messages)) {
-        // تحويل الرسائل إلى التنسيق المطلوب
-        const formattedMessages = (generalData as any).messages.map((msg: any) => ({
-          id: msg.id,
-          content: msg.content,
-          timestamp: new Date(msg.timestamp),
-          senderId: msg.senderId,
-          sender: msg.sender,
-          messageType: msg.messageType || 'text',
-          isPrivate: msg.isPrivate || false,
-          roomId: msg.roomId || 'general'
-        }));
+        const formattedMessages = mapDbMessagesToChatMessages((generalData as any).messages, 'general');
         
         // إضافة الرسائل للغرفة العامة
         dispatch({ 
