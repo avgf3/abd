@@ -67,7 +67,7 @@ export interface Notification {
   title: string;
   message: string;
   isRead: boolean;
-  data?: string;
+  data?: unknown;
   createdAt?: Date | string;
 }
 

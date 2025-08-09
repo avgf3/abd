@@ -118,8 +118,13 @@ function sendRoomUsers(roomId: string) {
     users: roomUsers,
     roomId: roomId
   });
-  
-  }
+}
+
+// بث تحديثات الغرف للمشتركين في الغرفة
+function broadcastRoomUpdate(roomId: string, updateType: string, payload: any): void {
+  if (!io) return;
+  io.to(`room_${roomId}`).emit('roomUpdate', { roomId, type: updateType, ...payload });
+}
 
 // إنشاء خدمات محسنة ومنظمة
 const authService = new (class AuthService {
@@ -1494,7 +1499,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // جلب غرف المستخدم وانضمام إليها
         try {
-          const userRooms = await storage.getUserRooms(user.id);
+          let userRooms: string[] = [];
+          try {
+            userRooms = await storage.getUserRooms(user.id);
+          } catch {}
           // التأكد من انضمام للغرفة العامة (مرة واحدة فقط)
           if (!userRooms.includes('general')) {
             await storage.joinRoom(user.id, 'general');
@@ -1509,7 +1517,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('خطأ في انضمام للغرف:', roomError);
           // انضمام للغرفة العامة على الأقل (مرة واحدة فقط)
           socket.join('room_general');
-          if (!userRooms.includes('general')) {
+          const roomsSafe = Array.isArray((globalThis as any).tmpUserRooms) ? (globalThis as any).tmpUserRooms as string[] : [];
+          if (!roomsSafe.includes('general')) {
             await storage.joinRoom(user.id, 'general');
           }
           (socket as any).currentRoom = 'general';

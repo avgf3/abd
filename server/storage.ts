@@ -349,7 +349,7 @@ interface LegacyStorage {
   createMessage: (message: any) => Promise<Message>;
   getPublicMessages: (limit?: number) => Promise<Message[]>;
   getPrivateMessages: (userId1: number, userId2: number, limit?: number) => Promise<Message[]>;
-  getRoomMessages: (roomId: string, limit?: number) => Promise<Message[]>;
+  getRoomMessages: (roomId: string, limit?: number, offset?: number) => Promise<Message[]>;
   addFriend: (userId: number, friendId: number) => Promise<Friend>;
   getFriends: (userId: number) => Promise<User[]>;
   createNotification: (notification: any) => Promise<Notification>;

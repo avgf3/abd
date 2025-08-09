@@ -89,7 +89,7 @@ class RoomMessageService {
         receiverId: message.receiverId,
         senderUsername: sender.username,
         senderUserType: sender.userType,
-        senderAvatar: sender.avatar
+        senderAvatar: (sender as any).profileImage || null
       };
 
       // إضافة الرسالة للذاكرة المؤقتة
@@ -158,7 +158,7 @@ class RoomMessageService {
             receiverId: msg.receiverId || null,
             senderUsername: sender?.username || 'مستخدم محذوف',
             senderUserType: sender?.userType || 'user',
-            senderAvatar: sender?.avatar || null
+            senderAvatar: (sender as any)?.profileImage || null
           };
           messages.push(roomMessage);
         } catch (err) {
@@ -285,7 +285,7 @@ class RoomMessageService {
             receiverId: msg.receiverId || null,
             senderUsername: sender?.username || 'مستخدم محذوف',
             senderUserType: sender?.userType || 'user',
-            senderAvatar: sender?.avatar || null
+            senderAvatar: (sender as any)?.profileImage || null
           };
           messages.push(roomMessage);
         } catch (err) {

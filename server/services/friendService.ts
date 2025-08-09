@@ -402,6 +402,28 @@ export class FriendService {
       return [];
     }
   }
+
+  // إضافة صداقة/تأكيدها بين مستخدمين
+  async addFriend(userId: number, friendId: number): Promise<Friend> {
+    const existing = await this.getFriendship(userId, friendId);
+    if (existing) {
+      if (existing.status !== 'accepted') {
+        const [updated] = await db
+          .update(friends)
+          .set({ status: 'accepted' })
+          .where(eq(friends.id, existing.id))
+          .returning();
+        return updated as Friend;
+      }
+      return existing;
+    }
+
+    const [created] = await db
+      .insert(friends)
+      .values({ userId, friendId, status: 'accepted' })
+      .returning();
+    return created as Friend;
+  }
 }
 
 // إنشاء مثيل واحد من الخدمة

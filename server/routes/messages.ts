@@ -210,17 +210,19 @@ router.get('/room/:roomId/search', async (req, res) => {
     const { roomId } = req.params;
     const { q: searchQuery, limit = 20, offset = 0 } = req.query;
 
+    const qStr = Array.isArray(searchQuery) ? (searchQuery[0] ?? '') : (searchQuery ?? '');
+
     if (!roomId?.trim()) {
       return res.status(400).json({ error: 'معرف الغرفة مطلوب' });
     }
 
-    if (!searchQuery?.trim()) {
+    if (typeof qStr !== 'string' || !qStr.trim()) {
       return res.status(400).json({ error: 'نص البحث مطلوب' });
     }
 
     const result = await roomMessageService.searchRoomMessages(
       roomId,
-      searchQuery as string,
+      qStr,
       parseInt(limit as string),
       parseInt(offset as string)
     );
@@ -228,7 +230,7 @@ router.get('/room/:roomId/search', async (req, res) => {
     res.json({
       success: true,
       roomId,
-      searchQuery,
+      searchQuery: qStr,
       ...result
     });
 
