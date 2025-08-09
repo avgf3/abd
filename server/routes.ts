@@ -1495,27 +1495,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // جلب غرف المستخدم وانضمام إليها
         try {
           const userRooms = await storage.getUserRooms(user.id);
-          // التأكد من انضمام للغرفة العامة
+          // التأكد من انضمام للغرفة العامة (مرة واحدة فقط)
           if (!userRooms.includes('general')) {
             await storage.joinRoom(user.id, 'general');
             userRooms.push('general');
           }
           
-          // الانضمام للغرفة العامة أولاً في Socket.IO
+          // الانضمام للغرفة العامة فقط في Socket.IO (إزالة التكرار)
           socket.join('room_general');
           (socket as any).currentRoom = 'general';
-          // انضمام للغرف الأخرى في Socket.IO
-          for (const roomId of userRooms) {
-            if (roomId !== 'general') {
-              socket.join(`room_${roomId}`);
-              }
-          }
           
           } catch (roomError) {
           console.error('خطأ في انضمام للغرف:', roomError);
-          // انضمام للغرفة العامة على الأقل
+          // انضمام للغرفة العامة على الأقل (مرة واحدة فقط)
           socket.join('room_general');
-          await storage.joinRoom(user.id, 'general');
+          if (!userRooms.includes('general')) {
+            await storage.joinRoom(user.id, 'general');
+          }
           (socket as any).currentRoom = 'general';
           
           // تحديث الغرفة في connectedUsers
@@ -2039,100 +2035,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
         
-        // مغادرة الغرفة السابقة إن وجدت
-        const previousRoom = (socket as any).currentRoom;
-        if (previousRoom && previousRoom !== roomId) {
-          socket.leave(`room_${previousRoom}`);
-          
-          // إرسال رسالة وداع في الغرفة السابقة
-          const goodbyeMessage = {
-            id: Date.now(),
-            senderId: -1,
-            content: `غادر ${username} الغرفة 👋`,
-            messageType: 'system',
-            isPrivate: false,
-            roomId: previousRoom,
-            timestamp: new Date(),
-            sender: {
-              id: -1,
-              username: 'النظام',
-              userType: 'moderator',
-              role: 'system',
-              level: 0,
-              points: 0,
-              achievements: [],
-              lastSeen: new Date(),
-              isOnline: true,
-              isBanned: false,
-              isActive: true,
-              currentRoom: '',
-              settings: {
-                theme: 'default',
-                language: 'ar',
-                notifications: true,
-                soundEnabled: true,
-                privateMessages: true
-              }
-            }
-          };
-          
-          socket.to(`room_${previousRoom}`).emit('message', {
-            type: 'newMessage',
-            message: goodbyeMessage
+        // التحقق من أن الغرفة المطلوبة مختلفة عن الحالية
+        const currentRoom = (socket as any).currentRoom;
+        if (currentRoom === roomId) {
+          // إرسال تأكيد أنه في الغرفة بالفعل
+          socket.emit('message', {
+            type: 'roomJoined',
+            roomId: roomId,
+            message: 'أنت موجود في هذه الغرفة بالفعل'
           });
-          
-          // إشعار المستخدمين في الغرفة السابقة
-          socket.to(`room_${previousRoom}`).emit('message', {
-            type: 'userLeftRoom',
-            username: username,
-            userId: userId,
-            roomId: previousRoom
-          });
-          
-          // إرسال قائمة محدثة للغرفة السابقة
-          
-          sendRoomUsers(previousRoom);
+          return;
         }
         
-        // الانضمام للغرفة الجديدة في Socket.IO
+        // مغادرة الغرفة السابقة إن وجدت
+        if (currentRoom && currentRoom !== roomId) {
+          await handleRoomLeave(socket, userId, username, currentRoom, false);
+        }
+        
+        // التحقق من وجود الغرفة المطلوبة
+        const targetRoom = await storage.getRoom(roomId);
+        if (!targetRoom) {
+          socket.emit('message', { type: 'error', message: 'الغرفة غير موجودة' });
+          return;
+        }
+        
+        // الانضمام للغرفة الجديدة
+        await handleRoomJoin(socket, userId, username, roomId);
+        
+      } catch (error) {
+        console.error('❌ خطأ في الانضمام للغرفة:', error);
+        socket.emit('message', { type: 'error', message: 'فشل الانضمام للغرفة' });
+      }
+    });
+
+    // دالة مساعدة للانضمام للغرفة
+    async function handleRoomJoin(socket: CustomSocket, userId: number, username: string, roomId: string) {
+      try {
+        // الانضمام للغرفة في Socket.IO
         socket.join(`room_${roomId}`);
         
         // حفظ الغرفة الحالية في الـ socket
         (socket as any).currentRoom = roomId;
         
-        // حفظ في قاعدة البيانات
+        // حفظ في قاعدة البيانات (مرة واحدة فقط)
         await storage.joinRoom(userId, roomId);
-        
-        // إذا كانت الغرفة غرفة بث والمضيف غير معين، عيّن أول إدمن/مشرف/مالك يدخل كمضيف
-        try {
-          const roomData = await storage.getRoom(roomId);
-          const isBroadcastRoom = (roomData as any)?.isBroadcast || (roomData as any)?.is_broadcast;
-          const currentHostId = (roomData as any)?.hostId ?? (roomData as any)?.host_id ?? null;
-          const privilegedRoles = ['owner', 'admin', 'moderator'];
-          if (isBroadcastRoom && (currentHostId == null)) {
-            // إذا المستخدم الحالي لديه صلاحية، عيّنه مباشرة
-            const userObj = (connectedUsers.get(userId) || {}).user;
-            if (userObj && privilegedRoles.includes(userObj.userType)) {
-              const ok = await storage.setRoomHost(roomId, userId);
-              if (ok) {
-                await broadcastRoomUpdate(roomId, 'hostChanged', { hostId: userId });
-              }
-            } else {
-              // وإلا ابحث عن أي مستخدم ذو صلاحية موجود حالياً في الغرفة وعيّنه
-              const candidate = Array.from(connectedUsers.values())
-                .filter(conn => conn.room === roomId && conn.user && privilegedRoles.includes(conn.user.userType))
-                .map(conn => conn.user)[0];
-              if (candidate) {
-                const ok = await storage.setRoomHost(roomId, candidate.id);
-                if (ok) {
-                  await broadcastRoomUpdate(roomId, 'hostChanged', { hostId: candidate.id });
-                }
-              }
-            }
-          }
-        } catch (e) {
-          console.warn('⚠️ Host auto-assign skipped:', e);
-        }
         
         // تحديث الغرفة في قائمة المتصلين الفعليين
         if (connectedUsers.has(userId)) {
@@ -2140,7 +2086,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userConnection.room = roomId;
           userConnection.lastSeen = new Date();
           connectedUsers.set(userId, userConnection);
-          }
+        }
+        
+        // إدارة غرف البث - تعيين مضيف إذا لم يكن موجود
+        await handleBroadcastHostAssignment(roomId, userId);
         
         // انتظار قصير للتأكد من التحديث
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -2157,7 +2106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           users: roomUsers
         });
         
-        // إشعار باقي المستخدمين في الغرفة
+        // إشعار باقي المستخدمين في الغرفة (مرة واحدة فقط)
         socket.to(`room_${roomId}`).emit('message', {
           type: 'userJoinedRoom',
           username: username,
@@ -2168,39 +2117,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إرسال قائمة محدثة للمستخدمين في الغرفة
         sendRoomUsers(roomId);
         
-        // إرسال رسالة ترحيب في الغرفة
+        // إرسال رسالة ترحيب واحدة فقط
         const welcomeMessage = {
           id: Date.now(),
-          senderId: -1, // معرف خاص للنظام
+          senderId: -1,
           content: `انضم ${username} إلى الغرفة 👋`,
           messageType: 'system',
           isPrivate: false,
           roomId: roomId,
           timestamp: new Date(),
-          sender: {
-            id: -1,
-            username: 'النظام',
-            userType: 'moderator',
-            role: 'system',
-            level: 0,
-            points: 0,
-            achievements: [],
-            lastSeen: new Date(),
-            isOnline: true,
-            isBanned: false,
-            isActive: true,
-            currentRoom: '',
-            settings: {
-              theme: 'default',
-              language: 'ar',
-              notifications: true,
-              soundEnabled: true,
-              privateMessages: true
-            }
-          }
+          sender: createSystemSender()
         };
         
-        io.to(`room_${roomId}`).emit('message', {
+        socket.to(`room_${roomId}`).emit('message', {
           type: 'newMessage',
           message: welcomeMessage
         });
@@ -2213,16 +2142,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
       } catch (error) {
-        console.error('❌ خطأ في الانضمام للغرفة:', error);
-        socket.emit('message', { type: 'error', message: 'فشل الانضمام للغرفة' });
+        console.error('خطأ في handleRoomJoin:', error);
+        throw error;
       }
-    });
+    }
 
-    // معالجة مغادرة الغرفة
+    // دالة مساعدة لمغادرة الغرفة
+    async function handleRoomLeave(socket: CustomSocket, userId: number, username: string, roomId: string, sendConfirmation = true) {
+      try {
+        // المغادرة من الغرفة في Socket.IO
+        socket.leave(`room_${roomId}`);
+        
+        // حذف من قاعدة البيانات (مرة واحدة فقط)
+        await storage.leaveRoom(userId, roomId);
+        
+        // إدارة غرف البث - إعادة تعيين المضيف إذا لزم الأمر
+        await handleBroadcastHostReassignment(roomId, userId);
+        
+        // مسح الغرفة الحالية من الـ socket إذا كانت نفس الغرفة
+        if ((socket as any).currentRoom === roomId) {
+          (socket as any).currentRoom = null;
+        }
+        
+        // إرسال تأكيد المغادرة إذا مطلوب
+        if (sendConfirmation) {
+          socket.emit('message', {
+            type: 'roomLeft',
+            roomId: roomId
+          });
+        }
+        
+        // إشعار باقي المستخدمين في الغرفة (مرة واحدة فقط)
+        socket.to(`room_${roomId}`).emit('message', {
+          type: 'userLeftRoom',
+          username: username,
+          userId: userId,
+          roomId: roomId
+        });
+        
+        // إرسال رسالة وداع واحدة فقط
+        const goodbyeMessage = {
+          id: Date.now(),
+          senderId: -1,
+          content: `غادر ${username} الغرفة 👋`,
+          messageType: 'system',
+          isPrivate: false,
+          roomId: roomId,
+          timestamp: new Date(),
+          sender: createSystemSender()
+        };
+        
+        socket.to(`room_${roomId}`).emit('message', {
+          type: 'newMessage',
+          message: goodbyeMessage
+        });
+        
+        // إرسال قائمة محدثة للمستخدمين المتبقين في الغرفة
+        sendRoomUsers(roomId);
+        
+      } catch (error) {
+        console.error('خطأ في handleRoomLeave:', error);
+        throw error;
+      }
+    }
+
+    // دالة مساعدة لإنشاء بيانات مرسل النظام
+    function createSystemSender() {
+      return {
+        id: -1,
+        username: 'النظام',
+        userType: 'moderator',
+        role: 'system',
+        level: 0,
+        points: 0,
+        achievements: [],
+        lastSeen: new Date(),
+        isOnline: true,
+        isBanned: false,
+        isActive: true,
+        currentRoom: '',
+        settings: {
+          theme: 'default',
+          language: 'ar',
+          notifications: true,
+          soundEnabled: true,
+          privateMessages: true
+        }
+      };
+    }
+
+    // دالة مساعدة لإدارة تعيين مضيف غرفة البث
+    async function handleBroadcastHostAssignment(roomId: string, userId: number) {
+      try {
+        const roomData = await storage.getRoom(roomId);
+        const isBroadcastRoom = (roomData as any)?.isBroadcast || (roomData as any)?.is_broadcast;
+        const currentHostId = (roomData as any)?.hostId ?? (roomData as any)?.host_id ?? null;
+        
+        if (isBroadcastRoom && (currentHostId == null)) {
+          const privilegedRoles = ['owner', 'admin', 'moderator'];
+          const userObj = (connectedUsers.get(userId) || {}).user;
+          
+          if (userObj && privilegedRoles.includes(userObj.userType)) {
+            const ok = await storage.setRoomHost(roomId, userId);
+            if (ok) {
+              await broadcastRoomUpdate(roomId, 'hostChanged', { hostId: userId });
+            }
+          } else {
+            // البحث عن مستخدم مؤهل آخر في الغرفة
+            const candidate = Array.from(connectedUsers.values())
+              .filter(conn => conn.room === roomId && conn.user && privilegedRoles.includes(conn.user.userType))
+              .map(conn => conn.user)[0];
+            
+            if (candidate) {
+              const ok = await storage.setRoomHost(roomId, candidate.id);
+              if (ok) {
+                await broadcastRoomUpdate(roomId, 'hostChanged', { hostId: candidate.id });
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ خطأ في تعيين مضيف البث:', error);
+      }
+    }
+
+    // دالة مساعدة لإعادة تعيين مضيف غرفة البث
+    async function handleBroadcastHostReassignment(roomId: string, leavingUserId: number) {
+      try {
+        const roomData = await storage.getRoom(roomId);
+        const isBroadcastRoom = (roomData as any)?.isBroadcast || (roomData as any)?.is_broadcast;
+        const currentHostId = (roomData as any)?.hostId ?? (roomData as any)?.host_id ?? null;
+        
+        if (isBroadcastRoom && currentHostId === leavingUserId) {
+          const privilegedRoles = ['owner', 'admin', 'moderator'];
+          const candidate = Array.from(connectedUsers.values())
+            .filter(conn => conn.room === roomId && conn.user && privilegedRoles.includes(conn.user.userType) && conn.user.id !== leavingUserId)
+            .map(conn => conn.user)[0];
+          
+          const newHostId = candidate ? candidate.id : null;
+          const ok = await storage.setRoomHost(roomId, newHostId);
+          
+          if (ok) {
+            await broadcastRoomUpdate(roomId, 'hostChanged', { hostId: newHostId });
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ خطأ في إعادة تعيين مضيف البث:', error);
+      }
+    }
+
+        // معالجة مغادرة الغرفة
     socket.on('leaveRoom', async (data) => {
       try {
         const { roomId } = data;
-        const userId = (socket as CustomSocket).userId; // استخدام userId من الجلسة
+        const userId = (socket as CustomSocket).userId;
         const username = (socket as CustomSocket).username;
         
         if (!userId) {
@@ -2230,54 +2303,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
         
-        // المغادرة من الغرفة في Socket.IO
-        socket.leave(`room_${roomId}`);
-        
-        // حذف من قاعدة البيانات
-        await storage.leaveRoom(userId, roomId);
-        
-        // إذا كانت غرفة بث وكان المغادر هو المضيف، أعِد التعيين لأقدم إدمن/مشرف/مالك متصل في الغرفة، أو أزل المضيف
-        try {
-          const roomData = await storage.getRoom(roomId);
-          const isBroadcastRoom = (roomData as any)?.isBroadcast || (roomData as any)?.is_broadcast;
-          const currentHostId = (roomData as any)?.hostId ?? (roomData as any)?.host_id ?? null;
-          if (isBroadcastRoom && currentHostId === userId) {
-            const privilegedRoles = ['owner', 'admin', 'moderator'];
-            const candidate = Array.from(connectedUsers.values())
-              .filter(conn => conn.room === roomId && conn.user && privilegedRoles.includes(conn.user.userType) && conn.user.id !== userId)
-              .map(conn => conn.user)[0];
-            const newHostId = candidate ? candidate.id : null;
-            const ok = await storage.setRoomHost(roomId, newHostId);
-            if (ok) {
-              await broadcastRoomUpdate(roomId, 'hostChanged', { hostId: newHostId });
-            }
-          }
-        } catch (e) {
-          console.warn('⚠️ Host reassignment on leave skipped:', e);
-        }
-        
-        // مسح الغرفة الحالية من الـ socket
-        if ((socket as any).currentRoom === roomId) {
-          (socket as any).currentRoom = null;
-        }
-        
-        // لا حاجة لجلب من قاعدة البيانات - sendRoomUsers ستتولى الأمر
-        
-        // إرسال تأكيد المغادرة
-        socket.emit('message', {
-          type: 'roomLeft',
-          roomId: roomId
-        });
-        
-        // إشعار باقي المستخدمين في الغرفة
-        socket.to(`room_${roomId}`).emit('message', {
-          type: 'userLeftRoom',
-          username: username,
-          roomId: roomId
-        });
-        
-        // إرسال قائمة محدثة للمستخدمين المتبقين في الغرفة
-        sendRoomUsers(roomId);
+        // استخدام الدالة المساعدة
+        await handleRoomLeave(socket, userId, username, roomId, true);
         
       } catch (error) {
         console.error('خطأ في مغادرة الغرفة:', error);
@@ -2285,69 +2312,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-    // معالج قطع الاتصال المحسن
-    socket.on('disconnect', async (reason) => {
-      // تنظيف جميع الموارد
-      cleanup();
-      
-      const customSocket = socket as CustomSocket;
-      if (customSocket.userId && isAuthenticated) {
-        try {
-          const currentRoom = (socket as any).currentRoom || 'general';
-          const userId = customSocket.userId;
-          const username = customSocket.username;
-          
-          // 1. إزالة المستخدم من قائمة المتصلين الفعليين فوراً
-          connectedUsers.delete(userId);
-          
-          // 2. تحديث حالة المستخدم في قاعدة البيانات
-          await storage.setUserOnlineStatus(userId, false);
-          
-          // 3. إزالة المستخدم من جميع الغرف في قاعدة البيانات
-          await storage.leaveRoom(userId, currentRoom);
-          
-          // إذا كانت غرفة بث وكان الخارج هو المضيف، إعادة التعيين كما في leaveRoom
-          try {
-            const roomData = await storage.getRoom(currentRoom);
-            const isBroadcastRoom = (roomData as any)?.isBroadcast || (roomData as any)?.is_broadcast;
-            const currentHostId = (roomData as any)?.hostId ?? (roomData as any)?.host_id ?? null;
-            if (isBroadcastRoom && currentHostId === userId) {
-              const privilegedRoles = ['owner', 'admin', 'moderator'];
-              const candidate = Array.from(connectedUsers.values())
-                .filter(conn => conn.room === currentRoom && conn.user && privilegedRoles.includes(conn.user.userType) && conn.user.id !== userId)
-                .map(conn => conn.user)[0];
-              const newHostId = candidate ? candidate.id : null;
-              const ok = await storage.setRoomHost(currentRoom, newHostId);
-              if (ok) {
-                await broadcastRoomUpdate(currentRoom, 'hostChanged', { hostId: newHostId });
-              }
-            }
-          } catch (e) {
-            console.warn('⚠️ Host reassignment on disconnect skipped:', e);
-          }
-          
-          // 4. إزالة المستخدم من جميع الغرف
-          socket.leave(userId.toString());
-          socket.leave(`room_${currentRoom}`);
-          
-          // 5. إشعار فوري لجميع المستخدمين في الغرفة
-          io.to(`room_${currentRoom}`).emit('message', {
-            type: 'userDisconnected',
-            userId: userId,
-            username: username,
-            roomId: currentRoom,
-            timestamp: new Date().toISOString()
-          });
-          
-          // 6. إرسال قائمة محدثة فوراً بعد الانقطاع
-          setTimeout(() => {
-            sendRoomUsers(currentRoom);
-          }, 50);
-          
-          // إشعار المستخدمين في الغرفة الحالية بخروج المستخدم
-          if (currentRoom) {
-            // إرسال رسالة وداع في الغرفة
-            const goodbyeMessage = {
+     // معالج قطع الاتصال المحسن
+     socket.on('disconnect', async (reason) => {
+       // تنظيف جميع الموارد
+       cleanup();
+       
+       const customSocket = socket as CustomSocket;
+       if (customSocket.userId && isAuthenticated) {
+         try {
+           const currentRoom = (socket as any).currentRoom || 'general';
+           const userId = customSocket.userId;
+           const username = customSocket.username;
+           
+           // 1. إزالة المستخدم من قائمة المتصلين الفعليين فوراً
+           connectedUsers.delete(userId);
+           
+           // 2. تحديث حالة المستخدم في قاعدة البيانات
+           await storage.setUserOnlineStatus(userId, false);
+           
+           // 3. معالجة مغادرة الغرفة باستخدام الدالة المساعدة
+           if (currentRoom) {
+             await handleRoomLeave(socket, userId, username, currentRoom, false);
+           }
+           
+           // 4. إزالة المستخدم من جميع الغرف في Socket.IO
+           socket.leave(userId.toString());
+           
+           // 5. إشعار فوري لجميع المستخدمين في الغرفة (مرة واحدة فقط)
+           if (currentRoom) {
+             io.to(`room_${currentRoom}`).emit('message', {
+               type: 'userDisconnected',
+               userId: userId,
+               username: username,
+               roomId: currentRoom,
+               timestamp: new Date().toISOString()
+             });
+             
+             // إرسال قائمة محدثة بعد انتظار قصير
+             setTimeout(() => {
+               sendRoomUsers(currentRoom);
+             }, 100);
+           }
+           
+           // إرسال رسالة وداع في الغرفة (مرة واحدة فقط)
+           if (currentRoom) {
+             const goodbyeMessage = {
               id: Date.now(),
               senderId: -1,
               content: `غادر ${username} الغرفة 👋`,

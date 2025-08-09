@@ -172,19 +172,29 @@ router.post('/:roomId/join', async (req, res) => {
       return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
     }
 
+    // التحقق من أن المستخدم ليس في الغرفة بالفعل
+    const roomUsers = await roomService.getRoomUsers(roomId);
+    const isAlreadyInRoom = roomUsers.some(user => user.id === parseInt(userId));
+    
+    if (isAlreadyInRoom) {
+      return res.json({ message: 'أنت موجود في الغرفة بالفعل' });
+    }
+
     await roomService.joinRoom(parseInt(userId), roomId);
 
-    // إرسال إشعار بانضمام المستخدم
+    // إرسال إشعار بانضمام المستخدم (مرة واحدة فقط)
     const io = req.app.get('io');
-    io?.to(`room_${roomId}`).emit('userJoinedRoom', {
-      userId: parseInt(userId),
-      roomId: roomId,
-      timestamp: new Date().toISOString()
-    });
-    
-    // تحديث عدد المستخدمين
-    const userCount = await roomService.updateRoomUserCount(roomId);
-    io?.emit('roomUserCountUpdated', { roomId, userCount });
+    if (io) {
+      io.to(`room_${roomId}`).emit('userJoinedRoom', {
+        userId: parseInt(userId),
+        roomId: roomId,
+        timestamp: new Date().toISOString()
+      });
+      
+      // تحديث عدد المستخدمين (مرة واحدة فقط)
+      const userCount = await roomService.updateRoomUserCount(roomId);
+      io.emit('roomUserCountUpdated', { roomId, userCount });
+    }
 
     res.json({ message: 'تم الانضمام للغرفة بنجاح' });
   } catch (error: any) {
@@ -206,19 +216,29 @@ router.post('/:roomId/leave', async (req, res) => {
       return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
     }
 
+    // التحقق من أن المستخدم في الغرفة فعلاً
+    const roomUsers = await roomService.getRoomUsers(roomId);
+    const isInRoom = roomUsers.some(user => user.id === parseInt(userId));
+    
+    if (!isInRoom) {
+      return res.json({ message: 'أنت لست في هذه الغرفة' });
+    }
+
     await roomService.leaveRoom(parseInt(userId), roomId);
 
-    // إرسال إشعار بمغادرة المستخدم
+    // إرسال إشعار بمغادرة المستخدم (مرة واحدة فقط)
     const io = req.app.get('io');
-    io?.to(`room_${roomId}`).emit('userLeftRoom', {
-      userId: parseInt(userId),
-      roomId: roomId,
-      timestamp: new Date().toISOString()
-    });
-    
-    // تحديث عدد المستخدمين
-    const userCount = await roomService.updateRoomUserCount(roomId);
-    io?.emit('roomUserCountUpdated', { roomId, userCount });
+    if (io) {
+      io.to(`room_${roomId}`).emit('userLeftRoom', {
+        userId: parseInt(userId),
+        roomId: roomId,
+        timestamp: new Date().toISOString()
+      });
+      
+      // تحديث عدد المستخدمين (مرة واحدة فقط)
+      const userCount = await roomService.updateRoomUserCount(roomId);
+      io.emit('roomUserCountUpdated', { roomId, userCount });
+    }
 
     res.json({ message: 'تم مغادرة الغرفة بنجاح' });
   } catch (error: any) {
