@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
-import { getUserRoleIcon } from './UserRoleBadge';
+import { getUserLevelIcon } from './UserRoleBadge';
 
 interface MessageAlertProps {
   isOpen: boolean;
@@ -58,12 +58,13 @@ export default function MessageAlert({ isOpen, sender, onClose, onOpenMessages }
           {/* معلومات المرسل */}
           <div className="flex-1 text-white">
             <h3 className="font-bold text-lg">{sender.username}</h3>
-            <p className="text-sm opacity-90">
-              {sender.userType === 'owner' && `${getUserRoleIcon(sender.userType)} مالك`}
-              {sender.userType === 'admin' && `${getUserRoleIcon(sender.userType)} مدير`}
-              {sender.userType === 'moderator' && `${getUserRoleIcon(sender.userType)} مشرف`}
-              {sender.userType === 'member' && '👤 عضو'}
-              {sender.userType === 'guest' && '👋 زائر'}
+            <p className="text-sm opacity-90 flex items-center gap-1">
+              {getUserLevelIcon(sender, 14)}
+              {sender.userType === 'owner' && 'مالك'}
+              {sender.userType === 'admin' && 'مدير'}
+              {sender.userType === 'moderator' && 'مشرف'}
+              {sender.userType === 'member' && 'عضو'}
+              {sender.userType === 'guest' && 'زائر'}
             </p>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-yellow-300">✉️</span>
