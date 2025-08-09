@@ -79,24 +79,39 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
 
 
-  const handleAddRoom = async (roomData: { name: string; description: string; image: File | null }) => {
+  // ➕ إضافة غرفة جديدة مع منع التكرار
+  const handleAddRoom = useCallback(async (roomData: { name: string; description: string; image: File | null }) => {
     if (!chat.currentUser) return;
-    const newRoom = await addRoomViaManager({ ...roomData }, chat.currentUser.id);
-    if (newRoom) {
-      showSuccessToast(`تم إنشاء غرفة "${roomData.name}" بنجاح`, 'تم إنشاء الغرفة');
+    
+    try {
+      const newRoom = await addRoomViaManager({ ...roomData }, chat.currentUser.id);
+      if (newRoom) {
+        showSuccessToast(`تم إنشاء غرفة "${roomData.name}" بنجاح`, 'تم إنشاء الغرفة');
+      }
+    } catch (error) {
+      console.error('خطأ في إنشاء الغرفة:', error);
+      showErrorToast('فشل في إنشاء الغرفة', 'خطأ');
     }
-  };
+  }, [chat.currentUser, addRoomViaManager, showSuccessToast, showErrorToast]);
 
-  const handleDeleteRoom = async (roomId: string) => {
+  // ❌ حذف غرفة مع منع التكرار
+  const handleDeleteRoom = useCallback(async (roomId: string) => {
     if (!chat.currentUser) return;
-    const ok = await deleteRoomViaManager(roomId, chat.currentUser.id);
-    if (ok) {
-      if (chat.currentRoomId === roomId) chat.joinRoom('general');
-      showSuccessToast('تم حذف الغرفة بنجاح', 'تم حذف الغرفة');
-    } else {
-      showErrorToast('حدث خطأ أثناء حذف الغرفة', 'خطأ في حذف الغرفة');
+    
+    try {
+      const ok = await deleteRoomViaManager(roomId, chat.currentUser.id);
+      if (ok) {
+        // الانتقال للغرفة العامة إذا تم حذف الغرفة الحالية
+        if (chat.currentRoomId === roomId) {
+          chat.joinRoom('general');
+        }
+        showSuccessToast('تم حذف الغرفة بنجاح', 'تم حذف الغرفة');
+      }
+    } catch (error) {
+      console.error('خطأ في حذف الغرفة:', error);
+      showErrorToast('فشل في حذف الغرفة', 'خطأ');
     }
-  };
+  }, [chat, deleteRoomViaManager, showSuccessToast, showErrorToast]);
 
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -599,6 +614,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
+      {/* ⚠️ لوحة الإدارة - إزالة التكرار */}
       {showModerationPanel && (
         <ModerationPanel
           isOpen={showModerationPanel}
@@ -608,19 +624,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
+      {/* 👑 لوحة المالك */}
       {showOwnerPanel && (
         <OwnerAdminPanel 
           isOpen={showOwnerPanel}
           onClose={() => setShowOwnerPanel(false)}
-          currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
-        />
-      )}
-
-      {showModerationPanel && (
-        <ModerationPanel 
-          isOpen={showModerationPanel}
-          onClose={() => setShowModerationPanel(false)}
           currentUser={chat.currentUser}
           onlineUsers={chat.onlineUsers}
         />

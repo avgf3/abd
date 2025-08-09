@@ -568,16 +568,11 @@ export default function UnifiedSidebar({
                               >
                                 {post.username}
                               </span>
-                              {/* شارة الرتبة حسب النظام الجديد */}
-                              {post.userRole === 'owner' && (
-                                <img src="/svgs/crown.svg" alt="owner" className="w-4 h-4 inline-block" />
-                              )}
-                              {post.userRole === 'admin' && (
-                                <span className="inline-block text-yellow-500">⭐</span>
-                              )}
-                              {post.userRole === 'moderator' && (
-                                <span className="inline-block">🛡️</span>
-                              )}
+                              {/* 🏅 شارة الرتبة الموحدة */}
+                              <UserRoleBadge 
+                                user={{ userType: post.userRole } as ChatUser} 
+                                size={16} 
+                              />
                             </div>
                             <p className="text-xs text-gray-500">{formatTimeAgo(post.timestamp.toString())}</p>
                           </div>

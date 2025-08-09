@@ -237,7 +237,7 @@ router.post('/:roomId/join', async (req, res) => {
 
 /**
  * POST /api/rooms/:roomId/leave
- * مغادرة غرفة
+ * مغادرة غرفة مع التحسينات
  */
 router.post('/:roomId/leave', async (req, res) => {
   try {
@@ -248,31 +248,45 @@ router.post('/:roomId/leave', async (req, res) => {
       return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
     }
 
-    // التحقق من أن المستخدم في الغرفة فعلاً
+    // 🔍 التحقق من أن المستخدم في الغرفة فعلاً
     const roomUsers = await roomService.getRoomUsers(roomId);
     const isInRoom = roomUsers.some(user => user.id === parseInt(userId));
     
     if (!isInRoom) {
-      return res.json({ message: 'أنت لست في هذه الغرفة' });
+      console.log(`⚠️ المستخدم ${userId} ليس في الغرفة ${roomId}`);
+      return res.json({ 
+        message: 'أنت لست في هذه الغرفة',
+        notInRoom: true 
+      });
     }
 
     await roomService.leaveRoom(parseInt(userId), roomId);
 
-    // إرسال إشعار بمغادرة المستخدم (مرة واحدة فقط)
+    // 📡 إرسال إشعار بمغادرة المستخدم (مرة واحدة فقط)
     const io = req.app.get('io');
     if (io) {
+      // إشعار للغرفة فقط
       io.to(`room_${roomId}`).emit('userLeftRoom', {
         userId: parseInt(userId),
         roomId: roomId,
         timestamp: new Date().toISOString()
       });
       
-      // تحديث عدد المستخدمين (مرة واحدة فقط)
-      const userCount = await roomService.updateRoomUserCount(roomId);
-      io.emit('roomUserCountUpdated', { roomId, userCount });
+      // 🔢 تحديث عدد المستخدمين بشكل محسن
+      try {
+        const userCount = await roomService.updateRoomUserCount(roomId);
+        io.emit('roomUserCountUpdated', { roomId, userCount });
+        console.log(`✅ تم تحديث عدد مستخدمي الغرفة ${roomId}: ${userCount}`);
+      } catch (countError) {
+        console.warn('⚠️ خطأ في تحديث عدد المستخدمين:', countError);
+      }
     }
 
-    res.json({ message: 'تم مغادرة الغرفة بنجاح' });
+    res.json({ 
+      message: 'تم مغادرة الغرفة بنجاح',
+      roomId,
+      left: true 
+    });
   } catch (error: any) {
     console.error('خطأ في مغادرة الغرفة:', error);
     res.status(400).json({ error: error.message || 'خطأ في مغادرة الغرفة' });

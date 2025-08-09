@@ -214,8 +214,7 @@ export function useChat() {
   // تحسين الأداء: مدراء التحسين
   const messageCache = useRef(new MessageCacheManager());
   
-  // إضافة متغير لتتبع حالة التحميل
-  const isLoadingMessages = useRef(false);
+  // 🗑️ حذف isLoadingMessages - لم تعد مطلوبة
   
   // إضافة متغير للوصول إلى import.meta.env
   const isDevelopment = process.env.NODE_ENV === 'development';
@@ -370,8 +369,8 @@ export function useChat() {
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
       dispatch({ type: 'SET_LOADING', payload: false });
       
-      // 🚀 تحسين: تحميل الرسائل مرة واحدة فقط
-      loadExistingMessages();
+      // 🚀 تحميل رسائل الغرفة العامة عند المصادقة
+      loadRoomMessages('general');
       
       // 🚀 تحسين: إزالة الطلبات الدورية للمستخدمين
       // سيتم تحديث القائمة عبر WebSocket events فقط
@@ -929,8 +928,7 @@ export function useChat() {
     dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: [] });
     dispatch({ type: 'SET_LOADING', payload: false });
     
-    // تنظيف متغيرات التحكم
-    isLoadingMessages.current = false;
+    // 🗑️ تنظيف متغيرات التحكم - تم حذف isLoadingMessages
     // تنظيف معالجات البث
     broadcastHandlers.current = [];
   }, []);
@@ -962,46 +960,7 @@ export function useChat() {
     }
   }, []);
 
-  // تحميل الرسائل الموجودة من قاعدة البيانات
-  const loadExistingMessages = useCallback(async () => {
-    // منع التحميل المتعدد
-    if (isLoadingMessages.current) {
-      return;
-    }
-    
-    // تحقق من وجود رسائل محملة مسبقاً للغرفة العامة
-    if (state.roomMessages['general'] && state.roomMessages['general'].length > 0) {
-      return;
-    }
-    
-    isLoadingMessages.current = true;
-    
-    try {
-      // تحميل رسائل الغرفة العامة
-      const generalData = await apiRequest('/api/messages/room/general?limit=50');
-      if ((generalData as any).messages && Array.isArray((generalData as any).messages)) {
-        const formattedMessages = mapDbMessagesToChatMessages((generalData as any).messages, 'general');
-        
-        // إضافة الرسائل للغرفة العامة
-        dispatch({ 
-          type: 'ADD_ROOM_MESSAGE', 
-          payload: { 
-            roomId: 'general', 
-            message: formattedMessages 
-          }
-        });
-        
-        // تحديث الرسائل العامة إذا كانت الغرفة الحالية هي العامة
-        if (state.currentRoomId === 'general') {
-          dispatch({ type: 'SET_PUBLIC_MESSAGES', payload: formattedMessages });
-        }
-      }
-    } catch (error) {
-      console.error('❌ خطأ في تحميل الرسائل:', error);
-    } finally {
-      isLoadingMessages.current = false;
-    }
-  }, [state.currentRoomId, state.roomMessages]);
+  // 🗑️ حذف loadExistingMessages - يتم استبدالها بـ loadRoomMessages المحسنة
 
   return {
     // State
