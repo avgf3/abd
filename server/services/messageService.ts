@@ -1,4 +1,4 @@
-import { eq, desc, and, or } from "drizzle-orm";
+import { eq, desc, and, or, isNull } from "drizzle-orm";
 import { db } from "../database-adapter";
 import { messages, users, type Message, type InsertMessage } from "../../shared/schema";
 
@@ -40,7 +40,7 @@ export class MessageService {
         })
         .from(messages)
         .leftJoin(users, eq(messages.senderId, users.id))
-        .where(and(eq(messages.isPrivate, false), eq(messages.deletedAt as any, null as any)))
+        .where(and(eq(messages.isPrivate, false), isNull(messages.deletedAt)))
         .orderBy(desc(messages.timestamp))
         .limit(limit);
 
@@ -99,10 +99,10 @@ export class MessageService {
             or(
               and(eq(messages.senderId, userId1), eq(messages.receiverId, userId2)),
               and(eq(messages.senderId, userId2), eq(messages.receiverId, userId1))
-            )
+            ),
+            isNull(messages.deletedAt)
           )
         )
-        .where(and(eq(messages.isPrivate, true), eq(messages.deletedAt as any, null as any)))
         .orderBy(desc(messages.timestamp))
         .limit(limit);
 
@@ -212,7 +212,7 @@ export class MessageService {
         .where(
           and(
             eq(messages.isPrivate, false),
-            eq(messages.deletedAt as any, null as any)
+            isNull(messages.deletedAt)
           )
         )
         .orderBy(desc(messages.timestamp))
