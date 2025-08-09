@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getImageSrc } from '@/utils/imageUtils';
+import { formatTime } from '@/utils/timeUtils';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import FileUploadButton from './FileUploadButton';
 import EmojiPicker from './EmojiPicker';
@@ -77,14 +78,7 @@ export default function PrivateMessageBox({
     setShowEmojiPicker(false);
   };
 
-  const formatTime = (date?: Date) => {
-    if (!date) return '';
-    return new Date(date).toLocaleString('ar-SA', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
+  // تم نقل دالة formatTime إلى utils/timeUtils.ts
 
   if (!isOpen) return null;
 

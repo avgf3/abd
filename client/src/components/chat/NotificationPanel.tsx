@@ -184,9 +184,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     }
   };
 
-  // استخدام الأداة العامة لتنسيق الوقت
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const formatTimeAgoLocal = (dateString: string) => formatTimeAgo(dateString);
+  // تم حذف دالة formatTimeAgoLocal - نستخدم formatTimeAgo مباشرة من utils/timeUtils.ts
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

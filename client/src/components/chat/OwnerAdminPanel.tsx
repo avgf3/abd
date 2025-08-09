@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getImageSrc } from '@/utils/imageUtils';
+import { formatDateTime } from '@/utils/timeUtils';
 import {
   Dialog,
   DialogContent,
@@ -156,15 +157,7 @@ export default function OwnerAdminPanel({
     }
   };
 
-  const formatDateTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('ar-SA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // تم نقل دالة formatDateTime إلى utils/timeUtils.ts
 
   const getActionColor = (type: string) => {
     switch (type) {
