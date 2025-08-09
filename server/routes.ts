@@ -4032,13 +4032,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'مستخدم غير موجود' });
       }
       
-      // التحقق من وجود نقاط كافية للمرسل
-      if ((sender.points || 0) < points) {
+      const senderIsOwner = (sender.userType === 'owner') || (sender.role === 'owner');
+      
+      // التحقق من وجود نقاط كافية للمرسل (إلا إذا كان المرسل هو المالك)
+      if (!senderIsOwner && (sender.points || 0) < points) {
         return res.status(400).json({ error: 'نقاط غير كافية' });
       }
       
-      // خصم النقاط من المرسل
-      await pointsService.addPoints(senderId, -points, `إرسال نقاط إلى ${receiver.username}`);
+      // خصم النقاط من المرسل (يُتجاوز للمالك)
+      if (!senderIsOwner) {
+        await pointsService.addPoints(senderId, -points, `إرسال نقاط إلى ${receiver.username}`);
+      }
       
       // إضافة النقاط للمستقبل
       const receiverResult = await pointsService.addPoints(receiverId, points, reason || `نقاط من ${sender.username}`);
