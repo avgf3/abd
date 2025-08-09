@@ -199,9 +199,9 @@ export class ModerationSystem {
     return true;
   }
 
-  // ترقية المستخدم (المالك فقط)
-  async promoteUser(moderatorId: number, targetUserId: number, newRole: 'admin' | 'moderator'): Promise<boolean> {
-    console.log(`[PROMOTE] محاولة ترقية - Moderator: ${moderatorId}, Target: ${targetUserId}, NewRole: ${newRole}`);
+  // ترقية المستخدم أو إزالة الإشراف (المالك فقط)
+  async promoteUser(moderatorId: number, targetUserId: number, newRole: 'admin' | 'moderator' | 'member'): Promise<boolean> {
+    console.log(`[PROMOTE] محاولة تغيير رتبة - Moderator: ${moderatorId}, Target: ${targetUserId}, NewRole: ${newRole}`);
     
     const moderator = await storage.getUser(moderatorId);
     const target = await storage.getUser(targetUserId);
@@ -214,20 +214,29 @@ export class ModerationSystem {
     console.log(`[PROMOTE] بيانات المستخدمين - Moderator: ${moderator.username} (${moderator.userType}), Target: ${target.username} (${target.userType})`);
     
     if (!this.canModerate(moderator, target, 'promote')) {
-      console.log(`[PROMOTE] فشل - لا توجد صلاحية للترقية`);
+      console.log(`[PROMOTE] فشل - لا توجد صلاحية للتعديل`);
       return false;
     }
     
     // التحقق من صحة الرتبة الجديدة
-    if (!['admin', 'moderator'].includes(newRole)) {
+    if (!['admin', 'moderator', 'member'].includes(newRole)) {
       console.log(`[PROMOTE] فشل - رتبة غير صالحة: ${newRole}`);
       return false;
     }
     
-    // التحقق من أن المستخدم المستهدف عضو عادي
-    if (target.userType !== 'member') {
-      console.log(`[PROMOTE] فشل - يمكن ترقية الأعضاء فقط. نوع المستخدم الحالي: ${target.userType}`);
-      return false;
+    // التحقق من صحة العملية حسب نوع التغيير
+    if (newRole === 'member') {
+      // إزالة الإشراف - يجب أن يكون المستهدف مشرف أو إدمن
+      if (!['moderator', 'admin'].includes(target.userType)) {
+        console.log(`[PROMOTE] فشل - لا يمكن إزالة إشراف عضو عادي. نوع المستخدم الحالي: ${target.userType}`);
+        return false;
+      }
+    } else {
+      // ترقية - يجب أن يكون المستهدف عضو عادي
+      if (target.userType !== 'member') {
+        console.log(`[PROMOTE] فشل - يمكن ترقية الأعضاء العاديين فقط. نوع المستخدم الحالي: ${target.userType}`);
+        return false;
+      }
     }
 
     try {
@@ -244,12 +253,18 @@ export class ModerationSystem {
       
       console.log(`[PROMOTE] نجح تحديث قاعدة البيانات للمستخدم ${target.username}`);
 
+      // تسجيل العملية
+      const actionType = newRole === 'member' ? 'demote' : 'promote';
+      const actionReason = newRole === 'member' ? 
+        `إزالة الإشراف (تحويل إلى عضو عادي)` : 
+        `ترقية إلى ${newRole}`;
+
       this.recordAction({
-        id: `promote_${Date.now()}`,
-        type: 'promote',
+        id: `${actionType}_${Date.now()}`,
+        type: actionType,
         targetUserId,
         moderatorId,
-        reason: `ترقية إلى ${newRole}`,
+        reason: actionReason,
         timestamp: Date.now()
       });
       

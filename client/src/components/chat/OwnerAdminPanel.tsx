@@ -140,23 +140,25 @@ export default function OwnerAdminPanel({
     if (!currentUser) return;
     
     try {
-      const response = await apiRequest('/api/admin/users/promote', {
+      const response = await apiRequest('/api/moderation/promote', {
         method: 'POST',
         body: {
-          userId: targetUser.id,
-          newRole: 'member',
-          promoterId: currentUser.id
+          moderatorId: currentUser.id,
+          targetUserId: targetUser.id,
+          newRole: 'member'
         }
       });
       
       toast({
         title: 'تم إلغاء الإشراف',
-        description: `تم إلغاء إشراف ${targetUser.username}`,
+        description: `تم إلغاء إشراف ${targetUser.username} بنجاح`,
         variant: 'default'
       });
       
+      // تحديث قائمة المشرفين فوراً
       fetchStaffMembers();
     } catch (error) {
+      console.error('Error demoting user:', error);
       toast({
         title: 'خطأ',
         description: 'فشل في إلغاء الإشراف',
