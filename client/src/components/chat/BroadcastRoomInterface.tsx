@@ -50,11 +50,31 @@ export default function BroadcastRoomInterface({
   const fetchBroadcastInfo = async () => {
     try {
       const data = await apiRequest(`/api/rooms/${room.id}/broadcast-info`, { method: 'GET' });
-      if ((data as any)?.info) {
-        setBroadcastInfo((data as any).info);
+      if (data?.info) {
+        setBroadcastInfo(data.info);
+      } else {
+        console.warn('⚠️ لم يتم استلام معلومات غرفة البث');
+        // إعداد حالة افتراضية
+        setBroadcastInfo({
+          hostId: room.hostId || null,
+          speakers: room.speakers || [],
+          micQueue: room.micQueue || []
+        });
       }
     } catch (error) {
       console.error('خطأ في جلب معلومات غرفة البث:', error);
+      // في حالة الخطأ، استخدم المعلومات الموجودة في الغرفة
+      setBroadcastInfo({
+        hostId: room.hostId || null,
+        speakers: room.speakers || [],
+        micQueue: room.micQueue || []
+      });
+      
+      toast({
+        title: 'تحذير',
+        description: 'تعذر جلب آخر تحديثات غرفة البث',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -66,72 +86,55 @@ export default function BroadcastRoomInterface({
 
   // معالجة الرسائل الجديدة من WebSocket
   useEffect(() => {
+    // دالة مساعدة لتحديث معلومات الغرفة
+    const updateBroadcastInfo = (data: any) => {
+      if (data.broadcastInfo) {
+        setBroadcastInfo(data.broadcastInfo);
+      } else {
+        fetchBroadcastInfo();
+      }
+    };
+
+    // دالة مساعدة لإظهار التوستات
+    const showToast = (title: string, description: string, variant?: 'default' | 'destructive') => {
+      toast({
+        title,
+        description,
+        variant
+      });
+    };
+
     const handleWebSocketMessage = (data: any) => {
       try {
         // معالجة رسائل Broadcast Room
         if (data.roomId === room.id) {
-          if (data.type === 'micRequest') {
-            // تحديث معلومات الغرفة مباشرة إذا كانت متوفرة
-            if (data.broadcastInfo) {
-              setBroadcastInfo(data.broadcastInfo);
-            } else {
-              fetchBroadcastInfo();
-            }
-            
-            // إظهار إشعار للمضيف
-            if (currentUser && currentUser.id === broadcastInfo?.hostId) {
-              toast({
-                title: 'طلب مايك جديد',
-                description: data.content || `${data.username} يطلب المايك`,
-              });
-            }
-          } else if (data.type === 'micApproved') {
-            // تحديث معلومات الغرفة
-            if (data.broadcastInfo) {
-              setBroadcastInfo(data.broadcastInfo);
-            } else {
-              fetchBroadcastInfo();
-            }
-            
-            toast({
-              title: 'تمت الموافقة على المايك',
-              description: data.content || 'تمت الموافقة على طلب المايك',
-            });
-          } else if (data.type === 'micRejected') {
-            // تحديث معلومات الغرفة
-            if (data.broadcastInfo) {
-              setBroadcastInfo(data.broadcastInfo);
-            } else {
-              fetchBroadcastInfo();
-            }
-            
-            toast({
-              title: 'تم رفض المايك',
-              description: data.content || 'تم رفض طلب المايك',
-              variant: 'destructive'
-            });
-          } else if (data.type === 'speakerRemoved') {
-            // تحديث معلومات الغرفة
-            if (data.broadcastInfo) {
-              setBroadcastInfo(data.broadcastInfo);
-            } else {
-              fetchBroadcastInfo();
-            }
-            
-            toast({
-              title: 'تم إزالة متحدث',
-              description: data.content || 'تم إزالة متحدث من الغرفة',
-            });
+          updateBroadcastInfo(data);
+          
+          switch (data.type) {
+            case 'micRequest':
+              // إظهار إشعار للمضيف فقط
+              if (currentUser && currentUser.id === broadcastInfo?.hostId) {
+                showToast('طلب مايك جديد', data.content || `${data.username} يطلب المايك`);
+              }
+              break;
+              
+            case 'micApproved':
+              showToast('تمت الموافقة على المايك', data.content || 'تمت الموافقة على طلب المايك');
+              break;
+              
+            case 'micRejected':
+              showToast('تم رفض المايك', data.content || 'تم رفض طلب المايك', 'destructive');
+              break;
+              
+            case 'speakerRemoved':
+              showToast('تم إزالة متحدث', data.content || 'تم إزالة متحدث من الغرفة');
+              break;
           }
         }
         
         if (data.type === 'error' && data.message) {
           // معالجة رسائل الخطأ من الخادم
-          toast({
-            title: 'خطأ',
-            description: data.message,
-            variant: 'destructive'
-          });
+          showToast('خطأ', data.message, 'destructive');
         }
       } catch (error) {
         console.error('خطأ في معالجة رسالة WebSocket:', error);

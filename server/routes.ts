@@ -4551,6 +4551,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Broadcast Room API Routes
   // ===================
 
+  // دالة مساعدة لإرسال تحديثات غرفة البث
+  async function broadcastRoomUpdate(roomId: string, type: string, data: any) {
+    if (io) {
+      const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
+      io.to(roomId).emit('message', {
+        type,
+        roomId,
+        broadcastInfo,
+        ...data
+      });
+      return broadcastInfo;
+    }
+    return null;
+  }
+
   // طلب المايك
   app.post('/api/rooms/:roomId/request-mic', async (req, res) => {
     try {
@@ -4569,18 +4584,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // إرسال إشعار للـ Host وتحديث معلومات الغرفة
       const room = await storage.getRoom(roomId);
       const user = await storage.getUser(parseInt(userId));
-      const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
       
-      if (room && user && io) {
-        io.to(roomId).emit('message', {
-          type: 'micRequest',
-          roomId,
-          requestUserId: parseInt(userId),
-          username: user.username,
-          content: `${user.username} يطلب المايك`,
-          broadcastInfo
-        });
-      }
+      const broadcastInfo = await broadcastRoomUpdate(roomId, 'micRequest', {
+        requestUserId: parseInt(userId),
+        username: user?.username,
+        content: `${user?.username} يطلب المايك`
+      });
 
       res.json({ message: 'تم إرسال طلب المايك بنجاح', broadcastInfo });
     } catch (error) {
@@ -4607,20 +4616,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // إرسال إشعار للجميع وتحديث معلومات الغرفة
       const user = await storage.getUser(parseInt(userId));
       const approver = await storage.getUser(parseInt(approvedBy));
-      const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
       
-      if (user && approver && io) {
-        io.to(roomId).emit('message', {
-          type: 'micApproved',
-          roomId,
-          requestUserId: parseInt(userId),
-          approvedBy: parseInt(approvedBy),
-          username: user.username,
-          approverName: approver.username,
-          content: `${approver.username} وافق على طلب ${user.username} للمايك`,
-          broadcastInfo
-        });
-      }
+      const broadcastInfo = await broadcastRoomUpdate(roomId, 'micApproved', {
+        requestUserId: parseInt(userId),
+        approvedBy: parseInt(approvedBy),
+        username: user?.username,
+        approverName: approver?.username,
+        content: `${approver?.username} وافق على طلب ${user?.username} للمايك`
+      });
 
       res.json({ message: 'تم الموافقة على طلب المايك بنجاح', broadcastInfo });
     } catch (error) {
@@ -4647,20 +4650,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // إرسال إشعار للجميع وتحديث معلومات الغرفة
       const user = await storage.getUser(parseInt(userId));
       const rejecter = await storage.getUser(parseInt(rejectedBy));
-      const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
       
-      if (user && rejecter && io) {
-        io.to(roomId).emit('message', {
-          type: 'micRejected',
-          roomId,
-          requestUserId: parseInt(userId),
-          rejectedBy: parseInt(rejectedBy),
-          username: user.username,
-          rejecterName: rejecter.username,
-          content: `${rejecter.username} رفض طلب ${user.username} للمايك`,
-          broadcastInfo
-        });
-      }
+      const broadcastInfo = await broadcastRoomUpdate(roomId, 'micRejected', {
+        requestUserId: parseInt(userId),
+        rejectedBy: parseInt(rejectedBy),
+        username: user?.username,
+        rejecterName: rejecter?.username,
+        content: `${rejecter?.username} رفض طلب ${user?.username} للمايك`
+      });
 
       res.json({ message: 'تم رفض طلب المايك بنجاح', broadcastInfo });
     } catch (error) {
@@ -4687,20 +4684,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // إرسال إشعار للجميع وتحديث معلومات الغرفة
       const user = await storage.getUser(parseInt(userId));
       const remover = await storage.getUser(parseInt(removedBy));
-      const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
       
-      if (user && remover && io) {
-        io.to(roomId).emit('message', {
-          type: 'speakerRemoved',
-          roomId,
-          requestUserId: parseInt(userId),
-          removedBy: parseInt(removedBy),
-          username: user.username,
-          removerName: remover.username,
-          content: `${remover.username} أزال ${user.username} من المتحدثين`,
-          broadcastInfo
-        });
-      }
+      const broadcastInfo = await broadcastRoomUpdate(roomId, 'speakerRemoved', {
+        requestUserId: parseInt(userId),
+        removedBy: parseInt(removedBy),
+        username: user?.username,
+        removerName: remover?.username,
+        content: `${remover?.username} أزال ${user?.username} من المتحدثين`
+      });
 
       res.json({ message: 'تم إزالة المتحدث بنجاح', broadcastInfo });
     } catch (error) {
