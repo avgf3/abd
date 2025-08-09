@@ -1,4 +1,4 @@
-import { storage } from '../storage';
+import { databaseService } from './databaseService';
 import { db, dbType } from '../database-adapter';
 import path from 'path';
 import fs from 'fs';
@@ -50,7 +50,7 @@ class RoomService {
       if (!db || dbType === 'disabled') {
         return [];
       }
-      return await storage.getAllRooms();
+      return await databaseService.getRooms();
     } catch (error) {
       console.error('خطأ في جلب الغرف:', error);
       return [];
@@ -65,7 +65,7 @@ class RoomService {
       if (!db || dbType === 'disabled') {
         return null;
       }
-      return await storage.getRoom(roomId);
+      return await databaseService.getRoomById(roomId);
     } catch (error) {
       console.error(`خطأ في جلب الغرفة ${roomId}:`, error);
       return null;
@@ -87,7 +87,7 @@ class RoomService {
       }
 
       // التحقق من صلاحيات المستخدم
-      const user = await storage.getUser(roomData.createdBy);
+      const user = await databaseService.getUser(roomData.createdBy);
       if (!user) {
         throw new Error('المستخدم غير موجود');
       }
@@ -106,7 +106,7 @@ class RoomService {
         throw new Error('اسم الغرفة موجود مسبقاً');
       }
 
-      const room = await storage.createRoom({
+      const room = await databaseService.createRoom({
         ...roomData,
         name: roomData.name.trim(),
         description: roomData.description?.trim() || '',
@@ -143,7 +143,7 @@ class RoomService {
       }
 
       // التحقق من الصلاحيات
-      const user = await storage.getUser(userId);
+      const user = await databaseService.getUser(userId);
       if (!user) {
         throw new Error('المستخدم غير موجود');
       }
@@ -166,7 +166,7 @@ class RoomService {
       }
 
       // حذف الغرفة من قاعدة البيانات
-      await storage.deleteRoom(roomId);
+      await databaseService.deleteRoom(roomId);
 
       // تنظيف ذاكرة الغرف المتصلة
       this.connectedRooms.delete(roomId);
@@ -217,7 +217,7 @@ class RoomService {
         throw new Error('الغرفة غير نشطة');
       }
 
-      const user = await storage.getUser(userId);
+      const user = await databaseService.getUser(userId);
       if (!user) {
         throw new Error('المستخدم غير موجود');
       }
@@ -236,7 +236,7 @@ class RoomService {
       this.userRooms.set(userId, roomId);
 
       // 💾 حفظ في قاعدة البيانات
-      await storage.joinRoom(userId, roomId);
+      await databaseService.joinRoom(userId, roomId);
 
       console.log(`✅ انضم المستخدم ${userId} للغرفة ${roomId}`);
     } catch (error) {
@@ -273,7 +273,7 @@ class RoomService {
 
       // 💾 حفظ في قاعدة البيانات
       if (db && dbType !== 'disabled') {
-        await storage.leaveRoom(userId, roomId);
+        await databaseService.leaveRoom(userId, roomId);
       }
 
       console.log(`✅ غادر المستخدم ${userId} الغرفة ${roomId}`);
@@ -314,7 +314,7 @@ class RoomService {
       }
 
       // جلب من قاعدة البيانات أولاً
-      const dbUsers = await storage.getRoomUsers(roomId);
+      const dbUsers = await databaseService.getRoomUsers(roomId);
       
       // دمج مع المستخدمين المتصلين في الذاكرة
       const connectedUserIds = this.connectedRooms.get(roomId) || new Set();
@@ -327,7 +327,7 @@ class RoomService {
       const users = [];
       for (const userId of allUserIds) {
         try {
-          const user = await storage.getUser(userId);
+          const user = await databaseService.getUser(userId);
           if (user) {
             users.push(user);
           }
@@ -353,7 +353,7 @@ class RoomService {
 
       // تحديث في قاعدة البيانات إذا أمكن
       if (db && dbType !== 'disabled') {
-        await storage.updateRoomUserCount(roomId, count);
+        await databaseService.updateRoomUserCount(roomId, count);
       }
 
       return count;
@@ -373,12 +373,12 @@ class RoomService {
         throw new Error('الغرفة غير صالحة للبث');
       }
 
-      const user = await storage.getUser(userId);
+      const user = await databaseService.getUser(userId);
       if (!user) {
         throw new Error('المستخدم غير موجود');
       }
 
-      await storage.addToMicQueue(roomId, userId);
+      await databaseService.addToMicQueue(roomId, userId);
       } catch (error) {
       console.error('خطأ في طلب الميكروفون:', error);
       throw error;
@@ -396,7 +396,7 @@ class RoomService {
       }
 
       // التحقق من الصلاحيات
-      const approver = await storage.getUser(approvedBy);
+      const approver = await databaseService.getUser(approvedBy);
       if (!approver) {
         throw new Error('المستخدم غير موجود');
       }
@@ -406,8 +406,8 @@ class RoomService {
         throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
       }
 
-      await storage.removeFromMicQueue(roomId, userId);
-      await storage.addSpeaker(roomId, userId);
+      await databaseService.removeFromMicQueue(roomId, userId);
+      await databaseService.addSpeaker(roomId, userId);
 
       console.log(`✅ تمت الموافقة على ميكروفون المستخدم ${userId} في الغرفة ${roomId}`);
     } catch (error) {
@@ -427,7 +427,7 @@ class RoomService {
       }
 
       // التحقق من الصلاحيات
-      const rejecter = await storage.getUser(rejectedBy);
+      const rejecter = await databaseService.getUser(rejectedBy);
       if (!rejecter) {
         throw new Error('المستخدم غير موجود');
       }
@@ -437,7 +437,7 @@ class RoomService {
         throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
       }
 
-      await storage.removeFromMicQueue(roomId, userId);
+      await databaseService.removeFromMicQueue(roomId, userId);
 
       console.log(`✅ تم رفض ميكروفون المستخدم ${userId} في الغرفة ${roomId}`);
     } catch (error) {
@@ -457,7 +457,7 @@ class RoomService {
       }
 
       // التحقق من الصلاحيات
-      const remover = await storage.getUser(removedBy);
+      const remover = await databaseService.getUser(removedBy);
       if (!remover) {
         throw new Error('المستخدم غير موجود');
       }
@@ -467,7 +467,7 @@ class RoomService {
         throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
       }
 
-      await storage.removeSpeaker(roomId, userId);
+      await databaseService.removeSpeaker(roomId, userId);
 
       console.log(`✅ تم إزالة المتحدث ${userId} من الغرفة ${roomId}`);
     } catch (error) {

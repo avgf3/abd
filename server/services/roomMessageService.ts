@@ -1,4 +1,4 @@
-import { storage } from '../storage';
+import { databaseService } from './databaseService';
 import { db, dbType } from '../database-adapter';
 
 export interface RoomMessage {
@@ -22,10 +22,220 @@ export interface MessagePagination {
   nextOffset?: number;
 }
 
+// 🚀 LRU Cache Node for efficient management
+interface LRUCacheNode {
+  roomId: string;
+  messages: RoomMessage[];
+  lastAccessed: number;
+  accessCount: number;
+  prev: LRUCacheNode | null;
+  next: LRUCacheNode | null;
+}
+
+// 🚀 Advanced LRU Cache Implementation
+class AdvancedLRUCache {
+  private capacity: number;
+  private maxMessagesPerRoom: number;
+  private cache = new Map<string, LRUCacheNode>();
+  private head: LRUCacheNode | null = null;
+  private tail: LRUCacheNode | null = null;
+  private size: number = 0;
+
+  constructor(capacity: number = 50, maxMessagesPerRoom: number = 100) {
+    this.capacity = capacity;
+    this.maxMessagesPerRoom = maxMessagesPerRoom;
+  }
+
+  private moveToHead(node: LRUCacheNode): void {
+    this.removeNode(node);
+    this.addToHead(node);
+  }
+
+  private removeNode(node: LRUCacheNode): void {
+    if (node.prev) {
+      node.prev.next = node.next;
+    } else {
+      this.head = node.next;
+    }
+
+    if (node.next) {
+      node.next.prev = node.prev;
+    } else {
+      this.tail = node.prev;
+    }
+  }
+
+  private addToHead(node: LRUCacheNode): void {
+    node.prev = null;
+    node.next = this.head;
+
+    if (this.head) {
+      this.head.prev = node;
+    }
+
+    this.head = node;
+
+    if (!this.tail) {
+      this.tail = node;
+    }
+  }
+
+  private removeTail(): LRUCacheNode | null {
+    if (!this.tail) return null;
+    
+    const lastNode = this.tail;
+    this.removeNode(lastNode);
+    return lastNode;
+  }
+
+  get(roomId: string): RoomMessage[] | null {
+    const node = this.cache.get(roomId);
+    if (!node) return null;
+
+    // Update access statistics
+    node.lastAccessed = Date.now();
+    node.accessCount++;
+
+    // Move to head (most recently used)
+    this.moveToHead(node);
+
+    return [...node.messages]; // Return a copy to prevent mutation
+  }
+
+  put(roomId: string, messages: RoomMessage[]): void {
+    const existingNode = this.cache.get(roomId);
+    const now = Date.now();
+
+    if (existingNode) {
+      // Update existing entry
+      existingNode.messages = messages.slice(0, this.maxMessagesPerRoom);
+      existingNode.lastAccessed = now;
+      existingNode.accessCount++;
+      this.moveToHead(existingNode);
+    } else {
+      // Create new entry
+      const newNode: LRUCacheNode = {
+        roomId,
+        messages: messages.slice(0, this.maxMessagesPerRoom),
+        lastAccessed: now,
+        accessCount: 1,
+        prev: null,
+        next: null
+      };
+
+      this.cache.set(roomId, newNode);
+      this.addToHead(newNode);
+      this.size++;
+
+      // Remove least recently used if capacity exceeded
+      if (this.size > this.capacity) {
+        const tail = this.removeTail();
+        if (tail) {
+          this.cache.delete(tail.roomId);
+          this.size--;
+        }
+      }
+    }
+  }
+
+  addMessage(roomId: string, message: RoomMessage): void {
+    const node = this.cache.get(roomId);
+    const now = Date.now();
+
+    if (node) {
+      // Check for duplicate message
+      const isDuplicate = node.messages.some(msg => 
+        msg.id === message.id || 
+        (msg.timestamp === message.timestamp && 
+         msg.senderId === message.senderId && 
+         msg.content === message.content)
+      );
+
+      if (!isDuplicate) {
+        node.messages.unshift(message); // Add to beginning (newest first)
+        
+        // Limit messages per room
+        if (node.messages.length > this.maxMessagesPerRoom) {
+          node.messages = node.messages.slice(0, this.maxMessagesPerRoom);
+        }
+
+        node.lastAccessed = now;
+        node.accessCount++;
+        this.moveToHead(node);
+      }
+    } else {
+      // Create new cache entry
+      this.put(roomId, [message]);
+    }
+  }
+
+  remove(roomId: string): void {
+    const node = this.cache.get(roomId);
+    if (node) {
+      this.removeNode(node);
+      this.cache.delete(roomId);
+      this.size--;
+    }
+  }
+
+  clear(): void {
+    this.cache.clear();
+    this.head = null;
+    this.tail = null;
+    this.size = 0;
+  }
+
+  getStats(): {
+    totalRooms: number;
+    totalMessages: number;
+    capacity: number;
+    averageAccessCount: number;
+    mostAccessedRoom: string | null;
+  } {
+    let totalMessages = 0;
+    let totalAccessCount = 0;
+    let mostAccessedRoom: string | null = null;
+    let maxAccessCount = 0;
+
+    for (const [roomId, node] of this.cache) {
+      totalMessages += node.messages.length;
+      totalAccessCount += node.accessCount;
+
+      if (node.accessCount > maxAccessCount) {
+        maxAccessCount = node.accessCount;
+        mostAccessedRoom = roomId;
+      }
+    }
+
+    return {
+      totalRooms: this.size,
+      totalMessages,
+      capacity: this.capacity,
+      averageAccessCount: this.size > 0 ? totalAccessCount / this.size : 0,
+      mostAccessedRoom
+    };
+  }
+
+  // Advanced cleanup based on access patterns
+  performSmartCleanup(): void {
+    const now = Date.now();
+    const ONE_HOUR = 60 * 60 * 1000;
+    const roomsToRemove: string[] = [];
+
+    for (const [roomId, node] of this.cache) {
+      // Remove rooms not accessed in the last hour with low access count
+      if (now - node.lastAccessed > ONE_HOUR && node.accessCount < 3) {
+        roomsToRemove.push(roomId);
+      }
+    }
+
+    roomsToRemove.forEach(roomId => this.remove(roomId));
+  }
+}
+
 class RoomMessageService {
-  private messageCache = new Map<string, RoomMessage[]>(); // roomId -> messages
-  private readonly MAX_CACHE_SIZE = 100; // رسائل لكل غرفة
-  private readonly MAX_CACHE_ROOMS = 50; // عدد الغرف المحفوظة في الذاكرة
+  private messageCache = new AdvancedLRUCache(50, 100); // 50 rooms, 100 messages each
+  private loadingStates = new Map<string, boolean>(); // Prevent concurrent loading
 
   /**
    * إرسال رسالة لغرفة
@@ -53,7 +263,7 @@ class RoomMessageService {
       }
 
       // التحقق من وجود المرسل
-      const sender = await storage.getUser(messageData.senderId);
+      const sender = await databaseService.getUser(messageData.senderId);
       if (!sender) {
         throw new Error('المرسل غير موجود');
       }
@@ -64,7 +274,7 @@ class RoomMessageService {
       }
 
       // إنشاء الرسالة في قاعدة البيانات
-      const message = await storage.createMessage({
+      const message = await databaseService.createMessage({
         senderId: messageData.senderId,
         content: messageData.content.trim(),
         messageType: messageData.messageType || 'text',
@@ -92,8 +302,8 @@ class RoomMessageService {
         senderAvatar: (sender as any).profileImage || null
       };
 
-      // إضافة الرسالة للذاكرة المؤقتة
-      this.addToCache(messageData.roomId, roomMessage);
+      // إضافة الرسالة للذاكرة المؤقتة المحسنة
+      this.messageCache.addMessage(messageData.roomId, roomMessage);
 
       return roomMessage;
 
@@ -104,7 +314,7 @@ class RoomMessageService {
   }
 
   /**
-   * جلب رسائل الغرفة مع الصفحات
+   * جلب رسائل الغرفة مع الصفحات والـ LRU cache المحسن
    */
   async getRoomMessages(
     roomId: string, 
@@ -121,20 +331,26 @@ class RoomMessageService {
       const safeLimit = Math.min(20, Math.max(1, Number(limit) || 20));
       const safeOffset = Math.max(0, Number(offset) || 0);
 
-      // محاولة الحصول على الرسائل من الذاكرة المؤقتة أولاً
-      if (useCache && safeOffset === 0 && this.messageCache.has(roomId)) {
-        const cachedMessages = this.messageCache.get(roomId)!;
-        const slicedMessages = cachedMessages.slice(0, safeLimit);
-        
-        return {
-          messages: slicedMessages,
-          totalCount: cachedMessages.length,
-          hasMore: cachedMessages.length > safeLimit,
-          nextOffset: slicedMessages.length
-        };
+      // 🚀 استخدام LRU cache المحسن
+      if (useCache && safeOffset === 0) {
+        const cachedMessages = this.messageCache.get(roomId);
+        if (cachedMessages && cachedMessages.length > 0) {
+          const slicedMessages = cachedMessages.slice(0, safeLimit);
+          
+          console.log(`✅ استخدام LRU cache للغرفة ${roomId} (${slicedMessages.length} رسالة)`);
+          
+          return {
+            messages: slicedMessages,
+            totalCount: cachedMessages.length,
+            hasMore: cachedMessages.length > safeLimit,
+            nextOffset: slicedMessages.length
+          };
+        }
       }
 
-      if (!db || dbType === 'disabled') {
+      // منع التحميل المتزامن للغرفة نفسها
+      if (this.loadingStates.get(roomId)) {
+        console.log(`⚠️ تحميل رسائل الغرفة ${roomId} قيد التنفيذ بالفعل`);
         return {
           messages: [],
           totalCount: 0,
@@ -142,45 +358,62 @@ class RoomMessageService {
         };
       }
 
-      // جلب الرسائل من قاعدة البيانات
-      const dbMessages = await storage.getRoomMessages(roomId, safeLimit, safeOffset);
-      const totalCount = await storage.getRoomMessageCount(roomId);
+      this.loadingStates.set(roomId, true);
 
-      // تحويل الرسائل للتنسيق المطلوب
-      const messages: RoomMessage[] = [];
-      for (const msg of dbMessages) {
-        try {
-          const sender = await storage.getUser(msg.senderId);
-          const roomMessage: RoomMessage = {
-            id: msg.id,
-            senderId: msg.senderId,
-            roomId: roomId,
-            content: msg.content,
-            messageType: msg.messageType || 'text',
-            timestamp: new Date(msg.timestamp),
-            isPrivate: msg.isPrivate || false,
-            receiverId: msg.receiverId || null,
-            senderUsername: sender?.username || 'مستخدم محذوف',
-            senderUserType: sender?.userType || 'user',
-            senderAvatar: (sender as any)?.profileImage || null
+      try {
+        if (!db || dbType === 'disabled') {
+          return {
+            messages: [],
+            totalCount: 0,
+            hasMore: false
           };
-          messages.push(roomMessage);
-        } catch (err) {
-          console.warn(`تعذر معالجة الرسالة ${msg.id}:`, err);
         }
-      }
 
-      // إضافة الرسائل للذاكرة المؤقتة (إذا كان offset = 0)
-      if (safeOffset === 0 && messages.length > 0) {
-        this.updateCache(roomId, messages);
-      }
+        // جلب الرسائل من قاعدة البيانات
+        const dbMessages = await databaseService.getRoomMessages(roomId, safeLimit, safeOffset);
+        const totalCount = await databaseService.getRoomMessageCount(roomId);
 
-      return {
-        messages,
-        totalCount,
-        hasMore: (safeOffset + messages.length) < totalCount,
-        nextOffset: safeOffset + messages.length
-      };
+        // تحويل الرسائل للتنسيق المطلوب
+        const messages: RoomMessage[] = [];
+        for (const msg of dbMessages) {
+          try {
+            const sender = await databaseService.getUser(msg.senderId);
+            const roomMessage: RoomMessage = {
+              id: msg.id,
+              senderId: msg.senderId,
+              roomId: roomId,
+              content: msg.content,
+              messageType: msg.messageType || 'text',
+              timestamp: new Date(msg.timestamp),
+              isPrivate: msg.isPrivate || false,
+              receiverId: msg.receiverId || null,
+              senderUsername: sender?.username || 'مستخدم محذوف',
+              senderUserType: sender?.userType || 'user',
+              senderAvatar: (sender as any)?.profileImage || null
+            };
+            messages.push(roomMessage);
+          } catch (err) {
+            console.warn(`تعذر معالجة الرسالة ${msg.id}:`, err);
+          }
+        }
+
+        // إضافة الرسائل للذاكرة المؤقتة المحسنة (إذا كان offset = 0)
+        if (safeOffset === 0 && messages.length > 0) {
+          this.messageCache.put(roomId, messages);
+        }
+
+        console.log(`✅ تم جلب ${messages.length} رسالة للغرفة ${roomId} من قاعدة البيانات`);
+
+        return {
+          messages,
+          totalCount,
+          hasMore: (safeOffset + messages.length) < totalCount,
+          nextOffset: safeOffset + messages.length
+        };
+
+      } finally {
+        this.loadingStates.delete(roomId);
+      }
 
     } catch (error) {
       console.error(`خطأ في جلب رسائل الغرفة ${roomId}:`, error);
@@ -215,13 +448,13 @@ class RoomMessageService {
       }
 
       // التحقق من وجود الرسالة
-      const message = await storage.getMessage(messageId);
+      const message = await databaseService.getMessage(messageId);
       if (!message) {
         throw new Error('الرسالة غير موجودة');
       }
 
       // التحقق من الصلاحيات
-      const user = await storage.getUser(userId);
+      const user = await databaseService.getUser(userId);
       if (!user) {
         throw new Error('المستخدم غير موجود');
       }
@@ -232,12 +465,16 @@ class RoomMessageService {
       }
 
       // حذف الرسالة من قاعدة البيانات
-      await storage.deleteMessage(messageId);
+      await databaseService.deleteMessage(messageId);
 
       // إزالة الرسالة من الذاكرة المؤقتة
-      this.removeFromCache(roomId, messageId);
+      const cachedMessages = this.messageCache.get(roomId);
+      if (cachedMessages) {
+        const updatedMessages = cachedMessages.filter(msg => msg.id !== messageId);
+        this.messageCache.put(roomId, updatedMessages);
+      }
 
-      } catch (error) {
+    } catch (error) {
       console.error('خطأ في حذف الرسالة:', error);
       throw error;
     }
@@ -270,14 +507,14 @@ class RoomMessageService {
       }
 
       // البحث في قاعدة البيانات
-      const results = await storage.searchRoomMessages(roomId, searchQuery, limit, offset);
-      const totalCount = await storage.countSearchRoomMessages(roomId, searchQuery);
+      const results = await databaseService.searchRoomMessages(roomId, searchQuery, limit, offset);
+      const totalCount = await databaseService.countSearchRoomMessages(roomId, searchQuery);
 
       // تحويل النتائج للتنسيق المطلوب
       const messages: RoomMessage[] = [];
       for (const msg of results) {
         try {
-          const sender = await storage.getUser(msg.senderId);
+          const sender = await databaseService.getUser(msg.senderId);
           const roomMessage: RoomMessage = {
             id: msg.id,
             senderId: msg.senderId,
@@ -332,12 +569,12 @@ class RoomMessageService {
         };
       }
 
-      const totalMessages = await storage.getRoomMessageCount(roomId);
+      const totalMessages = await databaseService.getRoomMessageCount(roomId);
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const messagesLast24h = await storage.getRoomMessageCountSince(roomId, yesterday);
-      const activeUsers = await storage.getRoomActiveUserCount(roomId, yesterday);
+      const messagesLast24h = await databaseService.getRoomMessageCountSince(roomId, yesterday);
+      const activeUsers = await databaseService.getRoomActiveUserCount(roomId, yesterday);
       
-      const lastMessage = await storage.getLastRoomMessage(roomId);
+      const lastMessage = await databaseService.getLastRoomMessage(roomId);
       const lastMessageTime = lastMessage ? new Date(lastMessage.timestamp) : undefined;
 
       return {
@@ -367,10 +604,10 @@ class RoomMessageService {
       }
 
       const cutoffDate = new Date(Date.now() - keepLastDays * 24 * 60 * 60 * 1000);
-      const deletedCount = await storage.deleteOldRoomMessages(roomId, cutoffDate);
+      const deletedCount = await databaseService.deleteOldRoomMessages(roomId, cutoffDate);
 
       // تنظيف الذاكرة المؤقتة أيضاً
-      this.clearCache(roomId);
+      this.messageCache.remove(roomId);
 
       return deletedCount;
 
@@ -383,97 +620,16 @@ class RoomMessageService {
   // ==================== إدارة الذاكرة المؤقتة ====================
 
   /**
-   * إضافة رسالة للذاكرة المؤقتة
-   */
-  private addToCache(roomId: string, message: RoomMessage): void {
-    try {
-      if (!this.messageCache.has(roomId)) {
-        this.messageCache.set(roomId, []);
-      }
-
-      const messages = this.messageCache.get(roomId)!;
-      messages.unshift(message); // إضافة في البداية (الأحدث أولاً)
-
-      // الحد من حجم الذاكرة المؤقتة
-      if (messages.length > this.MAX_CACHE_SIZE) {
-        messages.splice(this.MAX_CACHE_SIZE);
-      }
-
-      // إدارة عدد الغرف المحفوظة
-      this.manageCacheSize();
-
-    } catch (error) {
-      console.warn(`تعذر إضافة الرسالة للذاكرة المؤقتة للغرفة ${roomId}:`, error);
-    }
-  }
-
-  /**
-   * تحديث الذاكرة المؤقتة
-   */
-  private updateCache(roomId: string, messages: RoomMessage[]): void {
-    try {
-      this.messageCache.set(roomId, [...messages]);
-      this.manageCacheSize();
-    } catch (error) {
-      console.warn(`تعذر تحديث الذاكرة المؤقتة للغرفة ${roomId}:`, error);
-    }
-  }
-
-  /**
-   * إزالة رسالة من الذاكرة المؤقتة
-   */
-  private removeFromCache(roomId: string, messageId: number): void {
-    try {
-      if (this.messageCache.has(roomId)) {
-        const messages = this.messageCache.get(roomId)!;
-        const index = messages.findIndex(msg => msg.id === messageId);
-        if (index !== -1) {
-          messages.splice(index, 1);
-        }
-      }
-    } catch (error) {
-      console.warn(`تعذر إزالة الرسالة من الذاكرة المؤقتة للغرفة ${roomId}:`, error);
-    }
-  }
-
-  /**
-   * مسح ذاكرة الغرفة المؤقتة
-   */
-  private clearCache(roomId: string): void {
-    this.messageCache.delete(roomId);
-  }
-
-  /**
-   * إدارة حجم الذاكرة المؤقتة
-   */
-  private manageCacheSize(): void {
-    if (this.messageCache.size > this.MAX_CACHE_ROOMS) {
-      // حذف أقدم الغرف المحفوظة (LRU)
-      const roomsToDelete = Array.from(this.messageCache.keys()).slice(this.MAX_CACHE_ROOMS);
-      roomsToDelete.forEach(roomId => this.messageCache.delete(roomId));
-    }
-  }
-
-  /**
-   * الحصول على إحصائيات الذاكرة المؤقتة
+   * الحصول على إحصائيات الذاكرة المؤقتة المحسنة
    */
   getCacheStats(): {
     cachedRooms: number;
     totalCachedMessages: number;
-    cacheHitRatio: number;
+    capacity: number;
+    averageAccessCount: number;
+    mostAccessedRoom: string | null;
   } {
-    const cachedRooms = this.messageCache.size;
-    let totalCachedMessages = 0;
-    
-    for (const messages of this.messageCache.values()) {
-      totalCachedMessages += messages.length;
-    }
-
-    return {
-      cachedRooms,
-      totalCachedMessages,
-      cacheHitRatio: 0 // يمكن تطويره لاحقاً لحساب نسبة الإصابة
-    };
+    return this.messageCache.getStats();
   }
 
   /**
@@ -482,6 +638,13 @@ class RoomMessageService {
   clearAllCache(): void {
     this.messageCache.clear();
     }
+
+  /**
+   * تنظيف ذكي للذاكرة المؤقتة
+   */
+  performSmartCacheCleanup(): void {
+    this.messageCache.performSmartCleanup();
+  }
 }
 
 // تصدير instance واحد

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatRoom } from '@/types/chat';
-import { mapApiRooms, dedupeRooms, mapApiRoom } from '@/utils/roomUtils';
+import { mapApiRooms, dedupeRooms, mapApiRoom, roomStateManager } from '@/utils/roomUtils';
 
 interface UseRoomManagerOptions {
   autoRefresh?: boolean;
@@ -43,8 +43,6 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
   const cacheRef = useRef<RoomCache | null>(null);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const fetchingRef = useRef<boolean>(false); // 🔒 منع الطلبات المتعددة
-  const lastFetchTimeRef = useRef<number>(0); // تتبع وقت آخر طلب
 
   // 🧹 تنظيف الذاكرة عند إلغاء التحميل
   useEffect(() => {
@@ -81,19 +79,11 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     return (now - cacheRef.current.timestamp) < cacheTimeout;
   }, [cacheTimeout]);
 
-  // 🚀 جلب الغرف من API مع منع التكرار الكامل
+  // 🚀 جلب الغرف من API مع منع التكرار الكامل باستخدام RoomStateManager
   const fetchRooms = useCallback(async (force: boolean = false): Promise<ChatRoom[]> => {
-    const now = Date.now();
-    
-    // 🚫 منع الطلبات المتكررة (أقل من ثانية واحدة)
-    if (!force && (now - lastFetchTimeRef.current) < 1000) {
+    // 🚫 استخدام RoomStateManager لمنع الطلبات المتكررة
+    if (!force && !roomStateManager.canFetchRoom('all_rooms')) {
       console.log('⚠️ منع طلب متكرر - استخدام البيانات الحالية');
-      return rooms;
-    }
-
-    // 🚫 منع الطلبات المتعددة المتزامنة
-    if (fetchingRef.current && !force) {
-      console.log('⚠️ طلب جلب الغرف قيد التنفيذ بالفعل');
       return rooms;
     }
 
@@ -111,8 +101,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
 
     // 🆕 إنشاء controller جديد
     abortControllerRef.current = new AbortController();
-    fetchingRef.current = true;
-    lastFetchTimeRef.current = now;
+    roomStateManager.setRoomLoading('all_rooms', true);
 
     try {
       setLoading(true);
@@ -173,7 +162,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     } finally {
       setLoading(false);
       abortControllerRef.current = null;
-      fetchingRef.current = false;
+      roomStateManager.setRoomLoading('all_rooms', false);
     }
   }, [isCacheValid, maxCachedRooms, rooms]);
 
@@ -211,7 +200,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       }
 
       const data = await response.json();
-      const newRoom: ChatRoom = mapApiRoom(data.room);
+      const newRoom: ChatRoom = mapApiRoom(data.room)!;
 
       // 🔄 تحديث الحالة المحلية مع إزالة التكرار
       setRooms(prev => {
@@ -280,6 +269,70 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     }
   }, []);
 
+  // 🚪 انضمام للغرفة مع منع التكرار
+  const joinRoom = useCallback(async (roomId: string, userId: number): Promise<boolean> => {
+    // 🚫 استخدام RoomStateManager لمنع الانضمام المتكرر
+    if (!roomStateManager.canJoinRoom(roomId)) {
+      console.log(`⚠️ الانضمام للغرفة ${roomId} قيد التنفيذ بالفعل`);
+      return false;
+    }
+
+    roomStateManager.setRoomJoining(roomId, true);
+
+    try {
+      const response = await apiRequest(`/api/rooms/${roomId}/join`, {
+        method: 'POST',
+        body: { userId }
+      });
+
+      if (!response) {
+        throw new Error('فشل في الانضمام للغرفة');
+      }
+
+      console.log(`✅ تم الانضمام للغرفة ${roomId} بنجاح`);
+      return true;
+
+    } catch (err: any) {
+      console.error('❌ خطأ في الانضمام للغرفة:', err);
+      setError(err.message || 'فشل في الانضمام للغرفة');
+      return false;
+    } finally {
+      roomStateManager.setRoomJoining(roomId, false);
+    }
+  }, []);
+
+  // 🚪 مغادرة الغرفة مع منع التكرار
+  const leaveRoom = useCallback(async (roomId: string, userId: number): Promise<boolean> => {
+    // 🚫 استخدام RoomStateManager لمنع المغادرة المتكررة
+    if (!roomStateManager.canLeaveRoom(roomId)) {
+      console.log(`⚠️ مغادرة الغرفة ${roomId} قيد التنفيذ بالفعل`);
+      return false;
+    }
+
+    roomStateManager.setRoomLeaving(roomId, true);
+
+    try {
+      const response = await apiRequest(`/api/rooms/${roomId}/leave`, {
+        method: 'POST',
+        body: { userId }
+      });
+
+      if (!response) {
+        throw new Error('فشل في مغادرة الغرفة');
+      }
+
+      console.log(`✅ تم مغادرة الغرفة ${roomId} بنجاح`);
+      return true;
+
+    } catch (err: any) {
+      console.error('❌ خطأ في مغادرة الغرفة:', err);
+      setError(err.message || 'فشل في مغادرة الغرفة');
+      return false;
+    } finally {
+      roomStateManager.setRoomLeaving(roomId, false);
+    }
+  }, []);
+
   // 🔢 تحديث عدد المستخدمين في غرفة
   const updateRoomUserCount = useCallback((roomId: string, userCount: number) => {
     setRooms(prev => {
@@ -341,7 +394,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
 
       refreshTimeoutRef.current = setTimeout(() => {
         // تحديث فقط إذا لم يكن هناك طلب قيد التنفيذ
-        if (!fetchingRef.current) {
+        if (roomStateManager.canFetchRoom('all_rooms')) {
           fetchRooms(false).then(() => {
             scheduleRefresh(); // جدولة التحديث التالي
           });
@@ -363,17 +416,19 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
   // 🧹 مسح الذاكرة المؤقتة
   const clearCache = useCallback(() => {
     cacheRef.current = null;
-    lastFetchTimeRef.current = 0;
   }, []);
 
   // 📊 الحصول على إحصائيات الذاكرة المؤقتة
   const getCacheStats = useCallback(() => {
+    const roomStateStats = roomStateManager.getStats();
+    
     if (!cacheRef.current) {
       return {
         hasCache: false,
         cacheSize: 0,
         cacheAge: 0,
-        version: 0
+        version: 0,
+        roomStateStats
       };
     }
 
@@ -382,7 +437,8 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       cacheSize: cacheRef.current.data.length,
       cacheAge: Date.now() - cacheRef.current.timestamp,
       version: cacheRef.current.version,
-      isValid: isCacheValid()
+      isValid: isCacheValid(),
+      roomStateStats
     };
   }, [isCacheValid]);
 
@@ -406,6 +462,8 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     fetchRooms,
     addRoom,
     deleteRoom,
+    joinRoom,
+    leaveRoom,
     updateRoomUserCount,
     searchRooms,
     filterRooms,
@@ -418,6 +476,6 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     isRefreshing: loading && rooms.length > 0,
     
     // 🚫 منع التكرار
-    isFetching: fetchingRef.current
+    isFetching: !roomStateManager.canFetchRoom('all_rooms')
   };
 }

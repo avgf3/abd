@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { roomMessageService } from '../services/roomMessageService';
 import { roomService } from '../services/roomService';
-import { storage } from '../storage';
+import { databaseService } from '../services/databaseService';
 
 const router = Router();
 
@@ -299,7 +299,7 @@ router.post('/room/:roomId/cleanup', async (req, res) => {
     }
 
     // التحقق من الصلاحيات
-    const user = await storage.getUser(parseInt(userId));
+    const user = await databaseService.getUser(parseInt(userId));
     if (!user) {
       return res.status(404).json({ error: 'المستخدم غير موجود' });
     }
@@ -364,7 +364,7 @@ router.post('/cache/clear', async (req, res) => {
     }
 
     // التحقق من الصلاحيات
-    const user = await storage.getUser(parseInt(userId));
+    const user = await databaseService.getUser(parseInt(userId));
     if (!user) {
       return res.status(404).json({ error: 'المستخدم غير موجود' });
     }
