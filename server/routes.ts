@@ -1168,30 +1168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // جلب رسائل الغرف
-  app.get("/api/messages/room/:roomId", async (req, res) => {
-    try {
-      const { roomId } = req.params;
-      const limit = parseInt(req.query.limit as string) || 50;
-      
-      // جلب رسائل الغرفة
-      const messages = await storage.getRoomMessages(roomId, limit);
-      
-      // إضافة بيانات المرسلين
-      const messagesWithUsers = await Promise.all(
-        messages.map(async (msg) => {
-          const sender = msg.senderId ? await storage.getUser(msg.senderId) : null;
-          return { ...msg, sender };
-        })
-      );
-
-      res.json({ messages: messagesWithUsers });
-    } catch (error) {
-      console.error('خطأ في جلب رسائل الغرفة:', error);
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
-
+  // تم نقل مسارات رسائل الغرف إلى router المنفصل في server/routes/messages.ts لتفادي التكرار
   app.get("/api/messages/private/:userId1/:userId2", async (req, res) => {
     try {
       const userId1 = parseInt(req.params.userId1);
