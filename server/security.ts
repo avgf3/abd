@@ -187,7 +187,7 @@ export function setupSecurity(app: Express): void {
       "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: https:",
-      "connect-src 'self' ws: wss:",
+      "connect-src 'self' ws: wss: https:",
       "font-src 'self' https://fonts.gstatic.com",
       "object-src 'none'",
       "media-src 'self'",

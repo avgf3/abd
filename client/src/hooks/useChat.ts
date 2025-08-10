@@ -213,20 +213,17 @@ export const useChat = () => {
   const loadRoomMessages = useCallback(async (roomId: string, forceReload: boolean = false) => {
     // تجنب التحميل المتكرر
     if (!forceReload && state.roomMessages[roomId]?.length > 0) {
-      console.log(`✅ رسائل الغرفة ${roomId} محملة مسبقاً`);
       return;
     }
 
     // تجنب التحميل المتزامن
     if (loadingRooms.current.has(roomId)) {
-      console.log(`⏳ تحميل الغرفة ${roomId} قيد التنفيذ`);
       return;
     }
 
     loadingRooms.current.add(roomId);
     
     try {
-      console.log(`🔄 تحميل رسائل الغرفة ${roomId}...`);
       const data = await apiRequest(`/api/messages/room/${roomId}?limit=20`);
       
       if (data?.messages && Array.isArray(data.messages)) {
@@ -235,8 +232,7 @@ export const useChat = () => {
           type: 'SET_ROOM_MESSAGES', 
           payload: { roomId, messages: formattedMessages }
         });
-        console.log(`✅ تم تحميل ${formattedMessages.length} رسالة للغرفة ${roomId}`);
-      }
+        }
     } catch (error) {
       console.error(`❌ خطأ في تحميل رسائل الغرفة ${roomId}:`, error);
     } finally {
@@ -244,12 +240,23 @@ export const useChat = () => {
     }
   }, [state.roomMessages]);
 
-  // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
-  const setupSocketListeners = useCallback((socketInstance: Socket) => {
-    console.log('🔗 إعداد مستمعي Socket...');
+      // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
+    const setupSocketListeners = useCallback((socketInstance: Socket) => {
+      // حافظ على الاتصال عبر ping/pong مخصص عند السكون
+      const pingInterval = setInterval(() => {
+        if (socketInstance.connected) {
+          socketInstance.emit('client_ping');
+        }
+      }, 20000);
+      socketInstance.on('client_pong', () => {});
 
-    // ✅ معالج واحد للرسائل - حذف التضارب
-    socketInstance.on('message', (data: any) => {
+      // استجابة لنبض السيرفر المخصص للحفاظ على الاتصال
+      socketInstance.on('ping', () => {
+        try { socketInstance.emit('pong', { t: Date.now() }); } catch {}
+      });
+
+      // ✅ معالج واحد للرسائل - حذف التضارب
+      socketInstance.on('message', (data: any) => {
       try {
         const envelope = data.envelope || data;
         
@@ -341,7 +348,6 @@ export const useChat = () => {
           }
           
           default: {
-            console.log('📨 رسالة غير معروفة:', envelope.type);
             break;
           }
         }
@@ -387,13 +393,11 @@ export const useChat = () => {
 
     // معالجات الاتصال
     socketInstance.on('connect', () => {
-      console.log('✅ تم الاتصال بالسيرفر');
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
     });
 
     socketInstance.on('disconnect', () => {
-      console.log('❌ انقطع الاتصال بالسيرفر');
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
     });
 
@@ -422,6 +426,7 @@ export const useChat = () => {
         : window.location.origin;
 
       socket.current = io(serverUrl, {
+        path: '/socket.io',
         transports: ['websocket', 'polling'],
         timeout: 20000,
         reconnection: true,
@@ -482,11 +487,8 @@ export const useChat = () => {
   const joinRoom = useCallback((roomId: string) => {
     // تجنب الانضمام لنفس الغرفة
     if (state.currentRoomId === roomId) {
-      console.log(`✅ أنت موجود في الغرفة ${roomId} بالفعل`);
       return;
     }
-    
-    console.log(`🔄 الانضمام للغرفة: ${roomId}`);
     
     // تغيير الغرفة الحالية
     dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });

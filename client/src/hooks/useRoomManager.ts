@@ -87,19 +87,16 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     
     // 🚫 منع الطلبات المتكررة (أقل من ثانية واحدة)
     if (!force && (now - lastFetchTimeRef.current) < 1000) {
-      console.log('⚠️ منع طلب متكرر - استخدام البيانات الحالية');
       return rooms;
     }
 
     // 🚫 منع الطلبات المتعددة المتزامنة
     if (fetchingRef.current && !force) {
-      console.log('⚠️ طلب جلب الغرف قيد التنفيذ بالفعل');
       return rooms;
     }
 
     // 💾 استخدام الذاكرة المؤقتة إذا كانت صالحة وليس إجبارياً
     if (!force && isCacheValid() && cacheRef.current) {
-      console.log('✅ استخدام الذاكرة المؤقتة للغرف');
       setRooms(cacheRef.current.data);
       return cacheRef.current.data;
     }
@@ -118,7 +115,6 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       setLoading(true);
       setError(null);
 
-      console.log('🔄 جلب الغرف من API...');
       const response = await apiRequest('/api/rooms', {
         method: 'GET',
         signal: abortControllerRef.current.signal
@@ -149,12 +145,10 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       setLastUpdate(new Date());
       setError(null);
 
-      console.log(`✅ تم جلب ${cacheRef.current.data.length} غرفة بنجاح`);
       return cacheRef.current.data;
 
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        console.log('⚠️ تم إلغاء طلب جلب الغرف');
         return rooms; // إرجاع الغرف الحالية
       }
 
@@ -164,7 +158,6 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
 
       // 💾 استخدام الذاكرة المؤقتة في حالة الخطأ إذا كانت متوفرة
       if (cacheRef.current) {
-        console.log('⚠️ استخدام الذاكرة المؤقتة بسبب الخطأ');
         setRooms(cacheRef.current.data);
         return cacheRef.current.data;
       }
