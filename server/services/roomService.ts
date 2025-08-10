@@ -155,11 +155,12 @@ class RoomService {
 
       // حذف صورة الغرفة إن وجدت
       if (room.icon) {
-        const imagePath = path.join(process.cwd(), 'client', 'public', room.icon);
+        const relIcon = room.icon.startsWith('/') ? room.icon.slice(1) : room.icon;
+        const imagePath = path.join(process.cwd(), 'client', 'public', relIcon);
         if (fs.existsSync(imagePath)) {
           try {
             fs.unlinkSync(imagePath);
-            } catch (err) {
+          } catch (err) {
             console.warn(`⚠️ تعذر حذف صورة الغرفة: ${err}`);
           }
         }
@@ -307,13 +308,13 @@ class RoomService {
         return [];
       }
 
-      // جلب من قاعدة البيانات أولاً
-      const dbUsers = await storage.getRoomUsers(roomId);
+      // جلب معرفات المستخدمين من قاعدة البيانات أولاً
+      const dbUserIds: number[] = await storage.getRoomUsers(roomId);
       
       // دمج مع المستخدمين المتصلين في الذاكرة
-      const connectedUserIds = this.connectedRooms.get(roomId) || new Set();
-      const allUserIds = new Set([
-        ...dbUsers.map((u: any) => u.id),
+      const connectedUserIds = this.connectedRooms.get(roomId) || new Set<number>();
+      const allUserIds = new Set<number>([
+        ...dbUserIds,
         ...Array.from(connectedUserIds)
       ]);
 
@@ -345,10 +346,7 @@ class RoomService {
       const users = await this.getRoomUsers(roomId);
       const count = users.length;
 
-      // تحديث في قاعدة البيانات إذا أمكن
-      if (db && dbType !== 'disabled') {
-        await storage.updateRoomUserCount(roomId, count);
-      }
+      // لا نقوم بتحديث قاعدة البيانات هنا لعدم وجود عمود مخصص حالياً
 
       return count;
     } catch (error) {
@@ -395,7 +393,7 @@ class RoomService {
         throw new Error('المستخدم غير موجود');
       }
 
-      const canApprove = room.hostId === approvedBy || ['admin', 'owner'].includes(approver.userType);
+      const canApprove = room.hostId === approvedBy || ['admin', 'owner', 'moderator'].includes(approver.userType);
       if (!canApprove) {
         throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
       }
@@ -425,7 +423,7 @@ class RoomService {
         throw new Error('المستخدم غير موجود');
       }
 
-      const canReject = room.hostId === rejectedBy || ['admin', 'owner'].includes(rejecter.userType);
+      const canReject = room.hostId === rejectedBy || ['admin', 'owner', 'moderator'].includes(rejecter.userType);
       if (!canReject) {
         throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
       }
@@ -454,7 +452,7 @@ class RoomService {
         throw new Error('المستخدم غير موجود');
       }
 
-      const canRemove = room.hostId === removedBy || ['admin', 'owner'].includes(remover.userType);
+      const canRemove = room.hostId === removedBy || ['admin', 'owner', 'moderator'].includes(remover.userType);
       if (!canRemove) {
         throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
       }
