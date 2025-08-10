@@ -188,9 +188,7 @@ export default function FriendsTabPanel({
     friend.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  useGrabScroll(friendsScrollRef);
-
-
+  
   return (
     <div className="h-full flex flex-col bg-background/95 backdrop-blur-sm">
       {/* Header */}
