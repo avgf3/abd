@@ -413,6 +413,14 @@ export const storage: LegacyStorage = {
     return await databaseService.getMessages(roomId, limit, offset);
   },
 
+  async getMessage(messageId: number) {
+    return await databaseService.getMessageById(messageId);
+  },
+
+  async deleteMessage(messageId: number) {
+    return await databaseService.deleteMessage(messageId);
+  },
+
   // Friends
   async addFriend(userId: number, friendId: number) {
     return await friendService.addFriend(userId, friendId);
