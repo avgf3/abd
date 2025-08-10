@@ -1490,55 +1490,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           room: 'general', // البدء بالغرفة العامة دائماً
           lastSeen: new Date()
         });
-        // تحديث حالة المستخدم إلى متصل
-        try {
-          await storage.setUserOnlineStatus(user.id, true);
-          // انتظار قصير للتأكد من التحديث في قاعدة البيانات
-          await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (updateError) {
-          console.error('خطأ في تحديث حالة المستخدم:', updateError);
-        }
+        
+        // تحديث حالة المستخدم إلى متصل بشكل غير متزامن
+        storage.setUserOnlineStatus(user.id, true).catch(error => {
+          console.error('خطأ في تحديث حالة المستخدم:', error);
+        });
 
-        // جلب غرف المستخدم وانضمام إليها
-        try {
-          let userRooms: string[] = [];
-          try {
-            userRooms = await storage.getUserRooms(user.id);
-          } catch {}
-          // الانضمام للغرفة العامة عبر الدالة الموحدة لضمان حفظ الانضمام وإرسال الرسائل وقوائم المستخدمين
-          await handleRoomJoin(socket as CustomSocket, user.id, user.username, 'general');
-          
-          } catch (roomError) {
-          console.error('خطأ في انضمام للغرف:', roomError);
-          // انضمام للغرفة العامة على الأقل (مرة واحدة فقط)
-          await handleRoomJoin(socket as CustomSocket, user.id, user.username, 'general');
-        }
-
-        // إرسال تأكيد المصادقة
+        // إرسال تأكيد المصادقة فوراً
         socket.emit('authenticated', { 
           message: 'تم الاتصال بنجاح',
           user: user 
         });
 
-        // إذا كان العميل أرسل reconnect=true، لا نُخرج إشعارات مغادرة سابقة
-
-
-        // جلب وإرسال قائمة المستخدمين المتصلين في الغرفة العامة
-        const currentRoom = 'general'; // دائماً نبدأ بالغرفة العامة
-        // انتظار قصير للتأكد من تحديث قاعدة البيانات
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        // جلب قائمة المستخدمين المتصلين فعلياً في هذه الغرفة من الذاكرة فقط
-        const roomUsers = Array.from(connectedUsers.values())
-          .filter(conn => conn.room === currentRoom)
-          .map(conn => conn.user);
-        
-        // إرسال تأكيد الانضمام مع قائمة المستخدمين
-        // تم الانضمام للغرفة العامة عبر handleRoomJoin؛ لا حاجة لإرسال أحداث مكررة هنا
+        // الانضمام للغرفة العامة بشكل غير متزامن
+        handleRoomJoin(socket as CustomSocket, user.id, user.username, 'general').catch(error => {
+          console.error('خطأ في انضمام للغرف:', error);
+        });
 
       } catch (error) {
         console.error('❌ خطأ في المصادقة:', error);
-        socket.emit('error', { message: 'خطأ في المصادقة' });
+        socket.emit('error', { message: 'فشل في المصادقة' });
       }
     });
 
@@ -1583,138 +1554,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-    socket.on('publicMessage', async (data) => {
+    // معالج الرسائل العامة - محسّن
+    socket.on('publicMessage', async (messageData) => {
       try {
-        if (!socket.userId) return;
+        const userId = (socket as CustomSocket).userId;
+        const username = (socket as CustomSocket).username;
         
-        // التحقق من حالة المستخدم بشكل بسيط
-        const user = await storage.getUser(socket.userId);
-        if (!user) {
-          socket.emit('message', {
-            type: 'error',
-            message: 'المستخدم غير موجود'
-          });
-          return;
-        }
-        
-        // فحص حالة الحظر أو الكتم فقط إذا كانت موجودة في قاعدة البيانات
-        if (user.isBanned) {
-          socket.emit('message', {
-            type: 'error',
-            message: 'أنت محظور ولا يمكنك إرسال رسائل'
-          });
-          return;
-        }
-        
-        if (user.isMuted) {
-          socket.emit('message', {
-            type: 'error',
-            message: 'أنت مكتوم ولا يمكنك إرسال رسائل في الدردشة العامة'
-          });
+        if (!userId || !username) {
+          socket.emit('message', { type: 'error', message: 'يجب تسجيل الدخول أولاً' });
           return;
         }
 
-        // تنظيف المحتوى
-        const sanitizedContent = sanitizeInput(data.content);
-        
-        // فحص صحة المحتوى
-        const contentCheck = validateMessageContent(sanitizedContent);
-        if (!contentCheck.isValid) {
-          socket.emit('message', { type: 'error', message: contentCheck.reason });
-          return;
-        }
-        
-        // فحص الرسالة ضد السبام
-        const spamCheck = spamProtection.checkMessage(socket.userId, sanitizedContent);
-        if (!spamCheck.isAllowed) {
-          socket.emit('message', { type: 'error', message: spamCheck.reason, action: spamCheck.action });
+        // التحقق من صحة البيانات
+        if (!messageData.content?.trim()) {
+          socket.emit('message', { type: 'error', message: 'محتوى الرسالة فارغ' });
           return;
         }
 
-        const roomId = data.roomId || 'general';
+        const roomId = messageData.roomId || 'general';
         
-        // 🔥 FIXED: التحقق من صلاحيات البث المباشر (تجنب التأثير على الغرفة العامة)
-        if (roomId !== 'general' && roomId !== 'عام') { // ✅ إضافة فحص للاسم العربي أيضاً
-          try {
-            const room = await storage.getRoom(roomId);
-            if (room && room.is_broadcast) {
-              const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
-              if (broadcastInfo) {
-                const isHost = broadcastInfo.hostId === socket.userId;
-                const isSpeaker = broadcastInfo.speakers.includes(socket.userId);
-                
-                if (!isHost && !isSpeaker) {
-                  socket.emit('message', {
-                    type: 'error',
-                    message: 'فقط المضيف والمتحدثون يمكنهم إرسال الرسائل في غرفة البث المباشر'
-                  });
-                  return;
-                }
-              }
-            }
-          } catch (error) {
-            // ✅ تجنب توقف الرسائل بسبب خطأ في فحص البث
-            console.warn('تحذير: خطأ في فحص صلاحيات البث:', error);
-            // السماح بالمتابعة إذا حدث خطأ في الفحص
-          }
-        }
-        
-        const newMessage = await storage.createMessage({
-          senderId: socket.userId,
-          content: sanitizedContent,
-          messageType: data.messageType || 'text',
+        // إنشاء الرسالة
+        const message = await messageService.sendMessage(userId, {
+          content: messageData.content.trim(),
+          messageType: messageData.messageType || 'text',
+          isPrivate: false,
+          roomId: roomId
+        });
+
+        // تحضير الرسالة للإرسال
+        const messageToSend = {
+          id: message.id,
+          senderId: userId,
+          content: message.content,
+          messageType: message.messageType,
           isPrivate: false,
           roomId: roomId,
-        });
-        
-        // إضافة نقاط لإرسال رسالة
-        try {
-          const pointsResult = await pointsService.addMessagePoints(socket.userId);
-          
-          // التحقق من إنجاز أول رسالة
-          const achievementResult = await pointsService.checkAchievement(socket.userId, 'FIRST_MESSAGE');
-          
-          // إرسال إشعار ترقية المستوى إذا حدثت
-          if (pointsResult?.leveledUp) {
-            socket.emit('message', {
-              type: 'levelUp',
-              oldLevel: pointsResult.oldLevel,
-              newLevel: pointsResult.newLevel,
-              levelInfo: pointsResult.levelInfo,
-              message: `🎉 تهانينا! وصلت للمستوى ${pointsResult.newLevel}: ${pointsResult.levelInfo?.title}`
-            });
+          timestamp: message.createdAt || new Date(),
+          sender: {
+            id: userId,
+            username: username,
+            userType: (socket as CustomSocket).userType
           }
-          
-          // إرسال إشعار إنجاز أول رسالة
-          if (achievementResult?.leveledUp) {
-            socket.emit('message', {
-              type: 'achievement',
-              message: `🏆 إنجاز جديد: أول رسالة! حصلت على ${achievementResult.newPoints - pointsResult.newPoints} نقطة إضافية!`
-            });
-          }
-          
-          // تحديث بيانات المستخدم في الذاكرة والإرسال للعملاء
-          const updatedSender = await storage.getUser(socket.userId);
-          if (updatedSender) {
-            // إرسال البيانات المحدثة للمستخدم
-            socket.emit('message', {
-              type: 'userUpdated',
-              user: updatedSender
-            });
-          }
-        } catch (pointsError) {
-          console.error('خطأ في إضافة النقاط:', pointsError);
-        }
-        
-        const sender = await storage.getUser(socket.userId);
-        // إرسال الرسالة فقط للمستخدمين في نفس الغرفة
-        io.to(`room_${roomId}`).emit('message', { 
+        };
+
+        // إرسال الرسالة لجميع المستخدمين في الغرفة
+        io.to(`room_${roomId}`).emit('message', {
           type: 'newMessage',
-          message: { ...newMessage, sender, roomId }
+          message: messageToSend
         });
+
       } catch (error) {
-        console.error('خطأ في إرسال الرسالة العامة:', error);
-        socket.emit('message', { type: 'error', message: 'خطأ في إرسال الرسالة' });
+        console.error('❌ خطأ في إرسال الرسالة العامة:', error);
+        socket.emit('message', { 
+          type: 'error', 
+          message: error instanceof Error ? error.message : 'فشل في إرسال الرسالة' 
+        });
       }
     });
 
@@ -2050,16 +1944,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // دالة مساعدة للانضمام للغرفة
     async function handleRoomJoin(socket: CustomSocket, userId: number, username: string, roomId: string) {
       try {
-        // الانضمام للغرفة في Socket.IO
+        // الانضمام للغرفة في Socket.IO فوراً
         socket.join(`room_${roomId}`);
         
         // حفظ الغرفة الحالية في الـ socket
         (socket as any).currentRoom = roomId;
         
-        // حفظ في قاعدة البيانات (مرة واحدة فقط)
-        await roomService.joinRoom(userId, roomId);
-        
-        // تحديث الغرفة في قائمة المتصلين الفعليين
+        // تحديث الغرفة في قائمة المتصلين الفعليين فوراً
         if (connectedUsers.has(userId)) {
           const userConnection = connectedUsers.get(userId)!;
           userConnection.room = roomId;
@@ -2067,25 +1958,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           connectedUsers.set(userId, userConnection);
         }
         
-        // إدارة غرف البث - تعيين مضيف إذا لم يكن موجود
-        await handleBroadcastHostAssignment(roomId, userId);
-        
-        // انتظار قصير للتأكد من التحديث
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
         // جلب قائمة المستخدمين المتصلين في الغرفة الجديدة من الذاكرة فقط
         const roomUsers = Array.from(connectedUsers.values())
           .filter(conn => conn.room === roomId)
           .map(conn => conn.user);
         
-        // إرسال تأكيد الانضمام مع قائمة المستخدمين
+        // إرسال تأكيد الانضمام مع قائمة المستخدمين فوراً
         socket.emit('message', {
           type: 'roomJoined',
           roomId: roomId,
           users: roomUsers
         });
         
-        // إشعار باقي المستخدمين في الغرفة (مرة واحدة فقط)
+        // إشعار باقي المستخدمين في الغرفة
         socket.to(`room_${roomId}`).emit('message', {
           type: 'userJoinedRoom',
           username: username,
@@ -2093,10 +1978,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           roomId: roomId
         });
         
-        // إرسال تأكيد الانضمام مع قائمة محدثة للمستخدمين في الغرفة
+        // إرسال قائمة محدثة للمستخدمين في الغرفة
         sendRoomUsers(roomId);
         
-        // إرسال رسالة ترحيب واحدة فقط
+        // جلب آخر 10 رسائل في الغرفة الجديدة بشكل غير متزامن
+        roomMessageService.getLatestRoomMessages(roomId, 10).then(recentMessages => {
+          socket.emit('message', {
+            type: 'roomMessages',
+            roomId: roomId,
+            messages: recentMessages
+          });
+        }).catch(error => {
+          console.error('خطأ في جلب الرسائل:', error);
+        });
+        
+        // العمليات التي تستغرق وقت نفذها بشكل غير متزامن
+        Promise.all([
+          roomService.joinRoom(userId, roomId),
+          handleBroadcastHostAssignment(roomId, userId)
+        ]).catch(error => {
+          console.error('خطأ في العمليات غير المتزامنة:', error);
+        });
+        
+        // إرسال رسالة ترحيب
         const welcomeMessage = {
           id: Date.now(),
           senderId: -1,
@@ -2111,14 +2015,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         socket.to(`room_${roomId}`).emit('message', {
           type: 'newMessage',
           message: welcomeMessage
-        });
-        
-        // جلب آخر 10 رسائل في الغرفة الجديدة فقط (مع استخدام الخدمة التي تدعم الذاكرة المؤقتة)
-        const recentMessages = await roomMessageService.getLatestRoomMessages(roomId, 10);
-        socket.emit('message', {
-          type: 'roomMessages',
-          roomId: roomId,
-          messages: recentMessages
         });
         
       } catch (error) {
