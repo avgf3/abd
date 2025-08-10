@@ -20,6 +20,7 @@ import UserRoleBadge from './UserRoleBadge';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Socket } from 'socket.io-client';
 import { getSocket, saveSession } from '@/lib/socket';
+import ScrollToBottomButton from '../common/ScrollToBottomButton';
 
 interface UnifiedSidebarProps {
   users: ChatUser[];
@@ -135,6 +136,8 @@ export default function UnifiedSidebar({
 
   // جلب المنشورات عبر React Query مع كاش قوي
   const socketRef = useRef<Socket | null>(null);
+  const usersScrollRef = useRef<HTMLDivElement>(null);
+  const wallsScrollRef = useRef<HTMLDivElement>(null);
 
   const { data: wallData, isFetching } = useQuery<{ success?: boolean; posts: WallPost[] }>({
     queryKey: ['/api/wall/posts', activeTab, currentUser?.id],
@@ -424,7 +427,7 @@ export default function UnifiedSidebar({
 
       {/* Users View */}
       {activeView === 'users' && (
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div ref={usersScrollRef} className="relative flex-1 overflow-y-auto p-4 space-y-3">
           <div className="relative">
             <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
             <Input
@@ -519,6 +522,7 @@ export default function UnifiedSidebar({
               </div>
             )}
           </div>
+          <ScrollToBottomButton targetRef={usersScrollRef} />
         </div>
       )}
 
@@ -538,7 +542,7 @@ export default function UnifiedSidebar({
               </TabsTrigger>
             </TabsList>
 
-            <div className="flex-1 overflow-y-auto px-2">
+            <div ref={wallsScrollRef} className="relative flex-1 overflow-y-auto px-2">
               {/* Post Creation */}
               {currentUser && currentUser.userType !== 'guest' && (
                 <Card className="mb-4 border border-gray-200">
@@ -702,6 +706,7 @@ export default function UnifiedSidebar({
                   ))
                 )}
               </TabsContent>
+              <ScrollToBottomButton targetRef={wallsScrollRef} />
             </div>
           </Tabs>
         </div>

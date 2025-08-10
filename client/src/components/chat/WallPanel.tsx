@@ -12,6 +12,7 @@ import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
 import { Socket } from 'socket.io-client';
 import { getSocket, saveSession } from '@/lib/socket';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import ScrollToBottomButton from '../common/ScrollToBottomButton';
 interface WallPanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -29,6 +30,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const socket = useRef<Socket | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const panelScrollRef = useRef<HTMLDivElement>(null);
 
   // جلب المنشورات عبر React Query مع كاش قوي
   const { data: wallData, isFetching } = useQuery<{ success?: boolean; posts: WallPost[] }>({
@@ -435,16 +437,19 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                 </Card>
               )}
 
-              <TabsContent value={activeTab} className="flex-1 overflow-y-auto space-y-4 pr-2">
-                <WallPostList
-                  posts={posts}
-                  loading={loading}
-                  emptyFor={activeTab}
-                  currentUser={currentUser}
-                  onDelete={handleDeletePost}
-                  onReact={handleReaction}
-                  canDelete={canDeletePost}
-                />
+              <TabsContent value={activeTab} className="flex-1">
+                <div ref={panelScrollRef} className="relative overflow-y-auto space-y-4 pr-2">
+                  <WallPostList
+                    posts={posts}
+                    loading={loading}
+                    emptyFor={activeTab}
+                    currentUser={currentUser}
+                    onDelete={handleDeletePost}
+                    onReact={handleReaction}
+                    canDelete={canDeletePost}
+                  />
+                  <ScrollToBottomButton targetRef={panelScrollRef} />
+                </div>
               </TabsContent>
             </Tabs>
           </div>
