@@ -2007,6 +2007,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // الانضمام للغرفة الجديدة
         await handleRoomJoin(socket, userId, username, roomId);
         
+        // إرسال رسالة نظامية في الغرفة الجديدة تُفيد أن المستخدم انتقل من الغرفة السابقة (إن وجدت)
+        if (currentRoom && currentRoom !== roomId) {
+          const movedMessage = {
+            id: Date.now(),
+            senderId: -1,
+            content: `انتقل ${username} من الغرفة ${currentRoom} إلى الغرفة ${roomId} 🚪`,
+            messageType: 'system',
+            isPrivate: false,
+            roomId: roomId,
+            timestamp: new Date(),
+            sender: createSystemSender()
+          };
+          io.to(`room_${roomId}`).emit('message', {
+            type: 'newMessage',
+            message: movedMessage
+          });
+
+          // بث إشعار للحجرة العامة بأن المستخدم انتقل إلى الغرفة الجديدة
+          const generalNotice = {
+            id: Date.now() + 1,
+            senderId: -1,
+            content: `ℹ️ ${username} انتقل إلى الغرفة ${roomId}`,
+            messageType: 'system',
+            isPrivate: false,
+            roomId: 'general',
+            timestamp: new Date(),
+            sender: createSystemSender()
+          };
+          io.to(`room_general`).emit('message', {
+            type: 'newMessage',
+            message: generalNotice
+          });
+        }
+        
       } catch (error) {
         console.error('❌ خطأ في الانضمام للغرفة:', error);
         socket.emit('message', { type: 'error', message: 'فشل الانضمام للغرفة' });
@@ -2059,7 +2093,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           roomId: roomId
         });
         
-        // إرسال قائمة محدثة للمستخدمين في الغرفة
+        // إرسال تأكيد الانضمام مع قائمة محدثة للمستخدمين في الغرفة
         sendRoomUsers(roomId);
         
         // إرسال رسالة ترحيب واحدة فقط
@@ -2079,10 +2113,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: welcomeMessage
         });
         
-        // جلب آخر 20 رسالة في الغرفة الجديدة فقط
-        const recentMessages = await storage.getRoomMessages(roomId, 20);
+        // جلب آخر 10 رسائل في الغرفة الجديدة فقط (مع استخدام الخدمة التي تدعم الذاكرة المؤقتة)
+        const recentMessages = await roomMessageService.getLatestRoomMessages(roomId, 10);
         socket.emit('message', {
           type: 'roomMessages',
+          roomId: roomId,
           messages: recentMessages
         });
         
