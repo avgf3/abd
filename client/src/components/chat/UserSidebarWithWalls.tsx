@@ -101,6 +101,40 @@ export default function UnifiedSidebar({
     return <UserRoleBadge user={user} size={20} />;
   }, []);
 
+  const getCountryEmoji = useCallback((country?: string): string | null => {
+    if (!country) return null;
+    const token = country.trim().split(' ')[0];
+    return token || null;
+  }, []);
+
+  const renderCountryFlag = useCallback((user: ChatUser) => {
+    const emoji = getCountryEmoji(user.country);
+    const boxStyle: React.CSSProperties = {
+      width: 20,
+      height: 20,
+      borderRadius: 4,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#ffffff',
+      border: '1px solid #e5e7eb'
+    };
+
+    if (emoji) {
+      return (
+        <span style={boxStyle} title={user.country}>
+          <span style={{ fontSize: 14, lineHeight: 1 }}>{emoji}</span>
+        </span>
+      );
+    }
+
+    return (
+      <span style={{ ...boxStyle, background: '#f3f4f6' }} title="لم يتم تحديد الدولة">
+        <span style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1 }}>?</span>
+      </span>
+    );
+  }, [getCountryEmoji]);
+
   // 🚀 تحسين: دالة formatLastSeen محسنة
   const formatLastSeen = useCallback((lastSeen?: string | Date) => {
     if (!lastSeen) return 'غير معروف';
@@ -479,6 +513,7 @@ export default function UnifiedSidebar({
                           user={user} 
                           size="small" 
                           className="transition-transform hover:scale-105"
+                          hideRoleBadgeOverlay={true}
                         />
                         <div className="flex-1">
                           <div className="flex items-center justify-between gap-2">
@@ -492,12 +527,16 @@ export default function UnifiedSidebar({
                                 }}
                                 title={user.username}
                               >
-                                {user.username} {renderUserBadge(user)}
+                                {user.username}
                               </span>
                               {/* إشارة المكتوم */}
                               {user.isMuted && (
                                 <span className="text-yellow-400 text-xs">🔇</span>
                               )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {renderCountryFlag(user)}
+                              {renderUserBadge(user)}
                             </div>
                           </div>
                         </div>
