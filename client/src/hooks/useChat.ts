@@ -447,8 +447,6 @@ export const useChat = () => {
           userType: user.userType
         });
         dispatch({ type: 'SET_LOADING', payload: false });
-      });
-        
         // تأخير إرسال المصادقة لتجنب التضارب
         setTimeout(() => {
           if (socket.current?.connected && user) {
