@@ -1634,23 +1634,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const roomId = data.roomId || 'general';
         
-        // التحقق من صلاحيات البث المباشر (فقط للغرف غير العامة)
-        if (roomId !== 'general') {
-          const room = await storage.getRoom(roomId);
-          if (room && room.is_broadcast) {
-            const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
-            if (broadcastInfo) {
-              const isHost = broadcastInfo.hostId === socket.userId;
-              const isSpeaker = broadcastInfo.speakers.includes(socket.userId);
-              
-              if (!isHost && !isSpeaker) {
-                socket.emit('message', {
-                  type: 'error',
-                  message: 'فقط المضيف والمتحدثون يمكنهم إرسال الرسائل في غرفة البث المباشر'
-                });
-                return;
+        // 🔥 FIXED: التحقق من صلاحيات البث المباشر (تجنب التأثير على الغرفة العامة)
+        if (roomId !== 'general' && roomId !== 'عام') { // ✅ إضافة فحص للاسم العربي أيضاً
+          try {
+            const room = await storage.getRoom(roomId);
+            if (room && room.is_broadcast) {
+              const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
+              if (broadcastInfo) {
+                const isHost = broadcastInfo.hostId === socket.userId;
+                const isSpeaker = broadcastInfo.speakers.includes(socket.userId);
+                
+                if (!isHost && !isSpeaker) {
+                  socket.emit('message', {
+                    type: 'error',
+                    message: 'فقط المضيف والمتحدثون يمكنهم إرسال الرسائل في غرفة البث المباشر'
+                  });
+                  return;
+                }
               }
             }
+          } catch (error) {
+            // ✅ تجنب توقف الرسائل بسبب خطأ في فحص البث
+            console.warn('تحذير: خطأ في فحص صلاحيات البث:', error);
+            // السماح بالمتابعة إذا حدث خطأ في الفحص
           }
         }
         

@@ -59,16 +59,19 @@ export interface ChatUser {
   blockedUsers?: number[];
 }
 
+// 🔥 UNIFIED ChatMessage interface - مصدر واحد للحقيقة
 export interface ChatMessage {
   id: number;
   content: string;
-  roomId?: string;
-  isPrivate: boolean;
   senderId: number;
-  timestamp: Date | string | number;
+  timestamp: string; // ✅ توحيد النوع ليكون string دائماً
   messageType: 'text' | 'image' | 'system';
+  sender: ChatUser; // ✅ جعل المرسل مطلوب
+  
+  // Optional properties
+  roomId?: string;
+  isPrivate?: boolean;
   receiverId?: number;
-  sender?: ChatUser;
   receiver?: ChatUser;
 }
 
@@ -76,19 +79,21 @@ export interface PrivateConversation {
   [userId: number]: ChatMessage[];
 }
 
+// 🔥 SIMPLIFIED WebSocket message types - حذف التعقيدات
+export type WebSocketMessageType = 
+  // Core message types
+  | 'publicMessage' | 'privateMessage' | 'newMessage'
+  // User events
+  | 'userJoined' | 'userLeft' | 'onlineUsers' | 'typing'
+  // Room events  
+  | 'roomJoined' | 'roomMessages'
+  // System events
+  | 'auth' | 'error' | 'warning'
+  // Misc events
+  | 'kicked' | 'profileUpdated';
+
 export type WebSocketMessage = {
-  type: 'publicMessage' | 'privateMessage' | 'typing' | 
-        'userJoined' | 'userLeft' | 'newMessage' | 
-        'onlineUsers' | 'userUpdated' | 'warning' | 'error' | 'auth' | 
-        'friendRequestReceived' | 'friendRequestAccepted' | 'friendRequestRejected' |
-        'userKicked' | 'userMuted' | 'userBanned' | 'userBlocked' |
-        'userPromoted' | 'kick' | 'kicked' | 'points' | 'levelUp' | 'colorChanged' |
-        'userVisibilityChanged' | 'themeChanged' | 'effectChanged' |
-        'profileUpdated' | 'announcement' | 'roomUpdate' | 
-        'broadcastUpdate' | 'newWallPost' | 'wallPostReaction' | 'wallPostDeleted' |
-        'roomJoined' | 'userJoinedRoom' | 'userLeftRoom' | 'userDisconnected' |
-        // أحداث إضافية تستخدم في النظام
-        'roomMessages' | 'micRequest' | 'micApproved' | 'micRejected' | 'speakerRemoved' | 'broadcastRoomUpdate';
+  type: WebSocketMessageType;
   
   // خصائص الرسالة الأساسية
   username?: string;
