@@ -12,6 +12,8 @@ import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 import type { Friend, FriendRequest } from '@/../../shared/types';
 import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
+import UserRoleBadge from './UserRoleBadge';
+import { getUserThemeTextColor } from '@/utils/themeUtils';
 
 // Using shared types for Friend and FriendRequest
 
@@ -301,19 +303,23 @@ export default function FriendsTabPanel({
 
                     {/* Friend Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm flex items-center gap-2">
-                        {friend.username}
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="text-base font-medium transition-all duration-300"
+                          style={{
+                            color: friend.usernameColor || getUserThemeTextColor(friend),
+                            textShadow: friend.usernameColor ? `0 0 10px ${friend.usernameColor}40` : 'none',
+                            filter: friend.usernameColor ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                          }}
+                          title={friend.username}
+                        >
+                          {friend.username}
+                        </span>
+                        <UserRoleBadge user={friend as any} size={20} />
                         {friend.unreadCount && friend.unreadCount > 0 && (
                           <Badge variant="destructive" className="text-xs">
                             {friend.unreadCount}
                           </Badge>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {friend.isOnline ? (
-                          friend.status === 'away' ? 'بعيد' : 'متصل'
-                        ) : (
-                          'غير متصل'
                         )}
                       </div>
                       {friend.lastMessage && (
