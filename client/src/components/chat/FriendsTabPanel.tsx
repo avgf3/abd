@@ -12,7 +12,7 @@ import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 import type { Friend, FriendRequest } from '@/../../shared/types';
 import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
-import ScrollToBottomButton from '../common/ScrollToBottomButton';
+import { useGrabScroll } from '@/hooks/useGrabScroll';
 
 // Using shared types for Friend and FriendRequest
 
@@ -28,6 +28,7 @@ export default function FriendsTabPanel({
   onStartPrivateChat
 }: FriendsTabPanelProps) {
   const friendsScrollRef = useRef<HTMLDivElement>(null);
+  useGrabScroll(friendsScrollRef);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'friends' | 'requests'>('friends');
@@ -187,8 +188,7 @@ export default function FriendsTabPanel({
     friend.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-
-
+  useGrabScroll(friendsScrollRef);
 
 
   return (
@@ -249,7 +249,7 @@ export default function FriendsTabPanel({
       </div>
 
       {/* Content */}
-      <div ref={friendsScrollRef} className="relative flex-1 overflow-y-auto p-4">
+      <div ref={friendsScrollRef} className="relative flex-1 overflow-y-auto p-4 cursor-grab">
         {/* Friends Tab */}
         {activeTab === 'friends' && (
           <div className="space-y-3">
@@ -473,7 +473,6 @@ export default function FriendsTabPanel({
             </Card>
           </div>
         )}
-        <ScrollToBottomButton targetRef={friendsScrollRef} />
       </div>
     </div>
   );

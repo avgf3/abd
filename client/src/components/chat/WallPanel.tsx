@@ -12,7 +12,8 @@ import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
 import { Socket } from 'socket.io-client';
 import { getSocket, saveSession } from '@/lib/socket';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import ScrollToBottomButton from '../common/ScrollToBottomButton';
+import { useGrabScroll } from '@/hooks/useGrabScroll';
+
 interface WallPanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -31,6 +32,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const panelScrollRef = useRef<HTMLDivElement>(null);
+
+  useGrabScroll(panelScrollRef);
 
   // جلب المنشورات عبر React Query مع كاش قوي
   const { data: wallData, isFetching } = useQuery<{ success?: boolean; posts: WallPost[] }>({
@@ -305,7 +308,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" dir="rtl">
-      <div className="bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/50 w-[95vw] h-[92vh] flex flex-col overflow-hidden">
+      <div className="bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/50 w-[95vw] h-[92vh] flex flex-col overflow-hidden min-h-0">
         {/* رأس النافذة المحسن */}
         <div className="flex items-center justify-between p-6 border-b border-border/50 bg-gradient-to-l from-primary/5 to-transparent">
           <div className="flex items-center gap-3">
@@ -322,10 +325,10 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
           </Button>
         </div>
 
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden min-h-0">
           {/* منطقة الحائط - أكثر من الثلث قليلاً */}
-          <div className="w-2/5 border-l border-border/50 p-6 flex flex-col bg-gradient-to-b from-muted/20 to-transparent">
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col">
+          <div className="w-2/5 border-l border-border/50 p-6 flex flex-col bg-gradient-to-b from-muted/20 to-transparent min-h-0">
+                          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col min-h-0">
               <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50 backdrop-blur-sm rounded-xl p-1">
                 <TabsTrigger value="public" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2">
                   <Globe className="h-4 w-4" />
@@ -438,7 +441,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
               )}
 
               <TabsContent value={activeTab} className="flex-1">
-                <div ref={panelScrollRef} className="relative overflow-y-auto space-y-4 pr-2">
+                <div ref={panelScrollRef} className="relative overflow-y-auto space-y-4 pr-2 cursor-grab">
                   <WallPostList
                     posts={posts}
                     loading={loading}
@@ -448,7 +451,6 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                     onReact={handleReaction}
                     canDelete={canDeletePost}
                   />
-                  <ScrollToBottomButton targetRef={panelScrollRef} />
                 </div>
               </TabsContent>
             </Tabs>
