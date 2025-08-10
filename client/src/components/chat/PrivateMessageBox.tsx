@@ -9,6 +9,7 @@ import type { ChatUser, ChatMessage } from '@/types/chat';
 import FileUploadButton from './FileUploadButton';
 import EmojiPicker from './EmojiPicker';
 import { getUserLevelIcon } from './UserRoleBadge';
+import UserRoleBadge from './UserRoleBadge';
 
 
 interface PrivateMessageBoxProps {
@@ -116,7 +117,7 @@ export default function PrivateMessageBox({
                 <p className="font-bold text-lg flex items-center gap-1" style={{ 
                   color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#7C3AED') 
                 }}>
-                  {getUserLevelIcon(user, 16)} {user.username}
+                  <UserRoleBadge user={user} showOnlyIcon={true} size={18} /> {user.username}
                 </p>
               </div>
               <p className="text-sm text-purple-600 font-medium flex items-center gap-1">

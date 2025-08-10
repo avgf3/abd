@@ -272,7 +272,7 @@ export default function MessageArea({
                 <div className="flex-shrink-0">
                   <ProfileImage 
                     user={message.sender} 
-                    size="small"
+                    size="xsmall"
                     className="cursor-pointer hover:scale-110 transition-transform duration-200"
                   />
                 </div>
@@ -280,8 +280,9 @@ export default function MessageArea({
               
               {/* Message Content */}
               <div className="flex-1 min-w-0">
-                {/* Header */}
+                {/* Inline Header: شعار الدور + الاسم + التوقيت + تبليغ */}
                 <div className="flex items-center gap-2 mb-1">
+                  {message.sender && <UserRoleBadge user={message.sender} showOnlyIcon={true} size={16} />}
                   <button
                     onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
                     className="font-semibold hover:underline transition-colors duration-200"
@@ -289,15 +290,23 @@ export default function MessageArea({
                   >
                     {message.sender?.username}
                   </button>
-                  
-                                        {message.sender && <UserRoleBadge user={message.sender} showOnlyIcon={false} />}
-                  
-                  <span className="text-xs text-gray-500 mr-auto">
-                    {formatTime(message.timestamp)}
-                  </span>
+                  <div className="ml-auto flex items-center gap-2">
+                    <span className="text-[11px] text-gray-500 whitespace-nowrap max-w-[3cm] overflow-hidden text-ellipsis">
+                      {formatTime(message.timestamp)}
+                    </span>
+                    {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+                      <button
+                        onClick={() => onReportMessage(message.sender!, message.content, message.id)}
+                        className="text-xs text-red-500 hover:text-red-700 transition-colors duration-200"
+                        title="تبليغ"
+                      >
+                        🚩 تبليغ
+                      </button>
+                    )}
+                  </div>
                 </div>
-                
-                {/* Message Content */}
+
+                {/* Message Content inline under header but part of same block */}
                 <div className="text-gray-800 break-words">
                   {message.messageType === 'image' ? (
                     <img
@@ -306,7 +315,6 @@ export default function MessageArea({
                       className="max-w-xs max-h-64 rounded-lg shadow-sm cursor-pointer hover:shadow-lg transition-shadow duration-200"
                       loading="lazy"
                       onClick={() => {
-                        // فتح الصورة في نافذة جديدة
                         window.open(message.content, '_blank');
                       }}
                     />
@@ -316,18 +324,6 @@ export default function MessageArea({
                     </div>
                   )}
                 </div>
-                
-                {/* Message Actions */}
-                {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
-                  <div className="mt-2">
-                    <button
-                      onClick={() => onReportMessage(message.sender!, message.content, message.id)}
-                      className="text-xs text-red-500 hover:text-red-700 transition-colors duration-200"
-                    >
-                      🚨 إبلاغ
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           ))
