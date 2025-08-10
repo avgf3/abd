@@ -102,11 +102,7 @@ interface CustomSocket extends Socket {
 }
 
 // دالة broadcast للإرسال لجميع المستخدمين
-function broadcast(message: any) {
-  if (io) {
-    io.emit('message', message);
-  }
-}
+// removed duplicate broadcast; use io.emit('message', ...) or io.to(...).emit('message', ...) directly
 
 // الدالة الموحدة الوحيدة لإرسال قائمة المستخدمين المتصلين
 function sendRoomUsers(roomId: string) {
@@ -648,7 +644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إرسال إشعار للدردشة العامة
         const systemMessage = `⏰ تم طرد ${target?.username} من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`;
         
-        broadcast({
+        io.emit('message', {
           type: 'moderationAction',
           action: 'banned',
           targetUserId: targetUserId,
@@ -707,7 +703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             timestamp: new Date().toISOString()
           };
           
-          broadcast(promotionMessage);
+          io.emit('message', promotionMessage);
           }
         
         res.json({ message: "تم ترقية المستخدم بنجاح" });
@@ -1808,10 +1804,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     socket.on('typing', (data) => {
       const { isTyping } = data;
-      socket.broadcast.emit('message', {
+      const currentRoom = (socket as any).currentRoom || 'general';
+      socket.to(`room_${currentRoom}`).emit('message', {
         type: 'typing',
         username: socket.username,
-        isTyping
+        isTyping,
+        roomId: currentRoom
       });
     });
 
@@ -1852,7 +1850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Broadcast user joined
             const joinedUser = await storage.getUser(message.userId);
-            io.emit('userJoined', { user: joinedUser });
+            io.emit('message', { type: 'userJoined', user: joinedUser });
             
             // Send online users list with moderation status to all clients
             const onlineUsers = await storage.getOnlineUsers();
@@ -2353,9 +2351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   });
 
-  function broadcast(message: any) {
-    io.emit(message.type || 'broadcast', message.data || message);
-  }
+  // removed duplicate broadcast; use io.emit('message', ...) or io.to(...).emit('message', ...) directly
 
   // فحص دوري محسن لتنظيف الجلسات المنتهية الصلاحية
   const sessionCleanupInterval = setInterval(async () => {
@@ -2471,7 +2467,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const request = await friendService.createFriendRequest(senderId, receiverId);
       // إرسال إشعار عبر WebSocket
       const sender = await storage.getUser(senderId);
-      broadcast({
+      io.emit('message', {
         type: 'friendRequestReceived',
         targetUserId: receiverId,
         senderName: sender?.username,
@@ -2529,7 +2525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // إرسال إشعار عبر WebSocket
       const sender = await storage.getUser(senderId);
-      broadcast({
+      io.emit('message', {
         type: 'friendRequestReceived',
         targetUserId: targetUser.id,
         senderName: sender?.username,
@@ -2608,20 +2604,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sender = await storage.getUser(request.userId);
       
       // إرسال إشعار WebSocket لتحديث قوائم الأصدقاء
-      broadcast({
+      io.emit('message', {
         type: 'friendAdded',
         targetUserId: request.userId,
         friendId: request.friendId,
         friendName: receiver?.username
       });
       
-      broadcast({
+      io.emit('message', {
         type: 'friendAdded', 
         targetUserId: request.friendId,
         friendId: request.userId,
         friendName: sender?.username
       });
-      broadcast({
+      io.emit('message', {
         type: 'friendRequestAccepted',
         targetUserId: request.userId,
         senderName: receiver?.username
@@ -2835,7 +2831,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إرسال إشعار للدردشة العامة
         const systemMessage = `🔇 تم كتم ${target?.username} من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`;
         
-        broadcast({
+        io.emit('message', {
           type: 'moderationAction',
           action: 'muted',
           targetUserId: targetUserId,
@@ -2845,7 +2841,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         // إرسال إشعار للمستخدم المكتوم
-        broadcast({
+        io.emit('message', {
           type: 'notification',
           targetUserId: targetUserId,
           notificationType: 'muted',
@@ -2876,7 +2872,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إرسال إشعار للدردشة العامة
         const systemMessage = `🔊 تم إلغاء كتم ${target?.username} من قبل ${moderator?.username}`;
         
-        broadcast({
+        io.emit('message', {
           type: 'moderationAction',
           action: 'unmuted',
           targetUserId: targetUserId,
@@ -2921,7 +2917,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إرسال إشعار للدردشة العامة
         const systemMessage = `⏰ تم طرد ${target?.username} من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`;
         
-        broadcast({
+        io.emit('message', {
           type: 'moderationAction',
           action: 'banned',
           targetUserId: targetUserId,
@@ -2971,7 +2967,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إرسال إشعار للدردشة العامة
         const systemMessage = `🚫 تم حجب ${target?.username} نهائياً من قبل ${moderator?.username} - السبب: ${reason}`;
         
-        broadcast({
+        io.emit('message', {
           type: 'moderationAction',
           action: 'blocked',
           targetUserId: targetUserId,
@@ -3015,7 +3011,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             timestamp: new Date().toISOString()
           };
           
-          broadcast(promotionMessage);
+          io.emit('message', promotionMessage);
           }
         
         res.json({ message: "تم ترقية المستخدم بنجاح" });
@@ -3324,7 +3320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userTheme: updates.userTheme,
           timestamp: new Date().toISOString()
         };
-        broadcast(updateMessage);
+        io.emit('message', updateMessage);
         }
       
       // إرسال تحديث تأثير البروفايل ولون الاسم عبر WebSocket
@@ -3337,7 +3333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           user: user,
           timestamp: new Date().toISOString()
         };
-        broadcast(updateMessage);
+        io.emit('message', updateMessage);
         }
       
       res.json(user);
@@ -3688,7 +3684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // إشعار المستخدمين الآخرين عبر WebSocket
       try {
-        broadcast({
+        io.emit('message', {
           type: 'user_background_updated',
           data: { userId: userIdNum, profileBackgroundColor: backgroundColorValue }
         });
