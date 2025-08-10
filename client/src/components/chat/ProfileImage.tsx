@@ -19,7 +19,7 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
     large: 'w-20 h-20'
   };
 
-  // تحديد لون الإطار حسب الجنس
+  // تحديد لون الإطار حسب الجنس - كما كان سابقاً (ring + border color)
   const borderColor = user.gender === 'female'
     ? 'border-pink-400 ring-pink-200' 
     : 'border-blue-400 ring-blue-200';
@@ -55,10 +55,7 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
         </div>
       )}
       
-      {/* مؤشر الحالة (أونلاين/أوفلاين) */}
-      {user.isOnline && (
-        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-      )}
+      {/* بدون نقطة الحالة الخضراء */}
       
       {/* مؤشر الدور統一 */}
       {!hideRoleBadgeOverlay && (user.userType === 'owner' || user.userType === 'admin' || user.userType === 'moderator') && (

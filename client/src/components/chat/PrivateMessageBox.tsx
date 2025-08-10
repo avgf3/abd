@@ -97,9 +97,6 @@ export default function PrivateMessageBox({
                   target.src = '/default_avatar.svg';
                 }}
               />
-              {user.isOnline && (
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full animate-pulse"></div>
-              )}
             </div>
             <div className="text-center">
               <div 
