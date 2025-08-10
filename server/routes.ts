@@ -83,6 +83,10 @@ const connectedUsers = new Map<number, {
   lastSeen: Date
 }>();
 
+// Grace period (5 minutes) before finalizing disconnect removals
+const GRACE_PERIOD_MS = 5 * 60 * 1000;
+const pendingDisconnects = new Map<number, NodeJS.Timeout>();
+
 // Storage initialization - using imported storage instance
   
 // I/O interface
@@ -1488,8 +1492,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // بدء heartbeat
         startHeartbeat();
+
+        // إذا كان هناك فصل قيد الانتظار ضمن فترة السماح، قم بإلغائه
+        if (pendingDisconnects.has(user.id)) {
+          clearTimeout(pendingDisconnects.get(user.id)!);
+          pendingDisconnects.delete(user.id);
+        }
         
-        // إضافة المستخدم لقائمة المتصلين الفعليين
+        // إضافة/تحديث المستخدم لقائمة المتصلين الفعليين
         connectedUsers.set(user.id, {
           user: user,
           socketId: socket.id,
@@ -1525,6 +1535,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: 'تم الاتصال بنجاح',
           user: user 
         });
+
+        // إذا كان العميل أرسل reconnect=true، لا نُخرج إشعارات مغادرة سابقة
+
 
         // جلب وإرسال قائمة المستخدمين المتصلين في الغرفة العامة
         const currentRoom = 'general'; // دائماً نبدأ بالغرفة العامة
@@ -2258,9 +2271,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-     // معالج قطع الاتصال المحسن
+     // معالج قطع الاتصال المحسن مع فترة سماح
      socket.on('disconnect', async (reason) => {
-       // تنظيف جميع الموارد
+       // تنظيف موارد socket فقط
        cleanup();
        
        const customSocket = socket as CustomSocket;
@@ -2269,125 +2282,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
            const currentRoom = (socket as any).currentRoom || 'general';
            const userId = customSocket.userId;
            const username = customSocket.username;
-           
-           // 1. إزالة المستخدم من قائمة المتصلين الفعليين فوراً
-           connectedUsers.delete(userId);
-           
-           // 2. تحديث حالة المستخدم في قاعدة البيانات
-           await storage.setUserOnlineStatus(userId, false);
-           
-           // 3. معالجة مغادرة الغرفة باستخدام الدالة المساعدة
-           if (currentRoom) {
-             await handleRoomLeave(socket, userId, username, currentRoom, false);
+
+           // إذا كان هناك مؤقت سابق لنفس المستخدم، قم بإلغائه لإعادة جدولة فترة السماح
+           if (pendingDisconnects.has(userId)) {
+             clearTimeout(pendingDisconnects.get(userId)!);
+             pendingDisconnects.delete(userId);
            }
-           
-           // 4. إزالة المستخدم من جميع الغرف في Socket.IO
-           socket.leave(userId.toString());
-           
-           // 5. إشعار فوري لجميع المستخدمين في الغرفة (مرة واحدة فقط)
-           if (currentRoom) {
-             io.to(`room_${currentRoom}`).emit('message', {
-               type: 'userDisconnected',
-               userId: userId,
-               username: username,
-               roomId: currentRoom,
-               timestamp: new Date().toISOString()
-             });
-             
-             // إرسال قائمة محدثة بعد انتظار قصير
-             setTimeout(() => {
-               sendRoomUsers(currentRoom);
-             }, 100);
-           }
-           
-           // إرسال رسالة وداع في الغرفة (مرة واحدة فقط)
-           if (currentRoom) {
-             const goodbyeMessage = {
-              id: Date.now(),
-              senderId: -1,
-              content: `غادر ${username} الغرفة 👋`,
-              messageType: 'system',
-              isPrivate: false,
-              roomId: currentRoom,
-              timestamp: new Date(),
-              sender: {
-                id: -1,
-                username: 'النظام',
-                userType: 'moderator',
-                role: 'system',
-                level: 0,
-                points: 0,
-                achievements: [],
-                lastSeen: new Date(),
-                isOnline: true,
-                isBanned: false,
-                isActive: true,
-                currentRoom: '',
-                settings: {
-                  theme: 'default',
-                  language: 'ar',
-                  notifications: true,
-                  soundEnabled: true,
-                  privateMessages: true
-                }
-              }
-            };
-            
-            io.to(`room_${currentRoom}`).emit('message', {
-              type: 'newMessage',
-              message: goodbyeMessage
-            });
-            
-            // إشعار بخروج المستخدم
-            io.to(`room_${currentRoom}`).emit('message', {
-              type: 'userLeftRoom',
-              userId: userId,
-              username: username,
-              roomId: currentRoom
-            });
-            
-            // 6. تحديث قائمة المتصلين فوراً
-            setTimeout(async () => {
-              try {
-                // جلب المستخدمين المتصلين فعلياً فقط
-                const activeUsers = Array.from(connectedUsers.values())
-                  .filter(conn => {
-                    // التحقق من صحة الاتصال
-                    return conn.room === currentRoom && 
-                           conn.user && 
-                           conn.user.id && 
-                           conn.user.username &&
-                           conn.user.id !== userId; // استبعاد المستخدم المنقطع
-                  })
-                  .map(conn => conn.user);
-                
-                // إرسال القائمة المحدثة لجميع المستخدمين في الغرفة
-                sendRoomUsers(currentRoom);
-                
-                } catch (updateError) {
-                console.error('❌ خطأ في تحديث قائمة المتصلين:', updateError);
-              }
-            }, 100); // تأخير قصير لضمان التنظيف الكامل
-          }
-          
-          // إشعار جميع المستخدمين بخروج المستخدم
-          io.emit('message', {
-            type: 'userLeft',
-            userId: userId,
-            username: username,
-            timestamp: new Date().toISOString()
-          });
-          
-        } catch (error) {
-          console.error(`❌ خطأ في تنظيف جلسة ${customSocket.username}:`, error);
-        } finally {
-          // تنظيف متغيرات الجلسة في جميع الأحوال
-          customSocket.userId = undefined;
-          customSocket.username = undefined;
-          customSocket.isAuthenticated = false;
-        }
-      }
-    });
+
+           // جدولة الإزالة النهائية بعد فترة السماح
+           const timeout = setTimeout(async () => {
+             try {
+               // إزالة من قائمة المتصلين فعلياً
+               connectedUsers.delete(userId);
+               // تحديث حالة المستخدم في قاعدة البيانات إلى غير متصل
+               await storage.setUserOnlineStatus(userId, false);
+               // معالجة مغادرة الغرفة
+               if (currentRoom) {
+                 await handleRoomLeave(socket, userId, username, currentRoom, false);
+               }
+               // بث إشعارات الخروج بعد انتهاء فترة السماح
+               if (currentRoom) {
+                 const goodbyeMessage = {
+                   id: Date.now(),
+                   senderId: -1,
+                   content: `غادر ${username} الغرفة 👋`,
+                   messageType: 'system',
+                   isPrivate: false,
+                   roomId: currentRoom,
+                   timestamp: new Date(),
+                   sender: {
+                     id: -1,
+                     username: 'النظام',
+                     userType: 'moderator',
+                     role: 'system',
+                     level: 0,
+                     points: 0,
+                     achievements: [],
+                     lastSeen: new Date(),
+                     isOnline: true,
+                     isBanned: false,
+                     isActive: true,
+                     currentRoom: '',
+                     settings: { theme: 'default', language: 'ar', notifications: true, soundEnabled: true, privateMessages: true }
+                   }
+                 };
+                 io.to(`room_${currentRoom}`).emit('message', { type: 'newMessage', message: goodbyeMessage });
+                 io.to(`room_${currentRoom}`).emit('message', { type: 'userLeftRoom', userId, username, roomId: currentRoom });
+                 setTimeout(() => { sendRoomUsers(currentRoom); }, 100);
+               }
+               io.emit('message', { type: 'userLeft', userId, username, timestamp: new Date().toISOString() });
+             } catch (finalErr) {
+               console.error('❌ خطأ في الإزالة بعد فترة السماح:', finalErr);
+             } finally {
+               pendingDisconnects.delete(userId);
+             }
+           }, GRACE_PERIOD_MS);
+
+           pendingDisconnects.set(userId, timeout);
+
+           // ملاحظة: لا نزيل المستخدم فوراً من القائمة ولا نحدث قاعدة البيانات الآن
+           // للحفاظ على ظهوره متصلاً أثناء فترة السماح
+
+         } catch (error) {
+           console.error(`❌ خطأ في جدولة فصل جلسة ${customSocket.username}:`, error);
+         } finally {
+           // لا نقوم بتصفير معرّف المستخدم حتى انتهاء فترة السماح أو إعادة الاتصال
+           // للحفاظ على معلوماته إذا عاد بسرعة
+         }
+       }
+     });
     
     // معالج أخطاء Socket.IO
     socket.on('error', (error) => {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
+import { getSocket, saveSession } from '@/lib/socket';
 import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation, Notification } from '@/types/chat';
 import { apiRequest } from '@/lib/queryClient';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
@@ -404,6 +405,25 @@ export const useChat = () => {
 
   }, [state.currentUser, state.onlineUsers, state.currentRoomId]);
 
+  useEffect(() => {
+    const handleOnline = () => {
+      if (socket.current && !socket.current.connected) {
+        try { socket.current.connect(); } catch {}
+      }
+    };
+    const handleOffline = () => {
+      dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   // 🔥 SIMPLIFIED Connect function
   const connect = useCallback((user: ChatUser) => {
     dispatch({ type: 'SET_CURRENT_USER', payload: user });
@@ -417,54 +437,39 @@ export const useChat = () => {
         socket.current = null;
       }
 
-      const serverUrl = import.meta.env.DEV 
-        ? 'http://localhost:5000'
-        : window.location.origin;
+      // استخدام عميل Socket الموحد
+      const s = getSocket();
+      socket.current = s;
 
-      socket.current = io(serverUrl, {
-        path: '/socket.io',
-        transports: ['websocket', 'polling'],
-        timeout: 20000,
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        autoConnect: true,
-        forceNew: true,
-        query: {
-          userId: user.id?.toString() || '',
-          username: user.username || '',
-          userType: user.userType || 'guest'
-        }
-      });
+      // حفظ الجلسة
+      saveSession({ userId: user.id, username: user.username, userType: user.userType });
 
       // إعداد المستمعين
-      setupSocketListeners(socket.current);
+      setupSocketListeners(s);
 
-      // إرسال المصادقة عند الاتصال
-      socket.current.on('connect', () => {
-        dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
-        dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
-        socket.current?.emit('auth', {
+      // إذا كان متصلاً بالفعل، أرسل المصادقة والانضمام فوراً
+      if (s.connected) {
+        s.emit('auth', {
           userId: user.id,
           username: user.username,
-          userType: user.userType
+          userType: user.userType,
         });
+        s.emit('joinRoom', {
+          roomId: state.currentRoomId || 'general',
+          userId: user.id,
+          username: user.username,
+        });
+      }
+
+      // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
+      s.on('connect', () => {
+        dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+        dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
         dispatch({ type: 'SET_LOADING', payload: false });
-        // تأخير إرسال المصادقة لتجنب التضارب
-        setTimeout(() => {
-          if (socket.current?.connected && user) {
-            socket.current.emit('auth', {
-              userId: user.id,
-              username: user.username,
-              userType: user.userType,
-              reconnect: true
-            });
-          }
-        }, 1000);
       });
 
       // معالج فشل إعادة الاتصال النهائي
-      socket.current.on('reconnect_failed', () => {
+      s.on('reconnect_failed', () => {
         console.warn('⚠️ فشل في إعادة الاتصال بعد عدة محاولات');
         dispatch({ 
           type: 'SET_CONNECTION_ERROR', 
@@ -473,12 +478,12 @@ export const useChat = () => {
       });
 
       // تحديث حالة الاتصال عند الانفصال
-      socket.current.on('disconnect', () => {
+      s.on('disconnect', () => {
         dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
       });
 
       // معالجة أخطاء الاتصال
-      socket.current.on('connect_error', (error) => {
+      s.on('connect_error', (error) => {
         console.error('❌ خطأ في الاتصال:', error);
         dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل الاتصال بالسيرفر' });
       });
@@ -492,18 +497,15 @@ export const useChat = () => {
 
   // 🔥 SIMPLIFIED Join room function
   const joinRoom = useCallback((roomId: string) => {
-    // تجنب الانضمام لنفس الغرفة
     if (state.currentRoomId === roomId) {
       return;
     }
-    
-    // تغيير الغرفة الحالية
+
     dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
-    
-    // تحميل رسائل الغرفة إذا لم تكن محملة
+    saveSession({ roomId });
+
     loadRoomMessages(roomId);
-    
-    // إرسال طلب الانضمام للسيرفر
+
     if (socket.current?.connected) {
       socket.current.emit('joinRoom', { 
         roomId,

@@ -9,7 +9,8 @@ import { apiRequest } from '@/lib/queryClient';
 import { getImageSrc } from '@/utils/imageUtils';
 import WallPostList from './WallPostList';
 import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
+import { getSocket, saveSession } from '@/lib/socket';
 interface WallPanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -55,33 +56,31 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   // إعداد Socket.IO للتحديثات الفورية
   useEffect(() => {
     if (isOpen && !socket.current) {
-      // الاتصال بالخادم
-      socket.current = io();
+      // استخدام Socket الموحد
+      const s = getSocket();
+      socket.current = s;
+
+      // حفظ نوع الحائط في الجلسة كحقل سياقي (اختياري)
+      saveSession({ roomId: activeTab });
       
       // معالج المنشورات الجديدة
-      socket.current.on('message', (message: any) => {
+      s.on('message', (message: any) => {
         if (message.type === 'newWallPost') {
-          // تحديث المنشورات إذا كان النوع مطابق أو إذا كان المنشور عام
           const postType = message.wallType || message.post?.type || 'public';
           if (postType === activeTab) {
             setPosts(prevPosts => [message.post, ...prevPosts]);
-            
-            // إضافة إشعار للمستخدم
             toast({
               title: "منشور جديد ✨",
               description: `منشور جديد من ${message.post.username}`,
             });
-          } else {
-            }
+          }
         } else if (message.type === 'wallPostReaction') {
-          // تحديث التفاعلات
           setPosts(prevPosts => 
             prevPosts.map(post => 
               post.id === message.post.id ? message.post : post
             )
           );
         } else if (message.type === 'wallPostDeleted') {
-          // إزالة المنشور المحذوف
           setPosts(prevPosts => 
             prevPosts.filter(post => post.id !== message.postId)
           );
@@ -91,7 +90,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
     return () => {
       if (socket.current) {
-        socket.current.disconnect();
+        // لا نفصل الاتصال العام، فقط نزيل المستمع المحلي
+        socket.current.off('message');
         socket.current = null;
       }
     };
