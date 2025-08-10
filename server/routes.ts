@@ -2023,6 +2023,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             type: 'newMessage',
             message: movedMessage
           });
+
+          // بث إشعار للحجرة العامة بأن المستخدم انتقل إلى الغرفة الجديدة
+          const generalNotice = {
+            id: Date.now() + 1,
+            senderId: -1,
+            content: `ℹ️ ${username} انتقل إلى الغرفة ${roomId}`,
+            messageType: 'system',
+            isPrivate: false,
+            roomId: 'general',
+            timestamp: new Date(),
+            sender: createSystemSender()
+          };
+          io.to(`room_general`).emit('message', {
+            type: 'newMessage',
+            message: generalNotice
+          });
         }
         
       } catch (error) {
