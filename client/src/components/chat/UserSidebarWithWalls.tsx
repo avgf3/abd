@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,6 +18,8 @@ import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '
 import { formatTimeAgo } from '@/utils/timeUtils';
 import UserRoleBadge from './UserRoleBadge';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Socket } from 'socket.io-client';
+import { getSocket, saveSession } from '@/lib/socket';
 
 interface UnifiedSidebarProps {
   users: ChatUser[];
@@ -132,6 +134,8 @@ export default function UnifiedSidebar({
   // 🗑️ حذف useEffect فارغ
 
   // جلب المنشورات عبر React Query مع كاش قوي
+  const socketRef = useRef<Socket | null>(null);
+
   const { data: wallData, isFetching } = useQuery<{ success?: boolean; posts: WallPost[] }>({
     queryKey: ['/api/wall/posts', activeTab, currentUser?.id],
     queryFn: async () => {
@@ -158,6 +162,55 @@ export default function UnifiedSidebar({
       setActiveView(propActiveView);
     }
   }, [propActiveView]);
+
+  // اشترك في Socket للتحديث الفوري لمنشورات الحائط
+  useEffect(() => {
+    if (activeView === 'walls' && currentUser?.id) {
+      if (!socketRef.current) {
+        const s = getSocket();
+        socketRef.current = s;
+      }
+
+      const s = socketRef.current!;
+
+      // حفظ سياق التبويب لسهولة التعافي بعد إعادة الاتصال
+      saveSession({ roomId: activeTab });
+
+      const onMessage = (payload: any) => {
+        try {
+          // يدعم الشكل {type: ...} أو {envelope: {type: ...}}
+          const message = payload?.envelope || payload || {};
+          if (message.type === 'newWallPost') {
+            const postType = message.wallType || message.post?.type || 'public';
+            if (postType === activeTab) {
+              setPosts(prev => [message.post, ...prev]);
+              queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+                const oldPosts: WallPost[] = old?.posts || [];
+                return { ...(old || {}), posts: [message.post, ...oldPosts] };
+              });
+            }
+          } else if (message.type === 'wallPostReaction') {
+            setPosts(prev => prev.map(p => p.id === message.post?.id ? message.post : p));
+            queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+              const oldPosts: WallPost[] = old?.posts || [];
+              return { ...(old || {}), posts: oldPosts.map((p) => p.id === message.post?.id ? message.post : p) };
+            });
+          } else if (message.type === 'wallPostDeleted') {
+            setPosts(prev => prev.filter(p => p.id !== message.postId));
+            queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+              const oldPosts: WallPost[] = old?.posts || [];
+              return { ...(old || {}), posts: oldPosts.filter((p) => p.id !== message.postId) };
+            });
+          }
+        } catch {}
+      };
+
+      s.on('message', onMessage);
+      return () => {
+        try { s.off('message', onMessage); } catch {}
+      };
+    }
+  }, [activeView, activeTab, currentUser?.id, queryClient]);
 
   // معالجة اختيار الصورة
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
