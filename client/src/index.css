@@ -622,8 +622,10 @@ body.ltr {
   scrollbar-color: rgba(255, 255, 255, 0.35) rgba(255, 255, 255, 0.08);
 }
 
-/* Ensure scroll areas show scrollbar */
+/* Ensure scroll areas show scrollbar and allow proper wheel scrolling */
 .scroll-area,
 .overflow-y-auto {
   overscroll-behavior: contain;
+  /* Ensure wheel events work properly */
+  touch-action: auto;
 }
