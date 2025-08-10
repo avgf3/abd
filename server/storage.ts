@@ -806,6 +806,57 @@ export const storage: LegacyStorage = {
     }
   },
 
+  async removeSpeaker(roomId: string, userId: number) {
+    try {
+      const status = databaseService.getStatus();
+      if (!status.connected) return false;
+      const { db, dbType } = await import('./database-adapter');
+      if (dbType === 'postgresql') {
+        const { rooms } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        const rows = await (db as any)
+          .select({ speakers: (rooms as any).speakers })
+          .from((rooms as any))
+          .where(eq((rooms as any).id, roomId as any))
+          .limit(1);
+        const current: number[] = rows?.[0]?.speakers
+          ? (typeof rows[0].speakers === 'string' ? JSON.parse(rows[0].speakers) : rows[0].speakers)
+          : [];
+        const next = (current || []).filter((id: number) => id !== userId);
+        await (db as any)
+          .update(rooms)
+          .set({ speakers: JSON.stringify(next) })
+          .where(eq((rooms as any).id, roomId as any));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error removeSpeaker:', error);
+      return false;
+    }
+  },
+
+  async setRoomHost(roomId: string, hostId: number | null) {
+    try {
+      const status = databaseService.getStatus();
+      if (!status.connected) return false;
+      const { db, dbType } = await import('./database-adapter');
+      if (dbType === 'postgresql') {
+        const { rooms } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        await (db as any)
+          .update(rooms)
+          .set({ hostId: hostId as any })
+          .where(eq((rooms as any).id, roomId as any));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error setRoomHost:', error);
+      return false;
+    }
+  },
+
 };
 
 // Export the database service for direct access if needed
