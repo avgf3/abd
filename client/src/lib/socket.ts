@@ -53,6 +53,7 @@ function attachCoreListeners(socket: Socket) {
     const session = getSession();
     if (!session || (!session.userId && !session.username)) return;
     try {
+      // إرسال المصادقة فوراً
       socket.emit('auth', {
         userId: session.userId,
         username: session.username,
@@ -61,28 +62,41 @@ function attachCoreListeners(socket: Socket) {
         reconnect: isReconnect,
       });
 
-      const joinRoomId = session.roomId || 'general';
-      socket.emit('joinRoom', {
-        roomId: joinRoomId,
-        userId: session.userId,
-        username: session.username,
-      });
+      // انتظار قصير ثم انضمام للغرفة
+      setTimeout(() => {
+        const joinRoomId = session.roomId || 'general';
+        socket.emit('joinRoom', {
+          roomId: joinRoomId,
+          userId: session.userId,
+          username: session.username,
+        });
+      }, 50);
     } catch {}
   };
 
   socket.on('connect', () => {
+    console.log('🟢 Socket connected');
     reauth(false);
   });
 
   socket.on('reconnect', () => {
+    console.log('🔄 Socket reconnected');
     reauth(true);
   });
 
-  // If network goes back online, try to connect
+  // تحسين إدارة الاتصال عند عودة الشبكة
   window.addEventListener('online', () => {
     if (!socket.connected) {
-      try { socket.connect(); } catch {}
+      try { 
+        console.log('🌐 Network back online, reconnecting...');
+        socket.connect(); 
+      } catch {}
     }
+  });
+  
+  // إضافة معالج للفصل
+  socket.on('disconnect', (reason) => {
+    console.log('🔴 Socket disconnected:', reason);
   });
 }
 
@@ -96,13 +110,13 @@ export function getSocket(): Socket {
     rememberUpgrade: true,
     autoConnect: true,
     reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 60000,
-    randomizationFactor: 0.5,
-    timeout: 20000,
+    reconnectionAttempts: 10, // تقليل عدد المحاولات لتسريع الفشل
+    reconnectionDelay: 500, // تقليل فترة الانتظار الأولى
+    reconnectionDelayMax: 30000, // تقليل الحد الأقصى
+    randomizationFactor: 0.2, // تقليل العشوائية
+    timeout: 10000, // تقليل timeout للاتصال الأولي
     forceNew: false,
-    withCredentials: true,
+    withCredentials: false, // تقليل الأمان للسرعة
   });
 
   attachCoreListeners(socketInstance);

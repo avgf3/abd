@@ -244,17 +244,27 @@ export const useChat = () => {
 
       // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
     const setupSocketListeners = useCallback((socketInstance: Socket) => {
+      // إزالة جميع المستمعين السابقين قبل إضافة الجدد
+      socketInstance.removeAllListeners('message');
+      socketInstance.removeAllListeners('ping');
+      socketInstance.removeAllListeners('client_pong');
+      
       // حافظ على الاتصال عبر ping/pong مخصص عند السكون
       const pingInterval = setInterval(() => {
         if (socketInstance.connected) {
           socketInstance.emit('client_ping');
         }
-      }, 20000);
-      socketInstance.on('client_pong', () => {});
+      }, 30000); // زيادة الفاصل الزمني لتقليل الحمل
+      
+      socketInstance.on('client_pong', () => {
+        // console.log('🏓 Pong received');
+      });
 
       // استجابة لنبض السيرفر المخصص للحفاظ على الاتصال
       socketInstance.on('ping', () => {
-        try { socketInstance.emit('pong', { t: Date.now() }); } catch {}
+        try { 
+          socketInstance.emit('pong', { t: Date.now() }); 
+        } catch {}
       });
 
       // ✅ معالج واحد للرسائل - حذف التضارب
@@ -293,21 +303,40 @@ export const useChat = () => {
             }
             break;
           }
+          
           case 'messageDeleted': {
             const { messageId, roomId } = envelope as any;
             if (messageId && roomId) {
               const existing = state.roomMessages[roomId] || [];
               const next = existing.filter((m) => m.id !== messageId);
-              dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId, messages: next } });
+              dispatch({ 
+                type: 'SET_ROOM_MESSAGES', 
+                payload: { roomId, messages: next }
+              });
+            }
+            break;
+          }
+          
+          case 'onlineUsers': {
+            const { users, roomId } = envelope;
+            if (Array.isArray(users) && roomId === state.currentRoomId) {
+              dispatch({ type: 'SET_ONLINE_USERS', payload: users });
             }
             break;
           }
           
           case 'roomMessages': {
-            const { messages, roomId: payloadRoomId } = envelope as any;
-            if (Array.isArray(messages)) {
-              const roomId = payloadRoomId || state.currentRoomId;
-              const formattedMessages = mapDbMessagesToChatMessages(messages, roomId);
+            const { messages, roomId } = envelope;
+            if (Array.isArray(messages) && roomId) {
+              const formattedMessages = messages.map((msg: any) => ({
+                id: msg.id,
+                content: msg.content,
+                senderId: msg.senderId,
+                timestamp: msg.timestamp,
+                messageType: msg.messageType || 'text',
+                sender: msg.sender,
+                roomId: msg.roomId || roomId
+              }));
               dispatch({ 
                 type: 'SET_ROOM_MESSAGES', 
                 payload: { roomId, messages: formattedMessages }
@@ -316,96 +345,104 @@ export const useChat = () => {
             break;
           }
           
-          case 'onlineUsers': {
-            if (Array.isArray(envelope.users)) {
-              dispatch({ type: 'SET_ONLINE_USERS', payload: envelope.users });
+          case 'roomJoined': {
+            const { roomId, users } = envelope;
+            console.log('✅ انضمام مؤكد للغرفة:', roomId);
+            if (users && Array.isArray(users)) {
+              dispatch({ type: 'SET_ONLINE_USERS', payload: users });
+            }
+            dispatch({ type: 'SET_LOADING', payload: false });
+            break;
+          }
+          
+          case 'error': {
+            console.error('❌ خطأ من السيرفر:', envelope.message);
+            dispatch({ type: 'SET_CONNECTION_ERROR', payload: envelope.message });
+            break;
+          }
+          
+          case 'userJoinedRoom':
+          case 'userLeftRoom': {
+            // إعادة جلب قائمة المستخدمين للغرفة الحالية
+            if (envelope.roomId === state.currentRoomId) {
+              // سيتم تحديث القائمة تلقائياً عبر onlineUsers
             }
             break;
           }
           
-          case 'userJoined': {
-            if (envelope.user) {
-              dispatch({ 
-                type: 'SET_ONLINE_USERS', 
-                payload: [...state.onlineUsers.filter(u => u.id !== envelope.user.id), envelope.user] 
-              });
-            }
+          default:
+            // console.log('🔄 رسالة غير معروفة:', envelope.type);
             break;
-          }
-          
-          case 'userLeft': {
-            if (envelope.userId) {
-              dispatch({ 
-                type: 'SET_ONLINE_USERS', 
-                payload: state.onlineUsers.filter(u => u.id !== envelope.userId) 
-              });
-            }
-            break;
-          }
-          
-          case 'error':
-          case 'warning': {
-            console.warn('⚠️ خطأ من السيرفر:', envelope.message);
-            break;
-          }
-          
-          default: {
-            break;
-          }
         }
       } catch (error) {
-        console.error('❌ خطأ في معالجة رسالة Socket:', error);
+        console.error('خطأ في معالجة رسالة Socket:', error);
       }
     });
 
-    // معالج الرسائل الخاصة
-    socketInstance.on('privateMessage', (data: any) => {
-      try {
-        const { message } = data;
-        if (message?.sender) {
-          const chatMessage: ChatMessage = {
-            id: message.id,
-            content: message.content,
-            senderId: message.sender.id,
-            timestamp: message.timestamp || new Date().toISOString(),
-            messageType: message.messageType || 'text',
-            sender: message.sender,
-            isPrivate: true
-          };
-          
-          // تحديد معرف المحادثة (المرسل أو المستقبل)
-          const conversationId = message.senderId === state.currentUser?.id 
-            ? message.receiverId 
-            : message.senderId;
-          
-          dispatch({ 
-            type: 'SET_PRIVATE_MESSAGE', 
-            payload: { userId: conversationId, message: chatMessage }
-          });
-          
-          // إشعار للرسائل الخاصة
-          if (chatMessage.senderId !== state.currentUser?.id) {
-            playNotificationSound();
-          }
-        }
-      } catch (error) {
-        console.error('❌ خطأ في معالجة الرسالة الخاصة:', error);
-      }
-    });
+      // تنظيف عند إغلاق الاتصال
+      return () => {
+        clearInterval(pingInterval);
+        socketInstance.removeAllListeners('message');
+        socketInstance.removeAllListeners('ping');
+        socketInstance.removeAllListeners('client_pong');
+      };
+    }, [state.currentUser, state.currentRoomId, state.roomMessages]);
 
+  // ✅ مبسط: مصدر واحد للحقيقة لكل البيانات
+  const privateMessages = useMemo(() => state.privateConversations, [state.privateConversations]);
+  const ignoredUsers = useMemo(() => state.ignoredUsers, [state.ignoredUsers]);
+  const typingUsers = useMemo(() => Array.from(state.typingUsers), [state.typingUsers]);
 
-
-  }, [state.currentUser, state.onlineUsers, state.currentRoomId]);
-
+  // ✅ تحسين معالجة الاتصال والانقطاع
   useEffect(() => {
     const handleOnline = () => {
-      if (socket.current && !socket.current.connected) {
-        try { socket.current.connect(); } catch {}
+      console.log('🌐 الشبكة متاحة مرة أخرى');
+      if (socket.current && !socket.current.connected && state.currentUser) {
+        try { 
+          socket.current.connect(); 
+          // إعادة المصادقة بعد إعادة الاتصال
+          setTimeout(() => {
+            if (socket.current?.connected && state.currentUser) {
+              socket.current.emit('auth', {
+                userId: state.currentUser.id,
+                username: state.currentUser.username,
+                userType: state.currentUser.userType,
+                reconnect: true
+              });
+            }
+          }, 500);
+        } catch {}
       }
     };
+    
     const handleOffline = () => {
+      console.log('🔴 انقطع الاتصال بالشبكة');
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'انقطع الاتصال بالإنترنت' });
     };
+
+    // فحص دوري لحالة الاتصال
+    const connectionCheckInterval = setInterval(() => {
+      if (socket.current && state.currentUser) {
+        if (!socket.current.connected) {
+          console.log('🔄 فحص الاتصال: غير متصل، محاولة إعادة الاتصال');
+          dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+          try {
+            socket.current.connect();
+          } catch (error) {
+            console.error('فشل في إعادة الاتصال:', error);
+          }
+        } else {
+          // التأكد من المصادقة
+          if (state.connectionError) {
+            dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+          }
+          if (!state.isConnected) {
+            dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+          }
+        }
+      }
+    }, 10000); // فحص كل 10 ثوان
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -413,11 +450,13 @@ export const useChat = () => {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      clearInterval(connectionCheckInterval);
     };
-  }, []);
+  }, [state.currentUser, state.connectionError, state.isConnected]);
 
   // 🔥 SIMPLIFIED Connect function
   const connect = useCallback((user: ChatUser) => {
+    console.log('🚀 بدء الاتصال للمستخدم:', user.username);
     dispatch({ type: 'SET_CURRENT_USER', payload: user });
     dispatch({ type: 'SET_LOADING', payload: true });
 
@@ -433,32 +472,43 @@ export const useChat = () => {
       const s = getSocket();
       socket.current = s;
 
-      // حفظ الجلسة
-      saveSession({ userId: user.id, username: user.username, userType: user.userType });
+      // حفظ الجلسة فوراً
+      saveSession({ 
+        userId: user.id, 
+        username: user.username, 
+        userType: user.userType,
+        roomId: state.currentRoomId || 'general'
+      });
 
       // إعداد المستمعين
       setupSocketListeners(s);
 
-      // إذا كان متصلاً بالفعل، أرسل المصادقة والانضمام فوراً
+      // معالج الاتصال المحسن
+      s.on('connect', () => {
+        console.log('✅ اتصال Socket مؤكد');
+        dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+        dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+        dispatch({ type: 'SET_LOADING', payload: false });
+      });
+
+      // معالج المصادقة المؤكدة
+      s.on('authenticated', (data: any) => {
+        console.log('✅ مصادقة مؤكدة:', data.user?.username);
+        // تحديث بيانات المستخدم إذا لزم الأمر
+        if (data.user && data.user.username !== user.username) {
+          dispatch({ type: 'SET_CURRENT_USER', payload: { ...user, ...data.user } });
+        }
+      });
+
+      // إذا كان متصلاً بالفعل، أرسل المصادقة فوراً
       if (s.connected) {
+        console.log('🔗 Socket متصل، إرسال مصادقة...');
         s.emit('auth', {
           userId: user.id,
           username: user.username,
           userType: user.userType,
         });
-        s.emit('joinRoom', {
-          roomId: state.currentRoomId || 'general',
-          userId: user.id,
-          username: user.username,
-        });
       }
-
-      // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
-      s.on('connect', () => {
-        dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
-        dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
-        dispatch({ type: 'SET_LOADING', payload: false });
-      });
 
       // معالج فشل إعادة الاتصال النهائي
       s.on('reconnect_failed', () => {
@@ -470,7 +520,8 @@ export const useChat = () => {
       });
 
       // تحديث حالة الاتصال عند الانفصال
-      s.on('disconnect', () => {
+      s.on('disconnect', (reason) => {
+        console.log('🔴 انقطع الاتصال:', reason);
         dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
       });
 
@@ -478,6 +529,7 @@ export const useChat = () => {
       s.on('connect_error', (error) => {
         console.error('❌ خطأ في الاتصال:', error);
         dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل الاتصال بالسيرفر' });
+        dispatch({ type: 'SET_LOADING', payload: false });
       });
 
     } catch (error) {
@@ -485,54 +537,103 @@ export const useChat = () => {
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'خطأ في الاتصال بالخادم' });
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [setupSocketListeners]);
+  }, [setupSocketListeners, state.currentRoomId]);
 
   // 🔥 SIMPLIFIED Join room function
   const joinRoom = useCallback((roomId: string) => {
+    console.log('🚪 محاولة الانضمام للغرفة:', roomId);
+    
     if (state.currentRoomId === roomId) {
+      console.log('⚠️ الغرفة نفسها، لا حاجة للتغيير');
       return;
     }
 
+    // تحديث الغرفة الحالية فوراً في الحالة
     dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
-    saveSession({ roomId });
+    
+    // حفظ الغرفة الجديدة في الجلسة مع الحفاظ على بيانات المستخدم
+    saveSession({ 
+      roomId,
+      userId: state.currentUser?.id,
+      username: state.currentUser?.username,
+      userType: state.currentUser?.userType
+    });
 
-    // لا نطلق طلب REST هنا، سنعتمد على Socket لإرسال آخر 10 رسائل بعد الانضمام
-    // loadRoomMessages(roomId);
-
-    if (socket.current?.connected) {
+    // إرسال طلب الانضمام للغرفة عبر Socket
+    if (socket.current?.connected && state.currentUser) {
+      console.log('📡 إرسال طلب انضمام للغرفة:', roomId);
       socket.current.emit('joinRoom', { 
         roomId,
-        userId: state.currentUser?.id,
-        username: state.currentUser?.username 
+        userId: state.currentUser.id,
+        username: state.currentUser.username 
       });
+    } else {
+      console.warn('⚠️ Socket غير متصل أو المستخدم غير موجود');
     }
-  }, [loadRoomMessages, state.currentRoomId, state.currentUser]);
+  }, [state.currentRoomId, state.currentUser]);
 
   // 🔥 SIMPLIFIED Send message function
   const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number, roomId?: string) => {
-    if (!state.currentUser || !socket.current?.connected) {
+    // فحص الاتصال والمستخدم
+    if (!state.currentUser) {
       console.error('❌ لا يمكن إرسال الرسالة - المستخدم غير متصل');
-      return;
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'يجب تسجيل الدخول أولاً' });
+      return false;
+    }
+
+    if (!socket.current) {
+      console.error('❌ لا يمكن إرسال الرسالة - Socket غير موجود');
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فقدان الاتصال بالخادم' });
+      return false;
+    }
+
+    if (!socket.current.connected) {
+      console.error('❌ لا يمكن إرسال الرسالة - Socket غير متصل');
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'الاتصال منقطع، يتم إعادة المحاولة...' });
+      
+      // محاولة إعادة الاتصال
+      try {
+        socket.current.connect();
+      } catch (error) {
+        console.error('فشل في إعادة الاتصال:', error);
+      }
+      return false;
     }
 
     if (!content.trim()) {
       console.warn('⚠️ محتوى الرسالة فارغ');
-      return;
+      return false;
     }
 
-    const messageData = {
-      senderId: state.currentUser.id,
-      content: content.trim(),
-      messageType,
-      isPrivate: !!receiverId,
-      receiverId,
-      roomId: roomId || state.currentRoomId
-    };
+    try {
+      const messageData = {
+        senderId: state.currentUser.id,
+        senderUsername: state.currentUser.username, // إضافة اسم المستخدم للتأكد
+        content: content.trim(),
+        messageType,
+        isPrivate: !!receiverId,
+        receiverId,
+        roomId: roomId || state.currentRoomId,
+        timestamp: new Date().toISOString()
+      };
 
-    if (receiverId) {
-      socket.current.emit('privateMessage', messageData);
-    } else {
-      socket.current.emit('publicMessage', messageData);
+      // إرسال الرسالة
+      if (receiverId) {
+        console.log('📤 إرسال رسالة خاصة لـ:', receiverId);
+        socket.current.emit('privateMessage', messageData);
+      } else {
+        console.log('📤 إرسال رسالة عامة في الغرفة:', messageData.roomId);
+        socket.current.emit('publicMessage', messageData);
+      }
+
+      // مسح رسالة الخطأ إذا تم الإرسال بنجاح
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+      return true;
+
+    } catch (error) {
+      console.error('❌ خطأ في إرسال الرسالة:', error);
+      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل في إرسال الرسالة' });
+      return false;
     }
   }, [state.currentUser, state.currentRoomId]);
 
@@ -586,10 +687,10 @@ export const useChat = () => {
     currentUser: state.currentUser,
     onlineUsers: memoizedOnlineUsers,
     publicMessages: currentRoomMessages, // ✅ مصدر واحد للحقيقة
-    privateConversations: state.privateConversations,
-    ignoredUsers: state.ignoredUsers,
+    privateConversations: privateMessages,
+    ignoredUsers: ignoredUsers,
     isConnected: state.isConnected,
-    typingUsers: state.typingUsers,
+    typingUsers: typingUsers,
     connectionError: state.connectionError,
     newMessageSender: state.newMessageSender,
     isLoading: state.isLoading,
