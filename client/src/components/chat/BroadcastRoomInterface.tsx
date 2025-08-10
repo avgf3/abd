@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Mic, MicOff, Users, Crown, Clock, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import type { ChatUser, ChatRoom, WebSocketMessage, ChatMessage } from '@/types/chat';
+import type { ChatUser, ChatRoom, RoomWebSocketMessage as WebSocketMessage, ChatMessage } from '@/types/chat';
 import { normalizeBroadcastInfo } from '@/utils/roomUtils';
 import MessageArea from './MessageArea';
 

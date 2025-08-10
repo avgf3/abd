@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
 import { Socket } from 'socket.io-client';
 import { getSocket, saveSession } from '@/lib/socket';
-import type { ChatUser, ChatMessage, WebSocketMessage, PrivateConversation, Notification } from '@/types/chat';
+import type { ChatUser, ChatMessage, RoomWebSocketMessage as WebSocketMessage } from '@/types/chat';
+import type { PrivateConversation } from '../../../shared/types';
+import type { Notification } from '@/types/chat';
 import { apiRequest } from '@/lib/queryClient';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
 
@@ -273,7 +275,8 @@ export const useChat = () => {
                 timestamp: message.timestamp || new Date().toISOString(),
                 messageType: message.messageType || 'text',
                 sender: message.sender,
-                roomId
+                roomId,
+                isPrivate: Boolean(message.isPrivate)
               };
               
               // إضافة الرسالة للغرفة المناسبة

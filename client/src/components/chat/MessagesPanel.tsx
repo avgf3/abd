@@ -11,7 +11,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import ProfileImage from './ProfileImage';
-import type { ChatUser, PrivateConversation } from '@/types/chat';
+import type { ChatUser } from '@/types/chat';
+import type { PrivateConversation } from '../../../../shared/types';
 
 interface MessagesPanelProps {
   isOpen: boolean;
