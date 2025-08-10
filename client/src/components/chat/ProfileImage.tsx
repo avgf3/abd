@@ -6,17 +6,18 @@ import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 
 interface ProfileImageProps {
   user: ChatUser;
-  size?: 'small' | 'medium' | 'large';
+  size?: 'xsmall' | 'small' | 'medium' | 'large';
   className?: string;
   onClick?: (e: any) => void;
 }
 
 export default function ProfileImage({ user, size = 'medium', className = '', onClick }: ProfileImageProps) {
   const sizeClasses = {
+    xsmall: 'w-8 h-8',
     small: 'w-10 h-10',
     medium: 'w-16 h-16',
     large: 'w-20 h-20'
-  };
+  } as const;
 
   // تحديد لون الإطار حسب الجنس
   const borderColor = user.gender === 'female'
