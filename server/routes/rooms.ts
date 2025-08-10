@@ -127,11 +127,8 @@ router.post('/', upload.single('image'), async (req, res) => {
     const room = await roomService.createRoom(roomData);
     
     // 🚀 إشعار واحد محسن للغرفة الجديدة
-    const io = req.app.get('io');
-    if (io) {
-      io.emit('roomCreated', { room });
-      // 🗑️ حذف roomsUpdated المكرر - يتم التحديث تلقائياً
-    }
+    // لا بث عام عبر REST هنا لتفادي التعارض مع Socket.IO
+    // يمكن الاعتماد على Socket لإرسال إشعار إنشاء الغرفة عند الحاجة
 
     res.json({ room });
   } catch (error: any) {
@@ -166,11 +163,8 @@ router.delete('/:roomId', async (req, res) => {
     await roomService.deleteRoom(roomId, parseInt(userId));
 
     // 🚀 إشعار واحد محسن لحذف الغرفة
-    const io = req.app.get('io');
-    if (io) {
-      io.emit('roomDeleted', { roomId });
-      // 🗑️ حذف roomsUpdated المكرر - يتم التحديث تلقائياً
-    }
+    // لا بث عام عبر REST هنا لتفادي التعارض مع Socket.IO
+    // يمكن الاعتماد على Socket لإرسال إشعار حذف الغرفة عند الحاجة
 
     res.json({ message: 'تم حذف الغرفة بنجاح' });
   } catch (error: any) {
@@ -205,25 +199,8 @@ router.post('/:roomId/join', async (req, res) => {
 
     await roomService.joinRoom(parseInt(userId), roomId);
 
-    // 📡 إرسال إشعار بانضمام المستخدم (مرة واحدة فقط)
-    const io = req.app.get('io');
-    if (io) {
-      // إشعار للغرفة فقط (وليس لجميع الغرف)
-      io.to(`room_${roomId}`).emit('userJoinedRoom', {
-        userId: parseInt(userId),
-        roomId: roomId,
-        timestamp: new Date().toISOString()
-      });
-      
-      // 🔢 تحديث عدد المستخدمين بشكل محسن
-      try {
-        const userCount = await roomService.updateRoomUserCount(roomId);
-        io.emit('roomUserCountUpdated', { roomId, userCount });
-        } catch (countError) {
-        console.warn('⚠️ خطأ في تحديث عدد المستخدمين:', countError);
-      }
-    }
-
+    // لا بث عبر REST لتفادي التعارض مع Socket.IO
+    // إرجاع استجابة موحدة فقط
     res.json({ 
       message: 'تم الانضمام للغرفة بنجاح',
       roomId,
@@ -261,25 +238,7 @@ router.post('/:roomId/leave', async (req, res) => {
 
     await roomService.leaveRoom(parseInt(userId), roomId);
 
-    // 📡 إرسال إشعار بمغادرة المستخدم (مرة واحدة فقط)
-    const io = req.app.get('io');
-    if (io) {
-      // إشعار للغرفة فقط
-      io.to(`room_${roomId}`).emit('userLeftRoom', {
-        userId: parseInt(userId),
-        roomId: roomId,
-        timestamp: new Date().toISOString()
-      });
-      
-      // 🔢 تحديث عدد المستخدمين بشكل محسن
-      try {
-        const userCount = await roomService.updateRoomUserCount(roomId);
-        io.emit('roomUserCountUpdated', { roomId, userCount });
-        } catch (countError) {
-        console.warn('⚠️ خطأ في تحديث عدد المستخدمين:', countError);
-      }
-    }
-
+    // لا بث عبر REST لتفادي التعارض مع Socket.IO
     res.json({ 
       message: 'تم مغادرة الغرفة بنجاح',
       roomId,
