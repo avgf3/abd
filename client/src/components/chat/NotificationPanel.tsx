@@ -72,7 +72,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
         method: 'PUT'
       });
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       // تحديث فوري وذكي للكاش
       queryClient.setQueryData(
         ['/api/notifications', currentUser?.id],
@@ -81,7 +81,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
           return {
             ...oldData,
             notifications: oldData.notifications.map((notif: Notification) =>
-              notif.id === arguments[0] ? { ...notif, isRead: true } : notif
+              notif.id === variables ? { ...notif, isRead: true } : notif
             )
           };
         }

@@ -2,14 +2,12 @@
 
 import { Request, Response } from 'express';
 
-// تمديد Express Request type
-declare global {
-  namespace Express {
-    interface Request {
-      user?: AuthenticatedUser;
-      session?: any;
-      fileValidationError?: string;
-    }
+// تمديد Express Request type عبر module augmentation
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: import('../types/api').AuthenticatedUser;
+    session?: any;
+    fileValidationError?: string;
   }
 }
 

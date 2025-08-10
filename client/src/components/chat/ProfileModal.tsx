@@ -479,7 +479,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       await new Promise(resolve => setTimeout(resolve, 100));
       
       // جلب البيانات المحدثة من السيرفر للتأكد
-      await fetchAndUpdateUser(currentUser?.id!);
+      if (currentUser?.id) {
+        await fetchAndUpdateUser(currentUser.id);
+      }
       
       toast({ 
         title: "نجح ✅", 
@@ -527,7 +529,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         body: { userId: currentUser?.id, [fieldName]: editValue }
       });
       if ((response as any).success) {
-        await fetchAndUpdateUser(currentUser?.id!);
+        if (currentUser?.id) {
+          await fetchAndUpdateUser(currentUser.id);
+        }
         toast({ title: "نجح ✅", description: "تم تحديث الملف الشخصي" });
         closeEditModal();
       } else {

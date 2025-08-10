@@ -99,7 +99,7 @@ export default function ModerationPanel({
     
     try {
       let endpoint = '';
-      let body: any = {
+      const body: any = {
         moderatorId: currentUser.id,
         targetUserId: selectedUser.id,
         reason: reason || 'بدون سبب محدد'

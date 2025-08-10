@@ -564,6 +564,19 @@ export const useChat = () => {
     }
   }, []);
 
+  // Compatibility helpers for UI components
+  const handleTyping = useCallback(() => {
+    sendTyping();
+  }, [sendTyping]);
+
+  const getCurrentRoomMessages = useCallback(() => currentRoomMessages, [currentRoomMessages]);
+
+  const updateCurrentUser = useCallback((updates: Partial<ChatUser>) => {
+    if (!state.currentUser) return;
+    const merged = { ...state.currentUser, ...updates } as ChatUser;
+    dispatch({ type: 'SET_CURRENT_USER', payload: merged });
+  }, [state.currentUser]);
+
   return {
     // State
     currentUser: state.currentUser,
@@ -605,5 +618,10 @@ export const useChat = () => {
     // ✅ Convenience functions
     sendPublicMessage: (content: string) => sendMessage(content, 'text'),
     sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId),
+
+    // Newly added helpers for compatibility
+    handleTyping,
+    getCurrentRoomMessages,
+    updateCurrentUser,
   };
 }
