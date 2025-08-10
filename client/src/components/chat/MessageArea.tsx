@@ -324,7 +324,7 @@ export default function MessageArea({
                       onClick={() => onReportMessage(message.sender!, message.content, message.id)}
                       className="text-xs text-red-500 hover:text-red-700 transition-colors duration-200"
                     >
-                      🚨 إبلاغ
+                      🚩 تبليغ
                     </button>
                   </div>
                 )}
