@@ -20,7 +20,9 @@ import UserRoleBadge from './UserRoleBadge';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Socket } from 'socket.io-client';
 import { getSocket, saveSession } from '@/lib/socket';
-import ScrollToBottomButton from '../common/ScrollToBottomButton';
+import { useGrabScroll } from '@/hooks/useGrabScroll';
+
+
 
 interface UnifiedSidebarProps {
   users: ChatUser[];
@@ -138,6 +140,9 @@ export default function UnifiedSidebar({
   const socketRef = useRef<Socket | null>(null);
   const usersScrollRef = useRef<HTMLDivElement>(null);
   const wallsScrollRef = useRef<HTMLDivElement>(null);
+
+  useGrabScroll(usersScrollRef);
+  useGrabScroll(wallsScrollRef);
 
   const { data: wallData, isFetching } = useQuery<{ success?: boolean; posts: WallPost[] }>({
     queryKey: ['/api/wall/posts', activeTab, currentUser?.id],
@@ -372,7 +377,7 @@ export default function UnifiedSidebar({
   // تم نقل دالة formatTimeAgo إلى utils/timeUtils.ts (تستخدم من الاستيراد أعلاه)
 
   return (
-    <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col">
+    <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col min-h-0">
       {/* Toggle Buttons - always visible now */}
       <div className="flex border-b border-gray-200">
         <Button
@@ -427,7 +432,7 @@ export default function UnifiedSidebar({
 
       {/* Users View */}
       {activeView === 'users' && (
-        <div ref={usersScrollRef} className="relative flex-1 overflow-y-auto p-4 space-y-3">
+                  <div ref={usersScrollRef} className="relative flex-1 overflow-y-auto p-4 space-y-3 cursor-grab">
           <div className="relative">
             <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
             <Input
@@ -522,13 +527,12 @@ export default function UnifiedSidebar({
               </div>
             )}
           </div>
-          <ScrollToBottomButton targetRef={usersScrollRef} />
         </div>
       )}
 
       {/* Walls View */}
       {activeView === 'walls' && (
-        <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
           {/* Wall Tabs */}
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col">
             <TabsList className="grid w-full grid-cols-2 m-2">
@@ -542,7 +546,7 @@ export default function UnifiedSidebar({
               </TabsTrigger>
             </TabsList>
 
-            <div ref={wallsScrollRef} className="relative flex-1 overflow-y-auto px-2">
+            <div ref={wallsScrollRef} className="relative flex-1 overflow-y-auto px-2 cursor-grab">
               {/* Post Creation */}
               {currentUser && currentUser.userType !== 'guest' && (
                 <Card className="mb-4 border border-gray-200">
@@ -706,7 +710,6 @@ export default function UnifiedSidebar({
                   ))
                 )}
               </TabsContent>
-              <ScrollToBottomButton targetRef={wallsScrollRef} />
             </div>
           </Tabs>
         </div>

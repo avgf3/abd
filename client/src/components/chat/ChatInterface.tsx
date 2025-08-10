@@ -370,7 +370,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       </header>
       
       {/* Main Content */}
-      <main className="flex flex-1 overflow-hidden">
+      <main className="flex flex-1 overflow-hidden min-h-0">
         {/* الشريط الجانبي - يظهر فقط عندما يكون activeView ليس 'hidden' */}
         {activeView !== 'hidden' && (
           <div className={`${activeView === 'walls' ? 'w-96' : activeView === 'friends' ? 'w-80' : 'w-64'} transition-all duration-300`}>
