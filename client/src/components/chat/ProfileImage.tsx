@@ -19,6 +19,9 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
     large: 'w-20 h-20'
   };
 
+  // تمييز بسيط حسب الجنس (بدون مؤثرات إضافية)
+  const borderColor = user.gender === 'female' ? 'border-pink-400' : 'border-blue-400';
+
   // تحديد مصدر الصورة بشكل مستقر
   const imageSrc = useMemo(() => {
     return getImageSrc(user.profileImage, '');
@@ -33,7 +36,7 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
       <img
         src={finalSrc}
         alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
+        className={`${sizeClasses[size]} rounded-full object-cover border-2 ${borderColor} ${className}`}
         style={{
           transition: 'none',
           backfaceVisibility: 'hidden',
