@@ -252,10 +252,7 @@ export const useChat = () => {
       }, 20000);
       socketInstance.on('client_pong', () => {});
 
-      // استجابة لنبض السيرفر المخصص للحفاظ على الاتصال
-      socketInstance.on('ping', () => {
-        try { socketInstance.emit('pong', { t: Date.now() }); } catch {}
-      });
+      // لم نعد نستخدم ping/pong المخصصين؛ نعتمد فقط على client_ping/client_pong للحفاظ على الاتصال
 
       // ✅ معالج واحد للرسائل - حذف التضارب
       socketInstance.on('message', (data: any) => {

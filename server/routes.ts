@@ -1381,38 +1381,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const startHeartbeat = () => {
       if (heartbeatInterval) clearInterval(heartbeatInterval);
       
-      let missedPongs = 0;
-      const maxMissedPongs = 3;
-      
+      // الاعتماد على heartbeat الداخلي لـ Socket.IO مع رد 'client_pong' فقط
       heartbeatInterval = setInterval(() => {
-        if (socket.connected) {
-          if (missedPongs >= maxMissedPongs) {
-            console.warn(`⚠️ فقدان الاتصال مع ${socket.id} بعد ${maxMissedPongs} محاولات`);
-            socket.disconnect(true);
-            cleanup();
-            return;
-          }
-          
-          socket.emit('ping', { timestamp: Date.now() });
-          missedPongs++;
-        } else {
+        if (!socket.connected) {
           cleanup();
+        } else {
+          // تحديث آخر نشاط للمستخدم دورياً عند الاتصال
+          const userId = (socket as CustomSocket).userId;
+          if (userId && connectedUsers.has(userId)) {
+            const userConnection = connectedUsers.get(userId)!;
+            userConnection.lastSeen = new Date();
+            connectedUsers.set(userId, userConnection);
+          }
         }
-      }, 30000); // تقليل التكرار إلى كل 30 ثانية
+      }, 30000);
       
-      // إعادة تعيين العداد عند استلام pong
-      socket.on('pong', (data) => {
-        missedPongs = 0;
-        
-        // تحديث آخر نشاط للمستخدم
-        const userId = (socket as CustomSocket).userId;
-        if (userId && connectedUsers.has(userId)) {
-          const userConnection = connectedUsers.get(userId)!;
-          userConnection.lastSeen = new Date();
-          connectedUsers.set(userId, userConnection);
-        }
-      });
-
       // استجابة معيارية لأحداث ping المخصصة من العميل لضمان الحفاظ على الاتصال
       socket.on('client_ping', () => {
         socket.emit('client_pong', { t: Date.now() });
@@ -1467,6 +1450,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (socket as CustomSocket).userType = user.userType;
         (socket as CustomSocket).isAuthenticated = true;
         isAuthenticated = true;
+
+        // الانضمام لغرفة المستخدم الخاصة لاستقبال الرسائل الخاصة
+        try { socket.join(user.id.toString()); } catch {}
         
         // تنظيف timeout المصادقة
         if (connectionTimeout) {
@@ -1874,84 +1860,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // الـ case هذا محذوف لأنه مكرر - الأصل في أعلى الملف يعمل بشكل صحيح مع roomId
           // case 'publicMessage': - REMOVED DUPLICATE
 
-          case 'privateMessage': {
-            // التحقق الأولي من وجود معرف المستخدم والجلسة
-            if (!socket.userId || !socket.username) {
-              socket.emit('error', {
-                type: 'error',
-                message: 'جلسة غير صالحة - يرجى إعادة تسجيل الدخول',
-                action: 'invalid_session'
-              });
-              socket.disconnect(true);
-              break;
-            }
-            
-            // التحقق من وجود المستخدم في قاعدة البيانات
-            const currentUserPrivate = await storage.getUser(socket.userId);
-            if (!currentUserPrivate) {
-              socket.emit('error', {
-                type: 'error',
-                message: 'المستخدم غير موجود في النظام',
-                action: 'user_not_found'
-              });
-              socket.disconnect(true);
-              break;
-            }
-            
-            if (socket.userId) {
-              // منع إرسال رسالة للنفس
-              if (socket.userId === message.receiverId) {
-                socket.emit('error', {
-                  type: 'error',
-                  message: 'لا يمكن إرسال رسالة لنفسك',
-                  action: 'blocked'
-                });
-                break;
-              }
-
-              // تنظيف المحتوى
-              const sanitizedContent = sanitizeInput(message.content);
-              
-              // فحص صحة المحتوى
-              const contentCheck = validateMessageContent(sanitizedContent);
-              if (!contentCheck.isValid) {
-                socket.emit('error', {
-                  type: 'error',
-                  message: contentCheck.reason
-                });
-                break;
-              }
-              
-              // فحص الرسالة الخاصة ضد السبام
-              const spamCheck = spamProtection.checkMessage(socket.userId, sanitizedContent);
-              if (!spamCheck.isAllowed) {
-                socket.emit('error', {
-                  type: 'error',
-                  message: spamCheck.reason,
-                  action: spamCheck.action
-                });
-                break;
-              }
-
-              const newMessage = await storage.createMessage({
-                senderId: socket.userId,
-                receiverId: message.receiverId,
-                content: sanitizedContent,
-                messageType: message.messageType || 'text',
-                isPrivate: true,
-              });
-              
-              const sender = await storage.getUser(socket.userId);
-              const messageWithSender = { ...newMessage, sender };
-              
-              // Send to receiver only using Socket.IO rooms
-              io.to(message.receiverId.toString()).emit('privateMessage', { message: messageWithSender });
-              
-              // Send back to sender with confirmation
-              socket.emit('privateMessage', { message: messageWithSender });
-            }
-            break;
-          }
+          // case 'privateMessage' تمت إزالته لتجنب التكرار؛ معالج الرسائل الخاصة موجود في socket.on('privateMessage') أعلاه
+          break;
 
           case 'typing':
             if (socket.userId) {
