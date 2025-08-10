@@ -11,6 +11,7 @@ import WallPostList from './WallPostList';
 import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
 import { Socket } from 'socket.io-client';
 import { getSocket, saveSession } from '@/lib/socket';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 interface WallPanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -27,31 +28,27 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const [submitting, setSubmitting] = useState(false);
   const socket = useRef<Socket | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // جلب المنشورات
-  const fetchPosts = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await apiRequest(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`);
-      const posts = (data as any).posts || (data as any).data || data || [];
-      setPosts(posts);
-    } catch (error) {
-      console.error('❌ خطأ في الاتصال بالخادم:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في جلب المنشورات",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, currentUser.id, toast]);
+  // جلب المنشورات عبر React Query مع كاش قوي
+  const { data: wallData, isFetching } = useQuery<{ success?: boolean; posts: WallPost[] }>({
+    queryKey: ['/api/wall/posts', activeTab, currentUser.id],
+    queryFn: async () => await apiRequest(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`),
+    enabled: isOpen && !!currentUser?.id,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    initialData: () => queryClient.getQueryData(['/api/wall/posts', activeTab, currentUser.id]) as any,
+  });
 
   useEffect(() => {
-    if (isOpen && currentUser) {
-      fetchPosts();
+    const data = wallData as unknown as { posts?: WallPost[] } | undefined;
+    if (data?.posts) {
+      setPosts(data.posts);
     }
-  }, [isOpen, fetchPosts]);
+    setLoading(isFetching);
+  }, [wallData, isFetching]);
 
   // إعداد Socket.IO للتحديثات الفورية
   useEffect(() => {
@@ -69,21 +66,28 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
           const postType = message.wallType || message.post?.type || 'public';
           if (postType === activeTab) {
             setPosts(prevPosts => [message.post, ...prevPosts]);
+            // تحديث الكاش
+            queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+              const oldPosts = old?.posts || [];
+              return { ...(old || {}), posts: [message.post, ...oldPosts] };
+            });
             toast({
               title: "منشور جديد ✨",
               description: `منشور جديد من ${message.post.username}`,
             });
           }
         } else if (message.type === 'wallPostReaction') {
-          setPosts(prevPosts => 
-            prevPosts.map(post => 
-              post.id === message.post.id ? message.post : post
-            )
-          );
+          setPosts(prevPosts => prevPosts.map(post => post.id === message.post.id ? message.post : post));
+          queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+            const oldPosts: WallPost[] = old?.posts || [];
+            return { ...(old || {}), posts: oldPosts.map(p => p.id === message.post.id ? message.post : p) };
+          });
         } else if (message.type === 'wallPostDeleted') {
-          setPosts(prevPosts => 
-            prevPosts.filter(post => post.id !== message.postId)
-          );
+          setPosts(prevPosts => prevPosts.filter(post => post.id !== message.postId));
+          queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+            const oldPosts: WallPost[] = old?.posts || [];
+            return { ...(old || {}), posts: oldPosts.filter(p => p.id !== message.postId) };
+          });
         }
       });
     }
@@ -183,6 +187,10 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
         const newPost = data.post || data;
         // إضافة المنشور للقائمة فوراً
         setPosts(prev => [newPost, ...prev]);
+        queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+          const oldPosts = old?.posts || [];
+          return { ...(old || {}), posts: [newPost, ...oldPosts] };
+        });
         setNewPostContent('');
         removeSelectedImage();
         toast({
@@ -232,9 +240,11 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
       const data = result as any;
       if (data?.post) {
-        setPosts(prev => prev.map(post => 
-          post.id === postId ? data.post : post
-        ));
+        setPosts(prev => prev.map(post => post.id === postId ? data.post : post));
+        queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+          const oldPosts: WallPost[] = old?.posts || [];
+          return { ...(old || {}), posts: oldPosts.map(p => p.id === postId ? data.post : p) };
+        });
       }
     } catch (error) {
       console.error('خطأ في التفاعل:', error);
@@ -254,6 +264,10 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
       });
 
       setPosts(prev => prev.filter(post => post.id !== postId));
+      queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+        const oldPosts: WallPost[] = old?.posts || [];
+        return { ...(old || {}), posts: oldPosts.filter(p => p.id !== postId) };
+      });
       toast({
         title: "تم الحذف",
         description: "تم حذف المنشور بنجاح",
