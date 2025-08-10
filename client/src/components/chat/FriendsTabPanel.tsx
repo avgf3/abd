@@ -118,10 +118,13 @@ export default function FriendsTabPanel({
   // قبول طلب صداقة
   const handleAcceptRequest = async (requestId: number) => {
     try {
+      if (!currentUser?.id) {
+        showErrorToast('يجب تسجيل الدخول أولاً');
+        return;
+      }
       await apiRequest(`/api/friend-requests/${requestId}/accept`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser?.id })
+        body: { userId: currentUser.id }
       });
       
       showSuccessToast('تم قبول طلب الصداقة بنجاح', 'تم قبول الطلب');
@@ -139,10 +142,13 @@ export default function FriendsTabPanel({
   // رفض طلب صداقة
   const handleRejectRequest = async (requestId: number) => {
     try {
+      if (!currentUser?.id) {
+        showErrorToast('يجب تسجيل الدخول أولاً');
+        return;
+      }
       await apiRequest(`/api/friend-requests/${requestId}/decline`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser?.id })
+        body: { userId: currentUser.id }
       });
       
       showSuccessToast('تم رفض طلب الصداقة بنجاح', 'تم رفض الطلب');
