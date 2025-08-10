@@ -264,74 +264,73 @@ export default function MessageArea({
           validMessages.map((message) => (
             <div
               key={message.id}
-              className={`flex gap-3 p-3 rounded-lg border-r-4 ${getMessageBorderColor(message.sender?.userType)} 
-                bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
+              className={`flex items-center gap-3 p-3 rounded-lg border-r-4 ${getMessageBorderColor(message.sender?.userType)} bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
             >
-              {/* Profile Image */}
-              {message.sender && (
-                <div className="flex-shrink-0">
-                  <ProfileImage 
-                    user={message.sender} 
-                    size="small"
-                    className="cursor-pointer hover:scale-110 transition-transform duration-200"
-                  />
+              {/* System message: one-line red without avatar/badge */}
+              {message.messageType === 'system' ? (
+                <div className="w-full flex items-center justify-between text-red-600">
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="font-semibold">النظام:</span>
+                    <span className="truncate">{message.content}</span>
+                  </div>
+                  <span className="text-xs text-red-500 ml-2 whitespace-nowrap">{formatTime(message.timestamp)}</span>
                 </div>
-              )}
-              
-              {/* Message Content */}
-              <div className="flex-1 min-w-0">
-                {/* Header */}
-                <div className="flex items-center gap-2 mb-1">
-                  <button
-                    onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                    className="font-semibold hover:underline transition-colors duration-200"
-                    style={{ color: getFinalUsernameColor(message.sender) }}
-                  >
-                    {message.sender?.username}
-                  </button>
-                  
-                                        {message.sender && <UserRoleBadge user={message.sender} showOnlyIcon={false} />}
-                  
-                  <span className="text-xs text-gray-500 mr-auto">
-                    {formatTime(message.timestamp)}
-                  </span>
-                </div>
-                
-                {/* Message Content */}
-                <div className="text-gray-800 break-words">
-                  {message.messageType === 'image' ? (
-                    <img
-                      src={message.content}
-                      alt="صورة"
-                      className="max-w-xs max-h-64 rounded-lg shadow-sm cursor-pointer hover:shadow-lg transition-shadow duration-200"
-                      loading="lazy"
-                      onClick={() => {
-                        // فتح الصورة في نافذة جديدة
-                        window.open(message.content, '_blank');
-                      }}
-                    />
-                  ) : (
-                    <div className="leading-relaxed">
-                      {renderMessageWithMentions(message.content, currentUser, onlineUsers)}
+              ) : (
+                <>
+                  {/* Profile Image */}
+                  {message.sender && (
+                    <div className="flex-shrink-0">
+                      <ProfileImage 
+                        user={message.sender} 
+                        size="small"
+                        className="cursor-pointer hover:scale-110 transition-transform duration-200"
+                      />
                     </div>
                   )}
-                </div>
-                
-                {/* Message Actions */}
-                <div className="mt-2 flex gap-3">
-                  {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+
+                  {/* Inline row: badge, name, content */}
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    {message.sender && <UserRoleBadge user={message.sender} showOnlyIcon={true} />}
                     <button
-                      onClick={() => onReportMessage(message.sender!, message.content, message.id)}
-                      className="text-xs text-red-500 hover:text-red-700 transition-colors duration-200"
+                      onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                      className="font-semibold hover:underline transition-colors duration-200 truncate"
+                      style={{ color: getFinalUsernameColor(message.sender) }}
                     >
-                      🚨 إبلاغ
+                      {message.sender?.username}
                     </button>
-                  )}
-                  {currentUser && message.sender && (
-                    (() => {
+
+                    <div className="text-gray-800 break-words truncate flex-1">
+                      {message.messageType === 'image' ? (
+                        <img
+                          src={message.content}
+                          alt="صورة"
+                          className="max-h-10 rounded cursor-pointer"
+                          loading="lazy"
+                          onClick={() => window.open(message.content, '_blank')}
+                        />
+                      ) : (
+                        <span className="truncate">
+                          {renderMessageWithMentions(message.content, currentUser, onlineUsers)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Right side: time and report flag */}
+                    <span className="text-xs text-gray-500 whitespace-nowrap ml-2">{formatTime(message.timestamp)}</span>
+
+                    {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+                      <button
+                        onClick={() => onReportMessage(message.sender!, message.content, message.id)}
+                        className="text-sm hover:opacity-80"
+                        title="تبليغ"
+                      >
+                        🚩
+                      </button>
+                    )}
+
+                    {currentUser && message.sender && (() => {
                       const isOwner = currentUser.role === 'owner';
                       const isAdmin = currentUser.role === 'admin';
-                      const isModerator = currentUser.role === 'moderator';
                       const isSender = currentUser.id === message.sender.id;
                       const canDelete = isSender || isOwner || isAdmin;
                       if (!canDelete) return null;
@@ -343,7 +342,6 @@ export default function MessageArea({
                             body: JSON.stringify({ userId: currentUser.id, roomId: message.roomId || 'general' }),
                             credentials: 'include'
                           });
-                          // نترك التحديث لحدث السوكِت messageDeleted
                           if (!res.ok) {
                             const errText = await res.text();
                             console.error('فشل حذف الرسالة:', errText);
@@ -358,14 +356,13 @@ export default function MessageArea({
                           className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200"
                           title="حذف الرسالة"
                         >
-                          🗑️ حذف
+                          🗑️
                         </button>
                       );
-                    })()
-                  )}
-                </div>
-                
-              </div>
+                    })()}
+                  </div>
+                </>
+              )}
             </div>
           ))
         )}
