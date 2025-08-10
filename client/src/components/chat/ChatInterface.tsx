@@ -63,18 +63,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   // 🚀 دوال إدارة الغرف المحسنة
   const handleRoomChange = useCallback(async (roomId: string) => {
-    console.log(`🔄 طلب تغيير الغرفة إلى: ${roomId}`);
     chat.joinRoom(roomId);
   }, [chat]);
 
   // دالة تحديث الغرف مع منع التكرار
   const handleRefreshRooms = useCallback(async () => {
     if (isFetching) {
-      console.log('⚠️ تحديث الغرف قيد التنفيذ بالفعل');
       return;
     }
     
-    console.log('🔄 تحديث قائمة الغرف...');
     await fetchRooms(true); // فرض التحديث
   }, [fetchRooms, isFetching]);
 

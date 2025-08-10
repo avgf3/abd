@@ -906,12 +906,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // إعدادات CORS محسنة
     cors: { 
       origin: process.env.NODE_ENV === 'production' 
-        ? [process.env.RENDER_EXTERNAL_URL, "https://abd-ylo2.onrender.com", "https://abd-gmva.onrender.com"].filter(Boolean)
+        ? [process.env.RENDER_EXTERNAL_URL, process.env.FRONTEND_URL, process.env.CORS_ORIGIN, "https://abd-ylo2.onrender.com", "https://abd-gmva.onrender.com"].filter(Boolean)
         : "*",
       methods: ["GET", "POST"],
       credentials: true
     },
-    path: "/socket.io/",
+    path: "/socket.io",
     
     // إعدادات النقل محسنة للاستقرار
     transports: ['websocket', 'polling'],
@@ -930,9 +930,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // إعدادات الأداء
     maxHttpBufferSize: 1e6, // 1MB
     allowRequest: (req, callback) => {
-      // فحص أمني بسيط للطلبات
-      const isOriginAllowed = process.env.NODE_ENV !== 'production' || 
-        req.headers.origin === process.env.RENDER_EXTERNAL_URL;
+      // فحص أمني مبني على قائمة أصول مسموحة
+      const origin = req.headers.origin || '';
+      const allowedOrigins = (process.env.NODE_ENV === 'production')
+        ? [process.env.RENDER_EXTERNAL_URL, process.env.FRONTEND_URL, process.env.CORS_ORIGIN, 'https://abd-ylo2.onrender.com', 'https://abd-gmva.onrender.com'].filter(Boolean)
+        : ['*'];
+      const isOriginAllowed = allowedOrigins.includes('*') || (origin && allowedOrigins.includes(origin));
       callback(null, isOriginAllowed);
     }
   });
@@ -1420,6 +1423,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userConnection.lastSeen = new Date();
           connectedUsers.set(userId, userConnection);
         }
+      });
+
+      // استجابة معيارية لأحداث ping المخصصة من العميل لضمان الحفاظ على الاتصال
+      socket.on('client_ping', () => {
+        socket.emit('client_pong', { t: Date.now() });
       });
     };
 
