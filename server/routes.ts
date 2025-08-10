@@ -1511,13 +1511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             userRooms = await storage.getUserRooms(user.id);
           } catch {}
-          // التأكد من انضمام للغرفة العامة (مرة واحدة فقط)
-          if (!userRooms.includes('general')) {
-            await roomService.joinRoom(user.id, 'general');
-            userRooms.push('general');
-          }
-          
-          // الانضمام للغرفة العامة عبر الدالة الموحدة لضمان إرسال الرسائل وقوائم المستخدمين
+          // الانضمام للغرفة العامة عبر الدالة الموحدة لضمان حفظ الانضمام وإرسال الرسائل وقوائم المستخدمين
           await handleRoomJoin(socket as CustomSocket, user.id, user.username, 'general');
           
           } catch (roomError) {

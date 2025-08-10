@@ -400,20 +400,7 @@ export const useChat = () => {
       }
     });
 
-    // معالجات الاتصال
-    socketInstance.on('connect', () => {
-      dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
-      dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
-    });
 
-    socketInstance.on('disconnect', () => {
-      dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
-    });
-
-    socketInstance.on('connect_error', (error) => {
-      console.error('❌ خطأ في الاتصال:', error);
-      dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل الاتصال بالسيرفر' });
-    });
 
   }, [state.currentUser, state.onlineUsers, state.currentRoomId]);
 
@@ -455,6 +442,8 @@ export const useChat = () => {
 
       // إرسال المصادقة عند الاتصال
       socket.current.on('connect', () => {
+        dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+        dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
         socket.current?.emit('auth', {
           userId: user.id,
           username: user.username,
@@ -483,7 +472,16 @@ export const useChat = () => {
         });
       });
 
-      setupSocketListeners(socket.current);
+      // تحديث حالة الاتصال عند الانفصال
+      socket.current.on('disconnect', () => {
+        dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+      });
+
+      // معالجة أخطاء الاتصال
+      socket.current.on('connect_error', (error) => {
+        console.error('❌ خطأ في الاتصال:', error);
+        dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل الاتصال بالسيرفر' });
+      });
 
     } catch (error) {
       console.error('خطأ في الاتصال:', error);
