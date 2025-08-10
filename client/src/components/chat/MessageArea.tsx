@@ -44,17 +44,16 @@ export default function MessageArea({
   const lastTypingTime = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Memoize filtered messages لتحسين الأداء
-  const validMessages = useMemo(() => 
-    messages.filter(msg => 
+  // 🔥 SIMPLIFIED message filtering - حذف الفلترة المعقدة التي تخفي رسائل صحيحة
+  const validMessages = useMemo(() => {
+    // ✅ فلترة بسيطة فقط لإزالة الرسائل الفارغة تماماً
+    return messages.filter(msg => 
       msg && 
-      msg.sender && 
-      msg.sender.username && 
-      msg.content &&
-      msg.content.trim() !== ''
-    ),
-    [messages]
-  );
+      msg.content && 
+      msg.content.trim() !== '' &&
+      msg.sender // التأكد من وجود بيانات المرسل الأساسية
+    );
+  }, [messages]);
 
   // Scroll to bottom function - optimized
   const scrollToBottom = useCallback(() => {
