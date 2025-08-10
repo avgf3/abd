@@ -339,27 +339,9 @@ export interface SystemStats {
 }
 
 // أنواع WebSocket
-export type WebSocketMessageType = 
-  | 'auth'
-  | 'message'
-  | 'privateMessage'
-  | 'userJoined'
-  | 'userLeft'
-  | 'userUpdated'
-  | 'typing'
-  | 'stopTyping'
-  | 'notification'
-  | 'roomJoined'
-  | 'roomLeft'
-  | 'error'
-  | 'success';
-
-export interface WebSocketMessage<T = any> {
-  type: WebSocketMessageType;
-  data: T;
-  timestamp: Date;
-  userId?: number;
-}
+import type { WebSocketMessage as SharedWebSocketMessage } from '../../../shared/types';
+export type WebSocketMessageType = SharedWebSocketMessage['type'];
+export type WebSocketMessage = SharedWebSocketMessage;
 
 // أنواع FormData
 export interface LoginFormData {

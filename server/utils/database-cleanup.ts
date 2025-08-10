@@ -1,4 +1,4 @@
-import { db } from '../db';
+import { db } from '../database-adapter';
 import { messages, users } from '../../shared/schema';
 import { sql, eq, notInArray } from 'drizzle-orm';
 

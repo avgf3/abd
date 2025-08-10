@@ -40,10 +40,11 @@ export interface ChatMessage {
   senderId: number;
   receiverId?: number;
   content: string;
-  messageType: 'text' | 'image';
+  messageType: 'text' | 'image' | 'system';
   isPrivate: boolean;
-  timestamp: Date;
+  timestamp: string;
   sender?: ChatUser;
+  roomId?: string;
 }
 
 export interface PrivateConversation {
