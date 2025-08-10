@@ -717,27 +717,31 @@ export default function UnifiedSidebar({
 
       {/* Rooms View */}
       {activeView === 'rooms' && (
-        <RoomComponent
-          currentUser={currentUser}
-          rooms={rooms}
-          currentRoomId={currentRoomId}
-          onRoomChange={onRoomChange}
-          onAddRoom={onAddRoom}
-          onDeleteRoom={onDeleteRoom}
-          onRefreshRooms={onRefreshRooms}
-          viewMode="list"
-          showSearch={true}
-          compact={true}
-        />
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <RoomComponent
+            currentUser={currentUser}
+            rooms={rooms}
+            currentRoomId={currentRoomId}
+            onRoomChange={onRoomChange}
+            onAddRoom={onAddRoom}
+            onDeleteRoom={onDeleteRoom}
+            onRefreshRooms={onRefreshRooms}
+            viewMode="list"
+            showSearch={true}
+            compact={true}
+          />
+        </div>
       )}
 
       {/* Friends View */}
       {activeView === 'friends' && (
-        <FriendsTabPanel
-          currentUser={currentUser}
-          onlineUsers={users}
-          onStartPrivateChat={onStartPrivateChat || (() => {})}
-        />
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <FriendsTabPanel
+            currentUser={currentUser}
+            onlineUsers={users}
+            onStartPrivateChat={onStartPrivateChat || (() => {})}
+          />
+        </div>
       )}
     </aside>
   );
