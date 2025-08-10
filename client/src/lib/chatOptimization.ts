@@ -212,7 +212,7 @@ export function useOptimizedMessages(messages: ChatMessage[], containerRef: Reac
             levelProgress: 0
           },
           messages: [message],
-          timestamp: (message.timestamp instanceof Date) ? message.timestamp : new Date(message.timestamp as any)
+          timestamp: new Date(message.timestamp as any)
         };
         groups.push(currentGroup);
       }

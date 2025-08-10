@@ -48,7 +48,7 @@ export async function apiRequest<T = any>(
   const { method = 'GET', body, headers = {}, timeout = 30000, signal } = options || {};
   
   // تحديد نوع المحتوى والجسم بناءً على نوع البيانات
-  let requestHeaders: Record<string, string> = { ...headers };
+  const requestHeaders: Record<string, string> = { ...headers };
   let requestBody: any = body;
   
   // إذا كان FormData، لا نضيف Content-Type (المتصفح يضيفه تلقائياً مع boundary)

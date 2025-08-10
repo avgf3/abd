@@ -479,11 +479,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // فلترة البيانات المسموح بتحديثها
       const allowedUpdates = ['profileImage', 'profileBanner'];
-      const updateData = {};
+      const updateData: Record<string, any> = {};
       
       for (const key of allowedUpdates) {
-        if (req.body.hasOwnProperty(key)) {
-          updateData[key] = req.body[key];
+        if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+          updateData[key] = (req.body as any)[key];
         }
       }
 
@@ -1816,7 +1816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const message = JSON.parse(data.toString());
         switch (message.type) {
-          case 'auth':
+          case 'auth': {
             socket.userId = message.userId;
             socket.username = message.username;
             
@@ -1868,11 +1868,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // إزالة البث العالمي لقائمة المستخدمين لتفادي وميض القائمة
             // سيتم إرسال قوائم المستخدمين حسب الغرفة فقط عبر أحداث roomJoined/room switches وrequestOnlineUsers
             break;
+          }
 
           // الـ case هذا محذوف لأنه مكرر - الأصل في أعلى الملف يعمل بشكل صحيح مع roomId
           // case 'publicMessage': - REMOVED DUPLICATE
 
-          case 'privateMessage':
+          case 'privateMessage': {
             // التحقق الأولي من وجود معرف المستخدم والجلسة
             if (!socket.userId || !socket.username) {
               socket.emit('error', {
@@ -1949,6 +1950,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               socket.emit('privateMessage', { message: messageWithSender });
             }
             break;
+          }
 
           case 'typing':
             if (socket.userId) {

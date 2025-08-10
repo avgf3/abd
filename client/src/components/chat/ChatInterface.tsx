@@ -403,16 +403,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                  room={currentRoom}
                  onlineUsers={chat.onlineUsers}
                  onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
-                 onTyping={chat.handleTyping}
+                 onTyping={(_isTyping) => chat.sendTyping()}
                  typingUsers={Array.from(chat.typingUsers)}
                  onReportMessage={handleReportUser}
                  onUserClick={handleUserClick}
-                 messages={chat.getCurrentRoomMessages()}
+                 messages={chat.publicMessages}
                  chat={{
                    sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
-                   handleTyping: chat.handleTyping,
-                   addBroadcastMessageHandler: chat.addBroadcastMessageHandler,
-                   removeBroadcastMessageHandler: chat.removeBroadcastMessageHandler
+                   handleTyping: () => chat.sendTyping()
                  }}
                />
             );
@@ -421,10 +419,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           // وإلا استخدم MessageArea العادية
           return (
             <MessageArea 
-              messages={chat.getCurrentRoomMessages()}
+              messages={chat.publicMessages}
               currentUser={chat.currentUser}
               onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
-              onTyping={chat.handleTyping}
+              onTyping={() => chat.sendTyping()}
               typingUsers={chat.typingUsers}
               onReportMessage={handleReportUser}
               onUserClick={handleUserClick}

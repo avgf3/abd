@@ -139,12 +139,13 @@ export class PointsService {
   // التحقق من إنجاز معين (مثل أول رسالة)
   async checkAchievement(userId: number, achievementType: string) {
     switch (achievementType) {
-      case 'FIRST_MESSAGE':
+      case 'FIRST_MESSAGE': {
         const messageCount = await storage.getUserMessageCount(userId);
         if (messageCount === 1) {
           return this.addPoints(userId, DEFAULT_POINTS_CONFIG.FIRST_MESSAGE, 'FIRST_MESSAGE');
         }
         break;
+      }
       // يمكن إضافة إنجازات أخرى هنا
     }
     return null;
