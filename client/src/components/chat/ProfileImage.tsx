@@ -19,11 +19,6 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
     large: 'w-20 h-20'
   };
 
-  // تحديد لون الإطار حسب الجنس
-  const borderColor = user.gender === 'female'
-    ? 'border-pink-400 ring-pink-200' 
-    : 'border-blue-400 ring-blue-200';
-
   // تحديد مصدر الصورة بشكل مستقر
   const imageSrc = useMemo(() => {
     return getImageSrc(user.profileImage, '');
@@ -38,7 +33,7 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
       <img
         src={finalSrc}
         alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className}`}
+        className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
         style={{
           transition: 'none',
           backfaceVisibility: 'hidden',
@@ -53,11 +48,6 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
         <div className={`${sizeClasses[size]} rounded-full bg-gray-200 flex items-center justify-center absolute inset-0 z-10`}>
           <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
-      )}
-      
-      {/* مؤشر الحالة (أونلاين/أوفلاين) */}
-      {user.isOnline && (
-        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
       )}
       
       {/* مؤشر الدور統一 */}

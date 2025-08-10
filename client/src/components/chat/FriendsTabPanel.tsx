@@ -285,17 +285,14 @@ export default function FriendsTabPanel({
                 {filteredFriends.map((friend) => (
                   <div
                     key={friend.id}
-                    className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    className="flex items-center gap-3 p-3 rounded-none border-b hover:bg-muted/50 transition-colors"
                   >
                     {/* Profile Image with Status */}
                     <div className="relative">
                       <ProfileImage 
                         user={friend} 
                         size="small" 
-                        className="transition-transform hover:scale-105"
-                      />
-                      <div 
-                        className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${getStatusColor(friend.status)}`}
+                        className=""
                       />
                     </div>
 

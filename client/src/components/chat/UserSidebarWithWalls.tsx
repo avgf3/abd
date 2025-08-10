@@ -112,12 +112,12 @@ export default function UnifiedSidebar({
     const boxStyle: React.CSSProperties = {
       width: 20,
       height: 20,
-      borderRadius: 4,
+      borderRadius: 0,
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: '#ffffff',
-      border: '1px solid #e5e7eb'
+      background: 'transparent',
+      border: 'none'
     };
 
     if (emoji) {
@@ -129,7 +129,7 @@ export default function UnifiedSidebar({
     }
 
     return (
-      <span style={{ ...boxStyle, background: '#f3f4f6' }} title="لم يتم تحديد الدولة">
+      <span style={boxStyle} title="لم يتم تحديد الدولة">
         <span style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1 }}>?</span>
       </span>
     );
@@ -479,7 +479,6 @@ export default function UnifiedSidebar({
           
           <div className="space-y-3">
             <div className="flex items-center gap-2 font-bold text-green-600 text-base">
-              <span className="text-xs">●</span>
               المتصلون الآن
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
                 {validUsers.length}
@@ -501,7 +500,7 @@ export default function UnifiedSidebar({
                       showModerationActions={isModerator}
                     >
                       <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-lg transition-all duration-200 cursor-pointer w-full ${
+                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${
                           getUserThemeClasses(user)
                         }`}
                         style={{ 
@@ -512,7 +511,7 @@ export default function UnifiedSidebar({
                         <ProfileImage 
                           user={user} 
                           size="small" 
-                          className="transition-transform hover:scale-105"
+                          className=""
                           hideRoleBadgeOverlay={true}
                         />
                         <div className="flex-1">
@@ -535,8 +534,8 @@ export default function UnifiedSidebar({
                               )}
                             </div>
                             <div className="flex items-center gap-1">
-                              {renderCountryFlag(user)}
                               {renderUserBadge(user)}
+                              {renderCountryFlag(user)}
                             </div>
                           </div>
                         </div>
