@@ -2233,35 +2233,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                  await handleRoomLeave(socket, userId, username, currentRoom, false);
                }
                // بث إشعارات الخروج بعد انتهاء فترة السماح
-               if (currentRoom) {
-                 const goodbyeMessage = {
-                   id: Date.now(),
-                   senderId: -1,
-                   content: `غادر ${username} الغرفة 👋`,
-                   messageType: 'system',
-                   isPrivate: false,
-                   roomId: currentRoom,
-                   timestamp: new Date(),
-                   sender: {
-                     id: -1,
-                     username: 'النظام',
-                     userType: 'moderator',
-                     role: 'system',
-                     level: 0,
-                     points: 0,
-                     achievements: [],
-                     lastSeen: new Date(),
-                     isOnline: true,
-                     isBanned: false,
-                     isActive: true,
-                     currentRoom: '',
-                     settings: { theme: 'default', language: 'ar', notifications: true, soundEnabled: true, privateMessages: true }
-                   }
-                 };
-                 io.to(`room_${currentRoom}`).emit('message', { type: 'newMessage', message: goodbyeMessage });
-                 io.to(`room_${currentRoom}`).emit('message', { type: 'userLeftRoom', userId, username, roomId: currentRoom });
-                 setTimeout(() => { sendRoomUsers(currentRoom); }, 100);
-               }
+                               // تم التعامل مع إشعارات مغادرة الغرفة داخل handleRoomLeave، لا داعي لإصدار رسائل إضافية هنا
+                // الحفاظ فقط على تحديثات أخرى إن وجدت لاحقاً
                io.emit('message', { type: 'userLeft', userId, username, timestamp: new Date().toISOString() });
              } catch (finalErr) {
                console.error('❌ خطأ في الإزالة بعد فترة السماح:', finalErr);
@@ -2316,7 +2289,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تنظيف connectedUsers من المستخدمين غير المتصلين
       const disconnectedUsers = [];
       for (const [userId, connection] of connectedUsers.entries()) {
-        if (!activeSocketUsers.has(userId)) {
+        // لا نحذف المستخدم إذا كان لديه فصل قيد الانتظار ضمن فترة السماح
+        if (!activeSocketUsers.has(userId) && !pendingDisconnects.has(userId)) {
           disconnectedUsers.push({ userId, username: connection.user?.username });
           connectedUsers.delete(userId);
           
