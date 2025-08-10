@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { UserCheck, Crown, Shield } from 'lucide-react';
+import { UserCheck, Crown, Shield, Users as UsersIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import { Input } from '@/components/ui/input';
 
 interface PromoteUserPanelProps {
   isVisible: boolean;
@@ -25,11 +26,15 @@ export default function PromoteUserPanel({
   const [selectedUser, setSelectedUser] = useState<string>('');
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedLevelUser, setSelectedLevelUser] = useState<string>('');
+  const [levelValue, setLevelValue] = useState<string>('1');
+  const [isLevelSubmitting, setIsLevelSubmitting] = useState(false);
   const { toast } = useToast();
 
   const roleOptions = [
     { value: 'moderator', label: 'مشرف 🛡️', icon: Shield, description: 'يمكنه كتم المستخدمين فقط' },
-    { value: 'admin', label: 'إدمن ⭐', icon: Crown, description: 'يمكنه كتم وطرد المستخدمين' }
+    { value: 'admin', label: 'إدمن ⭐', icon: Crown, description: 'يمكنه كتم وطرد المستخدمين' },
+    { value: 'member', label: 'إلغاء إشراف ↘️', icon: UsersIcon, description: 'إرجاع المستخدم إلى عضو عادي' }
   ];
 
   const handlePromote = async () => {
@@ -44,21 +49,38 @@ export default function PromoteUserPanel({
 
     setIsSubmitting(true);
     try {
-      await apiRequest('/api/moderation/promote', {
-        method: 'POST',
-        body: {
-          moderatorId: currentUser.id,
-          targetUserId: parseInt(selectedUser),
-          newRole: selectedRole
-        }
-      });
+      if (selectedRole === 'member') {
+        // إلغاء الإشراف
+        await apiRequest('/api/moderation/demote', {
+          method: 'POST',
+          body: {
+            moderatorId: currentUser.id,
+            targetUserId: parseInt(selectedUser)
+          }
+        });
+        toast({
+          title: 'تم إلغاء الإشراف',
+          description: `تم تحويل المستخدم إلى عضو عادي ✅`,
+          variant: 'default'
+        });
+      } else {
+        // ترقية إلى مشرف/إدمن
+        await apiRequest('/api/moderation/promote', {
+          method: 'POST',
+          body: {
+            moderatorId: currentUser.id,
+            targetUserId: parseInt(selectedUser),
+            newRole: selectedRole
+          }
+        });
 
-      const roleDisplay = selectedRole === 'admin' ? 'إدمن ⭐' : 'مشرف 🛡️';
-      toast({
-        title: 'تم ترقية المستخدم بنجاح',
-        description: `تمت ترقية المستخدم إلى ${roleDisplay}`,
-        variant: 'default'
-      });
+        const roleDisplay = selectedRole === 'admin' ? 'إدمن ⭐' : 'مشرف 🛡️';
+        toast({
+          title: 'تم ترقية المستخدم بنجاح',
+          description: `تمت ترقية المستخدم إلى ${roleDisplay}`,
+          variant: 'default'
+        });
+      }
       setSelectedUser('');
       setSelectedRole('');
       onClose();
@@ -73,10 +95,61 @@ export default function PromoteUserPanel({
     }
   };
 
+  const handleSetLevel = async () => {
+    if (!selectedLevelUser || !levelValue) {
+      toast({
+        title: 'خطأ',
+        description: 'يرجى اختيار المستخدم والمستوى الجديد',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const levelNum = parseInt(levelValue);
+    if (isNaN(levelNum) || levelNum < 1 || levelNum > 40) {
+      toast({
+        title: 'مستوى غير صالح',
+        description: 'أدخل مستوى بين 1 و 40',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsLevelSubmitting(true);
+    try {
+      await apiRequest('/api/points/set-level', {
+        method: 'POST',
+        body: {
+          moderatorId: currentUser.id,
+          targetUserId: parseInt(selectedLevelUser),
+          level: levelNum
+        }
+      });
+
+      toast({
+        title: 'تم تعديل المستوى',
+        description: `تم تعيين المستوى إلى ${levelNum} بنجاح`,
+        variant: 'default'
+      });
+
+      setSelectedLevelUser('');
+      setLevelValue('1');
+    } catch (error) {
+      toast({
+        title: 'خطأ',
+        description: (error as Error)?.message || 'حدث خطأ أثناء تعديل المستوى',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLevelSubmitting(false);
+    }
+  };
+
   const getRoleBadge = (userType: string) => {
     switch (userType) {
       case 'owner': return <Badge variant="destructive" className="bg-red-600">مالك</Badge>;
-      case 'admin': return <Badge variant="default" className="bg-blue-600">مشرف</Badge>;
+      case 'admin': return <Badge variant="default" className="bg-blue-600">إدمن</Badge>;
+      case 'moderator': return <Badge variant="default" className="bg-green-600">مشرف</Badge>;
       case 'member': return <Badge variant="secondary">عضو</Badge>;
       case 'guest': return <Badge variant="outline">زائر</Badge>;
       default: return <Badge variant="outline">{userType}</Badge>;
@@ -106,10 +179,16 @@ export default function PromoteUserPanel({
     );
   }
 
-  const eligibleUsers = onlineUsers.filter(user => 
-    user.id !== currentUser.id && 
-    user.userType === 'member'
-  );
+  // اختر المستخدمين حسب الدور المطلوب
+  const eligibleUsers = onlineUsers.filter(user => {
+    if (user.id === currentUser.id) return false;
+    if (selectedRole === 'member') {
+      // إلغاء الإشراف يستهدف الإداريين فقط
+      return user.userType === 'admin' || user.userType === 'moderator';
+    }
+    // الترقية تستهدف الأعضاء فقط
+    return user.userType === 'member';
+  });
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -182,7 +261,7 @@ export default function PromoteUserPanel({
             <ScrollArea className="h-40">
               {eligibleUsers.length === 0 ? (
                 <p className="text-gray-400 text-center py-4">
-                  لا توجد مستخدمون مؤهلون للترقية
+                  لا توجد مستخدمون مؤهلون {selectedRole === 'member' ? 'لإلغاء الإشراف' : 'للترقية'}
                 </p>
               ) : (
                 <div className="space-y-2">
@@ -202,6 +281,51 @@ export default function PromoteUserPanel({
                 </div>
               )}
             </ScrollArea>
+          </div>
+
+          {/* قسم تعديل المستوى */}
+          <div className="mt-6 border-t border-gray-700 pt-4">
+            <h3 className="text-lg font-medium text-gray-200 mb-3">تعديل مستوى المستخدم</h3>
+            <div className="grid md:grid-cols-3 grid-cols-1 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-200 mb-2 block">اختر المستخدم</label>
+                <Select value={selectedLevelUser} onValueChange={setSelectedLevelUser}>
+                  <SelectTrigger className="bg-gray-800 border-gray-600">
+                    <SelectValue placeholder="اختر مستخدم لتعديل المستوى" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {onlineUsers.filter(u => u.id !== currentUser.id).map((user) => (
+                      <SelectItem key={user.id} value={user.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <span>{user.username}</span>
+                          {getRoleBadge(user.userType)}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-200 mb-2 block">المستوى الجديد (1-40)</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={40}
+                  value={levelValue}
+                  onChange={(e) => setLevelValue(e.target.value)}
+                  className="bg-gray-800 border-gray-600"
+                />
+              </div>
+              <div className="flex items-end">
+                <Button
+                  onClick={handleSetLevel}
+                  disabled={!selectedLevelUser || !levelValue || isLevelSubmitting}
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                >
+                  {isLevelSubmitting ? 'جاري التعديل...' : 'تعيين المستوى'}
+                </Button>
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-4 border-t border-gray-700">

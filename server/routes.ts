@@ -29,6 +29,7 @@ import bcrypt from "bcrypt";
 import sharp from "sharp";
 // import { trackClick } from "./middleware/analytics"; // commented out as file doesn't exist
 import { enhancedModerationSystem as enhancedModeration } from "./enhanced-moderation";
+import { DEFAULT_LEVELS, recalculateUserStats } from "../shared/points-system";
 
 // إعداد multer موحد لرفع الصور
 const createMulterConfig = (destination: string, prefix: string, maxSize: number = 5 * 1024 * 1024) => {
@@ -4275,6 +4276,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'error',
         error: error instanceof Error ? error.message : 'Unknown socket error'
       });
+    }
+  });
+
+  // تعيين مستوى المستخدم مباشرة (للمالك فقط)
+  app.post('/api/points/set-level', async (req, res) => {
+    try {
+      const { moderatorId, targetUserId, level } = req.body as { moderatorId: number; targetUserId: number; level: number };
+
+      if (!moderatorId || !targetUserId || typeof level !== 'number') {
+        return res.status(400).json({ error: 'معاملات ناقصة' });
+      }
+
+      const moderator = await storage.getUser(moderatorId);
+      if (!moderator || moderator.userType !== 'owner') {
+        return res.status(403).json({ error: 'هذا الإجراء متاح للمالك فقط' });
+      }
+
+      const targetLevel = DEFAULT_LEVELS.find(l => l.level === level);
+      if (!targetLevel) {
+        return res.status(400).json({ error: 'مستوى غير صالح' });
+      }
+
+      const requiredPoints = targetLevel.requiredPoints;
+
+      const updated = await storage.updateUser(targetUserId, {
+        totalPoints: requiredPoints,
+        level: recalculateUserStats(requiredPoints).level,
+        levelProgress: recalculateUserStats(requiredPoints).levelProgress
+      });
+
+      if (!updated) {
+        return res.status(400).json({ error: 'فشل في تحديث المستوى' });
+      }
+
+      io.to(targetUserId.toString()).emit('message', {
+        type: 'systemNotification',
+        message: `ℹ️ تم تعديل مستواك إلى ${level}`,
+        timestamp: new Date().toISOString()
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[SET_LEVEL] Error:', error);
+      res.status(500).json({ error: 'خطأ في تعيين المستوى' });
     }
   });
 

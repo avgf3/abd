@@ -247,6 +247,54 @@ export class ModerationSystem {
     }
   }
 
+  // إلغاء إشراف المستخدم (المالك فقط)
+  async demoteUser(moderatorId: number, targetUserId: number): Promise<boolean> {
+    const moderator = await storage.getUser(moderatorId);
+    const target = await storage.getUser(targetUserId);
+
+    if (!moderator || !target) {
+      return false;
+    }
+
+    if (!this.canModerate(moderator, target, 'demote')) {
+      return false;
+    }
+
+    // لا يمكن تنزيل المالك
+    if (target.userType === 'owner') {
+      return false;
+    }
+
+    // يجب أن يكون الهدف إدارياً لتنزيله
+    if (!['admin', 'moderator'].includes(target.userType)) {
+      return false;
+    }
+
+    try {
+      const updateResult = await storage.updateUser(targetUserId, {
+        userType: 'member' as any
+      });
+
+      if (!updateResult) {
+        return false;
+      }
+
+      this.recordAction({
+        id: `demote_${Date.now()}`,
+        type: 'demote',
+        targetUserId,
+        moderatorId,
+        reason: 'إلغاء إشراف',
+        timestamp: Date.now()
+      });
+
+      return true;
+    } catch (error) {
+      console.error(`[DEMOTE] خطأ في تنزيل المستخدم:`, error);
+      return false;
+    }
+  }
+
   // فك الكتم
   async unmuteUser(moderatorId: number, targetUserId: number): Promise<boolean> {
     const moderator = await storage.getUser(moderatorId);
