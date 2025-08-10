@@ -215,7 +215,11 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn,
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 10, // 10 minutes
+      gcTime: 1000 * 60 * 30, // keep cached data for 30 min
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      refetchOnMount: false,
       retry: (failureCount, error: any) => {
         if (error?.message?.includes('401') || error?.message?.includes('403')) {
           return false;

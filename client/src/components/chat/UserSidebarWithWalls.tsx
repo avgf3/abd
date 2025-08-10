@@ -17,6 +17,7 @@ import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/c
 import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
 import UserRoleBadge from './UserRoleBadge';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface UnifiedSidebarProps {
   users: ChatUser[];
@@ -55,6 +56,7 @@ export default function UnifiedSidebar({
   const [imagePreview, setImagePreview] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // 🚀 تحسين: استخدام useMemo لفلترة المستخدمين لتحسين الأداء
   const validUsers = useMemo(() => {
@@ -129,26 +131,26 @@ export default function UnifiedSidebar({
 
   // 🗑️ حذف useEffect فارغ
 
-  // جلب المنشورات
-  const fetchPosts = useCallback(async () => {
-    if (!currentUser) return;
-    setLoading(true);
-    try {
-      const data = await apiRequest(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`);
-      const posts = (data as any).posts || (data as any).data || data || [];
-      setPosts(posts);
-    } catch (error) {
-      console.error('❌ UserSidebar: خطأ في الاتصال بالخادم:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, currentUser]);
+  // جلب المنشورات عبر React Query مع كاش قوي
+  const { data: wallData, isFetching } = useQuery<{ success?: boolean; posts: WallPost[] }>({
+    queryKey: ['/api/wall/posts', activeTab, currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) return { posts: [] } as any;
+      return await apiRequest(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`)
+    },
+    enabled: activeView === 'walls' && !!currentUser?.id,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    initialData: () => queryClient.getQueryData(['/api/wall/posts', activeTab, currentUser?.id]) as any,
+  });
 
   useEffect(() => {
-    if (activeView === 'walls' && currentUser) {
-      fetchPosts();
-    }
-  }, [activeView, fetchPosts]);
+    const data = wallData as unknown as { posts?: WallPost[] } | undefined;
+    if (data?.posts) setPosts(data.posts);
+    setLoading(isFetching);
+  }, [wallData, isFetching]);
 
   // تحديث activeView عند تغيير propActiveView
   useEffect(() => {
@@ -232,6 +234,10 @@ export default function UnifiedSidebar({
       if (data?.post) {
         const newPost = data.post || data;
         setPosts(prev => [newPost, ...prev]);
+        queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+          const oldPosts = old?.posts || [];
+          return { ...(old || {}), posts: [newPost, ...oldPosts] };
+        });
         toast({
           title: "تم النشر",
           description: "تم نشر منشورك بنجاح",
@@ -268,11 +274,11 @@ export default function UnifiedSidebar({
 
       const data = result as any;
       if (data?.post) {
-        setPosts(prevPosts => 
-          prevPosts.map(post => 
-            post.id === postId ? data.post : post
-          )
-        );
+        setPosts(prevPosts => prevPosts.map(post => post.id === postId ? data.post : post));
+        queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+          const oldPosts: WallPost[] = old?.posts || [];
+          return { ...(old || {}), posts: oldPosts.map(p => p.id === postId ? data.post : p) };
+        });
       }
     } catch (error) {
       console.error('خطأ في التفاعل:', error);
@@ -294,6 +300,10 @@ export default function UnifiedSidebar({
         description: "تم حذف المنشور بنجاح",
       });
       setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+      queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+        const oldPosts: WallPost[] = old?.posts || [];
+        return { ...(old || {}), posts: oldPosts.filter(p => p.id !== postId) };
+      });
     } catch (error) {
       toast({
         title: "خطأ في الحذف",

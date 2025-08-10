@@ -266,10 +266,39 @@ export async function isUserInRoom(userId: number, roomId: number | string): Pro
 }
 
 // Wall post functions (placeholder - these tables may not exist yet)
-export async function createWallPost(userId: number, content: string): Promise<any> {
-  // This would need custom implementation with wall_posts table
-  // For now, return null
-  return null;
+export async function createWallPost(postData: any): Promise<any> {
+  try {
+    const { db, dbType } = await import('./database-adapter');
+    if (!db || dbType === 'disabled') {
+      // Fallback: return an in-memory-like object
+      return {
+        id: Math.floor(Date.now() / 1000),
+        ...postData,
+      };
+    }
+    if (dbType === 'postgresql') {
+      const { wallPosts } = await import('../shared/schema');
+      const [inserted] = await (db as any)
+        .insert((wallPosts as any))
+        .values({
+          userId: postData.userId,
+          username: postData.username,
+          userRole: postData.userRole,
+          content: postData.content ?? null,
+          imageUrl: postData.imageUrl ?? null,
+          type: postData.type ?? 'public',
+          timestamp: postData.timestamp ?? new Date(),
+          userProfileImage: postData.userProfileImage ?? null,
+          usernameColor: postData.usernameColor ?? null,
+        })
+        .returning();
+      return inserted;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error createWallPost:', error);
+    return null;
+  }
 }
 
 export async function getWallPosts(userId: number, limit: number = 10): Promise<any[]> {
@@ -315,16 +344,53 @@ export async function getWallPostsByUsers(userIds: number[], limit: number = 10)
   }
 }
 
-export async function deleteWallPost(postId: number, userId: number): Promise<boolean> {
-  // This would need custom implementation with wall_posts table
-  // For now, return true
-  return true;
+export async function deleteWallPost(postId: number): Promise<boolean> {
+  try {
+    const { db, dbType } = await import('./database-adapter');
+    if (!db || dbType === 'disabled') return true;
+    if (dbType === 'postgresql') {
+      const { wallPosts, wallReactions } = await import('../shared/schema');
+      const { eq } = await import('drizzle-orm');
+      await (db as any).delete((wallReactions as any)).where(eq((wallReactions as any).postId, postId as any));
+      await (db as any).delete((wallPosts as any)).where(eq((wallPosts as any).id, postId as any));
+      return true;
+    }
+    return true;
+  } catch (error) {
+    console.error('Error deleteWallPost:', error);
+    return false;
+  }
 }
 
 export async function reactToWallPost(postId: number, userId: number, reaction: string): Promise<boolean> {
-  // This would need custom implementation with wall_reactions table
-  // For now, return true
-  return true;
+  try {
+    const { db, dbType } = await import('./database-adapter');
+    if (!db || dbType === 'disabled') return true;
+    if (dbType === 'postgresql') {
+      const { wallReactions } = await import('../shared/schema');
+      const { eq, and } = await import('drizzle-orm');
+      const existing = await (db as any)
+        .select()
+        .from((wallReactions as any))
+        .where(and(eq((wallReactions as any).postId, postId as any), eq((wallReactions as any).userId, userId as any)))
+        .limit(1);
+      if (existing && existing.length > 0) {
+        await (db as any)
+          .update((wallReactions as any))
+          .set({ type: reaction })
+          .where(and(eq((wallReactions as any).postId, postId as any), eq((wallReactions as any).userId, userId as any)));
+      } else {
+        await (db as any)
+          .insert((wallReactions as any))
+          .values({ postId, userId, username: '', type: reaction });
+      }
+      return true;
+    }
+    return true;
+  } catch (error) {
+    console.error('Error reactToWallPost:', error);
+    return false;
+  }
 }
 
 export async function getWallPostReactions(postId: number): Promise<any[]> {
@@ -352,6 +418,7 @@ interface LegacyStorage {
   getRoomMessages: (roomId: string, limit?: number, offset?: number) => Promise<Message[]>;
   addFriend: (userId: number, friendId: number) => Promise<Friend>;
   getFriends: (userId: number) => Promise<User[]>;
+  getUserFriends?: (userId: number) => Promise<User[]>;
   createNotification: (notification: any) => Promise<Notification>;
   getUserNotifications: (userId: number, limit?: number) => Promise<Notification[]>;
   markNotificationAsRead: (notificationId: number) => Promise<boolean>;
@@ -430,6 +497,11 @@ export const storage: LegacyStorage = {
     return await friendService.getFriends(userId);
   },
 
+  // Alias expected by routes.ts
+  async getUserFriends(userId: number) {
+    return await friendService.getFriends(userId);
+  },
+
   // Legacy friend request passthroughs to unified friendService
   async getFriendship(userId1: number, userId2: number) {
     return await friendService.getFriendship(userId1, userId2);
@@ -499,6 +571,108 @@ export const storage: LegacyStorage = {
 
   async getWallPostsByUsers(userIds: number[]) {
     return await (await import('./storage')).getWallPostsByUsers(userIds, 50);
+  },
+
+  async createWallPost(postData: any) {
+    return await (await import('./storage')).createWallPost(postData);
+  },
+
+  async getWallPost(postId: number) {
+    try {
+      const { db, dbType } = await import('./database-adapter');
+      if (!db || dbType === 'disabled') return undefined;
+      if (dbType === 'postgresql') {
+        const { wallPosts } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        const rows = await (db as any)
+          .select()
+          .from((wallPosts as any))
+          .where(eq((wallPosts as any).id, postId as any))
+          .limit(1);
+        return rows && rows[0] ? rows[0] : undefined;
+      }
+      return undefined;
+    } catch (error) {
+      console.error('Error getWallPost:', error);
+      return undefined;
+    }
+  },
+
+  async addWallReaction(reaction: { postId: number; userId: number; username: string; type: string; }) {
+    try {
+      const { db, dbType } = await import('./database-adapter');
+      if (!db || dbType === 'disabled') return true;
+      if (dbType === 'postgresql') {
+        const { wallReactions, wallPosts } = await import('../shared/schema');
+        const { eq, and, count } = await import('drizzle-orm');
+
+        const existing = await (db as any)
+          .select()
+          .from((wallReactions as any))
+          .where(and(eq((wallReactions as any).postId, reaction.postId as any), eq((wallReactions as any).userId, reaction.userId as any)))
+          .limit(1);
+
+        if (existing && existing.length > 0) {
+          await (db as any)
+            .update((wallReactions as any))
+            .set({ type: reaction.type })
+            .where(and(eq((wallReactions as any).postId, reaction.postId as any), eq((wallReactions as any).userId, reaction.userId as any)));
+        } else {
+          await (db as any)
+            .insert((wallReactions as any))
+            .values({
+              postId: reaction.postId,
+              userId: reaction.userId,
+              username: reaction.username,
+              type: reaction.type,
+            });
+        }
+
+        // Recompute counts
+        const [likesRow] = await (db as any)
+          .select({ c: count() })
+          .from((wallReactions as any))
+          .where(and(eq((wallReactions as any).postId, reaction.postId as any), eq((wallReactions as any).type, 'like' as any)));
+        const [heartsRow] = await (db as any)
+          .select({ c: count() })
+          .from((wallReactions as any))
+          .where(and(eq((wallReactions as any).postId, reaction.postId as any), eq((wallReactions as any).type, 'heart' as any)));
+        const [dislikesRow] = await (db as any)
+          .select({ c: count() })
+          .from((wallReactions as any))
+          .where(and(eq((wallReactions as any).postId, reaction.postId as any), eq((wallReactions as any).type, 'dislike' as any)));
+
+        await (db as any)
+          .update((wallPosts as any))
+          .set({
+            totalLikes: (likesRow?.c ?? 0),
+            totalHearts: (heartsRow?.c ?? 0),
+            totalDislikes: (dislikesRow?.c ?? 0),
+            updatedAt: new Date(),
+          })
+          .where(eq((wallPosts as any).id, reaction.postId as any));
+
+        return true;
+      }
+      return true;
+    } catch (error) {
+      console.error('Error addWallReaction:', error);
+      return false;
+    }
+  },
+
+  async getWallPostWithReactions(postId: number) {
+    try {
+      const post = await (this as any).getWallPost(postId);
+      return post || null;
+    } catch (error) {
+      console.error('Error getWallPostWithReactions:', error);
+      return null;
+    }
+  },
+
+  async deleteWallPost(postId: number) {
+    return await (await import('./storage')).deleteWallPost(postId);
   },
 
   // Provide blocked devices for moderation bootstrap
