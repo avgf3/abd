@@ -291,6 +291,15 @@ export const useChat = () => {
             }
             break;
           }
+          case 'messageDeleted': {
+            const { messageId, roomId } = envelope as any;
+            if (messageId && roomId) {
+              const existing = state.roomMessages[roomId] || [];
+              const next = existing.filter((m) => m.id !== messageId);
+              dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId, messages: next } });
+            }
+            break;
+          }
           
           case 'roomMessages': {
             const { messages } = envelope;

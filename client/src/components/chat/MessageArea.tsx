@@ -318,16 +318,53 @@ export default function MessageArea({
                 </div>
                 
                 {/* Message Actions */}
-                {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
-                  <div className="mt-2">
+                <div className="mt-2 flex gap-3">
+                  {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
                     <button
                       onClick={() => onReportMessage(message.sender!, message.content, message.id)}
                       className="text-xs text-red-500 hover:text-red-700 transition-colors duration-200"
                     >
                       🚨 إبلاغ
                     </button>
-                  </div>
-                )}
+                  )}
+                  {currentUser && message.sender && (
+                    (() => {
+                      const isOwner = currentUser.role === 'owner';
+                      const isAdmin = currentUser.role === 'admin';
+                      const isModerator = currentUser.role === 'moderator';
+                      const isSender = currentUser.id === message.sender.id;
+                      const canDelete = isSender || isOwner || isAdmin;
+                      if (!canDelete) return null;
+                      const handleDelete = async () => {
+                        try {
+                          const res = await fetch(`/api/messages/${message.id}` , {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId: currentUser.id, roomId: message.roomId || 'general' }),
+                            credentials: 'include'
+                          });
+                          // نترك التحديث لحدث السوكِت messageDeleted
+                          if (!res.ok) {
+                            const errText = await res.text();
+                            console.error('فشل حذف الرسالة:', errText);
+                          }
+                        } catch (e) {
+                          console.error('خطأ في حذف الرسالة', e);
+                        }
+                      };
+                      return (
+                        <button
+                          onClick={handleDelete}
+                          className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                          title="حذف الرسالة"
+                        >
+                          🗑️ حذف
+                        </button>
+                      );
+                    })()
+                  )}
+                </div>
+                
               </div>
             </div>
           ))
