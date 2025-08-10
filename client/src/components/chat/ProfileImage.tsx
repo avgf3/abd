@@ -19,8 +19,10 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
     large: 'w-20 h-20'
   };
 
-  // تمييز بسيط حسب الجنس (بدون مؤثرات إضافية)
-  const borderColor = user.gender === 'female' ? 'border-pink-400' : 'border-blue-400';
+  // تحديد لون الإطار حسب الجنس - كما كان سابقاً (ring + border color)
+  const borderColor = user.gender === 'female'
+    ? 'border-pink-400 ring-pink-200' 
+    : 'border-blue-400 ring-blue-200';
 
   // تحديد مصدر الصورة بشكل مستقر
   const imageSrc = useMemo(() => {
@@ -36,7 +38,7 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
       <img
         src={finalSrc}
         alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full object-cover border-2 ${borderColor} ${className}`}
+        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className}`}
         style={{
           transition: 'none',
           backfaceVisibility: 'hidden',
@@ -52,6 +54,8 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
           <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
+      
+      {/* بدون نقطة الحالة الخضراء */}
       
       {/* مؤشر الدور統一 */}
       {!hideRoleBadgeOverlay && (user.userType === 'owner' || user.userType === 'admin' || user.userType === 'moderator') && (
