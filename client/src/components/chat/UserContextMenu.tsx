@@ -211,7 +211,7 @@ export default function UserContextMenu({
         body: {
           moderatorId: currentUser.id,
           targetUserId: targetUser.id,
-          role: promoteRole
+          newRole: promoteRole
         }
       });
 

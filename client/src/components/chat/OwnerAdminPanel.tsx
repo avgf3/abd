@@ -132,12 +132,11 @@ export default function OwnerAdminPanel({
     if (!currentUser) return;
     
     try {
-      const response = await apiRequest('/api/admin/users/promote', {
+      const response = await apiRequest('/api/moderation/demote', {
         method: 'POST',
         body: {
-          userId: targetUser.id,
-          newRole: 'member',
-          promoterId: currentUser.id
+          moderatorId: currentUser.id,
+          targetUserId: targetUser.id
         }
       });
       
