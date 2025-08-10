@@ -13,6 +13,7 @@ export interface RoomMessage {
   senderUsername?: string;
   senderUserType?: string;
   senderAvatar?: string;
+  sender?: any;
 }
 
 export interface MessagePagination {
@@ -89,7 +90,8 @@ class RoomMessageService {
         receiverId: message.receiverId,
         senderUsername: sender.username,
         senderUserType: sender.userType,
-        senderAvatar: (sender as any).profileImage || null
+        senderAvatar: (sender as any).profileImage || null,
+        sender
       };
 
       // إضافة الرسالة للذاكرة المؤقتة
@@ -162,7 +164,8 @@ class RoomMessageService {
             receiverId: msg.receiverId || null,
             senderUsername: sender?.username || 'مستخدم محذوف',
             senderUserType: sender?.userType || 'user',
-            senderAvatar: (sender as any)?.profileImage || null
+            senderAvatar: (sender as any)?.profileImage || null,
+            sender
           };
           messages.push(roomMessage);
         } catch (err) {
@@ -289,7 +292,8 @@ class RoomMessageService {
             receiverId: msg.receiverId || null,
             senderUsername: sender?.username || 'مستخدم محذوف',
             senderUserType: sender?.userType || 'user',
-            senderAvatar: (sender as any)?.profileImage || null
+            senderAvatar: (sender as any)?.profileImage || null,
+            sender
           };
           messages.push(roomMessage);
         } catch (err) {

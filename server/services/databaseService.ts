@@ -407,7 +407,7 @@ export class DatabaseService {
         return await (this.db as any)
           .select()
           .from(pgSchema.messages)
-          .where(and(eq(pgSchema.messages.roomId, roomId), isNull(pgSchema.messages.deletedAt)))
+          .where(and(eq(pgSchema.messages.roomId, roomId), isNull(pgSchema.messages.deletedAt), eq(pgSchema.messages.isPrivate, false)))
           .orderBy(desc(pgSchema.messages.timestamp))
           .limit(limit)
           .offset(offset);
@@ -415,7 +415,7 @@ export class DatabaseService {
         return await (this.db as any)
           .select()
           .from(sqliteSchema.messages)
-          .where(eq(sqliteSchema.messages.roomId, roomId))
+          .where(and(eq(sqliteSchema.messages.roomId, roomId), eq(sqliteSchema.messages.isPrivate, false)))
           .orderBy(desc(sqliteSchema.messages.timestamp))
           .limit(limit)
           .offset(offset);
@@ -475,13 +475,13 @@ export class DatabaseService {
         const rows = await (this.db as any)
           .select({ c: count() })
           .from(pgSchema.messages)
-          .where(and(eq(pgSchema.messages.roomId, roomId), isNull(pgSchema.messages.deletedAt)));
+          .where(and(eq(pgSchema.messages.roomId, roomId), isNull(pgSchema.messages.deletedAt), eq(pgSchema.messages.isPrivate, false)));
         return Number(rows?.[0]?.c || 0);
       } else {
         const rows = await (this.db as any)
           .select({ c: count() })
           .from(sqliteSchema.messages)
-          .where(eq(sqliteSchema.messages.roomId, roomId));
+          .where(and(eq(sqliteSchema.messages.roomId, roomId), eq(sqliteSchema.messages.isPrivate, false)));
         return Number(rows?.[0]?.c || 0);
       }
     } catch (error) {
@@ -500,6 +500,7 @@ export class DatabaseService {
           .where(and(
             eq(pgSchema.messages.roomId, roomId),
             isNull(pgSchema.messages.deletedAt),
+            eq(pgSchema.messages.isPrivate, false),
             gte(pgSchema.messages.timestamp, since as any)
           ));
         return Number(rows?.[0]?.c || 0);
@@ -510,6 +511,7 @@ export class DatabaseService {
           .from(sqliteSchema.messages)
           .where(and(
             eq(sqliteSchema.messages.roomId, roomId),
+            eq(sqliteSchema.messages.isPrivate, false),
             sql`${sqliteSchema.messages.timestamp} >= ${sinceIso}`
           ));
         return Number(rows?.[0]?.c || 0);
@@ -530,6 +532,7 @@ export class DatabaseService {
           .where(and(
             eq(pgSchema.messages.roomId, roomId),
             isNull(pgSchema.messages.deletedAt),
+            eq(pgSchema.messages.isPrivate, false),
             gte(pgSchema.messages.timestamp, since as any)
           ));
         return Number(rows?.[0]?.c || 0);
@@ -540,6 +543,7 @@ export class DatabaseService {
           .from(sqliteSchema.messages)
           .where(and(
             eq(sqliteSchema.messages.roomId, roomId),
+            eq(sqliteSchema.messages.isPrivate, false),
             sql`${sqliteSchema.messages.timestamp} >= ${sinceIso}`
           ));
         return Number(rows?.[0]?.c || 0);
@@ -557,7 +561,7 @@ export class DatabaseService {
         const rows = await (this.db as any)
           .select()
           .from(pgSchema.messages)
-          .where(and(eq(pgSchema.messages.roomId, roomId), isNull(pgSchema.messages.deletedAt)))
+          .where(and(eq(pgSchema.messages.roomId, roomId), isNull(pgSchema.messages.deletedAt), eq(pgSchema.messages.isPrivate, false)))
           .orderBy(desc(pgSchema.messages.timestamp))
           .limit(1);
         return rows?.[0] || null;
@@ -565,7 +569,7 @@ export class DatabaseService {
         const rows = await (this.db as any)
           .select()
           .from(sqliteSchema.messages)
-          .where(eq(sqliteSchema.messages.roomId, roomId))
+          .where(and(eq(sqliteSchema.messages.roomId, roomId), eq(sqliteSchema.messages.isPrivate, false)))
           .orderBy(desc(sqliteSchema.messages.timestamp))
           .limit(1);
         return rows?.[0] || null;
@@ -587,6 +591,7 @@ export class DatabaseService {
           .where(and(
             eq(pgSchema.messages.roomId, roomId),
             isNull(pgSchema.messages.deletedAt),
+            eq(pgSchema.messages.isPrivate, false),
             like(pgSchema.messages.content, pattern)
           ))
           .orderBy(desc(pgSchema.messages.timestamp))
@@ -598,6 +603,7 @@ export class DatabaseService {
           .from(sqliteSchema.messages)
           .where(and(
             eq(sqliteSchema.messages.roomId, roomId),
+            eq(sqliteSchema.messages.isPrivate, false),
             like(sqliteSchema.messages.content, pattern)
           ))
           .orderBy(desc(sqliteSchema.messages.timestamp))
@@ -621,6 +627,7 @@ export class DatabaseService {
           .where(and(
             eq(pgSchema.messages.roomId, roomId),
             isNull(pgSchema.messages.deletedAt),
+            eq(pgSchema.messages.isPrivate, false),
             like(pgSchema.messages.content, pattern)
           ));
         return Number(rows?.[0]?.c || 0);
@@ -630,6 +637,7 @@ export class DatabaseService {
           .from(sqliteSchema.messages)
           .where(and(
             eq(sqliteSchema.messages.roomId, roomId),
+            eq(sqliteSchema.messages.isPrivate, false),
             like(sqliteSchema.messages.content, pattern)
           ));
         return Number(rows?.[0]?.c || 0);
@@ -668,6 +676,52 @@ export class DatabaseService {
     } catch (error) {
       console.error('Error deleteOldRoomMessages:', error);
       return 0;
+    }
+  }
+
+  async getMessageById(messageId: number): Promise<Message | null> {
+    if (!this.isConnected()) return null;
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any)
+          .select()
+          .from(pgSchema.messages)
+          .where(eq(pgSchema.messages.id, messageId))
+          .limit(1);
+        return rows?.[0] || null;
+      } else {
+        const rows = await (this.db as any)
+          .select()
+          .from(sqliteSchema.messages)
+          .where(eq(sqliteSchema.messages.id, messageId))
+          .limit(1);
+        return rows?.[0] || null;
+      }
+    } catch (error) {
+      console.error('Error getMessageById:', error);
+      return null;
+    }
+  }
+
+  async deleteMessage(messageId: number): Promise<boolean> {
+    if (!this.isConnected()) return false;
+    try {
+      if (this.type === 'postgresql') {
+        const updated = await (this.db as any)
+          .update(pgSchema.messages)
+          .set({ deletedAt: new Date() })
+          .where(eq(pgSchema.messages.id, messageId))
+          .returning({ id: pgSchema.messages.id });
+        return Array.isArray(updated) && updated.length > 0;
+      } else {
+        const deleted = await (this.db as any)
+          .delete(sqliteSchema.messages)
+          .where(eq(sqliteSchema.messages.id, messageId));
+        return Boolean((deleted?.rowsAffected ?? deleted?.changes ?? 0) > 0);
+      }
+    } catch (error) {
+      console.error('Error deleteMessage:', error);
+      return false;
     }
   }
 
