@@ -210,14 +210,15 @@ export const useChat = () => {
     [state.onlineUsers, state.ignoredUsers]
   );
 
-  // 🔥 SIMPLIFIED Message loading - حذف التعقيدات
+      // 🔥 SIMPLIFIED Message loading - حذف التعقيدات
   const loadRoomMessages = useCallback(async (roomId: string, forceReload: boolean = false) => {
-    // تجنب التحميل المتكرر
+    // نعتمد الآن على Socket لإرسال آخر الرسائل عند الانضمام،
+    // لكن نُبقي هذا كنسخة احتياطية سريعة تطلب 10 رسائل فقط.
+
     if (!forceReload && state.roomMessages[roomId]?.length > 0) {
       return;
     }
 
-    // تجنب التحميل المتزامن
     if (loadingRooms.current.has(roomId)) {
       return;
     }
@@ -225,7 +226,7 @@ export const useChat = () => {
     loadingRooms.current.add(roomId);
     
     try {
-      const data = await apiRequest(`/api/messages/room/${roomId}?limit=20`);
+      const data = await apiRequest(`/api/messages/room/${roomId}/latest?limit=10`);
       
       if (data?.messages && Array.isArray(data.messages)) {
         const formattedMessages = mapDbMessagesToChatMessages(data.messages, roomId);
@@ -233,7 +234,7 @@ export const useChat = () => {
           type: 'SET_ROOM_MESSAGES', 
           payload: { roomId, messages: formattedMessages }
         });
-        }
+      }
     } catch (error) {
       console.error(`❌ خطأ في تحميل رسائل الغرفة ${roomId}:`, error);
     } finally {
@@ -303,19 +304,10 @@ export const useChat = () => {
           }
           
           case 'roomMessages': {
-            const { messages } = envelope;
+            const { messages, roomId: payloadRoomId } = envelope as any;
             if (Array.isArray(messages)) {
-              const roomId = state.currentRoomId;
-              const formattedMessages = messages.map((msg: any) => ({
-                id: msg.id,
-                content: msg.content,
-                senderId: msg.senderId,
-                timestamp: msg.timestamp,
-                messageType: msg.messageType || 'text',
-                sender: msg.sender,
-                roomId
-              }));
-              
+              const roomId = payloadRoomId || state.currentRoomId;
+              const formattedMessages = mapDbMessagesToChatMessages(messages, roomId);
               dispatch({ 
                 type: 'SET_ROOM_MESSAGES', 
                 payload: { roomId, messages: formattedMessages }
@@ -504,7 +496,8 @@ export const useChat = () => {
     dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
     saveSession({ roomId });
 
-    loadRoomMessages(roomId);
+    // لا نطلق طلب REST هنا، سنعتمد على Socket لإرسال آخر 10 رسائل بعد الانضمام
+    // loadRoomMessages(roomId);
 
     if (socket.current?.connected) {
       socket.current.emit('joinRoom', { 
