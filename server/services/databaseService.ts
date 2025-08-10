@@ -72,25 +72,32 @@ export interface Notification {
 }
 
 export interface Room {
-  id: string | number;
+  id: string; // توحيد النوع كـ string لكلا قواعد البيانات
   name: string;
   description?: string;
-  type: string;
-  ownerId?: number;
-  maxUsers: number;
-  isPrivate: boolean;
-  password?: string;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-  // Cross-DB optional fields (PostgreSQL schema)
-  createdBy?: number;
+  // حقول موحدة
+  createdBy: number; // استخدام createdBy بدلاً من ownerId للتوافق مع PostgreSQL
   isDefault?: boolean;
   isActive?: boolean;
   isBroadcast?: boolean;
-  hostId?: number | null;
-  speakers?: string | any[];
-  micQueue?: string | any[];
   icon?: string | null;
+  // حقول البث (دائماً arrays، يتم تحويلها حسب قاعدة البيانات)
+  hostId?: number | null;
+  speakers?: number[];
+  micQueue?: number[];
+  // حقول اختيارية للتوافق
+  type?: string; // للتوافق مع SQLite
+  maxUsers?: number; // للتوافق مع SQLite  
+  isPrivate?: boolean; // للتوافق مع SQLite
+  password?: string; // للتوافق مع SQLite
+  // حقول التواريخ
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  deletedAt?: Date | string;
+  lastMessageAt?: Date | string;
+  // حقول ديناميكية
+  userCount?: number;
+  slug?: string;
 }
 
 // Blocked device type for moderation persistence
@@ -824,31 +831,115 @@ export class DatabaseService {
     if (!this.isConnected()) return null;
 
     try {
-      const room = {
-        ...roomData,
-        createdAt: this.type === 'postgresql' ? new Date() : new Date().toISOString(),
-        updatedAt: this.type === 'postgresql' ? new Date() : new Date().toISOString(),
-      };
-
       if (this.type === 'postgresql') {
-        const result = await (this.db as any).insert(pgSchema.rooms).values(room).returning();
-        return result[0] || null;
+        const roomId = roomData.id || `room_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        
+        const newRoom = {
+          id: roomId,
+          name: roomData.name || 'غرفة جديدة',
+          description: roomData.description || '',
+          icon: roomData.icon || null,
+          createdBy: roomData.createdBy || 1,
+          isDefault: roomData.isDefault || false,
+          isActive: roomData.isActive !== false,
+          isBroadcast: roomData.isBroadcast || false,
+          hostId: roomData.hostId || null,
+          speakers: JSON.stringify(roomData.speakers || []),
+          micQueue: JSON.stringify(roomData.micQueue || []),
+          createdAt: new Date(),
+        };
+
+        const result = await (this.db as any).insert(pgSchema.rooms).values(newRoom).returning();
+        return this.normalizeRoom(result[0]);
       } else {
-        const result = await (this.db as any).insert(sqliteSchema.rooms).values(room);
+        // SQLite: تحويل البيانات للتوافق مع SQLite schema
+        const newRoom = {
+          name: roomData.name || 'غرفة جديدة',
+          description: roomData.description || '',
+          type: roomData.type || 'public',
+          ownerId: roomData.createdBy || 1,
+          maxUsers: roomData.maxUsers || 50,
+          isPrivate: roomData.isPrivate || false,
+          password: roomData.password || null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        const result = await (this.db as any).insert(sqliteSchema.rooms).values(newRoom);
         if (result.lastInsertRowid) {
           const rooms = await (this.db as any)
             .select()
             .from(sqliteSchema.rooms)
             .where(eq(sqliteSchema.rooms.id, Number(result.lastInsertRowid)))
             .limit(1);
-          return rooms[0] || null;
+          if (rooms[0]) {
+            return this.normalizeRoom({
+              ...rooms[0],
+              id: rooms[0].id.toString(),
+              createdBy: rooms[0].ownerId,
+              isDefault: false,
+              isActive: true,
+              isBroadcast: false,
+              speakers: '[]',
+              micQueue: '[]',
+            });
+          }
         }
         return null;
       }
     } catch (error) {
-      console.error('Error creating room:', error);
+      console.error('خطأ في إنشاء الغرفة:', error);
       return null;
     }
+  }
+
+  // وظيفة مساعدة لتحويل JSON strings إلى arrays
+  private parseJsonArray(jsonString: any): number[] {
+    try {
+      if (Array.isArray(jsonString)) return jsonString.map(n => Number(n)).filter(n => Number.isFinite(n));
+      if (typeof jsonString === 'string') {
+        const parsed = JSON.parse(jsonString || '[]');
+        return Array.isArray(parsed) ? parsed.map(n => Number(n)).filter(n => Number.isFinite(n)) : [];
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  }
+
+  // وظيفة مساعدة لتوحيد بيانات الغرفة
+  private normalizeRoom(roomData: any): Room {
+    if (!roomData) return roomData;
+    
+    // تحويل JSON strings إلى arrays
+    const speakers = this.parseJsonArray(roomData.speakers);
+    const micQueue = this.parseJsonArray(roomData.micQueue || roomData.mic_queue);
+    
+    return {
+      id: String(roomData.id),
+      name: roomData.name,
+      description: roomData.description || '',
+      createdBy: roomData.createdBy || roomData.ownerId || roomData.created_by,
+      isDefault: Boolean(roomData.isDefault || roomData.is_default),
+      isActive: roomData.isActive !== false && roomData.is_active !== false,
+      isBroadcast: Boolean(roomData.isBroadcast || roomData.is_broadcast),
+      icon: roomData.icon || null,
+      hostId: roomData.hostId || roomData.host_id || null,
+      speakers,
+      micQueue,
+      // حقول SQLite الاختيارية
+      type: roomData.type || 'public',
+      maxUsers: roomData.maxUsers || roomData.max_users || 50,
+      isPrivate: Boolean(roomData.isPrivate || roomData.is_private),
+      password: roomData.password || null,
+      // التواريخ
+      createdAt: roomData.createdAt || roomData.created_at,
+      updatedAt: roomData.updatedAt || roomData.updated_at,
+      deletedAt: roomData.deletedAt || roomData.deleted_at,
+      lastMessageAt: roomData.lastMessageAt || roomData.last_message_at,
+      slug: roomData.slug || null,
+      userCount: roomData.userCount || roomData.user_count || 0,
+    };
   }
 
   async getRooms(): Promise<Room[]> {
@@ -856,17 +947,21 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
-        // ignore soft-deleted rooms when column exists
-        return await (this.db as any)
+        const rawRooms = await (this.db as any)
           .select()
           .from(pgSchema.rooms)
           .where(isNull(pgSchema.rooms.deletedAt))
           .orderBy(asc(pgSchema.rooms.name));
+        return rawRooms.map((room: any) => this.normalizeRoom(room));
       } else {
-        return await (this.db as any).select().from(sqliteSchema.rooms).orderBy(asc(sqliteSchema.rooms.name));
+        const rawRooms = await (this.db as any)
+          .select()
+          .from(sqliteSchema.rooms)
+          .orderBy(asc(sqliteSchema.rooms.name));
+        return rawRooms.map((room: any) => this.normalizeRoom(room));
       }
     } catch (error) {
-      console.error('Error getting rooms:', error);
+      console.error('خطأ في جلب الغرف:', error);
       return [];
     }
   }
@@ -882,9 +977,9 @@ export class DatabaseService {
           .from(pgSchema.rooms)
           .where(and(eq(pgSchema.rooms.id, roomId), isNull(pgSchema.rooms.deletedAt)))
           .limit(1);
-        return rows[0] || null;
+        return rows[0] ? this.normalizeRoom(rows[0]) : null;
       } else {
-        // SQLite uses numeric id; try to parse and fetch
+        // SQLite يستخدم معرف رقمي، محاولة التحويل
         const maybeId = Number(roomId);
         if (!Number.isFinite(maybeId)) return null;
         const rows = await (this.db as any)
@@ -892,10 +987,10 @@ export class DatabaseService {
           .from(sqliteSchema.rooms)
           .where(eq(sqliteSchema.rooms.id, maybeId))
           .limit(1);
-        return rows[0] || null;
+        return rows[0] ? this.normalizeRoom(rows[0]) : null;
       }
     } catch (error) {
-      console.error('Error getting room by id:', error);
+      console.error('خطأ في جلب الغرفة:', error);
       return null;
     }
   }
@@ -906,12 +1001,14 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
+        // PostgreSQL: soft delete باستخدام deletedAt
         await (this.db as any)
           .update(pgSchema.rooms)
           .set({ deletedAt: new Date() })
           .where(eq(pgSchema.rooms.id, roomId));
         return true;
       } else {
+        // SQLite: hard delete
         const maybeId = Number(roomId);
         if (!Number.isFinite(maybeId)) return false;
         await (this.db as any)
@@ -920,7 +1017,7 @@ export class DatabaseService {
         return true;
       }
     } catch (error) {
-      console.error('Error deleting room:', error);
+      console.error('خطأ في حذف الغرفة:', error);
       return false;
     }
   }

@@ -206,24 +206,32 @@ export interface CreateWallPostData {
   type: 'friends' | 'public';
 }
 
-// أنواع بيانات الروم الجديدة
+// أنواع بيانات الروم الموحدة
 export interface ChatRoom {
   id: string;
   name: string;
   description?: string;
-  isDefault: boolean;
+  isDefault?: boolean;
   createdBy: number;
-  createdAt: Date;
-  isActive: boolean;
-  userCount: number;
+  createdAt?: Date;
+  isActive?: boolean;
+  userCount?: number;
   maxUsers?: number;
   icon?: string;
   color?: string;
-  // خصائص Broadcast Room الجديدة
+  // خصائص Broadcast Room
   isBroadcast?: boolean;
-  hostId?: number;
+  hostId?: number | null;
   speakers?: number[];
   micQueue?: number[];
+  // حقول إضافية للتوافق مع قاعدة البيانات
+  type?: string;
+  isPrivate?: boolean;
+  password?: string;
+  slug?: string;
+  deletedAt?: Date;
+  updatedAt?: Date;
+  lastMessageAt?: Date;
 }
 
 export interface RoomUser extends ChatUser {
