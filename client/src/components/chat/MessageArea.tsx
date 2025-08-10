@@ -281,7 +281,7 @@ export default function MessageArea({
               {/* Message Content */}
               <div className="flex-1 min-w-0">
                 {/* Inline Header: شعار الدور + الاسم + التوقيت + تبليغ */}
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <div className="flex items-center gap-2 mb-1">
                   {message.sender && <UserRoleBadge user={message.sender} showOnlyIcon={true} size={16} />}
                   <button
                     onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
@@ -290,18 +290,20 @@ export default function MessageArea({
                   >
                     {message.sender?.username}
                   </button>
-                  <span className="text-[11px] text-gray-500">
-                    {formatTime(message.timestamp)}
-                  </span>
-                  {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
-                    <button
-                      onClick={() => onReportMessage(message.sender!, message.content, message.id)}
-                      className="ml-auto text-xs text-red-500 hover:text-red-700 transition-colors duration-200"
-                      title="تبليغ"
-                    >
-                      🚩 تبليغ
-                    </button>
-                  )}
+                  <div className="ml-auto flex items-center gap-2">
+                    <span className="text-[11px] text-gray-500 whitespace-nowrap max-w-[3cm] overflow-hidden text-ellipsis">
+                      {formatTime(message.timestamp)}
+                    </span>
+                    {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
+                      <button
+                        onClick={() => onReportMessage(message.sender!, message.content, message.id)}
+                        className="text-xs text-red-500 hover:text-red-700 transition-colors duration-200"
+                        title="تبليغ"
+                      >
+                        🚩 تبليغ
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Message Content inline under header but part of same block */}
