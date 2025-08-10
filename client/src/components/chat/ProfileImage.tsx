@@ -9,9 +9,10 @@ interface ProfileImageProps {
   size?: 'small' | 'medium' | 'large';
   className?: string;
   onClick?: (e: any) => void;
+  hideRoleBadgeOverlay?: boolean;
 }
 
-export default function ProfileImage({ user, size = 'medium', className = '', onClick }: ProfileImageProps) {
+export default function ProfileImage({ user, size = 'medium', className = '', onClick, hideRoleBadgeOverlay = false }: ProfileImageProps) {
   const sizeClasses = {
     small: 'w-10 h-10',
     medium: 'w-16 h-16',
@@ -60,7 +61,7 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
       )}
       
       {/* مؤشر الدور統一 */}
-      {(user.userType === 'owner' || user.userType === 'admin' || user.userType === 'moderator') && (
+      {!hideRoleBadgeOverlay && (user.userType === 'owner' || user.userType === 'admin' || user.userType === 'moderator') && (
         <div className="absolute -top-1 -right-1 w-5 h-5 bg-white border-2 border-white rounded-full flex items-center justify-center overflow-hidden">
           <span className="scale-90">{getUserLevelIcon(user, 14)}</span>
         </div>
