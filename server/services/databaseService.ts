@@ -871,31 +871,51 @@ export class DatabaseService {
     }
   }
 
-  // Fetch single room by id
+  // Fetch single room by id or slug
   async getRoomById(roomId: string): Promise<Room | null> {
     if (!this.isConnected()) return null;
 
     try {
+      console.log(`🔍 البحث عن الغرفة: "${roomId}" (نوع: ${typeof roomId})`);
+      
       if (this.type === 'postgresql') {
         const rows = await (this.db as any)
           .select()
           .from(pgSchema.rooms)
           .where(and(eq(pgSchema.rooms.id, roomId), isNull(pgSchema.rooms.deletedAt)))
           .limit(1);
-        return rows[0] || null;
+        const room = rows[0] || null;
+        console.log(`📋 نتيجة البحث (PostgreSQL): ${room ? `موجودة (${room.name})` : 'غير موجودة'}`);
+        return room;
       } else {
-        // SQLite uses numeric id; try to parse and fetch
+        // محاولة البحث بالرقم أولاً
         const maybeId = Number(roomId);
-        if (!Number.isFinite(maybeId)) return null;
-        const rows = await (this.db as any)
-          .select()
-          .from(sqliteSchema.rooms)
-          .where(eq(sqliteSchema.rooms.id, maybeId))
-          .limit(1);
-        return rows[0] || null;
+        if (Number.isFinite(maybeId) && maybeId > 0) {
+          console.log(`🔢 البحث بالمعرف الرقمي: ${maybeId}`);
+          const rows = await (this.db as any)
+            .select()
+            .from(sqliteSchema.rooms)
+            .where(eq(sqliteSchema.rooms.id, maybeId))
+            .limit(1);
+          const room = rows[0] || null;
+          console.log(`📋 نتيجة البحث بالرقم: ${room ? `موجودة (${room.name})` : 'غير موجودة'}`);
+          return room;
+        } else {
+          // إذا لم يكن رقم، البحث بالـ slug
+          const trimmedSlug = roomId.trim();
+          console.log(`🏷️ البحث بالـ slug: "${trimmedSlug}"`);
+          const rows = await (this.db as any)
+            .select()
+            .from(sqliteSchema.rooms)
+            .where(eq(sqliteSchema.rooms.slug, trimmedSlug))
+            .limit(1);
+          const room = rows[0] || null;
+          console.log(`📋 نتيجة البحث بالـ slug: ${room ? `موجودة (${room.name})` : 'غير موجودة'}`);
+          return room;
+        }
       }
     } catch (error) {
-      console.error('Error getting room by id:', error);
+      console.error(`❌ خطأ في البحث عن الغرفة "${roomId}":`, error);
       return null;
     }
   }
@@ -905,22 +925,39 @@ export class DatabaseService {
     if (!this.isConnected()) return false;
 
     try {
+      console.log(`🗑️ محاولة حذف الغرفة: "${roomId}" (نوع: ${typeof roomId})`);
+      
       if (this.type === 'postgresql') {
         await (this.db as any)
           .update(pgSchema.rooms)
           .set({ deletedAt: new Date() })
           .where(eq(pgSchema.rooms.id, roomId));
+        console.log(`✅ تم حذف الغرفة بنجاح (PostgreSQL soft-delete): ${roomId}`);
         return true;
       } else {
+        // محاولة التحويل إلى رقم أولاً
         const maybeId = Number(roomId);
-        if (!Number.isFinite(maybeId)) return false;
-        await (this.db as any)
-          .delete(sqliteSchema.rooms)
-          .where(eq(sqliteSchema.rooms.id, maybeId));
-        return true;
+        if (Number.isFinite(maybeId) && maybeId > 0) {
+          // إذا كان معرف رقمي صحيح
+          console.log(`🔢 حذف بالمعرف الرقمي: ${maybeId}`);
+          const result = await (this.db as any)
+            .delete(sqliteSchema.rooms)
+            .where(eq(sqliteSchema.rooms.id, maybeId));
+          console.log(`✅ تم حذف الغرفة بنجاح (SQLite by ID): ${maybeId}`);
+          return true;
+        } else {
+          // إذا لم يكن رقم، قد يكون slug - نبحث بالـ slug
+          const trimmedSlug = roomId.trim();
+          console.log(`🏷️ حذف بالـ slug: "${trimmedSlug}"`);
+          const result = await (this.db as any)
+            .delete(sqliteSchema.rooms)
+            .where(eq(sqliteSchema.rooms.slug, trimmedSlug));
+          console.log(`✅ تم حذف الغرفة بنجاح (SQLite by slug): "${trimmedSlug}"`);
+          return true;
+        }
       }
     } catch (error) {
-      console.error('Error deleting room:', error);
+      console.error(`❌ خطأ في حذف الغرفة "${roomId}":`, error);
       return false;
     }
   }
