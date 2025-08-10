@@ -6,6 +6,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeSystem } from "./database-setup";
 import { setupSecurity } from "./security";
+import { initializeDefaultRooms } from "./utils/roomInitializer";
 import path from "path";
 import fs from "fs";
 import { Server } from "http";
@@ -125,7 +126,15 @@ async function startServer() {
     const systemInitialized = await initializeSystem();
     
     if (systemInitialized) {
-      } else {
+      // تهيئة الغرف الافتراضية بعد نجاح تهيئة النظام
+      setTimeout(async () => {
+        try {
+          await initializeDefaultRooms();
+        } catch (error) {
+          console.error('❌ خطأ في تهيئة الغرف الافتراضية:', error);
+        }
+      }, 1000);
+    } else {
       console.warn('⚠️ تم بدء الخادم مع تحذيرات في تهيئة النظام');
     }
 

@@ -155,7 +155,7 @@ export async function getUserCount(): Promise<number> {
 }
 
 // Room management functions
-export async function joinRoom(userId: number, roomId: number | string): Promise<boolean> {
+export async function joinRoom(userId: number, roomId: string): Promise<boolean> {
   try {
     const status = databaseService.getStatus();
     if (!status.connected) return true;
@@ -164,24 +164,28 @@ export async function joinRoom(userId: number, roomId: number | string): Promise
       const { roomMembers } = await import('../shared/schema');
       const { eq, and } = await import('drizzle-orm');
       const exists = await (db as any)
-        .select({ userId: (roomMembers as any).userId })
-        .from((roomMembers as any))
-        .where(and(eq((roomMembers as any).roomId, String(roomId) as any), eq((roomMembers as any).userId, userId as any)))
+        .select({ userId: roomMembers.userId })
+        .from(roomMembers)
+        .where(and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)))
         .limit(1);
       if (!exists || exists.length === 0) {
-        await (db as any).insert((roomMembers as any)).values({ roomId: String(roomId) as any, userId: userId as any });
+        await (db as any).insert(roomMembers).values({ 
+          roomId, 
+          userId, 
+          role: 'member',
+          joinedAt: new Date()
+        });
       }
       return true;
     }
-    // No SQLite fallback in production
     return true;
   } catch (error) {
-    console.error('Error joinRoom:', error);
+    console.error('خطأ في الانضمام للغرفة:', error);
     return true;
   }
 }
 
-export async function leaveRoom(userId: number, roomId: number | string): Promise<boolean> {
+export async function leaveRoom(userId: number, roomId: string): Promise<boolean> {
   try {
     const status = databaseService.getStatus();
     if (!status.connected) return true;
@@ -190,18 +194,18 @@ export async function leaveRoom(userId: number, roomId: number | string): Promis
       const { roomMembers } = await import('../shared/schema');
       const { eq, and } = await import('drizzle-orm');
       await (db as any)
-        .delete((roomMembers as any))
-        .where(and(eq((roomMembers as any).roomId, String(roomId) as any), eq((roomMembers as any).userId, userId as any)));
+        .delete(roomMembers)
+        .where(and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)));
       return true;
     }
     return true;
   } catch (error) {
-    console.error('Error leaveRoom:', error);
+    console.error('خطأ في مغادرة الغرفة:', error);
     return true;
   }
 }
 
-export async function getRoomUsers(roomId: number | string): Promise<number[]> {
+export async function getRoomUsers(roomId: string): Promise<number[]> {
   try {
     const status = databaseService.getStatus();
     if (!status.connected) return [];
@@ -210,14 +214,14 @@ export async function getRoomUsers(roomId: number | string): Promise<number[]> {
       const { roomMembers } = await import('../shared/schema');
       const { eq } = await import('drizzle-orm');
       const rows = await (db as any)
-        .select({ userId: (roomMembers as any).userId })
-        .from((roomMembers as any))
-        .where(eq((roomMembers as any).roomId, String(roomId) as any));
+        .select({ userId: roomMembers.userId })
+        .from(roomMembers)
+        .where(eq(roomMembers.roomId, roomId));
       return (rows || []).map((r: any) => r.userId);
     }
     return [];
   } catch (error) {
-    console.error('Error getRoomUsers:', error);
+    console.error('خطأ في جلب مستخدمي الغرفة:', error);
     return [];
   }
 }
@@ -509,29 +513,30 @@ export const storage: LegacyStorage = {
 
   async getRoom(roomId: string) {
     try {
-      // Try DB service helper
-      const room = await databaseService.getRoomById(roomId as any);
-      if (room) return room as any;
+      const room = await databaseService.getRoomById(roomId);
+      if (room) return room;
 
-      // Fallback: if not found and asking for 'general', synthesize minimal room info
+      // Fallback: إذا لم تجد الغرفة العامة، قم بإنشائها
       if (roomId === 'general') {
         return {
           id: 'general',
           name: 'الغرفة العامة',
           description: 'الغرفة العامة للدردشة',
+          createdBy: 1,
           isDefault: true,
           isActive: true,
           isBroadcast: false,
           hostId: null,
-          speakers: '[]',
-          micQueue: '[]',
+          speakers: [],
+          micQueue: [],
+          userCount: 0,
           createdAt: new Date()
-        } as any;
+        };
       }
-      return null as any;
+      return null;
     } catch (e) {
-      console.error('getRoom error:', e);
-      return null as any;
+      console.error('خطأ في جلب الغرفة:', e);
+      return null;
     }
   },
 
@@ -544,11 +549,11 @@ export const storage: LegacyStorage = {
   },
 
   async joinRoom(userId: number, roomId: number | string) {
-    return await joinRoom(userId, roomId as any);
+    return await joinRoom(userId, String(roomId));
   },
 
   async leaveRoom(userId: number, roomId: number | string) {
-    return await leaveRoom(userId, roomId as any);
+    return await leaveRoom(userId, String(roomId));
   },
 
   async getUserRooms(userId: number) {
@@ -556,7 +561,7 @@ export const storage: LegacyStorage = {
   },
 
   async getRoomUsers(roomId: string) {
-    return await getRoomUsers(roomId as any);
+    return await getRoomUsers(roomId);
   },
 
   async getOnlineUsersInRoom(roomId: string) {

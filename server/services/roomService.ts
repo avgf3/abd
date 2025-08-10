@@ -43,29 +43,85 @@ class RoomService {
   private operationLocks = new Map<string, boolean>(); // منع العمليات المتكررة
 
   /**
-   * جلب جميع الغرف
+   * جلب جميع الغرف مع ضمان وجود الغرفة العامة
    */
   async getAllRooms(): Promise<Room[]> {
     try {
       if (!db || dbType === 'disabled') {
-        return [];
+        return this.getDefaultRooms();
       }
-      return await storage.getAllRooms();
+      
+      const rooms = await storage.getAllRooms();
+      
+      // ضمان وجود الغرفة العامة
+      const hasGeneralRoom = rooms.some(room => room.id === 'general');
+      if (!hasGeneralRoom) {
+        const generalRoom: Room = {
+          id: 'general',
+          name: 'الغرفة العامة',
+          description: 'الغرفة العامة للدردشة',
+          createdBy: 1,
+          isDefault: true,
+          isActive: true,
+          isBroadcast: false,
+          hostId: null,
+          speakers: [],
+          micQueue: [],
+          userCount: 0,
+          createdAt: new Date()
+        };
+        rooms.unshift(generalRoom);
+      }
+      
+      return rooms;
     } catch (error) {
       console.error('خطأ في جلب الغرف:', error);
-      return [];
+      return this.getDefaultRooms();
     }
   }
 
   /**
-   * جلب غرفة واحدة
+   * إرجاع الغرف الافتراضية عند عدم توفر قاعدة البيانات
+   */
+  private getDefaultRooms(): Room[] {
+    return [{
+      id: 'general',
+      name: 'الغرفة العامة',
+      description: 'الغرفة العامة للدردشة',
+      createdBy: 1,
+      isDefault: true,
+      isActive: true,
+      isBroadcast: false,
+      hostId: null,
+      speakers: [],
+      micQueue: [],
+      userCount: 0,
+      createdAt: new Date()
+    }];
+  }
+
+  /**
+   * جلب غرفة واحدة مع معالجة الغرفة العامة
    */
   async getRoom(roomId: string): Promise<Room | null> {
     try {
       if (!db || dbType === 'disabled') {
+        // إرجاع الغرفة العامة إذا طُلبت
+        if (roomId === 'general') {
+          return this.getDefaultRooms()[0];
+        }
         return null;
       }
-      return await storage.getRoom(roomId);
+      
+      const room = await storage.getRoom(roomId);
+      if (room) return room;
+      
+      // إذا لم تجد الغرفة العامة، قم بإنشائها
+      if (roomId === 'general') {
+        return this.getDefaultRooms()[0];
+      }
+      
+      return null;
     } catch (error) {
       console.error(`خطأ في جلب الغرفة ${roomId}:`, error);
       return null;
@@ -235,7 +291,9 @@ class RoomService {
       this.userRooms.set(userId, roomId);
 
       // 💾 حفظ في قاعدة البيانات
-      await storage.joinRoom(userId, roomId);
+      if (db && dbType !== 'disabled') {
+        await storage.joinRoom(userId, roomId);
+      }
 
       } catch (error) {
       console.error('خطأ في الانضمام للغرفة:', error);
@@ -309,7 +367,9 @@ class RoomService {
       }
 
       // جلب معرفات المستخدمين من قاعدة البيانات أولاً
-      const dbUserIds: number[] = await storage.getRoomUsers(roomId);
+      const dbUserIds: number[] = db && dbType !== 'disabled' 
+        ? await storage.getRoomUsers(roomId) 
+        : [];
       
       // دمج مع المستخدمين المتصلين في الذاكرة
       const connectedUserIds = this.connectedRooms.get(roomId) || new Set<number>();
