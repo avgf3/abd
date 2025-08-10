@@ -18,6 +18,7 @@ import messageRoutes from "./routes/messages";
 import { pointsService } from "./services/pointsService";
 import { roomService } from "./services/roomService";
 import { roomMessageService } from "./services/roomMessageService";
+import { friendService } from "./services/friendService";
 import { developmentOnly, logDevelopmentEndpoint } from "./middleware/development";
 import { createFriendRequestNotification, createFriendAcceptedNotification } from "./utils/notificationHelpers";
 import { z } from "zod";
@@ -180,20 +181,7 @@ const messageService = new (class MessageService {
   }
 })();
 
-const friendService = new (class FriendService {
-  async sendFriendRequest(senderId: number, receiverId: number) {
-    if (senderId === receiverId) {
-      throw new Error('لا يمكنك إرسال طلب صداقة لنفسك');
-    }
-    
-    const existingRequest = await storage.getFriendRequest(senderId, receiverId);
-    if (existingRequest) {
-      throw new Error('طلب الصداقة مرسل مسبقاً');
-    }
-    
-    return await storage.createFriendRequest(senderId, receiverId);
-  }
-})();
+
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // استخدام مسارات الغرف المنفصلة
@@ -1795,7 +1783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // إنشاء طلب الصداقة
-        const friendRequest = await storage.createFriendRequest(socket.userId, targetUserId);
+        const friendRequest = await friendService.createFriendRequest(socket.userId, targetUserId);
         
         // إرسال إشعار للمستخدم المستهدف
         const sender = await storage.getUser(socket.userId);
@@ -2469,18 +2457,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // التحقق من وجود طلب سابق
-      const existingRequest = await storage.getFriendRequest(senderId, receiverId);
+      const existingRequest = await friendService.getFriendRequest(senderId, receiverId);
       if (existingRequest) {
         return res.status(400).json({ error: "طلب الصداقة موجود بالفعل" });
       }
 
       // التحقق من الصداقة الموجودة
-      const friendship = await storage.getFriendship(senderId, receiverId);
+      const friendship = await friendService.getFriendship(senderId, receiverId);
       if (friendship) {
         return res.status(400).json({ error: "أنتما أصدقاء بالفعل" });
       }
 
-      const request = await storage.createFriendRequest(senderId, receiverId);
+      const request = await friendService.createFriendRequest(senderId, receiverId);
       // إرسال إشعار عبر WebSocket
       const sender = await storage.getUser(senderId);
       broadcast({
@@ -2526,18 +2514,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // التحقق من وجود طلب سابق
-      const existingRequest = await storage.getFriendRequest(senderId, targetUser.id);
+      const existingRequest = await friendService.getFriendRequest(senderId, targetUser.id);
       if (existingRequest) {
         return res.status(400).json({ error: "طلب الصداقة موجود بالفعل" });
       }
 
       // التحقق من الصداقة الموجودة
-      const friendship = await storage.getFriendship(senderId, targetUser.id);
+      const friendship = await friendService.getFriendship(senderId, targetUser.id);
       if (friendship) {
         return res.status(400).json({ error: "أنتما أصدقاء بالفعل" });
       }
 
-      const request = await storage.createFriendRequest(senderId, targetUser.id);
+      const request = await friendService.createFriendRequest(senderId, targetUser.id);
       
       // إرسال إشعار عبر WebSocket
       const sender = await storage.getUser(senderId);
@@ -2568,8 +2556,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const [incoming, outgoing] = await Promise.all([
-        storage.getIncomingFriendRequests(userId),
-        storage.getOutgoingFriendRequests(userId)
+        friendService.getIncomingFriendRequests(userId),
+        friendService.getOutgoingFriendRequests(userId)
       ]);
       res.json({ incoming, outgoing });
     } catch (error) {
@@ -2582,7 +2570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/friend-requests/incoming/:userId", friendRequestLimiter, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
-      const requests = await storage.getIncomingFriendRequests(userId);
+      const requests = await friendService.getIncomingFriendRequests(userId);
       res.json({ requests });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
@@ -2593,7 +2581,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/friend-requests/outgoing/:userId", friendRequestLimiter, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
-      const requests = await storage.getOutgoingFriendRequests(userId);
+      const requests = await friendService.getOutgoingFriendRequests(userId);
       res.json({ requests });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
@@ -2606,14 +2594,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const requestId = parseInt(req.params.requestId);
       const { userId } = req.body;
       
-      const request = await storage.getFriendRequestById(requestId);
+      const request = await friendService.getFriendRequestById(requestId);
       if (!request || request.friendId !== userId) {
         return res.status(403).json({ error: "غير مسموح" });
       }
 
       // قبول طلب الصداقة وإضافة الصداقة
-      await storage.acceptFriendRequest(requestId);
-      await storage.addFriend(request.userId, request.friendId);
+      await friendService.acceptFriendRequest(requestId);
+      await friendService.addFriend(request.userId, request.friendId);
       
       // الحصول على بيانات المستخدمين
       const receiver = await storage.getUser(userId);
@@ -2659,12 +2647,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const requestId = parseInt(req.params.requestId);
       const { userId } = req.body;
       
-      const request = await storage.getFriendRequestById(requestId);
+      const request = await friendService.getFriendRequestById(requestId);
       if (!request || request.friendId !== userId) {
         return res.status(403).json({ error: "غير مسموح" });
       }
 
-      await storage.declineFriendRequest(requestId);
+      await friendService.declineFriendRequest(requestId);
       res.json({ message: "تم رفض طلب الصداقة" });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
@@ -2677,12 +2665,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const requestId = parseInt(req.params.requestId);
       const { userId } = req.body;
       
-      const request = await storage.getFriendRequestById(requestId);
+      const request = await friendService.getFriendRequestById(requestId);
       if (!request || request.userId !== userId) {
         return res.status(403).json({ error: "غير مسموح" });
       }
 
-      await storage.deleteFriendRequest(requestId);
+      await friendService.deleteFriendRequest(requestId);
       res.json({ message: "تم إلغاء طلب الصداقة" });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
@@ -2695,12 +2683,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const requestId = parseInt(req.params.requestId);
       const { userId } = req.body;
       
-      const request = await storage.getFriendRequestById(requestId);
+      const request = await friendService.getFriendRequestById(requestId);
       if (!request || request.friendId !== userId) {
         return res.status(403).json({ error: "غير مسموح" });
       }
 
-      await storage.ignoreFriendRequest(requestId);
+      await friendService.ignoreFriendRequest(requestId);
       res.json({ message: "تم تجاهل طلب الصداقة" });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
@@ -3094,7 +3082,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/friends/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
-      const friends = await storage.getFriends(userId);
+      const friends = await friendService.getFriends(userId);
       
       res.json({ friends });
     } catch (error) {
@@ -3102,49 +3090,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/friends", async (req, res) => {
-    try {
-      const { userId, friendId } = req.body;
-      
-      // التحقق من أن المستخدمين موجودين
-      const user = await storage.getUser(userId);
-      const friend = await storage.getUser(friendId);
-      
-      if (!user || !friend) {
-        return res.status(404).json({ error: "المستخدم غير موجود" });
-      }
-      
-      // التحقق من أن المستخدم لا يضيف نفسه
-      if (userId === friendId) {
-        return res.status(400).json({ error: "لا يمكنك إضافة نفسك كصديق" });
-      }
-      
-      const friendship = await storage.addFriend(userId, friendId);
-      
-      // إرسال تنبيه WebSocket للمستخدم المستهدف
-      broadcast({
-        type: 'friendRequest',
-        targetUserId: friendId,
-        senderUserId: userId,
-        senderUsername: user.username,
-        message: `${user.username} يريد إضافتك كصديق`
-      });
-      
-      res.json({ 
-        message: "تم إرسال طلب الصداقة",
-        friendship 
-      });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
+
 
   app.delete("/api/friends/:userId/:friendId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const friendId = parseInt(req.params.friendId);
       
-      const success = await storage.removeFriend(userId, friendId);
+      const success = await friendService.removeFriend(userId, friendId);
       
       if (success) {
         res.json({ message: "تم حذف الصديق" });

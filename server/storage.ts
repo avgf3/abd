@@ -430,6 +430,38 @@ export const storage: LegacyStorage = {
     return await friendService.getFriends(userId);
   },
 
+  // Legacy friend request passthroughs to unified friendService
+  async getFriendship(userId1: number, userId2: number) {
+    return await friendService.getFriendship(userId1, userId2);
+  },
+  async getFriendRequest(senderId: number, receiverId: number) {
+    return await friendService.getFriendRequest(senderId, receiverId);
+  },
+  async getFriendRequestById(requestId: number) {
+    return await friendService.getFriendRequestById(requestId);
+  },
+  async getIncomingFriendRequests(userId: number) {
+    return await friendService.getIncomingFriendRequests(userId);
+  },
+  async getOutgoingFriendRequests(userId: number) {
+    return await friendService.getOutgoingFriendRequests(userId);
+  },
+  async createFriendRequest(senderId: number, receiverId: number) {
+    return await friendService.createFriendRequest(senderId, receiverId);
+  },
+  async acceptFriendRequest(requestId: number) {
+    return await friendService.acceptFriendRequest(requestId);
+  },
+  async declineFriendRequest(requestId: number) {
+    return await friendService.declineFriendRequest(requestId);
+  },
+  async ignoreFriendRequest(requestId: number) {
+    return await friendService.ignoreFriendRequest(requestId);
+  },
+  async deleteFriendRequest(requestId: number) {
+    return await friendService.deleteFriendRequest(requestId);
+  },
+
   // Notifications
   async createNotification(notification: any) {
     const result = await notificationService.createNotification(notification);
