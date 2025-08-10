@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 import type { Friend, FriendRequest } from '@/../../shared/types';
 import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
+import ScrollToBottomButton from '../common/ScrollToBottomButton';
 
 // Using shared types for Friend and FriendRequest
 
@@ -26,6 +27,7 @@ export default function FriendsTabPanel({
   onlineUsers,
   onStartPrivateChat
 }: FriendsTabPanelProps) {
+  const friendsScrollRef = useRef<HTMLDivElement>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'friends' | 'requests'>('friends');
@@ -247,7 +249,7 @@ export default function FriendsTabPanel({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div ref={friendsScrollRef} className="relative flex-1 overflow-y-auto p-4">
         {/* Friends Tab */}
         {activeTab === 'friends' && (
           <div className="space-y-3">
@@ -471,6 +473,7 @@ export default function FriendsTabPanel({
             </Card>
           </div>
         )}
+        <ScrollToBottomButton targetRef={friendsScrollRef} />
       </div>
     </div>
   );

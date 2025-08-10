@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ChatRoom, ChatUser } from '@/types/chat';
 import { dedupeRooms } from '@/utils/roomUtils';
+import ScrollToBottomButton from '../common/ScrollToBottomButton';
 
 interface RoomComponentProps {
   // بيانات أساسية
@@ -275,6 +276,7 @@ export default function RoomComponent({
   allowRefresh = true
 }: RoomComponentProps) {
   // الحالات المحلية
+  const listScrollRef = React.useRef<HTMLDivElement>(null);
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomDescription, setNewRoomDescription] = useState('');
@@ -475,7 +477,7 @@ export default function RoomComponent({
       </div>
 
       {/* المحتوى */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div ref={listScrollRef} className="relative flex-1 overflow-y-auto p-4">
         {/* زر إضافة غرفة */}
         {canCreateRooms && (
           <Button
@@ -499,17 +501,11 @@ export default function RoomComponent({
               viewMode={viewMode}
               compact={compact}
               onSelect={onRoomChange}
-              onDelete={canDeleteRooms ? handleDeleteRoom : undefined}
+              onDelete={canDeleteRooms ? (id, e) => handleDeleteRoom(id, e) : undefined}
             />
           ))}
         </div>
-
-        {/* رسالة فارغة */}
-        {filteredRooms.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            {searchQuery ? 'لا توجد غرف تطابق البحث' : 'لا توجد غرف متاحة'}
-          </div>
-        )}
+        <ScrollToBottomButton targetRef={listScrollRef} />
       </div>
 
       {/* مربع حوار إضافة غرفة */}
