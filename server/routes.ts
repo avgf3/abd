@@ -597,7 +597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/mute", protect.admin, async (req, res) => {
+  app.post("/api/moderation/mute", protect.moderator, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
       const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
@@ -721,7 +721,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/unmute", protect.admin, async (req, res) => {
+  // مسار جديد لإلغاء الإشراف (تنزيل الرتبة) - للمالك فقط
+  app.post("/api/moderation/demote", protect.owner, async (req, res) => {
+    try {
+      const { moderatorId, targetUserId } = req.body;
+      if (!moderatorId || !targetUserId) {
+        return res.status(400).json({ error: "معاملات ناقصة" });
+      }
+
+      const success = await moderationSystem.demoteUser(moderatorId, targetUserId);
+      if (success) {
+        const target = await storage.getUser(targetUserId);
+        const moderator = await storage.getUser(moderatorId);
+        if (target && moderator) {
+          io.emit('message', {
+            type: 'systemNotification',
+            message: `ℹ️ تم تنزيل ${target.username} إلى عضو بواسطة ${moderator.username}`,
+            timestamp: new Date().toISOString()
+          });
+        }
+        res.json({ message: "تم إلغاء الإشراف بنجاح" });
+      } else {
+        res.status(400).json({ error: "فشل في إلغاء الإشراف" });
+      }
+    } catch (error) {
+      console.error("[DEMOTE_ENDPOINT] خطأ في إلغاء الإشراف:", error);
+      res.status(500).json({ error: "خطأ في إلغاء الإشراف" });
+    }
+  });
+
+  app.post("/api/moderation/unmute", protect.moderator, async (req, res) => {
     try {
       const { moderatorId, targetUserId } = req.body;
       
@@ -2746,7 +2775,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Moderation routes
   // DUPLICATE BLOCK REMOVED: Using the canonical moderation endpoints defined earlier in the file.
 
-  app.get("/api/moderation/log", protect.owner, async (req, res) => {
+  app.get("/api/moderation/log", protect.admin, async (req, res) => {
     try {
       const userId = parseInt(req.query.userId as string);
       const user = await storage.getUser(userId);
@@ -2799,7 +2828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // إضافة endpoint لوحة إجراءات المشرفين
-  app.get("/api/moderation/actions", protect.owner, async (req, res) => {
+  app.get("/api/moderation/actions", protect.admin, async (req, res) => {
     try {
       const { userId } = req.query;
       const user = await storage.getUser(Number(userId));
@@ -2809,22 +2838,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "غير مسموح - للمشرفين فقط" });
       }
 
-      const actions = moderationSystem.getModerationLog()
-        .map(action => ({
-          ...action,
-          moderatorName: '', // سيتم إضافة اسم المشرف
-          targetName: '' // سيتم إضافة اسم المستهدف
-        }));
-      
-      // إضافة أسماء المستخدمين للإجراءات
-      for (const action of actions) {
+      const now = new Date();
+      const toDate = (d?: Date | string | null): Date | null => {
+        if (!d) return null;
+        return d instanceof Date ? d : new Date(d);
+      };
+
+      const rawActions = moderationSystem.getModerationLog();
+      const actions = [] as any[];
+
+      for (const action of rawActions) {
         const moderator = await storage.getUser(action.moderatorId);
         const target = await storage.getUser(action.targetUserId);
-        action.moderatorName = moderator?.username || 'مجهول';
-        action.targetName = target?.username || 'مجهول';
+
+        let isActive = false;
+        if (target) {
+          if (action.type === 'block') {
+            isActive = !!target.isBlocked;
+          } else if (action.type === 'mute') {
+            const me = toDate(target.muteExpiry as any);
+            isActive = !!target.isMuted && !!me && me.getTime() > now.getTime();
+          } else if (action.type === 'ban') {
+            const be = toDate(target.banExpiry as any);
+            isActive = !!target.isBanned && !!be && be.getTime() > now.getTime();
+          }
+        }
+
+        actions.push({
+          ...action,
+          moderatorName: moderator?.username || 'مجهول',
+          targetName: target?.username || 'مجهول',
+          isActive
+        });
       }
 
-      res.json(actions);
+      res.json({ actions });
     } catch (error) {
       console.error("خطأ في الحصول على تاريخ الإجراءات:", error);
       res.status(500).json({ error: "خطأ في الخادم" });
@@ -2832,7 +2880,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // إضافة endpoint لسجل البلاغات
-  app.get("/api/reports", protect.owner, async (req, res) => {
+  app.get("/api/reports", protect.admin, async (req, res) => {
     try {
       const { userId } = req.query;
       const user = await storage.getUser(Number(userId));
@@ -2865,7 +2913,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // إضافة endpoint لمراجعة البلاغات
-  app.post("/api/reports/:id/review", protect.owner, async (req, res) => {
+  app.post("/api/reports/:id/review", protect.admin, async (req, res) => {
     try {
       const reportId = parseInt(req.params.id);
       const { action, moderatorId } = req.body;
@@ -2891,7 +2939,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // إضافة endpoint للإجراءات النشطة
-  app.get("/api/moderation/active-actions", protect.owner, async (req, res) => {
+  app.get("/api/moderation/active-actions", protect.admin, async (req, res) => {
     try {
       const { userId } = req.query;
       const user = await storage.getUser(Number(userId));
@@ -2900,24 +2948,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "غير مسموح - للمشرفين فقط" });
       }
 
+      const now = new Date();
+      const toDate = (d?: Date | string | null): Date | null => {
+        if (!d) return null;
+        return d instanceof Date ? d : new Date(d);
+      };
+
       const allActions = moderationSystem.getModerationLog();
-      const activeActions = allActions
-        .filter(action => (action.type === 'mute' || action.type === 'block'))
-        .map(action => ({
-          ...action,
-          moderatorName: '',
-          targetName: ''
-        }));
-      
-      // إضافة أسماء المستخدمين
-      for (const action of activeActions) {
+      const activeActions: any[] = [];
+
+      for (const action of allActions) {
+        if (action.type !== 'mute' && action.type !== 'block') continue;
         const moderator = await storage.getUser(action.moderatorId);
         const target = await storage.getUser(action.targetUserId);
-        action.moderatorName = moderator?.username || 'مجهول';
-        action.targetName = target?.username || 'مجهول';
+
+        let isActive = false;
+        if (target) {
+          if (action.type === 'block') {
+            isActive = !!target.isBlocked;
+          } else if (action.type === 'mute') {
+            const me = toDate(target.muteExpiry as any);
+            isActive = !!target.isMuted && !!me && me.getTime() > now.getTime();
+          }
+        }
+
+        if (isActive) {
+          activeActions.push({
+            ...action,
+            moderatorName: moderator?.username || 'مجهول',
+            targetName: target?.username || 'مجهول',
+            isActive: true
+          });
+        }
       }
 
-      res.json(activeActions);
+      res.json({ actions: activeActions });
     } catch (error) {
       console.error("خطأ في الحصول على الإجراءات النشطة:", error);
       res.status(500).json({ error: "خطأ في الخادم" });
