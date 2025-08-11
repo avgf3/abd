@@ -195,6 +195,14 @@ export const useChat = () => {
   
   // 🔥 SIMPLIFIED loading management - مصدر واحد
   const loadingRooms = useRef<Set<string>>(new Set());
+
+  // Handlers registry for broadcast/broadcast-like events (host/mic updates)
+  const broadcastHandlersRef = useRef<Set<(data: any) => void>>(new Set());
+  const notifyBroadcastHandlers = useCallback((data: any) => {
+    broadcastHandlersRef.current.forEach((h) => {
+      try { h(data); } catch {}
+    });
+  }, []);
   
   // Notification states
   const [levelUpNotification, setLevelUpNotification] = useState<any>(null);
@@ -401,6 +409,40 @@ export const useChat = () => {
       } catch (error) {
         console.error('❌ خطأ في معالجة رسالة Socket:', error);
       }
+    });
+
+    // Broadcast room realtime updates: host changes and mic events
+    const refreshBroadcastInfoAndNotify = async (type: string, payload: any) => {
+      const roomId = payload?.roomId || state.currentRoomId;
+      try {
+        const data = await apiRequest(`/api/rooms/${roomId}/broadcast-info`, { method: 'GET' });
+        const info = data?.info || null;
+        notifyBroadcastHandlers({ type, ...payload, broadcastInfo: info });
+      } catch {
+        notifyBroadcastHandlers({ type, ...payload });
+      }
+    };
+
+    const mapType = (t: string) => (t === 'micRequested' ? 'micRequest' : t);
+
+    socketInstance.on('roomUpdate', (payload: any) => {
+      if (!payload) return;
+      if (payload.roomId && payload.roomId !== state.currentRoomId) return;
+      const type = mapType(payload.type || 'roomUpdate');
+      refreshBroadcastInfoAndNotify(type, payload);
+    });
+
+    socketInstance.on('micRequested', (payload: any) => {
+      refreshBroadcastInfoAndNotify('micRequest', payload || {});
+    });
+    socketInstance.on('micApproved', (payload: any) => {
+      refreshBroadcastInfoAndNotify('micApproved', payload || {});
+    });
+    socketInstance.on('micRejected', (payload: any) => {
+      refreshBroadcastInfoAndNotify('micRejected', payload || {});
+    });
+    socketInstance.on('speakerRemoved', (payload: any) => {
+      refreshBroadcastInfoAndNotify('speakerRemoved', payload || {});
     });
 
     // معالج الرسائل الخاصة
@@ -707,6 +749,13 @@ export const useChat = () => {
     dispatch({ type: 'SET_CURRENT_USER', payload: merged });
   }, [state.currentUser]);
 
+  const addBroadcastMessageHandler = useCallback((handler: (data: any) => void) => {
+    broadcastHandlersRef.current.add(handler);
+  }, []);
+  const removeBroadcastMessageHandler = useCallback((handler: (data: any) => void) => {
+    broadcastHandlersRef.current.delete(handler);
+  }, []);
+
   return {
     // State
     currentUser: state.currentUser,
@@ -753,5 +802,9 @@ export const useChat = () => {
     handleTyping,
     getCurrentRoomMessages,
     updateCurrentUser,
+
+    // Broadcast handlers registration (for BroadcastRoomInterface)
+    addBroadcastMessageHandler,
+    removeBroadcastMessageHandler,
   };
 }

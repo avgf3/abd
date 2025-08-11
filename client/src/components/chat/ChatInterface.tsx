@@ -395,21 +395,23 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
           if (currentRoom?.isBroadcast) {
             return (
-                            <BroadcastRoomInterface
-                 currentUser={chat.currentUser}
-                 room={currentRoom}
-                 onlineUsers={chat.onlineUsers}
-                 onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
-                 onTyping={(_isTyping) => chat.sendTyping()}
-                 typingUsers={Array.from(chat.typingUsers)}
-                 onReportMessage={handleReportUser}
-                 onUserClick={handleUserClick}
-                 messages={chat.publicMessages}
-                 chat={{
-                   sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
-                   handleTyping: () => chat.sendTyping()
-                 }}
-               />
+                                             <BroadcastRoomInterface
+                  currentUser={chat.currentUser}
+                  room={currentRoom}
+                  onlineUsers={chat.onlineUsers}
+                  onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                  onTyping={(_isTyping) => chat.sendTyping()}
+                  typingUsers={Array.from(chat.typingUsers)}
+                  onReportMessage={handleReportUser}
+                  onUserClick={handleUserClick}
+                  messages={chat.publicMessages}
+                  chat={{
+                    sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
+                    handleTyping: () => chat.sendTyping(),
+                    addBroadcastMessageHandler: chat.addBroadcastMessageHandler,
+                    removeBroadcastMessageHandler: chat.removeBroadcastMessageHandler,
+                  }}
+                />
             );
           }
           
