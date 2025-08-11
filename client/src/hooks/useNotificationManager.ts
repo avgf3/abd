@@ -24,16 +24,23 @@ export function useNotificationManager(currentUser: ChatUser | null) {
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Initialize audio
-  useEffect(() => {
-    audioRef.current = new Audio('/notification.mp3');
-    audioRef.current.volume = 0.5;
-  }, []);
-
-  // Play notification sound
+  // Play notification sound (WebAudio tone لتفادي مشاكل MP3)
   const playNotificationSound = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.play().catch(console.warn);
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+      gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.06, audioContext.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.22);
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.22);
+    } catch (e) {
+      // Silent fail
     }
   }, []);
 

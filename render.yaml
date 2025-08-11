@@ -26,7 +26,7 @@ services:
       - key: SESSION_SECRET
         value: arabic-chat-session-secret-2025-production
       - key: CORS_ORIGIN
-        value: https://your-app-name.onrender.com
+        value: https://abd-owfr.onrender.com
     healthCheckPath: /api/health
     numInstances: 1
     plan: free
