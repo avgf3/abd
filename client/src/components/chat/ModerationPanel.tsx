@@ -121,7 +121,7 @@ export default function ModerationPanel({
           break;
         case 'promote_admin':
           endpoint = '/api/moderation/promote';
-          body.role = 'admin';
+          body.newRole = 'admin';
           break;
         case 'remove':
           // حذف كامل من الدردشة
