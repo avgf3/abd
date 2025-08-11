@@ -135,9 +135,12 @@ router.post('/room/:roomId', async (req, res) => {
       };
 
       if (isPrivate && receiverId) {
-        // رسالة خاصة - إرسال للمرسل والمستقبل فقط
-        io.to(`user_${senderId}`).emit('message', socketData);
-        io.to(`user_${receiverId}`).emit('message', socketData);
+        // رسالة خاصة - إرسال للمرسل والمستقبل فقط (توافقاً مع غرف المستخدم الحالية)
+        io.to(String(senderId)).emit('message', socketData);
+        io.to(String(receiverId)).emit('message', socketData);
+        // إرسال أيضاً حدث privateMessage مباشر للتوافق مع العملاء
+        io.to(String(senderId)).emit('privateMessage', { message });
+        io.to(String(receiverId)).emit('privateMessage', { message });
       } else {
         // رسالة عامة - إرسال لجميع أعضاء الغرفة
         io.to(`room_${roomId}`).emit('message', socketData);

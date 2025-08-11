@@ -359,9 +359,12 @@ export const useChat = () => {
     });
 
     // معالج الرسائل الخاصة
-    socketInstance.on('privateMessage', (data: any) => {
+    // Unified private message handling
+    const handlePrivateMessage = (incoming: any) => {
       try {
-        const { message } = data;
+        const envelope = incoming?.envelope ? incoming.envelope : incoming;
+        const payload = envelope?.message ?? envelope;
+        const message = payload?.message ?? payload;
         if (message?.sender) {
           const chatMessage: ChatMessage = {
             id: message.id,
@@ -372,24 +375,28 @@ export const useChat = () => {
             sender: message.sender,
             isPrivate: true
           };
-          
-          // تحديد معرف المحادثة (المرسل أو المستقبل)
           const conversationId = message.senderId === state.currentUser?.id 
             ? message.receiverId 
             : message.senderId;
-          
           dispatch({ 
             type: 'SET_PRIVATE_MESSAGE', 
             payload: { userId: conversationId, message: chatMessage }
           });
-          
-          // إشعار للرسائل الخاصة
           if (chatMessage.senderId !== state.currentUser?.id) {
             playNotificationSound();
           }
         }
       } catch (error) {
         console.error('❌ خطأ في معالجة الرسالة الخاصة:', error);
+      }
+    };
+
+    socketInstance.on('privateMessage', handlePrivateMessage);
+    socketInstance.on('message', (data: any) => {
+      // Also handle private messages sent over the generic channel
+      const type = (data?.envelope?.type) || data?.type;
+      if (type === 'privateMessage') {
+        handlePrivateMessage(data);
       }
     });
 
@@ -530,7 +537,10 @@ export const useChat = () => {
     };
 
     if (receiverId) {
+      // Ensure server handler also supports this direct event
       socket.current.emit('privateMessage', messageData);
+      // Fallback: also emit via generic channel for legacy handlers
+      socket.current.emit('message', JSON.stringify({ type: 'privateMessage', ...messageData }));
     } else {
       socket.current.emit('publicMessage', messageData);
     }
