@@ -78,7 +78,8 @@ export default function ModerationPanel({
     if (currentUser.userType === 'owner') {
       actions.push(
         { value: 'block', label: 'حجب كامل (المالك)' },
-        { value: 'promote_admin', label: 'ترقية لمشرف' }
+        { value: 'promote_moderator', label: 'ترقية لمشرف' },
+        { value: 'promote_admin', label: 'ترقية لإدمن' }
       );
     }
     
@@ -118,6 +119,10 @@ export default function ModerationPanel({
           endpoint = '/api/moderation/block';
           body.ipAddress = '127.0.0.1'; // سيتم تحديثه بالـ IP الحقيقي
           body.deviceId = 'device_' + selectedUser.id;
+          break;
+        case 'promote_moderator':
+          endpoint = '/api/moderation/promote';
+          body.newRole = 'moderator';
           break;
         case 'promote_admin':
           endpoint = '/api/moderation/promote';
@@ -168,8 +173,10 @@ export default function ModerationPanel({
         return `تم طرد ${username} لمدة 15 دقيقة`;
       case 'block':
         return `تم حجب ${username} نهائياً`;
-      case 'promote_admin':
+      case 'promote_moderator':
         return `تم ترقية ${username} لمشرف`;
+      case 'promote_admin':
+        return `تم ترقية ${username} لإدمن`;
       case 'remove':
         return `تم حذف ${username} من الدردشة`;
       default:

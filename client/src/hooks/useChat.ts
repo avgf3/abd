@@ -343,6 +343,25 @@ export const useChat = () => {
             break;
           }
           
+          case 'kicked': {
+            // إظهار عدّاد الطرد للمستخدم المستهدف فقط
+            const targetId = envelope.targetUserId;
+            if (targetId && targetId === state.currentUser?.id) {
+              dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
+            }
+            break;
+          }
+          
+          case 'moderationAction': {
+            // في حالة وصول بث عام بإجراء "banned"، فعّل العدّاد إذا كنت أنت الهدف
+            const action = (envelope as any).action;
+            const targetId = (envelope as any).targetUserId;
+            if (action === 'banned' && targetId && targetId === state.currentUser?.id) {
+              dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
+            }
+            break;
+          }
+          
           case 'error':
           case 'warning': {
             console.warn('⚠️ خطأ من السيرفر:', envelope.message);

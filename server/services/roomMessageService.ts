@@ -59,9 +59,14 @@ class RoomMessageService {
         throw new Error('المرسل غير موجود');
       }
 
-      // التحقق من حالة الكتم للرسائل العامة
-      if (!messageData.isPrivate && sender.isMuted) {
-        throw new Error('أنت مكتوم ولا يمكنك إرسال رسائل عامة');
+      // التحقق من حالة المنع قبل الإرسال
+      if (!messageData.isPrivate) {
+        if (sender.isBanned) {
+          throw new Error('أنت مطرود ولا يمكنك إرسال رسائل عامة');
+        }
+        if (sender.isMuted) {
+          throw new Error('أنت مكتوم ولا يمكنك إرسال رسائل عامة');
+        }
       }
 
       // إنشاء الرسالة في قاعدة البيانات
