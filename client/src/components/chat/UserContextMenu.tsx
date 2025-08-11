@@ -298,7 +298,7 @@ export default function UserContextMenu({
           </ContextMenuItem>
 
           {/* حذف الرسالة */}
-          {messageId && (
+          {messageId && currentUser && (currentUser.id === targetUser.id || ['admin','owner'].includes(currentUser.userType)) && (
             <>
               <div className="my-4 border-t-2 border-gray-300"></div>
               <ContextMenuItem 
