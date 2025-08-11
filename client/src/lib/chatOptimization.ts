@@ -263,17 +263,9 @@ export function usePerformanceOptimization() {
   
   // تنظيف الذاكرة
   const cleanupMemory = useCallback(() => {
-    // تنظيف event listeners
-    const events = ['resize', 'scroll', 'beforeunload'];
-    events.forEach(event => {
-      window.removeEventListener(event, () => {});
-    });
-    
-    // تنظيف timeouts and intervals
-    const highestTimeoutId = setTimeout(';');
-    for (let i = 0; i < highestTimeoutId; i++) {
-      clearTimeout(i);
-    }
+    // تنظيف event listeners العامة المعروفة إن كانت مضافة بمراجع
+    // ملاحظة: لا يمكن إزالة مستمعين مجهولين الهوية؛ يجب حفظ المراجع عند الإضافة
+    // هنا نكتفي بتوجيه المطوّر لاستخدام مراجع handlers وإزالتها في useEffect cleanup في أماكنها.
   }, []);
   
   return {

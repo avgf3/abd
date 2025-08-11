@@ -244,14 +244,21 @@ export const useChat = () => {
     }
   }, [state.roomMessages]);
 
+      // Track ping interval to avoid leaks
+    const pingIntervalRef = useRef<number | null>(null);
+    
       // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
     const setupSocketListeners = useCallback((socketInstance: Socket) => {
       // حافظ على الاتصال عبر ping/pong مخصص عند السكون
-      const pingInterval = setInterval(() => {
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+      }
+      const pingId = window.setInterval(() => {
         if (socketInstance.connected) {
           socketInstance.emit('client_ping');
         }
       }, 20000);
+      pingIntervalRef.current = pingId;
       socketInstance.on('client_pong', () => {});
 
       // لم نعد نستخدم ping/pong المخصصين؛ نعتمد فقط على client_ping/client_pong للحفاظ على الاتصال
@@ -495,6 +502,16 @@ export const useChat = () => {
 
     }, [state.currentUser, state.onlineUsers, state.currentRoomId]);
 
+    // Ensure cleanup on unmount
+    useEffect(() => {
+      return () => {
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current);
+          pingIntervalRef.current = null;
+        }
+      };
+    }, []);
+
   useEffect(() => {
     const handleOnline = () => {
       if (socket.current && !socket.current.connected) {
@@ -525,6 +542,10 @@ export const useChat = () => {
         socket.current.removeAllListeners();
         socket.current.disconnect();
         socket.current = null;
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current);
+          pingIntervalRef.current = null;
+        }
       }
 
       // استخدام عميل Socket الموحد
@@ -648,6 +669,10 @@ export const useChat = () => {
       socket.current.removeAllListeners();
       socket.current.disconnect();
       socket.current = null;
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = null;
+      }
     }
     
     // إعادة تعيين الحالة
