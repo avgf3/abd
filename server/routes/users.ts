@@ -44,33 +44,6 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// Toggle user hidden status
-router.post("/:userId/toggle-hidden", async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId);
-    const { isHidden } = req.body;
-    
-    await storage.setUserHiddenStatus(userId, isHidden);
-    res.json({ message: "تم تحديث حالة الإخفاء" });
-  } catch (error) {
-    console.error("Error toggling hidden status:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
-  }
-});
-
-// Toggle stealth mode
-router.post("/:userId/stealth", async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId);
-    const { isHidden } = req.body;
-    
-    await storage.setUserHiddenStatus(userId, isHidden);
-    res.json({ message: isHidden ? "تم تفعيل الوضع الخفي" : "تم إلغاء الوضع الخفي" });
-  } catch (error) {
-    console.error("Error toggling stealth mode:", error);
-    res.status(500).json({ error: "خطأ في الخادم" });
-  }
-});
 
 // User search
 router.get("/search", async (req, res) => {
