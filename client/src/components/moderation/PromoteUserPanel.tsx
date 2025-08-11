@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -192,7 +192,7 @@ export default function PromoteUserPanel({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl bg-gray-900/95 border-gray-700">
+      <Card className="w-full max-w-2xl max-h-[85vh] bg-gray-900/95 border-gray-700 flex flex-col">
         <CardHeader className="border-b border-gray-700">
           <CardTitle className="text-xl text-gray-100 flex items-center gap-2">
             <UserCheck className="w-6 h-6 text-blue-400" />
@@ -200,7 +200,7 @@ export default function PromoteUserPanel({
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="p-6 space-y-6">
+        <CardContent className="p-6 space-y-6 flex-1 overflow-y-auto">
           <div className="grid gap-4">
             <div>
               <label className="text-sm font-medium text-gray-200 mb-2 block">
@@ -327,20 +327,20 @@ export default function PromoteUserPanel({
               </div>
             </div>
           </div>
-
-          <div className="flex justify-end gap-2 pt-4 border-t border-gray-700">
-            <Button onClick={onClose} variant="outline">
-              إلغاء
-            </Button>
-            <Button 
-              onClick={handlePromote}
-              disabled={!selectedUser || !selectedRole || isSubmitting}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isSubmitting ? 'جاري الترقية...' : 'ترقية المستخدم'}
-            </Button>
-          </div>
         </CardContent>
+
+        <CardFooter className="flex justify-end gap-2 border-t border-gray-700">
+          <Button onClick={onClose} variant="outline">
+            إلغاء
+          </Button>
+          <Button 
+            onClick={handlePromote}
+            disabled={!selectedUser || !selectedRole || isSubmitting}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isSubmitting ? 'جاري الترقية...' : 'ترقية المستخدم'}
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   );
