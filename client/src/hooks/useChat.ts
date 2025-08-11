@@ -60,6 +60,7 @@ type ChatAction =
   | { type: 'SET_ROOM_MESSAGES'; payload: { roomId: string; messages: ChatMessage[] } }
   | { type: 'ADD_ROOM_MESSAGE'; payload: { roomId: string; message: ChatMessage } }
   | { type: 'SET_PRIVATE_MESSAGE'; payload: { userId: number; message: ChatMessage } }
+  | { type: 'SET_PRIVATE_CONVERSATION'; payload: { userId: number; messages: ChatMessage[] } }
   | { type: 'SET_CONNECTION_STATUS'; payload: boolean }
   | { type: 'SET_TYPING_USERS'; payload: Set<string> }
   | { type: 'SET_CONNECTION_ERROR'; payload: string | null }
@@ -138,6 +139,17 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
         privateConversations: {
           ...state.privateConversations,
           [userId]: [...(state.privateConversations[userId] || []), message]
+        }
+      };
+    }
+    
+    case 'SET_PRIVATE_CONVERSATION': {
+      const { userId, messages } = action.payload;
+      return {
+        ...state,
+        privateConversations: {
+          ...state.privateConversations,
+          [userId]: messages
         }
       };
     }
@@ -437,13 +449,7 @@ export const useChat = () => {
     };
 
     socketInstance.on('privateMessage', handlePrivateMessage);
-    socketInstance.on('message', (data: any) => {
-      // Also handle private messages sent over the generic channel
-      const type = (data?.envelope?.type) || data?.type;
-      if (type === 'privateMessage') {
-        handlePrivateMessage(data);
-      }
-    });
+    // ملاحظة: نتعامل مع الرسائل الخاصة فقط عبر حدث 'privateMessage' المخصص لتجنّب التكرار
 
       // معالج حدث الطرد
       socketInstance.on('kicked', (data: any) => {
@@ -651,8 +657,6 @@ export const useChat = () => {
     if (receiverId) {
       // Ensure server handler also supports this direct event
       socket.current.emit('privateMessage', messageData);
-      // Fallback: also emit via generic channel for legacy handlers
-      socket.current.emit('message', JSON.stringify({ type: 'privateMessage', ...messageData }));
     } else {
       socket.current.emit('publicMessage', messageData);
     }
@@ -707,6 +711,20 @@ export const useChat = () => {
     dispatch({ type: 'SET_CURRENT_USER', payload: merged });
   }, [state.currentUser]);
 
+  // تحميل سجل المحادثة الخاصة عند فتحها
+  const loadPrivateConversation = useCallback(async (otherUserId: number, limit: number = 50) => {
+    if (!state.currentUser) return;
+    try {
+      const data = await apiRequest(`/api/messages/private/${state.currentUser.id}/${otherUserId}?limit=${limit}`);
+      const formatted = Array.isArray((data as any)?.messages)
+        ? mapDbMessagesToChatMessages((data as any).messages)
+        : [];
+      dispatch({ type: 'SET_PRIVATE_CONVERSATION', payload: { userId: otherUserId, messages: formatted } });
+    } catch (error) {
+      console.error('❌ خطأ في تحميل رسائل الخاص:', error);
+    }
+  }, [state.currentUser]);
+
   return {
     // State
     currentUser: state.currentUser,
@@ -753,5 +771,6 @@ export const useChat = () => {
     handleTyping,
     getCurrentRoomMessages,
     updateCurrentUser,
+    loadPrivateConversation,
   };
 }

@@ -103,8 +103,8 @@ export default function PrivateMessageBox({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[450px] bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 shadow-2xl">
-        <DialogHeader className="border-b border-blue-200 p-2">
+      <DialogContent className="max-w-md max-h-[450px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl">
+        <DialogHeader className="border-b border-accent p-2">
           <div
             className={`flex items-center gap-2 px-2 py-1 rounded-none ${getUserThemeClasses(user)}`}
             style={{ ...getUserThemeStyles(user) }}
@@ -130,7 +130,7 @@ export default function PrivateMessageBox({
               return (
                 <div 
                   key={`${message.id}-${message.senderId}-${index}`}
-                  className={`flex items-center gap-3 p-3 rounded-lg border-r-4 ${getMessageBorderColor(sender?.userType)} bg-blue-50 shadow-sm hover:shadow-md transition-shadow duration-200`}
+                  className={`flex items-center gap-3 p-3 rounded-lg border-r-4 ${getMessageBorderColor(sender?.userType)} bg-card shadow-sm hover:shadow-md transition-shadow duration-200`}
                 >
                   {sender && (
                     <div className="flex-shrink-0">
@@ -159,7 +159,7 @@ export default function PrivateMessageBox({
             })}
             
             {messages.length === 0 && (
-              <div className="text-center py-8 text-blue-400">
+              <div className="text-center py-8 text-muted-foreground">
                 <div className="text-4xl mb-3">✉️</div>
                 <p className="text-lg font-medium">لا توجد رسائل</p>
                 <p className="text-sm">ابدأ محادثة جديدة!</p>
@@ -169,7 +169,7 @@ export default function PrivateMessageBox({
           </div>
         </ScrollArea>
 
-        <div className="flex gap-2 p-4 border-t border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100">
+        <div className="flex gap-2 p-4 border-t border-accent bg-gradient-to-r from-secondary to-accent">
           <FileUploadButton 
             onFileSelect={handleFileSelect}
             disabled={false}
@@ -178,7 +178,7 @@ export default function PrivateMessageBox({
           <div className="relative">
             <Button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-lg"
+              className="bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 rounded-lg"
               title="الرموز التعبيرية"
             >
               😊
@@ -197,12 +197,12 @@ export default function PrivateMessageBox({
             onChange={(e) => setMessageText(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="✉️ ارسال رسالة..."
-            className="flex-1 bg-blue-50 border-blue-300 text-gray-800 placeholder:text-blue-400 focus:border-blue-500"
+            className="flex-1 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary"
           />
           <Button
             onClick={handleSendMessage}
             disabled={!messageText.trim()}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium"
           >
             ✉️ ارسال
           </Button>
@@ -212,7 +212,7 @@ export default function PrivateMessageBox({
           <Button 
             onClick={onClose} 
             variant="outline" 
-            className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 font-medium px-6"
+            className="bg-background border-border text-foreground hover:bg-accent/30 font-medium px-6"
           >
             ✖️ إغلاق
           </Button>

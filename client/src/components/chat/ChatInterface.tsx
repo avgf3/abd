@@ -181,6 +181,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   const handlePrivateMessage = (user: ChatUser) => {
     setSelectedPrivateUser(user);
+    // تحميل سجل الرسائل الخاصة عند فتح الصندوق
+    try {
+      chat.loadPrivateConversation(user.id);
+    } catch {}
     closeUserPopup();
   };
 
