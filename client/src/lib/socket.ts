@@ -39,7 +39,9 @@ let listenersAttached = false;
 function getServerUrl(): string {
   try {
     const isDev = (import.meta as any)?.env?.DEV;
-    return isDev ? 'http://localhost:5000' : window.location.origin;
+    if (isDev) return 'http://localhost:5000';
+    // Always use same-origin in production
+    return window.location.origin;
   } catch {
     return window.location.origin;
   }

@@ -906,41 +906,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // إعداد Socket.IO محسن مع أمان وثبات أفضل
   io = new IOServer(httpServer, {
-    // إعدادات CORS محسنة
-    cors: { 
-      origin: process.env.NODE_ENV === 'production' 
-        ? [process.env.RENDER_EXTERNAL_URL, process.env.FRONTEND_URL, process.env.CORS_ORIGIN, "https://abd-ylo2.onrender.com", "https://abd-gmva.onrender.com"].filter(Boolean)
-        : "*",
+    // إعدادات CORS ديناميكية للسماح بنفس النطاق والإعدادات من المتغيرات
+    cors: {
+      origin: (_origin, callback) => {
+        // نسمح بالطلبات افتراضيًا، وسيتم ضبط التحقق الدقيق في allowRequest
+        callback(null, true);
+      },
       methods: ["GET", "POST"],
-      credentials: true
+      credentials: true,
     },
     path: "/socket.io",
-    
+
     // إعدادات النقل محسنة للاستقرار
-    transports: ['websocket', 'polling'],
+    transports: ["websocket", "polling"],
     allowEIO3: true,
-    
+
     // إعدادات الاتصال المحسنة
     pingTimeout: 60000,
     pingInterval: 25000,
     upgradeTimeout: 10000,
     allowUpgrades: true,
-    
+
     // إعدادات الأمان
     cookie: false,
     serveClient: false,
-    
-    // إعدادات الأداء
+
+    // إعدادات الأداء + تحكم أدق بالأصول المسموحة
     maxHttpBufferSize: 1e6, // 1MB
     allowRequest: (req, callback) => {
-      // فحص أمني مبني على قائمة أصول مسموحة
-      const origin = req.headers.origin || '';
-      const allowedOrigins = (process.env.NODE_ENV === 'production')
-        ? [process.env.RENDER_EXTERNAL_URL, process.env.FRONTEND_URL, process.env.CORS_ORIGIN, 'https://abd-ylo2.onrender.com', 'https://abd-gmva.onrender.com'].filter(Boolean)
-        : ['*'];
-      const isOriginAllowed = allowedOrigins.includes('*') || (origin && allowedOrigins.includes(origin));
-      callback(null, isOriginAllowed);
-    }
+      const originHeader = req.headers.origin || '';
+      const hostHeader = req.headers.host || '';
+
+      const envOrigins = [
+        process.env.RENDER_EXTERNAL_URL,
+        process.env.FRONTEND_URL,
+        process.env.CORS_ORIGIN,
+      ].filter(Boolean) as string[];
+
+      const envHosts = envOrigins
+        .map((u) => {
+          try { return new URL(u).host; } catch { return ''; }
+        })
+        .filter(Boolean);
+
+      const originHost = (() => {
+        try { return originHeader ? new URL(originHeader).host : ''; } catch { return ''; }
+      })();
+
+      const isDev = process.env.NODE_ENV !== 'production';
+      const isSameHost = originHost && hostHeader && originHost === hostHeader;
+      const isEnvAllowed = originHost && envHosts.includes(originHost);
+
+      const allowed = isDev || isSameHost || isEnvAllowed;
+      callback(null, allowed);
+    },
   });
 
   // تطبيق فحص الأمان على جميع الطلبات
