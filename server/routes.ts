@@ -1684,7 +1684,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           roomId: roomId,
         });
         
-        // إضافة نقاط لإرسال رسالة
+        const sender = await storage.getUser(socket.userId);
+        // إرسال الرسالة مباشرة للمستخدمين في نفس الغرفة لتقليل التأخير الإدراكي
+        io.to(`room_${roomId}`).emit('message', { 
+          type: 'newMessage',
+          message: { ...newMessage, sender, roomId }
+        });
+        
+        // إضافة نقاط وإشعارات المستوى بعد البث لعدم حجب الرسالة
         try {
           const pointsResult = await pointsService.addMessagePoints(socket.userId);
           
@@ -1722,13 +1729,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (pointsError) {
           console.error('خطأ في إضافة النقاط:', pointsError);
         }
-        
-        const sender = await storage.getUser(socket.userId);
-        // إرسال الرسالة فقط للمستخدمين في نفس الغرفة
-        io.to(`room_${roomId}`).emit('message', { 
-          type: 'newMessage',
-          message: { ...newMessage, sender, roomId }
-        });
       } catch (error) {
         console.error('خطأ في إرسال الرسالة العامة:', error);
         socket.emit('message', { type: 'error', message: 'خطأ في إرسال الرسالة' });
