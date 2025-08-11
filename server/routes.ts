@@ -30,6 +30,7 @@ import sharp from "sharp";
 // import { trackClick } from "./middleware/analytics"; // commented out as file doesn't exist
 import { enhancedModerationSystem as enhancedModeration } from "./enhanced-moderation";
 import { DEFAULT_LEVELS, recalculateUserStats } from "../shared/points-system";
+import { protect } from "./middleware/enhancedSecurity";
 
 // إعداد multer موحد لرفع الصور
 const createMulterConfig = (destination: string, prefix: string, maxSize: number = 5 * 1024 * 1024) => {
@@ -567,7 +568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API endpoints للإدارة
   // Removed duplicate moderation actions endpoint - kept the more detailed one below
 
-  app.get("/api/moderation/reports", async (req, res) => {
+  app.get("/api/moderation/reports", protect.admin, async (req, res) => {
     try {
       const { userId } = req.query;
       if (!userId) {
@@ -597,7 +598,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/mute", async (req, res) => {
+  app.post("/api/moderation/mute", protect.moderator, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
       
@@ -612,7 +613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/ban", async (req, res) => {
+  app.post("/api/moderation/ban", protect.admin, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
       const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
@@ -666,7 +667,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/block", async (req, res) => {
+  app.post("/api/moderation/block", protect.admin, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason } = req.body;
       
@@ -681,7 +682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/promote", async (req, res) => {
+  app.post("/api/moderation/promote", protect.owner, async (req, res) => {
     try {
       const { moderatorId, targetUserId, newRole } = req.body;
       
@@ -705,7 +706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           
           io.emit('message', promotionMessage);
-          }
+        }
         
         res.json({ message: "تم ترقية المستخدم بنجاح" });
       } else {
@@ -717,7 +718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/unmute", async (req, res) => {
+  app.post("/api/moderation/unmute", protect.moderator, async (req, res) => {
     try {
       const { moderatorId, targetUserId } = req.body;
       
@@ -732,7 +733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/unblock", async (req, res) => {
+  app.post("/api/moderation/unblock", protect.owner, async (req, res) => {
     try {
       const { moderatorId, targetUserId } = req.body;
       
@@ -2757,86 +2758,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Moderation routes
-  app.post("/api/moderation/mute", async (req, res) => {
+  app.post("/api/moderation/mute", protect.moderator, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
-      const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
-      const deviceId = req.headers['user-agent'] || 'unknown';
       
-      const success = await moderationSystem.muteUser(
-        moderatorId, 
-        targetUserId, 
-        reason, 
-        duration, 
-        clientIP, 
-        deviceId
-      );
-      
+      const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, duration);
       if (success) {
-        const moderator = await storage.getUser(moderatorId);
-        const target = await storage.getUser(targetUserId);
-        
-        // إرسال إشعار للدردشة العامة
-        const systemMessage = `🔇 تم كتم ${target?.username} من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`;
-        
-        io.emit('message', {
-          type: 'moderationAction',
-          action: 'muted',
-          targetUserId: targetUserId,
-          message: systemMessage,
-          reason,
-          duration
-        });
-
-        // إرسال إشعار للمستخدم المكتوم
-        io.emit('message', {
-          type: 'notification',
-          targetUserId: targetUserId,
-          notificationType: 'muted',
-          message: `تم كتمك من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`,
-          moderatorName: moderator?.username
-        });
-        
-        // لا يتم قطع الاتصال - المستخدم يبقى في الدردشة لكن مكتوم
-        res.json({ message: "تم كتم المستخدم بنجاح - يمكنه البقاء في الدردشة ولكن لا يمكنه التحدث في العام" });
+        res.json({ message: "تم كتم المستخدم بنجاح" });
       } else {
-        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+        res.status(400).json({ error: "فشل في كتم المستخدم" });
       }
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: "خطأ في كتم المستخدم" });
     }
   });
 
-  app.post("/api/moderation/unmute", async (req, res) => {
+  app.post("/api/moderation/unmute", protect.moderator, async (req, res) => {
     try {
       const { moderatorId, targetUserId } = req.body;
       
       const success = await moderationSystem.unmuteUser(moderatorId, targetUserId);
-      
       if (success) {
-        const moderator = await storage.getUser(moderatorId);
-        const target = await storage.getUser(targetUserId);
-        
-        // إرسال إشعار للدردشة العامة
-        const systemMessage = `🔊 تم إلغاء كتم ${target?.username} من قبل ${moderator?.username}`;
-        
-        io.emit('message', {
-          type: 'moderationAction',
-          action: 'unmuted',
-          targetUserId: targetUserId,
-          message: systemMessage
-        });
-        
         res.json({ message: "تم إلغاء الكتم بنجاح" });
       } else {
-        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+        res.status(400).json({ error: "فشل في إلغاء الكتم" });
       }
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: "خطأ في إلغاء الكتم" });
     }
   });
 
-  app.post("/api/moderation/ban", async (req, res) => {
+  app.post("/api/moderation/ban", protect.admin, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
       const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
@@ -2855,12 +2807,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const moderator = await storage.getUser(moderatorId);
         const target = await storage.getUser(targetUserId);
         
-        // إرسال إشعار خاص للمستخدم المطرود
-        io.to(targetUserId.toString()).emit('kicked', {
-          targetUserId: targetUserId,
-          duration: duration,
-          reason: reason
-        });
+        // إرسال إشعار خاص للمستخدم المطرود - تحسين الإشعار
+        if (target) {
+          io.to(targetUserId.toString()).emit('kicked', {
+            targetUserId: targetUserId,
+            duration: duration,
+            reason: reason
+          });
+        }
 
         // إرسال إشعار للدردشة العامة
         const systemMessage = `⏰ تم طرد ${target?.username} من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`;
@@ -2884,59 +2838,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/block", async (req, res) => {
+  app.post("/api/moderation/block", protect.admin, async (req, res) => {
     try {
-      const { moderatorId, targetUserId, reason, ipAddress, deviceId } = req.body;
-      const clientIP = req.ip || req.connection.remoteAddress || ipAddress || 'unknown';
-      const clientDevice = req.headers['user-agent'] || deviceId || 'unknown';
+      const { moderatorId, targetUserId, reason } = req.body;
       
-      const success = await moderationSystem.blockUser(
-        moderatorId, 
-        targetUserId, 
-        reason, 
-        clientIP, 
-        clientDevice
-      );
-      
+      const success = await moderationSystem.blockUser(moderatorId, targetUserId, reason);
       if (success) {
-        const moderator = await storage.getUser(moderatorId);
-        const target = await storage.getUser(targetUserId);
-        
-        // إرسال إشعار خاص للمستخدم المحجوب - تحسين الإشعار
-        if (target) {
-          io.to(targetUserId.toString()).emit('message', {
-            type: 'blocked',
-            targetUserId: targetUserId,
-            reason: reason,
-            moderatorName: moderator?.username || 'مشرف'
-          });
-        }
-
-        // إرسال إشعار للدردشة العامة
-        const systemMessage = `🚫 تم حجب ${target?.username} نهائياً من قبل ${moderator?.username} - السبب: ${reason}`;
-        
-        io.emit('message', {
-          type: 'moderationAction',
-          action: 'blocked',
-          targetUserId: targetUserId,
-          message: systemMessage
-        });
-        
-        // إجبار قطع الاتصال بعد فترة قصيرة
-        setTimeout(() => {
-          io.to(targetUserId.toString()).disconnectSockets();
-        }, 3000); // إعطاء وقت أطول لاستلام إشعار الحجب النهائي
-        
         res.json({ message: "تم حجب المستخدم بنجاح" });
       } else {
-        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+        res.status(400).json({ error: "فشل في حجب المستخدم" });
       }
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: "خطأ في حجب المستخدم" });
     }
   });
 
-  app.post("/api/moderation/promote", async (req, res) => {
+  app.post("/api/moderation/promote", protect.owner, async (req, res) => {
     try {
       const { moderatorId, targetUserId, newRole } = req.body;
       
@@ -2960,7 +2877,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           
           io.emit('message', promotionMessage);
-          }
+        }
         
         res.json({ message: "تم ترقية المستخدم بنجاح" });
       } else {
@@ -2972,34 +2889,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/unmute", async (req, res) => {
+  app.post("/api/moderation/unmute", protect.moderator, async (req, res) => {
     try {
       const { moderatorId, targetUserId } = req.body;
       
       const success = await moderationSystem.unmuteUser(moderatorId, targetUserId);
       if (success) {
-        res.json({ message: "تم فك الكتم بنجاح" });
+        res.json({ message: "تم إلغاء الكتم بنجاح" });
       } else {
-        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+        res.status(400).json({ error: "فشل في إلغاء الكتم" });
       }
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: "خطأ في إلغاء الكتم" });
     }
   });
 
-  app.post("/api/moderation/unblock", async (req, res) => {
+  app.post("/api/moderation/unblock", protect.owner, async (req, res) => {
     try {
       const { moderatorId, targetUserId } = req.body;
       
       const success = await moderationSystem.unblockUser(moderatorId, targetUserId);
-      
       if (success) {
-        res.json({ message: "تم فك الحجب بنجاح" });
+        res.json({ message: "تم إلغاء الحجب بنجاح" });
       } else {
-        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+        res.status(400).json({ error: "فشل في إلغاء الحجب" });
       }
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: "خطأ في إلغاء الحجب" });
     }
   });
 
