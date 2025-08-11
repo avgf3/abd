@@ -55,7 +55,7 @@ export default function MessagesPanel({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[500px] bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-2xl">
+      <DialogContent className="max-w-md max-h-[500px] bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 shadow-2xl">
         <DialogHeader className="border-b border-blue-200 pb-4">
           <DialogTitle className="text-2xl font-bold text-center text-blue-800">
             ✉️ ارسال رسالة
@@ -78,7 +78,7 @@ export default function MessagesPanel({
                 {conversationUsers.map(({ user, lastMessage, unreadCount }) => (
                   <div 
                     key={user!.id} 
-                    className="cursor-pointer hover:bg-purple-50 transition-all duration-200 p-2 rounded-lg"
+                    className="cursor-pointer hover:bg-blue-50 transition-all duration-200 p-2 rounded-lg"
                     onClick={() => {
                       onStartPrivateChat(user!);
                       onClose();
@@ -88,7 +88,7 @@ export default function MessagesPanel({
                       <img
                         src={getImageSrc(user!.profileImage)}
                         alt="صورة المستخدم"
-                        className="w-10 h-10 rounded-full border-2 border-purple-400 ring-1 ring-purple-200 shadow-sm object-cover"
+                        className="w-10 h-10 rounded-full border-2 border-blue-400 ring-1 ring-blue-200 shadow-sm object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = '/default_avatar.svg';
@@ -115,11 +115,11 @@ export default function MessagesPanel({
           </div>
         </ScrollArea>
 
-        <div className="flex justify-center pt-6 border-t border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
+        <div className="flex justify-center pt-6 border-t border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100">
           <Button 
             onClick={onClose} 
             variant="outline" 
-            className="w-full bg-white border-purple-300 text-purple-700 hover:bg-purple-100 font-medium"
+            className="w-full bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 font-medium"
           >
             ✖️ إغلاق
           </Button>

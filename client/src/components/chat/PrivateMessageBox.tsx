@@ -9,6 +9,9 @@ import type { ChatUser, ChatMessage } from '@/types/chat';
 import FileUploadButton from './FileUploadButton';
 import EmojiPicker from './EmojiPicker';
 import { getUserLevelIcon } from './UserRoleBadge';
+import ProfileImage from './ProfileImage';
+import UserRoleBadge from './UserRoleBadge';
+import { getFinalUsernameColor, getUserThemeClasses, getUserThemeStyles } from '@/utils/themeUtils';
 
 
 interface PrivateMessageBoxProps {
@@ -82,98 +85,81 @@ export default function PrivateMessageBox({
 
   if (!isOpen) return null;
 
+  // محاكاة لون حد الرسالة حسب رتبة المرسل كما في الغرف
+  const getMessageBorderColor = (userType?: string) => {
+    switch (userType) {
+      case 'owner':
+        return 'border-r-yellow-400';
+      case 'admin':
+        return 'border-r-red-400';
+      case 'moderator':
+        return 'border-r-purple-400';
+      case 'member':
+        return 'border-r-blue-400';
+      default:
+        return 'border-r-green-400';
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[450px] bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-2xl">
-        <DialogHeader className="border-b border-purple-200 pb-3">
-          <DialogTitle className="text-lg font-bold text-center text-purple-800 flex items-center justify-center gap-3">
-            <div className="relative">
-              <img
-                src={getImageSrc(user.profileImage)}
-                alt="صورة المستخدم"
-                className="w-12 h-12 rounded-full border-2 border-purple-300 shadow-md"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/default_avatar.svg';
-                }}
-              />
+      <DialogContent className="max-w-md max-h-[450px] bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 shadow-2xl">
+        <DialogHeader className="border-b border-blue-200 p-2">
+          <div
+            className={`flex items-center gap-2 px-2 py-1 rounded-none ${getUserThemeClasses(user)}`}
+            style={{ ...getUserThemeStyles(user) }}
+          >
+            <ProfileImage user={user} size="small" className="" hideRoleBadgeOverlay={true} />
+            <span
+              className="text-base font-medium truncate"
+              style={{ color: getFinalUsernameColor(user) }}
+              title={user.username}
+            >
+              {user.username}
+            </span>
+            <div className="ml-auto flex items-center gap-1">
+              <UserRoleBadge user={user} showOnlyIcon={true} />
             </div>
-            <div className="text-center">
-              <div 
-                className={`inline-block px-6 py-4 rounded-xl transition-all duration-300 min-w-[160px] text-center ${
-                  user.userType === 'owner' ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-lg' : ''
-                }`}
-                style={{
-                  ...(user.userType === 'owner' && {
-                    animation: 'golden-glow 2s ease-in-out infinite',
-                    boxShadow: '0 0 30px rgba(255, 215, 0, 0.9)'
-                  })
-                }}
-              >
-                <p className="font-bold text-lg flex items-center gap-1" style={{ 
-                  color: user.userType === 'owner' ? '#000000' : (user.usernameColor || '#7C3AED') 
-                }}>
-                  {getUserLevelIcon(user, 16)} {user.username}
-                </p>
-              </div>
-              <p className="text-sm text-purple-600 font-medium flex items-center gap-1">
-                {getUserLevelIcon(user, 14)}
-                {user.userType === 'owner' && 'مالك'}
-                {user.userType === 'admin' && 'إدمن'}
-                {user.userType === 'moderator' && 'مشرف'}
-              </p>
-              <p className={`text-xs font-medium ${user.isOnline ? 'text-green-600' : 'text-gray-500'}`}>
-                {user.isOnline ? '🟢 متصل الآن' : '⚫ غير متصل'}
-              </p>
-            </div>
-          </DialogTitle>
+          </div>
         </DialogHeader>
 
         <ScrollArea className="h-[250px] w-full p-4">
           <div className="space-y-3">
-            {messages.map((message, index) => (
-              <div 
-                key={`${message.id}-${message.senderId}-${index}`}
-                className={`flex ${message.senderId === currentUser?.id ? 'justify-end' : 'justify-start'}`}
-              >
-                <div className={`max-w-[80%] p-3 rounded-xl shadow-sm ${
-                  message.senderId === currentUser?.id 
-                    ? 'bg-purple-500 text-white rounded-br-sm' 
-                    : 'bg-white text-gray-800 rounded-bl-sm border border-purple-200'
-                }`}>
-                  {message.senderId !== currentUser?.id && (
-                    <div className="flex items-center gap-2 mb-2">
-                      <img
-                        src={getImageSrc(message.sender?.profileImage)}
-                        alt={message.sender?.username || 'User'}
-                        className="w-6 h-6 rounded-full object-cover border border-gray-300"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = '/default_avatar.svg';
-                        }}
+            {messages.map((message, index) => {
+              const sender = message.sender || (message.senderId === currentUser?.id ? currentUser! : user);
+              return (
+                <div 
+                  key={`${message.id}-${message.senderId}-${index}`}
+                  className={`flex items-center gap-3 p-3 rounded-lg border-r-4 ${getMessageBorderColor(sender?.userType)} bg-blue-50 shadow-sm hover:shadow-md transition-shadow duration-200`}
+                >
+                  {sender && (
+                    <div className="flex-shrink-0">
+                      <ProfileImage 
+                        user={sender} 
+                        size="small"
+                        className="cursor-pointer"
                       />
-                      <span 
-                        className="text-xs font-medium text-gray-600"
-                        style={{ color: message.sender?.usernameColor || '#000000' }}
-                      >
-                        {message.sender?.username || 'مجهول'}
-                      </span>
                     </div>
                   )}
-                  <div className="text-sm font-medium mb-1">
-                    {message.content}
-                  </div>
-                  <div className={`text-xs ${
-                    message.senderId === currentUser?.id ? 'text-purple-100' : 'text-gray-500'
-                  }`}>
-                    {formatTime(message.timestamp)}
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    {sender && <UserRoleBadge user={sender} showOnlyIcon={true} />}
+                    <span
+                      className="font-semibold truncate"
+                      style={{ color: getFinalUsernameColor(sender) }}
+                    >
+                      {sender?.username || 'مجهول'}
+                    </span>
+                    <div className="text-gray-800 break-words truncate flex-1">
+                      {message.content}
+                    </div>
+                    <span className="text-xs text-gray-500 whitespace-nowrap ml-2">{formatTime(message.timestamp)}</span>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             
             {messages.length === 0 && (
-              <div className="text-center py-8 text-purple-400">
+              <div className="text-center py-8 text-blue-400">
                 <div className="text-4xl mb-3">✉️</div>
                 <p className="text-lg font-medium">لا توجد رسائل</p>
                 <p className="text-sm">ابدأ محادثة جديدة!</p>
@@ -183,7 +169,7 @@ export default function PrivateMessageBox({
           </div>
         </ScrollArea>
 
-        <div className="flex gap-2 p-4 border-t border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
+        <div className="flex gap-2 p-4 border-t border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100">
           <FileUploadButton 
             onFileSelect={handleFileSelect}
             disabled={false}
@@ -192,7 +178,7 @@ export default function PrivateMessageBox({
           <div className="relative">
             <Button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="bg-purple-100 hover:bg-purple-200 text-purple-600 px-3 py-2 rounded-lg"
+              className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-lg"
               title="الرموز التعبيرية"
             >
               😊
@@ -211,12 +197,12 @@ export default function PrivateMessageBox({
             onChange={(e) => setMessageText(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="✉️ ارسال رسالة..."
-            className="flex-1 bg-white border-purple-300 text-gray-800 placeholder:text-purple-400 focus:border-purple-500"
+            className="flex-1 bg-blue-50 border-blue-300 text-gray-800 placeholder:text-blue-400 focus:border-blue-500"
           />
           <Button
             onClick={handleSendMessage}
             disabled={!messageText.trim()}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
           >
             ✉️ ارسال
           </Button>
@@ -226,7 +212,7 @@ export default function PrivateMessageBox({
           <Button 
             onClick={onClose} 
             variant="outline" 
-            className="bg-white border-purple-300 text-purple-700 hover:bg-purple-100 font-medium px-6"
+            className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 font-medium px-6"
           >
             ✖️ إغلاق
           </Button>

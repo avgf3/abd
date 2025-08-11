@@ -3838,7 +3838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Check database availability
       if (!db || dbType === 'disabled') {
-        return res.json({ success: true, posts: [], count: 0, type });
+        return res.json({ success: true, posts: [], count: 0, type: req.params.type });
       }
       
       const { type } = req.params; // 'public' أو 'friends'
