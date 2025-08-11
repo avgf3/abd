@@ -1402,6 +1402,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     };
     
+    // Register client ping handler once per socket to avoid duplicate listeners
+    socket.on('client_ping', () => {
+      socket.emit('client_pong', { t: Date.now() });
+    });
+    
     // heartbeat محسن للحفاظ على الاتصال
     const startHeartbeat = () => {
       if (heartbeatInterval) clearInterval(heartbeatInterval);
@@ -1421,10 +1426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }, 30000);
       
-      // استجابة معيارية لأحداث ping المخصصة من العميل لضمان الحفاظ على الاتصال
-      socket.on('client_ping', () => {
-        socket.emit('client_pong', { t: Date.now() });
-      });
+      // Removed: socket.on('client_ping', ...) duplicate registration
     };
 
     // معالج المصادقة الموحد - يدعم الضيوف والمستخدمين المسجلين
@@ -2387,6 +2389,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // تنظيف الفترة الزمنية عند إغلاق الخادم
   process.on('SIGINT', () => {
+    clearInterval(sessionCleanupInterval);
+    clearInterval(dbCleanupInterval);
+    process.exit(0);
+  });
+
+  // Ensure cleanup on SIGTERM as well
+  process.on('SIGTERM', () => {
     clearInterval(sessionCleanupInterval);
     clearInterval(dbCleanupInterval);
     process.exit(0);

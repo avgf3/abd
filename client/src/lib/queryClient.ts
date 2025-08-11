@@ -60,13 +60,13 @@ export async function apiRequest<T = any>(
   // إضافة timeout للطلبات مع دعم signal خارجي
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
-  const combinedSignal = signal
-    ? new AbortController()
-    : null;
-  
-  if (combinedSignal && signal) {
-    const onAbort = () => combinedSignal.abort();
-    signal.addEventListener('abort', onAbort, { once: true });
+  if (signal) {
+    if (signal.aborted) {
+      controller.abort();
+    } else {
+      const onAbort = () => controller.abort();
+      signal.addEventListener('abort', onAbort, { once: true });
+    }
   }
   
   try {
@@ -75,7 +75,7 @@ export async function apiRequest<T = any>(
       headers: requestHeaders,
       body: requestBody,
       credentials: "include",
-      signal: combinedSignal ? combinedSignal.signal : controller.signal,
+      signal: controller.signal,
     });
 
     clearTimeout(timeoutId);

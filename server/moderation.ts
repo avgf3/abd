@@ -467,7 +467,13 @@ export class ModerationSystem {
   }
 
   private recordAction(action: ModerationAction) {
+    // Keep a bounded history to prevent unbounded memory growth
     this.actions.set(action.id, action);
+    if (this.actions.size > 1000) {
+      // remove oldest 100 entries
+      const keys = Array.from(this.actions.keys()).slice(0, 100);
+      for (const key of keys) this.actions.delete(key);
+    }
   }
 
   // الحصول على سجل الإجراءات
