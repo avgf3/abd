@@ -203,34 +203,47 @@ export function setupSecurity(app: Express): void {
     const originHeader = req.headers.origin as string | undefined;
     const hostHeader = req.headers.host || '';
 
-    const envOrigins = [
-      process.env.RENDER_EXTERNAL_URL,
-      process.env.FRONTEND_URL,
-      process.env.CORS_ORIGIN,
-    ].filter(Boolean) as string[];
+    // في بيئة التطوير، اسمح بجميع الأصول
+    if (process.env.NODE_ENV === 'development') {
+      if (originHeader) {
+        res.setHeader('Access-Control-Allow-Origin', originHeader);
+      } else {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+      }
+    } else {
+      // في بيئة الإنتاج
+      if (!originHeader) {
+        // السماح بالطلبات من نفس النطاق (بدون origin header)
+        // لا نضع Access-Control-Allow-Origin للسماح بنفس النطاق
+      } else {
+        // قائمة النطاقات المسموحة
+        const allowedOrigins = [
+          process.env.RENDER_EXTERNAL_URL,
+          process.env.FRONTEND_URL,
+          process.env.CORS_ORIGIN,
+          'https://abd-owfr.onrender.com' // إضافة النطاق الخاص بك صراحة
+        ].filter(Boolean) as string[];
 
-    const envHosts = envOrigins
-      .map((u) => { try { return new URL(u).host; } catch { return ''; } })
-      .filter(Boolean);
+        // التحقق من الأصل
+        const isAllowed = allowedOrigins.some(allowed => {
+          if (!allowed) return false;
+          return originHeader === allowed || originHeader.startsWith(allowed);
+        }) || originHeader.includes('.onrender.com');
 
-    const originHost = (() => {
-      try { return originHeader ? new URL(originHeader).host : ''; } catch { return ''; }
-    })();
-
-    const isDev = process.env.NODE_ENV === 'development';
-    const isSameHost = originHost && hostHeader && originHost === hostHeader;
-    const isEnvAllowed = originHost && envHosts.includes(originHost);
-
-    if (originHeader && (isDev || isSameHost || isEnvAllowed)) {
-      res.setHeader('Access-Control-Allow-Origin', originHeader);
+        if (isAllowed) {
+          res.setHeader('Access-Control-Allow-Origin', originHeader);
+        }
+      }
     }
 
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Device-Id');
+    res.setHeader('Access-Control-Expose-Headers', 'X-Request-Id');
+    res.setHeader('Access-Control-Max-Age', '86400'); // 24 ساعة للـ preflight
 
     if (req.method === 'OPTIONS') {
-      res.sendStatus(200);
+      res.sendStatus(204); // No Content بدلاً من 200
     } else {
       next();
     }
