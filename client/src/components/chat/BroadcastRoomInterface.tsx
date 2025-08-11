@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,79 +49,79 @@ export default function BroadcastRoomInterface({
 }: BroadcastRoomInterfaceProps) {
   const [broadcastInfo, setBroadcastInfo] = useState<BroadcastInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const { toast } = useToast();
 
-  // جلب معلومات غرفة البث
-  // 🚀 جلب معلومات البث مع منع التكرار
-  const fetchBroadcastInfo = useCallback(async () => {
-    if (!room?.id) {
-      console.warn('⚠️ لا يمكن جلب معلومات البث - معرف الغرفة غير صحيح');
+  // 🚀 مُحسَّن: جلب معلومات البث مع منع التكرار الكامل
+  const fetchBroadcastInfo = useCallback(async (force = false) => {
+    if (!room?.id || !room.isBroadcast) {
+      console.warn('⚠️ الغرفة ليست غرفة بث صالحة');
       return;
     }
 
-    // 🚫 منع الطلبات المتكررة
-    const fetchKey = `broadcast_${room.id}`;
-    if ((fetchBroadcastInfo as any).loading === fetchKey) {
+    const now = Date.now();
+    // منع الطلبات المتكررة (أقل من 5 ثوانٍ)
+    if (!force && (now - lastFetchTime) < 5000) {
       return;
     }
-
-    (fetchBroadcastInfo as any).loading = fetchKey;
 
     try {
-      const data = await apiRequest(`/api/rooms/${room.id}/broadcast-info`, { method: 'GET' });
+      setLastFetchTime(now);
+      const data = await apiRequest(`/api/rooms/${room.id}/broadcast-info`, { 
+        method: 'GET',
+        signal: AbortSignal.timeout(5000) // timeout بعد 5 ثوانٍ
+      });
+      
       if (data?.info) {
         setBroadcastInfo(normalizeBroadcastInfo(data.info));
-        } else {
-        console.warn('⚠️ لم يتم استلام معلومات غرفة البث صحيحة من الخادم');
+      } else {
         setBroadcastInfo({ hostId: null, speakers: [], micQueue: [] });
       }
     } catch (error: any) {
+      if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+        console.warn('⏰ انتهت مهلة جلب معلومات البث');
+        return;
+      }
+      
       console.error('❌ خطأ في جلب معلومات غرفة البث:', error);
-      // fallback آمن بدون قيم افتراضية خاطئة
       setBroadcastInfo({ hostId: null, speakers: [], micQueue: [] });
       
-      // عرض toast تحذيري فقط للأخطاء المهمة
       if (error.status !== 404) {
         toast({
           title: 'تحذير',
-          description: 'تعذر جلب آخر تحديثات غرفة البث. سيتم استخدام البيانات المحفوظة.',
+          description: 'تعذر جلب آخر تحديثات غرفة البث',
           variant: 'default'
         });
       }
-    } finally {
-      delete (fetchBroadcastInfo as any).loading;
     }
-  }, [room?.id, toast]);
+  }, [room?.id, room?.isBroadcast, lastFetchTime, toast]);
 
+  // تحميل أولي محسن
   useEffect(() => {
-    if (room.isBroadcast) {
-      fetchBroadcastInfo();
+    if (room.isBroadcast && !broadcastInfo) {
+      fetchBroadcastInfo(true);
     }
-  }, [room.id, room.isBroadcast]);
+  }, [room.id, room.isBroadcast, broadcastInfo, fetchBroadcastInfo]);
 
-  // معالجة الرسائل الجديدة من WebSocket
+  // 🚀 مُحسَّن: معالجة رسائل WebSocket مع منع التكرار
   useEffect(() => {
-    const updateBroadcastInfo = (data: any) => {
-      if (data.broadcastInfo) {
-        setBroadcastInfo(normalizeBroadcastInfo(data.broadcastInfo));
-      }
-      // 🗑️ حذف fetchBroadcastInfo المكرر - سيتم التحديث تلقائياً
-    };
-
-    const showToast = (title: string, description: string, variant?: 'default' | 'destructive') => {
-      toast({ title, description, variant });
-    };
-
     const handleBroadcastMessage = (data: any) => {
       try {
-        updateBroadcastInfo(data);
+        // تحديث معلومات البث من WebSocket مباشرة
+        if (data.broadcastInfo) {
+          setBroadcastInfo(normalizeBroadcastInfo(data.broadcastInfo));
+        }
+
+        // معالجة أنواع الرسائل المختلفة
+        const showToast = (title: string, description: string, variant?: 'default' | 'destructive') => {
+          toast({ title, description, variant });
+        };
+
         switch (data.type) {
           case 'micRequest': {
             if (currentUser && (
               currentUser.id === broadcastInfo?.hostId ||
-              currentUser.userType === 'admin' ||
-              currentUser.userType === 'moderator' ||
-              currentUser.userType === 'owner'
+              ['admin', 'moderator', 'owner'].includes(currentUser.userType)
             )) {
               showToast('طلب مايك جديد', data.content || `${data.username} يطلب المايك`);
             }
@@ -136,11 +136,11 @@ export default function BroadcastRoomInterface({
           case 'speakerRemoved':
             showToast('تم إزالة متحدث', data.content || 'تم إزالة متحدث من الغرفة');
             break;
-          default:
+          case 'error':
+            if (data.message) {
+              showToast('خطأ', data.message, 'destructive');
+            }
             break;
-        }
-        if (data.type === 'error' && data.message) {
-          showToast('خطأ', data.message, 'destructive');
         }
       } catch (error) {
         console.error('خطأ في معالجة رسالة WebSocket للبث:', error);
@@ -156,56 +156,63 @@ export default function BroadcastRoomInterface({
         chat.removeBroadcastMessageHandler(handleBroadcastMessage);
       }
     };
-  // تقليل التبعيات لمنع إعادة التسجيل المتكرر
-  }, [room.id, chat, toast, currentUser?.id, currentUser?.userType]);
+  }, [room.id, chat, toast, currentUser?.id, currentUser?.userType, broadcastInfo?.hostId]);
 
-  // التحقق من صلاحيات المستخدم
-  const speakers = Array.isArray(broadcastInfo?.speakers) ? broadcastInfo!.speakers : [];
-  const micQueue = Array.isArray(broadcastInfo?.micQueue) ? broadcastInfo!.micQueue : [];
-  const isHost = !!currentUser && broadcastInfo?.hostId != null && broadcastInfo.hostId === currentUser.id;
-  const isAdmin = !!currentUser && currentUser.userType === 'admin';
-  const isModerator = !!currentUser && currentUser.userType === 'moderator';
-  const isOwner = !!currentUser && currentUser.userType === 'owner';
-  const canManageMic = isHost || isAdmin || isModerator || isOwner;
-  const isSpeaker = !!currentUser && speakers.includes(currentUser.id);
-  const isInQueue = !!currentUser && micQueue.includes(currentUser.id);
-  const canSpeak = isHost || isSpeaker;
-  const canRequestMic = !!currentUser && !isHost && !isSpeaker && !isInQueue;
+  // 🚀 مُحسَّن: حساب صلاحيات المستخدم
+  const userPermissions = useMemo(() => {
+    if (!currentUser || !broadcastInfo) {
+      return {
+        isHost: false,
+        canManageMic: false,
+        isSpeaker: false,
+        isInQueue: false,
+        canSpeak: false,
+        canRequestMic: false
+      };
+    }
 
-  // طلب المايك
-  const handleRequestMic = async () => {
-    if (!currentUser) {
+    const speakers = Array.isArray(broadcastInfo.speakers) ? broadcastInfo.speakers : [];
+    const micQueue = Array.isArray(broadcastInfo.micQueue) ? broadcastInfo.micQueue : [];
+    
+    const isHost = broadcastInfo.hostId === currentUser.id;
+    const isAdmin = ['admin', 'moderator', 'owner'].includes(currentUser.userType);
+    const isSpeaker = speakers.includes(currentUser.id);
+    const isInQueue = micQueue.includes(currentUser.id);
+
+    return {
+      isHost,
+      canManageMic: isHost || isAdmin,
+      isSpeaker,
+      isInQueue,
+      canSpeak: isHost || isSpeaker,
+      canRequestMic: !isHost && !isSpeaker && !isInQueue
+    };
+  }, [currentUser, broadcastInfo]);
+
+  // جلب معلومات المستخدم
+  const getUserById = useCallback((userId: number) => {
+    return onlineUsers.find(user => user.id === userId);
+  }, [onlineUsers]);
+
+  // 🚀 مُحسَّن: طلب المايك مع معالجة أفضل للأخطاء
+  const handleRequestMic = useCallback(async () => {
+    if (!currentUser || !room?.id) {
       toast({
         title: 'خطأ',
-        description: 'يجب تسجيل الدخول أولاً لطلب المايك',
+        description: 'يجب تسجيل الدخول أولاً',
         variant: 'destructive'
       });
       return;
     }
 
-    if (!room?.id) {
-      toast({
-        title: 'خطأ',
-        description: 'معرف الغرفة غير صحيح',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    // التحقق من أن المستخدم لم يطلب المايك بالفعل
-    if (isInQueue) {
+    if (!userPermissions.canRequestMic) {
+      let message = 'لا يمكنك طلب المايك';
+      if (userPermissions.isInQueue) message = 'أنت في قائمة انتظار المايك بالفعل';
+      if (userPermissions.canSpeak) message = 'أنت تملك المايك بالفعل';
+      
       toast({
         title: 'تنبيه',
-        description: 'أنت بالفعل في قائمة انتظار المايك',
-        variant: 'default'
-      });
-      return;
-    }
-
-    if (isSpeaker || isHost) {
-      toast({
-        title: 'تنبيه',
-        description: 'أنت تملك المايك بالفعل',
+        description: message,
         variant: 'default'
       });
       return;
@@ -223,113 +230,158 @@ export default function BroadcastRoomInterface({
         description: 'تم إرسال طلب المايك للمسؤولين بنجاح',
       });
       
-      // تحديث معلومات الغرفة
-      await fetchBroadcastInfo();
+      // تحديث معلومات الغرفة بعد تأخير قصير
+      setTimeout(() => fetchBroadcastInfo(true), 1000);
     } catch (error: any) {
       console.error('خطأ في طلب المايك:', error);
       toast({
         title: 'خطأ في طلب المايك',
-        description: error?.message || error?.error || 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى',
+        description: error?.message || 'حدث خطأ غير متوقع',
         variant: 'destructive'
       });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUser, room?.id, userPermissions, toast, fetchBroadcastInfo]);
 
-  // الموافقة على طلب المايك
-  const handleApproveMic = async (userId: number) => {
-    if (!currentUser) {
-      toast({ title: 'خطأ', description: 'يجب تسجيل الدخول أولاً', variant: 'destructive' });
+  // 🚀 مُحسَّن: الموافقة على طلب المايك
+  const handleApproveMic = useCallback(async (userId: number) => {
+    if (!currentUser || !userPermissions.canManageMic) {
+      toast({ 
+        title: 'غير مسموح', 
+        description: 'ليس لديك صلاحية للموافقة على طلبات المايك', 
+        variant: 'destructive' 
+      });
       return;
     }
-    if (!canManageMic) {
-      toast({ title: 'غير مسموح', description: 'ليس لديك صلاحية للموافقة على طلبات المايك', variant: 'destructive' });
-      return;
-    }
+    
     const targetUser = getUserById(userId);
     if (!targetUser) {
       toast({ title: 'خطأ', description: 'المستخدم غير موجود', variant: 'destructive' });
       return;
     }
+    
     try {
       setIsLoading(true);
-      await apiRequest(`/api/rooms/${room.id}/approve-mic/${userId}`, { method: 'POST', body: { approvedBy: currentUser.id } });
-      toast({ title: 'تمت الموافقة', description: `تمت الموافقة على طلب ${targetUser.username} للمايك` });
-      await fetchBroadcastInfo();
+      await apiRequest(`/api/rooms/${room.id}/approve-mic/${userId}`, { 
+        method: 'POST', 
+        body: { approvedBy: currentUser.id } 
+      });
+      
+      toast({ 
+        title: 'تمت الموافقة', 
+        description: `تمت الموافقة على طلب ${targetUser.username} للمايك` 
+      });
+      
+      setTimeout(() => fetchBroadcastInfo(true), 1000);
     } catch (error: any) {
       console.error('خطأ في الموافقة على المايك:', error);
-      toast({ title: 'خطأ في الموافقة', description: error?.message || error?.error || 'حدث خطأ في الموافقة على الطلب', variant: 'destructive' });
+      toast({ 
+        title: 'خطأ في الموافقة', 
+        description: error?.message || 'حدث خطأ في الموافقة على الطلب', 
+        variant: 'destructive' 
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUser, userPermissions.canManageMic, room.id, getUserById, toast, fetchBroadcastInfo]);
 
-  // رفض طلب المايك
-  const handleRejectMic = async (userId: number) => {
-    if (!currentUser) {
-      toast({ title: 'خطأ', description: 'يجب تسجيل الدخول أولاً', variant: 'destructive' });
+  // 🚀 مُحسَّن: رفض طلب المايك
+  const handleRejectMic = useCallback(async (userId: number) => {
+    if (!currentUser || !userPermissions.canManageMic) {
+      toast({ 
+        title: 'غير مسموح', 
+        description: 'ليس لديك صلاحية لرفض طلبات المايك', 
+        variant: 'destructive' 
+      });
       return;
     }
-    if (!canManageMic) {
-      toast({ title: 'غير مسموح', description: 'ليس لديك صلاحية لرفض طلبات المايك', variant: 'destructive' });
-      return;
-    }
+    
     const targetUser = getUserById(userId);
     if (!targetUser) {
       toast({ title: 'خطأ', description: 'المستخدم غير موجود', variant: 'destructive' });
       return;
     }
+    
     try {
       setIsLoading(true);
-      await apiRequest(`/api/rooms/${room.id}/reject-mic/${userId}`, { method: 'POST', body: { rejectedBy: currentUser.id } });
-      toast({ title: 'تم الرفض', description: `تم رفض طلب ${targetUser.username} للمايك` });
-      await fetchBroadcastInfo();
+      await apiRequest(`/api/rooms/${room.id}/reject-mic/${userId}`, { 
+        method: 'POST', 
+        body: { rejectedBy: currentUser.id } 
+      });
+      
+      toast({ 
+        title: 'تم الرفض', 
+        description: `تم رفض طلب ${targetUser.username} للمايك` 
+      });
+      
+      setTimeout(() => fetchBroadcastInfo(true), 1000);
     } catch (error: any) {
       console.error('خطأ في رفض المايك:', error);
-      toast({ title: 'خطأ في الرفض', description: error?.message || error?.error || 'حدث خطأ في رفض الطلب', variant: 'destructive' });
+      toast({ 
+        title: 'خطأ في الرفض', 
+        description: error?.message || 'حدث خطأ في رفض الطلب', 
+        variant: 'destructive' 
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUser, userPermissions.canManageMic, room.id, getUserById, toast, fetchBroadcastInfo]);
 
-  // إزالة متحدث
-  const handleRemoveSpeaker = async (userId: number) => {
-    if (!currentUser) {
-      toast({ title: 'خطأ', description: 'يجب تسجيل الدخول أولاً', variant: 'destructive' });
+  // 🚀 مُحسَّن: إزالة متحدث
+  const handleRemoveSpeaker = useCallback(async (userId: number) => {
+    if (!currentUser || !userPermissions.canManageMic) {
+      toast({ 
+        title: 'غير مسموح', 
+        description: 'ليس لديك صلاحية لإزالة المتحدثين', 
+        variant: 'destructive' 
+      });
       return;
     }
-    if (!canManageMic) {
-      toast({ title: 'غير مسموح', description: 'ليس لديك صلاحية لإزالة المتحدثين', variant: 'destructive' });
-      return;
-    }
+    
     if (userId === broadcastInfo?.hostId) {
-      toast({ title: 'غير مسموح', description: 'لا يمكن إزالة مضيف الغرفة من المتحدثين', variant: 'destructive' });
+      toast({ 
+        title: 'غير مسموح', 
+        description: 'لا يمكن إزالة مضيف الغرفة من المتحدثين', 
+        variant: 'destructive' 
+      });
       return;
     }
+    
     const targetUser = getUserById(userId);
     if (!targetUser) {
       toast({ title: 'خطأ', description: 'المستخدم غير موجود', variant: 'destructive' });
       return;
     }
+    
     try {
       setIsLoading(true);
-      await apiRequest(`/api/rooms/${room.id}/remove-speaker/${userId}`, { method: 'POST', body: { removedBy: currentUser.id } });
-      toast({ title: 'تم الإزالة', description: `تم إزالة ${targetUser.username} من المتحدثين بنجاح` });
-      await fetchBroadcastInfo();
+      await apiRequest(`/api/rooms/${room.id}/remove-speaker/${userId}`, { 
+        method: 'POST', 
+        body: { removedBy: currentUser.id } 
+      });
+      
+      toast({ 
+        title: 'تم الإزالة', 
+        description: `تم إزالة ${targetUser.username} من المتحدثين بنجاح` 
+      });
+      
+      setTimeout(() => fetchBroadcastInfo(true), 1000);
     } catch (error: any) {
       console.error('خطأ في إزالة المتحدث:', error);
-      toast({ title: 'خطأ في الإزالة', description: error?.message || error?.error || 'حدث خطأ في إزالة المتحدث', variant: 'destructive' });
+      toast({ 
+        title: 'خطأ في الإزالة', 
+        description: error?.message || 'حدث خطأ في إزالة المتحدث', 
+        variant: 'destructive' 
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUser, userPermissions.canManageMic, room.id, broadcastInfo?.hostId, getUserById, toast, fetchBroadcastInfo]);
 
-  // إرسال رسالة - تمت إزالته لصالح MessageArea
-  // جلب معلومات المستخدم
-  const getUserById = (userId: number) => {
-    return onlineUsers.find(user => user.id === userId);
-  };
+  // تعيين القيم الافتراضية الآمنة
+  const speakers = broadcastInfo?.speakers || [];
+  const micQueue = broadcastInfo?.micQueue || [];
 
   return (
     <div className="flex flex-col h-full">
@@ -346,10 +398,12 @@ export default function BroadcastRoomInterface({
           <div className="flex items-center gap-2">
             <Crown className="w-4 h-4 text-yellow-500" />
             <span className="font-medium">المضيف:</span>
-            {broadcastInfo?.hostId != null && (
+            {broadcastInfo?.hostId ? (
               <Badge variant="secondary" className="flex items-center gap-1">
-                {getUserById(broadcastInfo.hostId!)?.username || 'غير معروف'}
+                {getUserById(broadcastInfo.hostId)?.username || 'غير معروف'}
               </Badge>
+            ) : (
+              <span className="text-muted-foreground text-sm">لا يوجد مضيف</span>
             )}
           </div>
 
@@ -363,7 +417,7 @@ export default function BroadcastRoomInterface({
                 return user ? (
                   <Badge key={userId} variant="outline" className="flex items-center gap-1">
                     {user.username}
-                    {canManageMic && (
+                    {userPermissions.canManageMic && userId !== broadcastInfo?.hostId && (
                       <Button
                         size="sm"
                         variant="ghost"
@@ -394,7 +448,7 @@ export default function BroadcastRoomInterface({
                   return user ? (
                     <Badge key={userId} variant="outline" className="flex items-center gap-1">
                       {user.username}
-                      {canManageMic && (
+                      {userPermissions.canManageMic && (
                         <div className="flex gap-1">
                           <Button
                             size="sm"
@@ -440,7 +494,7 @@ export default function BroadcastRoomInterface({
 
       {/* أزرار التحكم */}
       <div className="flex gap-2 mb-4">
-        {canRequestMic && (
+        {userPermissions.canRequestMic && (
           <Button
             onClick={handleRequestMic}
             disabled={isLoading}
@@ -451,21 +505,21 @@ export default function BroadcastRoomInterface({
           </Button>
         )}
 
-        {isInQueue && (
+        {userPermissions.isInQueue && (
           <Button variant="outline" disabled className="flex items-center gap-2">
             <Clock className="w-4 h-4 animate-pulse" />
             في قائمة الانتظار
           </Button>
         )}
 
-        {canSpeak && (
+        {userPermissions.canSpeak && (
           <Button variant="outline" disabled className="flex items-center gap-2">
             <Mic className="w-4 h-4 text-green-500" />
-            {isHost ? 'أنت المضيف' : 'يمكنك التحدث'}
+            {userPermissions.isHost ? 'أنت المضيف' : 'يمكنك التحدث'}
           </Button>
         )}
 
-        {canManageMic && micQueue.length > 0 && (
+        {userPermissions.canManageMic && micQueue.length > 0 && (
           <Badge variant="secondary" className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
             {micQueue.length} في الانتظار
@@ -476,14 +530,14 @@ export default function BroadcastRoomInterface({
       <Separator className="my-4" />
 
       {/* منطقة الرسائل الموحدة */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <MessageArea
           messages={messages}
           currentUser={currentUser}
-          onSendMessage={(content) => onSendMessage(content)}
+          onSendMessage={onSendMessage}
           onTyping={() => onTyping(true)}
           typingUsers={new Set(typingUsers)}
-          onReportMessage={(u, c, id) => onReportMessage(u, c, id)}
+          onReportMessage={onReportMessage}
           onUserClick={onUserClick}
           onlineUsers={onlineUsers}
           currentRoomName={room?.name || 'غرفة البث'}

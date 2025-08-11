@@ -373,7 +373,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       <main className="flex flex-1 overflow-hidden min-h-0">
         {/* الشريط الجانبي - يظهر فقط عندما يكون activeView ليس 'hidden' */}
         {activeView !== 'hidden' && (
-          <div className={`${activeView === 'walls' ? 'w-96' : activeView === 'friends' ? 'w-80' : 'w-64'} transition-all duration-300`}>
+          <div className={`${activeView === 'walls' ? 'w-96' : activeView === 'friends' ? 'w-80' : 'w-64'} transition-all duration-300 flex-shrink-0`}>
             <UnifiedSidebar 
               users={chat.onlineUsers}
               onUserClick={handleUserClick}
@@ -389,47 +389,55 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             />
           </div>
         )}
-        {(() => {
-          const currentRoom = rooms.find(room => room.id === chat.currentRoomId);
-          
-          // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
-          if (currentRoom?.isBroadcast) {
+        
+        {/* منطقة المحتوى الرئيسي - محسنة للاستقرار */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {(() => {
+            const currentRoom = rooms.find(room => room.id === chat.currentRoomId);
+            
+            // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
+            if (currentRoom?.isBroadcast) {
+              return (
+                <div className="h-full w-full overflow-hidden">
+                  <BroadcastRoomInterface
+                    currentUser={chat.currentUser}
+                    room={currentRoom}
+                    onlineUsers={chat.onlineUsers}
+                    onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                    onTyping={(_isTyping) => chat.sendTyping()}
+                    typingUsers={Array.from(chat.typingUsers)}
+                    onReportMessage={handleReportUser}
+                    onUserClick={handleUserClick}
+                    messages={chat.publicMessages}
+                    chat={{
+                      sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
+                      handleTyping: () => chat.sendTyping(),
+                      addBroadcastMessageHandler: chat.addBroadcastMessageHandler,
+                      removeBroadcastMessageHandler: chat.removeBroadcastMessageHandler,
+                    }}
+                  />
+                </div>
+              );
+            }
+            
+            // وإلا استخدم MessageArea العادية
             return (
-                                             <BroadcastRoomInterface
+              <div className="h-full w-full overflow-hidden">
+                <MessageArea 
+                  messages={chat.publicMessages}
                   currentUser={chat.currentUser}
-                  room={currentRoom}
-                  onlineUsers={chat.onlineUsers}
                   onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
-                  onTyping={(_isTyping) => chat.sendTyping()}
-                  typingUsers={Array.from(chat.typingUsers)}
+                  onTyping={() => chat.sendTyping()}
+                  typingUsers={chat.typingUsers}
                   onReportMessage={handleReportUser}
                   onUserClick={handleUserClick}
-                  messages={chat.publicMessages}
-                  chat={{
-                    sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
-                    handleTyping: () => chat.sendTyping(),
-                    addBroadcastMessageHandler: chat.addBroadcastMessageHandler,
-                    removeBroadcastMessageHandler: chat.removeBroadcastMessageHandler,
-                  }}
+                  onlineUsers={chat.onlineUsers}
+                  currentRoomName={currentRoom?.name || 'الدردشة العامة'}
                 />
+              </div>
             );
-          }
-          
-          // وإلا استخدم MessageArea العادية
-          return (
-            <MessageArea 
-              messages={chat.publicMessages}
-              currentUser={chat.currentUser}
-              onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
-              onTyping={() => chat.sendTyping()}
-              typingUsers={chat.typingUsers}
-              onReportMessage={handleReportUser}
-              onUserClick={handleUserClick}
-              onlineUsers={chat.onlineUsers}
-              currentRoomName={currentRoom?.name || 'الدردشة العامة'}
-            />
-          );
-        })()}
+          })()}
+        </div>
       </main>
 
       {/* Footer - مع التبويبات الأربعة المنقولة */}

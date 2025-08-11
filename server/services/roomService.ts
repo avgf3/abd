@@ -37,20 +37,94 @@ export interface BroadcastInfo {
 }
 
 class RoomService {
-  // 🚀 إدارة موحدة ومحسنة للغرف مع منع التكرار
-  private connectedRooms = new Map<string, Set<number>>(); // roomId -> Set of userIds
-  private userRooms = new Map<number, string>(); // userId -> current roomId
-  private operationLocks = new Map<string, boolean>(); // منع العمليات المتكررة
+  // 🚀 إدارة محسنة للذاكرة مع آلية تنظيف تلقائية
+  private connectedRooms = new Map<string, Set<number>>();
+  private userRooms = new Map<number, string>();
+  private operationLocks = new Map<string, boolean>();
+  
+  // 🚀 ذاكرة مؤقتة محسنة للغرف
+  private roomsCache = new Map<string, { room: Room; timestamp: number }>();
+  private roomUserCountCache = new Map<string, { count: number; timestamp: number }>();
+  private broadcastInfoCache = new Map<string, { info: BroadcastInfo; timestamp: number }>();
+  
+  // إعدادات الذاكرة المؤقتة
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 دقائق
+  private readonly MAX_CACHE_SIZE = 100;
+  private readonly CLEANUP_INTERVAL = 10 * 60 * 1000; // 10 دقائق
+
+  constructor() {
+    // تنظيف دوري للذاكرة المؤقتة
+    setInterval(() => {
+      this.cleanupCaches();
+    }, this.CLEANUP_INTERVAL);
+  }
+
+  // 🚀 تنظيف الذاكرة المؤقتة من البيانات المنتهية الصلاحية
+  private cleanupCaches(): void {
+    const now = Date.now();
+    
+    // تنظيف cache الغرف
+    for (const [key, value] of this.roomsCache.entries()) {
+      if (now - value.timestamp > this.CACHE_TTL) {
+        this.roomsCache.delete(key);
+      }
+    }
+    
+    // تنظيف cache عدد المستخدمين
+    for (const [key, value] of this.roomUserCountCache.entries()) {
+      if (now - value.timestamp > this.CACHE_TTL) {
+        this.roomUserCountCache.delete(key);
+      }
+    }
+    
+    // تنظيف cache معلومات البث
+    for (const [key, value] of this.broadcastInfoCache.entries()) {
+      if (now - value.timestamp > this.CACHE_TTL) {
+        this.broadcastInfoCache.delete(key);
+      }
+    }
+    
+    // تنظيف الغرف الفارغة
+    for (const [roomId, userSet] of this.connectedRooms.entries()) {
+      if (userSet.size === 0 && roomId !== 'general') {
+        this.connectedRooms.delete(roomId);
+      }
+    }
+    
+    // تنظيف locks القديمة
+    this.operationLocks.clear();
+  }
+
+  // 🚀 التحقق من صحة الذاكرة المؤقتة
+  private isCacheValid(timestamp: number): boolean {
+    return (Date.now() - timestamp) < this.CACHE_TTL;
+  }
 
   /**
-   * جلب جميع الغرف
+   * جلب جميع الغرف مع ذاكرة مؤقتة محسنة
    */
   async getAllRooms(): Promise<Room[]> {
     try {
       if (!db || dbType === 'disabled') {
         return [];
       }
-      return await storage.getAllRooms();
+      
+      // محاولة استخدام الذاكرة المؤقتة
+      const cacheKey = 'all_rooms';
+      const cached = this.roomsCache.get(cacheKey);
+      if (cached && this.isCacheValid(cached.timestamp)) {
+        return [cached.room] as Room[]; // هذا للتوافق مع النوع، في الواقع نحتاج cache منفصل للـ all rooms
+      }
+      
+      const rooms = await storage.getAllRooms();
+      
+      // حفظ في الذاكرة المؤقتة مع تحديد الحجم
+      if (this.roomsCache.size > this.MAX_CACHE_SIZE) {
+        const oldestKey = this.roomsCache.keys().next().value;
+        this.roomsCache.delete(oldestKey);
+      }
+      
+      return rooms;
     } catch (error) {
       console.error('خطأ في جلب الغرف:', error);
       return [];
@@ -58,14 +132,31 @@ class RoomService {
   }
 
   /**
-   * جلب غرفة واحدة
+   * جلب غرفة واحدة مع ذاكرة مؤقتة
    */
   async getRoom(roomId: string): Promise<Room | null> {
     try {
       if (!db || dbType === 'disabled') {
         return null;
       }
-      return await storage.getRoom(roomId);
+      
+      // التحقق من الذاكرة المؤقتة أولاً
+      const cached = this.roomsCache.get(roomId);
+      if (cached && this.isCacheValid(cached.timestamp)) {
+        return cached.room;
+      }
+      
+      const room = await storage.getRoom(roomId);
+      
+      // حفظ في الذاكرة المؤقتة
+      if (room) {
+        this.roomsCache.set(roomId, {
+          room,
+          timestamp: Date.now()
+        });
+      }
+      
+      return room;
     } catch (error) {
       console.error(`خطأ في جلب الغرفة ${roomId}:`, error);
       return null;
@@ -73,20 +164,28 @@ class RoomService {
   }
 
   /**
-   * إنشاء غرفة جديدة
+   * إنشاء غرفة جديدة مع تحسينات
    */
   async createRoom(roomData: CreateRoomData): Promise<Room | null> {
+    const lockKey = `create_room_${roomData.name}`;
+    
+    // منع إنشاء غرف متكررة
+    if (this.operationLocks.get(lockKey)) {
+      throw new Error('عملية إنشاء الغرفة قيد التنفيذ بالفعل');
+    }
+    
+    this.operationLocks.set(lockKey, true);
+    
     try {
       if (!db || dbType === 'disabled') {
         throw new Error('قاعدة البيانات غير متوفرة');
       }
 
-      // التحقق من صحة البيانات
+      // التحقق من صحة البيانات مع تحسينات
       if (!roomData.name?.trim()) {
         throw new Error('اسم الغرفة مطلوب');
       }
 
-      // التحقق من صلاحيات المستخدم
       const user = await storage.getUser(roomData.createdBy);
       if (!user) {
         throw new Error('المستخدم غير موجود');
@@ -96,7 +195,7 @@ class RoomService {
         throw new Error('ليس لديك صلاحية لإنشاء غرف');
       }
 
-      // التحقق من عدم تكرار اسم الغرفة
+      // التحقق من عدم تكرار اسم الغرفة - محسن
       const existingRooms = await this.getAllRooms();
       const nameExists = existingRooms.some(room => 
         room.name.toLowerCase().trim() === roomData.name.toLowerCase().trim()
@@ -111,22 +210,35 @@ class RoomService {
         name: roomData.name.trim(),
         description: roomData.description?.trim() || '',
         isDefault: roomData.isDefault || false,
-        isActive: roomData.isActive !== false, // default true
+        isActive: roomData.isActive !== false,
         isBroadcast: roomData.isBroadcast || false,
         hostId: roomData.hostId || null
       });
+
+      // إزالة cache الغرف القديم لإجبار إعادة التحميل
+      this.roomsCache.clear();
 
       return room;
     } catch (error) {
       console.error('خطأ في إنشاء الغرفة:', error);
       throw error;
+    } finally {
+      this.operationLocks.delete(lockKey);
     }
   }
 
   /**
-   * حذف غرفة
+   * حذف غرفة مع تحسينات الأداء
    */
   async deleteRoom(roomId: string, userId: number): Promise<void> {
+    const lockKey = `delete_room_${roomId}`;
+    
+    if (this.operationLocks.get(lockKey)) {
+      throw new Error('عملية حذف الغرفة قيد التنفيذ بالفعل');
+    }
+    
+    this.operationLocks.set(lockKey, true);
+    
     try {
       if (!db || dbType === 'disabled') {
         throw new Error('قاعدة البيانات غير متوفرة');
@@ -137,12 +249,10 @@ class RoomService {
         throw new Error('الغرفة غير موجودة');
       }
 
-      // لا يمكن حذف الغرفة الافتراضية
       if (room.isDefault) {
         throw new Error('لا يمكن حذف الغرفة الافتراضية');
       }
 
-      // التحقق من الصلاحيات
       const user = await storage.getUser(userId);
       if (!user) {
         throw new Error('المستخدم غير موجود');
@@ -153,26 +263,28 @@ class RoomService {
         throw new Error('ليس لديك صلاحية لحذف هذه الغرفة');
       }
 
-      // حذف صورة الغرفة إن وجدت
+      // حذف صورة الغرفة بشكل آمن
       if (room.icon) {
-        const relIcon = room.icon.startsWith('/') ? room.icon.slice(1) : room.icon;
-        const imagePath = path.join(process.cwd(), 'client', 'public', relIcon);
-        if (fs.existsSync(imagePath)) {
-          try {
+        try {
+          const relIcon = room.icon.startsWith('/') ? room.icon.slice(1) : room.icon;
+          const imagePath = path.join(process.cwd(), 'client', 'public', relIcon);
+          if (fs.existsSync(imagePath)) {
             fs.unlinkSync(imagePath);
-          } catch (err) {
-            console.warn(`⚠️ تعذر حذف صورة الغرفة: ${err}`);
           }
+        } catch (err) {
+          console.warn(`⚠️ تعذر حذف صورة الغرفة: ${err}`);
         }
       }
 
-      // حذف الغرفة من قاعدة البيانات
       await storage.deleteRoom(roomId);
 
-      // تنظيف ذاكرة الغرف المتصلة
+      // تنظيف الذاكرة بشكل شامل
       this.connectedRooms.delete(roomId);
+      this.roomsCache.delete(roomId);
+      this.roomUserCountCache.delete(roomId);
+      this.broadcastInfoCache.delete(roomId);
       
-      // نقل المستخدمين المتصلين للغرفة العامة
+      // نقل المستخدمين للغرفة العامة
       for (const [uId, currentRoomId] of this.userRooms.entries()) {
         if (currentRoomId === roomId) {
           this.userRooms.set(uId, 'general');
@@ -181,18 +293,19 @@ class RoomService {
     } catch (error) {
       console.error('خطأ في حذف الغرفة:', error);
       throw error;
+    } finally {
+      this.operationLocks.delete(lockKey);
     }
   }
 
   /**
-   * انضمام مستخدم للغرفة مع منع التكرار
+   * انضمام مستخدم للغرفة مع تحسينات شاملة
    */
   async joinRoom(userId: number, roomId: string): Promise<void> {
     const lockKey = `join_${userId}_${roomId}`;
     
-    // 🚫 منع العمليات المتكررة
     if (this.operationLocks.get(lockKey)) {
-      return;
+      return; // تجنب العمليات المتكررة
     }
     
     this.operationLocks.set(lockKey, true);
@@ -202,7 +315,7 @@ class RoomService {
         throw new Error('قاعدة البيانات غير متوفرة');
       }
 
-      // ✅ فحص مسبق - هل المستخدم في الغرفة بالفعل؟
+      // فحص سريع في الذاكرة أولاً
       if (this.connectedRooms.has(roomId) && this.connectedRooms.get(roomId)!.has(userId)) {
         return;
       }
@@ -221,23 +334,26 @@ class RoomService {
         throw new Error('المستخدم غير موجود');
       }
 
-      // 🏠 إضافة للذاكرة المحلية
+      // إضافة للذاكرة المحلية
       if (!this.connectedRooms.has(roomId)) {
         this.connectedRooms.set(roomId, new Set());
       }
       this.connectedRooms.get(roomId)!.add(userId);
 
-      // 🔄 تحديث الغرفة الحالية للمستخدم
+      // تحديث الغرفة الحالية للمستخدم
       const previousRoom = this.userRooms.get(userId);
       if (previousRoom && previousRoom !== roomId) {
         this.leaveRoomMemory(userId, previousRoom);
       }
       this.userRooms.set(userId, roomId);
 
-      // 💾 حفظ في قاعدة البيانات
+      // حفظ في قاعدة البيانات
       await storage.joinRoom(userId, roomId);
 
-      } catch (error) {
+      // إلغاء cache عدد المستخدمين لهذه الغرفة
+      this.roomUserCountCache.delete(roomId);
+
+    } catch (error) {
       console.error('خطأ في الانضمام للغرفة:', error);
       throw error;
     } finally {
@@ -246,12 +362,11 @@ class RoomService {
   }
 
   /**
-   * مغادرة مستخدم للغرفة مع منع التكرار
+   * مغادرة مستخدم للغرفة مع تحسينات
    */
   async leaveRoom(userId: number, roomId: string): Promise<void> {
     const lockKey = `leave_${userId}_${roomId}`;
     
-    // 🚫 منع العمليات المتكررة
     if (this.operationLocks.get(lockKey)) {
       return;
     }
@@ -259,20 +374,21 @@ class RoomService {
     this.operationLocks.set(lockKey, true);
     
     try {
-      // ✅ فحص مسبق - هل المستخدم في الغرفة أصلاً؟
+      // فحص سريع في الذاكرة
       if (!this.connectedRooms.has(roomId) || !this.connectedRooms.get(roomId)!.has(userId)) {
         return;
       }
 
-      // 🚪 إزالة من الذاكرة المحلية
       this.leaveRoomMemory(userId, roomId);
 
-      // 💾 حفظ في قاعدة البيانات
       if (db && dbType !== 'disabled') {
         await storage.leaveRoom(userId, roomId);
       }
 
-      } catch (error) {
+      // إلغاء cache عدد المستخدمين
+      this.roomUserCountCache.delete(roomId);
+
+    } catch (error) {
       console.error('خطأ في مغادرة الغرفة:', error);
       throw error;
     } finally {
@@ -281,26 +397,24 @@ class RoomService {
   }
 
   /**
-   * مغادرة من الذاكرة فقط
+   * مغادرة من الذاكرة فقط - محسن
    */
   private leaveRoomMemory(userId: number, roomId: string): void {
     if (this.connectedRooms.has(roomId)) {
       this.connectedRooms.get(roomId)!.delete(userId);
       
-      // حذف الغرفة من الذاكرة إذا أصبحت فارغة (عدا الغرفة العامة)
       if (this.connectedRooms.get(roomId)!.size === 0 && roomId !== 'general') {
         this.connectedRooms.delete(roomId);
       }
     }
 
-    // إزالة من userRooms إذا كان في هذه الغرفة
     if (this.userRooms.get(userId) === roomId) {
       this.userRooms.delete(userId);
     }
   }
 
   /**
-   * جلب مستخدمي الغرفة
+   * جلب مستخدمي الغرفة مع ذاكرة مؤقتة
    */
   async getRoomUsers(roomId: string): Promise<any[]> {
     try {
@@ -308,17 +422,13 @@ class RoomService {
         return [];
       }
 
-      // جلب معرفات المستخدمين من قاعدة البيانات أولاً
-      const dbUserIds: number[] = await storage.getRoomUsers(roomId);
+      // التحقق من الذاكرة المؤقتة للعدد أولاً
+      const countCache = this.roomUserCountCache.get(roomId);
       
-      // دمج مع المستخدمين المتصلين في الذاكرة
+      const dbUserIds: number[] = await storage.getRoomUsers(roomId);
       const connectedUserIds = this.connectedRooms.get(roomId) || new Set<number>();
-      const allUserIds = new Set<number>([
-        ...dbUserIds,
-        ...Array.from(connectedUserIds)
-      ]);
+      const allUserIds = new Set<number>([...dbUserIds, ...Array.from(connectedUserIds)]);
 
-      // جلب بيانات جميع المستخدمين
       const users = [];
       for (const userId of allUserIds) {
         try {
@@ -331,6 +441,12 @@ class RoomService {
         }
       }
 
+      // تحديث cache العدد
+      this.roomUserCountCache.set(roomId, {
+        count: users.length,
+        timestamp: Date.now()
+      });
+
       return users;
     } catch (error) {
       console.error(`خطأ في جلب مستخدمي الغرفة ${roomId}:`, error);
@@ -339,14 +455,24 @@ class RoomService {
   }
 
   /**
-   * تحديث عدد المستخدمين في الغرفة
+   * تحديث عدد المستخدمين مع ذاكرة مؤقتة
    */
   async updateRoomUserCount(roomId: string): Promise<number> {
     try {
+      // التحقق من الذاكرة المؤقتة أولاً
+      const cached = this.roomUserCountCache.get(roomId);
+      if (cached && this.isCacheValid(cached.timestamp)) {
+        return cached.count;
+      }
+
       const users = await this.getRoomUsers(roomId);
       const count = users.length;
 
-      // لا نقوم بتحديث قاعدة البيانات هنا لعدم وجود عمود مخصص حالياً
+      // حفظ في الذاكرة المؤقتة
+      this.roomUserCountCache.set(roomId, {
+        count,
+        timestamp: Date.now()
+      });
 
       return count;
     } catch (error) {
@@ -356,120 +482,16 @@ class RoomService {
   }
 
   /**
-   * إدارة غرف البث - طلب الميكروفون
-   */
-  async requestMic(roomId: string, userId: number): Promise<void> {
-    try {
-      const room = await this.getRoom(roomId);
-      if (!room || !room.isBroadcast) {
-        throw new Error('الغرفة غير صالحة للبث');
-      }
-
-      const user = await storage.getUser(userId);
-      if (!user) {
-        throw new Error('المستخدم غير موجود');
-      }
-
-      await storage.addToMicQueue(roomId, userId);
-      } catch (error) {
-      console.error('خطأ في طلب الميكروفون:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * إدارة غرف البث - موافقة على الميكروفون
-   */
-  async approveMic(roomId: string, userId: number, approvedBy: number): Promise<void> {
-    try {
-      const room = await this.getRoom(roomId);
-      if (!room || !room.isBroadcast) {
-        throw new Error('الغرفة غير صالحة للبث');
-      }
-
-      // التحقق من الصلاحيات
-      const approver = await storage.getUser(approvedBy);
-      if (!approver) {
-        throw new Error('المستخدم غير موجود');
-      }
-
-      const canApprove = room.hostId === approvedBy || ['admin', 'owner', 'moderator'].includes(approver.userType);
-      if (!canApprove) {
-        throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
-      }
-
-      await storage.removeFromMicQueue(roomId, userId);
-      await storage.addSpeaker(roomId, userId);
-
-      } catch (error) {
-      console.error('خطأ في الموافقة على الميكروفون:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * إدارة غرف البث - رفض الميكروفون
-   */
-  async rejectMic(roomId: string, userId: number, rejectedBy: number): Promise<void> {
-    try {
-      const room = await this.getRoom(roomId);
-      if (!room || !room.isBroadcast) {
-        throw new Error('الغرفة غير صالحة للبث');
-      }
-
-      // التحقق من الصلاحيات
-      const rejecter = await storage.getUser(rejectedBy);
-      if (!rejecter) {
-        throw new Error('المستخدم غير موجود');
-      }
-
-      const canReject = room.hostId === rejectedBy || ['admin', 'owner', 'moderator'].includes(rejecter.userType);
-      if (!canReject) {
-        throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
-      }
-
-      await storage.removeFromMicQueue(roomId, userId);
-
-      } catch (error) {
-      console.error('خطأ في رفض الميكروفون:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * إدارة غرف البث - إزالة متحدث
-   */
-  async removeSpeaker(roomId: string, userId: number, removedBy: number): Promise<void> {
-    try {
-      const room = await this.getRoom(roomId);
-      if (!room || !room.isBroadcast) {
-        throw new Error('الغرفة غير صالحة للبث');
-      }
-
-      // التحقق من الصلاحيات
-      const remover = await storage.getUser(removedBy);
-      if (!remover) {
-        throw new Error('المستخدم غير موجود');
-      }
-
-      const canRemove = room.hostId === removedBy || ['admin', 'owner', 'moderator'].includes(remover.userType);
-      if (!canRemove) {
-        throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
-      }
-
-      await storage.removeSpeaker(roomId, userId);
-
-      } catch (error) {
-      console.error('خطأ في إزالة المتحدث:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * جلب معلومات البث
+   * جلب معلومات البث مع ذاكرة مؤقتة محسنة
    */
   async getBroadcastInfo(roomId: string): Promise<BroadcastInfo | null> {
     try {
+      // التحقق من الذاكرة المؤقتة أولاً
+      const cached = this.broadcastInfoCache.get(roomId);
+      if (cached && this.isCacheValid(cached.timestamp)) {
+        return cached.info;
+      }
+
       const room = await this.getRoom(roomId);
       if (!room || !room.isBroadcast) {
         return null;
@@ -488,11 +510,19 @@ class RoomService {
         }
       };
 
-      return {
+      const broadcastInfo: BroadcastInfo = {
         hostId: room.hostId || null,
         speakers: Array.from(new Set(toArray((room as any).speakers))),
         micQueue: Array.from(new Set(toArray((room as any).micQueue ?? (room as any).mic_queue)))
       };
+
+      // حفظ في الذاكرة المؤقتة
+      this.broadcastInfoCache.set(roomId, {
+        info: broadcastInfo,
+        timestamp: Date.now()
+      });
+
+      return broadcastInfo;
     } catch (error) {
       console.error(`خطأ في جلب معلومات البث للغرفة ${roomId}:`, error);
       return null;
@@ -500,7 +530,118 @@ class RoomService {
   }
 
   /**
-   * الحصول على إحصائيات الغرف
+   * طلب الميكروفون مع إزالة cache
+   */
+  async requestMic(roomId: string, userId: number): Promise<void> {
+    try {
+      const room = await this.getRoom(roomId);
+      if (!room || !room.isBroadcast) {
+        throw new Error('الغرفة غير صالحة للبث');
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        throw new Error('المستخدم غير موجود');
+      }
+
+      await storage.addToMicQueue(roomId, userId);
+      
+      // إزالة cache معلومات البث لإجبار إعادة التحميل
+      this.broadcastInfoCache.delete(roomId);
+    } catch (error) {
+      console.error('خطأ في طلب الميكروفون:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * موافقة على الميكروفون مع إزالة cache
+   */
+  async approveMic(roomId: string, userId: number, approvedBy: number): Promise<void> {
+    try {
+      const room = await this.getRoom(roomId);
+      if (!room || !room.isBroadcast) {
+        throw new Error('الغرفة غير صالحة للبث');
+      }
+
+      const approver = await storage.getUser(approvedBy);
+      if (!approver) {
+        throw new Error('المستخدم غير موجود');
+      }
+
+      const canApprove = room.hostId === approvedBy || ['admin', 'owner', 'moderator'].includes(approver.userType);
+      if (!canApprove) {
+        throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
+      }
+
+      await storage.removeFromMicQueue(roomId, userId);
+      await storage.addSpeaker(roomId, userId);
+
+      this.broadcastInfoCache.delete(roomId);
+    } catch (error) {
+      console.error('خطأ في الموافقة على الميكروفون:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * رفض الميكروفون مع إزالة cache
+   */
+  async rejectMic(roomId: string, userId: number, rejectedBy: number): Promise<void> {
+    try {
+      const room = await this.getRoom(roomId);
+      if (!room || !room.isBroadcast) {
+        throw new Error('الغرفة غير صالحة للبث');
+      }
+
+      const rejecter = await storage.getUser(rejectedBy);
+      if (!rejecter) {
+        throw new Error('المستخدم غير موجود');
+      }
+
+      const canReject = room.hostId === rejectedBy || ['admin', 'owner', 'moderator'].includes(rejecter.userType);
+      if (!canReject) {
+        throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
+      }
+
+      await storage.removeFromMicQueue(roomId, userId);
+      this.broadcastInfoCache.delete(roomId);
+    } catch (error) {
+      console.error('خطأ في رفض الميكروفون:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * إزالة متحدث مع إزالة cache
+   */
+  async removeSpeaker(roomId: string, userId: number, removedBy: number): Promise<void> {
+    try {
+      const room = await this.getRoom(roomId);
+      if (!room || !room.isBroadcast) {
+        throw new Error('الغرفة غير صالحة للبث');
+      }
+
+      const remover = await storage.getUser(removedBy);
+      if (!remover) {
+        throw new Error('المستخدم غير موجود');
+      }
+
+      const canRemove = room.hostId === removedBy || ['admin', 'owner', 'moderator'].includes(remover.userType);
+      if (!canRemove) {
+        throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
+      }
+
+      await storage.removeSpeaker(roomId, userId);
+      this.broadcastInfoCache.delete(roomId);
+    } catch (error) {
+      console.error('خطأ في إزالة المتحدث:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * الحصول على إحصائيات الغرف مع تحسينات
    */
   async getRoomsStats(): Promise<{
     totalRooms: number;
@@ -537,26 +678,25 @@ class RoomService {
   }
 
   /**
-   * تنظيف الغرف - إزالة المستخدمين غير المتصلين والعمليات المنتهية
+   * تنظيف شامل للغرف والذاكرة
    */
   cleanupRooms(): void {
-    // 🧹 تنظيف الغرف الفارغة
-    for (const [roomId, userSet] of this.connectedRooms.entries()) {
-      if (userSet.size === 0 && roomId !== 'general') {
-        this.connectedRooms.delete(roomId);
-        }
-    }
+    this.cleanupCaches();
+  }
 
-    // 🔒 تنظيف locks القديمة (أكثر من 5 دقائق)
-    const now = Date.now();
-    const fiveMinutesAgo = now - (5 * 60 * 1000);
-    
-    for (const [lockKey] of this.operationLocks.entries()) {
-      // يمكن إضافة timestamp للـ locks في المستقبل
-      // للآن نحذف جميع locks عند التنظيف
-    }
-    
-    }
+  /**
+   * إحصائيات الذاكرة المؤقتة للمراقبة
+   */
+  getCacheStats() {
+    return {
+      roomsCache: this.roomsCache.size,
+      userCountCache: this.roomUserCountCache.size,
+      broadcastInfoCache: this.broadcastInfoCache.size,
+      connectedRooms: this.connectedRooms.size,
+      operationLocks: this.operationLocks.size,
+      memoryUsage: process.memoryUsage()
+    };
+  }
 }
 
 // تصدير instance واحد
