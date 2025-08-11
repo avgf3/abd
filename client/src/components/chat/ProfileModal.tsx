@@ -56,12 +56,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   // دالة موحدة لجلب بيانات المستخدم من السيرفر وتحديث الحالة المحلية - محسّنة
   const fetchAndUpdateUser = async (userId: number) => {
     try {
-      const res = await fetch(`/api/users/${userId}?t=${Date.now()}`); // إضافة timestamp لتجنب cache
-      if (!res.ok) {
-        throw new Error(`فشل في جلب بيانات المستخدم: ${res.status}`);
-      }
-      
-      const userData = await res.json();
+      const userData = await apiRequest(`/api/users/${userId}?t=${Date.now()}`); // إضافة timestamp لتجنب cache
       setLocalUser(userData);
       if (onUpdate) onUpdate(userData);
       

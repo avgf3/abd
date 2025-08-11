@@ -526,43 +526,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // إدارة التجاهل
-  app.post("/api/users/:userId/ignore/:targetId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const targetId = parseInt(req.params.targetId);
-      
-      await storage.addIgnoredUser(userId, targetId);
-      
-      res.json({ message: "تم تجاهل المستخدم" });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في تجاهل المستخدم" });
-    }
-  });
 
-  app.delete("/api/users/:userId/ignore/:targetId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const targetId = parseInt(req.params.targetId);
-      
-      await storage.removeIgnoredUser(userId, targetId);
-      
-      res.json({ message: "تم إلغاء تجاهل المستخدم" });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في إلغاء تجاهل المستخدم" });
-    }
-  });
-
-  app.get("/api/users/:userId/ignored", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const ignoredUsers = await storage.getIgnoredUsers(userId);
-      
-      res.json({ ignoredUsers });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في جلب قائمة المتجاهلين" });
-    }
-  });
 
   // API endpoints للإدارة
   // Removed duplicate moderation actions endpoint - kept the more detailed one below
@@ -835,44 +799,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API لتبديل وضع الإخفاء للإدمن والمالك
-  app.post("/api/users/:userId/toggle-hidden", async (req, res) => {
-    try {
-      const { userId } = req.params;
-      const { isHidden } = req.body;
-      const userIdNum = parseInt(userId);
-      
-      // التحقق من وجود المستخدم
-      const user = await storage.getUser(userIdNum);
-      if (!user) {
-        return res.status(404).json({ error: "المستخدم غير موجود" });
-      }
-      
-      // التحقق من الصلاحيات - فقط للإدمن والمالك
-      if (user.userType !== 'admin' && user.userType !== 'owner') {
-        return res.status(403).json({ error: "هذه الخاصية للإدمن والمالك فقط" });
-      }
-      
-      // تحديث حالة الإخفاء
-      await storage.setUserHiddenStatus(userIdNum, isHidden);
-      
-      // إرسال إشعار WebSocket لتحديث قائمة المتصلين
-      io.emit('userVisibilityChanged', {
-        userId: userIdNum,
-        isHidden: isHidden
-      });
-      
-      res.json({ 
-        message: isHidden ? "تم تفعيل الوضع المخفي" : "تم إلغاء الوضع المخفي",
-        isHidden: isHidden
-      });
-      
-    } catch (error) {
-      console.error('خطأ في تبديل وضع الإخفاء:', error);
-      res.status(500).json({ error: "خطأ في تبديل وضع الإخفاء" });
-    }
-  });
-
   // API لتحديث لون اسم المستخدم
   app.post("/api/users/:userId/username-color", async (req, res) => {
     try {
@@ -1015,16 +941,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isOriginAllowed = allowedOrigins.includes('*') || (origin && allowedOrigins.includes(origin));
       callback(null, isOriginAllowed);
     }
-  });
-  
-  // Health Check endpoint للمراقبة
-  app.get('/api/health', (req, res) => {
-    res.status(200).json({ 
-      status: 'ok', 
-              timestamp: new Date(),
-      env: process.env.NODE_ENV,
-      socketIO: 'enabled'
-    });
   });
 
   // تطبيق فحص الأمان على جميع الطلبات
@@ -1209,25 +1125,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const users = await storage.getOnlineUsers();
       res.json({ users });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
-
-  app.put("/api/users/:id", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.id);
-      const updates = req.body;
-      
-      const user = await storage.updateUser(userId, updates);
-      if (!user) {
-        return res.status(404).json({ error: "المستخدم غير موجود" });
-      }
-
-      // Broadcast user update to all connected clients
-      io.emit('userUpdated', { user: user });
-
-      res.json({ user });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
     }
@@ -3092,11 +2989,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // New Modular Routes - نظام المسارات المعاد تنظيمه
   app.use('/api/v2', apiRoutes);
-  
-  // Performance ping endpoint
-  app.get('/api/ping', (req, res) => {
-    res.json({ timestamp: Date.now(), status: 'ok' });
-  });
 
 
 

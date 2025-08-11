@@ -9,6 +9,7 @@ import { findMentions, playMentionSound, renderMessageWithMentions, insertMentio
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import { Send, Image as ImageIcon, Smile } from "lucide-react";
 import UserRoleBadge from './UserRoleBadge';
+import { apiRequest } from '@/lib/queryClient';
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -336,16 +337,10 @@ export default function MessageArea({
                       if (!canDelete) return null;
                       const handleDelete = async () => {
                         try {
-                          const res = await fetch(`/api/messages/${message.id}` , {
+                          await apiRequest(`/api/messages/${message.id}`, {
                             method: 'DELETE',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ userId: currentUser.id, roomId: message.roomId || 'general' }),
-                            credentials: 'include'
+                            body: { userId: currentUser.id, roomId: message.roomId || 'general' }
                           });
-                          if (!res.ok) {
-                            const errText = await res.text();
-                            console.error('فشل حذف الرسالة:', errText);
-                          }
                         } catch (e) {
                           console.error('خطأ في حذف الرسالة', e);
                         }

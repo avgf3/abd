@@ -193,17 +193,10 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
         formData.append('image', roomData.image);
       }
 
-      const response = await fetch('/api/rooms', {
+      const data = await apiRequest('/api/rooms', {
         method: 'POST',
         body: formData
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'فشل في إنشاء الغرفة');
-      }
-
-      const data = await response.json();
       const newRoom: ChatRoom = mapApiRoom(data.room);
 
       // 🔄 تحديث الحالة المحلية مع إزالة التكرار
