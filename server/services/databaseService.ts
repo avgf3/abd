@@ -356,9 +356,15 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
-        return await (this.db as any).select().from(pgSchema.users).where(eq(pgSchema.users.isOnline, true));
+        return await (this.db as any)
+          .select()
+          .from(pgSchema.users)
+          .where(and(eq(pgSchema.users.isOnline, true), eq(pgSchema.users.isHidden, false)));
       } else {
-        return await (this.db as any).select().from(sqliteSchema.users).where(eq(sqliteSchema.users.isOnline, true));
+        return await (this.db as any)
+          .select()
+          .from(sqliteSchema.users)
+          .where(and(eq(sqliteSchema.users.isOnline, true), eq(sqliteSchema.users.isHidden, false)));
       }
     } catch (error) {
       console.error('Error getting online users:', error);

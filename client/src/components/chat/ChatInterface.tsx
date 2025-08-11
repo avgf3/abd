@@ -21,7 +21,6 @@ import BlockNotification from '../moderation/BlockNotification';
 import PromoteUserPanel from '../moderation/PromoteUserPanel';
 import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
-import StealthModeToggle from './StealthModeToggle';
 import WelcomeNotification from './WelcomeNotification';
 import ThemeSelector from './ThemeSelector';
 // import RoomComponent from './RoomComponent';
@@ -317,7 +316,24 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 إدارة
               </Button>
               
-              <StealthModeToggle currentUser={chat.currentUser} />
+              <Button 
+                className="glass-effect px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 border"
+                onClick={async () => {
+                  if (!chat.currentUser) return;
+                  try {
+                    const endpoint = chat.currentUser.isHidden ? `/api/users/${chat.currentUser.id}/show-online` : `/api/users/${chat.currentUser.id}/hide-online`;
+                    const res = await apiRequest(endpoint, { method: 'POST' });
+                    const nowHidden = (res as any)?.isHidden ?? !chat.currentUser.isHidden;
+                    // تحديث محلي بسيط لحالة المستخدم الحالي
+                    (chat.currentUser as any).isHidden = nowHidden;
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+                title="إخفائي من قائمة المتصلين للجميع"
+              >
+                <span>{chat.currentUser?.isHidden ? '👁️ إظهار' : '🕵️ إخفاء'}</span>
+              </Button>
               
               <Button 
                 className="glass-effect px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 border border-red-400 relative"
