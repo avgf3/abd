@@ -266,6 +266,33 @@ export const logActivity = (actionType: string) => {
 };
 
 // دوال مساعدة للاستخدام السريع
+export const requireOwnerAboudOnly = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await requireAuth(req, res, () => {});
+
+    if (!req.user) {
+      throw createError.unauthorized();
+    }
+
+    const isOwnerAboud = req.user.userType === 'owner' && req.user.username === 'عبود';
+    if (!isOwnerAboud) {
+      log.security('محاولة وصول بصلاحيات غير كافية (مطلوب المالك عبود فقط)', {
+        userId: req.user.id,
+        username: req.user.username,
+        requiredLevel: 'ownerAboudOnly',
+        path: req.path,
+        ip: req.ip
+      });
+
+      throw createError.forbidden('هذا الإجراء متاح فقط للمالك عبود');
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const protect = {
   public: requirePermission(ProtectionLevel.PUBLIC),
   auth: requirePermission(ProtectionLevel.AUTHENTICATED),
@@ -276,5 +303,6 @@ export const protect = {
   ownership: requireOwnership,
   online: requireOnlineStatus,
   recentAuth: requireRecentAuth,
-  log: logActivity
+  log: logActivity,
+  ownerAboudOnly: requireOwnerAboudOnly
 };
