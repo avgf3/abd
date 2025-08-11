@@ -342,6 +342,29 @@ export const useChat = () => {
             }
             break;
           }
+
+          // ✅ إشعارات اجتماعية (طلبات/قبول صداقة) تُبث عبر قناة message
+          case 'friendRequestReceived': {
+            if (envelope.targetUserId && envelope.targetUserId === state.currentUser?.id) {
+              const detail = { senderName: envelope.senderName, senderId: envelope.senderId };
+              window.dispatchEvent(new CustomEvent('friendRequestReceived', { detail }));
+            }
+            break;
+          }
+          case 'friendRequestAccepted': {
+            if (envelope.targetUserId && envelope.targetUserId === state.currentUser?.id) {
+              const detail = { friendName: envelope.senderName };
+              window.dispatchEvent(new CustomEvent('friendRequestAccepted', { detail }));
+            }
+            break;
+          }
+          case 'friendAdded': {
+            if (envelope.targetUserId && envelope.targetUserId === state.currentUser?.id) {
+              const detail = { friendId: envelope.friendId, friendName: envelope.friendName };
+              window.dispatchEvent(new CustomEvent('friendAdded', { detail }));
+            }
+            break;
+          }
           
           case 'error':
           case 'warning': {
@@ -397,6 +420,20 @@ export const useChat = () => {
       const type = (data?.envelope?.type) || data?.type;
       if (type === 'privateMessage') {
         handlePrivateMessage(data);
+      }
+    });
+
+    // ✅ إشعار Socket.io مباشر للإشعارات الجديدة (من مسار POST /api/notifications)
+    socketInstance.on('newNotification', (payload: any) => {
+      try {
+        const notification = payload?.notification || payload;
+        if (notification?.userId && notification.userId === state.currentUser?.id) {
+          window.dispatchEvent(new CustomEvent('notificationReceived', { detail: notification }));
+          // تشغيل صوت خفيف للإشعارات العامة
+          playNotificationSound();
+        }
+      } catch (e) {
+        console.warn('Failed to handle newNotification:', e);
       }
     });
 
