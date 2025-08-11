@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePerformanceOptimization } from '@/lib/chatOptimization';
+import { apiRequest } from '@/lib/queryClient';
 
 interface PerformanceMetrics {
   fps: number;
@@ -86,7 +87,7 @@ export default function PerformanceMonitor({ isVisible }: PerformanceMonitorProp
     const measureLatency = async () => {
       const start = performance.now();
       try {
-        await fetch('/api/ping');
+        await apiRequest('/api/ping');
         const latency = performance.now() - start;
         
         setMetrics(prev => ({

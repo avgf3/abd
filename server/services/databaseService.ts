@@ -991,7 +991,7 @@ export class DatabaseService {
           deviceId: data.deviceId!,
           userId: data.userId!,
           reason: data.reason || 'unspecified',
-          blockedAt: data.blockedAt?.toISOString() || new Date().toISOString(),
+          blockedAt: data.blockedAt instanceof Date ? data.blockedAt.toISOString() : (data.blockedAt || new Date().toISOString()),
           blockedBy: data.blockedBy!,
         } as any;
         await (this.db as any).insert(sqliteSchema.blockedDevices).values(payload);
