@@ -44,7 +44,13 @@ export default function MessageArea({
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const lastTypingTime = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLenRef = useRef<number>(0);
 
+  // State for improved scroll behavior
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+  
   // 🔥 SIMPLIFIED message filtering - حذف الفلترة المعقدة التي تخفي رسائل صحيحة
   const validMessages = useMemo(() => {
     // ✅ فلترة بسيطة فقط لإزالة الرسائل الفارغة تماماً
@@ -57,18 +63,60 @@ export default function MessageArea({
   }, [messages]);
 
   // Scroll to bottom function - optimized
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ 
-      behavior: 'smooth',
-      block: 'end'
-    });
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    // Prefer anchor to ensure we truly reach the bottom even if content height changes
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior,
+        block: 'end'
+      });
+    } else if (messagesContainerRef.current) {
+      const el = messagesContainerRef.current;
+      el.scrollTo({ top: el.scrollHeight, behavior });
+    }
   }, []);
 
-  // Auto scroll to bottom when new messages arrive
+  // Track scroll position to know if user is near the bottom
+  const handleScroll = useCallback(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const threshold = 80; // px
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+    setIsAtBottom(atBottom);
+    if (atBottom) setUnreadCount(0);
+  }, []);
+
+  // Auto scroll to bottom only when appropriate
   useEffect(() => {
-    const timeout = setTimeout(scrollToBottom, 100);
-    return () => clearTimeout(timeout);
-  }, [validMessages.length, scrollToBottom]);
+    const prevLen = prevMessagesLenRef.current;
+    const currLen = validMessages.length;
+    if (currLen <= prevLen) return;
+
+    const lastMessage = validMessages[currLen - 1];
+    const sentByMe = !!(currentUser && lastMessage?.sender?.id === currentUser.id);
+
+    // If first load, or user is at bottom, or the last message was sent by me, autoscroll
+    if (prevLen === 0 || isAtBottom || sentByMe) {
+      scrollToBottom(prevLen === 0 ? 'auto' : 'smooth');
+      setUnreadCount(0);
+    } else {
+      setUnreadCount(count => count + (currLen - prevLen));
+    }
+
+    prevMessagesLenRef.current = currLen;
+  }, [validMessages.length, isAtBottom, currentUser, scrollToBottom]);
+
+  // Ensure initial prev length is set on mount
+  useEffect(() => {
+    prevMessagesLenRef.current = validMessages.length;
+    // If there are messages on first mount, jump to bottom without animation
+    if (validMessages.length > 0) {
+      // Delay to allow layout to stabilize
+      const t = setTimeout(() => scrollToBottom('auto'), 0);
+      return () => clearTimeout(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // تشغيل صوت التنبيه عند استقبال منشن - محسن
   useEffect(() => {
@@ -254,7 +302,11 @@ export default function MessageArea({
       </div>
       
       {/* Messages Container */}
-      <div className="flex-1 p-6 overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white">
+      <div
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="relative flex-1 p-6 overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white"
+      >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
             <div className="text-6xl mb-4">💬</div>
@@ -360,6 +412,18 @@ export default function MessageArea({
               )}
             </div>
           ))
+        )}
+        
+        {/* Jump to bottom / New messages indicator */}
+        {!isAtBottom && unreadCount > 0 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+            <button
+              onClick={() => { scrollToBottom('smooth'); setUnreadCount(0); }}
+              className="px-3 py-1 rounded-full text-xs bg-primary text-primary-foreground shadow"
+            >
+              عرض {unreadCount} رسالة جديدة
+            </button>
+          </div>
         )}
         
         {/* Scroll anchor */}
