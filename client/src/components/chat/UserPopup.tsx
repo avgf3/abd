@@ -42,23 +42,24 @@ export default function UserPopup({
         method: 'POST',
         body: {
           moderatorId: currentUser.id,
-          userId: user.id,
+          targetUserId: user.id,  // تصحيح: من userId إلى targetUserId
           reason: 'كتم من المشرف',
-          duration: 0
+          duration: 30  // تصحيح: من 0 إلى 30 دقيقة كمدة افتراضية
         }
       });
 
       toast({
         title: '🔇 تم الكتم',
-        description: `${user.username} مكتوم من الدردشة العامة`,
+        description: `${user.username} مكتوم من الدردشة العامة لمدة 30 دقيقة`,
       });
       
       onClose?.();
     } catch (error) {
       console.error('Mute error:', error);
+      
       toast({
-        title: 'خطأ',
-        description: 'فشل في كتم المستخدم',
+        title: 'فشل الكتم',
+        description: 'حدث خطأ أثناء كتم المستخدم',
         variant: 'destructive'
       });
     }
@@ -72,7 +73,7 @@ export default function UserPopup({
         method: 'POST',
         body: {
           moderatorId: currentUser.id,
-          userId: user.id,
+          targetUserId: user.id,  // تصحيح: من userId إلى targetUserId
           reason: 'طرد من المشرف',
           duration: 15
         }
@@ -85,10 +86,11 @@ export default function UserPopup({
       
       onClose?.();
     } catch (error) {
-      console.error('Ban error:', error);
+      console.error('Kick error:', error);
+      
       toast({
-        title: 'خطأ',
-        description: 'فشل في طرد المستخدم',
+        title: 'فشل الطرد',
+        description: 'حدث خطأ أثناء طرد المستخدم',
         variant: 'destructive'
       });
     }
@@ -98,14 +100,20 @@ export default function UserPopup({
     if (!currentUser || currentUser.userType !== 'owner') return;
     
     try {
+      // الحصول على device ID من localStorage أو إنشاء واحد جديد
+      const deviceId = localStorage.getItem('deviceId') || (() => {
+        const id = 'web-' + Math.random().toString(36).slice(2);
+        localStorage.setItem('deviceId', id);
+        return id;
+      })();
+
       await apiRequest('/api/moderation/block', {
         method: 'POST',
+        headers: { 'x-device-id': deviceId },  // إضافة header للجهاز
         body: {
           moderatorId: currentUser.id,
-          userId: user.id,
-          reason: 'حظر من المشرف',
-          ipAddress: 'unknown',
-          deviceId: 'unknown'
+          targetUserId: user.id,  // تصحيح: من userId إلى targetUserId
+          reason: 'حظر من المشرف'
         }
       });
 
@@ -117,9 +125,10 @@ export default function UserPopup({
       onClose?.();
     } catch (error) {
       console.error('Block error:', error);
+      
       toast({
-        title: 'خطأ',
-        description: 'فشل في حجب المستخدم',
+        title: 'فشل الحجب',
+        description: 'حدث خطأ أثناء حجب المستخدم',
         variant: 'destructive'
       });
     }

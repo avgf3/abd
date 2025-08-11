@@ -332,15 +332,33 @@ export class ModerationSystem {
     if (!moderator || !target) return false;
     if (moderator.userType !== 'owner') return false;
 
+    // تحديث حالة المستخدم
     await storage.updateUser(targetUserId, {
       isBlocked: false,
       ipAddress: null,
       deviceId: null
     });
 
-    // إزالة IP والجهاز من القائمة المحجوبة
+    // إزالة IP والجهاز من القائمة المحجوبة في الذاكرة
     if (target.ipAddress) this.blockedIPs.delete(target.ipAddress);
     if (target.deviceId) this.blockedDevices.delete(target.deviceId);
+
+    // حذف بيانات الحجب من قاعدة البيانات
+    try {
+      await storage.deleteBlockedDevice(targetUserId);
+    } catch (error) {
+      console.error('خطأ في حذف بيانات الحجب من قاعدة البيانات:', error);
+    }
+
+    // تسجيل إلغاء الحجب
+    this.recordAction({
+      id: `unblock_${Date.now()}`,
+      type: 'unblock' as any,
+      targetUserId,
+      moderatorId,
+      reason: 'إلغاء الحجب',
+      timestamp: Date.now()
+    });
 
     return true;
   }
@@ -372,10 +390,13 @@ export class ModerationSystem {
       };
     }
 
-    // Helpers
+    // Helpers لمعالجة التواريخ بشكل صحيح
     const toDate = (d?: Date | string | null): Date | null => {
       if (!d) return null;
-      return d instanceof Date ? d : new Date(d);
+      if (d instanceof Date) return d;
+      // معالجة التواريخ القادمة من قاعدة البيانات
+      const parsed = new Date(d);
+      return isNaN(parsed.getTime()) ? null : parsed;
     };
 
     // التحقق من الطرد
@@ -409,12 +430,24 @@ export class ModerationSystem {
     }
 
     // تنظيف الحالات المنتهية الصلاحية
+    let needsUpdate = false;
+    const updates: any = {};
+    
     if (user.isBanned && banExpiry && banExpiry.getTime() <= now.getTime()) {
-      await storage.updateUser(userId, { isBanned: false, banExpiry: null });
+      updates.isBanned = false;
+      updates.banExpiry = null;
+      needsUpdate = true;
     }
 
     if (user.isMuted && muteExpiry && muteExpiry.getTime() <= now.getTime()) {
-      await storage.updateUser(userId, { isMuted: false, muteExpiry: null });
+      updates.isMuted = false;
+      updates.muteExpiry = null;
+      needsUpdate = true;
+    }
+    
+    // تحديث قاعدة البيانات إذا انتهت المدة
+    if (needsUpdate) {
+      await storage.updateUser(userId, updates);
     }
 
     return { 

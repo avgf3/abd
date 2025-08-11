@@ -689,6 +689,15 @@ export const storage: LegacyStorage = {
     }
   },
   
+  async deleteBlockedDevice(userId: number) {
+    try {
+      return await databaseService.deleteBlockedDevice(userId);
+    } catch (error) {
+      console.error('Error in storage.deleteBlockedDevice:', error);
+      return null;
+    }
+  },
+  
   // ========= Room helpers exposed on storage =========
   async getRooms() {
     return await databaseService.getRooms();
