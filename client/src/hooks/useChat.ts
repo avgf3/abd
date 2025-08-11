@@ -265,238 +265,225 @@ export const useChat = () => {
       pingIntervalRef.current = pingId;
       socketInstance.on('client_pong', () => {});
 
-      // لم نعد نستخدم ping/pong المخصصين؛ نعتمد فقط على client_ping/client_pong للحفاظ على الاتصال
-
-      // ✅ معالج واحد للرسائل - حذف التضارب
+      // ✅ معالج واحد موحد للرسائل - إزالة التضارب والتكرار
       socketInstance.on('message', (data: any) => {
-      try {
-        const envelope = data.envelope || data;
-        
-        switch (envelope.type) {
-          case 'newMessage': {
-            const { message } = envelope;
-            if (message?.sender && message.content) {
-              const roomId = message.roomId || 'general';
-              
-              // تحويل الرسالة لتنسيق ChatMessage
-              const chatMessage: ChatMessage = {
-                id: message.id,
-                content: message.content,
-                senderId: message.sender.id,
-                timestamp: message.timestamp || new Date().toISOString(),
-                messageType: message.messageType || 'text',
-                sender: message.sender,
-                roomId,
-                isPrivate: Boolean(message.isPrivate)
-              };
-              
-              // إضافة الرسالة للغرفة المناسبة
-              dispatch({ 
-                type: 'ADD_ROOM_MESSAGE', 
-                payload: { roomId, message: chatMessage }
-              });
-              
-              // تشغيل الإشعار للرسائل الجديدة في الغرفة الحالية
-              if (chatMessage.senderId !== state.currentUser?.id && roomId === state.currentRoomId) {
-                playNotificationSound();
-                dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: message.sender });
+        try {
+          const envelope = data.envelope || data;
+          
+          switch (envelope.type) {
+            case 'newMessage': {
+              const { message } = envelope;
+              if (message?.sender && message.content) {
+                const roomId = message.roomId || 'general';
+                
+                // تحويل الرسالة لتنسيق ChatMessage مع التحقق من صحة البيانات
+                const chatMessage: ChatMessage = {
+                  id: message.id || Date.now(),
+                  content: message.content.trim(),
+                  senderId: message.sender.id,
+                  timestamp: message.timestamp || new Date().toISOString(),
+                  messageType: message.messageType || 'text',
+                  sender: message.sender,
+                  roomId,
+                  isPrivate: Boolean(message.isPrivate)
+                };
+                
+                // إضافة الرسالة للغرفة المناسبة
+                dispatch({ 
+                  type: 'ADD_ROOM_MESSAGE', 
+                  payload: { roomId, message: chatMessage }
+                });
+                
+                // تشغيل الإشعار للرسائل الجديدة في الغرفة الحالية
+                if (chatMessage.senderId !== state.currentUser?.id && roomId === state.currentRoomId) {
+                  playNotificationSound();
+                  dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: message.sender });
+                }
               }
+              break;
             }
-            break;
-          }
-          case 'messageDeleted': {
-            const { messageId, roomId } = envelope as any;
-            if (messageId && roomId) {
-              const existing = state.roomMessages[roomId] || [];
-              const next = existing.filter((m) => m.id !== messageId);
-              dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId, messages: next } });
+            
+            case 'privateMessage': {
+              const messageData = envelope.message || envelope;
+              if (messageData?.sender) {
+                const chatMessage: ChatMessage = {
+                  id: messageData.id || Date.now(),
+                  content: messageData.content?.trim() || '',
+                  senderId: messageData.sender.id,
+                  timestamp: messageData.timestamp || new Date().toISOString(),
+                  messageType: messageData.messageType || 'text',
+                  sender: messageData.sender,
+                  isPrivate: true
+                };
+                
+                const conversationId = messageData.senderId === state.currentUser?.id 
+                  ? messageData.receiverId 
+                  : messageData.senderId;
+                  
+                dispatch({ 
+                  type: 'SET_PRIVATE_MESSAGE', 
+                  payload: { userId: conversationId, message: chatMessage }
+                });
+                
+                if (chatMessage.senderId !== state.currentUser?.id) {
+                  playNotificationSound();
+                }
+              }
+              break;
             }
-            break;
-          }
-          
-          case 'roomMessages': {
-            const { messages, roomId: payloadRoomId } = envelope as any;
-            if (Array.isArray(messages)) {
-              const roomId = payloadRoomId || state.currentRoomId;
-              const formattedMessages = mapDbMessagesToChatMessages(messages, roomId);
-              dispatch({ 
-                type: 'SET_ROOM_MESSAGES', 
-                payload: { roomId, messages: formattedMessages }
-              });
+            
+            case 'messageDeleted': {
+              const { messageId, roomId } = envelope;
+              if (messageId && roomId) {
+                const existing = state.roomMessages[roomId] || [];
+                const filtered = existing.filter((m) => m.id !== messageId);
+                dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId, messages: filtered } });
+              }
+              break;
             }
-            break;
-          }
-          
-          case 'onlineUsers': {
-            if (Array.isArray(envelope.users)) {
-              dispatch({ type: 'SET_ONLINE_USERS', payload: envelope.users });
+            
+            case 'roomMessages': {
+              const { messages, roomId: payloadRoomId } = envelope;
+              if (Array.isArray(messages)) {
+                const roomId = payloadRoomId || state.currentRoomId;
+                const formattedMessages = mapDbMessagesToChatMessages(messages, roomId);
+                dispatch({ 
+                  type: 'SET_ROOM_MESSAGES', 
+                  payload: { roomId, messages: formattedMessages }
+                });
+              }
+              break;
             }
-            break;
-          }
-          
-          case 'userJoined': {
-            if (envelope.user) {
-              dispatch({ 
-                type: 'SET_ONLINE_USERS', 
-                payload: [...state.onlineUsers.filter(u => u.id !== envelope.user.id), envelope.user] 
-              });
+            
+            case 'onlineUsers': {
+              if (Array.isArray(envelope.users)) {
+                dispatch({ type: 'SET_ONLINE_USERS', payload: envelope.users });
+              }
+              break;
             }
-            break;
-          }
-          
-          case 'userLeft': {
-            if (envelope.userId) {
-              dispatch({ 
-                type: 'SET_ONLINE_USERS', 
-                payload: state.onlineUsers.filter(u => u.id !== envelope.userId) 
-              });
+            
+            case 'userJoined': {
+              if (envelope.user) {
+                dispatch({ 
+                  type: 'SET_ONLINE_USERS', 
+                  payload: [...state.onlineUsers.filter(u => u.id !== envelope.user.id), envelope.user] 
+                });
+              }
+              break;
             }
-            break;
-          }
-          
-          case 'kicked': {
-            // إظهار عدّاد الطرد للمستخدم المستهدف فقط
-            const targetId = envelope.targetUserId;
-            if (targetId && targetId === state.currentUser?.id) {
-              dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
-              // إضافة رسالة واضحة للمستخدم
-              const duration = (envelope as any).duration || 15;
-              const reason = (envelope as any).reason || 'بدون سبب';
-              const moderator = (envelope as any).moderator || 'مشرف';
-              alert(`تم طردك من الدردشة بواسطة ${moderator}\nالسبب: ${reason}\nالمدة: ${duration} دقيقة`);
+            
+            case 'userLeft': {
+              if (envelope.userId) {
+                dispatch({ 
+                  type: 'SET_ONLINE_USERS', 
+                  payload: state.onlineUsers.filter(u => u.id !== envelope.userId) 
+                });
+              }
+              break;
             }
-            break;
-          }
-          
-          case 'blocked': {
-            // معالجة الحجب النهائي
-            if (state.currentUser?.id) {
-              const reason = (envelope as any).reason || 'بدون سبب';
-              const moderator = (envelope as any).moderator || 'مشرف';
-              alert(`تم حجبك نهائياً من الدردشة بواسطة ${moderator}\nالسبب: ${reason}`);
-              // فصل المستخدم وإعادة توجيهه
-              setTimeout(() => {
-                window.location.href = '/';
-              }, 3000);
+            
+            case 'kicked': {
+              const targetId = envelope.targetUserId;
+              if (targetId && targetId === state.currentUser?.id) {
+                dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
+                const duration = envelope.duration || 15;
+                const reason = envelope.reason || 'بدون سبب';
+                const moderator = envelope.moderator || 'مشرف';
+                alert(`تم طردك من الدردشة بواسطة ${moderator}\nالسبب: ${reason}\nالمدة: ${duration} دقيقة`);
+              }
+              break;
             }
-            break;
-          }
-          
-          case 'moderationAction': {
-            // في حالة وصول بث عام بإجراء "banned"، فعّل العدّاد إذا كنت أنت الهدف
-            const action = (envelope as any).action;
-            const targetId = (envelope as any).targetUserId;
-            if (action === 'banned' && targetId && targetId === state.currentUser?.id) {
-              dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
+            
+            case 'blocked': {
+              if (state.currentUser?.id) {
+                const reason = envelope.reason || 'بدون سبب';
+                const moderator = envelope.moderator || 'مشرف';
+                alert(`تم حجبك نهائياً من الدردشة بواسطة ${moderator}\nالسبب: ${reason}`);
+                setTimeout(() => {
+                  window.location.href = '/';
+                }, 3000);
+              }
+              break;
             }
-            break;
+            
+            case 'moderationAction': {
+              const action = envelope.action;
+              const targetId = envelope.targetUserId;
+              if (action === 'banned' && targetId && targetId === state.currentUser?.id) {
+                dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
+              }
+              break;
+            }
+            
+            case 'error':
+            case 'warning': {
+              console.warn('⚠️ خطأ من السيرفر:', envelope.message);
+              break;
+            }
+            
+            default: {
+              // تمرير الرسائل غير المعروفة للمعالجات الأخرى
+              if (envelope.type?.includes('mic') || envelope.type?.includes('broadcast')) {
+                notifyBroadcastHandlers(envelope);
+              }
+              break;
+            }
           }
-          
-          case 'error':
-          case 'warning': {
-            console.warn('⚠️ خطأ من السيرفر:', envelope.message);
-            break;
-          }
-          
-          default: {
-            break;
-          }
+        } catch (error) {
+          console.error('❌ خطأ في معالجة رسالة Socket:', error);
         }
-      } catch (error) {
-        console.error('❌ خطأ في معالجة رسالة Socket:', error);
-      }
-    });
+      });
 
-    // Broadcast room realtime updates: host changes and mic events
-    const refreshBroadcastInfoAndNotify = async (type: string, payload: any) => {
-      const roomId = payload?.roomId || state.currentRoomId;
-      try {
-        const data = await apiRequest(`/api/rooms/${roomId}/broadcast-info`, { method: 'GET' });
-        const info = data?.info || null;
-        notifyBroadcastHandlers({ type, ...payload, broadcastInfo: info });
-      } catch {
-        notifyBroadcastHandlers({ type, ...payload });
-      }
-    };
-
-    const mapType = (t: string) => (t === 'micRequested' ? 'micRequest' : t);
-
-    socketInstance.on('roomUpdate', (payload: any) => {
-      if (!payload) return;
-      if (payload.roomId && payload.roomId !== state.currentRoomId) return;
-      const type = mapType(payload.type || 'roomUpdate');
-      refreshBroadcastInfoAndNotify(type, payload);
-    });
-
-    socketInstance.on('micRequested', (payload: any) => {
-      refreshBroadcastInfoAndNotify('micRequest', payload || {});
-    });
-    socketInstance.on('micApproved', (payload: any) => {
-      refreshBroadcastInfoAndNotify('micApproved', payload || {});
-    });
-    socketInstance.on('micRejected', (payload: any) => {
-      refreshBroadcastInfoAndNotify('micRejected', payload || {});
-    });
-    socketInstance.on('speakerRemoved', (payload: any) => {
-      refreshBroadcastInfoAndNotify('speakerRemoved', payload || {});
-    });
-
-    // معالج الرسائل الخاصة
-    // Unified private message handling
-    const handlePrivateMessage = (incoming: any) => {
-      try {
-        const envelope = incoming?.envelope ? incoming.envelope : incoming;
-        const payload = envelope?.message ?? envelope;
-        const message = payload?.message ?? payload;
-        if (message?.sender) {
-          const chatMessage: ChatMessage = {
-            id: message.id,
-            content: message.content,
-            senderId: message.sender.id,
-            timestamp: message.timestamp || new Date().toISOString(),
-            messageType: message.messageType || 'text',
-            sender: message.sender,
-            isPrivate: true
-          };
-          const conversationId = message.senderId === state.currentUser?.id 
-            ? message.receiverId 
-            : message.senderId;
-          dispatch({ 
-            type: 'SET_PRIVATE_MESSAGE', 
-            payload: { userId: conversationId, message: chatMessage }
+      // 🚀 معالجة محسنة لأحداث البث المباشر
+      const handleBroadcastEvent = async (eventType: string, payload: any) => {
+        const roomId = payload?.roomId || state.currentRoomId;
+        try {
+          const data = await apiRequest(`/api/rooms/${roomId}/broadcast-info`, { 
+            method: 'GET',
+            signal: AbortSignal.timeout(3000)
           });
-          if (chatMessage.senderId !== state.currentUser?.id) {
-            playNotificationSound();
-          }
+          const info = data?.info || null;
+          notifyBroadcastHandlers({ type: eventType, ...payload, broadcastInfo: info });
+        } catch (error) {
+          // في حالة الخطأ، أرسل بدون معلومات البث
+          notifyBroadcastHandlers({ type: eventType, ...payload });
         }
-      } catch (error) {
-        console.error('❌ خطأ في معالجة الرسالة الخاصة:', error);
-      }
-    };
+      };
 
-    socketInstance.on('privateMessage', handlePrivateMessage);
-    socketInstance.on('message', (data: any) => {
-      // Also handle private messages sent over the generic channel
-      const type = (data?.envelope?.type) || data?.type;
-      if (type === 'privateMessage') {
-        handlePrivateMessage(data);
-      }
-    });
+      // أحداث البث المباشر
+      socketInstance.on('roomUpdate', (payload: any) => {
+        if (payload && (!payload.roomId || payload.roomId === state.currentRoomId)) {
+          const eventType = payload.type === 'micRequested' ? 'micRequest' : payload.type || 'roomUpdate';
+          handleBroadcastEvent(eventType, payload);
+        }
+      });
 
-      // معالج حدث الطرد
+      socketInstance.on('micRequested', (payload: any) => {
+        handleBroadcastEvent('micRequest', payload || {});
+      });
+      
+      socketInstance.on('micApproved', (payload: any) => {
+        handleBroadcastEvent('micApproved', payload || {});
+      });
+      
+      socketInstance.on('micRejected', (payload: any) => {
+        handleBroadcastEvent('micRejected', payload || {});
+      });
+      
+      socketInstance.on('speakerRemoved', (payload: any) => {
+        handleBroadcastEvent('speakerRemoved', payload || {});
+      });
+
+      // 🚀 معالجات محسنة للأخطاء والطرد
       socketInstance.on('kicked', (data: any) => {
         if (state.currentUser?.id) {
           const duration = data.duration || 15;
           const reason = data.reason || 'بدون سبب';
           const moderator = data.moderator || 'مشرف';
           
-          // إظهار رسالة الطرد
           alert(`تم طردك من الدردشة بواسطة ${moderator}\nالسبب: ${reason}\nالمدة: ${duration} دقيقة`);
-          
-          // إظهار عداد الطرد
           dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
           
-          // فصل المستخدم بعد 3 ثواني
           setTimeout(() => {
             socketInstance.disconnect();
             window.location.href = '/';
@@ -504,16 +491,13 @@ export const useChat = () => {
         }
       });
 
-      // معالج حدث الحجب
       socketInstance.on('blocked', (data: any) => {
         if (state.currentUser?.id) {
           const reason = data.reason || 'بدون سبب';
           const moderator = data.moderator || 'مشرف';
           
-          // إظهار رسالة الحجب
           alert(`تم حجبك نهائياً من الدردشة بواسطة ${moderator}\nالسبب: ${reason}`);
           
-          // فصل المستخدم فوراً وإعادة توجيهه
           socketInstance.disconnect();
           setTimeout(() => {
             window.location.href = '/';
@@ -521,7 +505,6 @@ export const useChat = () => {
         }
       });
 
-      // معالج أخطاء المصادقة
       socketInstance.on('error', (data: any) => {
         if (data.action === 'blocked' || data.action === 'device_blocked') {
           alert(data.message);
@@ -538,7 +521,22 @@ export const useChat = () => {
         }
       });
 
-    }, [state.currentUser, state.onlineUsers, state.currentRoomId]);
+      // أحداث الاتصال
+      socketInstance.on('connect', () => {
+        dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+        dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
+      });
+
+      socketInstance.on('disconnect', () => {
+        dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+      });
+
+      socketInstance.on('connect_error', (error) => {
+        console.error('خطأ في الاتصال:', error);
+        dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'فشل في الاتصال بالخادم' });
+      });
+
+    }, [state.currentUser, state.onlineUsers, state.currentRoomId, state.roomMessages]);
 
     // Ensure cleanup on unmount
     useEffect(() => {
