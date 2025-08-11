@@ -8,7 +8,7 @@
 const https = require('https');
 const http = require('http');
 
-const RENDER_URL = 'https://abd-ylo2.onrender.com';
+const RENDER_URL = 'https://abd-owfr.onrender.com';
 const ENDPOINTS_TO_CHECK = [
   '/api/health',
   '/api/ping', 

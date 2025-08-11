@@ -93,7 +93,7 @@ export function getSocket(): Socket {
 
   socketInstance = io(getServerUrl(), {
     path: '/socket.io',
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'],
     upgrade: true,
     rememberUpgrade: true,
     autoConnect: true,

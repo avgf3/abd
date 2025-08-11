@@ -908,24 +908,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   io = new IOServer(httpServer, {
     // إعدادات CORS ديناميكية للسماح بنفس النطاق والإعدادات من المتغيرات
     cors: {
-      origin: (_origin, callback) => {
-        // نسمح بالطلبات افتراضيًا، وسيتم ضبط التحقق الدقيق في allowRequest
-        callback(null, true);
-      },
+      origin: (_origin, callback) => callback(null, true),
       methods: ["GET", "POST"],
       credentials: true,
     },
     path: "/socket.io",
 
     // إعدادات النقل محسنة للاستقرار
-    transports: ["websocket", "polling"],
+    transports: (String(process.env.SOCKET_IO_POLLING_ONLY || '').toLowerCase() === 'true') ? ['polling'] : ['polling', 'websocket'],
     allowEIO3: true,
 
     // إعدادات الاتصال المحسنة
     pingTimeout: 60000,
     pingInterval: 25000,
     upgradeTimeout: 10000,
-    allowUpgrades: true,
+    allowUpgrades: String(process.env.SOCKET_IO_POLLING_ONLY || '').toLowerCase() !== 'true',
 
     // إعدادات الأمان
     cookie: false,
