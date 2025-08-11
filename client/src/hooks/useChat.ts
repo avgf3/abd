@@ -640,22 +640,25 @@ export const useChat = () => {
       return;
     }
 
-    if (!content.trim()) {
+    const trimmed = typeof content === 'string' ? content.trim() : '';
+    if (!trimmed) {
       console.warn('⚠️ محتوى الرسالة فارغ');
       return;
     }
 
+    // اكتشاف الصور المرسلة كـ base64
+    const detectedType = (messageType === 'text' && trimmed.startsWith('data:image')) ? 'image' : messageType;
+
     const messageData = {
       senderId: state.currentUser.id,
-      content: content.trim(),
-      messageType,
+      content: trimmed,
+      messageType: detectedType,
       isPrivate: !!receiverId,
       receiverId,
       roomId: roomId || state.currentRoomId
     };
 
     if (receiverId) {
-      // Ensure server handler also supports this direct event
       socket.current.emit('privateMessage', messageData);
     } else {
       socket.current.emit('publicMessage', messageData);
