@@ -75,9 +75,9 @@ export default function UserContextMenu({
     // المالك له صلاحية كاملة
     if (currentUser.userType === 'owner') return true;
     
-    // المشرف يمكنه الكتم والطرد فقط
+    // المشرف يمكنه الكتم والطرد والحجب
     if (currentUser.userType === 'admin') {
-      return ['mute', 'kick', 'ban'].includes(action);
+      return ['mute', 'kick', 'ban', 'block'].includes(action);
     }
     
     return false;
@@ -93,11 +93,29 @@ export default function UserContextMenu({
       return;
     }
 
+    if (!currentUser || !currentUser.id) {
+      toast({
+        title: 'خطأ في الهوية',
+        description: 'يرجى تسجيل الدخول أولاً قبل تنفيذ إجراء الكتم',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
+      const deviceId = (() => {
+        const existing = localStorage.getItem('deviceId');
+        if (existing) return existing;
+        const id = 'web-' + Math.random().toString(36).slice(2);
+        localStorage.setItem('deviceId', id);
+        return id;
+      })();
+
       await apiRequest('/api/moderation/mute', {
         method: 'POST',
+        headers: { 'x-device-id': deviceId },
         body: {
-          moderatorId: currentUser?.id || 0,
+          moderatorId: currentUser.id,
           targetUserId: targetUser.id,
           reason: muteReason,
           duration: muteDuration
@@ -133,11 +151,29 @@ export default function UserContextMenu({
       return;
     }
 
+    if (!currentUser || !currentUser.id) {
+      toast({
+        title: 'خطأ في الهوية',
+        description: 'يرجى تسجيل الدخول أولاً قبل تنفيذ إجراء الطرد',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
+      const deviceId = (() => {
+        const existing = localStorage.getItem('deviceId');
+        if (existing) return existing;
+        const id = 'web-' + Math.random().toString(36).slice(2);
+        localStorage.setItem('deviceId', id);
+        return id;
+      })();
+
       await apiRequest('/api/moderation/ban', {
         method: 'POST',
+        headers: { 'x-device-id': deviceId },
         body: {
-          moderatorId: currentUser?.id || 0,
+          moderatorId: currentUser.id,
           targetUserId: targetUser.id,
           reason: kickReason,
           duration: 15
@@ -173,15 +209,33 @@ export default function UserContextMenu({
       return;
     }
 
+    if (!currentUser || !currentUser.id) {
+      toast({
+        title: 'خطأ في الهوية',
+        description: 'يرجى تسجيل الدخول أولاً قبل تنفيذ إجراء الحجب',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
+      const deviceId = (() => {
+        const existing = localStorage.getItem('deviceId');
+        if (existing) return existing;
+        const id = 'web-' + Math.random().toString(36).slice(2);
+        localStorage.setItem('deviceId', id);
+        return id;
+      })();
+
       await apiRequest('/api/moderation/block', {
         method: 'POST',
+        headers: { 'x-device-id': deviceId },
         body: {
-          moderatorId: currentUser?.id || 0,
+          moderatorId: currentUser.id,
           targetUserId: targetUser.id,
           reason: blockReason,
           ipAddress: 'unknown',
-          deviceId: 'unknown'
+          deviceId
         }
       });
 
@@ -273,29 +327,33 @@ export default function UserContextMenu({
           <div className="my-4 border-t-2 border-gray-300"></div>
           
           {/* إجراءات الإدارة - متاحة للجميع */}
-          <ContextMenuItem 
-            className="flex items-center gap-3 text-yellow-600 font-bold bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 rounded-lg p-3 cursor-pointer transition-all duration-200"
-            onClick={() => setShowMuteDialog(true)}
-          >
-            <UserX className="w-5 h-5" />
-            <span className="text-lg">🔇 كتم المستخدم</span>
-          </ContextMenuItem>
+          {(canModerate('mute') || canModerate('ban') || canModerate('block')) && (
+            <>
+              <ContextMenuItem 
+                className="flex items-center gap-3 text-yellow-600 font-bold bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 rounded-lg p-3 cursor-pointer transition-all duration-200"
+                onClick={() => setShowMuteDialog(true)}
+              >
+                <UserX className="w-5 h-5" />
+                <span className="text-lg">🔇 كتم المستخدم</span>
+              </ContextMenuItem>
 
-          <ContextMenuItem 
-            className="flex items-center gap-3 text-orange-600 font-bold bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg p-3 cursor-pointer transition-all duration-200"
-            onClick={() => setShowKickDialog(true)}
-          >
-            <Clock className="w-5 h-5" />
-            <span className="text-lg">⏰ طرد لمدة 15 دقيقة</span>
-          </ContextMenuItem>
+              <ContextMenuItem 
+                className="flex items-center gap-3 text-orange-600 font-bold bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg p-3 cursor-pointer transition-all duration-200"
+                onClick={() => setShowKickDialog(true)}
+              >
+                <Clock className="w-5 h-5" />
+                <span className="text-lg">⏰ طرد لمدة 15 دقيقة</span>
+              </ContextMenuItem>
 
-          <ContextMenuItem 
-            className="flex items-center gap-3 text-red-600 font-bold bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg p-3 cursor-pointer transition-all duration-200"
-            onClick={() => setShowBlockDialog(true)}
-          >
-            <Ban className="w-5 h-5" />
-            <span className="text-lg">🚫 حجب نهائي من الموقع</span>
-          </ContextMenuItem>
+              <ContextMenuItem 
+                className="flex items-center gap-3 text-red-600 font-bold bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg p-3 cursor-pointer transition-all duration-200"
+                onClick={() => setShowBlockDialog(true)}
+              >
+                <Ban className="w-5 h-5" />
+                <span className="text-lg">🚫 حجب نهائي من الموقع</span>
+              </ContextMenuItem>
+            </>
+          )}
 
           {/* حذف الرسالة */}
           {messageId && currentUser && (currentUser.id === targetUser.id || ['admin','owner'].includes(currentUser.userType)) && (
