@@ -128,7 +128,7 @@ router.post('/room/:roomId', async (req, res) => {
     const io = req.app.get('io');
     if (io) {
       const socketData = {
-        type: 'roomMessage',
+        type: 'newMessage',
         roomId,
         message,
         timestamp: new Date().toISOString()

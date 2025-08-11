@@ -304,10 +304,9 @@ export const useChat = () => {
                 payload: { roomId, message: chatMessage }
               });
               
-              // تشغيل الإشعار للرسائل الجديدة في الغرفة الحالية
+              // تشغيل صوت خفيف فقط عند الرسائل العامة في الغرفة الحالية
               if (chatMessage.senderId !== state.currentUser?.id && roomId === state.currentRoomId) {
                 playNotificationSound();
-                dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: message.sender });
               }
             }
             break;
@@ -450,6 +449,7 @@ export const useChat = () => {
 
     socketInstance.on('privateMessage', handlePrivateMessage);
     // ملاحظة: نتعامل مع الرسائل الخاصة فقط عبر حدث 'privateMessage' المخصص لتجنّب التكرار
+    // منع أي إشعار يشبه الخاص من مسار الرسائل العامة
 
       // معالج حدث الطرد
       socketInstance.on('kicked', (data: any) => {
