@@ -600,23 +600,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/moderation/mute", protect.moderator, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
+      
+      // التحقق من المعاملات المطلوبة
+      if (!moderatorId || !targetUserId || !reason) {
+        return res.status(400).json({ error: "معاملات ناقصة: moderatorId, targetUserId, reason مطلوبة" });
+      }
+      
+      // التحقق من صحة المدة
+      const muteDuration = duration && !isNaN(duration) ? parseInt(duration) : 30;
+      if (muteDuration < 1 || muteDuration > 1440) { // بين دقيقة و24 ساعة
+        return res.status(400).json({ error: "المدة يجب أن تكون بين 1 و 1440 دقيقة" });
+      }
+      
       const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
       const deviceId = (req.headers['x-device-id'] as string) || (req.headers['user-agent'] as string) || 'unknown';
       
-      const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, duration, clientIP, deviceId);
+      const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, muteDuration, clientIP, deviceId);
       if (success) {
-        res.json({ message: "تم كتم المستخدم بنجاح" });
+        res.json({ 
+          success: true,
+          message: "تم كتم المستخدم بنجاح",
+          duration: muteDuration 
+        });
       } else {
-        res.status(400).json({ error: "فشل في كتم المستخدم" });
+        res.status(400).json({ error: "فشل في كتم المستخدم - تحقق من الصلاحيات أو حالة المستخدم" });
       }
     } catch (error) {
-      res.status(500).json({ error: "خطأ في كتم المستخدم" });
+      console.error('خطأ في كتم المستخدم:', error);
+      res.status(500).json({ error: "خطأ في كتم المستخدم: " + (error as any).message });
     }
   });
 
   app.post("/api/moderation/ban", protect.admin, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
+      
+      // التحقق من المعاملات المطلوبة
+      if (!moderatorId || !targetUserId || !reason) {
+        return res.status(400).json({ error: "معاملات ناقصة: moderatorId, targetUserId, reason مطلوبة" });
+      }
+      
+      // للأدمن: المدة الافتراضية 15 دقيقة
+      const banDuration = duration && !isNaN(duration) ? parseInt(duration) : 15;
+      if (banDuration < 5 || banDuration > 60) { // بين 5 دقائق وساعة
+        return res.status(400).json({ error: "مدة الطرد يجب أن تكون بين 5 و 60 دقيقة" });
+      }
+      
       const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
       const deviceId = (req.headers['x-device-id'] as string) || (req.headers['user-agent'] as string) || 'unknown';
       
@@ -624,64 +653,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
         moderatorId, 
         targetUserId, 
         reason, 
-        duration, 
+        banDuration, 
         clientIP, 
         deviceId
       );
       
       if (success) {
-        const moderator = await storage.getUser(moderatorId);
         const target = await storage.getUser(targetUserId);
+        const moderator = await storage.getUser(moderatorId);
         
-        // إرسال إشعار خاص للمستخدم المطرود - تحسين الإشعار
-        if (target) {
-          io.to(targetUserId.toString()).emit('message', {
-            type: 'kicked',
-            targetUserId: targetUserId,
-            duration: duration,
-            reason: reason,
-            moderatorName: moderator?.username || 'مشرف'
-          });
-        }
-
-        // إرسال إشعار للدردشة العامة
-        const systemMessage = `⏰ تم طرد ${target?.username} من قبل ${moderator?.username} لمدة ${duration} دقيقة - السبب: ${reason}`;
-        
-        io.emit('message', {
-          type: 'moderationAction',
-          action: 'banned',
-          targetUserId: targetUserId,
-          message: systemMessage
+        // إشعار المستخدم المطرود
+        io.to(targetUserId.toString()).emit('kicked', {
+          moderator: moderator?.username || 'مشرف',
+          reason: reason,
+          duration: banDuration
         });
-        
-        // إجبار قطع الاتصال
-        setTimeout(() => {
-          io.to(targetUserId.toString()).disconnectSockets();
-        }, 2000); // إعطاء وقت لاستلام الإشعار
-        
-        res.json({ message: "تم طرد المستخدم بنجاح" });
+
+        res.json({ 
+          success: true,
+          message: "تم طرد المستخدم بنجاح",
+          duration: banDuration 
+        });
       } else {
-        res.status(403).json({ error: "غير مسموح لك بهذا الإجراء" });
+        res.status(400).json({ error: "فشل في طرد المستخدم - تحقق من الصلاحيات أو حالة المستخدم" });
       }
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      console.error('خطأ في طرد المستخدم:', error);
+      res.status(500).json({ error: "خطأ في طرد المستخدم: " + (error as any).message });
     }
   });
 
   app.post("/api/moderation/block", protect.owner, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason } = req.body;
-      const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
-      const deviceId = (req.headers['x-device-id'] as string) || (req.headers['user-agent'] as string) || 'unknown';
+      
+      // التحقق من المعاملات المطلوبة
+      if (!moderatorId || !targetUserId || !reason) {
+        return res.status(400).json({ error: "معاملات ناقصة: moderatorId, targetUserId, reason مطلوبة" });
+      }
+      
+      // التحقق من أن المستخدم لا يحاول حجب نفسه
+      if (moderatorId === targetUserId) {
+        return res.status(400).json({ error: "لا يمكنك حجب نفسك" });
+      }
+      
+      // الحصول على IP والجهاز الحقيقيين
+      const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 
+                      req.headers['x-real-ip'] as string || 
+                      req.ip || 
+                      (req.connection as any)?.remoteAddress || 
+                      'unknown';
+      const deviceId = (req.headers['x-device-id'] as string) || 
+                      `device_${targetUserId}_${Date.now()}`; // إنشاء معرف فريد إذا لم يكن موجود
       
       const success = await moderationSystem.blockUser(moderatorId, targetUserId, reason, clientIP, deviceId);
       if (success) {
-        res.json({ message: "تم حجب المستخدم بنجاح" });
+        const target = await storage.getUser(targetUserId);
+        const moderator = await storage.getUser(moderatorId);
+        
+        // إشعار المستخدم المحجوب
+        io.to(targetUserId.toString()).emit('blocked', {
+          moderator: moderator?.username || 'مشرف',
+          reason: reason,
+          permanent: true
+        });
+        
+        // فصل المستخدم المحجوب فوراً
+        io.to(targetUserId.toString()).disconnectSockets();
+        
+        res.json({ 
+          success: true,
+          message: "تم حجب المستخدم بنجاح",
+          blocked: {
+            userId: targetUserId,
+            username: target?.username,
+            ipAddress: clientIP,
+            deviceId: deviceId
+          }
+        });
       } else {
-        res.status(400).json({ error: "فشل في حجب المستخدم" });
+        res.status(400).json({ error: "فشل في حجب المستخدم - تحقق من الصلاحيات أو حالة المستخدم" });
       }
     } catch (error) {
-      res.status(500).json({ error: "خطأ في حجب المستخدم" });
+      console.error('خطأ في حجب المستخدم:', error);
+      res.status(500).json({ error: "خطأ في حجب المستخدم: " + (error as any).message });
     }
   });
 
@@ -1383,6 +1438,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let heartbeatInterval: NodeJS.Timeout | null = null;
     let connectionTimeout: NodeJS.Timeout | null = null;
     
+    // التحقق من IP والجهاز المحجوب
+    const clientIP = (socket.handshake.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 
+                    socket.handshake.headers['x-real-ip'] as string || 
+                    socket.handshake.address || 
+                    'unknown';
+    const deviceId = socket.handshake.headers['x-device-id'] as string || 
+                    socket.handshake.headers['user-agent'] as string || 
+                    'unknown';
+    
+    // التحقق من الحجب قبل السماح بالاتصال
+    if (moderationSystem.isBlocked(clientIP, deviceId)) {
+      socket.emit('error', {
+        type: 'error',
+        message: 'جهازك أو عنوان IP الخاص بك محجوب من الدردشة',
+        action: 'device_blocked'
+      });
+      socket.disconnect(true);
+      return;
+    }
+    
     // إعداد timeout للمصادقة (60 ثانية - زيادة المهلة لتجنب قطع الاتصال المفرط)
     connectionTimeout = setTimeout(() => {
       if (!isAuthenticated) {
@@ -1452,6 +1527,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           user = await storage.getUser(userData.userId);
           if (!user) {
             socket.emit('error', { message: 'المستخدم غير موجود' });
+            return;
+          }
+
+          // فحص حالة المستخدم قبل السماح بالاتصال
+          const authUserStatus = await moderationSystem.checkUserStatus(user.id);
+          if (authUserStatus.isBlocked) {
+            socket.emit('error', {
+              type: 'error',
+              message: 'أنت محجوب نهائياً من الدردشة',
+              action: 'blocked'
+            });
+            socket.disconnect(true);
+            return;
+          }
+          
+          if (authUserStatus.isBanned && !authUserStatus.canJoin) {
+            socket.emit('error', {
+              type: 'error',
+              message: authUserStatus.reason || 'أنت مطرود من الدردشة',
+              action: 'banned',
+              timeLeft: authUserStatus.timeLeft
+            });
+            socket.disconnect(true);
             return;
           }
 

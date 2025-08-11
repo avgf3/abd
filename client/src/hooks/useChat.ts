@@ -348,6 +348,25 @@ export const useChat = () => {
             const targetId = envelope.targetUserId;
             if (targetId && targetId === state.currentUser?.id) {
               dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
+              // إضافة رسالة واضحة للمستخدم
+              const duration = (envelope as any).duration || 15;
+              const reason = (envelope as any).reason || 'بدون سبب';
+              const moderator = (envelope as any).moderator || 'مشرف';
+              alert(`تم طردك من الدردشة بواسطة ${moderator}\nالسبب: ${reason}\nالمدة: ${duration} دقيقة`);
+            }
+            break;
+          }
+          
+          case 'blocked': {
+            // معالجة الحجب النهائي
+            if (state.currentUser?.id) {
+              const reason = (envelope as any).reason || 'بدون سبب';
+              const moderator = (envelope as any).moderator || 'مشرف';
+              alert(`تم حجبك نهائياً من الدردشة بواسطة ${moderator}\nالسبب: ${reason}`);
+              // فصل المستخدم وإعادة توجيهه
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 3000);
             }
             break;
           }
@@ -419,9 +438,62 @@ export const useChat = () => {
       }
     });
 
+      // معالج حدث الطرد
+      socketInstance.on('kicked', (data: any) => {
+        if (state.currentUser?.id) {
+          const duration = data.duration || 15;
+          const reason = data.reason || 'بدون سبب';
+          const moderator = data.moderator || 'مشرف';
+          
+          // إظهار رسالة الطرد
+          alert(`تم طردك من الدردشة بواسطة ${moderator}\nالسبب: ${reason}\nالمدة: ${duration} دقيقة`);
+          
+          // إظهار عداد الطرد
+          dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
+          
+          // فصل المستخدم بعد 3 ثواني
+          setTimeout(() => {
+            socketInstance.disconnect();
+            window.location.href = '/';
+          }, 3000);
+        }
+      });
 
+      // معالج حدث الحجب
+      socketInstance.on('blocked', (data: any) => {
+        if (state.currentUser?.id) {
+          const reason = data.reason || 'بدون سبب';
+          const moderator = data.moderator || 'مشرف';
+          
+          // إظهار رسالة الحجب
+          alert(`تم حجبك نهائياً من الدردشة بواسطة ${moderator}\nالسبب: ${reason}`);
+          
+          // فصل المستخدم فوراً وإعادة توجيهه
+          socketInstance.disconnect();
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1000);
+        }
+      });
 
-  }, [state.currentUser, state.onlineUsers, state.currentRoomId]);
+      // معالج أخطاء المصادقة
+      socketInstance.on('error', (data: any) => {
+        if (data.action === 'blocked' || data.action === 'device_blocked') {
+          alert(data.message);
+          socketInstance.disconnect();
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1000);
+        } else if (data.action === 'banned') {
+          const timeLeft = data.timeLeft || 0;
+          alert(`${data.message}\nالوقت المتبقي: ${timeLeft} دقيقة`);
+          dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
+        } else {
+          console.error('خطأ من السيرفر:', data.message);
+        }
+      });
+
+    }, [state.currentUser, state.onlineUsers, state.currentRoomId]);
 
   useEffect(() => {
     const handleOnline = () => {

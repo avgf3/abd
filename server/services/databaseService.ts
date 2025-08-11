@@ -991,23 +991,35 @@ export class DatabaseService {
           deviceId: data.deviceId!,
           userId: data.userId!,
           reason: data.reason || 'unspecified',
-          blockedAt: (data.blockedAt instanceof Date ? data.blockedAt.toISOString() : new Date().toISOString()),
+          blockedAt: data.blockedAt?.toISOString() || new Date().toISOString(),
           blockedBy: data.blockedBy!,
         } as any;
-        const result = await (this.db as any).insert(sqliteSchema.blockedDevices).values(payload);
-        if ((result as any).lastInsertRowid) {
-          const rows = await (this.db as any)
-            .select()
-            .from(sqliteSchema.blockedDevices)
-            .where(eq(sqliteSchema.blockedDevices.id, Number((result as any).lastInsertRowid)))
-            .limit(1);
-          return rows[0] || null;
-        }
-        return null;
+        await (this.db as any).insert(sqliteSchema.blockedDevices).values(payload);
+        return { ...payload };
       }
     } catch (error) {
       console.error('Error creating blocked device:', error);
       return null;
+    }
+  }
+
+  async deleteBlockedDevice(userId: number): Promise<boolean> {
+    if (!this.isConnected()) return false;
+
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any)
+          .delete(pgSchema.blockedDevices)
+          .where(eq(pgSchema.blockedDevices.userId, userId));
+      } else {
+        await (this.db as any)
+          .delete(sqliteSchema.blockedDevices)
+          .where(eq(sqliteSchema.blockedDevices.userId, userId));
+      }
+      return true;
+    } catch (error) {
+      console.error('Error deleting blocked device:', error);
+      return false;
     }
   }
 
