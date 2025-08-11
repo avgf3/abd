@@ -601,8 +601,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/moderation/mute", protect.moderator, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
+      const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
+      const deviceId = (req.headers['x-device-id'] as string) || (req.headers['user-agent'] as string) || 'unknown';
       
-      const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, duration);
+      const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, duration, clientIP, deviceId);
       if (success) {
         res.json({ message: "تم كتم المستخدم بنجاح" });
       } else {
@@ -616,8 +618,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/moderation/ban", protect.admin, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
-      const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
-      const deviceId = req.headers['user-agent'] || 'unknown';
+      const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
+      const deviceId = (req.headers['x-device-id'] as string) || (req.headers['user-agent'] as string) || 'unknown';
       
       const success = await moderationSystem.banUser(
         moderatorId, 
@@ -670,8 +672,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/moderation/block", protect.admin, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason } = req.body;
+      const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
+      const deviceId = (req.headers['x-device-id'] as string) || (req.headers['user-agent'] as string) || 'unknown';
       
-      const success = await moderationSystem.blockUser(moderatorId, targetUserId, reason);
+      const success = await moderationSystem.blockUser(moderatorId, targetUserId, reason, clientIP, deviceId);
       if (success) {
         res.json({ message: "تم حجب المستخدم بنجاح" });
       } else {
@@ -2761,8 +2765,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/moderation/mute", protect.moderator, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
+      const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
+      const deviceId = (req.headers['x-device-id'] as string) || (req.headers['user-agent'] as string) || 'unknown';
       
-      const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, duration);
+      const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, duration, clientIP, deviceId);
       if (success) {
         res.json({ message: "تم كتم المستخدم بنجاح" });
       } else {
@@ -2791,8 +2797,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/moderation/ban", protect.admin, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
-      const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
-      const deviceId = req.headers['user-agent'] || 'unknown';
+      const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
+      const deviceId = (req.headers['x-device-id'] as string) || (req.headers['user-agent'] as string) || 'unknown';
       
       const success = await moderationSystem.banUser(
         moderatorId, 
@@ -2809,10 +2815,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // إرسال إشعار خاص للمستخدم المطرود - تحسين الإشعار
         if (target) {
-          io.to(targetUserId.toString()).emit('kicked', {
+          io.to(targetUserId.toString()).emit('message', {
+            type: 'kicked',
             targetUserId: targetUserId,
             duration: duration,
-            reason: reason
+            reason: reason,
+            moderatorName: moderator?.username || 'مشرف'
           });
         }
 
@@ -2827,7 +2835,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         // إجبار قطع الاتصال
-        io.to(targetUserId.toString()).disconnectSockets();
+        setTimeout(() => {
+          io.to(targetUserId.toString()).disconnectSockets();
+        }, 2000); // إعطاء وقت لاستلام الإشعار
         
         res.json({ message: "تم طرد المستخدم بنجاح" });
       } else {
@@ -2841,8 +2851,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/moderation/block", protect.admin, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason } = req.body;
+      const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
+      const deviceId = (req.headers['x-device-id'] as string) || (req.headers['user-agent'] as string) || 'unknown';
       
-      const success = await moderationSystem.blockUser(moderatorId, targetUserId, reason);
+      const success = await moderationSystem.blockUser(moderatorId, targetUserId, reason, clientIP, deviceId);
       if (success) {
         res.json({ message: "تم حجب المستخدم بنجاح" });
       } else {
@@ -4238,6 +4250,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('[SET_LEVEL] Error:', error);
       res.status(500).json({ error: 'خطأ في تعيين المستوى' });
+    }
+  });
+
+  app.get("/api/moderation/blocked-devices", protect.admin, async (req, res) => {
+    try {
+      const list = await storage.getAllBlockedDevices();
+      res.json({ blockedDevices: list });
+    } catch (error) {
+      res.status(500).json({ error: "خطأ في جلب الأجهزة/العناوين المحجوبة" });
     }
   });
 

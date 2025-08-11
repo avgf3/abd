@@ -40,6 +40,13 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     
     if (req.body?.userId) {
       userId = parseInt(req.body.userId);
+    } else if (req.body?.moderatorId) {
+      // السماح باستخدام moderatorId كبديل في مسارات الإدارة
+      userId = parseInt(req.body.moderatorId);
+    } else if (req.query?.userId) {
+      userId = parseInt(req.query.userId as string);
+    } else if (req.query?.moderatorId) {
+      userId = parseInt(req.query.moderatorId as string);
     } else if (req.params?.userId) {
       userId = parseInt(req.params.userId);
     } else if (req.params?.id) {
