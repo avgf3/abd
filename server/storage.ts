@@ -680,6 +680,15 @@ export const storage: LegacyStorage = {
     return await databaseService.getBlockedDevices();
   },
 
+  async createBlockedDevice(data: any) {
+    try {
+      return await databaseService.createBlockedDevice(data);
+    } catch (error) {
+      console.error('Error in storage.createBlockedDevice:', error);
+      return null;
+    }
+  },
+  
   // ========= Room helpers exposed on storage =========
   async getRooms() {
     return await databaseService.getRooms();
