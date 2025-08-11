@@ -51,21 +51,30 @@ export default function PrivateMessageBox({
   };
 
   const handleFileSelect = (file: File, type: 'image' | 'video' | 'document') => {
-    const fileUrl = URL.createObjectURL(file);
+    if (type === 'image') {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        if (dataUrl && dataUrl.startsWith('data:image')) {
+          onSendMessage(dataUrl);
+        }
+      };
+      reader.onerror = () => {
+        alert('فشل في قراءة الملف');
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // حالياً نعرض رسالة نصية للأنواع الأخرى إلى حين إضافة مسار رفع مرفقات خاص
     let fileMessage = '';
-    
     switch (type) {
-      case 'image':
-        fileMessage = `📷 صورة: ${file.name}`;
-        break;
       case 'video':
         fileMessage = `🎥 فيديو: ${file.name}`;
         break;
-      case 'document':
+      default:
         fileMessage = `📄 مستند: ${file.name}`;
-        break;
     }
-    
     onSendMessage(fileMessage);
   };
 
@@ -103,7 +112,7 @@ export default function PrivateMessageBox({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[450px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl">
+      <DialogContent className="relative max-w-md max-h-[450px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl">
         <DialogHeader className="border-b border-accent p-2">
           <div
             className={`flex items-center gap-2 px-2 py-1 rounded-none ${getUserThemeClasses(user)}`}
@@ -119,6 +128,7 @@ export default function PrivateMessageBox({
             </span>
             <div className="ml-auto flex items-center gap-1">
               <UserRoleBadge user={user} showOnlyIcon={true} />
+              <Button onClick={onClose} variant="ghost" className="px-2 py-1">✖️</Button>
             </div>
           </div>
         </DialogHeader>
@@ -127,10 +137,11 @@ export default function PrivateMessageBox({
           <div className="space-y-3">
             {messages.map((message, index) => {
               const sender = message.sender || (message.senderId === currentUser?.id ? currentUser! : user);
+              const isImage = message.messageType === 'image' || (typeof message.content === 'string' && message.content.startsWith('data:image'));
               return (
                 <div 
                   key={`${message.id}-${message.senderId}-${index}`}
-                  className={`flex items-center gap-3 p-3 rounded-lg border-r-4 ${getMessageBorderColor(sender?.userType)} bg-card shadow-sm hover:shadow-md transition-shadow duration-200`}
+                  className={`flex items-center gap-3 p-3 rounded-lg border-r-4 ${getMessageBorderColor(sender?.userType)} bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
                 >
                   {sender && (
                     <div className="flex-shrink-0">
@@ -149,8 +160,18 @@ export default function PrivateMessageBox({
                     >
                       {sender?.username || 'مجهول'}
                     </span>
-                    <div className="text-gray-800 break-words truncate flex-1">
-                      {message.content}
+                    <div className="text-gray-800 break-words flex-1">
+                      {isImage ? (
+                        <img
+                          src={message.content}
+                          alt="صورة"
+                          className="max-h-28 rounded cursor-pointer"
+                          loading="lazy"
+                          onClick={() => window.open(message.content, '_blank')}
+                        />
+                      ) : (
+                        <span>{message.content}</span>
+                      )}
                     </div>
                     <span className="text-xs text-gray-500 whitespace-nowrap ml-2">{formatTime(message.timestamp)}</span>
                   </div>
@@ -197,7 +218,7 @@ export default function PrivateMessageBox({
             onChange={(e) => setMessageText(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="✉️ ارسال رسالة..."
-            className="flex-1 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary"
+            className="flex-1 bg-white border border-border text-foreground placeholder:text-muted-foreground focus:border-primary"
           />
           <Button
             onClick={handleSendMessage}
@@ -205,16 +226,6 @@ export default function PrivateMessageBox({
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium"
           >
             ✉️ ارسال
-          </Button>
-        </div>
-        
-        <div className="flex justify-center pt-2 pb-4">
-          <Button 
-            onClick={onClose} 
-            variant="outline" 
-            className="bg-background border-border text-foreground hover:bg-accent/30 font-medium px-6"
-          >
-            ✖️ إغلاق
           </Button>
         </div>
       </DialogContent>
