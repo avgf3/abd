@@ -274,17 +274,17 @@ export const requireOwnerAboudOnly = async (req: Request, res: Response, next: N
       throw createError.unauthorized();
     }
 
-    const isOwnerAboud = req.user.userType === 'owner' && req.user.username === 'عبود';
-    if (!isOwnerAboud) {
-      log.security('محاولة وصول بصلاحيات غير كافية (مطلوب المالك عبود فقط)', {
+    const isOwner = req.user.userType === 'owner';
+    if (!isOwner) {
+      log.security('محاولة وصول بصلاحيات غير كافية (مطلوب المالك فقط)', {
         userId: req.user.id,
         username: req.user.username,
-        requiredLevel: 'ownerAboudOnly',
+        requiredLevel: 'ownerOnly',
         path: req.path,
         ip: req.ip
       });
 
-      throw createError.forbidden('هذا الإجراء متاح فقط للمالك عبود');
+      throw createError.forbidden('هذا الإجراء متاح فقط للمالك');
     }
 
     next();
@@ -304,5 +304,5 @@ export const protect = {
   online: requireOnlineStatus,
   recentAuth: requireRecentAuth,
   log: logActivity,
-  ownerAboudOnly: requireOwnerAboudOnly
+  ownerOnly: requireOwnerAboudOnly
 };

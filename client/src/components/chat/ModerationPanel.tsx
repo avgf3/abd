@@ -50,8 +50,8 @@ export default function ModerationPanel({
   const canModerateUser = (target: ChatUser) => {
     if (!currentUser) return false;
     
-    // عبود (المالك) له صلاحية كاملة
-    if (currentUser.username === 'عبود' && currentUser.userType === 'owner') {
+    // المالك له صلاحية كاملة
+    if (currentUser.userType === 'owner') {
       return true;
     }
     
@@ -82,8 +82,8 @@ export default function ModerationPanel({
       );
     }
     
-    // عبود يستطيع حذف أي شخص
-    if (currentUser.username === 'عبود' && currentUser.userType === 'owner') {
+    // المالك يستطيع حذف أي شخص
+    if (currentUser.userType === 'owner') {
       actions.push(
         { value: 'remove', label: 'حذف من الدردشة' }
       );
@@ -240,7 +240,7 @@ export default function ModerationPanel({
           <DialogTitle className="flex items-center gap-2">
             🛡️ لوحة الإدارة
             <Badge variant="destructive">
-              {currentUser?.username === 'عبود' ? 'مالك' : 'مشرف'}
+              {currentUser?.userType === 'owner' ? 'مالك' : 'مشرف'}
             </Badge>
           </DialogTitle>
           <DialogDescription>
