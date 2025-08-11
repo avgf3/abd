@@ -1406,15 +1406,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // معالج المصادقة الموحد - يدعم الضيوف والمستخدمين المسجلين
     socket.on('auth', async (userData: { userId?: number; username?: string; userType?: string; reconnect?: boolean }) => {
       try {
-        // منع المصادقة المتكررة
-        if (isAuthenticated && !userData.reconnect) {
-          // السماح بتحديث الهوية إذا تغيّر userId أو طُلب reconnect صريحاً
-          if (userData.userId && userData.userId !== (socket as CustomSocket).userId) {
-            // سنسمح بتحديث الهوية لاحقاً في نفس المعالج
-          } else {
-            console.warn(`⚠️ محاولة مصادقة متكررة من ${socket.id}`);
-            return;
-          }
+        // منع المصادقة المتكررة أو تبديل الهوية على نفس الاتصال
+        if (isAuthenticated) {
+          console.warn(`⚠️ محاولة مصادقة متكررة/تبديل هوية من ${socket.id}`);
+          return;
         }
         
         let user;
@@ -1426,25 +1421,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
             socket.emit('error', { message: 'المستخدم غير موجود' });
             return;
           }
-        } 
-        // إذا كان هناك username فقط، فهو ضيف
-        else if (userData.username && userData.userType) {
-          // البحث عن المستخدم أو إنشاؤه
-          user = await storage.getUserByUsername(userData.username);
-          
-          if (!user) {
-            // إنشاء مستخدم ضيف جديد
-            const newUser = {
-              username: userData.username,
-              userType: userData.userType,
-              role: userData.userType,
-              isOnline: true,
-              joinDate: new Date(),
-              createdAt: new Date()
-            };
-            
-            user = await storage.createUser(newUser);
+
+          // لا نسمح بالمصادقة عبر userId لمستخدم غير ضيف ما لم تكن لديه جلسة فعّالة (تم تسجيل الدخول عبر API)
+          if (user.userType !== 'guest' && !user.isOnline) {
+            console.warn('محاولة دخول عبر Socket بدون جلسة فعالة', { userId: user.id, socketId: socket.id });
+            socket.emit('error', { message: 'يرجى تسجيل الدخول أولاً' });
+            return;
           }
+        } 
+        // إذا كان هناك username فقط، نسمح بإنشاء ضيف جديد فقط ولا نسمح بتسجيل الدخول بحساب موجود عبر الاسم
+        else if (userData.username) {
+          const safeUsername = String(userData.username).trim();
+          const validName = /^[\u0600-\u06FFa-zA-Z0-9_]{3,20}$/.test(safeUsername);
+          if (!validName) {
+            socket.emit('error', { message: 'اسم مستخدم غير صالح' });
+            return;
+          }
+
+          // إذا كان الاسم موجوداً، نرفض المصادقة عبر الاسم فقط و نطلب تسجيل الدخول الرسمي
+          const existing = await storage.getUserByUsername(safeUsername);
+          if (existing) {
+            console.warn('محاولة انتحال عبر Socket باستخدام اسم مستخدم موجود', { username: safeUsername, socketId: socket.id });
+            socket.emit('error', { message: 'الرجاء تسجيل الدخول باستخدام الحساب' });
+            return;
+          }
+
+          // السماح بإنشاء حساب ضيف فقط عبر Socket
+          const requestedType = String(userData.userType || 'guest').toLowerCase();
+          if (requestedType !== 'guest') {
+            console.warn('محاولة تصعيد صلاحيات عبر Socket', { username: safeUsername, requestedType, socketId: socket.id });
+            socket.emit('error', { message: 'غير مسموح بإنشاء حسابات بامتيازات عبر Socket' });
+            return;
+          }
+
+          const newUser = {
+            username: safeUsername,
+            userType: 'guest',
+            role: 'guest',
+            isOnline: true,
+            joinDate: new Date(),
+            createdAt: new Date()
+          };
+
+          user = await storage.createUser(newUser);
         } else {
           socket.emit('error', { message: 'بيانات المصادقة غير مكتملة' });
           return;
