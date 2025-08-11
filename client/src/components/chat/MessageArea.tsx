@@ -329,8 +329,8 @@ export default function MessageArea({
                     )}
 
                     {currentUser && message.sender && (() => {
-                      const isOwner = currentUser.role === 'owner';
-                      const isAdmin = currentUser.role === 'admin';
+                      const isOwner = currentUser.userType === 'owner';
+                      const isAdmin = currentUser.userType === 'admin';
                       const isSender = currentUser.id === message.sender.id;
                       const canDelete = isSender || isOwner || isAdmin;
                       if (!canDelete) return null;
