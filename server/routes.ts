@@ -567,7 +567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API endpoints للإدارة
   // Removed duplicate moderation actions endpoint - kept the more detailed one below
 
-  app.get("/api/moderation/reports", protect.admin, async (req, res) => {
+  app.get("/api/moderation/reports", protect.ownerAboudOnly, async (req, res) => {
     try {
       const { userId } = req.query;
       if (!userId) {
@@ -597,7 +597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/mute", protect.moderator, async (req, res) => {
+  app.post("/api/moderation/mute", protect.ownerAboudOnly, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
       const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
@@ -614,7 +614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/ban", protect.admin, async (req, res) => {
+  app.post("/api/moderation/ban", protect.ownerAboudOnly, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
       const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
@@ -668,7 +668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/block", protect.admin, async (req, res) => {
+  app.post("/api/moderation/block", protect.ownerAboudOnly, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason } = req.body;
       const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
@@ -685,7 +685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/promote", protect.owner, async (req, res) => {
+  app.post("/api/moderation/promote", protect.ownerAboudOnly, async (req, res) => {
     try {
       const { moderatorId, targetUserId, newRole } = req.body;
       
@@ -721,7 +721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/unmute", protect.moderator, async (req, res) => {
+  app.post("/api/moderation/unmute", protect.ownerAboudOnly, async (req, res) => {
     try {
       const { moderatorId, targetUserId } = req.body;
       
@@ -736,7 +736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/moderation/unblock", protect.owner, async (req, res) => {
+  app.post("/api/moderation/unblock", protect.ownerAboudOnly, async (req, res) => {
     try {
       const { moderatorId, targetUserId } = req.body;
       
@@ -2763,7 +2763,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Moderation routes
   // DUPLICATE BLOCK REMOVED: Using the canonical moderation endpoints defined earlier in the file.
 
-  app.get("/api/moderation/log", async (req, res) => {
+  app.get("/api/moderation/log", protect.ownerAboudOnly, async (req, res) => {
     try {
       const userId = parseInt(req.query.userId as string);
       const user = await storage.getUser(userId);
@@ -2816,7 +2816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // إضافة endpoint لوحة إجراءات المشرفين
-  app.get("/api/moderation/actions", async (req, res) => {
+  app.get("/api/moderation/actions", protect.ownerAboudOnly, async (req, res) => {
     try {
       const { userId } = req.query;
       const user = await storage.getUser(Number(userId));
@@ -2849,7 +2849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // إضافة endpoint لسجل البلاغات
-  app.get("/api/reports", async (req, res) => {
+  app.get("/api/reports", protect.ownerAboudOnly, async (req, res) => {
     try {
       const { userId } = req.query;
       const user = await storage.getUser(Number(userId));
@@ -2882,7 +2882,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // إضافة endpoint لمراجعة البلاغات
-  app.post("/api/reports/:id/review", async (req, res) => {
+  app.post("/api/reports/:id/review", protect.ownerAboudOnly, async (req, res) => {
     try {
       const reportId = parseInt(req.params.id);
       const { action, moderatorId } = req.body;
@@ -2908,7 +2908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // إضافة endpoint للإجراءات النشطة
-  app.get("/api/moderation/active-actions", async (req, res) => {
+  app.get("/api/moderation/active-actions", protect.ownerAboudOnly, async (req, res) => {
     try {
       const { userId } = req.query;
       const user = await storage.getUser(Number(userId));
@@ -4085,7 +4085,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/moderation/blocked-devices", protect.admin, async (req, res) => {
+  app.get("/api/moderation/blocked-devices", protect.ownerAboudOnly, async (req, res) => {
     try {
       const list = await storage.getAllBlockedDevices();
       res.json({ blockedDevices: list });
