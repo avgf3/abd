@@ -86,9 +86,14 @@ const connectedUsers = new Map<number, {
   lastSeen: Date
 }>();
 
-// Grace period (5 minutes) before finalizing disconnect removals
-const GRACE_PERIOD_MS = 5 * 60 * 1000;
+// Grace period (1 minute) before finalizing disconnect removals - تم تقليلها لتحسين الاستجابة
+const GRACE_PERIOD_MS = 1 * 60 * 1000; // دقيقة واحدة بدلاً من 5 دقائق
 const pendingDisconnects = new Map<number, NodeJS.Timeout>();
+
+// إعدادات محسنة لـ ping/pong
+const PING_INTERVAL_MS = 10000; // 10 ثوانٍ
+const PONG_TIMEOUT_MS = 5000; // 5 ثوانٍ
+const MAX_MISSED_PONGS = 3; // عدد pongs المفقودة المسموح بها
 
 // Storage initialization - using imported storage instance
   
@@ -1383,26 +1388,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     };
     
-    // heartbeat محسن للحفاظ على الاتصال
+    // heartbeat محسن للحفاظ على الاتصال مع آلية ping/pong أقوى
     const startHeartbeat = () => {
       if (heartbeatInterval) clearInterval(heartbeatInterval);
       
-      // الاعتماد على heartbeat الداخلي لـ Socket.IO مع رد 'client_pong' فقط
+      let missedPongs = 0;
+      let pongTimeout: NodeJS.Timeout | null = null;
+      
+      // آلية ping/pong محسنة
       heartbeatInterval = setInterval(() => {
         if (!socket.connected) {
           cleanup();
-        } else {
-          // تحديث آخر نشاط للمستخدم دورياً عند الاتصال
-          const userId = (socket as CustomSocket).userId;
-          if (userId && connectedUsers.has(userId)) {
-            const userConnection = connectedUsers.get(userId)!;
-            userConnection.lastSeen = new Date();
-            connectedUsers.set(userId, userConnection);
-          }
+          return;
         }
-      }, 30000);
+        
+        // تحقق من عدد pongs المفقودة
+        if (missedPongs >= MAX_MISSED_PONGS) {
+          console.warn(`⚠️ تجاوز عدد pongs المفقودة للمستخدم ${(socket as CustomSocket).username || socket.id}`);
+          socket.disconnect(true);
+          return;
+        }
+        
+        // إرسال ping
+        socket.emit('ping', { timestamp: Date.now() });
+        missedPongs++;
+        
+        // مهلة انتظار pong
+        if (pongTimeout) clearTimeout(pongTimeout);
+        pongTimeout = setTimeout(() => {
+          if (missedPongs >= MAX_MISSED_PONGS) {
+            console.warn(`⚠️ انتهت مهلة pong للمستخدم ${(socket as CustomSocket).username || socket.id}`);
+            socket.disconnect(true);
+          }
+        }, PONG_TIMEOUT_MS);
+        
+        // تحديث آخر نشاط للمستخدم
+        const userId = (socket as CustomSocket).userId;
+        if (userId && connectedUsers.has(userId)) {
+          const userConnection = connectedUsers.get(userId)!;
+          userConnection.lastSeen = new Date();
+          connectedUsers.set(userId, userConnection);
+        }
+      }, PING_INTERVAL_MS);
       
-      // استجابة معيارية لأحداث ping المخصصة من العميل لضمان الحفاظ على الاتصال
+      // معالج استقبال pong
+      socket.on('pong', () => {
+        if (pongTimeout) {
+          clearTimeout(pongTimeout);
+          pongTimeout = null;
+        }
+        missedPongs = 0; // إعادة تعيين العداد
+      });
+      
+      // التوافق مع client_ping القديم
       socket.on('client_ping', () => {
         socket.emit('client_pong', { t: Date.now() });
       });
@@ -2254,27 +2292,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
              pendingDisconnects.delete(userId);
            }
 
-           // جدولة الإزالة النهائية بعد فترة السماح
-           const timeout = setTimeout(async () => {
-             try {
-               // إزالة من قائمة المتصلين فعلياً
-               connectedUsers.delete(userId);
-               // تحديث حالة المستخدم في قاعدة البيانات إلى غير متصل
-               await storage.setUserOnlineStatus(userId, false);
-               // معالجة مغادرة الغرفة
-               if (currentRoom) {
-                 await handleRoomLeave(socket, userId, username, currentRoom, false);
-               }
-               // بث إشعارات الخروج بعد انتهاء فترة السماح
-                               // تم التعامل مع إشعارات مغادرة الغرفة داخل handleRoomLeave، لا داعي لإصدار رسائل إضافية هنا
-                // الحفاظ فقط على تحديثات أخرى إن وجدت لاحقاً
-               io.emit('message', { type: 'userLeft', userId, username, timestamp: new Date().toISOString() });
-             } catch (finalErr) {
-               console.error('❌ خطأ في الإزالة بعد فترة السماح:', finalErr);
-             } finally {
-               pendingDisconnects.delete(userId);
-             }
-           }, GRACE_PERIOD_MS);
+                      // تحديد مدة فترة السماح بناءً على سبب قطع الاتصال
+          const gracePeriod = ['transport close', 'ping timeout'].includes(reason) 
+            ? 30000 // 30 ثانية للأسباب المؤقتة
+            : GRACE_PERIOD_MS; // دقيقة واحدة للأسباب الأخرى
+            
+          // جدولة الإزالة النهائية بعد فترة السماح
+          const timeout = setTimeout(async () => {
+            try {
+              // التحقق مرة أخرى من عدم إعادة الاتصال
+              const isStillConnected = Array.from(io.sockets.sockets.values())
+                .some(s => (s as CustomSocket).userId === userId);
+                
+              if (!isStillConnected) {
+                // إزالة من قائمة المتصلين فعلياً
+                connectedUsers.delete(userId);
+                // تحديث حالة المستخدم في قاعدة البيانات إلى غير متصل
+                await storage.setUserOnlineStatus(userId, false);
+                // معالجة مغادرة الغرفة
+                if (currentRoom) {
+                  await handleRoomLeave(socket, userId, username, currentRoom, false);
+                }
+                // بث إشعارات الخروج بعد انتهاء فترة السماح
+                io.emit('message', { type: 'userLeft', userId, username, timestamp: new Date().toISOString() });
+                
+                // تحديث قائمة المستخدمين المتصلين
+                const onlineUsers = Array.from(connectedUsers.values())
+                  .map(conn => conn.user)
+                  .filter(Boolean);
+                io.emit('onlineUsers', { users: onlineUsers });
+              }
+            } catch (finalErr) {
+              console.error('❌ خطأ في الإزالة بعد فترة السماح:', finalErr);
+            } finally {
+              pendingDisconnects.delete(userId);
+            }
+          }, gracePeriod);
 
            pendingDisconnects.set(userId, timeout);
 

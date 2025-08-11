@@ -96,13 +96,23 @@ export function getSocket(): Socket {
     rememberUpgrade: true,
     autoConnect: true,
     reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 60000,
+    reconnectionAttempts: 10, // تقليل المحاولات لتجنب الحظر
+    reconnectionDelay: 2000, // بداية أبطأ (2 ثانية)
+    reconnectionDelayMax: 30000, // حد أقصى أقل (30 ثانية)
     randomizationFactor: 0.5,
     timeout: 20000,
     forceNew: false,
     withCredentials: true,
+    // إعدادات إضافية للاستقرار
+    pingInterval: 10000, // ping كل 10 ثوانٍ
+    pingTimeout: 5000, // مهلة 5 ثوانٍ للرد
+    upgradeTimeout: 10000,
+    autoUnref: true
+  });
+
+  // إضافة معالج لأحداث ping/pong
+  socketInstance.on('ping', () => {
+    socketInstance.emit('pong');
   });
 
   attachCoreListeners(socketInstance);

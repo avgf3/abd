@@ -6,6 +6,7 @@ import type { PrivateConversation } from '../../../shared/types';
 import type { Notification } from '@/types/chat';
 import { apiRequest } from '@/lib/queryClient';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
+import { getNetworkMonitor } from '@/lib/networkMonitor';
 
 // Audio notification function
 const playNotificationSound = () => {
@@ -427,6 +428,17 @@ export const useChat = () => {
   const connect = useCallback((user: ChatUser) => {
     dispatch({ type: 'SET_CURRENT_USER', payload: user });
     dispatch({ type: 'SET_LOADING', payload: true });
+
+    // إعداد مراقب الشبكة
+    const networkMonitor = getNetworkMonitor();
+    const unsubscribeNetwork = networkMonitor.subscribe((online) => {
+      if (online && socket.current && !socket.current.connected) {
+        console.log('🔄 إعادة الاتصال بعد عودة الشبكة');
+        socket.current.connect();
+      } else if (!online) {
+        dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'الشبكة غير متصلة' });
+      }
+    });
 
     try {
       // تنظيف الاتصال السابق
