@@ -1604,29 +1604,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         if (!socket.userId) return;
         
-        // التحقق من حالة المستخدم بشكل بسيط
-        const user = await storage.getUser(socket.userId);
-        if (!user) {
+        // التحقق من حالة المستخدم باستخدام نظام الإدارة لضمان دقة الحالة وانتهاء المدة
+        const status = await moderationSystem.checkUserStatus(socket.userId);
+        if (!status.canChat) {
           socket.emit('message', {
             type: 'error',
-            message: 'المستخدم غير موجود'
-          });
-          return;
-        }
-        
-        // فحص حالة الحظر أو الكتم فقط إذا كانت موجودة في قاعدة البيانات
-        if (user.isBanned) {
-          socket.emit('message', {
-            type: 'error',
-            message: 'أنت محظور ولا يمكنك إرسال رسائل'
-          });
-          return;
-        }
-        
-        if (user.isMuted) {
-          socket.emit('message', {
-            type: 'error',
-            message: 'أنت مكتوم ولا يمكنك إرسال رسائل في الدردشة العامة'
+            message: status.reason || 'غير مسموح بإرسال الرسائل حالياً'
           });
           return;
         }

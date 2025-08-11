@@ -16,7 +16,7 @@ import MessageAlert from './MessageAlert';
 import ModerationPanel from './ModerationPanel';
 import ReportsLog from '../moderation/ReportsLog';
 import ActiveModerationLog from '../moderation/ActiveModerationLog';
-import KickNotification from '../moderation/KickNotification';
+import KickCountdown from '@/components/moderation/KickCountdown';
 import BlockNotification from '../moderation/BlockNotification';
 import PromoteUserPanel from '../moderation/PromoteUserPanel';
 import OwnerAdminPanel from './OwnerAdminPanel';
@@ -707,7 +707,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* إشعارات الطرد والحجب */}
       {chat.showKickCountdown && (
-        <KickNotification
+        <KickCountdown
           isVisible={chat.showKickCountdown}
           durationMinutes={15}
           onClose={() => chat.setShowKickCountdown(false)}
