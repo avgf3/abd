@@ -205,7 +205,7 @@ export default function OwnerAdminPanel({
   return (
     <>
       {/* أيقونة الإدارة للمالك */}
-      {currentUser?.username === 'عبود' && (
+      {currentUser?.userType === 'owner' && (
         <Button
           onClick={() => setIsModalOpen(true)}
           className="fixed bottom-4 right-4 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-full p-4 shadow-xl z-50"
