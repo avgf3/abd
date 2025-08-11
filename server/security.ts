@@ -187,6 +187,7 @@ export function setupSecurity(app: Express): void {
       "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: https:",
+      // allow connect to same-origin + websockets on same-origin
       "connect-src 'self' ws: wss: https:",
       "font-src 'self' https://fonts.gstatic.com",
       "object-src 'none'",
@@ -197,35 +198,37 @@ export function setupSecurity(app: Express): void {
     next();
   });
 
-  // CORS configuration
+  // CORS configuration (same-origin by default, allow env-configured origins)
   app.use((req: Request, res: Response, next: NextFunction) => {
-    const allowedOrigins = [
-      // Development origins
-      ...(process.env.NODE_ENV === 'development' ? [
-        'http://localhost:5173',
-        'http://localhost:3000',
-        'http://127.0.0.1:5173',
-        'http://127.0.0.1:3000'
-      ] : []),
-      // Production origins
-      'https://abd-ylo2.onrender.com',
-      process.env.FRONTEND_URL,
-      process.env.RENDER_EXTERNAL_URL,
-      process.env.CORS_ORIGIN
-    ].filter(Boolean);
+    const originHeader = req.headers.origin as string | undefined;
+    const hostHeader = req.headers.host || '';
 
-    const origin = req.headers.origin;
-    if (origin && allowedOrigins.includes(origin)) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-    } else if (!origin) {
-      // For same-origin requests (production)
-      res.setHeader('Access-Control-Allow-Origin', '*');
+    const envOrigins = [
+      process.env.RENDER_EXTERNAL_URL,
+      process.env.FRONTEND_URL,
+      process.env.CORS_ORIGIN,
+    ].filter(Boolean) as string[];
+
+    const envHosts = envOrigins
+      .map((u) => { try { return new URL(u).host; } catch { return ''; } })
+      .filter(Boolean);
+
+    const originHost = (() => {
+      try { return originHeader ? new URL(originHeader).host : ''; } catch { return ''; }
+    })();
+
+    const isDev = process.env.NODE_ENV === 'development';
+    const isSameHost = originHost && hostHeader && originHost === hostHeader;
+    const isEnvAllowed = originHost && envHosts.includes(originHost);
+
+    if (originHeader && (isDev || isSameHost || isEnvAllowed)) {
+      res.setHeader('Access-Control-Allow-Origin', originHeader);
     }
-    
+
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    
+
     if (req.method === 'OPTIONS') {
       res.sendStatus(200);
     } else {
