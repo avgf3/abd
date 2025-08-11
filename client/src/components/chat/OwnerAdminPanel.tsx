@@ -102,24 +102,22 @@ export default function OwnerAdminPanel({
   const fetchStaffMembers = async () => {
     setLoading(true);
     try {
-      // جلب جميع المستخدمين وتصفية الإداريين
-      const allUsers = onlineUsers.concat(
-        // يمكن إضافة مستخدمين آخرين من قاعدة البيانات
-      );
-      
-      const staff = allUsers.filter(user => 
-        user.userType === 'moderator' || 
-        user.userType === 'admin' || 
-        user.userType === 'owner'
-      ).map(user => ({
-        id: user.id,
-        username: user.username,
-        userType: user.userType as 'moderator' | 'admin' | 'owner',
-        profileImage: user.profileImage,
-        joinDate: user.joinDate,
-        lastSeen: user.lastSeen,
-        isOnline: true
-      }));
+      // جلب جميع المستخدمين من الخادم ثم تصفية أعضاء الإدارة فقط
+      const response = await apiRequest('/api/users', { method: 'GET' });
+      const allUsers = (response?.users || []) as Array<any>;
+
+      const staff = allUsers
+        .filter((user) => ['moderator', 'admin', 'owner'].includes(user.userType))
+        .map((user) => ({
+          id: user.id,
+          username: user.username,
+          userType: user.userType as 'moderator' | 'admin' | 'owner',
+          profileImage: user.profileImage,
+          joinDate: (user.joinDate ?? user.createdAt) as Date | undefined,
+          lastSeen: (user.lastSeen ?? user.lastActive ?? user.createdAt) as Date | string | undefined,
+          isOnline: Boolean(user.isOnline),
+        }));
+
       setStaffMembers(staff);
     } catch (error) {
       console.error('Error fetching staff:', error);
