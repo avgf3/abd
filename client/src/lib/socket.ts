@@ -15,13 +15,13 @@ export function saveSession(partial: Partial<StoredSession>) {
   try {
     const existing = getSession();
     const merged: StoredSession = { ...existing, ...partial };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
   } catch {}
 }
 
 export function getSession(): StoredSession {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
     return JSON.parse(raw) as StoredSession;
   } catch {
@@ -30,7 +30,7 @@ export function getSession(): StoredSession {
 }
 
 export function clearSession() {
-  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
 }
 
 let socketInstance: Socket | null = null;

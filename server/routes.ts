@@ -1408,8 +1408,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // منع المصادقة المتكررة
         if (isAuthenticated && !userData.reconnect) {
-          console.warn(`⚠️ محاولة مصادقة متكررة من ${socket.id}`);
-          return;
+          // السماح بتحديث الهوية إذا تغيّر userId أو طُلب reconnect صريحاً
+          if (userData.userId && userData.userId !== (socket as CustomSocket).userId) {
+            // سنسمح بتحديث الهوية لاحقاً في نفس المعالج
+          } else {
+            console.warn(`⚠️ محاولة مصادقة متكررة من ${socket.id}`);
+            return;
+          }
         }
         
         let user;
@@ -1477,6 +1482,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           room: 'general', // البدء بالغرفة العامة دائماً
           lastSeen: new Date()
         });
+        // انضمام لغرفة المستخدم الخاصة لضمان خاص يعمل دائماً
+        try { socket.join(user.id.toString()); } catch {}
         // تحديث حالة المستخدم إلى متصل
         try {
           await storage.setUserOnlineStatus(user.id, true);
@@ -1737,6 +1744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             message: messageWithSender
           }
         });
+        io.to(receiverId.toString()).emit('privateMessage', { message: messageWithSender });
         
         // إرسال للمرسل أيضاً
         socket.emit('message', {
@@ -1745,6 +1753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             message: messageWithSender
           }
         });
+        socket.emit('privateMessage', { message: messageWithSender });
         
       } catch (error) {
         console.error('خطأ في إرسال الرسالة الخاصة:', error);
@@ -3829,7 +3838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Check database availability
       if (!db || dbType === 'disabled') {
-        return res.json([]);
+        return res.json({ success: true, posts: [], count: 0, type });
       }
       
       const { type } = req.params; // 'public' أو 'friends'
