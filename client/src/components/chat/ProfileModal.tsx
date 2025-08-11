@@ -572,7 +572,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         }
       });
 
-      if ((result as any)?.user) {
+      const updatedUser = (result as any)?.user ?? result;
+
+      if (updatedUser && (updatedUser as any).id) {
         updateUserData({
           userTheme: theme,
           profileBackgroundColor: theme
@@ -612,8 +614,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         }
       });
 
-      const updated = (result as any)?.user;
-      if (updated) {
+      const updated = (result as any)?.user ?? result;
+      if (updated && (updated as any).id) {
         updateUserData({ 
           profileEffect: effect,
           usernameColor: getEffectColor(effect)
