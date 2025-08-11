@@ -1221,13 +1221,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
       } else {
-        // رسالة عامة
-        io.emit('message', {
-          envelope: {
-            type: 'newMessage',
-            message: { ...message, sender }
-          }
-        });
+                 // رسالة عامة - إرسال لأعضاء الغرفة فقط
+         io.to(`room_${roomId}`).emit('message', {
+           envelope: {
+             type: 'newMessage',
+             message: { ...message, sender, roomId }
+           }
+         });
       }
 
       res.json({ 
@@ -1621,107 +1621,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         if (!socket.userId) return;
         
-        // التحقق من حالة المستخدم باستخدام نظام الإدارة لضمان دقة الحالة وانتهاء المدة
-        const status = await moderationSystem.checkUserStatus(socket.userId);
-        if (!status.canChat) {
-          socket.emit('message', {
-            type: 'error',
-            message: status.reason || 'غير مسموح بإرسال الرسائل حالياً'
-          });
-          return;
-        }
-
-        // تنظيف المحتوى
+        // حذف فحوصات النظام الصارمة (حظر/كتم/سبام) والاكتفاء بتنظيف المحتوى فقط
         const sanitizedContent = sanitizeInput(data.content);
-        
-        // فحص صحة المحتوى
-        const contentCheck = validateMessageContent(sanitizedContent);
-        if (!contentCheck.isValid) {
-          socket.emit('message', { type: 'error', message: contentCheck.reason });
+        if (!sanitizedContent || !sanitizedContent.trim()) {
+          socket.emit('message', { type: 'error', message: 'محتوى الرسالة مطلوب' });
           return;
         }
         
-        // فحص الرسالة ضد السبام
-        const spamCheck = spamProtection.checkMessage(socket.userId, sanitizedContent);
-        if (!spamCheck.isAllowed) {
-          socket.emit('message', { type: 'error', message: spamCheck.reason, action: spamCheck.action });
-          return;
-        }
-
         const roomId = data.roomId || 'general';
-        
-        // 🔥 FIXED: التحقق من صلاحيات البث المباشر (تجنب التأثير على الغرفة العامة)
-        if (roomId !== 'general' && roomId !== 'عام') { // ✅ إضافة فحص للاسم العربي أيضاً
-          try {
-            const room = await storage.getRoom(roomId);
-            if (room && room.is_broadcast) {
-              const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
-              if (broadcastInfo) {
-                const isHost = broadcastInfo.hostId === socket.userId;
-                const isSpeaker = broadcastInfo.speakers.includes(socket.userId);
-                
-                if (!isHost && !isSpeaker) {
-                  socket.emit('message', {
-                    type: 'error',
-                    message: 'فقط المضيف والمتحدثون يمكنهم إرسال الرسائل في غرفة البث المباشر'
-                  });
-                  return;
-                }
-              }
-            }
-          } catch (error) {
-            // ✅ تجنب توقف الرسائل بسبب خطأ في فحص البث
-            console.warn('تحذير: خطأ في فحص صلاحيات البث:', error);
-            // السماح بالمتابعة إذا حدث خطأ في الفحص
-          }
-        }
         
         const newMessage = await storage.createMessage({
           senderId: socket.userId,
-          content: sanitizedContent,
+          content: sanitizedContent.trim(),
           messageType: data.messageType || 'text',
           isPrivate: false,
           roomId: roomId,
         });
-        
-        // إضافة نقاط لإرسال رسالة
-        try {
-          const pointsResult = await pointsService.addMessagePoints(socket.userId);
-          
-          // التحقق من إنجاز أول رسالة
-          const achievementResult = await pointsService.checkAchievement(socket.userId, 'FIRST_MESSAGE');
-          
-          // إرسال إشعار ترقية المستوى إذا حدثت
-          if (pointsResult?.leveledUp) {
-            socket.emit('message', {
-              type: 'levelUp',
-              oldLevel: pointsResult.oldLevel,
-              newLevel: pointsResult.newLevel,
-              levelInfo: pointsResult.levelInfo,
-              message: `🎉 تهانينا! وصلت للمستوى ${pointsResult.newLevel}: ${pointsResult.levelInfo?.title}`
-            });
-          }
-          
-          // إرسال إشعار إنجاز أول رسالة
-          if (achievementResult?.leveledUp) {
-            socket.emit('message', {
-              type: 'achievement',
-              message: `🏆 إنجاز جديد: أول رسالة! حصلت على ${achievementResult.newPoints - pointsResult.newPoints} نقطة إضافية!`
-            });
-          }
-          
-          // تحديث بيانات المستخدم في الذاكرة والإرسال للعملاء
-          const updatedSender = await storage.getUser(socket.userId);
-          if (updatedSender) {
-            // إرسال البيانات المحدثة للمستخدم
-            socket.emit('message', {
-              type: 'userUpdated',
-              user: updatedSender
-            });
-          }
-        } catch (pointsError) {
-          console.error('خطأ في إضافة النقاط:', pointsError);
-        }
         
         const sender = await storage.getUser(socket.userId);
         // إرسال الرسالة فقط للمستخدمين في نفس الغرفة
@@ -1748,7 +1663,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
         
-        // إنشاء الرسالة الخاصة
+         // إنشاء الرسالة الخاصة
         const newMessage = await storage.createMessage({
           senderId: socket.userId,
           receiverId: receiverId,
@@ -1760,23 +1675,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const sender = await storage.getUser(socket.userId);
         const messageWithSender = { ...newMessage, sender };
         
-        // إرسال للمستقبل
-        io.to(receiverId.toString()).emit('message', {
-          envelope: {
-            type: 'privateMessage',
-            message: messageWithSender
-          }
-        });
+        // إرسال فقط للمستقبل والمرسل عبر غرفهم الخاصة
         io.to(receiverId.toString()).emit('privateMessage', { message: messageWithSender });
-        
-        // إرسال للمرسل أيضاً
-        socket.emit('message', {
-          envelope: {
-            type: 'privateMessage',
-            message: messageWithSender
-          }
-        });
-        socket.emit('privateMessage', { message: messageWithSender });
+        io.to(receiverId.toString()).emit('message', { envelope: { type: 'privateMessage', message: messageWithSender } });
+        io.to(socket.userId.toString()).emit('privateMessage', { message: messageWithSender });
+        io.to(socket.userId.toString()).emit('message', { envelope: { type: 'privateMessage', message: messageWithSender } });
         
       } catch (error) {
         console.error('خطأ في إرسال الرسالة الخاصة:', error);
@@ -2426,7 +2329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const request = await friendService.createFriendRequest(senderId, receiverId);
       // إرسال إشعار عبر WebSocket
       const sender = await storage.getUser(senderId);
-      io.emit('message', {
+      io.to(receiverId.toString()).emit('message', {
         type: 'friendRequestReceived',
         targetUserId: receiverId,
         senderName: sender?.username,
@@ -2484,7 +2387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // إرسال إشعار عبر WebSocket
       const sender = await storage.getUser(senderId);
-      io.emit('message', {
+      io.to(targetUser.id.toString()).emit('message', {
         type: 'friendRequestReceived',
         targetUserId: targetUser.id,
         senderName: sender?.username,
@@ -2563,20 +2466,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sender = await storage.getUser(request.userId);
       
       // إرسال إشعار WebSocket لتحديث قوائم الأصدقاء
-      io.emit('message', {
+      io.to(request.userId.toString()).emit('message', {
         type: 'friendAdded',
         targetUserId: request.userId,
         friendId: request.friendId,
         friendName: receiver?.username
       });
       
-      io.emit('message', {
+      io.to(request.friendId.toString()).emit('message', {
         type: 'friendAdded', 
         targetUserId: request.friendId,
         friendId: request.userId,
         friendName: sender?.username
       });
-      io.emit('message', {
+      io.to(request.userId.toString()).emit('message', {
         type: 'friendRequestAccepted',
         targetUserId: request.userId,
         senderName: receiver?.username
