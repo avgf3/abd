@@ -284,6 +284,9 @@ export default function MessageArea({
     };
   }, []);
 
+  // ملاحظة حالة المصادقة بشكل مبسط: إذا لا يوجد currentUser نمنع الإدخال (المنطق الدقيق للمصادقة عولج في useChat)
+  const inputDisabled = !currentUser;
+ 
   return (
     <section className="flex-1 flex flex-col bg-white">
       {/* Room Header */}
@@ -477,7 +480,7 @@ export default function MessageArea({
             onKeyPress={handleKeyPress}
             placeholder="اكتب رسالتك هنا..."
             className="flex-1 resize-none"
-            disabled={!currentUser}
+            disabled={inputDisabled}
             maxLength={1000}
             autoComplete="off"
           />
@@ -485,7 +488,7 @@ export default function MessageArea({
           {/* Send Button */}
           <Button
             onClick={handleSendMessage}
-            disabled={!messageText.trim() || !currentUser}
+            disabled={!messageText.trim() || inputDisabled}
             className="aspect-square bg-primary hover:bg-primary/90"
           >
             <Send className="w-4 h-4" />
