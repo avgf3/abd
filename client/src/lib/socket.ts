@@ -180,7 +180,6 @@ class SocketManager {
     
     // معالج الاتصال
     this.socket.on('connect', () => {
-      console.log('Socket connected:', this.socket?.id);
       this.reconnectAttempts = 0;
       
       // المصادقة التلقائية باستخدام التوكن المحفوظ
@@ -194,7 +193,6 @@ class SocketManager {
     
     // معالج قطع الاتصال
     this.socket.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
       this.isAuthenticated = false;
       
       // إضافة الرسائل المعلقة للطابور
@@ -214,8 +212,6 @@ class SocketManager {
     
     // معالج إعادة الاتصال
     this.socket.on('reconnect', (attemptNumber) => {
-      console.log('Socket reconnected after', attemptNumber, 'attempts');
-      
       // إعادة المصادقة
       const token = localStorage.getItem('auth_token');
       if (token) {
@@ -231,7 +227,6 @@ class SocketManager {
     
     // معالج نجاح المصادقة
     this.socket.on('authSuccess', (data: { user: SocketUser }) => {
-      console.log('Authentication successful:', data.user.username);
       this.isAuthenticated = true;
       this.currentUser = data.user;
       

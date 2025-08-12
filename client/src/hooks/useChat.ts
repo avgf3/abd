@@ -207,6 +207,8 @@ export const useChat = () => {
   
   // 🔥 SIMPLIFIED loading management - مصدر واحد
   const loadingRooms = useRef<Set<string>>(new Set());
+  // Broadcast message handlers registry
+  const broadcastHandlersRef = useRef<Set<(data: any) => void>>(new Set());
   
   // Notification states
   const [levelUpNotification, setLevelUpNotification] = useState<any>(null);
@@ -292,7 +294,6 @@ export const useChat = () => {
 
       // معالج نجاح المصادقة
       socketInstance.on('authSuccess', (data: any) => {
-        console.log('✅ تمت المصادقة بنجاح');
         dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
         dispatch({ type: 'SET_LOADING', payload: false });
         // ابدأ ping بعد المصادقة
@@ -540,6 +541,63 @@ export const useChat = () => {
         } else {
           console.error('خطأ من السيرفر:', data.message);
         }
+      });
+
+      // ===== Broadcast room realtime handlers =====
+      const broadcastHandlersRefLocal = broadcastHandlersRef; // use outer ref
+      const notifyBroadcastHandlers = (payload: any) => {
+        try {
+          broadcastHandlersRefLocal.current.forEach((handler) => {
+            try { handler(payload); } catch {}
+          });
+        } catch {}
+      };
+
+      // Helper to refresh broadcast info from API
+      const refreshBroadcastInfo = async (roomId?: string) => {
+        try {
+          const effectiveRoomId = roomId || state.currentRoomId || 'general';
+          const data = await apiRequest(`/api/rooms/${effectiveRoomId}/broadcast-info`, { method: 'GET' });
+          if (data?.info) {
+            notifyBroadcastHandlers({ type: 'broadcastInfo', roomId: effectiveRoomId, broadcastInfo: data.info });
+          }
+        } catch {}
+      };
+
+      // Unified roomUpdate event from server (already includes broadcast sometimes)
+      socketInstance.on('roomUpdate', (payload: any) => {
+        const roomId = payload?.roomId || state.currentRoomId;
+        if (payload?.broadcast) {
+          notifyBroadcastHandlers({ type: payload.type || 'broadcastInfo', roomId, broadcastInfo: payload.broadcast });
+        } else if (payload?.type === 'hostChanged' || payload?.type === 'usersUpdated') {
+          // fetch fresh info
+          refreshBroadcastInfo(roomId);
+        }
+      });
+
+      // Mic flow events
+      socketInstance.on('micRequested', (payload: any) => {
+        const roomId = payload?.roomId || state.currentRoomId;
+        notifyBroadcastHandlers({ type: 'micRequest', roomId, content: payload?.message, userId: payload?.userId });
+        refreshBroadcastInfo(roomId);
+      });
+
+      socketInstance.on('micApproved', (payload: any) => {
+        const roomId = payload?.roomId || state.currentRoomId;
+        notifyBroadcastHandlers({ type: 'micApproved', roomId, content: payload?.message, userId: payload?.userId, approvedBy: payload?.approvedBy });
+        refreshBroadcastInfo(roomId);
+      });
+
+      socketInstance.on('micRejected', (payload: any) => {
+        const roomId = payload?.roomId || state.currentRoomId;
+        notifyBroadcastHandlers({ type: 'micRejected', roomId, content: payload?.message, userId: payload?.userId, rejectedBy: payload?.rejectedBy });
+        refreshBroadcastInfo(roomId);
+      });
+
+      socketInstance.on('speakerRemoved', (payload: any) => {
+        const roomId = payload?.roomId || state.currentRoomId;
+        notifyBroadcastHandlers({ type: 'speakerRemoved', roomId, content: payload?.message, userId: payload?.userId, removedBy: payload?.removedBy });
+        refreshBroadcastInfo(roomId);
       });
 
     }, [state.currentUser, state.onlineUsers, state.currentRoomId]);
@@ -845,5 +903,13 @@ export const useChat = () => {
     getCurrentRoomMessages,
     updateCurrentUser,
     loadPrivateConversation,
+
+    // Broadcast helpers for BroadcastRoomInterface
+    addBroadcastMessageHandler: (handler: (data: any) => void) => {
+      broadcastHandlersRef.current.add(handler);
+    },
+    removeBroadcastMessageHandler: (handler: (data: any) => void) => {
+      broadcastHandlersRef.current.delete(handler);
+    },
   };
 }
