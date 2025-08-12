@@ -26,14 +26,45 @@ export function useNotificationManager(currentUser: ChatUser | null) {
 
   // Initialize audio
   useEffect(() => {
-    audioRef.current = new Audio('/notification.mp3');
-    audioRef.current.volume = 0.5;
+    const audio = new Audio('/notification.mp3');
+    audio.volume = 0.5;
+
+    const onError = () => {
+      // Fallback: use Web Audio API beep if mp3 cannot be decoded
+      audioRef.current = null;
+    };
+
+    audio.addEventListener('error', onError, { once: true });
+    audioRef.current = audio;
+
+    return () => {
+      audio.removeEventListener('error', onError as any);
+    };
   }, []);
 
   // Play notification sound
   const playNotificationSound = useCallback(() => {
+    const tryBeep = () => {
+      try {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+        gain.gain.setValueAtTime(0.001, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.03, audioContext.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.25);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.25);
+      } catch {}
+    };
+
     if (audioRef.current) {
-      audioRef.current.play().catch(console.warn);
+      audioRef.current.play().catch(tryBeep);
+    } else {
+      tryBeep();
     }
   }, []);
 
