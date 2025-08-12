@@ -278,46 +278,54 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       <div className="h-screen flex flex-col" onClick={closeUserPopup}>
       {/* Header - بدون التبويبات الأربعة */}
       <header className="bg-secondary py-4 px-6 flex justify-between items-center shadow-2xl border-b border-accent">
-        <div className="flex items-center gap-3">
-          <div className="text-2xl">💬</div>
-          <div className="text-2xl font-bold text-white">
-            Arabic<span className="text-primary">Chat</span>
-          </div>
-        </div>
         <div className="flex gap-3">
           <Button 
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
-            onClick={() => setShowNotifications(true)}
-          >
-            <span>🔔</span>
-            إشعارات
-          </Button>
-          
-          <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
-            onClick={() => setShowMessages(true)}
-            title="الرسائل"
+            onClick={() => setShowSettings(!showSettings)}
           >
-            <span style={{ display: 'flex', alignItems: 'center' }}>
-              <svg width="24" height="18" viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
-                <rect x="5" y="20" width="110" height="60" fill="white" stroke="#444" strokeWidth="1.5"/>
-                <polygon points="5,20 60,55 115,20" fill="white" stroke="#444" strokeWidth="1.5"/>
-                <line x1="5" y1="20" x2="60" y2="55" stroke="#555" strokeWidth="1"/>
-                <line x1="115" y1="20" x2="60" y2="55" stroke="#555" strokeWidth="1"/>
-              </svg>
-            </span>
-            الرسائل
+            <span>⚙️</span>
+            إعدادات
           </Button>
+
+          {/* زر خاص بالمالك فقط */}
+          {chat.currentUser && chat.currentUser.userType === 'owner' && (
+            <Button 
+              className="glass-effect px-4 py-2 rounded-lg hover:bg-purple-600 transition-all duration-200 flex items-center gap-2 border border-purple-400"
+              onClick={() => setShowOwnerPanel(true)}
+            >
+              <span>👑</span>
+              إدارة المالك
+            </Button>
+          )}
           
           {/* زر لوحة الإدارة للمشرفين */}
           {chat.currentUser && (chat.currentUser.userType === 'owner' || chat.currentUser.userType === 'admin') && (
             <>
+              {/* زر ترقية المستخدمين - للمالك فقط */}
+              {chat.currentUser?.userType === 'owner' && (
+                <Button 
+                  className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2"
+                  onClick={() => setShowPromotePanel(true)}
+                >
+                  <span>👑</span>
+                  ترقية المستخدمين
+                </Button>
+              )}
+
               <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
-                onClick={() => setShowModerationPanel(true)}
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400"
+                onClick={() => setShowActiveActions(true)}
               >
-                <span>🛡️</span>
-                إدارة
+                <span>🔒</span>
+                سجل الإجراءات النشطة
+              </Button>
+              
+              <Button 
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 border border-red-400 relative"
+                onClick={() => setShowReportsLog(true)}
+              >
+                <span>⚠️</span>
+                سجل البلاغات
               </Button>
               
               <Button 
@@ -340,52 +348,44 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               </Button>
               
               <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 border border-red-400 relative"
-                onClick={() => setShowReportsLog(true)}
+                className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+                onClick={() => setShowModerationPanel(true)}
               >
-                <span>⚠️</span>
-                سجل البلاغات
+                <span>🛡️</span>
+                إدارة
               </Button>
-              
-              <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400"
-                onClick={() => setShowActiveActions(true)}
-              >
-                <span>🔒</span>
-                سجل الإجراءات النشطة
-              </Button>
-
-              {/* زر ترقية المستخدمين - للمالك فقط */}
-              {chat.currentUser?.userType === 'owner' && (
-                <Button 
-                  className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2"
-                  onClick={() => setShowPromotePanel(true)}
-                >
-                  <span>👑</span>
-                  ترقية المستخدمين
-                </Button>
-              )}
             </>
           )}
 
-          {/* زر خاص بالمالك فقط */}
-          {chat.currentUser && chat.currentUser.userType === 'owner' && (
-            <Button 
-              className="glass-effect px-4 py-2 rounded-lg hover:bg-purple-600 transition-all duration-200 flex items-center gap-2 border border-purple-400"
-              onClick={() => setShowOwnerPanel(true)}
-            >
-              <span>👑</span>
-              إدارة المالك
-            </Button>
-          )}
-          
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
-            onClick={() => setShowSettings(!showSettings)}
+            onClick={() => setShowMessages(true)}
+            title="الرسائل"
           >
-            <span>⚙️</span>
-            إعدادات
+            <span style={{ display: 'flex', alignItems: 'center' }}>
+              <svg width="24" height="18" viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+                <rect x="5" y="20" width="110" height="60" fill="white" stroke="#444" strokeWidth="1.5"/>
+                <polygon points="5,20 60,55 115,20" fill="white" stroke="#444" strokeWidth="1.5"/>
+                <line x1="5" y1="20" x2="60" y2="55" stroke="#555" strokeWidth="1"/>
+                <line x1="115" y1="20" x2="60" y2="55" stroke="#555" strokeWidth="1"/>
+              </svg>
+            </span>
+            الرسائل
           </Button>
+          
+          <Button 
+            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
+            onClick={() => setShowNotifications(true)}
+          >
+            <span>🔔</span>
+            إشعارات
+          </Button>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-2xl">💬</div>
+          <div className="text-2xl font-bold text-white">
+            Arabic<span className="text-primary">Chat</span>
+          </div>
         </div>
       </header>
       
