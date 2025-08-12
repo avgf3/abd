@@ -308,16 +308,18 @@ export const useChat = () => {
                 isPrivate: Boolean(message.isPrivate)
               };
               
-              // إضافة الرسالة للغرفة المناسبة
-              dispatch({ 
-                type: 'ADD_ROOM_MESSAGE', 
-                payload: { roomId, message: chatMessage }
-              });
+                             // إضافة الرسالة للغرفة المناسبة (عام فقط)
+               if (!chatMessage.isPrivate) {
+                 dispatch({ 
+                   type: 'ADD_ROOM_MESSAGE', 
+                   payload: { roomId, message: chatMessage }
+                 });
+               }
               
-              // تشغيل صوت خفيف فقط عند الرسائل العامة في الغرفة الحالية
-              if (chatMessage.senderId !== state.currentUser?.id && roomId === state.currentRoomId) {
-                playNotificationSound();
-              }
+                             // تشغيل صوت خفيف فقط عند الرسائل العامة في الغرفة الحالية
+               if (!chatMessage.isPrivate && chatMessage.senderId !== state.currentUser?.id && roomId === state.currentRoomId) {
+                 playNotificationSound();
+               }
             }
             break;
           }
@@ -494,8 +496,7 @@ export const useChat = () => {
     };
 
     socketInstance.on('privateMessage', handlePrivateMessage);
-    // ملاحظة: نتعامل مع الرسائل الخاصة فقط عبر حدث 'privateMessage' المخصص لتجنّب التكرار
-    // منع أي إشعار يشبه الخاص من مسار الرسائل العامة
+    // نتعامل مع الرسائل الخاصة حصراً عبر 'privateMessage' بعد حذف التكرار على الخادم
 
       // معالج حدث الطرد
       socketInstance.on('kicked', (data: any) => {

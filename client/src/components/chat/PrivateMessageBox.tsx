@@ -10,6 +10,7 @@ import EmojiPicker from './EmojiPicker';
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
 import { getFinalUsernameColor, getUserThemeClasses, getUserThemeStyles } from '@/utils/themeUtils';
+import { api } from '@/lib/queryClient';
 
 
 interface PrivateMessageBoxProps {
@@ -57,8 +58,31 @@ export default function PrivateMessageBox({
     }
   };
 
-  const handleFileSelect = (file: File, type: 'image' | 'video' | 'document') => {
+  const handleFileSelect = async (file: File, type: 'image' | 'video' | 'document') => {
     if (type === 'image') {
+      try {
+        if (!currentUser) {
+          alert('يجب تسجيل الدخول');
+          return;
+        }
+        const form = new FormData();
+        form.append('image', file);
+        form.append('senderId', String(currentUser.id));
+        form.append('receiverId', String(user.id));
+        const resp = await api.upload<{ success: boolean; imageUrl: string; message?: any }>(
+          '/api/upload/message-image',
+          form,
+          { timeout: 60000 }
+        );
+        if (resp?.message?.content) {
+          // لا حاجة لاستدعاء onSendMessage لأن الخادم سيرسلها عبر socket
+          return;
+        }
+        // fallback: إن لم يرجع الخادم رسالة، أرسل base64 محلياً (نادر)
+      } catch (e) {
+        console.error('رفع الصورة فشل، سنحاول كـ base64 محلياً', e);
+      }
+      // fallback لقراءة الصورة كـ base64
       const reader = new FileReader();
       reader.onload = (event) => {
         const dataUrl = event.target?.result as string;

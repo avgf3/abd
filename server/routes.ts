@@ -1207,21 +1207,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // إرسال الرسالة عبر Socket.IO
       if (isPrivate && receiverId) {
-        // رسالة خاصة
-        io.to(receiverId.toString()).emit('message', {
-          envelope: {
-            type: 'privateMessage',
-            message: { ...message, sender }
-          }
-        });
-        
-        // إرسال للمرسل أيضاً
-        io.to(senderId.toString()).emit('message', {
-          envelope: {
-            type: 'privateMessage',
-            message: { ...message, sender }
-          }
-        });
+        // رسالة خاصة - حدث موحّد فقط
+        io.to(receiverId.toString()).emit('privateMessage', { message: { ...message, sender } });
+        io.to(senderId.toString()).emit('privateMessage', { message: { ...message, sender } });
       } else {
         // رسالة عامة
         io.emit('message', {
@@ -1776,22 +1764,8 @@ if (!existing) {
         const sender = await storage.getUser(socket.userId);
         const messageWithSender = { ...newMessage, sender };
         
-        // إرسال للمستقبل
-        io.to(receiverId.toString()).emit('message', {
-          envelope: {
-            type: 'privateMessage',
-            message: messageWithSender
-          }
-        });
+        // إرسال للمستقبل والمرسل - حدث موحّد فقط
         io.to(receiverId.toString()).emit('privateMessage', { message: messageWithSender });
-        
-        // إرسال للمرسل أيضاً
-        socket.emit('message', {
-          envelope: {
-            type: 'privateMessage',
-            message: messageWithSender
-          }
-        });
         socket.emit('privateMessage', { message: messageWithSender });
         
       } catch (error) {
@@ -4249,6 +4223,77 @@ if (!existing) {
       res.json({ blockedDevices: list });
     } catch (error) {
       res.status(500).json({ error: "خطأ في جلب الأجهزة/العناوين المحجوبة" });
+    }
+  });
+
+  // رفع صورة رسالة (خاص/عام) - يحول الصورة إلى base64 لتوافق بيئات الاستضافة
+  const messageImageUpload = createMulterConfig('messages', 'message', 8 * 1024 * 1024);
+  app.post('/api/upload/message-image', messageImageUpload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "لم يتم رفع أي ملف", details: "أرسل الملف في الحقل 'image'" });
+      }
+
+      const { senderId, receiverId, roomId } = req.body as any;
+      const parsedSenderId = parseInt(senderId);
+
+      if (!parsedSenderId || isNaN(parsedSenderId)) {
+        try { fs.unlinkSync(req.file.path); } catch {}
+        return res.status(400).json({ error: 'senderId مطلوب' });
+      }
+
+      let imageUrl: string;
+      try {
+        const fileBuffer = fs.readFileSync(req.file.path);
+        const base64Image = fileBuffer.toString('base64');
+        const mimeType = req.file.mimetype;
+        imageUrl = `data:${mimeType};base64,${base64Image}`;
+        fs.unlinkSync(req.file.path);
+      } catch (e) {
+        // fallback لمسار ملف ثابت
+        imageUrl = `/uploads/messages/${req.file.filename}`;
+      }
+
+      // إذا كان receiverId موجوداً، فهذه رسالة خاصة
+      if (receiverId) {
+        const parsedReceiverId = parseInt(receiverId);
+        const newMessage = await storage.createMessage({
+          senderId: parsedSenderId,
+          receiverId: parsedReceiverId,
+          content: imageUrl,
+          messageType: 'image',
+          isPrivate: true,
+          roomId: 'general'
+        });
+        const sender = await storage.getUser(parsedSenderId);
+        const messageWithSender = { ...newMessage, sender };
+        io.to(parsedReceiverId.toString()).emit('privateMessage', { message: messageWithSender });
+        io.to(parsedSenderId.toString()).emit('privateMessage', { message: messageWithSender });
+        return res.json({ success: true, imageUrl, message: messageWithSender });
+      }
+
+      // خلاف ذلك: نعتبرها صورة غرفة
+      const targetRoomId = (roomId && typeof roomId === 'string') ? roomId : 'general';
+      const newMessage = await storage.createMessage({
+        senderId: parsedSenderId,
+        content: imageUrl,
+        messageType: 'image',
+        isPrivate: false,
+        roomId: targetRoomId
+      });
+      const sender = await storage.getUser(parsedSenderId);
+      const socketData = {
+        type: 'newMessage',
+        roomId: targetRoomId,
+        message: { ...newMessage, sender },
+        timestamp: new Date().toISOString()
+      };
+      io.to(`room_${targetRoomId}`).emit('message', socketData);
+
+      res.json({ success: true, imageUrl, message: { ...newMessage, sender } });
+    } catch (error: any) {
+      console.error('❌ خطأ في رفع صورة الرسالة:', error);
+      res.status(500).json({ error: 'خطأ في رفع صورة الرسالة', details: error?.message });
     }
   });
 

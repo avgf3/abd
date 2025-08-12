@@ -9,7 +9,7 @@ import { findMentions, playMentionSound, renderMessageWithMentions, insertMentio
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import { Send, Image as ImageIcon, Smile } from "lucide-react";
 import UserRoleBadge from './UserRoleBadge';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, api } from '@/lib/queryClient';
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -199,7 +199,7 @@ export default function MessageArea({
   }, []);
 
   // File upload handler - محسن
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -210,17 +210,37 @@ export default function MessageArea({
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageData = event.target?.result as string;
-        if (imageData) {
-          onSendMessage(imageData, 'image');
+      // حاول رفع الصورة عبر API
+      try {
+        if (!currentUser) throw new Error('يجب تسجيل الدخول');
+        const form = new FormData();
+        form.append('image', file);
+        form.append('senderId', String(currentUser.id));
+        form.append('roomId', String(currentRoomName || 'general'));
+        const resp = await api.upload<{ success: boolean; imageUrl: string; message?: any }>(
+          '/api/upload/message-image',
+          form,
+          { timeout: 60000 }
+        );
+        if (resp?.message?.content) {
+          // سيتم استقبال الرسالة عبر socket
+        } else if (resp?.imageUrl) {
+          onSendMessage(resp.imageUrl, 'image');
         }
-      };
-      reader.onerror = () => {
-        alert('فشل في قراءة الملف');
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        // fallback إلى base64
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const imageData = event.target?.result as string;
+          if (imageData) {
+            onSendMessage(imageData, 'image');
+          }
+        };
+        reader.onerror = () => {
+          alert('فشل في قراءة الملف');
+        };
+        reader.readAsDataURL(file);
+      }
     } else {
       alert('يرجى اختيار ملف صورة صحيح');
     }
@@ -229,7 +249,7 @@ export default function MessageArea({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [onSendMessage]);
+  }, [onSendMessage, currentUser, currentRoomName]);
 
   // تم نقل دالة formatTime إلى utils/timeUtils.ts لتجنب التكرار
 
