@@ -27,9 +27,48 @@ import path from "path";
 import fs from "fs";
 import bcrypt from "bcrypt";
 import sharp from "sharp";
+import jwt from "jsonwebtoken";
+import fileType from "file-type";
 // import { trackClick } from "./middleware/analytics"; // commented out as file doesn't exist
 import { DEFAULT_LEVELS, recalculateUserStats } from "../shared/points-system";
 import { protect } from "./middleware/enhancedSecurity";
+import { requireAuth, requireOwnership, type AuthRequest } from "./middleware/requireAuth";
+import logger from "./utils/logger";
+
+// ثوابت الحدود
+const MAX_MESSAGE_LENGTH = 1000;
+const MAX_USERNAME_LENGTH = 20;
+const MAX_WALL_POST_LENGTH = 500;
+const MAX_ROOM_NAME_LENGTH = 50;
+const MAX_ROOM_DESCRIPTION_LENGTH = 200;
+
+// Validation schemas
+const messageSchema = z.object({
+  content: z.string().min(1).max(MAX_MESSAGE_LENGTH, `الرسالة يجب أن تكون أقل من ${MAX_MESSAGE_LENGTH} حرف`),
+  roomId: z.string().min(1),
+  isPrivate: z.boolean().optional(),
+  receiverId: z.number().optional()
+});
+
+const userUpdateSchema = z.object({
+  profileImage: z.string().url().optional(),
+  profileBanner: z.string().url().optional(),
+  usernameColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'لون غير صالح').optional()
+});
+
+const wallPostSchema = z.object({
+  content: z.string().max(MAX_WALL_POST_LENGTH, `المنشور يجب أن يكون أقل من ${MAX_WALL_POST_LENGTH} حرف`).optional(),
+  type: z.enum(['public', 'private']).optional(),
+  userId: z.string().transform(val => parseInt(val))
+});
+
+const roomCreateSchema = z.object({
+  name: z.string().min(1).max(MAX_ROOM_NAME_LENGTH, `اسم الغرفة يجب أن يكون أقل من ${MAX_ROOM_NAME_LENGTH} حرف`),
+  description: z.string().max(MAX_ROOM_DESCRIPTION_LENGTH).optional(),
+  icon: z.string().optional(),
+  isPrivate: z.boolean().optional(),
+  requiresApproval: z.boolean().optional()
+});
 
 // إعداد multer موحد لرفع الصور
 const createMulterConfig = (destination: string, prefix: string, maxSize: number = 5 * 1024 * 1024) => {
@@ -59,13 +98,19 @@ const createMulterConfig = (destination: string, prefix: string, maxSize: number
     fileFilter: (req, file, cb) => {
       const allowedMimes = [
         'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
-        'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff'
+        'image/webp', 'image/bmp', 'image/tiff'
       ];
+      
+      // منع SVG بشكل صريح
+      if (file.mimetype === 'image/svg+xml' || file.originalname.toLowerCase().endsWith('.svg')) {
+        cb(new Error('ملفات SVG غير مسموحة لأسباب أمنية'));
+        return;
+      }
       
       if (allowedMimes.includes(file.mimetype)) {
         cb(null, true);
       } else {
-        cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`));
+        cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP`));
       }
     }
   });
@@ -217,6 +262,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('خطأ في حذف الملف:', unlinkError);
         }
         return res.status(404).json({ error: "المستخدم غير موجود" });
+      }
+
+      // فحص نوع الملف الحقيقي باستخدام file-type
+      try {
+        const fileBuffer = fs.readFileSync(req.file.path);
+        const fileTypeResult = await fileType.fromBuffer(fileBuffer);
+        
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        
+        if (!fileTypeResult || !allowedTypes.includes(fileTypeResult.mime)) {
+          // حذف الملف إذا كان نوعه غير مسموح
+          fs.unlinkSync(req.file.path);
+          return res.status(400).json({ 
+            error: 'نوع الملف غير مسموح',
+            details: fileTypeResult ? `النوع المكتشف: ${fileTypeResult.mime}` : 'لم يتم التعرف على نوع الملف'
+          });
+        }
+        
+        // منع SVG بشكل صريح
+        if (fileTypeResult.mime === 'image/svg+xml' || fileTypeResult.ext === 'svg') {
+          fs.unlinkSync(req.file.path);
+          return res.status(400).json({ 
+            error: 'ملفات SVG غير مسموحة لأسباب أمنية' 
+          });
+        }
+      } catch (typeCheckError) {
+        console.error('خطأ في فحص نوع الملف:', typeCheckError);
+        fs.unlinkSync(req.file.path);
+        return res.status(500).json({ error: 'فشل في التحقق من نوع الملف' });
       }
 
       // حل مشكلة Render: تحويل الصورة إلى base64 وحفظها في قاعدة البيانات
@@ -453,7 +527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // تحديث بيانات المستخدم - للإصلاح
-  app.patch('/api/users/:userId', async (req, res) => {
+  app.patch('/api/users/:userId', requireAuth, requireOwnership, async (req: AuthRequest, res) => {
     try {
       const userId = parseInt(req.params.userId);
       if (!userId || isNaN(userId)) {
@@ -772,7 +846,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API لتحديث لون اسم المستخدم
-  app.post("/api/users/:userId/username-color", async (req, res) => {
+  app.post("/api/users/:userId/username-color", requireAuth, requireOwnership, async (req: AuthRequest, res) => {
     try {
       const { userId } = req.params;
       const { color } = req.body;
@@ -1233,7 +1307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Update username color
-  app.post('/api/users/:userId/color', async (req, res) => {
+  app.post('/api/users/:userId/color', requireAuth, requireOwnership, async (req: AuthRequest, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const { color } = req.body;
@@ -1295,6 +1369,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return;
     }
     
+    // Middleware لمنع أي أحداث قبل المصادقة
+    socket.use((packet, next) => {
+      const eventName = packet[0];
+      
+      // السماح فقط بحدث المصادقة قبل تسجيل الدخول
+      if (!isAuthenticated && eventName !== 'auth') {
+        console.warn(`محاولة استخدام حدث ${eventName} بدون مصادقة من ${socket.id}`);
+        return next(new Error('يجب المصادقة أولاً'));
+      }
+      
+      next();
+    });
+    
     // إعداد timeout للمصادقة (60 ثانية - زيادة المهلة لتجنب قطع الاتصال المفرط)
     connectionTimeout = setTimeout(() => {
       if (!isAuthenticated) {
@@ -1351,11 +1438,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
 
     // معالج المصادقة الموحد - يدعم الضيوف والمستخدمين المسجلين
-    socket.on('auth', async (userData: { 
-      userId?: number; 
-      username?: string; 
-      userType?: string; 
-      token?: string;
+    socket.on('auth', async (authData: { 
+      token: string;
       reconnect?: boolean;
       lastRoomId?: string;
     }) => {
@@ -1372,23 +1456,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
         
-        let user;
-        let shouldRejoinRoom = false;
-        let roomToRejoin = userData.lastRoomId || 'general';
-        
-        // إذا كان هناك userId، فهو مستخدم مسجل
-        if (userData.userId) {
-          user = await storage.getUser(userData.userId);
-          if (!user) {
-            socket.emit('authError', { message: 'المستخدم غير موجود' });
+        // التحقق من وجود التوكن
+        if (!authData.token) {
+          socket.emit('authError', { message: 'رمز المصادقة مطلوب' });
+          return;
+        }
+
+        // التحقق من JWT_SECRET
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+          console.error('JWT_SECRET غير محدد في متغيرات البيئة');
+          socket.emit('authError', { message: 'خطأ في إعداد الخادم' });
+          return;
+        }
+
+        // التحقق من التوكن
+        let decoded: any;
+        try {
+          decoded = jwt.verify(authData.token, jwtSecret);
+        } catch (jwtError: any) {
+          if (jwtError.name === 'TokenExpiredError') {
+            socket.emit('authError', { message: 'انتهت صلاحية رمز المصادقة' });
+            return;
+          } else if (jwtError.name === 'JsonWebTokenError') {
+            socket.emit('authError', { message: 'رمز المصادقة غير صالح' });
             return;
           }
+          throw jwtError;
+        }
+
+        // التحقق من وجود معرف المستخدم في التوكن
+        if (!decoded.userId || typeof decoded.userId !== 'number') {
+          socket.emit('authError', { message: 'رمز المصادقة غير صالح - معرف المستخدم مفقود' });
+          return;
+        }
+        
+        let user;
+        let shouldRejoinRoom = false;
+        let roomToRejoin = authData.lastRoomId || 'general';
+        
+        // جلب معلومات المستخدم من قاعدة البيانات
+        user = await storage.getUser(decoded.userId);
+        if (!user) {
+          socket.emit('authError', { message: 'المستخدم غير موجود' });
+          return;
+        }
           
           // في حالة إعادة الاتصال، نحاول استعادة الغرفة السابقة
-          if (userData.reconnect) {
+          if (authData.reconnect) {
             shouldRejoinRoom = true;
             // محاولة الحصول على آخر غرفة من قاعدة البيانات إذا لم يتم إرسالها
-            if (!userData.lastRoomId) {
+            if (!authData.lastRoomId) {
               const userRooms = await roomService.getUserRooms(user.id);
               if (userRooms && userRooms.length > 0) {
                 roomToRejoin = userRooms[0].id; // آخر غرفة انضم إليها
@@ -1419,52 +1537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return;
           }
 
-          // لا نسمح بالمصادقة عبر userId لمستخدم غير ضيف ما لم تكن لديه جلسة فعّالة (تم تسجيل الدخول عبر API)
-          if (user.userType !== 'guest' && !user.isOnline) {
-            console.warn('محاولة دخول عبر Socket بدون جلسة فعالة', { userId: user.id, socketId: socket.id });
-            socket.emit('error', { message: 'يرجى تسجيل الدخول أولاً' });
-            return;
-          }
-        } 
-        // إذا كان هناك username فقط، نسمح بإنشاء ضيف جديد فقط ولا نسمح بتسجيل الدخول بحساب موجود عبر الاسم
-        else if (userData.username) {
-          const safeUsername = String(userData.username).trim();
-          const validName = /^[\u0600-\u06FFa-zA-Z0-9_]{3,20}$/.test(safeUsername);
-          if (!validName) {
-            socket.emit('error', { message: 'اسم مستخدم غير صالح' });
-            return;
-          }
 
-          // إذا كان الاسم موجوداً، نرفض المصادقة عبر الاسم فقط و نطلب تسجيل الدخول الرسمي
-          const existing = await storage.getUserByUsername(safeUsername);
-          if (existing) {
-            console.warn('محاولة انتحال عبر Socket باستخدام اسم مستخدم موجود', { username: safeUsername, socketId: socket.id });
-            socket.emit('error', { message: 'الرجاء تسجيل الدخول باستخدام الحساب' });
-            return;
-          }
-
-          // السماح بإنشاء حساب ضيف فقط عبر Socket
-          const requestedType = String(userData.userType || 'guest').toLowerCase();
-          if (requestedType !== 'guest') {
-            console.warn('محاولة تصعيد صلاحيات عبر Socket', { username: safeUsername, requestedType, socketId: socket.id });
-            socket.emit('error', { message: 'غير مسموح بإنشاء حسابات بامتيازات عبر Socket' });
-            return;
-          }
-
-          const newUser = {
-            username: safeUsername,
-            userType: 'guest',
-            role: 'guest',
-            isOnline: true,
-            joinDate: new Date(),
-            createdAt: new Date()
-          };
-
-          user = await storage.createUser(newUser);
-        } else {
-          socket.emit('error', { message: 'بيانات المصادقة غير مكتملة' });
-          return;
-        }
 
         // تحديث معلومات Socket
         (socket as CustomSocket).userId = user.id;
@@ -1472,6 +1545,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (socket as CustomSocket).userType = user.userType;
         (socket as CustomSocket).isAuthenticated = true;
         isAuthenticated = true;
+        
+        // تخزين معلومات المستخدم في socket.data (الطريقة الموصى بها من Socket.IO)
+        socket.data.user = {
+          id: user.id,
+          username: user.username,
+          role: user.userType || 'member'
+        };
 
         // الانضمام لغرفة المستخدم الخاصة لاستقبال الرسائل الخاصة
         try { socket.join(user.id.toString()); } catch {}
@@ -2779,7 +2859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Removed second duplicate moderation actions endpoint - kept the more complete one
 
   // Friends routes
-  app.get("/api/friends/:userId", async (req, res) => {
+  app.get("/api/friends/:userId", requireAuth, requireOwnership, async (req: AuthRequest, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const friends = await friendService.getFriends(userId);
@@ -2792,7 +2872,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  app.delete("/api/friends/:userId/:friendId", async (req, res) => {
+  app.delete("/api/friends/:userId/:friendId", requireAuth, requireOwnership, async (req: AuthRequest, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const friendId = parseInt(req.params.friendId);
@@ -3095,7 +3175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notifications API
-  app.get("/api/notifications/:userId", async (req, res) => {
+  app.get("/api/notifications/:userId", requireAuth, requireOwnership, async (req: AuthRequest, res) => {
     try {
       // Check database availability
       if (!db || dbType === 'disabled') {
@@ -3729,9 +3809,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // إنشاء منشور جديد
-  app.post('/api/wall/posts', wallUpload.single('image'), async (req, res) => {
+  app.post('/api/wall/posts', messageLimiter, wallUpload.single('image'), async (req, res) => {
     try {
-      const { content, type, userId } = req.body;
+      // التحقق من صحة البيانات باستخدام zod
+      const validationResult = wallPostSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: 'بيانات غير صالحة',
+          details: validationResult.error.issues.map(issue => issue.message)
+        });
+      }
+      
+      const { content, type, userId } = validationResult.data;
 
       if (!userId) {
         return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
@@ -3770,9 +3859,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let computedImageUrl: string | null = null;
 
       if (req.file) {
+        // فحص نوع الملف الحقيقي باستخدام file-type
+        const filePath = path.join(process.cwd(), 'client', 'public', 'uploads', 'wall', req.file.filename);
+        
+        try {
+          const fileBuffer = await fs.promises.readFile(filePath);
+          const fileTypeResult = await fileType.fromBuffer(fileBuffer);
+          
+          const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+          
+          if (!fileTypeResult || !allowedTypes.includes(fileTypeResult.mime)) {
+            // حذف الملف إذا كان نوعه غير مسموح
+            await fs.promises.unlink(filePath);
+            return res.status(400).json({ 
+              error: 'نوع الملف غير مسموح',
+              details: fileTypeResult ? `النوع المكتشف: ${fileTypeResult.mime}` : 'لم يتم التعرف على نوع الملف'
+            });
+          }
+          
+          // منع SVG بشكل صريح
+          if (fileTypeResult.mime === 'image/svg+xml' || fileTypeResult.ext === 'svg') {
+            await fs.promises.unlink(filePath);
+            return res.status(400).json({ 
+              error: 'ملفات SVG غير مسموحة لأسباب أمنية' 
+            });
+          }
+        } catch (typeCheckError) {
+          console.error('خطأ في فحص نوع الملف:', typeCheckError);
+          try { await fs.promises.unlink(filePath); } catch {}
+          return res.status(500).json({ error: 'فشل في التحقق من نوع الملف' });
+        }
+        
         try {
           // ضغط الصورة أولاً إلى JPEG مناسب (إن أمكن)
-          const filePath = path.join(process.cwd(), 'client', 'public', 'uploads', 'wall', req.file.filename);
           await compressImage(filePath);
 
           // قراءة الملف المضغوط وتحويله إلى base64

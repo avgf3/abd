@@ -301,15 +301,22 @@ export function setupSecurity(app: Express): void {
     next();
   });
 
-  // CORS configuration (same-origin by default, allow env-configured origins)
+  // CORS configuration with ALLOWED_ORIGINS from environment
   app.use((req: Request, res: Response, next: NextFunction) => {
     const originHeader = req.headers.origin as string | undefined;
     const hostHeader = req.headers.host || '';
 
+    // Parse ALLOWED_ORIGINS from environment (comma-separated list)
+    const allowedOrigins = process.env.ALLOWED_ORIGINS 
+      ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()).filter(Boolean)
+      : [];
+
+    // Add other env origins for backward compatibility
     const envOrigins = [
       process.env.RENDER_EXTERNAL_URL,
       process.env.FRONTEND_URL,
       process.env.CORS_ORIGIN,
+      ...allowedOrigins
     ].filter(Boolean) as string[];
 
     const envHosts = envOrigins
@@ -323,14 +330,16 @@ export function setupSecurity(app: Express): void {
     const isDev = process.env.NODE_ENV === 'development';
     const isSameHost = originHost && hostHeader && originHost === hostHeader;
     const isEnvAllowed = originHost && envHosts.includes(originHost);
+    const isAllowedOrigin = originHeader && allowedOrigins.includes(originHeader);
 
-    if (originHeader && (isDev || isSameHost || isEnvAllowed)) {
+    if (originHeader && (isDev || isSameHost || isEnvAllowed || isAllowedOrigin)) {
       res.setHeader('Access-Control-Allow-Origin', originHeader);
     }
 
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
 
     if (req.method === 'OPTIONS') {
       res.sendStatus(200);
