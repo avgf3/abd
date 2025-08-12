@@ -1153,6 +1153,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // جلب المستخدمين المحظورين
+  app.get("/api/users/blocked", async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const blockedUsers = allUsers.filter(user => user.isBlocked === true);
+      
+      // إخفاء المعلومات الحساسة
+      const safeBlockedUsers = blockedUsers.map(user => ({
+        id: user.id,
+        username: user.username,
+        userType: user.userType,
+        profileImage: user.profileImage,
+        usernameColor: user.usernameColor,
+        ipAddress: user.ipAddress,
+        deviceId: user.deviceId,
+        joinDate: user.joinDate,
+        isBlocked: user.isBlocked
+      }));
+      
+      res.json({ users: safeBlockedUsers });
+    } catch (error) {
+      console.error('خطأ في جلب المستخدمين المحظورين:', error);
+      res.status(500).json({ 
+        error: 'خطأ في جلب المستخدمين المحظورين',
+        details: error instanceof Error ? error.message : 'خطأ غير معروف'
+      });
+    }
+  });
+
   // Message routes
   app.get("/api/messages/public", async (req, res) => {
     try {

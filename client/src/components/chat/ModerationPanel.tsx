@@ -34,7 +34,8 @@ export default function ModerationPanel({
   const [reason, setReason] = useState('');
   const [duration, setDuration] = useState('30');
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'users' | 'actions'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'blocked' | 'actions'>('users');
+  const [blockedUsers, setBlockedUsers] = useState<ChatUser[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
@@ -44,6 +45,45 @@ export default function ModerationPanel({
     user.username.toLowerCase().includes(searchTerm.toLowerCase()) &&
     user.id !== currentUser?.id
   );
+
+  // جلب المستخدمين المحظورين
+  const fetchBlockedUsers = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const response = await apiRequest('/api/users/blocked', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${currentUser.id}`
+        }
+      });
+      
+      if (response?.users) {
+        setBlockedUsers(response.users);
+      }
+    } catch (error) {
+      console.error('Error fetching blocked users:', error);
+      // محاولة بديلة: جلب كل المستخدمين وفلترة المحظورين
+      try {
+        const allUsersResponse = await apiRequest('/api/users', { method: 'GET' });
+        const allUsers = allUsersResponse?.users || [];
+        const blocked = allUsers.filter((user: any) => user.isBlocked === true);
+        setBlockedUsers(blocked);
+      } catch (fallbackError) {
+        toast({
+          title: 'خطأ',
+          description: 'فشل في جلب قائمة المستخدمين المحظورين',
+          variant: 'destructive'
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && currentUser && activeTab === 'blocked') {
+      fetchBlockedUsers();
+    }
+  }, [isOpen, currentUser, activeTab]);
 
 
 
@@ -223,10 +263,13 @@ export default function ModerationPanel({
       });
       
       toast({
-        title: 'تم',
+        title: 'تم إلغاء الحظر بنجاح ✅',
         description: `تم فك الحجب عن ${targetUser.username}`,
         variant: 'default'
       });
+      
+      // تحديث قائمة المحظورين
+      fetchBlockedUsers();
     } catch (error) {
       toast({
         title: 'خطأ',
@@ -264,6 +307,14 @@ export default function ModerationPanel({
               onClick={() => setActiveTab('users')}
             >
               المستخدمين ({filteredUsers.length})
+            </Button>
+            <Button
+              variant={activeTab === 'blocked' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveTab('blocked')}
+              className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+            >
+              المحظورين ({blockedUsers.length})
             </Button>
             <Button
               variant={activeTab === 'actions' ? 'default' : 'outline'}
@@ -337,6 +388,75 @@ export default function ModerationPanel({
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'blocked' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-red-700">المستخدمون المحظورون</h3>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={fetchBlockedUsers}
+                >
+                  تحديث القائمة
+                </Button>
+              </div>
+
+              {blockedUsers.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="text-6xl mb-4">🎉</div>
+                  <p>لا يوجد مستخدمين محظورين</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                  {blockedUsers.map((user) => (
+                    <div key={user.id} className="border border-red-200 rounded-lg p-3 bg-red-50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={getImageSrc(user.profileImage)}
+                            alt={user.username}
+                            className="w-10 h-10 rounded-full opacity-50"
+                          />
+                          <div>
+                            <div className="font-semibold flex items-center gap-2">
+                              <span style={{ color: user.usernameColor || '#dc2626' }}>
+                                {user.username}
+                              </span>
+                              <Badge variant="destructive" className="text-xs">
+                                محظور
+                              </Badge>
+                              <UserRoleBadge user={user} />
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              ID: {user.id} • {user.userType || 'عضو'}
+                            </div>
+                            {user.ipAddress && (
+                              <div className="text-xs text-red-600">
+                                IP: {user.ipAddress}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          {currentUser?.userType === 'owner' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-green-300 text-green-700 hover:bg-green-50"
+                              onClick={() => handleUnblock(user)}
+                            >
+                              ✅ إلغاء الحظر
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
