@@ -385,6 +385,34 @@ class SocketManager {
   getLastRoomId(): string | null {
     return this.lastRoomId || localStorage.getItem('last_room_id');
   }
+
+  saveSession(payload: SaveSessionPayload): void {
+    try {
+      if (payload.token) {
+        localStorage.setItem('auth_token', payload.token);
+      }
+
+      const resolvedRoomId = payload.lastRoomId ?? payload.roomId;
+      if (resolvedRoomId) {
+        this.lastRoomId = resolvedRoomId;
+        localStorage.setItem('last_room_id', resolvedRoomId);
+      }
+
+      if (
+        typeof payload.userId === 'number' &&
+        typeof payload.username === 'string' &&
+        typeof payload.userType === 'string'
+      ) {
+        this.currentUser = {
+          id: payload.userId,
+          username: payload.username,
+          role: payload.userType
+        };
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }
 }
 
 // تصدير instance واحد
@@ -398,6 +426,9 @@ export const getSocket = () =>
   socketManager.getSocket();
 
 export const emitEvent = (event: string, data?: any) => 
+  socketManager.emit(event, data);
+
+export const sendMessage = (event: string, data?: any) =>
   socketManager.emit(event, data);
 
 export const onEvent = (event: string, handler: (...args: any[]) => void) => 
@@ -426,6 +457,18 @@ export const getCurrentUser = () =>
 
 export const getLastRoomId = () => 
   socketManager.getLastRoomId();
+
+export type SaveSessionPayload = {
+  roomId?: string;
+  lastRoomId?: string;
+  userId?: number;
+  username?: string;
+  userType?: string;
+  token?: string;
+};
+
+export const saveSession = (payload: SaveSessionPayload) =>
+  socketManager.saveSession(payload);
 
 // تصدير الـ manager نفسه للاستخدامات المتقدمة
 export default socketManager;
