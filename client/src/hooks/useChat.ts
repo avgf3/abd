@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
 import { Socket } from 'socket.io-client';
-import { getSocket, saveSession } from '@/lib/socket';
+import { getSocket, saveSession, connectSocket, sendMessage as socketSendMessage, isSocketConnected } from '@/lib/socket';
 import type { ChatUser, ChatMessage, RoomWebSocketMessage as WebSocketMessage } from '@/types/chat';
 import type { PrivateConversation } from '../../../shared/types';
 import type { Notification } from '@/types/chat';
@@ -274,6 +274,36 @@ export const useChat = () => {
       socketInstance.on('client_pong', () => {});
 
       // لم نعد نستخدم ping/pong المخصصين؛ نعتمد فقط على client_ping/client_pong للحفاظ على الاتصال
+
+      // معالج تجاوز حد الطلبات
+      socketInstance.on('rateLimitExceeded', (data: any) => {
+        console.warn('⚠️ تم تجاوز حد الطلبات:', data);
+        dispatch({ type: 'ADD_NOTIFICATION', payload: {
+          id: Date.now().toString(),
+          type: 'warning',
+          message: data.message || 'تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً',
+          timestamp: new Date()
+        }});
+      });
+
+      // معالج نجاح المصادقة
+      socketInstance.on('authSuccess', (data: any) => {
+        console.log('✅ تمت المصادقة بنجاح');
+        dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+        dispatch({ type: 'SET_LOADING', payload: false });
+        
+        // تحديث الغرفة الحالية إذا تم إعادة الانضمام لغرفة مختلفة
+        if (data.currentRoom && data.currentRoom !== state.currentRoomId) {
+          dispatch({ type: 'SET_CURRENT_ROOM', payload: data.currentRoom });
+        }
+      });
+
+      // معالج خطأ المصادقة
+      socketInstance.on('authError', (data: any) => {
+        console.error('❌ خطأ في المصادقة:', data.message);
+        dispatch({ type: 'SET_CONNECTION_ERROR', payload: data.message || 'فشلت المصادقة' });
+        dispatch({ type: 'SET_LOADING', payload: false });
+      });
 
       // ✅ معالج واحد للرسائل - حذف التضارب
       socketInstance.on('message', (data: any) => {
@@ -558,23 +588,30 @@ export const useChat = () => {
       const s = getSocket();
       socket.current = s;
 
-      // حفظ الجلسة
-      saveSession({ userId: user.id, username: user.username, userType: user.userType });
+      // حفظ الجلسة مع آخر غرفة
+      const currentRoom = state.currentRoomId || 'general';
+      saveSession({ 
+        userId: user.id, 
+        username: user.username, 
+        userType: user.userType,
+        roomId: currentRoom,
+        lastRoomId: currentRoom
+      });
 
       // إعداد المستمعين
       setupSocketListeners(s);
 
-      // إذا كان متصلاً بالفعل، أرسل المصادقة والانضمام فوراً
-      if (s.connected) {
+      // الاتصال إذا لم يكن متصلاً
+      if (!s.connected) {
+        connectSocket();
+      } else {
+        // إذا كان متصلاً بالفعل، أرسل المصادقة فقط
+        // لأن socket.ts سيتولى إعادة الانضمام للغرفة تلقائياً
         s.emit('auth', {
           userId: user.id,
           username: user.username,
           userType: user.userType,
-        });
-        s.emit('joinRoom', {
-          roomId: state.currentRoomId || 'general',
-          userId: user.id,
-          username: user.username,
+          lastRoomId: currentRoom
         });
       }
 
@@ -612,14 +649,15 @@ export const useChat = () => {
     }
   }, [setupSocketListeners]);
 
-  // 🔥 SIMPLIFIED Join room function
+  // 🔥 SIMPLIFIED Join room function - مع حفظ آخر غرفة
   const joinRoom = useCallback((roomId: string) => {
     if (state.currentRoomId === roomId) {
       return;
     }
 
     dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
-    saveSession({ roomId });
+    // حفظ الغرفة كآخر غرفة أيضاً
+    saveSession({ roomId, lastRoomId: roomId });
 
     // لا نطلق طلب REST هنا، سنعتمد على Socket لإرسال آخر 10 رسائل بعد الانضمام
     // loadRoomMessages(roomId);
@@ -633,10 +671,10 @@ export const useChat = () => {
     }
   }, [loadRoomMessages, state.currentRoomId, state.currentUser]);
 
-  // 🔥 SIMPLIFIED Send message function
+  // 🔥 SIMPLIFIED Send message function - مع دعم الطابور
   const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number, roomId?: string) => {
-    if (!state.currentUser || !socket.current?.connected) {
-      console.error('❌ لا يمكن إرسال الرسالة - المستخدم غير متصل');
+    if (!state.currentUser) {
+      console.error('❌ لا يمكن إرسال الرسالة - المستخدم غير موجود');
       return;
     }
 
@@ -658,10 +696,11 @@ export const useChat = () => {
       roomId: roomId || state.currentRoomId
     };
 
+    // استخدام دالة الإرسال الجديدة مع دعم الطابور
     if (receiverId) {
-      socket.current.emit('privateMessage', messageData);
+      socketSendMessage('privateMessage', messageData);
     } else {
-      socket.current.emit('publicMessage', messageData);
+      socketSendMessage('publicMessage', messageData);
     }
   }, [state.currentUser, state.currentRoomId]);
 
