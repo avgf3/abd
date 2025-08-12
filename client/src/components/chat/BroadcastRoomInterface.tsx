@@ -4,12 +4,13 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { Mic, MicOff, Users, Crown, Clock, Check, X } from 'lucide-react';
+import { Mic, MicOff, Users, Crown, Clock, Check, X, Volume2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom, RoomWebSocketMessage as WebSocketMessage, ChatMessage } from '@/types/chat';
 import { normalizeBroadcastInfo } from '@/utils/roomUtils';
 import MessageArea from './MessageArea';
+import { WebRTCAudioManager } from '@/utils/webrtc';
 
 interface BroadcastRoomInterfaceProps {
   currentUser: ChatUser | null;
@@ -26,6 +27,7 @@ interface BroadcastRoomInterfaceProps {
     handleTyping?: () => void;
     addBroadcastMessageHandler?: (handler: (data: any) => void) => void;
     removeBroadcastMessageHandler?: (handler: (data: any) => void) => void;
+    socket?: any; // إضافة socket للوصول إليه
   };
 }
 
@@ -49,6 +51,8 @@ export default function BroadcastRoomInterface({
 }: BroadcastRoomInterfaceProps) {
   const [broadcastInfo, setBroadcastInfo] = useState<BroadcastInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [webrtcManager, setWebrtcManager] = useState<WebRTCAudioManager | null>(null);
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
   const { toast } = useToast();
 
   // جلب معلومات غرفة البث
@@ -96,8 +100,22 @@ export default function BroadcastRoomInterface({
   useEffect(() => {
     if (room.isBroadcast) {
       fetchBroadcastInfo();
+      
+      // إنشاء مدير WebRTC إذا كان لدينا socket ومستخدم
+      if (chat.socket && currentUser && !webrtcManager) {
+        const manager = new WebRTCAudioManager(chat.socket, room.id, currentUser.id);
+        setWebrtcManager(manager);
+      }
     }
-  }, [room.id, room.isBroadcast]);
+    
+    // تنظيف عند الخروج
+    return () => {
+      if (webrtcManager) {
+        webrtcManager.cleanup();
+        setWebrtcManager(null);
+      }
+    };
+  }, [room.id, room.isBroadcast, chat.socket, currentUser?.id]);
 
   // معالجة الرسائل الجديدة من WebSocket
   useEffect(() => {
@@ -330,6 +348,61 @@ export default function BroadcastRoomInterface({
   const getUserById = (userId: number) => {
     return onlineUsers.find(user => user.id === userId);
   };
+  
+  // بدء/إيقاف البث الصوتي
+  const toggleBroadcast = async () => {
+    if (!webrtcManager || !canSpeak) return;
+    
+    try {
+      if (!isBroadcasting) {
+        const success = await webrtcManager.startBroadcasting();
+        if (success) {
+          setIsBroadcasting(true);
+          toast({
+            title: 'بدأ البث',
+            description: 'أنت الآن تبث صوتك للمستمعين',
+          });
+          
+          // الاستماع لقائمة المستمعين الجدد
+          chat.socket?.on('listeners-list', (data: { listeners: number[] }) => {
+            // إرسال عروض WebRTC لجميع المستمعين
+            data.listeners.forEach(listenerId => {
+              webrtcManager.sendOfferToListener(listenerId);
+            });
+          });
+          
+          // الاستماع لمستمعين جدد ينضمون
+          chat.socket?.on('listener-joined', (data: { listenerId: number }) => {
+            webrtcManager.sendOfferToListener(data.listenerId);
+          });
+        } else {
+          toast({
+            title: 'فشل البث',
+            description: 'لم نتمكن من الوصول للمايكروفون. تأكد من منح الصلاحيات.',
+            variant: 'destructive'
+          });
+        }
+      } else {
+        webrtcManager.stopBroadcasting();
+        setIsBroadcasting(false);
+        toast({
+          title: 'توقف البث',
+          description: 'تم إيقاف البث الصوتي',
+        });
+        
+        // إزالة المستمعين للأحداث
+        chat.socket?.off('listeners-list');
+        chat.socket?.off('listener-joined');
+      }
+    } catch (error) {
+      console.error('خطأ في التحكم بالبث:', error);
+      toast({
+        title: 'خطأ',
+        description: 'حدث خطأ في التحكم بالبث الصوتي',
+        variant: 'destructive'
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -459,10 +532,32 @@ export default function BroadcastRoomInterface({
         )}
 
         {canSpeak && (
-          <Button variant="outline" disabled className="flex items-center gap-2">
-            <Mic className="w-4 h-4 text-green-500" />
-            {isHost ? 'أنت المضيف' : 'يمكنك التحدث'}
-          </Button>
+          <>
+            <Button 
+              variant={isBroadcasting ? "destructive" : "outline"} 
+              onClick={toggleBroadcast}
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              {isBroadcasting ? (
+                <>
+                  <MicOff className="w-4 h-4" />
+                  إيقاف البث
+                </>
+              ) : (
+                <>
+                  <Mic className="w-4 h-4 text-green-500" />
+                  بدء البث الصوتي
+                </>
+              )}
+            </Button>
+            {isBroadcasting && (
+              <Badge variant="secondary" className="flex items-center gap-1 animate-pulse">
+                <Volume2 className="w-3 h-3 text-red-500" />
+                جاري البث
+              </Badge>
+            )}
+          </>
         )}
 
         {canManageMic && micQueue.length > 0 && (

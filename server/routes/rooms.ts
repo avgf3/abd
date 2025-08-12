@@ -121,7 +121,9 @@ router.post('/', upload.single('image'), async (req, res) => {
       description: description?.trim() || '',
       icon,
       createdBy: parseInt(userId),
-      isBroadcast: isBroadcast === 'true' || isBroadcast === true
+      isBroadcast: isBroadcast === 'true' || isBroadcast === true,
+      // تعيين المضيف تلقائياً للمستخدم الذي أنشأ الغرفة إذا كانت غرفة برودكاست
+      hostId: (isBroadcast === 'true' || isBroadcast === true) ? parseInt(userId) : null
     };
 
     const room = await roomService.createRoom(roomData);
