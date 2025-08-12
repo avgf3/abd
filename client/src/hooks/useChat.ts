@@ -436,6 +436,37 @@ export const useChat = () => {
             break;
           }
           
+          case 'roomJoined': {
+            if (envelope.roomId) {
+              dispatch({ type: 'SET_CURRENT_ROOM', payload: envelope.roomId });
+              // إضافة رسالة نظام بالانضمام للغرفة
+              const systemMessage: ChatMessage = {
+        id: Date.now(),
+        content: `انضممت إلى الغرفة: ${envelope.roomId}`,
+        senderId: -1,
+        timestamp: new Date().toISOString(),
+        messageType: 'system',
+        sender: {
+          id: -1,
+          username: 'النظام',
+          userType: 'system',
+          online: true,
+          lastSeen: new Date().toISOString()
+        } as ChatUser
+      };
+              dispatch({ 
+                type: 'ADD_ROOM_MESSAGE', 
+                payload: { roomId: envelope.roomId, message: systemMessage }
+              });
+              
+              // 🆕 طلب قائمة المتصلين في الغرفة الجديدة
+              setTimeout(() => {
+                socketInstance.emit('requestOnlineUsers');
+              }, 500);
+            }
+            break;
+          }
+          
           case 'error':
           case 'warning': {
             console.warn('⚠️ خطأ من السيرفر:', envelope.message);
@@ -488,59 +519,26 @@ export const useChat = () => {
     // ملاحظة: نتعامل مع الرسائل الخاصة فقط عبر حدث 'privateMessage' المخصص لتجنّب التكرار
     // منع أي إشعار يشبه الخاص من مسار الرسائل العامة
 
-      // معالج حدث الطرد
-      socketInstance.on('kicked', (data: any) => {
-        if (state.currentUser?.id) {
-          const duration = data.duration || 15;
-          const reason = data.reason || 'بدون سبب';
-          const moderator = data.moderator || 'مشرف';
-          
-          // إظهار رسالة الطرد
-          alert(`تم طردك من الدردشة بواسطة ${moderator}\nالسبب: ${reason}\nالمدة: ${duration} دقيقة`);
-          
-          // إظهار عداد الطرد
-          dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
-          
-          // فصل المستخدم بعد 3 ثواني
-          setTimeout(() => {
-            socketInstance.disconnect();
-            window.location.href = '/';
-          }, 3000);
+      // ملاحظة: تم نقل معالجات kicked و blocked و error إلى معالج message الرئيسي أعلاه لتجنب التكرار
+
+      // 🆕 طلب قائمة المتصلين بشكل دوري
+      const requestOnlineUsers = () => {
+        if (socketInstance.connected) {
+          socketInstance.emit('requestOnlineUsers');
         }
+      };
+
+      // طلب قائمة المتصلين عند الاتصال
+      socketInstance.on('connect', () => {
+        setTimeout(requestOnlineUsers, 1000); // انتظار ثانية للتأكد من المصادقة
       });
 
-      // معالج حدث الحجب
-      socketInstance.on('blocked', (data: any) => {
-        if (state.currentUser?.id) {
-          const reason = data.reason || 'بدون سبب';
-          const moderator = data.moderator || 'مشرف';
-          
-          // إظهار رسالة الحجب
-          alert(`تم حجبك نهائياً من الدردشة بواسطة ${moderator}\nالسبب: ${reason}`);
-          
-          // فصل المستخدم فوراً وإعادة توجيهه
-          socketInstance.disconnect();
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 1000);
-        }
-      });
+      // طلب قائمة المتصلين كل 30 ثانية
+      const onlineUsersInterval = setInterval(requestOnlineUsers, 30000);
 
-      // معالج أخطاء المصادقة
-      socketInstance.on('error', (data: any) => {
-        if (data.action === 'blocked' || data.action === 'device_blocked') {
-          alert(data.message);
-          socketInstance.disconnect();
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 1000);
-        } else if (data.action === 'banned') {
-          const timeLeft = data.timeLeft || 0;
-          alert(`${data.message}\nالوقت المتبقي: ${timeLeft} دقيقة`);
-          dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
-        } else {
-          console.error('خطأ من السيرفر:', data.message);
-        }
+      // تنظيف عند فك الاتصال
+      socketInstance.on('disconnect', () => {
+        clearInterval(onlineUsersInterval);
       });
 
       // ===== Broadcast room realtime handlers =====

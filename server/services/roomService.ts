@@ -221,6 +221,13 @@ class RoomService {
         throw new Error('المستخدم غير موجود');
       }
 
+      // 🔄 مغادرة الغرفة السابقة إن وجدت
+      const previousRoom = this.userRooms.get(userId);
+      if (previousRoom && previousRoom !== roomId) {
+        // مغادرة الغرفة السابقة أولاً
+        await this.leaveRoom(userId, previousRoom);
+      }
+
       // 🏠 إضافة للذاكرة المحلية
       if (!this.connectedRooms.has(roomId)) {
         this.connectedRooms.set(roomId, new Set());
@@ -228,10 +235,6 @@ class RoomService {
       this.connectedRooms.get(roomId)!.add(userId);
 
       // 🔄 تحديث الغرفة الحالية للمستخدم
-      const previousRoom = this.userRooms.get(userId);
-      if (previousRoom && previousRoom !== roomId) {
-        this.leaveRoomMemory(userId, previousRoom);
-      }
       this.userRooms.set(userId, roomId);
 
       // 💾 حفظ في قاعدة البيانات
