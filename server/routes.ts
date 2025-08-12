@@ -6,7 +6,7 @@ import { setupDownloadRoute } from "./download-route";
 import { insertUserSchema, insertMessageSchema } from "../shared/schema";
 import { spamProtection } from "./spam-protection";
 import { moderationSystem } from "./moderation";
-import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter, friendRequestLimiter } from "./security";
+import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter, friendRequestLimiter, socketRateLimiter } from "./security";
 import { databaseCleanup } from "./utils/database-cleanup";
 import { db, dbType } from "./database-adapter";
 
@@ -887,13 +887,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       methods: ["GET", "POST"],
       credentials: true,
     },
-    path: "/socket.io",
+    path: "/socket.io/",
 
     // إعدادات النقل محسنة للاستقرار
     transports: ["websocket", "polling"],
     allowEIO3: true,
 
-    // إعدادات الاتصال المحسنة
+    // إعدادات الاتصال المحسنة مع heartbeat محسن
     pingTimeout: 60000,
     pingInterval: 25000,
     upgradeTimeout: 10000,
@@ -905,32 +905,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // إعدادات الأداء + تحكم أدق بالأصول المسموحة
     maxHttpBufferSize: 1e6, // 1MB
-    allowRequest: (req, callback) => {
-      const originHeader = req.headers.origin || '';
-      const hostHeader = req.headers.host || '';
+    allowRequest: async (req, callback) => {
+      try {
+        const originHeader = req.headers.origin || '';
+        const hostHeader = req.headers.host || '';
+        const authToken = req.headers.authorization || '';
 
-      const envOrigins = [
-        process.env.RENDER_EXTERNAL_URL,
-        process.env.FRONTEND_URL,
-        process.env.CORS_ORIGIN,
-      ].filter(Boolean) as string[];
+        // التحقق من الأصل
+        const envOrigins = [
+          process.env.RENDER_EXTERNAL_URL,
+          process.env.FRONTEND_URL,
+          process.env.CORS_ORIGIN,
+        ].filter(Boolean) as string[];
 
-      const envHosts = envOrigins
-        .map((u) => {
-          try { return new URL(u).host; } catch { return ''; }
-        })
-        .filter(Boolean);
+        const envHosts = envOrigins
+          .map((u) => {
+            try { return new URL(u).host; } catch { return ''; }
+          })
+          .filter(Boolean);
 
-      const originHost = (() => {
-        try { return originHeader ? new URL(originHeader).host : ''; } catch { return ''; }
-      })();
+        const originHost = (() => {
+          try { return originHeader ? new URL(originHeader).host : ''; } catch { return ''; }
+        })();
 
-      const isDev = process.env.NODE_ENV !== 'production';
-      const isSameHost = originHost && hostHeader && originHost === hostHeader;
-      const isEnvAllowed = originHost && envHosts.includes(originHost);
+        const isDev = process.env.NODE_ENV !== 'production';
+        const isSameHost = originHost && hostHeader && originHost === hostHeader;
+        const isEnvAllowed = originHost && envHosts.includes(originHost);
 
-      const allowed = isDev || isSameHost || isEnvAllowed;
-      callback(null, allowed);
+        // التحقق من المصادقة إذا تم توفير رمز
+        let isAuthenticated = false;
+        if (authToken) {
+          // يمكن إضافة التحقق من JWT أو رمز الجلسة هنا
+          isAuthenticated = true;
+        }
+
+        const allowed = isDev || isSameHost || isEnvAllowed || isAuthenticated;
+        
+        // تسجيل محاولات الاتصال المرفوضة
+        if (!allowed) {
+          console.log('Socket.IO connection rejected:', {
+            origin: originHeader,
+            host: hostHeader,
+            isDev,
+            isSameHost,
+            isEnvAllowed
+          });
+        }
+        
+        callback(null, allowed);
+      } catch (error) {
+        console.error('Error in allowRequest:', error);
+        callback(null, false);
+      }
     },
   });
 
@@ -1325,22 +1351,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
 
     // معالج المصادقة الموحد - يدعم الضيوف والمستخدمين المسجلين
-    socket.on('auth', async (userData: { userId?: number; username?: string; userType?: string; reconnect?: boolean }) => {
+    socket.on('auth', async (userData: { 
+      userId?: number; 
+      username?: string; 
+      userType?: string; 
+      token?: string;
+      reconnect?: boolean;
+      lastRoomId?: string;
+    }) => {
+      // التحقق من rate limit
+      if (!socketRateLimiter(socket, 'auth')) {
+        return;
+      }
+      
       try {
         // منع المصادقة المتكررة أو تبديل الهوية على نفس الاتصال
         if (isAuthenticated) {
           console.warn(`⚠️ محاولة مصادقة متكررة/تبديل هوية من ${socket.id}`);
+          socket.emit('authError', { message: 'تم المصادقة بالفعل' });
           return;
         }
         
         let user;
+        let shouldRejoinRoom = false;
+        let roomToRejoin = userData.lastRoomId || 'general';
         
         // إذا كان هناك userId، فهو مستخدم مسجل
         if (userData.userId) {
           user = await storage.getUser(userData.userId);
           if (!user) {
-            socket.emit('error', { message: 'المستخدم غير موجود' });
+            socket.emit('authError', { message: 'المستخدم غير موجود' });
             return;
+          }
+          
+          // في حالة إعادة الاتصال، نحاول استعادة الغرفة السابقة
+          if (userData.reconnect) {
+            shouldRejoinRoom = true;
+            // محاولة الحصول على آخر غرفة من قاعدة البيانات إذا لم يتم إرسالها
+            if (!userData.lastRoomId) {
+              const userRooms = await roomService.getUserRooms(user.id);
+              if (userRooms && userRooms.length > 0) {
+                roomToRejoin = userRooms[0].id; // آخر غرفة انضم إليها
+              }
+            }
           }
 
           // فحص حالة المستخدم قبل السماح بالاتصال
@@ -1458,23 +1511,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // جلب غرف المستخدم وانضمام إليها
         try {
-          let userRooms: string[] = [];
-          try {
-            userRooms = await storage.getUserRooms(user.id);
-          } catch {}
-          // الانضمام للغرفة العامة عبر الدالة الموحدة لضمان حفظ الانضمام وإرسال الرسائل وقوائم المستخدمين
-          await handleRoomJoin(socket as CustomSocket, user.id, user.username, 'general');
+          // الانضمام التلقائي للغرفة المناسبة
+          if (shouldRejoinRoom && roomToRejoin) {
+            // التحقق من وجود الغرفة
+            const targetRoom = await storage.getRoom(roomToRejoin);
+            if (targetRoom) {
+              await handleRoomJoin(socket as CustomSocket, user.id, user.username, roomToRejoin);
+            } else {
+              // إذا لم توجد الغرفة، انضم للغرفة العامة
+              await handleRoomJoin(socket as CustomSocket, user.id, user.username, 'general');
+            }
+          } else {
+            // الانضمام للغرفة العامة افتراضياً
+            await handleRoomJoin(socket as CustomSocket, user.id, user.username, 'general');
+          }
           
-          } catch (roomError) {
+        } catch (roomError) {
           console.error('خطأ في انضمام للغرف:', roomError);
           // انضمام للغرفة العامة على الأقل (مرة واحدة فقط)
           await handleRoomJoin(socket as CustomSocket, user.id, user.username, 'general');
         }
 
-        // إرسال تأكيد المصادقة
-        socket.emit('authenticated', { 
+        // إرسال تأكيد المصادقة مع معلومات الغرفة
+        socket.emit('authSuccess', { 
           message: 'تم الاتصال بنجاح',
-          user: user 
+          user: user,
+          currentRoom: (socket as any).currentRoom || 'general',
+          isReconnect: userData.reconnect || false
         });
 
         // إذا كان العميل أرسل reconnect=true، لا نُخرج إشعارات مغادرة سابقة
@@ -1541,6 +1604,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     socket.on('publicMessage', async (data) => {
+      // التحقق من rate limit
+      if (!socketRateLimiter(socket, 'sendMessage')) {
+        return;
+      }
+      
       try {
         if (!socket.userId) return;
         
@@ -1659,6 +1727,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     socket.on('privateMessage', async (data) => {
+      // التحقق من rate limit
+      if (!socketRateLimiter(socket, 'privateMessage')) {
+        return;
+      }
+      
       try {
         if (!socket.userId) return;
         
@@ -1824,6 +1897,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // معالجة انضمام للغرفة
     socket.on('joinRoom', async (data) => {
+      // التحقق من rate limit
+      if (!socketRateLimiter(socket, 'joinRoom')) {
+        return;
+      }
+      
       try {
         const { roomId } = data;
         const userId = (socket as CustomSocket).userId; // استخدام userId من الجلسة

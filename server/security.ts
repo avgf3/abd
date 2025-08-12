@@ -1,10 +1,113 @@
 import express, { type Express, Request, Response, NextFunction } from 'express';
+import { Socket } from 'socket.io';
 
 // Rate limiting maps
 const authRequestCounts = new Map<string, { count: number; resetTime: number }>();
 const messageRequestCounts = new Map<string, { count: number; resetTime: number }>();
 const friendRequestCounts = new Map<string, { count: number; resetTime: number }>();
+const socketRequestCounts = new Map<string, { count: number; resetTime: number; events: string[] }>();
 const blockedIPs = new Set<string>();
+
+// Socket rate limiting configuration
+const SOCKET_RATE_LIMITS = {
+  auth: { windowMs: 60000, maxRequests: 5 }, // 5 auth attempts per minute
+  joinRoom: { windowMs: 60000, maxRequests: 10 }, // 10 room joins per minute
+  sendMessage: { windowMs: 60000, maxRequests: 30 }, // 30 messages per minute
+  privateMessage: { windowMs: 60000, maxRequests: 20 }, // 20 private messages per minute
+  typing: { windowMs: 5000, maxRequests: 10 }, // 10 typing events per 5 seconds
+  default: { windowMs: 60000, maxRequests: 100 } // 100 general events per minute
+};
+
+// Socket rate limiter middleware
+export function socketRateLimiter(socket: Socket, eventName: string): boolean {
+  const clientId = socket.handshake.address || socket.id;
+  const now = Date.now();
+  
+  // Get rate limit config for this event
+  const config = SOCKET_RATE_LIMITS[eventName as keyof typeof SOCKET_RATE_LIMITS] || SOCKET_RATE_LIMITS.default;
+  
+  const current = socketRequestCounts.get(clientId);
+  
+  if (!current || now > current.resetTime) {
+    socketRequestCounts.set(clientId, { 
+      count: 1, 
+      resetTime: now + config.windowMs,
+      events: [eventName]
+    });
+    return true;
+  }
+  
+  // Track event types for pattern detection
+  current.events.push(eventName);
+  if (current.events.length > 100) {
+    current.events = current.events.slice(-100); // Keep last 100 events
+  }
+  
+  // Detect suspicious patterns
+  if (detectSuspiciousPattern(current.events)) {
+    console.warn(`Suspicious pattern detected from ${clientId}`);
+    blockIP(clientId);
+    return false;
+  }
+  
+  if (current.count < config.maxRequests) {
+    current.count++;
+    return true;
+  }
+  
+  // Rate limit exceeded
+  socket.emit('rateLimitExceeded', {
+    event: eventName,
+    retryAfter: Math.ceil((current.resetTime - now) / 1000),
+    message: 'تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً'
+  });
+  
+  return false;
+}
+
+// Detect suspicious patterns in event sequence
+function detectSuspiciousPattern(events: string[]): boolean {
+  if (events.length < 10) return false;
+  
+  // Check for rapid repeated events
+  const last10 = events.slice(-10);
+  const uniqueEvents = new Set(last10).size;
+  
+  // If all last 10 events are the same, it's suspicious
+  if (uniqueEvents === 1) return true;
+  
+  // Check for auth flooding
+  const authCount = last10.filter(e => e === 'auth').length;
+  if (authCount > 3) return true;
+  
+  return false;
+}
+
+// Clean up old rate limit entries periodically
+setInterval(() => {
+  const now = Date.now();
+  
+  // Clean auth counts
+  for (const [key, value] of authRequestCounts.entries()) {
+    if (now > value.resetTime) {
+      authRequestCounts.delete(key);
+    }
+  }
+  
+  // Clean message counts
+  for (const [key, value] of messageRequestCounts.entries()) {
+    if (now > value.resetTime) {
+      messageRequestCounts.delete(key);
+    }
+  }
+  
+  // Clean socket counts
+  for (const [key, value] of socketRequestCounts.entries()) {
+    if (now > value.resetTime + 300000) { // Keep for 5 minutes after reset
+      socketRequestCounts.delete(key);
+    }
+  }
+}, 60000); // Run every minute
 
 // Rate limiter for authentication endpoints
 export function authLimiter(req: Request, res: Response, next: NextFunction): void {
