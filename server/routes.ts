@@ -2299,6 +2299,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // بدء heartbeat بعد الإعداد
     startHeartbeat();
 
+    // ========== WebRTC signaling for Broadcast Room ==========
+    socket.on('webrtc-offer', async (payload) => {
+      try {
+        if (!socket.userId) return;
+        const { roomId, targetUserId, sdp, senderId } = payload || {};
+        if (!roomId || !targetUserId || !sdp || !senderId) return;
+
+        // Only allow relaying inside the same room
+        const currentRoom = (socket as any).currentRoom || 'general';
+        if (currentRoom !== roomId) return;
+
+        // Relay to the target user's private room
+        io.to(targetUserId.toString()).emit('webrtc-offer', { roomId, sdp, senderId });
+      } catch (err) {
+        console.error('WebRTC offer relay error:', err);
+      }
+    });
+
+    socket.on('webrtc-answer', async (payload) => {
+      try {
+        if (!socket.userId) return;
+        const { roomId, targetUserId, sdp, senderId } = payload || {};
+        if (!roomId || !targetUserId || !sdp || !senderId) return;
+
+        const currentRoom = (socket as any).currentRoom || 'general';
+        if (currentRoom !== roomId) return;
+
+        io.to(targetUserId.toString()).emit('webrtc-answer', { roomId, sdp, senderId });
+      } catch (err) {
+        console.error('WebRTC answer relay error:', err);
+      }
+    });
+
+    socket.on('webrtc-ice-candidate', async (payload) => {
+      try {
+        if (!socket.userId) return;
+        const { roomId, targetUserId, candidate, senderId } = payload || {};
+        if (!roomId || !targetUserId || !candidate || !senderId) return;
+
+        const currentRoom = (socket as any).currentRoom || 'general';
+        if (currentRoom !== roomId) return;
+
+        io.to(targetUserId.toString()).emit('webrtc-ice-candidate', { roomId, candidate, senderId });
+      } catch (err) {
+        console.error('WebRTC ICE relay error:', err);
+      }
+    });
+    // ==========================================================
 
   });
 

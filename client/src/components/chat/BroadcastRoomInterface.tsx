@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { Mic, MicOff, Users, Crown, Clock, Check, X } from 'lucide-react';
+import { Mic, MicOff, Users, Crown, Clock, Check, X, Volume2, VolumeX } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom, RoomWebSocketMessage as WebSocketMessage, ChatMessage } from '@/types/chat';
@@ -26,6 +26,15 @@ interface BroadcastRoomInterfaceProps {
     handleTyping?: () => void;
     addBroadcastMessageHandler?: (handler: (data: any) => void) => void;
     removeBroadcastMessageHandler?: (handler: (data: any) => void) => void;
+    sendWebRTCIceCandidate?: (toUserId: number, roomId: string, candidate: RTCIceCandidateInit) => void;
+    sendWebRTCOffer?: (toUserId: number, roomId: string, offer: RTCSessionDescriptionInit) => void;
+    sendWebRTCAnswer?: (toUserId: number, roomId: string, answer: RTCSessionDescriptionInit) => void;
+    onWebRTCOffer?: (handler: (payload: any) => void) => void;
+    offWebRTCOffer?: (handler: (payload: any) => void) => void;
+    onWebRTCIceCandidate?: (handler: (payload: any) => void) => void;
+    offWebRTCIceCandidate?: (handler: (payload: any) => void) => void;
+    onWebRTCAnswer?: (handler: (payload: any) => void) => void;
+    offWebRTCAnswer?: (handler: (payload: any) => void) => void;
   };
 }
 
@@ -50,6 +59,13 @@ export default function BroadcastRoomInterface({
   const [broadcastInfo, setBroadcastInfo] = useState<BroadcastInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // WebRTC states
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const peersRef = React.useRef<Map<number, RTCPeerConnection>>(new Map());
+  const [isMuted, setIsMuted] = useState(false);
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   // جلب معلومات غرفة البث
   // 🚀 جلب معلومات البث مع منع التكرار
@@ -171,6 +187,164 @@ export default function BroadcastRoomInterface({
   const isInQueue = !!currentUser && micQueue.includes(currentUser.id);
   const canSpeak = isHost || isSpeaker;
   const canRequestMic = !!currentUser && !isHost && !isSpeaker && !isInQueue;
+  const isListener = !!currentUser && !canSpeak;
+
+  // ============= WebRTC helpers =============
+  const stopBroadcast = useCallback(() => {
+    setIsBroadcasting(false);
+    peersRef.current.forEach((pc) => pc.close());
+    peersRef.current.clear();
+    if (localStream) {
+      localStream.getTracks().forEach((t) => t.stop());
+    }
+    setLocalStream(null);
+  }, [localStream]);
+
+  useEffect(() => {
+    return () => stopBroadcast();
+  }, [stopBroadcast]);
+
+  const startBroadcast = useCallback(async () => {
+    if (!currentUser || !room.id) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      setLocalStream(stream);
+      setIsBroadcasting(true);
+      // Create peer connections per listener (lazy: on offer request)
+      // Actively send offers to currently online listeners (non-speakers)
+      const listeners = onlineUsers.filter(u => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId);
+      for (const listener of listeners) {
+        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+        pc.onicecandidate = (event) => {
+          if (event.candidate) {
+            chat.sendWebRTCIceCandidate?.(listener.id, room.id, event.candidate);
+          }
+        };
+        peersRef.current.set(listener.id, pc);
+        const offer = await pc.createOffer({ offerToReceiveAudio: false });
+        await pc.setLocalDescription(offer);
+        chat.sendWebRTCOffer?.(listener.id, room.id, offer);
+      }
+    } catch (err) {
+      console.error('startBroadcast error:', err);
+      toast({ title: 'فشل بدء البث الصوتي', description: 'تحقق من صلاحيات الميكروفون', variant: 'destructive' });
+    }
+  }, [currentUser, room.id, onlineUsers, speakers, broadcastInfo?.hostId, chat, toast]);
+
+  // While broadcasting, send offers to any new listeners who appear later
+  useEffect(() => {
+    const run = async () => {
+      if (!isBroadcasting || !localStream || !currentUser || !room.id) return;
+      const listeners = onlineUsers.filter(u => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId);
+      for (const listener of listeners) {
+        if (peersRef.current.has(listener.id)) continue;
+        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        pc.onicecandidate = (event) => {
+          if (event.candidate) {
+            chat.sendWebRTCIceCandidate?.(listener.id, room.id, event.candidate);
+          }
+        };
+        peersRef.current.set(listener.id, pc);
+        const offer = await pc.createOffer({ offerToReceiveAudio: false });
+        await pc.setLocalDescription(offer);
+        chat.sendWebRTCOffer?.(listener.id, room.id, offer);
+      }
+    };
+    run();
+  }, [isBroadcasting, localStream, onlineUsers, currentUser?.id, room.id, speakers, broadcastInfo?.hostId, chat]);
+
+  // Listener side: handle offers/answers/ice
+  useEffect(() => {
+    if (!isListener || !currentUser || !room.id) return;
+    const handleOffer = async (payload: any) => {
+      try {
+        if (payload?.roomId !== room.id) return;
+        const fromUserId = payload.senderId;
+        let pc = peersRef.current.get(fromUserId);
+        if (!pc) {
+          pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+          pc.ontrack = (event) => {
+            // Play the first audio track
+            if (!audioRef.current) return;
+            const [remoteStream] = event.streams;
+            audioRef.current.srcObject = remoteStream;
+            audioRef.current.muted = isMuted;
+            audioRef.current.play().catch(() => {});
+          };
+          pc.onicecandidate = (event) => {
+            if (event.candidate) {
+              chat.sendWebRTCIceCandidate?.(fromUserId, room.id, event.candidate);
+            }
+          };
+          peersRef.current.set(fromUserId, pc);
+        }
+        await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        chat.sendWebRTCAnswer?.(fromUserId, room.id, answer);
+      } catch (err) {
+        console.error('handleOffer error:', err);
+      }
+    };
+    const handleAnswer = async (_payload: any) => {
+      // Listener doesn't process answers
+    };
+    const handleIce = async (payload: any) => {
+      try {
+        if (payload?.roomId !== room.id) return;
+        const fromUserId = payload.senderId;
+        const pc = peersRef.current.get(fromUserId);
+        if (pc && payload.candidate) {
+          await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+        }
+      } catch {}
+    };
+
+    chat.onWebRTCOffer?.(handleOffer);
+    chat.onWebRTCIceCandidate?.(handleIce);
+    chat.onWebRTCAnswer?.(handleAnswer);
+
+    return () => {
+      chat.offWebRTCOffer?.(handleOffer);
+      chat.offWebRTCIceCandidate?.(handleIce);
+      chat.offWebRTCAnswer?.(handleAnswer);
+    };
+  }, [isListener, currentUser?.id, room.id, chat, isMuted]);
+
+  // Host/Speaker side: handle answers/ice from listeners
+  useEffect(() => {
+    if (!canSpeak || !currentUser || !room.id) return;
+    const handleAnswer = async (payload: any) => {
+      try {
+        if (payload?.roomId !== room.id) return;
+        const fromUserId = payload.senderId;
+        const pc = peersRef.current.get(fromUserId);
+        if (pc) {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+        }
+      } catch (err) {}
+    };
+    const handleIce = async (payload: any) => {
+      try {
+        if (payload?.roomId !== room.id) return;
+        const fromUserId = payload.senderId;
+        const pc = peersRef.current.get(fromUserId);
+        if (pc && payload.candidate) {
+          await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+        }
+      } catch {}
+    };
+
+    chat.onWebRTCAnswer?.(handleAnswer);
+    chat.onWebRTCIceCandidate?.(handleIce);
+
+    return () => {
+      chat.offWebRTCAnswer?.(handleAnswer);
+      chat.offWebRTCIceCandidate?.(handleIce);
+    };
+  }, [canSpeak, currentUser?.id, room.id, chat]);
 
   // طلب المايك
   const handleRequestMic = async () => {
@@ -331,6 +505,23 @@ export default function BroadcastRoomInterface({
     return onlineUsers.find(user => user.id === userId);
   };
 
+  // UI Helpers
+  const listenerCount = onlineUsers.filter(user => 
+    !speakers.includes(user.id) && 
+    !micQueue.includes(user.id) &&
+    broadcastInfo?.hostId !== user.id
+  ).length;
+
+  const toggleMute = () => {
+    setIsMuted((m) => {
+      const next = !m;
+      if (audioRef.current) {
+        audioRef.current.muted = next;
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* شريط معلومات غرفة البث */}
@@ -427,14 +618,31 @@ export default function BroadcastRoomInterface({
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-blue-500" />
             <span className="font-medium">المستمعون:</span>
-            <Badge variant="secondary">
-              {onlineUsers.filter(user => 
-                !speakers.includes(user.id) && 
-                !micQueue.includes(user.id) &&
-                broadcastInfo?.hostId !== user.id
-              ).length}
-            </Badge>
+            <Badge variant="secondary">{listenerCount}</Badge>
           </div>
+
+          {/* عناصر التحكم في البث */}
+          <div className="flex flex-wrap gap-2 mt-2">
+            {canSpeak && !isBroadcasting && (
+              <Button onClick={startBroadcast} className="flex items-center gap-2">
+                <Mic className="w-4 h-4" />
+                بدء البث الصوتي
+              </Button>
+            )}
+            {canSpeak && isBroadcasting && (
+              <Button variant="outline" onClick={stopBroadcast} className="flex items-center gap-2">
+                <MicOff className="w-4 h-4" />
+                إيقاف البث الصوتي
+              </Button>
+            )}
+            {isListener && (
+              <Button type="button" onClick={toggleMute} variant="ghost" className="flex items-center gap-2">
+                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                {isMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
+              </Button>
+            )}
+          </div>
+          <audio ref={audioRef} hidden playsInline />
         </CardContent>
       </Card>
 
