@@ -235,11 +235,7 @@ class SocketManager {
       this.isAuthenticated = true;
       this.currentUser = data.user;
       
-      // إعادة الانضمام للغرفة السابقة إذا كانت موجودة
-      if (this.lastRoomId) {
-        this.joinRoom(this.lastRoomId);
-      }
-      
+      // لا نقوم بالانضمام من العميل بعد المصادقة لتجنب الازدواج؛ الخادم سيتكفل بذلك
       // معالجة الرسائل المعلقة
       this.processQueuedMessages();
       
