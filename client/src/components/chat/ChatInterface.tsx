@@ -241,11 +241,21 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
-      const match = hash.match(/#id(\d+)/);
-      if (match) {
-        const userId = parseInt(match[1]);
+      const profileMatch = hash.match(/#id(\d+)/);
+      const pmMatch = hash.match(/#pm(\d+)/);
+      if (profileMatch) {
+        const userId = parseInt(profileMatch[1]);
         handleProfileLink(userId);
-        // إزالة الهاش من العنوان
+        window.history.replaceState(null, '', window.location.pathname);
+      } else if (pmMatch) {
+        const userId = parseInt(pmMatch[1]);
+        const user = chat.onlineUsers.find(u => u.id === userId);
+        if (user) {
+          setSelectedPrivateUser(user);
+          try { chat.loadPrivateConversation(user.id); } catch {}
+        } else {
+          showErrorToast("لم نتمكن من العثور على هذا المستخدم", "مستخدم غير موجود");
+        }
         window.history.replaceState(null, '', window.location.pathname);
       }
     };
