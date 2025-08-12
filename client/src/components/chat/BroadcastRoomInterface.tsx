@@ -53,6 +53,7 @@ export default function BroadcastRoomInterface({
   const [isLoading, setIsLoading] = useState(false);
   const [webrtcManager, setWebrtcManager] = useState<WebRTCAudioManager | null>(null);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [needsAudioPermission, setNeedsAudioPermission] = useState(false);
   const { toast } = useToast();
 
   // جلب معلومات غرفة البث
@@ -102,19 +103,25 @@ export default function BroadcastRoomInterface({
       fetchBroadcastInfo();
       
       // إنشاء مدير WebRTC إذا كان لدينا socket ومستخدم
-      if (chat.socket && currentUser && !webrtcManager) {
+      if (chat.socket && currentUser) {
         const manager = new WebRTCAudioManager(chat.socket, room.id, currentUser.id);
         setWebrtcManager(manager);
+        
+        // الاستماع لفشل تشغيل الصوت
+        const handleAudioPlayFailed = () => {
+          setNeedsAudioPermission(true);
+        };
+        
+        chat.socket.on('audio-play-failed', handleAudioPlayFailed);
+        
+        // تنظيف عند إلغاء المكون
+        return () => {
+          manager.cleanup();
+          setWebrtcManager(null);
+          chat.socket.off('audio-play-failed', handleAudioPlayFailed);
+        };
       }
     }
-    
-    // تنظيف عند الخروج
-    return () => {
-      if (webrtcManager) {
-        webrtcManager.cleanup();
-        setWebrtcManager(null);
-      }
-    };
   }, [room.id, room.isBroadcast, chat.socket, currentUser?.id]);
 
   // معالجة الرسائل الجديدة من WebSocket
@@ -349,6 +356,26 @@ export default function BroadcastRoomInterface({
     return onlineUsers.find(user => user.id === userId);
   };
   
+  // تمكين الصوت يدوياً للمستمعين
+  const enableAudio = async () => {
+    if (webrtcManager) {
+      const success = await webrtcManager.playAudio();
+      if (success) {
+        setNeedsAudioPermission(false);
+        toast({
+          title: 'تم تفعيل الصوت',
+          description: 'يمكنك الآن سماع البث الصوتي',
+        });
+      } else {
+        toast({
+          title: 'خطأ',
+          description: 'تعذر تفعيل الصوت. حاول مرة أخرى.',
+          variant: 'destructive'
+        });
+      }
+    }
+  };
+  
   // بدء/إيقاف البث الصوتي
   const toggleBroadcast = async () => {
     if (!webrtcManager || !canSpeak) return;
@@ -558,6 +585,17 @@ export default function BroadcastRoomInterface({
               </Badge>
             )}
           </>
+        )}
+
+        {needsAudioPermission && !canSpeak && (
+          <Button 
+            variant="default" 
+            onClick={enableAudio}
+            className="flex items-center gap-2"
+          >
+            <Volume2 className="w-4 h-4" />
+            تفعيل الصوت للاستماع
+          </Button>
         )}
 
         {canManageMic && micQueue.length > 0 && (
