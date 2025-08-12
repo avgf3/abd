@@ -510,6 +510,14 @@ export const storage: LegacyStorage = {
     return await databaseService.deleteMessage(messageId);
   },
 
+  async getPrivateConversations(userId: number) {
+    return await databaseService.getPrivateConversations(userId);
+  },
+
+  async markMessagesAsRead(userId: number, conversationUserId: number) {
+    return await databaseService.markMessagesAsRead(userId, conversationUserId);
+  },
+
   // Friends
   async addFriend(userId: number, friendId: number) {
     return await friendService.addFriend(userId, friendId);

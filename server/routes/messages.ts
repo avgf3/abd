@@ -2,6 +2,12 @@ import { Router } from 'express';
 import { roomMessageService } from '../services/roomMessageService';
 import { roomService } from '../services/roomService';
 import { storage } from '../storage';
+import { 
+  validatePrivateMessage, 
+  rateLimitPrivateMessages, 
+  filterMessageContent,
+  validateMessageRetrieval 
+} from '../middleware/messageValidation';
 
 const router = Router();
 
@@ -327,6 +333,225 @@ router.post('/room/:roomId/cleanup', async (req, res) => {
     console.error('خطأ في تنظيف رسائل الغرفة:', error);
     res.status(400).json({
       error: error.message || 'خطأ في تنظيف الرسائل'
+    });
+  }
+});
+
+/**
+ * GET /api/messages/private/:userId1/:userId2
+ * جلب الرسائل الخاصة بين مستخدمين
+ */
+router.get('/private/:userId1/:userId2', validateMessageRetrieval, async (req, res) => {
+  try {
+    const userId1 = parseInt(req.params.userId1);
+    const userId2 = parseInt(req.params.userId2);
+    const { limit = 50, offset = 0 } = req.query;
+
+    if (!userId1 || !userId2) {
+      return res.status(400).json({ error: 'معرفات المستخدمين مطلوبة' });
+    }
+
+    const messages = await storage.getPrivateMessages(
+      userId1,
+      userId2,
+      parseInt(limit as string)
+    );
+
+    // إضافة معلومات المرسل لكل رسالة
+    const messagesWithSenders = await Promise.all(
+      messages.map(async (msg) => {
+        const sender = await storage.getUser(msg.senderId);
+        return { ...msg, sender };
+      })
+    );
+
+    res.json({
+      success: true,
+      messages: messagesWithSenders,
+      count: messagesWithSenders.length
+    });
+
+  } catch (error: any) {
+    console.error('خطأ في جلب الرسائل الخاصة:', error);
+    res.status(500).json({
+      error: 'خطأ في الخادم',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/messages/private
+ * إرسال رسالة خاصة
+ */
+router.post('/private', rateLimitPrivateMessages, filterMessageContent, validatePrivateMessage, async (req, res) => {
+  try {
+    const { senderId, receiverId, content, messageType = 'text', validatedSender } = req.body;
+    
+    // المستخدمون تم التحقق منهم في middleware
+
+    // إنشاء الرسالة
+    const message = await storage.createMessage({
+      senderId: parseInt(senderId),
+      receiverId: parseInt(receiverId),
+      content: content.trim(),
+      messageType,
+      isPrivate: true,
+      roomId: 'private', // استخدام roomId خاص للرسائل الخاصة
+      timestamp: new Date()
+    });
+
+    if (!message) {
+      return res.status(500).json({ error: 'فشل في إرسال الرسالة' });
+    }
+
+    // إضافة معلومات المرسل
+    const messageWithSender = { ...message, sender: validatedSender };
+
+    // إرسال الرسالة عبر Socket.IO
+    const io = req.app.get('io');
+    if (io) {
+      // إرسال للمستقبل
+      io.to(String(receiverId)).emit('privateMessage', { 
+        message: messageWithSender 
+      });
+      
+      // إرسال للمرسل أيضاً للتأكيد
+      io.to(String(senderId)).emit('privateMessage', { 
+        message: messageWithSender 
+      });
+    }
+
+    res.json({
+      success: true,
+      message: messageWithSender
+    });
+
+  } catch (error: any) {
+    console.error('خطأ في إرسال الرسالة الخاصة:', error);
+    res.status(400).json({
+      error: error.message || 'خطأ في إرسال الرسالة'
+    });
+  }
+});
+
+/**
+ * DELETE /api/messages/private/:messageId
+ * حذف رسالة خاصة
+ */
+router.delete('/private/:messageId', async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { userId } = req.body;
+
+    if (!messageId || !userId) {
+      return res.status(400).json({
+        error: 'معرف الرسالة ومعرف المستخدم مطلوبان'
+      });
+    }
+
+    // التحقق من الرسالة
+    const message = await storage.getMessage(parseInt(messageId));
+    if (!message) {
+      return res.status(404).json({ error: 'الرسالة غير موجودة' });
+    }
+
+    // التحقق من الصلاحيات - فقط المرسل يمكنه حذف رسالته
+    if (message.senderId !== parseInt(userId)) {
+      const user = await storage.getUser(parseInt(userId));
+      if (!user || !['admin', 'owner'].includes(user.userType)) {
+        return res.status(403).json({ error: 'ليس لديك صلاحية حذف هذه الرسالة' });
+      }
+    }
+
+    await storage.deleteMessage(parseInt(messageId));
+
+    // إرسال إشعار بحذف الرسالة عبر Socket.IO
+    const io = req.app.get('io');
+    if (io && message.receiverId) {
+      const deleteNotification = {
+        type: 'privateMessageDeleted',
+        messageId: parseInt(messageId),
+        deletedBy: parseInt(userId),
+        timestamp: new Date().toISOString()
+      };
+
+      // إرسال للمرسل والمستقبل
+      io.to(String(message.senderId)).emit('privateMessage', deleteNotification);
+      io.to(String(message.receiverId)).emit('privateMessage', deleteNotification);
+    }
+
+    res.json({
+      success: true,
+      message: 'تم حذف الرسالة بنجاح'
+    });
+
+  } catch (error: any) {
+    console.error('خطأ في حذف الرسالة الخاصة:', error);
+    res.status(400).json({
+      error: error.message || 'خطأ في حذف الرسالة'
+    });
+  }
+});
+
+/**
+ * GET /api/messages/private/conversations/:userId
+ * جلب قائمة المحادثات الخاصة لمستخدم
+ */
+router.get('/private/conversations/:userId', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+
+    if (!userId) {
+      return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+    }
+
+    // جلب جميع المحادثات الخاصة
+    const conversations = await storage.getPrivateConversations(userId);
+
+    res.json({
+      success: true,
+      conversations,
+      count: conversations.length
+    });
+
+  } catch (error: any) {
+    console.error('خطأ في جلب المحادثات الخاصة:', error);
+    res.status(500).json({
+      error: 'خطأ في الخادم',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/messages/private/mark-read
+ * تحديد الرسائل كمقروءة
+ */
+router.post('/private/mark-read', async (req, res) => {
+  try {
+    const { userId, conversationUserId } = req.body;
+
+    if (!userId || !conversationUserId) {
+      return res.status(400).json({ 
+        error: 'معرف المستخدم ومعرف المحادثة مطلوبان' 
+      });
+    }
+
+    await storage.markMessagesAsRead(
+      parseInt(userId),
+      parseInt(conversationUserId)
+    );
+
+    res.json({
+      success: true,
+      message: 'تم تحديد الرسائل كمقروءة'
+    });
+
+  } catch (error: any) {
+    console.error('خطأ في تحديد الرسائل كمقروءة:', error);
+    res.status(400).json({
+      error: error.message || 'خطأ في تحديث حالة القراءة'
     });
   }
 });
