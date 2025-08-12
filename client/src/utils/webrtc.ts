@@ -25,31 +25,26 @@ export class WebRTCAudioManager {
   private setupSocketListeners() {
     // استقبال عرض من متحدث
     this.socket.on('webrtc-offer', async (data: { from: number; offer: RTCSessionDescriptionInit }) => {
-      console.log('استقبال عرض WebRTC من:', data.from);
       await this.handleOffer(data.from, data.offer);
     });
 
     // استقبال إجابة
     this.socket.on('webrtc-answer', async (data: { from: number; answer: RTCSessionDescriptionInit }) => {
-      console.log('استقبال إجابة WebRTC من:', data.from);
       await this.handleAnswer(data.from, data.answer);
     });
 
     // استقبال ICE candidate
     this.socket.on('webrtc-ice-candidate', async (data: { from: number; candidate: RTCIceCandidateInit }) => {
-      console.log('استقبال ICE candidate من:', data.from);
       await this.handleIceCandidate(data.from, data.candidate);
     });
 
     // متحدث غادر
     this.socket.on('speaker-left', (data: { userId: number }) => {
-      console.log('متحدث غادر:', data.userId);
       this.removePeer(data.userId);
     });
 
     // مستمع انضم - نحتاج لإرسال عرض له إذا كنا متحدث
     this.socket.on('listener-joined', async (data: { listenerId: number }) => {
-      console.log('مستمع جديد انضم:', data.listenerId);
       if (this.isSpeaker && this.localStream) {
         await this.sendOfferToListener(data.listenerId);
       }
@@ -57,7 +52,6 @@ export class WebRTCAudioManager {
 
     // قائمة المستمعين عند بدء البث
     this.socket.on('listeners-list', async (data: { listeners: number[] }) => {
-      console.log('قائمة المستمعين الحاليين:', data.listeners);
       if (this.isSpeaker && this.localStream) {
         // إرسال عروض لجميع المستمعين الحاليين
         for (const listenerId of data.listeners) {
@@ -68,7 +62,6 @@ export class WebRTCAudioManager {
 
     // متحدث بدأ البث - للمستمعين
     this.socket.on('speaker-started', (data: { speakerId: number }) => {
-      console.log('متحدث بدأ البث:', data.speakerId);
       // المستمع سيستقبل عرض من المتحدث قريباً
     });
   }
@@ -144,7 +137,6 @@ export class WebRTCAudioManager {
 
     // معالجة المسارات الواردة (للمستمعين)
     peer.ontrack = (event) => {
-      console.log('استقبال مسار صوتي من:', userId);
       const [remoteStream] = event.streams;
       
       // تشغيل الصوت

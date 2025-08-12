@@ -2382,8 +2382,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         socket.to(`room_${roomId}`).emit('speaker-started', { speakerId: userId });
         
         // إرسال قائمة المستمعين للمتحدث ليبدأ الاتصال معهم
-        const roomUsers = connectedRooms.get(roomId) || new Set();
-        const listeners = Array.from(roomUsers).filter(id => {
+        const roomUserIds = Array.from(connectedUsers.entries())
+          .filter(([_, conn]) => conn.room === roomId)
+          .map(([id]) => id);
+        const listeners = roomUserIds.filter((id) => {
           // استبعاد المتحدث نفسه والمتحدثين الآخرين
           if (id === userId) return false;
           if (broadcastInfo.speakers.includes(id)) return false;
@@ -2410,6 +2412,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
       } catch (error) {
         console.error('خطأ في إيقاف البث:', error);
+      }
+    });
+    
+    // عند فشل التشغيل التلقائي للصوت لدى المستمع، أبلغ نفس العميل أو الغرفة ليظهر زر تفعيل الصوت
+    socket.on('audio-play-failed', (data: { roomId: string }) => {
+      try {
+        const { roomId } = data || ({} as any);
+        // إعادة إرسال الحدث لنفس العميل
+        socket.emit('audio-play-failed', { roomId });
+        // ويمكن كذلك إشعار المتحدث إن لزم: socket.to(`room_${roomId}`).emit('listener-audio-permission-needed');
+      } catch (err) {
+        console.warn('⚠️ audio-play-failed handler error:', err);
       }
     });
     
