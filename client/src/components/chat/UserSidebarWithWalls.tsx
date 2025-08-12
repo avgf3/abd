@@ -72,8 +72,8 @@ export default function UnifiedSidebar({
         return false;
       }
       
-      // رفض الأسماء العامة
-      if (user.username === 'مستخدم' || user.username === 'User' || user.username.trim() === '') {
+      // رفض الأسماء الفارغة فقط
+      if (user.username.trim() === '') {
         return false;
       }
       
