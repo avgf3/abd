@@ -379,6 +379,12 @@ class SocketManager {
   }
   
   getSocket(): Socket | null {
+    // Lazily create the socket instance if it doesn't exist yet
+    if (!this.socket) {
+      this.socket = this.createSocket();
+      // Initialize default event handlers without custom options
+      this.setupEventHandlers();
+    }
     return this.socket;
   }
   

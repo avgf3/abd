@@ -265,13 +265,17 @@ export const useChat = () => {
       if (pingIntervalRef.current) {
         clearInterval(pingIntervalRef.current);
       }
-      const pingId = window.setInterval(() => {
-        if (socketInstance.connected) {
-          socketInstance.emit('client_ping');
-        }
-      }, 20000);
-      pingIntervalRef.current = pingId;
-      socketInstance.on('client_pong', () => {});
+      // لا نبدأ ping قبل المصادقة لتجنب تحذير السيرفر
+      const startPing = () => {
+        if (pingIntervalRef.current) return;
+        const pingId = window.setInterval(() => {
+          if (socketInstance.connected) {
+            socketInstance.emit('client_ping');
+          }
+        }, 20000);
+        pingIntervalRef.current = pingId;
+        socketInstance.on('client_pong', () => {});
+      };
 
       // لم نعد نستخدم ping/pong المخصصين؛ نعتمد فقط على client_ping/client_pong للحفاظ على الاتصال
 
@@ -291,6 +295,8 @@ export const useChat = () => {
         console.log('✅ تمت المصادقة بنجاح');
         dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
         dispatch({ type: 'SET_LOADING', payload: false });
+        // ابدأ ping بعد المصادقة
+        startPing();
         
         // تحديث الغرفة الحالية إذا تم إعادة الانضمام لغرفة مختلفة
         if (data.currentRoom && data.currentRoom !== state.currentRoomId) {
@@ -603,16 +609,16 @@ export const useChat = () => {
 
       // الاتصال إذا لم يكن متصلاً
       if (!s.connected) {
-        connectSocket();
+        // استخرج التوكن من localStorage إذا كان مخزنًا
+        const token = localStorage.getItem('auth_token') || '';
+        connectSocket(token);
       } else {
         // إذا كان متصلاً بالفعل، أرسل المصادقة فقط
         // لأن socket.ts سيتولى إعادة الانضمام للغرفة تلقائياً
-        s.emit('auth', {
-          userId: user.id,
-          username: user.username,
-          userType: user.userType,
-          lastRoomId: currentRoom
-        });
+        const token = localStorage.getItem('auth_token') || '';
+        if (token) {
+          s.emit('auth', { token, lastRoomId: currentRoom, reconnect: true });
+        }
       }
 
       // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
