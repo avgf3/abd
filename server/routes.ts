@@ -80,8 +80,7 @@ const bannerUpload = createMulterConfig('banners', 'banner', 8 * 1024 * 1024);
 // تتبع المستخدمين المتصلين حقاً عبر Socket
 const connectedUsers = new Map<number, {
   user: any,
-  socketId: string,
-  room: string,
+  sockets: Map<string, { room: string; lastSeen: Date }>,
   lastSeen: Date
 }>();
 
@@ -106,19 +105,22 @@ interface CustomSocket extends Socket {
 // removed duplicate broadcast; use io.emit('message', ...) or io.to(...).emit('message', ...) directly
 
 // الدالة الموحدة الوحيدة لإرسال قائمة المستخدمين المتصلين
-function sendRoomUsers(roomId: string) {
-  const roomUsers = Array.from(connectedUsers.values())
-    .filter(conn => conn.room === roomId && 
-                   conn.user && 
-                   conn.user.id && 
-                   conn.user.username && 
-                   conn.user.userType)
-    .map(conn => conn.user);
-    
+function sendRoomUsers(roomId: string, source: string = 'system') {
+  const userMap = new Map<number, any>();
+  for (const { user, sockets } of connectedUsers.values()) {
+    for (const { room } of sockets.values()) {
+      if (room === roomId && user && user.id && user.username && user.userType) {
+        userMap.set(user.id, user);
+        break;
+      }
+    }
+  }
+  const roomUsers = Array.from(userMap.values());
   io.to(`room_${roomId}`).emit('message', {
     type: 'onlineUsers',
     users: roomUsers,
-    roomId: roomId
+    roomId,
+    source
   });
 }
 
@@ -1516,14 +1518,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // إضافة/تحديث المستخدم لقائمة المتصلين الفعليين
-        connectedUsers.set(user.id, {
-          user: user,
-          socketId: socket.id,
-          room: 'general', // البدء بالغرفة العامة دائماً
-          lastSeen: new Date()
-        });
-        // انضمام لغرفة المستخدم الخاصة لضمان خاص يعمل دائماً
-        try { socket.join(user.id.toString()); } catch {}
+const existing = connectedUsers.get(user.id);
+if (!existing) {
+  connectedUsers.set(user.id, {
+    user,
+    sockets: new Map([[socket.id, { room: 'general', lastSeen: new Date() }]]),
+    lastSeen: new Date()
+  });
+} else {
+  existing.user = user; // sync latest user data
+  existing.sockets.set(socket.id, { room: 'general', lastSeen: new Date() });
+  existing.lastSeen = new Date();
+  connectedUsers.set(user.id, existing);
+}
         // تحديث حالة المستخدم إلى متصل
         try {
           await storage.setUserOnlineStatus(user.id, true);
@@ -1563,9 +1570,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await new Promise(resolve => setTimeout(resolve, 200));
         
         // جلب قائمة المستخدمين المتصلين فعلياً في هذه الغرفة من الذاكرة فقط
-        const roomUsers = Array.from(connectedUsers.values())
-          .filter(conn => conn.room === currentRoom)
-          .map(conn => conn.user);
+        const roomUsers = (() => {
+          const userMap = new Map<number, any>();
+          for (const { user, sockets } of connectedUsers.values()) {
+            for (const { room } of sockets.values()) {
+              if (room === currentRoom && user && user.id) { userMap.set(user.id, user); break; }
+            }
+          }
+          return Array.from(userMap.values());
+        })();
         
         // إرسال تأكيد الانضمام مع قائمة المستخدمين
         // تم الانضمام للغرفة العامة عبر handleRoomJoin؛ لا حاجة لإرسال أحداث مكررة هنا
@@ -1578,7 +1591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // 🚀 تحسين: تقليل استدعاءات المستخدمين - زيادة الفترة الزمنية
     let lastUserListRequest = 0;
-    const USER_LIST_THROTTLE = 5000; // زيادة إلى 5 ثوان لتقليل التحميل
+    const USER_LIST_THROTTLE = 5000; // زيادة إلى 5 ثوان لتقليل التحميل (server-enforced)
     
     socket.on('requestOnlineUsers', async () => {
       try {
@@ -1595,21 +1608,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastUserListRequest = now;
 
         const currentRoom = (socket as any).currentRoom || 'general';
-        
-        // 🚀 تحسين: فلترة وتنظيف بيانات المستخدمين
-        const roomUsers = Array.from(connectedUsers.values())
-          .filter(conn => {
-            return conn.room === currentRoom && 
-                   conn.user && 
-                   conn.user.id && 
-                   conn.user.username && 
-                   conn.user.userType;
-          })
-          .map(conn => conn.user);
+
+        // بناء القائمة من تعدد الاتصالات
+        const userMap = new Map<number, any>();
+        for (const { user, sockets } of connectedUsers.values()) {
+          for (const { room } of sockets.values()) {
+            if (room === currentRoom && user && user.id && user.username && user.userType) {
+              userMap.set(user.id, user);
+              break;
+            }
+          }
+        }
+        const roomUsers = Array.from(userMap.values());
         
         socket.emit('message', { 
           type: 'onlineUsers', 
-          users: roomUsers 
+          users: roomUsers,
+          roomId: currentRoom,
+          source: 'request'
         });
         
         } catch (error) {
@@ -1824,8 +1840,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     socket.on('typing', (data) => {
       const { isTyping } = data;
       const currentRoom = (socket as any).currentRoom || 'general';
-      socket.to(`room_${currentRoom}`).emit('message', {
+      io.to(`room_${currentRoom}`).emit('message', {
         type: 'typing',
+        userId: socket.userId,
         username: socket.username,
         isTyping,
         roomId: currentRoom
@@ -1897,13 +1914,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
 
           case 'typing':
-            if (socket.userId) {
-              io.emit('userTyping', {
-                userId: socket.userId,
-                username: socket.username,
-                isTyping: message.isTyping,
-              });
-            }
+            // موحّد عبر حدث message.type='typing' في الغرفة، لا حاجة لبث عام إضافي
             break;
         }
       } catch (error) {
@@ -1938,6 +1949,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // مغادرة الغرفة السابقة إن وجدت
         if (currentRoom && currentRoom !== roomId) {
           await handleRoomLeave(socket, userId, username, currentRoom, false);
+          // تحديث قائمة مستخدمي الغرفة السابقة
+          sendRoomUsers(currentRoom, 'switch_room');
         }
         
         // التحقق من وجود الغرفة المطلوبة
@@ -2005,7 +2018,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // تحديث الغرفة في قائمة المتصلين الفعليين
         if (connectedUsers.has(userId)) {
           const userConnection = connectedUsers.get(userId)!;
-          userConnection.room = roomId;
+          const prev = userConnection.sockets.get(socket.id) || { room: roomId, lastSeen: new Date() };
+          userConnection.sockets.set(socket.id, { room: roomId, lastSeen: new Date() });
           userConnection.lastSeen = new Date();
           connectedUsers.set(userId, userConnection);
         }
@@ -2017,9 +2031,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await new Promise(resolve => setTimeout(resolve, 100));
         
         // جلب قائمة المستخدمين المتصلين في الغرفة الجديدة من الذاكرة فقط
-        const roomUsers = Array.from(connectedUsers.values())
-          .filter(conn => conn.room === roomId)
-          .map(conn => conn.user);
+        // بناء قائمة مستخدمي الغرفة من جميع الاتصالات
+          const roomUserMap = new Map<number, any>();
+          for (const { user, sockets } of connectedUsers.values()) {
+            for (const { room } of sockets.values()) {
+              if (room === roomId && user && user.id) { roomUserMap.set(user.id, user); break; }
+            }
+          }
+          const roomUsers = Array.from(roomUserMap.values());
         
         // إرسال تأكيد الانضمام مع قائمة المستخدمين
         socket.emit('message', {
@@ -2037,7 +2056,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         // إرسال تأكيد الانضمام مع قائمة محدثة للمستخدمين في الغرفة
-        sendRoomUsers(roomId);
+        sendRoomUsers(roomId, 'join');
         
         // إرسال رسالة ترحيب واحدة فقط
         const welcomeMessage = {
@@ -2121,7 +2140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         // إرسال قائمة محدثة للمستخدمين المتبقين في الغرفة
-        sendRoomUsers(roomId);
+        sendRoomUsers(roomId, 'leave');
         
       } catch (error) {
         console.error('خطأ في handleRoomLeave:', error);
@@ -2163,7 +2182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (isBroadcastRoom && (currentHostId == null)) {
           const privilegedRoles = ['owner', 'admin', 'moderator'];
-          const userObj = (connectedUsers.get(userId) || {}).user;
+          const userObj = (connectedUsers.get(userId) || ({} as any)).user;
           
           if (userObj && privilegedRoles.includes(userObj.userType)) {
             const ok = await storage.setRoomHost(roomId, userId);
@@ -2172,9 +2191,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           } else {
             // البحث عن مستخدم مؤهل آخر في الغرفة
-            const candidate = Array.from(connectedUsers.values())
-              .filter(conn => conn.room === roomId && conn.user && privilegedRoles.includes(conn.user.userType))
-              .map(conn => conn.user)[0];
+            const candidate = (() => {
+              for (const { user, sockets } of connectedUsers.values()) {
+                if (!user || !privilegedRoles.includes(user.userType)) continue;
+                for (const { room } of sockets.values()) {
+                  if (room === roomId) return user;
+                }
+              }
+              return undefined;
+            })();
             
             if (candidate) {
               const ok = await storage.setRoomHost(roomId, candidate.id);
@@ -2198,9 +2223,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (isBroadcastRoom && currentHostId === leavingUserId) {
           const privilegedRoles = ['owner', 'admin', 'moderator'];
-          const candidate = Array.from(connectedUsers.values())
-            .filter(conn => conn.room === roomId && conn.user && privilegedRoles.includes(conn.user.userType) && conn.user.id !== leavingUserId)
-            .map(conn => conn.user)[0];
+          const candidate = (() => {
+            for (const { user, sockets } of connectedUsers.values()) {
+              if (!user || user.id === leavingUserId || !privilegedRoles.includes(user.userType)) continue;
+              for (const { room } of sockets.values()) {
+                if (room === roomId) return user;
+              }
+            }
+            return undefined;
+          })();
           
           const newHostId = candidate ? candidate.id : null;
           const ok = await storage.setRoomHost(roomId, newHostId);
@@ -2243,9 +2274,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
        const customSocket = socket as CustomSocket;
        if (customSocket.userId && isAuthenticated) {
          try {
-           const currentRoom = (socket as any).currentRoom || 'general';
            const userId = customSocket.userId;
            const username = customSocket.username;
+
+           // إزالة هذا الـ socket فقط من قائمة اتصالات المستخدم
+           const entry = connectedUsers.get(userId);
+           if (entry) {
+             entry.sockets.delete(socket.id);
+             entry.lastSeen = new Date();
+             connectedUsers.set(userId, entry);
+
+             // إذا بقيت اتصالات أخرى فعّالة لنفس المستخدم، لا نطلق فترة السماح
+             if (entry.sockets.size > 0) {
+               return;
+             }
+           }
 
            // إذا كان هناك مؤقت سابق لنفس المستخدم، قم بإلغائه لإعادة جدولة فترة السماح
            if (pendingDisconnects.has(userId)) {
@@ -2256,18 +2299,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
            // جدولة الإزالة النهائية بعد فترة السماح
            const timeout = setTimeout(async () => {
              try {
+               // تحقق مرة أخرى إذا عاد المستخدم باتصال جديد خلال فترة السماح
+               const stillEntry = connectedUsers.get(userId);
+               if (stillEntry && stillEntry.sockets.size > 0) {
+                 return; // عاد المستخدم
+               }
+
+               // تحديد الغرف المتأثرة من آخر حالة معروفة (قد لا تتوفر غرفة محددة لكل socket الآن)
+               const affectedRooms = new Set<string>();
+               if (entry) {
+                 for (const { room } of entry.sockets.values()) {
+                   if (room) affectedRooms.add(room);
+                 }
+               }
+
                // إزالة من قائمة المتصلين فعلياً
                connectedUsers.delete(userId);
                // تحديث حالة المستخدم في قاعدة البيانات إلى غير متصل
                await storage.setUserOnlineStatus(userId, false);
-               // معالجة مغادرة الغرفة
-               if (currentRoom) {
-                 await handleRoomLeave(socket, userId, username, currentRoom, false);
+
+               // بث تحديث قوائم المتصلين للغرف المتأثرة
+               for (const roomId of affectedRooms) {
+                 sendRoomUsers(roomId, 'disconnect_cleanup');
                }
-               // بث إشعارات الخروج بعد انتهاء فترة السماح
-                               // تم التعامل مع إشعارات مغادرة الغرفة داخل handleRoomLeave، لا داعي لإصدار رسائل إضافية هنا
-                // الحفاظ فقط على تحديثات أخرى إن وجدت لاحقاً
-               io.emit('message', { type: 'userLeft', userId, username, timestamp: new Date().toISOString() });
+
+               // لا نرسل userLeft عام؛ أحداث الغرف كافية
              } catch (finalErr) {
                console.error('❌ خطأ في الإزالة بعد فترة السماح:', finalErr);
              } finally {
@@ -2387,7 +2443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // إرسال قائمة محدثة لجميع الغرف
         const rooms = ['general']; // يمكن إضافة غرف أخرى
         for (const roomId of rooms) {
-          sendRoomUsers(roomId);
+          sendRoomUsers(roomId, 'session_cleanup');
         }
       }
       
