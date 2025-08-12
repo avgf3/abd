@@ -31,7 +31,8 @@ export const requireAuth = async (
     const token = authHeader.substring(7); // إزالة "Bearer " من البداية
 
     // التحقق من وجود JWT_SECRET
-    const jwtSecret = process.env.JWT_SECRET;
+    const { SecurityManager } = await import('../auth/security');
+    const jwtSecret = SecurityManager.getJwtSecret();
     if (!jwtSecret) {
       console.error('JWT_SECRET غير محدد في متغيرات البيئة');
       return res.status(500).json({ 

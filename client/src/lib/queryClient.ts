@@ -56,6 +56,14 @@ export async function apiRequest<T = any>(
     requestHeaders['Content-Type'] = 'application/json';
     requestBody = body ? JSON.stringify(body) : undefined;
   }
+
+  // إرفاق رمز المصادقة تلقائياً إن وجد
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (token && !requestHeaders['Authorization']) {
+      requestHeaders['Authorization'] = `Bearer ${token}`;
+    }
+  } catch {}
   
   // إضافة timeout للطلبات مع دعم signal خارجي
   const controller = new AbortController();
