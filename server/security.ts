@@ -240,8 +240,14 @@ export function setupSecurity(app: Express): void {
   app.use(express.json({ 
     limit: '10mb',
     verify: (req: any, res: Response, buf: Buffer) => {
-      // Prevent JSON pollution attacks
+      // Prevent JSON pollution attacks, but only when body is non-empty and method expects a body
       try {
+        const method = (req.method || 'GET').toUpperCase();
+        const hasBody = buf && buf.length > 0;
+        const shouldParse = hasBody && method !== 'GET' && method !== 'HEAD';
+        if (!shouldParse) {
+          return;
+        }
         JSON.parse(buf.toString());
       } catch (e) {
         res.status(400).json({ error: 'Invalid JSON format' });

@@ -47,14 +47,24 @@ export async function apiRequest<T = any>(
 ): Promise<T> {
   const { method = 'GET', body, headers = {}, timeout = 30000, signal } = options || {};
   
-  // تحديد نوع المحتوى والجسم بناءً على نوع البيانات
   const requestHeaders: Record<string, string> = { ...headers };
-  let requestBody: any = body;
-  
-  // إذا كان FormData، لا نضيف Content-Type (المتصفح يضيفه تلقائياً مع boundary)
-  if (!(body instanceof FormData)) {
+  let requestBody: any = undefined;
+
+  const upperMethod = method.toUpperCase();
+
+  // Only set Content-Type and body when we actually send a JSON payload
+  if (body instanceof FormData) {
+    // Let the browser set the multipart boundary
+    requestBody = body;
+    // Ensure we don't override Content-Type for FormData
+    delete requestHeaders['Content-Type'];
+  } else if (body !== undefined && upperMethod !== 'GET') {
     requestHeaders['Content-Type'] = 'application/json';
-    requestBody = body ? JSON.stringify(body) : undefined;
+    requestBody = JSON.stringify(body);
+  } else {
+    // For GET or when no body, ensure Content-Type is not set to application/json
+    delete requestHeaders['Content-Type'];
+    requestBody = undefined;
   }
   
   // إضافة timeout للطلبات مع دعم signal خارجي
@@ -71,7 +81,7 @@ export async function apiRequest<T = any>(
   
   try {
     const res = await fetch(endpoint, {
-      method,
+      method: upperMethod,
       headers: requestHeaders,
       body: requestBody,
       credentials: "include",
@@ -81,7 +91,6 @@ export async function apiRequest<T = any>(
     clearTimeout(timeoutId);
     await throwIfResNotOk(res);
     
-    // التحقق من نوع المحتوى المُعاد
     const contentType = res.headers.get('content-type');
     if (contentType?.includes('application/json')) {
       return await res.json();
@@ -91,7 +100,6 @@ export async function apiRequest<T = any>(
   } catch (error: any) {
     clearTimeout(timeoutId);
     
-    // معالجة أخطاء مختلفة بطريقة أفضل
     if (error.name === 'AbortError') {
       const timeoutError = new Error('انتهت مهلة الطلب - يرجى المحاولة مرة أخرى') as any;
       timeoutError.code = 'TIMEOUT';
@@ -106,7 +114,6 @@ export async function apiRequest<T = any>(
       throw networkError;
     }
     
-    // تحسين رسائل الأخطاء الشائعة
     if (error.status === 401) {
       error.message = 'يجب تسجيل الدخول للوصول لهذه الصفحة';
     } else if (error.status === 403) {

@@ -95,8 +95,8 @@ export function getSocket(): Socket {
     path: '/socket.io',
     transports: ['websocket', 'polling'],
     upgrade: true,
-    rememberUpgrade: true,
-    autoConnect: true,
+    rememberUpgrade: false,
+    autoConnect: false,
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
@@ -108,5 +108,7 @@ export function getSocket(): Socket {
   });
 
   attachCoreListeners(socketInstance);
+  // Connect explicitly after listeners are attached
+  try { socketInstance.connect(); } catch {}
   return socketInstance;
 }

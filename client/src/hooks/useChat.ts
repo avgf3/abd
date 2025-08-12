@@ -21,17 +21,19 @@ const playNotificationSound = () => {
         oscillator.connect(gain);
         gain.connect(audioContext.destination);
         
+        oscillator.type = 'sine';
         oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        gain.gain.setValueAtTime(0.1, audioContext.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.001, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.03, audioContext.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.3);
         
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.3);
-      } catch (error) {
+      } catch {
         // Silent fail
       }
     });
-  } catch (error) {
+  } catch {
     // Silent fail
   }
 };
