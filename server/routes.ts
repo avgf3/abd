@@ -2131,6 +2131,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           roomId: roomId
         });
         
+        // إذا كانت غرفة برودكاست، أرسل إشعار للمتحدثين
+        const broadcastInfo = await roomService.getBroadcastInfo(roomId);
+        if (broadcastInfo) {
+          // إشعار جميع المتحدثين بانضمام مستمع جديد
+          const allSpeakers = [...broadcastInfo.speakers];
+          if (broadcastInfo.hostId) allSpeakers.push(broadcastInfo.hostId);
+          
+          allSpeakers.forEach(speakerId => {
+            io.to(speakerId.toString()).emit('listener-joined', { listenerId: userId });
+          });
+        }
+        
         // إرسال تأكيد الانضمام مع قائمة محدثة للمستخدمين في الغرفة
         await sendRoomUsers(roomId);
         
@@ -2333,6 +2345,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
         socket.emit('message', { type: 'error', message: 'خطأ في مغادرة الغرفة' });
       } finally {
         roomTransitionInProgress = false;
+      }
+    });
+
+    // ============= WebRTC Handlers للصوت في غرف البرودكاست =============
+    
+    // بدء البث الصوتي
+    socket.on('start-broadcasting', async (data) => {
+      try {
+        const { roomId } = data;
+        const userId = (socket as any).userId;
+        
+        if (!userId || !roomId) {
+          socket.emit('error', { message: 'معلومات غير كاملة' });
+          return;
+        }
+        
+        // التحقق من أن المستخدم متحدث أو مضيف
+        const broadcastInfo = await roomService.getBroadcastInfo(roomId);
+        if (!broadcastInfo) {
+          socket.emit('error', { message: 'الغرفة ليست غرفة بث' });
+          return;
+        }
+        
+        const isSpeaker = broadcastInfo.speakers.includes(userId) || broadcastInfo.hostId === userId;
+        if (!isSpeaker) {
+          socket.emit('error', { message: 'ليس لديك صلاحية البث' });
+          return;
+        }
+        
+        // إشعار جميع المستخدمين في الغرفة أن متحدث بدأ البث
+        socket.to(`room_${roomId}`).emit('speaker-started', { speakerId: userId });
+        
+        // إرسال قائمة المستمعين للمتحدث ليبدأ الاتصال معهم
+        const roomUsers = connectedRooms.get(roomId) || new Set();
+        const listeners = Array.from(roomUsers).filter(id => {
+          // استبعاد المتحدث نفسه والمتحدثين الآخرين
+          if (id === userId) return false;
+          if (broadcastInfo.speakers.includes(id)) return false;
+          return true;
+        });
+        socket.emit('listeners-list', { listeners });
+        
+      } catch (error) {
+        console.error('خطأ في بدء البث:', error);
+        socket.emit('error', { message: 'خطأ في بدء البث' });
+      }
+    });
+    
+    // إيقاف البث الصوتي
+    socket.on('stop-broadcasting', async (data) => {
+      try {
+        const { roomId } = data;
+        const userId = (socket as any).userId;
+        
+        if (!userId || !roomId) return;
+        
+        // إشعار جميع المستخدمين أن المتحدث أوقف البث
+        socket.to(`room_${roomId}`).emit('speaker-stopped', { speakerId: userId });
+        
+      } catch (error) {
+        console.error('خطأ في إيقاف البث:', error);
+      }
+    });
+    
+    // WebRTC Signaling
+    socket.on('webrtc-offer', async (data) => {
+      try {
+        const { to, offer } = data;
+        const from = (socket as any).userId;
+        
+        if (!from || !to || !offer) return;
+        
+        // إرسال العرض للمستخدم المستهدف
+        io.to(to.toString()).emit('webrtc-offer', { from, offer });
+        
+      } catch (error) {
+        console.error('خطأ في إرسال WebRTC offer:', error);
+      }
+    });
+    
+    socket.on('webrtc-answer', async (data) => {
+      try {
+        const { to, answer } = data;
+        const from = (socket as any).userId;
+        
+        if (!from || !to || !answer) return;
+        
+        // إرسال الإجابة للمستخدم المستهدف
+        io.to(to.toString()).emit('webrtc-answer', { from, answer });
+        
+      } catch (error) {
+        console.error('خطأ في إرسال WebRTC answer:', error);
+      }
+    });
+    
+    socket.on('webrtc-ice-candidate', async (data) => {
+      try {
+        const { to, candidate } = data;
+        const from = (socket as any).userId;
+        
+        if (!from || !to || !candidate) return;
+        
+        // إرسال ICE candidate للمستخدم المستهدف
+        io.to(to.toString()).emit('webrtc-ice-candidate', { from, candidate });
+        
+      } catch (error) {
+        console.error('خطأ في إرسال ICE candidate:', error);
       }
     });
 

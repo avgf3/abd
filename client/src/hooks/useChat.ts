@@ -911,5 +911,8 @@ export const useChat = () => {
     removeBroadcastMessageHandler: (handler: (data: any) => void) => {
       broadcastHandlersRef.current.delete(handler);
     },
+    
+    // تصدير socket للوصول إليه في BroadcastRoomInterface
+    socket: socket.current,
   };
 }
