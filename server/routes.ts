@@ -152,7 +152,7 @@ interface CustomSocket extends Socket {
 // removed duplicate broadcast; use io.emit('message', ...) or io.to(...).emit('message', ...) directly
 
 // الدالة الموحدة الوحيدة لإرسال قائمة المستخدمين المتصلين
-function sendRoomUsers(roomId: string) {
+async function sendRoomUsers(roomId: string) {
   const roomUsers = Array.from(connectedUsers.values())
     .filter(conn => conn.room === roomId && 
                    conn.user && 
@@ -161,15 +161,22 @@ function sendRoomUsers(roomId: string) {
                    conn.user.userType &&
                    !(conn.user as any).isHidden)
     .map(conn => conn.user);
-    
+
+  // معلومات البث المباشر المرتبطة بالغرفة
+  const broadcastInfo = await roomService.getBroadcastInfo(roomId);
+  
   io.to(`room_${roomId}`).emit('message', {
     type: 'onlineUsers',
     users: roomUsers,
     roomId: roomId,
     count: roomUsers.length,
+    broadcast: broadcastInfo || null,
     source: 'socket',
     timestamp: new Date().toISOString()
   });
+
+  // بث تحديث عدد المستخدمين ومعلومات البث كحدث غرفة موحد
+  broadcastRoomUpdate(roomId, 'usersUpdated', { count: roomUsers.length, broadcast: broadcastInfo || null });
 }
 
 // بث تحديثات الغرف للمشتركين في الغرفة
@@ -1382,6 +1389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // متغيرات محلية لتتبع حالة الاتصال
     let isAuthenticated = false;
     let heartbeatInterval: NodeJS.Timeout | null = null;
+    let roomTransitionInProgress = false;
     let connectionTimeout: NodeJS.Timeout | null = null;
     
     // التحقق من IP والجهاز المحجوب
@@ -1709,14 +1717,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })
           .map(conn => conn.user);
         
+        const broadcastInfo = await roomService.getBroadcastInfo(currentRoom);
         socket.emit('message', { 
           type: 'onlineUsers', 
           users: roomUsers,
           roomId: currentRoom,
           count: roomUsers.length,
+          broadcast: broadcastInfo || null,
           source: 'socket',
           timestamp: new Date().toISOString()
         });
+        broadcastRoomUpdate(currentRoom, 'usersUpdated', { count: roomUsers.length, broadcast: broadcastInfo || null });
         
         } catch (error) {
         console.error('❌ خطأ في جلب المستخدمين المتصلين:', error);
@@ -2017,6 +2028,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // معالجة انضمام للغرفة
     socket.on('joinRoom', async (data) => {
+      if (roomTransitionInProgress) {
+        return;
+      }
+      roomTransitionInProgress = true;
       // التحقق من rate limit
       if (!socketRateLimiter(socket, 'joinRoom')) {
         return;
@@ -2096,6 +2111,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.error('❌ خطأ في الانضمام للغرفة:', error);
         socket.emit('message', { type: 'error', message: 'فشل الانضمام للغرفة' });
+      } finally {
+        roomTransitionInProgress = false;
       }
     });
 
@@ -2146,7 +2163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         // إرسال تأكيد الانضمام مع قائمة محدثة للمستخدمين في الغرفة
-        sendRoomUsers(roomId);
+        await sendRoomUsers(roomId);
         
         // إرسال رسالة ترحيب واحدة فقط
         const welcomeMessage = {
@@ -2230,7 +2247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         // إرسال قائمة محدثة للمستخدمين المتبقين في الغرفة
-        sendRoomUsers(roomId);
+        await sendRoomUsers(roomId);
         
       } catch (error) {
         console.error('خطأ في handleRoomLeave:', error);
@@ -2325,6 +2342,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // معالجة مغادرة الغرفة
     socket.on('leaveRoom', async (data) => {
+      if (roomTransitionInProgress) {
+        return;
+      }
+      roomTransitionInProgress = true;
       try {
         const { roomId } = data;
         const userId = (socket as CustomSocket).userId;
@@ -2341,6 +2362,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.error('خطأ في مغادرة الغرفة:', error);
         socket.emit('message', { type: 'error', message: 'خطأ في مغادرة الغرفة' });
+      } finally {
+        roomTransitionInProgress = false;
       }
     });
 
