@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { authLimiter } from "../security";
+import { SecurityManager } from "../auth/security";
 
 const router = Router();
 
@@ -47,7 +48,12 @@ router.post("/register", async (req, res) => {
       profileImage: "/default_avatar.svg",
     });
 
-    res.json({ user, message: "تم التسجيل بنجاح" });
+    try {
+      const token = SecurityManager.createAuthToken({ userId: user.id, username: user.username, userType: user.userType });
+      res.json({ user, token, message: "تم التسجيل بنجاح" });
+    } catch {
+      res.json({ user, message: "تم التسجيل بنجاح" });
+    }
   } catch (error: any) {
     console.error("Registration error:", error);
     
@@ -101,7 +107,12 @@ router.post("/guest", async (req, res) => {
       profileImage: "/default_avatar.svg",
     });
 
-    res.json({ user });
+    try {
+      const token = SecurityManager.createAuthToken({ userId: user.id, username: user.username, userType: user.userType });
+      res.json({ user, token });
+    } catch {
+      res.json({ user });
+    }
   } catch (error) {
     console.error("Guest login error:", error);
     console.error("Error details:", error.message, error.stack);
@@ -134,7 +145,12 @@ router.post("/member", authLimiter, async (req, res) => {
       // Don't fail login just because status update failed
     }
     
-    res.json({ user });
+    try {
+      const token = SecurityManager.createAuthToken({ userId: user.id, username: user.username, userType: user.userType });
+      res.json({ user, token });
+    } catch {
+      res.json({ user });
+    }
   } catch (error) {
     console.error("Member login error:", error);
     res.status(500).json({ error: "خطأ في الخادم" });

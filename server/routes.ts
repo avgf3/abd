@@ -34,6 +34,7 @@ import { DEFAULT_LEVELS, recalculateUserStats } from "../shared/points-system";
 import { protect } from "./middleware/enhancedSecurity";
 import { requireAuth, requireOwnership, type AuthRequest } from "./middleware/requireAuth";
 import logger from "./utils/logger";
+import { SecurityManager } from "./auth/security";
 
 // ثوابت الحدود
 const MAX_MESSAGE_LENGTH = 1000;
@@ -1089,7 +1090,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileImage: "/default_avatar.svg",
       });
 
-      res.json({ user, message: "تم التسجيل بنجاح" });
+      try {
+        const token = SecurityManager.createAuthToken({ userId: user.id, username: user.username, userType: user.userType });
+        res.json({ user, token, message: "تم التسجيل بنجاح" });
+      } catch (e) {
+        res.json({ user, message: "تم التسجيل بنجاح" });
+      }
     } catch (error) {
       console.error('Registration error:', error);
       res.status(500).json({ error: "خطأ في الخادم" });
@@ -1118,7 +1124,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileImage: "/default_avatar.svg",
       });
 
-      res.json({ user });
+      try {
+        const token = SecurityManager.createAuthToken({ userId: user.id, username: user.username, userType: user.userType });
+        res.json({ user, token });
+      } catch (e) {
+        res.json({ user });
+      }
     } catch (error) {
       console.error("Guest login error:", error);
       console.error("Error details:", error.message, error.stack);
@@ -1169,14 +1180,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // تحديث حالة المستخدم إلى متصل
+            // تحديث حالة المستخدم إلى متصل
       try {
         await storage.setUserOnlineStatus(user.id, true);
         } catch (updateError) {
         console.error('خطأ في تحديث حالة المستخدم:', updateError);
       }
-
-      res.json({ user });
+      
+      try {
+        const token = SecurityManager.createAuthToken({ userId: user.id, username: user.username, userType: user.userType });
+        res.json({ user, token });
+      } catch (e) {
+        res.json({ user });
+      }
     } catch (error) {
       console.error('Member authentication error:', error);
       res.status(500).json({ error: "خطأ في الخادم" });
@@ -1463,7 +1479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // التحقق من JWT_SECRET
-        const jwtSecret = process.env.JWT_SECRET;
+        const jwtSecret = SecurityManager.getJwtSecret();
         if (!jwtSecret) {
           console.error('JWT_SECRET غير محدد في متغيرات البيئة');
           socket.emit('authError', { message: 'خطأ في إعداد الخادم' });

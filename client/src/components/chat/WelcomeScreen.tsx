@@ -50,6 +50,9 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           gender: guestGender,
         }
       });
+      if ((data as any)?.token) {
+        try { localStorage.setItem('auth_token', (data as any).token); } catch {}
+      }
       onUserLogin(data.user);
       setShowGuestModal(false);
     } catch (error: any) {
@@ -82,6 +85,9 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           password: memberPassword.trim(),
         }
       });
+      if ((data as any)?.token) {
+        try { localStorage.setItem('auth_token', (data as any).token); } catch {}
+      }
       onUserLogin(data.user);
       setShowMemberModal(false);
     } catch (error: any) {
@@ -151,6 +157,9 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
         title: "نجح التسجيل",
         description: data.message,
       });
+      if ((data as any)?.token) {
+        try { localStorage.setItem('auth_token', (data as any).token); } catch {}
+      }
       onUserLogin(data.user);
       setShowRegisterModal(false);
     } catch (error: any) {
