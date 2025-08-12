@@ -1163,83 +1163,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // POST endpoint for sending messages
-  app.post("/api/messages", async (req, res) => {
-    try {
-      const { senderId, receiverId, content, messageType = 'text', isPrivate = false, roomId = 'general' } = req.body;
-      
-      if (!senderId || !content?.trim()) {
-        return res.status(400).json({ error: "معرف المرسل والمحتوى مطلوبان" });
-      }
-
-      // التحقق من المرسل
-      const sender = await storage.getUser(senderId);
-      if (!sender) {
-        return res.status(404).json({ error: "المرسل غير موجود" });
-      }
-
-      // فحص الكتم للرسائل العامة
-      if (!isPrivate && sender.isMuted) {
-        return res.status(403).json({ error: "أنت مكتوم ولا يمكنك إرسال رسائل عامة" });
-      }
-
-      // التحقق من المستقبل للرسائل الخاصة
-      if (isPrivate && receiverId) {
-        const receiver = await storage.getUser(receiverId);
-        if (!receiver) {
-          return res.status(404).json({ error: "المستقبل غير موجود" });
-        }
-      }
-
-      // إنشاء الرسالة
-      const messageData = {
-        senderId,
-        receiverId: isPrivate ? receiverId : null,
-        content: content.trim(),
-        messageType,
-        isPrivate,
-        roomId: isPrivate ? null : roomId // للرسائل العامة فقط
-      };
-
-      const message = await storage.createMessage(messageData);
-      
-      // إرسال الرسالة عبر Socket.IO
-      if (isPrivate && receiverId) {
-        // رسالة خاصة
-        io.to(receiverId.toString()).emit('message', {
-          envelope: {
-            type: 'privateMessage',
-            message: { ...message, sender }
-          }
-        });
-        
-        // إرسال للمرسل أيضاً
-        io.to(senderId.toString()).emit('message', {
-          envelope: {
-            type: 'privateMessage',
-            message: { ...message, sender }
-          }
-        });
-      } else {
-        // رسالة عامة
-        io.emit('message', {
-          envelope: {
-            type: 'newMessage',
-            message: { ...message, sender }
-          }
-        });
-      }
-
-      res.json({ 
-        success: true, 
-        message: "تم إرسال الرسالة بنجاح",
-        data: { ...message, sender }
-      });
-    } catch (error) {
-      console.error("خطأ في إرسال الرسالة:", error);
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
 
   // Profile picture upload (members only)
   app.post('/api/users/:id/profile-image', async (req, res) => {
@@ -1760,22 +1683,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const sender = await storage.getUser(socket.userId);
         const messageWithSender = { ...newMessage, sender };
         
-        // إرسال للمستقبل
-        io.to(receiverId.toString()).emit('message', {
-          envelope: {
-            type: 'privateMessage',
-            message: messageWithSender
-          }
-        });
+        // إرسال للمستقبل والقناة الخاصة فقط (إزالة التكرار)
         io.to(receiverId.toString()).emit('privateMessage', { message: messageWithSender });
         
-        // إرسال للمرسل أيضاً
-        socket.emit('message', {
-          envelope: {
-            type: 'privateMessage',
-            message: messageWithSender
-          }
-        });
+        // إرسال للمرسل أيضاً عبر القناة الخاصة فقط
         socket.emit('privateMessage', { message: messageWithSender });
         
       } catch (error) {

@@ -31,20 +31,56 @@ export default function MessagesPanel({
   onlineUsers,
   onStartPrivateChat
 }: MessagesPanelProps) {
-  // Get users who have active conversations
-  const conversationUsers = Object.keys(privateConversations).map(userId => {
-    const user = onlineUsers.find(u => u.id === parseInt(userId));
-    const conversation = privateConversations[parseInt(userId)];
+  // Get users who have active conversations - resilient even if user is offline
+  const conversationUsers = Object.keys(privateConversations).map((idStr) => {
+    const otherUserId = parseInt(idStr);
+    const conversation = privateConversations[otherUserId] || [];
     const lastMessage = conversation[conversation.length - 1];
-    
+
+    // Prefer live online user object; otherwise fallback to last sender or a minimal stub
+    const onlineUser = onlineUsers.find(u => u.id === otherUserId);
+    const fallbackFromMessage = lastMessage?.sender;
+
+    const resolvedUser: ChatUser | undefined = onlineUser || fallbackFromMessage || (otherUserId ? {
+      id: otherUserId,
+      username: `مستخدم #${otherUserId}`,
+      userType: 'member',
+      role: 'member',
+      profileImage: undefined,
+      profileBanner: undefined,
+      profileBackgroundColor: '#ffffff',
+      status: '',
+      gender: undefined,
+      age: undefined,
+      country: undefined,
+      relation: undefined,
+      bio: undefined,
+      isOnline: false,
+      isHidden: false,
+      lastSeen: null,
+      joinDate: new Date(),
+      createdAt: new Date(),
+      isMuted: false,
+      muteExpiry: null,
+      isBanned: false,
+      banExpiry: null,
+      isBlocked: false,
+      ignoredUsers: [],
+      usernameColor: '#000000',
+      userTheme: 'theme-new-gradient',
+      profileEffect: 'none',
+      points: 0,
+      level: 1,
+      totalPoints: 0,
+      levelProgress: 0,
+    } as ChatUser : undefined);
+
     return {
-      user,
+      user: resolvedUser,
       lastMessage,
       unreadCount: 0 // يمكن تطويره لاحقاً
     };
-  }).filter(item => item.user);
-
-
+  }).filter(item => item.user && (privateConversations[(item.user as ChatUser).id]?.length ?? 0) > 0);
 
   const formatLastMessage = (content: string) => {
     if (content.length > 30) {
@@ -105,6 +141,12 @@ export default function MessagesPanel({
                           </span>
                         )}
                       </div>
+
+                      {lastMessage && (
+                        <div className="text-xs text-muted-foreground">
+                          {formatTime(lastMessage.timestamp)}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
