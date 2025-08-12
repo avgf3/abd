@@ -1382,6 +1382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // متغيرات محلية لتتبع حالة الاتصال
     let isAuthenticated = false;
     let heartbeatInterval: NodeJS.Timeout | null = null;
+    let roomTransitionInProgress = false;
     let connectionTimeout: NodeJS.Timeout | null = null;
     
     // التحقق من IP والجهاز المحجوب
