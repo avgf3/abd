@@ -90,15 +90,37 @@ export async function getStats(): Promise<{ users: number; messages: number; onl
 }
 
 export async function blockDevice(ipAddress: string, deviceId: string, userId: number, reason: string, blockedBy: number): Promise<void> {
-  // This functionality needs to be implemented in databaseService
-  console.warn('blockDevice not implemented in databaseService');
+  try {
+    const { blockedDevices } = await import('../shared/schema');
+    await db.insert(blockedDevices).values({
+      ipAddress,
+      deviceId,
+      userId,
+      reason,
+      blockedBy,
+      blockedAt: new Date()
+    });
+  } catch (error) {
+    console.error('Error blocking device:', error);
+    throw error;
+  }
 }
 
 export async function isDeviceBlocked(ipAddress: string, deviceId: string): Promise<boolean> {
   try {
-    // This functionality needs to be implemented in databaseService
-    console.warn('isDeviceBlocked not implemented in databaseService');
-    return false;
+    const { blockedDevices } = await import('../shared/schema');
+    const { and, eq } = await import('drizzle-orm');
+    
+    const result = await db
+      .select()
+      .from(blockedDevices)
+      .where(and(
+        eq(blockedDevices.ipAddress, ipAddress),
+        eq(blockedDevices.deviceId, deviceId)
+      ))
+      .limit(1);
+    
+    return result.length > 0;
   } catch (error) {
     console.error('Error checking device block:', error);
     return false;

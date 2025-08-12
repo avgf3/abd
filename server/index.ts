@@ -9,11 +9,18 @@ import { setupSecurity } from "./security";
 import path from "path";
 import fs from "fs";
 import { Server } from "http";
+import { cookieMiddleware, csrfTokenMiddleware, getCSRFToken } from "./middleware/cookieProtection";
 
 const app = express();
 
 // Setup security first
 setupSecurity(app);
+
+// Cookie parser middleware
+app.use(cookieMiddleware);
+
+// CSRF token middleware
+app.use(csrfTokenMiddleware);
 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
@@ -77,6 +84,9 @@ app.use('/uploads/wall', express.static(wallUploadsPath, { maxAge: '1d', etag: t
 app.use('/icons', express.static(path.join(process.cwd(), 'client/public/icons'), {
   maxAge: '7d'
 }));
+
+// CSRF token endpoint
+app.get('/api/csrf-token', getCSRFToken);
 
 // Health check endpoint - simple and fast
 app.get('/health', (req, res) => {

@@ -1,65 +1,39 @@
 import { io, Socket } from 'socket.io-client';
 
-// Session storage helpers
-const STORAGE_KEY = 'chat_session';
-const QUEUE_KEY = 'pending_messages';
+// Types
+interface SocketUser {
+  id: number;
+  username: string;
+  role: string;
+}
 
-type StoredSession = {
-  userId?: number;
-  username?: string;
-  userType?: string;
-  token?: string;
-  roomId?: string;
-  lastRoomId?: string; // لحفظ آخر غرفة
-};
+interface AuthData {
+  token: string;
+  reconnect?: boolean;
+  lastRoomId?: string;
+}
 
-type PendingMessage = {
+interface SocketOptions {
+  onConnect?: () => void;
+  onDisconnect?: (reason: string) => void;
+  onError?: (error: any) => void;
+  onAuth?: (user: SocketUser) => void;
+  onAuthError?: (error: any) => void;
+}
+
+// Message Queue for offline messages
+interface QueuedMessage {
   id: string;
   event: string;
   data: any;
   timestamp: number;
   retries: number;
-};
-
-// ==================== Session Management ====================
-export function saveSession(partial: Partial<StoredSession>) {
-  try {
-    const existing = getSession();
-    const merged: StoredSession = { ...existing, ...partial };
-    
-    // حفظ آخر غرفة تم الانضمام إليها
-    if (partial.roomId) {
-      merged.lastRoomId = partial.roomId;
-    }
-    
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-  } catch (error) {
-    console.error('Error saving session:', error);
-  }
 }
 
-export function getSession(): StoredSession {
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    return JSON.parse(raw) as StoredSession;
-  } catch {
-    return {};
-  }
-}
-
-export function clearSession() {
-  try { 
-    sessionStorage.removeItem(STORAGE_KEY);
-    sessionStorage.removeItem(QUEUE_KEY);
-  } catch {}
-}
-
-// ==================== Message Queue Management ====================
 class MessageQueue {
-  private queue: PendingMessage[] = [];
-  private processing = false;
-  private maxRetries = 3;
+  private queue: QueuedMessage[] = [];
+  private readonly MAX_RETRIES = 3;
+  private readonly STORAGE_KEY = 'socket_message_queue';
   
   constructor() {
     this.loadFromStorage();
@@ -67,14 +41,12 @@ class MessageQueue {
   
   private loadFromStorage() {
     try {
-      const stored = sessionStorage.getItem(QUEUE_KEY);
+      const stored = localStorage.getItem(this.STORAGE_KEY);
       if (stored) {
         this.queue = JSON.parse(stored);
         // تنظيف الرسائل القديمة (أكثر من 5 دقائق)
-        const now = Date.now();
-        this.queue = this.queue.filter(msg => 
-          now - msg.timestamp < 5 * 60 * 1000
-        );
+        const cutoff = Date.now() - 5 * 60 * 1000;
+        this.queue = this.queue.filter(msg => msg.timestamp > cutoff);
         this.saveToStorage();
       }
     } catch {
@@ -84,12 +56,12 @@ class MessageQueue {
   
   private saveToStorage() {
     try {
-      sessionStorage.setItem(QUEUE_KEY, JSON.stringify(this.queue));
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.queue));
     } catch {}
   }
   
-  add(event: string, data: any) {
-    const message: PendingMessage = {
+  add(event: string, data: any): void {
+    const message: QueuedMessage = {
       id: `${Date.now()}-${Math.random()}`,
       event,
       data,
@@ -99,323 +71,361 @@ class MessageQueue {
     
     this.queue.push(message);
     this.saveToStorage();
-    this.process();
   }
   
-  async process() {
-    if (this.processing || !socketInstance?.connected) return;
-    
-    this.processing = true;
-    
-    while (this.queue.length > 0) {
-      const message = this.queue[0];
-      
-      try {
-        // إرسال الرسالة مع انتظار تأكيد
-        const sent = await this.sendWithAck(message);
-        
-        if (sent) {
-          // إزالة الرسالة من الطابور بعد النجاح
-          this.queue.shift();
-          this.saveToStorage();
-        } else {
-          // زيادة عدد المحاولات
-          message.retries++;
-          
-          if (message.retries >= this.maxRetries) {
-            // إزالة الرسالة بعد فشل المحاولات
-            this.queue.shift();
-            console.error('Message dropped after max retries:', message);
-          } else {
-            // الانتظار قبل المحاولة مرة أخرى
-            await new Promise(resolve => setTimeout(resolve, 1000 * message.retries));
-          }
-          
-          this.saveToStorage();
-        }
-      } catch (error) {
-        console.error('Error processing message:', error);
-        break;
-      }
+  getAll(): QueuedMessage[] {
+    return [...this.queue];
+  }
+  
+  remove(id: string): void {
+    this.queue = this.queue.filter(msg => msg.id !== id);
+    this.saveToStorage();
+  }
+  
+  incrementRetries(id: string): boolean {
+    const msg = this.queue.find(m => m.id === id);
+    if (msg) {
+      msg.retries++;
+      this.saveToStorage();
+      return msg.retries < this.MAX_RETRIES;
     }
-    
-    this.processing = false;
+    return false;
   }
   
-  private sendWithAck(message: PendingMessage): Promise<boolean> {
-    return new Promise((resolve) => {
-      if (!socketInstance?.connected) {
-        resolve(false);
-        return;
-      }
-      
-      const timeout = setTimeout(() => {
-        resolve(false);
-      }, 5000);
-      
-      // إرسال مع callback للتأكيد
-      socketInstance.emit(message.event, message.data, (ack: any) => {
-        clearTimeout(timeout);
-        resolve(true);
-      });
-      
-      // في حالة عدم دعم الخادم للـ acknowledgments
-      if (message.event === 'sendMessage' || message.event === 'joinRoom') {
-        clearTimeout(timeout);
-        resolve(true);
-      }
-    });
-  }
-  
-  clear() {
+  clear(): void {
     this.queue = [];
     this.saveToStorage();
   }
 }
 
-// ==================== Socket Singleton ====================
-let socketInstance: Socket | null = null;
-let messageQueue: MessageQueue | null = null;
-let reconnectTimer: NodeJS.Timeout | null = null;
-let isReconnecting = false;
-
-function getServerUrl(): string {
-  try {
-    const isDev = (import.meta as any)?.env?.DEV;
-    if (isDev) return 'http://localhost:5000';
-    return window.location.origin;
-  } catch {
-    return window.location.origin;
-  }
-}
-
-// ==================== Connection Management ====================
-function createSocketInstance(): Socket {
-  const socket = io(getServerUrl(), {
-    path: '/socket.io/',
-    transports: ['websocket', 'polling'],
-    upgrade: true,
-    rememberUpgrade: true,
-    autoConnect: false, // سنتحكم في الاتصال يدوياً
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 30000,
-    randomizationFactor: 0.5,
-    timeout: 20000,
-    forceNew: false,
-    withCredentials: true,
-    // Heartbeat settings
-    pingInterval: 25000,
-    pingTimeout: 60000,
-  });
+// Singleton Socket Manager
+class SocketManager {
+  private static instance: SocketManager;
+  private socket: Socket | null = null;
+  private messageQueue = new MessageQueue();
+  private isAuthenticated = false;
+  private currentUser: SocketUser | null = null;
+  private lastRoomId: string | null = null;
+  private reconnectAttempts = 0;
+  private readonly MAX_RECONNECT_ATTEMPTS = 5;
   
-  attachEventListeners(socket);
-  return socket;
-}
-
-function attachEventListeners(socket: Socket) {
-  // Connection events
-  socket.on('connect', () => {
-    console.log('Socket connected:', socket.id);
-    isReconnecting = false;
-    
-    // المصادقة
-    authenticateSocket(false);
-    
-    // معالجة الرسائل المعلقة
-    if (messageQueue) {
-      messageQueue.process();
+  private constructor() {}
+  
+  static getInstance(): SocketManager {
+    if (!SocketManager.instance) {
+      SocketManager.instance = new SocketManager();
     }
-  });
-  
-  socket.on('disconnect', (reason) => {
-    console.log('Socket disconnected:', reason);
-    
-    // إعادة الاتصال التلقائي للأسباب المؤقتة
-    if (reason === 'io server disconnect') {
-      // الخادم قطع الاتصال، نحتاج إعادة اتصال يدوي
-      attemptReconnect();
-    }
-  });
-  
-  socket.on('reconnect', (attemptNumber) => {
-    console.log('Socket reconnected after', attemptNumber, 'attempts');
-    isReconnecting = false;
-    
-    // إعادة المصادقة والانضمام للغرفة
-    authenticateSocket(true);
-  });
-  
-  socket.on('reconnect_attempt', (attemptNumber) => {
-    console.log('Reconnection attempt', attemptNumber);
-    isReconnecting = true;
-  });
-  
-  socket.on('reconnect_error', (error) => {
-    console.error('Reconnection error:', error);
-  });
-  
-  socket.on('reconnect_failed', () => {
-    console.error('Reconnection failed');
-    isReconnecting = false;
-    // محاولة إعادة الاتصال يدوياً بعد فترة
-    attemptReconnect();
-  });
-  
-  socket.on('error', (error) => {
-    console.error('Socket error:', error);
-  });
-  
-  // Auth response
-  socket.on('authSuccess', (data) => {
-    console.log('Authentication successful:', data);
-    
-    // الانضمام التلقائي لآخر غرفة
-    const session = getSession();
-    const roomToJoin = session.lastRoomId || session.roomId || 'general';
-    
-    if (roomToJoin) {
-      socket.emit('joinRoom', {
-        roomId: roomToJoin,
-        userId: session.userId,
-        username: session.username,
-      });
-    }
-  });
-  
-  socket.on('authError', (error) => {
-    console.error('Authentication error:', error);
-    // يمكن إضافة منطق لإعادة تسجيل الدخول
-  });
-  
-  // Network events
-  window.addEventListener('online', () => {
-    console.log('Network online');
-    if (!socket.connected && !isReconnecting) {
-      socket.connect();
-    }
-  });
-  
-  window.addEventListener('offline', () => {
-    console.log('Network offline');
-  });
-  
-  // Page visibility
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && !socket.connected && !isReconnecting) {
-      socket.connect();
-    }
-  });
-}
-
-function authenticateSocket(isReconnect: boolean) {
-  const session = getSession();
-  if (!session || (!session.userId && !session.username)) {
-    console.log('No session for authentication');
-    return;
+    return SocketManager.instance;
   }
   
-  if (!socketInstance?.connected) {
-    console.log('Socket not connected for authentication');
-    return;
+  private getSocketUrl(): string {
+    if (typeof window === 'undefined') return '';
+    
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    
+    // في بيئة التطوير، استخدم المنفذ 5000
+    if (import.meta.env.DEV) {
+      return 'ws://localhost:5000';
+    }
+    
+    return `${protocol}//${host}`;
   }
   
-  try {
-    socketInstance.emit('auth', {
-      userId: session.userId,
-      username: session.username,
-      userType: session.userType,
-      token: session.token,
-      reconnect: isReconnect,
+  private createSocket(): Socket {
+    const socketUrl = this.getSocketUrl();
+    
+    return io(socketUrl, {
+      autoConnect: false, // لا يتصل تلقائياً
+      reconnection: true,
+      reconnectionAttempts: this.MAX_RECONNECT_ATTEMPTS,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
+      transports: ['websocket', 'polling'],
+      path: '/socket.io/',
+      // إعدادات الـ heartbeat
+      pingInterval: 25000,
+      pingTimeout: 60000,
+      // إرسال الكوكيز
+      withCredentials: true
     });
-  } catch (error) {
-    console.error('Error during authentication:', error);
-  }
-}
-
-function attemptReconnect() {
-  if (isReconnecting || !socketInstance) return;
-  
-  if (reconnectTimer) {
-    clearTimeout(reconnectTimer);
   }
   
-  reconnectTimer = setTimeout(() => {
-    if (!socketInstance?.connected) {
-      console.log('Attempting manual reconnection...');
-      socketInstance.connect();
+  connect(token: string, options?: SocketOptions): Socket {
+    // إذا كان متصلاً بالفعل، أعد الـ socket الحالي
+    if (this.socket?.connected) {
+      return this.socket;
     }
-  }, 5000);
-}
-
-// ==================== Public API ====================
-export function getSocket(): Socket {
-  if (!socketInstance) {
-    socketInstance = createSocketInstance();
-    messageQueue = new MessageQueue();
     
-    // الاتصال التلقائي إذا كان هناك جلسة
-    const session = getSession();
-    if (session.userId || session.username) {
-      socketInstance.connect();
+    // إنشاء socket جديد إذا لم يكن موجوداً
+    if (!this.socket) {
+      this.socket = this.createSocket();
+      this.setupEventHandlers(options);
+    }
+    
+    // حفظ التوكن في localStorage
+    if (token) {
+      localStorage.setItem('auth_token', token);
+    }
+    
+    // الاتصال
+    this.socket.connect();
+    
+    return this.socket;
+  }
+  
+  private setupEventHandlers(options?: SocketOptions) {
+    if (!this.socket) return;
+    
+    // معالج الاتصال
+    this.socket.on('connect', () => {
+      console.log('Socket connected:', this.socket?.id);
+      this.reconnectAttempts = 0;
+      
+      // المصادقة التلقائية باستخدام التوكن المحفوظ
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        this.authenticate(token, true);
+      }
+      
+      options?.onConnect?.();
+    });
+    
+    // معالج قطع الاتصال
+    this.socket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
+      this.isAuthenticated = false;
+      
+      // إضافة الرسائل المعلقة للطابور
+      if (reason === 'io server disconnect' || reason === 'io client disconnect') {
+        // قطع اتصال متعمد، لا نحاول إعادة الاتصال
+        this.lastRoomId = null;
+      }
+      
+      options?.onDisconnect?.(reason);
+    });
+    
+    // معالج الأخطاء
+    this.socket.on('error', (error) => {
+      console.error('Socket error:', error);
+      options?.onError?.(error);
+    });
+    
+    // معالج إعادة الاتصال
+    this.socket.on('reconnect', (attemptNumber) => {
+      console.log('Socket reconnected after', attemptNumber, 'attempts');
+      
+      // إعادة المصادقة
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        this.authenticate(token, true);
+      }
+    });
+    
+    // معالج فشل إعادة الاتصال
+    this.socket.on('reconnect_failed', () => {
+      console.error('Socket reconnection failed');
+      this.messageQueue.clear();
+    });
+    
+    // معالج نجاح المصادقة
+    this.socket.on('authSuccess', (data: { user: SocketUser }) => {
+      console.log('Authentication successful:', data.user.username);
+      this.isAuthenticated = true;
+      this.currentUser = data.user;
+      
+      // إعادة الانضمام للغرفة السابقة إذا كانت موجودة
+      if (this.lastRoomId) {
+        this.joinRoom(this.lastRoomId);
+      }
+      
+      // معالجة الرسائل المعلقة
+      this.processQueuedMessages();
+      
+      options?.onAuth?.(data.user);
+    });
+    
+    // معالج فشل المصادقة
+    this.socket.on('authError', (error) => {
+      console.error('Authentication failed:', error);
+      this.isAuthenticated = false;
+      this.currentUser = null;
+      
+      // حذف التوكن غير الصالح
+      localStorage.removeItem('auth_token');
+      
+      options?.onAuthError?.(error);
+    });
+  }
+  
+  authenticate(token: string, isReconnect = false): void {
+    if (!this.socket?.connected) {
+      console.error('Socket not connected');
+      return;
+    }
+    
+    const authData: AuthData = {
+      token,
+      reconnect: isReconnect,
+      lastRoomId: this.lastRoomId || undefined
+    };
+    
+    this.socket.emit('auth', authData);
+  }
+  
+  private processQueuedMessages(): void {
+    if (!this.socket?.connected || !this.isAuthenticated) return;
+    
+    const messages = this.messageQueue.getAll();
+    
+    messages.forEach(msg => {
+      try {
+        this.socket!.emit(msg.event, msg.data);
+        this.messageQueue.remove(msg.id);
+      } catch (error) {
+        console.error('Error sending queued message:', error);
+        
+        // إعادة المحاولة أو حذف الرسالة
+        if (!this.messageQueue.incrementRetries(msg.id)) {
+          this.messageQueue.remove(msg.id);
+        }
+      }
+    });
+  }
+  
+  emit(event: string, data?: any): void {
+    if (!this.socket) {
+      console.error('Socket not initialized');
+      return;
+    }
+    
+    if (!this.socket.connected || !this.isAuthenticated) {
+      // إضافة للطابور إذا لم يكن متصلاً
+      this.messageQueue.add(event, data);
+      return;
+    }
+    
+    try {
+      this.socket.emit(event, data);
+    } catch (error) {
+      console.error('Error emitting event:', event, error);
+      this.messageQueue.add(event, data);
     }
   }
   
-  return socketInstance;
-}
-
-export function connectSocket() {
-  const socket = getSocket();
-  if (!socket.connected && !isReconnecting) {
-    socket.connect();
-  }
-}
-
-export function disconnectSocket() {
-  if (socketInstance) {
-    isReconnecting = false;
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
+  on(event: string, handler: (...args: any[]) => void): void {
+    if (!this.socket) {
+      console.error('Socket not initialized');
+      return;
     }
-    socketInstance.disconnect();
+    
+    this.socket.on(event, handler);
+  }
+  
+  off(event: string, handler?: (...args: any[]) => void): void {
+    if (!this.socket) return;
+    
+    if (handler) {
+      this.socket.off(event, handler);
+    } else {
+      this.socket.off(event);
+    }
+  }
+  
+  joinRoom(roomId: string): void {
+    this.lastRoomId = roomId;
+    this.emit('joinRoom', { roomId });
+    
+    // حفظ آخر غرفة في localStorage
+    localStorage.setItem('last_room_id', roomId);
+  }
+  
+  leaveRoom(roomId: string): void {
+    if (this.lastRoomId === roomId) {
+      this.lastRoomId = null;
+      localStorage.removeItem('last_room_id');
+    }
+    
+    this.emit('leaveRoom', { roomId });
+  }
+  
+  disconnect(): void {
+    if (this.socket) {
+      this.isAuthenticated = false;
+      this.currentUser = null;
+      this.lastRoomId = null;
+      this.messageQueue.clear();
+      
+      this.socket.disconnect();
+      this.socket = null;
+    }
+    
+    // تنظيف localStorage
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('last_room_id');
+  }
+  
+  isConnected(): boolean {
+    return this.socket?.connected || false;
+  }
+  
+  isUserAuthenticated(): boolean {
+    return this.isAuthenticated;
+  }
+  
+  getCurrentUser(): SocketUser | null {
+    return this.currentUser;
+  }
+  
+  getSocket(): Socket | null {
+    return this.socket;
+  }
+  
+  getLastRoomId(): string | null {
+    return this.lastRoomId || localStorage.getItem('last_room_id');
   }
 }
 
-export function isSocketConnected(): boolean {
-  return socketInstance?.connected || false;
-}
+// تصدير instance واحد
+const socketManager = SocketManager.getInstance();
 
-// إرسال رسالة مع دعم الطابور
-export function sendMessage(event: string, data: any) {
-  const socket = getSocket();
-  
-  if (socket.connected) {
-    socket.emit(event, data);
-  } else {
-    // إضافة للطابور في حالة عدم الاتصال
-    messageQueue?.add(event, data);
-  }
-}
+// تصدير الدوال المساعدة
+export const connectSocket = (token: string, options?: SocketOptions) => 
+  socketManager.connect(token, options);
 
-// تنظيف عند الخروج
-export function cleanupSocket() {
-  if (socketInstance) {
-    socketInstance.removeAllListeners();
-    socketInstance.disconnect();
-    socketInstance = null;
-  }
-  
-  if (messageQueue) {
-    messageQueue.clear();
-    messageQueue = null;
-  }
-  
-  if (reconnectTimer) {
-    clearTimeout(reconnectTimer);
-    reconnectTimer = null;
-  }
-  
-  isReconnecting = false;
-}
+export const getSocket = () => 
+  socketManager.getSocket();
+
+export const emitEvent = (event: string, data?: any) => 
+  socketManager.emit(event, data);
+
+export const onEvent = (event: string, handler: (...args: any[]) => void) => 
+  socketManager.on(event, handler);
+
+export const offEvent = (event: string, handler?: (...args: any[]) => void) => 
+  socketManager.off(event, handler);
+
+export const joinRoom = (roomId: string) => 
+  socketManager.joinRoom(roomId);
+
+export const leaveRoom = (roomId: string) => 
+  socketManager.leaveRoom(roomId);
+
+export const disconnectSocket = () => 
+  socketManager.disconnect();
+
+export const isSocketConnected = () => 
+  socketManager.isConnected();
+
+export const isAuthenticated = () => 
+  socketManager.isUserAuthenticated();
+
+export const getCurrentUser = () => 
+  socketManager.getCurrentUser();
+
+export const getLastRoomId = () => 
+  socketManager.getLastRoomId();
+
+// تصدير الـ manager نفسه للاستخدامات المتقدمة
+export default socketManager;

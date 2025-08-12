@@ -1,5 +1,10 @@
 import type { ChatRoom } from '@/types/chat';
 
+/**
+ * ملاحظة: هذا الملف يتعامل مع التناقضات في التسمية بين الواجهة (camelCase) والخادم (snake_case)
+ * يتم دعم كلا التسميتين للتوافق مع الإصدارات القديمة
+ */
+
 // يحول عنصر من API إلى ChatRoom موحّد
 export function mapApiRoom(room: any): ChatRoom {
   return {
