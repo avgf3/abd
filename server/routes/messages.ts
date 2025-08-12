@@ -424,4 +424,26 @@ router.post('/private/upload-image', async (req, res) => {
   }
 });
 
+router.get('/private/:userId/:otherUserId', async (req, res) => {
+  try {
+    const { userId, otherUserId } = req.params as any;
+    const { limit = 50 } = req.query;
+
+    if (!userId || !otherUserId) {
+      return res.status(400).json({ error: 'userId و otherUserId مطلوبة' });
+    }
+
+    const uid = parseInt(userId);
+    const oid = parseInt(otherUserId);
+
+    // استخدم خدمة الرسائل للبحث عن رسائل خاصة بين المستخدمين (أي اتجاه)
+    const all = await roomMessageService.getPrivateMessagesBetween(uid, oid, parseInt(limit as string));
+
+    res.json({ success: true, messages: all });
+  } catch (error: any) {
+    console.error('خطأ في جلب رسائل الخاص:', error);
+    res.status(500).json({ error: error.message || 'خطأ في جلب رسائل الخاص' });
+  }
+});
+
 export default router;

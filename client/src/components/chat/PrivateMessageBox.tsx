@@ -170,7 +170,7 @@ export default function PrivateMessageBox({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="relative max-w-md max-h-[450px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl">
+      <DialogContent className="max-w-md max-h-[450px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl">
         <DialogHeader className="border-b border-accent p-2">
           <div
             className={`flex items-center gap-2 px-2 py-1 rounded-none ${getUserThemeClasses(user)}`}

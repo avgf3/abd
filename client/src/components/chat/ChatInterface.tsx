@@ -180,6 +180,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   const handlePrivateMessage = (user: ChatUser) => {
+    // إغلاق نافذة البروفايل قبل فتح الرسائل الخاصة لمنع تداخل طبقات التعتيم
+    setShowProfile(false);
+    setProfileUser(null);
+
     setSelectedPrivateUser(user);
     // تحميل سجل الرسائل الخاصة عند فتح الصندوق
     try {
