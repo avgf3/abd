@@ -1831,7 +1831,10 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               <div className="profile-buttons">
                 <button>🚩 تبليغ</button>
                 <button onClick={() => onIgnoreUser?.(localUser?.id || 0)}>🚫 حظر</button>
-                <button onClick={() => onPrivateMessage?.(localUser)}>💬 محادثة</button>
+                <button onClick={() => {
+                  onPrivateMessage?.(localUser);
+                  onClose();
+                }}>💬 محادثة</button>
                 <button onClick={() => onAddFriend?.(localUser)}>👥 اضافة صديق</button>
               </div>
             )}
