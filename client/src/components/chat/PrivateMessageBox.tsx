@@ -170,28 +170,35 @@ export default function PrivateMessageBox({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="relative max-w-md max-h-[450px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl overflow-hidden">
-        <DialogHeader className="border-b border-accent p-2">
+      <DialogContent className="relative max-w-md w-[95vw] sm:w-full max-h-[80vh] sm:max-h-[450px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl overflow-hidden z-[100] [&>button]:hidden">
+        <DialogHeader className="border-b border-accent p-2 pb-3">
           <div
-            className={`flex items-center gap-2 px-2 py-1 rounded-none ${getUserThemeClasses(user)}`}
+            className={`flex items-center gap-2 px-2 py-1 rounded ${getUserThemeClasses(user)}`}
             style={{ ...getUserThemeStyles(user) }}
           >
             <ProfileImage user={user} size="small" className="" hideRoleBadgeOverlay={true} />
             <span
-              className="text-base font-medium truncate"
+              className="text-base font-medium truncate flex-1"
               style={{ color: getFinalUsernameColor(user) }}
               title={user.username}
             >
               {user.username}
             </span>
-            <div className="ml-auto flex items-center gap-1">
+            <div className="flex items-center gap-1">
               <UserRoleBadge user={user} showOnlyIcon={true} />
-              <Button onClick={onClose} variant="ghost" className="px-2 py-1">✖️</Button>
+              <Button 
+                onClick={onClose} 
+                variant="ghost" 
+                className="px-2 py-1 hover:bg-accent/50 transition-colors"
+                aria-label="إغلاق"
+              >
+                ✖️
+              </Button>
             </div>
           </div>
         </DialogHeader>
 
-        <div ref={messagesContainerRef} className="h-[250px] w-full p-4 overflow-y-auto">
+        <div ref={messagesContainerRef} className="h-[250px] sm:h-[280px] w-full p-4 overflow-y-auto overflow-x-hidden custom-scrollbar">
           <div className="space-y-3">
             {sortedMessages.map((message, index) => {
               // تحديد المرسل بشكل صحيح
@@ -264,26 +271,29 @@ export default function PrivateMessageBox({
           </div>
         </div>
 
-        <div className="flex gap-2 p-4 border-t border-accent bg-gradient-to-r from-secondary to-accent">
+        <div className="flex gap-2 p-4 pt-3 border-t border-accent bg-gradient-to-r from-secondary to-accent">
           <FileUploadButton 
             onFileSelect={handleFileSelect}
             disabled={false}
+            className="flex-shrink-0"
           />
           
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <Button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 rounded-lg"
+              className="bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 rounded-lg transition-colors"
               title="الرموز التعبيرية"
             >
               😊
             </Button>
             
             {showEmojiPicker && (
-              <EmojiPicker 
-                onEmojiSelect={handleEmojiSelect}
-                onClose={() => setShowEmojiPicker(false)}
-              />
+              <div className="absolute bottom-full mb-2 left-0 z-[110]">
+                <EmojiPicker 
+                  onEmojiSelect={handleEmojiSelect}
+                  onClose={() => setShowEmojiPicker(false)}
+                />
+              </div>
             )}
           </div>
           
@@ -292,12 +302,12 @@ export default function PrivateMessageBox({
             onChange={(e) => setMessageText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="✉️ ارسال رسالة..."
-            className="flex-1 bg-white border border-border text-foreground placeholder:text-muted-foreground focus:border-primary"
+            className="flex-1 bg-white border border-border text-foreground placeholder:text-muted-foreground focus:border-primary min-w-0"
           />
           <Button
             onClick={handleSendMessage}
             disabled={!messageText.trim()}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium flex-shrink-0 transition-colors"
           >
             ✉️ ارسال
           </Button>
