@@ -54,8 +54,8 @@ export default function MessagesPanel({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[500px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-md max-h-[500px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl overflow-hidden">
         <DialogHeader className="border-b border-accent pb-4">
           <DialogTitle className="text-2xl font-bold text-center text-primary-foreground">
             ✉️ ارسال رسالة

@@ -203,7 +203,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
   // تم حذف دالة formatTimeAgoLocal - نستخدم formatTimeAgo مباشرة من utils/timeUtils.ts
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-md max-h-[80vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
