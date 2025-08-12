@@ -8,8 +8,12 @@ import {
   filterMessageContent,
   validateMessageRetrieval 
 } from '../middleware/messageValidation';
+import { requireAuth as requireJwtAuth } from '../middleware/requireAuth';
 
 const router = Router();
+
+// فرض المصادقة على جميع مسارات الرسائل
+router.use(requireJwtAuth as any);
 
 /**
  * GET /api/messages/room/:roomId
@@ -500,19 +504,17 @@ router.delete('/private/:messageId', async (req, res) => {
  */
 router.get('/private/conversations/:userId', async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
+    const { userId } = req.params;
 
     if (!userId) {
       return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
     }
 
-    // جلب جميع المحادثات الخاصة
-    const conversations = await storage.getPrivateConversations(userId);
+    const conversations = await storage.getPrivateConversations(parseInt(userId));
 
     res.json({
       success: true,
-      conversations,
-      count: conversations.length
+      conversations
     });
 
   } catch (error: any) {
@@ -526,32 +528,27 @@ router.get('/private/conversations/:userId', async (req, res) => {
 
 /**
  * POST /api/messages/private/mark-read
- * تحديد الرسائل كمقروءة
+ * تعليم رسائل خاصة كمقروءة
  */
 router.post('/private/mark-read', async (req, res) => {
   try {
     const { userId, conversationUserId } = req.body;
 
     if (!userId || !conversationUserId) {
-      return res.status(400).json({ 
-        error: 'معرف المستخدم ومعرف المحادثة مطلوبان' 
-      });
+      return res.status(400).json({ error: 'معرف المستخدم ومعرف الطرف الآخر مطلوبان' });
     }
 
-    await storage.markMessagesAsRead(
-      parseInt(userId),
-      parseInt(conversationUserId)
-    );
+    await storage.markPrivateMessagesAsRead(Number(userId), Number(conversationUserId));
 
     res.json({
       success: true,
-      message: 'تم تحديد الرسائل كمقروءة'
+      message: 'تم تعليم الرسائل كمقروءة'
     });
 
   } catch (error: any) {
-    console.error('خطأ في تحديد الرسائل كمقروءة:', error);
+    console.error('خطأ في تعليم الرسائل الخاصة:', error);
     res.status(400).json({
-      error: error.message || 'خطأ في تحديث حالة القراءة'
+      error: error.message || 'خطأ في تعليم الرسائل كمقروءة'
     });
   }
 });

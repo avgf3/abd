@@ -285,11 +285,11 @@ export const useChat = () => {
       socketInstance.on('rateLimitExceeded', (data: any) => {
         console.warn('⚠️ تم تجاوز حد الطلبات:', data);
         dispatch({ type: 'ADD_NOTIFICATION', payload: {
-          id: Date.now().toString(),
+          id: Date.now(),
           type: 'warning',
           message: data.message || 'تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً',
           timestamp: new Date()
-        }});
+        } as any});
       });
 
       // معالج نجاح المصادقة
@@ -681,9 +681,9 @@ export const useChat = () => {
 
       // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
       s.on('connect', () => {
-        dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+        // لا نعتبر الاتصال ناجحاً قبل المصادقة
         dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
-        dispatch({ type: 'SET_LOADING', payload: false });
+        // سيتم ضبط حالة الاتصال ورفع التحميل عند authSuccess فقط
       });
 
       // معالج فشل إعادة الاتصال النهائي
@@ -777,8 +777,8 @@ export const useChat = () => {
         if (response.success && response.message) {
           // تحديث المحادثة المحلية مباشرة
           dispatch({ 
-            type: 'ADD_PRIVATE_MESSAGE', 
-            payload: response.message 
+            type: 'SET_PRIVATE_MESSAGE', 
+            payload: { userId: receiverId!, message: response.message } 
           });
         }
       } catch (error) {

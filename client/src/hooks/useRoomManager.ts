@@ -326,11 +326,20 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
       }
 
       refreshTimeoutRef.current = setTimeout(() => {
-        // تحديث فقط إذا لم يكن هناك طلب قيد التنفيذ
+        // تحديث فقط إذا لم يكن هناك طلب قيد التنفيذ وبعد توفر التوكن
         if (!fetchingRef.current) {
-          fetchRooms(false).then(() => {
-            scheduleRefresh(); // جدولة التحديث التالي
-          });
+          try {
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+              fetchRooms(false).then(() => {
+                scheduleRefresh(); // جدولة التحديث التالي
+              });
+            } else {
+              scheduleRefresh();
+            }
+          } catch {
+            scheduleRefresh();
+          }
         } else {
           scheduleRefresh(); // إعادة المحاولة لاحقاً
         }
@@ -374,9 +383,14 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
 
   // 🚀 التحديث الأولي المحسن
   useEffect(() => {
-    // تحميل فقط إذا لم تكن هناك غرف محملة
+    // تحميل فقط إذا لم تكن هناك غرف محملة وبعد توفر التوكن
     if (rooms.length === 0) {
-      fetchRooms(false);
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+          fetchRooms(false);
+        }
+      } catch {}
     }
   }, []); // التشغيل مرة واحدة فقط
 

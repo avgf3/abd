@@ -26,7 +26,7 @@ export class SecurityManager {
     if (!secret) {
       throw new Error('JWT_SECRET غير محدد في متغيرات البيئة');
     }
-    return jwt.sign(payload, secret, { expiresIn });
+    return jwt.sign(payload as any, secret as any, { expiresIn } as any) as any;
   }
 
   /**

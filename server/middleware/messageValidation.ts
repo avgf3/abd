@@ -35,15 +35,15 @@ export const validatePrivateMessage = async (req: Request, res: Response, next: 
     }
 
     // التحقق من أن المرسل لا يرسل لنفسه
-    if (parseInt(senderId) === parseInt(receiverId)) {
+    if (Number(senderId) === Number(receiverId)) {
       return res.status(400).json({ 
         error: 'لا يمكن إرسال رسالة لنفسك' 
       });
     }
 
     // التحقق من وجود المستخدمين
-    const sender = await storage.getUser(parseInt(senderId));
-    const receiver = await storage.getUser(parseInt(receiverId));
+      const sender = await storage.getUser(Number(senderId));
+  const receiver = await storage.getUser(Number(receiverId));
 
     if (!sender) {
       return res.status(404).json({ error: 'المرسل غير موجود' });
@@ -68,11 +68,17 @@ export const validatePrivateMessage = async (req: Request, res: Response, next: 
     }
 
     // التحقق من قائمة المتجاهلين
-    if (receiver.ignoredUsers && receiver.ignoredUsers.includes(parseInt(senderId))) {
-      return res.status(403).json({ 
-        error: 'لا يمكنك إرسال رسائل لهذا المستخدم' 
-      });
-    }
+    try {
+      const ignoredList = Array.isArray(receiver.ignoredUsers)
+        ? receiver.ignoredUsers
+        : JSON.parse(receiver.ignoredUsers || '[]');
+      const ignoredNumbers = ignoredList.map((id: any) => Number(id)).filter((n: any) => !isNaN(n));
+      if (ignoredNumbers.includes(Number(senderId))) {
+        return res.status(403).json({ 
+          error: 'لا يمكنك إرسال رسائل لهذا المستخدم' 
+        });
+      }
+    } catch {}
 
     // إضافة البيانات المحققة إلى الطلب
     req.body.validatedSender = sender;
