@@ -14,7 +14,7 @@ import ProfileImage from './ProfileImage';
 import type { ChatUser } from '@/types/chat';
 import type { PrivateConversation } from '../../../../shared/types';
 import { Badge } from '@/components/ui/badge';
-import { apiRequest } from '@/lib/api';
+import { apiRequest } from '@/lib/queryClient';
 
 interface MessagesPanelProps {
   isOpen: boolean;
