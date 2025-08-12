@@ -136,22 +136,50 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
     
     case 'SET_PRIVATE_MESSAGE': {
       const { userId, message } = action.payload;
+      const existingMessages = state.privateConversations[userId] || [];
+      
+      // منع التكرار - التحقق من وجود الرسالة بنفس ID أو نفس المحتوى والوقت
+      const isDuplicate = existingMessages.some(msg => 
+        (message.id && msg.id === message.id) || 
+        (msg.content === message.content && 
+         msg.senderId === message.senderId &&
+         Math.abs(new Date(msg.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000)
+      );
+      
+      if (isDuplicate) {
+        return state; // تجاهل الرسالة المكررة
+      }
+      
       return {
         ...state,
         privateConversations: {
           ...state.privateConversations,
-          [userId]: [...(state.privateConversations[userId] || []), message]
+          [userId]: [...existingMessages, message]
         }
       };
     }
     
     case 'SET_PRIVATE_CONVERSATION': {
       const { userId, messages } = action.payload;
+      // إزالة التكرارات بناءً على ID الرسالة
+      const uniqueMessages = messages.reduce((acc: ChatMessage[], msg) => {
+        const exists = acc.some(m => 
+          (msg.id && m.id === msg.id) || 
+          (m.content === msg.content && 
+           m.senderId === msg.senderId &&
+           Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 1000)
+        );
+        if (!exists) {
+          acc.push(msg);
+        }
+        return acc;
+      }, []);
+      
       return {
         ...state,
         privateConversations: {
           ...state.privateConversations,
-          [userId]: messages
+          [userId]: uniqueMessages
         }
       };
     }
@@ -479,9 +507,15 @@ export const useChat = () => {
             sender: message.sender,
             isPrivate: true
           };
-          const conversationId = message.senderId === state.currentUser?.id 
-            ? message.receiverId 
-            : message.senderId;
+          // تحديد معرف المحادثة بشكل صحيح
+          let conversationId: number;
+          if (message.senderId === state.currentUser?.id) {
+            // إذا كنت أنا المرسل، المحادثة مع المستقبل
+            conversationId = message.receiverId;
+          } else {
+            // إذا كنت أنا المستقبل، المحادثة مع المرسل
+            conversationId = message.senderId;
+          }
           dispatch({ 
             type: 'SET_PRIVATE_MESSAGE', 
             payload: { userId: conversationId, message: chatMessage }

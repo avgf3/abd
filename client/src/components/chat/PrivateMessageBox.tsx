@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
@@ -33,6 +33,22 @@ export default function PrivateMessageBox({
   const [messageText, setMessageText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // ترتيب الرسائل حسب الوقت وإزالة التكرارات
+  const sortedMessages = React.useMemo(() => {
+    const uniqueMap = new Map<string, ChatMessage>();
+    
+    messages.forEach(msg => {
+      const key = msg.id || `${msg.senderId}-${msg.content}-${msg.timestamp}`;
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, msg);
+      }
+    });
+    
+    return Array.from(uniqueMap.values()).sort((a, b) => 
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -40,7 +56,7 @@ export default function PrivateMessageBox({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [sortedMessages]);
 
   // Ensure we scroll on open as well
   useEffect(() => {
@@ -164,8 +180,9 @@ export default function PrivateMessageBox({
 
         <ScrollArea className="h-[250px] w-full p-4">
           <div className="space-y-3">
-            {messages.map((message, index) => {
-              const sender = message.sender || (message.senderId === currentUser?.id ? currentUser! : user);
+            {sortedMessages.map((message, index) => {
+              // تحديد المرسل بشكل صحيح
+              const sender = message.sender || (message.senderId === currentUser?.id ? currentUser : user);
               const isImage = message.messageType === 'image' || (typeof message.content === 'string' && message.content.startsWith('data:image'));
               const key = message.id ?? `${message.senderId}-${message.timestamp}-${index}`;
 
@@ -223,7 +240,7 @@ export default function PrivateMessageBox({
               );
             })}
             
-            {messages.length === 0 && (
+            {sortedMessages.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <div className="text-4xl mb-3">✉️</div>
                 <p className="text-lg font-medium">لا توجد رسائل</p>
