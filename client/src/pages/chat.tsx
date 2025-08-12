@@ -16,8 +16,7 @@ export default function ChatPage() {
   const handleUserLogin = (user: ChatUser) => {
     chat.connect(user);
     setShowWelcome(false);
-    // الانضمام تلقائياً للغرفة العامة، باقي التنقل من داخل الواجهة
-    chat.joinRoom('general');
+    // الانضمام التلقائي للغرفة العامة يتم الآن من الخادم بعد المصادقة
   };
 
   // لم يعد هناك محدد غرف على مستوى الصفحة
