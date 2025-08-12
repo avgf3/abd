@@ -731,6 +731,131 @@ export class DatabaseService {
     }
   }
 
+  async getPrivateConversations(userId: number): Promise<any[]> {
+    if (!this.isConnected()) return [];
+    try {
+      // جلب جميع المستخدمين الذين لديهم محادثات مع المستخدم
+      if (this.type === 'postgresql') {
+        const conversations = await (this.db as any).sql`
+          WITH conversation_users AS (
+            SELECT DISTINCT 
+              CASE 
+                WHEN sender_id = ${userId} THEN receiver_id
+                ELSE sender_id
+              END as other_user_id,
+              MAX(timestamp) as last_message_time
+            FROM ${pgSchema.messages}
+            WHERE is_private = true
+              AND (sender_id = ${userId} OR receiver_id = ${userId})
+              AND deleted_at IS NULL
+            GROUP BY other_user_id
+          )
+          SELECT 
+            u.*,
+            cu.last_message_time,
+            (
+              SELECT COUNT(*)
+              FROM ${pgSchema.messages} m
+              WHERE m.is_private = true
+                AND m.sender_id = cu.other_user_id
+                AND m.receiver_id = ${userId}
+                AND m.is_read = false
+                AND m.deleted_at IS NULL
+            ) as unread_count,
+            (
+              SELECT content
+              FROM ${pgSchema.messages} m
+              WHERE m.is_private = true
+                AND ((m.sender_id = ${userId} AND m.receiver_id = cu.other_user_id)
+                  OR (m.sender_id = cu.other_user_id AND m.receiver_id = ${userId}))
+                AND m.deleted_at IS NULL
+              ORDER BY m.timestamp DESC
+              LIMIT 1
+            ) as last_message
+          FROM conversation_users cu
+          JOIN ${pgSchema.users} u ON u.id = cu.other_user_id
+          ORDER BY cu.last_message_time DESC
+        `;
+        return conversations || [];
+      } else {
+        // SQLite implementation
+        const conversations = await (this.db as any).all(sql`
+          WITH conversation_users AS (
+            SELECT DISTINCT 
+              CASE 
+                WHEN sender_id = ${userId} THEN receiver_id
+                ELSE sender_id
+              END as other_user_id,
+              MAX(timestamp) as last_message_time
+            FROM ${sqliteSchema.messages}
+            WHERE is_private = 1
+              AND (sender_id = ${userId} OR receiver_id = ${userId})
+            GROUP BY other_user_id
+          )
+          SELECT 
+            u.*,
+            cu.last_message_time,
+            (
+              SELECT COUNT(*)
+              FROM ${sqliteSchema.messages} m
+              WHERE m.is_private = 1
+                AND m.sender_id = cu.other_user_id
+                AND m.receiver_id = ${userId}
+                AND m.is_read = 0
+            ) as unread_count,
+            (
+              SELECT content
+              FROM ${sqliteSchema.messages} m
+              WHERE m.is_private = 1
+                AND ((m.sender_id = ${userId} AND m.receiver_id = cu.other_user_id)
+                  OR (m.sender_id = cu.other_user_id AND m.receiver_id = ${userId}))
+              ORDER BY m.timestamp DESC
+              LIMIT 1
+            ) as last_message
+          FROM conversation_users cu
+          JOIN ${sqliteSchema.users} u ON u.id = cu.other_user_id
+          ORDER BY cu.last_message_time DESC
+        `);
+        return conversations || [];
+      }
+    } catch (error) {
+      console.error('Error getting private conversations:', error);
+      return [];
+    }
+  }
+
+  async markMessagesAsRead(userId: number, conversationUserId: number): Promise<boolean> {
+    if (!this.isConnected()) return false;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any)
+          .update(pgSchema.messages)
+          .set({ isRead: true })
+          .where(and(
+            eq(pgSchema.messages.isPrivate, true),
+            eq(pgSchema.messages.senderId, conversationUserId),
+            eq(pgSchema.messages.receiverId, userId),
+            eq(pgSchema.messages.isRead, false)
+          ));
+        return true;
+      } else {
+        await (this.db as any)
+          .update(sqliteSchema.messages)
+          .set({ isRead: true })
+          .where(and(
+            eq(sqliteSchema.messages.isPrivate, true),
+            eq(sqliteSchema.messages.senderId, conversationUserId),
+            eq(sqliteSchema.messages.receiverId, userId),
+            eq(sqliteSchema.messages.isRead, false)
+          ));
+        return true;
+      }
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+      return false;
+    }
+  }
+
   // Friend operations
   async sendFriendRequest(userId: number, friendId: number): Promise<Friend | null> {
     if (!this.isConnected()) return null;

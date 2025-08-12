@@ -678,7 +678,7 @@ export const useChat = () => {
   }, [loadRoomMessages, state.currentRoomId, state.currentUser]);
 
   // 🔥 SIMPLIFIED Send message function - مع دعم الطابور
-  const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number, roomId?: string) => {
+  const sendMessage = useCallback(async (content: string, messageType: string = 'text', receiverId?: number, roomId?: string) => {
     if (!state.currentUser) {
       console.error('❌ لا يمكن إرسال الرسالة - المستخدم غير موجود');
       return;
@@ -704,7 +704,30 @@ export const useChat = () => {
 
     // استخدام دالة الإرسال الجديدة مع دعم الطابور
     if (receiverId) {
-      socketSendMessage('privateMessage', messageData);
+      // إرسال رسالة خاصة عبر API
+      try {
+        const response = await apiRequest('/api/messages/private', {
+          method: 'POST',
+          body: JSON.stringify({
+            senderId: state.currentUser.id,
+            receiverId,
+            content,
+            messageType
+          })
+        });
+        
+        if (response.success && response.message) {
+          // تحديث المحادثة المحلية مباشرة
+          dispatch({ 
+            type: 'ADD_PRIVATE_MESSAGE', 
+            payload: response.message 
+          });
+        }
+      } catch (error) {
+        console.error('Error sending private message:', error);
+        // Fallback to Socket.IO if API fails
+        socketSendMessage('privateMessage', messageData);
+      }
     } else {
       socketSendMessage('publicMessage', messageData);
     }
@@ -763,11 +786,13 @@ export const useChat = () => {
   const loadPrivateConversation = useCallback(async (otherUserId: number, limit: number = 50) => {
     if (!state.currentUser) return;
     try {
-      const data = await apiRequest(`/api/messages/private/${state.currentUser.id}/${otherUserId}?limit=${limit}`);
-      const formatted = Array.isArray((data as any)?.messages)
-        ? mapDbMessagesToChatMessages((data as any).messages)
-        : [];
-      dispatch({ type: 'SET_PRIVATE_CONVERSATION', payload: { userId: otherUserId, messages: formatted } });
+      const response = await apiRequest(`/api/messages/private/${state.currentUser.id}/${otherUserId}?limit=${limit}`);
+      if (response.success && response.messages) {
+        const formatted = Array.isArray(response.messages)
+          ? mapDbMessagesToChatMessages(response.messages)
+          : [];
+        dispatch({ type: 'SET_PRIVATE_CONVERSATION', payload: { userId: otherUserId, messages: formatted } });
+      }
     } catch (error) {
       console.error('❌ خطأ في تحميل رسائل الخاص:', error);
     }
