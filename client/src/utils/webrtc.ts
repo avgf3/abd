@@ -46,6 +46,31 @@ export class WebRTCAudioManager {
       console.log('متحدث غادر:', data.userId);
       this.removePeer(data.userId);
     });
+
+    // مستمع انضم - نحتاج لإرسال عرض له إذا كنا متحدث
+    this.socket.on('listener-joined', async (data: { listenerId: number }) => {
+      console.log('مستمع جديد انضم:', data.listenerId);
+      if (this.isSpeaker && this.localStream) {
+        await this.sendOfferToListener(data.listenerId);
+      }
+    });
+
+    // قائمة المستمعين عند بدء البث
+    this.socket.on('listeners-list', async (data: { listeners: number[] }) => {
+      console.log('قائمة المستمعين الحاليين:', data.listeners);
+      if (this.isSpeaker && this.localStream) {
+        // إرسال عروض لجميع المستمعين الحاليين
+        for (const listenerId of data.listeners) {
+          await this.sendOfferToListener(listenerId);
+        }
+      }
+    });
+
+    // متحدث بدأ البث - للمستمعين
+    this.socket.on('speaker-started', (data: { speakerId: number }) => {
+      console.log('متحدث بدأ البث:', data.speakerId);
+      // المستمع سيستقبل عرض من المتحدث قريباً
+    });
   }
 
   // بدء البث كمتحدث
@@ -129,6 +154,13 @@ export class WebRTCAudioManager {
       }
       
       this.audioElement.srcObject = remoteStream;
+      
+      // محاولة تشغيل الصوت مع معالجة قيود المتصفح
+      this.audioElement.play().catch(error => {
+        console.warn('تعذر التشغيل التلقائي للصوت:', error);
+        // سيحتاج المستخدم للنقر على زر لبدء الاستماع
+        this.socket.emit('audio-play-failed', { roomId: this.roomId });
+      });
     };
 
     this.peers.set(userId, { peer });
@@ -188,6 +220,20 @@ export class WebRTCAudioManager {
     }
   }
 
+  // تشغيل الصوت يدوياً (في حالة فشل التشغيل التلقائي)
+  async playAudio(): Promise<boolean> {
+    if (this.audioElement && this.audioElement.paused) {
+      try {
+        await this.audioElement.play();
+        return true;
+      } catch (error) {
+        console.error('خطأ في تشغيل الصوت:', error);
+        return false;
+      }
+    }
+    return true;
+  }
+
   // تنظيف
   cleanup() {
     this.stopBroadcasting();
@@ -196,5 +242,14 @@ export class WebRTCAudioManager {
       this.audioElement.srcObject = null;
       this.audioElement = null;
     }
+    
+    // إزالة جميع مستمعي الأحداث
+    this.socket.off('webrtc-offer');
+    this.socket.off('webrtc-answer');
+    this.socket.off('webrtc-ice-candidate');
+    this.socket.off('speaker-left');
+    this.socket.off('listener-joined');
+    this.socket.off('listeners-list');
+    this.socket.off('speaker-started');
   }
 }
