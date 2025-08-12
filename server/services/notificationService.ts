@@ -240,6 +240,69 @@ export class NotificationService {
       return 0;
     }
   }
+
+  // إنشاء إشعار ترقية مستوى
+  async createLevelUpNotification(
+    userId: number,
+    oldLevel: number,
+    newLevel: number,
+    levelTitle: string
+  ): Promise<Notification> {
+    return this.createNotification({
+      userId,
+      type: 'level_up',
+      title: '🎉 ترقية مستوى!',
+      message: `تهانينا! لقد وصلت إلى المستوى ${newLevel} - ${levelTitle}`,
+      data: { oldLevel, newLevel, levelTitle }
+    });
+  }
+
+  // إنشاء إشعار الحصول على نقاط
+  async createPointsReceivedNotification(
+    userId: number,
+    points: number,
+    senderName: string,
+    senderId: number
+  ): Promise<Notification> {
+    return this.createNotification({
+      userId,
+      type: 'points_received',
+      title: '💰 استلمت نقاط!',
+      message: `أرسل لك ${senderName} ${points} نقطة`,
+      data: { points, senderName, senderId }
+    });
+  }
+
+  // إنشاء إشعار مكافأة يومية
+  async createDailyBonusNotification(
+    userId: number,
+    points: number,
+    bonusType: string = 'daily'
+  ): Promise<Notification> {
+    return this.createNotification({
+      userId,
+      type: 'daily_bonus',
+      title: '🎁 مكافأة يومية!',
+      message: `حصلت على ${points} نقطة كمكافأة ${bonusType === 'daily' ? 'يومية' : bonusType}`,
+      data: { points, bonusType }
+    });
+  }
+
+  // إنشاء إشعار إنجاز
+  async createAchievementNotification(
+    userId: number,
+    achievementName: string,
+    achievementDescription: string,
+    reward?: number
+  ): Promise<Notification> {
+    return this.createNotification({
+      userId,
+      type: 'achievement',
+      title: '🏆 إنجاز جديد!',
+      message: achievementDescription,
+      data: { achievementName, reward }
+    });
+  }
 }
 
 // إنشاء مثيل واحد من الخدمة

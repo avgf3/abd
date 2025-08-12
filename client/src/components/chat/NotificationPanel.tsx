@@ -176,7 +176,23 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     switch (type) {
       case 'friend_request':
       case 'friend':
+      case 'friendRequest':
+      case 'friendAccepted':
         return <Users className="w-4 h-4" />;
+      case 'level_up':
+        return <span className="text-base">🎉</span>;
+      case 'points_received':
+        return <span className="text-base">💰</span>;
+      case 'daily_bonus':
+        return <span className="text-base">🎁</span>;
+      case 'achievement':
+        return <span className="text-base">🏆</span>;
+      case 'promotion':
+        return <span className="text-base">⬆️</span>;
+      case 'moderation':
+        return <span className="text-base">⚠️</span>;
+      case 'message':
+        return <span className="text-base">💬</span>;
       case 'system':
         return <Bell className="w-4 h-4" />;
       default:
