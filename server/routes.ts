@@ -20,7 +20,6 @@ import { roomService } from "./services/roomService";
 import { roomMessageService } from "./services/roomMessageService";
 import { friendService } from "./services/friendService";
 import { developmentOnly, logDevelopmentEndpoint } from "./middleware/development";
-import { createFriendRequestNotification, createFriendAcceptedNotification } from "./utils/notificationHelpers";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -30,6 +29,7 @@ import sharp from "sharp";
 // import { trackClick } from "./middleware/analytics"; // commented out as file doesn't exist
 import { DEFAULT_LEVELS, recalculateUserStats } from "../shared/points-system";
 import { protect } from "./middleware/enhancedSecurity";
+import { notificationService } from "./services/notificationService";
 
 // إعداد multer موحد لرفع الصور
 const createMulterConfig = (destination: string, prefix: string, maxSize: number = 5 * 1024 * 1024) => {
@@ -555,6 +555,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, muteDuration, clientIP, deviceId);
       if (success) {
+        // إنشاء إشعار في قاعدة البيانات
+        const moderator = await storage.getUser(moderatorId);
+        if (moderator) {
+          await notificationService.createModerationNotification(
+            targetUserId,
+            'mute',
+            reason,
+            moderator.username,
+            muteDuration
+          );
+        }
+
         res.json({ 
           success: true,
           message: "تم كتم المستخدم بنجاح",
@@ -606,6 +618,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           reason: reason,
           duration: banDuration
         });
+
+        // إنشاء إشعار في قاعدة البيانات
+        if (moderator) {
+          await notificationService.createModerationNotification(
+            targetUserId,
+            'kick',
+            reason,
+            moderator.username,
+            banDuration
+          );
+        }
 
         res.json({ 
           success: true,
@@ -702,6 +725,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           
           io.emit('message', promotionMessage);
+
+          // إنشاء إشعار في قاعدة البيانات للمستخدم المُرقى
+          await notificationService.createPromotionNotification(
+            targetUserId,
+            newRole === 'admin' ? 'إدمن' : 'مشرف',
+            moderator.username
+          );
         }
         
         res.json({ message: "تم ترقية المستخدم بنجاح" });
@@ -1210,6 +1240,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // رسالة خاصة - حدث موحّد فقط
         io.to(receiverId.toString()).emit('privateMessage', { message: { ...message, sender } });
         io.to(senderId.toString()).emit('privateMessage', { message: { ...message, sender } });
+
+        // إنشاء إشعار في قاعدة البيانات للمستقبل
+        await notificationService.createMessageNotification(
+          receiverId,
+          sender.username,
+          senderId,
+          content.substring(0, 100) // معاينة من الرسالة
+        );
       } else {
         // رسالة عامة
         io.emit('message', {
@@ -2512,11 +2550,10 @@ if (!existing) {
       });
 
       // إنشاء إشعار حقيقي في قاعدة البيانات
-      await createFriendRequestNotification(
+      await notificationService.createFriendRequestNotification(
         receiverId,
         sender?.username || 'مستخدم مجهول',
-        senderId,
-        request.id
+        senderId
       );
 
       res.json({ message: "تم إرسال طلب الصداقة", request });
@@ -2570,11 +2607,10 @@ if (!existing) {
       });
 
       // إنشاء إشعار حقيقي في قاعدة البيانات
-      await createFriendRequestNotification(
+      await notificationService.createFriendRequestNotification(
         targetUser.id,
         sender?.username || 'مستخدم مجهول',
-        senderId,
-        request.id
+        senderId
       );
 
       res.json({ message: "تم إرسال طلب الصداقة", request });
@@ -2661,7 +2697,7 @@ if (!existing) {
       });
 
       // إنشاء إشعار حقيقي في قاعدة البيانات
-      await createFriendAcceptedNotification(
+      await notificationService.createFriendAcceptedNotification(
         request.userId,
         receiver?.username || 'مستخدم مجهول',
         userId
@@ -3694,6 +3730,24 @@ if (!existing) {
         points,
         message: `💰 تم إرسال ${points} نقطة من ${sender.username} إلى ${receiver.username}`
       });
+      
+      // إنشاء إشعار في قاعدة البيانات للمستقبل
+      await notificationService.createPointsReceivedNotification(
+        receiverId,
+        points,
+        sender.username,
+        senderId
+      );
+
+      // إنشاء إشعار ترقية المستوى إذا حدثت ترقية
+      if (receiverResult.leveledUp && receiverResult.levelInfo) {
+        await notificationService.createLevelUpNotification(
+          receiverId,
+          receiverResult.oldLevel || 0,
+          receiverResult.newLevel || 1,
+          receiverResult.levelInfo.title
+        );
+      }
       
       // تحديث بيانات المستخدمين في real-time
       const updatedSender = await storage.getUser(senderId);
