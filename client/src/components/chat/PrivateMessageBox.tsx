@@ -111,7 +111,7 @@ export default function PrivateMessageBox({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="relative max-w-md max-h-[450px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl">
         <DialogHeader className="border-b border-accent p-2">
           <div
@@ -128,7 +128,7 @@ export default function PrivateMessageBox({
             </span>
             <div className="ml-auto flex items-center gap-1">
               <UserRoleBadge user={user} showOnlyIcon={true} />
-              <Button onClick={onClose} variant="ghost" className="px-2 py-1">✖️</Button>
+              <Button type="button" onClick={onClose} variant="ghost" className="px-2 py-1">✖️</Button>
             </div>
           </div>
         </DialogHeader>
@@ -140,7 +140,7 @@ export default function PrivateMessageBox({
               const isImage = message.messageType === 'image' || (typeof message.content === 'string' && message.content.startsWith('data:image'));
               return (
                 <div 
-                  key={`${message.id}-${message.senderId}-${index}`}
+                  key={message.id ?? `${message.senderId}-${index}`}
                   className={`flex items-center gap-3 p-3 rounded-lg border-r-4 ${getMessageBorderColor(sender?.userType)} bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
                 >
                   {sender && (
@@ -198,6 +198,7 @@ export default function PrivateMessageBox({
           
           <div className="relative">
             <Button
+              type="button"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               className="bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 rounded-lg"
               title="الرموز التعبيرية"
@@ -216,11 +217,17 @@ export default function PrivateMessageBox({
           <Input
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
             placeholder="✉️ ارسال رسالة..."
             className="flex-1 bg-white border border-border text-foreground placeholder:text-muted-foreground focus:border-primary"
           />
           <Button
+            type="button"
             onClick={handleSendMessage}
             disabled={!messageText.trim()}
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium"

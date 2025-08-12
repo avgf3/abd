@@ -275,6 +275,29 @@ export const useChat = () => {
       if (pingIntervalRef.current) {
         clearInterval(pingIntervalRef.current);
       }
+
+      // اجعل المستمعين معرّفين مرة واحدة: قم بإزالة أي مستمعين سابقين قبل الإضافة
+      const eventsToClear = [
+        'message',
+        'privateMessage',
+        'kicked',
+        'blocked',
+        'error',
+        'webrtc-offer',
+        'webrtc-answer',
+        'webrtc-ice-candidate',
+        'micRequest',
+        'micApproved',
+        'micRejected',
+        'speakerRemoved',
+        'client_pong',
+      ];
+      try {
+        eventsToClear.forEach((evt) => {
+          try { (socketInstance as any).off(evt); } catch {}
+        });
+      } catch {}
+
       const pingId = window.setInterval(() => {
         if (socketInstance.connected) {
           socketInstance.emit('client_ping');
@@ -287,215 +310,170 @@ export const useChat = () => {
 
       // ✅ معالج واحد للرسائل - حذف التضارب
       socketInstance.on('message', (data: any) => {
-      try {
-        const envelope = data.envelope || data;
-        
-        switch (envelope.type) {
-          case 'newMessage': {
-            const { message } = envelope;
-            if (message?.sender && message.content) {
-              const roomId = message.roomId || 'general';
-              
-              // تحويل الرسالة لتنسيق ChatMessage
-              const chatMessage: ChatMessage = {
-                id: message.id,
-                content: message.content,
-                senderId: message.sender.id,
-                timestamp: message.timestamp || new Date().toISOString(),
-                messageType: message.messageType || 'text',
-                sender: message.sender,
-                roomId,
-                isPrivate: Boolean(message.isPrivate)
-              };
-              
-              // إضافة الرسالة للغرفة المناسبة
-              dispatch({ 
-                type: 'ADD_ROOM_MESSAGE', 
-                payload: { roomId, message: chatMessage }
-              });
-              
-              // تشغيل صوت خفيف فقط عند الرسائل العامة في الغرفة الحالية
-              if (chatMessage.senderId !== state.currentUser?.id && roomId === state.currentRoomId) {
-                playNotificationSound();
+        try {
+          const envelope = data.envelope || data;
+          
+          switch (envelope.type) {
+            case 'newMessage': {
+              const { message } = envelope;
+              if (message?.sender && message.content) {
+                const roomId = message.roomId || 'general';
+                
+                // تحويل الرسالة لتنسيق ChatMessage
+                const chatMessage: ChatMessage = {
+                  id: message.id,
+                  content: message.content,
+                  senderId: message.sender.id,
+                  timestamp: message.timestamp || new Date().toISOString(),
+                  messageType: message.messageType || 'text',
+                  sender: message.sender,
+                  roomId,
+                  isPrivate: Boolean(message.isPrivate)
+                };
+                
+                // إضافة الرسالة للغرفة المناسبة
+                dispatch({ 
+                  type: 'ADD_ROOM_MESSAGE', 
+                  payload: { roomId, message: chatMessage }
+                });
+                
+                // تشغيل صوت خفيف فقط عند الرسائل العامة في الغرفة الحالية
+                if (chatMessage.senderId !== state.currentUser?.id && roomId === state.currentRoomId) {
+                  playNotificationSound();
+                }
               }
+              break;
             }
-            break;
-          }
-          case 'messageDeleted': {
-            const { messageId, roomId } = envelope as any;
-            if (messageId && roomId) {
-              const existing = state.roomMessages[roomId] || [];
-              const next = existing.filter((m) => m.id !== messageId);
-              dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId, messages: next } });
+            case 'messageDeleted': {
+              const { messageId, roomId } = envelope as any;
+              if (messageId && roomId) {
+                const existing = state.roomMessages[roomId] || [];
+                const next = existing.filter((m) => m.id !== messageId);
+                dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId, messages: next } });
+              }
+              break;
             }
-            break;
-          }
-          
-          case 'roomMessages': {
-            const { messages, roomId: payloadRoomId } = envelope as any;
-            if (Array.isArray(messages)) {
-              const roomId = payloadRoomId || state.currentRoomId;
-              const formattedMessages = mapDbMessagesToChatMessages(messages, roomId);
-              dispatch({ 
-                type: 'SET_ROOM_MESSAGES', 
-                payload: { roomId, messages: formattedMessages }
-              });
+            
+            case 'roomMessages': {
+              const { messages, roomId: payloadRoomId } = envelope as any;
+              if (Array.isArray(messages)) {
+                const roomId = payloadRoomId || state.currentRoomId;
+                const formattedMessages = mapDbMessagesToChatMessages(messages, roomId);
+                dispatch({ 
+                  type: 'SET_ROOM_MESSAGES', 
+                  payload: { roomId, messages: formattedMessages }
+                });
+              }
+              break;
             }
-            break;
-          }
-          
-          case 'onlineUsers': {
-            if (Array.isArray(envelope.users)) {
-              dispatch({ type: 'SET_ONLINE_USERS', payload: envelope.users });
+            
+            case 'onlineUsers': {
+              if (Array.isArray(envelope.users)) {
+                dispatch({ type: 'SET_ONLINE_USERS', payload: envelope.users });
+              }
+              break;
             }
-            break;
-          }
-          
-          case 'userJoined': {
-            if (envelope.user) {
-              dispatch({ 
-                type: 'SET_ONLINE_USERS', 
-                payload: [...state.onlineUsers.filter(u => u.id !== envelope.user.id), envelope.user] 
-              });
+            
+            case 'userJoined': {
+              if (envelope.user) {
+                dispatch({ 
+                  type: 'SET_ONLINE_USERS', 
+                  payload: [...state.onlineUsers.filter(u => u.id !== envelope.user.id), envelope.user] 
+                });
+              }
+              break;
             }
-            break;
-          }
-          
-          case 'userLeft': {
-            if (envelope.userId) {
-              dispatch({ 
-                type: 'SET_ONLINE_USERS', 
-                payload: state.onlineUsers.filter(u => u.id !== envelope.userId) 
-              });
+            
+            case 'userLeft': {
+              if (envelope.userId) {
+                dispatch({ 
+                  type: 'SET_ONLINE_USERS', 
+                  payload: state.onlineUsers.filter(u => u.id !== envelope.userId) 
+                });
+              }
+              break;
             }
-            break;
-          }
-          
-          case 'kicked': {
-            // إظهار عدّاد الطرد للمستخدم المستهدف فقط
-            const targetId = envelope.targetUserId;
-            if (targetId && targetId === state.currentUser?.id) {
-              dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
-              // إضافة رسالة واضحة للمستخدم
-              const duration = (envelope as any).duration || 15;
-              const reason = (envelope as any).reason || 'بدون سبب';
-              const moderator = (envelope as any).moderator || 'مشرف';
-              alert(`تم طردك من الدردشة بواسطة ${moderator}\nالسبب: ${reason}\nالمدة: ${duration} دقيقة`);
+            
+            case 'kicked': {
+              // إظهار عدّاد الطرد للمستخدم المستهدف فقط
+              const targetId = envelope.targetUserId;
+              if (targetId && targetId === state.currentUser?.id) {
+                dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
+                // إضافة رسالة واضحة للمستخدم
+                const duration = (envelope as any).duration || 15;
+                const reason = (envelope as any).reason || 'بدون سبب';
+                const moderator = (envelope as any).moderator || 'مشرف';
+                alert(`تم طردك من الدردشة بواسطة ${moderator}\nالسبب: ${reason}\nالمدة: ${duration} دقيقة`);
+              }
+              break;
             }
-            break;
-          }
-          
-          case 'blocked': {
-            // معالجة الحجب النهائي
-            if (state.currentUser?.id) {
-              const reason = (envelope as any).reason || 'بدون سبب';
-              const moderator = (envelope as any).moderator || 'مشرف';
-              alert(`تم حجبك نهائياً من الدردشة بواسطة ${moderator}\nالسبب: ${reason}`);
-              // فصل المستخدم وإعادة توجيهه
-              setTimeout(() => {
-                window.location.href = '/';
-              }, 3000);
+            
+            case 'blocked': {
+              // معالجة الحجب النهائي
+              if (state.currentUser?.id) {
+                const reason = (envelope as any).reason || 'بدون سبب';
+                const moderator = (envelope as any).moderator || 'مشرف';
+                alert(`تم حجبك نهائياً من الدردشة بواسطة ${moderator}\nالسبب: ${reason}`);
+                // فصل المستخدم وإعادة توجيهه
+                setTimeout(() => {
+                  window.location.href = '/';
+                }, 3000);
+              }
+              break;
             }
-            break;
           }
-          
-          case 'moderationAction': {
-            // في حالة وصول بث عام بإجراء "banned"، فعّل العدّاد إذا كنت أنت الهدف
-            const action = (envelope as any).action;
-            const targetId = (envelope as any).targetUserId;
-            if (action === 'banned' && targetId && targetId === state.currentUser?.id) {
-              dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
-            }
-            break;
-          }
-          
-          case 'error':
-          case 'warning': {
-            console.warn('⚠️ خطأ من السيرفر:', envelope.message);
-            break;
-          }
-          
-          default: {
-            break;
-          }
+        } catch {
+          // Silent
         }
-      } catch (error) {
-        console.error('❌ خطأ في معالجة رسالة Socket:', error);
-      }
-    });
-
-    // بث تحديثات غرفة البث وأحداث المايك عبر قنوات Socket المخصصة
-    const emitToBroadcastHandlers = (payload: any) => {
-      broadcastHandlers.current.forEach((handler) => {
-        try { handler(payload); } catch (err) { /* ignore single handler error */ }
       });
-    };
 
-    socketInstance.on('roomUpdate', (message: any) => {
-      emitToBroadcastHandlers(message);
-    });
+      // WebRTC signaling relays
+      socketInstance.on('webrtc-offer', (payload: any) => {
+        webrtcOfferHandlers.current.forEach((h) => { try { h(payload); } catch {} });
+      });
+      socketInstance.on('webrtc-answer', (payload: any) => {
+        webrtcAnswerHandlers.current.forEach((h) => { try { h(payload); } catch {} });
+      });
+      socketInstance.on('webrtc-ice-candidate', (payload: any) => {
+        webrtcIceHandlers.current.forEach((h) => { try { h(payload); } catch {} });
+      });
 
-    // توافق مع REST endpoints التي تبث أحداث المايك كأحداث مستقلة
-    socketInstance.on('micRequested', (message: any) => {
-      emitToBroadcastHandlers({ type: 'micRequest', ...message });
-    });
-    socketInstance.on('micApproved', (message: any) => {
-      emitToBroadcastHandlers({ type: 'micApproved', ...message });
-    });
-    socketInstance.on('micRejected', (message: any) => {
-      emitToBroadcastHandlers({ type: 'micRejected', ...message });
-    });
-    socketInstance.on('speakerRemoved', (message: any) => {
-      emitToBroadcastHandlers({ type: 'speakerRemoved', ...message });
-    });
-
-    // WebRTC signaling relays
-    socketInstance.on('webrtc-offer', (payload: any) => {
-      webrtcOfferHandlers.current.forEach((h) => { try { h(payload); } catch {} });
-    });
-    socketInstance.on('webrtc-answer', (payload: any) => {
-      webrtcAnswerHandlers.current.forEach((h) => { try { h(payload); } catch {} });
-    });
-    socketInstance.on('webrtc-ice-candidate', (payload: any) => {
-      webrtcIceHandlers.current.forEach((h) => { try { h(payload); } catch {} });
-    });
-
-    // معالج الرسائل الخاصة
-    // Unified private message handling
-    const handlePrivateMessage = (incoming: any) => {
-      try {
-        const envelope = incoming?.envelope ? incoming.envelope : incoming;
-        const payload = envelope?.message ?? envelope;
-        const message = payload?.message ?? payload;
-        if (message?.sender) {
-          const chatMessage: ChatMessage = {
-            id: message.id,
-            content: message.content,
-            senderId: message.sender.id,
-            timestamp: message.timestamp || new Date().toISOString(),
-            messageType: message.messageType || 'text',
-            sender: message.sender,
-            isPrivate: true
-          };
-          const conversationId = message.senderId === state.currentUser?.id 
-            ? message.receiverId 
-            : message.senderId;
-          dispatch({ 
-            type: 'SET_PRIVATE_MESSAGE', 
-            payload: { userId: conversationId, message: chatMessage }
-          });
-          if (chatMessage.senderId !== state.currentUser?.id) {
-            playNotificationSound();
+      // معالج الرسائل الخاصة
+      // Unified private message handling
+      const handlePrivateMessage = (incoming: any) => {
+        try {
+          const envelope = incoming?.envelope ? incoming.envelope : incoming;
+          const payload = envelope?.message ?? envelope;
+          const message = payload?.message ?? payload;
+          if (message?.sender) {
+            const chatMessage: ChatMessage = {
+              id: message.id,
+              content: message.content,
+              senderId: message.sender.id,
+              timestamp: message.timestamp || new Date().toISOString(),
+              messageType: message.messageType || 'text',
+              sender: message.sender,
+              isPrivate: true
+            };
+            const conversationId = message.senderId === state.currentUser?.id 
+              ? message.receiverId 
+              : message.senderId;
+            dispatch({ 
+              type: 'SET_PRIVATE_MESSAGE', 
+              payload: { userId: conversationId, message: chatMessage }
+            });
+            if (chatMessage.senderId !== state.currentUser?.id) {
+              playNotificationSound();
+            }
           }
+        } catch (error) {
+          console.error('❌ خطأ في معالجة الرسالة الخاصة:', error);
         }
-      } catch (error) {
-        console.error('❌ خطأ في معالجة الرسالة الخاصة:', error);
-      }
-    };
+      };
 
-    socketInstance.on('privateMessage', handlePrivateMessage);
-    // ملاحظة: نتعامل مع الرسائل الخاصة فقط عبر حدث 'privateMessage' المخصص لتجنّب التكرار
-    // منع أي إشعار يشبه الخاص من مسار الرسائل العامة
+      socketInstance.on('privateMessage', handlePrivateMessage);
+      // ملاحظة: نتعامل مع الرسائل الخاصة فقط عبر حدث 'privateMessage' المخصص لتجنّب التكرار
+      // منع أي إشعار يشبه الخاص من مسار الرسائل العامة
 
       // معالج حدث الطرد
       socketInstance.on('kicked', (data: any) => {
@@ -623,6 +601,14 @@ export const useChat = () => {
           username: user.username,
         });
       }
+
+      // تأكد من عدم تكرار مستمعي أحداث الاتصال الأساسية
+      try {
+        s.off('connect');
+        s.off('reconnect_failed');
+        s.off('disconnect');
+        s.off('connect_error');
+      } catch {}
 
       // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
       s.on('connect', () => {
