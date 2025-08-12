@@ -208,6 +208,14 @@ export const useChat = () => {
   // 🔥 SIMPLIFIED loading management - مصدر واحد
   const loadingRooms = useRef<Set<string>>(new Set());
   
+  // Broadcast handlers registry
+  const broadcastHandlers = useRef<Set<(data: any) => void>>(new Set());
+
+  // WebRTC signaling handlers registries
+  const webrtcOfferHandlers = useRef<Set<(data: any) => void>>(new Set());
+  const webrtcAnswerHandlers = useRef<Set<(data: any) => void>>(new Set());
+  const webrtcIceHandlers = useRef<Set<(data: any) => void>>(new Set());
+  
   // Notification states
   const [levelUpNotification, setLevelUpNotification] = useState<any>(null);
   const [achievementNotification, setAchievementNotification] = useState<any>(null);
@@ -412,6 +420,42 @@ export const useChat = () => {
       } catch (error) {
         console.error('❌ خطأ في معالجة رسالة Socket:', error);
       }
+    });
+
+    // بث تحديثات غرفة البث وأحداث المايك عبر قنوات Socket المخصصة
+    const emitToBroadcastHandlers = (payload: any) => {
+      broadcastHandlers.current.forEach((handler) => {
+        try { handler(payload); } catch (err) { /* ignore single handler error */ }
+      });
+    };
+
+    socketInstance.on('roomUpdate', (message: any) => {
+      emitToBroadcastHandlers(message);
+    });
+
+    // توافق مع REST endpoints التي تبث أحداث المايك كأحداث مستقلة
+    socketInstance.on('micRequested', (message: any) => {
+      emitToBroadcastHandlers({ type: 'micRequest', ...message });
+    });
+    socketInstance.on('micApproved', (message: any) => {
+      emitToBroadcastHandlers({ type: 'micApproved', ...message });
+    });
+    socketInstance.on('micRejected', (message: any) => {
+      emitToBroadcastHandlers({ type: 'micRejected', ...message });
+    });
+    socketInstance.on('speakerRemoved', (message: any) => {
+      emitToBroadcastHandlers({ type: 'speakerRemoved', ...message });
+    });
+
+    // WebRTC signaling relays
+    socketInstance.on('webrtc-offer', (payload: any) => {
+      webrtcOfferHandlers.current.forEach((h) => { try { h(payload); } catch {} });
+    });
+    socketInstance.on('webrtc-answer', (payload: any) => {
+      webrtcAnswerHandlers.current.forEach((h) => { try { h(payload); } catch {} });
+    });
+    socketInstance.on('webrtc-ice-candidate', (payload: any) => {
+      webrtcIceHandlers.current.forEach((h) => { try { h(payload); } catch {} });
     });
 
     // معالج الرسائل الخاصة
@@ -766,7 +810,7 @@ export const useChat = () => {
     setShowKickCountdown: (show: boolean) => dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: show }),
     setNewMessageSender: (sender: ChatUser | null) => dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: sender }),
 
-    // ✅ Convenience functions
+    // Convenience wrappers
     sendPublicMessage: (content: string) => sendMessage(content, 'text'),
     sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId),
 
@@ -775,5 +819,48 @@ export const useChat = () => {
     getCurrentRoomMessages,
     updateCurrentUser,
     loadPrivateConversation,
+
+    // Broadcast handlers registration
+    addBroadcastMessageHandler: (handler: (data: any) => void) => {
+      broadcastHandlers.current.add(handler);
+    },
+    removeBroadcastMessageHandler: (handler: (data: any) => void) => {
+      broadcastHandlers.current.delete(handler);
+    },
+
+    // WebRTC signaling helpers
+    sendWebRTCOffer: (targetUserId: number, roomId: string, sdp: any) => {
+      if (!socket.current?.connected || !state.currentUser) return;
+      socket.current.emit('webrtc-offer', {
+        roomId,
+        targetUserId,
+        sdp,
+        senderId: state.currentUser.id,
+      });
+    },
+    sendWebRTCAnswer: (targetUserId: number, roomId: string, sdp: any) => {
+      if (!socket.current?.connected || !state.currentUser) return;
+      socket.current.emit('webrtc-answer', {
+        roomId,
+        targetUserId,
+        sdp,
+        senderId: state.currentUser.id,
+      });
+    },
+    sendWebRTCIceCandidate: (targetUserId: number, roomId: string, candidate: any) => {
+      if (!socket.current?.connected || !state.currentUser) return;
+      socket.current.emit('webrtc-ice-candidate', {
+        roomId,
+        targetUserId,
+        candidate,
+        senderId: state.currentUser.id,
+      });
+    },
+    onWebRTCOffer: (handler: (data: any) => void) => { webrtcOfferHandlers.current.add(handler); },
+    offWebRTCOffer: (handler: (data: any) => void) => { webrtcOfferHandlers.current.delete(handler); },
+    onWebRTCAnswer: (handler: (data: any) => void) => { webrtcAnswerHandlers.current.add(handler); },
+    offWebRTCAnswer: (handler: (data: any) => void) => { webrtcAnswerHandlers.current.delete(handler); },
+    onWebRTCIceCandidate: (handler: (data: any) => void) => { webrtcIceHandlers.current.add(handler); },
+    offWebRTCIceCandidate: (handler: (data: any) => void) => { webrtcIceHandlers.current.delete(handler); },
   };
-}
+};
