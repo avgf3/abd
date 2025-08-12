@@ -271,21 +271,22 @@ router.get('/:roomId/users', async (req, res) => {
  * GET /api/rooms/:roomId/broadcast-info
  * جلب معلومات البث للغرفة
  */
-router.get('/:roomId/broadcast-info', async (req, res) => {
-  try {
-    const { roomId } = req.params;
-    const info = await roomService.getBroadcastInfo(roomId);
-    
-    if (!info) {
-      return res.status(404).json({ error: 'الغرفة ليست غرفة بث' });
+  router.get('/:roomId/broadcast-info', async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const info = await roomService.getBroadcastInfo(roomId);
+      
+      // بدلاً من إرجاع 404، نرجع 200 مع info=null لتجنّب ضوضاء الأخطاء في الواجهة
+      if (!info) {
+        return res.json({ info: null, message: 'الغرفة ليست غرفة بث' });
+      }
+      
+      res.json({ info });
+    } catch (error) {
+      console.error('خطأ في جلب معلومات البث:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
-    
-    res.json({ info });
-  } catch (error) {
-    console.error('خطأ في جلب معلومات البث:', error);
-    res.status(500).json({ error: 'خطأ في الخادم' });
-  }
-});
+  });
 
 /**
  * POST /api/rooms/:roomId/request-mic
