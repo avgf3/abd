@@ -450,8 +450,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         })()}
       </main>
 
-      {/* Footer - مع التبويبات الأربعة المنقولة */}
-      <footer className="bg-secondary py-4 px-6 flex justify-end items-center shadow-2xl border-t border-accent">
+      {/* Footer - مع التبويبات الأربعة المنقولة إلى الجهة اليمنى */}
+      <footer className="bg-secondary py-4 px-6 flex justify-start items-center shadow-2xl border-t border-accent">
         <div className="flex gap-3">
           {/* الحوائط */}
           <Button 
