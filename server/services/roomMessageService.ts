@@ -23,13 +23,180 @@ export interface MessagePagination {
   nextOffset?: number;
 }
 
+// LRU Cache Node for proper cache management
+interface CacheNode {
+  key: string;
+  value: RoomMessage[];
+  prev?: CacheNode;
+  next?: CacheNode;
+  lastAccess: number;
+}
+
+class LRUCache {
+  private capacity: number;
+  private cache: Map<string, CacheNode>;
+  private head?: CacheNode;
+  private tail?: CacheNode;
+  private size: number;
+
+  constructor(capacity: number) {
+    this.capacity = capacity;
+    this.cache = new Map();
+    this.size = 0;
+  }
+
+  private moveToHead(node: CacheNode): void {
+    this.removeNode(node);
+    this.addToHead(node);
+  }
+
+  private removeNode(node: CacheNode): void {
+    if (node.prev) {
+      node.prev.next = node.next;
+    } else {
+      this.head = node.next;
+    }
+
+    if (node.next) {
+      node.next.prev = node.prev;
+    } else {
+      this.tail = node.prev;
+    }
+  }
+
+  private addToHead(node: CacheNode): void {
+    node.prev = undefined;
+    node.next = this.head;
+
+    if (this.head) {
+      this.head.prev = node;
+    }
+
+    this.head = node;
+
+    if (!this.tail) {
+      this.tail = node;
+    }
+  }
+
+  private removeTail(): CacheNode | undefined {
+    if (!this.tail) return undefined;
+
+    const last = this.tail;
+    this.removeNode(last);
+    return last;
+  }
+
+  get(key: string): RoomMessage[] | null {
+    const node = this.cache.get(key);
+    if (!node) return null;
+
+    // تحديث وقت الوصول ونقل للمقدمة
+    node.lastAccess = Date.now();
+    this.moveToHead(node);
+    return [...node.value]; // إرجاع نسخة للأمان
+  }
+
+  set(key: string, value: RoomMessage[]): void {
+    const existingNode = this.cache.get(key);
+
+    if (existingNode) {
+      // تحديث القيمة الموجودة
+      existingNode.value = [...value]; // نسخة للأمان
+      existingNode.lastAccess = Date.now();
+      this.moveToHead(existingNode);
+    } else {
+      // إضافة عقدة جديدة
+      const newNode: CacheNode = {
+        key,
+        value: [...value], // نسخة للأمان
+        lastAccess: Date.now()
+      };
+
+      if (this.size >= this.capacity) {
+        // إزالة العقدة الأقدم
+        const tail = this.removeTail();
+        if (tail) {
+          this.cache.delete(tail.key);
+          this.size--;
+        }
+      }
+
+      this.cache.set(key, newNode);
+      this.addToHead(newNode);
+      this.size++;
+    }
+  }
+
+  delete(key: string): boolean {
+    const node = this.cache.get(key);
+    if (!node) return false;
+
+    this.removeNode(node);
+    this.cache.delete(key);
+    this.size--;
+    return true;
+  }
+
+  clear(): void {
+    this.cache.clear();
+    this.head = undefined;
+    this.tail = undefined;
+    this.size = 0;
+  }
+
+  getStats(): { size: number; capacity: number; hitRatio: number } {
+    return {
+      size: this.size,
+      capacity: this.capacity,
+      hitRatio: 0 // يمكن تطبيق نظام tracking للحصول على نسبة دقيقة
+    };
+  }
+
+  removeMessageFromRoom(roomId: string, messageId: number): boolean {
+    const node = this.cache.get(roomId);
+    if (!node) return false;
+
+    const messageIndex = node.value.findIndex(msg => msg.id === messageId);
+    if (messageIndex === -1) return false;
+
+    node.value.splice(messageIndex, 1);
+    node.lastAccess = Date.now();
+    this.moveToHead(node);
+    return true;
+  }
+
+  addMessageToRoom(roomId: string, message: RoomMessage): void {
+    const node = this.cache.get(roomId);
+    if (!node) return;
+
+    // إضافة الرسالة في البداية (الأحدث أولاً)
+    node.value.unshift({ ...message });
+    
+    // تحديد الحد الأقصى للرسائل في كل غرفة
+    const MAX_MESSAGES_PER_ROOM = 100;
+    if (node.value.length > MAX_MESSAGES_PER_ROOM) {
+      node.value.splice(MAX_MESSAGES_PER_ROOM);
+    }
+
+    node.lastAccess = Date.now();
+    this.moveToHead(node);
+  }
+}
+
 class RoomMessageService {
-  private messageCache = new Map<string, RoomMessage[]>(); // roomId -> messages
+  private messageCache: LRUCache;
   private readonly MAX_CACHE_SIZE = 100; // رسائل لكل غرفة
   private readonly MAX_CACHE_ROOMS = 50; // عدد الغرف المحفوظة في الذاكرة
+  private cacheHits = 0;
+  private cacheMisses = 0;
+
+  constructor() {
+    this.messageCache = new LRUCache(this.MAX_CACHE_ROOMS);
+  }
 
   /**
-   * إرسال رسالة لغرفة
+   * إرسال رسالة لغرفة مع معالجة شاملة للأخطاء
    */
   async sendMessage(messageData: {
     senderId: number;
@@ -40,47 +207,35 @@ class RoomMessageService {
     receiverId?: number;
   }): Promise<RoomMessage | null> {
     try {
+      // التحقق من توفر قاعدة البيانات
       if (!db || dbType === 'disabled') {
-        throw new Error('قاعدة البيانات غير متوفرة');
+        const error = new Error('قاعدة البيانات غير متوفرة');
+        console.error('خطأ في إرسال الرسالة:', error.message);
+        throw error;
       }
 
-      // التحقق من صحة البيانات
-      if (!messageData.content?.trim()) {
-        throw new Error('محتوى الرسالة مطلوب');
+      // التحقق من صحة البيانات المدخلة
+      const validation = this.validateMessageData(messageData);
+      if (!validation.isValid) {
+        const error = new Error(validation.error);
+        console.error('خطأ في التحقق من البيانات:', error.message);
+        throw error;
       }
 
-      if (!messageData.roomId?.trim()) {
-        throw new Error('معرف الغرفة مطلوب');
-      }
-
-      // التحقق من وجود المرسل
-      const sender = await storage.getUser(messageData.senderId);
+      // التحقق من وجود المرسل وصلاحياته
+      const sender = await this.validateSender(messageData.senderId, messageData.isPrivate);
       if (!sender) {
-        throw new Error('المرسل غير موجود');
-      }
-
-      // التحقق من حالة المنع قبل الإرسال
-      if (!messageData.isPrivate) {
-        if (sender.isBanned) {
-          throw new Error('أنت مطرود ولا يمكنك إرسال رسائل عامة');
-        }
-        if (sender.isMuted) {
-          throw new Error('أنت مكتوم ولا يمكنك إرسال رسائل عامة');
-        }
+        const error = new Error('المرسل غير موجود أو غير مخول');
+        console.error('خطأ في التحقق من المرسل:', error.message);
+        throw error;
       }
 
       // إنشاء الرسالة في قاعدة البيانات
-      const message = await storage.createMessage({
-        senderId: messageData.senderId,
-        content: messageData.content.trim(),
-        messageType: messageData.messageType || 'text',
-        isPrivate: messageData.isPrivate || false,
-        receiverId: messageData.receiverId || null,
-        roomId: messageData.roomId
-      });
-
+      const message = await this.createDatabaseMessage(messageData);
       if (!message) {
-        throw new Error('فشل في إنشاء الرسالة');
+        const error = new Error('فشل في إنشاء الرسالة في قاعدة البيانات');
+        console.error('خطأ في قاعدة البيانات:', error.message);
+        throw error;
       }
 
       // تحويل الرسالة للتنسيق المطلوب
@@ -102,16 +257,91 @@ class RoomMessageService {
       // إضافة الرسالة للذاكرة المؤقتة
       this.addToCache(messageData.roomId, roomMessage);
 
+      console.log(`✅ تم إرسال الرسالة ${message.id} للغرفة ${messageData.roomId}`);
       return roomMessage;
 
     } catch (error) {
-      console.error('خطأ في إرسال الرسالة:', error);
+      // معالجة مفصلة للأخطاء
+      this.handleError('sendMessage', error, { 
+        roomId: messageData.roomId, 
+        senderId: messageData.senderId 
+      });
       throw error;
     }
   }
 
   /**
-   * جلب رسائل الغرفة مع الصفحات
+   * التحقق من صحة بيانات الرسالة
+   */
+  private validateMessageData(messageData: any): { isValid: boolean; error?: string } {
+    if (!messageData.content?.trim()) {
+      return { isValid: false, error: 'محتوى الرسالة مطلوب' };
+    }
+
+    if (!messageData.roomId?.trim()) {
+      return { isValid: false, error: 'معرف الغرفة مطلوب' };
+    }
+
+    if (!messageData.senderId || typeof messageData.senderId !== 'number') {
+      return { isValid: false, error: 'معرف المرسل غير صحيح' };
+    }
+
+    // فحص طول المحتوى
+    if (messageData.content.length > 5000) {
+      return { isValid: false, error: 'محتوى الرسالة طويل جداً' };
+    }
+
+    return { isValid: true };
+  }
+
+  /**
+   * التحقق من المرسل وصلاحياته
+   */
+  private async validateSender(senderId: number, isPrivate?: boolean): Promise<any | null> {
+    try {
+      const sender = await storage.getUser(senderId);
+      if (!sender) {
+        return null;
+      }
+
+      // التحقق من حالة المنع للرسائل العامة فقط
+      if (!isPrivate) {
+        if (sender.isBanned) {
+          throw new Error('أنت مطرود ولا يمكنك إرسال رسائل عامة');
+        }
+        if (sender.isMuted) {
+          throw new Error('أنت مكتوم ولا يمكنك إرسال رسائل عامة');
+        }
+      }
+
+      return sender;
+    } catch (error) {
+      console.error('خطأ في التحقق من المرسل:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * إنشاء الرسالة في قاعدة البيانات
+   */
+  private async createDatabaseMessage(messageData: any): Promise<any | null> {
+    try {
+      return await storage.createMessage({
+        senderId: messageData.senderId,
+        content: messageData.content.trim(),
+        messageType: messageData.messageType || 'text',
+        isPrivate: messageData.isPrivate || false,
+        receiverId: messageData.receiverId || null,
+        roomId: messageData.roomId
+      });
+    } catch (error) {
+      console.error('خطأ في إنشاء الرسالة في قاعدة البيانات:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * جلب رسائل الغرفة مع الصفحات - محسن
    */
   async getRoomMessages(
     roomId: string, 
@@ -120,28 +350,34 @@ class RoomMessageService {
     useCache: boolean = true
   ): Promise<MessagePagination> {
     try {
+      // التحقق من صحة المعاملات
       if (!roomId?.trim()) {
         throw new Error('معرف الغرفة مطلوب');
       }
 
-      // ضبط الحد الأقصى إلى 20 لتفادي التحميل الزائد
       const safeLimit = Math.min(20, Math.max(1, Number(limit) || 20));
       const safeOffset = Math.max(0, Number(offset) || 0);
 
       // محاولة الحصول على الرسائل من الذاكرة المؤقتة أولاً
-      if (useCache && safeOffset === 0 && this.messageCache.has(roomId)) {
-        const cachedMessages = this.messageCache.get(roomId)!;
-        const slicedMessages = cachedMessages.slice(0, safeLimit);
-        
-        return {
-          messages: slicedMessages,
-          totalCount: cachedMessages.length,
-          hasMore: cachedMessages.length > safeLimit,
-          nextOffset: slicedMessages.length
-        };
+      if (useCache && safeOffset === 0) {
+        const cachedMessages = this.messageCache.get(roomId);
+        if (cachedMessages && cachedMessages.length > 0) {
+          this.cacheHits++;
+          const slicedMessages = cachedMessages.slice(0, safeLimit);
+          
+          return {
+            messages: slicedMessages,
+            totalCount: cachedMessages.length,
+            hasMore: cachedMessages.length > safeLimit,
+            nextOffset: slicedMessages.length
+          };
+        }
+        this.cacheMisses++;
       }
 
+      // جلب من قاعدة البيانات إذا لم تكن متوفرة في الذاكرة المؤقتة
       if (!db || dbType === 'disabled') {
+        console.warn('قاعدة البيانات غير متوفرة، إرجاع قائمة فارغة');
         return {
           messages: [],
           totalCount: 0,
@@ -149,34 +385,13 @@ class RoomMessageService {
         };
       }
 
-      // جلب الرسائل من قاعدة البيانات
-      const dbMessages = await storage.getRoomMessages(roomId, safeLimit, safeOffset);
-      const totalCount = await storage.getRoomMessageCount(roomId);
+      const [dbMessages, totalCount] = await Promise.all([
+        storage.getRoomMessages(roomId, safeLimit, safeOffset),
+        storage.getRoomMessageCount(roomId)
+      ]);
 
-      // تحويل الرسائل للتنسيق المطلوب
-      const messages: RoomMessage[] = [];
-      for (const msg of dbMessages) {
-        try {
-          const sender = await storage.getUser(msg.senderId);
-          const roomMessage: RoomMessage = {
-            id: msg.id,
-            senderId: msg.senderId,
-            roomId: roomId,
-            content: msg.content,
-            messageType: msg.messageType || 'text',
-            timestamp: new Date(msg.timestamp),
-            isPrivate: msg.isPrivate || false,
-            receiverId: msg.receiverId || null,
-            senderUsername: sender?.username || 'مستخدم محذوف',
-            senderUserType: sender?.userType || 'user',
-            senderAvatar: (sender as any)?.profileImage || null,
-            sender
-          };
-          messages.push(roomMessage);
-        } catch (err) {
-          console.warn(`تعذر معالجة الرسالة ${msg.id}:`, err);
-        }
-      }
+      // تحويل الرسائل للتنسيق المطلوب مع معالجة الأخطاء
+      const messages: RoomMessage[] = await this.processMessages(dbMessages, roomId);
 
       // إضافة الرسائل للذاكرة المؤقتة (إذا كان offset = 0)
       if (safeOffset === 0 && messages.length > 0) {
@@ -191,7 +406,7 @@ class RoomMessageService {
       };
 
     } catch (error) {
-      console.error(`خطأ في جلب رسائل الغرفة ${roomId}:`, error);
+      this.handleError('getRoomMessages', error, { roomId, limit, offset });
       return {
         messages: [],
         totalCount: 0,
@@ -201,20 +416,59 @@ class RoomMessageService {
   }
 
   /**
+   * معالجة الرسائل من قاعدة البيانات مع التعامل مع الأخطاء
+   */
+  private async processMessages(dbMessages: any[], roomId: string): Promise<RoomMessage[]> {
+    const messages: RoomMessage[] = [];
+    const failedMessages: number[] = [];
+
+    for (const msg of dbMessages) {
+      try {
+        const sender = await storage.getUser(msg.senderId);
+        const roomMessage: RoomMessage = {
+          id: msg.id,
+          senderId: msg.senderId,
+          roomId: roomId,
+          content: msg.content,
+          messageType: msg.messageType || 'text',
+          timestamp: new Date(msg.timestamp),
+          isPrivate: msg.isPrivate || false,
+          receiverId: msg.receiverId || null,
+          senderUsername: sender?.username || 'مستخدم محذوف',
+          senderUserType: sender?.userType || 'user',
+          senderAvatar: (sender as any)?.profileImage || null,
+          sender
+        };
+        messages.push(roomMessage);
+      } catch (err) {
+        console.warn(`تعذر معالجة الرسالة ${msg.id}:`, err);
+        failedMessages.push(msg.id);
+      }
+    }
+
+    if (failedMessages.length > 0) {
+      console.warn(`فشل في معالجة ${failedMessages.length} رسالة من أصل ${dbMessages.length}`);
+    }
+
+    return messages;
+  }
+
+  /**
    * جلب رسائل الغرفة الأحدث فقط
    */
   async getLatestRoomMessages(roomId: string, limit: number = 20): Promise<RoomMessage[]> {
     try {
-      const result = await this.getRoomMessages(roomId, Math.min(20, Math.max(1, Number(limit) || 20)), 0, true);
+      const safeLimit = Math.min(20, Math.max(1, Number(limit) || 20));
+      const result = await this.getRoomMessages(roomId, safeLimit, 0, true);
       return result.messages;
     } catch (error) {
-      console.error(`خطأ في جلب أحدث رسائل الغرفة ${roomId}:`, error);
+      this.handleError('getLatestRoomMessages', error, { roomId, limit });
       return [];
     }
   }
 
   /**
-   * حذف رسالة من الغرفة
+   * حذف رسالة من الغرفة مع التحقق من الصلاحيات
    */
   async deleteMessage(messageId: number, userId: number, roomId: string): Promise<void> {
     try {
@@ -245,14 +499,16 @@ class RoomMessageService {
       // إزالة الرسالة من الذاكرة المؤقتة
       this.removeFromCache(roomId, messageId);
 
-      } catch (error) {
-      console.error('خطأ في حذف الرسالة:', error);
+      console.log(`✅ تم حذف الرسالة ${messageId} من الغرفة ${roomId}`);
+
+    } catch (error) {
+      this.handleError('deleteMessage', error, { messageId, userId, roomId });
       throw error;
     }
   }
 
   /**
-   * البحث في رسائل الغرفة
+   * البحث في رسائل الغرفة مع معالجة آمنة
    */
   async searchRoomMessages(
     roomId: string, 
@@ -270,6 +526,7 @@ class RoomMessageService {
       }
 
       if (!db || dbType === 'disabled') {
+        console.warn('قاعدة البيانات غير متوفرة للبحث');
         return {
           messages: [],
           totalCount: 0,
@@ -277,34 +534,16 @@ class RoomMessageService {
         };
       }
 
-      // البحث في قاعدة البيانات
-      const results = await storage.searchRoomMessages(roomId, searchQuery, limit, offset);
-      const totalCount = await storage.countSearchRoomMessages(roomId, searchQuery);
+      // تنظيف نص البحث
+      const cleanQuery = searchQuery.trim().substring(0, 100);
+
+      const [results, totalCount] = await Promise.all([
+        storage.searchRoomMessages(roomId, cleanQuery, limit, offset),
+        storage.countSearchRoomMessages(roomId, cleanQuery)
+      ]);
 
       // تحويل النتائج للتنسيق المطلوب
-      const messages: RoomMessage[] = [];
-      for (const msg of results) {
-        try {
-          const sender = await storage.getUser(msg.senderId);
-          const roomMessage: RoomMessage = {
-            id: msg.id,
-            senderId: msg.senderId,
-            roomId: roomId,
-            content: msg.content,
-            messageType: msg.messageType || 'text',
-            timestamp: new Date(msg.timestamp),
-            isPrivate: msg.isPrivate || false,
-            receiverId: msg.receiverId || null,
-            senderUsername: sender?.username || 'مستخدم محذوف',
-            senderUserType: sender?.userType || 'user',
-            senderAvatar: (sender as any)?.profileImage || null,
-            sender
-          };
-          messages.push(roomMessage);
-        } catch (err) {
-          console.warn(`تعذر معالجة نتيجة البحث ${msg.id}:`, err);
-        }
-      }
+      const messages: RoomMessage[] = await this.processMessages(results, roomId);
 
       return {
         messages,
@@ -314,7 +553,7 @@ class RoomMessageService {
       };
 
     } catch (error) {
-      console.error(`خطأ في البحث في رسائل الغرفة ${roomId}:`, error);
+      this.handleError('searchRoomMessages', error, { roomId, searchQuery });
       return {
         messages: [],
         totalCount: 0,
@@ -341,12 +580,17 @@ class RoomMessageService {
         };
       }
 
-      const totalMessages = await storage.getRoomMessageCount(roomId);
+      const [totalMessages, lastMessage] = await Promise.all([
+        storage.getRoomMessageCount(roomId),
+        storage.getLastRoomMessage(roomId)
+      ]);
+
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const messagesLast24h = await storage.getRoomMessageCountSince(roomId, yesterday);
-      const activeUsers = await storage.getRoomActiveUserCount(roomId, yesterday);
-      
-      const lastMessage = await storage.getLastRoomMessage(roomId);
+      const [messagesLast24h, activeUsers] = await Promise.all([
+        storage.getRoomMessageCountSince(roomId, yesterday),
+        storage.getRoomActiveUserCount(roomId, yesterday)
+      ]);
+
       const lastMessageTime = lastMessage ? new Date(lastMessage.timestamp) : undefined;
 
       return {
@@ -357,7 +601,7 @@ class RoomMessageService {
       };
 
     } catch (error) {
-      console.error(`خطأ في جلب إحصائيات الغرفة ${roomId}:`, error);
+      this.handleError('getRoomStats', error, { roomId });
       return {
         totalMessages: 0,
         messagesLast24h: 0,
@@ -372,6 +616,7 @@ class RoomMessageService {
   async cleanupOldMessages(roomId: string, keepLastDays: number = 30): Promise<number> {
     try {
       if (!db || dbType === 'disabled') {
+        console.warn('قاعدة البيانات غير متوفرة للتنظيف');
         return 0;
       }
 
@@ -381,36 +626,23 @@ class RoomMessageService {
       // تنظيف الذاكرة المؤقتة أيضاً
       this.clearCache(roomId);
 
+      console.log(`✅ تم حذف ${deletedCount} رسالة قديمة من الغرفة ${roomId}`);
       return deletedCount;
 
     } catch (error) {
-      console.error(`خطأ في تنظيف رسائل الغرفة ${roomId}:`, error);
+      this.handleError('cleanupOldMessages', error, { roomId, keepLastDays });
       return 0;
     }
   }
 
-  // ==================== إدارة الذاكرة المؤقتة ====================
+  // ==================== إدارة الذاكرة المؤقتة المحسنة ====================
 
   /**
    * إضافة رسالة للذاكرة المؤقتة
    */
   private addToCache(roomId: string, message: RoomMessage): void {
     try {
-      if (!this.messageCache.has(roomId)) {
-        this.messageCache.set(roomId, []);
-      }
-
-      const messages = this.messageCache.get(roomId)!;
-      messages.unshift(message); // إضافة في البداية (الأحدث أولاً)
-
-      // الحد من حجم الذاكرة المؤقتة
-      if (messages.length > this.MAX_CACHE_SIZE) {
-        messages.splice(this.MAX_CACHE_SIZE);
-      }
-
-      // إدارة عدد الغرف المحفوظة
-      this.manageCacheSize();
-
+      this.messageCache.addMessageToRoom(roomId, message);
     } catch (error) {
       console.warn(`تعذر إضافة الرسالة للذاكرة المؤقتة للغرفة ${roomId}:`, error);
     }
@@ -421,8 +653,7 @@ class RoomMessageService {
    */
   private updateCache(roomId: string, messages: RoomMessage[]): void {
     try {
-      this.messageCache.set(roomId, [...messages]);
-      this.manageCacheSize();
+      this.messageCache.set(roomId, messages);
     } catch (error) {
       console.warn(`تعذر تحديث الذاكرة المؤقتة للغرفة ${roomId}:`, error);
     }
@@ -433,13 +664,7 @@ class RoomMessageService {
    */
   private removeFromCache(roomId: string, messageId: number): void {
     try {
-      if (this.messageCache.has(roomId)) {
-        const messages = this.messageCache.get(roomId)!;
-        const index = messages.findIndex(msg => msg.id === messageId);
-        if (index !== -1) {
-          messages.splice(index, 1);
-        }
-      }
+      this.messageCache.removeMessageFromRoom(roomId, messageId);
     } catch (error) {
       console.warn(`تعذر إزالة الرسالة من الذاكرة المؤقتة للغرفة ${roomId}:`, error);
     }
@@ -453,35 +678,28 @@ class RoomMessageService {
   }
 
   /**
-   * إدارة حجم الذاكرة المؤقتة
-   */
-  private manageCacheSize(): void {
-    if (this.messageCache.size > this.MAX_CACHE_ROOMS) {
-      // حذف أقدم الغرف المحفوظة (LRU)
-      const roomsToDelete = Array.from(this.messageCache.keys()).slice(this.MAX_CACHE_ROOMS);
-      roomsToDelete.forEach(roomId => this.messageCache.delete(roomId));
-    }
-  }
-
-  /**
-   * الحصول على إحصائيات الذاكرة المؤقتة
+   * الحصول على إحصائيات الذاكرة المؤقتة المحسنة
    */
   getCacheStats(): {
     cachedRooms: number;
     totalCachedMessages: number;
     cacheHitRatio: number;
+    cacheStats: any;
   } {
-    const cachedRooms = this.messageCache.size;
-    let totalCachedMessages = 0;
-    
-    for (const messages of this.messageCache.values()) {
-      totalCachedMessages += messages.length;
-    }
+    const cacheStats = this.messageCache.getStats();
+    const totalRequests = this.cacheHits + this.cacheMisses;
+    const hitRatio = totalRequests > 0 ? (this.cacheHits / totalRequests) * 100 : 0;
 
     return {
-      cachedRooms,
-      totalCachedMessages,
-      cacheHitRatio: 0 // يمكن تطويره لاحقاً لحساب نسبة الإصابة
+      cachedRooms: cacheStats.size,
+      totalCachedMessages: 0, // يمكن حسابه إذا لزم الأمر
+      cacheHitRatio: Math.round(hitRatio * 100) / 100,
+      cacheStats: {
+        ...cacheStats,
+        hits: this.cacheHits,
+        misses: this.cacheMisses,
+        totalRequests
+      }
     };
   }
 
@@ -490,7 +708,27 @@ class RoomMessageService {
    */
   clearAllCache(): void {
     this.messageCache.clear();
-    }
+    this.cacheHits = 0;
+    this.cacheMisses = 0;
+    console.log('✅ تم مسح جميع الذاكرة المؤقتة للرسائل');
+  }
+
+  /**
+   * معالج موحد للأخطاء
+   */
+  private handleError(operation: string, error: any, context?: any): void {
+    const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف';
+    const contextStr = context ? JSON.stringify(context) : '';
+    
+    console.error(`❌ خطأ في ${operation}:`, {
+      message: errorMessage,
+      context: contextStr,
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+
+    // يمكن إضافة تسجيل أكثر تفصيلاً هنا أو إرسال تنبيهات
+  }
 }
 
 // تصدير instance واحد
