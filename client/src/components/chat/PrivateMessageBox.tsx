@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatTime } from '@/utils/timeUtils';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import FileUploadButton from './FileUploadButton';
@@ -33,6 +32,7 @@ export default function PrivateMessageBox({
   const [messageText, setMessageText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   
   // ترتيب الرسائل حسب الوقت وإزالة التكرارات
   const sortedMessages = React.useMemo(() => {
@@ -50,19 +50,30 @@ export default function PrivateMessageBox({
     );
   }, [messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      if (behavior === 'smooth') {
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+      } else {
+        container.scrollTop = container.scrollHeight;
+      }
+      return;
+    }
+    // Fallback to anchor if container is not available yet
+    messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // استخدم تمرير بدون أنيميشن عند التحديثات الكبيرة أو الفتح الأول لتجنب القفز العام للصفحة
+    scrollToBottom(sortedMessages.length > 20 ? 'auto' : 'smooth');
   }, [sortedMessages]);
 
   // Ensure we scroll on open as well
   useEffect(() => {
     if (isOpen) {
       // slight delay to allow layout to render
-      const t = setTimeout(scrollToBottom, 0);
+      const t = setTimeout(() => scrollToBottom('auto'), 0);
       return () => clearTimeout(t);
     }
   }, [isOpen]);
@@ -71,6 +82,8 @@ export default function PrivateMessageBox({
     if (messageText.trim()) {
       onSendMessage(messageText.trim());
       setMessageText('');
+      // Scroll after sending to keep the latest message in view
+      setTimeout(() => scrollToBottom('smooth'), 0);
     }
   };
 
@@ -178,7 +191,7 @@ export default function PrivateMessageBox({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="h-[250px] w-full p-4">
+        <div ref={messagesContainerRef} className="h-[250px] w-full p-4 overflow-y-auto">
           <div className="space-y-3">
             {sortedMessages.map((message, index) => {
               // تحديد المرسل بشكل صحيح
@@ -249,7 +262,7 @@ export default function PrivateMessageBox({
             )}
             <div ref={messagesEndRef} />
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="flex gap-2 p-4 border-t border-accent bg-gradient-to-r from-secondary to-accent">
           <FileUploadButton 
