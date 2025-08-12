@@ -389,6 +389,37 @@ class RoomMessageService {
     }
   }
 
+  async getPrivateMessagesBetween(userId1: number, userId2: number, limit: number = 50): Promise<RoomMessage[]> {
+    try {
+      const rows = await storage.getPrivateMessages(userId1, userId2, limit);
+      const result: RoomMessage[] = [];
+      for (const msg of rows) {
+        try {
+          const sender = await storage.getUser(msg.senderId!);
+          result.push({
+            id: msg.id,
+            senderId: msg.senderId!,
+            roomId: msg.roomId || 'general',
+            content: msg.content,
+            messageType: msg.messageType || 'text',
+            timestamp: new Date(msg.timestamp || new Date()),
+            isPrivate: true,
+            receiverId: msg.receiverId,
+            senderUsername: sender?.username,
+            senderUserType: sender?.userType,
+            senderAvatar: (sender as any)?.profileImage || null,
+            sender
+          });
+        } catch {}
+      }
+      // رسائل خاصة تعرض أقدم أولاً في الواجهة
+      return result.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    } catch (e) {
+      console.error('getPrivateMessagesBetween error:', e);
+      return [];
+    }
+  }
+
   // ==================== إدارة الذاكرة المؤقتة ====================
 
   /**
