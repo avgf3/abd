@@ -10,6 +10,8 @@ import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
 import { getFinalUsernameColor, getUserThemeClasses, getUserThemeStyles } from '@/utils/themeUtils';
 import { api } from '@/lib/queryClient';
+import { scrollToBottom, handleAutoScroll } from '@/utils/scrollUtils';
+import { handleImageUpload, formatFileMessage } from '@/utils/uploadUtils';
 
 
 interface PrivateMessageBoxProps {
@@ -50,30 +52,30 @@ export default function PrivateMessageBox({
     );
   }, [messages]);
 
-  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
-    const container = messagesContainerRef.current;
-    if (container) {
-      if (behavior === 'smooth') {
-        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-      } else {
-        container.scrollTop = container.scrollHeight;
-      }
-      return;
-    }
-    // Fallback to anchor if container is not available yet
-    messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
-  };
+  // تم نقل دالة scrollToBottom إلى utils/scrollUtils.ts لتجنب التكرار
 
   useEffect(() => {
-    // استخدم تمرير بدون أنيميشن عند التحديثات الكبيرة أو الفتح الأول لتجنب القفز العام للصفحة
-    scrollToBottom(sortedMessages.length > 20 ? 'auto' : 'smooth');
+    // استخدم الدالة الموحدة للتمرير التلقائي
+    handleAutoScroll({
+      messagesEndRef,
+      messagesContainerRef,
+      messageCount: sortedMessages.length,
+      useContainer: true
+    });
   }, [sortedMessages]);
 
   // Ensure we scroll on open as well
   useEffect(() => {
     if (isOpen) {
       // slight delay to allow layout to render
-      const t = setTimeout(() => scrollToBottom('auto'), 0);
+      const t = setTimeout(() => {
+        scrollToBottom({
+          messagesEndRef,
+          messagesContainerRef,
+          behavior: 'auto',
+          useContainer: true
+        });
+      }, 0);
       return () => clearTimeout(t);
     }
   }, [isOpen]);
@@ -83,59 +85,36 @@ export default function PrivateMessageBox({
       onSendMessage(messageText.trim());
       setMessageText('');
       // Scroll after sending to keep the latest message in view
-      setTimeout(() => scrollToBottom('smooth'), 0);
+      setTimeout(() => {
+        scrollToBottom({
+          messagesEndRef,
+          messagesContainerRef,
+          behavior: 'smooth',
+          useContainer: true
+        });
+      }, 0);
     }
   };
 
   const handleFileSelect = async (file: File, type: 'image' | 'video' | 'document') => {
-    if (type === 'image') {
-      try {
-        if (!currentUser) {
-          alert('يجب تسجيل الدخول');
-          return;
-        }
-        const form = new FormData();
-        form.append('image', file);
-        form.append('senderId', String(currentUser.id));
-        form.append('receiverId', String(user.id));
-        const resp = await api.upload<{ success: boolean; imageUrl: string; message?: any }>(
-          '/api/upload/message-image',
-          form,
-          { timeout: 60000 }
-        );
-        if (resp?.message?.content) {
-          // لا حاجة لاستدعاء onSendMessage لأن الخادم سيرسلها عبر socket
-          return;
-        }
-        // fallback: إن لم يرجع الخادم رسالة، أرسل base64 محلياً (نادر)
-      } catch (e) {
-        console.error('رفع الصورة فشل، سنحاول كـ base64 محلياً', e);
-      }
-      // fallback لقراءة الصورة كـ base64
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        if (dataUrl && dataUrl.startsWith('data:image')) {
-          onSendMessage(dataUrl);
-        }
-      };
-      reader.onerror = () => {
-        alert('فشل في قراءة الملف');
-      };
-      reader.readAsDataURL(file);
+    if (!currentUser) {
+      alert('يجب تسجيل الدخول');
       return;
     }
 
-    // حالياً نعرض رسالة نصية للأنواع الأخرى إلى حين إضافة مسار رفع مرفقات خاص
-    let fileMessage = '';
-    switch (type) {
-      case 'video':
-        fileMessage = `🎥 فيديو: ${file.name}`;
-        break;
-      default:
-        fileMessage = `📄 مستند: ${file.name}`;
+    if (type === 'image') {
+      await handleImageUpload(
+        file,
+        currentUser.id,
+        user.id,
+        onSendMessage,
+        (error) => alert(error)
+      );
+    } else {
+      // حالياً نعرض رسالة نصية للأنواع الأخرى إلى حين إضافة مسار رفع مرفقات خاص
+      const fileMessage = formatFileMessage(file, type);
+      onSendMessage(fileMessage);
     }
-    onSendMessage(fileMessage);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import { getOrCreateDeviceId } from '@/utils/deviceUtils';
 import { 
   UserX, 
   Clock, 
@@ -103,13 +104,7 @@ export default function UserContextMenu({
     }
 
     try {
-      const deviceId = (() => {
-        const existing = localStorage.getItem('deviceId');
-        if (existing) return existing;
-        const id = 'web-' + Math.random().toString(36).slice(2);
-        localStorage.setItem('deviceId', id);
-        return id;
-      })();
+      const deviceId = getOrCreateDeviceId();
 
       await apiRequest('/api/moderation/mute', {
         method: 'POST',
@@ -161,13 +156,7 @@ export default function UserContextMenu({
     }
 
     try {
-      const deviceId = (() => {
-        const existing = localStorage.getItem('deviceId');
-        if (existing) return existing;
-        const id = 'web-' + Math.random().toString(36).slice(2);
-        localStorage.setItem('deviceId', id);
-        return id;
-      })();
+      const deviceId = getOrCreateDeviceId();
 
       await apiRequest('/api/moderation/ban', {
         method: 'POST',
@@ -219,13 +208,7 @@ export default function UserContextMenu({
     }
 
     try {
-      const deviceId = (() => {
-        const existing = localStorage.getItem('deviceId');
-        if (existing) return existing;
-        const id = 'web-' + Math.random().toString(36).slice(2);
-        localStorage.setItem('deviceId', id);
-        return id;
-      })();
+      const deviceId = getOrCreateDeviceId();
 
       await apiRequest('/api/moderation/block', {
         method: 'POST',
