@@ -158,13 +158,17 @@ function sendRoomUsers(roomId: string) {
                    conn.user && 
                    conn.user.id && 
                    conn.user.username && 
-                   conn.user.userType)
+                   conn.user.userType &&
+                   !(conn.user as any).isHidden)
     .map(conn => conn.user);
     
   io.to(`room_${roomId}`).emit('message', {
     type: 'onlineUsers',
     users: roomUsers,
-    roomId: roomId
+    roomId: roomId,
+    count: roomUsers.length,
+    source: 'socket',
+    timestamp: new Date().toISOString()
   });
 }
 
@@ -1231,9 +1235,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/online", async (req, res) => {
     try {
       const users = await storage.getOnlineUsers();
-      res.json({ users });
+      const safe = (users || []).filter(u => !(u as any).isHidden);
+      res.json({ users: safe, count: safe.length, source: 'db', timestamp: new Date().toISOString() });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // قائمة المتصلين من الذاكرة حسب الغرفة (أسرع وأدق)
+  app.get("/api/users/online-socket", async (req, res) => {
+    try {
+      const roomId = (req.query.roomId as string) || 'general';
+      const roomUsers = Array.from(connectedUsers.values())
+        .filter(conn => conn.room === roomId && conn.user && !(conn.user as any).isHidden)
+        .map(conn => conn.user);
+      res.json({ users: roomUsers, count: roomUsers.length, roomId, source: 'socket', timestamp: new Date().toISOString() });
+    } catch (error) {
+      console.error('Error fetching online users from socket memory:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
@@ -1685,13 +1704,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                    conn.user && 
                    conn.user.id && 
                    conn.user.username && 
-                   conn.user.userType;
+                   conn.user.userType &&
+                   !(conn.user as any).isHidden;
           })
           .map(conn => conn.user);
         
         socket.emit('message', { 
           type: 'onlineUsers', 
-          users: roomUsers 
+          users: roomUsers,
+          roomId: currentRoom,
+          count: roomUsers.length,
+          source: 'socket',
+          timestamp: new Date().toISOString()
         });
         
         } catch (error) {

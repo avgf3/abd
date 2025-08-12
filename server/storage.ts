@@ -474,7 +474,17 @@ export const storage: LegacyStorage = {
   },
 
   async setUserOnlineStatus(id: number, isOnline: boolean) {
-    await databaseService.updateUser(id, { isOnline, lastSeen: new Date() });
+    try {
+      await userService.setUserOnlineStatus(id, isOnline);
+    } catch (error) {
+      console.error('Error in userService.setUserOnlineStatus, falling back to direct update:', error);
+      // Fallback: ensure lastSeen only updates when going offline
+      await databaseService.updateUser(id, {
+        isOnline,
+        // Use undefined for online to avoid overwriting, set date when offline
+        lastSeen: (isOnline ? (undefined as any) : new Date())
+      });
+    }
   },
 
   async createMessage(message: any) {
