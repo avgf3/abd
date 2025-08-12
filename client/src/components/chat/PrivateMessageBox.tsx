@@ -1,14 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getImageSrc } from '@/utils/imageUtils';
 import { formatTime } from '@/utils/timeUtils';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import FileUploadButton from './FileUploadButton';
 import EmojiPicker from './EmojiPicker';
-import { getUserLevelIcon } from './UserRoleBadge';
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
 import { getFinalUsernameColor, getUserThemeClasses, getUserThemeStyles } from '@/utils/themeUtils';
@@ -42,6 +40,15 @@ export default function PrivateMessageBox({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Ensure we scroll on open as well
+  useEffect(() => {
+    if (isOpen) {
+      // slight delay to allow layout to render
+      const t = setTimeout(scrollToBottom, 0);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen]);
 
   const handleSendMessage = () => {
     if (messageText.trim()) {
@@ -78,8 +85,8 @@ export default function PrivateMessageBox({
     onSendMessage(fileMessage);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -89,8 +96,6 @@ export default function PrivateMessageBox({
     setMessageText(prev => prev + emoji);
     setShowEmojiPicker(false);
   };
-
-  // تم نقل دالة formatTime إلى utils/timeUtils.ts
 
   if (!isOpen) return null;
 
@@ -111,7 +116,7 @@ export default function PrivateMessageBox({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="relative max-w-md max-h-[450px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl">
         <DialogHeader className="border-b border-accent p-2">
           <div
@@ -138,9 +143,24 @@ export default function PrivateMessageBox({
             {messages.map((message, index) => {
               const sender = message.sender || (message.senderId === currentUser?.id ? currentUser! : user);
               const isImage = message.messageType === 'image' || (typeof message.content === 'string' && message.content.startsWith('data:image'));
+              const key = message.id ?? `${message.senderId}-${message.timestamp}-${index}`;
+
+              // Handle system message in a compact style similar to public area
+              if (message.messageType === 'system') {
+                return (
+                  <div key={key} className="w-full flex items-center justify-between p-3 rounded-lg bg-white shadow-sm text-red-600">
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="font-semibold">النظام:</span>
+                      <span className="truncate">{message.content}</span>
+                    </div>
+                    <span className="text-xs text-red-500 ml-2 whitespace-nowrap">{formatTime(message.timestamp)}</span>
+                  </div>
+                );
+              }
+
               return (
                 <div 
-                  key={`${message.id}-${message.senderId}-${index}`}
+                  key={key}
                   className={`flex items-center gap-3 p-3 rounded-lg border-r-4 ${getMessageBorderColor(sender?.userType)} bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
                 >
                   {sender && (
@@ -216,7 +236,7 @@ export default function PrivateMessageBox({
           <Input
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder="✉️ ارسال رسالة..."
             className="flex-1 bg-white border border-border text-foreground placeholder:text-muted-foreground focus:border-primary"
           />
