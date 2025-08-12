@@ -53,8 +53,11 @@ export async function apiRequest<T = any>(
   
   // إذا كان FormData، لا نضيف Content-Type (المتصفح يضيفه تلقائياً مع boundary)
   if (!(body instanceof FormData)) {
-    requestHeaders['Content-Type'] = 'application/json';
-    requestBody = body ? JSON.stringify(body) : undefined;
+    // لا تقم بتعيين Content-Type لطلبات GET أو عندما لا يكون هناك جسم
+    if (body !== undefined && body !== null && method.toUpperCase() !== 'GET') {
+      requestHeaders['Content-Type'] = 'application/json';
+    }
+    requestBody = body !== undefined ? JSON.stringify(body) : undefined;
   }
 
   // إرفاق رمز المصادقة تلقائياً إن وجد

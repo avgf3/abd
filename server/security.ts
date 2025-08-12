@@ -352,7 +352,12 @@ export function setupSecurity(app: Express): void {
   app.use(express.json({ 
     limit: '10mb',
     verify: (req: any, res: Response, buf: Buffer) => {
-      // Prevent JSON pollution attacks
+      // Skip verification for requests without a body or for safe methods
+      const method = (req.method || 'GET').toUpperCase();
+      if (!buf || buf.length === 0 || method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+        return;
+      }
+      // Prevent JSON pollution attacks, only when there is a body
       try {
         JSON.parse(buf.toString());
       } catch (e) {
