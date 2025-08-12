@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Users, Globe, Home, UserPlus } from 'lucide-react';
+import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Globe } from 'lucide-react';
 import SimpleUserMenu from './SimpleUserMenu';
 import ProfileImage from './ProfileImage';
 import RoomComponent from './RoomComponent';
@@ -423,7 +423,12 @@ export default function UnifiedSidebar({
           }`}
           onClick={() => setActiveView('users')}
         >
-          <Users className="w-4 h-4 ml-2" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 ml-2">
+            <circle cx="9" cy="7" r="3"></circle>
+            <path d="M2 21c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"></path>
+            <circle cx="17" cy="7" r="3"></circle>
+            <path d="M14 21c0-1.657 1.343-3 3-3h1c1.657 0 3 1.343 3 3"></path>
+          </svg>
           المستخدمون
         </Button>
         <Button
@@ -435,7 +440,11 @@ export default function UnifiedSidebar({
           }`}
           onClick={() => setActiveView('walls')}
         >
-          <Home className="w-4 h-4 ml-2" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 ml-2">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
           الحوائط
         </Button>
         <Button
@@ -447,7 +456,11 @@ export default function UnifiedSidebar({
           }`}
           onClick={() => setActiveView('rooms')}
         >
-          <Users className="w-4 h-4 ml-2" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 ml-2">
+            <path d="M3 11l9-8 9 8"></path>
+            <path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"></path>
+            <path d="M9 21v-6h6v6"></path>
+          </svg>
           الغرف
         </Button>
         <Button
@@ -459,7 +472,12 @@ export default function UnifiedSidebar({
           }`}
           onClick={() => setActiveView('friends')}
         >
-          <UserPlus className="w-4 h-4 ml-2" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 ml-2">
+            <circle cx="9" cy="7" r="3"></circle>
+            <path d="M2 21c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"></path>
+            <path d="M19 8v6"></path>
+            <path d="M16 11h6"></path>
+          </svg>
           الأصدقاء
         </Button>
       </div>
