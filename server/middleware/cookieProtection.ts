@@ -3,10 +3,10 @@ import crypto from 'crypto';
 import cookieParser from 'cookie-parser';
 
 // إعدادات الكوكيز
-export const cookieOptions = {
+export const cookieOptions: import('express').CookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax' as const,
+  sameSite: (process.env.NODE_ENV === 'production' ? 'strict' : 'lax'),
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 أيام
   path: '/'
 };

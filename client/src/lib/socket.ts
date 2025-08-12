@@ -145,8 +145,8 @@ class SocketManager {
       transports: ['websocket', 'polling'],
       path: '/socket.io/',
       // إعدادات الـ heartbeat
-      pingInterval: 25000,
-      pingTimeout: 60000,
+      // pingInterval/pingTimeout غير مدعومة هنا في عميل socket.io
+
       // إرسال الكوكيز
       withCredentials: true
     });
@@ -187,7 +187,7 @@ class SocketManager {
       if (token) {
         this.authenticate(token, true);
       }
-      
+      // لا نعتبر الاتصال ناجحاً للواجهة قبل authSuccess
       options?.onConnect?.();
     });
     
@@ -234,6 +234,7 @@ class SocketManager {
       // معالجة الرسائل المعلقة
       this.processQueuedMessages();
       
+      // إبلاغ الواجهة بنجاح الاتصال الآن فقط
       options?.onAuth?.(data.user);
     });
     

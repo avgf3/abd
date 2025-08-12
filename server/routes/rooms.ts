@@ -3,8 +3,12 @@ import { roomService } from '../services/roomService';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { requireAuth as requireJwtAuth } from '../middleware/requireAuth';
 
 const router = Router();
+
+// فرض المصادقة على جميع مسارات الغرف
+router.use(requireJwtAuth as any);
 
 // إعداد multer لرفع صور الغرف
 const storage = multer.diskStorage({

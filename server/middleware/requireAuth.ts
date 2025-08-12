@@ -2,11 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { storage } from '../storage';
 
+import type { AuthenticatedUser } from '../types/api';
+
 interface AuthRequest extends Request {
-  user?: {
-    id: number;
-    role: string;
-  };
+  user?: AuthenticatedUser;
 }
 
 /**
@@ -82,8 +81,14 @@ export const requireAuth = async (
     // إضافة معلومات المستخدم إلى الطلب
     req.user = {
       id: user.id,
-      role: user.userType || 'member'
-    };
+      username: user.username,
+      userType: (user.userType as any) || 'member',
+      isOnline: !!user.isOnline,
+      isBanned: !!user.isBanned,
+      isMuted: !!user.isMuted,
+      lastSeen: user.lastSeen ? new Date(user.lastSeen as any) : null,
+      createdAt: user.createdAt ? new Date(user.createdAt as any) : undefined
+    } as AuthenticatedUser;
 
     next();
   } catch (error) {
@@ -123,7 +128,7 @@ export const requireOwnership = async (
     // التحقق من الملكية
     if (req.user.id !== requestedUserId) {
       // السماح للمدراء والمالكين بالوصول
-      if (req.user.role !== 'admin' && req.user.role !== 'owner') {
+      if (req.user.userType !== 'admin' && req.user.userType !== 'owner') {
         return res.status(403).json({ 
           error: 'غير مصرح - لا يمكنك الوصول لموارد مستخدم آخر' 
         });
@@ -151,7 +156,7 @@ export const requireRole = (allowedRoles: string[]) => {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!allowedRoles.includes(req.user.userType)) {
       return res.status(403).json({ 
         error: 'غير مصرح - ليس لديك الصلاحيات المطلوبة' 
       });

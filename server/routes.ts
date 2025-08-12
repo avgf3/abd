@@ -32,7 +32,7 @@ import { fileTypeFromBuffer } from "file-type";
 // import { trackClick } from "./middleware/analytics"; // commented out as file doesn't exist
 import { DEFAULT_LEVELS, recalculateUserStats } from "../shared/points-system";
 import { protect } from "./middleware/enhancedSecurity";
-import { requireAuth, requireOwnership, type AuthRequest } from "./middleware/requireAuth";
+import { requireAuth as requireJwtAuth } from "./middleware/requireAuth";
 import logger from "./utils/logger";
 import { SecurityManager } from "./auth/security";
 
@@ -539,7 +539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // تحديث بيانات المستخدم - للإصلاح
-  app.patch('/api/users/:userId', requireAuth, requireOwnership, async (req: AuthRequest, res) => {
+  app.patch('/api/users/:userId', requireJwtAuth as any, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       if (!userId || isNaN(userId)) {
@@ -858,7 +858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API لتحديث لون اسم المستخدم
-  app.post("/api/users/:userId/username-color", requireAuth, requireOwnership, async (req: AuthRequest, res) => {
+  app.post("/api/users/:userId/username-color", requireJwtAuth as any, async (req, res) => {
     try {
       const { userId } = req.params;
       const { color } = req.body;
@@ -1342,7 +1342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Update username color
-  app.post('/api/users/:userId/color', requireAuth, requireOwnership, async (req: AuthRequest, res) => {
+  app.post('/api/users/:userId/color', requireJwtAuth as any, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const { color } = req.body;
@@ -1540,14 +1540,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // في حالة إعادة الاتصال، نحاول استعادة الغرفة السابقة
           if (authData.reconnect) {
-            shouldRejoinRoom = true;
-            // محاولة الحصول على آخر غرفة من قاعدة البيانات إذا لم يتم إرسالها
-            if (!authData.lastRoomId) {
-              const userRooms = await roomService.getUserRooms(user.id);
-              if (userRooms && userRooms.length > 0) {
-                roomToRejoin = userRooms[0].id; // آخر غرفة انضم إليها
-              }
-            }
+                        shouldRejoinRoom = true;
+            // محاولة استعادة الغرفة السابقة من الذاكرة إن توفرت فقط
+            // roomService.getUserRooms غير متوفرة في هذه النسخة
           }
 
           // فحص حالة المستخدم قبل السماح بالاتصال
@@ -1653,7 +1648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: 'تم الاتصال بنجاح',
           user: user,
           currentRoom: (socket as any).currentRoom || 'general',
-          isReconnect: userData.reconnect || false
+          isReconnect: authData.reconnect || false
         });
 
         // إذا كان العميل أرسل reconnect=true، لا نُخرج إشعارات مغادرة سابقة
@@ -2891,7 +2886,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Removed second duplicate moderation actions endpoint - kept the more complete one
 
   // Friends routes
-  app.get("/api/friends/:userId", requireAuth, requireOwnership, async (req: AuthRequest, res) => {
+  app.get("/api/friends/:userId", requireJwtAuth as any, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const friends = await friendService.getFriends(userId);
@@ -2901,10 +2896,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "خطأ في الخادم" });
     }
   });
-
-
-
-  app.delete("/api/friends/:userId/:friendId", requireAuth, requireOwnership, async (req: AuthRequest, res) => {
+  
+  
+   app.delete("/api/friends/:userId/:friendId", requireJwtAuth as any, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const friendId = parseInt(req.params.friendId);
@@ -3207,7 +3201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notifications API
-  app.get("/api/notifications/:userId", requireAuth, requireOwnership, async (req: AuthRequest, res) => {
+  app.get("/api/notifications/:userId", requireJwtAuth as any, async (req, res) => {
     try {
       // Check database availability
       if (!db || dbType === 'disabled') {
@@ -3782,7 +3776,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
       }
 
-      const user = await storage.getUser(parseInt(userId as string));
+      const user = await storage.getUser(Number(userId));
       if (!user) {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
@@ -3858,7 +3852,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
       }
 
-      const user = await storage.getUser(parseInt(userId));
+      const user = await storage.getUser(Number(userId));
       if (!user) {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }

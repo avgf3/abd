@@ -1,11 +1,15 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { sanitizeInput } from "../security";
+import { requireAuth as requireJwtAuth } from "../middleware/requireAuth";
 
 const router = Router();
 
 // ملاحظة: تم نقل APIs رفع الصور إلى server/routes.ts لتوحيد المسارات
 // جميع عمليات رفع الصور تتم عبر /api/upload/* الآن
+
+// فرض المصادقة على جميع مسارات المستخدمين
+router.use(requireJwtAuth as any);
 
 // Get online users
 router.get("/online", async (req, res) => {
