@@ -110,6 +110,19 @@ router.post('/room/:roomId', async (req, res) => {
       return res.status(404).json({ error: 'الغرفة غير موجودة' });
     }
 
+    // ضمان العضوية في الغرفة قبل الإرسال (لتفادي منع الإرسال بسبب عضوية room_members)
+    const senderIdNum = parseInt(senderId);
+    try {
+      const usersInRoom = await roomService.getRoomUsers(roomId);
+      const isMember = usersInRoom.some(u => u?.id === senderIdNum);
+      if (!isMember) {
+        await roomService.joinRoom(senderIdNum, roomId);
+      }
+    } catch (e) {
+      // نتجاهل أخطاء الانضمام غير الحرجة ونكمل محاولة الإرسال
+      console.warn('تعذر ضمان العضوية قبل إرسال الرسالة:', e);
+    }
+
     // إرسال الرسالة
     const message = await roomMessageService.sendMessage({
       senderId: parseInt(senderId),
