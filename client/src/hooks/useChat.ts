@@ -217,7 +217,14 @@ export const useChat = () => {
 
   // ✅ Memoized current room messages - حل مشكلة الـ performance
   const currentRoomMessages = useMemo(() => {
-    return state.roomMessages[state.currentRoomId] || [];
+    const messages = state.roomMessages[state.currentRoomId] || [];
+    console.log('🔍 Current room messages:', {
+      currentRoomId: state.currentRoomId,
+      messagesCount: messages.length,
+      allRoomKeys: Object.keys(state.roomMessages),
+      allMessageCounts: Object.entries(state.roomMessages).map(([room, msgs]) => ({room, count: msgs.length}))
+    });
+    return messages;
   }, [state.roomMessages, state.currentRoomId]);
 
   // ✅ Memoized online users
@@ -315,11 +322,17 @@ export const useChat = () => {
       // ✅ معالج واحد للرسائل - حذف التضارب
       socketInstance.on('message', (data: any) => {
       try {
+        console.log('📩 Received message event:', data);
         const envelope = data.envelope || data;
         
         switch (envelope.type) {
           case 'newMessage': {
             const { message } = envelope;
+            console.log('📨 Processing newMessage:', {
+              message,
+              currentRoomId: state.currentRoomId,
+              messageRoomId: message?.roomId
+            });
             if (message?.sender && message.content) {
               const roomId = message.roomId || 'general';
               
@@ -334,6 +347,8 @@ export const useChat = () => {
                 roomId,
                 isPrivate: Boolean(message.isPrivate)
               };
+              
+              console.log('💬 Adding message to room:', roomId, chatMessage);
               
               // إضافة الرسالة للغرفة المناسبة
               dispatch({ 
@@ -438,7 +453,9 @@ export const useChat = () => {
           
           case 'roomJoined': {
             if (envelope.roomId) {
+              console.log('🎉 Room joined successfully:', envelope.roomId);
               dispatch({ type: 'SET_CURRENT_ROOM', payload: envelope.roomId });
+              
               // إضافة رسالة نظام بالانضمام للغرفة
               const systemMessage: ChatMessage = {
         id: Date.now(),
@@ -629,6 +646,14 @@ export const useChat = () => {
     };
   }, []);
 
+  // Load room messages when room changes
+  useEffect(() => {
+    if (state.currentRoomId && state.isConnected) {
+      console.log('📚 Loading messages for room:', state.currentRoomId);
+      loadRoomMessages(state.currentRoomId);
+    }
+  }, [state.currentRoomId, state.isConnected, loadRoomMessages]);
+
   // 🔥 SIMPLIFIED Connect function
   const connect = useCallback((user: ChatUser) => {
     dispatch({ type: 'SET_CURRENT_USER', payload: user });
@@ -713,7 +738,14 @@ export const useChat = () => {
 
   // 🔥 SIMPLIFIED Join room function - مع حفظ آخر غرفة
   const joinRoom = useCallback((roomId: string) => {
+    console.log('🚪 Joining room:', {
+      fromRoom: state.currentRoomId,
+      toRoom: roomId,
+      isConnected: socket.current?.connected
+    });
+    
     if (state.currentRoomId === roomId) {
+      console.log('⚠️ Already in room:', roomId);
       return;
     }
 
@@ -725,11 +757,14 @@ export const useChat = () => {
     // loadRoomMessages(roomId);
 
     if (socket.current?.connected) {
+      console.log('📤 Emitting joinRoom event for:', roomId);
       socket.current.emit('joinRoom', { 
         roomId,
         userId: state.currentUser?.id,
         username: state.currentUser?.username 
       });
+    } else {
+      console.error('❌ Socket not connected when trying to join room');
     }
   }, [loadRoomMessages, state.currentRoomId, state.currentUser]);
 
@@ -785,6 +820,12 @@ export const useChat = () => {
         socketSendMessage('privateMessage', messageData);
       }
     } else {
+      console.log('🔵 Sending public message:', {
+        messageData,
+        currentRoomId: state.currentRoomId,
+        isConnected: isSocketConnected(),
+        socketExists: !!socket.current
+      });
       socketSendMessage('publicMessage', messageData);
     }
   }, [state.currentUser, state.currentRoomId]);
