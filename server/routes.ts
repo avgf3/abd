@@ -871,43 +871,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API لتحديث لون اسم المستخدم
-  app.post("/api/users/:userId/username-color", requireAuth, requireOwnership, async (req: AuthRequest, res) => {
-    try {
-      const { userId } = req.params;
-      const { color } = req.body;
-      const userIdNum = parseInt(userId);
-      
-      // التحقق من صحة اللون (hex color)
-      if (!color || !/^#[0-9A-F]{6}$/i.test(color)) {
-        return res.status(400).json({ error: "لون غير صحيح" });
-      }
-      
-      // التحقق من وجود المستخدم
-      const user = await storage.getUser(userIdNum);
-      if (!user) {
-        return res.status(404).json({ error: "المستخدم غير موجود" });
-      }
-      
-      // تحديث لون الاسم
-      await storage.updateUser(userIdNum, { usernameColor: color });
-      
-      // إرسال إشعار WebSocket لتحديث لون الاسم
-      io.emit('usernameColorChanged', {
-        userId: userIdNum,
-        color: color
-      });
-      
-      res.json({ 
-        message: "تم تحديث لون اسم المستخدم بنجاح",
-        color: color
-      });
-      
-    } catch (error) {
-      console.error('خطأ في تحديث لون الاسم:', error);
-      res.status(500).json({ error: "خطأ في تحديث لون الاسم" });
-    }
-  });
+
 
   // إضافة endpoint لفحص حالة المستخدم
   app.get('/api/user-status/:userId', async (req, res) => {
