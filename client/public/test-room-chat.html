@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>اختبار دردشة الغرف</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .status {
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    .connected { background-color: #d4edda; color: #155724; }
+    .disconnected { background-color: #f8d7da; color: #721c24; }
+    .room-selector {
+      margin-bottom: 20px;
+    }
+    .messages {
+      height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 20px;
+      background-color: #f9f9f9;
+    }
+    .message {
+      margin-bottom: 10px;
+      padding: 5px;
+      border-radius: 5px;
+    }
+    .my-message {
+      background-color: #e3f2fd;
+      text-align: left;
+    }
+    .other-message {
+      background-color: #fff3e0;
+    }
+    .system-message {
+      background-color: #f5f5f5;
+      color: #666;
+      font-style: italic;
+      text-align: center;
+    }
+    .input-area {
+      display: flex;
+      gap: 10px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .console {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .console-entry {
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>اختبار دردشة الغرف</h1>
+    
+    <div id="status" class="status disconnected">غير متصل</div>
+    
+    <div class="room-selector">
+      <label>الغرفة الحالية:</label>
+      <select id="roomSelect">
+        <option value="general">العامة</option>
+        <option value="games">الألعاب</option>
+        <option value="tech">التقنية</option>
+      </select>
+      <button onclick="changeRoom()">تغيير الغرفة</button>
+      <span id="currentRoom" style="margin-right: 10px;">الغرفة: general</span>
+    </div>
+    
+    <div id="messages" class="messages"></div>
+    
+    <div class="input-area">
+      <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا..." onkeypress="handleKeyPress(event)">
+      <button onclick="sendMessage()">إرسال</button>
+    </div>
+    
+    <div class="console" id="console">
+      <div class="console-entry">Console output will appear here...</div>
+    </div>
+  </div>
+
+  <script>
+    // Test configuration
+    const API_URL = window.location.origin;
+    let currentUser = null;
+    let currentRoom = 'general';
+    let socket = null;
+
+    // Logging function
+    function log(message, data = null) {
+      const consoleEl = document.getElementById('console');
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = 'console-entry';
+      entry.textContent = `[${timestamp}] ${message}`;
+      if (data) {
+        entry.textContent += ' ' + JSON.stringify(data);
+      }
+      consoleEl.appendChild(entry);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+      console.log(message, data);
+    }
+
+    // Initialize
+    async function init() {
+      log('🚀 Starting initialization...');
+      
+      // Create a test user
+      try {
+        const registerResponse = await fetch(`${API_URL}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: `testuser_${Date.now()}`,
+            password: 'test123456'
+          })
+        });
+        
+        const registerData = await registerResponse.json();
+        log('✅ User registered:', registerData.user?.username);
+        
+        currentUser = registerData.user;
+        
+        // Connect to socket
+        connectSocket(registerData.token);
+        
+      } catch (error) {
+        log('❌ Registration error:', error.message);
+      }
+    }
+
+    // Connect to socket
+    function connectSocket(token) {
+      log('🔌 Connecting to socket...');
+      
+      // Connect using Socket.IO
+      socket = io(API_URL, {
+        transports: ['websocket', 'polling'],
+        auth: { token }
+      });
+      
+      // Socket event handlers
+      socket.on('connect', () => {
+        log('✅ Socket connected');
+        updateStatus(true);
+        
+        // Authenticate
+        socket.emit('auth', { token });
+      });
+      
+      socket.on('authSuccess', (data) => {
+        log('✅ Authentication successful:', data.user?.username);
+        currentUser = data.user;
+        currentRoom = data.currentRoom || 'general';
+        updateCurrentRoom();
+      });
+      
+      socket.on('authError', (error) => {
+        log('❌ Authentication error:', error.message);
+        updateStatus(false);
+      });
+      
+      socket.on('disconnect', () => {
+        log('🔌 Socket disconnected');
+        updateStatus(false);
+      });
+      
+      socket.on('message', (data) => {
+        log('📨 Received message event:', { type: data.type });
+        handleMessage(data);
+      });
+      
+      socket.on('error', (error) => {
+        log('❌ Socket error:', error);
+      });
+    }
+
+    // Handle incoming messages
+    function handleMessage(data) {
+      const messagesEl = document.getElementById('messages');
+      
+      switch(data.type) {
+        case 'newMessage':
+          const message = data.message;
+          log('💬 New message:', {
+            from: message.sender?.username,
+            content: message.content.substring(0, 50),
+            roomId: message.roomId
+          });
+          
+          // Only show messages from current room
+          if (message.roomId === currentRoom) {
+            addMessageToUI(message);
+          }
+          break;
+          
+        case 'roomMessages':
+          log('📚 Received room messages:', {
+            roomId: data.roomId,
+            count: data.messages?.length
+          });
+          if (data.roomId === currentRoom) {
+            messagesEl.innerHTML = '';
+            data.messages?.forEach(msg => addMessageToUI(msg));
+          }
+          break;
+          
+        case 'roomJoined':
+          log('🚪 Joined room:', data.roomId);
+          currentRoom = data.roomId;
+          updateCurrentRoom();
+          messagesEl.innerHTML = '';
+          break;
+          
+        case 'userJoinedRoom':
+          log('👤 User joined room:', {
+            username: data.username,
+            roomId: data.roomId
+          });
+          break;
+          
+        case 'error':
+          log('⚠️ Error:', data.message);
+          alert('خطأ: ' + data.message);
+          break;
+      }
+    }
+
+    // Add message to UI
+    function addMessageToUI(message) {
+      const messagesEl = document.getElementById('messages');
+      const messageEl = document.createElement('div');
+      messageEl.className = 'message';
+      
+      if (message.messageType === 'system') {
+        messageEl.className += ' system-message';
+        messageEl.textContent = message.content;
+      } else {
+        const isMyMessage = message.senderId === currentUser?.id;
+        messageEl.className += isMyMessage ? ' my-message' : ' other-message';
+        messageEl.innerHTML = `
+          <strong>${message.sender?.username || 'Unknown'}:</strong> ${message.content}
+          <small style="color: #666; margin-right: 10px;">${new Date(message.timestamp).toLocaleTimeString()}</small>
+        `;
+      }
+      
+      messagesEl.appendChild(messageEl);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // Send message
+    function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const content = input.value.trim();
+      
+      if (!content || !socket || !currentUser) return;
+      
+      log('📤 Sending message:', {
+        content: content.substring(0, 50),
+        roomId: currentRoom
+      });
+      
+      socket.emit('publicMessage', {
+        content,
+        roomId: currentRoom,
+        messageType: 'text'
+      });
+      
+      input.value = '';
+    }
+
+    // Change room
+    function changeRoom() {
+      const select = document.getElementById('roomSelect');
+      const newRoom = select.value;
+      
+      if (newRoom === currentRoom) {
+        log('⚠️ Already in room:', newRoom);
+        return;
+      }
+      
+      log('🚪 Changing room from', currentRoom, 'to', newRoom);
+      
+      socket.emit('joinRoom', {
+        roomId: newRoom
+      });
+    }
+
+    // Update UI
+    function updateStatus(connected) {
+      const statusEl = document.getElementById('status');
+      statusEl.className = `status ${connected ? 'connected' : 'disconnected'}`;
+      statusEl.textContent = connected ? 'متصل' : 'غير متصل';
+    }
+
+    function updateCurrentRoom() {
+      document.getElementById('currentRoom').textContent = `الغرفة: ${currentRoom}`;
+      document.getElementById('roomSelect').value = currentRoom;
+    }
+
+    function handleKeyPress(event) {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    }
+
+    // Load Socket.IO
+    const script = document.createElement('script');
+    script.src = '/socket.io/socket.io.js';
+    script.onload = init;
+    document.head.appendChild(script);
+  </script>
+</body>
+</html>

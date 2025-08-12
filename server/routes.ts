@@ -1750,6 +1750,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         if (!socket.userId) return;
         
+        console.log('📨 Received publicMessage:', {
+          userId: socket.userId,
+          username: socket.username,
+          data,
+          currentRoom: (socket as any).currentRoom,
+          socketRooms: Array.from(socket.rooms)
+        });
+        
         // التحقق من حالة المستخدم باستخدام نظام الإدارة لضمان دقة الحالة وانتهاء المدة
         const status = await moderationSystem.checkUserStatus(socket.userId);
         if (!status.canChat) {
@@ -1790,6 +1798,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         const sender = await storage.getUser(socket.userId);
+        
+        console.log('📤 Broadcasting message to room:', {
+          roomId,
+          roomChannel: `room_${roomId}`,
+          messageSender: sender?.username,
+          messageContent: sanitizedContent.substring(0, 50) + '...'
+        });
+        
         // إرسال الرسالة مباشرة للمستخدمين في نفس الغرفة لتقليل التأخير الإدراكي
         io.to(`room_${roomId}`).emit('message', { 
           type: 'newMessage',
