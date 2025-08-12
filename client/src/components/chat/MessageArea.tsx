@@ -10,6 +10,8 @@ import type { ChatMessage, ChatUser } from '@/types/chat';
 import { Send, Image as ImageIcon, Smile } from "lucide-react";
 import UserRoleBadge from './UserRoleBadge';
 import { apiRequest } from '@/lib/queryClient';
+import { scrollToBottom, isNearBottom } from '@/utils/scrollUtils';
+import { validateImageFile, readFileAsDataURL } from '@/utils/uploadUtils';
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -62,26 +64,11 @@ export default function MessageArea({
     );
   }, [messages]);
 
-  // Scroll to bottom function - optimized
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
-    // Prefer anchor to ensure we truly reach the bottom even if content height changes
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ 
-        behavior,
-        block: 'end'
-      });
-    } else if (messagesContainerRef.current) {
-      const el = messagesContainerRef.current;
-      el.scrollTo({ top: el.scrollHeight, behavior });
-    }
-  }, []);
+  // تم نقل دالة scrollToBottom إلى utils/scrollUtils.ts لتجنب التكرار
 
   // Track scroll position to know if user is near the bottom
   const handleScroll = useCallback(() => {
-    const el = messagesContainerRef.current;
-    if (!el) return;
-    const threshold = 80; // px
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+    const atBottom = isNearBottom(messagesContainerRef, 80);
     setIsAtBottom(atBottom);
     if (atBottom) setUnreadCount(0);
   }, []);
@@ -97,7 +84,11 @@ export default function MessageArea({
 
     // If first load, or user is at bottom, or the last message was sent by me, autoscroll
     if (prevLen === 0 || isAtBottom || sentByMe) {
-      scrollToBottom(prevLen === 0 ? 'auto' : 'smooth');
+      scrollToBottom({
+        messagesEndRef,
+        messagesContainerRef,
+        behavior: prevLen === 0 ? 'auto' : 'smooth'
+      });
       setUnreadCount(0);
     } else {
       setUnreadCount(count => count + (currLen - prevLen));
@@ -112,7 +103,13 @@ export default function MessageArea({
     // If there are messages on first mount, jump to bottom without animation
     if (validMessages.length > 0) {
       // Delay to allow layout to stabilize
-      const t = setTimeout(() => scrollToBottom('auto'), 0);
+      const t = setTimeout(() => {
+        scrollToBottom({
+          messagesEndRef,
+          messagesContainerRef,
+          behavior: 'auto'
+        });
+      }, 0);
       return () => clearTimeout(t);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -198,31 +195,23 @@ export default function MessageArea({
     inputRef.current?.focus();
   }, []);
 
-  // File upload handler - محسن
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  // File upload handler - محسن باستخدام الدوال الموحدة
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type.startsWith('image/')) {
-      // فحص حجم الملف (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('حجم الصورة كبير جداً. الحد الأقصى 5MB');
-        return;
-      }
+    // التحقق من صحة الملف
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageData = event.target?.result as string;
-        if (imageData) {
-          onSendMessage(imageData, 'image');
-        }
-      };
-      reader.onerror = () => {
-        alert('فشل في قراءة الملف');
-      };
-      reader.readAsDataURL(file);
-    } else {
-      alert('يرجى اختيار ملف صورة صحيح');
+    try {
+      const imageData = await readFileAsDataURL(file);
+      onSendMessage(imageData, 'image');
+    } catch (error) {
+      alert('فشل في قراءة الملف');
     }
 
     // Reset file input
@@ -418,7 +407,14 @@ export default function MessageArea({
         {!isAtBottom && unreadCount > 0 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
             <button
-              onClick={() => { scrollToBottom('smooth'); setUnreadCount(0); }}
+              onClick={() => { 
+                scrollToBottom({
+                  messagesEndRef,
+                  messagesContainerRef,
+                  behavior: 'smooth'
+                }); 
+                setUnreadCount(0); 
+              }}
               className="px-3 py-1 rounded-full text-xs bg-primary text-primary-foreground shadow"
             >
               عرض {unreadCount} رسالة جديدة

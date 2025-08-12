@@ -388,40 +388,6 @@ router.post('/cache/clear', async (req, res) => {
   }
 });
 
-router.post('/private/upload-image', async (req, res) => {
-  try {
-    // هذه النهاية تعتمد على المرفع الموحد في server/routes.ts
-    // سنفترض أن الصورة تم رفعها مسبقاً عبر /api/upload/message-image ونستقبل url هنا
-    const { senderId, receiverId, imageUrl } = req.body as any;
-
-    if (!senderId || !receiverId || !imageUrl) {
-      return res.status(400).json({ error: 'senderId و receiverId و imageUrl مطلوبة' });
-    }
-
-    const message = await roomMessageService.sendMessage({
-      senderId: parseInt(senderId),
-      roomId: 'general',
-      content: imageUrl,
-      messageType: 'image',
-      isPrivate: true,
-      receiverId: parseInt(receiverId)
-    });
-
-    if (!message) {
-      return res.status(500).json({ error: 'فشل في إنشاء رسالة الصورة' });
-    }
-
-    const io = req.app.get('io');
-    if (io) {
-      io.to(String(senderId)).emit('privateMessage', { message });
-      io.to(String(receiverId)).emit('privateMessage', { message });
-    }
-
-    res.json({ success: true, message });
-  } catch (error: any) {
-    console.error('خطأ في إرسال صورة خاصة:', error);
-    res.status(400).json({ error: error.message || 'خطأ في إرسال صورة خاصة' });
-  }
-});
+// تم حذف route مكرر لرفع الصور الخاصة - يتم التعامل معه في النظام الموحد
 
 export default router;
