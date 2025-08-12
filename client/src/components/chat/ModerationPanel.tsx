@@ -241,8 +241,8 @@ export default function ModerationPanel({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[600px]" dir="rtl">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-[700px] max-h-[600px] overflow-hidden" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             🛡️ لوحة الإدارة

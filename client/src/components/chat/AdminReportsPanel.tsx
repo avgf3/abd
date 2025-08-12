@@ -104,8 +104,8 @@ export default function AdminReportsPanel({ isOpen, onClose, currentUser }: Admi
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] max-h-[600px]" dir="rtl">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-[800px] max-h-[600px] overflow-hidden" dir="rtl">
         <DialogHeader>
           <DialogTitle>لوحة إدارة التبليغات</DialogTitle>
           <DialogDescription>
