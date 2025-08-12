@@ -28,7 +28,7 @@ import fs from "fs";
 import bcrypt from "bcrypt";
 import sharp from "sharp";
 import jwt from "jsonwebtoken";
-import fileType from "file-type";
+import { fileTypeFromBuffer } from "file-type";
 // import { trackClick } from "./middleware/analytics"; // commented out as file doesn't exist
 import { DEFAULT_LEVELS, recalculateUserStats } from "../shared/points-system";
 import { protect } from "./middleware/enhancedSecurity";
@@ -267,7 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // فحص نوع الملف الحقيقي باستخدام file-type
       try {
         const fileBuffer = fs.readFileSync(req.file.path);
-        const fileTypeResult = await fileType.fromBuffer(fileBuffer);
+        const fileTypeResult = await fileTypeFromBuffer(fileBuffer);
         
         const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         
@@ -3864,7 +3864,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         try {
           const fileBuffer = await fs.promises.readFile(filePath);
-          const fileTypeResult = await fileType.fromBuffer(fileBuffer);
+          const fileTypeResult = await fileTypeFromBuffer(fileBuffer);
           
           const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
           
