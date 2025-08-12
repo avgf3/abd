@@ -308,6 +308,12 @@ router.post('/:roomId/request-mic', async (req, res) => {
       timestamp: new Date().toISOString()
     });
 
+    // بث معلومات البث المحدثة
+    try {
+      const info = await roomService.getBroadcastInfo(roomId);
+      io?.to(`room_${roomId}`).emit('roomUpdate', { roomId, type: 'broadcastInfo', broadcast: info });
+    } catch {}
+
     res.json({ message: 'تم إرسال طلب الميكروفون' });
   } catch (error: any) {
     console.error('خطأ في طلب الميكروفون:', error);
@@ -338,6 +344,12 @@ router.post('/:roomId/approve-mic/:userId', async (req, res) => {
       approvedBy: parseInt(approvedBy),
       timestamp: new Date().toISOString()
     });
+
+    // بث معلومات البث المحدثة
+    try {
+      const info = await roomService.getBroadcastInfo(roomId);
+      io?.to(`room_${roomId}`).emit('roomUpdate', { roomId, type: 'broadcastInfo', broadcast: info });
+    } catch {}
 
     res.json({ message: 'تمت الموافقة على الميكروفون' });
   } catch (error: any) {
@@ -370,6 +382,12 @@ router.post('/:roomId/reject-mic/:userId', async (req, res) => {
       timestamp: new Date().toISOString()
     });
 
+    // بث معلومات البث المحدثة
+    try {
+      const info = await roomService.getBroadcastInfo(roomId);
+      io?.to(`room_${roomId}`).emit('roomUpdate', { roomId, type: 'broadcastInfo', broadcast: info });
+    } catch {}
+
     res.json({ message: 'تم رفض طلب الميكروفون' });
   } catch (error: any) {
     console.error('خطأ في رفض الميكروفون:', error);
@@ -400,6 +418,12 @@ router.post('/:roomId/remove-speaker/:userId', async (req, res) => {
       removedBy: parseInt(removedBy),
       timestamp: new Date().toISOString()
     });
+
+    // بث معلومات البث المحدثة
+    try {
+      const info = await roomService.getBroadcastInfo(roomId);
+      io?.to(`room_${roomId}`).emit('roomUpdate', { roomId, type: 'broadcastInfo', broadcast: info });
+    } catch {}
 
     res.json({ message: 'تم إزالة المتحدث' });
   } catch (error: any) {
