@@ -260,6 +260,7 @@ export const useChat = () => {
 
       // Track ping interval to avoid leaks
     const pingIntervalRef = useRef<number | null>(null);
+    const isAuthenticatedRef = useRef<boolean>(false);
     
       // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
     const setupSocketListeners = useCallback((socketInstance: Socket) => {
@@ -294,10 +295,13 @@ export const useChat = () => {
 
       // معالج نجاح المصادقة
       socketInstance.on('authSuccess', (data: any) => {
+        isAuthenticatedRef.current = true;
         dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
         dispatch({ type: 'SET_LOADING', payload: false });
         // ابدأ ping بعد المصادقة
         startPing();
+        // طلب قائمة المتصلين مباشرة بعد المصادقة لتجنب الإرسال قبل auth
+        try { socketInstance.emit('requestOnlineUsers'); } catch {}
         
         // تحديث الغرفة الحالية إذا تم إعادة الانضمام لغرفة مختلفة
         if (data.currentRoom && data.currentRoom !== state.currentRoomId) {
@@ -307,6 +311,7 @@ export const useChat = () => {
 
       // معالج خطأ المصادقة
       socketInstance.on('authError', (data: any) => {
+        isAuthenticatedRef.current = false;
         console.error('❌ خطأ في المصادقة:', data.message);
         dispatch({ type: 'SET_CONNECTION_ERROR', payload: data.message || 'فشلت المصادقة' });
         dispatch({ type: 'SET_LOADING', payload: false });
@@ -461,7 +466,9 @@ export const useChat = () => {
               
               // 🆕 طلب قائمة المتصلين في الغرفة الجديدة
               setTimeout(() => {
-                socketInstance.emit('requestOnlineUsers');
+                if (isAuthenticatedRef.current) {
+                  socketInstance.emit('requestOnlineUsers');
+                }
               }, 500);
             }
             break;
@@ -523,21 +530,19 @@ export const useChat = () => {
 
       // 🆕 طلب قائمة المتصلين بشكل دوري
       const requestOnlineUsers = () => {
-        if (socketInstance.connected) {
+        if (socketInstance.connected && isAuthenticatedRef.current) {
           socketInstance.emit('requestOnlineUsers');
         }
       };
 
-      // طلب قائمة المتصلين عند الاتصال
-      socketInstance.on('connect', () => {
-        setTimeout(requestOnlineUsers, 1000); // انتظار ثانية للتأكد من المصادقة
-      });
+      // طلب قائمة المتصلين سيتم تشغيله بعد authSuccess مباشرة
 
       // طلب قائمة المتصلين كل 30 ثانية
       const onlineUsersInterval = setInterval(requestOnlineUsers, 30000);
 
       // تنظيف عند فك الاتصال
       socketInstance.on('disconnect', () => {
+        isAuthenticatedRef.current = false;
         clearInterval(onlineUsersInterval);
       });
 
