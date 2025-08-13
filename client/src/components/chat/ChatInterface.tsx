@@ -11,7 +11,7 @@ import AdminReportsPanel from './AdminReportsPanel';
 import NotificationPanel from './NotificationPanel';
 import UsernameColorPicker from '@/components/profile/UsernameColorPicker';
 
-import MessagesPanel from './MessagesPanel';
+
 import MessageAlert from './MessageAlert';
 import ModerationPanel from './ModerationPanel';
 import ReportsLog from '../moderation/ReportsLog';
@@ -25,6 +25,7 @@ import WelcomeNotification from './WelcomeNotification';
 import ThemeSelector from './ThemeSelector';
 // import RoomComponent from './RoomComponent';
 import { useRoomManager } from '@/hooks/useRoomManager';
+import DirectMessagesPanel from '@/components/private-messages/DirectMessagesPanel';
 
 import { Button } from '@/components/ui/button';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
@@ -113,6 +114,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const [showMessages, setShowMessages] = useState(false);
+  const [showDirectMessages, setShowDirectMessages] = useState(false);
   const [showModerationPanel, setShowModerationPanel] = useState(false);
   const [showOwnerPanel, setShowOwnerPanel] = useState(false);
   const [showReportsLog, setShowReportsLog] = useState(false);
@@ -186,6 +188,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       // تم تعطيل واجهة الخاص القديمة؛ التحميل لم يعد متاحاً هنا
     } catch {}
     closeUserPopup();
+    setShowDirectMessages(true);
   };
 
   const closePrivateMessage = () => {
@@ -380,7 +383,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
-            onClick={() => setShowMessages(true)}
+            onClick={() => setShowDirectMessages(true)}
             title="الرسائل"
           >
             <span style={{ display: 'flex', alignItems: 'center' }}>
@@ -669,17 +672,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
 
 
-      {showMessages && (
-        <MessagesPanel
-          isOpen={showMessages}
-          onClose={() => setShowMessages(false)}
-          currentUser={chat.currentUser}
-          privateConversations={chat.privateConversations}
-          onlineUsers={chat.onlineUsers}
-          onStartPrivateChat={(user) => {
-            setShowMessages(false);
-            setTimeout(() => setSelectedPrivateUser(user), 0);
-          }}
+
+      {showDirectMessages && (
+        <DirectMessagesPanel
+          isOpen={showDirectMessages}
+          onClose={() => setShowDirectMessages(false)}
+          initialParticipantId={selectedPrivateUser?.id}
         />
       )}
 
@@ -781,7 +779,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         isOpen={newMessageAlert.show}
         sender={newMessageAlert.sender}
         onClose={() => setNewMessageAlert({ show: false, sender: null })}
-        onOpenMessages={() => setShowMessages(true)}
+        onOpenMessages={() => setShowDirectMessages(true)}
       />
 
       {/* إشعار الترحيب */}
