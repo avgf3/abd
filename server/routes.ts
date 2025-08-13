@@ -1389,6 +1389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     connectionTimeout = setTimeout(() => {
       if (!isAuthenticated) {
         console.warn(`⚠️ انتهت مهلة المصادقة للاتصال ${socket.id}`);
+        socket.emit('error', { type: 'error', message: 'انتهت مهلة المصادقة', action: 'auth_timeout' });
         socket.emit('message', { type: 'error', message: 'انتهت مهلة المصادقة' });
         socket.disconnect(true);
       }
@@ -1482,10 +1483,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return;
           }
 
-          // لا نسمح بالمصادقة عبر userId لمستخدم غير ضيف ما لم تكن لديه جلسة فعّالة (تم تسجيل الدخول عبر API)
-          if (user.userType !== 'guest' && !user.isOnline) {
+          // السماح بالمصادقة للمستخدمين المسجلين حتى لو كانت حالة isOnline = false في حال إعادة الاتصال أو ضمن فترة السماح
+          const isReconnect = Boolean((userData as any)?.reconnect);
+          const hasPendingGrace = pendingDisconnects.has(user.id);
+          if (user.userType !== 'guest' && !user.isOnline && !(isReconnect || hasPendingGrace)) {
             console.warn('محاولة دخول عبر Socket بدون جلسة فعالة', { userId: user.id, socketId: socket.id });
-            socket.emit('error', { message: 'يرجى تسجيل الدخول أولاً' });
+            socket.emit('error', { message: 'يرجى تسجيل الدخول أولاً', action: 'invalid_session' });
+            try { socket.disconnect(true); } catch {}
             return;
           }
         } 
@@ -1536,17 +1540,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (socket as CustomSocket).isAuthenticated = true;
         isAuthenticated = true;
 
-        // الانضمام لغرفة المستخدم الخاصة لاستقبال الرسائل الخاصة
-        try { socket.join(user.id.toString()); } catch {}
-        
-        // تنظيف timeout المصادقة
-        if (connectionTimeout) {
-          clearTimeout(connectionTimeout);
-          connectionTimeout = null;
-        }
-        
-        // بدء heartbeat
-        startHeartbeat();
+                 // الانضمام لغرفة المستخدم الخاصة لاستقبال الرسائل الخاصة
+         try { socket.join(user.id.toString()); } catch {}
+         
+         // تنظيف timeout المصادقة
+         if (connectionTimeout) {
+           clearTimeout(connectionTimeout);
+           connectionTimeout = null;
+         }
+         
+         // بدء heartbeat
+         startHeartbeat();
+         
+         // أرسل joinRoom تلقائياً للغرفة العامة إذا لم يُرسل من العميل بعد الاتصال
+         try {
+           const currentRoom = (socket as any).currentRoom;
+           if (!currentRoom) {
+             await handleRoomJoin(socket as CustomSocket, user.id, user.username, 'general');
+           }
+         } catch {}
+
 
         // إذا كان هناك فصل قيد الانتظار ضمن فترة السماح، قم بإلغائه
         if (pendingDisconnects.has(user.id)) {
@@ -1571,8 +1584,6 @@ if (!existing) {
         // تحديث حالة المستخدم إلى متصل
         try {
           await storage.setUserOnlineStatus(user.id, true);
-          // انتظار قصير للتأكد من التحديث في قاعدة البيانات
-          await new Promise(resolve => setTimeout(resolve, 100));
         } catch (updateError) {
           console.error('خطأ في تحديث حالة المستخدم:', updateError);
         }
