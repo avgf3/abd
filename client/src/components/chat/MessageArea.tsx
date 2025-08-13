@@ -298,7 +298,7 @@ export default function MessageArea({
   }, []);
 
   return (
-    <section className="flex-1 flex flex-col bg-white">
+    <section className="flex-1 flex flex-col bg-white min-h-0">
       {/* Room Header */}
       <div className={`bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 ${compactHeader ? 'p-2' : 'p-4'}`}>
         <div className="flex items-center gap-3">

@@ -47,7 +47,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAdminReports, setShowAdminReports] = useState(false);
-  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>('users'); // إظهار المستخدمين افتراضياً
+  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>(() => (typeof window !== 'undefined' && window.innerWidth < 768 ? 'hidden' : 'users')); // إظهار المستخدمين افتراضياً على الشاشات الكبيرة وإخفاؤه على الجوال
   
   // 🚀 إدارة الغرف عبر hook موحّد محسن
   const {
@@ -303,10 +303,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   return (
-      <div className="h-screen flex flex-col" onClick={closeUserPopup}>
+      <div className="min-h-[100dvh] flex flex-col" onClick={closeUserPopup}>
       {/* Header - بدون التبويبات الأربعة */}
-      <header className="bg-secondary py-4 px-6 flex justify-between items-center shadow-2xl border-b border-accent">
-        <div className="flex gap-3">
+      <header className="bg-secondary py-3 px-3 sm:py-4 sm:px-6 flex flex-wrap gap-2 justify-between items-center shadow-2xl border-b border-accent">
+        <div className="flex gap-3 overflow-x-auto max-w-full pr-2">
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowSettings(!showSettings)}
@@ -409,19 +409,19 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             إشعارات
           </Button>
         </div>
-        <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
           <div className="text-2xl">💬</div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-xl sm:text-2xl font-bold text-white truncate">
             Arabic<span className="text-primary">Chat</span>
           </div>
         </div>
       </header>
       
       {/* Main Content */}
-      <main className="flex flex-1 overflow-hidden min-h-0">
+      <main className="flex flex-1 overflow-hidden min-h-0 flex-col sm:flex-row">
         {/* الشريط الجانبي - يظهر فقط عندما يكون activeView ليس 'hidden' */}
         {activeView !== 'hidden' && (
-          <div className={`${activeView === 'walls' ? 'w-96' : activeView === 'friends' ? 'w-80' : 'w-64'} transition-all duration-300`}>
+          <div className={`${activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full shrink-0 transition-all duration-300`}>
             <UnifiedSidebar 
               users={chat.onlineUsers}
               onUserClick={handleUserClick}
@@ -495,8 +495,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       </main>
 
       {/* Footer - مع التبويبات الأربعة المنقولة إلى الجهة اليمنى */}
-      <footer className="bg-secondary py-4 px-6 flex justify-start items-center shadow-2xl border-t border-accent">
-        <div className="flex gap-3">
+      <footer className="bg-secondary py-3 px-3 sm:py-4 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent">
+        <div className="flex gap-2 sm:gap-3 overflow-x-auto max-w-full">
           {/* الحوائط */}
           <Button 
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
