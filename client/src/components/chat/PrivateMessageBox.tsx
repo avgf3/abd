@@ -67,7 +67,7 @@ export default function PrivateMessageBox({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="relative max-w-md max-h-[500px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl overflow-hidden">
+      <DialogContent className="relative z-[12000] w-[90vw] max-w-md max-h-[80vh] bg-white text-gray-900 border border-gray-200 shadow-2xl rounded-xl overflow-hidden">
         <DialogHeader className="border-b border-accent p-3">
           <div className="flex items-center gap-2">
             <img
@@ -83,7 +83,7 @@ export default function PrivateMessageBox({
           </div>
         </DialogHeader>
 
-        <div ref={containerRef} className="h-[280px] w-full p-4 overflow-y-auto bg-white/60">
+        <div ref={containerRef} className="h-[50vh] w-full p-4 overflow-y-auto bg-white">
           <div className="space-y-3">
             {sortedMessages.length === 0 && (
               <div className="text-center py-10 text-muted-foreground">
@@ -131,17 +131,21 @@ export default function PrivateMessageBox({
           </div>
         </div>
 
-        <div className="flex gap-2 p-4 border-t border-accent bg-gradient-to-r from-secondary to-accent">
-          <Input
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="اكتب رسالتك..."
-            className="flex-1 bg-white border border-border text-foreground placeholder:text-muted-foreground"
-          />
-          <Button onClick={handleSend} disabled={!messageText.trim()} className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium">
-            ارسال
-          </Button>
+        <div className="flex gap-2 p-4 border-t border-gray-200 bg-white">
+                    <Input
+             value={messageText}
+             onChange={(e) => setMessageText(e.target.value)}
+             onKeyDown={handleKeyDown}
+             placeholder="اكتب رسالتك..."
+             className="flex-1 bg-white border border-border text-foreground placeholder:text-muted-foreground"
+           />
+           <Button
+             onClick={handleSend}
+             disabled={!messageText.trim()}
+             className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium"
+           >
+             ارسال
+           </Button>
         </div>
       </DialogContent>
     </Dialog>
