@@ -755,8 +755,9 @@ export const useChat = () => {
     };
 
     if (receiverId) {
-      // أرسل عبر REST الموحد لضمان الحفظ والبث
-      apiRequest('/api/messages', { method: 'POST', body: messageData }).catch(() => {});
+      // أرسل عبر REST لضمان الحفظ والبث عبر مسار الغرفة
+      const endpoint = `/api/messages/room/${messageData.roomId}`;
+      apiRequest(endpoint, { method: 'POST', body: messageData }).catch(() => {});
     } else {
       socket.current.emit('publicMessage', messageData);
     }
