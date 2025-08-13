@@ -323,9 +323,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   return (
-      <div className="min-h-[100dvh] flex flex-col" onClick={closeUserPopup}>
+      <div className="min-h-[100dvh] flex flex-col app-shell" onClick={closeUserPopup}>
       {/* Header - بدون التبويبات الأربعة */}
-      <header className="sticky top-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex flex-wrap gap-2 justify-between items-center shadow-2xl border-b border-accent">
+      <header className="sticky top-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex flex-wrap gap-2 justify-between items-center shadow-2xl border-b border-accent topbar-white">
         <div className="flex gap-3 overflow-x-auto max-w-full pr-2">
           <Button
             className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
@@ -454,7 +454,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* الشعار بجانب الإشعارات */}
           <div className="flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-primary" />
-            <div className="text-lg sm:text-xl font-bold text-white truncate">
+                         <div className="text-lg sm:text-xl font-bold text-white truncate tabs-white">
               Arabic<span className="text-primary">Chat</span>
             </div>
           </div>
@@ -462,7 +462,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       </header>
       
       {/* Main Content */}
-      <main className="flex flex-1 overflow-hidden min-h-0 flex-col sm:flex-row">
+      <main className="flex flex-1 overflow-hidden min-h-0 flex-col sm:flex-row app-main-scroll">
         {/* الشريط الجانبي - على الجوال يعرض بملء الشاشة عند اختيار التبويب */}
         {activeView !== 'hidden' && (
           <div className={`${isMobile ? 'w-full' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full shrink-0 transition-all duration-300`}>
@@ -539,7 +539,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
        </main>
 
       {/* Footer - تبويبات سفلية. على الجوال: تفتح بملء الشاشة، وعلى الشاشات الكبيرة: تظهر كلوحة جانبية قابلة للإخفاء */}
-      <footer className="sticky bottom-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent">
+      <footer className="sticky bottom-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent bottombar-white">
         <div className="flex gap-2 sm:gap-3 overflow-x-auto max-w-full">
           {/* الحوائط */}
                      <Button 
@@ -549,7 +549,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
              onClick={() => setActiveView(isMobile ? 'walls' : (activeView === 'walls' ? 'hidden' : 'walls'))}
              title="الحوائط"
            >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Walls">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Walls">
               <line x1="3" y1="6" x2="21" y2="6"></line>
               <line x1="3" y1="12" x2="21" y2="12"></line>
               <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -565,7 +565,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
              onClick={() => setActiveView(isMobile ? 'users' : (activeView === 'users' ? 'hidden' : 'users'))}
              title="المستخدمون المتصلون"
            >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Users">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Users">
               <circle cx="9" cy="7" r="3"></circle>
               <path d="M2 21c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"></path>
               <circle cx="17" cy="7" r="3"></circle>
@@ -582,7 +582,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClick={() => setActiveView(isMobile ? 'rooms' : (activeView === 'rooms' ? 'hidden' : 'rooms'))}
             title="الغرف"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Rooms">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Rooms">
               <path d="M3 11l9-8 9 8"></path>
               <path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"></path>
               <path d="M9 21v-6h6v6"></path>
@@ -598,7 +598,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClick={() => setActiveView(isMobile ? 'friends' : (activeView === 'friends' ? 'hidden' : 'friends'))}
             title="الأصدقاء"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Friends">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Friends">
               <circle cx="9" cy="7" r="3"></circle>
               <path d="M2 21c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"></path>
               <path d="M19 8v6"></path>

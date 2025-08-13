@@ -629,3 +629,37 @@ body.ltr {
   /* Ensure wheel events work properly */
   touch-action: auto;
 }
+
+/* Global white theming for top/bottom menus and tabs */
+.topbar-white, .bottombar-white, .tabs-white,
+.topbar-white *, .bottombar-white *, .tabs-white * {
+  color: #fff !important;
+}
+.topbar-white svg, .bottombar-white svg, .tabs-white svg,
+.topbar-white [class*='icon'], .bottombar-white [class*='icon'] {
+  color: #fff !important;
+  fill: #fff !important;
+  stroke: #fff !important;
+}
+
+/* Force inline SVGs to render in white without changing SVG files */
+svg[fill]:not([data-keep-color]), svg path[fill]:not([data-keep-color]), svg use:not([data-keep-color]) {
+  fill: #fff !important;
+}
+svg[stroke]:not([data-keep-color]), svg path[stroke]:not([data-keep-color]) {
+  stroke: #fff !important;
+}
+
+/* Confine scrolling to main content panes, prevent the whole page from scrolling */
+html, body, #root { height: 100%; overflow: hidden; }
+.app-shell { height: 100%; display: flex; flex-direction: column; }
+.app-main-scroll { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; }
+.app-panel-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+
+/* Make message input stay at bottom; chat list scrolls */
+.chat-container { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.chat-messages-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.chat-input-sticky { position: sticky; bottom: 0; z-index: 10; }
+
+/* Keep svg designs intact but white for aesthetics */
+.white-svg { color: #fff !important; fill: #fff !important; stroke: #fff !important; }

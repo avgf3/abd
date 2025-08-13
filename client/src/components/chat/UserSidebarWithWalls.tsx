@@ -411,7 +411,7 @@ export default function UnifiedSidebar({
   // تم نقل دالة formatTimeAgo إلى utils/timeUtils.ts (تستخدم من الاستيراد أعلاه)
 
   return (
-    <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col min-h-0">
+    <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col min-h-0 app-panel-scroll">
       {/* Toggle Buttons - always visible now */}
       <div className="flex border-b border-gray-200">
         <Button
