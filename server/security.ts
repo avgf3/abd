@@ -267,7 +267,7 @@ export function sanitizeInput(input: string): string {
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
     .replace(/javascript:/gi, '') // Remove javascript: protocols
     .replace(/on\w+\s*=/gi, '') // Remove event handlers
-    .slice(0, 1000); // Limit length
+    .slice(0, 5000); // Allow larger payloads for data:image URLs and emojis
 }
 
 // Check if IP is blocked
@@ -292,7 +292,7 @@ export function validateSession(session: any): boolean {
 }
 
 export const SecurityConfig = {
-  MAX_MESSAGE_LENGTH: 1000,
+  MAX_MESSAGE_LENGTH: 5000,
   MAX_USERNAME_LENGTH: 50,
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
   ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],

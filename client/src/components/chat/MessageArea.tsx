@@ -10,6 +10,7 @@ import type { ChatMessage, ChatUser } from '@/types/chat';
 import { Send, Image as ImageIcon, Smile } from "lucide-react";
 import UserRoleBadge from './UserRoleBadge';
 import { apiRequest } from '@/lib/queryClient';
+import { api } from '@/lib/queryClient';
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -21,6 +22,7 @@ interface MessageAreaProps {
   onUserClick?: (event: React.MouseEvent, user: ChatUser) => void;
   onlineUsers?: ChatUser[]; // إضافة قائمة المستخدمين المتصلين للمنشن
   currentRoomName?: string; // اسم الغرفة الحالية
+  currentRoomId?: string; // معرف الغرفة الحالية
 }
 
 export default function MessageArea({ 
@@ -32,7 +34,8 @@ export default function MessageArea({
   onReportMessage,
   onUserClick,
   onlineUsers = [],
-  currentRoomName = 'الدردشة العامة'
+  currentRoomName = 'الدردشة العامة',
+  currentRoomId = 'general'
 }: MessageAreaProps) {
   const [messageText, setMessageText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -199,37 +202,38 @@ export default function MessageArea({
   }, []);
 
   // File upload handler - محسن
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !currentUser) return;
 
-    if (file.type.startsWith('image/')) {
-      // فحص حجم الملف (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('حجم الصورة كبير جداً. الحد الأقصى 5MB');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageData = event.target?.result as string;
-        if (imageData) {
-          onSendMessage(imageData, 'image');
-        }
-      };
-      reader.onerror = () => {
-        alert('فشل في قراءة الملف');
-      };
-      reader.readAsDataURL(file);
-    } else {
+    if (!file.type.startsWith('image/')) {
       alert('يرجى اختيار ملف صورة صحيح');
+      fileInputRef.current && (fileInputRef.current.value = '');
+      return;
     }
 
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (file.size > 5 * 1024 * 1024) {
+      alert('حجم الصورة كبير جداً. الحد الأقصى 5MB');
+      fileInputRef.current && (fileInputRef.current.value = '');
+      return;
     }
-  }, [onSendMessage]);
+
+    try {
+      const form = new FormData();
+      form.append('image', file);
+      form.append('senderId', String(currentUser.id));
+      form.append('roomId', currentRoomId || 'general');
+      await api.upload('/api/upload/message-image', form, { timeout: 60000 });
+      // سيتم بث الرسالة عبر الـ socket من الخادم فلا داعي لاستدعاء onSendMessage محلياً
+    } catch (err) {
+      console.error('رفع الصورة فشل:', err);
+      alert('تعذر رفع الصورة، حاول مرة أخرى');
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [currentUser, currentRoomId]);
 
   // تم نقل دالة formatTime إلى utils/timeUtils.ts لتجنب التكرار
 
@@ -431,7 +435,7 @@ export default function MessageArea({
       </div>
       
       {/* Message Input */}
-      <div className="p-4 bg-gray-50 border-t">
+      <div className="p-4 bg-white border-t">
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
           <div className="mb-2 text-xs text-gray-500 animate-pulse">
@@ -470,17 +474,17 @@ export default function MessageArea({
           </Button>
           
           {/* Message Input */}
-          <Input
-            ref={inputRef}
-            value={messageText}
-            onChange={handleMessageChange}
-            onKeyPress={handleKeyPress}
-            placeholder="اكتب رسالتك هنا..."
-            className="flex-1 resize-none"
-            disabled={!currentUser}
-            maxLength={1000}
-            autoComplete="off"
-          />
+                    <Input
+             ref={inputRef}
+             value={messageText}
+             onChange={handleMessageChange}
+             onKeyPress={handleKeyPress}
+             placeholder="اكتب رسالتك هنا..."
+             className="flex-1 resize-none bg-white text-gray-900 placeholder:text-gray-500 ring-offset-white"
+             disabled={!currentUser}
+             maxLength={1000}
+             autoComplete="off"
+           />
           
           {/* Send Button */}
           <Button

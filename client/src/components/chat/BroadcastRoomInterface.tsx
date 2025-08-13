@@ -695,6 +695,7 @@ export default function BroadcastRoomInterface({
           onUserClick={onUserClick}
           onlineUsers={onlineUsers}
           currentRoomName={room?.name || 'غرفة البث'}
+          currentRoomId={room?.id}
         />
       </div>
     </div>
