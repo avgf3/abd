@@ -1831,7 +1831,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
             {localUser?.id !== currentUser?.id && (
               <div className="profile-buttons">
                 <button onClick={() => onReportUser?.(localUser)}>🚩 تبليغ</button>
-                <button onClick={() => onIgnoreUser?.(localUser?.id || 0)}>🚫 تجاهل</button>
+                <button onClick={() => onIgnoreUser?.(localUser?.id || 0)}>🚫 تجاهل (لن ترى رسائله ولن يستطيع مراسلتك)</button>
                 <button onClick={() => onPrivateMessage?.(localUser)}>💬 محادثة</button>
                 <button onClick={() => onAddFriend?.(localUser)}>👥 اضافة صديق</button>
               </div>

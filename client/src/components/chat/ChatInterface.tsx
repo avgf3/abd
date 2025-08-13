@@ -118,6 +118,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showReportsLog, setShowReportsLog] = useState(false);
   const [showActiveActions, setShowActiveActions] = useState(false);
   const [showPromotePanel, setShowPromotePanel] = useState(false);
+  const [showIgnoredUsers, setShowIgnoredUsers] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [showUsernameColorPicker, setShowUsernameColorPicker] = useState(false);
   const [newMessageAlert, setNewMessageAlert] = useState<{
@@ -214,7 +215,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   const handleIgnoreUser = (user: ChatUser) => {
     chat.ignoreUser(user.id);
-    showSuccessToast(`تم تجاهل المستخدم ${user.username} - لن ترى رسائله بعد الآن`, "تم التجاهل");
+    showSuccessToast(`تم تجاهل ${user.username}. لن ترى رسائله العامة أو الخاصة ولن يستطيع إرسال طلب صداقة لك.`, "تم التجاهل");
     closeUserPopup();
   };
 
@@ -456,6 +457,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onlineUsers={chat.onlineUsers}
               currentRoomName={currentRoom?.name || 'الدردشة العامة'}
               currentRoomId={chat.currentRoomId}
+              ignoredUserIds={chat.ignoredUsers}
             />
           );
         })()}
@@ -614,6 +616,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               setShowUsernameColorPicker(true);
               setShowSettings(false);
             }}
+            onOpenIgnoredUsers={() => {
+              setShowIgnoredUsers(true);
+              setShowSettings(false);
+            }}
             currentUser={chat.currentUser}
           />
         )}
@@ -765,6 +771,42 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* إشعار الترحيب */}
       {chat.currentUser && <WelcomeNotification user={chat.currentUser} />}
+
+      {showIgnoredUsers && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-bold">قائمة المتجاهلين</h3>
+          <button className="text-gray-500 hover:text-gray-700" onClick={() => setShowIgnoredUsers(false)}>✖️</button>
+        </div>
+        <div className="space-y-2 max-h-80 overflow-y-auto">
+          {Array.from(chat.ignoredUsers || new Set()).length === 0 && (
+            <div className="text-sm text-gray-500">لا يوجد مستخدمون متجاهلون</div>
+          )}
+          {Array.from(chat.ignoredUsers || new Set()).map((ignoredId) => {
+            const u = chat.onlineUsers.find(u => u.id === ignoredId);
+            return (
+              <div key={ignoredId} className="flex items-center justify-between border p-2 rounded">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">#{ignoredId}</span>
+                  <span className="text-sm text-gray-600">{u?.username || 'مستخدم'}</span>
+                </div>
+                <button
+                  className="text-blue-600 hover:underline text-sm"
+                  onClick={() => chat.unignoreUser(ignoredId)}
+                >
+                  إلغاء التجاهل
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-4 flex justify-end">
+          <button className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300" onClick={() => setShowIgnoredUsers(false)}>إغلاق</button>
+        </div>
+      </div>
+    </div>
+  )}
 
     </div>
   );
