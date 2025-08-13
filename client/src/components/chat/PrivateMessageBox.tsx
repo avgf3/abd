@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { formatTime } from '@/utils/timeUtils';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
+import { motion } from 'framer-motion';
 
 interface PrivateMessageBoxProps {
   isOpen: boolean;
@@ -67,7 +68,8 @@ export default function PrivateMessageBox({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="relative z-[12000] w-[90vw] max-w-md max-h-[80vh] bg-white text-gray-900 border border-gray-200 shadow-2xl rounded-xl overflow-hidden">
+      <DialogContent className="p-0 bg-transparent border-none shadow-none">
+        <motion.div drag dragMomentum={false} className="relative z-[12000] w-[90vw] max-w-md max-h-[80vh] bg-white text-gray-900 border border-gray-200 shadow-2xl rounded-xl overflow-hidden cursor-grab active:cursor-grabbing">
         <DialogHeader className="border-b border-accent p-3">
           <div className="flex items-center gap-2">
             <img
@@ -147,6 +149,7 @@ export default function PrivateMessageBox({
              ارسال
            </Button>
         </div>
+        </motion.div>
       </DialogContent>
     </Dialog>
   );
