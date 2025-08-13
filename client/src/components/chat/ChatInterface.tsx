@@ -29,6 +29,13 @@ import { useRoomManager } from '@/hooks/useRoomManager';
 // import DirectMessagesPanel from '@/components/private-messages/DirectMessagesPanel';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import { Menu } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { useChat } from '@/hooks/useChat';
@@ -47,7 +54,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAdminReports, setShowAdminReports] = useState(false);
-  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>(() => (typeof window !== 'undefined' && window.innerWidth < 768 ? 'hidden' : 'users')); // إظهار المستخدمين افتراضياً على الشاشات الكبيرة وإخفاؤه على الجوال
+  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>(() => (typeof window !== 'undefined' && window.innerWidth < 768 ? 'hidden' : 'users'));
+  const isMobile = useIsMobile();
+  const [showAddRoomDialog, setShowAddRoomDialog] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
+  const [newRoomDescription, setNewRoomDescription] = useState('');
+  const [newRoomImage, setNewRoomImage] = useState<File | null>(null);
   
   // 🚀 إدارة الغرف عبر hook موحّد محسن
   const {
@@ -110,8 +122,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       console.error('خطأ في حذف الغرفة:', error);
       showErrorToast('فشل في حذف الغرفة', 'خطأ');
     }
-  }, [chat, deleteRoomViaManager, showSuccessToast, showErrorToast]);
-
+    }, [chat, deleteRoomViaManager, showSuccessToast, showErrorToast]);
+  
+  const submitNewRoom = useCallback(async () => {
+    await handleAddRoom({ name: newRoomName, description: newRoomDescription, image: newRoomImage });
+    setShowAddRoomDialog(false);
+    setNewRoomName('');
+    setNewRoomDescription('');
+    setNewRoomImage(null);
+  }, [handleAddRoom, newRoomName, newRoomDescription, newRoomImage]);
+  
   const [showNotifications, setShowNotifications] = useState(false);
 
   const [showMessages, setShowMessages] = useState(false);
@@ -315,6 +335,25 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             إعدادات
           </Button>
 
+          {/* قائمة ثلاث شرائط للمالك */}
+          {chat.currentUser && chat.currentUser.userType === 'owner' && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2">
+                  <Menu className="w-5 h-5" />
+                  المزيد
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={8}>
+                <DropdownMenuLabel>إجراءات</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setShowAddRoomDialog(true)}>
+                  إضافة غرفة جديدة
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
           {/* زر خاص بالمالك فقط */}
           {chat.currentUser && chat.currentUser.userType === 'owner' && (
             <Button 
@@ -419,9 +458,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       
       {/* Main Content */}
       <main className="flex flex-1 overflow-hidden min-h-0 flex-col sm:flex-row">
-        {/* الشريط الجانبي - يظهر فقط عندما يكون activeView ليس 'hidden' */}
+        {/* الشريط الجانبي - على الجوال يعرض بملء الشاشة عند اختيار التبويب */}
         {activeView !== 'hidden' && (
-          <div className={`${activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full shrink-0 transition-all duration-300`}>
+          <div className={`${isMobile ? 'w-full' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full shrink-0 transition-all duration-300`}>
             <UnifiedSidebar 
               users={chat.onlineUsers}
               onUserClick={handleUserClick}
@@ -440,10 +479,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             />
           </div>
         )}
-        {(() => {
-          const currentRoom = rooms.find(room => room.id === chat.currentRoomId);
-          
-          // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
+                {(!isMobile || activeView === 'hidden') ? (() => {
+           const currentRoom = rooms.find(room => room.id === chat.currentRoomId);
+           
+           // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
           if (currentRoom?.isBroadcast) {
             return (
                             <BroadcastRoomInterface
@@ -489,22 +528,22 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               currentRoomName={currentRoom?.name || 'الدردشة العامة'}
               currentRoomId={chat.currentRoomId}
               ignoredUserIds={chat.ignoredUsers}
-            />
-          );
-        })()}
-      </main>
+                        />
+           );
+         })() : null}
+       </main>
 
-      {/* Footer - مع التبويبات الأربعة المنقولة إلى الجهة اليمنى */}
+      {/* Footer - تبويبات سفلية. على الجوال: تفتح بملء الشاشة، وعلى الشاشات الكبيرة: تظهر كلوحة جانبية قابلة للإخفاء */}
       <footer className="bg-secondary py-3 px-3 sm:py-4 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent">
         <div className="flex gap-2 sm:gap-3 overflow-x-auto max-w-full">
           {/* الحوائط */}
-          <Button 
-            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-            }`}
-            onClick={() => setActiveView(activeView === 'walls' ? 'hidden' : 'walls')}
-            title="الحوائط"
-          >
+                     <Button 
+             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+               activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+             }`}
+             onClick={() => setActiveView(isMobile ? 'walls' : (activeView === 'walls' ? 'hidden' : 'walls'))}
+             title="الحوائط"
+           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Walls">
               <line x1="3" y1="6" x2="21" y2="6"></line>
               <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -514,13 +553,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
           
           {/* المستخدمون */}
-          <Button 
-            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
-              activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-            }`}
-            onClick={() => setActiveView(activeView === 'users' ? 'hidden' : 'users')}
-            title="المستخدمون المتصلون"
-          >
+                     <Button 
+             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+               activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+             }`}
+             onClick={() => setActiveView(isMobile ? 'users' : (activeView === 'users' ? 'hidden' : 'users'))}
+             title="المستخدمون المتصلون"
+           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Users">
               <circle cx="9" cy="7" r="3"></circle>
               <path d="M2 21c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"></path>
@@ -535,7 +574,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
               activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView(activeView === 'rooms' ? 'hidden' : 'rooms')}
+            onClick={() => setActiveView(isMobile ? 'rooms' : (activeView === 'rooms' ? 'hidden' : 'rooms'))}
             title="الغرف"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Rooms">
@@ -551,7 +590,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
               activeView === 'friends' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView(activeView === 'friends' ? 'hidden' : 'friends')}
+            onClick={() => setActiveView(isMobile ? 'friends' : (activeView === 'friends' ? 'hidden' : 'friends'))}
             title="الأصدقاء"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Friends">
@@ -599,6 +638,33 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           )}
         </>
       )}
+
+      {/* Dialog: إضافة غرفة جديدة */}
+      <Dialog open={showAddRoomDialog} onOpenChange={setShowAddRoomDialog}>
+        <DialogContent className="max-w-md w-full">
+          <DialogHeader>
+            <DialogTitle>إضافة غرفة جديدة</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="room-name">اسم الغرفة</Label>
+              <Input id="room-name" value={newRoomName} onChange={(e) => setNewRoomName(e.target.value)} placeholder="مثال: الدردشة العامة 2" />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="room-desc">الوصف</Label>
+              <Textarea id="room-desc" value={newRoomDescription} onChange={(e) => setNewRoomDescription(e.target.value)} placeholder="نبذة قصيرة عن الغرفة" />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="room-image">صورة الغرفة (اختياري)</Label>
+              <Input id="room-image" type="file" accept="image/*" onChange={(e) => setNewRoomImage(e.target.files?.[0] || null)} />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={() => setShowAddRoomDialog(false)}>إلغاء</Button>
+              <Button onClick={submitNewRoom} disabled={!newRoomName.trim()}>حفظ</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* لوحة الرسائل */}
       {showMessages && (
