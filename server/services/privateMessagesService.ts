@@ -101,8 +101,8 @@ export class PrivateMessagesService {
       {
         conversationId: newConversation.id,
         userId: creatorId,
-        role: 'owner' as const,
-        status: 'active' as const
+        role: 'owner' as any,
+        status: 'active' as any
       }
     ];
 
@@ -112,8 +112,8 @@ export class PrivateMessagesService {
         participants.push({
           conversationId: newConversation.id,
           userId: memberId,
-          role: 'member' as const,
-          status: 'active' as const
+          role: 'member' as any,
+          status: 'active' as any
         });
       }
     }
@@ -360,9 +360,7 @@ export class PrivateMessagesService {
           id: users.id,
           username: users.username,
           profileImage: users.profileImage,
-          nameColor: users.nameColor,
-          nameGlow: users.nameGlow,
-          badges: users.badges
+          usernameColor: users.usernameColor
         },
         replyTo: sql<any>`
           CASE WHEN ${privateMessages.replyToId} IS NOT NULL THEN
@@ -940,8 +938,9 @@ export class PrivateMessagesService {
 
     if (status === 'answered' && !call.answeredAt) {
       updates.answeredAt = new Date();
-      if (participantId && !call.participants.includes(participantId)) {
-        updates.participants = [...call.participants, participantId];
+      const participants: number[] = Array.isArray((call as any).participants) ? (call as any).participants as number[] : [];
+      if (participantId && !participants.includes(participantId)) {
+        updates.participants = [...participants, participantId];
       }
     } else if (status === 'ended' && !call.endedAt) {
       updates.endedAt = new Date();

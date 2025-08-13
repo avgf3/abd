@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { useAuth } from './useAuth';
+import { useAuth } from '@/contexts/UserContext';
 import type {
   ConversationWithDetails,
   PrivateMessage,
@@ -10,6 +10,7 @@ import type {
   MessageType,
   SendMessageState,
 } from '@/types/private-messages';
+import { getSocket } from '@/lib/socket';
 
 interface UsePrivateMessagesReturn {
   // المحادثات
@@ -90,11 +91,9 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
   useEffect(() => {
     if (!user) return;
 
-    const socket = io({
-      auth: { token: localStorage.getItem('token') },
-    });
+    const socket = getSocket();
 
-    socketRef.current = socket;
+    socketRef.current = socket as unknown as Socket;
 
     // معالجات الأحداث
     socket.on('connect', () => {
@@ -102,7 +101,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
     });
 
     socket.on('conversations_joined', ({ conversationIds }) => {
-      });
+    });
 
     socket.on('new_message', (message: PrivateMessage) => {
       handleNewMessage(message);
@@ -162,7 +161,15 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
     });
 
     return () => {
-      socket.disconnect();
+      socket.off('new_message');
+      socket.off('message_edited');
+      socket.off('message_deleted');
+      socket.off('typing_status');
+      socket.off('messages_read');
+      socket.off('reaction_update');
+      socket.off('incoming_call');
+      socket.off('call_answered');
+      socket.off('call_ended');
     };
   }, [user]);
 
@@ -343,6 +350,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
       const response = await fetch('/api/private-messages/conversations', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'x-user-id': user?.id ? String(user.id) : ''
         },
       });
       
@@ -355,7 +363,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
     } finally {
       setLoadingConversations(false);
     }
-  }, []);
+  }, [user?.id]);
 
   const createConversation = useCallback(async (participantId: number): Promise<ConversationWithDetails> => {
     const response = await fetch('/api/private-messages/conversations', {
@@ -387,6 +395,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
       const response = await fetch(`/api/private-messages/conversations/${conversationId}/messages?${params}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'x-user-id': user?.id ? String(user.id) : ''
         },
       });
       
@@ -399,10 +408,8 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
         const existingMessages = newMessages.get(conversationId) || [];
         
         if (options?.beforeId) {
-          // إضافة الرسائل القديمة في البداية
           newMessages.set(conversationId, [...data.messages, ...existingMessages]);
         } else {
-          // استبدال الرسائل
           newMessages.set(conversationId, data.messages);
         }
         
@@ -416,7 +423,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
     } finally {
       setLoadingMessages(prev => new Map(prev).set(conversationId, false));
     }
-  }, []);
+  }, [user?.id]);
 
   const sendMessage = useCallback(async (
     conversationId: number,
@@ -457,6 +464,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'x-user-id': user?.id ? String(user.id) : ''
         },
         body: formData,
       });
@@ -468,7 +476,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
       console.error('خطأ في رفع الملف:', error);
       setSendingState({ isLoading: false, error: 'فشل رفع الملف' });
     }
-  }, []);
+  }, [user?.id]);
 
   const editMessage = useCallback(async (
     messageId: number,
@@ -568,6 +576,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'x-user-id': user?.id ? String(user.id) : ''
         },
       });
       
@@ -591,7 +600,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
     } catch (error) {
       console.error('خطأ في تثبيت المحادثة:', error);
     }
-  }, []);
+  }, [user?.id]);
 
   const muteConversation = useCallback(async (conversationId: number, duration?: number) => {
     try {
@@ -600,6 +609,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'x-user-id': user?.id ? String(user.id) : ''
         },
         body: JSON.stringify({ duration }),
       });
@@ -624,7 +634,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
     } catch (error) {
       console.error('خطأ في كتم المحادثة:', error);
     }
-  }, []);
+  }, [user?.id]);
 
   const archiveConversation = useCallback(async (conversationId: number) => {
     try {
@@ -632,6 +642,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'x-user-id': user?.id ? String(user.id) : ''
         },
       });
       
@@ -655,7 +666,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
     } catch (error) {
       console.error('خطأ في أرشفة المحادثة:', error);
     }
-  }, []);
+  }, [user?.id]);
 
   const startCall = useCallback(async (conversationId: number, type: 'voice' | 'video') => {
     socketRef.current?.emit('start_call', {
@@ -707,6 +718,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
       const response = await fetch(`/api/private-messages/messages/search?${params}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'x-user-id': user?.id ? String(user.id) : ''
         },
       });
       
@@ -718,7 +730,7 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
       console.error('خطأ في البحث:', error);
       return [];
     }
-  }, []);
+  }, [user?.id]);
 
   const getUnreadCount = useCallback((conversationId: number): number => {
     const conversation = conversations.find(c => c.conversation.id === conversationId);

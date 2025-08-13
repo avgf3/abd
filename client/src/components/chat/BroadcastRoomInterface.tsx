@@ -239,8 +239,8 @@ export default function BroadcastRoomInterface({
   const queryMicrophonePermission = async (): Promise<'granted' | 'denied' | 'prompt' | 'unknown'> => {
     try {
       // Not universally supported (e.g., Safari), so guard it
-      // @ts-expect-error - permissions name might not be typed
-      const result = await navigator.permissions?.query?.({ name: 'microphone' as any });
+      const perms: any = (navigator as any).permissions;
+      const result = await perms?.query?.({ name: 'microphone' as any });
       if (!result) return 'unknown';
       return (result.state as 'granted' | 'denied' | 'prompt') || 'unknown';
     } catch {

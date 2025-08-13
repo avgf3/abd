@@ -183,7 +183,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const handlePrivateMessage = (user: ChatUser) => {
     setSelectedPrivateUser(user);
     try {
-      chat.loadPrivateConversation(user.id);
+      // تم تعطيل واجهة الخاص القديمة؛ التحميل لم يعد متاحاً هنا
     } catch {}
     closeUserPopup();
   };
@@ -261,7 +261,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           }
           if (user) {
             setSelectedPrivateUser(user);
-            try { chat.loadPrivateConversation(user.id); } catch {}
+            try { /* واجهة الخاص القديمة معطلة */ } catch {}
           } else {
             showErrorToast("لم نتمكن من العثور على هذا المستخدم", "مستخدم غير موجود");
           }
@@ -428,7 +428,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onRefreshRooms={handleRefreshRooms}
               onStartPrivateChat={(user) => {
                 setSelectedPrivateUser(user);
-                try { chat.loadPrivateConversation(user.id); } catch {}
+                try { /* واجهة الخاص القديمة معطلة */ } catch {}
               }}
             />
           </div>
