@@ -307,8 +307,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" dir="rtl">
-      <div className="bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/50 w-[95vw] h-[92vh] flex flex-col overflow-hidden min-h-0">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-6" dir="rtl">
+      <div className="bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/50 w-full sm:w-[95vw] h-[92dvh] sm:h-[92vh] flex flex-col overflow-hidden min-h-0 max-w-[1200px]">
         {/* رأس النافذة المحسن */}
         <div className="flex items-center justify-between p-6 border-b border-border/50 bg-gradient-to-l from-primary/5 to-transparent">
           <div className="flex items-center gap-3">
@@ -325,9 +325,9 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
           </Button>
         </div>
 
-        <div className="flex-1 flex overflow-hidden min-h-0">
+        <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-0">
           {/* منطقة الحائط - أكثر من الثلث قليلاً */}
-          <div className="w-2/5 border-l border-border/50 p-6 flex flex-col bg-gradient-to-b from-muted/20 to-transparent min-h-0">
+          <div className="w-full sm:w-2/5 border-l border-border/50 p-4 sm:p-6 flex flex-col bg-gradient-to-b from-muted/20 to-transparent min-h-0">
                           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col min-h-0">
               <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50 backdrop-blur-sm rounded-xl p-1">
                 <TabsTrigger value="public" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2">
@@ -457,7 +457,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
           </div>
 
           {/* منطقة الشات - أقل من الثلثين قليلاً */}
-          <div className="w-3/5 p-6">
+          <div className="w-full sm:w-3/5 p-4 sm:p-6 mt-4 sm:mt-0">
             <div className="h-full bg-gradient-to-br from-muted/10 to-muted/20 rounded-2xl flex items-center justify-center text-muted-foreground border border-dashed border-border/50">
               <div className="text-center">
                 <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">

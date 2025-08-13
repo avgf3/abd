@@ -172,17 +172,17 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
   };
 
   return (
-    <div className="h-screen flex flex-col justify-center items-center welcome-gradient">
+    <div className="min-h-[100dvh] flex flex-col justify-center items-center welcome-gradient">
       <div className="text-center animate-slide-up">
         <div className="mb-8">
-          <div className="text-6xl mb-4 animate-pulse-slow">💬</div>
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
+          <div className="text-5xl sm:text-6xl mb-4 animate-pulse-slow">💬</div>
+          <h1 className="text-3xl sm:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
             مرحبًا بك في دردشة العرب
           </h1>
           <p className="text-xl text-muted-foreground mb-8">منصة التواصل العربية الأولى</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-3">
           <Button 
             className="btn-success text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3"
             onClick={() => setShowGuestModal(true)}
