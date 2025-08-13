@@ -34,7 +34,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
-import { Menu } from 'lucide-react';
+import { Menu, Settings, Bell, MessageSquare, MessageCircle, Crown, Shield, AlertTriangle, Eye, EyeOff, Lock } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { apiRequest } from '@/lib/queryClient';
@@ -325,13 +325,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   return (
       <div className="min-h-[100dvh] flex flex-col" onClick={closeUserPopup}>
       {/* Header - بدون التبويبات الأربعة */}
-      <header className="bg-secondary py-3 px-3 sm:py-4 sm:px-6 flex flex-wrap gap-2 justify-between items-center shadow-2xl border-b border-accent">
+      <header className="sticky top-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex flex-wrap gap-2 justify-between items-center shadow-2xl border-b border-accent">
         <div className="flex gap-3 overflow-x-auto max-w-full pr-2">
-          <Button 
-            className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+          <Button
+            className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowSettings(!showSettings)}
           >
-            <span>⚙️</span>
+            <Settings className="w-4 h-4" />
             إعدادات
           </Button>
 
@@ -360,7 +360,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               className="glass-effect px-4 py-2 rounded-lg hover:bg-purple-600 transition-all duration-200 flex items-center gap-2 border border-purple-400"
               onClick={() => setShowOwnerPanel(true)}
             >
-              <span>👑</span>
+              <Crown className="w-4 h-4" />
               إدارة المالك
             </Button>
           )}
@@ -374,7 +374,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2"
                   onClick={() => setShowPromotePanel(true)}
                 >
-                  <span>👑</span>
+                  <Crown className="w-4 h-4" />
                   ترقية المستخدمين
                 </Button>
               )}
@@ -383,7 +383,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400"
                 onClick={() => setShowActiveActions(true)}
               >
-                <span>🔒</span>
+                <Lock className="w-4 h-4" />
                 سجل الإجراءات النشطة
               </Button>
               
@@ -391,7 +391,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 className="glass-effect px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 border border-red-400 relative"
                 onClick={() => setShowReportsLog(true)}
               >
-                <span>⚠️</span>
+                <AlertTriangle className="w-4 h-4" />
                 سجل البلاغات
               </Button>
               
@@ -411,14 +411,24 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 }}
                 title="إخفائي من قائمة المتصلين للجميع"
               >
-                <span>{chat.currentUser?.isHidden ? '👁️ إظهار' : '🕵️ إخفاء'}</span>
+                {chat.currentUser?.isHidden ? (
+                  <>
+                    <Eye className="w-4 h-4" />
+                    <span>إظهار</span>
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="w-4 h-4" />
+                    <span>إخفاء</span>
+                  </>
+                )}
               </Button>
               
               <Button 
                 className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
                 onClick={() => setShowModerationPanel(true)}
               >
-                <span>🛡️</span>
+                <Shield className="w-4 h-4" />
                 إدارة
               </Button>
             </>
@@ -429,14 +439,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClick={() => setShowMessages(true)}
             title="الرسائل"
           >
-            <span style={{ display: 'flex', alignItems: 'center' }}>
-              <svg width="24" height="18" viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
-                <rect x="5" y="20" width="110" height="60" fill="white" stroke="#444" strokeWidth="1.5"/>
-                <polygon points="5,20 60,55 115,20" fill="white" stroke="#444" strokeWidth="1.5"/>
-                <line x1="5" y1="20" x2="60" y2="55" stroke="#555" strokeWidth="1"/>
-                <line x1="115" y1="20" x2="60" y2="55" stroke="#555" strokeWidth="1"/>
-              </svg>
-            </span>
+            <MessageSquare className="w-4 h-4" />
             الرسائل
           </Button>
           
@@ -444,14 +447,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
             onClick={() => setShowNotifications(true)}
           >
-            <span>🔔</span>
+            <Bell className="w-4 h-4" />
             إشعارات
           </Button>
-        </div>
-                  <div className="flex items-center gap-3 min-w-0">
-          <div className="text-2xl">💬</div>
-          <div className="text-xl sm:text-2xl font-bold text-white truncate">
-            Arabic<span className="text-primary">Chat</span>
+
+          {/* الشعار بجانب الإشعارات */}
+          <div className="flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-primary" />
+            <div className="text-lg sm:text-xl font-bold text-white truncate">
+              Arabic<span className="text-primary">Chat</span>
+            </div>
           </div>
         </div>
       </header>
@@ -534,11 +539,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
        </main>
 
       {/* Footer - تبويبات سفلية. على الجوال: تفتح بملء الشاشة، وعلى الشاشات الكبيرة: تظهر كلوحة جانبية قابلة للإخفاء */}
-      <footer className="bg-secondary py-3 px-3 sm:py-4 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent">
+      <footer className="sticky bottom-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent">
         <div className="flex gap-2 sm:gap-3 overflow-x-auto max-w-full">
           {/* الحوائط */}
                      <Button 
-             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+             className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
                activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
              }`}
              onClick={() => setActiveView(isMobile ? 'walls' : (activeView === 'walls' ? 'hidden' : 'walls'))}
@@ -554,7 +559,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           
           {/* المستخدمون */}
                      <Button 
-             className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+             className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
                activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
              }`}
              onClick={() => setActiveView(isMobile ? 'users' : (activeView === 'users' ? 'hidden' : 'users'))}
@@ -571,7 +576,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
           {/* الغرف */}
           <Button 
-            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+            className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
               activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
             onClick={() => setActiveView(isMobile ? 'rooms' : (activeView === 'rooms' ? 'hidden' : 'rooms'))}
@@ -587,7 +592,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
           {/* الأصدقاء */}
           <Button 
-            className={`glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+            className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
               activeView === 'friends' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
             onClick={() => setActiveView(isMobile ? 'friends' : (activeView === 'friends' ? 'hidden' : 'friends'))}
@@ -827,9 +832,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           <div className="relative max-w-md w-full">
             <button
               onClick={() => setShowUsernameColorPicker(false)}
-              className="absolute -top-12 right-0 text-white hover:text-gray-300 text-xl"
+              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg hover:bg-red-600"
+              aria-label="إغلاق"
             >
-              ✕ إغلاق
+              ×
             </button>
             <UsernameColorPicker
               currentUser={chat.currentUser}
@@ -875,33 +881,29 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-bold">قائمة المتجاهلين</h3>
-          <button className="text-gray-500 hover:text-gray-700" onClick={() => setShowIgnoredUsers(false)}>✖️</button>
+          <h3 className="text-lg font-semibold">المستخدمون المتجاهلون</h3>
+          <button
+            onClick={() => setShowIgnoredUsers(false)}
+            className="text-gray-500 hover:text-gray-700"
+            aria-label="إغلاق"
+          >
+            ×
+          </button>
         </div>
-        <div className="space-y-2 max-h-80 overflow-y-auto">
-          {Array.from<number>(chat.ignoredUsers ?? new Set<number>()).length === 0 && (
-            <div className="text-sm text-gray-500">لا يوجد مستخدمون متجاهلون</div>
-          )}
-          {Array.from<number>(chat.ignoredUsers ?? new Set<number>()).map((ignoredId: number) => {
-            const u = chat.onlineUsers.find(u => u.id === ignoredId);
+        <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+          {Array.from(chat.ignoredUsers || []).map((id) => {
+            const u = chat.onlineUsers.find(u => u.id === id);
+            if (!u) return null;
             return (
-              <div key={ignoredId} className="flex items-center justify-between border p-2 rounded">
+              <div key={id} className="flex items-center justify-between p-2 border rounded">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">#{ignoredId}</span>
-                  <span className="text-sm text-gray-600">{u?.username || 'مستخدم'}</span>
+                  <ProfileImage user={u} size="small" />
+                  <span className="font-medium">{u.username}</span>
                 </div>
-                <button
-                  className="text-blue-600 hover:underline text-sm"
-                  onClick={() => chat.unignoreUser(ignoredId)}
-                >
-                  إلغاء التجاهل
-                </button>
+                <Button size="sm" variant="outline" onClick={() => chat.unignoreUser?.(id)}>إلغاء التجاهل</Button>
               </div>
             );
           })}
-        </div>
-        <div className="mt-4 flex justify-end">
-          <button className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300" onClick={() => setShowIgnoredUsers(false)}>إغلاق</button>
         </div>
       </div>
     </div>
