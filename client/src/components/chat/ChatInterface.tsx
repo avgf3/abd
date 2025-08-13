@@ -3,7 +3,7 @@ import UnifiedSidebar from './UserSidebarWithWalls';
 import MessageArea from './MessageArea';
 import BroadcastRoomInterface from './BroadcastRoomInterface';
 import ProfileModal from './ProfileModal';
-import PrivateMessageBox from './PrivateMessageBox';
+// import PrivateMessageBox from './PrivateMessageBox';
 import UserPopup from './UserPopup';
 import SettingsMenu from './SettingsMenu';
 import ReportModal from './ReportModal';
@@ -593,16 +593,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         </>
       )}
 
-      {selectedPrivateUser && (
-        <PrivateMessageBox
-          isOpen={!!selectedPrivateUser}
-          user={selectedPrivateUser}
-          currentUser={chat.currentUser}
-          messages={chat.privateConversations[selectedPrivateUser.id] || []}
-          onSendMessage={(content) => chat.sendPrivateMessage(selectedPrivateUser.id, content)}
-          onClose={closePrivateMessage}
-        />
-      )}
+      {/* الرسائل الخاصة القديمة معطلة. استخدم واجهة DM المتطورة لاحقاً هنا. */}
 
       {userPopup.show && userPopup.user && (
         <UserPopup

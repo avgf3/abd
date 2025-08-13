@@ -30,6 +30,10 @@ import sharp from "sharp";
 import { DEFAULT_LEVELS, recalculateUserStats } from "../shared/points-system";
 import { protect } from "./middleware/enhancedSecurity";
 import { notificationService } from "./services/notificationService";
+import { createPrivateMessagesRouter } from "./routes/private-messages";
+import { PrivateMessagesService } from "./services/privateMessagesService";
+import { NotificationService } from "./services/notificationService";
+import { setupPrivateMessagesSocket } from "./sockets/private-messages-socket";
 
 // إعداد multer موحد لرفع الصور
 const createMulterConfig = (destination: string, prefix: string, maxSize: number = 5 * 1024 * 1024) => {
@@ -188,6 +192,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // استخدام مسارات الرسائل المنفصلة والمحسنة
   app.use('/api/messages', messageRoutes);
+  
+  // رسائل خاصة متطورة: تهيئة الخدمة وراوتر الـ DM المتطور
+  const pmService = new PrivateMessagesService(db as any);
+  let privateMessagesRouter = createPrivateMessagesRouter(pmService, notificationService as NotificationService, io as any);
+  app.use('/api/private-messages', privateMessagesRouter);
   
   // رفع صور البروفايل - محسّن مع حل مشكلة Render
   app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
@@ -966,6 +975,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   });
 
+  // بعد تهيئة Socket.IO، نمرر io الحقيقي لموديول الرسائل الخاصة
+  try {
+    setupPrivateMessagesSocket(io as any, pmService, notificationService as NotificationService);
+  } catch (e) {
+    console.error('Failed to setup private messages socket:', e);
+  }
+
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);
   app.use(advancedSecurityMiddleware);
@@ -1202,27 +1218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // تم نقل مسارات رسائل الغرف إلى router المنفصل في server/routes/messages.ts لتفادي التكرار
-  app.get("/api/messages/private/:userId1/:userId2", async (req, res) => {
-    try {
-      const userId1 = parseInt(req.params.userId1);
-      const userId2 = parseInt(req.params.userId2);
-      const limit = parseInt(req.query.limit as string) || 50;
-      
-      const messages = await storage.getPrivateMessages(userId1, userId2, limit);
-      
-      const messagesWithUsers = await Promise.all(
-        messages.map(async (msg) => {
-          const sender = msg.senderId ? await storage.getUser(msg.senderId) : null;
-          return { ...msg, sender };
-        })
-      );
-
-      res.json({ messages: messagesWithUsers });
-    } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
-    }
-  });
+  // [Deprecated] تم إلغاء endpoint الخاص القديم /api/messages/private/:userId1/:userId2 لصالح /api/private-messages
 
   // POST endpoint for sending messages
   app.post("/api/messages", async (req, res) => {
@@ -1806,52 +1802,9 @@ if (!existing) {
       }
     });
 
-    socket.on('privateMessage', async (data) => {
-      try {
-        if (!socket.userId) return;
-        
-        const { receiverId, content, messageType = 'text' } = data;
-        
-        // التحقق من المستقبل
-        const receiver = await storage.getUser(receiverId);
-        if (!receiver) {
-          socket.emit('message', { type: 'error', message: 'المستقبل غير موجود' });
-          return;
-        }
-
-        // منع الرسائل إذا كان المستقبل قد تجاهل المرسل
-        try {
-          const ignoredByReceiver: number[] = await storage.getIgnoredUsers(receiverId);
-          if (Array.isArray(ignoredByReceiver) && ignoredByReceiver.includes(socket.userId)) {
-            socket.emit('message', { type: 'error', message: 'لا يمكن إرسال رسالة: هذا المستخدم قام بتجاهلك' });
-            return;
-          }
-        } catch (e) {
-          // في حال فشل جلب قائمة التجاهل، لا نمنع لكن نسجل تحذير
-          console.warn('تحذير: تعذر التحقق من قائمة التجاهل للمستقبل:', e);
-        }
-        
-        // إنشاء الرسالة الخاصة
-        const newMessage = await storage.createMessage({
-          senderId: socket.userId,
-          receiverId: receiverId,
-          content: content.trim(),
-          messageType,
-          isPrivate: true
-        });
-        
-        const sender = await storage.getUser(socket.userId);
-        const messageWithSender = { ...newMessage, sender };
-        
-        // إرسال للمستقبل والمرسل - حدث موحّد فقط
-        io.to(receiverId.toString()).emit('privateMessage', { message: messageWithSender });
-        socket.emit('privateMessage', { message: messageWithSender });
-        
-      } catch (error) {
-        console.error('خطأ في إرسال الرسالة الخاصة:', error);
-        socket.emit('message', { type: 'error', message: 'خطأ في إرسال الرسالة الخاصة' });
-      }
-    });
+    // socket.on('privateMessage', async (data) => {
+    //   console.warn('[Deprecated] privateMessage handler is disabled. Use DM module events instead.');
+    // });
 
     socket.on('sendFriendRequest', async (data) => {
       try {

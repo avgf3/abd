@@ -529,8 +529,8 @@ export const useChat = () => {
       }
     };
 
-    socketInstance.on('privateMessage', handlePrivateMessage);
-    // نتعامل مع الرسائل الخاصة حصراً عبر 'privateMessage' بعد حذف التكرار على الخادم
+    // socketInstance.on('privateMessage', handlePrivateMessage);
+    // [Deprecated] منظومة الخاص القديمة معطّلة. استخدم واجهة DM المتطورة عبر usePrivateMessages().
 
       // معالج حدث الطرد
       socketInstance.on('kicked', (data: any) => {
@@ -755,7 +755,8 @@ export const useChat = () => {
     };
 
     if (receiverId) {
-      socket.current.emit('privateMessage', messageData);
+      // [Deprecated] تم تعطيل القناة القديمة للخاص
+      console.warn('[Deprecated] استخدام قناة الخاص القديمة. يرجى الانتقال لمنظومة DM المتطورة.');
     } else {
       socket.current.emit('publicMessage', messageData);
     }
@@ -876,13 +877,13 @@ export const useChat = () => {
 
     // Convenience wrappers
     sendPublicMessage: (content: string) => sendMessage(content, 'text'),
-    sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId),
+    // sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId), // Deprecated
 
     // Newly added helpers for compatibility
     handleTyping,
     getCurrentRoomMessages,
     updateCurrentUser,
-    loadPrivateConversation,
+    // loadPrivateConversation, // Deprecated
 
     // Broadcast handlers registration
     addBroadcastMessageHandler: (handler: (data: any) => void) => {
