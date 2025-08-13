@@ -300,15 +300,15 @@ export default function MessageArea({
   return (
     <section className="flex-1 flex flex-col bg-white min-h-0">
       {/* Room Header */}
-      <div className={`bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 ${compactHeader ? 'p-2' : 'p-4'}`}>
+      <div className={`bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 ${compactHeader ? 'p-1.5' : 'p-2'}`}>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
+          <div className="w-6 h-6 bg-primary/20 rounded-lg flex items-center justify-center">
             <span className="text-primary font-bold">💬</span>
           </div>
           <div>
-            <h2 className={`font-bold ${compactHeader ? 'text-base' : 'text-lg'} text-primary`}>{currentRoomName}</h2>
+            <h2 className={`font-bold ${compactHeader ? 'text-sm' : 'text-base'} text-primary`}>{currentRoomName}</h2>
             {!compactHeader && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {validMessages.length} رسالة • {typingDisplay || 'جاهز للدردشة'}
               </p>
             )}
@@ -320,7 +320,7 @@ export default function MessageArea({
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className={`relative flex-1 ${compactHeader ? 'p-4' : 'p-6'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white`}
+        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white`}
       >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -446,10 +446,10 @@ export default function MessageArea({
       </div>
       
       {/* Message Input */}
-      <div className={`${compactHeader ? 'p-3' : 'p-4'} bg-white border-t`}>
+      <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t`}>
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
-          <div className="mb-2 text-xs text-gray-500 animate-pulse">
+          <div className="mb-1.5 text-[11px] text-gray-500 animate-pulse">
             {typingDisplay}
           </div>
         )}
@@ -518,7 +518,7 @@ export default function MessageArea({
         
         {/* Character Counter */}
         {messageText.length > 800 && (
-          <div className="mt-1 text-xs text-gray-500 text-left">
+          <div className="mt-1 text-[11px] text-gray-500 text-left">
             {messageText.length}/1000 حرف
           </div>
         )}
