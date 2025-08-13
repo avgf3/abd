@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { Mic, MicOff, Users, Crown, Clock, Check, X, Volume2, VolumeX } from 'lucide-react';
+import { Mic, MicOff, Users, Crown, Clock, Check, X, Volume2, VolumeX, ChevronDown, ChevronUp, PlayCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom, RoomWebSocketMessage as WebSocketMessage, ChatMessage } from '@/types/chat';
@@ -66,6 +66,8 @@ export default function BroadcastRoomInterface({
   const peersRef = React.useRef<Map<number, RTCPeerConnection>>(new Map());
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const [isInfoCollapsed, setIsInfoCollapsed] = useState(true);
+  const [playbackBlocked, setPlaybackBlocked] = useState(false);
 
   // جلب معلومات غرفة البث
   // 🚀 جلب معلومات البث مع منع التكرار
@@ -271,7 +273,11 @@ export default function BroadcastRoomInterface({
             const [remoteStream] = event.streams;
             audioRef.current.srcObject = remoteStream;
             audioRef.current.muted = isMuted;
-            audioRef.current.play().catch(() => {});
+            audioRef.current.play().then(() => {
+              setPlaybackBlocked(false);
+            }).catch(() => {
+              setPlaybackBlocked(true);
+            });
           };
           pc.onicecandidate = (event) => {
             if (event.candidate) {
@@ -525,14 +531,26 @@ export default function BroadcastRoomInterface({
   return (
     <div className="flex flex-col h-full">
       {/* شريط معلومات غرفة البث */}
-      <Card className="mb-4">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Mic className="w-5 h-5 text-primary" />
-            غرفة البث المباشر
-          </CardTitle>
+      <Card className="mb-2">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Mic className="w-5 h-5 text-primary" />
+              غرفة البث المباشر
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              {isListener && playbackBlocked && (
+                <Button size="sm" variant="outline" onClick={() => { try { audioRef.current?.play(); setPlaybackBlocked(false); } catch {} }}>
+                  <PlayCircle className="w-4 h-4" /> تشغيل الصوت
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={() => setIsInfoCollapsed(v => !v)} title={isInfoCollapsed ? 'عرض التفاصيل' : 'إخفاء التفاصيل'}>
+                {isInfoCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className={isInfoCollapsed ? "space-y-2" : "space-y-3 max-h-56 overflow-y-auto"}>
           {/* المضيف */}
           <div className="flex items-center gap-2">
             <Crown className="w-4 h-4 text-yellow-500" />
@@ -544,85 +562,99 @@ export default function BroadcastRoomInterface({
             )}
           </div>
 
-          {/* المتحدثين */}
-          <div className="flex items-center gap-2">
-            <Mic className="w-4 h-4 text-green-500" />
-            <span className="font-medium">المتحدثون:</span>
-            <div className="flex gap-1 flex-wrap">
-              {speakers.map(userId => {
-                const user = getUserById(userId);
-                return user ? (
-                  <Badge key={userId} variant="outline" className="flex items-center gap-1">
-                    {user.username}
-                    {canManageMic && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-4 w-4 p-0 text-destructive hover:text-destructive"
-                        onClick={() => handleRemoveSpeaker(userId)}
-                        disabled={isLoading}
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    )}
-                  </Badge>
-                ) : null;
-              })}
-              {speakers.length === 0 && (
-                <span className="text-muted-foreground text-sm">لا يوجد متحدثون</span>
-              )}
+          {/* المتحدثون */}
+          {isInfoCollapsed ? (
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1"><Mic className="w-4 h-4 text-green-500" /> {speakers.length} متحدث</span>
+              <span className="flex items-center gap-1"><Clock className="w-4 h-4 text-orange-500" /> {micQueue.length} انتظار</span>
+              <span className="flex items-center gap-1"><Users className="w-4 h-4 text-blue-500" /> {listenerCount} مستمع</span>
             </div>
-          </div>
-
-          {/* قائمة الانتظار */}
-          {micQueue.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-orange-500" />
-              <span className="font-medium">قائمة الانتظار:</span>
-              <div className="flex gap-1 flex-wrap">
-                {micQueue.map(userId => {
-                  const user = getUserById(userId);
-                  return user ? (
-                    <Badge key={userId} variant="outline" className="flex items-center gap-1">
-                      {user.username}
-                      {canManageMic && (
-                        <div className="flex gap-1">
+          ) : (
+            <div className="flex items-start gap-2">
+              <Mic className="w-4 h-4 text-green-500 mt-1" />
+              <div className="flex-1">
+                <span className="font-medium">المتحدثون:</span>
+                <div className="mt-1 flex gap-1 flex-wrap">
+                  {speakers.map(userId => {
+                    const user = getUserById(userId);
+                    return user ? (
+                      <Badge key={userId} variant="outline" className="flex items-center gap-1">
+                        {user.username}
+                        {canManageMic && (
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-4 w-4 p-0 text-green-600 hover:text-green-600"
-                            onClick={() => handleApproveMic(userId)}
-                            disabled={isLoading}
-                          >
-                            <Check className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-4 w-4 p-0 text-red-600 hover:text-red-600"
-                            onClick={() => handleRejectMic(userId)}
+                            className="h-4 w-4 p-0 text-destructive hover:text-destructive"
+                            onClick={() => handleRemoveSpeaker(userId)}
                             disabled={isLoading}
                           >
                             <X className="w-3 h-3" />
                           </Button>
-                        </div>
-                      )}
-                    </Badge>
-                  ) : null;
-                })}
+                        )}
+                      </Badge>
+                    ) : null;
+                  })}
+                  {speakers.length === 0 && (
+                    <span className="text-muted-foreground text-sm">لا يوجد متحدثون</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* قائمة الانتظار */}
+          {!isInfoCollapsed && micQueue.length > 0 && (
+            <div className="flex items-start gap-2">
+              <Clock className="w-4 h-4 text-orange-500 mt-1" />
+              <div className="flex-1">
+                <span className="font-medium">قائمة الانتظار:</span>
+                <div className="mt-1 flex gap-1 flex-wrap">
+                  {micQueue.map(userId => {
+                    const user = getUserById(userId);
+                    return user ? (
+                      <Badge key={userId} variant="outline" className="flex items-center gap-1">
+                        {user.username}
+                        {canManageMic && (
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-4 w-4 p-0 text-green-600 hover:text-green-600"
+                              onClick={() => handleApproveMic(userId)}
+                              disabled={isLoading}
+                            >
+                              <Check className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-4 w-4 p-0 text-red-600 hover:text-red-600"
+                              onClick={() => handleRejectMic(userId)}
+                              disabled={isLoading}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
               </div>
             </div>
           )}
 
           {/* المستمعون */}
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-blue-500" />
-            <span className="font-medium">المستمعون:</span>
-            <Badge variant="secondary">{listenerCount}</Badge>
-          </div>
+          {!isInfoCollapsed && (
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-blue-500" />
+              <span className="font-medium">المستمعون:</span>
+              <Badge variant="secondary">{listenerCount}</Badge>
+            </div>
+          )}
 
           {/* عناصر التحكم في البث */}
-          <div className="flex flex-wrap gap-2 mt-2">
+          <div className="flex flex-wrap gap-2 mt-1">
             {canSpeak && !isBroadcasting && (
               <Button onClick={startBroadcast} className="flex items-center gap-2">
                 <Mic className="w-4 h-4" />
@@ -642,12 +674,12 @@ export default function BroadcastRoomInterface({
               </Button>
             )}
           </div>
-          <audio ref={audioRef} hidden playsInline />
+          <audio ref={audioRef} playsInline autoPlay controlsList="nodownload noplaybackrate" className="w-0 h-0 opacity-0 pointer-events-none" />
         </CardContent>
       </Card>
 
       {/* أزرار التحكم */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-2">
         {canRequestMic && (
           <Button
             onClick={handleRequestMic}
@@ -681,7 +713,7 @@ export default function BroadcastRoomInterface({
         )}
       </div>
 
-      <Separator className="my-4" />
+      <Separator className="my-2" />
 
       {/* منطقة الرسائل الموحدة */}
       <div className="flex-1 min-h-0">
@@ -696,6 +728,7 @@ export default function BroadcastRoomInterface({
           onlineUsers={onlineUsers}
           currentRoomName={room?.name || 'غرفة البث'}
           currentRoomId={room?.id}
+          compactHeader
         />
       </div>
     </div>

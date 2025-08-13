@@ -439,7 +439,18 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                  messages={chat.publicMessages}
                  chat={{
                    sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
-                   handleTyping: () => chat.sendTyping()
+                   handleTyping: () => chat.sendTyping(),
+                   addBroadcastMessageHandler: (handler: (data: any) => void) => chat.addBroadcastMessageHandler?.(handler),
+                   removeBroadcastMessageHandler: (handler: (data: any) => void) => chat.removeBroadcastMessageHandler?.(handler),
+                   sendWebRTCIceCandidate: (toUserId: number, roomId: string, candidate: RTCIceCandidateInit) => chat.sendWebRTCIceCandidate?.(toUserId, roomId, candidate),
+                   sendWebRTCOffer: (toUserId: number, roomId: string, offer: RTCSessionDescriptionInit) => chat.sendWebRTCOffer?.(toUserId, roomId, offer),
+                   sendWebRTCAnswer: (toUserId: number, roomId: string, answer: RTCSessionDescriptionInit) => chat.sendWebRTCAnswer?.(toUserId, roomId, answer),
+                   onWebRTCOffer: (handler: (payload: any) => void) => chat.onWebRTCOffer?.(handler),
+                   offWebRTCOffer: (handler: (payload: any) => void) => chat.offWebRTCOffer?.(handler),
+                   onWebRTCIceCandidate: (handler: (payload: any) => void) => chat.onWebRTCIceCandidate?.(handler),
+                   offWebRTCIceCandidate: (handler: (payload: any) => void) => chat.offWebRTCIceCandidate?.(handler),
+                   onWebRTCAnswer: (handler: (payload: any) => void) => chat.onWebRTCAnswer?.(handler),
+                   offWebRTCAnswer: (handler: (payload: any) => void) => chat.offWebRTCAnswer?.(handler),
                  }}
                />
             );
@@ -781,10 +792,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           <button className="text-gray-500 hover:text-gray-700" onClick={() => setShowIgnoredUsers(false)}>✖️</button>
         </div>
         <div className="space-y-2 max-h-80 overflow-y-auto">
-          {Array.from(chat.ignoredUsers || new Set()).length === 0 && (
+          {Array.from<number>(chat.ignoredUsers ?? new Set<number>()).length === 0 && (
             <div className="text-sm text-gray-500">لا يوجد مستخدمون متجاهلون</div>
           )}
-          {Array.from(chat.ignoredUsers || new Set()).map((ignoredId) => {
+          {Array.from<number>(chat.ignoredUsers ?? new Set<number>()).map((ignoredId: number) => {
             const u = chat.onlineUsers.find(u => u.id === ignoredId);
             return (
               <div key={ignoredId} className="flex items-center justify-between border p-2 rounded">
