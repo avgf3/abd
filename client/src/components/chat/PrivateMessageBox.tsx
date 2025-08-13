@@ -1,16 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { formatTime } from '@/utils/timeUtils';
-import type { ChatUser, ChatMessage } from '@/types/chat';
-import FileUploadButton from './FileUploadButton';
-import EmojiPicker from './EmojiPicker';
-import ProfileImage from './ProfileImage';
-import UserRoleBadge from './UserRoleBadge';
-import { getFinalUsernameColor, getUserThemeClasses, getUserThemeStyles } from '@/utils/themeUtils';
-import { api } from '@/lib/queryClient';
-
+import type { ChatMessage, ChatUser } from '@/types/chat';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 interface PrivateMessageBoxProps {
   isOpen: boolean;
@@ -27,279 +21,126 @@ export default function PrivateMessageBox({
   currentUser,
   messages,
   onSendMessage,
-  onClose
+  onClose,
 }: PrivateMessageBoxProps) {
   const [messageText, setMessageText] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  
-  // ترتيب الرسائل حسب الوقت وإزالة التكرارات
-  const sortedMessages = React.useMemo(() => {
-    const uniqueMap = new Map<string, ChatMessage>();
-    
-    messages.forEach(msg => {
-      const key: string = String(msg.id ?? `${msg.senderId}-${msg.content}-${msg.timestamp}`);
-      if (!uniqueMap.has(key)) {
-        uniqueMap.set(key, msg);
-      }
-    });
-    
-    return Array.from(uniqueMap.values()).sort((a, b) => 
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const sortedMessages = useMemo(() => {
+    return [...messages].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }, [messages]);
 
-  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
-    const container = messagesContainerRef.current;
-    if (container) {
-      if (behavior === 'smooth') {
-        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-      } else {
-        container.scrollTop = container.scrollHeight;
-      }
-      return;
-    }
-    // Fallback to anchor if container is not available yet
-    messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
+  const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
+    const c = containerRef.current;
+    if (!c) return;
+    if (behavior === 'smooth') c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' });
+    else c.scrollTop = c.scrollHeight;
   };
 
   useEffect(() => {
-    // استخدم تمرير بدون أنيميشن عند التحديثات الكبيرة أو الفتح الأول لتجنب القفز العام للصفحة
-    scrollToBottom(sortedMessages.length > 20 ? 'auto' : 'smooth');
-  }, [sortedMessages]);
-
-  // Ensure we scroll on open as well
-  useEffect(() => {
     if (isOpen) {
-      // slight delay to allow layout to render
       const t = setTimeout(() => scrollToBottom('auto'), 0);
       return () => clearTimeout(t);
     }
   }, [isOpen]);
 
-  const handleSendMessage = () => {
-    if (messageText.trim()) {
-      onSendMessage(messageText.trim());
-      setMessageText('');
-      // Scroll after sending to keep the latest message in view
-      setTimeout(() => scrollToBottom('smooth'), 0);
-    }
-  };
+  useEffect(() => {
+    scrollToBottom(sortedMessages.length > 20 ? 'auto' : 'smooth');
+  }, [sortedMessages.length]);
 
-  const handleFileSelect = async (file: File, type: 'image' | 'video' | 'document') => {
-    if (type === 'image') {
-      try {
-        if (!currentUser) {
-          alert('يجب تسجيل الدخول');
-          return;
-        }
-        const form = new FormData();
-        form.append('image', file);
-        form.append('senderId', String(currentUser.id));
-        form.append('receiverId', String(user.id));
-        const resp = await api.upload<{ success: boolean; imageUrl: string; message?: any }>(
-          '/api/upload/message-image',
-          form,
-          { timeout: 60000 }
-        );
-        if (resp?.message?.content) {
-          // لا حاجة لاستدعاء onSendMessage لأن الخادم سيرسلها عبر socket
-          return;
-        }
-        // fallback: إن لم يرجع الخادم رسالة، أرسل base64 محلياً (نادر)
-      } catch (e) {
-        console.error('رفع الصورة فشل، سنحاول كـ base64 محلياً', e);
-      }
-      // fallback لقراءة الصورة كـ base64
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        if (dataUrl && dataUrl.startsWith('data:image')) {
-          onSendMessage(dataUrl);
-        }
-      };
-      reader.onerror = () => {
-        alert('فشل في قراءة الملف');
-      };
-      reader.readAsDataURL(file);
-      return;
-    }
-
-    // حالياً نعرض رسالة نصية للأنواع الأخرى إلى حين إضافة مسار رفع مرفقات خاص
-    let fileMessage = '';
-    switch (type) {
-      case 'video':
-        fileMessage = `🎥 فيديو: ${file.name}`;
-        break;
-      default:
-        fileMessage = `📄 مستند: ${file.name}`;
-    }
-    onSendMessage(fileMessage);
+  const handleSend = () => {
+    const text = messageText.trim();
+    if (!text) return;
+    onSendMessage(text);
+    setMessageText('');
+    setTimeout(() => scrollToBottom('smooth'), 0);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      handleSend();
     }
-  };
-
-  const handleEmojiSelect = (emoji: string) => {
-    setMessageText(prev => prev + emoji);
-    setShowEmojiPicker(false);
   };
 
   if (!isOpen) return null;
 
-  // محاكاة لون حد الرسالة حسب رتبة المرسل كما في الغرف
-  const getMessageBorderColor = (userType?: string) => {
-    switch (userType) {
-      case 'owner':
-        return 'border-r-yellow-400';
-      case 'admin':
-        return 'border-r-red-400';
-      case 'moderator':
-        return 'border-r-purple-400';
-      case 'member':
-        return 'border-r-blue-400';
-      default:
-        return 'border-r-green-400';
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="relative max-w-md max-h-[450px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl overflow-hidden">
-        <DialogHeader className="border-b border-accent p-2">
-          <div
-            className={`flex items-center gap-2 px-2 py-1 rounded-none ${getUserThemeClasses(user)}`}
-            style={{ ...getUserThemeStyles(user) }}
-          >
-            <ProfileImage user={user} size="small" className="" hideRoleBadgeOverlay={true} />
-            <span
-              className="text-base font-medium truncate"
-              style={{ color: getFinalUsernameColor(user) }}
-              title={user.username}
-            >
+      <DialogContent className="relative max-w-md max-h-[500px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl overflow-hidden">
+        <DialogHeader className="border-b border-accent p-3">
+          <div className="flex items-center gap-2">
+            <img
+              src={user.profileImage || '/default_avatar.svg'}
+              alt="avatar"
+              className="w-8 h-8 rounded-full border"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/default_avatar.svg'; }}
+            />
+            <span className="text-base font-medium truncate" style={{ color: getFinalUsernameColor(user) }}>
               {user.username}
             </span>
-            <div className="ml-auto flex items-center gap-1">
-              <UserRoleBadge user={user} showOnlyIcon={true} />
-              <Button onClick={onClose} variant="ghost" className="px-2 py-1">✖️</Button>
-            </div>
+            <Button onClick={onClose} variant="ghost" className="ml-auto px-2 py-1">✖️</Button>
           </div>
         </DialogHeader>
 
-        <div ref={messagesContainerRef} className="h-[250px] w-full p-4 overflow-y-auto">
+        <div ref={containerRef} className="h-[280px] w-full p-4 overflow-y-auto bg-white/60">
           <div className="space-y-3">
-            {sortedMessages.map((message, index) => {
-              // تحديد المرسل بشكل صحيح
-              const sender = message.sender || (message.senderId === currentUser?.id ? currentUser : user);
-              const isImage = message.messageType === 'image' || (typeof message.content === 'string' && message.content.startsWith('data:image'));
-              const key = message.id ?? `${message.senderId}-${message.timestamp}-${index}`;
+            {sortedMessages.length === 0 && (
+              <div className="text-center py-10 text-muted-foreground">
+                <div className="text-4xl mb-3">✉️</div>
+                <p className="text-sm">لا توجد رسائل بعد</p>
+              </div>
+            )}
 
-              // Handle system message in a compact style similar to public area
-              if (message.messageType === 'system') {
-                return (
-                  <div key={key} className="w-full flex items-center justify-between p-3 rounded-lg bg-white shadow-sm text-red-600">
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="font-semibold">النظام:</span>
-                      <span className="truncate">{message.content}</span>
-                    </div>
-                    <span className="text-xs text-red-500 ml-2 whitespace-nowrap">{formatTime(message.timestamp)}</span>
-                  </div>
-                );
-              }
-
+            {sortedMessages.map((m, idx) => {
+              const isMe = currentUser && m.senderId === currentUser.id;
+              const key = m.id ?? `${m.senderId}-${m.timestamp}-${idx}`;
+              const isImage = m.messageType === 'image' || (typeof m.content === 'string' && m.content.startsWith('data:image'));
               return (
-                <div 
-                  key={key}
-                  className={`flex items-center gap-3 p-3 rounded-lg border-r-4 ${getMessageBorderColor(sender?.userType)} bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
-                >
-                  {sender && (
-                    <div className="flex-shrink-0">
-                      <ProfileImage 
-                        user={sender} 
-                        size="small"
-                        className="cursor-pointer"
-                      />
+                <div key={key} className={`flex items-center gap-3 p-3 rounded-lg bg-white shadow-sm ${isMe ? 'border-r-4 border-blue-400' : 'border-r-4 border-green-400'}`}>
+                  <img
+                    src={(m.sender?.profileImage as string) || '/default_avatar.svg'}
+                    alt="avatar"
+                    className="w-8 h-8 rounded-full border"
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/default_avatar.svg'; }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold truncate" style={{ color: getFinalUsernameColor(m.sender || user) }}>
+                        {m.sender?.username || (isMe ? currentUser?.username : user.username)}
+                      </span>
+                      <span className="text-xs text-gray-500 whitespace-nowrap ml-auto">{formatTime(m.timestamp)}</span>
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0 flex items-center gap-2">
-                    {sender && <UserRoleBadge user={sender} showOnlyIcon={true} />}
-                    <span
-                      className="font-semibold truncate"
-                      style={{ color: getFinalUsernameColor(sender) }}
-                    >
-                      {sender?.username || 'مجهول'}
-                    </span>
-                    <div className="text-gray-800 break-words flex-1">
+                    <div className="text-gray-800 break-words mt-1">
                       {isImage ? (
                         <img
-                          src={message.content}
+                          src={m.content}
                           alt="صورة"
-                          className="max-h-28 rounded cursor-pointer"
+                          className="max-h-36 rounded cursor-pointer"
                           loading="lazy"
-                          onClick={() => window.open(message.content, '_blank')}
+                          onClick={() => window.open(m.content, '_blank')}
                         />
                       ) : (
-                        <span>{message.content}</span>
+                        <span>{m.content}</span>
                       )}
                     </div>
-                    <span className="text-xs text-gray-500 whitespace-nowrap ml-2">{formatTime(message.timestamp)}</span>
                   </div>
                 </div>
               );
             })}
-            
-            {sortedMessages.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <div className="text-4xl mb-3">✉️</div>
-                <p className="text-lg font-medium">لا توجد رسائل</p>
-                <p className="text-sm">ابدأ محادثة جديدة!</p>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
           </div>
         </div>
 
         <div className="flex gap-2 p-4 border-t border-accent bg-gradient-to-r from-secondary to-accent">
-          <FileUploadButton 
-            onFileSelect={handleFileSelect}
-            disabled={false}
-          />
-          
-          <div className="relative">
-            <Button
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 rounded-lg"
-              title="الرموز التعبيرية"
-            >
-              😊
-            </Button>
-            
-            {showEmojiPicker && (
-              <EmojiPicker 
-                onEmojiSelect={handleEmojiSelect}
-                onClose={() => setShowEmojiPicker(false)}
-              />
-            )}
-          </div>
-          
           <Input
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="✉️ ارسال رسالة..."
-            className="flex-1 bg-white border border-border text-foreground placeholder:text-muted-foreground focus:border-primary"
+            placeholder="اكتب رسالتك..."
+            className="flex-1 bg-white border border-border text-foreground placeholder:text-muted-foreground"
           />
-          <Button
-            onClick={handleSendMessage}
-            disabled={!messageText.trim()}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium"
-          >
-            ✉️ ارسال
+          <Button onClick={handleSend} disabled={!messageText.trim()} className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium">
+            ارسال
           </Button>
         </div>
       </DialogContent>
