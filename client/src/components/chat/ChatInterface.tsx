@@ -4,7 +4,7 @@ import MessageArea from './MessageArea';
 import BroadcastRoomInterface from './BroadcastRoomInterface';
 import ProfileModal from './ProfileModal';
 // import PrivateMessageBox from './PrivateMessageBox';
-import UserPopup from './UserPopup';
+// import UserPopup from './UserPopup';
 import SettingsMenu from './SettingsMenu';
 import ReportModal from './ReportModal';
 import AdminReportsPanel from './AdminReportsPanel';
@@ -46,7 +46,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAdminReports, setShowAdminReports] = useState(false);
-  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>('users'); // إظهار المستخدمين افتراضياً
+  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>('users');
   
   // 🚀 إدارة الغرف عبر hook موحّد محسن
   const {
@@ -156,38 +156,34 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   }, []);
   const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
   const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(null);
-  const [userPopup, setUserPopup] = useState<{
-    show: boolean;
-    user: ChatUser | null;
-    x: number;
-    y: number;
-  }>({
-    show: false,
-    user: null,
-    x: 0,
-    y: 0,
-  });
+  // const [userPopup, setUserPopup] = useState<{
+  //   show: boolean;
+  //   user: ChatUser | null;
+  //   x: number;
+  //   y: number;
+  // }>({
+  //   show: false,
+  //   user: null,
+  //   x: 0,
+  //   y: 0,
+  // });
 
   const handleUserClick = (event: React.MouseEvent, user: ChatUser) => {
     event.stopPropagation();
-    setUserPopup({
-      show: true,
-      user,
-      x: event.clientX,
-      y: event.clientY,
-    });
+    setProfileUser(user);
+    setShowProfile(true);
   };
 
-  const closeUserPopup = () => {
-    setUserPopup(prev => ({ ...prev, show: false }));
-  };
+  // const closeUserPopup = () => {
+  //   setUserPopup(prev => ({ ...prev, show: false }));
+  // };
 
   const handlePrivateMessage = (user: ChatUser) => {
     setSelectedPrivateUser(user);
     try {
       // تم تعطيل واجهة الخاص القديمة؛ التحميل لم يعد متاحاً هنا
     } catch {}
-    closeUserPopup();
+    // closeUserPopup();
     setShowDirectMessages(true);
   };
 
@@ -212,13 +208,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       console.error('Friend request error:', error);
       showErrorToast(error instanceof Error ? error.message : "لم نتمكن من إرسال طلب الصداقة", "خطأ");
     }
-    closeUserPopup();
+    // closeUserPopup();
   };
 
   const handleIgnoreUser = (user: ChatUser) => {
     chat.ignoreUser(user.id);
     showSuccessToast(`تم تجاهل ${user.username}. لن ترى رسائله العامة أو الخاصة ولن يستطيع إرسال طلب صداقة لك.`, "تم التجاهل");
-    closeUserPopup();
+    // closeUserPopup();
   };
 
 
@@ -226,7 +222,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const handleViewProfile = (user: ChatUser) => {
     setProfileUser(user);
     setShowProfile(true);
-    closeUserPopup();
+    // closeUserPopup();
   };
 
   // معالج للروابط الشخصية
@@ -289,7 +285,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setReportedUser(user);
     setReportedMessage(messageContent && messageId ? { content: messageContent, id: messageId } : null);
     setShowReportModal(true);
-    closeUserPopup();
+    // closeUserPopup();
   };
 
   const closeReportModal = () => {
@@ -299,7 +295,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   return (
-      <div className="h-screen flex flex-col" onClick={closeUserPopup}>
+      <div className="h-screen flex flex-col">
       {/* Header - بدون التبويبات الأربعة */}
       <header className="bg-secondary py-4 px-6 flex justify-between items-center shadow-2xl border-b border-accent">
         <div className="flex gap-3">
@@ -598,21 +594,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* الرسائل الخاصة القديمة معطلة. استخدم واجهة DM المتطورة لاحقاً هنا. */}
 
-      {userPopup.show && userPopup.user && (
-        <UserPopup
-          user={userPopup.user}
-          x={userPopup.x}
-          y={userPopup.y}
-          onPrivateMessage={() => { closeUserPopup(); setTimeout(() => handlePrivateMessage(userPopup.user!), 0); }}
-          onAddFriend={() => handleAddFriend(userPopup.user!)}
-          onIgnore={() => {
-            // إزالة زر التجاهل من UserPopup - الآن في الملف الشخصي فقط
-          }}
-          onViewProfile={() => handleViewProfile(userPopup.user!)}
-          currentUser={chat.currentUser}
-          onClose={closeUserPopup}
-        />
-      )}
+      {/* UserPopup removed */}
 
               {showSettings && (
           <SettingsMenu
