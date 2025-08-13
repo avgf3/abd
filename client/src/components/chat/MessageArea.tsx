@@ -23,6 +23,7 @@ interface MessageAreaProps {
   onlineUsers?: ChatUser[]; // إضافة قائمة المستخدمين المتصلين للمنشن
   currentRoomName?: string; // اسم الغرفة الحالية
   currentRoomId?: string; // معرف الغرفة الحالية
+  ignoredUserIds?: Set<number>; // قائمة المتجاهلين لحجب الرسائل ظاهرياً
 }
 
 export default function MessageArea({ 
@@ -35,7 +36,8 @@ export default function MessageArea({
   onUserClick,
   onlineUsers = [],
   currentRoomName = 'الدردشة العامة',
-  currentRoomId = 'general'
+  currentRoomId = 'general',
+  ignoredUserIds
 }: MessageAreaProps) {
   const [messageText, setMessageText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -57,13 +59,18 @@ export default function MessageArea({
   // 🔥 SIMPLIFIED message filtering - حذف الفلترة المعقدة التي تخفي رسائل صحيحة
   const validMessages = useMemo(() => {
     // ✅ فلترة بسيطة فقط لإزالة الرسائل الفارغة تماماً
-    return messages.filter(msg => 
+    const base = messages.filter(msg => 
       msg && 
       msg.content && 
       msg.content.trim() !== '' &&
       msg.sender // التأكد من وجود بيانات المرسل الأساسية
     );
-  }, [messages]);
+    // ✅ حجب رسائل المستخدمين المتجاهَلين (حماية واجهة فقط؛ الخادم يمنع أيضاً للخاص)
+    if (ignoredUserIds && ignoredUserIds.size > 0) {
+      return base.filter(msg => !ignoredUserIds.has(msg.senderId));
+    }
+    return base;
+  }, [messages, ignoredUserIds]);
 
   // Scroll to bottom function - optimized
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {

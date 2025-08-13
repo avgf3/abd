@@ -1818,6 +1818,18 @@ if (!existing) {
           socket.emit('message', { type: 'error', message: 'المستقبل غير موجود' });
           return;
         }
+
+        // منع الرسائل إذا كان المستقبل قد تجاهل المرسل
+        try {
+          const ignoredByReceiver: number[] = await storage.getIgnoredUsers(receiverId);
+          if (Array.isArray(ignoredByReceiver) && ignoredByReceiver.includes(socket.userId)) {
+            socket.emit('message', { type: 'error', message: 'لا يمكن إرسال رسالة: هذا المستخدم قام بتجاهلك' });
+            return;
+          }
+        } catch (e) {
+          // في حال فشل جلب قائمة التجاهل، لا نمنع لكن نسجل تحذير
+          console.warn('تحذير: تعذر التحقق من قائمة التجاهل للمستقبل:', e);
+        }
         
         // إنشاء الرسالة الخاصة
         const newMessage = await storage.createMessage({
@@ -1853,6 +1865,17 @@ if (!existing) {
           socket.emit('message', { type: 'error', message: 'المستخدم غير موجود' });
           return;
         }
+
+        // منع إرسال طلب صداقة إذا كان المستهدف قد تجاهل المرسل
+        try {
+          const ignoredByTarget: number[] = await storage.getIgnoredUsers(targetUserId);
+          if (Array.isArray(ignoredByTarget) && ignoredByTarget.includes(socket.userId)) {
+            socket.emit('message', { type: 'error', message: 'لا يمكن إرسال طلب صداقة: هذا المستخدم قام بتجاهلك' });
+            return;
+          }
+        } catch (e) {
+          console.warn('تحذير: تعذر التحقق من قائمة التجاهل للمستخدم المستهدف:', e);
+        }
         
         // إنشاء طلب الصداقة
         const friendRequest = await friendService.createFriendRequest(socket.userId, targetUserId);
@@ -1863,17 +1886,19 @@ if (!existing) {
           type: 'friendRequest',
           targetUserId: targetUserId,
           senderId: socket.userId,
-          senderUsername: sender?.username,
-          message: `${sender?.username} يريد إضافتك كصديق`
+          senderName: sender?.username,
         });
         
-        socket.emit('message', {
-          type: 'notification',
-          message: 'تم إرسال طلب الصداقة'
-        });
+        // إنشاء إشعار حقيقي في قاعدة البيانات
+        await notificationService.createFriendRequestNotification(
+          targetUserId,
+          sender?.username || 'مستخدم مجهول',
+          socket.userId
+        );
         
+        socket.emit('message', { type: 'info', message: 'تم إرسال طلب الصداقة' });
       } catch (error) {
-        console.error('خطأ في إرسال طلب الصداقة:', error);
+        console.error('خطأ في إرسال طلب الصداقة عبر Socket:', error);
         socket.emit('message', { type: 'error', message: 'خطأ في إرسال طلب الصداقة' });
       }
     });
@@ -2568,6 +2593,16 @@ if (!existing) {
         return res.status(400).json({ error: "أنتما أصدقاء بالفعل" });
       }
 
+      // منع إرسال طلب صداقة إذا كان المستقبل قد تجاهل المرسل
+      try {
+        const ignoredByReceiver: number[] = await storage.getIgnoredUsers(receiverId);
+        if (Array.isArray(ignoredByReceiver) && ignoredByReceiver.includes(senderId)) {
+          return res.status(403).json({ error: 'لا يمكن إرسال طلب صداقة: هذا المستخدم قام بتجاهلك' });
+        }
+      } catch (e) {
+        console.warn('تحذير: تعذر التحقق من قائمة التجاهل للمستقبل:', e);
+      }
+
       const request = await friendService.createFriendRequest(senderId, receiverId);
       // إرسال إشعار عبر WebSocket
       const sender = await storage.getUser(senderId);
@@ -2622,6 +2657,16 @@ if (!existing) {
       const friendship = await friendService.getFriendship(senderId, targetUser.id);
       if (friendship) {
         return res.status(400).json({ error: "أنتما أصدقاء بالفعل" });
+      }
+
+      // منع إرسال طلب صداقة إذا كان المستهدف قد تجاهل المُرسل
+      try {
+        const ignoredByTarget: number[] = await storage.getIgnoredUsers(targetUser.id);
+        if (Array.isArray(ignoredByTarget) && ignoredByTarget.includes(senderId)) {
+          return res.status(403).json({ error: 'لا يمكن إرسال طلب صداقة: هذا المستخدم قام بتجاهلك' });
+        }
+      } catch (e) {
+        console.warn('تحذير: تعذر التحقق من قائمة التجاهل للمستخدم المستهدف:', e);
       }
 
       const request = await friendService.createFriendRequest(senderId, targetUser.id);

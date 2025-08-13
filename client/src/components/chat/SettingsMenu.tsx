@@ -18,10 +18,11 @@ interface SettingsMenuProps {
   onOpenReports?: () => void;
   onOpenThemeSelector?: () => void;
   onOpenUsernameColorPicker?: () => void;
+  onOpenIgnoredUsers?: () => void;
   currentUser?: any;
 }
 
-export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenReports, onOpenThemeSelector, onOpenUsernameColorPicker, currentUser }: SettingsMenuProps) {
+export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenReports, onOpenThemeSelector, onOpenUsernameColorPicker, onOpenIgnoredUsers, currentUser }: SettingsMenuProps) {
   const handleLogout = () => {
     if (confirm('🤔 هل أنت متأكد من تسجيل الخروج؟')) {
       onLogout();
@@ -73,6 +74,16 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
           >
             <Brush className="w-4 h-4 text-primary" />
             لون الاسم
+          </Button>
+
+          <Button
+            onClick={onOpenIgnoredUsers}
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+          >
+            <Shield className="w-4 h-4 text-primary" />
+            قائمة المتجاهلين
           </Button>
         </div>
 

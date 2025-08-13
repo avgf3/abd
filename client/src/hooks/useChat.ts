@@ -618,6 +618,21 @@ export const useChat = () => {
     };
   }, []);
 
+  useEffect(() => {
+    // عند تحديد المستخدم الحالي، اجلب قائمة المتجاهلين الخاصة به مرة واحدة
+    const fetchIgnored = async () => {
+      if (!state.currentUser?.id) return;
+      try {
+        const data = await apiRequest(`/api/users/${state.currentUser.id}/ignored`);
+        const ids: number[] = Array.isArray(data?.ignoredUsers) ? data.ignoredUsers : [];
+        ids.forEach((id) => dispatch({ type: 'IGNORE_USER', payload: id }));
+      } catch (e) {
+        console.warn('تعذر جلب قائمة المتجاهلين:', e);
+      }
+    };
+    fetchIgnored();
+  }, [state.currentUser?.id]);
+
   // 🔥 SIMPLIFIED Connect function
   const connect = useCallback((user: ChatUser) => {
     dispatch({ type: 'SET_CURRENT_USER', payload: user });
@@ -768,13 +783,25 @@ export const useChat = () => {
   }, []);
 
   // 🔥 SIMPLIFIED helper functions
-  const ignoreUser = useCallback((userId: number) => {
-    dispatch({ type: 'IGNORE_USER', payload: userId });
-  }, []);
+  const ignoreUser = useCallback(async (userId: number) => {
+    try {
+      if (!state.currentUser?.id) return;
+      await apiRequest(`/api/users/${state.currentUser.id}/ignore/${userId}`, { method: 'POST' });
+      dispatch({ type: 'IGNORE_USER', payload: userId });
+    } catch (e) {
+      console.error('فشل في تجاهل المستخدم:', e);
+    }
+  }, [state.currentUser?.id]);
 
-  const unignoreUser = useCallback((userId: number) => {
-    dispatch({ type: 'UNIGNORE_USER', payload: userId });
-  }, []);
+  const unignoreUser = useCallback(async (userId: number) => {
+    try {
+      if (!state.currentUser?.id) return;
+      await apiRequest(`/api/users/${state.currentUser.id}/ignore/${userId}`, { method: 'DELETE' });
+      dispatch({ type: 'UNIGNORE_USER', payload: userId });
+    } catch (e) {
+      console.error('فشل في إلغاء تجاهل المستخدم:', e);
+    }
+  }, [state.currentUser?.id]);
 
   const sendTyping = useCallback(() => {
     if (socket.current?.connected) {
