@@ -42,6 +42,7 @@ interface UserContextMenuProps {
   messageId?: number;
   messageContent?: string;
   onAction?: () => void;
+  onStartPrivateChat?: (user: ChatUser) => void;
 }
 
 export default function UserContextMenu({
@@ -50,7 +51,8 @@ export default function UserContextMenu({
   currentUser,
   messageId,
   messageContent,
-  onAction
+  onAction,
+  onStartPrivateChat
 }: UserContextMenuProps) {
   const [showMuteDialog, setShowMuteDialog] = useState(false);
   const [showKickDialog, setShowKickDialog] = useState(false);
@@ -316,9 +318,8 @@ export default function UserContextMenu({
           {/* إجراءات عامة */}
           <ContextMenuItem className="flex items-center gap-3 text-blue-600 font-semibold bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-2 cursor-pointer transition-all duration-200"
             onClick={() => {
-              // افتح نافذة الخاص عبر الهاش لالتقاطه من الواجهة الرئيسية
               if (targetUser?.id) {
-                window.location.hash = `#pm${targetUser.id}`;
+                onStartPrivateChat?.(targetUser);
               }
             }}
           >
