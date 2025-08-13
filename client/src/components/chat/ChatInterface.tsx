@@ -181,13 +181,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   const handlePrivateMessage = (user: ChatUser) => {
-    setShowMessages(false);
-    setTimeout(() => {
-      setSelectedPrivateUser(user);
-      try {
-        chat.loadPrivateConversation(user.id);
-      } catch {}
-    }, 0);
+    setSelectedPrivateUser(user);
+    try {
+      chat.loadPrivateConversation(user.id);
+    } catch {}
+    closeUserPopup();
   };
 
   const closePrivateMessage = () => {
