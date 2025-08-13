@@ -547,6 +547,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               }}
               onPrivateMessage={handlePrivateMessage}
               onAddFriend={handleAddFriend}
+              onReportUser={(u) => handleReportUser(u)}
             />
           ) : (
             <ProfileModal 
@@ -559,6 +560,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onIgnoreUser={(userId) => {
                 chat.ignoreUser(userId);
               }}
+              onReportUser={(u) => handleReportUser(u)}
             />
           )}
         </>

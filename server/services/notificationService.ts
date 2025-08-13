@@ -133,6 +133,21 @@ export class NotificationService {
     });
   }
 
+  // إنشاء إشعار قبول صداقة
+  async createFriendAcceptedNotification(
+    userId: number,
+    friendName: string,
+    friendId: number
+  ): Promise<Notification> {
+    return this.createNotification({
+      userId,
+      type: 'friend_accepted',
+      title: 'تم قبول طلب الصداقة',
+      message: `${friendName} قبل طلب صداقتك`,
+      data: { friendId, friendName }
+    });
+  }
+
   // إنشاء إشعار رسالة خاصة
   async createMessageNotification(
     userId: number,
