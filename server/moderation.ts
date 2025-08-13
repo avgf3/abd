@@ -33,8 +33,12 @@ export class ModerationSystem {
     try {
       const blockedDevices = await storage.getBlockedDevices();
       for (const device of blockedDevices) {
-        this.blockedIPs.add(device.ipAddress);
-        this.blockedDevices.add(device.deviceId);
+        if (device.ipAddress && device.ipAddress !== 'unknown') {
+          this.blockedIPs.add(device.ipAddress);
+        }
+        if (device.deviceId && device.deviceId !== 'unknown') {
+          this.blockedDevices.add(device.deviceId);
+        }
       }
       } catch (error) {
       console.error('خطأ في تحميل الأجهزة المحجوبة:', error);
@@ -168,19 +172,23 @@ export class ModerationSystem {
     });
 
     // حجب IP والجهاز نهائياً (بدون انتهاء صلاحية)
-    if (ipAddress) this.blockedIPs.add(ipAddress);
-    if (deviceId) this.blockedDevices.add(deviceId);
+    if (ipAddress && ipAddress !== 'unknown') this.blockedIPs.add(ipAddress);
+    if (deviceId && deviceId !== 'unknown') this.blockedDevices.add(deviceId);
 
     // حفظ بيانات الحجب في قاعدة البيانات للاستمرارية
     try {
-      await storage.createBlockedDevice({
-        ipAddress: ipAddress || 'unknown',
-        deviceId: deviceId || 'unknown',
-        userId: targetUserId,
-        reason: reason,
-        blockedAt: new Date(),
-        blockedBy: moderatorId
-      });
+      const hasValidIp = !!ipAddress && ipAddress !== 'unknown';
+      const hasValidDevice = !!deviceId && deviceId !== 'unknown';
+      if (hasValidIp || hasValidDevice) {
+        await storage.createBlockedDevice({
+          ipAddress: hasValidIp ? ipAddress! : 'unknown',
+          deviceId: hasValidDevice ? deviceId! : 'unknown',
+          userId: targetUserId,
+          reason: reason,
+          blockedAt: new Date(),
+          blockedBy: moderatorId
+        });
+      }
     } catch (error) {
       console.error('خطأ في حفظ بيانات الحجب:', error);
     }
@@ -461,8 +469,8 @@ export class ModerationSystem {
 
   // التحقق من IP/الجهاز المحجوب
   isBlocked(ipAddress?: string, deviceId?: string): boolean {
-    if (ipAddress && this.blockedIPs.has(ipAddress)) return true;
-    if (deviceId && this.blockedDevices.has(deviceId)) return true;
+    if (ipAddress && ipAddress !== 'unknown' && this.blockedIPs.has(ipAddress)) return true;
+    if (deviceId && deviceId !== 'unknown' && this.blockedDevices.has(deviceId)) return true;
     return false;
   }
 

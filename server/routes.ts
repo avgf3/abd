@@ -30,6 +30,7 @@ import sharp from "sharp";
 import { DEFAULT_LEVELS, recalculateUserStats } from "../shared/points-system";
 import { protect } from "./middleware/enhancedSecurity";
 import { notificationService } from "./services/notificationService";
+import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 
 
 // إعداد multer موحد لرفع الصور
@@ -554,8 +555,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "المدة يجب أن تكون بين 1 و 1440 دقيقة" });
       }
       
-      const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
-      const deviceId = (req.headers['x-device-id'] as string) || (req.headers['user-agent'] as string) || 'unknown';
+      const clientIP = getClientIpFromHeaders(req.headers as any, (req.ip || (req.connection as any)?.remoteAddress) as any);
+      const deviceId = getDeviceIdFromHeaders(req.headers as any);
       
       const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, muteDuration, clientIP, deviceId);
       if (success) {
@@ -600,8 +601,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "مدة الطرد يجب أن تكون بين 5 و 60 دقيقة" });
       }
       
-      const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.headers['x-real-ip'] as string || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
-      const deviceId = (req.headers['x-device-id'] as string) || (req.headers['user-agent'] as string) || 'unknown';
+      const clientIP = getClientIpFromHeaders(req.headers as any, (req.ip || (req.connection as any)?.remoteAddress) as any);
+      const deviceId = getDeviceIdFromHeaders(req.headers as any);
       
       const success = await moderationSystem.banUser(
         moderatorId, 
@@ -663,13 +664,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // الحصول على IP والجهاز الحقيقيين
-      const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 
-                      req.headers['x-real-ip'] as string || 
-                      req.ip || 
-                      (req.connection as any)?.remoteAddress || 
-                      'unknown';
-      const deviceId = (req.headers['x-device-id'] as string) || 
-                      `device_${targetUserId}_${Date.now()}`; // إنشاء معرف فريد إذا لم يكن موجود
+      const clientIP = getClientIpFromHeaders(req.headers as any, (req.ip || (req.connection as any)?.remoteAddress) as any);
+      const deviceId = getDeviceIdFromHeaders(req.headers as any);
       
       const success = await moderationSystem.blockUser(moderatorId, targetUserId, reason, clientIP, deviceId);
       if (success) {
@@ -1375,13 +1371,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let connectionTimeout: NodeJS.Timeout | null = null;
     
     // التحقق من IP والجهاز المحجوب
-    const clientIP = (socket.handshake.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 
-                    socket.handshake.headers['x-real-ip'] as string || 
-                    socket.handshake.address || 
-                    'unknown';
-    const deviceId = socket.handshake.headers['x-device-id'] as string || 
-                    socket.handshake.headers['user-agent'] as string || 
-                    'unknown';
+    const clientIP = getClientIpFromHeaders(socket.handshake.headers as any, socket.handshake.address as any);
+    const deviceId = getDeviceIdFromHeaders(socket.handshake.headers as any);
     
     // التحقق من الحجب قبل السماح بالاتصال
     if (moderationSystem.isBlocked(clientIP, deviceId)) {
