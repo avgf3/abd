@@ -335,37 +335,7 @@
   color: var(--chat-highlight);
 }
 
-.user-popup {
-  position: absolute; 
-  background: linear-gradient(135deg, var(--chat-secondary), var(--chat-accent));
-  color: white;
-  border: 1px solid var(--border); 
-  border-radius: 12px; 
-  padding: 8px;
-  font-size: 14px; 
-  z-index: 9999; 
-  display: none; 
-  flex-direction: column;
-  gap: 4px; 
-  min-width: 160px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(10px);
-}
-
-.user-popup button { 
-  text-align: right; 
-  padding: 8px 12px; 
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  border: none;
-  background: transparent;
-  color: white;
-}
-
-.user-popup button:hover { 
-  background: hsla(197, 100%, 55%, 0.2);
-  transform: translateX(-2px);
-}
+ /* user-popup removed */
 
 .private-message-box {
   position: fixed; 
