@@ -146,19 +146,19 @@ export function createPrivateMessagesRouter(
 
       const message = await pmService.sendMessage(conversationId, userId, messageData);
 
-      // جلب بيانات المرسل والمحادثة للإرسال عبر Socket.IO
-      const conversation = await pmService.getUserConversations(userId, { limit: 1 });
+      // إعداد الرسالة مع تفاصيل المرسل
       const messageWithDetails = {
         ...message,
         sender: req.user,
-        conversation: conversation[0]?.conversation,
       };
 
-      // إرسال الرسالة لجميع المشاركين
+      // بث الرسالة للمحادثة
       io.to(`conversation:${conversationId}`).emit('new_message', messageWithDetails);
 
-      // إرسال إشعار للمشاركين الآخرين
-      const participants = conversation[0]?.otherParticipants || [];
+      // إرسال إشعار للمشاركين الآخرين الحقيقيين في هذه المحادثة
+      const convParticipants = await pmService.getUserConversations(userId, { limit: 200 });
+      const currentConv = convParticipants.find(c => c.conversation.id === conversationId);
+      const participants = currentConv?.otherParticipants || [];
       for (const participant of participants) {
         if (participant.id !== userId) {
           await notificationService.createMessageNotification(
@@ -228,9 +228,17 @@ export function createPrivateMessagesRouter(
           };
         }
 
-        // حفظ الملف (في بيئة الإنتاج، يفضل استخدام خدمة تخزين سحابية)
-        const fileUrl = `/uploads/${fileId}${path.extname(file.originalname)}`;
-        // هنا يجب حفظ processedBuffer في نظام الملفات أو خدمة التخزين
+        // حفظ الملف فعلياً داخل client/public/uploads
+        const uploadsDir = path.join(process.cwd(), 'client', 'public', 'uploads');
+        const fs = await import('fs');
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        const fileExt = path.extname(file.originalname);
+        const filePath = path.join(uploadsDir, `${fileId}${fileExt}`);
+        fs.writeFileSync(filePath, processedBuffer);
+
+        const fileUrl = `/uploads/${fileId}${fileExt}`;
 
         const attachments = [{
           id: fileId,
@@ -250,7 +258,6 @@ export function createPrivateMessagesRouter(
           metadata,
         });
 
-        // إرسال عبر Socket.IO
         const messageWithDetails = {
           ...message,
           sender: req.user,
@@ -330,7 +337,7 @@ export function createPrivateMessagesRouter(
         user: {
           id: userId,
           username: req.user!.username,
-          profileImage: req.user!.profileImage,
+          profileImage: (req.user as any)?.profileImage,
         },
         isTyping,
       });

@@ -264,10 +264,7 @@ export function ConversationsList({
                         {getConversationName(conv)}
                       </h3>
                       <div className="flex items-center gap-1">
-                        {/* حالة الرسالة */}
-                        {conv.lastMessage && conv.lastMessage.senderId === conv.participant.userId && (
-                          getMessageStatusIcon(conv.lastMessage.status as MessageStatus)
-                        )}
+                        {/* حالة الرسالة غير متاحة هنا حالياً */}
                         
                         {/* الوقت */}
                         <span className="text-xs text-gray-500">

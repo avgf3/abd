@@ -40,7 +40,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/UserContext';
 import { cn } from '@/lib/utils';
 import { MessageItem } from './MessageItem';
 import { MessageInput } from './MessageInput';
