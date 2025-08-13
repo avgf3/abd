@@ -39,7 +39,7 @@ export default function PrivateMessageBox({
     const uniqueMap = new Map<string, ChatMessage>();
     
     messages.forEach(msg => {
-      const key = msg.id || `${msg.senderId}-${msg.content}-${msg.timestamp}`;
+      const key: string = String(msg.id ?? `${msg.senderId}-${msg.content}-${msg.timestamp}`);
       if (!uniqueMap.has(key)) {
         uniqueMap.set(key, msg);
       }

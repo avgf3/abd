@@ -18,9 +18,10 @@ interface ProfileModalProps {
   onUpdate?: (user: ChatUser) => void;
   onPrivateMessage?: (user: ChatUser) => void;
   onAddFriend?: (user: ChatUser) => void;
+  onReportUser?: (user: ChatUser) => void;
 }
 
-export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser, onUpdate, onPrivateMessage, onAddFriend }: ProfileModalProps) {
+export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser, onUpdate, onPrivateMessage, onAddFriend, onReportUser }: ProfileModalProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -1829,8 +1830,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
             {localUser?.id !== currentUser?.id && (
               <div className="profile-buttons">
-                <button>🚩 تبليغ</button>
-                <button onClick={() => onIgnoreUser?.(localUser?.id || 0)}>🚫 حظر</button>
+                <button onClick={() => onReportUser?.(localUser)}>🚩 تبليغ</button>
+                <button onClick={() => onIgnoreUser?.(localUser?.id || 0)}>🚫 تجاهل</button>
                 <button onClick={() => onPrivateMessage?.(localUser)}>💬 محادثة</button>
                 <button onClick={() => onAddFriend?.(localUser)}>👥 اضافة صديق</button>
               </div>
