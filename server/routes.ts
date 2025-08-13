@@ -30,10 +30,7 @@ import sharp from "sharp";
 import { DEFAULT_LEVELS, recalculateUserStats } from "../shared/points-system";
 import { protect } from "./middleware/enhancedSecurity";
 import { notificationService } from "./services/notificationService";
-import { createPrivateMessagesRouter } from "./routes/private-messages";
-import { PrivateMessagesService } from "./services/privateMessagesService";
-import { NotificationService } from "./services/notificationService";
-import { setupPrivateMessagesSocket } from "./sockets/private-messages-socket";
+
 
 // إعداد multer موحد لرفع الصور
 const createMulterConfig = (destination: string, prefix: string, maxSize: number = 5 * 1024 * 1024) => {
@@ -193,11 +190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // استخدام مسارات الرسائل المنفصلة والمحسنة
   app.use('/api/messages', messageRoutes);
   
-  // رسائل خاصة متطورة: تهيئة الخدمة وراوتر الـ DM المتطور
-  const pmService = new PrivateMessagesService(db as any);
-  let privateMessagesRouter = createPrivateMessagesRouter(pmService, notificationService as NotificationService, io as any);
-  app.use('/api/private-messages', privateMessagesRouter);
-  
+
   // رفع صور البروفايل - محسّن مع حل مشكلة Render
   app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
     try {
@@ -977,7 +970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // بعد تهيئة Socket.IO، نمرر io الحقيقي لموديول الرسائل الخاصة
   try {
-    setupPrivateMessagesSocket(io as any, pmService, notificationService as NotificationService);
+
   } catch (e) {
     console.error('Failed to setup private messages socket:', e);
   }
@@ -1218,7 +1211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // [Deprecated] تم إلغاء endpoint الخاص القديم /api/messages/private/:userId1/:userId2 لصالح /api/private-messages
+  // ملاحظة: تم تبسيط نظام الخاص واعتماد /api/messages (isPrivate=true) بدلاً من /api/private-messages
 
   // POST endpoint for sending messages
   app.post("/api/messages", async (req, res) => {

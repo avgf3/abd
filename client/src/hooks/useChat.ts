@@ -529,7 +529,7 @@ export const useChat = () => {
       }
     };
 
-    // socketInstance.on('privateMessage', handlePrivateMessage);
+    socketInstance.on('privateMessage', handlePrivateMessage);
     // [Deprecated] منظومة الخاص القديمة معطّلة. استخدم واجهة DM المتطورة عبر usePrivateMessages().
 
       // معالج حدث الطرد
@@ -755,8 +755,8 @@ export const useChat = () => {
     };
 
     if (receiverId) {
-      // [Deprecated] تم تعطيل القناة القديمة للخاص
-      console.warn('[Deprecated] استخدام قناة الخاص القديمة. يرجى الانتقال لمنظومة DM المتطورة.');
+      // أرسل عبر REST الموحد لضمان الحفظ والبث
+      apiRequest('/api/messages', { method: 'POST', body: messageData }).catch(() => {});
     } else {
       socket.current.emit('publicMessage', messageData);
     }

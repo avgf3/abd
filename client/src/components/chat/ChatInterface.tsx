@@ -3,7 +3,7 @@ import UnifiedSidebar from './UserSidebarWithWalls';
 import MessageArea from './MessageArea';
 import BroadcastRoomInterface from './BroadcastRoomInterface';
 import ProfileModal from './ProfileModal';
-// import PrivateMessageBox from './PrivateMessageBox';
+import PrivateMessageBox from './PrivateMessageBox';
 import UserPopup from './UserPopup';
 import SettingsMenu from './SettingsMenu';
 import ReportModal from './ReportModal';
@@ -25,7 +25,7 @@ import WelcomeNotification from './WelcomeNotification';
 import ThemeSelector from './ThemeSelector';
 // import RoomComponent from './RoomComponent';
 import { useRoomManager } from '@/hooks/useRoomManager';
-import DirectMessagesPanel from '@/components/private-messages/DirectMessagesPanel';
+// import DirectMessagesPanel from '@/components/private-messages/DirectMessagesPanel';
 
 import { Button } from '@/components/ui/button';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
@@ -115,6 +115,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   const [showMessages, setShowMessages] = useState(false);
   const [showDirectMessages, setShowDirectMessages] = useState(false);
+  const [showPmBox, setShowPmBox] = useState(false);
   const [showModerationPanel, setShowModerationPanel] = useState(false);
   const [showOwnerPanel, setShowOwnerPanel] = useState(false);
   const [showReportsLog, setShowReportsLog] = useState(false);
@@ -188,7 +189,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       // تم تعطيل واجهة الخاص القديمة؛ التحميل لم يعد متاحاً هنا
     } catch {}
     closeUserPopup();
-    setShowDirectMessages(true);
+    // setShowDirectMessages(true);
+    setShowPmBox(true);
   };
 
   const closePrivateMessage = () => {
@@ -673,13 +675,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
 
 
-      {showDirectMessages && (
-        <DirectMessagesPanel
-          isOpen={showDirectMessages}
-          onClose={() => setShowDirectMessages(false)}
-          initialParticipantId={selectedPrivateUser?.id}
-        />
-      )}
 
       {/* ⚠️ لوحة الإدارة - إزالة التكرار */}
       {showModerationPanel && (
