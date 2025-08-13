@@ -98,13 +98,11 @@ export function usePrivateMessages(): UsePrivateMessagesReturn {
 
     // معالجات الأحداث
     socket.on('connect', () => {
-      console.log('متصل بخادم الرسائل الخاصة');
       socket.emit('join_conversations');
     });
 
     socket.on('conversations_joined', ({ conversationIds }) => {
-      console.log('تم الانضمام إلى المحادثات:', conversationIds);
-    });
+      });
 
     socket.on('new_message', (message: PrivateMessage) => {
       handleNewMessage(message);
