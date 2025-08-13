@@ -9,6 +9,7 @@ import SettingsMenu from './SettingsMenu';
 import ReportModal from './ReportModal';
 import AdminReportsPanel from './AdminReportsPanel';
 import NotificationPanel from './NotificationPanel';
+import MessagesPanel from './MessagesPanel';
 import UsernameColorPicker from '@/components/profile/UsernameColorPicker';
 
 
@@ -114,7 +115,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const [showMessages, setShowMessages] = useState(false);
-  const [showDirectMessages, setShowDirectMessages] = useState(false);
   const [showPmBox, setShowPmBox] = useState(false);
   const [showModerationPanel, setShowModerationPanel] = useState(false);
   const [showOwnerPanel, setShowOwnerPanel] = useState(false);
@@ -185,13 +185,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   const handlePrivateMessage = (user: ChatUser) => {
     setSelectedPrivateUser(user);
-    try {
-      // تم تعطيل واجهة الخاص القديمة؛ التحميل لم يعد متاحاً هنا
-    } catch {}
     closeUserPopup();
-    // setShowDirectMessages(true);
     setShowPmBox(true);
   };
+
+  useEffect(() => {
+    if (showPmBox && selectedPrivateUser && (chat as any).loadPrivateConversation) {
+      (chat as any).loadPrivateConversation(selectedPrivateUser.id, 50);
+    }
+  }, [showPmBox, selectedPrivateUser]);
 
   const closePrivateMessage = () => {
     setSelectedPrivateUser(null);
@@ -266,7 +268,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           }
           if (user) {
             setSelectedPrivateUser(user);
-            try { /* واجهة الخاص القديمة معطلة */ } catch {}
+            setShowPmBox(true);
           } else {
             showErrorToast("لم نتمكن من العثور على هذا المستخدم", "مستخدم غير موجود");
           }
@@ -385,7 +387,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
           <Button 
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
-            onClick={() => setShowDirectMessages(true)}
+            onClick={() => setShowMessages(true)}
             title="الرسائل"
           >
             <span style={{ display: 'flex', alignItems: 'center' }}>
@@ -433,7 +435,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onRefreshRooms={handleRefreshRooms}
               onStartPrivateChat={(user) => {
                 setSelectedPrivateUser(user);
-                try { /* واجهة الخاص القديمة معطلة */ } catch {}
+                setShowPmBox(true);
               }}
             />
           </div>
@@ -598,7 +600,30 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         </>
       )}
 
-      {/* الرسائل الخاصة القديمة معطلة. استخدم واجهة DM المتطورة لاحقاً هنا. */}
+      {/* لوحة الرسائل */}
+      {showMessages && (
+        <MessagesPanel
+          isOpen={showMessages}
+          onClose={() => setShowMessages(false)}
+          currentUser={chat.currentUser}
+          privateConversations={chat.privateConversations}
+          onlineUsers={chat.onlineUsers}
+          onStartPrivateChat={(user) => { setShowMessages(false); setSelectedPrivateUser(user); setShowPmBox(true); }}
+        />
+      )}
+
+      {/* صندوق الرسائل الخاصة */}
+      {showPmBox && selectedPrivateUser && (
+        <PrivateMessageBox
+          isOpen={showPmBox}
+          onClose={() => setShowPmBox(false)}
+          user={selectedPrivateUser}
+          currentUser={chat.currentUser}
+          messages={chat.privateConversations[selectedPrivateUser.id] || []}
+          onSendMessage={(content) => chat.sendMessage(content, 'text', selectedPrivateUser.id)}
+        />
+      )}
+
 
       {userPopup.show && userPopup.user && (
         <UserPopup
@@ -770,12 +795,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       )}
 
       {/* تنبيه الرسائل الجديدة */}
-      <MessageAlert
-        isOpen={newMessageAlert.show}
-        sender={newMessageAlert.sender}
-        onClose={() => setNewMessageAlert({ show: false, sender: null })}
-        onOpenMessages={() => setShowDirectMessages(true)}
-      />
+              <MessageAlert
+          isOpen={newMessageAlert.show}
+          sender={newMessageAlert.sender}
+          onClose={() => setNewMessageAlert({ show: false, sender: null })}
+          onOpenMessages={() => setShowMessages(true)}
+        />
 
       {/* إشعار الترحيب */}
       {chat.currentUser && <WelcomeNotification user={chat.currentUser} />}

@@ -755,8 +755,14 @@ export const useChat = () => {
     };
 
     if (receiverId) {
-      // أرسل عبر REST الموحد لضمان الحفظ والبث
-      apiRequest('/api/messages', { method: 'POST', body: messageData }).catch(() => {});
+      // إرسال خاص عبر مسار منفصل كلياً
+      const endpoint = `/api/private-messages/send`;
+      apiRequest(endpoint, { method: 'POST', body: {
+        senderId: messageData.senderId,
+        receiverId,
+        content: messageData.content,
+        messageType: messageData.messageType || 'text'
+      }}).catch(() => {});
     } else {
       socket.current.emit('publicMessage', messageData);
     }
@@ -825,9 +831,9 @@ export const useChat = () => {
 
   // تحميل سجل المحادثة الخاصة عند فتحها
   const loadPrivateConversation = useCallback(async (otherUserId: number, limit: number = 50) => {
-    if (!state.currentUser) return;
+    if (!state.currentUser?.id) return;
     try {
-      const data = await apiRequest(`/api/messages/private/${state.currentUser.id}/${otherUserId}?limit=${limit}`);
+      const data = await apiRequest(`/api/private-messages/${state.currentUser.id}/${otherUserId}?limit=${limit}`);
       const formatted = Array.isArray((data as any)?.messages)
         ? mapDbMessagesToChatMessages((data as any).messages)
         : [];
@@ -835,7 +841,7 @@ export const useChat = () => {
     } catch (error) {
       console.error('❌ خطأ في تحميل رسائل الخاص:', error);
     }
-  }, [state.currentUser]);
+  }, [state.currentUser?.id]);
 
   return {
     // State
@@ -883,7 +889,7 @@ export const useChat = () => {
     handleTyping,
     getCurrentRoomMessages,
     updateCurrentUser,
-    // loadPrivateConversation, // Deprecated
+    loadPrivateConversation,
 
     // Broadcast handlers registration
     addBroadcastMessageHandler: (handler: (data: any) => void) => {
