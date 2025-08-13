@@ -335,8 +335,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             إعدادات
           </Button>
 
-          {/* قائمة ثلاث شرائط للمالك */}
-          {chat.currentUser && chat.currentUser.userType === 'owner' && (
+          {/* قائمة ثلاث شرائط للمالك (الهاتف فقط) */}
+          {isMobile && chat.currentUser && chat.currentUser.userType === 'owner' && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2">
