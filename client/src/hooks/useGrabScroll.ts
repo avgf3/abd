@@ -25,6 +25,7 @@ export function useGrabScroll<T extends HTMLElement>(
     let scrollLeft = 0
     let scrollTop = 0
     let hasMoved = false
+    let originalUserSelect: string | null = null
 
     const onMouseDown = (e: MouseEvent) => {
       const button = options?.button ?? 0
@@ -40,9 +41,10 @@ export function useGrabScroll<T extends HTMLElement>(
       scrollLeft = el.scrollLeft
       scrollTop = el.scrollTop
       el.classList.add('cursor-grabbing')
-      
-      // Don't prevent default immediately - only prevent if we actually move
-      // This allows other mouse events (like click) to work properly
+
+      // Disable text selection during drag without blocking default wheel behavior
+      originalUserSelect = document.body.style.userSelect
+      document.body.style.userSelect = 'none'
     }
 
     const onMouseMove = (e: MouseEvent) => {
@@ -56,44 +58,33 @@ export function useGrabScroll<T extends HTMLElement>(
       if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
         hasMoved = true
         el.scrollTo({ left: scrollLeft - dx, top: scrollTop - dy })
-        e.preventDefault() // Now prevent default since we're actively dragging
       }
     }
 
-    const endDrag = (e?: MouseEvent) => {
+    const endDrag = () => {
       if (!isDown) return
       isDown = false
       hasMoved = false
       el.classList.remove('cursor-grabbing')
-    }
 
-    // Wheel event handler to ensure normal scrolling works
-    const onWheel = (e: WheelEvent) => {
-      // Don't interfere with wheel scrolling - let browser handle it normally
-      // This ensures mouse wheel scrolling works properly in all tabs
-      if (!isDown) {
-        // Allow normal wheel scrolling when not dragging
-        return
+      // Restore text selection
+      if (originalUserSelect !== null) {
+        document.body.style.userSelect = originalUserSelect
+        originalUserSelect = null
       }
-      // If we're actively dragging, let wheel events through too
-      // The user might want to scroll while dragging is active
     }
 
     // Add event listeners
     el.addEventListener('mousedown', onMouseDown)
-    window.addEventListener('mousemove', onMouseMove, { passive: false })
+    window.addEventListener('mousemove', onMouseMove, { passive: true })
     window.addEventListener('mouseup', endDrag)
     el.addEventListener('mouseleave', endDrag)
-    
-    // Add wheel event listener with passive: true to ensure it doesn't block scrolling
-    el.addEventListener('wheel', onWheel, { passive: true })
 
     return () => {
       el.removeEventListener('mousedown', onMouseDown)
       window.removeEventListener('mousemove', onMouseMove as any)
       window.removeEventListener('mouseup', endDrag)
       el.removeEventListener('mouseleave', endDrag)
-      el.removeEventListener('wheel', onWheel)
     }
   }, [ref, options?.button, options?.enabled])
 }
