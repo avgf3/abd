@@ -478,9 +478,9 @@ export default function UnifiedSidebar({
           </div>
           
           <div className="space-y-3">
-            <div className="flex items-center gap-2 font-bold text-green-600 text-base">
+            <div className="flex items-center gap-2 font-bold text-gray-800 text-base">
               المتصلون الآن
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
+              <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-semibold">
                 {validUsers.length}
               </span>
             </div>
