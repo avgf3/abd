@@ -2,14 +2,18 @@ import { Router } from "express";
 import { z } from "zod";
 import { PrivateMessagesService } from "../services/privateMessagesService";
 import { NotificationService } from "../services/notificationService";
-import { protect } from "../middleware/auth";
-import { rateLimiter } from "../middleware/rateLimiter";
+import { protect as enhancedProtect } from "../middleware/enhancedSecurity";
+import { messageLimiter } from "../security";
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import sharp from "sharp";
 
 const router = Router();
+
+// Backwards-compat wrappers to keep original names
+const protect = enhancedProtect.auth;
+const rateLimiter = (_opts?: any) => messageLimiter;
 
 // إعداد multer لرفع الملفات
 const storage = multer.memoryStorage();
@@ -76,7 +80,7 @@ export function createPrivateMessagesRouter(
   // ==================== المحادثات ====================
 
   // إنشاء محادثة جديدة أو الحصول على محادثة موجودة
-  router.post('/conversations', protect, rateLimiter({ max: 20, windowMs: 60000 }), async (req, res) => {
+  router.post('/conversations', enhancedProtect.auth, messageLimiter, async (req, res) => {
     try {
       const userId = req.user!.id;
       const { type, participantId, name, memberIds } = createConversationSchema.parse(req.body);
@@ -105,7 +109,7 @@ export function createPrivateMessagesRouter(
   });
 
   // الحصول على محادثات المستخدم
-  router.get('/conversations', protect, async (req, res) => {
+  router.get('/conversations', enhancedProtect.auth, async (req, res) => {
     try {
       const userId = req.user!.id;
       const { includeArchived, includeMuted, limit, offset } = req.query;
@@ -127,7 +131,7 @@ export function createPrivateMessagesRouter(
   // ==================== الرسائل ====================
 
   // إرسال رسالة
-  router.post('/conversations/:conversationId/messages', protect, rateLimiter({ max: 30, windowMs: 60000 }), async (req, res) => {
+  router.post('/conversations/:conversationId/messages', enhancedProtect.auth, messageLimiter, async (req, res) => {
     try {
       const userId = req.user!.id;
       const conversationId = parseInt(req.params.conversationId);
@@ -173,8 +177,8 @@ export function createPrivateMessagesRouter(
   // رفع وإرسال ملف
   router.post(
     '/conversations/:conversationId/messages/upload',
-    protect,
-    rateLimiter({ max: 10, windowMs: 60000 }),
+    enhancedProtect.auth,
+    messageLimiter,
     upload.single('file'),
     async (req, res) => {
       try {
@@ -260,7 +264,7 @@ export function createPrivateMessagesRouter(
   );
 
   // الحصول على رسائل محادثة
-  router.get('/conversations/:conversationId/messages', protect, async (req, res) => {
+  router.get('/conversations/:conversationId/messages', enhancedProtect.auth, async (req, res) => {
     try {
       const userId = req.user!.id;
       const conversationId = parseInt(req.params.conversationId);
@@ -282,7 +286,7 @@ export function createPrivateMessagesRouter(
   // ==================== حالة القراءة والكتابة ====================
 
   // تحديد الرسائل كمقروءة
-  router.post('/conversations/:conversationId/read', protect, async (req, res) => {
+  router.post('/conversations/:conversationId/read', enhancedProtect.auth, async (req, res) => {
     try {
       const userId = req.user!.id;
       const conversationId = parseInt(req.params.conversationId);
@@ -309,7 +313,7 @@ export function createPrivateMessagesRouter(
   });
 
   // تحديث حالة الكتابة
-  router.post('/conversations/:conversationId/typing', protect, rateLimiter({ max: 60, windowMs: 60000 }), async (req, res) => {
+  router.post('/conversations/:conversationId/typing', enhancedProtect.auth, async (req, res) => {
     try {
       const userId = req.user!.id;
       const conversationId = parseInt(req.params.conversationId);
@@ -336,7 +340,7 @@ export function createPrivateMessagesRouter(
   });
 
   // الحصول على المستخدمين الذين يكتبون حالياً
-  router.get('/conversations/:conversationId/typing', protect, async (req, res) => {
+  router.get('/conversations/:conversationId/typing', enhancedProtect.auth, async (req, res) => {
     try {
       const conversationId = parseInt(req.params.conversationId);
       const typingUsers = await pmService.getTypingUsers(conversationId);
@@ -350,7 +354,7 @@ export function createPrivateMessagesRouter(
   // ==================== المسودات ====================
 
   // حفظ مسودة
-  router.post('/conversations/:conversationId/draft', protect, async (req, res) => {
+  router.post('/conversations/:conversationId/draft', enhancedProtect.auth, async (req, res) => {
     try {
       const userId = req.user!.id;
       const conversationId = parseInt(req.params.conversationId);
@@ -365,7 +369,7 @@ export function createPrivateMessagesRouter(
   });
 
   // الحصول على مسودة
-  router.get('/conversations/:conversationId/draft', protect, async (req, res) => {
+  router.get('/conversations/:conversationId/draft', enhancedProtect.auth, async (req, res) => {
     try {
       const userId = req.user!.id;
       const conversationId = parseInt(req.params.conversationId);
@@ -381,7 +385,7 @@ export function createPrivateMessagesRouter(
   // ==================== التفاعلات ====================
 
   // إضافة/إزالة تفاعل
-  router.post('/messages/:messageId/reactions', protect, rateLimiter({ max: 30, windowMs: 60000 }), async (req, res) => {
+  router.post('/messages/:messageId/reactions', enhancedProtect.auth, messageLimiter, async (req, res) => {
     try {
       const userId = req.user!.id;
       const messageId = parseInt(req.params.messageId);
@@ -408,7 +412,7 @@ export function createPrivateMessagesRouter(
   // ==================== إدارة المحادثات ====================
 
   // تثبيت/إلغاء تثبيت محادثة
-  router.post('/conversations/:conversationId/pin', protect, async (req, res) => {
+  router.post('/conversations/:conversationId/pin', enhancedProtect.auth, async (req, res) => {
     try {
       const userId = req.user!.id;
       const conversationId = parseInt(req.params.conversationId);
@@ -422,7 +426,7 @@ export function createPrivateMessagesRouter(
   });
 
   // كتم/إلغاء كتم محادثة
-  router.post('/conversations/:conversationId/mute', protect, async (req, res) => {
+  router.post('/conversations/:conversationId/mute', enhancedProtect.auth, async (req, res) => {
     try {
       const userId = req.user!.id;
       const conversationId = parseInt(req.params.conversationId);
@@ -437,7 +441,7 @@ export function createPrivateMessagesRouter(
   });
 
   // أرشفة/إلغاء أرشفة محادثة
-  router.post('/conversations/:conversationId/archive', protect, async (req, res) => {
+  router.post('/conversations/:conversationId/archive', enhancedProtect.auth, async (req, res) => {
     try {
       const userId = req.user!.id;
       const conversationId = parseInt(req.params.conversationId);
@@ -453,7 +457,7 @@ export function createPrivateMessagesRouter(
   // ==================== الرسائل ====================
 
   // حذف رسالة
-  router.delete('/messages/:messageId', protect, async (req, res) => {
+  router.delete('/messages/:messageId', enhancedProtect.auth, async (req, res) => {
     try {
       const userId = req.user!.id;
       const messageId = parseInt(req.params.messageId);
@@ -476,7 +480,7 @@ export function createPrivateMessagesRouter(
   });
 
   // تعديل رسالة
-  router.put('/messages/:messageId', protect, rateLimiter({ max: 10, windowMs: 60000 }), async (req, res) => {
+  router.put('/messages/:messageId', enhancedProtect.auth, messageLimiter, async (req, res) => {
     try {
       const userId = req.user!.id;
       const messageId = parseInt(req.params.messageId);
@@ -504,7 +508,7 @@ export function createPrivateMessagesRouter(
   });
 
   // البحث في الرسائل
-  router.get('/messages/search', protect, async (req, res) => {
+  router.get('/messages/search', enhancedProtect.auth, async (req, res) => {
     try {
       const userId = req.user!.id;
       const { q, conversationId, limit, offset } = req.query;
@@ -529,7 +533,7 @@ export function createPrivateMessagesRouter(
   // ==================== المكالمات ====================
 
   // بدء مكالمة
-  router.post('/conversations/:conversationId/calls', protect, rateLimiter({ max: 5, windowMs: 60000 }), async (req, res) => {
+  router.post('/conversations/:conversationId/calls', enhancedProtect.auth, messageLimiter, async (req, res) => {
     try {
       const userId = req.user!.id;
       const conversationId = parseInt(req.params.conversationId);
@@ -555,7 +559,7 @@ export function createPrivateMessagesRouter(
   });
 
   // تحديث حالة المكالمة
-  router.put('/calls/:callId/status', protect, async (req, res) => {
+  router.put('/calls/:callId/status', enhancedProtect.auth, async (req, res) => {
     try {
       const userId = req.user!.id;
       const callId = parseInt(req.params.callId);
