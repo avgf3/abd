@@ -11,6 +11,25 @@ import type { ChatUser, ChatRoom, RoomWebSocketMessage as WebSocketMessage, Chat
 import { normalizeBroadcastInfo } from '@/utils/roomUtils';
 import MessageArea from './MessageArea';
 
+// ICE servers helper with optional TURN support via env
+const getIceServers = (): RTCIceServer[] => {
+  const servers: RTCIceServer[] = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }
+  ];
+  try {
+    const env = (import.meta as any)?.env || {};
+    const turnUrl = env?.VITE_TURN_URL || (window as any)?.__TURN_URL__;
+    const turnUsername = env?.VITE_TURN_USERNAME || (window as any)?.__TURN_USERNAME__;
+    const turnCredential = env?.VITE_TURN_CREDENTIAL || (window as any)?.__TURN_CREDENTIAL__;
+    if (turnUrl && turnUsername && turnCredential) {
+      servers.push({ urls: turnUrl, username: turnUsername, credential: turnCredential });
+    }
+  } catch {}
+  return servers;
+};
+
 interface BroadcastRoomInterfaceProps {
   currentUser: ChatUser | null;
   room: ChatRoom;
@@ -216,7 +235,7 @@ export default function BroadcastRoomInterface({
       // Actively send offers to currently online listeners (non-speakers)
       const listeners = onlineUsers.filter(u => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId);
       for (const listener of listeners) {
-        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        const pc = new RTCPeerConnection({ iceServers: getIceServers() });
         stream.getTracks().forEach(track => pc.addTrack(track, stream));
         pc.onicecandidate = (event) => {
           if (event.candidate) {
@@ -241,7 +260,7 @@ export default function BroadcastRoomInterface({
       const listeners = onlineUsers.filter(u => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId);
       for (const listener of listeners) {
         if (peersRef.current.has(listener.id)) continue;
-        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        const pc = new RTCPeerConnection({ iceServers: getIceServers() });
         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
         pc.onicecandidate = (event) => {
           if (event.candidate) {
@@ -266,7 +285,7 @@ export default function BroadcastRoomInterface({
         const fromUserId = payload.senderId;
         let pc = peersRef.current.get(fromUserId);
         if (!pc) {
-          pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+          pc = new RTCPeerConnection({ iceServers: getIceServers() });
           pc.ontrack = (event) => {
             // Play the first audio track
             if (!audioRef.current) return;
