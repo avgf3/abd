@@ -189,6 +189,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // استخدام مسارات الرسائل المنفصلة والمحسنة
   app.use('/api/messages', messageRoutes);
+  // مسارات الرسائل الخاصة مفصولة بالكامل
+  app.use('/api/private-messages', (await import('./routes/privateMessages')).default);
   
 
   // رفع صور البروفايل - محسّن مع حل مشكلة Render

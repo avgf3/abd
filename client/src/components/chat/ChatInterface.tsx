@@ -189,6 +189,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setShowPmBox(true);
   };
 
+  useEffect(() => {
+    if (showPmBox && selectedPrivateUser && (chat as any).loadPrivateConversation) {
+      (chat as any).loadPrivateConversation(selectedPrivateUser.id, 50);
+    }
+  }, [showPmBox, selectedPrivateUser]);
+
   const closePrivateMessage = () => {
     setSelectedPrivateUser(null);
   };
@@ -617,6 +623,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           onSendMessage={(content) => chat.sendMessage(content, 'text', selectedPrivateUser.id)}
         />
       )}
+
 
       {userPopup.show && userPopup.user && (
         <UserPopup
