@@ -1,12 +1,8 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
-import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
-
-const viteLogger = createLogger();
 
 // استخدام نظام التسجيل الموحد من logger.ts
 import { log as logger } from './utils/logger';
@@ -22,8 +18,21 @@ export async function setupVite(app: Express, server: Server) {
     allowedHosts: true as const,
   };
 
+  // Dynamically import the Vite API only when needed (development)
+  const { createServer: createViteServer, createLogger } = await import('vite');
+  const viteLogger = createLogger();
+
+  // Dynamically import the Vite config only in development to avoid evaluating it in production
+  let viteUserConfig: any = {};
+  try {
+    const module = await import(new URL("../vite.config.ts", import.meta.url).href);
+    viteUserConfig = module.default || {};
+  } catch {
+    viteUserConfig = {};
+  }
+
   const vite = await createViteServer({
-    ...viteConfig,
+    ...viteUserConfig,
     configFile: false,
     customLogger: {
       ...viteLogger,

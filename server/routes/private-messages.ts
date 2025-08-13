@@ -5,7 +5,7 @@ import { NotificationService } from "../services/notificationService";
 import { protect as enhancedProtect } from "../middleware/enhancedSecurity";
 import { messageLimiter } from "../security";
 import multer from "multer";
-import { v4 as uuidv4 } from "uuid";
+import { customAlphabet } from "nanoid";
 import path from "path";
 import sharp from "sharp";
 
@@ -14,6 +14,9 @@ const router = Router();
 // Backwards-compat wrappers to keep original names
 const protect = enhancedProtect.auth;
 const rateLimiter = (_opts?: any) => messageLimiter;
+
+// إعداد مولد معرفات ثابت الطول بديل لـ uuid v4
+const generateId = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 21);
 
 // إعداد multer لرفع الملفات
 const storage = multer.memoryStorage();
@@ -190,7 +193,7 @@ export function createPrivateMessagesRouter(
           return res.status(400).json({ error: 'لم يتم تحديد ملف' });
         }
 
-        const fileId = uuidv4();
+        const fileId = generateId();
         let processedBuffer = file.buffer;
         let metadata: any = {
           originalName: file.originalname,
