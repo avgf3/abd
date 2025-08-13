@@ -181,12 +181,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   const handlePrivateMessage = (user: ChatUser) => {
-    setSelectedPrivateUser(user);
-    // تحميل سجل الرسائل الخاصة عند فتح الصندوق
-    try {
-      chat.loadPrivateConversation(user.id);
-    } catch {}
-    closeUserPopup();
+    setShowMessages(false);
+    setTimeout(() => {
+      setSelectedPrivateUser(user);
+      try {
+        chat.loadPrivateConversation(user.id);
+      } catch {}
+    }, 0);
   };
 
   const closePrivateMessage = () => {
@@ -585,7 +586,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           user={userPopup.user}
           x={userPopup.x}
           y={userPopup.y}
-          onPrivateMessage={() => handlePrivateMessage(userPopup.user!)}
+          onPrivateMessage={() => { closeUserPopup(); setTimeout(() => handlePrivateMessage(userPopup.user!), 0); }}
           onAddFriend={() => handleAddFriend(userPopup.user!)}
           onIgnore={() => {
             // إزالة زر التجاهل من UserPopup - الآن في الملف الشخصي فقط
@@ -662,8 +663,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           privateConversations={chat.privateConversations}
           onlineUsers={chat.onlineUsers}
           onStartPrivateChat={(user) => {
-            setSelectedPrivateUser(user);
             setShowMessages(false);
+            setTimeout(() => setSelectedPrivateUser(user), 0);
           }}
         />
       )}

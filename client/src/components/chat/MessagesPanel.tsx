@@ -100,7 +100,7 @@ export default function MessagesPanel({
                     <button
                       key={user.id}
                       className="w-full text-right cursor-pointer hover:bg-accent/20 transition-all duration-200 p-2 rounded-lg"
-                      onClick={() => { onStartPrivateChat(user); onClose(); }}
+                      onClick={() => { onClose(); setTimeout(() => onStartPrivateChat(user), 0); }}
                     >
                       <div className="flex items-center gap-3">
                         <img
@@ -143,7 +143,7 @@ export default function MessagesPanel({
                     <button
                       key={user.id}
                       className="w-full text-right cursor-pointer hover:bg-accent/20 transition-all duration-200 p-2 rounded-lg"
-                      onClick={() => { onStartPrivateChat(user); onClose(); }}
+                      onClick={() => { onClose(); setTimeout(() => onStartPrivateChat(user), 0); }}
                     >
                       <div className="flex items-center gap-3">
                         <img
