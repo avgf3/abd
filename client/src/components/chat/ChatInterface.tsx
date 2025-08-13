@@ -455,6 +455,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onUserClick={handleUserClick}
               onlineUsers={chat.onlineUsers}
               currentRoomName={currentRoom?.name || 'الدردشة العامة'}
+              currentRoomId={chat.currentRoomId}
             />
           );
         })()}
