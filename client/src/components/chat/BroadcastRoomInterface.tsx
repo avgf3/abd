@@ -87,6 +87,63 @@ export default function BroadcastRoomInterface({
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const [isInfoCollapsed, setIsInfoCollapsed] = useState(true);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
+  const [availableMics, setAvailableMics] = useState<MediaDeviceInfo[]>([]);
+  const [selectedMicId, setSelectedMicId] = useState<string | null>(null);
+  const [micLevel, setMicLevel] = useState(0);
+
+  useEffect(() => {
+    const loadDevices = async () => {
+      try {
+        if (!navigator.mediaDevices?.enumerateDevices) return;
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const mics = devices.filter((d) => d.kind === 'audioinput');
+        setAvailableMics(mics);
+        if (!selectedMicId && mics.length > 0) setSelectedMicId(mics[0].deviceId || 'default');
+      } catch {}
+    };
+    loadDevices();
+    navigator.mediaDevices?.addEventListener?.('devicechange', loadDevices as any);
+    return () => navigator.mediaDevices?.removeEventListener?.('devicechange', loadDevices as any);
+  }, [selectedMicId]);
+
+  // Monitor microphone level when streaming
+  useEffect(() => {
+    let rafId: number | null = null;
+    let analyser: AnalyserNode | null = null;
+    let source: MediaStreamAudioSourceNode | null = null;
+    let audioCtx: AudioContext | null = null;
+    if (localStream) {
+      try {
+        audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 512;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        source = audioCtx.createMediaStreamSource(localStream);
+        source.connect(analyser);
+        const tick = () => {
+          analyser!.getByteTimeDomainData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            const v = (dataArray[i] - 128) / 128; // -1..1
+            sum += v * v;
+          }
+          const rms = Math.sqrt(sum / dataArray.length);
+          setMicLevel(Math.min(1, rms * 4));
+          rafId = requestAnimationFrame(tick);
+        };
+        rafId = requestAnimationFrame(tick);
+      } catch {}
+    }
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      try {
+        source?.disconnect();
+        analyser?.disconnect();
+        audioCtx?.close();
+      } catch {}
+    };
+  }, [localStream]);
 
   // جلب معلومات غرفة البث
   // 🚀 جلب معلومات البث مع منع التكرار
@@ -263,29 +320,30 @@ export default function BroadcastRoomInterface({
       throw new Error('المتصفح لا يدعم الوصول للميكروفون (getUserMedia غير متوفر)');
     }
 
+    const baseAudio: MediaTrackConstraints = { echoCancellation: true, noiseSuppression: true, autoGainControl: true } as any;
+    if (selectedMicId && selectedMicId !== 'default') {
+      (baseAudio as any).deviceId = { exact: selectedMicId };
+    }
+
     const constraintsList: MediaStreamConstraints[] = [
-      { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } as MediaTrackConstraints, video: false },
-      { audio: { channelCount: 1, sampleRate: 44100 } as MediaTrackConstraints, video: false },
-      { audio: true, video: false }
+      { audio: baseAudio, video: false },
+      { audio: { channelCount: 1, sampleRate: 44100, ...(selectedMicId ? { deviceId: { exact: selectedMicId } } : {}) } as any, video: false },
+      { audio: selectedMicId ? { deviceId: { exact: selectedMicId } } as any : true, video: false }
     ];
 
     let lastError: any = null;
     for (const constraints of constraintsList) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        // Ensure all audio tracks are enabled
         stream.getAudioTracks().forEach((t) => (t.enabled = true));
         return stream;
       } catch (err: any) {
         lastError = err;
-        // Overconstrained → try next; Permission denied/NotAllowed may be final
         const name = err?.name || '';
         if (name === 'NotAllowedError' || name === 'SecurityError') break;
-        // If device busy or not found, try next fallback too
       }
     }
 
-    // Rethrow the last error with a friendlier message
     const name = lastError?.name || 'Error';
     const message = lastError?.message || '';
     if (name === 'NotAllowedError') {
@@ -735,7 +793,7 @@ export default function BroadcastRoomInterface({
   return (
     <div className="flex flex-col h-full">
       {/* شريط معلومات غرفة البث */}
-      <Card className="mb-2">
+      <Card className="mb-2 topbar-white">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -876,6 +934,25 @@ export default function BroadcastRoomInterface({
                 {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                 {isMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
               </Button>
+            )}
+
+            {/* اختيار الميكروفون ومؤشر المستوى */}
+            {canSpeak && (
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedMicId || ''}
+                  onChange={(e) => setSelectedMicId(e.target.value || null)}
+                  className="border rounded-md bg-background text-foreground h-9 px-2"
+                  title="اختيار الميكروفون"
+                >
+                  {availableMics.map((d) => (
+                    <option key={d.deviceId || d.label} value={d.deviceId || ''}>{d.label || 'ميكروفون'}</option>
+                  ))}
+                </select>
+                <div className="h-2 w-24 rounded bg-muted overflow-hidden" title="مستوى الميكروفون">
+                  <div className="h-full bg-green-500 transition-all" style={{ width: `${Math.round(micLevel * 100)}%` }} />
+                </div>
+              </div>
             )}
           </div>
           <audio ref={audioRef} playsInline autoPlay controlsList="nodownload noplaybackrate" className="w-0 h-0 opacity-0 pointer-events-none" />

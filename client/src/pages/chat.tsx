@@ -28,7 +28,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo']" dir="rtl">
+    <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo'] app-shell" dir="rtl">
       {showWelcome ? (
         <WelcomeScreen onUserLogin={handleUserLogin} />
       ) : (
