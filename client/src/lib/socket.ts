@@ -53,6 +53,7 @@ function attachCoreListeners(socket: Socket) {
 
   const reauth = (isReconnect: boolean) => {
     const session = getSession();
+    // لا ترسل auth إذا لم تتوفر جلسة محفوظة صالحة
     if (!session || (!session.userId && !session.username)) return;
     try {
       socket.emit('auth', {
@@ -74,6 +75,7 @@ function attachCoreListeners(socket: Socket) {
 
   socket.on('connect', () => {
     reauth(false);
+    // إذا لم تكن هناك جلسة محفوظة، لا نرسل auth هنا لتفادي مهلة غير ضرورية
   });
 
   socket.on('reconnect', () => {
