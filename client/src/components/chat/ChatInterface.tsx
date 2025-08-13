@@ -251,14 +251,25 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         window.history.replaceState(null, '', window.location.pathname);
       } else if (pmMatch) {
         const userId = parseInt(pmMatch[1]);
-        const user = chat.onlineUsers.find(u => u.id === userId);
-        if (user) {
-          setSelectedPrivateUser(user);
-          try { chat.loadPrivateConversation(user.id); } catch {}
-        } else {
-          showErrorToast("لم نتمكن من العثور على هذا المستخدم", "مستخدم غير موجود");
-        }
-        window.history.replaceState(null, '', window.location.pathname);
+        const openPm = async () => {
+          let user = chat.onlineUsers.find(u => u.id === userId);
+          if (!user) {
+            try {
+              const data = await apiRequest(`/api/users/${userId}?t=${Date.now()}`);
+              if (data && data.id) {
+                user = data as any;
+              }
+            } catch {}
+          }
+          if (user) {
+            setSelectedPrivateUser(user);
+            try { chat.loadPrivateConversation(user.id); } catch {}
+          } else {
+            showErrorToast("لم نتمكن من العثور على هذا المستخدم", "مستخدم غير موجود");
+          }
+          window.history.replaceState(null, '', window.location.pathname);
+        };
+        openPm();
       }
     };
 
@@ -417,7 +428,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onAddRoom={handleAddRoom}
               onDeleteRoom={handleDeleteRoom}
               onRefreshRooms={handleRefreshRooms}
-              onStartPrivateChat={setSelectedPrivateUser}
+              onStartPrivateChat={(user) => {
+                setSelectedPrivateUser(user);
+                try { chat.loadPrivateConversation(user.id); } catch {}
+              }}
             />
           </div>
         )}
