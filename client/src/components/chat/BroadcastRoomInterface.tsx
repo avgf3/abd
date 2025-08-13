@@ -225,12 +225,118 @@ export default function BroadcastRoomInterface({
     return () => stopBroadcast();
   }, [stopBroadcast]);
 
+  // Environment and permission helpers for microphone
+  const isSecureContext = () => {
+    try {
+      if (window.isSecureContext) return true;
+      const host = window.location.hostname;
+      return host === 'localhost' || host === '127.0.0.1';
+    } catch {
+      return false;
+    }
+  };
+
+  const queryMicrophonePermission = async (): Promise<'granted' | 'denied' | 'prompt' | 'unknown'> => {
+    try {
+      // Not universally supported (e.g., Safari), so guard it
+      // @ts-expect-error - permissions name might not be typed
+      const result = await navigator.permissions?.query?.({ name: 'microphone' as any });
+      if (!result) return 'unknown';
+      return (result.state as 'granted' | 'denied' | 'prompt') || 'unknown';
+    } catch {
+      return 'unknown';
+    }
+  };
+
+  const hasAudioInputDevice = async (): Promise<boolean> => {
+    try {
+      if (!navigator.mediaDevices?.enumerateDevices) return true; // best-effort
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      return devices.some((d) => d.kind === 'audioinput');
+    } catch {
+      return true; // do not block on failure
+    }
+  };
+
+  const getUserMediaWithFallbacks = async (): Promise<MediaStream> => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error('المتصفح لا يدعم الوصول للميكروفون (getUserMedia غير متوفر)');
+    }
+
+    const constraintsList: MediaStreamConstraints[] = [
+      { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } as MediaTrackConstraints, video: false },
+      { audio: { channelCount: 1, sampleRate: 44100 } as MediaTrackConstraints, video: false },
+      { audio: true, video: false }
+    ];
+
+    let lastError: any = null;
+    for (const constraints of constraintsList) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        // Ensure all audio tracks are enabled
+        stream.getAudioTracks().forEach((t) => (t.enabled = true));
+        return stream;
+      } catch (err: any) {
+        lastError = err;
+        // Overconstrained → try next; Permission denied/NotAllowed may be final
+        const name = err?.name || '';
+        if (name === 'NotAllowedError' || name === 'SecurityError') break;
+        // If device busy or not found, try next fallback too
+      }
+    }
+
+    // Rethrow the last error with a friendlier message
+    const name = lastError?.name || 'Error';
+    const message = lastError?.message || '';
+    if (name === 'NotAllowedError') {
+      throw new Error('تم رفض إذن الميكروفون. افتح إعدادات الموقع ومنح الإذن ثم أعد تحميل الصفحة.');
+    }
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+      throw new Error('لم يتم العثور على جهاز ميكروفون متاح. تأكد من توصيل الميكروفون أو اختيار الجهاز الصحيح.');
+    }
+    if (name === 'NotReadableError') {
+      throw new Error('يتعذر الوصول إلى الميكروفون (قد يكون مشغولاً بتطبيق آخر). أغلق التطبيقات الأخرى وحاول مجدداً.');
+    }
+    if (name === 'OverconstrainedError') {
+      throw new Error('إعدادات الميكروفون غير مدعومة على هذا الجهاز. حاول مرة أخرى.');
+    }
+    if (name === 'SecurityError') {
+      throw new Error('لا يمكن الوصول إلى الميكروفون بسبب إعدادات الأمان. تأكد من استخدام اتصال آمن (HTTPS).');
+    }
+    throw new Error(message || 'تعذر الحصول على صوت من الميكروفون.');
+  };
+
+  const explainStartBroadcastError = (error: unknown) => {
+    const err = error as any;
+    const msg = typeof err === 'string' ? err : err?.message;
+    toast({
+      title: 'فشل بدء البث الصوتي',
+      description: msg || 'تحقق من صلاحيات الميكروفون',
+      variant: 'destructive'
+    });
+  };
+
   const startBroadcast = useCallback(async () => {
     if (!currentUser || !room.id) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      if (!isSecureContext()) {
+        throw new Error('يتطلب الميكروفون اتصالاً آمناً. افتح الموقع عبر HTTPS (أو محلياً على localhost).');
+      }
+
+      const perm = await queryMicrophonePermission();
+      if (perm === 'denied') {
+        throw new Error('تم رفض إذن الميكروفون. افتح إعدادات الموقع ومنح الإذن ثم أعد تحميل الصفحة.');
+      }
+
+      const hasInput = await hasAudioInputDevice();
+      if (!hasInput) {
+        throw new Error('لا يوجد جهاز ميكروفون متاح على هذا الجهاز.');
+      }
+
+      const stream = await getUserMediaWithFallbacks();
       setLocalStream(stream);
       setIsBroadcasting(true);
+
       // Create peer connections per listener (lazy: on offer request)
       // Actively send offers to currently online listeners (non-speakers)
       const listeners = onlineUsers.filter(u => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId);
@@ -249,7 +355,7 @@ export default function BroadcastRoomInterface({
       }
     } catch (err) {
       console.error('startBroadcast error:', err);
-      toast({ title: 'فشل بدء البث الصوتي', description: 'تحقق من صلاحيات الميكروفون', variant: 'destructive' });
+      explainStartBroadcastError(err);
     }
   }, [currentUser, room.id, onlineUsers, speakers, broadcastInfo?.hostId, chat, toast]);
 
