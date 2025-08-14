@@ -452,7 +452,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
 
           {/* الشعار بجانب الإشعارات */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 cursor-pointer select-none" onClick={() => { if (isMobile) setActiveView('hidden'); }}>
             <MessageCircle className="w-5 h-5 text-primary" />
             <div className="text-lg sm:text-xl font-bold text-white truncate">
               Arabic<span className="text-primary">Chat</span>
@@ -548,7 +548,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
              className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
                activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
              }`}
-             onClick={() => setActiveView(isMobile ? 'walls' : (activeView === 'walls' ? 'hidden' : 'walls'))}
+             onClick={() => setActiveView(prev => (prev === 'walls' ? 'hidden' : 'walls'))}
              title="الحوائط"
            >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Walls">
@@ -564,7 +564,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
              className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
                activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
              }`}
-             onClick={() => setActiveView(isMobile ? 'users' : (activeView === 'users' ? 'hidden' : 'users'))}
+             onClick={() => setActiveView(prev => (prev === 'users' ? 'hidden' : 'users'))}
              title="المستخدمون المتصلون"
            >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Users">
@@ -581,7 +581,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
               activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView(isMobile ? 'rooms' : (activeView === 'rooms' ? 'hidden' : 'rooms'))}
+            onClick={() => setActiveView(prev => (prev === 'rooms' ? 'hidden' : 'rooms'))}
             title="الغرف"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Rooms">
@@ -597,7 +597,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
               activeView === 'friends' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView(isMobile ? 'friends' : (activeView === 'friends' ? 'hidden' : 'friends'))}
+            onClick={() => setActiveView(prev => (prev === 'friends' ? 'hidden' : 'friends'))}
             title="الأصدقاء"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Friends">
