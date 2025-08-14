@@ -76,14 +76,8 @@ export default function MessageArea({
 
   // Scroll to bottom function - optimized
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
-    // Prefer anchor to ensure we truly reach the bottom even if content height changes
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ 
-        behavior,
-        block: 'end'
-      });
-    } else if (messagesContainerRef.current) {
-      const el = messagesContainerRef.current;
+    const el = messagesContainerRef.current;
+    if (el) {
       el.scrollTo({ top: el.scrollHeight, behavior });
     }
   }, []);
@@ -320,7 +314,7 @@ export default function MessageArea({
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white`}
+        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white pb-24` }
       >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -430,7 +424,7 @@ export default function MessageArea({
         )}
         
         {/* Jump to bottom / New messages indicator */}
-        {!isAtBottom && unreadCount > 0 && (
+        {false && !isAtBottom && unreadCount > 0 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
             <button
               onClick={() => { scrollToBottom('smooth'); setUnreadCount(0); }}
@@ -446,7 +440,7 @@ export default function MessageArea({
       </div>
       
       {/* Message Input */}
-      <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t`}>
+      <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t sticky bottom-0 z-10`}>
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
           <div className="mb-1.5 text-[11px] text-gray-500 animate-pulse">
@@ -485,7 +479,7 @@ export default function MessageArea({
           </Button>
           
           {/* Message Input */}
-                    <Input
+          <Input
              ref={inputRef}
              value={messageText}
              onChange={handleMessageChange}
