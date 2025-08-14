@@ -33,6 +33,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const queryClient = useQueryClient();
   const panelScrollRef = useRef<HTMLDivElement>(null);
   const [isAtBottomWall, setIsAtBottomWall] = useState(true);
+  const wallImageInputRef = useRef<HTMLInputElement>(null);
 
   useGrabScroll(panelScrollRef);
 
@@ -418,18 +419,21 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <input
+                          ref={wallImageInputRef}
                           type="file"
                           accept="image/*"
                           onChange={handleImageSelect}
                           className="hidden"
-                          id="image-upload"
                         />
-                        <label htmlFor="image-upload">
-                          <Button variant="outline" size="sm" className="cursor-pointer rounded-xl border-dashed hover:bg-primary/5">
-                            <ImageIcon className="h-4 w-4 ml-2" />
-                            إضافة صورة
-                          </Button>
-                        </label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="cursor-pointer rounded-xl border-dashed hover:bg-primary/5"
+                          onClick={() => wallImageInputRef.current?.click()}
+                        >
+                          <ImageIcon className="h-4 w-4 ml-2" />
+                          إضافة صورة
+                        </Button>
                       </div>
                       
                       <Button 

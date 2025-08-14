@@ -175,6 +175,7 @@ export default function UnifiedSidebar({
   const usersScrollRef = useRef<HTMLDivElement>(null);
   const wallsScrollRef = useRef<HTMLDivElement>(null);
   const [isAtBottomSidebarWall, setIsAtBottomSidebarWall] = useState(true);
+  const wallImageInputRef = useRef<HTMLInputElement>(null);
 
   useGrabScroll(usersScrollRef);
   useGrabScroll(wallsScrollRef);
@@ -621,16 +622,16 @@ export default function UnifiedSidebar({
                     <div className="flex justify-between items-center">
                       <div className="flex gap-2">
                         <input
+                          ref={wallImageInputRef}
                           type="file"
                           accept="image/*"
                           onChange={handleImageSelect}
                           className="hidden"
-                          id="image-upload"
                         />
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => document.getElementById('image-upload')?.click()}
+                          onClick={() => wallImageInputRef.current?.click()}
                         >
                           <ImageIcon className="w-4 h-4" />
                         </Button>
