@@ -1,0 +1,5 @@
+[dotenv@17.2.1] injecting env (3) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar
+The `fetchConnectionCache` option is deprecated (now always `true`)
+[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[2025-08-14T10:08:20.994Z] INFO: [express] 🚀 الخادم يعمل على المنفذ 5001 في وضع development
+[2025-08-14T10:08:20.994Z] INFO: [express] 📱 رابط التطبيق: http://localhost:5001

@@ -184,7 +184,7 @@ export function setupSecurity(app: Express): void {
     // Content Security Policy
     res.setHeader('Content-Security-Policy', [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      "script-src 'self'" + (process.env.NODE_ENV !== 'production' ? " 'unsafe-inline' 'unsafe-eval'" : ""),
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: https:",
       // allow connect to same-origin + websockets on same-origin
