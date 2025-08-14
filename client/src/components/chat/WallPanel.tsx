@@ -32,8 +32,23 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const panelScrollRef = useRef<HTMLDivElement>(null);
+  const [isAtBottomWall, setIsAtBottomWall] = useState(true);
 
   useGrabScroll(panelScrollRef);
+
+  const handleWallScroll = useCallback(() => {
+    const el = panelScrollRef.current;
+    if (!el) return;
+    const threshold = 80;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+    setIsAtBottomWall(atBottom);
+  }, []);
+
+  const scrollWallToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    const el = panelScrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
+  }, []);
 
   // جلب المنشورات عبر React Query مع كاش قوي
   const { data: wallData, isFetching } = useQuery<{ success?: boolean; posts: WallPost[] }>({
@@ -441,7 +456,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
               )}
 
               <TabsContent value={activeTab} className="flex-1">
-                <div ref={panelScrollRef} className="relative overflow-y-auto space-y-4 pr-2 cursor-grab">
+                <div ref={panelScrollRef} onScroll={handleWallScroll} className="relative overflow-y-auto space-y-4 pr-2 pb-24 cursor-grab">
                   <WallPostList
                     posts={posts}
                     loading={loading}
@@ -451,6 +466,13 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                     onReact={handleReaction}
                     canDelete={canDeletePost}
                   />
+                  {!isAtBottomWall && (
+                    <div className="absolute bottom-4 right-4 z-10">
+                      <Button size="sm" onClick={() => scrollWallToBottom('smooth')} className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow">
+                        الانتقال لأسفل
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>

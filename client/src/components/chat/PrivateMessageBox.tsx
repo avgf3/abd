@@ -26,6 +26,7 @@ export default function PrivateMessageBox({
 }: PrivateMessageBoxProps) {
   const [messageText, setMessageText] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isAtBottomPrivate, setIsAtBottomPrivate] = useState(true);
 
   const sortedMessages = useMemo(() => {
     return [...messages].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -48,6 +49,14 @@ export default function PrivateMessageBox({
   useEffect(() => {
     scrollToBottom(sortedMessages.length > 20 ? 'auto' : 'smooth');
   }, [sortedMessages.length]);
+
+  const handlePrivateScroll = () => {
+    const el = containerRef.current;
+    if (!el) return;
+    const threshold = 80;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+    setIsAtBottomPrivate(atBottom);
+  };
 
   const handleSend = () => {
     const text = messageText.trim();
@@ -85,7 +94,7 @@ export default function PrivateMessageBox({
           </div>
         </DialogHeader>
 
-        <div ref={containerRef} className="h-[50vh] w-full p-4 overflow-y-auto bg-white">
+        <div ref={containerRef} onScroll={handlePrivateScroll} className="relative h-[50vh] w-full p-4 pb-16 overflow-y-auto bg-white">
           <div className="space-y-3">
             {sortedMessages.length === 0 && (
               <div className="text-center py-10 text-muted-foreground">
@@ -131,6 +140,13 @@ export default function PrivateMessageBox({
               );
             })}
           </div>
+          {!isAtBottomPrivate && (
+            <div className="absolute bottom-4 right-4 z-10">
+              <Button size="sm" onClick={() => scrollToBottom('smooth')} className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow">
+                الانتقال لأسفل
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 p-4 border-t border-gray-200 bg-white">
