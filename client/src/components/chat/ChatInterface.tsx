@@ -539,7 +539,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
        </main>
 
       {/* Footer - تبويبات سفلية. على الجوال: تفتح بملء الشاشة، وعلى الشاشات الكبيرة: تظهر كلوحة جانبية قابلة للإخفاء */}
-      <footer className="sticky bottom-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent bottombar-white">
+      <footer className="sticky bottom-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center border-t border-accent bottombar-white">
         <div className="flex gap-2 sm:gap-3 overflow-x-auto max-w-full">
           {/* الحوائط */}
                      <Button 
