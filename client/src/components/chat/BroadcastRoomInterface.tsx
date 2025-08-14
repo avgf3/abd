@@ -319,15 +319,11 @@ export default function BroadcastRoomInterface({
   const startBroadcast = useCallback(async () => {
     if (!currentUser || !room.id) return;
     try {
-      console.log('🎤 Starting broadcast...');
-      
       if (!isSecureContext()) {
         throw new Error('يتطلب الميكروفون اتصالاً آمناً. افتح الموقع عبر HTTPS (أو محلياً على localhost).');
       }
 
       const perm = await queryMicrophonePermission();
-      console.log('📋 Microphone permission:', perm);
-      
       if (perm === 'denied') {
         throw new Error('تم رفض إذن الميكروفون. افتح إعدادات الموقع ومنح الإذن ثم أعد تحميل الصفحة.');
       }
@@ -337,26 +333,18 @@ export default function BroadcastRoomInterface({
         throw new Error('لا يوجد جهاز ميكروفون متاح على هذا الجهاز.');
       }
 
-      console.log('🎙️ Getting user media...');
       const stream = await getUserMediaWithFallbacks();
-      console.log('✅ Got media stream:', stream);
-      console.log('🔊 Audio tracks:', stream.getAudioTracks());
-      
       setLocalStream(stream);
       setIsBroadcasting(true);
 
       // Create peer connections per listener (lazy: on offer request)
       // Actively send offers to currently online listeners (non-speakers)
       const listeners = onlineUsers.filter(u => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId);
-      console.log(`👥 Found ${listeners.length} listeners to connect to`);
-      
       for (const listener of listeners) {
-        console.log(`🔗 Creating peer connection for listener: ${listener.username}`);
         const pc = new RTCPeerConnection({ iceServers: getIceServers() });
         
         // Add connection state monitoring
         pc.onconnectionstatechange = () => {
-          console.log(`📡 Connection state for ${listener.username}: ${pc.connectionState}`);
           if (pc.connectionState === 'failed') {
             toast({
               title: 'مشكلة في الاتصال',
@@ -367,27 +355,22 @@ export default function BroadcastRoomInterface({
         };
         
         pc.oniceconnectionstatechange = () => {
-          console.log(`🧊 ICE state for ${listener.username}: ${pc.iceConnectionState}`);
-        };
+          };
         
         stream.getTracks().forEach(track => {
-          console.log(`➕ Adding track to peer connection: ${track.kind}`);
           pc.addTrack(track, stream);
         });
         
         pc.onicecandidate = (event) => {
           if (event.candidate) {
-            console.log(`🧊 Sending ICE candidate to ${listener.username}`);
             chat.sendWebRTCIceCandidate?.(listener.id, room.id, event.candidate);
           }
         };
         
         peersRef.current.set(listener.id, pc);
         
-        console.log(`📤 Creating offer for ${listener.username}...`);
         const offer = await pc.createOffer({ offerToReceiveAudio: false });
         await pc.setLocalDescription(offer);
-        console.log(`📨 Sending offer to ${listener.username}`);
         chat.sendWebRTCOffer?.(listener.id, room.id, offer);
       }
       
@@ -429,26 +412,20 @@ export default function BroadcastRoomInterface({
     if (!isListener || !currentUser || !room.id) return;
     const handleOffer = async (payload: any) => {
       try {
-        console.log('🎧 Listener received offer:', payload);
         if (payload?.roomId !== room.id) return;
         const fromUserId = payload.senderId;
         let pc = peersRef.current.get(fromUserId);
         if (!pc) {
-          console.log(`🔗 Creating peer connection for broadcaster ${fromUserId}`);
           pc = new RTCPeerConnection({ iceServers: getIceServers() });
           
           // Add connection state monitoring
           pc.onconnectionstatechange = () => {
-            console.log(`📡 Listener connection state: ${pc!.connectionState}`);
-          };
+            };
           
           pc.oniceconnectionstatechange = () => {
-            console.log(`🧊 Listener ICE state: ${pc!.iceConnectionState}`);
-          };
+            };
           
           pc.ontrack = (event) => {
-            console.log('🎵 Received audio track:', event.track);
-            console.log('🎵 Streams:', event.streams);
             // Play the first audio track
             if (!audioRef.current) {
               console.warn('⚠️ Audio element not ready');
@@ -457,9 +434,7 @@ export default function BroadcastRoomInterface({
             const [remoteStream] = event.streams;
             audioRef.current.srcObject = remoteStream;
             audioRef.current.muted = isMuted;
-            console.log('🔊 Attempting to play audio...');
             audioRef.current.play().then(() => {
-              console.log('✅ Audio playback started');
               setPlaybackBlocked(false);
             }).catch((err) => {
               console.error('❌ Audio playback blocked:', err);
@@ -473,18 +448,14 @@ export default function BroadcastRoomInterface({
           };
           pc.onicecandidate = (event) => {
             if (event.candidate) {
-              console.log('🧊 Listener sending ICE candidate');
               chat.sendWebRTCIceCandidate?.(fromUserId, room.id, event.candidate);
             }
           };
           peersRef.current.set(fromUserId, pc);
         }
-        console.log('📥 Setting remote description...');
         await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-        console.log('📤 Creating answer...');
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        console.log('📨 Sending answer back');
         chat.sendWebRTCAnswer?.(fromUserId, room.id, answer);
       } catch (err) {
         console.error('❌ handleOffer error:', err);
@@ -504,7 +475,6 @@ export default function BroadcastRoomInterface({
         const fromUserId = payload.senderId;
         const pc = peersRef.current.get(fromUserId);
         if (pc && payload.candidate) {
-          console.log('🧊 Listener received ICE candidate');
           await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
         }
       } catch (err) {
