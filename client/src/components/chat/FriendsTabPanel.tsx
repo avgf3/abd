@@ -28,7 +28,8 @@ export default function FriendsTabPanel({
   onStartPrivateChat
 }: FriendsTabPanelProps) {
   const friendsScrollRef = useRef<HTMLDivElement>(null);
-  useGrabScroll(friendsScrollRef);
+  // Temporarily disabled to fix scrolling issues
+  // useGrabScroll(friendsScrollRef);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'friends' | 'requests'>('friends');
@@ -247,7 +248,7 @@ export default function FriendsTabPanel({
       </div>
 
       {/* Content */}
-      <div ref={friendsScrollRef} className="relative flex-1 overflow-y-auto p-4 cursor-grab">
+      <div ref={friendsScrollRef} className="flex-1 overflow-y-auto p-4">
         {/* Friends Tab */}
         {activeTab === 'friends' && (
           <div className="space-y-3">

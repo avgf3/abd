@@ -175,8 +175,9 @@ export default function UnifiedSidebar({
   const usersScrollRef = useRef<HTMLDivElement>(null);
   const wallsScrollRef = useRef<HTMLDivElement>(null);
 
-  useGrabScroll(usersScrollRef);
-  useGrabScroll(wallsScrollRef);
+  // Temporarily disabled to fix scrolling issues
+  // useGrabScroll(usersScrollRef);
+  // useGrabScroll(wallsScrollRef);
 
   const { data: wallData, isFetching } = useQuery<{ success?: boolean; posts: WallPost[] }>({
     queryKey: ['/api/wall/posts', activeTab, currentUser?.id],
@@ -466,7 +467,7 @@ export default function UnifiedSidebar({
 
       {/* Users View */}
       {activeView === 'users' && (
-                  <div ref={usersScrollRef} className="relative flex-1 overflow-y-auto p-4 space-y-3 cursor-grab bg-white">
+        <div ref={usersScrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-white">
           <div className="relative">
             <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
             <Input
@@ -580,7 +581,7 @@ export default function UnifiedSidebar({
               </TabsTrigger>
             </TabsList>
 
-            <div ref={wallsScrollRef} className="relative flex-1 overflow-y-auto px-2 cursor-grab">
+            <div ref={wallsScrollRef} className="flex-1 overflow-y-auto px-2">
               {/* Post Creation */}
               {currentUser && currentUser.userType !== 'guest' && (
                 <Card className="mb-4 border border-gray-200">

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ChatRoom, ChatUser } from '@/types/chat';
 import { dedupeRooms } from '@/utils/roomUtils';
-import { useGrabScroll } from '@/hooks/useGrabScroll';
+// import { useGrabScroll } from '@/hooks/useGrabScroll';
 
 
 interface RoomComponentProps {
@@ -278,7 +278,7 @@ export default function RoomComponent({
 }: RoomComponentProps) {
   // الحالات المحلية
   const listScrollRef = React.useRef<HTMLDivElement>(null);
-  useGrabScroll(listScrollRef);
+  // useGrabScroll(listScrollRef);
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomDescription, setNewRoomDescription] = useState('');
@@ -479,7 +479,7 @@ export default function RoomComponent({
       </div>
 
       {/* المحتوى */}
-      <div ref={listScrollRef} className="relative flex-1 overflow-y-auto p-4 cursor-grab">
+      <div ref={listScrollRef} className="flex-1 overflow-y-auto p-4">
         {/* زر إضافة غرفة */}
         {canCreateRooms && (
           <Button
