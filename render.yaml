@@ -13,18 +13,18 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
       - key: ENABLE_WEBSOCKET
         value: true
       - key: SOCKET_IO_POLLING_ONLY
         value: false
       - key: DATABASE_URL
-        value: postgresql://postgres:your_actual_password@qzehjgmawnrihmepboca.supabase.co:5432/postgres?sslmode=require
+        fromDatabase:
+          name: chat-app-db
+          property: connectionString
       - key: JWT_SECRET
-        value: arabic-chat-secret-key-2025-production
+        value: CHANGE_ME_JWT
       - key: SESSION_SECRET
-        value: arabic-chat-session-secret-2025-production
+        value: CHANGE_ME_SESSION
       - key: CORS_ORIGIN
         value: https://your-app-name.onrender.com
     healthCheckPath: /api/health

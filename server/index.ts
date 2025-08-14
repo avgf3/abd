@@ -9,11 +9,20 @@ import { setupSecurity } from "./security";
 import path from "path";
 import fs from "fs";
 import { Server } from "http";
+import compression from "compression";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 
 const app = express();
 
+// Trust proxy and harden headers
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
+
 // Setup security first
 setupSecurity(app);
+
+// Enable gzip compression
+app.use(compression());
 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
@@ -131,6 +140,10 @@ async function startServer() {
 
     // Register routes and get the server
     const server = await registerRoutes(app);
+
+    // API 404 and error handlers
+    app.use('/api', notFoundHandler);
+    app.use(errorHandler);
 
     // Setup client handling
     if (process.env.NODE_ENV === 'development') {
