@@ -87,7 +87,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
   // معلومات الغرفة
   const RoomInfo = () => (
     <div className="flex-1 min-w-0">
-      <div className={`font-medium ${compact ? 'text-sm' : 'text-base'} truncate flex items-center gap-2`}>
+      <div className={`font-medium ${compact ? 'text-sm' : 'text-base'} truncate flex items-center gap-2`} style={{ color: '#000000' }}>
         {room.name}
         {room.isBroadcast && (
           <Mic className="w-3 h-3 text-orange-500" />
@@ -166,7 +166,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
             )}
           </div>
           
-          <CardTitle className="text-lg flex items-center justify-center gap-2">
+          <CardTitle className="text-lg flex items-center justify-center gap-2 text-black">
             {room.name}
             {room.isBroadcast && <Mic className="w-4 h-4 text-orange-500" />}
           </CardTitle>
@@ -230,7 +230,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
           )}
         </div>
         
-        <CardTitle className="text-xl flex items-center justify-center gap-2">
+        <CardTitle className="text-xl flex items-center justify-center gap-2 text-black">
           {room.name}
           {room.isBroadcast && <Mic className="w-4 h-4 text-orange-500" />}
         </CardTitle>
