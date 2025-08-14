@@ -292,9 +292,9 @@ export default function MessageArea({
   }, []);
 
   return (
-    <section className="flex-1 flex flex-col bg-white min-h-0">
+    <section className="flex-1 flex flex-col bg-white min-h-0 relative">
       {/* Room Header */}
-      <div className={`bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 ${compactHeader ? 'p-1.5' : 'p-2'}`}>
+      <div className={`bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 ${compactHeader ? 'p-1.5' : 'p-2'} sticky top-0 z-20`}>
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 bg-primary/20 rounded-lg flex items-center justify-center">
             <span className="text-primary font-bold">💬</span>
@@ -314,7 +314,8 @@ export default function MessageArea({
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white pb-24` }
+        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white pb-4`}
+        style={{ paddingBottom: '120px' }}
       >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -439,8 +440,8 @@ export default function MessageArea({
         <div ref={messagesEndRef} />
       </div>
       
-      {/* Message Input */}
-      <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t sticky bottom-0 z-10`}>
+      {/* Message Input - تثبيت محسن */}
+      <div className={`chat-input-sticky ${compactHeader ? 'p-2.5' : 'p-3'}`}>
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
           <div className="mb-1.5 text-[11px] text-gray-500 animate-pulse">

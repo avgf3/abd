@@ -629,3 +629,25 @@ body.ltr {
   /* Ensure wheel events work properly */
   touch-action: auto;
 }
+
+/* تحسينات تثبيت صندوق الرسائل */
+.chat-input-sticky {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 1000 !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* تحسينات للأجهزة المحمولة */
+@media (max-width: 768px) {
+  .chat-input-sticky {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+  }
+}
