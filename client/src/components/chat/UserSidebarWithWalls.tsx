@@ -423,7 +423,10 @@ export default function UnifiedSidebar({
           }`}
           onClick={() => setActiveView('users')}
         >
-          <Users className="w-4 h-4 ml-2" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2">
+            <circle cx="12" cy="8" r="5"/>
+            <path d="M20 21a8 8 0 0 0-16 0"/>
+          </svg>
           المستخدمون
         </Button>
         <Button
@@ -435,7 +438,11 @@ export default function UnifiedSidebar({
           }`}
           onClick={() => setActiveView('walls')}
         >
-          <Home className="w-4 h-4 ml-2" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <rect x="7" y="7" width="3" height="9"/>
+            <rect x="14" y="7" width="3" height="5"/>
+          </svg>
           الحوائط
         </Button>
         <Button
@@ -447,7 +454,12 @@ export default function UnifiedSidebar({
           }`}
           onClick={() => setActiveView('rooms')}
         >
-          <Users className="w-4 h-4 ml-2" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+            <line x1="6" y1="6" x2="6.01" y2="6"/>
+            <line x1="6" y1="18" x2="6.01" y2="18"/>
+          </svg>
           الغرف
         </Button>
         <Button
@@ -459,7 +471,12 @@ export default function UnifiedSidebar({
           }`}
           onClick={() => setActiveView('friends')}
         >
-          <UserPlus className="w-4 h-4 ml-2" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
           الأصدقاء
         </Button>
       </div>
@@ -633,7 +650,10 @@ export default function UnifiedSidebar({
                       >
                         {submitting ? 'جاري النشر...' : (
                           <>
-                            <Send className="w-4 h-4 ml-1" />
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
+                              <line x1="22" y1="2" x2="11" y2="13"/>
+                              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
                             نشر
                           </>
                         )}

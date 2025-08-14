@@ -331,7 +331,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowSettings(!showSettings)}
           >
-            <Settings className="w-4 h-4" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 1v6m0 6v6m11-6h-6m-6 0H1"/>
+              <path d="m20.5 7.5-3 3-3-3m-6 9 3-3 3 3m-9-9 3 3-3 3m9-9-3 3 3 3"/>
+            </svg>
             إعدادات
           </Button>
 
@@ -340,7 +344,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2">
-                  <Menu className="w-5 h-5" />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <line x1="3" y1="18" x2="21" y2="18"/>
+                  </svg>
                   المزيد
                 </Button>
               </DropdownMenuTrigger>
@@ -439,7 +447,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClick={() => setShowMessages(true)}
             title="الرسائل"
           >
-            <MessageSquare className="w-4 h-4" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="m22 7-10 5L2 7"/>
+            </svg>
             الرسائل
           </Button>
           
@@ -447,7 +458,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
             onClick={() => setShowNotifications(true)}
           >
-            <Bell className="w-4 h-4" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
             إشعارات
           </Button>
 
@@ -549,10 +563,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
              onClick={() => setActiveView(isMobile ? 'walls' : (activeView === 'walls' ? 'hidden' : 'walls'))}
              title="الحوائط"
            >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Walls">
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <rect x="7" y="7" width="3" height="9"/>
+              <rect x="14" y="7" width="3" height="5"/>
             </svg>
             الحوائط
           </Button>
@@ -565,11 +579,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
              onClick={() => setActiveView(isMobile ? 'users' : (activeView === 'users' ? 'hidden' : 'users'))}
              title="المستخدمون المتصلون"
            >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Users">
-              <circle cx="9" cy="7" r="3"></circle>
-              <path d="M2 21c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"></path>
-              <circle cx="17" cy="7" r="3"></circle>
-              <path d="M14 21c0-1.657 1.343-3 3-3h1c1.657 0 3 1.343 3 3"></path>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="8" r="5"/>
+              <path d="M20 21a8 8 0 0 0-16 0"/>
             </svg>
             المستخدمون ({chat.onlineUsers?.length ?? 0})
           </Button>
@@ -582,10 +594,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClick={() => setActiveView(isMobile ? 'rooms' : (activeView === 'rooms' ? 'hidden' : 'rooms'))}
             title="الغرف"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Rooms">
-              <path d="M3 11l9-8 9 8"></path>
-              <path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"></path>
-              <path d="M9 21v-6h6v6"></path>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+              <line x1="6" y1="6" x2="6.01" y2="6"/>
+              <line x1="6" y1="18" x2="6.01" y2="18"/>
             </svg>
             الغرف
           </Button>
@@ -598,11 +611,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClick={() => setActiveView(isMobile ? 'friends' : (activeView === 'friends' ? 'hidden' : 'friends'))}
             title="الأصدقاء"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Friends">
-              <circle cx="9" cy="7" r="3"></circle>
-              <path d="M2 21c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"></path>
-              <path d="M19 8v6"></path>
-              <path d="M16 11h6"></path>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
             الأصدقاء
           </Button>

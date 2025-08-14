@@ -40,7 +40,10 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
             size="sm"
             className="w-full justify-start gap-3 h-9 hover:bg-accent text-foreground"
           >
-            <User className="w-4 h-4 text-primary" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+              <circle cx="12" cy="8" r="5"/>
+              <path d="M20 21a8 8 0 0 0-16 0"/>
+            </svg>
             الملف الشخصي
           </Button>
         </div>

@@ -323,8 +323,11 @@ export default function UserContextMenu({
               }
             }}
           >
-            <MessageSquare className="w-5 h-5" />
-            <span className="text-lg">💬 رسالة خاصة</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="m22 7-10 5L2 7"/>
+            </svg>
+            <span className="text-lg">رسالة خاصة</span>
           </ContextMenuItem>
           
           <ContextMenuItem className="flex items-center gap-3 text-green-600 font-semibold bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg p-2 cursor-pointer transition-all duration-200">
