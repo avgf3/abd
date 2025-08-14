@@ -38,6 +38,7 @@ export default function FriendsTabPanel({
   });
   const [loading, setLoading] = useState(false);
   const { showErrorToast, showSuccessToast, updateFriendQueries } = useNotificationManager(currentUser);
+  const [isAtBottomFriends, setIsAtBottomFriends] = useState(true);
 
   // مراقبة إشعارات طلبات الصداقة للتبديل التلقائي للطلبات
   useEffect(() => {
@@ -247,7 +248,17 @@ export default function FriendsTabPanel({
       </div>
 
       {/* Content */}
-      <div ref={friendsScrollRef} className="relative flex-1 overflow-y-auto p-4 cursor-grab">
+      <div
+        ref={friendsScrollRef}
+        onScroll={() => {
+          const el = friendsScrollRef.current;
+          if (!el) return;
+          const threshold = 80;
+          const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+          setIsAtBottomFriends(atBottom);
+        }}
+        className="relative flex-1 overflow-y-auto p-4 pb-24 cursor-grab"
+      >
         {/* Friends Tab */}
         {activeTab === 'friends' && (
           <div className="space-y-3">
@@ -469,6 +480,17 @@ export default function FriendsTabPanel({
           </div>
         )}
       </div>
+
+      {!isAtBottomFriends && (
+        <div className="absolute bottom-4 right-4 z-10">
+          <Button size="sm" onClick={() => {
+            const el = friendsScrollRef.current;
+            if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+          }} className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow">
+            الانتقال لأسفل
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

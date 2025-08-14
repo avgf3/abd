@@ -424,13 +424,13 @@ export default function MessageArea({
         )}
         
         {/* Jump to bottom / New messages indicator */}
-        {false && !isAtBottom && unreadCount > 0 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+        {!isAtBottom && (
+          <div className="absolute bottom-4 right-4 z-10">
             <button
               onClick={() => { scrollToBottom('smooth'); setUnreadCount(0); }}
-              className="px-3 py-1 rounded-full text-xs bg-primary text-primary-foreground shadow"
+              className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow"
             >
-              عرض {unreadCount} رسالة جديدة
+              {unreadCount > 0 ? `عرض ${unreadCount} رسالة جديدة` : 'الانتقال لأسفل'}
             </button>
           </div>
         )}

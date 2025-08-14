@@ -285,6 +285,7 @@ export default function RoomComponent({
   const [roomImage, setRoomImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAtBottomRooms, setIsAtBottomRooms] = useState(true);
 
   // التحقق من الصلاحيات
   const isAdmin = currentUser && ['owner', 'admin'].includes(currentUser.userType);
@@ -479,7 +480,17 @@ export default function RoomComponent({
       </div>
 
       {/* المحتوى */}
-      <div ref={listScrollRef} className="relative flex-1 overflow-y-auto p-4 cursor-grab">
+      <div
+        ref={listScrollRef}
+        onScroll={() => {
+          const el = listScrollRef.current;
+          if (!el) return;
+          const threshold = 80;
+          const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+          setIsAtBottomRooms(atBottom);
+        }}
+        className="relative flex-1 overflow-y-auto p-4 pb-24 cursor-grab"
+      >
         {/* زر إضافة غرفة */}
         {canCreateRooms && (
           <Button
@@ -507,7 +518,16 @@ export default function RoomComponent({
             />
           ))}
         </div>
-
+        {!isAtBottomRooms && (
+          <div className="absolute bottom-4 right-4 z-10">
+            <Button size="sm" onClick={() => {
+              const el = listScrollRef.current;
+              if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+            }} className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow">
+              الانتقال لأسفل
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* مربع حوار إضافة غرفة */}

@@ -174,6 +174,7 @@ export default function UnifiedSidebar({
   const socketRef = useRef<Socket | null>(null);
   const usersScrollRef = useRef<HTMLDivElement>(null);
   const wallsScrollRef = useRef<HTMLDivElement>(null);
+  const [isAtBottomSidebarWall, setIsAtBottomSidebarWall] = useState(true);
 
   useGrabScroll(usersScrollRef);
   useGrabScroll(wallsScrollRef);
@@ -580,7 +581,17 @@ export default function UnifiedSidebar({
               </TabsTrigger>
             </TabsList>
 
-            <div ref={wallsScrollRef} className="relative flex-1 overflow-y-auto px-2 cursor-grab">
+            <div
+              ref={wallsScrollRef}
+              onScroll={() => {
+                const el = wallsScrollRef.current;
+                if (!el) return;
+                const threshold = 80;
+                const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+                setIsAtBottomSidebarWall(atBottom);
+              }}
+              className="relative flex-1 overflow-y-auto px-2 pb-24 cursor-grab"
+            >
               {/* Post Creation */}
               {currentUser && currentUser.userType !== 'guest' && (
                 <Card className="mb-4 border border-gray-200">
@@ -744,6 +755,17 @@ export default function UnifiedSidebar({
                   ))
                 )}
               </TabsContent>
+
+              {!isAtBottomSidebarWall && (
+                <div className="absolute bottom-4 right-4 z-10">
+                  <Button size="sm" onClick={() => {
+                    const el = wallsScrollRef.current;
+                    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+                  }} className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow">
+                    الانتقال لأسفل
+                  </Button>
+                </div>
+              )}
             </div>
           </Tabs>
         </div>
