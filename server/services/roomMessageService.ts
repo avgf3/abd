@@ -401,7 +401,11 @@ class RoomMessageService {
       }
 
       const messages = this.messageCache.get(roomId)!;
-      messages.unshift(message); // إضافة في البداية (الأحدث أولاً)
+      // منع الازدواجية البسيطة قبل الإدراج
+      const exists = messages.some((m) => m.id === message.id || (m as any).clientMessageId && (message as any).clientMessageId && (m as any).clientMessageId === (message as any).clientMessageId);
+      if (!exists) {
+        messages.unshift(message); // إضافة في البداية (الأحدث أولاً)
+      }
 
       // الحد من حجم الذاكرة المؤقتة
       if (messages.length > this.MAX_CACHE_SIZE) {

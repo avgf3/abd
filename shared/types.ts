@@ -45,6 +45,7 @@ export interface ChatMessage {
   timestamp: string;
   sender?: ChatUser;
   roomId?: string;
+  clientMessageId?: string;
 }
 
 export interface PrivateConversation {

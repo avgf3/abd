@@ -1749,10 +1749,11 @@ if (!existing) {
         });
         
         const sender = await storage.getUser(socket.userId);
-        // إرسال الرسالة مباشرة للمستخدمين في نفس الغرفة لتقليل التأخير الإدراكي
+        // إرسال الرسالة مباشرة للمستخدمين في نفس الغرفة لتقليل التأخير الإدراكي + تحديث كاش الخدمة
+        try { roomMessageService['addToCache' as any]?.call?.(roomMessageService, roomId, { ...newMessage, sender }); } catch {}
         io.to(`room_${roomId}`).emit('message', { 
           type: 'newMessage',
-          message: { ...newMessage, sender, roomId }
+          message: { ...newMessage, sender, roomId, clientMessageId: data.clientMessageId }
         });
         
         // إضافة نقاط وإشعارات المستوى بعد البث لعدم حجب الرسالة
@@ -2091,8 +2092,8 @@ if (!existing) {
           message: welcomeMessage
         });
         
-        // جلب آخر 10 رسائل في الغرفة الجديدة فقط (مع استخدام الخدمة التي تدعم الذاكرة المؤقتة)
-        const recentMessages = await roomMessageService.getLatestRoomMessages(roomId, 10);
+        // جلب آخر 20 رسالة في الغرفة الجديدة مع أفضلية الكاش (boost UX)
+        const recentMessages = await roomMessageService.getLatestRoomMessages(roomId, 20);
         socket.emit('message', {
           type: 'roomMessages',
           roomId: roomId,
