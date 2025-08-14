@@ -325,7 +325,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   return (
       <div className="min-h-[100dvh] flex flex-col app-shell" onClick={closeUserPopup}>
       {/* Header - بدون التبويبات الأربعة */}
-      <header className="sticky top-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex flex-wrap gap-2 justify-between items-center shadow-2xl border-b border-accent topbar-white">
+      <header className="sticky top-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex flex-wrap gap-2 justify-between items-center shadow-2xl border-b border-accent">
         <div className="flex gap-3 overflow-x-auto max-w-full pr-2">
           <Button
             className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
@@ -454,7 +454,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* الشعار بجانب الإشعارات */}
           <div className="flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-primary" />
-                         <div className="text-lg sm:text-xl font-bold text-white truncate tabs-white">
+            <div className="text-lg sm:text-xl font-bold text-white truncate">
               Arabic<span className="text-primary">Chat</span>
             </div>
           </div>
@@ -539,7 +539,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
        </main>
 
       {/* Footer - تبويبات سفلية. على الجوال: تفتح بملء الشاشة، وعلى الشاشات الكبيرة: تظهر كلوحة جانبية قابلة للإخفاء */}
-      <footer className="sticky bottom-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent bottombar-white">
+      <footer className="sticky bottom-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent">
         <div className="flex gap-2 sm:gap-3 overflow-x-auto max-w-full">
           {/* الحوائط */}
                      <Button 

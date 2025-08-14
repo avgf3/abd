@@ -320,7 +320,7 @@ export default function MessageArea({
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white chat-messages-scroll`}
+        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white`}
       >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -446,7 +446,7 @@ export default function MessageArea({
       </div>
       
       {/* Message Input */}
-      <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t chat-input-sticky`}>
+      <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t`}>
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
           <div className="mb-1.5 text-[11px] text-gray-500 animate-pulse">
