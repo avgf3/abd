@@ -51,7 +51,7 @@ export default function WallPostList({
   return (
     <>
       {posts.map((post) => (
-        <Card key={post.id} className="hover:shadow-lg transition-all duration-300 border-0 bg-background/60 backdrop-blur-sm group">
+        <Card key={post.id} className="hover:shadow-lg transition-all duration-300 border border-gray-200 bg-white group">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

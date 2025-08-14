@@ -210,7 +210,7 @@ export default function FriendsTabPanel({
   }, [fetchingFriends, fetchingIncoming, fetchingOutgoing]);
 
   return (
-    <div className="h-full flex flex-col bg-background/95 backdrop-blur-sm">
+    <div className="h-full flex flex-col bg-white min-h-0">
       {/* Header */}
       <div className="p-4 border-b">
         <div className="flex items-center justify-between">

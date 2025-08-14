@@ -426,7 +426,7 @@ export default function RoomComponent({
 
   // العرض العادي (قائمة أو شبكة)
   return (
-    <div className="h-full flex flex-col bg-background/95 backdrop-blur-sm">
+    <div className="h-full flex flex-col bg-white min-h-0">
       {/* العنوان */}
       <div className="p-4 border-b">
         <div className="flex items-center justify-between">
