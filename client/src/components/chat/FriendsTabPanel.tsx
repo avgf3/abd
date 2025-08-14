@@ -13,6 +13,7 @@ import type { ChatUser } from '@/types/chat';
 import type { Friend, FriendRequest } from '@/../../shared/types';
 import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
 import { useGrabScroll } from '@/hooks/useGrabScroll';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 // Using shared types for Friend and FriendRequest
 
@@ -39,6 +40,7 @@ export default function FriendsTabPanel({
   });
   const [loading, setLoading] = useState(false);
   const { showErrorToast, showSuccessToast, updateFriendQueries } = useNotificationManager(currentUser);
+  const queryClient = useQueryClient();
 
   // مراقبة إشعارات طلبات الصداقة للتبديل التلقائي للطلبات
   useEffect(() => {
@@ -54,48 +56,69 @@ export default function FriendsTabPanel({
     };
   }, []);
 
-  // جلب قائمة الأصدقاء
-  const fetchFriends = useCallback(async () => {
-    if (!currentUser) return;
-    
-    setLoading(true);
-    try {
-      const data = await apiRequest(`/api/friends/${currentUser.id}`);
-      if (data && Array.isArray((data as any).friends)) {
-        setFriends((data as any).friends.map((friend: any) => ({
-          ...friend,
-          status: friend.isOnline ? 'online' : 'offline'
-        })));
-      }
-    } catch (error) {
-      console.error('Error fetching friends:', error);
-      showErrorToast("فشل في جلب قائمة الأصدقاء");
-    } finally {
-      setLoading(false);
-    }
-  }, [currentUser]);
+  // جلب الأصدقاء عبر React Query مع كاش قوي كالحوائط
+  const { data: friendsData, isFetching: fetchingFriends } = useQuery<{ friends: Friend[] }>({
+    queryKey: ['/api/friends', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) return { friends: [] } as any;
+      return await apiRequest(`/api/friends/${currentUser.id}`);
+    },
+    enabled: !!currentUser?.id,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    initialData: () => queryClient.getQueryData(['/api/friends', currentUser?.id]) as any,
+  });
 
-  // جلب طلبات الصداقة
-  const fetchFriendRequests = useCallback(async () => {
-    if (!currentUser) return;
-    
-    try {
-      const [incoming, outgoing] = await Promise.all([
-        apiRequest(`/api/friend-requests/incoming/${currentUser.id}`),
-        apiRequest(`/api/friend-requests/outgoing/${currentUser.id}`)
-      ]);
-      
-      setFriendRequests({
-        incoming: (incoming as any)?.requests || [],
-        outgoing: (outgoing as any)?.requests || []
-      });
-    } catch (error) {
-      console.error('Error fetching friend requests:', error);
-      setFriendRequests({ incoming: [], outgoing: [] });
-    }
-  }, [currentUser]);
+  // جلب طلبات الصداقة (الواردة + الصادرة) عبر React Query
+  const { data: incomingData, isFetching: fetchingIncoming } = useQuery<{ requests: FriendRequest[] }>({
+    queryKey: ['/api/friend-requests/incoming', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) return { requests: [] } as any;
+      return await apiRequest(`/api/friend-requests/incoming/${currentUser.id}`);
+    },
+    enabled: !!currentUser?.id,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    initialData: () => queryClient.getQueryData(['/api/friend-requests/incoming', currentUser?.id]) as any,
+  });
 
-  // تحديث حالة الاتصال للأصدقاء
+  const { data: outgoingData, isFetching: fetchingOutgoing } = useQuery<{ requests: FriendRequest[] }>({
+    queryKey: ['/api/friend-requests/outgoing', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) return { requests: [] } as any;
+      return await apiRequest(`/api/friend-requests/outgoing/${currentUser.id}`);
+    },
+    enabled: !!currentUser?.id,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    initialData: () => queryClient.getQueryData(['/api/friend-requests/outgoing', currentUser?.id]) as any,
+  });
+
+  // ربط بيانات الاستعلام بالحالة المحلية لسهولة العرض الحالي
+  useEffect(() => {
+    const rawFriends = friendsData?.friends || [];
+    if (Array.isArray(rawFriends)) {
+      setFriends(rawFriends.map((friend: any) => ({
+        ...friend,
+        status: friend.isOnline ? 'online' : 'offline'
+      })));
+    }
+  }, [friendsData]);
+
+  useEffect(() => {
+    setFriendRequests({
+      incoming: incomingData?.requests || [],
+      outgoing: outgoingData?.requests || []
+    });
+  }, [incomingData, outgoingData]);
+
+  // تحديث حالة الاتصال للأصدقاء من قائمة المتصلين
   useEffect(() => {
     if (friends.length > 0) {
       setFriends(prev => 
@@ -111,14 +134,6 @@ export default function FriendsTabPanel({
     }
   }, [onlineUsers, friends.length]);
 
-  // جلب البيانات عند التحميل
-  useEffect(() => {
-    if (currentUser) {
-      fetchFriends();
-      fetchFriendRequests();
-    }
-  }, [currentUser, fetchFriends, fetchFriendRequests]);
-
   // قبول طلب صداقة
   const handleAcceptRequest = async (requestId: number) => {
     try {
@@ -130,13 +145,13 @@ export default function FriendsTabPanel({
         method: 'POST',
         body: { userId: currentUser.id }
       });
-      
       showSuccessToast('تم قبول طلب الصداقة بنجاح', 'تم قبول الطلب');
-      
-      // تحديث البيانات
-      fetchFriendRequests();
-      fetchFriends();
+      // تحديث الكاش فورياً
+      queryClient.invalidateQueries({ queryKey: ['/api/friend-requests/incoming', currentUser.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/friend-requests/outgoing', currentUser.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/friends', currentUser.id] });
       updateFriendQueries();
+      setActiveTab('friends');
     } catch (error: any) {
       console.error('Accept friend request error:', error);
       showErrorToast(error?.message || 'فشل في قبول طلب الصداقة');
@@ -154,10 +169,10 @@ export default function FriendsTabPanel({
         method: 'POST',
         body: { userId: currentUser.id }
       });
-      
       showSuccessToast('تم رفض طلب الصداقة بنجاح', 'تم رفض الطلب');
-      
-      fetchFriendRequests();
+      // تحديث الكاش فورياً
+      queryClient.invalidateQueries({ queryKey: ['/api/friend-requests/incoming', currentUser.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/friend-requests/outgoing', currentUser.id] });
       updateFriendQueries();
     } catch (error: any) {
       console.error('Reject friend request error:', error);
@@ -173,11 +188,11 @@ export default function FriendsTabPanel({
       await apiRequest(`/api/friends/${currentUser.id}/${friendId}`, {
         method: 'DELETE'
       });
-      
       showSuccessToast('تم حذف الصديق من قائمتك', 'تم الحذف');
-      
-      // إزالة الصديق من القائمة فوراً
+      // إزالة الصديق محلياً لتحديث فوري
       setFriends(prev => prev.filter(f => f.id !== friendId));
+      // وتحديث الكاش
+      queryClient.invalidateQueries({ queryKey: ['/api/friends', currentUser.id] });
       updateFriendQueries();
     } catch (error) {
       showErrorToast('فشل في حذف الصديق');
@@ -189,7 +204,11 @@ export default function FriendsTabPanel({
     friend.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  
+  // مزامنة حالة التحميل مع الاستعلامات
+  useEffect(() => {
+    setLoading(fetchingFriends || fetchingIncoming || fetchingOutgoing);
+  }, [fetchingFriends, fetchingIncoming, fetchingOutgoing]);
+
   return (
     <div className="h-full flex flex-col bg-background/95 backdrop-blur-sm">
       {/* Header */}
@@ -201,8 +220,11 @@ export default function FriendsTabPanel({
           </div>
           <Button
             onClick={() => {
-              fetchFriends();
-              fetchFriendRequests();
+              if (currentUser?.id) {
+                queryClient.invalidateQueries({ queryKey: ['/api/friends', currentUser.id] });
+                queryClient.invalidateQueries({ queryKey: ['/api/friend-requests/incoming', currentUser.id] });
+                queryClient.invalidateQueries({ queryKey: ['/api/friend-requests/outgoing', currentUser.id] });
+              }
             }}
             variant="ghost"
             size="sm"
@@ -240,7 +262,7 @@ export default function FriendsTabPanel({
           <UserPlus className="w-4 h-4 ml-2" />
           الطلبات
           {friendRequests.incoming.length > 0 && (
-            <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs min-w-[20px] h-5">
+            <Badge variant="secondary" className="absolute -top-1 -right-1 bg-red-500 text-white text-xs min-w-[20px] h-5">
               {friendRequests.incoming.length}
             </Badge>
           )}

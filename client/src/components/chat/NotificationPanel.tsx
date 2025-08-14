@@ -47,8 +47,11 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     },
     enabled: !!currentUser?.id && isOpen,
     refetchInterval: isOpen ? 30000 : false, // كل 30 ثانية بدلاً من 3 ثوانٍ عند فتح النافذة
-    staleTime: 10000, // البيانات صالحة لمدة 10 ثوانٍ
-    gcTime: 5 * 60 * 1000 // حفظ في الكاش لمدة 5 دقائق
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    initialData: () => queryClient.getQueryData(['/api/notifications', currentUser?.id]) as any,
   });
 
   // جلب عدد الإشعارات غير المقروءة - مُحسّن
@@ -60,7 +63,11 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     },
     enabled: !!currentUser?.id,
     refetchInterval: 60000, // كل دقيقة بدلاً من ثانيتين
-    staleTime: 30000, // البيانات صالحة لمدة 30 ثانية
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    initialData: () => queryClient.getQueryData(['/api/notifications/unread-count', currentUser?.id]) as any,
   });
 
   // Real-time notifications are now handled by useNotificationManager hook

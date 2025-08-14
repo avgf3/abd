@@ -6,6 +6,7 @@ import type { PrivateConversation } from '../../../shared/types';
 import type { Notification } from '@/types/chat';
 import { apiRequest } from '@/lib/queryClient';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
+import { queryClient } from '@/lib/queryClient';
 
 // Audio notification function
 const playNotificationSound = () => {
@@ -271,6 +272,15 @@ export const useChat = () => {
       return;
     }
 
+    // محاولة قراءة من كاش React Query أولاً
+    try {
+      const cached = queryClient.getQueryData<ChatMessage[]>(['/api/messages/room/latest', roomId, 10]);
+      if (cached && cached.length > 0 && !forceReload) {
+        dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId, messages: cached } });
+        return;
+      }
+    } catch {}
+
     if (loadingRooms.current.has(roomId)) {
       return;
     }
@@ -282,10 +292,13 @@ export const useChat = () => {
       
       if (data?.messages && Array.isArray(data.messages)) {
         const formattedMessages = mapDbMessagesToChatMessages(data.messages, roomId);
+        // تخزين في الحالة
         dispatch({ 
           type: 'SET_ROOM_MESSAGES', 
           payload: { roomId, messages: formattedMessages }
         });
+        // تخزين في الكاش
+        try { queryClient.setQueryData(['/api/messages/room/latest', roomId, 10], formattedMessages); } catch {}
       }
     } catch (error) {
       console.error(`❌ خطأ في تحميل رسائل الغرفة ${roomId}:`, error);
@@ -336,18 +349,25 @@ export const useChat = () => {
                 isPrivate: Boolean(message.isPrivate)
               };
               
-                             // إضافة الرسالة للغرفة المناسبة (عام فقط)
-               if (!chatMessage.isPrivate) {
-                 dispatch({ 
-                   type: 'ADD_ROOM_MESSAGE', 
-                   payload: { roomId, message: chatMessage }
-                 });
-               }
+              // إضافة الرسالة للغرفة المناسبة (عام فقط)
+              if (!chatMessage.isPrivate) {
+                dispatch({ 
+                  type: 'ADD_ROOM_MESSAGE', 
+                  payload: { roomId, message: chatMessage }
+                });
+                // تحديث كاش الرسائل الأخيرة للغرفة
+                try {
+                  const key = ['/api/messages/room/latest', roomId, 10] as const;
+                  const prev = (queryClient.getQueryData<ChatMessage[]>(key) || []);
+                  const next = [chatMessage, ...prev].slice(0, 50);
+                  queryClient.setQueryData(key, next);
+                } catch {}
+              }
               
-                             // تشغيل صوت خفيف فقط عند الرسائل العامة في الغرفة الحالية
-               if (!chatMessage.isPrivate && chatMessage.senderId !== state.currentUser?.id && roomId === state.currentRoomId) {
-                 playNotificationSound();
-               }
+              // تشغيل صوت خفيف فقط عند الرسائل العامة في الغرفة الحالية
+              if (!chatMessage.isPrivate && chatMessage.senderId !== state.currentUser?.id && roomId === state.currentRoomId) {
+                playNotificationSound();
+              }
             }
             break;
           }
@@ -520,6 +540,13 @@ export const useChat = () => {
             type: 'SET_PRIVATE_MESSAGE', 
             payload: { userId: conversationId, message: chatMessage }
           });
+          // تحديث كاش الخاص
+          try {
+            const key = ['/api/private-messages', state.currentUser?.id, conversationId, 50] as const;
+            const prev = (queryClient.getQueryData<ChatMessage[]>(key) || []);
+            const next = [...prev, chatMessage].slice(-100);
+            queryClient.setQueryData(key, next);
+          } catch {}
           if (chatMessage.senderId !== state.currentUser?.id) {
             playNotificationSound();
           }
@@ -717,6 +744,19 @@ export const useChat = () => {
     dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
     saveSession({ roomId });
 
+    // Prefetch آخر 10 رسائل باستخدام React Query لتسريع العرض
+    try {
+      queryClient.prefetchQuery({
+        queryKey: ['/api/messages/room/latest', roomId, 10],
+        queryFn: async () => {
+          const data = await apiRequest(`/api/messages/room/${roomId}/latest?limit=10`);
+          const formatted = Array.isArray(data?.messages) ? mapDbMessagesToChatMessages(data.messages, roomId) : [];
+          return formatted;
+        },
+        staleTime: 1000 * 60 * 10
+      });
+    } catch {}
+    
     // لا نطلق طلب REST هنا، سنعتمد على Socket لإرسال آخر 10 رسائل بعد الانضمام
     // loadRoomMessages(roomId);
 
@@ -833,11 +873,21 @@ export const useChat = () => {
   const loadPrivateConversation = useCallback(async (otherUserId: number, limit: number = 50) => {
     if (!state.currentUser?.id) return;
     try {
+      // محاولة قراءة من الكاش أولاً
+      const cacheKey = ['/api/private-messages', state.currentUser.id, otherUserId, limit] as const;
+      const cached = queryClient.getQueryData<ChatMessage[]>(cacheKey);
+      if (cached && cached.length > 0) {
+        dispatch({ type: 'SET_PRIVATE_CONVERSATION', payload: { userId: otherUserId, messages: cached } });
+        return;
+      }
+
       const data = await apiRequest(`/api/private-messages/${state.currentUser.id}/${otherUserId}?limit=${limit}`);
       const formatted = Array.isArray((data as any)?.messages)
         ? mapDbMessagesToChatMessages((data as any).messages)
         : [];
       dispatch({ type: 'SET_PRIVATE_CONVERSATION', payload: { userId: otherUserId, messages: formatted } });
+      // تخزين في الكاش
+      try { queryClient.setQueryData(cacheKey, formatted); } catch {}
     } catch (error) {
       console.error('❌ خطأ في تحميل رسائل الخاص:', error);
     }

@@ -11,6 +11,7 @@ import { Send, Image as ImageIcon, Smile } from "lucide-react";
 import UserRoleBadge from './UserRoleBadge';
 import { apiRequest } from '@/lib/queryClient';
 import { api } from '@/lib/queryClient';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -57,11 +58,57 @@ export default function MessageArea({
   // State for improved scroll behavior
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
-  
+
+  // استعلام لرسائل أقدم (صفحات) - يبدأ من طول الرسائل الحالية لتفادي التكرار
+  const pageSize = 20;
+  const { data: olderPages, fetchNextPage, hasNextPage, isFetchingNextPage, refetch: refetchOlder, isLoading: isLoadingOlder } = useInfiniteQuery({
+    queryKey: ['/api/messages/room', currentRoomId, pageSize],
+    queryFn: async ({ pageParam }) => {
+      const offset = typeof pageParam === 'number' ? pageParam : messages.length;
+      const result = await apiRequest(`/api/messages/room/${currentRoomId}?limit=${pageSize}&offset=${offset}&useCache=true`);
+      const items = Array.isArray(result?.messages) ? result.messages : [];
+      const mapped: ChatMessage[] = items.map((m: any) => ({
+        id: m.id,
+        content: m.content,
+        senderId: m.senderId,
+        timestamp: (m.timestamp && typeof m.timestamp === 'string') ? m.timestamp : new Date(m.timestamp).toISOString(),
+        messageType: m.messageType || 'text',
+        sender: m.sender,
+        roomId: m.roomId || currentRoomId,
+        isPrivate: false
+      }));
+      return { messages: mapped, hasMore: !!result?.hasMore, nextOffset: result?.nextOffset ?? (offset + mapped.length) };
+    },
+    getNextPageParam: (lastPage: any) => lastPage?.hasMore ? lastPage?.nextOffset : undefined,
+    initialPageParam: messages.length,
+    enabled: !!currentRoomId,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    keepPreviousData: true,
+  });
+
+  const olderMessages: ChatMessage[] = useMemo(() => {
+    const pages = olderPages?.pages || [];
+    const flat = pages.flatMap((p: any) => p.messages || []);
+    return flat;
+  }, [olderPages]);
+
+  const combinedMessages = useMemo(() => {
+    // دمج الأقدم مع الحالية، وإزالة أي تكرار بسيط بحسب id
+    const map = new Map<number | string, ChatMessage>();
+    for (const m of olderMessages) map.set(m.id, m);
+    for (const m of messages) map.set(m.id, m);
+    const arr = Array.from(map.values());
+    // ترتيب تصاعدي بالوقت لعرض طبيعي
+    return arr.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  }, [olderMessages, messages]);
+
   // 🔥 SIMPLIFIED message filtering - حذف الفلترة المعقدة التي تخفي رسائل صحيحة
   const validMessages = useMemo(() => {
     // ✅ فلترة بسيطة فقط لإزالة الرسائل الفارغة تماماً
-    const base = messages.filter(msg => 
+    const base = combinedMessages.filter(msg => 
       msg && 
       msg.content && 
       msg.content.trim() !== '' &&
@@ -72,7 +119,7 @@ export default function MessageArea({
       return base.filter(msg => !ignoredUserIds.has(msg.senderId));
     }
     return base;
-  }, [messages, ignoredUserIds]);
+  }, [combinedMessages, ignoredUserIds]);
 
   // Scroll to bottom function - optimized
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
@@ -322,6 +369,15 @@ export default function MessageArea({
         onScroll={handleScroll}
         className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white chat-messages-scroll`}
       >
+        {/* زر تحميل أقدم الرسائل */}
+        {hasNextPage && (
+          <div className="flex justify-center">
+            <Button size="sm" variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage || isLoadingOlder}>
+              {isFetchingNextPage ? 'جاري التحميل...' : 'تحميل المزيد من الرسائل'}
+            </Button>
+          </div>
+        )}
+
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
             <div className="text-6xl mb-4">💬</div>
@@ -485,17 +541,17 @@ export default function MessageArea({
           </Button>
           
           {/* Message Input */}
-                    <Input
-             ref={inputRef}
-             value={messageText}
-             onChange={handleMessageChange}
-             onKeyPress={handleKeyPress}
-             placeholder="اكتب رسالتك هنا..."
-             className="flex-1 resize-none bg-white text-gray-900 placeholder:text-gray-500 ring-offset-white"
-             disabled={!currentUser}
-             maxLength={1000}
-             autoComplete="off"
-           />
+          <Input
+            ref={inputRef}
+            value={messageText}
+            onChange={handleMessageChange}
+            onKeyPress={handleKeyPress}
+            placeholder="اكتب رسالتك هنا..."
+            className="flex-1 resize-none bg-white text-gray-900 placeholder:text-gray-500 ring-offset-white"
+            disabled={!currentUser}
+            maxLength={1000}
+            autoComplete="off"
+          />
           
           {/* Send Button */}
           <Button
