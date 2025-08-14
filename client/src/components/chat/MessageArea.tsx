@@ -7,7 +7,7 @@ import EmojiPicker from './EmojiPicker';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { findMentions, playMentionSound, renderMessageWithMentions, insertMention } from '@/utils/mentionUtils';
 import type { ChatMessage, ChatUser } from '@/types/chat';
-import { Send, Image as ImageIcon, Smile } from "lucide-react";
+import { Send, Image as ImageIcon, Smile, ArrowDown } from "lucide-react";
 import UserRoleBadge from './UserRoleBadge';
 import { apiRequest } from '@/lib/queryClient';
 import { api } from '@/lib/queryClient';
@@ -57,6 +57,7 @@ export default function MessageArea({
   // State for improved scroll behavior
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   
   // 🔥 SIMPLIFIED message filtering - حذف الفلترة المعقدة التي تخفي رسائل صحيحة
   const validMessages = useMemo(() => {
@@ -90,6 +91,9 @@ export default function MessageArea({
     const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
     setIsAtBottom(atBottom);
     if (atBottom) setUnreadCount(0);
+    
+    // إظهار زر التمرير عند التمرير لأعلى
+    setShowScrollButton(!atBottom && el.scrollTop < el.scrollHeight - el.clientHeight - 200);
   }, []);
 
   // Auto scroll to bottom only when appropriate
@@ -292,7 +296,7 @@ export default function MessageArea({
   }, []);
 
   return (
-    <section className="flex-1 flex flex-col bg-white min-h-0">
+    <section className="flex-1 flex flex-col bg-white min-h-0 relative">
       {/* Room Header */}
       <div className={`bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 ${compactHeader ? 'p-1.5' : 'p-2'}`}>
         <div className="flex items-center gap-3">
@@ -314,7 +318,7 @@ export default function MessageArea({
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white pb-24` }
+        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white`}
       >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -437,17 +441,33 @@ export default function MessageArea({
         
         {/* Scroll anchor */}
         <div ref={messagesEndRef} />
+        
+        {/* زر التمرير للأسفل */}
+        {showScrollButton && (
+          <Button
+            onClick={() => scrollToBottom('smooth')}
+            className="fixed bottom-24 left-4 z-20 rounded-full w-10 h-10 p-0 bg-primary hover:bg-primary/90 shadow-lg"
+            size="sm"
+          >
+            <ArrowDown className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {unreadCount}
+              </span>
+            )}
+          </Button>
+        )}
       </div>
       
-      {/* Message Input */}
-      <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t sticky bottom-0 z-10`}>
-        {/* Typing Indicator */}
-        {typingUsers.size > 0 && (
-          <div className="mb-1.5 text-[11px] text-gray-500 animate-pulse">
-            {typingDisplay}
-          </div>
-        )}
-        
+      {/* Typing Indicator */}
+      {typingUsers.size > 0 && (
+        <div className="px-4 py-2 text-xs text-muted-foreground bg-gray-50 border-t">
+          {typingDisplay}
+        </div>
+      )}
+      
+      {/* Message Input Area - تثبيت في الأسفل */}
+      <div className={`bg-white border-t border-gray-200 ${compactHeader ? 'p-2' : 'p-3'} sticky bottom-0`}>
         <div className="flex gap-3 items-end">
           {/* Emoji Picker */}
           <div className="relative">

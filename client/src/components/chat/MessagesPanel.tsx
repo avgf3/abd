@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { getImageSrc } from '@/utils/imageUtils';
 import { formatTime } from '@/utils/timeUtils';
 import {
@@ -32,7 +31,7 @@ export default function MessagesPanel({
 }: MessagesPanelProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const conversations = useMemo(() => {
+  const conversations = React.useMemo(() => {
     const items = Object.keys(privateConversations)
       .map((userId) => {
         const id = parseInt(userId);
@@ -53,7 +52,7 @@ export default function MessagesPanel({
     return items.filter((item) => item.user.username.toLowerCase().includes(q));
   }, [privateConversations, onlineUsers, searchTerm]);
 
-  const availableUsers = useMemo(() => {
+  const availableUsers = React.useMemo(() => {
     const filtered = onlineUsers.filter((u) => !!u && u.id !== currentUser?.id);
     if (!searchTerm.trim()) return filtered;
     const q = searchTerm.toLowerCase();
@@ -83,7 +82,7 @@ export default function MessagesPanel({
           />
         </div>
 
-        <ScrollArea className="h-[380px] w-full">
+        <div className="h-[400px] w-full overflow-y-auto">
           <div className="space-y-6 p-4">
             <section>
               <h4 className="font-bold text-foreground text-base mb-3 border-b border-accent pb-2">
@@ -163,7 +162,7 @@ export default function MessagesPanel({
               )}
             </section>
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="flex justify-center pt-6 border-t border-accent bg-gradient-to-r from-secondary to-accent">
           <Button
