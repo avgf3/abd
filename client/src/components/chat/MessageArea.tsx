@@ -314,7 +314,7 @@ export default function MessageArea({
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white`}
+        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white pb-24` }
       >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
