@@ -240,20 +240,11 @@ export default function MessageArea({
 
   // تم نقل دالة formatTime إلى utils/timeUtils.ts لتجنب التكرار
 
-  // Get message border color - محسن
-  const getMessageBorderColor = useCallback((userType?: string) => {
-    switch (userType) {
-      case 'owner':
-        return 'border-r-yellow-400';
-      case 'admin':
-        return 'border-r-red-400';
-      case 'moderator':
-        return 'border-r-purple-400';
-      case 'member':
-        return 'border-r-blue-400';
-      default:
-        return 'border-r-green-400';
-    }
+  // لون حد الرسالة مرتبط بلون اسم المستخدم النهائي
+  const getDynamicBorderColor = useCallback((sender?: ChatUser | null) => {
+    if (!sender) return '#4ade80';
+    const color = getFinalUsernameColor(sender);
+    return color === '#000000' ? '#4ade80' : color;
   }, []);
 
   // Username click handler - معالج النقر على اسم المستخدم لإدراج المنشن
@@ -327,7 +318,8 @@ export default function MessageArea({
           validMessages.map((message) => (
             <div
               key={message.id}
-              className={`flex items-center gap-3 p-3 rounded-lg border-r-4 ${getMessageBorderColor(message.sender?.userType)} bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
+              className={`flex items-center gap-3 p-3 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
+              style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
             >
               {/* System message: one-line red without avatar/badge */}
               {message.messageType === 'system' ? (

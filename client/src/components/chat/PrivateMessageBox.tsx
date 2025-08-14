@@ -116,6 +116,13 @@ export default function PrivateMessageBox({
     }
   }, [handleSend]);
 
+  // لون حد الرسالة مرتبط بلون اسم المستخدم النهائي في الخاص
+  const getDynamicBorderColor = useCallback((sender?: ChatUser | null) => {
+    if (!sender) return '#4ade80';
+    const color = getFinalUsernameColor(sender);
+    return color === '#000000' ? '#4ade80' : color;
+  }, []);
+
   // محسن: دالة تنسيق الرسائل مع ذاكرة التخزين المؤقت
   const formatLastMessage = useCallback((content: string) => {
     if (!content) return '';
@@ -195,9 +202,10 @@ export default function PrivateMessageBox({
                         transition={{ duration: 0.3 }}
                         className={`flex items-start gap-3 p-3 rounded-lg transition-all duration-200 ${
                           isMe 
-                            ? 'bg-blue-50 border-r-4 border-blue-400 ml-4' 
-                            : 'bg-green-50 border-r-4 border-green-400 mr-4'
+                            ? 'bg-blue-50 border-r-4 ml-4' 
+                            : 'bg-green-50 border-r-4 mr-4'
                         }`}
+                        style={{ borderRightColor: getDynamicBorderColor(m.sender || (isMe ? currentUser : user)) }}
                       >
                         <img
                           src={(m.sender?.profileImage as string) || '/default_avatar.svg'}
