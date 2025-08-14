@@ -567,7 +567,7 @@ export default function UnifiedSidebar({
 
       {/* Walls View */}
       {activeView === 'walls' && (
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0 bg-white">
           {/* Wall Tabs */}
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col">
             <TabsList className="grid w-full grid-cols-2 m-2">
@@ -752,7 +752,7 @@ export default function UnifiedSidebar({
 
       {/* Rooms View */}
       {activeView === 'rooms' && (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white">
           <RoomComponent
             currentUser={currentUser}
             rooms={rooms}
@@ -770,7 +770,7 @@ export default function UnifiedSidebar({
 
       {/* Friends View */}
       {activeView === 'friends' && (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white">
           <FriendsTabPanel
             currentUser={currentUser}
             onlineUsers={users}
