@@ -333,6 +333,30 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
             ON messages (room_id, "timestamp" DESC)
             WHERE deleted_at IS NULL;
           `);
+
+          // Helpful indexes for private messages (bi-directional conversations)
+          await (db as any).execute(`
+            CREATE INDEX IF NOT EXISTS idx_messages_private_sender_receiver
+            ON messages (sender_id, receiver_id, "timestamp" DESC)
+            WHERE is_private = TRUE;
+          `);
+          await (db as any).execute(`
+            CREATE INDEX IF NOT EXISTS idx_messages_private_receiver_sender
+            ON messages (receiver_id, sender_id, "timestamp" DESC)
+            WHERE is_private = TRUE;
+          `);
+          // Expression index to speed symmetric conversations
+          await (db as any).execute(`
+            CREATE INDEX IF NOT EXISTS idx_messages_private_pair
+            ON messages ((LEAST(sender_id, receiver_id)), (GREATEST(sender_id, receiver_id)), "timestamp" DESC)
+            WHERE is_private = TRUE;
+          `).catch(() => {});
+
+          // Helpful index for notifications
+          await (db as any).execute(`
+            CREATE INDEX IF NOT EXISTS idx_notifications_user_time
+            ON notifications (user_id, created_at DESC);
+          `);
         } catch (ensureError) {
           console.error('⚠️ فشل في ضمان المخطط بعد الـ migrations:', ensureError);
         }

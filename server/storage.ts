@@ -440,6 +440,17 @@ export const storage: LegacyStorage = {
     return user || undefined;
   },
 
+  // Batch users fetch to reduce N+1 patterns
+  async getUsersByIds(userIds: number[]) {
+    try {
+      const users = await databaseService.getUsersByIds(userIds);
+      return Array.isArray(users) ? users : [];
+    } catch (e) {
+      console.error('storage.getUsersByIds error:', e);
+      return [];
+    }
+  },
+
   async createUser(user: any) {
     const newUser = await databaseService.createUser(user);
     if (!newUser) throw new Error('Failed to create user');
