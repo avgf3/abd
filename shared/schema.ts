@@ -31,7 +31,7 @@ export const users = pgTable("users", {
   ipAddress: varchar("ip_address", { length: 45 }),
   deviceId: varchar("device_id", { length: 100 }),
   ignoredUsers: text("ignored_users").default('[]'), // قائمة المستخدمين المتجاهلين - JSON string للتوافق مع SQLite
-  usernameColor: text("username_color").default('#FFFFFF'), // لون اسم المستخدم
+  usernameColor: text("username_color").default('#000000'), // لون اسم المستخدم
   userTheme: text("user_theme").default('default'), // ثيم المستخدم
   profileEffect: text("profile_effect").default('none'), // تأثير البروفايل
   points: integer("points").default(0), // نقاط المستخدم الحالية
@@ -172,7 +172,7 @@ export const wallPosts = pgTable("wall_posts", {
   type: text("type").notNull().default("public"), // 'public', 'friends'
   timestamp: timestamp("timestamp").defaultNow(),
   userProfileImage: text("user_profile_image"),
-  usernameColor: text("username_color").default('#FFFFFF'),
+  usernameColor: text("username_color").default('#000000'),
   totalLikes: integer("total_likes").default(0),
   totalDislikes: integer("total_dislikes").default(0),
   totalHearts: integer("total_hearts").default(0),
