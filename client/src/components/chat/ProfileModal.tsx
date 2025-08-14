@@ -1034,7 +1034,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
         .profile-card {
           width: 100%;
-          max-width: 380px;
+          max-width: 440px;
           border-radius: 16px;
           overflow: hidden;
           background: var(--card-bg);
@@ -1077,14 +1077,51 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           background: rgba(0,0,0,0.9);
         }
 
+        /* شريط الأزرار بالقرب من أسفل الغلاف وبجوار يسار الصورة الشخصية */
+        .profile-actions {
+          position: absolute;
+          bottom: 12px;
+          left: 12px;
+          right: 170px; /* اترك مساحة للصورة الشخصية على اليمين */
+          display: flex;
+          gap: 8px;
+          align-items: center;
+          flex-wrap: wrap;
+          z-index: 3;
+        }
+
+        .profile-actions button {
+          border: none;
+          padding: 6px 10px;
+          border-radius: 8px;
+          font-weight: bold;
+          font-size: 12px;
+          cursor: pointer;
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+          white-space: nowrap;
+        }
+
+        .profile-actions button:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+          filter: brightness(1.05);
+        }
+
+        .btn-chat { background: linear-gradient(135deg, #3490dc, #2779bd); }
+        .btn-add { background: linear-gradient(135deg, #38a169, #2f855a); }
+        .btn-ignore { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .btn-report { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+
         .profile-avatar {
-          width: 100px;
-          height: 100px;
+          width: 130px;
+          height: 130px;
           border-radius: 16px;
           overflow: hidden;
           border: 4px solid rgba(255,255,255,0.9);
           position: absolute;
-          top: calc(100% - 50px);
+          top: calc(100% - 65px);
           right: 20px;
           background-color: white;
           box-shadow: 0 6px 20px rgba(0,0,0,0.6);
@@ -1105,7 +1142,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
         .change-avatar-btn {
           position: absolute;
-          top: calc(100% - 25px);
+          top: calc(100% - 32px);
           right: 28px;
           background: rgba(0,0,0,0.8);
           border-radius: 50%;
@@ -1131,7 +1168,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         }
 
         .profile-body {
-          padding: 60px 20px 16px;
+          padding: 72px 20px 16px;
         }
 
         .profile-info {
@@ -1714,14 +1751,14 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           }
           
           .profile-avatar {
-            width: 80px;
-            height: 80px;
-            top: calc(100% - 40px);
+            width: 100px;
+            height: 100px;
+            top: calc(100% - 50px);
             right: 16px;
           }
           
           .change-avatar-btn {
-            top: calc(100% - 20px);
+            top: calc(100% - 24px);
             right: 22px;
             width: 25px;
             height: 25px;
@@ -1771,6 +1808,15 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               >
                 🖼️ تغيير الغلاف
               </button>
+            )}
+
+            {localUser?.id !== currentUser?.id && (
+              <div className="profile-actions">
+                <button className="btn-chat" onClick={() => onPrivateMessage?.(localUser)}>💬 محادثة خاصة</button>
+                <button className="btn-add" onClick={() => onAddFriend?.(localUser)}>👥 إضافة صديق</button>
+                <button className="btn-ignore" onClick={() => onIgnoreUser?.(localUser?.id || 0)}>🚫 تجاهل</button>
+                <button className="btn-report" onClick={() => onReportUser?.(localUser)}>🚩 إبلاغ</button>
+              </div>
             )}
 
             <div className="profile-avatar">
@@ -1829,12 +1875,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
             </div>
 
             {localUser?.id !== currentUser?.id && (
-              <div className="profile-buttons">
-                <button onClick={() => onReportUser?.(localUser)}>🚩 تبليغ</button>
-                <button onClick={() => onIgnoreUser?.(localUser?.id || 0)}>🚫 تجاهل (لن ترى رسائله ولن يستطيع مراسلتك)</button>
-                <button onClick={() => onPrivateMessage?.(localUser)}>💬 محادثة</button>
-                <button onClick={() => onAddFriend?.(localUser)}>👥 اضافة صديق</button>
-              </div>
+              <></>
             )}
 
             <div className="profile-details">
