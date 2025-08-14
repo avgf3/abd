@@ -172,8 +172,8 @@ export default function UnifiedSidebar({
 
   // جلب المنشورات عبر React Query مع كاش قوي
   const socketRef = useRef<Socket | null>(null);
-  const { scrollRef: usersScrollRef } = useScrollArea();
-  const { scrollRef: wallsScrollRef } = useScrollArea();
+  const { scrollRef: usersScrollRef, onScroll: onUsersScroll, isAtBottom: usersAtBottom, scrollToBottom: usersScrollToBottom } = useScrollArea();
+  const { scrollRef: wallsScrollRef, onScroll: onWallsScroll, isAtBottom: wallsAtBottom, scrollToBottom: wallsScrollToBottom } = useScrollArea();
 
   const { data: wallData, isFetching } = useQuery<{ success?: boolean; posts: WallPost[] }>({
     queryKey: ['/api/wall/posts', activeTab, currentUser?.id],
@@ -463,107 +463,117 @@ export default function UnifiedSidebar({
 
       {/* Users View */}
       {activeView === 'users' && (
-        <div ref={usersScrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-white">
-          <div className="relative">
-            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
-            <Input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="البحث عن المستخدمين..."
-              className="w-full pl-4 pr-10 py-2 rounded-lg bg-white border-gray-300 placeholder:text-gray-500 text-gray-900"
-            />
-          </div>
-          
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 font-bold text-green-600 text-base">
-              المتصلون الآن
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
-                {validUsers.length}
-              </span>
+        <div className="relative flex-1">
+          <div ref={usersScrollRef} onScroll={onUsersScroll} className="flex-1 absolute inset-0 overflow-y-auto p-4 space-y-3 bg-white">
+            <div className="relative">
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="البحث عن المستخدمين..."
+                className="w-full pl-4 pr-10 py-2 rounded-lg bg-white border-gray-300 placeholder:text-gray-500 text-gray-900"
+              />
             </div>
             
-            <ul className="space-y-1">
-              {filteredUsers.map((user) => {
-                // 🚀 تحسين: التحقق من وجود البيانات المطلوبة
-                if (!user?.username || !user?.userType) {
-                  return null;
-                }
-                
-                return (
-                  <li key={user.id} className="relative -mx-4">
-                    <SimpleUserMenu
-                      targetUser={user}
-                      currentUser={currentUser}
-                      showModerationActions={isModerator}
-                    >
-                      <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full bg-white`}
-                        style={{ }}
-                        onClick={(e) => handleUserClick(e, user)}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 font-bold text-green-600 text-base">
+                المتصلون الآن
+                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
+                  {validUsers.length}
+                </span>
+              </div>
+              
+              <ul className="space-y-1">
+                {filteredUsers.map((user) => {
+                  // 🚀 تحسين: التحقق من وجود البيانات المطلوبة
+                  if (!user?.username || !user?.userType) {
+                    return null;
+                  }
+                  
+                  return (
+                    <li key={user.id} className="relative -mx-4">
+                      <SimpleUserMenu
+                        targetUser={user}
+                        currentUser={currentUser}
+                        showModerationActions={isModerator}
                       >
-                        <ProfileImage 
-                          user={user} 
-                          size="small" 
-                          className=""
-                          hideRoleBadgeOverlay={true}
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <span 
-                                className="text-base font-medium transition-all duration-300"
-                                style={{ 
-                                  color: user.usernameColor || getUserThemeTextColor(user),
-                                  textShadow: user.usernameColor ? `0 0 10px ${user.usernameColor}40` : 'none',
-                                  filter: user.usernameColor ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
-                                }}
-                                title={user.username}
-                              >
-                                {user.username}
-                              </span>
-                              {/* إشارة المكتوم */}
-                              {user.isMuted && (
-                                <span className="text-yellow-400 text-xs">🔇</span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              {renderUserBadge(user)}
-                              {renderCountryFlag(user)}
+                        <div
+                          className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full bg-white`}
+                          style={{ }}
+                          onClick={(e) => handleUserClick(e, user)}
+                        >
+                          <ProfileImage 
+                            user={user} 
+                            size="small" 
+                            className=""
+                            hideRoleBadgeOverlay={true}
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span 
+                                  className="text-base font-medium transition-all duration-300"
+                                  style={{ 
+                                    color: user.usernameColor || getUserThemeTextColor(user),
+                                    textShadow: user.usernameColor ? `0 0 10px ${user.usernameColor}40` : 'none',
+                                    filter: user.usernameColor ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                                  }}
+                                  title={user.username}
+                                >
+                                  {user.username}
+                                </span>
+                                {/* إشارة المكتوم */}
+                                {user.isMuted && (
+                                  <span className="text-yellow-400 text-xs">🔇</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {renderUserBadge(user)}
+                                {renderCountryFlag(user)}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </SimpleUserMenu>
-                  </li>
-                );
-              })}
-            </ul>
-            
-            {filteredUsers.length === 0 && (
-              <div className="text-center text-gray-500 py-8">
-                <div className="mb-3">
-                  {searchTerm ? '🔍' : '👥'}
+                      </SimpleUserMenu>
+                    </li>
+                  );
+                })}
+              </ul>
+              
+              {filteredUsers.length === 0 && (
+                <div className="text-center text-gray-500 py-8">
+                  <div className="mb-3">
+                    {searchTerm ? '🔍' : '👥'}
+                  </div>
+                  <p className="text-sm">
+                    {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمون متصلون حالياً'}
+                  </p>
+                  {searchTerm && (
+                    <button 
+                      onClick={() => setSearchTerm('')}
+                      className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
+                    >
+                      مسح البحث
+                    </button>
+                  )}
                 </div>
-                <p className="text-sm">
-                  {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمون متصلون حالياً'}
-                </p>
-                {searchTerm && (
-                  <button 
-                    onClick={() => setSearchTerm('')}
-                    className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
-                  >
-                    مسح البحث
-                  </button>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
+          {!usersAtBottom && (
+            <button
+              onClick={() => usersScrollToBottom('smooth')}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full text-xs bg-blue-600 text-white shadow"
+            >
+              عرض المزيد بالأسفل
+            </button>
+          )}
         </div>
       )}
 
       {/* Walls View */}
       {activeView === 'walls' && (
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0 bg-white">
+        <div className="relative flex-1 overflow-hidden flex flex-col min-h-0 bg-white">
           {/* Wall Tabs */}
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col">
             <TabsList className="grid w-full grid-cols-2 m-2">
@@ -577,7 +587,7 @@ export default function UnifiedSidebar({
               </TabsTrigger>
             </TabsList>
 
-            <div ref={wallsScrollRef} className="flex-1 overflow-y-auto px-2">
+            <div ref={wallsScrollRef} onScroll={onWallsScroll} className="flex-1 overflow-y-auto px-2">
               {/* Post Creation */}
               {currentUser && currentUser.userType !== 'guest' && (
                 <Card className="mb-4 border border-gray-200">
@@ -740,8 +750,17 @@ export default function UnifiedSidebar({
                     </Card>
                   ))
                 )}
-              </TabsContent>
+                            </TabsContent>
             </div>
+            {/* زر تمرير لأسفل */}
+            {!wallsAtBottom && (
+              <button
+                onClick={() => wallsScrollToBottom('smooth')}
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full text-xs bg-blue-600 text-white shadow"
+              >
+                عرض المزيد بالأسفل
+              </button>
+            )}
           </Tabs>
         </div>
       )}

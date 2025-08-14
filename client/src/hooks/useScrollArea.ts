@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 /**
  * Hook موحد لإدارة منطقة التمرير
@@ -6,6 +6,7 @@ import { useRef, useEffect } from 'react';
  */
 export function useScrollArea() {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
   useEffect(() => {
     const scrollElement = scrollRef.current;
@@ -14,11 +15,19 @@ export function useScrollArea() {
     // تحسين أداء التمرير
     scrollElement.style.overscrollBehavior = 'contain';
     scrollElement.style.touchAction = 'pan-y';
-    
-    return () => {
-      // تنظيف
-    };
   }, []);
+
+  const updateIsAtBottom = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const threshold = 80; // px
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+    setIsAtBottom(atBottom);
+  };
+
+  const onScroll = () => {
+    updateIsAtBottom();
+  };
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     if (scrollRef.current) {
@@ -26,6 +35,8 @@ export function useScrollArea() {
         top: scrollRef.current.scrollHeight,
         behavior
       });
+      // تحديث الحالة مباشرةً لتحسين استجابة زر التمرير
+      setIsAtBottom(true);
     }
   };
 
@@ -35,12 +46,16 @@ export function useScrollArea() {
         top: 0,
         behavior
       });
+      // عند الصعود للأعلى قطعاً لسنا في الأسفل
+      setIsAtBottom(false);
     }
   };
 
   return {
     scrollRef,
     scrollToBottom,
-    scrollToTop
+    scrollToTop,
+    isAtBottom,
+    onScroll,
   };
 }

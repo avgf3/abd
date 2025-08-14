@@ -28,7 +28,7 @@ export default function FriendsTabPanel({
   onlineUsers,
   onStartPrivateChat
 }: FriendsTabPanelProps) {
-  const { scrollRef: friendsScrollRef } = useScrollArea();
+  const { scrollRef: friendsScrollRef, onScroll: onFriendsScroll, isAtBottom: friendsAtBottom, scrollToBottom: friendsScrollToBottom } = useScrollArea();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'friends' | 'requests'>('friends');
@@ -268,7 +268,7 @@ export default function FriendsTabPanel({
       </div>
 
       {/* Content */}
-      <div ref={friendsScrollRef} className="flex-1 overflow-y-auto p-4">
+      <div ref={friendsScrollRef} onScroll={onFriendsScroll} className="relative flex-1 overflow-y-auto p-4">
         {/* Friends Tab */}
         {activeTab === 'friends' && (
           <div className="space-y-3">
@@ -484,6 +484,16 @@ export default function FriendsTabPanel({
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* زر تمرير لأسفل */}
+        {!friendsAtBottom && (
+          <button
+            onClick={() => friendsScrollToBottom('smooth')}
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full text-xs bg-blue-600 text-white shadow"
+          >
+            عرض المزيد بالأسفل
+          </button>
         )}
       </div>
     </div>

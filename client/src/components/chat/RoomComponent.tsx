@@ -277,7 +277,7 @@ export default function RoomComponent({
   allowRefresh = true
 }: RoomComponentProps) {
   // الحالات المحلية
-  const { scrollRef: listScrollRef } = useScrollArea();
+  const { scrollRef: listScrollRef, onScroll: onRoomsScroll, isAtBottom: roomsAtBottom, scrollToBottom: roomsScrollToBottom } = useScrollArea();
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomDescription, setNewRoomDescription] = useState('');
@@ -478,7 +478,7 @@ export default function RoomComponent({
       </div>
 
       {/* المحتوى */}
-      <div ref={listScrollRef} className="flex-1 overflow-y-auto p-4">
+      <div ref={listScrollRef} onScroll={onRoomsScroll} className="relative flex-1 overflow-y-auto p-4">
         {/* زر إضافة غرفة */}
         {canCreateRooms && (
           <Button
@@ -507,6 +507,15 @@ export default function RoomComponent({
           ))}
         </div>
 
+        {/* زر تمرير لأسفل */}
+        {!roomsAtBottom && (
+          <button
+            onClick={() => roomsScrollToBottom('smooth')}
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full text-xs bg-blue-600 text-white shadow"
+          >
+            عرض المزيد بالأسفل
+          </button>
+        )}
       </div>
 
       {/* مربع حوار إضافة غرفة */}
