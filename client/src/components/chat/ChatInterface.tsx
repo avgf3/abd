@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import UnifiedSidebar from './UserSidebarWithWalls';
 import MessageArea from './MessageArea';
 import BroadcastRoomInterface from './BroadcastRoomInterface';
@@ -452,7 +452,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
 
           {/* الشعار بجانب الإشعارات */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" onClick={() => setActiveView('hidden')} title="العودة للدردشة">
             <MessageCircle className="w-5 h-5 text-primary" />
             <div className="text-lg sm:text-xl font-bold text-white truncate">
               Arabic<span className="text-primary">Chat</span>
