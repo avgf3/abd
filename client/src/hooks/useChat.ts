@@ -237,6 +237,7 @@ export const useChat = () => {
   
   // 🔥 SIMPLIFIED loading management - مصدر واحد
   const loadingRooms = useRef<Set<string>>(new Set());
+  const loadingOlderRooms = useRef<Set<string>>(new Set());
   
   // Broadcast handlers registry
   const broadcastHandlers = useRef<Set<(data: any) => void>>(new Set());
@@ -291,6 +292,27 @@ export const useChat = () => {
       console.error(`❌ خطأ في تحميل رسائل الغرفة ${roomId}:`, error);
     } finally {
       loadingRooms.current.delete(roomId);
+    }
+  }, [state.roomMessages]);
+
+  // تحميل رسائل أقدم عند التمرير للأعلى (Pagination)
+  const loadOlderRoomMessages = useCallback(async (roomId: string, pageSize: number = 20) => {
+    const existing = state.roomMessages[roomId] || [];
+    const offset = existing.length;
+    if (loadingOlderRooms.current.has(roomId)) return;
+    loadingOlderRooms.current.add(roomId);
+    try {
+      const data = await apiRequest(`/api/messages/room/${roomId}?limit=${pageSize}&offset=${offset}&useCache=true`);
+      if (data?.messages && Array.isArray(data.messages) && data.messages.length > 0) {
+        const formattedOlder = mapDbMessagesToChatMessages(data.messages, roomId);
+        // دمج الأقدم قبل الموجود للحفاظ على الترتيب التصاعدي
+        const merged = [...formattedOlder, ...existing];
+        dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId, messages: merged } });
+      }
+    } catch (e) {
+      console.error('❌ خطأ في تحميل الرسائل الأقدم:', e);
+    } finally {
+      loadingOlderRooms.current.delete(roomId);
     }
   }, [state.roomMessages]);
 
@@ -875,6 +897,7 @@ export const useChat = () => {
     sendRoomMessage,
     joinRoom,
     loadRoomMessages,
+    loadOlderRoomMessages,
     ignoreUser,
     unignoreUser,
     sendTyping,

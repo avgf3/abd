@@ -96,7 +96,13 @@ export default function MessageArea({
     const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
     setIsAtBottom(atBottom);
     if (atBottom) setUnreadCount(0);
-  }, []);
+    // تحميل أقدم عند الاقتراب من الأعلى
+    if (el.scrollTop < 60 && currentRoomId) {
+      try {
+        (window as any).__chat_load_older__?.(currentRoomId);
+      } catch {}
+    }
+  }, [currentRoomId]);
 
   // Auto scroll to bottom only when appropriate
   useEffect(() => {

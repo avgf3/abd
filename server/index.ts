@@ -9,11 +9,15 @@ import { setupSecurity } from "./security";
 import path from "path";
 import fs from "fs";
 import { Server } from "http";
+import compression from "compression";
 
 const app = express();
 
 // Setup security first
 setupSecurity(app);
+
+// ضغط gzip/brotli (إن توفر) لتقليل حجم الاستجابات
+app.use(compression({ threshold: 1024 }));
 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 

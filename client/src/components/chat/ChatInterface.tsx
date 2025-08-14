@@ -322,6 +322,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setReportedMessage(null);
   };
 
+  useEffect(() => {
+    // ربط محمّل الرسائل الأقدم مع نافذة عامة لاستدعائه من MessageArea دون تغيير واجهتها
+    (window as any).__chat_load_older__ = (roomId: string) => {
+      try { (chat as any).loadOlderRoomMessages?.(roomId, 20); } catch {}
+    };
+    return () => { try { delete (window as any).__chat_load_older__; } catch {} };
+  }, [chat]);
+
   return (
       <div className="min-h-[100dvh] flex flex-col app-shell" onClick={closeUserPopup}>
       {/* Header - بدون التبويبات الأربعة */}

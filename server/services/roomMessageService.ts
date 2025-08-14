@@ -28,6 +28,21 @@ class RoomMessageService {
   private readonly MAX_CACHE_SIZE = 100; // رسائل لكل غرفة
   private readonly MAX_CACHE_ROOMS = 50; // عدد الغرف المحفوظة في الذاكرة
 
+  private sanitizeUserForClient(user: any): any {
+    if (!user) return null;
+    return {
+      id: user.id,
+      username: user.username,
+      userType: user.userType,
+      level: user.level,
+      gender: user.gender,
+      usernameColor: user.usernameColor,
+      profileImage: (user as any)?.profileImage || null,
+      userTheme: user.userTheme,
+      profileEffect: user.profileEffect,
+    };
+  }
+
   /**
    * إرسال رسالة لغرفة
    */
@@ -86,7 +101,7 @@ class RoomMessageService {
       // تحويل الرسالة للتنسيق المطلوب
       const roomMessage: RoomMessage = {
         id: message.id,
-        senderId: message.senderId,
+        senderId: messageData.senderId,
         roomId: messageData.roomId,
         content: message.content,
         messageType: message.messageType,
@@ -96,7 +111,7 @@ class RoomMessageService {
         senderUsername: sender.username,
         senderUserType: sender.userType,
         senderAvatar: (sender as any).profileImage || null,
-        sender
+        sender: this.sanitizeUserForClient(sender)
       };
 
       // إضافة الرسالة للذاكرة المؤقتة
@@ -170,7 +185,7 @@ class RoomMessageService {
             senderUsername: sender?.username || 'مستخدم محذوف',
             senderUserType: sender?.userType || 'user',
             senderAvatar: (sender as any)?.profileImage || null,
-            sender
+            sender: this.sanitizeUserForClient(sender)
           };
           messages.push(roomMessage);
         } catch (err) {
@@ -298,7 +313,7 @@ class RoomMessageService {
             senderUsername: sender?.username || 'مستخدم محذوف',
             senderUserType: sender?.userType || 'user',
             senderAvatar: (sender as any)?.profileImage || null,
-            sender
+            sender: this.sanitizeUserForClient(sender)
           };
           messages.push(roomMessage);
         } catch (err) {

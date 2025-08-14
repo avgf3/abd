@@ -43,7 +43,20 @@ router.post('/send', async (req, res) => {
       return res.status(500).json({ error: 'فشل في إنشاء الرسالة' });
     }
 
-    const messageWithSender = { ...newMessage, sender } as any;
+    const messageWithSender = { 
+      ...newMessage, 
+      sender: {
+        id: sender.id,
+        username: sender.username,
+        userType: sender.userType,
+        level: sender.level,
+        gender: sender.gender,
+        usernameColor: sender.usernameColor,
+        profileImage: (sender as any)?.profileImage || null,
+        userTheme: sender.userTheme,
+        profileEffect: sender.profileEffect,
+      }
+    } as any;
 
     // بث إلى غرف المستخدمين الخاصة عبر Socket.IO
     const io = req.app.get('io');

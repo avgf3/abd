@@ -118,9 +118,20 @@ function sendRoomUsers(roomId: string, source: string = 'system') {
     }
   }
   const roomUsers = Array.from(userMap.values());
+  const safeUsers = roomUsers.map((u) => ({
+    id: u.id,
+    username: u.username,
+    userType: u.userType,
+    level: u.level,
+    gender: u.gender,
+    usernameColor: u.usernameColor,
+    profileImage: (u as any)?.profileImage || null,
+    userTheme: u.userTheme,
+    profileEffect: u.profileEffect,
+  }));
   io.to(`room_${roomId}`).emit('message', {
     type: 'onlineUsers',
-    users: roomUsers,
+    users: safeUsers,
     roomId,
     source
   });
@@ -1740,15 +1751,10 @@ if (!existing) {
           }
         }
         
-        const newMessage = await storage.createMessage({
-          senderId: socket.userId,
-          content: sanitizedContent,
-          messageType: data.messageType || 'text',
-          isPrivate: false,
-          roomId: roomId,
-        });
+        /* DB insert moved to roomMessageService.sendMessage() to avoid duplication */
+        const newMessage = undefined as any;
         
-        const sender = await storage.getUser(socket.userId);
+        /* sender already included (sanitized) in roomMessage */
         // إرسال الرسالة مباشرة للمستخدمين في نفس الغرفة لتقليل التأخير الإدراكي
         const roomMessage = await roomMessageService.sendMessage({
           senderId: socket.userId,
@@ -1758,10 +1764,10 @@ if (!existing) {
           isPrivate: false,
         });
         
-        io.to(`room_${roomId}`).emit('message', { 
-          type: 'newMessage',
-          message: { ...(roomMessage || newMessage), sender, roomId }
-        });
+                 io.to(`room_${roomId}`).emit('message', { 
+           type: 'newMessage',
+           message: { ...(roomMessage as any), roomId }
+         });
         
         // إضافة نقاط وإشعارات المستوى بعد البث لعدم حجب الرسالة
         try {
@@ -2064,11 +2070,22 @@ if (!existing) {
           }
           const roomUsers = Array.from(roomUserMap.values());
         
-        // إرسال تأكيد الانضمام مع قائمة المستخدمين
+        // إرسال تأكيد الانضمام مع قائمة المستخدمين (مصغّرة)
+        const safeUsers = roomUsers.map((u) => ({
+          id: u.id,
+          username: u.username,
+          userType: u.userType,
+          level: u.level,
+          gender: u.gender,
+          usernameColor: u.usernameColor,
+          profileImage: (u as any)?.profileImage || null,
+          userTheme: u.userTheme,
+          profileEffect: u.profileEffect,
+        }));
         socket.emit('message', {
           type: 'roomJoined',
           roomId: roomId,
-          users: roomUsers
+          users: safeUsers
         });
         
         // إشعار باقي المستخدمين في الغرفة (مرة واحدة فقط)
