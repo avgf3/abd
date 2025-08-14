@@ -413,9 +413,9 @@ export default function UnifiedSidebar({
   // تم نقل دالة formatTimeAgo إلى utils/timeUtils.ts (تستخدم من الاستيراد أعلاه)
 
   return (
-    <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col min-h-0">
+    <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col h-full max-h-screen">
       {/* Toggle Buttons - always visible now */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 flex-shrink-0">
         <Button
           variant={activeView === 'users' ? 'default' : 'ghost'}
           className={`flex-1 rounded-none py-3 ${
@@ -466,18 +466,24 @@ export default function UnifiedSidebar({
         </Button>
       </div>
 
-      {/* Users View */}
+      {/* Users View - تحسين التمرير */}
       {activeView === 'users' && (
-                  <div ref={usersScrollRef} className="relative flex-1 overflow-y-auto p-4 space-y-3 cursor-grab bg-white">
-          <div className="relative">
-            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
-            <Input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="البحث عن المستخدمين..."
-              className="w-full pl-4 pr-10 py-2 rounded-lg bg-white border-gray-300 placeholder:text-gray-500 text-gray-900"
-            />
+        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+          {/* Search Bar - ثابت في الأعلى */}
+          <div className="p-4 bg-white border-b border-gray-100 flex-shrink-0">
+            <div className="relative">
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="البحث عن المستخدمين..."
+                className="w-full pl-4 pr-10 py-2 rounded-lg bg-white border-gray-300 placeholder:text-gray-500 text-gray-900"
+              />
+            </div>
           </div>
+          
+          {/* Users List - قابل للتمرير */}
+          <div ref={usersScrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 cursor-grab bg-white" style={{ maxHeight: 'calc(100vh - 200px)' }}>
           
           <div className="space-y-3">
             <div className="flex items-center gap-2 font-bold text-green-600 text-base">
@@ -562,16 +568,17 @@ export default function UnifiedSidebar({
                 )}
               </div>
             )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Walls View */}
+      {/* Walls View - تحسين التمرير */}
       {activeView === 'walls' && (
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">
           {/* Wall Tabs */}
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-2 m-2">
+            <TabsList className="grid w-full grid-cols-2 m-2 flex-shrink-0">
               <TabsTrigger value="public" className="flex items-center gap-2">
                 <Globe className="w-4 h-4" />
                 عام
@@ -591,7 +598,8 @@ export default function UnifiedSidebar({
                 const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
                 setIsAtBottomSidebarWall(atBottom);
               }}
-              className="relative flex-1 overflow-y-auto px-2 pb-24 cursor-grab"
+              className="flex-1 overflow-y-auto px-2 pb-4 cursor-grab"
+              style={{ maxHeight: 'calc(100vh - 250px)' }}
             >
               {/* Post Creation */}
               {currentUser && currentUser.userType !== 'guest' && (
@@ -772,9 +780,9 @@ export default function UnifiedSidebar({
         </div>
       )}
 
-      {/* Rooms View */}
+      {/* Rooms View - تحسين التمرير */}
       {activeView === 'rooms' && (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden" style={{ maxHeight: 'calc(100vh - 150px)' }}>
           <RoomComponent
             currentUser={currentUser}
             rooms={rooms}
@@ -790,9 +798,9 @@ export default function UnifiedSidebar({
         </div>
       )}
 
-      {/* Friends View */}
+      {/* Friends View - تحسين التمرير */}
       {activeView === 'friends' && (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden" style={{ maxHeight: 'calc(100vh - 150px)' }}>
           <FriendsTabPanel
             currentUser={currentUser}
             onlineUsers={users}

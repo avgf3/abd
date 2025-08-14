@@ -629,3 +629,56 @@ body.ltr {
   /* Ensure wheel events work properly */
   touch-action: auto;
 }
+
+/* Chat layout improvements - تحسينات خاصة بتخطيط الدردشة */
+.chat-main-container {
+  height: calc(100vh - 160px);
+  overflow: hidden;
+}
+
+.chat-message-area {
+  height: calc(100vh - 240px);
+  overflow-y: auto;
+}
+
+.chat-sidebar {
+  height: calc(100vh - 160px);
+  overflow: hidden;
+}
+
+.chat-input-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.chat-footer-tabs {
+  position: fixed;
+  bottom: 80px;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: var(--secondary);
+  border-top: 1px solid var(--accent);
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Mobile improvements for chat */
+@media (max-width: 768px) {
+  .chat-main-container {
+    height: calc(100dvh - 160px);
+  }
+  
+  .chat-message-area {
+    height: calc(100dvh - 240px);
+  }
+  
+  .chat-sidebar {
+    height: calc(100dvh - 160px);
+  }
+}

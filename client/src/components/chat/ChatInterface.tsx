@@ -461,11 +461,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         </div>
       </header>
       
-      {/* Main Content */}
-      <main className="flex flex-1 overflow-hidden min-h-0 flex-col sm:flex-row">
+      {/* Main Content - تحسين التخطيط لمنع التداخل */}
+      <main className="flex flex-1 overflow-hidden min-h-0 flex-col sm:flex-row" style={{ paddingBottom: '80px' }}>
         {/* الشريط الجانبي - على الجوال يعرض بملء الشاشة عند اختيار التبويب */}
         {activeView !== 'hidden' && (
-          <div className={`${isMobile ? 'w-full flex-1 min-h-0' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}>
+          <div className={`${isMobile ? 'w-full flex-1 min-h-0' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`} style={{ maxHeight: 'calc(100vh - 160px)' }}>
             <UnifiedSidebar 
               users={chat.onlineUsers}
               onUserClick={handleUserClick}
@@ -519,27 +519,29 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             );
           }
           
-          // وإلا استخدم MessageArea العادية
-          return (
-            <MessageArea 
-              messages={chat.publicMessages}
-              currentUser={chat.currentUser}
-              onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
-              onTyping={() => chat.sendTyping()}
-              typingUsers={chat.typingUsers}
-              onReportMessage={handleReportUser}
-              onUserClick={handleUserClick}
-              onlineUsers={chat.onlineUsers}
-              currentRoomName={currentRoom?.name || 'الدردشة العامة'}
-              currentRoomId={chat.currentRoomId}
-              ignoredUserIds={chat.ignoredUsers}
-                        />
-           );
+                      // وإلا استخدم MessageArea العادية مع حماية من التداخل
+            return (
+              <div className="flex-1 flex flex-col min-h-0 relative" style={{ maxHeight: 'calc(100vh - 160px)' }}>
+                <MessageArea 
+                  messages={chat.publicMessages}
+                  currentUser={chat.currentUser}
+                  onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                  onTyping={() => chat.sendTyping()}
+                  typingUsers={chat.typingUsers}
+                  onReportMessage={handleReportUser}
+                  onUserClick={handleUserClick}
+                  onlineUsers={chat.onlineUsers}
+                  currentRoomName={currentRoom?.name || 'الدردشة العامة'}
+                  currentRoomId={chat.currentRoomId}
+                  ignoredUserIds={chat.ignoredUsers}
+                />
+              </div>
+            );
          })() : null}
        </main>
 
-      {/* Footer - تبويبات سفلية. على الجوال: تفتح بملء الشاشة، وعلى الشاشات الكبيرة: تظهر كلوحة جانبية قابلة للإخفاء */}
-      <footer className="sticky bottom-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent">
+      {/* Footer - تبويبات سفلية محسنة لتجنب التداخل مع منطقة الإرسال */}
+      <footer className="fixed bottom-0 left-0 right-0 z-10 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent" style={{ transform: 'translateY(-80px)' }}>
         <div className="flex gap-2 sm:gap-3 overflow-x-auto max-w-full">
           {/* الحوائط */}
                      <Button 

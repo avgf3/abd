@@ -310,11 +310,12 @@ export default function MessageArea({
         </div>
       </div>
       
-      {/* Messages Container */}
+      {/* Messages Container - إضافة مساحة كافية في الأسفل لمنطقة الإرسال */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white pb-24` }
+        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white pb-32`}
+        style={{ marginBottom: '80px' }}
       >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -439,8 +440,8 @@ export default function MessageArea({
         <div ref={messagesEndRef} />
       </div>
       
-      {/* Message Input */}
-      <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t sticky bottom-0 z-10`}>
+      {/* Message Input - تحسين التثبيت لمنع التداخل */}
+      <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg`}>
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
           <div className="mb-1.5 text-[11px] text-gray-500 animate-pulse">
@@ -448,7 +449,7 @@ export default function MessageArea({
           </div>
         )}
         
-        <div className="flex gap-3 items-end">
+        <div className="flex gap-3 items-end max-w-full mx-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           {/* Emoji Picker */}
           <div className="relative">
             <Button
@@ -461,7 +462,7 @@ export default function MessageArea({
               <Smile className="w-4 h-4" />
             </Button>
             {showEmojiPicker && (
-              <div className="absolute bottom-full mb-2 z-10">
+              <div className="absolute bottom-full mb-2 z-30">
                 <EmojiPicker onEmojiSelect={handleEmojiSelect} onClose={() => setShowEmojiPicker(false)} />
               </div>
             )}
