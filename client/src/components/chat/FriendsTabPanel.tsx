@@ -12,7 +12,7 @@ import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 import type { Friend, FriendRequest } from '@/../../shared/types';
 import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
-import { useGrabScroll } from '@/hooks/useGrabScroll';
+import { useScrollArea } from '@/hooks/useScrollArea';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 // Using shared types for Friend and FriendRequest
@@ -28,9 +28,7 @@ export default function FriendsTabPanel({
   onlineUsers,
   onStartPrivateChat
 }: FriendsTabPanelProps) {
-  const friendsScrollRef = useRef<HTMLDivElement>(null);
-  // Temporarily disabled to fix scrolling issues
-  // useGrabScroll(friendsScrollRef);
+  const { scrollRef: friendsScrollRef } = useScrollArea();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'friends' | 'requests'>('friends');

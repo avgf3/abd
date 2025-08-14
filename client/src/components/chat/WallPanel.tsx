@@ -12,7 +12,7 @@ import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
 import { Socket } from 'socket.io-client';
 import { getSocket, saveSession } from '@/lib/socket';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useGrabScroll } from '@/hooks/useGrabScroll';
+import { useScrollArea } from '@/hooks/useScrollArea';
 
 interface WallPanelProps {
   isOpen: boolean;
@@ -31,10 +31,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const socket = useRef<Socket | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const panelScrollRef = useRef<HTMLDivElement>(null);
-
-  // Temporarily disabled to fix scrolling issues
-  // useGrabScroll(panelScrollRef);
+  const { scrollRef: panelScrollRef } = useScrollArea();
 
   // جلب المنشورات عبر React Query مع كاش قوي
   const { data: wallData, isFetching } = useQuery<{ success?: boolean; posts: WallPost[] }>({
@@ -309,7 +306,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-6" dir="rtl">
-      <div className="bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/50 w-full sm:w-[95vw] h-[92dvh] sm:h-[92vh] flex flex-col overflow-hidden min-h-0 max-w-[1200px]">
+      <div className="bg-background/95 backdrop-blur-xl rounded-2xl border border-border/50 w-full sm:w-[95vw] h-[92dvh] sm:h-[92vh] flex flex-col overflow-hidden min-h-0 max-w-[1200px]">
         {/* رأس النافذة المحسن */}
         <div className="flex items-center justify-between p-6 border-b border-border/50 bg-gradient-to-l from-primary/5 to-transparent">
           <div className="flex items-center gap-3">
@@ -343,7 +340,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
               {/* نموذج النشر المحسن */}
               {currentUser.userType !== 'guest' && (
-                <Card className="mb-6 border-0 shadow-lg bg-background/80 backdrop-blur-sm">
+                <Card className="mb-6 border-0 bg-background/80 backdrop-blur-sm">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">

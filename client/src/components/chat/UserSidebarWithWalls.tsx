@@ -20,7 +20,7 @@ import UserRoleBadge from './UserRoleBadge';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Socket } from 'socket.io-client';
 import { getSocket, saveSession } from '@/lib/socket';
-import { useGrabScroll } from '@/hooks/useGrabScroll';
+import { useScrollArea } from '@/hooks/useScrollArea';
 
 
 
@@ -172,12 +172,8 @@ export default function UnifiedSidebar({
 
   // جلب المنشورات عبر React Query مع كاش قوي
   const socketRef = useRef<Socket | null>(null);
-  const usersScrollRef = useRef<HTMLDivElement>(null);
-  const wallsScrollRef = useRef<HTMLDivElement>(null);
-
-  // Temporarily disabled to fix scrolling issues
-  // useGrabScroll(usersScrollRef);
-  // useGrabScroll(wallsScrollRef);
+  const { scrollRef: usersScrollRef } = useScrollArea();
+  const { scrollRef: wallsScrollRef } = useScrollArea();
 
   const { data: wallData, isFetching } = useQuery<{ success?: boolean; posts: WallPost[] }>({
     queryKey: ['/api/wall/posts', activeTab, currentUser?.id],
@@ -412,7 +408,7 @@ export default function UnifiedSidebar({
   // تم نقل دالة formatTimeAgo إلى utils/timeUtils.ts (تستخدم من الاستيراد أعلاه)
 
   return (
-    	<aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col min-h-0">
+    	<aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 flex flex-col min-h-0">
       {/* Toggle Buttons - always visible now */}
       <div className="flex border-b border-gray-200">
         <Button
