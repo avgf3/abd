@@ -400,6 +400,6 @@ router.post('/cache/clear', async (req, res) => {
   }
 });
 
-// [Deprecated] تم إلغاء مسار رفع الصور للخاص القديم. استخدم /api/private-messages/...
+
 
 export default router;

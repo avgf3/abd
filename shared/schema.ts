@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb, primaryKey, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -52,7 +52,13 @@ export const messages = pgTable("messages", {
   editedAt: timestamp("edited_at"),
   deletedAt: timestamp("deleted_at"),
   timestamp: timestamp("timestamp").defaultNow(),
-});
+}, (table) => ({
+  // Indexes for optimizing private message queries
+  privateMessagesIndex: index("idx_private_messages").on(table.isPrivate, table.senderId, table.receiverId, table.timestamp),
+  roomMessagesIndex: index("idx_room_messages").on(table.roomId, table.timestamp),
+  senderReceiverIndex: index("idx_sender_receiver").on(table.senderId, table.receiverId),
+  timestampIndex: index("idx_messages_timestamp").on(table.timestamp),
+}));
 
 export const friends = pgTable("friends", {
   id: serial("id").primaryKey(),

@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -41,15 +41,24 @@ export const users = sqliteTable("users", {
 });
 
 export const messages = sqliteTable("messages", {
-  id: integer("id").primaryKey(),
+  id: integer("id").primaryKey({ autoIncrement: true }),
   senderId: integer("sender_id").references(() => users.id),
-  receiverId: integer("receiver_id").references(() => users.id), // null for public messages
+  receiverId: integer("receiver_id").references(() => users.id),
   content: text("content").notNull(),
-  messageType: text("message_type").notNull().default("text"), // 'text', 'image'
+  messageType: text("message_type").notNull().default("text"),
   isPrivate: integer("is_private", { mode: "boolean" }).default(false),
-  roomId: text("room_id").default("general"), // معرف الغرفة
-  timestamp: text("timestamp"), // ISO string في SQLite
-});
+  roomId: text("room_id").default("general"),
+  attachments: text("attachments").default("[]"), // JSON string
+  editedAt: integer("edited_at", { mode: "timestamp" }),
+  deletedAt: integer("deleted_at", { mode: "timestamp" }),
+  timestamp: integer("timestamp", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+}, (table) => ({
+  // Indexes for optimizing private message queries
+  privateMessagesIndex: index("idx_private_messages").on(table.isPrivate, table.senderId, table.receiverId, table.timestamp),
+  roomMessagesIndex: index("idx_room_messages").on(table.roomId, table.timestamp),
+  senderReceiverIndex: index("idx_sender_receiver").on(table.senderId, table.receiverId),
+  timestampIndex: index("idx_messages_timestamp").on(table.timestamp),
+}));
 
 export const friends = sqliteTable("friends", {
   id: integer("id").primaryKey(),

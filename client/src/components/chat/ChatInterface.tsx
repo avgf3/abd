@@ -26,7 +26,7 @@ import WelcomeNotification from './WelcomeNotification';
 import ThemeSelector from './ThemeSelector';
 // import RoomComponent from './RoomComponent';
 import { useRoomManager } from '@/hooks/useRoomManager';
-// import DirectMessagesPanel from '@/components/private-messages/DirectMessagesPanel';
+
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
