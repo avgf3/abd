@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// import { ScrollArea } from '@/components/ui/scroll-area';
 import { RefreshCw, Users, UserPlus, MessageCircle, Trash2, Check, X } from 'lucide-react';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { apiRequest } from '@/lib/queryClient';
@@ -364,53 +364,51 @@ export default function FriendsTabPanel({
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[200px]">
-                  {friendRequests.incoming.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      لا توجد طلبات صداقة واردة
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {friendRequests.incoming.map((request) => (
-                        <div key={request.id} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={getImageSrc(request.user.profileImage)}
-                                alt={request.user.username}
-                                className="w-10 h-10 rounded-full"
-                              />
-                              <div>
-                                <div className="font-semibold">{request.user.username}</div>
-                                <div className="text-sm text-gray-600">
-                                  {formatTimeAgo(request.createdAt.toString())}
-                                </div>
+                {friendRequests.incoming.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    لا توجد طلبات صداقة واردة
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {friendRequests.incoming.map((request) => (
+                      <div key={request.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={getImageSrc(request.user.profileImage)}
+                              alt={request.user.username}
+                              className="w-10 h-10 rounded-full"
+                            />
+                            <div>
+                              <div className="font-semibold">{request.user.username}</div>
+                              <div className="text-sm text-gray-600">
+                                {formatTimeAgo(request.createdAt.toString())}
                               </div>
                             </div>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => handleAcceptRequest(request.id)}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                <Check className="w-4 h-4 ml-1" />
-                                قبول
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleRejectRequest(request.id)}
-                              >
-                                <X className="w-4 h-4 ml-1" />
-                                رفض
-                              </Button>
-                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleAcceptRequest(request.id)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Check className="w-4 h-4 ml-1" />
+                              قبول
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleRejectRequest(request.id)}
+                            >
+                              <X className="w-4 h-4 ml-1" />
+                              رفض
+                            </Button>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -428,42 +426,40 @@ export default function FriendsTabPanel({
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[200px]">
-                  {friendRequests.outgoing.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      لا توجد طلبات صداقة صادرة
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {friendRequests.outgoing.map((request) => (
-                        <div key={request.id} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={getImageSrc(request.user.profileImage)}
-                                alt={request.user.username}
-                                className="w-10 h-10 rounded-full"
-                              />
-                              <div>
-                                <div className="font-semibold">{request.user.username}</div>
-                                <div className="text-sm text-gray-600">
-                                  {formatTimeAgo(request.createdAt.toString())}
-                                </div>
+                {friendRequests.outgoing.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    لا توجد طلبات صداقة صادرة
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {friendRequests.outgoing.map((request) => (
+                      <div key={request.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={getImageSrc(request.user.profileImage)}
+                              alt={request.user.username}
+                              className="w-10 h-10 rounded-full"
+                            />
+                            <div>
+                              <div className="font-semibold">{request.user.username}</div>
+                              <div className="text-sm text-gray-600">
+                                {formatTimeAgo(request.createdAt.toString())}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline">
-                                {request.status === 'pending' ? 'في الانتظار' : 
-                                 request.status === 'accepted' ? 'مقبول' : 
-                                 request.status === 'declined' ? 'مرفوض' : 'مجاهل'}
-                              </Badge>
-                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">
+                              {request.status === 'pending' ? 'في الانتظار' : 
+                               request.status === 'accepted' ? 'مقبول' : 
+                               request.status === 'declined' ? 'مرفوض' : 'مجاهل'}
+                            </Badge>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
