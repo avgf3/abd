@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { storage } from '../storage';
+import { notificationService } from '../services/notificationService';
 
 const router = Router();
 
@@ -45,11 +46,25 @@ router.post('/send', async (req, res) => {
 
     const messageWithSender = { ...newMessage, sender } as any;
 
+    // إنشاء إشعار رسالة خاصة للمستلم وبثّه فوراً
+    let createdNotification: any = null;
+    try {
+      createdNotification = await notificationService.createMessageNotification(
+        receiver.id,
+        sender.username,
+        sender.id,
+        text.substring(0, 100)
+      );
+    } catch {}
+
     // بث إلى غرف المستخدمين الخاصة عبر Socket.IO
     const io = req.app.get('io');
     if (io) {
       try { io.to(String(senderId)).emit('privateMessage', { message: messageWithSender }); } catch {}
       try { io.to(String(receiverId)).emit('privateMessage', { message: messageWithSender }); } catch {}
+      if (createdNotification) {
+        try { io.to(String(receiverId)).emit('newNotification', { notification: createdNotification }); } catch {}
+      }
     }
 
     return res.json({ success: true, message: messageWithSender });

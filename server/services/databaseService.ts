@@ -1,7 +1,7 @@
 import { dbAdapter, dbType } from '../database-adapter';
 import * as pgSchema from '../../shared/schema';
 import * as sqliteSchema from '../../shared/sqlite-schema';
-import { sql, eq, desc, asc, and, or, like, count, isNull, gte, lt } from 'drizzle-orm';
+import { sql, eq, desc, asc, and, or, like, count, isNull, gte, lt, inArray } from 'drizzle-orm';
 
 // Type definitions for database operations
 export interface User {
@@ -150,6 +150,29 @@ export class DatabaseService {
     } catch (error) {
       console.error('Error getting user by username:', error);
       return null;
+    }
+  }
+
+  // Batch fetch users by IDs to avoid N+1 queries
+  async getUsersByIds(userIds: number[]): Promise<User[]> {
+    if (!this.isConnected()) return [];
+    const uniqueIds = Array.from(new Set((userIds || []).filter((id) => typeof id === 'number')));
+    if (uniqueIds.length === 0) return [];
+    try {
+      if (this.type === 'postgresql') {
+        return await (this.db as any)
+          .select()
+          .from(pgSchema.users)
+          .where(inArray(pgSchema.users.id, uniqueIds));
+      } else {
+        return await (this.db as any)
+          .select()
+          .from(sqliteSchema.users)
+          .where(inArray(sqliteSchema.users.id, uniqueIds));
+      }
+    } catch (error) {
+      console.error('Error getUsersByIds:', error);
+      return [];
     }
   }
 

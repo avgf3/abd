@@ -153,11 +153,16 @@ class RoomMessageService {
       const dbMessages = await storage.getRoomMessages(roomId, safeLimit, safeOffset);
       const totalCount = await storage.getRoomMessageCount(roomId);
 
+      // Batch fetch senders to avoid N+1
+      const uniqueSenderIds = Array.from(new Set((dbMessages || []).map((m: any) => m.senderId).filter(Boolean)));
+      const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
+      const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
+
       // تحويل الرسائل للتنسيق المطلوب
       const messages: RoomMessage[] = [];
       for (const msg of dbMessages) {
         try {
-          const sender = await storage.getUser(msg.senderId);
+          const sender = senderMap.get(msg.senderId);
           const roomMessage: RoomMessage = {
             id: msg.id,
             senderId: msg.senderId,
@@ -281,11 +286,16 @@ class RoomMessageService {
       const results = await storage.searchRoomMessages(roomId, searchQuery, limit, offset);
       const totalCount = await storage.countSearchRoomMessages(roomId, searchQuery);
 
+      // Batch fetch senders
+      const uniqueSenderIds = Array.from(new Set((results || []).map((m: any) => m.senderId).filter(Boolean)));
+      const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
+      const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
+
       // تحويل النتائج للتنسيق المطلوب
       const messages: RoomMessage[] = [];
       for (const msg of results) {
         try {
-          const sender = await storage.getUser(msg.senderId);
+          const sender = senderMap.get(msg.senderId);
           const roomMessage: RoomMessage = {
             id: msg.id,
             senderId: msg.senderId,

@@ -1614,9 +1614,6 @@ if (!existing) {
 
         // جلب وإرسال قائمة المستخدمين المتصلين في الغرفة العامة
         const currentRoom = 'general'; // دائماً نبدأ بالغرفة العامة
-        // انتظار قصير للتأكد من تحديث قاعدة البيانات
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
         // جلب قائمة المستخدمين المتصلين فعلياً في هذه الغرفة من الذاكرة فقط
         const roomUsers = (() => {
           const userMap = new Map<number, any>();
