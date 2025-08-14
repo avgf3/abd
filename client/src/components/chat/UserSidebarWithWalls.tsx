@@ -508,8 +508,8 @@ export default function UnifiedSidebar({
                       showModerationActions={isModerator}
                     >
                       <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full bg-white`}
-                        style={{ }}
+                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserThemeClasses(user)}`}
+                        style={getUserThemeStyles(user)}
                         onClick={(e) => handleUserClick(e, user)}
                       >
                         <ProfileImage 
