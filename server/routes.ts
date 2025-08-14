@@ -1750,9 +1750,17 @@ if (!existing) {
         
         const sender = await storage.getUser(socket.userId);
         // إرسال الرسالة مباشرة للمستخدمين في نفس الغرفة لتقليل التأخير الإدراكي
+        const roomMessage = await roomMessageService.sendMessage({
+          senderId: socket.userId,
+          roomId,
+          content: sanitizedContent,
+          messageType: data.messageType || 'text',
+          isPrivate: false,
+        });
+        
         io.to(`room_${roomId}`).emit('message', { 
           type: 'newMessage',
-          message: { ...newMessage, sender, roomId }
+          message: { ...(roomMessage || newMessage), sender, roomId }
         });
         
         // إضافة نقاط وإشعارات المستوى بعد البث لعدم حجب الرسالة

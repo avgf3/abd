@@ -170,7 +170,10 @@ export default function UserPopup({
           </Button>
           
           <Button
-            onClick={onIgnore}
+            onClick={() => {
+              onIgnore();
+              onClose?.();
+            }}
             variant="ghost"
             className="user-popup-button text-red-400"
           >
