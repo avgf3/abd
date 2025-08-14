@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { RefreshCw, Users, UserPlus, MessageCircle, Trash2, Check, X } from 'lucide-react';
+import { RefreshCw, Users, UserPlus, MessageCircle, Trash2, Check, X, Search } from 'lucide-react';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { apiRequest } from '@/lib/queryClient';
 import ProfileImage from './ProfileImage';
@@ -250,15 +250,15 @@ export default function FriendsTabPanel({
       <div ref={friendsScrollRef} className="relative flex-1 overflow-y-auto p-4 cursor-grab">
         {/* Friends Tab */}
         {activeTab === 'friends' && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {/* Search */}
             <div className="relative">
-              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="البحث عن صديق..."
-                className="w-full pl-4 pr-10 py-2 rounded-lg bg-gray-50 border-gray-300 placeholder:text-gray-500 text-gray-900"
+                placeholder="ابحث عن صديق..."
+                className="pl-3 pr-10 text-sm"
               />
             </div>
 
@@ -353,25 +353,20 @@ export default function FriendsTabPanel({
             {/* Incoming Requests */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>الطلبات الواردة</span>
-                  <Badge variant="secondary">
-                    {friendRequests.incoming.length}
-                  </Badge>
-                </CardTitle>
+                <CardTitle className="text-lg">طلبات الصداقة الواردة</CardTitle>
                 <CardDescription>
-                  طلبات الصداقة التي وصلتك من مستخدمين آخرين
+                  {friendRequests.incoming.length} طلب
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[200px]">
+                <div className="max-h-[400px] overflow-y-auto space-y-3">
                   {friendRequests.incoming.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
-                      لا توجد طلبات صداقة واردة
+                      <UserPlus className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                      <p>لا توجد طلبات صداقة واردة</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {friendRequests.incoming.map((request) => (
+                    friendRequests.incoming.map((request) => (
                         <div key={request.id} className="border rounded-lg p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -407,28 +402,22 @@ export default function FriendsTabPanel({
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      ))
                   )}
-                </ScrollArea>
+                </div>
               </CardContent>
             </Card>
 
             {/* Outgoing Requests */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>الطلبات الصادرة</span>
-                  <Badge variant="secondary">
-                    {friendRequests.outgoing.length}
-                  </Badge>
-                </CardTitle>
+                <CardTitle className="text-lg">طلبات الصداقة المرسلة</CardTitle>
                 <CardDescription>
-                  طلبات الصداقة التي أرسلتها لمستخدمين آخرين
+                  {friendRequests.outgoing.length} طلب
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[200px]">
+                <div className="max-h-[400px] overflow-y-auto space-y-3">
                   {friendRequests.outgoing.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       لا توجد طلبات صداقة صادرة
@@ -463,7 +452,7 @@ export default function FriendsTabPanel({
                       ))}
                     </div>
                   )}
-                </ScrollArea>
+                </div>
               </CardContent>
             </Card>
           </div>

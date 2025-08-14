@@ -411,9 +411,9 @@ export default function UnifiedSidebar({
   // تم نقل دالة formatTimeAgo إلى utils/timeUtils.ts (تستخدم من الاستيراد أعلاه)
 
   return (
-    <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col min-h-0">
+    <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col h-full">
       {/* Toggle Buttons - always visible now */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 flex-shrink-0">
         <Button
           variant={activeView === 'users' ? 'default' : 'ghost'}
           className={`flex-1 rounded-none py-3 ${
@@ -566,10 +566,10 @@ export default function UnifiedSidebar({
 
       {/* Walls View */}
       {activeView === 'walls' && (
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 overflow-hidden flex flex-col h-full">
           {/* Wall Tabs */}
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-2 m-2">
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col h-full">
+            <TabsList className="grid w-full grid-cols-2 m-2 flex-shrink-0">
               <TabsTrigger value="public" className="flex items-center gap-2">
                 <Globe className="w-4 h-4" />
                 عام
@@ -751,7 +751,7 @@ export default function UnifiedSidebar({
 
       {/* Rooms View */}
       {activeView === 'rooms' && (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 h-full flex flex-col overflow-hidden">
           <RoomComponent
             currentUser={currentUser}
             rooms={rooms}
@@ -761,15 +761,17 @@ export default function UnifiedSidebar({
             onDeleteRoom={onDeleteRoom}
             onRefreshRooms={onRefreshRooms}
             viewMode="list"
-            showSearch={true}
-            compact={true}
+            showStats={true}
+            allowCreate={true}
+            allowDelete={true}
+            allowRefresh={true}
           />
         </div>
       )}
 
       {/* Friends View */}
       {activeView === 'friends' && (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 h-full flex flex-col overflow-hidden">
           <FriendsTabPanel
             currentUser={currentUser}
             onlineUsers={users}
