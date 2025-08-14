@@ -33,7 +33,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const queryClient = useQueryClient();
   const panelScrollRef = useRef<HTMLDivElement>(null);
 
-  useGrabScroll(panelScrollRef);
+  // Temporarily disabled to fix scrolling issues
+  // useGrabScroll(panelScrollRef);
 
   // جلب المنشورات عبر React Query مع كاش قوي
   const { data: wallData, isFetching } = useQuery<{ success?: boolean; posts: WallPost[] }>({
@@ -441,7 +442,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
               )}
 
               <TabsContent value={activeTab} className="flex-1">
-                <div ref={panelScrollRef} className="relative overflow-y-auto space-y-4 pr-2 cursor-grab">
+                <div ref={panelScrollRef} className="overflow-y-auto space-y-4 pr-2">
                   <WallPostList
                     posts={posts}
                     loading={loading}
