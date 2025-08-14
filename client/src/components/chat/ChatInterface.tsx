@@ -465,7 +465,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       <main className="flex flex-1 overflow-hidden min-h-0 flex-col sm:flex-row">
         {/* الشريط الجانبي - على الجوال يعرض بملء الشاشة عند اختيار التبويب */}
         {activeView !== 'hidden' && (
-          <div className={`${isMobile ? 'w-full' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full shrink-0 transition-all duration-300`}>
+          <div className={`${isMobile ? 'w-full flex-1 min-h-0' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300`}>
             <UnifiedSidebar 
               users={chat.onlineUsers}
               onUserClick={handleUserClick}
