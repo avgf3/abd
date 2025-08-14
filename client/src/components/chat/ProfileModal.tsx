@@ -1059,13 +1059,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
         .change-cover-btn {
           position: absolute;
-          top: 12px;
-          left: 12px;
+          top: 10px;
+          left: 10px;
           background: rgba(0,0,0,0.7);
-          border-radius: 8px;
-          padding: 8px 12px;
+          border-radius: 6px;
+          padding: 6px 10px;
           color: #fff;
-          font-size: 12px;
+          font-size: 11px;
           cursor: pointer;
           z-index: 3;
           transition: background 0.3s ease;
@@ -1078,13 +1078,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         }
 
         .profile-avatar {
-          width: 100px;
-          height: 100px;
-          border-radius: 16px;
+          width: 80px;
+          height: 80px;
+          border-radius: 14px;
           overflow: hidden;
-          border: 4px solid rgba(255,255,255,0.9);
+          border: 3px solid rgba(255,255,255,0.9);
           position: absolute;
-          top: calc(100% - 50px);
+          top: calc(100% - 40px);
           right: 20px;
           background-color: white;
           box-shadow: 0 6px 20px rgba(0,0,0,0.6);
@@ -1105,15 +1105,15 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
         .change-avatar-btn {
           position: absolute;
-          top: calc(100% - 25px);
-          right: 28px;
+          top: calc(100% - 20px);
+          right: 25px;
           background: rgba(0,0,0,0.8);
           border-radius: 50%;
-          width: 30px;
-          height: 30px;
+          width: 25px;
+          height: 25px;
           text-align: center;
-          line-height: 30px;
-          font-size: 14px;
+          line-height: 25px;
+          font-size: 12px;
           color: #fff;
           cursor: pointer;
           z-index: 3;
@@ -1131,18 +1131,18 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         }
 
         .profile-body {
-          padding: 60px 20px 16px;
+          padding: 50px 16px 12px;
         }
 
         .profile-info {
-          margin-bottom: 12px;
+          margin-bottom: 10px;
           text-align: center;
-          margin-top: -50px;
+          margin-top: -40px;
         }
 
         .profile-info h3 {
           margin: 0 0 6px 0;
-          font-size: 20px;
+          font-size: 16px;
           font-weight: bold;
           color: var(--accent-color);
           text-shadow: 0 2px 4px rgba(0,0,0,0.5);
@@ -1157,7 +1157,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
         .profile-info small {
           display: block;
-          font-size: 13px;
+          font-size: 11px;
           color: #ddd;
           opacity: 0.9;
           cursor: pointer;
@@ -1172,8 +1172,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         .profile-buttons {
           display: flex;
           flex-wrap: wrap;
-          gap: 8px;
-          margin: 12px 0;
+          gap: 6px;
+          margin: 10px 0;
           justify-content: center;
         }
 
@@ -1182,11 +1182,11 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           background: linear-gradient(135deg, #b71c1c, #8e0000);
           color: white;
           border: none;
-          padding: 8px 12px;
-          border-radius: 8px;
+          padding: 6px 10px;
+          border-radius: 6px;
           font-weight: bold;
           cursor: pointer;
-          font-size: 12px;
+          font-size: 11px;
           transition: all 0.3s ease;
           box-shadow: 0 4px 12px rgba(0,0,0,0.3);
           border: 1px solid rgba(255,255,255,0.1);
@@ -1205,25 +1205,26 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         }
 
         .profile-details {
-          padding: 12px;
-          font-size: 13px;
+          padding: 10px;
+          font-size: 12px;
           background: rgba(255,255,255,0.08);
-          border-radius: 12px;
-          margin: 12px 0;
+          border-radius: 10px;
+          margin: 10px 0;
           border: 1px solid rgba(255,255,255,0.1);
           backdrop-filter: blur(10px);
         }
 
         .profile-details p {
-          margin: 6px 0;
+          margin: 4px 0;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 6px 8px;
+          padding: 5px 8px;
           border-radius: 6px;
           transition: all 0.3s ease;
           border-bottom: 1px solid rgba(255,255,255,0.08);
           cursor: pointer;
+          font-size: 11px;
         }
         
         .profile-details p:hover {
@@ -1256,8 +1257,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         }
 
         .additional-details p {
-          margin: 6px 0;
-          font-size: 12px;
+          margin: 4px 0;
+          font-size: 11px;
           color: #eee;
           display: flex;
           justify-content: space-between;
