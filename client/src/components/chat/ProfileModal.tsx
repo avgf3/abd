@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
 import PointsSentNotification from '@/components/ui/PointsSentNotification';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -33,6 +34,22 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   const [localUser, setLocalUser] = useState<ChatUser | null>(user);
   const [selectedTheme, setSelectedTheme] = useState(user?.userTheme || 'theme-new-gradient');
   const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
+  const queryClient = useQueryClient();
+
+  // جلب بيانات المستخدم عبر React Query (كاش قوي)
+  const { data: profileData } = useQuery<ChatUser>({
+    queryKey: ['/api/users', user?.id],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('No user');
+      return await apiRequest(`/api/users/${user.id}`);
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    initialData: () => queryClient.getQueryData(['/api/users', user?.id]) as any,
+  });
 
   // متغيرات نظام إرسال النقاط
   const [sendingPoints, setSendingPoints] = useState(false);
@@ -52,6 +69,16 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     }
   }, [user]);
 
+  // مزامنة الحالة مع بيانات الكاش (إن توفرت)
+  useEffect(() => {
+    if (profileData && (!localUser || profileData.id === localUser.id)) {
+      setLocalUser(profileData);
+      if (onUpdate) onUpdate(profileData);
+      if ((profileData as any).userTheme) setSelectedTheme((profileData as any).userTheme);
+      if ((profileData as any).profileEffect) setSelectedEffect((profileData as any).profileEffect);
+    }
+  }, [profileData]);
+
   if (!localUser) return null;
 
   // دالة موحدة لجلب بيانات المستخدم من السيرفر وتحديث الحالة المحلية - محسّنة
@@ -68,6 +95,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       if (userData.profileEffect) {
         setSelectedEffect(userData.profileEffect);
       }
+      // تحديث كاش React Query
+      try { queryClient.setQueryData(['/api/users', userId], userData); } catch {}
       
     } catch (err: any) {
       console.error('❌ خطأ في جلب بيانات المستخدم:', err);
@@ -470,6 +499,18 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       } else if (uploadType === 'banner' && result.bannerUrl) {
         updateUserData({ profileBanner: result.bannerUrl });
       }
+      // تحديث الكاش
+      try {
+        const targetId = (localUser?.id || currentUser?.id) as number;
+        if (targetId) {
+          const prev = (queryClient.getQueryData(['/api/users', targetId]) as any) || {};
+          const merged = {
+            ...prev,
+            ...(uploadType === 'profile' ? { profileImage: result.imageUrl } : { profileBanner: result.bannerUrl })
+          };
+          queryClient.setQueryData(['/api/users', targetId], merged);
+        }
+      } catch {}
       
       // انتظار قصير للتأكد من التحديث المحلي
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -580,6 +621,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           userTheme: theme,
           profileBackgroundColor: theme
         });
+        // مزامنة الكاش
+        try { queryClient.setQueryData(['/api/users', updatedUser.id], { ...updatedUser }); } catch {}
         
         toast({
           title: "نجح ✅",
@@ -621,6 +664,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           profileEffect: effect,
           usernameColor: getEffectColor(effect)
         });
+        // مزامنة الكاش
+        try { queryClient.setQueryData(['/api/users', updated.id], { ...updated }); } catch {}
         
         toast({
           title: "نجح ✅",
