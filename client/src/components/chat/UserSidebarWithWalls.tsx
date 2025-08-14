@@ -21,6 +21,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Socket } from 'socket.io-client';
 import { getSocket, saveSession } from '@/lib/socket';
 import { useGrabScroll } from '@/hooks/useGrabScroll';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 
@@ -52,6 +53,7 @@ export default function UnifiedSidebar({
   onStartPrivateChat
 }: UnifiedSidebarProps) {
   const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms' | 'friends'>(propActiveView || 'users');
+  const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'public' | 'friends'>('public');
   const [posts, setPosts] = useState<WallPost[]>([]);
@@ -66,6 +68,10 @@ export default function UnifiedSidebar({
   const handleHeaderTabPress = useCallback((view: 'users' | 'walls' | 'rooms' | 'friends') => {
     return () => {
       const now = Date.now();
+      if (!isMobile) {
+        setActiveView(view);
+        return;
+      }
       if (now - lastHeaderTapRef.current < 350) {
         setActiveView('hidden' as any);
       } else {
@@ -73,7 +79,7 @@ export default function UnifiedSidebar({
         setActiveView(view);
       }
     };
-  }, []);
+  }, [isMobile]);
 
   // 🚀 تحسين: استخدام useMemo لفلترة المستخدمين لتحسين الأداء
   const validUsers = useMemo(() => {

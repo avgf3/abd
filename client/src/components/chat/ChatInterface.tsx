@@ -157,12 +157,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const handleFooterTabPress = useCallback((view: 'walls' | 'users' | 'rooms' | 'friends') => {
     return () => {
       const now = Date.now();
-      if (now - lastFooterTapRef.current < 350) {
-        setActiveView('hidden');
-      } else {
-        lastFooterTapRef.current = now;
-        setActiveView(isMobile ? view : (activeView === view ? 'hidden' : view));
-      }
+      if (!isMobile) {
+         setActiveView(activeView === view ? 'hidden' : view);
+         return;
+       }
+       if (now - lastFooterTapRef.current < 350) {
+         setActiveView('hidden');
+       } else {
+         lastFooterTapRef.current = now;
+         setActiveView(view);
+       }
     };
   }, [isMobile, activeView]);
 
@@ -465,7 +469,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
 
           {/* الشعار بجانب الإشعارات */}
-          <div className="flex items-center gap-2" onClick={() => setActiveView('hidden')} title="العودة للدردشة">
+          <div className="flex items-center gap-2" onClick={() => { if (isMobile) setActiveView('hidden'); }} title="العودة للدردشة">
             <MessageCircle className="w-5 h-5 text-primary" />
             <div className="text-lg sm:text-xl font-bold text-white truncate">
               Arabic<span className="text-primary">Chat</span>
