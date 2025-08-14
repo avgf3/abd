@@ -490,14 +490,14 @@ export const useChat = () => {
       webrtcIceHandlers.current.forEach((h) => { try { h(payload); } catch {} });
     });
 
-    // معالج الرسائل الخاصة
-    // Unified private message handling
+    // معالج الرسائل الخاصة المحسن
     const handlePrivateMessage = (incoming: any) => {
       try {
         const envelope = incoming?.envelope ? incoming.envelope : incoming;
         const payload = envelope?.message ?? envelope;
         const message = payload?.message ?? payload;
-        if (message?.sender) {
+        
+        if (message?.sender && state.currentUser) {
           const chatMessage: ChatMessage = {
             id: message.id,
             content: message.content,
@@ -507,21 +507,26 @@ export const useChat = () => {
             sender: message.sender,
             isPrivate: true
           };
-          // تحديد معرف المحادثة بشكل صحيح
+          
+          // تحديد معرف المحادثة بشكل محسن
           let conversationId: number;
-          if (message.senderId === state.currentUser?.id) {
-            // إذا كنت أنا المرسل، المحادثة مع المستقبل
+          if (message.senderId === state.currentUser.id) {
             conversationId = message.receiverId;
           } else {
-            // إذا كنت أنا المستقبل، المحادثة مع المرسل
             conversationId = message.senderId;
           }
-          dispatch({ 
-            type: 'SET_PRIVATE_MESSAGE', 
-            payload: { userId: conversationId, message: chatMessage }
-          });
-          if (chatMessage.senderId !== state.currentUser?.id) {
-            playNotificationSound();
+          
+          // التأكد من صحة معرف المحادثة
+          if (conversationId && !isNaN(conversationId) && conversationId !== state.currentUser.id) {
+            dispatch({ 
+              type: 'SET_PRIVATE_MESSAGE', 
+              payload: { userId: conversationId, message: chatMessage }
+            });
+            
+            // تشغيل صوت الإشعار فقط للرسائل الواردة
+            if (chatMessage.senderId !== state.currentUser.id) {
+              playNotificationSound();
+            }
           }
         }
       } catch (error) {
@@ -530,7 +535,6 @@ export const useChat = () => {
     };
 
     socketInstance.on('privateMessage', handlePrivateMessage);
-    // [Deprecated] منظومة الخاص القديمة معطّلة. استخدم واجهة DM المتطورة عبر usePrivateMessages().
 
       // معالج حدث الطرد
       socketInstance.on('kicked', (data: any) => {
@@ -883,7 +887,6 @@ export const useChat = () => {
 
     // Convenience wrappers
     sendPublicMessage: (content: string) => sendMessage(content, 'text'),
-    // sendPrivateMessage: (receiverId: number, content: string) => sendMessage(content, 'text', receiverId), // Deprecated
 
     // Newly added helpers for compatibility
     handleTyping,
