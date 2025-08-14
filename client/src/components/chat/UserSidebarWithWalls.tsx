@@ -62,6 +62,18 @@ export default function UnifiedSidebar({
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const lastHeaderTapRef = useRef(0);
+  const handleHeaderTabPress = useCallback((view: 'users' | 'walls' | 'rooms' | 'friends') => {
+    return () => {
+      const now = Date.now();
+      if (now - lastHeaderTapRef.current < 350) {
+        setActiveView('hidden' as any);
+      } else {
+        lastHeaderTapRef.current = now;
+        setActiveView(view);
+      }
+    };
+  }, []);
 
   // 🚀 تحسين: استخدام useMemo لفلترة المستخدمين لتحسين الأداء
   const validUsers = useMemo(() => {
@@ -423,7 +435,7 @@ export default function UnifiedSidebar({
               ? 'bg-blue-500 text-white' 
               : 'text-gray-600 hover:bg-gray-100'
           }`}
-          onClick={() => setActiveView('users')}
+          onClick={handleHeaderTabPress('users')}
         >
           <Users className="w-4 h-4 ml-2" />
           المستخدمون
@@ -435,7 +447,7 @@ export default function UnifiedSidebar({
               ? 'bg-blue-500 text-white' 
               : 'text-gray-600 hover:bg-gray-100'
           }`}
-          onClick={() => setActiveView('walls')}
+          onClick={handleHeaderTabPress('walls')}
         >
           <Home className="w-4 h-4 ml-2" />
           الحوائط
@@ -447,7 +459,7 @@ export default function UnifiedSidebar({
               ? 'bg-blue-500 text-white' 
               : 'text-gray-600 hover:bg-gray-100'
           }`}
-          onClick={() => setActiveView('rooms')}
+          onClick={handleHeaderTabPress('rooms')}
         >
           <Users className="w-4 h-4 ml-2" />
           الغرف
@@ -459,7 +471,7 @@ export default function UnifiedSidebar({
               ? 'bg-blue-500 text-white' 
               : 'text-gray-600 hover:bg-gray-100'
           }`}
-          onClick={() => setActiveView('friends')}
+          onClick={handleHeaderTabPress('friends')}
         >
           <UserPlus className="w-4 h-4 ml-2" />
           الأصدقاء
