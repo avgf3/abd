@@ -1051,7 +1051,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
         .profile-cover {
           position: relative;
-          aspect-ratio: 3 / 1;
+          height: 150px; /* تحديد ارتفاع ثابت بدلاً من aspect-ratio */
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
