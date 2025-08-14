@@ -63,9 +63,21 @@ export default function UnifiedSidebar({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // 🚀 تحسين: استخدام useMemo لفلترة المستخدمين لتحسين الأداء
+  // دالة ترتيب المستخدمين حسب الرتب
+  const getRankOrder = useCallback((userType: string): number => {
+    switch (userType) {
+      case 'owner': return 1;
+      case 'admin': return 2;
+      case 'moderator': return 3;
+      case 'member': return 4;
+      case 'guest': return 5;
+      default: return 6;
+    }
+  }, []);
+
+  // 🚀 تحسين: استخدام useMemo لفلترة وترتيب المستخدمين لتحسين الأداء
   const validUsers = useMemo(() => {
-    return users.filter(user => {
+    const filtered = users.filter(user => {
       // فلترة صارمة للمستخدمين الصالحين
       if (!user?.id || !user?.username || !user?.userType) {
         console.warn('🚫 مستخدم بيانات غير صالحة في القائمة:', user);
@@ -84,7 +96,31 @@ export default function UnifiedSidebar({
       
       return true;
     });
-  }, [users]);
+
+    // ترتيب المستخدمين حسب الرتب: المالك أولاً، ثم الإدمن، ثم المشرف، ثم الأعضاء، ثم الضيوف
+    // وداخل كل رتبة ترتيب أبجدي بالاسم
+    const sorted = filtered.sort((a, b) => {
+      const rankA = getRankOrder(a.userType);
+      const rankB = getRankOrder(b.userType);
+      
+      // إذا كانت الرتب مختلفة، رتب حسب الرتبة
+      if (rankA !== rankB) {
+        return rankA - rankB;
+      }
+      
+      // إذا كانت الرتب متساوية، رتب أبجدياً بالاسم
+      return a.username.localeCompare(b.username, 'ar');
+    });
+
+    // طباعة الترتيب للتحقق من صحته (فقط في وضع التطوير)
+    if (process.env.NODE_ENV === 'development' && sorted.length > 0) {
+      console.log('🏆 ترتيب قائمة المتصلين حسب الرتب:', 
+        sorted.map(u => `${u.username} (${u.userType})`).join(', ')
+      );
+    }
+
+    return sorted;
+  }, [users, getRankOrder]);
 
   const filteredUsers = useMemo(() => {
     // تطبيق البحث على المستخدمين الصالحين فقط
@@ -486,11 +522,17 @@ export default function UnifiedSidebar({
           <div ref={usersScrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 cursor-grab bg-white" style={{ maxHeight: 'calc(100vh - 200px)' }}>
           
           <div className="space-y-3">
-            <div className="flex items-center gap-2 font-bold text-green-600 text-base">
-              المتصلون الآن
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
-                {validUsers.length}
-              </span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-green-600 text-base">
+                المتصلون الآن
+                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
+                  {validUsers.length}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500 flex items-center gap-1">
+                <span>🏆</span>
+                <span>مرتب حسب الرتب</span>
+              </div>
             </div>
             
             <ul className="space-y-1">
