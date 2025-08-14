@@ -306,7 +306,7 @@ export default function MessageArea({
             <span className="text-primary font-bold">💬</span>
           </div>
           <div>
-            <h2 className={`font-bold ${compactHeader ? 'text-sm' : 'text-base'} text-primary`}>{currentRoomName}</h2>
+            <h2 className={`font-bold ${compactHeader ? 'text-sm' : 'text-base'} text-black`}>{currentRoomName}</h2>
             {!compactHeader && (
               <p className="text-xs text-muted-foreground">
                 {validMessages.length} رسالة • {typingDisplay || 'جاهز للدردشة'}

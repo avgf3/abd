@@ -111,5 +111,5 @@ export const getFinalUsernameColor = (user: any): string => {
   }
   
   // وإلا استخدم usernameColor العادي
-  return user.usernameColor || '#FFFFFF';
+  return user.usernameColor || '#000000';
 };
