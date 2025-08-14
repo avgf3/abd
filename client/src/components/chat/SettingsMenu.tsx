@@ -30,7 +30,7 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
   };
 
   return (
-    <Card className="fixed top-20 right-4 z-50 shadow-2xl animate-fade-in w-56 bg-card/95 backdrop-blur-md border-accent">
+    <Card className="fixed top-20 right-4 z-50 shadow-2xl animate-fade-in w-56 glass-effect bg-secondary text-foreground border border-accent">
       <CardContent className="p-0">
         {/* القسم الأول - الملف الشخصي */}
         <div className="p-3 border-b border-border">
@@ -38,7 +38,7 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
             onClick={onOpenProfile}
             variant="ghost"
             size="sm"
-            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+            className="w-full justify-start gap-3 h-9 hover:bg-accent text-foreground"
           >
             <User className="w-4 h-4 text-primary" />
             الملف الشخصي
@@ -50,7 +50,7 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+            className="w-full justify-start gap-3 h-9 hover:bg-accent text-foreground"
           >
             <Home className="w-4 h-4 text-primary" />
             الغرف
@@ -60,7 +60,7 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
             onClick={onOpenThemeSelector}
             variant="ghost"
             size="sm"
-            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+            className="w-full justify-start gap-3 h-9 hover:bg-accent text-foreground"
           >
             <Palette className="w-4 h-4 text-primary" />
             اختيار الثيم
@@ -70,7 +70,7 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
             onClick={onOpenUsernameColorPicker}
             variant="ghost"
             size="sm"
-            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+            className="w-full justify-start gap-3 h-9 hover:bg-accent text-foreground"
           >
             <Brush className="w-4 h-4 text-primary" />
             لون الاسم
@@ -80,7 +80,7 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
             onClick={onOpenIgnoredUsers}
             variant="ghost"
             size="sm"
-            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+            className="w-full justify-start gap-3 h-9 hover:bg-accent text-foreground"
           >
             <Shield className="w-4 h-4 text-primary" />
             قائمة المتجاهلين
@@ -94,7 +94,7 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
               onClick={onOpenReports}
               variant="ghost"
               size="sm"
-              className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+              className="w-full justify-start gap-3 h-9 hover:bg-accent text-foreground"
             >
               <Shield className="w-4 h-4 text-primary" />
               إدارة التبليغات
@@ -108,7 +108,7 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
             onClick={handleLogout}
             variant="ghost"
             size="sm"
-            className="w-full justify-start gap-3 h-9 hover:bg-destructive/10 text-destructive hover:text-destructive"
+            className="w-full justify-start gap-3 h-9 hover:bg-destructive/20 text-destructive hover:text-destructive"
           >
             <LogOut className="w-4 h-4" />
             تسجيل الخروج
