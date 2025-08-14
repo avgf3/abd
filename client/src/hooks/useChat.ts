@@ -624,7 +624,7 @@ export const useChat = () => {
       if (!state.currentUser?.id) return;
       try {
         const data = await apiRequest(`/api/users/${state.currentUser.id}/ignored`);
-        const ids: number[] = Array.isArray(data?.ignoredUsers) ? data.ignoredUsers : [];
+        const ids: number[] = Array.isArray(data) ? data : (Array.isArray((data as any)?.ignoredUsers) ? (data as any).ignoredUsers : []);
         ids.forEach((id) => dispatch({ type: 'IGNORE_USER', payload: id }));
       } catch (e) {
         console.warn('تعذر جلب قائمة المتجاهلين:', e);

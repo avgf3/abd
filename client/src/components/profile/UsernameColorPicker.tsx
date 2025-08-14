@@ -45,7 +45,7 @@ const USERNAME_COLORS = [
 ];
 
 export default function UsernameColorPicker({ currentUser, onColorUpdate }: UsernameColorPickerProps) {
-  const [selectedColor, setSelectedColor] = useState(currentUser.usernameColor || '#FFFFFF');
+  const [selectedColor, setSelectedColor] = useState(currentUser.usernameColor || '#000000');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
