@@ -112,7 +112,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
   return (
     <div className="relative">
       {/* صورة البروفايل البانر */}
-      <div className="relative h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 shadow-2xl border border-white/20">
+      <div className="relative h-[280px] rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 shadow-2xl border border-white/20">
         {preview ? (
           <img 
             src={preview} 
