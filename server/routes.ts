@@ -1738,21 +1738,25 @@ if (!existing) {
           }
         }
         
-        const newMessage = await storage.createMessage({
-          senderId: socket.userId,
+        const created = await roomMessageService.sendMessage({
+          senderId: socket.userId as number,
+          roomId,
           content: sanitizedContent,
           messageType: data.messageType || 'text',
           isPrivate: false,
-          roomId: roomId,
         });
-        
+
+        if (!created) {
+          socket.emit('message', { type: 'error', message: 'فشل في إرسال الرسالة' });
+          return;
+        }
+
         const sender = await storage.getUser(socket.userId);
-        // إرسال الرسالة مباشرة للمستخدمين في نفس الغرفة لتقليل التأخير الإدراكي
-        io.to(`room_${roomId}`).emit('message', { 
+        io.to(`room_${roomId}`).emit('message', {
           type: 'newMessage',
-          message: { ...newMessage, sender, roomId }
+          message: { ...created, sender, roomId }
         });
-        
+
         // إضافة نقاط وإشعارات المستوى بعد البث لعدم حجب الرسالة
         try {
           const pointsResult = await pointsService.addMessagePoints(socket.userId);
