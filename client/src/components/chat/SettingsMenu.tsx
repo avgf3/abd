@@ -8,21 +8,19 @@ import {
   LogOut, 
   Settings,
   Palette,
-  Brush
-} from 'lucide-react';
-
-interface SettingsMenuProps {
-  onOpenProfile: () => void;
-  onLogout: () => void;
-  onClose: () => void;
-  onOpenReports?: () => void;
-  onOpenThemeSelector?: () => void;
-  onOpenUsernameColorPicker?: () => void;
-  onOpenIgnoredUsers?: () => void;
-  currentUser?: any;
-}
-
-export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenReports, onOpenThemeSelector, onOpenUsernameColorPicker, onOpenIgnoredUsers, currentUser }: SettingsMenuProps) {
+   } from 'lucide-react';
+ 
+ interface SettingsMenuProps {
+   onOpenProfile: () => void;
+   onLogout: () => void;
+   onClose: () => void;
+   onOpenReports?: () => void;
+   onOpenThemeSelector?: () => void;
+   onOpenIgnoredUsers?: () => void;
+   currentUser?: any;
+ }
+ 
+ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenReports, onOpenThemeSelector, onOpenIgnoredUsers, currentUser }: SettingsMenuProps) {
   const handleLogout = () => {
     if (confirm('🤔 هل أنت متأكد من تسجيل الخروج؟')) {
       onLogout();
@@ -66,16 +64,7 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
             اختيار الثيم
           </Button>
 
-          <Button
-            onClick={onOpenUsernameColorPicker}
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
-          >
-            <Brush className="w-4 h-4 text-primary" />
-            لون الاسم
-          </Button>
-
+          
           <Button
             onClick={onOpenIgnoredUsers}
             variant="ghost"
