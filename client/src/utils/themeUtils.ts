@@ -140,7 +140,8 @@ export const getFinalUsernameColor = (user: any): string => {
 
 // إرجاع كلاسات CSS الخاصة بالتأثير ليتم تطبيق الحركة/التوهج
 export const getUserEffectClasses = (user: any): string => {
-  const effect = (user && user.profileEffect) ? String(user.profileEffect) : 'none';
+  const rawEffect = (user && user.profileEffect) ? String(user.profileEffect) : 'none';
+  const effect = rawEffect === 'golden' ? 'effect-glow' : rawEffect;
   if (!effect || effect === 'none') return '';
   // هذه الكلاسات معرفة في index.css: .effect-glow, .effect-pulse, .effect-water, .effect-aurora ...
   return effect;
@@ -148,30 +149,27 @@ export const getUserEffectClasses = (user: any): string => {
 
 // إرجاع أنماط خلفية لطيفة وفق التأثير (بدون استخدام userTheme)
 export const getUserEffectStyles = (user: any): Record<string, string> => {
-  const effect = (user && user.profileEffect) ? String(user.profileEffect) : 'none';
+  const rawEffect = (user && user.profileEffect) ? String(user.profileEffect) : 'none';
+  const effect = rawEffect === 'golden' ? 'effect-glow' : rawEffect;
   const backgrounds: Record<string, string> = {
-    'effect-glow': 'linear-gradient(135deg, rgba(255, 215, 0, 0.10), rgba(255, 215, 0, 0.05))',
-    'effect-pulse': 'linear-gradient(135deg, rgba(255, 105, 180, 0.10), rgba(255, 105, 180, 0.05))',
-    'effect-water': 'linear-gradient(135deg, rgba(0, 206, 209, 0.10), rgba(0, 206, 209, 0.05))',
-    'effect-aurora': 'linear-gradient(135deg, rgba(155, 89, 182, 0.10), rgba(155, 89, 182, 0.05))',
-    'effect-neon': 'linear-gradient(135deg, rgba(0, 255, 127, 0.12), rgba(0, 255, 127, 0.06))',
-    'effect-fire': 'linear-gradient(135deg, rgba(255, 69, 0, 0.10), rgba(255, 69, 0, 0.05))',
-    'effect-ice': 'linear-gradient(135deg, rgba(135, 206, 235, 0.10), rgba(135, 206, 235, 0.05))',
-    'effect-rainbow': 'linear-gradient(135deg, rgba(236, 72, 153, 0.10), rgba(139, 92, 246, 0.05))',
-    'effect-shadow': 'linear-gradient(135deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.03))',
-    'effect-electric': 'linear-gradient(135deg, rgba(0, 191, 255, 0.10), rgba(0, 191, 255, 0.05))',
-    'effect-crystal': 'linear-gradient(135deg, rgba(230, 230, 250, 0.10), rgba(230, 230, 250, 0.05))',
+    'effect-glow': 'linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(255, 215, 0, 0.08))',
+    'effect-pulse': 'linear-gradient(135deg, rgba(255, 105, 180, 0.12), rgba(255, 105, 180, 0, 0.08))',
+    'effect-water': 'linear-gradient(135deg, rgba(0, 206, 209, 0.12), rgba(0, 206, 209, 0.08))',
+    'effect-aurora': 'linear-gradient(135deg, rgba(155, 89, 182, 0.12), rgba(155, 89, 182, 0.08))',
+    'effect-neon': 'linear-gradient(135deg, rgba(0, 255, 127, 0.14), rgba(0, 255, 127, 0.08))',
+    'effect-fire': 'linear-gradient(135deg, rgba(255, 69, 0, 0.12), rgba(255, 69, 0, 0.08))',
+    'effect-ice': 'linear-gradient(135deg, rgba(135, 206, 235, 0.12), rgba(135, 206, 235, 0.08))',
+    'effect-rainbow': 'linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(139, 92, 246, 0.08))',
+    'effect-shadow': 'linear-gradient(135deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.04))',
+    'effect-electric': 'linear-gradient(135deg, rgba(0, 191, 255, 0.12), rgba(0, 191, 255, 0.08))',
+    'effect-crystal': 'linear-gradient(135deg, rgba(230, 230, 250, 0.12), rgba(230, 230, 250, 0.08))',
   };
 
   const style: Record<string, string> = {};
   if (effect && effect !== 'none') {
-    const base = backgrounds[effect] || 'rgba(255,255,255,0.05)';
-    if (user?.usernameColor) {
-      const overlay = `linear-gradient(0deg, ${hexToRgba(String(user.usernameColor), 0.10)}, ${hexToRgba(String(user.usernameColor), 0.10)})`;
-      style.background = `${overlay}, ${base}`;
-    } else {
-      style.background = base;
-    }
+    // جعل تأثير البروفايل هو لون الصندوق مباشرة بدون مزج لون الاسم
+    const base = backgrounds[effect] || 'rgba(255,255,255,0.06)';
+    style.background = base;
     return style;
   }
 
@@ -195,11 +193,12 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
 // دالة موحدة للحصول على أنماط عنصر المستخدم في القائمة
 export const getUserListItemStyles = (user: any): Record<string, string> => {
   const style: Record<string, string> = {};
-  const isPrivileged = ['moderator', 'admin', 'owner'].includes(String(user?.userType || '').toLowerCase());
+  const typeOrRole = String((user?.userType || user?.role || '')).toLowerCase();
+  const isPrivileged = ['moderator', 'admin', 'owner'].includes(typeOrRole);
 
-  // للمشرفين/الأدمن/الأونر: السلوك المتقدم (تأثيرات ثم ثيم)، مع تظليل من لون الاسم إن وُجد
+  // للمشرفين/الأدمن/الأونر: السلوك المتقدم (تأثيرات ثم ثيم)
   if (isPrivileged) {
-    // 1) تأثيرات الصندوق إذا وُجدت
+    // 1) تأثيرات الصندوق إذا وُجدت (التأثير يحدد لون الصندوق مباشرة)
     if (user?.profileEffect && user.profileEffect !== 'none') {
       return getUserEffectStyles(user);
     }
@@ -226,7 +225,7 @@ export const getUserListItemStyles = (user: any): Record<string, string> => {
     return style;
   }
 
-  // للمستخدمين العاديين: اجعل الصندوق يعتمد فقط على لون الاسم
+  // للمستخدمين العاديين: يعتمد الصندوق فقط على لون الاسم
   if (user?.usernameColor) {
     style.background = hexToRgba(String(user.usernameColor), 0.08);
     style.borderLeft = `3px solid ${String(user.usernameColor)}`;
@@ -238,12 +237,14 @@ export const getUserListItemStyles = (user: any): Record<string, string> => {
 // دالة للحصول على كلاسات CSS للمستخدم في القائمة
 export const getUserListItemClasses = (user: any): string => {
   const classes: string[] = [];
-  const isPrivileged = ['moderator', 'admin', 'owner'].includes(String(user?.userType || '').toLowerCase());
+  const typeOrRole = String((user?.userType || user?.role || '')).toLowerCase();
+  const isPrivileged = ['moderator', 'admin', 'owner'].includes(typeOrRole);
 
   if (isPrivileged) {
-    // إضافة كلاس التأثير إذا وجد
+    // إضافة كلاس التأثير إذا وجد (مع تطبيع القيمة القديمة golden)
     if (user?.profileEffect && user.profileEffect !== 'none') {
-      classes.push(user.profileEffect);
+      const raw = String(user.profileEffect);
+      classes.push(raw === 'golden' ? 'effect-glow' : raw);
     }
 
     // إضافة كلاس التحريك إذا كان الثيم يدعم التحريك
