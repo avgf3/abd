@@ -314,7 +314,7 @@ export default function UserContextMenu({
         <ContextMenuTrigger asChild>
           {children}
         </ContextMenuTrigger>
-        <ContextMenuContent className="w-80 bg-white shadow-2xl border-2 border-gray-200 rounded-xl p-4">
+        <ContextMenuContent className="w-80 bg-card shadow-2xl border-2 border-border rounded-xl p-4">
           {/* إجراءات عامة */}
           <ContextMenuItem className="flex items-center gap-3 text-blue-600 font-semibold bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-2 cursor-pointer transition-all duration-200"
             onClick={() => {
@@ -331,8 +331,8 @@ export default function UserContextMenu({
             <UserCheck className="w-5 h-5" />
             <span className="text-lg">👥 إضافة صديق</span>
           </ContextMenuItem>
-
-          <div className="my-4 border-t-2 border-gray-300"></div>
+          
+          <div className="my-4 border-t-2 border-border"></div>
           
           {/* إجراءات الإدارة - متاحة للجميع */}
           {(canModerate('mute') || canModerate('ban') || canModerate('block')) && (
@@ -360,17 +360,17 @@ export default function UserContextMenu({
                 <Ban className="w-5 h-5" />
                 <span className="text-lg">🚫 حجب نهائي من الموقع</span>
               </ContextMenuItem>
-            </>
-          )}
+              </>
+            )}
 
-          {/* حذف الرسالة */}
-          {messageId && currentUser && (currentUser.id === targetUser.id || ['admin','owner'].includes(currentUser.userType)) && (
-            <>
-              <div className="my-4 border-t-2 border-gray-300"></div>
-              <ContextMenuItem 
-                className="flex items-center gap-3 text-red-700 font-bold bg-red-100 hover:bg-red-200 border border-red-300 rounded-lg p-3 cursor-pointer transition-all duration-200"
-                onClick={handleDeleteMessage}
-              >
+            {/* حذف الرسالة */}
+            {messageId && currentUser && (currentUser.id === targetUser.id || ['admin','owner'].includes(currentUser.userType)) && (
+              <>
+                <div className="my-4 border-t-2 border-border"></div>
+                <ContextMenuItem 
+                  className="flex items-center gap-3 text-red-700 font-bold bg-red-100 hover:bg-red-200 border border-red-300 rounded-lg p-3 cursor-pointer transition-all duration-200"
+                  onClick={handleDeleteMessage}
+                >
                 <Trash2 className="w-5 h-5" />
                 <span className="text-lg">🗑️ حذف الرسالة</span>
               </ContextMenuItem>

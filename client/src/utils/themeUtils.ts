@@ -2,6 +2,7 @@
 export const getThemeData = (themeId: string) => {
   const themes = {
     'default': { gradient: 'transparent', textColor: '#FFFFFF', hasAnimation: false },
+    'dark': { gradient: 'linear-gradient(45deg, #1a202c, #111827)', textColor: '#FFFFFF', hasAnimation: false },
     'golden': { gradient: 'linear-gradient(45deg, #FFD700, #FFA500)', textColor: '#000000', hasAnimation: true },
     'royal': { gradient: 'linear-gradient(45deg, #8B5CF6, #A855F7)', textColor: '#FFFFFF', hasAnimation: true },
     'ocean': { gradient: 'linear-gradient(45deg, #0EA5E9, #0284C7)', textColor: '#FFFFFF', hasAnimation: true },
@@ -45,7 +46,8 @@ export const getThemeData = (themeId: string) => {
     'soft_mint': { gradient: 'linear-gradient(45deg, #D1FAE5, #86EFAC)', textColor: '#000000', hasAnimation: true },
     'peach': { gradient: 'linear-gradient(45deg, #FED7AA, #FDBA74)', textColor: '#000000', hasAnimation: true },
     'lilac': { gradient: 'linear-gradient(45deg, #E9D5FF, #D8B4FE)', textColor: '#000000', hasAnimation: true },
-    'ivory': { gradient: 'linear-gradient(45deg, #FFFBEB, #FEF3C7)', textColor: '#000000', hasAnimation: true }
+    'ivory': { gradient: 'linear-gradient(45deg, #FFFBEB, #FEF3C7)', textColor: '#000000', hasAnimation: true },
+    'ice': { gradient: 'linear-gradient(45deg, #a8edea, #66a6ff)', textColor: '#0f172a', hasAnimation: true },
   };
   return themes[themeId as keyof typeof themes] || themes.default;
 };
