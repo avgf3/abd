@@ -15,6 +15,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import { getUserListItemStyles, getUserListItemClasses, getFinalUsernameColor } from '@/utils/themeUtils';
 
 interface ModerationPanelProps {
   isOpen: boolean;
@@ -337,7 +338,7 @@ export default function ModerationPanel({
               {/* قائمة المستخدمين */}
               <div className="space-y-2 max-h-[300px] overflow-y-auto">
                 {filteredUsers.map((user) => (
-                  <div key={user.id} className="border rounded-lg p-3 space-y-2">
+                  <div key={user.id} className={`border rounded-lg p-3 space-y-2 ${getUserListItemClasses(user)} ${!getUserListItemClasses(user) ? 'bg-card hover:bg-accent/10' : ''}`} style={getUserListItemStyles(user)}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <img
@@ -347,7 +348,7 @@ export default function ModerationPanel({
                         />
                         <div>
                           <div className="font-semibold flex items-center gap-2">
-                            <span style={{ color: user.usernameColor || '#000000' }}>
+                            <span style={{ color: getFinalUsernameColor(user) }}>
                               {user.username}
                             </span>
                             <UserRoleBadge user={user} />
