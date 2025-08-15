@@ -195,53 +195,64 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
 // دالة موحدة للحصول على أنماط عنصر المستخدم في القائمة
 export const getUserListItemStyles = (user: any): Record<string, string> => {
   const style: Record<string, string> = {};
-  
-  // أولاً: تأثيرات الصندوق إن وُجدت (مستقلة عن اللون والثيم)
-  if (user?.profileEffect && user.profileEffect !== 'none') {
-    return getUserEffectStyles(user);
-  }
-  
-  // ثانياً: إذا حدّد المستخدم لون خلفية للبروفايل فاعرضه في القائمة كتظليل خفيف
-  const bg = (user && user.profileBackgroundColor) ? String(user.profileBackgroundColor) : '';
-  const isHex = /^#[0-9A-F]{6}$/i.test(bg);
-  if (isHex) {
-    style.background = hexToRgba(bg, 0.08);
-    style.borderLeft = `3px solid ${bg}`;
+  const isPrivileged = ['moderator', 'admin', 'owner'].includes(String(user?.userType || '').toLowerCase());
+
+  // للمشرفين/الأدمن/الأونر: السلوك المتقدم (تأثيرات ثم ثيم)، مع تظليل من لون الاسم إن وُجد
+  if (isPrivileged) {
+    // 1) تأثيرات الصندوق إذا وُجدت
+    if (user?.profileEffect && user.profileEffect !== 'none') {
+      return getUserEffectStyles(user);
+    }
+
+    // 2) ثيم المستخدم (بدون profileBackgroundColor لتجنب التضارب)
+    const theme = getThemeData(user?.userTheme || 'default');
+    if (theme.gradient !== 'transparent') {
+      const base = gradientToTransparent(theme.gradient, 0.08);
+      if (user?.usernameColor) {
+        const overlay = `linear-gradient(0deg, ${hexToRgba(String(user.usernameColor), 0.08)}, ${hexToRgba(String(user.usernameColor), 0.08)})`;
+        style.background = `${overlay}, ${base}`;
+      } else {
+        style.background = base;
+      }
+    } else if (user?.usernameColor) {
+      style.background = hexToRgba(String(user.usernameColor), 0.08);
+    }
+
+    // خط جانبي لإبراز اللون
+    if (user?.usernameColor) {
+      style.borderLeft = `3px solid ${String(user.usernameColor)}`;
+    }
+
     return style;
   }
-  
-  // ثالثاً: خلفية خفيفة من ثيم المستخدم فقط (بدون تغيير لون الاسم)
-  const theme = getThemeData(user?.userTheme || 'default');
-  if (theme.gradient !== 'transparent') {
-    style.background = gradientToTransparent(theme.gradient, 0.08);
-  } else if (user?.usernameColor) {
-    // إن لم يوجد ثيم، استخدم تظليل خفيف من لون اسم المستخدم
-    style.background = hexToRgba(String(user.usernameColor), 0.08);
-  }
 
-  // إضافة خط جانبي بلون اسم المستخدم لإبراز اللون بغض النظر عن الثيم
+  // للمستخدمين العاديين: اجعل الصندوق يعتمد فقط على لون الاسم
   if (user?.usernameColor) {
+    style.background = hexToRgba(String(user.usernameColor), 0.08);
     style.borderLeft = `3px solid ${String(user.usernameColor)}`;
   }
-  
+
   return style;
 };
 
 // دالة للحصول على كلاسات CSS للمستخدم في القائمة
 export const getUserListItemClasses = (user: any): string => {
-  const classes = [];
-  
-  // إضافة كلاس التأثير إذا وجد
-  if (user?.profileEffect && user.profileEffect !== 'none') {
-    classes.push(user.profileEffect);
+  const classes: string[] = [];
+  const isPrivileged = ['moderator', 'admin', 'owner'].includes(String(user?.userType || '').toLowerCase());
+
+  if (isPrivileged) {
+    // إضافة كلاس التأثير إذا وجد
+    if (user?.profileEffect && user.profileEffect !== 'none') {
+      classes.push(user.profileEffect);
+    }
+
+    // إضافة كلاس التحريك إذا كان الثيم يدعم التحريك
+    const theme = getThemeData(user?.userTheme || 'default');
+    if (theme.hasAnimation) {
+      classes.push('theme-animated');
+    }
   }
-  
-  // إضافة كلاس التحريك إذا كان الثيم يدعم التحريك
-  const theme = getThemeData(user?.userTheme || 'default');
-  if (theme.hasAnimation) {
-    classes.push('theme-animated');
-  }
-  
+
   return classes.join(' ');
 };
 

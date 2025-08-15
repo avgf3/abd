@@ -1998,12 +1998,16 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               <div className="additional-details">
                 <p>💬 عدد الرسائل: <span>0</span></p>
                 <p>⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span></p>
-                <p onClick={() => setCurrentEditType('theme')} style={{ cursor: 'pointer' }}>
-                  🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
-                </p>
-                <p onClick={() => setCurrentEditType('effects')} style={{ cursor: 'pointer' }}>
-                  ✨ تأثيرات حركية: <span>اضغط للتغيير</span>
-                </p>
+                {['moderator','admin','owner'].includes(String(currentUser?.userType || '').toLowerCase()) && (
+                  <>
+                    <p onClick={() => setCurrentEditType('theme')} style={{ cursor: 'pointer' }}>
+                      🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
+                    </p>
+                    <p onClick={() => setCurrentEditType('effects')} style={{ cursor: 'pointer' }}>
+                      ✨ تأثيرات حركية: <span>اضغط للتغيير</span>
+                    </p>
+                  </>
+                )}
               </div>
             )}
           </div>
