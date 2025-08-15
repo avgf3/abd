@@ -52,20 +52,27 @@ export const getThemeData = (themeId: string) => {
 
 export const getUserThemeClasses = (user: any) => {
   const theme = getThemeData(user.userTheme || (user.userType === 'owner' ? 'golden' : 'default'));
-  if (theme.gradient === 'transparent') {
-    return 'glass-effect hover:bg-accent';
+  
+  // إذا كان الثيم له تدرج لوني (غير شفاف)، نطبق تأثيرات خاصة
+  if (theme.gradient !== 'transparent') {
+    return 'shadow-lg hover:shadow-xl hover:scale-[1.02] transition-transform';
   }
-  return 'shadow-lg';
+  
+  // للثيمات الشفافة أو الافتراضية، نطبق خلفية بيضاء مع تأثير hover
+  return 'bg-white hover:bg-gray-50';
 };
 
 export const getUserThemeStyles = (user: any) => {
   const theme = getThemeData(user.userTheme || (user.userType === 'owner' ? 'golden' : 'default'));
   const styles: any = {};
   
+  // تطبيق التدرج اللوني إذا كان موجوداً
   if (theme.gradient !== 'transparent') {
     styles.background = theme.gradient;
+    styles.color = theme.textColor;
   }
   
+  // تطبيق التأثيرات المتحركة
   if (theme.hasAnimation) {
     styles.animation = 'golden-glow 2s ease-in-out infinite';
     styles.boxShadow = '0 0 25px rgba(255, 215, 0, 0.8)';
