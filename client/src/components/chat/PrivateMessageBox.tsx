@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { formatTime } from '@/utils/timeUtils';
 import type { ChatMessage, ChatUser } from '@/types/chat';
-import { getFinalUsernameColor } from '@/utils/themeUtils';
+import { getFinalUsernameColor } from '@/utils/unifiedThemeSystem';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface PrivateMessageBoxProps {

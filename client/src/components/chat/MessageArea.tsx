@@ -4,7 +4,7 @@ import { formatTime } from '@/utils/timeUtils';
 import { Input } from '@/components/ui/input';
 import ProfileImage from './ProfileImage';
 import EmojiPicker from './EmojiPicker';
-import { getFinalUsernameColor } from '@/utils/themeUtils';
+import { getFinalUsernameColor } from '@/utils/unifiedThemeSystem';
 import { findMentions, playMentionSound, renderMessageWithMentions, insertMention } from '@/utils/mentionUtils';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import { Send, Image as ImageIcon, Smile } from "lucide-react";

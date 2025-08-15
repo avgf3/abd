@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { getEffectColor } from '@/utils/themeUtils';
+import { getProfileEffect, getAvailableThemes, getAvailableEffects, normalizeThemeId } from '@/utils/unifiedThemeSystem';
+import { saveAndSyncTheme, syncEffect } from '@/utils/themeStorageSync';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 import { Input } from '@/components/ui/input';
@@ -47,30 +48,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   useEffect(() => {
     if (user) {
       setLocalUser(user);
-      const storedTheme = user.userTheme || 'theme-new-gradient';
-      const storageToModal: Record<string, string> = {
-        default: 'theme-new-gradient',
-        dark: 'theme-cosmic-night',
-        ocean: 'theme-ocean-depths',
-        sunset: 'theme-sunset-glow',
-        forest: 'theme-emerald-forest',
-        royal: 'theme-midnight-purple',
-        fire: 'theme-fire-opal',
-        ice: 'theme-crystal-clear',
-        aurora: 'theme-aurora-borealis',
-        emerald: 'theme-emerald-forest',
-        crystal: 'theme-crystal-clear',
-        obsidian: 'theme-royal-black',
-        burgundy: 'theme-burgundy-velvet',
-        golden: 'theme-golden-velvet',
-        sapphire: 'theme-sapphire-velvet',
-        lilac: 'theme-amethyst-velvet',
-        crimson: 'theme-crimson-velvet',
-        deep_black: 'theme-onyx-velvet',
-        galaxy: 'theme-neon-dreams'
-      };
-      const modalTheme = storedTheme.startsWith('theme-') ? storedTheme : (storageToModal[storedTheme] || 'theme-new-gradient');
-      setSelectedTheme(modalTheme);
+      // استخدام النظام الموحد لتطبيع الثيم
+      const normalizedTheme = normalizeThemeId(user.userTheme || 'default');
+      setSelectedTheme(normalizedTheme);
       setSelectedEffect(user.profileEffect || 'none');
     }
   }, [user]);
@@ -121,265 +101,22 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     
     };
 
-  // Complete themes collection from original code
-  const themes = [
-    { 
-      value: 'theme-sunset-glow', 
-      name: 'توهج الغروب',
-      preview: 'linear-gradient(135deg, #ff6b6b, #ff8e53, #ffa726, #ffcc02, #ff6b6b)',
-      emoji: '🌅'
-    },
-    { 
-      value: 'theme-ocean-depths', 
-      name: 'أعماق المحيط',
-      preview: 'linear-gradient(135deg, #667eea, #764ba2, #f093fb, #667eea)',
-      emoji: '🌊'
-    },
-    { 
-      value: 'theme-aurora-borealis', 
-      name: 'الشفق القطبي',
-      preview: 'linear-gradient(135deg, #a8edea, #fed6e3, #ffecd2, #fcb69f, #a8edea)',
-      emoji: '✨'
-    },
-    { 
-      value: 'theme-cosmic-night', 
-      name: 'الليل الكوني',
-      preview: 'linear-gradient(135deg, #667eea, #764ba2, #f093fb, #667eea, #764ba2)',
-      emoji: '🌌'
-    },
-    { 
-      value: 'theme-emerald-forest', 
-      name: 'الغابة الزمردية',
-      preview: 'linear-gradient(135deg, #11998e, #38ef7d, #11998e, #38ef7d)',
-      emoji: '🌿'
-    },
-    { 
-      value: 'theme-rose-gold', 
-      name: 'الوردي الذهبي',
-      preview: 'linear-gradient(135deg, #ff9a9e, #fecfef, #fecfef, #ff9a9e)',
-      emoji: '🌸'
-    },
-    { 
-      value: 'theme-midnight-purple', 
-      name: 'البنفسجي الليلي',
-      preview: 'linear-gradient(135deg, #4facfe, #00f2fe, #4facfe, #00f2fe)',
-      emoji: '🔮'
-    },
-    { 
-      value: 'theme-golden-hour', 
-      name: 'الساعة الذهبية',
-      preview: 'linear-gradient(135deg, #fa709a, #fee140, #fa709a, #fee140)',
-      emoji: '🌟'
-    },
-    { 
-      value: 'theme-neon-dreams', 
-      name: 'أحلام النيون',
-      preview: 'linear-gradient(135deg, #ff0099, #493240, #ff0099, #493240)',
-      emoji: '💫'
-    },
-    { 
-      value: 'theme-silver-mist', 
-      name: 'الضباب الفضي',
-      preview: 'linear-gradient(135deg, #c3cfe2, #c3cfe2, #e0c3fc, #c3cfe2)',
-      emoji: '☁️'
-    },
-    { 
-      value: 'theme-fire-opal', 
-      name: 'الأوبال الناري',
-      preview: 'linear-gradient(135deg, #ff416c, #ff4b2b, #ff416c, #ff4b2b)',
-      emoji: '🔥'
-    },
-    { 
-      value: 'theme-crystal-clear', 
-      name: 'البلور الصافي',
-      preview: 'linear-gradient(135deg, #89f7fe, #66a6ff, #89f7fe, #66a6ff)',
-      emoji: '💎'
-    },
-    { 
-      value: 'theme-burgundy-velvet', 
-      name: 'الخمري المخملي',
-      preview: 'linear-gradient(135deg, #800020, #8b0000, #a52a2a, #800020)',
-      emoji: '🍷'
-    },
-    { 
-      value: 'theme-golden-velvet', 
-      name: 'الذهبي المخملي',
-      preview: 'linear-gradient(135deg, #ffd700, #daa520, #b8860b, #ffd700)',
-      emoji: '👑'
-    },
-    { 
-      value: 'theme-royal-black', 
-      name: 'الأسود الملكي',
-      preview: 'linear-gradient(135deg, #191970, #2f4f4f, #000000, #191970)',
-      emoji: '⚜️'
-    },
-    { 
-      value: 'theme-berry-velvet', 
-      name: 'التوتي المخملي',
-      preview: 'linear-gradient(135deg, #8a2be2, #4b0082, #800080, #8a2be2)',
-      emoji: '🫐'
-    },
-    { 
-      value: 'theme-crimson-velvet', 
-      name: 'العنابي المخملي',
-      preview: 'linear-gradient(135deg, #dc143c, #b22222, #8b0000, #dc143c)',
-      emoji: '🔴'
-    },
-    { 
-      value: 'theme-emerald-velvet', 
-      name: 'الزمردي المخملي',
-      preview: 'linear-gradient(135deg, #008000, #228b22, #006400, #008000)',
-      emoji: '💚'
-    },
-    { 
-      value: 'theme-sapphire-velvet', 
-      name: 'الياقوتي المخملي',
-      preview: 'linear-gradient(135deg, #0047ab, #191970, #00008b, #0047ab)',
-      emoji: '💙'
-    },
-    { 
-      value: 'theme-ruby-velvet', 
-      name: 'الياقوت الأحمر',
-      preview: 'linear-gradient(135deg, #9b111e, #8b0000, #800000, #9b111e)',
-      emoji: '❤️'
-    },
-    { 
-      value: 'theme-amethyst-velvet', 
-      name: 'الأميثيست المخملي',
-      preview: 'linear-gradient(135deg, #9966cc, #8a2be2, #4b0082, #9966cc)',
-      emoji: '💜'
-    },
-    { 
-      value: 'theme-onyx-velvet', 
-      name: 'الأونيكس المخملي',
-      preview: 'linear-gradient(135deg, #2f4f4f, #191919, #000000, #2f4f4f)',
-      emoji: '🖤'
-    },
-    { 
-      value: 'theme-sunset-fire', 
-      name: 'توهج النار البرتقالي - محدث',
-      preview: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)',
-      emoji: '🔥'
-    },
-    { 
-      value: 'theme-perfect-gradient', 
-      name: 'التدرج المثالي - محدث',
-      preview: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)',
-      emoji: '🌟'
-    },
-    { 
-      value: 'theme-image-gradient', 
-      name: 'تدرج الصورة - محدث',
-      preview: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)',
-      emoji: '🖼️'
-    },
-    { 
-      value: 'theme-new-gradient', 
-      name: 'التدرج الجديد المطابق للصورة',
-      preview: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)',
-      emoji: '🎨'
-    }
-  ];
+  // استخدام الثيمات الموحدة الجديدة
+  const themes = getAvailableThemes().map(theme => ({
+    value: theme.id,
+    name: theme.nameAr,
+    preview: theme.previewGradient,
+    emoji: theme.emoji
+  }));
 
   // Complete effects collection from original code
-  const effects = [
-    { 
-      value: 'none', 
-      name: 'بدون تأثيرات',
-      emoji: '🚫',
-      description: 'بدون أي تأثيرات حركية'
-    },
-    { 
-      value: 'effect-pulse', 
-      name: 'النبض الناعم',
-      emoji: '💓',
-      description: 'نبض خفيف ومريح'
-    },
-    { 
-      value: 'effect-glow', 
-      name: 'التوهج الذهبي',
-      emoji: '✨',
-      description: 'توهج ذهبي جميل'
-    },
-    { 
-      value: 'effect-water', 
-      name: 'التموج المائي',
-      emoji: '🌊',
-      description: 'حركة مائية سلسة'
-    },
-    { 
-      value: 'effect-aurora', 
-      name: 'الشفق القطبي',
-      emoji: '🌌',
-      description: 'تأثير الشفق الملون'
-    },
-    { 
-      value: 'effect-neon', 
-      name: 'النيون المتوهج',
-      emoji: '💖',
-      description: 'توهج نيون وردي'
-    },
-    { 
-      value: 'effect-crystal', 
-      name: 'البلور المتلألئ',
-      emoji: '💎',
-      description: 'لمعة بلورية جميلة'
-    },
-    { 
-      value: 'effect-fire', 
-      name: 'النار المتوهجة',
-      emoji: '🔥',
-      description: 'توهج ناري حارق'
-    },
-    { 
-      value: 'effect-magnetic', 
-      name: 'المغناطيس',
-      emoji: '🧲',
-      description: 'حركة عائمة مغناطيسية'
-    },
-    { 
-      value: 'effect-heartbeat', 
-      name: 'القلب النابض',
-      emoji: '❤️',
-      description: 'نبض مثل القلب'
-    },
-    { 
-      value: 'effect-stars', 
-      name: 'النجوم المتلألئة',
-      emoji: '⭐',
-      description: 'نجوم متحركة'
-    },
-    { 
-      value: 'effect-rainbow', 
-      name: 'قوس قزح',
-      emoji: '🌈',
-      description: 'تدرج قوس قزح متحرك'
-    },
-    { 
-      value: 'effect-snow', 
-      name: 'الثلج المتساقط',
-      emoji: '❄️',
-      description: 'ثلج متساقط جميل'
-    },
-    { 
-      value: 'effect-lightning', 
-      name: 'البرق',
-      emoji: '⚡',
-      description: 'وميض البرق'
-    },
-    { 
-      value: 'effect-smoke', 
-      name: 'الدخان',
-      emoji: '💨',
-      description: 'دخان متصاعد'
-    },
-    { 
-      value: 'effect-butterfly', 
-      name: 'الفراشة',
-      emoji: '🦋',
-      description: 'فراشة متحركة'
-    }
-  ];
+  // استخدام التأثيرات الموحدة الجديدة
+  const effects = getAvailableEffects().map(effect => ({
+    value: effect.id,
+    name: effect.nameAr,
+    emoji: effect.emoji,
+    description: effect.nameAr
+  }));
 
   // Profile image fallback - محسّن للتعامل مع base64 و مشاكل الcache
   const getProfileImageSrcLocal = () => {
@@ -563,7 +300,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     }
   };
 
-  // تحديث الثيم - محسّن
+  // تحديث الثيم - محسّن مع النظام الموحد
   const handleThemeChange = async (theme: string) => {
     try {
       setIsLoading(true);
@@ -581,62 +318,14 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       if (!theme || theme.trim() === '') {
         toast({
           title: "خطأ", 
-          description: "يرجى اختيار لون صحيح.",
+          description: "يرجى اختيار ثيم صحيح.",
           variant: "destructive",
         });
         return;
       }
       
-      // تحويل قيم modal (theme-*) إلى معرفات قياسية مستخدمة في القائمة
-      const aliasMap: Record<string, string> = {
-        'theme-sunset-glow': 'sunset',
-        'theme-ocean-depths': 'ocean',
-        'theme-aurora-borealis': 'aurora',
-        'theme-cosmic-night': 'royal',
-        'theme-emerald-forest': 'forest',
-        'theme-rose-gold': 'rose',
-        'theme-midnight-purple': 'royal',
-        'theme-golden-hour': 'golden',
-        'theme-neon-dreams': 'galaxy',
-        'theme-silver-mist': 'crystal',
-        'theme-fire-opal': 'fire',
-        'theme-crystal-clear': 'ice',
-        'theme-burgundy-velvet': 'burgundy',
-        'theme-golden-velvet': 'golden',
-        'theme-royal-black': 'obsidian',
-        'theme-berry-velvet': 'lilac',
-        'theme-crimson-velvet': 'crimson',
-        'theme-emerald-velvet': 'emerald',
-        'theme-sapphire-velvet': 'sapphire',
-        'theme-ruby-velvet': 'wine',
-        'theme-amethyst-velvet': 'mystical',
-        'theme-onyx-velvet': 'deep_black',
-        'theme-sunset-fire': 'sunset',
-        'theme-perfect-gradient': 'royal',
-        'theme-image-gradient': 'ocean',
-        'theme-new-gradient': 'royal',
-        // السماح بتمرير المعرفات القياسية كما هي
-        'default': 'default',
-        'dark': 'dark',
-        'ocean': 'ocean',
-        'sunset': 'sunset',
-        'forest': 'forest',
-        'royal': 'royal',
-        'fire': 'fire',
-        'ice': 'ice',
-        'aurora': 'aurora',
-        'emerald': 'emerald',
-        'crystal': 'crystal',
-        'obsidian': 'obsidian',
-        'burgundy': 'burgundy',
-        'golden': 'golden',
-        'sapphire': 'sapphire',
-        'lilac': 'lilac',
-        'crimson': 'crimson',
-        'deep_black': 'deep_black',
-        'galaxy': 'galaxy'
-      };
-      const normalized = aliasMap[theme] || 'royal';
+      // استخدام النظام الموحد لتطبيع الثيم
+      const normalized = normalizeThemeId(theme);
       
       const result = await apiRequest(`/api/users/${currentUser.id}`, {
         method: 'PUT',
@@ -652,21 +341,26 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           userTheme: normalized
         });
         
+        // حفظ ومزامنة الثيم مع النظام الموحد
+        if (currentUser?.id) {
+          await saveAndSyncTheme(currentUser.id, normalized);
+        }
+        
         toast({
           title: "نجح ✅",
-          description: "تم تحديث الثيم",
+          description: "تم تحديث الثيم وتطبيقه فوراً",
         });
       } else {
-        throw new Error('فشل في تحديث اللون');
+        throw new Error('فشل في تحديث الثيم');
       }
     } catch (error) {
       console.error('❌ خطأ في تحديث الثيم:', error);
       toast({
         title: "خطأ",
-        description: "فشل في تحديث اللون. تحقق من اتصال الإنترنت.",
+        description: "فشل في تحديث الثيم. تحقق من اتصال الإنترنت.",
         variant: "destructive",
       });
-      setSelectedTheme(localUser?.userTheme || 'theme-new-gradient');
+      setSelectedTheme(localUser?.userTheme || 'default');
     } finally {
       setIsLoading(false);
     }
@@ -691,12 +385,17 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           profileEffect: effect
         });
         
+        // مزامنة التأثير مع النظام الموحد
+        if (localUser?.id) {
+          await syncEffect(localUser.id, effect);
+        }
+        
         toast({
           title: "نجح ✅",
-          description: "تم تحديث التأثيرات ولون الاسم",
+          description: "تم تحديث التأثير وتطبيقه",
         });
       } else {
-        throw new Error('فشل في تحديث التأثيرات');
+        throw new Error('فشل في تحديث التأثير');
       }
     } catch (error) {
       console.error('❌ خطأ في تحديث التأثير:', error);

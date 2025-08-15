@@ -10,7 +10,7 @@ import {
   Palette,
   Brush
 } from 'lucide-react';
-import { getFinalUsernameColor, getUserListItemStyles } from '@/utils/themeUtils';
+import { getFinalUsernameColor, getUserListItemStyles } from '@/utils/unifiedThemeSystem';
 
 interface SettingsMenuProps {
   onOpenProfile: () => void;
