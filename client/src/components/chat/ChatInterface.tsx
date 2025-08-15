@@ -625,6 +625,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onIgnoreUser={(userId) => {
                 chat.ignoreUser(userId);
               }}
+              onUpdate={(updatedUser) => {
+                // تحديث بيانات المستخدم في قائمة المتصلون
+                if (updatedUser && updatedUser.id) {
+                  chat.updateCurrentUser({
+                    userTheme: updatedUser.userTheme,
+                    profileEffect: updatedUser.profileEffect,
+                    usernameColor: updatedUser.usernameColor
+                  });
+                }
+              }}
               onPrivateMessage={handlePrivateMessage}
               onAddFriend={handleAddFriend}
               onReportUser={(u) => handleReportUser(u)}
@@ -639,6 +649,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               }}
               onIgnoreUser={(userId) => {
                 chat.ignoreUser(userId);
+              }}
+              onUpdate={(updatedUser) => {
+                // تحديث بيانات المستخدم الحالي في قائمة المتصلون
+                if (updatedUser && updatedUser.id) {
+                  chat.updateCurrentUser({
+                    userTheme: updatedUser.userTheme,
+                    profileEffect: updatedUser.profileEffect,
+                    usernameColor: updatedUser.usernameColor
+                  });
+                }
               }}
               onReportUser={(u) => handleReportUser(u)}
             />
