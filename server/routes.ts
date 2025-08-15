@@ -1570,7 +1570,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...user,
             profileEffect: (user as any)?.profileEffect || 'none',
             profileBackgroundColor: (user as any)?.profileBackgroundColor || '#3c0d0d',
-            usernameColor: (user as any)?.usernameColor || '#FFFFFF'
+            usernameColor: (user as any)?.usernameColor || '#FFFFFF',
+            userTheme: (user as any)?.userTheme || 'default'
           };
         } catch {}
         
