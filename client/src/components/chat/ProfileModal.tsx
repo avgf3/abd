@@ -566,7 +566,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
       // نرسل قيمة HEX فقط. إذا تم تمرير تدرّج، سيُطبّق الخادم أول HEX صالح
       const colorValue = theme;
-      const result = await apiRequest(`/api/users/${currentUser.id}`, {
+      const result = await apiRequest(`/api/users/${localUser?.id}`, {
         method: 'PUT',
         body: { profileBackgroundColor: colorValue }
       });
