@@ -166,73 +166,44 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
   const style: Record<string, string> = {};
   if (effect && effect !== 'none') {
     const base = backgrounds[effect] || 'rgba(255,255,255,0.05)';
-    if (user?.usernameColor) {
-      const overlay = `linear-gradient(0deg, ${hexToRgba(String(user.usernameColor), 0.10)}, ${hexToRgba(String(user.usernameColor), 0.10)})`;
-      style.background = `${overlay}, ${base}`;
-    } else {
-      style.background = base;
-    }
+    style.background = base;
     return style;
   }
 
-  // ✨ استخدام userTheme للحصول على نفس اللون المستخدم في البطاقة الشخصية مع تظليل من لون المستخدم
-  const theme = getThemeData(user?.userTheme || 'default');
-  if (theme.gradient !== 'transparent') {
-    const base = gradientToTransparent(theme.gradient, 0.12);
-    if (user?.usernameColor) {
-      const overlay = `linear-gradient(0deg, ${hexToRgba(String(user.usernameColor), 0.08)}, ${hexToRgba(String(user.usernameColor), 0.08)})`;
-      style.background = `${overlay}, ${base}`;
-    } else {
-      style.background = base;
-    }
-  } else if (user?.usernameColor) {
-    style.background = hexToRgba(String(user.usernameColor), 0.08);
-  }
-
+  // خلفية افتراضية خفيفة في حال عدم وجود تأثير
+  style.background = 'rgba(255,255,255,0.05)';
   return style;
 };
 
 // دالة موحدة للحصول على أنماط عنصر المستخدم في القائمة
 export const getUserListItemStyles = (user: any): Record<string, string> => {
   const style: Record<string, string> = {};
-  
+
   // أولاً: تأثيرات الصندوق إن وُجدت (مستقلة عن اللون والثيم)
   if (user?.profileEffect && user.profileEffect !== 'none') {
     return getUserEffectStyles(user);
   }
-  
-  // ثانياً: خلفية خفيفة من ثيم المستخدم فقط (بدون تغيير لون الاسم)
-  const theme = getThemeData(user?.userTheme || 'default');
-  if (theme.gradient !== 'transparent') {
-    style.background = gradientToTransparent(theme.gradient, 0.08);
-  } else if (user?.usernameColor) {
-    // إن لم يوجد ثيم، استخدم تظليل خفيف من لون اسم المستخدم
-    style.background = hexToRgba(String(user.usernameColor), 0.08);
+
+  // ثانياً: استخدام لون الملف الشخصي فقط لتلوين الصندوق بخفة
+  if (user?.profileBackgroundColor) {
+    style.background = hexToRgba(String(user.profileBackgroundColor), 0.12);
+  } else {
+    style.background = 'rgba(255,255,255,0.05)';
   }
 
-  // إضافة خط جانبي بلون اسم المستخدم لإبراز اللون بغض النظر عن الثيم
-  if (user?.usernameColor) {
-    style.borderLeft = `3px solid ${String(user.usernameColor)}`;
-  }
-  
   return style;
 };
 
 // دالة للحصول على كلاسات CSS للمستخدم في القائمة
 export const getUserListItemClasses = (user: any): string => {
-  const classes = [];
-  
+  const classes = [] as string[];
+
   // إضافة كلاس التأثير إذا وجد
   if (user?.profileEffect && user.profileEffect !== 'none') {
     classes.push(user.profileEffect);
   }
-  
-  // إضافة كلاس التحريك إذا كان الثيم يدعم التحريك
-  const theme = getThemeData(user?.userTheme || 'default');
-  if (theme.hasAnimation) {
-    classes.push('theme-animated');
-  }
-  
+
+  // لا نضيف أي كلاسات مرتبطة بالثيم العام هنا
   return classes.join(' ');
 };
 

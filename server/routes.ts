@@ -31,6 +31,7 @@ import { DEFAULT_LEVELS, recalculateUserStats } from "../shared/points-system";
 import { protect } from "./middleware/enhancedSecurity";
 import { notificationService } from "./services/notificationService";
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
+import { databaseService } from "./services/databaseService";
 
 
 // إعداد multer موحد لرفع الصور
@@ -4377,6 +4378,42 @@ if (!existing) {
     } catch (error: any) {
       console.error('❌ خطأ في رفع صورة الرسالة:', error);
       res.status(500).json({ error: 'خطأ في رفع صورة الرسالة', details: error?.message });
+    }
+  });
+
+  // ===== Site Theme (Global) =====
+  app.get('/api/settings/site-theme', async (req, res) => {
+    try {
+      const theme = await databaseService.getSiteTheme();
+      res.json({ siteTheme: theme });
+    } catch (e) {
+      res.status(500).json({ error: 'فشل في جلب ثيم الموقع' });
+    }
+  });
+
+  app.put('/api/settings/site-theme', async (req, res) => {
+    try {
+      const { userId, theme } = req.body || {};
+      if (!userId) return res.status(401).json({ error: 'معرف المستخدم مطلوب' });
+      const user = await storage.getUser(parseInt(userId));
+      if (!user || user.userType !== 'owner') {
+        return res.status(403).json({ error: 'صلاحيات غير كافية - مالك فقط' });
+      }
+      if (!theme || typeof theme !== 'string') {
+        return res.status(400).json({ error: 'معرف ثيم غير صالح' });
+      }
+      const saved = await databaseService.setSiteTheme(theme);
+
+      // بث التحديث للجميع
+      io.emit('message', {
+        type: 'site_theme_update',
+        siteTheme: saved,
+        timestamp: new Date().toISOString()
+      });
+
+      res.json({ success: true, siteTheme: saved });
+    } catch (e) {
+      res.status(500).json({ error: 'فشل في تحديث ثيم الموقع' });
     }
   });
 

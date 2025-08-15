@@ -104,6 +104,13 @@ export interface BlockedDevice {
   blockedBy: number;
 }
 
+// إعدادات الموقع
+export interface SiteSettings {
+  id: number;
+  siteTheme: string;
+  updatedAt?: Date | string;
+}
+
 // Database Service Class
 export class DatabaseService {
   private get db() {
@@ -1145,6 +1152,64 @@ export class DatabaseService {
       type: this.type,
       adapter: dbAdapter.type
     };
+  }
+
+  // ===== Site Settings operations =====
+  async getSiteTheme(): Promise<string> {
+    if (!this.isConnected()) return 'default';
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any).select().from(pgSchema.siteSettings).limit(1);
+        if (rows && rows.length > 0) return rows[0].siteTheme || 'default';
+        const [inserted] = await (this.db as any)
+          .insert(pgSchema.siteSettings)
+          .values({ siteTheme: 'default' })
+          .returning();
+        return inserted?.siteTheme || 'default';
+      } else {
+        const rows = await (this.db as any).select().from(sqliteSchema.siteSettings).limit(1);
+        if (rows && rows.length > 0) return rows[0].siteTheme || 'default';
+        await (this.db as any).insert(sqliteSchema.siteSettings).values({ siteTheme: 'default', updatedAt: new Date().toISOString() });
+        return 'default';
+      }
+    } catch (e) {
+      return 'default';
+    }
+  }
+
+  async setSiteTheme(themeId: string): Promise<string> {
+    if (!this.isConnected()) return 'default';
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any).select().from(pgSchema.siteSettings).limit(1);
+        if (rows && rows.length > 0) {
+          const [updated] = await (this.db as any)
+            .update(pgSchema.siteSettings)
+            .set({ siteTheme: themeId, updatedAt: new Date() })
+            .where(eq(pgSchema.siteSettings.id as any, rows[0].id))
+            .returning();
+          return updated?.siteTheme || themeId;
+        }
+        const [inserted] = await (this.db as any)
+          .insert(pgSchema.siteSettings)
+          .values({ siteTheme: themeId })
+          .returning();
+        return inserted?.siteTheme || themeId;
+      } else {
+        const rows = await (this.db as any).select().from(sqliteSchema.siteSettings).limit(1);
+        if (rows && rows.length > 0) {
+          await (this.db as any)
+            .update(sqliteSchema.siteSettings)
+            .set({ siteTheme: themeId, updatedAt: new Date().toISOString() })
+            .where(eq(sqliteSchema.siteSettings.id as any, rows[0].id));
+          return themeId;
+        }
+        await (this.db as any).insert(sqliteSchema.siteSettings).values({ siteTheme: themeId, updatedAt: new Date().toISOString() });
+        return themeId;
+      }
+    } catch (e) {
+      return themeId || 'default';
+    }
   }
 }
 
