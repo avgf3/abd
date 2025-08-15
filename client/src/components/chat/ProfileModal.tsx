@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { getEffectColor } from '@/utils/themeUtils';
+import { getEffectColor, getFinalUsernameColor } from '@/utils/themeUtils';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 import { Input } from '@/components/ui/input';
@@ -1845,7 +1845,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
             <div className="profile-info">
               <h3 
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('name')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default', color: getFinalUsernameColor(localUser) }}
               >
                 {localUser?.username || 'اسم المستخدم'}
               </h3>
