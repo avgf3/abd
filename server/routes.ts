@@ -1346,8 +1346,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update username color
       await storage.updateUser(userId, { usernameColor: color });
       
-      // Broadcast the color change to all connected clients
-      io.emit('usernameColorChanged', {
+      // Broadcast the color change to all connected clients (unified via message envelope)
+      io.emit('message', {
+        type: 'usernameColorChanged',
         userId: userId,
         color: color,
         username: user.username
@@ -3237,9 +3238,10 @@ if (!existing) {
         io.emit('message', updateMessage);
       }
 
-      // إرسال تحديث لون الاسم عبر WebSocket بشكل منفصل
+      // إرسال تحديث لون الاسم عبر WebSocket ضمن مظروف موحّد
       if (updates.usernameColor) {
-        io.emit('usernameColorChanged', {
+        io.emit('message', {
+          type: 'usernameColorChanged',
           userId: parseInt(id),
           color: updates.usernameColor,
           username: user.username
@@ -3591,6 +3593,15 @@ if (!existing) {
       }
 
       await storage.updateUser(userIdNum, { profileBackgroundColor: backgroundColorValue });
+
+      // تحديث نسخة المستخدم في connectedUsers لضمان ظهور اللون فوراً
+      try {
+        const entry = connectedUsers.get(userIdNum);
+        if (entry && entry.user) {
+          entry.user.profileBackgroundColor = backgroundColorValue;
+          connectedUsers.set(userIdNum, entry);
+        }
+      } catch {}
       
       // إشعار المستخدمين الآخرين عبر WebSocket
       try {
@@ -3598,7 +3609,24 @@ if (!existing) {
           type: 'user_background_updated',
           data: { userId: userIdNum, profileBackgroundColor: backgroundColorValue }
         });
-        } catch (broadcastError) {
+        // تحديث قوائم المستخدمين لكل الغرف التي يتواجد فيها المستخدم
+        try {
+          const entryForRooms = connectedUsers.get(userIdNum);
+          if (entryForRooms) {
+            const affectedRooms = new Set<string>();
+            for (const socketInfo of entryForRooms.sockets.values()) {
+              if (socketInfo.room) affectedRooms.add(socketInfo.room);
+            }
+            if (affectedRooms.size === 0) affectedRooms.add('general');
+            for (const roomId of affectedRooms) {
+              sendRoomUsers(roomId, 'profile_background_update');
+            }
+          } else {
+            sendRoomUsers('general', 'profile_background_update');
+          }
+        } catch {}
+
+      } catch (broadcastError) {
         console.error('⚠️ فشل في إرسال إشعار WebSocket:', broadcastError);
         // لا نفشل العملية بسبب فشل الإشعار
       }
