@@ -649,12 +649,76 @@ body.ltr {
 }
 
 /* Firefox */
-* {
+html {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.35) rgba(255, 255, 255, 0.08);
+  scrollbar-color: rgba(255, 255, 255, 0.25) rgba(255, 255, 255, 0.06);
 }
 
-/* Ensure scroll areas show scrollbar and allow proper wheel scrolling */
+/* تأثيرات الثيمات المتحركة في قائمة المتصلين */
+.theme-animated {
+  position: relative;
+  overflow: hidden;
+  animation: themeGlow 3s ease-in-out infinite;
+}
+
+.theme-animated::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: inherit;
+  filter: blur(10px);
+  opacity: 0.5;
+  z-index: -1;
+  animation: themePulse 3s ease-in-out infinite;
+}
+
+@keyframes themeGlow {
+  0%, 100% { 
+    transform: translateX(0);
+    filter: brightness(1);
+  }
+  50% { 
+    transform: translateX(2px);
+    filter: brightness(1.1);
+  }
+}
+
+@keyframes themePulse {
+  0%, 100% { 
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.6;
+    transform: scale(1.02);
+  }
+}
+
+/* تحسين التوافق مع التأثيرات الموجودة */
+.theme-animated.effect-glow,
+.theme-animated.effect-pulse,
+.theme-animated.effect-water,
+.theme-animated.effect-aurora,
+.theme-animated.effect-neon,
+.theme-animated.effect-fire,
+.theme-animated.effect-ice,
+.theme-animated.effect-rainbow,
+.theme-animated.effect-shadow,
+.theme-animated.effect-electric,
+.theme-animated.effect-crystal {
+  animation: none;
+}
+
+/* تأثير التحويم على عناصر القائمة */
+.theme-animated:hover {
+  filter: brightness(1.15);
+  transform: translateX(5px);
+}
+
+/* Force hide context menu and text selection for audio-only controls */
 .scroll-area,
 .overflow-y-auto {
   overscroll-behavior: contain;

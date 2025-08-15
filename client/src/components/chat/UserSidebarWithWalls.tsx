@@ -14,7 +14,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getImageSrc } from '@/utils/imageUtils';
 
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
-import { getUserEffectStyles, getUserEffectClasses, getFinalUsernameColor } from '@/utils/themeUtils';
+import { getUserEffectStyles, getUserEffectClasses, getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
 import UserRoleBadge from './UserRoleBadge';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -550,8 +550,8 @@ export default function UnifiedSidebar({
                       showModerationActions={isModerator}
                     >
                       <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserEffectClasses(user)} ${!getUserEffectClasses(user) ? 'bg-white hover:bg-gray-50' : ''}`}
-                        style={getUserEffectStyles(user)}
+                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} ${!getUserListItemClasses(user) ? 'bg-white hover:bg-gray-50' : ''}`}
+                        style={getUserListItemStyles(user)}
                         onClick={(e) => handleUserClick(e, user)}
                       >
                         <ProfileImage 
