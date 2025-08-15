@@ -631,7 +631,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   chat.updateCurrentUser({
                     userTheme: updatedUser.userTheme,
                     profileEffect: updatedUser.profileEffect,
-                    usernameColor: updatedUser.usernameColor
+                    usernameColor: updatedUser.usernameColor,
+                    profileBackgroundColor: updatedUser.profileBackgroundColor
                   });
                 }
               }}
@@ -656,7 +657,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   chat.updateCurrentUser({
                     userTheme: updatedUser.userTheme,
                     profileEffect: updatedUser.profileEffect,
-                    usernameColor: updatedUser.usernameColor
+                    usernameColor: updatedUser.usernameColor,
+                    profileBackgroundColor: updatedUser.profileBackgroundColor
                   });
                 }
               }}
