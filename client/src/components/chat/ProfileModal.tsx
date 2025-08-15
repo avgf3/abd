@@ -47,7 +47,30 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   useEffect(() => {
     if (user) {
       setLocalUser(user);
-      setSelectedTheme(user.userTheme || 'theme-new-gradient');
+      const storedTheme = user.userTheme || 'theme-new-gradient';
+      const storageToModal: Record<string, string> = {
+        default: 'theme-new-gradient',
+        dark: 'theme-cosmic-night',
+        ocean: 'theme-ocean-depths',
+        sunset: 'theme-sunset-glow',
+        forest: 'theme-emerald-forest',
+        royal: 'theme-midnight-purple',
+        fire: 'theme-fire-opal',
+        ice: 'theme-crystal-clear',
+        aurora: 'theme-aurora-borealis',
+        emerald: 'theme-emerald-forest',
+        crystal: 'theme-crystal-clear',
+        obsidian: 'theme-royal-black',
+        burgundy: 'theme-burgundy-velvet',
+        golden: 'theme-golden-velvet',
+        sapphire: 'theme-sapphire-velvet',
+        lilac: 'theme-amethyst-velvet',
+        crimson: 'theme-crimson-velvet',
+        deep_black: 'theme-onyx-velvet',
+        galaxy: 'theme-neon-dreams'
+      };
+      const modalTheme = storedTheme.startsWith('theme-') ? storedTheme : (storageToModal[storedTheme] || 'theme-new-gradient');
+      setSelectedTheme(modalTheme);
       setSelectedEffect(user.profileEffect || 'none');
     }
   }, [user]);
@@ -564,11 +587,61 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         return;
       }
       
-      // تحديث userTheme فقط (فصل كامل عن لون الاسم والتأثير)
+      // تحويل قيم modal (theme-*) إلى معرفات قياسية مستخدمة في القائمة
+      const aliasMap: Record<string, string> = {
+        'theme-sunset-glow': 'sunset',
+        'theme-ocean-depths': 'ocean',
+        'theme-aurora-borealis': 'aurora',
+        'theme-cosmic-night': 'royal',
+        'theme-emerald-forest': 'forest',
+        'theme-rose-gold': 'rose',
+        'theme-midnight-purple': 'royal',
+        'theme-golden-hour': 'golden',
+        'theme-neon-dreams': 'galaxy',
+        'theme-silver-mist': 'crystal',
+        'theme-fire-opal': 'fire',
+        'theme-crystal-clear': 'ice',
+        'theme-burgundy-velvet': 'burgundy',
+        'theme-golden-velvet': 'golden',
+        'theme-royal-black': 'obsidian',
+        'theme-berry-velvet': 'lilac',
+        'theme-crimson-velvet': 'crimson',
+        'theme-emerald-velvet': 'emerald',
+        'theme-sapphire-velvet': 'sapphire',
+        'theme-ruby-velvet': 'wine',
+        'theme-amethyst-velvet': 'mystical',
+        'theme-onyx-velvet': 'deep_black',
+        'theme-sunset-fire': 'sunset',
+        'theme-perfect-gradient': 'royal',
+        'theme-image-gradient': 'ocean',
+        'theme-new-gradient': 'royal',
+        // السماح بتمرير المعرفات القياسية كما هي
+        'default': 'default',
+        'dark': 'dark',
+        'ocean': 'ocean',
+        'sunset': 'sunset',
+        'forest': 'forest',
+        'royal': 'royal',
+        'fire': 'fire',
+        'ice': 'ice',
+        'aurora': 'aurora',
+        'emerald': 'emerald',
+        'crystal': 'crystal',
+        'obsidian': 'obsidian',
+        'burgundy': 'burgundy',
+        'golden': 'golden',
+        'sapphire': 'sapphire',
+        'lilac': 'lilac',
+        'crimson': 'crimson',
+        'deep_black': 'deep_black',
+        'galaxy': 'galaxy'
+      };
+      const normalized = aliasMap[theme] || 'royal';
+      
       const result = await apiRequest(`/api/users/${currentUser.id}`, {
         method: 'PUT',
         body: { 
-          userTheme: theme
+          userTheme: normalized
         }
       });
 
@@ -576,12 +649,12 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
       if (updatedUser && (updatedUser as any).id) {
         updateUserData({
-          userTheme: theme
+          userTheme: normalized
         });
         
         toast({
           title: "نجح ✅",
-          description: "تم تحديث لون الملف الشخصي",
+          description: "تم تحديث الثيم",
         });
       } else {
         throw new Error('فشل في تحديث اللون');

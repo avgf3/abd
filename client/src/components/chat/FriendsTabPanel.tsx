@@ -236,9 +236,9 @@ export default function FriendsTabPanel({
   );
   
   return (
-    <div className="h-full flex flex-col bg-background/95 backdrop-blur-sm">
+    <div className="h-full flex flex-col bg-card/95 backdrop-blur-sm">
       {/* Header */}
-      <div className="p-4 border-b">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <UserPlus className="w-5 h-5 text-primary" />
@@ -314,7 +314,7 @@ export default function FriendsTabPanel({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="البحث عن صديق..."
-                className="w-full pl-4 pr-10 py-2 rounded-lg bg-gray-50 border-gray-300 placeholder:text-gray-500 text-gray-900"
+                className="w-full pl-4 pr-10 py-2 rounded-lg bg-background border-input placeholder:text-muted-foreground text-foreground"
               />
             </div>
 

@@ -449,7 +449,7 @@ export default function UnifiedSidebar({
   // تم نقل دالة formatTimeAgo إلى utils/timeUtils.ts (تستخدم من الاستيراد أعلاه)
 
   return (
-    <aside className="w-full bg-white text-sm overflow-hidden border-l border-gray-200 shadow-lg flex flex-col h-full max-h-screen">
+    <aside className="w-full bg-card text-sm overflow-hidden border-l border-border shadow-lg flex flex-col h-full max-h-screen">
       {/* Toggle Buttons - always visible now */}
       <div className="flex border-b border-gray-200 flex-shrink-0">
         <Button
@@ -506,20 +506,20 @@ export default function UnifiedSidebar({
       {activeView === 'users' && (
         <div className="flex-1 flex flex-col overflow-hidden min-h-0">
           {/* Search Bar - ثابت في الأعلى */}
-          <div className="p-4 bg-white border-b border-gray-100 flex-shrink-0">
+          <div className="p-4 bg-card border-b border-border flex-shrink-0">
             <div className="relative">
               <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="البحث عن المستخدمين..."
-                className="w-full pl-4 pr-10 py-2 rounded-lg bg-white border-gray-300 placeholder:text-gray-500 text-gray-900"
+                className="w-full pl-4 pr-10 py-2 rounded-lg bg-background border-input placeholder:text-muted-foreground text-foreground"
               />
             </div>
           </div>
           
           {/* Users List - قابل للتمرير */}
-          <div ref={usersScrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 cursor-grab bg-white" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+          <div ref={usersScrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 cursor-grab bg-background" style={{ maxHeight: 'calc(100vh - 200px)' }}>
           
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -550,7 +550,7 @@ export default function UnifiedSidebar({
                       showModerationActions={isModerator}
                     >
                       <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} ${!getUserListItemClasses(user) ? 'bg-white hover:bg-gray-50' : ''}`}
+                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} ${!getUserListItemClasses(user) ? 'bg-card hover:bg-accent/10' : ''}`}
                         style={getUserListItemStyles(user)}
                         onClick={(e) => handleUserClick(e, user)}
                       >
@@ -617,7 +617,7 @@ export default function UnifiedSidebar({
 
       {/* Walls View - تحسين التمرير */}
       {activeView === 'walls' && (
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0 bg-card">
           {/* Wall Tabs */}
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col">
             <TabsList className="grid w-full grid-cols-2 m-2 flex-shrink-0">
@@ -645,13 +645,13 @@ export default function UnifiedSidebar({
             >
               {/* Post Creation */}
               {currentUser && currentUser.userType !== 'guest' && (
-                <Card className="mb-4 border border-gray-200">
+                <Card className="mb-4 border border-border bg-card">
                   <CardContent className="p-3">
                     <Textarea
                       value={newPostContent}
                       onChange={(e) => setNewPostContent(e.target.value)}
                       placeholder={`ما الذي تريد مشاركته مع ${activeTab === 'public' ? 'الجميع' : 'أصدقائك'}؟`}
-                      className="mb-3 min-h-[80px] resize-none text-sm"
+                      className="mb-3 min-h-[80px] resize-none text-sm bg-background text-foreground border-input"
                       maxLength={500}
                     />
                     
@@ -715,7 +715,7 @@ export default function UnifiedSidebar({
                   </div>
                 ) : (
                   posts.map((post) => (
-                    <Card key={post.id} className="border border-gray-200">
+                    <Card key={post.id} className="border border-border bg-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
