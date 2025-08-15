@@ -103,6 +103,16 @@ export const getEffectColor = (effect: string): string => {
   return effectColors[effect as keyof typeof effectColors] || '#FFFFFF';
 };
 
+// تحويل HEX إلى RGBA بنسبة شفافية
+const hexToRgba = (hex: string, alpha: number): string => {
+  const match = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex.trim());
+  if (!match) return hex;
+  const r = parseInt(match[1], 16);
+  const g = parseInt(match[2], 16);
+  const b = parseInt(match[3], 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 // دالة لحصول على لون الاسم النهائي (يدمج usernameColor و profileEffect)
 export const getFinalUsernameColor = (user: any): string => {
   // إذا المستخدم عنده profileEffect، استخدم لونه
@@ -110,8 +120,8 @@ export const getFinalUsernameColor = (user: any): string => {
     return getEffectColor(user.profileEffect);
   }
   
-  // وإلا استخدم usernameColor العادي
-  return user.usernameColor || '#000000';
+  // وإلا استخدم usernameColor العادي ثم لون الملف الشخصي كبديل
+  return user.usernameColor || user.profileBackgroundColor || user.profileColor || '#000000';
 };
 
 // ===== دوال تأثيرات صندوق المستخدم (بدلاً من ربطه بالثيم العام) =====
@@ -136,7 +146,7 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
     'effect-fire': 'linear-gradient(135deg, rgba(255, 69, 0, 0.10), rgba(255, 69, 0, 0.05))',
     'effect-ice': 'linear-gradient(135deg, rgba(135, 206, 235, 0.10), rgba(135, 206, 235, 0.05))',
     'effect-rainbow': 'linear-gradient(135deg, rgba(236, 72, 153, 0.10), rgba(139, 92, 246, 0.05))',
-    'effect-shadow': 'linear-gradient(135deg, rgba(0, 0, 0, 0.10), rgba(0, 0, 0, 0.05))',
+    'effect-shadow': 'linear-gradient(135deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.03))',
     'effect-electric': 'linear-gradient(135deg, rgba(0, 191, 255, 0.10), rgba(0, 191, 255, 0.05))',
     'effect-crystal': 'linear-gradient(135deg, rgba(230, 230, 250, 0.10), rgba(230, 230, 250, 0.05))',
   };
@@ -144,6 +154,16 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
   const style: Record<string, string> = {};
   if (effect && effect !== 'none') {
     style.background = backgrounds[effect] || 'rgba(255,255,255,0.05)';
+    return style;
   }
+
+  // ✨ في حال عدم وجود تأثير، استخدم لون الملف الشخصي لإعطاء خلفية لطيفة في القائمة
+  const profileBg = (user && (user.profileBackgroundColor || user.profileColor)) ? String(user.profileBackgroundColor || user.profileColor) : '';
+  if (profileBg) {
+    const a = hexToRgba(profileBg, 0.12);
+    const b = hexToRgba(profileBg, 0.06);
+    style.background = `linear-gradient(135deg, ${a}, ${b})`;
+  }
+
   return style;
 };
