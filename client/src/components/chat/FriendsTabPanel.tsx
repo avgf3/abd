@@ -15,7 +15,7 @@ import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
 import { useGrabScroll } from '@/hooks/useGrabScroll';
 import UserRoleBadge from './UserRoleBadge';
 import SimpleUserMenu from './SimpleUserMenu';
-import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
+import { getFinalUsernameColor, getUserEffectStyles, getUserEffectClasses } from '@/utils/themeUtils';
 
 // Using shared types for Friend and FriendRequest
 
@@ -234,7 +234,6 @@ export default function FriendsTabPanel({
   const filteredFriends = friends.filter(friend =>
     friend.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
   
   return (
     <div className="h-full flex flex-col bg-background/95 backdrop-blur-sm">
@@ -347,7 +346,8 @@ export default function FriendsTabPanel({
                       showModerationActions={isModerator}
                     >
                       <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full bg-white`}
+                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserEffectClasses(friend)} ${!getUserEffectClasses(friend) ? 'bg-white hover:bg-gray-50' : ''}`}
+                        style={getUserEffectStyles(friend)}
                         onClick={(e) => onStartPrivateChat(friend)}
                       >
                         <ProfileImage 
@@ -362,9 +362,9 @@ export default function FriendsTabPanel({
                               <span 
                                 className="text-base font-medium transition-all duration-300"
                                 style={{ 
-                                  color: friend.usernameColor || getUserThemeTextColor(friend),
-                                  textShadow: friend.usernameColor ? `0 0 10px ${friend.usernameColor}40` : 'none',
-                                  filter: friend.usernameColor ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                                  color: getFinalUsernameColor(friend),
+                                  textShadow: getFinalUsernameColor(friend) ? `0 0 10px ${getFinalUsernameColor(friend)}40` : 'none',
+                                  filter: getFinalUsernameColor(friend) ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
                                 }}
                                 title={friend.username}
                               >
@@ -479,9 +479,9 @@ export default function FriendsTabPanel({
                                   <span 
                                     className="font-semibold"
                                     style={{ 
-                                      color: request.user.usernameColor || getUserThemeTextColor(request.user),
-                                      textShadow: request.user.usernameColor ? `0 0 10px ${request.user.usernameColor}40` : 'none',
-                                      filter: request.user.usernameColor ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                                      color: getFinalUsernameColor(request.user),
+                                      textShadow: getFinalUsernameColor(request.user) ? `0 0 10px ${getFinalUsernameColor(request.user)}40` : 'none',
+                                      filter: getFinalUsernameColor(request.user) ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
                                     }}
                                   >
                                     {request.user.username}
@@ -557,9 +557,9 @@ export default function FriendsTabPanel({
                                   <span 
                                     className="font-semibold"
                                     style={{ 
-                                      color: request.user.usernameColor || getUserThemeTextColor(request.user),
-                                      textShadow: request.user.usernameColor ? `0 0 10px ${request.user.usernameColor}40` : 'none',
-                                      filter: request.user.usernameColor ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                                      color: getFinalUsernameColor(request.user),
+                                      textShadow: getFinalUsernameColor(request.user) ? `0 0 10px ${getFinalUsernameColor(request.user)}40` : 'none',
+                                      filter: getFinalUsernameColor(request.user) ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
                                     }}
                                   >
                                     {request.user.username}

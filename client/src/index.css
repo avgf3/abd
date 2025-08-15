@@ -3,7 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Golden Glow Animation for Owner */
+/* Golden Glow Animation (used by effect-glow) */
 @keyframes golden-glow {
   0%, 100% {
     box-shadow: 0 0 15px rgba(255, 215, 0, 0.5), inset 0 0 10px rgba(255, 215, 0, 0.2);
