@@ -103,7 +103,8 @@ export class FriendService {
           senderUsername: users.username,
           senderProfileImage: users.profileImage,
           senderUserType: users.userType,
-          senderUsernameColor: users.usernameColor
+          senderUsernameColor: users.usernameColor,
+          senderProfileEffect: users.profileEffect
         })
         .from(friends)
         .leftJoin(users, eq(friends.userId, users.id))
@@ -126,7 +127,8 @@ export class FriendService {
           username: req.senderUsername,
           profileImage: req.senderProfileImage,
           userType: req.senderUserType,
-          usernameColor: req.senderUsernameColor
+          usernameColor: req.senderUsernameColor,
+          profileEffect: req.senderProfileEffect || 'none'
         }
       }));
     } catch (error) {
@@ -149,7 +151,8 @@ export class FriendService {
           receiverUsername: users.username,
           receiverProfileImage: users.profileImage,
           receiverUserType: users.userType,
-          receiverUsernameColor: users.usernameColor
+          receiverUsernameColor: users.usernameColor,
+          receiverProfileEffect: users.profileEffect
         })
         .from(friends)
         .leftJoin(users, eq(friends.friendId, users.id))
@@ -172,7 +175,8 @@ export class FriendService {
           username: req.receiverUsername,
           profileImage: req.receiverProfileImage,
           userType: req.receiverUserType,
-          usernameColor: req.receiverUsernameColor
+          usernameColor: req.receiverUsernameColor,
+          profileEffect: req.receiverProfileEffect || 'none'
         }
       }));
     } catch (error) {
@@ -265,6 +269,7 @@ export class FriendService {
           createdAt: users.createdAt,
           usernameColor: users.usernameColor,
           userTheme: users.userTheme,
+          profileEffect: users.profileEffect,
           // حقول أخرى مطلوبة
           role: users.role,
           isMuted: users.isMuted,

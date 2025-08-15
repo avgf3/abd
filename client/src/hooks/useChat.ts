@@ -332,6 +332,36 @@ export const useChat = () => {
           }
         }
         
+        // تحديث تأثير البروفايل ولون الاسم عند وصول بث profileEffectChanged
+        if (envelope.type === 'profileEffectChanged') {
+          const { userId, profileEffect, usernameColor, user } = envelope as any;
+          const targetId = userId || user?.id;
+          if (targetId) {
+            // تحديث المستخدم الحالي إذا كان هو الهدف
+            if (state.currentUser?.id === targetId) {
+              dispatch({ 
+                type: 'SET_CURRENT_USER', 
+                payload: { 
+                  ...state.currentUser, 
+                  profileEffect: (profileEffect ?? user?.profileEffect ?? state.currentUser.profileEffect),
+                  usernameColor: (usernameColor ?? user?.usernameColor ?? state.currentUser.usernameColor)
+                } as any 
+              });
+            }
+            // تحديث قائمة المتصلين
+            const updatedOnline = state.onlineUsers.map(u => 
+              u.id === targetId 
+                ? { 
+                    ...u, 
+                    profileEffect: (profileEffect ?? user?.profileEffect ?? u.profileEffect),
+                    usernameColor: (usernameColor ?? user?.usernameColor ?? u.usernameColor)
+                  }
+                : u
+            );
+            dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
+          }
+        }
+        
         switch (envelope.type) {
           case 'newMessage': {
             const { message } = envelope;
