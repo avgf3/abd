@@ -828,6 +828,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             if (chat.updateCurrentUser) {
               chat.updateCurrentUser({ userTheme: theme });
             }
+            try { localStorage.setItem('selectedTheme', theme); } catch {}
           }}
         />
       )}

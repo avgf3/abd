@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import { applyThemeById } from '@/utils/applyTheme';
 
 interface ThemeSelectorProps {
   isOpen: boolean;
@@ -119,18 +120,7 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
 
   // تطبيق CSS variables فوراً
   const applyThemeVariables = (themeId: string, persist: boolean = false) => {
-    const theme = themes.find(t => t.id === themeId);
-    if (!theme) return;
-
-    const root = document.documentElement;
-    Object.entries(theme.cssVars).forEach(([property, value]) => {
-      root.style.setProperty(property, value);
-    });
-
-    // لا نقوم بالحفظ إلا عند التأكيد
-    if (persist) {
-      localStorage.setItem('selectedTheme', themeId);
-    }
+    applyThemeById(themeId, persist);
   };
 
   // تطبيق الثيم المحفوظ عند التحميل
