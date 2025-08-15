@@ -549,11 +549,11 @@ export default function UnifiedSidebar({
                       currentUser={currentUser}
                       showModerationActions={isModerator}
                     >
-                      <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} ${!getUserListItemClasses(user) ? 'bg-card hover:bg-accent/10' : ''}`}
-                        style={getUserListItemStyles(user)}
-                        onClick={(e) => handleUserClick(e, user)}
-                      >
+                                              <div
+                          className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} ${!getUserListItemClasses(user) ? 'bg-card hover:bg-accent/10' : ''}`}
+                          style={getUserListItemStyles(user)}
+                          onClick={(e) => handleUserClick(e, user)}
+                        >
                         <ProfileImage 
                           user={user} 
                           size="small" 
@@ -564,11 +564,9 @@ export default function UnifiedSidebar({
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
                               <span 
-                                className="text-base font-medium transition-all duration-300"
+                                className="text-base font-medium transition-colors duration-300"
                                 style={{ 
-                                  color: getFinalUsernameColor(user),
-                                  textShadow: getFinalUsernameColor(user) ? `0 0 10px ${getFinalUsernameColor(user)}40` : 'none',
-                                  filter: getFinalUsernameColor(user) ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                                  color: getFinalUsernameColor(user)
                                 }}
                                 title={user.username}
                               >

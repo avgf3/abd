@@ -101,20 +101,20 @@ router.post("/:userId/color", async (req, res) => {
   }
 });
 
-// Update profile background color
+// Update profile background color (legacy) -> use unified PUT /api/users/:id
 router.post("/update-background-color", async (req, res) => {
   try {
     const { userId, color } = req.body;
-    
     if (!userId || !color) {
       return res.status(400).json({ error: "معرف المستخدم واللون مطلوبان" });
     }
-    
-    if (!/^#[0-9A-F]{6}$/i.test(color)) {
-      return res.status(400).json({ error: "تنسيق اللون غير صالح" });
+    const idNum = parseInt(userId);
+    if (isNaN(idNum) || idNum <= 0) {
+      return res.status(400).json({ error: "معرف المستخدم غير صحيح" });
     }
-    
-    const user = await storage.updateUser(userId, { profileBackgroundColor: color });
+    // Delegate to unified route logic by normal update
+    const firstHex = String(color).match(/#[0-9A-Fa-f]{6}/)?.[0] || color;
+    const user = await storage.updateUser(idNum, { profileBackgroundColor: firstHex });
     res.json({ user, message: "تم تحديث لون خلفية الملف الشخصي" });
   } catch (error) {
     console.error("Error updating background color:", error);
