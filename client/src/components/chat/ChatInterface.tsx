@@ -844,7 +844,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           isOpen={showThemeSelector}
           onClose={() => setShowThemeSelector(false)}
           currentUser={chat.currentUser}
-          onThemeUpdate={(theme) => {
+          onThemeUpdate={async (theme) => {
             if (chat.updateCurrentUser) {
               chat.updateCurrentUser({ userTheme: theme });
             }
