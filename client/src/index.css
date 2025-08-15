@@ -3,7 +3,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Golden Glow Animation (used by effect-glow) */
+/* ===== تأثيرات النظام الموحد ===== */
+
+/* تأثير التوهج الذهبي */
 @keyframes golden-glow {
   0%, 100% {
     box-shadow: 0 0 15px rgba(255, 215, 0, 0.5), inset 0 0 10px rgba(255, 215, 0, 0.2);
@@ -12,6 +14,126 @@
   50% {
     box-shadow: 0 0 25px rgba(255, 215, 0, 0.8), inset 0 0 15px rgba(255, 215, 0, 0.4);
     transform: scale(1.02);
+  }
+}
+
+/* تأثير النبض */
+@keyframes pulse-effect {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 105, 180, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 105, 180, 0.7);
+    transform: scale(1.01);
+  }
+}
+
+/* تأثير الماء */
+@keyframes water-effect {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(0, 206, 209, 0.3);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(0, 206, 209, 0.6);
+    transform: translateY(-1px);
+  }
+}
+
+/* تأثير الشفق */
+@keyframes aurora-effect {
+  0% { box-shadow: 0 0 15px rgba(155, 89, 182, 0.5); }
+  25% { box-shadow: 0 0 20px rgba(46, 213, 115, 0.5); }
+  50% { box-shadow: 0 0 25px rgba(255, 159, 67, 0.5); }
+  75% { box-shadow: 0 0 20px rgba(116, 185, 255, 0.5); }
+  100% { box-shadow: 0 0 15px rgba(155, 89, 182, 0.5); }
+}
+
+/* تأثير النيون */
+@keyframes neon-effect {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(0, 255, 127, 0.6);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 255, 127, 0.9);
+    filter: brightness(1.1);
+  }
+}
+
+/* تأثير النار */
+@keyframes fire-effect {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(255, 69, 0, 0.6);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(255, 69, 0, 0.9);
+    transform: scale(1.01);
+  }
+}
+
+/* تأثير الجليد */
+@keyframes ice-effect {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(135, 206, 235, 0.4);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(135, 206, 235, 0.7);
+    filter: brightness(1.05);
+  }
+}
+
+/* تأثير الكهرباء */
+@keyframes electric-effect {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(0, 191, 255, 0.5);
+  }
+  25% {
+    box-shadow: 0 0 20px rgba(0, 191, 255, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(0, 191, 255, 0.6);
+  }
+  75% {
+    box-shadow: 0 0 25px rgba(0, 191, 255, 0.9);
+  }
+}
+
+/* تأثير الظل */
+@keyframes shadow-effect {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+    transform: translateY(-2px);
+  }
+}
+
+/* تأثير قوس قزح */
+@keyframes rainbow-effect {
+  0% { box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
+  16.66% { box-shadow: 0 0 15px rgba(255, 165, 0, 0.5); }
+  33.33% { box-shadow: 0 0 15px rgba(255, 255, 0, 0.5); }
+  50% { box-shadow: 0 0 15px rgba(0, 255, 0, 0.5); }
+  66.66% { box-shadow: 0 0 15px rgba(0, 0, 255, 0.5); }
+  83.33% { box-shadow: 0 0 15px rgba(75, 0, 130, 0.5); }
+  100% { box-shadow: 0 0 15px rgba(238, 130, 238, 0.5); }
+}
+
+/* تأثير البلور */
+@keyframes crystal-effect {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(230, 230, 250, 0.5);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(230, 230, 250, 0.8);
+    filter: brightness(1.1);
   }
 }
 
@@ -459,20 +581,16 @@ body.ltr {
 
 /* ===== Profile Effects & Animations ===== */
 
-/* تأثير النبض الناعم */
-.effect-pulse {
-  animation: gentlePulse 3s ease-in-out infinite;
-}
-
-@keyframes gentlePulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-}
+/* ===== كلاسات التأثيرات الموحدة ===== */
 
 /* تأثير التوهج الذهبي */
 .effect-glow {
-  animation: goldenGlow 4s ease-in-out infinite;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 20px rgba(255,215,0,0.3);
+  animation: golden-glow 2s ease-in-out infinite;
+}
+
+/* تأثير النبض */
+.effect-pulse {
+  animation: pulse-effect 2.5s ease-in-out infinite;
 }
 
 @keyframes goldenGlow {
@@ -596,18 +714,17 @@ body.ltr {
 
 /* تأثير قوس قزح */
 .effect-rainbow {
-  animation: rainbowShift 6s ease-in-out infinite;
-  background-size: 300% 300% !important;
+  animation: rainbow-effect 4s ease-in-out infinite;
 }
 
-@keyframes rainbowShift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-/* تأثير الظل الغامض */
+/* تأثير الظل */
 .effect-shadow {
-  animation: shadowPulse 3.5s ease-in-out infinite;
+  animation: shadow-effect 3s ease-in-out infinite;
+}
+
+/* تأثير الكهرباء */
+.effect-electric {
+  animation: electric-effect 1.5s ease-in-out infinite;
 }
 
 @keyframes shadowPulse {
@@ -697,25 +814,107 @@ html {
   }
 }
 
-/* تحسين التوافق مع التأثيرات الموجودة */
-.theme-animated.effect-glow,
-.theme-animated.effect-pulse,
-.theme-animated.effect-water,
-.theme-animated.effect-aurora,
-.theme-animated.effect-neon,
-.theme-animated.effect-fire,
-.theme-animated.effect-ice,
-.theme-animated.effect-rainbow,
-.theme-animated.effect-shadow,
-.theme-animated.effect-electric,
-.theme-animated.effect-crystal {
-  animation: none;
+/* ===== كلاسات الثيمات المتحركة ===== */
+
+/* كلاس عام للثيمات المتحركة */
+.theme-animated {
+  transition: all 0.3s ease;
+}
+
+/* تحسين التوافق مع التأثيرات الجديدة */
+.theme-animated:not([class*="effect-"]) {
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-animated:not([class*="effect-"])::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+
+.theme-animated:not([class*="effect-"]):hover::before {
+  transform: translateX(100%);
 }
 
 /* تأثير التحويم على عناصر القائمة */
 .theme-animated:hover {
   filter: brightness(1.15);
   transform: translateX(5px);
+}
+
+/* ===== تحسينات الأداء ===== */
+
+/* تقليل الحركة للمستخدمين الذين يفضلون ذلك */
+@media (prefers-reduced-motion: reduce) {
+  .theme-animated,
+  [class*="effect-"] {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  .reduce-motion .theme-animated::before {
+    transition: none !important;
+  }
+}
+
+/* تحسين الأداء للعناصر المتحركة */
+.theme-animated,
+[class*="effect-"] {
+  transform: translateZ(0); /* تفعيل hardware acceleration */
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* تحسين الشفافية */
+.optimized-transparency {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: opacity;
+}
+
+.semi-transparent {
+  isolation: isolate;
+}
+
+.reduce-overdraw {
+  contain: layout style paint;
+}
+
+/* تحسين التمرير للقوائم الطويلة */
+.theme-list-container {
+  contain: layout style;
+  overflow: hidden;
+}
+
+.theme-list-item {
+  contain: layout;
+  will-change: transform;
+}
+
+/* تحسين الخطوط */
+.optimized-text {
+  text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* تحسين الحدود المنحنية */
+.optimized-borders {
+  transform: translateZ(0);
+}
+
+/* تحسين gradients للأداء */
+.performance-gradient {
+  background-attachment: fixed;
+  will-change: background-position;
 }
 
 /* Force hide context menu and text selection for audio-only controls */

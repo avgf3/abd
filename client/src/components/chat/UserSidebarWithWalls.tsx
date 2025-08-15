@@ -14,7 +14,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getImageSrc } from '@/utils/imageUtils';
 
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
-import { getUserEffectStyles, getUserEffectClasses, getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
+import { getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/unifiedThemeSystem';
 import { formatTimeAgo } from '@/utils/timeUtils';
 import UserRoleBadge from './UserRoleBadge';
 import { useQuery, useQueryClient } from '@tanstack/react-query';

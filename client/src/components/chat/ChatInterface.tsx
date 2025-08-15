@@ -848,7 +848,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             if (chat.updateCurrentUser) {
               chat.updateCurrentUser({ userTheme: theme });
             }
-            try { localStorage.setItem('selectedTheme', theme); } catch {}
+            try { 
+              const { saveAndSyncTheme } = await import('@/utils/themeStorageSync');
+              if (chat.currentUser?.id) {
+                await saveAndSyncTheme(chat.currentUser.id, theme);
+              }
+            } catch {}
           }}
         />
       )}

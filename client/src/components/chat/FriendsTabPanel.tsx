@@ -15,7 +15,7 @@ import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
 import { useGrabScroll } from '@/hooks/useGrabScroll';
 import UserRoleBadge from './UserRoleBadge';
 import SimpleUserMenu from './SimpleUserMenu';
-import { getFinalUsernameColor, getUserEffectStyles, getUserEffectClasses } from '@/utils/themeUtils';
+import { getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/unifiedThemeSystem';
 
 // Using shared types for Friend and FriendRequest
 
@@ -346,8 +346,8 @@ export default function FriendsTabPanel({
                       showModerationActions={isModerator}
                     >
                       <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserEffectClasses(friend)} ${!getUserEffectClasses(friend) ? 'bg-white hover:bg-gray-50' : ''}`}
-                        style={getUserEffectStyles(friend)}
+                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(friend)} ${!getUserListItemClasses(friend) ? 'bg-white hover:bg-gray-50' : ''}`}
+                        style={getUserListItemStyles(friend)}
                         onClick={(e) => onStartPrivateChat(friend)}
                       >
                         <ProfileImage 

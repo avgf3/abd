@@ -1,12 +1,9 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import { applyThemeById } from "@/utils/applyTheme";
+import { initializeUnifiedThemeSystem } from "@/utils/unifiedThemeSystem";
 
-// تطبيق الثيم المحفوظ عند بدء التطبيق
-try {
-  const saved = localStorage.getItem('selectedTheme');
-  if (saved) applyThemeById(saved, false);
-} catch {}
+// تهيئة النظام الموحد للثيمات
+initializeUnifiedThemeSystem();
 
 createRoot(document.getElementById("root")!).render(<App />);
