@@ -10,7 +10,6 @@ export interface ChatUser {
   // معلومات إضافية - تحسين type safety
   profileBanner?: string;
   profileBackgroundColor?: string;
-  profileColor?: string;
   usernameColor?: string;
   profileEffect?: string;
   userTheme?: string;

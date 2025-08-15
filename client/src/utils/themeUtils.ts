@@ -133,7 +133,7 @@ const gradientToTransparent = (gradient: string, opacity: number): string => {
 
 // دالة لحصول على لون الاسم النهائي (يعتمد فقط على usernameColor)
 export const getFinalUsernameColor = (user: any): string => {
-  return (user && user.usernameColor) ? String(user.usernameColor) : '#000000';
+  return (user && user.usernameColor) ? String(user.usernameColor) : '#FFFFFF';
 };
 
 // ===== دوال تأثيرات صندوق المستخدم (بدلاً من ربطه بالثيم العام) =====
@@ -201,7 +201,16 @@ export const getUserListItemStyles = (user: any): Record<string, string> => {
     return getUserEffectStyles(user);
   }
   
-  // ثانياً: خلفية خفيفة من ثيم المستخدم فقط (بدون تغيير لون الاسم)
+  // ثانياً: إذا حدّد المستخدم لون خلفية للبروفايل فاعرضه في القائمة كتظليل خفيف
+  const bg = (user && user.profileBackgroundColor) ? String(user.profileBackgroundColor) : '';
+  const isHex = /^#[0-9A-F]{6}$/i.test(bg);
+  if (isHex) {
+    style.background = hexToRgba(bg, 0.08);
+    style.borderLeft = `3px solid ${bg}`;
+    return style;
+  }
+  
+  // ثالثاً: خلفية خفيفة من ثيم المستخدم فقط (بدون تغيير لون الاسم)
   const theme = getThemeData(user?.userTheme || 'default');
   if (theme.gradient !== 'transparent') {
     style.background = gradientToTransparent(theme.gradient, 0.08);
