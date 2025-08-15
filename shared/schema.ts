@@ -190,6 +190,13 @@ export const wallReactions = pgTable("wall_reactions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// جدول إعدادات الموقع العامة (لتخزين ثيم الموقع العام)
+export const siteSettings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
+  siteTheme: text("site_theme").default('default'),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // العلاقات للحوائط
 export const wallPostsRelations = relations(wallPosts, ({ one, many }) => ({
   user: one(users, {

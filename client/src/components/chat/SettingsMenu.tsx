@@ -67,15 +67,17 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
             الغرف
           </Button>
           
-          <Button
-            onClick={onOpenThemeSelector}
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
-          >
-            <Palette className="w-4 h-4 text-primary" />
-            اختيار الثيم
-          </Button>
+          {currentUser?.userType === 'owner' && (
+            <Button
+              onClick={onOpenThemeSelector}
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+            >
+              <Palette className="w-4 h-4 text-primary" />
+              اختيار الثيم
+            </Button>
+          )}
 
           <Button
             onClick={onOpenUsernameColorPicker}

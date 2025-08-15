@@ -125,6 +125,13 @@ export const rooms = sqliteTable("rooms", {
   updatedAt: text("updated_at"), // ISO string في SQLite
 });
 
+// جدول إعدادات الموقع العامة (لتخزين ثيم الموقع العام)
+export const siteSettings = sqliteTable("site_settings", {
+  id: integer("id").primaryKey(),
+  siteTheme: text("site_theme").default('default'),
+  updatedAt: text("updated_at"), // ISO string
+});
+
 // Relations للتوافق مع Drizzle ORM
 export const usersRelations = relations(users, ({ many }) => ({
   messages: many(messages),

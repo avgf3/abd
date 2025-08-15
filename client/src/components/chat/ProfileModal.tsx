@@ -31,7 +31,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   
   // حالة محلية للمستخدم للتحديث الفوري
   const [localUser, setLocalUser] = useState<ChatUser | null>(user);
-  const [selectedTheme, setSelectedTheme] = useState(user?.userTheme || 'theme-new-gradient');
+  const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
   const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
 
   // متغيرات نظام إرسال النقاط
@@ -47,30 +47,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   useEffect(() => {
     if (user) {
       setLocalUser(user);
-      const storedTheme = user.userTheme || 'theme-new-gradient';
-      const storageToModal: Record<string, string> = {
-        default: 'theme-new-gradient',
-        dark: 'theme-cosmic-night',
-        ocean: 'theme-ocean-depths',
-        sunset: 'theme-sunset-glow',
-        forest: 'theme-emerald-forest',
-        royal: 'theme-midnight-purple',
-        fire: 'theme-fire-opal',
-        ice: 'theme-crystal-clear',
-        aurora: 'theme-aurora-borealis',
-        emerald: 'theme-emerald-forest',
-        crystal: 'theme-crystal-clear',
-        obsidian: 'theme-royal-black',
-        burgundy: 'theme-burgundy-velvet',
-        golden: 'theme-golden-velvet',
-        sapphire: 'theme-sapphire-velvet',
-        lilac: 'theme-amethyst-velvet',
-        crimson: 'theme-crimson-velvet',
-        deep_black: 'theme-onyx-velvet',
-        galaxy: 'theme-neon-dreams'
-      };
-      const modalTheme = storedTheme.startsWith('theme-') ? storedTheme : (storageToModal[storedTheme] || 'theme-new-gradient');
-      setSelectedTheme(modalTheme);
+      setSelectedTheme(user.profileBackgroundColor || '');
       setSelectedEffect(user.profileEffect || 'none');
     }
   }, [user]);
@@ -111,13 +88,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       onUpdate(updatedUser);
     }
     
-    // تحديث الثيم والتأثير إذا تم تغييرهما
-    if (updates.userTheme) {
-      setSelectedTheme(updates.userTheme);
-    }
-    if (updates.profileEffect) {
-      setSelectedEffect(updates.profileEffect);
-    }
+          // تحديث لون الخلفية والتأثير إذا تم تغييرهما
+      if (updates.profileBackgroundColor) {
+        setSelectedTheme(updates.profileBackgroundColor);
+      }
+      if (updates.profileEffect) {
+        setSelectedEffect(updates.profileEffect);
+      }
     
     };
 
@@ -568,7 +545,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     try {
       setIsLoading(true);
       setSelectedTheme(theme);
-      
+
       if (!currentUser?.id) {
         toast({
           title: "خطأ",
@@ -586,87 +563,24 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         });
         return;
       }
-      
-      // تحويل قيم modal (theme-*) إلى معرفات قياسية مستخدمة في القائمة
-      const aliasMap: Record<string, string> = {
-        'theme-sunset-glow': 'sunset',
-        'theme-ocean-depths': 'ocean',
-        'theme-aurora-borealis': 'aurora',
-        'theme-cosmic-night': 'royal',
-        'theme-emerald-forest': 'forest',
-        'theme-rose-gold': 'rose',
-        'theme-midnight-purple': 'royal',
-        'theme-golden-hour': 'golden',
-        'theme-neon-dreams': 'galaxy',
-        'theme-silver-mist': 'crystal',
-        'theme-fire-opal': 'fire',
-        'theme-crystal-clear': 'ice',
-        'theme-burgundy-velvet': 'burgundy',
-        'theme-golden-velvet': 'golden',
-        'theme-royal-black': 'obsidian',
-        'theme-berry-velvet': 'lilac',
-        'theme-crimson-velvet': 'crimson',
-        'theme-emerald-velvet': 'emerald',
-        'theme-sapphire-velvet': 'sapphire',
-        'theme-ruby-velvet': 'wine',
-        'theme-amethyst-velvet': 'mystical',
-        'theme-onyx-velvet': 'deep_black',
-        'theme-sunset-fire': 'sunset',
-        'theme-perfect-gradient': 'royal',
-        'theme-image-gradient': 'ocean',
-        'theme-new-gradient': 'royal',
-        // السماح بتمرير المعرفات القياسية كما هي
-        'default': 'default',
-        'dark': 'dark',
-        'ocean': 'ocean',
-        'sunset': 'sunset',
-        'forest': 'forest',
-        'royal': 'royal',
-        'fire': 'fire',
-        'ice': 'ice',
-        'aurora': 'aurora',
-        'emerald': 'emerald',
-        'crystal': 'crystal',
-        'obsidian': 'obsidian',
-        'burgundy': 'burgundy',
-        'golden': 'golden',
-        'sapphire': 'sapphire',
-        'lilac': 'lilac',
-        'crimson': 'crimson',
-        'deep_black': 'deep_black',
-        'galaxy': 'galaxy'
-      };
-      const normalized = aliasMap[theme] || 'royal';
-      
-      const result = await apiRequest(`/api/users/${currentUser.id}`, {
-        method: 'PUT',
-        body: { 
-          userTheme: normalized
-        }
+
+      // بدلاً من userTheme: نرسل لون الخلفية كقيمة مباشرة
+      const colorValue = theme;
+      const result = await apiRequest(`/api/users/update-background-color`, {
+        method: 'POST',
+        body: { userId: currentUser.id, color: colorValue }
       });
 
-      const updatedUser = (result as any)?.user ?? result;
-
-      if (updatedUser && (updatedUser as any).id) {
-        updateUserData({
-          userTheme: normalized
-        });
-        
-        toast({
-          title: "نجح ✅",
-          description: "تم تحديث الثيم",
-        });
+      if ((result as any)?.success) {
+        updateUserData({ profileBackgroundColor: colorValue });
+        toast({ title: "نجح ✅", description: "تم تحديث لون الملف الشخصي" });
       } else {
-        throw new Error('فشل في تحديث اللون');
+        throw new Error('فشل في تحديث لون الملف الشخصي');
       }
     } catch (error) {
-      console.error('❌ خطأ في تحديث الثيم:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في تحديث اللون. تحقق من اتصال الإنترنت.",
-        variant: "destructive",
-      });
-      setSelectedTheme(localUser?.userTheme || 'theme-new-gradient');
+      console.error('❌ خطأ في تحديث لون الملف الشخصي:', error);
+      toast({ title: "خطأ", description: "فشل في تحديث اللون. تحقق من اتصال الإنترنت.", variant: "destructive" });
+      setSelectedTheme(localUser?.profileBackgroundColor || '');
     } finally {
       setIsLoading(false);
     }
@@ -1850,7 +1764,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       
       {/* Main Modal */}
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-4 px-4 overflow-y-auto">
-        <div className={`profile-card ${selectedTheme} ${selectedEffect}`}>
+        <div className={`profile-card ${selectedEffect}`}>
           {/* Close Button */}
           <button 
             onClick={onClose}
@@ -2051,7 +1965,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               {currentEditType === 'country' && 'تعديل البلد'}
               {currentEditType === 'age' && 'تعديل العمر'}
               {currentEditType === 'socialStatus' && 'تعديل الحالة الاجتماعية'}
-              {currentEditType === 'theme' && '🎨 اختيار لون الملف الشخصي'}
+              {currentEditType === 'theme' && '🎨 اختيار لون الملف الشخصي (خلفية الصندوق)'}
               {currentEditType === 'effects' && '✨ تعديل التأثيرات الحركية'}
               {currentEditType === 'sendPoints' && '💰 إرسال النقاط'}
             </h3>
@@ -2061,8 +1975,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                 {themes.map(theme => (
                   <div
                     key={theme.value}
-                    className={`theme-option ${selectedTheme === theme.value ? 'selected' : ''}`}
-                    onClick={() => handleThemeChange(theme.value)}
+                    className={`theme-option ${selectedTheme === theme.preview ? 'selected' : ''}`}
+                    onClick={() => handleThemeChange(theme.preview)}
                   >
                     <div 
                       className="theme-preview"
