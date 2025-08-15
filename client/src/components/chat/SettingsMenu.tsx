@@ -10,6 +10,7 @@ import {
   Palette,
   Brush
 } from 'lucide-react';
+import { getFinalUsernameColor, getUserListItemStyles } from '@/utils/themeUtils';
 
 interface SettingsMenuProps {
   onOpenProfile: () => void;
@@ -32,6 +33,16 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
   return (
     <Card className="fixed top-20 right-4 z-50 shadow-2xl animate-fade-in w-56 bg-card/95 backdrop-blur-md border-accent">
       <CardContent className="p-0">
+        {currentUser && (
+          <div className="p-3 border-b border-border" style={getUserListItemStyles(currentUser)}>
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4" style={{ color: getFinalUsernameColor(currentUser) }} />
+              <span className="font-semibold" style={{ color: getFinalUsernameColor(currentUser) }}>
+                {currentUser.username}
+              </span>
+            </div>
+          </div>
+        )}
         {/* القسم الأول - الملف الشخصي */}
         <div className="p-3 border-b border-border">
           <Button
