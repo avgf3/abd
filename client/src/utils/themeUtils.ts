@@ -113,6 +113,22 @@ const hexToRgba = (hex: string, alpha: number): string => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+// دالة لتحويل التدرج اللوني إلى تدرج شفاف
+const gradientToTransparent = (gradient: string, opacity: number): string => {
+  // استخراج الألوان من التدرج
+  const colors = gradient.match(/#[a-fA-F0-9]{6}/g);
+  if (!colors) return gradient;
+  
+  // تحويل كل لون إلى RGBA مع الشفافية المطلوبة
+  let newGradient = gradient;
+  colors.forEach(color => {
+    const rgba = hexToRgba(color, opacity);
+    newGradient = newGradient.replace(color, rgba);
+  });
+  
+  return newGradient;
+};
+
 // دالة لحصول على لون الاسم النهائي (يدمج usernameColor و profileEffect)
 export const getFinalUsernameColor = (user: any): string => {
   // إذا المستخدم عنده profileEffect، استخدم لونه
@@ -120,8 +136,8 @@ export const getFinalUsernameColor = (user: any): string => {
     return getEffectColor(user.profileEffect);
   }
   
-  // وإلا استخدم usernameColor العادي ثم لون الملف الشخصي كبديل
-  return user.usernameColor || user.profileBackgroundColor || user.profileColor || '#000000';
+  // وإلا استخدم usernameColor العادي
+  return user.usernameColor || '#000000';
 };
 
 // ===== دوال تأثيرات صندوق المستخدم (بدلاً من ربطه بالثيم العام) =====
@@ -157,13 +173,65 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
     return style;
   }
 
-  // ✨ في حال عدم وجود تأثير، استخدم لون الملف الشخصي لإعطاء خلفية لطيفة في القائمة
-  const profileBg = (user && (user.profileBackgroundColor || user.profileColor)) ? String(user.profileBackgroundColor || user.profileColor) : '';
-  if (profileBg) {
-    const a = hexToRgba(profileBg, 0.12);
-    const b = hexToRgba(profileBg, 0.06);
-    style.background = `linear-gradient(135deg, ${a}, ${b})`;
+  // ✨ استخدام userTheme للحصول على نفس اللون المستخدم في البطاقة الشخصية
+  const theme = getThemeData(user?.userTheme || 'default');
+  if (theme.gradient !== 'transparent') {
+    // استخدم التدرج من الثيم مع شفافية لإعطاء تأثير لطيف في القائمة
+    style.background = gradientToTransparent(theme.gradient, 0.12);
   }
 
   return style;
+};
+
+// دالة موحدة للحصول على أنماط عنصر المستخدم في القائمة
+export const getUserListItemStyles = (user: any): Record<string, string> => {
+  const style: Record<string, string> = {};
+  
+  // إذا كان هناك تأثير، استخدم أنماط التأثير
+  if (user?.profileEffect && user.profileEffect !== 'none') {
+    return getUserEffectStyles(user);
+  }
+  
+  // إذا كان هناك ثيم، استخدم لون الثيم مع شفافية
+  const theme = getThemeData(user?.userTheme || 'default');
+  if (theme.gradient !== 'transparent') {
+    style.background = gradientToTransparent(theme.gradient, 0.08);
+    style.borderLeft = `3px solid ${theme.gradient.match(/#[a-fA-F0-9]{6}/)?.[0] || '#ccc'}`;
+  }
+  
+  return style;
+};
+
+// دالة للحصول على كلاسات CSS للمستخدم في القائمة
+export const getUserListItemClasses = (user: any): string => {
+  const classes = [];
+  
+  // إضافة كلاس التأثير إذا وجد
+  if (user?.profileEffect && user.profileEffect !== 'none') {
+    classes.push(user.profileEffect);
+  }
+  
+  // إضافة كلاس التحريك إذا كان الثيم يدعم التحريك
+  const theme = getThemeData(user?.userTheme || 'default');
+  if (theme.hasAnimation) {
+    classes.push('theme-animated');
+  }
+  
+  return classes.join(' ');
+};
+
+// دالة للحصول على البيانات الكاملة للثيم والتأثير للمستخدم
+export const getUserThemeAndEffect = (user: any) => {
+  return {
+    theme: getThemeData(user?.userTheme || 'default'),
+    effect: user?.profileEffect || 'none',
+    effectColor: user?.profileEffect ? getEffectColor(user.profileEffect) : null,
+    usernameColor: getFinalUsernameColor(user),
+    hasAnimation: getThemeData(user?.userTheme || 'default').hasAnimation || (user?.profileEffect && user.profileEffect !== 'none')
+  };
+};
+
+// دالة مساعدة للتحقق من وجود ثيم مخصص
+export const hasCustomTheme = (user: any): boolean => {
+  return (user?.userTheme && user.userTheme !== 'default') || (user?.profileEffect && user.profileEffect !== 'none');
 };
