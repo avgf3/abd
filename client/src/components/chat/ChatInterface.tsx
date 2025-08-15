@@ -541,7 +541,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
        </main>
 
       {/* Footer - تبويبات سفلية محسنة لتجنب التداخل مع منطقة الإرسال */}
-      <footer className="fixed bottom-0 left-0 right-0 z-10 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent" style={{ transform: 'translateY(-80px)' }}>
+      <footer className="fixed bottom-0 left-0 right-0 z-10 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent">
         <div className="flex gap-2 sm:gap-3 overflow-x-auto max-w-full">
           {/* الحوائط */}
                      <Button 
