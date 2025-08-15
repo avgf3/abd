@@ -459,6 +459,25 @@ body.ltr {
 
 /* ===== Profile Effects & Animations ===== */
 
+/* تأثير كهربائي إضافي */
+.effect-electric {
+  animation: electricPulse 2s ease-in-out infinite;
+  box-shadow: 0 0 18px rgba(0,191,255,0.4);
+}
+@keyframes electricPulse {
+  0%, 100% { box-shadow: 0 0 18px rgba(0,191,255,0.4); }
+  50% { box-shadow: 0 0 28px rgba(0,191,255,0.7); }
+}
+
+/* تأثير مغناطيسي إضافي لطيف */
+.effect-magnetic {
+  animation: magneticFloat 4s ease-in-out infinite;
+}
+@keyframes magneticFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
 /* تأثير النبض الناعم */
 .effect-pulse {
   animation: gentlePulse 3s ease-in-out infinite;
