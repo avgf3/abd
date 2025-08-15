@@ -866,8 +866,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             <UsernameColorPicker
               currentUser={chat.currentUser}
               onColorUpdate={(color) => {
-                // تحديث اللون محلياً
-                chat.updateCurrentUser({ ...chat.currentUser, usernameColor: color });
+                chat.updateCurrentUser({ usernameColor: color } as any);
                 setShowUsernameColorPicker(false);
               }}
             />

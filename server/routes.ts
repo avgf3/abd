@@ -3220,18 +3220,26 @@ if (!existing) {
         io.emit('message', updateMessage);
         }
       
-      // إرسال تحديث تأثير البروفايل ولون الاسم عبر WebSocket
-      if (updates.profileEffect || updates.usernameColor) {
+      // إرسال تحديث تأثير البروفايل فقط عبر WebSocket
+      if (updates.profileEffect) {
         const updateMessage = {
           type: 'profileEffectChanged',
           userId: parseInt(id),
           profileEffect: updates.profileEffect,
-          usernameColor: updates.usernameColor,
           user: user,
           timestamp: new Date().toISOString()
         };
         io.emit('message', updateMessage);
-        }
+      }
+
+      // إرسال تحديث لون الاسم عبر WebSocket بشكل منفصل
+      if (updates.usernameColor) {
+        io.emit('usernameColorChanged', {
+          userId: parseInt(id),
+          color: updates.usernameColor,
+          username: user.username
+        });
+      }
       
       res.json(user);
     } catch (error) {
