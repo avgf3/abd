@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { getEffectColor } from '@/utils/themeUtils';
+import { getEffectColor, getThemeByEffect, getThemeData } from '@/utils/themeUtils';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 import { Input } from '@/components/ui/input';
@@ -31,7 +31,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   
   // حالة محلية للمستخدم للتحديث الفوري
   const [localUser, setLocalUser] = useState<ChatUser | null>(user);
-  const [selectedTheme, setSelectedTheme] = useState(user?.userTheme || 'theme-new-gradient');
   const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
 
   // متغيرات نظام إرسال النقاط
@@ -47,7 +46,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   useEffect(() => {
     if (user) {
       setLocalUser(user);
-      setSelectedTheme(user.userTheme || 'theme-new-gradient');
       setSelectedEffect(user.profileEffect || 'none');
     }
   }, [user]);
@@ -61,10 +59,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       setLocalUser(userData);
       if (onUpdate) onUpdate(userData);
       
-      // تحديث الثيم والتأثير المحلي
-      if (userData.userTheme) {
-        setSelectedTheme(userData.userTheme);
-      }
+      // تحديث التأثير المحلي
       if (userData.profileEffect) {
         setSelectedEffect(userData.profileEffect);
       }
@@ -88,10 +83,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       onUpdate(updatedUser);
     }
     
-    // تحديث الثيم والتأثير إذا تم تغييرهما
-    if (updates.userTheme) {
-      setSelectedTheme(updates.userTheme);
-    }
     if (updates.profileEffect) {
       setSelectedEffect(updates.profileEffect);
     }
@@ -540,78 +531,20 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     }
   };
 
-  // تحديث الثيم - محسّن
-  const handleThemeChange = async (theme: string) => {
-    try {
-      setIsLoading(true);
-      setSelectedTheme(theme);
-      
-      if (!currentUser?.id) {
-        toast({
-          title: "خطأ",
-          description: "لم يتم العثور على معرف المستخدم. يرجى تسجيل الدخول مرة أخرى.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!theme || theme.trim() === '') {
-        toast({
-          title: "خطأ", 
-          description: "يرجى اختيار لون صحيح.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // تحديث userTheme و profileBackgroundColor معاً ليتوافق مع الواجهة
-      const result = await apiRequest(`/api/users/${currentUser.id}`, {
-        method: 'PUT',
-        body: { 
-          userTheme: theme,
-          profileBackgroundColor: theme
-        }
-      });
-
-      const updatedUser = (result as any)?.user ?? result;
-
-      if (updatedUser && (updatedUser as any).id) {
-        updateUserData({
-          userTheme: theme,
-          profileBackgroundColor: theme
-        });
-        
-        toast({
-          title: "نجح ✅",
-          description: "تم تحديث لون الملف الشخصي",
-        });
-      } else {
-        throw new Error('فشل في تحديث اللون');
-      }
-    } catch (error) {
-      console.error('❌ خطأ في تحديث الثيم:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في تحديث اللون. تحقق من اتصال الإنترنت.",
-        variant: "destructive",
-      });
-      setSelectedTheme(localUser?.userTheme || 'theme-new-gradient');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // تحديث التأثير - محسّن
   const handleEffectChange = async (effect: string) => {
     try {
       setIsLoading(true);
       setSelectedEffect(effect);
       
+      const mappedTheme = getThemeByEffect(effect);
+
       const result = await apiRequest(`/api/users/${localUser?.id}`, {
         method: 'PUT',
         body: { 
           profileEffect: effect,
-          usernameColor: getEffectColor(effect)
+          usernameColor: getEffectColor(effect),
+          userTheme: mappedTheme,
         }
       });
 
@@ -619,22 +552,23 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       if (updated && (updated as any).id) {
         updateUserData({ 
           profileEffect: effect,
-          usernameColor: getEffectColor(effect)
+          usernameColor: getEffectColor(effect),
+          userTheme: mappedTheme,
         });
         
-        toast({
-          title: "نجح ✅",
-          description: "تم تحديث التأثيرات ولون الاسم",
+        toast({ 
+          title: 'نجح ✅',
+          description: 'تم تحديث التأثير وربط الثيم تلقائياً',
         });
       } else {
         throw new Error('فشل في تحديث التأثيرات');
       }
     } catch (error) {
       console.error('❌ خطأ في تحديث التأثير:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في تحديث التأثيرات",
-        variant: "destructive",
+      toast({ 
+        title: 'خطأ',
+        description: 'فشل في تحديث التأثيرات',
+        variant: 'destructive',
       });
       // إرجاع التأثير للحالة السابقة
       setSelectedEffect(localUser?.profileEffect || 'none');
@@ -727,311 +661,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         }
 
         /* أنماط الألوان العصرية مع التدريج المائي */
-        .theme-sunset-glow {
-          --card-bg: linear-gradient(135deg, 
-            #2c1810, 
-            #8b0000, 
-            #dc143c, 
-            #ff6347, 
-            #ff8c00
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #fff3e0;
-        }
-
-        .theme-ocean-depths {
-          --card-bg: linear-gradient(135deg, 
-            rgba(102, 126, 234, 0.9), 
-            rgba(118, 75, 162, 0.85), 
-            rgba(171, 147, 251, 0.8), 
-            rgba(102, 126, 234, 0.9)
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0, 150, 255, 0.25) 0%, transparent 60%);
-          --accent-color: #e3f2fd;
-        }
-
-        .theme-aurora-borealis {
-          --card-bg: linear-gradient(135deg, 
-            #0a0a0a, 
-            #1a1a2e, 
-            #16213e, 
-            #0f3460, 
-            #533483
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #f0f8ff;
-        }
-
-        .theme-cosmic-night {
-          --card-bg: linear-gradient(135deg, 
-            #000000, 
-            #1a0033, 
-            #330066, 
-            #6600cc, 
-            #9933ff
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #e8eaf6;
-        }
-
-        .theme-emerald-forest {
-          --card-bg: linear-gradient(135deg, 
-            #0a1a0a, 
-            #1a3a1a, 
-            #2d5a2d, 
-            #4a7c4a, 
-            #6b9e6b
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #e8f5e8;
-        }
-
-        .theme-rose-gold {
-          --card-bg: linear-gradient(135deg, 
-            #2d1b1b, 
-            #4a2c2c, 
-            #8b4513, 
-            #daa520, 
-            #ffd700
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #fff0f3;
-        }
-
-        .theme-midnight-purple {
-          --card-bg: linear-gradient(135deg, 
-            #000033, 
-            #1a1a4a, 
-            #333366, 
-            #4d4d99, 
-            #6666cc
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #f3e5f5;
-        }
-
-        .theme-golden-hour {
-          --card-bg: linear-gradient(135deg, 
-            #1a0f0f, 
-            #4a2c1a, 
-            #8b4513, 
-            #daa520, 
-            #ffd700
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #fff8e1;
-        }
-
-        .theme-neon-dreams {
-          --card-bg: linear-gradient(135deg, 
-            #0a0a0a, 
-            #2d1b2d, 
-            #4a1a4a, 
-            #8b008b, 
-            #ff00ff
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #fce4ec;
-        }
-
-        .theme-silver-mist {
-          --card-bg: linear-gradient(135deg, 
-            #1a1a1a, 
-            #2d2d2d, 
-            #4a4a4a, 
-            #666666, 
-            #808080
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #fafafa;
-        }
-
-        .theme-fire-opal {
-          --card-bg: linear-gradient(135deg, 
-            #1a0a0a, 
-            #4a1a1a, 
-            #8b0000, 
-            #dc143c, 
-            #ff4500
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #fff3e0;
-        }
-
-        .theme-crystal-clear {
-          --card-bg: linear-gradient(135deg, 
-            #0a1a2a, 
-            #1a2a4a, 
-            #2a4a6a, 
-            #4a6a8a, 
-            #6a8aaa
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #e1f5fe;
-        }
-
-        .theme-burgundy-velvet {
-          --card-bg: linear-gradient(135deg, 
-            #0a0a0a, 
-            #2d1b1b, 
-            #4a1a1a, 
-            #8b0000, 
-            #a52a2a
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #ffe4e1;
-        }
-
-        .theme-golden-velvet {
-          --card-bg: linear-gradient(135deg, 
-            #1a1a0a, 
-            #2d2d1a, 
-            #4a4a1a, 
-            #8b8b00, 
-            #ffd700
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #fff8dc;
-        }
-
-        .theme-royal-black {
-          --card-bg: linear-gradient(135deg, 
-            #000000, 
-            #1a1a2e, 
-            #2d2d4a, 
-            #4a4a6a, 
-            #66668a
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #f0f8ff;
-        }
-
-        .theme-berry-velvet {
-          --card-bg: linear-gradient(135deg, 
-            #0a0a1a, 
-            #1a1a2d, 
-            #2d2d4a, 
-            #4a4a6a, 
-            #8a2be2
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #f8f0ff;
-        }
-
-        .theme-crimson-velvet {
-          --card-bg: linear-gradient(135deg, 
-            #0a0a0a, 
-            #2d1b1b, 
-            #4a1a1a, 
-            #8b0000, 
-            #dc143c
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #ffe4e1;
-        }
-
-        .theme-emerald-velvet {
-          --card-bg: linear-gradient(135deg, 
-            #0a1a0a, 
-            #1a2d1a, 
-            #2d4a2d, 
-            #4a6a4a, 
-            #6b8a6b
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #f0fff0;
-        }
-
-        .theme-sapphire-velvet {
-          --card-bg: linear-gradient(135deg, 
-            #0a0a1a, 
-            #1a1a2d, 
-            #2d2d4a, 
-            #4a4a6a, 
-            #6b6b8a
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #f0f8ff;
-        }
-
-        .theme-ruby-velvet {
-          --card-bg: linear-gradient(135deg, 
-            #0a0a0a, 
-            #2d1b1b, 
-            #4a1a1a, 
-            #8b0000, 
-            #9b111e
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #ffe4e1;
-        }
-
-        .theme-amethyst-velvet {
-          --card-bg: linear-gradient(135deg, 
-            #0a0a1a, 
-            #1a1a2d, 
-            #2d2d4a, 
-            #4a4a6a, 
-            #9966cc
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #f8f0ff;
-        }
-
-        .theme-onyx-velvet {
-          --card-bg: linear-gradient(135deg, 
-            #000000, 
-            #1a1a1a, 
-            #2d2d2d, 
-            #4a4a4a, 
-            #666666
-          ),
-          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-          radial-gradient(circle at 80% 70%, rgba(0,150,255,0.25) 0%, transparent 60%);
-          --accent-color: #f5f5f5;
-        }
-
-        .theme-sunset-fire {
-          --card-bg: linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%);
-          --accent-color: #fff3e0;
-        }
-
-        .theme-perfect-gradient {
-          --card-bg: linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%);
-          --accent-color: #fff3e0;
-        }
-
-        .theme-image-gradient {
-          --card-bg: linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%);
-          --accent-color: #fff3e0;
-        }
-
-        .theme-new-gradient {
-          --card-bg: linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%);
-          --accent-color: #fff3e0;
-        }
-
+        
         .profile-card {
           width: 100%;
           max-width: 440px;
@@ -1781,13 +1411,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       
       {/* Main Modal */}
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-4 px-4 overflow-y-auto">
-        <div className={`profile-card ${selectedTheme} ${selectedEffect}`}>
+        <div className={`profile-card ${selectedEffect}`} style={{ background: getThemeData(localUser?.userTheme || (localUser?.userType === 'owner' ? 'golden' : 'default')).gradient }}>
           {/* Close Button */}
           <button 
             onClick={onClose}
             className="absolute top-2 right-2 z-20 p-2 rounded-full bg-red-500/80 hover:bg-red-600 text-white transition-colors shadow-lg"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
 
           {/* Cover Section - completely stable */}
@@ -1929,9 +1559,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               <div className="additional-details">
                 <p>💬 عدد الرسائل: <span>0</span></p>
                 <p>⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span></p>
-                <p onClick={() => setCurrentEditType('theme')} style={{ cursor: 'pointer' }}>
-                  🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
-                </p>
+                {/* تم إلغاء تغيير لون الملف الشخصي (الثيم) منفصلاً - يُربط تلقائياً مع التأثير */}
                 <p onClick={() => setCurrentEditType('effects')} style={{ cursor: 'pointer' }}>
                   ✨ تأثيرات حركية: <span>اضغط للتغيير</span>
                 </p>
@@ -1982,28 +1610,11 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               {currentEditType === 'country' && 'تعديل البلد'}
               {currentEditType === 'age' && 'تعديل العمر'}
               {currentEditType === 'socialStatus' && 'تعديل الحالة الاجتماعية'}
-              {currentEditType === 'theme' && '🎨 اختيار لون الملف الشخصي'}
               {currentEditType === 'effects' && '✨ تعديل التأثيرات الحركية'}
               {currentEditType === 'sendPoints' && '💰 إرسال النقاط'}
             </h3>
             
-            {currentEditType === 'theme' ? (
-              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                {themes.map(theme => (
-                  <div
-                    key={theme.value}
-                    className={`theme-option ${selectedTheme === theme.value ? 'selected' : ''}`}
-                    onClick={() => handleThemeChange(theme.value)}
-                  >
-                    <div 
-                      className="theme-preview"
-                      style={{ background: theme.preview }}
-                    />
-                    <div className="theme-name">{theme.emoji} {theme.name}</div>
-                  </div>
-                ))}
-              </div>
-            ) : currentEditType === 'effects' ? (
+            {currentEditType === 'effects' ? (
               <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                 {effects.map(effect => (
                   <div
@@ -2013,16 +1624,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                   >
                     <div 
                       className="theme-preview"
-                      style={{ 
-                        background: 'linear-gradient(45deg, #ff7c00, #e10026, #800e8c, #1a004d)',
-                        fontSize: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      {effect.emoji}
-                    </div>
+                      style={{ background: getEffectColor(effect.value) }}
+                    />
                     <div>
                       <div className="theme-name">{effect.emoji} {effect.name}</div>
                       <div style={{ fontSize: '11px', color: '#ccc', marginTop: '2px' }}>
@@ -2034,6 +1637,15 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               </div>
             ) : currentEditType === 'sendPoints' ? (
               <div>
+                <div style={{ 
+                  background: 'rgba(0,0,0,0.6)', 
+                  padding: '10px', 
+                  borderRadius: '8px', 
+                  marginBottom: '8px',
+                  fontSize: '13px'
+                }}>
+                  <strong>معلومات:</strong> قم بإرسال النقاط لصاحب الملف الشخصي مباشرةً.
+                </div>
                 <div style={{ 
                   background: 'rgba(255,255,255,0.05)', 
                   padding: '12px', 
@@ -2152,7 +1764,6 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                       type={currentEditType === 'age' ? 'number' : 'text'}
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      autoFocus
                     />
                   )}
                 </div>
@@ -2167,7 +1778,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               </>
             )}
 
-            {(currentEditType === 'theme' || currentEditType === 'effects') && (
+            {(currentEditType === 'effects') && (
               <div className="edit-buttons">
                 <button className="cancel-btn" onClick={closeEditModal}>
                   ❌ إغلاق

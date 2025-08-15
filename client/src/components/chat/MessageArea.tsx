@@ -348,7 +348,7 @@ export default function MessageArea({
                     {message.sender && <UserRoleBadge user={message.sender} showOnlyIcon={true} />}
                     <button
                       onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                      className="font-semibold hover:underline transition-colors duration-200 truncate"
+                      className={`font-semibold hover:underline transition-colors duration-200 truncate ${message.sender?.profileEffect && message.sender.profileEffect !== 'none' ? message.sender.profileEffect : ''}`}
                       style={{ color: getFinalUsernameColor(message.sender) }}
                     >
                       {message.sender?.username}

@@ -381,6 +381,33 @@ export const useChat = () => {
             break;
           }
           
+          case 'usernameColorChanged': {
+            const { userId, color } = envelope as any;
+            if (typeof userId === 'number' && typeof color === 'string') {
+              const updated = state.onlineUsers.map(u => u.id === userId ? { ...u, usernameColor: color } : u);
+              dispatch({ type: 'SET_ONLINE_USERS', payload: updated });
+              if (state.currentUser?.id === userId) {
+                dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, usernameColor: color } });
+              }
+            }
+            break;
+          }
+
+          case 'profileEffectChanged': {
+            const { userId, profileEffect, usernameColor, user } = envelope as any;
+            const updatedUsers = state.onlineUsers.map(u => {
+              if (u.id === userId) {
+                return { ...u, profileEffect: profileEffect ?? u.profileEffect, usernameColor: usernameColor ?? u.usernameColor, userTheme: (user?.userTheme) ?? u.userTheme };
+              }
+              return u;
+            });
+            dispatch({ type: 'SET_ONLINE_USERS', payload: updatedUsers });
+            if (state.currentUser?.id === userId) {
+              dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, profileEffect: profileEffect ?? state.currentUser.profileEffect, usernameColor: usernameColor ?? state.currentUser.usernameColor, userTheme: (user?.userTheme) ?? state.currentUser.userTheme } });
+            }
+            break;
+          }
+
           case 'userJoined': {
             if (envelope.user) {
               dispatch({ 

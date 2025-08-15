@@ -152,7 +152,7 @@ export default function PrivateMessageBox({
                 onError={(e) => { (e.target as HTMLImageElement).src = '/default_avatar.svg'; }}
               />
               <div className="flex-1 min-w-0">
-                <span className="text-lg font-semibold truncate block" style={{ color: getFinalUsernameColor(user) }}>
+                <span className={`text-lg font-semibold truncate block ${user.profileEffect && user.profileEffect !== 'none' ? user.profileEffect : ''}`} style={{ color: getFinalUsernameColor(user) }}>
                   {user.username}
                 </span>
                 <span className="text-xs text-gray-500">رسائل خاصة</span>
@@ -215,7 +215,7 @@ export default function PrivateMessageBox({
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-sm truncate" style={{ color: getFinalUsernameColor(m.sender || user) }}>
+                            <span className={`font-semibold text-sm truncate ${m.sender?.profileEffect && m.sender.profileEffect !== 'none' ? m.sender.profileEffect : ''}`} style={{ color: getFinalUsernameColor(m.sender || user) }}>
                               {m.sender?.username || (isMe ? currentUser?.username : user.username)}
                             </span>
                             <span className="text-xs text-gray-500 whitespace-nowrap">{formatTime(m.timestamp)}</span>

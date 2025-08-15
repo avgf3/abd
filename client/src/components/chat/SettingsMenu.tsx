@@ -16,13 +16,12 @@ interface SettingsMenuProps {
   onLogout: () => void;
   onClose: () => void;
   onOpenReports?: () => void;
-  onOpenThemeSelector?: () => void;
   onOpenUsernameColorPicker?: () => void;
   onOpenIgnoredUsers?: () => void;
   currentUser?: any;
 }
 
-export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenReports, onOpenThemeSelector, onOpenUsernameColorPicker, onOpenIgnoredUsers, currentUser }: SettingsMenuProps) {
+export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenReports, onOpenUsernameColorPicker, onOpenIgnoredUsers, currentUser }: SettingsMenuProps) {
   const handleLogout = () => {
     if (confirm('🤔 هل أنت متأكد من تسجيل الخروج؟')) {
       onLogout();
@@ -56,15 +55,7 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
             الغرف
           </Button>
           
-          <Button
-            onClick={onOpenThemeSelector}
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
-          >
-            <Palette className="w-4 h-4 text-primary" />
-            اختيار الثيم
-          </Button>
+          {/* تم إلغاء اختيار الثيم: يُدار تلقائياً حسب التأثير */}
 
           <Button
             onClick={onOpenUsernameColorPicker}
