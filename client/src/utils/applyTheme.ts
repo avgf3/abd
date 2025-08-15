@@ -68,9 +68,19 @@ export function applyThemeById(themeId: string, persist: boolean = false) {
 
   const theme = themes[themeId] || themes.default;
   const root = document.documentElement;
+
+  // Apply CSS variables for the selected theme
   Object.entries(theme.cssVars).forEach(([property, value]) => {
     root.style.setProperty(property, value);
   });
+
+  // Ensure Tailwind dark: variants and any .dark-based styles work as expected
+  const darkThemes = new Set(['dark']);
+  if (darkThemes.has(themeId)) {
+    root.classList.add('dark');
+  } else {
+    root.classList.remove('dark');
+  }
 
   if (persist) {
     try {
