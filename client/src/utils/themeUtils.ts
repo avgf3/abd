@@ -201,14 +201,12 @@ export const getUserListItemStyles = (user: any): Record<string, string> => {
   const baseColor = String(user?.profileBackgroundColor || user?.usernameColor || '').trim();
 
   if (isPrivileged && baseColor) {
-    style.background = hexToRgba(baseColor, 0.12);
     style.borderLeft = `3px solid ${baseColor}`;
     return style;
   }
 
   // للمستخدمين العاديين لا تأثيرات ثيم أو مؤثرات على القائمة
   if (!isPrivileged && baseColor) {
-    style.background = hexToRgba(baseColor, 0.06);
     style.borderLeft = `3px solid ${baseColor}`;
   }
 
