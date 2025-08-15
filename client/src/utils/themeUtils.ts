@@ -84,6 +84,32 @@ export const getUserThemeGradient = (user: any) => {
   return theme.gradient;
 };
 
+// دالة ترجمة التأثير إلى ثيم مناسب لضمان توحيد التجربة
+export const getThemeByEffect = (effect: string): string => {
+  const mapping: Record<string, string> = {
+    'none': 'default',
+    'effect-glow': 'golden',
+    'effect-pulse': 'rose',
+    'effect-water': 'ocean',
+    'effect-aurora': 'aurora',
+    'effect-neon': 'galaxy',
+    'effect-crystal': 'crystal',
+    'effect-fire': 'fire',
+    'effect-ice': 'arctic',
+    'effect-rainbow': 'rainbow',
+    'effect-shadow': 'deep_black',
+    'effect-electric': 'royal_blue',
+    'effect-stars': 'mystical',
+    'effect-snow': 'silver',
+    'effect-lightning': 'royal_blue',
+    'effect-smoke': 'charcoal',
+    'effect-butterfly': 'tropical',
+    'effect-magnetic': 'obsidian',
+    'effect-heartbeat': 'rose',
+  };
+  return mapping[effect] || 'default';
+};
+
 // دالة جديدة لربط تأثير البروفايل بلون الاسم
 export const getEffectColor = (effect: string): string => {
   const effectColors = {

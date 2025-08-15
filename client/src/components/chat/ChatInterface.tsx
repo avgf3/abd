@@ -23,7 +23,7 @@ import PromoteUserPanel from '../moderation/PromoteUserPanel';
 import OwnerAdminPanel from './OwnerAdminPanel';
 import ProfileImage from './ProfileImage';
 import WelcomeNotification from './WelcomeNotification';
-import ThemeSelector from './ThemeSelector';
+
 // import RoomComponent from './RoomComponent';
 import { useRoomManager } from '@/hooks/useRoomManager';
 
@@ -142,7 +142,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showActiveActions, setShowActiveActions] = useState(false);
   const [showPromotePanel, setShowPromotePanel] = useState(false);
   const [showIgnoredUsers, setShowIgnoredUsers] = useState(false);
-  const [showThemeSelector, setShowThemeSelector] = useState(false);
+
   const [showUsernameColorPicker, setShowUsernameColorPicker] = useState(false);
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
@@ -726,10 +726,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               setShowAdminReports(true);
               setShowSettings(false);
             }}
-            onOpenThemeSelector={() => {
-              setShowThemeSelector(true);
-              setShowSettings(false);
-            }}
             onOpenUsernameColorPicker={() => {
               setShowUsernameColorPicker(true);
               setShowSettings(false);
@@ -819,15 +815,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
-      {showThemeSelector && (
-        <ThemeSelector
-          isOpen={showThemeSelector}
-          onClose={() => setShowThemeSelector(false)}
-          currentUser={chat.currentUser}
-          onThemeUpdate={(theme) => {
-            }}
-        />
-      )}
+
 
       {showUsernameColorPicker && chat.currentUser && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">

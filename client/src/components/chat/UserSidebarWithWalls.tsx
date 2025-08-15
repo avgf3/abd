@@ -564,7 +564,7 @@ export default function UnifiedSidebar({
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
                               <span 
-                                className="text-base font-medium transition-all duration-300"
+                                className={`text-base font-medium transition-all duration-300 ${user.profileEffect && user.profileEffect !== 'none' ? user.profileEffect : ''}`}
                                 style={{ 
                                   color: user.usernameColor || getUserThemeTextColor(user),
                                   textShadow: user.usernameColor ? `0 0 10px ${user.usernameColor}40` : 'none',

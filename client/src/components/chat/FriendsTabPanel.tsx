@@ -360,7 +360,7 @@ export default function FriendsTabPanel({
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
                               <span 
-                                className="text-base font-medium transition-all duration-300"
+                                className={`text-base font-medium transition-all duration-300 ${friend.profileEffect && friend.profileEffect !== 'none' ? friend.profileEffect : ''}`}
                                 style={{ 
                                   color: friend.usernameColor || getUserThemeTextColor(friend),
                                   textShadow: friend.usernameColor ? `0 0 10px ${friend.usernameColor}40` : 'none',
@@ -477,7 +477,7 @@ export default function FriendsTabPanel({
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
                                   <span 
-                                    className="font-semibold"
+                                    className={`font-semibold ${request.user.profileEffect && request.user.profileEffect !== 'none' ? request.user.profileEffect : ''}`}
                                     style={{ 
                                       color: request.user.usernameColor || getUserThemeTextColor(request.user),
                                       textShadow: request.user.usernameColor ? `0 0 10px ${request.user.usernameColor}40` : 'none',
@@ -555,7 +555,7 @@ export default function FriendsTabPanel({
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
                                   <span 
-                                    className="font-semibold"
+                                    className={`font-semibold ${request.user.profileEffect && request.user.profileEffect !== 'none' ? request.user.profileEffect : ''}`}
                                     style={{ 
                                       color: request.user.usernameColor || getUserThemeTextColor(request.user),
                                       textShadow: request.user.usernameColor ? `0 0 10px ${request.user.usernameColor}40` : 'none',
