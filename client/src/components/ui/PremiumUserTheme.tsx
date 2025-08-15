@@ -15,22 +15,20 @@ export default function PremiumUserTheme({ user, children, size = 'medium', show
   }
 
   const getFrameStyles = () => {
-    if (user.userType === 'owner') {
+    // توحيد الإطار للمناصب العليا بدون تمييز ذهبي خاص للمالك
+    const base = {
+      borderRadius: '8px',
+      padding: '4px 8px'
+    } as const;
+
+    if (user.userType === 'owner' || user.userType === 'admin') {
       return {
-        border: '2px solid #FFD700',
-        borderRadius: '8px',
-        padding: '4px 8px',
-        background: 'rgba(255, 215, 0, 0.1)',
-      };
-    } else if (user.userType === 'admin') {
-      return {
-        border: '2px solid #9333EA',
-        borderRadius: '8px', 
-        padding: '4px 8px',
-        background: 'rgba(147, 51, 234, 0.1)',
-      };
+        ...base,
+        border: '2px solid #6366F1',
+        background: 'rgba(99, 102, 241, 0.08)'
+      } as React.CSSProperties;
     }
-    return {};
+    return base as unknown as React.CSSProperties;
   };
 
   const getCountryFlag = (country: string) => {

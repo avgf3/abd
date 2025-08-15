@@ -14,7 +14,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getImageSrc } from '@/utils/imageUtils';
 
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
-import { getUserThemeClasses, getUserThemeStyles, getUserThemeTextColor } from '@/utils/themeUtils';
+import { getUserEffectStyles, getUserEffectClasses, getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
 import UserRoleBadge from './UserRoleBadge';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -550,8 +550,8 @@ export default function UnifiedSidebar({
                       showModerationActions={isModerator}
                     >
                       <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${user.userTheme && user.userTheme !== 'default' ? 'hover:opacity-90' : 'bg-white hover:bg-gray-50'}`}
-                        style={user.userTheme && user.userTheme !== 'default' ? getUserThemeStyles(user) : {}}
+                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserEffectClasses(user)} ${!getUserEffectClasses(user) ? 'bg-white hover:bg-gray-50' : ''}`}
+                        style={getUserEffectStyles(user)}
                         onClick={(e) => handleUserClick(e, user)}
                       >
                         <ProfileImage 
@@ -566,9 +566,9 @@ export default function UnifiedSidebar({
                               <span 
                                 className="text-base font-medium transition-all duration-300"
                                 style={{ 
-                                  color: user.usernameColor || getUserThemeTextColor(user),
-                                  textShadow: user.usernameColor ? `0 0 10px ${user.usernameColor}40` : 'none',
-                                  filter: user.usernameColor ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                                  color: getFinalUsernameColor(user),
+                                  textShadow: getFinalUsernameColor(user) ? `0 0 10px ${getFinalUsernameColor(user)}40` : 'none',
+                                  filter: getFinalUsernameColor(user) ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
                                 }}
                                 title={user.username}
                               >

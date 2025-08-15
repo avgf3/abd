@@ -51,7 +51,7 @@ export const getThemeData = (themeId: string) => {
 };
 
 export const getUserThemeClasses = (user: any) => {
-  const theme = getThemeData(user.userTheme || (user.userType === 'owner' ? 'golden' : 'default'));
+  const theme = getThemeData(user.userTheme || 'default');
   if (theme.gradient === 'transparent') {
     return 'glass-effect hover:bg-accent';
   }
@@ -59,7 +59,7 @@ export const getUserThemeClasses = (user: any) => {
 };
 
 export const getUserThemeStyles = (user: any) => {
-  const theme = getThemeData(user.userTheme || (user.userType === 'owner' ? 'golden' : 'default'));
+  const theme = getThemeData(user.userTheme || 'default');
   const styles: any = {};
   
   if (theme.gradient !== 'transparent') {
@@ -75,12 +75,12 @@ export const getUserThemeStyles = (user: any) => {
 };
 
 export const getUserThemeTextColor = (user: any) => {
-  const theme = getThemeData(user.userTheme || (user.userType === 'owner' ? 'golden' : 'default'));
+  const theme = getThemeData(user.userTheme || 'default');
   return theme.textColor;
 };
 
 export const getUserThemeGradient = (user: any) => {
-  const theme = getThemeData(user.userTheme || (user.userType === 'owner' ? 'golden' : 'default'));
+  const theme = getThemeData(user.userTheme || 'default');
   return theme.gradient;
 };
 
@@ -112,4 +112,38 @@ export const getFinalUsernameColor = (user: any): string => {
   
   // وإلا استخدم usernameColor العادي
   return user.usernameColor || '#000000';
+};
+
+// ===== دوال تأثيرات صندوق المستخدم (بدلاً من ربطه بالثيم العام) =====
+
+// إرجاع كلاسات CSS الخاصة بالتأثير ليتم تطبيق الحركة/التوهج
+export const getUserEffectClasses = (user: any): string => {
+  const effect = (user && user.profileEffect) ? String(user.profileEffect) : 'none';
+  if (!effect || effect === 'none') return '';
+  // هذه الكلاسات معرفة في index.css: .effect-glow, .effect-pulse, .effect-water, .effect-aurora ...
+  return effect;
+};
+
+// إرجاع أنماط خلفية لطيفة وفق التأثير (بدون استخدام userTheme)
+export const getUserEffectStyles = (user: any): Record<string, string> => {
+  const effect = (user && user.profileEffect) ? String(user.profileEffect) : 'none';
+  const backgrounds: Record<string, string> = {
+    'effect-glow': 'linear-gradient(135deg, rgba(255, 215, 0, 0.10), rgba(255, 215, 0, 0.05))',
+    'effect-pulse': 'linear-gradient(135deg, rgba(255, 105, 180, 0.10), rgba(255, 105, 180, 0.05))',
+    'effect-water': 'linear-gradient(135deg, rgba(0, 206, 209, 0.10), rgba(0, 206, 209, 0.05))',
+    'effect-aurora': 'linear-gradient(135deg, rgba(155, 89, 182, 0.10), rgba(155, 89, 182, 0.05))',
+    'effect-neon': 'linear-gradient(135deg, rgba(0, 255, 127, 0.12), rgba(0, 255, 127, 0.06))',
+    'effect-fire': 'linear-gradient(135deg, rgba(255, 69, 0, 0.10), rgba(255, 69, 0, 0.05))',
+    'effect-ice': 'linear-gradient(135deg, rgba(135, 206, 235, 0.10), rgba(135, 206, 235, 0.05))',
+    'effect-rainbow': 'linear-gradient(135deg, rgba(236, 72, 153, 0.10), rgba(139, 92, 246, 0.05))',
+    'effect-shadow': 'linear-gradient(135deg, rgba(0, 0, 0, 0.10), rgba(0, 0, 0, 0.05))',
+    'effect-electric': 'linear-gradient(135deg, rgba(0, 191, 255, 0.10), rgba(0, 191, 255, 0.05))',
+    'effect-crystal': 'linear-gradient(135deg, rgba(230, 230, 250, 0.10), rgba(230, 230, 250, 0.05))',
+  };
+
+  const style: Record<string, string> = {};
+  if (effect && effect !== 'none') {
+    style.background = backgrounds[effect] || 'rgba(255,255,255,0.05)';
+  }
+  return style;
 };
