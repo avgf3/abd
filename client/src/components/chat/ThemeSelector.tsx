@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { applyThemeById } from '@/utils/applyTheme';
 
@@ -125,53 +124,35 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
 
   // تطبيق الثيم المحفوظ عند التحميل
   useEffect(() => {
-    const savedTheme = localStorage.getItem('selectedTheme') || currentUser?.userTheme || 'default';
+    const savedTheme = localStorage.getItem('selectedTheme') || 'default';
     setSelectedTheme(savedTheme);
     applyThemeVariables(savedTheme, false);
-  }, [currentUser?.userTheme]);
+  }, []);
 
+  // جعل تغيير الثيم محلي فقط بدون أي طلبات API أو تعديل userTheme
   const handleThemeSelect = async (themeId: string) => {
-    if (!currentUser) return;
-
     setLoading(true);
     selectingRef.current = true;
-    
-    // تطبيق الثيم فوراً للحصول على استجابة سريعة
+
+    // تطبيق الثيم فوراً وحفظه محلياً
     applyThemeVariables(themeId, true);
     setSelectedTheme(themeId);
 
-    try {
-      const result = await apiRequest(`/api/users/${currentUser.id}`, {
-        method: 'PUT',
-        body: { userTheme: themeId }
-      });
-
-      if (onThemeUpdate) {
-        onThemeUpdate(themeId);
-      }
-
-      toast({
-        title: "تم تحديث الثيم",
-        description: `تم تطبيق ثيم ${themes.find(t => t.id === themeId)?.name}`,
-      });
-
-      setTimeout(() => {
-        onClose();
-      }, 1000);
-    } catch (error: any) {
-      const previousTheme = currentUser.userTheme || 'default';
-      applyThemeVariables(previousTheme, true);
-      setSelectedTheme(previousTheme);
-      
-      toast({
-        title: "خطأ",
-        description: error.message || "فشل في تحديث الثيم",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-      selectingRef.current = false;
+    if (onThemeUpdate) {
+      onThemeUpdate(themeId);
     }
+
+    toast({
+      title: "تم تحديث الثيم",
+      description: `تم تطبيق ثيم ${themes.find(t => t.id === themeId)?.name}`,
+    });
+
+    setTimeout(() => {
+      onClose();
+    }, 1000);
+
+    setLoading(false);
+    selectingRef.current = false;
   };
 
   // معاينة الثيم عند التمرير فوقه
