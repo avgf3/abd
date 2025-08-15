@@ -4493,5 +4493,143 @@ if (!existing) {
     }
   });
 
+  // Update profile background color (now also supports profileEffect and usernameColor sync)
+  app.post('/api/users/update-background-color', async (req, res) => {
+    try {
+      const { userId, profileBackgroundColor, color, profileEffect, syncUsernameColor } = req.body;
+      
+      // دعم كلا من color و profileBackgroundColor
+      const backgroundColorValue = profileBackgroundColor || color;
+      const effectValue = typeof profileEffect === 'string' ? String(profileEffect) : undefined;
+
+      // التحقق من المعطيات الأساسية
+      if (!userId) {
+        console.error('❌ معرف المستخدم مفقود:', { userId, backgroundColorValue, effectValue });
+        return res.status(400).json({ 
+          error: 'معرف المستخدم مطلوب',
+          details: 'userId is required'
+        });
+      }
+
+      // لا نطلب اللون إجباريًا الآن إذا كان هناك تأثير مرفق
+      if (!backgroundColorValue && !effectValue) {
+        console.error('❌ لا يوجد لون أو تأثير مرفق:', { userId, backgroundColorValue, effectValue });
+        return res.status(400).json({ 
+          error: 'لون الخلفية أو تأثير البروفايل مطلوب',
+          details: 'provide color/profileBackgroundColor and/or profileEffect'
+        });
+      }
+
+      // تحقق من صيغة اللون إن وُجد
+      if (backgroundColorValue && !/^#[0-9A-F]{6}$/i.test(String(backgroundColorValue))) {
+        return res.status(400).json({ 
+          error: 'تنسيق اللون غير صالح',
+          details: 'Expected HEX like #AABBCC'
+        });
+      }
+
+      // التحقق من صحة معرف المستخدم
+      const userIdNum = parseInt(userId);
+      if (isNaN(userIdNum) || userIdNum <= 0) {
+        console.error('❌ معرف المستخدم غير صحيح:', userId);
+        return res.status(400).json({ 
+          error: 'معرف المستخدم غير صحيح',
+          details: 'userId must be a valid positive number'
+        });
+      }
+
+      // إعداد التحديثات المطلوبة
+      const updates: any = {};
+      if (backgroundColorValue) {
+        updates.profileBackgroundColor = String(backgroundColorValue);
+        // مزامنة لون الاسم مع خلفية البروفايل افتراضيًا لتوحيد الصندوق
+        if (syncUsernameColor !== false) {
+          updates.usernameColor = String(backgroundColorValue);
+        }
+      }
+      if (effectValue) {
+        updates.profileEffect = effectValue;
+      }
+
+      // وضع fallback عند تعطيل قاعدة البيانات
+      if (!db || dbType === 'disabled') {
+        const entry = connectedUsers.get(userIdNum);
+        if (!entry) {
+          return res.status(404).json({ error: 'المستخدم غير موجود' });
+        }
+        try { updateConnectedUserData(userIdNum, updates); } catch {}
+        try {
+          if (backgroundColorValue) {
+            io.emit('message', {
+              type: 'user_background_updated',
+              data: { userId: userIdNum, profileBackgroundColor: String(backgroundColorValue) }
+            });
+          }
+          if (effectValue) {
+            io.emit('message', {
+              type: 'profileEffectChanged',
+              userId: userIdNum,
+              profileEffect: effectValue,
+              user: { id: userIdNum, ...updates },
+              timestamp: new Date().toISOString()
+            });
+          }
+        } catch {}
+        return res.json({ 
+          success: true, 
+          message: 'تم تحديث مظهر البروفايل بنجاح',
+          data: { userId: userIdNum, ...updates }
+        });
+      }
+
+      const user = await storage.getUser(userIdNum);
+      if (!user) {
+        console.error('❌ المستخدم غير موجود:', userIdNum);
+        return res.status(404).json({ 
+          error: 'المستخدم غير موجود',
+          details: `User with ID ${userIdNum} not found`
+        });
+      }
+
+      // تنفيذ التحديثات في قاعدة البيانات
+      await storage.updateUser(userIdNum, updates);
+
+      // إشعار المستخدمين الآخرين عبر WebSocket + تحديث الكاش
+      try {
+        if (backgroundColorValue) {
+          io.emit('message', {
+            type: 'user_background_updated',
+            data: { userId: userIdNum, profileBackgroundColor: String(backgroundColorValue) }
+          });
+        }
+        if (effectValue) {
+          io.emit('message', {
+            type: 'profileEffectChanged',
+            userId: userIdNum,
+            profileEffect: effectValue,
+            user: { id: userIdNum, ...updates },
+            timestamp: new Date().toISOString()
+          });
+        }
+        try { updateConnectedUserData(userIdNum, updates); } catch {}
+      } catch (broadcastError) {
+        console.error('⚠️ فشل في إرسال إشعار WebSocket:', broadcastError);
+        // لا نفشل العملية بسبب فشل الإشعار
+      }
+
+      res.json({ 
+        success: true, 
+        message: 'تم تحديث مظهر البروفايل بنجاح',
+        data: { userId: userIdNum, ...updates }
+      });
+    } catch (error) {
+      console.error('❌ خطأ في تحديث المظهر:', error);
+      res.status(500).json({ 
+        error: 'خطأ في الخادم',
+        details: error instanceof Error ? error.message : 'Unknown server error'
+      });
+    }
+  });
+
   return httpServer;
 }
