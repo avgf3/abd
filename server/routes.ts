@@ -3609,8 +3609,23 @@ if (!existing) {
           type: 'user_background_updated',
           data: { userId: userIdNum, profileBackgroundColor: backgroundColorValue }
         });
-        // تحديث قوائم المستخدمين في الغرفة الحالية (العامة كحد أدنى)
-        sendRoomUsers('general', 'profile_background_update');
+        // تحديث قوائم المستخدمين لكل الغرف التي يتواجد فيها المستخدم
+        try {
+          const entryForRooms = connectedUsers.get(userIdNum);
+          if (entryForRooms) {
+            const affectedRooms = new Set<string>();
+            for (const socketInfo of entryForRooms.sockets.values()) {
+              if (socketInfo.room) affectedRooms.add(socketInfo.room);
+            }
+            if (affectedRooms.size === 0) affectedRooms.add('general');
+            for (const roomId of affectedRooms) {
+              sendRoomUsers(roomId, 'profile_background_update');
+            }
+          } else {
+            sendRoomUsers('general', 'profile_background_update');
+          }
+        } catch {}
+
       } catch (broadcastError) {
         console.error('⚠️ فشل في إرسال إشعار WebSocket:', broadcastError);
         // لا نفشل العملية بسبب فشل الإشعار
