@@ -825,7 +825,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           onClose={() => setShowThemeSelector(false)}
           currentUser={chat.currentUser}
           onThemeUpdate={(theme) => {
-            }}
+            if (chat.updateCurrentUser) {
+              chat.updateCurrentUser({ userTheme: theme });
+            }
+          }}
         />
       )}
 

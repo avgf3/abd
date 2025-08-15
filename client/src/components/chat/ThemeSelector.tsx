@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -115,9 +115,10 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
   const [selectedTheme, setSelectedTheme] = useState(currentUser?.userTheme || 'default');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const selectingRef = useRef(false);
 
   // تطبيق CSS variables فوراً
-  const applyThemeVariables = (themeId: string) => {
+  const applyThemeVariables = (themeId: string, persist: boolean = false) => {
     const theme = themes.find(t => t.id === themeId);
     if (!theme) return;
 
@@ -126,24 +127,27 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
       root.style.setProperty(property, value);
     });
 
-    // حفظ الثيم في localStorage للبقاء بين الجلسات
-    localStorage.setItem('selectedTheme', themeId);
+    // لا نقوم بالحفظ إلا عند التأكيد
+    if (persist) {
+      localStorage.setItem('selectedTheme', themeId);
+    }
   };
 
   // تطبيق الثيم المحفوظ عند التحميل
   useEffect(() => {
     const savedTheme = localStorage.getItem('selectedTheme') || currentUser?.userTheme || 'default';
     setSelectedTheme(savedTheme);
-    applyThemeVariables(savedTheme);
+    applyThemeVariables(savedTheme, false);
   }, [currentUser?.userTheme]);
 
   const handleThemeSelect = async (themeId: string) => {
     if (!currentUser) return;
 
     setLoading(true);
+    selectingRef.current = true;
     
     // تطبيق الثيم فوراً للحصول على استجابة سريعة
-    applyThemeVariables(themeId);
+    applyThemeVariables(themeId, true);
     setSelectedTheme(themeId);
 
     try {
@@ -166,7 +170,7 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
       }, 1000);
     } catch (error: any) {
       const previousTheme = currentUser.userTheme || 'default';
-      applyThemeVariables(previousTheme);
+      applyThemeVariables(previousTheme, true);
       setSelectedTheme(previousTheme);
       
       toast({
@@ -176,19 +180,20 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
       });
     } finally {
       setLoading(false);
+      selectingRef.current = false;
     }
   };
 
   // معاينة الثيم عند التمرير فوقه
   const handleThemeHover = (themeId: string) => {
     if (loading) return;
-    applyThemeVariables(themeId);
+    applyThemeVariables(themeId, false);
   };
 
   // إعادة الثيم المحدد عند مغادرة المعاينة
   const handleThemeLeave = () => {
-    if (loading) return;
-    applyThemeVariables(selectedTheme);
+    if (loading || selectingRef.current) return;
+    applyThemeVariables(selectedTheme, false);
   };
 
   return (
@@ -249,7 +254,7 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
         
         <div className="flex justify-center p-4 gap-3">
           <Button
-            onClick={() => applyThemeVariables(selectedTheme)}
+            onClick={() => applyThemeVariables(selectedTheme, false)}
             variant="outline"
             className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
             disabled={loading}
