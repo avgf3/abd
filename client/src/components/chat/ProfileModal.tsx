@@ -564,15 +564,16 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         return;
       }
 
-      // بدلاً من userTheme: نرسل لون الخلفية كقيمة مباشرة
+      // نرسل قيمة HEX فقط. إذا تم تمرير تدرّج، سيُطبّق الخادم أول HEX صالح
       const colorValue = theme;
-      const result = await apiRequest(`/api/users/update-background-color`, {
-        method: 'POST',
-        body: { userId: currentUser.id, color: colorValue }
+      const result = await apiRequest(`/api/users/${currentUser.id}`, {
+        method: 'PUT',
+        body: { profileBackgroundColor: colorValue }
       });
 
-      if ((result as any)?.success) {
-        updateUserData({ profileBackgroundColor: colorValue });
+      const updated = (result as any)?.user ?? result;
+      if (updated && (updated as any).id) {
+        updateUserData({ profileBackgroundColor: updated.profileBackgroundColor || colorValue });
         toast({ title: "نجح ✅", description: "تم تحديث لون الملف الشخصي" });
       } else {
         throw new Error('فشل في تحديث لون الملف الشخصي');
@@ -1845,7 +1846,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
             <div className="profile-info">
               <h3 
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('name')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default', color: getFinalUsernameColor(localUser) }}
+                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default', color: getFinalUsernameColor(localUser || {}) }}
               >
                 {localUser?.username || 'اسم المستخدم'}
               </h3>

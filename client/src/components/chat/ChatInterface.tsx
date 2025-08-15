@@ -862,13 +862,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             >
               ×
             </button>
-            <UsernameColorPicker
-              currentUser={chat.currentUser}
-              onColorUpdate={(color) => {
-                chat.updateCurrentUser({ usernameColor: color } as any);
-                setShowUsernameColorPicker(false);
-              }}
-            />
+                          <UsernameColorPicker
+                currentUser={chat.currentUser}
+                onColorUpdate={(color) => {
+                  chat.updateCurrentUser({ usernameColor: color } as any);
+                  // إذا كان لون الخلفية مضبوطاً ولم يكن لون الاسم مضبوطاً سابقاً (أبيض افتراضياً)، لا نغيّر الخلفية.
+                  // أما إذا كان لون الاسم أبيض افتراضياً والملف الشخصي بلا خلفية، فلا شيء نفعله هنا. البث سيحدّث القائمة.
+                  setShowUsernameColorPicker(false);
+                }}
+              />
           </div>
         </div>
       )}

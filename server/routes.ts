@@ -3208,46 +3208,82 @@ if (!existing) {
   app.put('/api/users/:id', async (req, res) => {
     try {
       const { id } = req.params;
-      const updates = req.body;
-      
-      const user = await storage.updateUser(parseInt(id), updates);
+      const idNum = parseInt(id);
+      if (isNaN(idNum) || idNum <= 0) {
+        return res.status(400).json({ error: 'User ID must be a valid number' });
+      }
+
+      const updates = req.body || {};
+
+      // Normalize profileBackgroundColor: extract first HEX if gradient provided
+      const normalizedUpdates: any = { ...updates };
+      if (typeof normalizedUpdates.profileBackgroundColor === 'string') {
+        const str = String(normalizedUpdates.profileBackgroundColor);
+        const firstHex = str.match(/#[0-9A-Fa-f]{6}/)?.[0];
+        if (firstHex) {
+          normalizedUpdates.profileBackgroundColor = firstHex;
+        } else if (/^#[0-9A-Fa-f]{6}$/.test(str)) {
+          // already valid
+        } else {
+          // fallback to a safe default color if invalid
+          normalizedUpdates.profileBackgroundColor = '#4A90E2';
+        }
+      }
+
+      const user = await storage.updateUser(idNum, normalizedUpdates);
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
-      
-      // إرسال تحديث الثيم عبر WebSocket
-      if (updates.userTheme) {
+
+      // Emit theme update
+      if (normalizedUpdates.userTheme) {
         const updateMessage = {
           type: 'theme_update',
-          userId: parseInt(id),
-          userTheme: updates.userTheme,
+          userId: idNum,
+          userTheme: normalizedUpdates.userTheme,
           timestamp: new Date().toISOString()
         };
         io.emit('message', updateMessage);
-        }
-      
-      // إرسال تحديث تأثير البروفايل فقط عبر WebSocket
-      if (updates.profileEffect) {
+      }
+
+      // Emit profile effect update
+      if (normalizedUpdates.profileEffect) {
         const updateMessage = {
           type: 'profileEffectChanged',
-          userId: parseInt(id),
-          profileEffect: updates.profileEffect,
+          userId: idNum,
+          profileEffect: normalizedUpdates.profileEffect,
           user: user,
           timestamp: new Date().toISOString()
         };
         io.emit('message', updateMessage);
       }
 
-      // إرسال تحديث لون الاسم عبر WebSocket ضمن مظروف موحّد
-      if (updates.usernameColor) {
+      // Emit username color update
+      if (normalizedUpdates.usernameColor) {
         io.emit('message', {
           type: 'usernameColorChanged',
-          userId: parseInt(id),
-          color: updates.usernameColor,
+          userId: idNum,
+          color: normalizedUpdates.usernameColor,
           username: user.username
         });
       }
-      
+
+      // Emit background color update and update connectedUsers cache
+      if (normalizedUpdates.profileBackgroundColor) {
+        try {
+          const entry = connectedUsers.get(idNum);
+          if (entry && entry.user) {
+            entry.user.profileBackgroundColor = normalizedUpdates.profileBackgroundColor;
+            connectedUsers.set(idNum, entry);
+          }
+        } catch {}
+
+        io.emit('message', {
+          type: 'user_background_updated',
+          data: { userId: idNum, profileBackgroundColor: normalizedUpdates.profileBackgroundColor }
+        });
+      }
+
       res.json(user);
     } catch (error) {
       console.error('Error updating user:', error);
