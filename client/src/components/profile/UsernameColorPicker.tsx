@@ -54,9 +54,9 @@ export default function UsernameColorPicker({ currentUser, onColorUpdate }: User
     setIsLoading(true);
 
     try {
-      await apiRequest(`/api/users/${currentUser.id}/color`, {
-        method: 'POST',
-        body: { color }
+      await apiRequest(`/api/users/${currentUser.id}`, {
+        method: 'PUT',
+        body: { usernameColor: color }
       });
 
       onColorUpdate(color);

@@ -322,42 +322,49 @@ export const useChat = () => {
         if (envelope.type === 'theme_update') {
           const { userId, userTheme } = envelope as any;
           if (userId && userTheme) {
-            // تحديث المستخدم الحالي إذا كان هو الهدف
             if (state.currentUser?.id === userId) {
               dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, userTheme } as any });
             }
-            // تحديث قائمة المتصلين
             const updatedOnline = state.onlineUsers.map(u => u.id === userId ? { ...u, userTheme } : u);
             dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
           }
         }
-        
-        // تحديث تأثير البروفايل ولون الاسم عند وصول بث profileEffectChanged
+
+        // تحديث تأثير البروفايل فقط عند وصول بث profileEffectChanged
         if (envelope.type === 'profileEffectChanged') {
-          const { userId, profileEffect, usernameColor, user } = envelope as any;
+          const { userId, profileEffect, user } = envelope as any;
           const targetId = userId || user?.id;
           if (targetId) {
-            // تحديث المستخدم الحالي إذا كان هو الهدف
             if (state.currentUser?.id === targetId) {
               dispatch({ 
                 type: 'SET_CURRENT_USER', 
                 payload: { 
                   ...state.currentUser, 
-                  profileEffect: (profileEffect ?? user?.profileEffect ?? state.currentUser.profileEffect),
-                  usernameColor: (usernameColor ?? user?.usernameColor ?? state.currentUser.usernameColor)
+                  profileEffect: (profileEffect ?? user?.profileEffect ?? state.currentUser.profileEffect)
                 } as any 
               });
             }
-            // تحديث قائمة المتصلين
             const updatedOnline = state.onlineUsers.map(u => 
               u.id === targetId 
                 ? { 
                     ...u, 
-                    profileEffect: (profileEffect ?? user?.profileEffect ?? u.profileEffect),
-                    usernameColor: (usernameColor ?? user?.usernameColor ?? u.usernameColor)
+                    profileEffect: (profileEffect ?? user?.profileEffect ?? u.profileEffect)
                   }
                 : u
             );
+            dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
+          }
+        }
+
+        // بث خاص لتحديث لون الاسم فقط
+        if (envelope.type === 'usernameColorChanged') {
+          const { userId, color, user } = envelope as any;
+          const targetId = userId || user?.id;
+          if (targetId && color) {
+            if (state.currentUser?.id === targetId) {
+              dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, usernameColor: color } as any });
+            }
+            const updatedOnline = state.onlineUsers.map(u => u.id === targetId ? { ...u, usernameColor: color } : u);
             dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
           }
         }

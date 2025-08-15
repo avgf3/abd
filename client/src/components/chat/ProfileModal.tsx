@@ -564,12 +564,11 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         return;
       }
       
-      // تحديث userTheme و profileBackgroundColor معاً ليتوافق مع الواجهة
+      // تحديث userTheme فقط (فصل كامل عن لون الاسم والتأثير)
       const result = await apiRequest(`/api/users/${currentUser.id}`, {
         method: 'PUT',
         body: { 
-          userTheme: theme,
-          profileBackgroundColor: theme
+          userTheme: theme
         }
       });
 
@@ -577,8 +576,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
       if (updatedUser && (updatedUser as any).id) {
         updateUserData({
-          userTheme: theme,
-          profileBackgroundColor: theme
+          userTheme: theme
         });
         
         toast({
@@ -610,16 +608,14 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       const result = await apiRequest(`/api/users/${localUser?.id}`, {
         method: 'PUT',
         body: { 
-          profileEffect: effect,
-          usernameColor: getEffectColor(effect)
+          profileEffect: effect
         }
       });
 
       const updated = (result as any)?.user ?? result;
       if (updated && (updated as any).id) {
         updateUserData({ 
-          profileEffect: effect,
-          usernameColor: getEffectColor(effect)
+          profileEffect: effect
         });
         
         toast({
