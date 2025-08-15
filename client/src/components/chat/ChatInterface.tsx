@@ -10,8 +10,6 @@ import ReportModal from './ReportModal';
 import AdminReportsPanel from './AdminReportsPanel';
 import NotificationPanel from './NotificationPanel';
 import MessagesPanel from './MessagesPanel';
-import UsernameColorPicker from '@/components/profile/UsernameColorPicker';
-
 
 import MessageAlert from './MessageAlert';
 import ModerationPanel from './ModerationPanel';
@@ -143,7 +141,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showPromotePanel, setShowPromotePanel] = useState(false);
   const [showIgnoredUsers, setShowIgnoredUsers] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
-  const [showUsernameColorPicker, setShowUsernameColorPicker] = useState(false);
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
     sender: ChatUser | null;
@@ -750,10 +747,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               setShowThemeSelector(true);
               setShowSettings(false);
             }}
-            onOpenUsernameColorPicker={() => {
-              setShowUsernameColorPicker(true);
-              setShowSettings(false);
-            }}
             onOpenIgnoredUsers={() => {
               setShowIgnoredUsers(true);
               setShowSettings(false);
@@ -853,26 +846,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
-      {showUsernameColorPicker && chat.currentUser && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="relative max-w-md w-full">
-            <button
-              onClick={() => setShowUsernameColorPicker(false)}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg hover:bg-red-600"
-              aria-label="إغلاق"
-            >
-              ×
-            </button>
-            <UsernameColorPicker
-              currentUser={chat.currentUser}
-              onColorUpdate={(color) => {
-                chat.updateCurrentUser({ usernameColor: color } as any);
-                setShowUsernameColorPicker(false);
-              }}
-            />
-          </div>
-        </div>
-      )}
 
       {/* إشعارات الطرد والحجب */}
       {chat.showKickCountdown && (

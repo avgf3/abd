@@ -368,6 +368,20 @@ export const useChat = () => {
             dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
           }
         }
+
+        // بث تحديث لون خلفية الملف الشخصي (يوحد لون الاسم وصندوق المشرف)
+        if (envelope.type === 'user_background_updated') {
+          const { data } = envelope as any;
+          const targetId = data?.userId;
+          const bg = data?.profileBackgroundColor;
+          if (targetId && bg) {
+            if (state.currentUser?.id === targetId) {
+              dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, profileBackgroundColor: bg, usernameColor: bg } as any });
+            }
+            const updatedOnline = state.onlineUsers.map(u => u.id === targetId ? { ...u, profileBackgroundColor: bg, usernameColor: bg } : u);
+            dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
+          }
+        }
         
         switch (envelope.type) {
           case 'newMessage': {
