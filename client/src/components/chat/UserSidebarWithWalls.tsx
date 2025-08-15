@@ -550,8 +550,8 @@ export default function UnifiedSidebar({
                       showModerationActions={isModerator}
                     >
                       <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserThemeClasses(user)}`}
-                        style={getUserThemeStyles(user)}
+                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${user.userTheme && user.userTheme !== 'default' ? 'hover:opacity-90' : 'bg-white hover:bg-gray-50'}`}
+                        style={user.userTheme && user.userTheme !== 'default' ? getUserThemeStyles(user) : {}}
                         onClick={(e) => handleUserClick(e, user)}
                       >
                         <ProfileImage 
