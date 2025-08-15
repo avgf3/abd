@@ -433,7 +433,7 @@ export default function MessageArea({
       </div>
       
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
-      <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg`}>
+      <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg`} style={{ transform: 'translateY(-80px)' }}>
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
           <div className="mb-1.5 text-[11px] text-gray-500 animate-pulse">
