@@ -118,6 +118,15 @@ function sendRoomUsers(roomId: string, source: string = 'system') {
     }
   }
   const roomUsers = Array.from(userMap.values());
+  
+  // تصحيح: طباعة بيانات المستخدمين لفهم المشكلة
+  if (roomUsers.some(u => ['moderator', 'admin', 'owner'].includes(u.userType))) {
+    console.log('🔍 sendRoomUsers - إرسال مستخدمين مع صلاحيات:', 
+      roomUsers.filter(u => ['moderator', 'admin', 'owner'].includes(u.userType))
+        .map(u => ({ username: u.username, userType: u.userType, userTheme: u.userTheme, profileEffect: u.profileEffect }))
+    );
+  }
+  
   io.to(`room_${roomId}`).emit('message', {
     type: 'onlineUsers',
     users: roomUsers,
@@ -1570,7 +1579,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...user,
             profileEffect: (user as any)?.profileEffect || 'none',
             profileBackgroundColor: (user as any)?.profileBackgroundColor || '#3c0d0d',
-            usernameColor: (user as any)?.usernameColor || '#FFFFFF'
+            usernameColor: (user as any)?.usernameColor || '#FFFFFF',
+            userTheme: (user as any)?.userTheme || 'default'
           };
         } catch {}
         
