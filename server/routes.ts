@@ -126,6 +126,30 @@ function sendRoomUsers(roomId: string, source: string = 'system') {
   });
 }
 
+// Helper: get all rooms a connected user is currently in
+function getUserRoomsFromConnections(userId: number): string[] {
+  const entry = connectedUsers.get(userId);
+  if (!entry) return [];
+  const rooms = new Set<string>();
+  for (const { room } of entry.sockets.values()) {
+    if (room) rooms.add(room);
+  }
+  return Array.from(rooms.values());
+}
+
+// Helper: update connectedUsers cache and optionally broadcast refreshed lists
+function updateConnectedUserData(userId: number, partial: Partial<any>, broadcast: boolean = true): void {
+  const entry = connectedUsers.get(userId);
+  if (!entry) return;
+  entry.user = { ...entry.user, ...partial };
+  connectedUsers.set(userId, entry);
+  if (broadcast) {
+    for (const roomId of getUserRoomsFromConnections(userId)) {
+      sendRoomUsers(roomId, 'user_update');
+    }
+  }
+}
+
 // بث تحديثات الغرف للمشتركين في الغرفة
 function broadcastRoomUpdate(roomId: string, updateType: string, payload: any): void {
   if (!io) return;
@@ -825,10 +849,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUser(userIdNum, { usernameColor: color });
       
       // إرسال إشعار WebSocket لتحديث لون الاسم
-      io.emit('usernameColorChanged', {
+      io.emit('message', {
+        type: 'usernameColorChanged',
         userId: userIdNum,
         color: color
       });
+      
+      try { updateConnectedUserData(userIdNum, { usernameColor: color }); } catch {}
       
       res.json({ 
         message: "تم تحديث لون اسم المستخدم بنجاح",
@@ -1140,7 +1167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         points: user.points || 0,
         createdAt: user.createdAt,
         lastActive: user.lastSeen || user.createdAt,
-        profileColor: user.profileBackgroundColor,
+        profileBackgroundColor: user.profileBackgroundColor, // keep backward compat field naming
         profileEffect: user.profileEffect,
         isHidden: user.isHidden
       }));
@@ -1316,7 +1343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Broadcast user update to all connected clients
-      io.emit('userUpdated', { user });
+      io.emit('message', { type: 'userUpdated', user });
 
       res.json({ user, message: "تم تحديث الصورة الشخصية بنجاح" });
     } catch (error) {
@@ -1346,11 +1373,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUser(userId, { usernameColor: color });
       
       // Broadcast the color change to all connected clients
-      io.emit('usernameColorChanged', {
+      io.emit('message', {
+        type: 'usernameColorChanged',
         userId: userId,
         color: color,
         username: user.username
       });
+      
+      // Also refresh online user lists where this user is present
+      try { updateConnectedUserData(userId, { usernameColor: color }); } catch {}
       
       res.json({ 
         success: true, 
@@ -1532,7 +1563,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           socket.emit('error', { message: 'بيانات المصادقة غير مكتملة' });
           return;
         }
-
+        
+        // تطبيع خصائص البروفايل للتوافق (إذا كانت مفقودة)
+        try {
+          user = {
+            ...user,
+            profileEffect: (user as any)?.profileEffect || 'none',
+            profileBackgroundColor: (user as any)?.profileBackgroundColor || '#3c0d0d',
+            usernameColor: (user as any)?.usernameColor || '#FFFFFF'
+          };
+        } catch {}
+        
         // تحديث معلومات Socket
         (socket as CustomSocket).userId = user.id;
         (socket as CustomSocket).username = user.username;
@@ -1902,22 +1943,26 @@ if (!existing) {
             io.emit('message', { type: 'userJoined', user: joinedUser });
             
             // Send online users list with moderation status to all clients
-            const onlineUsers = await storage.getOnlineUsers();
-            const usersWithStatus = await Promise.all(
-              onlineUsers.map(async (user) => {
-                const status = await moderationSystem.checkUserStatus(user.id);
-                return {
-                  ...user,
-                  isMuted: status.isMuted,
-                  isBlocked: status.isBlocked,
-                  isBanned: status.isBanned
-                };
-              })
-            );
-            
-            // إزالة البث العالمي لقائمة المستخدمين لتفادي وميض القائمة
-            // سيتم إرسال قوائم المستخدمين حسب الغرفة فقط عبر أحداث roomJoined/room switches وrequestOnlineUsers
-            break;
+                  const onlineUsers = await storage.getOnlineUsers();
+      const usersWithStatus = await Promise.all(
+        onlineUsers.map(async (user) => {
+          const status = await moderationSystem.checkUserStatus(user.id);
+          // طبّق تطبيع الحقول لضمان عدم نقص profileEffect ولون الخلفية والاسم
+          return {
+            ...user,
+            profileEffect: (user as any).profileEffect || 'none',
+            profileBackgroundColor: (user as any).profileBackgroundColor || '#3c0d0d',
+            usernameColor: (user as any).usernameColor || '#FFFFFF',
+            isMuted: status.isMuted,
+            isBlocked: status.isBlocked,
+            isBanned: status.isBanned
+          };
+        })
+      );
+      
+      // إزالة البث العالمي لقائمة المستخدمين لتفادي وميض القائمة
+      // سيتم إرسال قوائم المستخدمين حسب الغرفة فقط عبر أحداث roomJoined/room switches وrequestOnlineUsers
+      break;
           }
 
           // الـ case هذا محذوف لأنه مكرر - الأصل في أعلى الملف يعمل بشكل صحيح مع roomId
@@ -3204,12 +3249,10 @@ if (!existing) {
       const { id } = req.params;
       const updates = req.body;
       
+      // محاولة التحديث في قاعدة البيانات أولاً
       const user = await storage.updateUser(parseInt(id), updates);
-      if (!user) {
-        return res.status(404).json({ error: 'User not found' });
-      }
       
-      // إرسال تحديث الثيم عبر WebSocket
+      // معالجة التحديثات الخاصة بالبث
       if (updates.userTheme) {
         const updateMessage = {
           type: 'theme_update',
@@ -3218,9 +3261,8 @@ if (!existing) {
           timestamp: new Date().toISOString()
         };
         io.emit('message', updateMessage);
-        }
+      }
       
-      // إرسال تحديث تأثير البروفايل فقط عبر WebSocket
       if (updates.profileEffect) {
         const updateMessage = {
           type: 'profileEffectChanged',
@@ -3230,18 +3272,66 @@ if (!existing) {
           timestamp: new Date().toISOString()
         };
         io.emit('message', updateMessage);
+        try { updateConnectedUserData(parseInt(id), { profileEffect: updates.profileEffect }); } catch {}
       }
 
-      // إرسال تحديث لون الاسم عبر WebSocket بشكل منفصل
       if (updates.usernameColor) {
-        io.emit('usernameColorChanged', {
+        io.emit('message', {
+          type: 'usernameColorChanged',
           userId: parseInt(id),
           color: updates.usernameColor,
-          username: user.username
+          username: user?.username
         });
+        try { updateConnectedUserData(parseInt(id), { usernameColor: updates.usernameColor }); } catch {}
       }
-      
-      res.json(user);
+
+      // إذا نجح التحديث في قاعدة البيانات
+      if (user) {
+        res.json(user);
+        return;
+      }
+
+      // في حال كانت قاعدة البيانات معطلة أو لم يتم العثور على المستخدم، استخدم وضع fallback الآمن
+      if (!db || dbType === 'disabled') {
+        const userIdNum = parseInt(id);
+        const entry = connectedUsers.get(userIdNum);
+        if (!entry) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+        const fallbackUser = { ...entry.user, ...updates };
+        // تحديث الكاش وبث القوائم
+        try { updateConnectedUserData(userIdNum, updates); } catch {}
+        // إرسال رسائل توافقية كما أعلاه إذا لم تُرسل
+        if (updates.userTheme) {
+          io.emit('message', {
+            type: 'theme_update',
+            userId: userIdNum,
+            userTheme: updates.userTheme,
+            timestamp: new Date().toISOString()
+          });
+        }
+        if (updates.profileEffect) {
+          io.emit('message', {
+            type: 'profileEffectChanged',
+            userId: userIdNum,
+            profileEffect: updates.profileEffect,
+            user: fallbackUser,
+            timestamp: new Date().toISOString()
+          });
+        }
+        if (updates.usernameColor) {
+          io.emit('message', {
+            type: 'usernameColorChanged',
+            userId: userIdNum,
+            color: updates.usernameColor,
+            username: fallbackUser.username
+          });
+        }
+        return res.json({ user: fallbackUser });
+      }
+
+      // غير ذلك اعتبره غير موجود
+      return res.status(404).json({ error: 'User not found' });
     } catch (error) {
       console.error('Error updating user:', error);
       res.status(500).json({ error: 'Failed to update user', details: error instanceof Error ? error.message : 'Unknown error' });
@@ -3576,6 +3666,26 @@ if (!existing) {
         });
       }
 
+      // وضع fallback عند تعطيل قاعدة البيانات
+      if (!db || dbType === 'disabled') {
+        const entry = connectedUsers.get(userIdNum);
+        if (!entry) {
+          return res.status(404).json({ error: 'المستخدم غير موجود' });
+        }
+        try { updateConnectedUserData(userIdNum, { profileBackgroundColor: backgroundColorValue }); } catch {}
+        try {
+          io.emit('message', {
+            type: 'user_background_updated',
+            data: { userId: userIdNum, profileBackgroundColor: backgroundColorValue }
+          });
+        } catch {}
+        return res.json({ 
+          success: true, 
+          message: 'تم تحديث لون خلفية البروفايل بنجاح',
+          data: { userId: userIdNum, profileBackgroundColor: backgroundColorValue }
+        });
+      }
+
       const user = await storage.getUser(userIdNum);
       if (!user) {
         console.error('❌ المستخدم غير موجود:', userIdNum);
@@ -3593,7 +3703,9 @@ if (!existing) {
           type: 'user_background_updated',
           data: { userId: userIdNum, profileBackgroundColor: backgroundColorValue }
         });
-        } catch (broadcastError) {
+        // تحديث الكاش وبث قائمة المستخدمين لكل الغرف التي يتواجد فيها
+        try { updateConnectedUserData(userIdNum, { profileBackgroundColor: backgroundColorValue }); } catch {}
+      } catch (broadcastError) {
         console.error('⚠️ فشل في إرسال إشعار WebSocket:', broadcastError);
         // لا نفشل العملية بسبب فشل الإشعار
       }

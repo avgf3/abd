@@ -17,7 +17,7 @@ export class UserService {
         ...userData,
         role: userData.role || userData.userType || 'guest',
         profileBackgroundColor: userData.profileBackgroundColor || '#3c0d0d',
-        usernameColor: userData.usernameColor || '#000000',
+        usernameColor: userData.usernameColor || '#FFFFFF',
         userTheme: userData.userTheme || 'default',
       };
 
