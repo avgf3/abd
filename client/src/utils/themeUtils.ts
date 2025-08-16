@@ -139,9 +139,7 @@ const sanitizeHexColor = (color: string, defaultColor: string = '#3c0d0d'): stri
 // لون خلفية موحّد (بدون تدرّج) ليطابق اللون الحقيقي تماماً
 export const buildProfileBackgroundGradient = (hex: string): string => {
   const clean = sanitizeHexColor(hex);
-  const color20 = `${clean}20`;  // شفافية 20%
-  const color08 = `${clean}08`;  // شفافية 8%
-  return `linear-gradient(0deg, ${color20}, ${color08})`;
+  return clean; // إرجاع اللون الأصلي كما هو
 };
 
 // دالة لتحويل التدرج اللوني إلى تدرج شفاف
