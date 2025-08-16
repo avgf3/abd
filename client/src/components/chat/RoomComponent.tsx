@@ -302,11 +302,13 @@ export default function RoomComponent({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAtBottomRooms, setIsAtBottomRooms] = useState(true);
+  const [roomIdToChangeIcon, setRoomIdToChangeIcon] = useState<string | null>(null);
   const { updateRoomIcon } = useRoomManager();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { toast } = useToast();
 
   const handleChangeIconClick = useCallback((roomId: string) => {
+    setRoomIdToChangeIcon(roomId);
     if (fileInputRef.current) fileInputRef.current.value = '';
     fileInputRef.current?.click();
   }, []);
@@ -316,7 +318,8 @@ export default function RoomComponent({
     if (!file) return;
     if (!currentUser) return;
     try {
-      await updateRoomIcon(room.id, file, currentUser.id);
+      const targetRoomId = roomIdToChangeIcon || room.id;
+      await updateRoomIcon(targetRoomId, file, currentUser.id);
       toast({ title: 'نجاح', description: 'تم تحديث صورة الغرفة' });
     } catch (err) {
       toast({ title: 'خطأ', description: 'فشل تحديث صورة الغرفة', variant: 'destructive' });
