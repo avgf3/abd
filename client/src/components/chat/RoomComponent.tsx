@@ -11,7 +11,7 @@ import { useGrabScroll } from '@/hooks/useGrabScroll';
 import type { ChatRoom, ChatUser } from '@/types/chat';
 import { dedupeRooms } from '@/utils/roomUtils';
 import { useRoomManager } from '@/hooks/useRoomManager';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface RoomComponentProps {
