@@ -21,6 +21,7 @@ import { roomMessageService } from "./services/roomMessageService";
 import { friendService } from "./services/friendService";
 import { developmentOnly, logDevelopmentEndpoint } from "./middleware/development";
 import { z } from "zod";
+import { sanitizeUserData, sanitizeUsersArray } from './utils/data-sanitizer';
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -119,9 +120,10 @@ function sendRoomUsers(roomId: string, source: string = 'system') {
     }
   }
   const roomUsers = Array.from(userMap.values());
+  const sanitizedUsers = sanitizeUsersArray(roomUsers);
   io.to(`room_${roomId}`).emit('message', {
     type: 'onlineUsers',
-    users: roomUsers,
+    users: sanitizedUsers,
     roomId,
     source
   });
@@ -1670,7 +1672,7 @@ if (!existing) {
         
         socket.emit('message', { 
           type: 'onlineUsers', 
-          users: roomUsers,
+          users: sanitizeUsersArray(roomUsers),
           roomId: currentRoom,
           source: 'request'
         });
@@ -2063,7 +2065,7 @@ if (!existing) {
         socket.emit('message', {
           type: 'roomJoined',
           roomId: roomId,
-          users: roomUsers
+          users: sanitizeUsersArray(roomUsers)
         });
         
         // إشعار باقي المستخدمين في الغرفة (مرة واحدة فقط)
@@ -3571,9 +3573,10 @@ if (!existing) {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
-      // إرجاع بيانات المستخدم بدون كلمة المرور
+      // إرجاع بيانات المستخدم بدون كلمة المرور مع تنظيف البيانات
       const { password, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
+      const sanitizedUser = sanitizeUserData(userWithoutPassword);
+      res.json(sanitizedUser);
       
     } catch (error) {
       console.error('❌ خطأ في جلب بيانات المستخدم:', error);

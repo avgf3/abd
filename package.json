@@ -25,6 +25,7 @@
     "db:fix-production": "node fix-production-database.mjs",
     "db:add-profile-effect": "node run-profile-effect-migration.js",
     "db:fix-issues": "node fix-database-issues.js",
+    "db:fix-data": "cd server && npx tsx scripts/fix-inconsistent-data.ts",
     "test:supabase": "tsx test-supabase-connection.ts",
     "fix-issues": "node fix-critical-issues.js",
     "check-fixed": "tsc --noEmit",

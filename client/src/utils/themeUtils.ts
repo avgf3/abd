@@ -115,14 +115,32 @@ const hexToRgba = (hex: string, alpha: number): string => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+// دالة للتحقق من صحة كود HEX
+const isValidHexColor = (color: string): boolean => {
+  if (!color) return false;
+  const hexPattern = /^#?[0-9A-Fa-f]{6}$/;
+  return hexPattern.test(color.trim());
+};
+
+// دالة لتنظيف وتصحيح لون HEX
+const sanitizeHexColor = (color: string, defaultColor: string = '#3c0d0d'): string => {
+  if (!color || color === 'null' || color === 'undefined' || color === '') {
+    return defaultColor;
+  }
+  
+  const trimmed = color.trim();
+  if (isValidHexColor(trimmed)) {
+    return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+  }
+  
+  return defaultColor;
+};
+
 // بناء تدرّج خلفية موحد من لون HEX ليتطابق مع بطاقة البروفايل وصندوق القائمة
 export const buildProfileBackgroundGradient = (hex: string): string => {
-  const clean = String(hex).trim();
-  const isHex6 = /^#?[a-fA-F0-9]{6}$/.test(clean);
-  if (!isHex6) return '';
-  const normalized = clean.startsWith('#') ? clean : `#${clean}`;
-  const color20 = `${normalized}20`;
-  const color08 = `${normalized}08`;
+  const clean = sanitizeHexColor(hex);
+  const color20 = `${clean}20`;
+  const color08 = `${clean}08`;
   return `linear-gradient(0deg, ${color20}, ${color08})`;
 };
 
@@ -144,7 +162,8 @@ const gradientToTransparent = (gradient: string, opacity: number): string => {
 
 // دالة لحصول على لون الاسم النهائي (يعتمد فقط على usernameColor)
 export const getFinalUsernameColor = (user: any): string => {
-  return (user && user.usernameColor) ? String(user.usernameColor) : '#000000';
+  const color = (user && user.usernameColor) ? String(user.usernameColor) : '#000000';
+  return sanitizeHexColor(color, '#000000');
 };
 
 // ===== نظام موحد جديد لتأثيرات صندوق المستخدم مع الملف الشخصي =====
@@ -163,7 +182,8 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
   
   // أولاً: تطبيق لون الخلفية من الملف الشخصي
   if (user?.profileBackgroundColor) {
-    const bg = buildProfileBackgroundGradient(String(user.profileBackgroundColor));
+    const sanitizedColor = sanitizeHexColor(user.profileBackgroundColor);
+    const bg = buildProfileBackgroundGradient(sanitizedColor);
     if (bg) {
       style.background = bg;
     }
@@ -171,7 +191,7 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
   
   // ثانياً: إضافة تأثيرات إضافية حسب نوع التأثير المختار
   const effect = user?.profileEffect || 'none';
-  if (effect !== 'none') {
+  if (effect !== 'none' && effect !== 'null' && effect !== 'undefined') {
     // إضافة ظلال ملونة حسب التأثير
     const effectShadows: Record<string, string> = {
       'effect-glow': '0 0 20px rgba(255, 215, 0, 0.5)',
