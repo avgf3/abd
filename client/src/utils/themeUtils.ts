@@ -136,12 +136,10 @@ const sanitizeHexColor = (color: string, defaultColor: string = '#3c0d0d'): stri
   return defaultColor;
 };
 
-// بناء تدرّج خلفية موحد من لون HEX ليتطابق مع بطاقة البروفايل وصندوق القائمة
+// لون خلفية موحّد (بدون تدرّج) ليطابق اللون الحقيقي تماماً
 export const buildProfileBackgroundGradient = (hex: string): string => {
   const clean = sanitizeHexColor(hex);
-  const color20 = `${clean}20`;
-  const color08 = `${clean}08`;
-  return `linear-gradient(0deg, ${color20}, ${color08})`;
+  return clean;
 };
 
 // دالة لتحويل التدرج اللوني إلى تدرج شفاف
