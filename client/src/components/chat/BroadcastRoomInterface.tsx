@@ -1,15 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
 import { Mic, MicOff, Users, Crown, Clock, Check, X, Volume2, VolumeX, ChevronDown, ChevronUp, PlayCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+
+import MessageArea from './MessageArea';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom, RoomWebSocketMessage as WebSocketMessage, ChatMessage } from '@/types/chat';
 import { normalizeBroadcastInfo } from '@/utils/roomUtils';
-import MessageArea from './MessageArea';
+
 
 // ICE servers helper with optional TURN support via env
 const getIceServers = (): RTCIceServer[] => {

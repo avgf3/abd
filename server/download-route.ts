@@ -1,5 +1,6 @@
-import { Express } from 'express';
 import path from 'path';
+
+import type { Express } from 'express';
 
 export function setupDownloadRoute(app: Express) {
   // Serve the compressed project file

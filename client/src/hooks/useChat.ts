@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
-import { Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
+
+import type { PrivateConversation } from '../../../shared/types';
+
+import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
 import type { ChatUser, ChatMessage, RoomWebSocketMessage as WebSocketMessage } from '@/types/chat';
-import type { PrivateConversation } from '../../../shared/types';
 import type { Notification } from '@/types/chat';
-import { apiRequest } from '@/lib/queryClient';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
 
 // Audio notification function

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Award, Crown } from 'lucide-react';
-import { getLevelInfo, getLevelColor, formatPoints } from '@/utils/pointsUtils';
+import React, { useState, useEffect } from 'react';
+
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
-import type { ChatUser } from '@/types/chat';
 import { apiRequest } from '@/lib/queryClient';
+import type { ChatUser } from '@/types/chat';
+import { getLevelInfo, getLevelColor, formatPoints } from '@/utils/pointsUtils';
 
 interface LeaderboardProps {
   currentUser?: ChatUser;

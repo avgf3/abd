@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { CheckCircle, Gift } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface PointsSentNotificationProps {
   show: boolean;

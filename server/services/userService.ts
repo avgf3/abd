@@ -1,7 +1,8 @@
-import { eq, desc, and } from "drizzle-orm";
-import { db } from "../database-adapter";
-import { users, type User, type InsertUser } from "../../shared/schema";
 import bcrypt from "bcrypt";
+import { eq, desc, and } from "drizzle-orm";
+
+import { users, type User, type InsertUser } from "../../shared/schema";
+import { db } from "../database-adapter";
 
 export class UserService {
   // إنشاء مستخدم جديد

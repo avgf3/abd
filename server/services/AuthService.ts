@@ -1,6 +1,7 @@
+import type { InsertUser } from '../../shared/schema';
 import { SecurityManager } from '../auth/security';
 import type { IStorage } from '../storage';
-import type { InsertUser } from '../../shared/schema';
+
 import type { User } from './databaseService';
 
 /**

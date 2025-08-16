@@ -1,7 +1,8 @@
 import React from 'react';
-import { getLevelInfo, getLevelColor, formatPoints, getPointsToNextLevel } from '@/utils/pointsUtils';
+
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
+import { getLevelInfo, getLevelColor, formatPoints, getPointsToNextLevel } from '@/utils/pointsUtils';
 
 interface LevelBadgeProps {
   user: ChatUser;

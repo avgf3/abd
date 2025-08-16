@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+
 import { usePerformanceOptimization } from '@/lib/chatOptimization';
 import { apiRequest } from '@/lib/queryClient';
 

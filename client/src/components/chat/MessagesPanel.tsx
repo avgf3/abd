@@ -1,16 +1,18 @@
 import { useMemo } from 'react';
+
+import type { PrivateConversation } from '../../../../shared/types';
+
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { getImageSrc } from '@/utils/imageUtils';
-import { formatTime } from '@/utils/timeUtils';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ChatUser } from '@/types/chat';
-import type { PrivateConversation } from '../../../../shared/types';
+import { getImageSrc } from '@/utils/imageUtils';
+import { formatTime } from '@/utils/timeUtils';
 
 interface MessagesPanelProps {
   isOpen: boolean;

@@ -1,6 +1,7 @@
-import { db } from '../database-adapter';
-import { users } from '../../shared/schema';
 import { eq, isNull, or, sql } from 'drizzle-orm';
+
+import { users } from '../../shared/schema';
+import { db } from '../database-adapter';
 
 async function fixInconsistentData() {
   try {

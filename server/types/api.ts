@@ -1,6 +1,6 @@
 // أنواع API للخادم
 
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 // تمديد Express Request type عبر module augmentation
 declare module 'express-serve-static-core' {

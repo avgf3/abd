@@ -1,26 +1,30 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Users, Globe, Home, UserPlus } from 'lucide-react';
-import SimpleUserMenu from './SimpleUserMenu';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import type { Socket } from 'socket.io-client';
+
+import FriendsTabPanel from './FriendsTabPanel';
 import ProfileImage from './ProfileImage';
 import RoomComponent from './RoomComponent';
-import FriendsTabPanel from './FriendsTabPanel';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { getImageSrc } from '@/utils/imageUtils';
+import SimpleUserMenu from './SimpleUserMenu';
+import UserRoleBadge from './UserRoleBadge';
 
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { useGrabScroll } from '@/hooks/useGrabScroll';
+import { apiRequest } from '@/lib/queryClient';
+import { getSocket, saveSession } from '@/lib/socket';
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
+import { getImageSrc } from '@/utils/imageUtils';
 import { getUserEffectStyles, getUserEffectClasses, getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
-import UserRoleBadge from './UserRoleBadge';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Socket } from 'socket.io-client';
-import { getSocket, saveSession } from '@/lib/socket';
-import { useGrabScroll } from '@/hooks/useGrabScroll';
+
+
+
 
 
 

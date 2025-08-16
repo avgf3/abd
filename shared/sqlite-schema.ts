@@ -1,7 +1,7 @@
+import { relations } from "drizzle-orm";
 import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { relations } from "drizzle-orm";
 
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey(),

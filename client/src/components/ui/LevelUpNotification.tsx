@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { getLevelInfo, getLevelColor } from '@/utils/pointsUtils';
+import React, { useState, useEffect } from 'react';
+
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
+import { getLevelInfo, getLevelColor } from '@/utils/pointsUtils';
 
 interface LevelUpNotificationProps {
   oldLevel: number;

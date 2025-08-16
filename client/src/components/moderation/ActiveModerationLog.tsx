@@ -1,14 +1,17 @@
+import { Shield, UserX, Ban, Clock } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
+
+import ModerationList from './ModerationList';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatTimestamp } from '@/utils/timeUtils';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Shield, UserX, Ban, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { ChatUser } from '@/types/chat';
 import { apiRequest } from '@/lib/queryClient';
-import ModerationList from './ModerationList';
+import type { ChatUser } from '@/types/chat';
+import { formatTimestamp } from '@/utils/timeUtils';
+
 
 interface ActiveModerationAction {
   id: string;

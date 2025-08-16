@@ -1,16 +1,18 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { formatTime } from '@/utils/timeUtils';
-import { Input } from '@/components/ui/input';
-import ProfileImage from './ProfileImage';
-import EmojiPicker from './EmojiPicker';
-import { getFinalUsernameColor } from '@/utils/themeUtils';
-import { findMentions, playMentionSound, renderMessageWithMentions, insertMention } from '@/utils/mentionUtils';
-import type { ChatMessage, ChatUser } from '@/types/chat';
 import { Send, Image as ImageIcon, Smile } from "lucide-react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+
+import EmojiPicker from './EmojiPicker';
+import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { apiRequest } from '@/lib/queryClient';
 import { api } from '@/lib/queryClient';
+import type { ChatMessage, ChatUser } from '@/types/chat';
+import { findMentions, playMentionSound, renderMessageWithMentions, insertMention } from '@/utils/mentionUtils';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
+import { formatTime } from '@/utils/timeUtils';
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -121,7 +123,7 @@ export default function MessageArea({
       const t = setTimeout(() => scrollToBottom('auto'), 0);
       return () => clearTimeout(t);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, []);
 
   // تشغيل صوت التنبيه عند استقبال منشن - محسن
@@ -211,13 +213,13 @@ export default function MessageArea({
 
     if (!file.type.startsWith('image/')) {
       alert('يرجى اختيار ملف صورة صحيح');
-      fileInputRef.current && (fileInputRef.current.value = '');
+      if (fileInputRef.current) { fileInputRef.current.value = ''; }
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       alert('حجم الصورة كبير جداً. الحد الأقصى 5MB');
-      fileInputRef.current && (fileInputRef.current.value = '');
+      if (fileInputRef.current) { fileInputRef.current.value = ''; }
       return;
     }
 

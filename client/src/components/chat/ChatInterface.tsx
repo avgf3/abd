@@ -1,13 +1,6 @@
+import { Menu, Settings, Bell, MessageSquare, MessageCircle, Crown, Shield, AlertTriangle, Eye, EyeOff, Lock } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
-import UnifiedSidebar from './UserSidebarWithWalls';
-import MessageArea from './MessageArea';
-import BroadcastRoomInterface from './BroadcastRoomInterface';
-import ProfileModal from './ProfileModal';
-import PrivateMessageBox from './PrivateMessageBox';
-import UserPopup from './UserPopup';
-import SettingsMenu from './SettingsMenu';
-import ReportModal from './ReportModal';
-import AdminReportsPanel from './AdminReportsPanel';
+
 import NotificationPanel from './NotificationPanel';
 import MessagesPanel from './MessagesPanel';
 import UsernameColorPicker from '@/components/profile/UsernameColorPicker';
@@ -20,25 +13,33 @@ import ActiveModerationLog from '../moderation/ActiveModerationLog';
 import KickCountdown from '@/components/moderation/KickCountdown';
 import BlockNotification from '../moderation/BlockNotification';
 import PromoteUserPanel from '../moderation/PromoteUserPanel';
+import AdminReportsPanel from './AdminReportsPanel';
+import BroadcastRoomInterface from './BroadcastRoomInterface';
+import MessageArea from './MessageArea';
 import OwnerAdminPanel from './OwnerAdminPanel';
+import PrivateMessageBox from './PrivateMessageBox';
 import ProfileImage from './ProfileImage';
-import WelcomeNotification from './WelcomeNotification';
+import ProfileModal from './ProfileModal';
+import ReportModal from './ReportModal';
+import SettingsMenu from './SettingsMenu';
 import ThemeSelector from './ThemeSelector';
+import UserPopup from './UserPopup';
+import UnifiedSidebar from './UserSidebarWithWalls';
+import WelcomeNotification from './WelcomeNotification';
 // import RoomComponent from './RoomComponent';
-import { useRoomManager } from '@/hooks/useRoomManager';
 
 
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
-import { Menu, Settings, Bell, MessageSquare, MessageCircle, Crown, Shield, AlertTriangle, Eye, EyeOff, Lock } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useNotificationManager } from '@/hooks/useNotificationManager';
-import { apiRequest } from '@/lib/queryClient';
 import type { useChat } from '@/hooks/useChat';
+import { useNotificationManager } from '@/hooks/useNotificationManager';
+import { useRoomManager } from '@/hooks/useRoomManager';
+import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 
 interface ChatInterfaceProps {

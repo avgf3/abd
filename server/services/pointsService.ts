@@ -1,4 +1,3 @@
-import { storage } from '../storage';
 import { 
   calculateLevel, 
   calculateLevelProgress, 
@@ -6,6 +5,7 @@ import {
   DEFAULT_POINTS_CONFIG,
   DEFAULT_LEVELS
 } from '../../shared/points-system';
+import { storage } from '../storage';
 
 export class PointsService {
   // إضافة نقاط لمستخدم

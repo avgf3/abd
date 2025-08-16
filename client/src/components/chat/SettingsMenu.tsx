@@ -1,5 +1,3 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { 
   User, 
   Home, 
@@ -10,6 +8,9 @@ import {
   Palette,
   Brush
 } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { getFinalUsernameColor, getUserListItemStyles } from '@/utils/themeUtils';
 
 interface SettingsMenuProps {

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
+
 import { Button } from '@/components/ui/button';
-import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
+import { getImageSrc } from '@/utils/imageUtils';
 
 interface MessageAlertProps {
   isOpen: boolean;

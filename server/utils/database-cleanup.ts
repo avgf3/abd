@@ -1,6 +1,7 @@
-import { db } from '../database-adapter';
-import { messages, users } from '../../shared/schema';
 import { sql, eq, notInArray } from 'drizzle-orm';
+
+import { messages, users } from '../../shared/schema';
+import { db } from '../database-adapter';
 
 export class DatabaseCleanup {
   

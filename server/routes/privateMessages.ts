@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { storage } from '../storage';
+
 import { notificationService } from '../services/notificationService';
+import { storage } from '../storage';
 
 const router = Router();
 
