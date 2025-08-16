@@ -797,3 +797,59 @@ html {
     height: calc(100dvh - 160px);
   }
 }
+
+/* تأثيرات صندوق المستخدم المحسّنة */
+.has-custom-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.has-custom-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  opacity: 0.1;
+  z-index: -1;
+}
+
+/* تطبيق التأثيرات على صناديق المستخدمين */
+li > * > div.effect-glow,
+li > * > div.effect-pulse,
+li > * > div.effect-water,
+li > * > div.effect-aurora,
+li > * > div.effect-neon,
+li > * > div.effect-fire,
+li > * > div.effect-ice,
+li > * > div.effect-rainbow,
+li > * > div.effect-shadow,
+li > * > div.effect-electric,
+li > * > div.effect-crystal {
+  transition: all 0.3s ease;
+}
+
+/* تحسين عرض التأثيرات في قائمة المستخدمين */
+.effect-glow.has-custom-bg,
+.effect-pulse.has-custom-bg,
+.effect-water.has-custom-bg,
+.effect-aurora.has-custom-bg,
+.effect-neon.has-custom-bg,
+.effect-fire.has-custom-bg,
+.effect-ice.has-custom-bg,
+.effect-rainbow.has-custom-bg,
+.effect-shadow.has-custom-bg,
+.effect-electric.has-custom-bg,
+.effect-crystal.has-custom-bg {
+  background-blend-mode: soft-light;
+}
+
+/* تأثير hover محسّن للصناديق بألوان مخصصة */
+.has-custom-bg:hover {
+  filter: brightness(1.1);
+}
+
+/* التأكد من أن لون النص يظهر بوضوح على الخلفيات الملونة */
+.has-custom-bg span {
+  position: relative;
+  z-index: 1;
+}
