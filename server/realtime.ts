@@ -304,7 +304,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
       }
     });
 
-    socket.on('requestOnlineUsers', () => {
+    socket.on('requestOnlineUsers', async () => {
       if (!socket.isAuthenticated) return;
       const roomId = socket.currentRoom || GENERAL_ROOM;
       const users = await buildOnlineUsersForRoom(roomId);
