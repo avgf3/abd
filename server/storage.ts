@@ -783,6 +783,10 @@ export const storage: LegacyStorage = {
     return await databaseService.deleteRoom(roomId);
   },
 
+  async updateRoom(roomId: string, updates: Partial<Room>) {
+    return await databaseService.updateRoomById(roomId, updates);
+  },
+
   async joinRoom(userId: number, roomId: number | string) {
     return await joinRoom(userId, roomId as any);
   },

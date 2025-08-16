@@ -1,5 +1,5 @@
 import { X, Plus, Users, Mic, RefreshCw, MessageCircle, Search, Settings } from 'lucide-react';
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { useGrabScroll } from '@/hooks/useGrabScroll';
 import type { ChatRoom, ChatUser } from '@/types/chat';
 import { dedupeRooms } from '@/utils/roomUtils';
+import { useRoomManager } from '@/hooks/useRoomManager';
+import { useToast } from '@/components/ui/use-toast';
 
 
 interface RoomComponentProps {
@@ -44,6 +46,7 @@ interface RoomCardProps {
   compact: boolean;
   onSelect: (roomId: string) => void;
   onDelete?: (roomId: string, e: React.MouseEvent) => void;
+  onChangeIcon?: (roomId: string) => void;
 }
 
 // مكون البطاقة المعاد استخدامه
@@ -54,7 +57,8 @@ const RoomCard: React.FC<RoomCardProps> = ({
   viewMode,
   compact,
   onSelect,
-  onDelete
+  onDelete,
+  onChangeIcon
 }) => {
   const isAdmin = currentUser && ['owner', 'admin'].includes(currentUser.userType);
   const canDelete = isAdmin && !room.isDefault && onDelete;
@@ -128,14 +132,25 @@ const RoomCard: React.FC<RoomCardProps> = ({
         <RoomInfo />
         
         {canDelete && (
-          <Button
-            onClick={handleDelete}
-            variant="ghost"
-            size="sm"
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-          >
-            <X className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              onClick={handleDelete}
+              variant="ghost"
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+            <Button
+              onClick={(e) => { e.stopPropagation(); onChangeIcon && onChangeIcon(room.id); }}
+              variant="ghost"
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 transition-opacity"
+              title="تغيير صورة الغرفة"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          </div>
         )}
       </div>
     );
@@ -287,6 +302,29 @@ export default function RoomComponent({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAtBottomRooms, setIsAtBottomRooms] = useState(true);
+  const [roomIdToChangeIcon, setRoomIdToChangeIcon] = useState<string | null>(null);
+  const { updateRoomIcon } = useRoomManager();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { toast } = useToast();
+
+  const handleChangeIconClick = useCallback((roomId: string) => {
+    setRoomIdToChangeIcon(roomId);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!currentUser) return;
+    try {
+      const targetRoomId = roomIdToChangeIcon || room.id;
+      await updateRoomIcon(targetRoomId, file, currentUser.id);
+      toast({ title: 'نجاح', description: 'تم تحديث صورة الغرفة' });
+    } catch (err) {
+      toast({ title: 'خطأ', description: 'فشل تحديث صورة الغرفة', variant: 'destructive' });
+    }
+  }, [updateRoomIcon, currentUser, room?.id, toast]);
 
   // التحقق من الصلاحيات
   const isAdmin = currentUser && ['owner', 'admin'].includes(currentUser.userType);
@@ -516,9 +554,18 @@ export default function RoomComponent({
               compact={compact}
               onSelect={onRoomChange}
               onDelete={canDeleteRooms ? (id, e) => handleDeleteRoom(id, e) : undefined}
+              onChangeIcon={isAdmin ? (rid) => handleChangeIconClick(rid) : undefined}
             />
           ))}
         </div>
+        {/* Hidden file input for changing room icon */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleFileSelected}
+        />
         {!isAtBottomRooms && (
           <div className="absolute bottom-4 right-4 z-10">
             <Button size="sm" onClick={() => {
