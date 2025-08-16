@@ -280,6 +280,17 @@ export const useChat = () => {
   const [achievementNotification, setAchievementNotification] = useState<any>(null);
   const [dailyBonusNotification, setDailyBonusNotification] = useState<any>(null);
 
+  // Refs to avoid stale closures in socket listeners
+  const currentUserRef = useRef<ChatUser | null>(null);
+  const currentRoomIdRef = useRef<string>(initialState.currentRoomId);
+  const ignoredUsersRef = useRef<Set<number>>(new Set());
+  const roomMessagesRef = useRef<Record<string, ChatMessage[]>>({});
+
+  useEffect(() => { currentUserRef.current = state.currentUser; }, [state.currentUser]);
+  useEffect(() => { currentRoomIdRef.current = state.currentRoomId; }, [state.currentRoomId]);
+  useEffect(() => { ignoredUsersRef.current = state.ignoredUsers; }, [state.ignoredUsers]);
+  useEffect(() => { roomMessagesRef.current = state.roomMessages; }, [state.roomMessages]);
+
   // ✅ Memoized current room messages - حل مشكلة الـ performance
   const currentRoomMessages = useMemo(() => {
     return state.roomMessages[state.currentRoomId] || [];
@@ -387,12 +398,12 @@ export const useChat = () => {
           const { userId, profileEffect, user } = envelope as any;
           const targetId = userId || user?.id;
           if (targetId) {
-            if (state.currentUser?.id === targetId) {
+            if (currentUserRef.current?.id === targetId) {
               dispatch({ 
                 type: 'SET_CURRENT_USER', 
                 payload: { 
-                  ...state.currentUser, 
-                  profileEffect: (profileEffect ?? user?.profileEffect ?? state.currentUser.profileEffect)
+                  ...currentUserRef.current!, 
+                  profileEffect: (profileEffect ?? user?.profileEffect ?? currentUserRef.current?.profileEffect)
                 } as any 
               });
             }
@@ -405,8 +416,8 @@ export const useChat = () => {
           const { userId, color, user } = envelope as any;
           const targetId = userId || user?.id;
           if (targetId && color) {
-            if (state.currentUser?.id === targetId) {
-              dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, usernameColor: color } as any });
+            if (currentUserRef.current?.id === targetId) {
+              dispatch({ type: 'SET_CURRENT_USER', payload: { ...currentUserRef.current!, usernameColor: color } as any });
             }
             dispatch({ type: 'UPSERT_ONLINE_USER', payload: { id: targetId, usernameColor: color } as any });
           }
@@ -418,8 +429,8 @@ export const useChat = () => {
           const targetId = data?.userId;
           const color = data?.profileBackgroundColor;
           if (targetId && color) {
-            if (state.currentUser?.id === targetId) {
-              dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, profileBackgroundColor: color } as any });
+            if (currentUserRef.current?.id === targetId) {
+              dispatch({ type: 'SET_CURRENT_USER', payload: { ...currentUserRef.current!, profileBackgroundColor: color } as any });
             }
             dispatch({ type: 'UPSERT_ONLINE_USER', payload: { id: targetId, profileBackgroundColor: color } as any });
           }
@@ -429,10 +440,10 @@ export const useChat = () => {
         if (envelope.type === 'userUpdated') {
           const updatedUser: ChatUser | undefined = (envelope as any).user;
           if (updatedUser && updatedUser.id) {
-            const isCurrent = state.currentUser?.id === updatedUser.id;
+            const isCurrent = currentUserRef.current?.id === updatedUser.id;
             // دمج فوري للحقول المتاحة
-            if (isCurrent) {
-              dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, ...updatedUser } as any });
+            if (isCurrent && currentUserRef.current) {
+              dispatch({ type: 'SET_CURRENT_USER', payload: { ...currentUserRef.current, ...updatedUser } as any });
             }
             dispatch({ type: 'UPSERT_ONLINE_USER', payload: updatedUser });
 
@@ -440,8 +451,8 @@ export const useChat = () => {
             if (isCurrent && (!updatedUser.profileImage || (typeof updatedUser.profileImage === 'string' && !updatedUser.profileImage.startsWith('data:')))) {
               try {
                 apiRequest(`/api/users/${updatedUser.id}?t=${Date.now()}`).then((full: any) => {
-                  if (full && full.id) {
-                    dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, ...full } as any });
+                  if (full && full.id && currentUserRef.current?.id === updatedUser.id) {
+                    dispatch({ type: 'SET_CURRENT_USER', payload: { ...currentUserRef.current!, ...full } as any });
                   }
                 }).catch(() => {});
               } catch {}
@@ -476,7 +487,7 @@ export const useChat = () => {
               }
               
               // تشغيل صوت خفيف فقط عند الرسائل العامة في الغرفة الحالية
-              if (!chatMessage.isPrivate && chatMessage.senderId !== state.currentUser?.id && roomId === state.currentRoomId) {
+              if (!chatMessage.isPrivate && chatMessage.senderId !== (currentUserRef.current?.id) && roomId === currentRoomIdRef.current) {
                 playNotificationSound();
               }
             }
@@ -485,7 +496,7 @@ export const useChat = () => {
           case 'messageDeleted': {
             const { messageId, roomId } = envelope as any;
             if (messageId && roomId) {
-              const existing = state.roomMessages[roomId] || [];
+              const existing = roomMessagesRef.current[roomId] || [];
               const next = existing.filter((m) => m.id !== messageId);
               dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId, messages: next } });
             }
@@ -495,7 +506,7 @@ export const useChat = () => {
           case 'roomMessages': {
             const { messages, roomId: payloadRoomId } = envelope as any;
             if (Array.isArray(messages)) {
-              const roomId = payloadRoomId || state.currentRoomId;
+              const roomId = payloadRoomId || currentRoomIdRef.current;
               const formattedMessages = mapDbMessagesToChatMessages(messages, roomId);
               dispatch({ 
                 type: 'SET_ROOM_MESSAGES', 
@@ -507,13 +518,13 @@ export const useChat = () => {
           
           case 'onlineUsers': {
             const roomId = (envelope as any).roomId || 'general';
-            if (roomId !== state.currentRoomId) {
+            if (roomId !== currentRoomIdRef.current) {
               break;
             }
             if (Array.isArray(envelope.users)) {
               const rawUsers = envelope.users as ChatUser[];
               // فلترة صارمة + إزالة المتجاهلين + إزالة التكرارات
-              const filtered = rawUsers.filter(u => u && u.id && u.username && u.userType && !state.ignoredUsers.has(u.id));
+              const filtered = rawUsers.filter(u => u && u.id && u.username && u.userType && !ignoredUsersRef.current.has(u.id));
               const dedup = new Map<number, ChatUser>();
               for (const u of filtered) { if (!dedup.has(u.id)) dedup.set(u.id, u); }
               const nextUsers = Array.from(dedup.values());
@@ -524,13 +535,17 @@ export const useChat = () => {
           
           case 'roomJoined': {
             const roomId = (envelope as any).roomId;
-            if (roomId && roomId !== state.currentRoomId) {
+            if (roomId && roomId !== currentRoomIdRef.current) {
               break;
             }
-            // استبدال القائمة بالكامل بقائمة الغرفة المرسلة
+            // استبدال القائمة بالكامل بقائمة الغرفة المرسلة (مع فلترة وإزالة التكرارات)
             const users = (envelope as any).users;
             if (Array.isArray(users)) {
-              dispatch({ type: 'SET_ONLINE_USERS', payload: users });
+              const rawUsers = users as ChatUser[];
+              const filtered = rawUsers.filter(u => u && u.id && u.username && u.userType && !ignoredUsersRef.current.has(u.id));
+              const dedup = new Map<number, ChatUser>();
+              for (const u of filtered) { if (!dedup.has(u.id)) dedup.set(u.id, u); }
+              dispatch({ type: 'SET_ONLINE_USERS', payload: Array.from(dedup.values()) });
             }
             break;
           }
@@ -582,7 +597,7 @@ export const useChat = () => {
           case 'kicked': {
             // إظهار عدّاد الطرد للمستخدم المستهدف فقط
             const targetId = envelope.targetUserId;
-            if (targetId && targetId === state.currentUser?.id) {
+            if (targetId && targetId === currentUserRef.current?.id) {
               dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
               // إضافة رسالة واضحة للمستخدم
               const duration = (envelope as any).duration || 15;
@@ -595,7 +610,7 @@ export const useChat = () => {
           
           case 'blocked': {
             // معالجة الحجب النهائي
-            if (state.currentUser?.id) {
+            if (currentUserRef.current?.id) {
               const reason = (envelope as any).reason || 'بدون سبب';
               const moderator = (envelope as any).moderator || 'مشرف';
               alert(`تم حجبك نهائياً من الدردشة بواسطة ${moderator}\nالسبب: ${reason}`);
@@ -611,7 +626,7 @@ export const useChat = () => {
             // في حالة وصول بث عام بإجراء "banned"، فعّل العدّاد إذا كنت أنت الهدف
             const action = (envelope as any).action;
             const targetId = (envelope as any).targetUserId;
-            if (action === 'banned' && targetId && targetId === state.currentUser?.id) {
+            if (action === 'banned' && targetId && targetId === currentUserRef.current?.id) {
               dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
             }
             break;
@@ -689,7 +704,7 @@ export const useChat = () => {
         const payload = envelope?.message ?? envelope;
         const message = payload?.message ?? payload;
         
-        if (message?.sender && state.currentUser) {
+        if (message?.sender && currentUserRef.current) {
           const chatMessage: ChatMessage = {
             id: message.id,
             content: message.content,
@@ -702,21 +717,21 @@ export const useChat = () => {
           
           // تحديد معرف المحادثة بشكل محسن
           let conversationId: number;
-          if (message.senderId === state.currentUser.id) {
+          if (message.senderId === currentUserRef.current.id) {
             conversationId = message.receiverId;
           } else {
             conversationId = message.senderId;
           }
           
           // التأكد من صحة معرف المحادثة
-          if (conversationId && !isNaN(conversationId) && conversationId !== state.currentUser.id) {
+          if (conversationId && !isNaN(conversationId) && conversationId !== currentUserRef.current.id) {
             dispatch({ 
               type: 'SET_PRIVATE_MESSAGE', 
               payload: { userId: conversationId, message: chatMessage }
             });
             
             // تشغيل صوت الإشعار فقط للرسائل الواردة
-            if (chatMessage.senderId !== state.currentUser.id) {
+            if (chatMessage.senderId !== currentUserRef.current.id) {
               playNotificationSound();
             }
           }
@@ -730,7 +745,7 @@ export const useChat = () => {
 
       // معالج حدث الطرد
       socketInstance.on('kicked', (data: any) => {
-        if (state.currentUser?.id === data.userId) {
+        if (currentUserRef.current?.id === data.userId) {
           const kickerName = data.kickerName || 'مشرف';
           const reason = data.reason || 'بدون سبب';
           
@@ -751,7 +766,7 @@ export const useChat = () => {
 
       // معالج حدث الحجب
       socketInstance.on('blocked', (data: any) => {
-        if (state.currentUser?.id) {
+        if (currentUserRef.current?.id) {
           const reason = data.reason || 'بدون سبب';
           const moderator = data.moderator || 'مشرف';
           
@@ -785,7 +800,7 @@ export const useChat = () => {
         }
       });
 
-    }, [state.currentUser, state.onlineUsers, state.currentRoomId]);
+    }, []);
 
     // Ensure cleanup on unmount
     useEffect(() => {
