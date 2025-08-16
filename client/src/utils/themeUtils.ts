@@ -115,6 +115,17 @@ const hexToRgba = (hex: string, alpha: number): string => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+// بناء تدرّج خلفية موحد من لون HEX ليتطابق مع بطاقة البروفايل وصندوق القائمة
+export const buildProfileBackgroundGradient = (hex: string): string => {
+  const clean = String(hex).trim();
+  const isHex6 = /^#?[a-fA-F0-9]{6}$/.test(clean);
+  if (!isHex6) return '';
+  const normalized = clean.startsWith('#') ? clean : `#${clean}`;
+  const color20 = `${normalized}20`;
+  const color08 = `${normalized}08`;
+  return `linear-gradient(0deg, ${color20}, ${color08})`;
+};
+
 // دالة لتحويل التدرج اللوني إلى تدرج شفاف
 const gradientToTransparent = (gradient: string, opacity: number): string => {
   // استخراج الألوان من التدرج
@@ -184,9 +195,10 @@ export const getUserListItemStyles = (user: any): Record<string, string> => {
     return getUserEffectStyles(user);
   }
 
-  // ثانياً: استخدام لون الملف الشخصي فقط لتلوين الصندوق بخفة
+  // ثانياً: استخدام تدرّج موحّد مشتق من لون الملف الشخصي لضمان التطابق مع بطاقة البروفايل
   if (user?.profileBackgroundColor) {
-    style.background = hexToRgba(String(user.profileBackgroundColor), 0.12);
+    const bg = buildProfileBackgroundGradient(String(user.profileBackgroundColor));
+    style.background = bg || 'rgba(255,255,255,0.05)';
   } else {
     style.background = 'rgba(255,255,255,0.05)';
   }

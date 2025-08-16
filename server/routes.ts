@@ -1129,22 +1129,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const users = await storage.getAllUsers();
       // إخفاء المعلومات الحساسة
-      const safeUsers = users.map(user => ({
-        id: user.id,
-        username: user.username,
-        userType: user.userType,
-        role: user.role,
-        isOnline: user.isOnline,
-        profileImage: user.profileImage,
-        level: user.level || 1,
-        gender: user.gender,
-        points: user.points || 0,
-        createdAt: user.createdAt,
-        lastActive: user.lastSeen || user.createdAt,
-        profileColor: user.profileBackgroundColor,
-        profileEffect: user.profileEffect,
-        isHidden: user.isHidden
-      }));
+              const safeUsers = users.map(user => ({
+          id: user.id,
+          username: user.username,
+          userType: user.userType,
+          role: user.role,
+          isOnline: user.isOnline,
+          profileImage: user.profileImage,
+          level: user.level || 1,
+          gender: user.gender,
+          points: user.points || 0,
+          createdAt: user.createdAt,
+          lastActive: user.lastSeen || user.createdAt,
+          profileBackgroundColor: user.profileBackgroundColor,
+          profileEffect: user.profileEffect,
+          isHidden: user.isHidden
+        }));
       res.json({ users: safeUsers });
     } catch (error) {
       console.error('خطأ في جلب جميع المستخدمين:', error);
@@ -3584,103 +3584,7 @@ if (!existing) {
     }
   });
 
-  // Update profile background color
-  app.post('/api/users/update-background-color', async (req, res) => {
-    try {
-      const { userId, profileBackgroundColor, color } = req.body;
-      
-      // دعم كلا من color و profileBackgroundColor
-      const backgroundColorValue = profileBackgroundColor || color;
-      
-      // تحسين التحقق من صحة البيانات
-      if (!userId) {
-        console.error('❌ معرف المستخدم مفقود:', { userId, backgroundColorValue });
-        return res.status(400).json({ 
-          error: 'معرف المستخدم مطلوب',
-          details: 'userId is required'
-        });
-      }
-      
-      if (!backgroundColorValue) {
-        console.error('❌ لون الخلفية مفقود:', { userId, backgroundColorValue });
-        return res.status(400).json({ 
-          error: 'لون الخلفية مطلوب',
-          details: 'color or profileBackgroundColor is required'
-        });
-      }
-
-      // التحقق من صحة معرف المستخدم
-      const userIdNum = parseInt(userId);
-      if (isNaN(userIdNum) || userIdNum <= 0) {
-        console.error('❌ معرف المستخدم غير صحيح:', userId);
-        return res.status(400).json({ 
-          error: 'معرف المستخدم غير صحيح',
-          details: 'userId must be a valid positive number'
-        });
-      }
-
-      const user = await storage.getUser(userIdNum);
-      if (!user) {
-        console.error('❌ المستخدم غير موجود:', userIdNum);
-        return res.status(404).json({ 
-          error: 'المستخدم غير موجود',
-          details: `User with ID ${userIdNum} not found`
-        });
-      }
-
-      await storage.updateUser(userIdNum, { profileBackgroundColor: backgroundColorValue });
-
-      // تحديث نسخة المستخدم في connectedUsers لضمان ظهور اللون فوراً
-      try {
-        const entry = connectedUsers.get(userIdNum);
-        if (entry && entry.user) {
-          entry.user.profileBackgroundColor = backgroundColorValue;
-          connectedUsers.set(userIdNum, entry);
-        }
-      } catch {}
-      
-      // إشعار المستخدمين الآخرين عبر WebSocket
-      try {
-        io.emit('message', {
-          type: 'user_background_updated',
-          data: { userId: userIdNum, profileBackgroundColor: backgroundColorValue }
-        });
-        // تحديث قوائم المستخدمين لكل الغرف التي يتواجد فيها المستخدم
-        try {
-          const entryForRooms = connectedUsers.get(userIdNum);
-          if (entryForRooms) {
-            const affectedRooms = new Set<string>();
-            for (const socketInfo of entryForRooms.sockets.values()) {
-              if (socketInfo.room) affectedRooms.add(socketInfo.room);
-            }
-            if (affectedRooms.size === 0) affectedRooms.add('general');
-            for (const roomId of affectedRooms) {
-              sendRoomUsers(roomId, 'profile_background_update');
-            }
-          } else {
-            sendRoomUsers('general', 'profile_background_update');
-          }
-        } catch {}
-
-      } catch (broadcastError) {
-        console.error('⚠️ فشل في إرسال إشعار WebSocket:', broadcastError);
-        // لا نفشل العملية بسبب فشل الإشعار
-      }
-
-      res.json({ 
-        success: true, 
-        message: 'تم تحديث لون خلفية البروفايل بنجاح',
-        data: { userId: userIdNum, profileBackgroundColor: backgroundColorValue }
-      });
-    } catch (error) {
-      console.error('❌ خطأ في تحديث لون الخلفية:', error);
-      res.status(500).json({ 
-        error: 'خطأ في الخادم',
-        details: error instanceof Error ? error.message : 'Unknown server error'
-      });
-    }
-  });
-
+  // [removed] Legacy endpoint '/api/users/update-background-color' was deprecated. Use PUT /api/users/:id with { profileBackgroundColor } instead.
   // ========== API نظام النقاط والمستويات ==========
 
   // الحصول على معلومات النقاط والمستوى للمستخدم
