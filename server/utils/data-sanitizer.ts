@@ -73,7 +73,7 @@ export function sanitizeUserData(user: any): any {
   
   return {
     ...user,
-    profileBackgroundColor: sanitizeHexColor(user.profileBackgroundColor),
+    profileBackgroundColor: sanitizeProfileBackgroundColor(user.profileBackgroundColor),
     usernameColor: sanitizeHexColor(user.usernameColor, '#000000'),
     profileEffect: sanitizeEffect(user.profileEffect),
     userTheme: sanitizeTheme(user.userTheme)
@@ -83,4 +83,21 @@ export function sanitizeUserData(user: any): any {
 // دالة لتنظيف مصفوفة من المستخدمين
 export function sanitizeUsersArray(users: any[]): any[] {
   return users.map(user => sanitizeUserData(user));
+}
+
+export function sanitizeProfileBackgroundColor(color: string | null | undefined, defaultColor: string = '#3c0d0d'): string {
+  if (!color || color === 'null' || color === 'undefined' || color === '') {
+    return defaultColor;
+  }
+  
+  const trimmed = color.trim();
+  if (trimmed.startsWith('linear-gradient(')) {
+    return trimmed;
+  }
+  
+  if (isValidHexColor(trimmed)) {
+    return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+  }
+  
+  return defaultColor;
 }
