@@ -118,10 +118,7 @@ export default function UnifiedSidebar({
 
     // طباعة الترتيب للتحقق من صحته (فقط في وضع التطوير)
     if (process.env.NODE_ENV === 'development' && sorted.length > 0) {
-      console.log('🏆 ترتيب قائمة المتصلين حسب الرتب:', 
-        sorted.map(u => `${u.username} (${u.userType})`).join(', ')
-      );
-    }
+      }
 
     return sorted;
   }, [users]);
