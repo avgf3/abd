@@ -29,7 +29,19 @@ const connectedUsers = new Map<number, {
   lastSeen: Date
 }>();
 
-function buildOnlineUsersForRoom(roomId: string) {
+export function updateConnectedUserCache(user: any) {
+  try {
+    if (!user || !user.id) return;
+    const entry = connectedUsers.get(user.id);
+    if (entry) {
+      entry.user = { ...entry.user, ...user };
+      entry.lastSeen = new Date();
+      connectedUsers.set(user.id, entry);
+    }
+  } catch {}
+}
+
+async function buildOnlineUsersForRoom(roomId: string) {
   const userMap = new Map<number, any>();
   for (const { user, sockets } of connectedUsers.values()) {
     for (const { room } of sockets.values()) {
@@ -39,7 +51,18 @@ function buildOnlineUsersForRoom(roomId: string) {
       }
     }
   }
-  return sanitizeUsersArray(Array.from(userMap.values()));
+  const { sanitizeUsersArray } = await import('./utils/data-sanitizer');
+  const sanitized = sanitizeUsersArray(Array.from(userMap.values()));
+  // Append version tag to profileImage for cache-busting consistency
+  return sanitized.map((u: any) => {
+    try {
+      const versionTag = (u as any).avatarHash || (u as any).avatarVersion;
+      if (u?.profileImage && typeof u.profileImage === 'string' && !u.profileImage.startsWith('data:') && versionTag && !String(u.profileImage).includes('?v=')) {
+        return { ...u, profileImage: `${u.profileImage}?v=${versionTag}` };
+      }
+    } catch {}
+    return u;
+  });
 }
 
 async function joinRoom(io: IOServer, socket: CustomSocket, userId: number, username: string, roomId: string) {
@@ -79,7 +102,7 @@ async function joinRoom(io: IOServer, socket: CustomSocket, userId: number, user
   });
 
   // Send confirmation with current users list
-  const users = buildOnlineUsersForRoom(roomId);
+  const users = await buildOnlineUsersForRoom(roomId);
   socket.emit('message', { type: 'roomJoined', roomId, users });
 
   // Send last 10 messages for room
@@ -104,7 +127,7 @@ async function leaveRoom(io: IOServer, socket: CustomSocket, userId: number, use
   });
 
   // Push updated online users for the room
-  const users = buildOnlineUsersForRoom(roomId);
+  const users = await buildOnlineUsersForRoom(roomId);
   io.to(`room_${roomId}`).emit('message', { type: 'onlineUsers', users, roomId, source: 'leave' });
 }
 
@@ -284,7 +307,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
     socket.on('requestOnlineUsers', () => {
       if (!socket.isAuthenticated) return;
       const roomId = socket.currentRoom || GENERAL_ROOM;
-      const users = buildOnlineUsersForRoom(roomId);
+      const users = await buildOnlineUsersForRoom(roomId);
       socket.emit('message', { type: 'onlineUsers', users, roomId, source: 'request' });
     });
 
@@ -297,7 +320,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         const previousRoom = socket.currentRoom;
         await joinRoom(io, socket, socket.userId, username, roomId);
         if (previousRoom && previousRoom !== roomId) {
-          const prevUsers = buildOnlineUsersForRoom(previousRoom);
+          const prevUsers = await buildOnlineUsersForRoom(previousRoom);
           io.to(`room_${previousRoom}`).emit('message', { type: 'onlineUsers', users: prevUsers, roomId: previousRoom, source: 'switch_room' });
         }
       } catch (e) {
@@ -409,7 +432,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
             try { await storage.setUserOnlineStatus(userId, false); } catch {}
             // Update any room the user was in last (best effort)
             const lastRoom = socket.currentRoom || GENERAL_ROOM;
-            const users = buildOnlineUsersForRoom(lastRoom);
+            const users = await buildOnlineUsersForRoom(lastRoom);
             io.to(`room_${lastRoom}`).emit('message', { type: 'onlineUsers', users, roomId: lastRoom, source: 'disconnect' });
           } else {
             connectedUsers.set(userId, entry);
