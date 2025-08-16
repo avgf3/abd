@@ -552,7 +552,7 @@ export default function UnifiedSidebar({
                       showModerationActions={isModerator}
                     >
                                               <div
-                          className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} ${!getUserListItemClasses(user) ? 'bg-card hover:bg-accent/10' : ''}`}
+                          className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} ${!getUserListItemClasses(user) ? 'bg-card hover:bg-accent/10' : 'has-custom-bg'}`}
                           style={getUserListItemStyles(user)}
                           onClick={(e) => handleUserClick(e, user)}
                         >
