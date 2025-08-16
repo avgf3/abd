@@ -100,6 +100,128 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
   // Complete themes collection from original code
   const themes = [
+    // ===== ألوان صلبة أصلية =====
+    { 
+      value: 'solid-red', 
+      name: 'أحمر',
+      preview: '#DC143C',
+      emoji: '🔴'
+    },
+    { 
+      value: 'solid-blue', 
+      name: 'أزرق',
+      preview: '#1E90FF',
+      emoji: '🔵'
+    },
+    { 
+      value: 'solid-green', 
+      name: 'أخضر',
+      preview: '#32CD32',
+      emoji: '🟢'
+    },
+    { 
+      value: 'solid-purple', 
+      name: 'بنفسجي',
+      preview: '#9370DB',
+      emoji: '🟣'
+    },
+    { 
+      value: 'solid-orange', 
+      name: 'برتقالي',
+      preview: '#FF8C00',
+      emoji: '🟠'
+    },
+    { 
+      value: 'solid-yellow', 
+      name: 'أصفر',
+      preview: '#FFD700',
+      emoji: '🟡'
+    },
+    { 
+      value: 'solid-pink', 
+      name: 'وردي',
+      preview: '#FF69B4',
+      emoji: '🩷'
+    },
+    { 
+      value: 'solid-brown', 
+      name: 'بني',
+      preview: '#8B4513',
+      emoji: '🟤'
+    },
+    { 
+      value: 'solid-black', 
+      name: 'أسود',
+      preview: '#000000',
+      emoji: '⚫'
+    },
+    { 
+      value: 'solid-white', 
+      name: 'أبيض',
+      preview: '#FFFFFF',
+      emoji: '⚪'
+    },
+    { 
+      value: 'solid-gray', 
+      name: 'رمادي',
+      preview: '#808080',
+      emoji: '🩶'
+    },
+    { 
+      value: 'solid-cyan', 
+      name: 'سماوي',
+      preview: '#00CED1',
+      emoji: '🟦'
+    },
+    { 
+      value: 'solid-magenta', 
+      name: 'أرجواني',
+      preview: '#FF00FF',
+      emoji: '💜'
+    },
+    { 
+      value: 'solid-gold', 
+      name: 'ذهبي',
+      preview: '#FFD700',
+      emoji: '⭐'
+    },
+    { 
+      value: 'solid-silver', 
+      name: 'فضي',
+      preview: '#C0C0C0',
+      emoji: '🥈'
+    },
+    { 
+      value: 'solid-navy', 
+      name: 'كحلي',
+      preview: '#000080',
+      emoji: '💙'
+    },
+    { 
+      value: 'solid-teal', 
+      name: 'أخضر مزرق',
+      preview: '#008080',
+      emoji: '🟩'
+    },
+    { 
+      value: 'solid-maroon', 
+      name: 'خمري',
+      preview: '#800000',
+      emoji: '🍷'
+    },
+    { 
+      value: 'solid-olive', 
+      name: 'زيتوني',
+      preview: '#808000',
+      emoji: '🫒'
+    },
+    { 
+      value: 'solid-coral', 
+      name: 'مرجاني',
+      preview: '#FF7F50',
+      emoji: '🪸'
+    },
+    // ===== تدرجات لونية (اختياري) =====
     { 
       value: 'theme-sunset-glow', 
       name: 'توهج الغروب',
