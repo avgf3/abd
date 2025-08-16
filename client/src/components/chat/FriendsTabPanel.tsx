@@ -1,5 +1,6 @@
 import { RefreshCw, Users, UserPlus, MessageCircle, Trash2, Check, X } from 'lucide-react';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import ProfileImage from './ProfileImage';
 import SimpleUserMenu from './SimpleUserMenu';
@@ -35,16 +36,138 @@ export default function FriendsTabPanel({
 }: FriendsTabPanelProps) {
   const friendsScrollRef = useRef<HTMLDivElement>(null);
   useGrabScroll(friendsScrollRef);
-  const [friends, setFriends] = useState<Friend[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'friends' | 'requests'>('friends');
-  const [friendRequests, setFriendRequests] = useState<{ incoming: FriendRequest[]; outgoing: FriendRequest[] }>({
-    incoming: [],
-    outgoing: []
-  });
-  const [loading, setLoading] = useState(false);
   const { showErrorToast, showSuccessToast, updateFriendQueries } = useNotificationManager(currentUser);
   const [isAtBottomFriends, setIsAtBottomFriends] = useState(true);
+  const queryClient = useQueryClient();
+
+  // جلب الأصدقاء عبر React Query مع كاش متسق
+  const {
+    data: friendsData,
+    isLoading: isLoadingFriends,
+    isFetching: isFetchingFriends,
+    refetch: refetchFriends
+  } = useQuery<{ friends: Friend[] }>({
+    queryKey: ['/api/friends', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) throw new Error('No user ID');
+      return await apiRequest(`/api/friends/${currentUser.id}`);
+    },
+    enabled: !!currentUser?.id,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+  });
+
+  const rawFriends = (friendsData as any)?.friends || [];
+  const friendsWithStatus = useMemo(() => {
+    return rawFriends.map((friend: any) => {
+      const onlineUser = onlineUsers.find(u => u.id === friend.id);
+      return {
+        ...friend,
+        isOnline: !!onlineUser,
+        status: onlineUser ? 'online' : 'offline'
+      };
+    });
+  }, [rawFriends, onlineUsers]);
+
+  // جلب طلبات الصداقة (واردة وصادرة)
+  const { data: incomingData, isFetching: isFetchingIncoming, refetch: refetchIncoming } = useQuery<{ requests: FriendRequest[] }>({
+    queryKey: ['/api/friend-requests/incoming', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) throw new Error('No user ID');
+      return await apiRequest(`/api/friend-requests/incoming/${currentUser.id}`);
+    },
+    enabled: !!currentUser?.id,
+    staleTime: 60 * 1000,
+  });
+  const { data: outgoingData, isFetching: isFetchingOutgoing, refetch: refetchOutgoing } = useQuery<{ requests: FriendRequest[] }>({
+    queryKey: ['/api/friend-requests/outgoing', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) throw new Error('No user ID');
+      return await apiRequest(`/api/friend-requests/outgoing/${currentUser.id}`);
+    },
+    enabled: !!currentUser?.id,
+    staleTime: 60 * 1000,
+  });
+
+  const incomingRequests = (incomingData as any)?.requests || [];
+  const outgoingRequests = (outgoingData as any)?.requests || [];
+
+  // Mutations: قبول/رفض الطلبات وحذف صديق
+  const acceptRequestMutation = useMutation({
+    mutationFn: async (requestId: number) => {
+      if (!currentUser?.id) throw new Error('No user ID');
+      return await apiRequest(`/api/friend-requests/${requestId}/accept`, {
+        method: 'POST',
+        body: { userId: currentUser.id }
+      });
+    },
+    onSuccess: () => {
+      showSuccessToast('تم قبول طلب الصداقة بنجاح', 'تم قبول الطلب');
+      queryClient.invalidateQueries({ queryKey: ['/api/friends', currentUser?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/friend-requests/incoming', currentUser?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/friend-requests/outgoing', currentUser?.id] });
+      updateFriendQueries();
+    },
+    onError: (error: any) => {
+      showErrorToast(error?.message || 'فشل في قبول طلب الصداقة');
+    }
+  });
+
+  const rejectRequestMutation = useMutation({
+    mutationFn: async (requestId: number) => {
+      if (!currentUser?.id) throw new Error('No user ID');
+      return await apiRequest(`/api/friend-requests/${requestId}/decline`, {
+        method: 'POST',
+        body: { userId: currentUser.id }
+      });
+    },
+    onSuccess: () => {
+      showSuccessToast('تم رفض طلب الصداقة بنجاح', 'تم رفض الطلب');
+      queryClient.invalidateQueries({ queryKey: ['/api/friend-requests/incoming', currentUser?.id] });
+      updateFriendQueries();
+    },
+    onError: (error: any) => {
+      showErrorToast(error?.message || 'فشل في رفض طلب الصداقة');
+    }
+  });
+
+  const removeFriendMutation = useMutation({
+    mutationFn: async (friendId: number) => {
+      if (!currentUser?.id) throw new Error('No user ID');
+      return await apiRequest(`/api/friends/${currentUser.id}/${friendId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: (_data, friendId) => {
+      showSuccessToast('تم حذف الصديق من قائمتك', 'تم الحذف');
+      // تحديث الكاش فورياً
+      queryClient.setQueryData(['/api/friends', currentUser?.id], (oldData: any) => {
+        if (!oldData?.friends) return oldData;
+        return {
+          ...oldData,
+          friends: oldData.friends.filter((f: any) => f.id !== friendId)
+        };
+      });
+      updateFriendQueries();
+    },
+    onError: () => {
+      showErrorToast('فشل في حذف الصديق');
+    }
+  });
+
+  // دوال التحديث اليدوي (تستخدم في زر التحديث)
+  const fetchFriends = useCallback(() => {
+    if (!currentUser?.id) return;
+    refetchFriends();
+  }, [currentUser?.id, refetchFriends]);
+
+  const fetchFriendRequests = useCallback(() => {
+    if (!currentUser?.id) return;
+    refetchIncoming();
+    refetchOutgoing();
+  }, [currentUser?.id, refetchIncoming, refetchOutgoing]);
 
   // دوال مساعدة لعرض الشارات والأعلام
   const renderUserBadge = useCallback((user: ChatUser) => {
@@ -103,64 +226,9 @@ export default function FriendsTabPanel({
     };
   }, []);
 
-  // جلب قائمة الأصدقاء
-  const fetchFriends = useCallback(async () => {
-    if (!currentUser) return;
-    
-    setLoading(true);
-    try {
-      const data = await apiRequest(`/api/friends/${currentUser.id}`);
-      if (data && Array.isArray((data as any).friends)) {
-        setFriends((data as any).friends.map((friend: any) => ({
-          ...friend,
-          status: friend.isOnline ? 'online' : 'offline'
-        })));
-      }
-    } catch (error) {
-      console.error('Error fetching friends:', error);
-      showErrorToast("فشل في جلب قائمة الأصدقاء");
-    } finally {
-      setLoading(false);
-    }
-  }, [currentUser]);
+  // تحديث حالة الاتصال للأصدقاء يتم الآن تلقائياً عبر friendsWithStatus المشتقة من الكاش
 
-  // جلب طلبات الصداقة
-  const fetchFriendRequests = useCallback(async () => {
-    if (!currentUser) return;
-    
-    try {
-      const [incoming, outgoing] = await Promise.all([
-        apiRequest(`/api/friend-requests/incoming/${currentUser.id}`),
-        apiRequest(`/api/friend-requests/outgoing/${currentUser.id}`)
-      ]);
-      
-      setFriendRequests({
-        incoming: (incoming as any)?.requests || [],
-        outgoing: (outgoing as any)?.requests || []
-      });
-    } catch (error) {
-      console.error('Error fetching friend requests:', error);
-      setFriendRequests({ incoming: [], outgoing: [] });
-    }
-  }, [currentUser]);
-
-  // تحديث حالة الاتصال للأصدقاء
-  useEffect(() => {
-    if (friends.length > 0) {
-      setFriends(prev => 
-        prev.map(friend => {
-          const onlineUser = onlineUsers.find(u => u.id === friend.id);
-          return {
-            ...friend,
-            isOnline: !!onlineUser,
-            status: onlineUser ? 'online' : 'offline'
-          };
-        })
-      );
-    }
-  }, [onlineUsers, friends.length]);
-
-  // جلب البيانات عند التحميل
+  // جلب البيانات عند التحميل (يعتمد على React Query)
   useEffect(() => {
     if (currentUser) {
       fetchFriends();
@@ -170,71 +238,30 @@ export default function FriendsTabPanel({
 
   // قبول طلب صداقة
   const handleAcceptRequest = async (requestId: number) => {
-    try {
-      if (!currentUser?.id) {
-        showErrorToast('يجب تسجيل الدخول أولاً');
-        return;
-      }
-      await apiRequest(`/api/friend-requests/${requestId}/accept`, {
-        method: 'POST',
-        body: { userId: currentUser.id }
-      });
-      
-      showSuccessToast('تم قبول طلب الصداقة بنجاح', 'تم قبول الطلب');
-      
-      // تحديث البيانات
-      fetchFriendRequests();
-      fetchFriends();
-      updateFriendQueries();
-    } catch (error: any) {
-      console.error('Accept friend request error:', error);
-      showErrorToast(error?.message || 'فشل في قبول طلب الصداقة');
+    if (!currentUser?.id) {
+      showErrorToast('يجب تسجيل الدخول أولاً');
+      return;
     }
+    await acceptRequestMutation.mutateAsync(requestId);
   };
 
   // رفض طلب صداقة
   const handleRejectRequest = async (requestId: number) => {
-    try {
-      if (!currentUser?.id) {
-        showErrorToast('يجب تسجيل الدخول أولاً');
-        return;
-      }
-      await apiRequest(`/api/friend-requests/${requestId}/decline`, {
-        method: 'POST',
-        body: { userId: currentUser.id }
-      });
-      
-      showSuccessToast('تم رفض طلب الصداقة بنجاح', 'تم رفض الطلب');
-      
-      fetchFriendRequests();
-      updateFriendQueries();
-    } catch (error: any) {
-      console.error('Reject friend request error:', error);
-      showErrorToast(error?.message || 'فشل في رفض طلب الصداقة');
+    if (!currentUser?.id) {
+      showErrorToast('يجب تسجيل الدخول أولاً');
+      return;
     }
+    await rejectRequestMutation.mutateAsync(requestId);
   };
 
   // حذف صديق
   const handleRemoveFriend = async (friendId: number) => {
     if (!currentUser) return;
-    
-    try {
-      await apiRequest(`/api/friends/${currentUser.id}/${friendId}`, {
-        method: 'DELETE'
-      });
-      
-      showSuccessToast('تم حذف الصديق من قائمتك', 'تم الحذف');
-      
-      // إزالة الصديق من القائمة فوراً
-      setFriends(prev => prev.filter(f => f.id !== friendId));
-      updateFriendQueries();
-    } catch (error) {
-      showErrorToast('فشل في حذف الصديق');
-    }
+    await removeFriendMutation.mutateAsync(friendId);
   };
 
   // تصفية الأصدقاء
-  const filteredFriends = friends.filter(friend =>
+  const filteredFriends = friendsWithStatus.filter(friend =>
     friend.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
@@ -274,7 +301,7 @@ export default function FriendsTabPanel({
           onClick={() => setActiveTab('friends')}
         >
           <Users className="w-4 h-4 ml-2" />
-          الأصدقاء ({friends.length})
+          الأصدقاء ({friendsWithStatus.length})
         </Button>
         <Button
           variant={activeTab === 'requests' ? 'default' : 'ghost'}
@@ -287,9 +314,9 @@ export default function FriendsTabPanel({
         >
           <UserPlus className="w-4 h-4 ml-2" />
           الطلبات
-          {friendRequests.incoming.length > 0 && (
+          {incomingRequests.length > 0 && (
             <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs min-w-[20px] h-5">
-              {friendRequests.incoming.length}
+              {incomingRequests.length}
             </Badge>
           )}
         </Button>
@@ -322,7 +349,7 @@ export default function FriendsTabPanel({
             </div>
 
             {/* Friends List */}
-            {loading ? (
+            {(isLoadingFriends || isFetchingFriends) ? (
               <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
             ) : filteredFriends.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
@@ -452,7 +479,7 @@ export default function FriendsTabPanel({
                 <CardTitle className="flex items-center justify-between">
                   <span>الطلبات الواردة</span>
                   <Badge variant="secondary">
-                    {friendRequests.incoming.length}
+                    {incomingRequests.length}
                   </Badge>
                 </CardTitle>
                 <CardDescription>
@@ -461,13 +488,13 @@ export default function FriendsTabPanel({
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[200px]">
-                  {friendRequests.incoming.length === 0 ? (
+                  {incomingRequests.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       لا توجد طلبات صداقة واردة
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {friendRequests.incoming.map((request) => (
+                      {incomingRequests.map((request) => (
                         <div key={request.id} className="border rounded-lg p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -530,7 +557,7 @@ export default function FriendsTabPanel({
                 <CardTitle className="flex items-center justify-between">
                   <span>الطلبات الصادرة</span>
                   <Badge variant="secondary">
-                    {friendRequests.outgoing.length}
+                    {outgoingRequests.length}
                   </Badge>
                 </CardTitle>
                 <CardDescription>
@@ -539,13 +566,13 @@ export default function FriendsTabPanel({
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[200px]">
-                  {friendRequests.outgoing.length === 0 ? (
+                  {outgoingRequests.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       لا توجد طلبات صداقة صادرة
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {friendRequests.outgoing.map((request) => (
+                      {outgoingRequests.map((request) => (
                         <div key={request.id} className="border rounded-lg p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
