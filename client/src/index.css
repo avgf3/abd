@@ -809,7 +809,7 @@ html {
   position: absolute;
   inset: 0;
   background: inherit;
-  opacity: 0.12;
+  opacity: 1;
   z-index: -1;
 }
 
