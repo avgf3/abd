@@ -185,50 +185,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "المستخدم غير موجود" });
       }
 
-      // حل مشكلة Render: تحويل الصورة إلى base64 وحفظها في قاعدة البيانات
-      let imageUrl: string;
-      
-      try {
-        // قراءة الملف كـ base64
-        const fileBuffer = fs.readFileSync(req.file.path);
-        const base64Image = fileBuffer.toString('base64');
-        const mimeType = req.file.mimetype;
-        
-        // إنشاء data URL
-        imageUrl = `data:${mimeType};base64,${base64Image}`;
-        
-        // حذف الملف الأصلي
-        fs.unlinkSync(req.file.path);
-        
-      } catch (fileError) {
-        console.error('❌ خطأ في معالجة الملف:', fileError);
-        
-        // في حالة فشل base64، استخدم المسار العادي
-        imageUrl = `/uploads/profiles/${req.file.filename}`;
-        
-        // حاول التأكد من وجود المجلد
-        const uploadsDir = path.dirname(req.file.path);
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
+      // حفظ الصورة بصيغة webp ثابتة + حساب hash/version
+      const avatarsDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'avatars');
+      if (!fs.existsSync(avatarsDir)) {
+        fs.mkdirSync(avatarsDir, { recursive: true });
       }
-      
-      // تحديث صورة البروفايل في قاعدة البيانات
-      const updatedUser = await storage.updateUser(userId, { profileImage: imageUrl });
+      const inputBuffer = fs.readFileSync(req.file.path);
+      let webpBuffer = inputBuffer;
+      try {
+        webpBuffer = await (sharp as any)(inputBuffer).resize(256, 256, { fit: 'cover' }).webp({ quality: 80 }).toBuffer();
+      } catch {}
+      const hash = (await import('crypto')).createHash('md5').update(webpBuffer).digest('hex').slice(0, 12);
+      const targetPath = path.join(avatarsDir, `${userId}.webp`);
+      fs.writeFileSync(targetPath, webpBuffer);
+
+      // حذف الملف المؤقت
+      try { fs.unlinkSync(req.file.path); } catch {}
+
+      // تحديث DB: avatarHash + زيادة avatarVersion
+      const nextVersion = (user as any).avatarVersion ? Number((user as any).avatarVersion) + 1 : 1;
+      const updatedUser = await storage.updateUser(userId, { profileImage: `/uploads/avatars/${userId}.webp`, avatarHash: hash, avatarVersion: nextVersion });
       
       if (!updatedUser) {
         return res.status(500).json({ error: "فشل في تحديث صورة البروفايل في قاعدة البيانات" });
       }
 
-      // بث خفيف للغرف: إعلام بتحديث الصورة فقط + كامل لصاحب التعديل
+      // بث خفيف للغرف + كامل لصاحب التعديل
       emitUserUpdatedToUser(userId, updatedUser);
-      await emitToUserRooms(userId, { type: 'userUpdated', user: { id: userId, profileImage: updatedUser.profileImage } });
+      await emitToUserRooms(userId, { type: 'userUpdated', user: { id: userId, profileImage: `${updatedUser.profileImage}?v=${hash}` } });
 
       res.json({
         success: true,
         message: "تم رفع الصورة بنجاح",
-        imageUrl: imageUrl,
-        filename: req.file.filename,
+        imageUrl: `${updatedUser.profileImage}?v=${hash}`,
+        filename: `${userId}.webp`,
+        avatarHash: hash,
         user: updatedUser
       });
 
