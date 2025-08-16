@@ -147,10 +147,14 @@ async function fixInconsistentData() {
       const updates: any = {};
 
       // التحقق من profileBackgroundColor
-      if (user.profileBackgroundColor && !isValidHexColor(user.profileBackgroundColor)) {
-        updates.profileBackgroundColor = '#3c0d0d';
-        needsUpdate = true;
-        invalidHexCount++;
+      if (user.profileBackgroundColor) {
+        const color = String(user.profileBackgroundColor).trim();
+        const isGradient = color.toLowerCase().startsWith('linear-gradient(');
+        if (!isGradient && !isValidHexColor(color)) {
+          updates.profileBackgroundColor = '#3c0d0d';
+          needsUpdate = true;
+          invalidHexCount++;
+        }
       }
 
       // التحقق من usernameColor
