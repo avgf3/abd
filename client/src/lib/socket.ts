@@ -104,12 +104,12 @@ export function getSocket(): Socket {
     rememberUpgrade: false,
     autoConnect: false,
     reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 60000,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 3000,
+    reconnectionDelayMax: 15000,
     randomizationFactor: 0.5,
     timeout: 20000,
-    forceNew: false,
+    forceNew: true,
     withCredentials: true,
   });
 
