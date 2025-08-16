@@ -295,21 +295,22 @@ export const useChat = () => {
   }, [state.roomMessages]);
 
       // Track ping interval to avoid leaks
-    const pingIntervalRef = useRef<number | null>(null);
-    
-      // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
-    const setupSocketListeners = useCallback((socketInstance: Socket) => {
-      // حافظ على الاتصال عبر ping/pong مخصص عند السكون
-      if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
+  const pingIntervalRef = useRef<number | null>(null);
+  const refreshIntervalRef = useRef<number | null>(null);
+  
+  // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
+  const setupSocketListeners = useCallback((socketInstance: Socket) => {
+    // حافظ على الاتصال عبر ping/pong مخصص عند السكون
+    if (pingIntervalRef.current) {
+      clearInterval(pingIntervalRef.current);
+    }
+    const pingId = window.setInterval(() => {
+      if (socketInstance.connected) {
+        socketInstance.emit('client_ping');
       }
-      const pingId = window.setInterval(() => {
-        if (socketInstance.connected) {
-          socketInstance.emit('client_ping');
-        }
-      }, 20000);
-      pingIntervalRef.current = pingId;
-      socketInstance.on('client_pong', () => {});
+    }, 20000);
+    pingIntervalRef.current = pingId;
+    socketInstance.on('client_pong', () => {});
 
       // لم نعد نستخدم ping/pong المخصصين؛ نعتمد فقط على client_ping/client_pong للحفاظ على الاتصال
 
@@ -453,7 +454,13 @@ export const useChat = () => {
           
           case 'onlineUsers': {
             if (Array.isArray(envelope.users)) {
-              dispatch({ type: 'SET_ONLINE_USERS', payload: envelope.users });
+              // ✅ تحديث فوري لقائمة المتصلين
+              const validUsers = envelope.users.filter((user: ChatUser) => {
+                return user?.id && user?.username && user?.userType && 
+                       user.username !== 'مستخدم' && user.username !== 'User' &&
+                       user.id > 0;
+              });
+              dispatch({ type: 'SET_ONLINE_USERS', payload: validUsers });
             }
             break;
           }
@@ -462,15 +469,52 @@ export const useChat = () => {
             // استبدال القائمة بالكامل بقائمة الغرفة المرسلة
             const users = (envelope as any).users;
             if (Array.isArray(users)) {
-              dispatch({ type: 'SET_ONLINE_USERS', payload: users });
+              const validUsers = users.filter((user: ChatUser) => {
+                return user?.id && user?.username && user?.userType && 
+                       user.username !== 'مستخدم' && user.username !== 'User' &&
+                       user.id > 0;
+              });
+              dispatch({ type: 'SET_ONLINE_USERS', payload: validUsers });
             }
             break;
           }
 
-          case 'userJoinedRoom':
+          case 'userJoinedRoom': {
+            // ✅ إضافة المستخدم الجديد فوراً للقائمة المحلية
+            const { userId, username, user } = envelope as any;
+            if (user && user.id && user.username && user.userType) {
+              dispatch({ type: 'SET_ONLINE_USERS', payload: [...state.onlineUsers.filter(u => u.id !== user.id), user] });
+            } else if (userId && username) {
+              // طلب تحديث كامل إذا لم تكن البيانات كاملة
+              socketInstance.emit('requestOnlineUsers');
+            }
+            break;
+          }
+          
           case 'userLeftRoom': {
-            // اطلب قائمة المتصلين للغرفة الحالية لتجنب مشاكل السباق
-            try { socketInstance.emit('requestOnlineUsers'); } catch {}
+            // ✅ إزالة المستخدم فوراً من القائمة المحلية
+            const { userId } = envelope as any;
+            if (userId) {
+              dispatch({ type: 'SET_ONLINE_USERS', payload: state.onlineUsers.filter(u => u.id !== userId) });
+            }
+            break;
+          }
+          
+          case 'userDisconnected': {
+            // ✅ إزالة المستخدم المنقطع فوراً
+            const { userId } = envelope as any;
+            if (userId) {
+              dispatch({ type: 'SET_ONLINE_USERS', payload: state.onlineUsers.filter(u => u.id !== userId) });
+            }
+            break;
+          }
+          
+          case 'userConnected': {
+            // ✅ إضافة المستخدم المتصل الجديد
+            const { user } = envelope as any;
+            if (user && user.id && user.username && user.userType) {
+              dispatch({ type: 'SET_ONLINE_USERS', payload: [...state.onlineUsers.filter(u => u.id !== user.id), user] });
+            }
             break;
           }
           
@@ -526,6 +570,17 @@ export const useChat = () => {
         console.error('❌ خطأ في معالجة رسالة Socket:', error);
       }
     });
+
+    // ✅ آلية تحديث دورية لقائمة المتصلين
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+    }
+    const refreshId = window.setInterval(() => {
+      if (socketInstance.connected) {
+        socketInstance.emit('requestOnlineUsers');
+      }
+    }, 30000); // كل 30 ثانية
+    refreshIntervalRef.current = refreshId;
 
     // بث تحديثات غرفة البث وأحداث المايك عبر قنوات Socket المخصصة
     const emitToBroadcastHandlers = (payload: any) => {
@@ -666,12 +721,48 @@ export const useChat = () => {
 
     }, [state.currentUser, state.onlineUsers, state.currentRoomId]);
 
+    // إرجاع دالة تنظيف
+    return () => {
+      // تنظيف المستمعين بشكل آمن
+      if (socketInstance && typeof socketInstance.off === 'function') {
+        try {
+          socketInstance.off('message');
+          socketInstance.off('roomUpdate');
+          socketInstance.off('micRequested');
+          socketInstance.off('micApproved');
+          socketInstance.off('micRejected');
+          socketInstance.off('speakerRemoved');
+          socketInstance.off('webrtc-offer');
+          socketInstance.off('webrtc-answer');
+          socketInstance.off('webrtc-ice-candidate');
+          socketInstance.off('privateMessage');
+          socketInstance.off('kicked');
+          socketInstance.off('blocked');
+          socketInstance.off('error');
+          socketInstance.off('client_pong');
+        } catch (error) {
+          console.error('❌ خطأ في تنظيف مستمعي Socket:', error);
+        }
+      }
+      
+      // تنظيف intervals
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+    };
+  }, [state.currentUser, state.onlineUsers, state.currentRoomId]);
+
     // Ensure cleanup on unmount
     useEffect(() => {
       return () => {
         if (pingIntervalRef.current) {
           clearInterval(pingIntervalRef.current);
           pingIntervalRef.current = null;
+        }
+        if (refreshIntervalRef.current) {
+          clearInterval(refreshIntervalRef.current);
+          refreshIntervalRef.current = null;
         }
       };
     }, []);
@@ -859,6 +950,10 @@ export const useChat = () => {
       if (pingIntervalRef.current) {
         clearInterval(pingIntervalRef.current);
         pingIntervalRef.current = null;
+      }
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
       }
     }
     

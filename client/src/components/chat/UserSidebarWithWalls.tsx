@@ -21,6 +21,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Socket } from 'socket.io-client';
 import { getSocket, saveSession } from '@/lib/socket';
 import { useGrabScroll } from '@/hooks/useGrabScroll';
+import UserListItem from './UserListItem';
 
 
 
@@ -63,8 +64,8 @@ export default function UnifiedSidebar({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // دالة ترتيب المستخدمين حسب الرتب
-  const getRankOrder = useCallback((userType: string): number => {
+  // دالة ترتيب المستخدمين حسب الرتب - خارج useCallback لأنها لا تعتمد على أي متغيرات
+  const getRankOrder = (userType: string): number => {
     switch (userType) {
       case 'owner': return 1;
       case 'admin': return 2;
@@ -73,29 +74,45 @@ export default function UnifiedSidebar({
       case 'guest': return 5;
       default: return 6;
     }
-  }, []);
+  };
 
   // 🚀 تحسين: استخدام useMemo لفلترة وترتيب المستخدمين لتحسين الأداء
   const validUsers = useMemo(() => {
-    const filtered = users.filter(user => {
+    // إنشاء Map لمنع التكرار بناءً على ID
+    const uniqueUsersMap = new Map<number, ChatUser>();
+    
+    users.forEach(user => {
       // فلترة صارمة للمستخدمين الصالحين
       if (!user?.id || !user?.username || !user?.userType) {
         console.warn('🚫 مستخدم بيانات غير صالحة في القائمة:', user);
-        return false;
+        return;
       }
       
       // رفض الأسماء العامة
       if (user.username === 'مستخدم' || user.username === 'User' || user.username.trim() === '') {
-        return false;
+        return;
       }
       
       // رفض المعرفات غير الصالحة
-      if (user.id <= 0) {
-        return false;
+      if (user.id <= 0 || !Number.isInteger(user.id)) {
+        return;
       }
       
-      return true;
+      // التحقق من صحة userType
+      const validUserTypes = ['owner', 'admin', 'moderator', 'member', 'guest'];
+      if (!validUserTypes.includes(user.userType)) {
+        console.warn('🚫 نوع مستخدم غير صالح:', user.userType);
+        return;
+      }
+      
+      // إضافة للـ Map فقط إذا لم يكن موجوداً (منع التكرار)
+      if (!uniqueUsersMap.has(user.id)) {
+        uniqueUsersMap.set(user.id, user);
+      }
     });
+    
+    // تحويل Map إلى Array
+    const filtered = Array.from(uniqueUsersMap.values());
 
     // ترتيب المستخدمين حسب الرتب: المالك أولاً، ثم الإدمن، ثم المشرف، ثم الأعضاء، ثم الضيوف
     // وداخل كل رتبة ترتيب أبجدي بالاسم
@@ -287,7 +304,14 @@ export default function UnifiedSidebar({
 
       s.on('message', onMessage);
       return () => {
-        try { s.off('message', onMessage); } catch {}
+        // تنظيف آمن للمستمعين مع تسجيل الأخطاء
+        if (s && typeof s.off === 'function') {
+          try {
+            s.off('message', onMessage);
+          } catch (error) {
+            console.error('❌ خطأ في تنظيف مستمع Socket:', error);
+          }
+        }
       };
     }
   }, [activeView, activeTab, currentUser?.id, queryClient]);
@@ -545,49 +569,13 @@ export default function UnifiedSidebar({
 
                 
                 return (
-                  <li key={user.id} className="relative -mx-4">
-                    <SimpleUserMenu
-                      targetUser={user}
-                      currentUser={currentUser}
-                      showModerationActions={isModerator}
-                    >
-                                              <div
-                          className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} ${!getUserListItemClasses(user) ? 'bg-card hover:bg-accent/10' : ''}`}
-                          style={getUserListItemStyles(user)}
-                          onClick={(e) => handleUserClick(e, user)}
-                        >
-                        <ProfileImage 
-                          user={user} 
-                          size="small" 
-                          className=""
-                          hideRoleBadgeOverlay={true}
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <span 
-                                className="text-base font-medium transition-colors duration-300"
-                                style={{ 
-                                  color: getFinalUsernameColor(user)
-                                }}
-                                title={user.username}
-                              >
-                                {user.username}
-                              </span>
-                              {/* إشارة المكتوم */}
-                              {user.isMuted && (
-                                <span className="text-yellow-400 text-xs">🔇</span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              {renderUserBadge(user)}
-                              {renderCountryFlag(user)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </SimpleUserMenu>
-                  </li>
+                  <UserListItem
+                    key={user.id}
+                    user={user}
+                    currentUser={currentUser}
+                    isModerator={isModerator}
+                    onUserClick={handleUserClick}
+                  />
                 );
               })}
             </ul>

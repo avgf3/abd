@@ -243,8 +243,46 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
 
 // دالة موحدة للحصول على أنماط عنصر المستخدم في القائمة
 export const getUserListItemStyles = (user: any): Record<string, string> => {
-  // استخدام نفس المنطق المستخدم في الملف الشخصي
-  return getUserEffectStyles(user);
+  const style: Record<string, string> = {};
+  
+  // أولاً: تطبيق خلفية الملف الشخصي (تدرج أو لون)
+  if (user?.profileBackgroundColor) {
+    const bg = buildProfileBackgroundGradient(String(user.profileBackgroundColor));
+    if (bg) {
+      style.background = bg;
+      // إضافة !important لضمان عدم تجاوز اللون
+      style.backgroundImage = bg;
+      style.backgroundColor = 'transparent';
+    }
+  }
+  
+  // ثانياً: إضافة تأثيرات إضافية حسب نوع التأثير المختار
+  const effect = user?.profileEffect || 'none';
+  if (effect !== 'none' && effect !== 'null' && effect !== 'undefined') {
+    // إضافة ظلال ملونة حسب التأثير
+    const effectShadows: Record<string, string> = {
+      'effect-glow': '0 0 20px rgba(255, 215, 0, 0.5), inset 0 0 10px rgba(255, 215, 0, 0.1)',
+      'effect-pulse': '0 0 20px rgba(255, 105, 180, 0.5), inset 0 0 10px rgba(255, 105, 180, 0.1)',
+      'effect-water': '0 0 20px rgba(0, 206, 209, 0.5), inset 0 0 10px rgba(0, 206, 209, 0.1)',
+      'effect-aurora': '0 0 20px rgba(155, 89, 182, 0.5), inset 0 0 10px rgba(155, 89, 182, 0.1)',
+      'effect-neon': '0 0 20px rgba(0, 255, 127, 0.6), inset 0 0 10px rgba(0, 255, 127, 0.1)',
+      'effect-fire': '0 0 20px rgba(255, 69, 0, 0.5), inset 0 0 10px rgba(255, 69, 0, 0.1)',
+      'effect-ice': '0 0 20px rgba(135, 206, 235, 0.5), inset 0 0 10px rgba(135, 206, 235, 0.1)',
+      'effect-rainbow': '0 0 20px rgba(236, 72, 153, 0.5), inset 0 0 10px rgba(236, 72, 153, 0.1)',
+      'effect-shadow': '0 2px 10px rgba(0, 0, 0, 0.3), inset 0 1px 3px rgba(0, 0, 0, 0.1)',
+      'effect-electric': '0 0 20px rgba(0, 191, 255, 0.5), inset 0 0 10px rgba(0, 191, 255, 0.1)',
+      'effect-crystal': '0 0 20px rgba(230, 230, 250, 0.5), inset 0 0 10px rgba(230, 230, 250, 0.1)',
+    };
+    
+    if (effectShadows[effect]) {
+      style.boxShadow = effectShadows[effect];
+    }
+  }
+  
+  // إضافة transition للتأثيرات السلسة
+  style.transition = 'all 0.3s ease';
+  
+  return style;
 };
 
 // دالة للحصول على كلاسات CSS للمستخدم في القائمة
