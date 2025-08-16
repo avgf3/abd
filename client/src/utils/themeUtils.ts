@@ -136,6 +136,27 @@ const sanitizeHexColor = (color: string, defaultColor: string = '#3c0d0d'): stri
   return defaultColor;
 };
 
+// دالة لاستخراج أول لون HEX من تدرج لوني
+export const extractFirstHexColor = (gradient: string, defaultColor: string = '#3c0d0d'): string => {
+  if (!gradient || typeof gradient !== 'string') {
+    return defaultColor;
+  }
+  
+  // إذا كان اللون بالفعل hex صالح، أعده مباشرة
+  if (isValidHexColor(gradient)) {
+    return sanitizeHexColor(gradient, defaultColor);
+  }
+  
+  // البحث عن أول لون hex في التدرج
+  const hexMatch = gradient.match(/#[a-fA-F0-9]{6}/);
+  if (hexMatch) {
+    return hexMatch[0];
+  }
+  
+  // إذا لم نجد أي لون hex، نعيد اللون الافتراضي
+  return defaultColor;
+};
+
 // بناء تدرّج خلفية موحد من لون HEX ليتطابق مع بطاقة البروفايل وصندوق القائمة
 export const buildProfileBackgroundGradient = (hex: string): string => {
   const clean = sanitizeHexColor(hex);
