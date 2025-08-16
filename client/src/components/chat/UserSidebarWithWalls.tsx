@@ -64,7 +64,7 @@ export default function UnifiedSidebar({
   const queryClient = useQueryClient();
 
   // دالة ترتيب المستخدمين حسب الرتب
-  const getRankOrder = useCallback((userType: string): number => {
+  const getRankOrder = (userType: string): number => {
     switch (userType) {
       case 'owner': return 1;
       case 'admin': return 2;
@@ -73,7 +73,7 @@ export default function UnifiedSidebar({
       case 'guest': return 5;
       default: return 6;
     }
-  }, []);
+  };
 
   // 🚀 تحسين: استخدام useMemo لفلترة وترتيب المستخدمين لتحسين الأداء
   const validUsers = useMemo(() => {
@@ -97,9 +97,13 @@ export default function UnifiedSidebar({
       return true;
     });
 
+    // إزالة التكرارات حسب id
+    const dedup = new Map<number, ChatUser>();
+    for (const u of filtered) { if (!dedup.has(u.id)) dedup.set(u.id, u); }
+
     // ترتيب المستخدمين حسب الرتب: المالك أولاً، ثم الإدمن، ثم المشرف، ثم الأعضاء، ثم الضيوف
     // وداخل كل رتبة ترتيب أبجدي بالاسم
-    const sorted = filtered.sort((a, b) => {
+    const sorted = Array.from(dedup.values()).sort((a, b) => {
       const rankA = getRankOrder(a.userType);
       const rankB = getRankOrder(b.userType);
       
@@ -120,7 +124,7 @@ export default function UnifiedSidebar({
     }
 
     return sorted;
-  }, [users, getRankOrder]);
+  }, [users]);
 
   const filteredUsers = useMemo(() => {
     // تطبيق البحث على المستخدمين الصالحين فقط
@@ -287,7 +291,7 @@ export default function UnifiedSidebar({
 
       s.on('message', onMessage);
       return () => {
-        try { s.off('message', onMessage); } catch {}
+        s.off('message', onMessage);
       };
     }
   }, [activeView, activeTab, currentUser?.id, queryClient]);
@@ -448,6 +452,55 @@ export default function UnifiedSidebar({
 
   // تم نقل دالة formatTimeAgo إلى utils/timeUtils.ts (تستخدم من الاستيراد أعلاه)
 
+  // عنصر مستخدم فرعي معزول لتحسين الأداء
+  const UserListItem = useMemo(() => React.memo(({ user }: { user: ChatUser }) => {
+    if (!user?.username || !user?.userType) return null;
+    return (
+      <li key={user.id} className="relative -mx-4">
+        <SimpleUserMenu
+          targetUser={user}
+          currentUser={currentUser}
+          showModerationActions={isModerator}
+        >
+          <div
+            className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
+            style={getUserListItemStyles(user)}
+            onClick={(e) => handleUserClick(e as any, user)}
+          >
+            <ProfileImage 
+              user={user} 
+              size="small" 
+              className=""
+              hideRoleBadgeOverlay={true}
+            />
+            <div className="flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span 
+                    className="text-base font-medium transition-colors duration-300"
+                    style={{ 
+                      color: getFinalUsernameColor(user)
+                    }}
+                    title={user.username}
+                  >
+                    {user.username}
+                  </span>
+                  {user.isMuted && (
+                    <span className="text-yellow-400 text-xs">🔇</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  {renderUserBadge(user)}
+                  {renderCountryFlag(user)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </SimpleUserMenu>
+      </li>
+    );
+  }), [currentUser, isModerator, renderCountryFlag, renderUserBadge]);
+
   return (
     <aside className="w-full bg-card text-sm overflow-hidden border-l border-border shadow-lg flex flex-col h-full max-h-screen">
       {/* Toggle Buttons - always visible now */}
@@ -536,60 +589,9 @@ export default function UnifiedSidebar({
             </div>
             
             <ul className="space-y-1">
-              {filteredUsers.map((user) => {
-                // 🚀 تحسين: التحقق من وجود البيانات المطلوبة
-                if (!user?.username || !user?.userType) {
-                  return null;
-                }
-                
-
-                
-                return (
-                  <li key={user.id} className="relative -mx-4">
-                    <SimpleUserMenu
-                      targetUser={user}
-                      currentUser={currentUser}
-                      showModerationActions={isModerator}
-                    >
-                                              <div
-                          className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user)} ${!getUserListItemClasses(user) ? 'bg-card hover:bg-accent/10' : ''}`}
-                          style={getUserListItemStyles(user)}
-                          onClick={(e) => handleUserClick(e, user)}
-                        >
-                        <ProfileImage 
-                          user={user} 
-                          size="small" 
-                          className=""
-                          hideRoleBadgeOverlay={true}
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <span 
-                                className="text-base font-medium transition-colors duration-300"
-                                style={{ 
-                                  color: getFinalUsernameColor(user)
-                                }}
-                                title={user.username}
-                              >
-                                {user.username}
-                              </span>
-                              {/* إشارة المكتوم */}
-                              {user.isMuted && (
-                                <span className="text-yellow-400 text-xs">🔇</span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              {renderUserBadge(user)}
-                              {renderCountryFlag(user)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </SimpleUserMenu>
-                  </li>
-                );
-              })}
+              {filteredUsers.map((user) => (
+                <UserListItem key={user.id} user={user} />
+              ))}
             </ul>
             
             {filteredUsers.length === 0 && (

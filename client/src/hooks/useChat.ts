@@ -258,7 +258,13 @@ export const useChat = () => {
 
   // ✅ Memoized online users
   const memoizedOnlineUsers = useMemo(() => 
-    state.onlineUsers.filter(user => !state.ignoredUsers.has(user.id)),
+    {
+      const filtered = state.onlineUsers.filter(user => user && user.id && user.username && user.userType && !state.ignoredUsers.has(user.id));
+      // إزالة التكرارات
+      const dedup = new Map<number, ChatUser>();
+      for (const u of filtered) { if (!dedup.has(u.id)) dedup.set(u.id, u); }
+      return Array.from(dedup.values());
+    },
     [state.onlineUsers, state.ignoredUsers]
   );
 
@@ -295,26 +301,53 @@ export const useChat = () => {
   }, [state.roomMessages]);
 
       // Track ping interval to avoid leaks
-    const pingIntervalRef = useRef<number | null>(null);
-    
-      // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
-    const setupSocketListeners = useCallback((socketInstance: Socket) => {
-      // حافظ على الاتصال عبر ping/pong مخصص عند السكون
-      if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
+  const pingIntervalRef = useRef<number | null>(null);
+  const onlineUsersIntervalRef = useRef<number | null>(null);
+  const lastUserListRequestAtRef = useRef<number>(0);
+  
+  // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
+  const setupSocketListeners = useCallback((socketInstance: Socket) => {
+    // حافظ على الاتصال عبر ping/pong مخصص عند السكون
+    if (pingIntervalRef.current) {
+      clearInterval(pingIntervalRef.current);
+    }
+    const pingId = window.setInterval(() => {
+      if (socketInstance.connected) {
+        socketInstance.emit('client_ping');
       }
-      const pingId = window.setInterval(() => {
-        if (socketInstance.connected) {
-          socketInstance.emit('client_ping');
-        }
-      }, 20000);
-      pingIntervalRef.current = pingId;
-      socketInstance.on('client_pong', () => {});
+    }, 20000);
+    pingIntervalRef.current = pingId;
+    socketInstance.on('client_pong', () => {});
 
-      // لم نعد نستخدم ping/pong المخصصين؛ نعتمد فقط على client_ping/client_pong للحفاظ على الاتصال
+    // إعداد مؤقّت تحديث دوري لقائمة المتصلين مع Throttle لمنع التحميل الزائد
+    if (onlineUsersIntervalRef.current) {
+      clearInterval(onlineUsersIntervalRef.current);
+    }
+    const ouIntervalId = window.setInterval(() => {
+      if (!socketInstance.connected) return;
+      const now = Date.now();
+      if (now - lastUserListRequestAtRef.current >= 10000) {
+        try {
+          socketInstance.emit('requestOnlineUsers');
+          lastUserListRequestAtRef.current = now;
+        } catch {}
+      }
+    }, 30000);
+    onlineUsersIntervalRef.current = ouIntervalId;
 
-      // ✅ معالج واحد للرسائل - حذف التضارب
-      socketInstance.on('message', (data: any) => {
+    // دالة مساعدة لطلب القائمة مع Throttle فوري
+    const requestUsersThrottled = () => {
+      const now = Date.now();
+      if (now - lastUserListRequestAtRef.current >= 1500) {
+        try {
+          socketInstance.emit('requestOnlineUsers');
+          lastUserListRequestAtRef.current = now;
+        } catch {}
+      }
+    };
+
+    // ✅ معالج واحد للرسائل - حذف التضارب
+    socketInstance.on('message', (data: any) => {
       try {
         const envelope = data.envelope || data;
         
@@ -413,18 +446,18 @@ export const useChat = () => {
                 isPrivate: Boolean(message.isPrivate)
               };
               
-                             // إضافة الرسالة للغرفة المناسبة (عام فقط)
-               if (!chatMessage.isPrivate) {
-                 dispatch({ 
-                   type: 'ADD_ROOM_MESSAGE', 
-                   payload: { roomId, message: chatMessage }
-                 });
-               }
+              // إضافة الرسالة للغرفة المناسبة (عام فقط)
+              if (!chatMessage.isPrivate) {
+                dispatch({ 
+                  type: 'ADD_ROOM_MESSAGE', 
+                  payload: { roomId, message: chatMessage }
+                });
+              }
               
-                             // تشغيل صوت خفيف فقط عند الرسائل العامة في الغرفة الحالية
-               if (!chatMessage.isPrivate && chatMessage.senderId !== state.currentUser?.id && roomId === state.currentRoomId) {
-                 playNotificationSound();
-               }
+              // تشغيل صوت خفيف فقط عند الرسائل العامة في الغرفة الحالية
+              if (!chatMessage.isPrivate && chatMessage.senderId !== state.currentUser?.id && roomId === state.currentRoomId) {
+                playNotificationSound();
+              }
             }
             break;
           }
@@ -453,7 +486,13 @@ export const useChat = () => {
           
           case 'onlineUsers': {
             if (Array.isArray(envelope.users)) {
-              dispatch({ type: 'SET_ONLINE_USERS', payload: envelope.users });
+              const rawUsers = envelope.users as ChatUser[];
+              // فلترة صارمة + إزالة المتجاهلين + إزالة التكرارات
+              const filtered = rawUsers.filter(u => u && u.id && u.username && u.userType && !state.ignoredUsers.has(u.id));
+              const dedup = new Map<number, ChatUser>();
+              for (const u of filtered) { if (!dedup.has(u.id)) dedup.set(u.id, u); }
+              const nextUsers = Array.from(dedup.values());
+              dispatch({ type: 'SET_ONLINE_USERS', payload: nextUsers });
             }
             break;
           }
@@ -467,10 +506,55 @@ export const useChat = () => {
             break;
           }
 
-          case 'userJoinedRoom':
+          case 'userJoinedRoom': {
+            const joinedId = (envelope as any).userId;
+            const username = (envelope as any).username || (joinedId ? `User#${joinedId}` : 'User');
+            if (joinedId && !state.onlineUsers.find(u => u.id === joinedId)) {
+              const placeholder = { id: joinedId, username, role: 'member', userType: 'member', isOnline: true } as ChatUser;
+              dispatch({ type: 'SET_ONLINE_USERS', payload: [...state.onlineUsers, placeholder] });
+              // محاولة تحديث التفاصيل بسرعة ثم طلب القائمة كنسخة احتياطية
+              try {
+                apiRequest(`/api/users/${joinedId}?t=${Date.now()}`).then((data: any) => {
+                  if (data && data.id) {
+                    const replaced = state.onlineUsers.filter(u => u.id !== joinedId).concat([{ ...(data as any), isOnline: true } as ChatUser]);
+                    dispatch({ type: 'SET_ONLINE_USERS', payload: replaced });
+                  } else {
+                    requestUsersThrottled();
+                  }
+                }).catch(() => requestUsersThrottled());
+              } catch {
+                requestUsersThrottled();
+              }
+            } else {
+              requestUsersThrottled();
+            }
+            break;
+          }
           case 'userLeftRoom': {
-            // اطلب قائمة المتصلين للغرفة الحالية لتجنب مشاكل السباق
-            try { socketInstance.emit('requestOnlineUsers'); } catch {}
+            const leftId = (envelope as any).userId;
+            if (leftId) {
+              const next = state.onlineUsers.filter(u => u.id !== leftId);
+              dispatch({ type: 'SET_ONLINE_USERS', payload: next });
+            }
+            break;
+          }
+          case 'userDisconnected': {
+            const uid = (envelope as any).userId;
+            if (uid) {
+              const next = state.onlineUsers.filter(u => u.id !== uid);
+              dispatch({ type: 'SET_ONLINE_USERS', payload: next });
+            }
+            break;
+          }
+          case 'userConnected': {
+            const u = (envelope as any).user;
+            if (u && u.id) {
+              if (!state.onlineUsers.find(x => x.id === u.id)) {
+                dispatch({ type: 'SET_ONLINE_USERS', payload: [...state.onlineUsers, u] });
+              } else {
+                dispatch({ type: 'SET_ONLINE_USERS', payload: state.onlineUsers.map(x => x.id === u.id ? { ...x, ...u } : x) });
+              }
+            }
             break;
           }
           
@@ -527,6 +611,25 @@ export const useChat = () => {
       }
     });
 
+    // أحداث مباشرة محتملة لتحديث قائمة المتصلين فوراً إن وُجدت على الخادم
+    socketInstance.on('userDisconnected', (payload: any) => {
+      const uid = payload?.userId || payload?.id;
+      if (uid) {
+        const next = state.onlineUsers.filter(u => u.id !== uid);
+        dispatch({ type: 'SET_ONLINE_USERS', payload: next });
+      }
+    });
+    socketInstance.on('userConnected', (payload: any) => {
+      const user = payload?.user || payload;
+      if (user?.id) {
+        if (!state.onlineUsers.find(u => u.id === user.id)) {
+          dispatch({ type: 'SET_ONLINE_USERS', payload: [...state.onlineUsers, user] });
+        } else {
+          dispatch({ type: 'SET_ONLINE_USERS', payload: state.onlineUsers.map(u => u.id === user.id ? { ...u, ...user } : u) });
+        }
+      }
+    });
+
     // بث تحديثات غرفة البث وأحداث المايك عبر قنوات Socket المخصصة
     const emitToBroadcastHandlers = (payload: any) => {
       broadcastHandlers.current.forEach((handler) => {
@@ -554,13 +657,13 @@ export const useChat = () => {
 
     // WebRTC signaling relays
     socketInstance.on('webrtc-offer', (payload: any) => {
-      webrtcOfferHandlers.current.forEach((h) => { try { h(payload); } catch {} });
+      webrtcOfferHandlers.current.forEach((h) => { try { h(payload); } catch (e) { console.warn('webrtc offer handler error', e); } });
     });
     socketInstance.on('webrtc-answer', (payload: any) => {
-      webrtcAnswerHandlers.current.forEach((h) => { try { h(payload); } catch {} });
+      webrtcAnswerHandlers.current.forEach((h) => { try { h(payload); } catch (e) { console.warn('webrtc answer handler error', e); } });
     });
     socketInstance.on('webrtc-ice-candidate', (payload: any) => {
-      webrtcIceHandlers.current.forEach((h) => { try { h(payload); } catch {} });
+      webrtcIceHandlers.current.forEach((h) => { try { h(payload); } catch (e) { console.warn('webrtc ice handler error', e); } });
     });
 
     // معالج الرسائل الخاصة المحسن
@@ -673,6 +776,10 @@ export const useChat = () => {
           clearInterval(pingIntervalRef.current);
           pingIntervalRef.current = null;
         }
+        if (onlineUsersIntervalRef.current) {
+          clearInterval(onlineUsersIntervalRef.current);
+          onlineUsersIntervalRef.current = null;
+        }
       };
     }, []);
 
@@ -749,6 +856,8 @@ export const useChat = () => {
           userId: user.id,
           username: user.username,
         });
+        // طلب قائمة المتصلين فور الاتصال
+        try { s.emit('requestOnlineUsers'); lastUserListRequestAtRef.current = Date.now(); } catch {}
       }
 
       // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
@@ -756,6 +865,8 @@ export const useChat = () => {
         dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
         dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
         dispatch({ type: 'SET_LOADING', payload: false });
+        // طلب محدث لقائمة المتصلين بعد الاتصال
+        try { s.emit('requestOnlineUsers'); lastUserListRequestAtRef.current = Date.now(); } catch {}
       });
 
       // معالج فشل إعادة الاتصال النهائي

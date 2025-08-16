@@ -211,7 +211,13 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
   if (user?.profileBackgroundColor) {
     const bg = buildProfileBackgroundGradient(String(user.profileBackgroundColor));
     if (bg) {
-      style.background = bg;
+      // استخدام backgroundImage لضمان أولوية التدرج وعدم تجاوزه بسهولة
+      style.backgroundImage = bg.startsWith('linear-gradient(') ? bg : undefined as any;
+      if (!style.backgroundImage) {
+        style.background = bg;
+      }
+      // تحسين المزج لمنع الطبقات الأخرى من محو التدرج
+      style.backgroundBlendMode = 'normal';
     }
   }
   
