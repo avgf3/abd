@@ -5,6 +5,7 @@ import WelcomeScreen from '@/components/chat/WelcomeScreen';
 // حذف المحدد المحلي للغرف لتجنب التكرار
 import KickCountdown from '@/components/moderation/KickCountdown';
 import { useChat } from '@/hooks/useChat';
+import { clearSession } from '@/lib/socket';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 
 export default function ChatPage() {
@@ -15,6 +16,7 @@ export default function ChatPage() {
   // إزالة قائمة الغرف الثابتة لتفادي التعارض مع المنظومة الأساسية
 
   const handleUserLogin = (user: ChatUser) => {
+    clearSession(); // مسح أي جلسة سابقة قبل تسجيل دخول جديد
     chat.connect(user);
     setShowWelcome(false);
     // الانضمام تلقائياً للغرفة العامة، باقي التنقل من داخل الواجهة
@@ -24,6 +26,7 @@ export default function ChatPage() {
   // لم يعد هناك محدد غرف على مستوى الصفحة
 
   const handleLogout = () => {
+    clearSession(); // مسح بيانات الجلسة المحفوظة
     chat.disconnect();
     setShowWelcome(true);
   };

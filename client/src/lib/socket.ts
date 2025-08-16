@@ -33,6 +33,13 @@ export function getSession(): StoredSession {
 
 export function clearSession() {
   try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
+  // إعادة تعيين Socket instance عند مسح الجلسة
+  if (socketInstance) {
+    socketInstance.removeAllListeners();
+    socketInstance.disconnect();
+    socketInstance = null;
+    listenersAttached = false;
+  }
 }
 
 let socketInstance: Socket | null = null;
@@ -96,6 +103,14 @@ function attachCoreListeners(socket: Socket) {
 }
 
 export function getSocket(): Socket {
+  // إذا كان هناك socket قديم وتم مسح الجلسة، أنشئ واحد جديد
+  if (socketInstance && !getSession().userId && !getSession().username) {
+    socketInstance.removeAllListeners();
+    socketInstance.disconnect();
+    socketInstance = null;
+    listenersAttached = false;
+  }
+  
   if (socketInstance) return socketInstance;
 
   socketInstance = io(getServerUrl(), {

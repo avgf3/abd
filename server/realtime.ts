@@ -181,7 +181,36 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
     });
 
     socket.on('auth', async (payload: { userId?: number; username?: string; userType?: string; reconnect?: boolean }) => {
+      // السماح بإعادة المصادقة إذا كان المستخدم مختلفاً
+      if (isAuthenticated && payload.userId && socket.userId && payload.userId !== socket.userId) {
+        // مستخدم مختلف يحاول المصادقة - نظف البيانات القديمة
+        try {
+          const oldUserId = socket.userId;
+          const oldEntry = connectedUsers.get(oldUserId);
+          if (oldEntry) {
+            oldEntry.sockets.delete(socket.id);
+            if (oldEntry.sockets.size === 0) {
+              connectedUsers.delete(oldUserId);
+              await storage.setUserOnlineStatus(oldUserId, false);
+            }
+          }
+          // مغادرة الغرف القديمة
+          socket.leave(oldUserId.toString());
+          if (socket.currentRoom) {
+            socket.leave(`room_${socket.currentRoom}`);
+          }
+        } catch {}
+        
+        // إعادة تعيين حالة المصادقة
+        isAuthenticated = false;
+        socket.userId = undefined;
+        socket.username = undefined;
+        socket.userType = undefined;
+        socket.isAuthenticated = false;
+      }
+      
       if (isAuthenticated) return;
+      
       try {
         let user: any | undefined;
         if (payload.userId) {
