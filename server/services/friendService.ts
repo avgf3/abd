@@ -269,7 +269,6 @@ export class FriendService {
           joinDate: users.joinDate,
           createdAt: users.createdAt,
           usernameColor: users.usernameColor,
-          userTheme: users.userTheme,
           profileEffect: users.profileEffect,
           // حقول أخرى مطلوبة
           role: users.role,
@@ -385,7 +384,6 @@ export class FriendService {
           joinDate: users.joinDate,
           createdAt: users.createdAt,
           usernameColor: users.usernameColor,
-          userTheme: users.userTheme,
           role: users.role,
           isMuted: users.isMuted,
           isBanned: users.isBanned,

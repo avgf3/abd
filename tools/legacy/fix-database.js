@@ -46,7 +46,6 @@ async function fixDatabase() {
     const columnsToAdd = [
       { name: 'profile_background_color', sql: 'profile_background_color TEXT DEFAULT \'#3c0d0d\'' },
       { name: 'username_color', sql: 'username_color TEXT DEFAULT \'#FFFFFF\'' },
-      { name: 'user_theme', sql: 'user_theme TEXT DEFAULT \'default\'' },
       { name: 'profile_effect', sql: 'profile_effect TEXT DEFAULT \'none\'' },
       { name: 'points', sql: 'points INTEGER DEFAULT 0' },
       { name: 'level', sql: 'level INTEGER DEFAULT 1' },
@@ -80,7 +79,7 @@ async function fixDatabase() {
         await db.execute(sql`
           INSERT INTO users (
             username, password, user_type, role, profile_background_color,
-            username_color, user_theme, profile_effect, points, level,
+            username_color, profile_effect, points, level,
             total_points, level_progress, join_date, created_at,
             is_online, is_hidden, is_muted, is_banned, is_blocked, ignored_users
           ) VALUES (

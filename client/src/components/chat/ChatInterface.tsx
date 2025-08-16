@@ -631,7 +631,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 if (updatedUser && updatedUser.id) {
 
                   chat.updateCurrentUser({
-                    userTheme: updatedUser.userTheme,
                     profileEffect: updatedUser.profileEffect,
                     usernameColor: updatedUser.usernameColor,
                     profileBackgroundColor: updatedUser.profileBackgroundColor
@@ -657,7 +656,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 // تحديث بيانات المستخدم الحالي في قائمة المتصلون
                 if (updatedUser && updatedUser.id) {
                   chat.updateCurrentUser({
-                    userTheme: updatedUser.userTheme,
                     profileEffect: updatedUser.profileEffect,
                     usernameColor: updatedUser.usernameColor,
                     profileBackgroundColor: updatedUser.profileBackgroundColor

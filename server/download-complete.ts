@@ -142,7 +142,6 @@ CREATE TABLE users (
   profile_image TEXT,
   profile_banner TEXT,
   username_color VARCHAR(7) DEFAULT '#ffffff',
-  user_theme VARCHAR(50) DEFAULT 'default',
   is_online BOOLEAN DEFAULT false,
   is_hidden BOOLEAN DEFAULT false,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

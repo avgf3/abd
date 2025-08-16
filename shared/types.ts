@@ -27,7 +27,6 @@ export interface ChatUser {
   deviceId?: string;
   ignoredUsers: number[];
   usernameColor: string;
-  userTheme: string;
   profileEffect?: string;
   points?: number;
   level?: number;

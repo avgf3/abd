@@ -31,7 +31,7 @@ async function syncDatabases() {
                 is_online, is_hidden, last_seen, join_date, created_at,
                 is_muted, mute_expiry, is_banned, ban_expiry, is_blocked,
                 ip_address, device_id, ignored_users, username_color,
-                user_theme, profile_effect, points, level, total_points, level_progress
+                profile_effect, points, level, total_points, level_progress
             FROM users 
             ORDER BY id
         `);
@@ -57,7 +57,7 @@ async function syncDatabases() {
                 is_online, is_hidden, last_seen, join_date, created_at,
                 is_muted, mute_expiry, is_banned, ban_expiry, is_blocked,
                 ip_address, device_id, ignored_users, username_color,
-                user_theme, profile_effect, points, level, total_points, level_progress
+                profile_effect, points, level, total_points, level_progress
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
@@ -97,7 +97,6 @@ async function syncDatabases() {
                     user.device_id,
                     user.ignored_users || '[]',
                     user.username_color || '#FFFFFF',
-                    user.user_theme || 'default',
                     user.profile_effect || 'none',
                     user.points || 0,
                     user.level || 1,

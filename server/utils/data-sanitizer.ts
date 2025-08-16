@@ -75,8 +75,7 @@ export function sanitizeUserData(user: any): any {
     ...user,
     profileBackgroundColor: sanitizeProfileBackgroundColor(user.profileBackgroundColor),
     usernameColor: sanitizeHexColor(user.usernameColor, '#000000'),
-    profileEffect: sanitizeEffect(user.profileEffect),
-    userTheme: sanitizeTheme(user.userTheme)
+    profileEffect: sanitizeEffect(user.profileEffect)
   };
 }
 
