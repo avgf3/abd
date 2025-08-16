@@ -220,9 +220,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "فشل في تحديث صورة البروفايل في قاعدة البيانات" });
       }
 
-      // بث موجه للمستخدم + بث خفيف للجميع
+      // بث خفيف: لا نرسل الصورة للجميع، فقط لصاحب التعديل
       emitUserUpdatedToUser(userId, updatedUser);
-      emitUserUpdatedToAll(updatedUser);
+      getIO().emit('message', { type: 'userUpdated', user: { id: userId, profileImage: updatedUser.profileImage } });
 
       res.json({
         success: true,
@@ -316,9 +316,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "فشل في تحديث صورة البانر في قاعدة البيانات" });
       }
 
-      // بث موجه للمستخدم + بث خفيف للجميع
+      // بث خفيف: الخلفية فقط + كامل لصاحب التعديل
       emitUserUpdatedToUser(userId, updatedUser);
-      emitUserUpdatedToAll(updatedUser);
+      getIO().emit('message', { type: 'user_background_updated', data: { userId, profileBackgroundColor: updatedUser.profileBackgroundColor } });
 
       res.json({
         success: true,
@@ -775,10 +775,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تحديث لون الاسم
       await storage.updateUser(userIdNum, { usernameColor: color });
       
-      // بث موجه للمستخدم + بث خفيف للجميع
+      // بث خفيف مخصص + كامل لصاحب التعديل
       const updated = await storage.getUser(userIdNum);
       emitUserUpdatedToUser(userIdNum, updated);
-      emitUserUpdatedToAll(updated);
+      getIO().emit('message', { type: 'usernameColorChanged', userId: userIdNum, color });
       
       res.json({ 
         message: "تم تحديث لون اسم المستخدم بنجاح",
@@ -1235,10 +1235,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update username color
       await storage.updateUser(userId, { usernameColor: color });
       
-      // بث موجه للمستخدم + بث خفيف للجميع
+      // بث خفيف مخصص + كامل لصاحب التعديل
       const updated = await storage.getUser(userId);
       emitUserUpdatedToUser(userId, updated);
-      emitUserUpdatedToAll(updated);
+      getIO().emit('message', { type: 'usernameColorChanged', userId, color });
       
       res.json({ 
         success: true, 
