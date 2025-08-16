@@ -386,12 +386,24 @@ export const useChat = () => {
         // تحديث بيانات المستخدم الموحدة
         if (envelope.type === 'userUpdated') {
           const updatedUser: ChatUser | undefined = (envelope as any).user;
-          if (updatedUser && updatedUser.id) {
+          const roomId = (envelope as any).roomId;
+          
+          // تحديث فقط إذا كان التحديث للغرفة الحالية أو بدون غرفة محددة
+          if (updatedUser && updatedUser.id && (!roomId || roomId === state.currentRoomId)) {
             if (state.currentUser?.id === updatedUser.id) {
               dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, ...updatedUser } as any });
             }
             const updatedOnline = state.onlineUsers.map(u => u.id === updatedUser.id ? { ...u, ...updatedUser } : u);
             dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
+          }
+        }
+        
+        // معالجة انفصال مؤقت للمستخدم
+        if (envelope.type === 'userDisconnecting') {
+          const { userId } = envelope as any;
+          if (userId) {
+            // يمكن إضافة مؤشر بصري للمستخدم الذي قد يكون منفصل
+            console.log(`User ${userId} is disconnecting...`);
           }
         }
         
@@ -453,7 +465,19 @@ export const useChat = () => {
           
           case 'onlineUsers': {
             if (Array.isArray(envelope.users)) {
-              dispatch({ type: 'SET_ONLINE_USERS', payload: envelope.users });
+              // تصفية المستخدمين غير الصالحين
+              const validUsers = envelope.users.filter((user: any) => {
+                if (!user || !user.id || !user.username || !user.userType) return false;
+                if (user.username === 'مستخدم' || user.username === 'User') return false;
+                if (user.id <= 0) return false;
+                return true;
+              });
+              
+              // تحديث القائمة فقط إذا كانت للغرفة الحالية
+              const roomId = (envelope as any).roomId;
+              if (!roomId || roomId === state.currentRoomId) {
+                dispatch({ type: 'SET_ONLINE_USERS', payload: validUsers });
+              }
             }
             break;
           }
@@ -461,8 +485,17 @@ export const useChat = () => {
           case 'roomJoined': {
             // استبدال القائمة بالكامل بقائمة الغرفة المرسلة
             const users = (envelope as any).users;
-            if (Array.isArray(users)) {
-              dispatch({ type: 'SET_ONLINE_USERS', payload: users });
+            const roomId = (envelope as any).roomId;
+            
+            if (Array.isArray(users) && roomId === state.currentRoomId) {
+              // تصفية المستخدمين غير الصالحين
+              const validUsers = users.filter((user: any) => {
+                if (!user || !user.id || !user.username || !user.userType) return false;
+                if (user.username === 'مستخدم' || user.username === 'User') return false;
+                if (user.id <= 0) return false;
+                return true;
+              });
+              dispatch({ type: 'SET_ONLINE_USERS', payload: validUsers });
             }
             break;
           }
