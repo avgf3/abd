@@ -485,6 +485,10 @@ export const useChat = () => {
           }
           
           case 'onlineUsers': {
+            const roomId = (envelope as any).roomId || 'general';
+            if (roomId !== state.currentRoomId) {
+              break;
+            }
             if (Array.isArray(envelope.users)) {
               const rawUsers = envelope.users as ChatUser[];
               // فلترة صارمة + إزالة المتجاهلين + إزالة التكرارات
@@ -498,6 +502,10 @@ export const useChat = () => {
           }
           
           case 'roomJoined': {
+            const roomId = (envelope as any).roomId;
+            if (roomId && roomId !== state.currentRoomId) {
+              break;
+            }
             // استبدال القائمة بالكامل بقائمة الغرفة المرسلة
             const users = (envelope as any).users;
             if (Array.isArray(users)) {
@@ -856,8 +864,9 @@ export const useChat = () => {
           userId: user.id,
           username: user.username,
         });
-        // طلب قائمة المتصلين فور الاتصال
-        try { s.emit('requestOnlineUsers'); lastUserListRequestAtRef.current = Date.now(); } catch {}
+        
+        // طلب قائمة المتصلين فور الاتصال - تمت الإزالة لتجنب سباق التوقيت مع الانضمام للغرفة
+        // سيتم استقبال القائمة الصحيحة عبر حدث roomJoined أو onlineUsers الخاص بالغرفة
       }
 
       // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
@@ -865,8 +874,7 @@ export const useChat = () => {
         dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
         dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
         dispatch({ type: 'SET_LOADING', payload: false });
-        // طلب محدث لقائمة المتصلين بعد الاتصال
-        try { s.emit('requestOnlineUsers'); lastUserListRequestAtRef.current = Date.now(); } catch {}
+        // طلب محدث لقائمة المتصلين بعد الاتصال - تمت الإزالة لتجنب سباق التوقيت
       });
 
       // معالج فشل إعادة الاتصال النهائي
