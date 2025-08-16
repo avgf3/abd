@@ -861,11 +861,51 @@ export class DatabaseService {
     if (!this.isConnected()) return null;
 
     try {
+      // Generate stable id/slug for PostgreSQL schema (id is text PK, no default)
+      let generatedId: string | number | undefined = roomData.id;
+      let generatedSlug: string | undefined = (roomData as any).slug as any;
+
+      const genSlug = (name?: string) => {
+        try {
+          const base = (name || 'room')
+            .toString()
+            .normalize('NFKD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-zA-Z0-9\s-]+/g, '')
+            .trim()
+            .replace(/\s+/g, '-')
+            .toLowerCase();
+          return base || 'room';
+        } catch {
+          return 'room';
+        }
+      };
+
+      const genId = (name?: string) => {
+        const slugPart = genSlug(name);
+        const suffix = Math.random().toString(36).slice(2, 8);
+        return `${slugPart}-${suffix}`;
+      };
+
+      if (this.type === 'postgresql') {
+        if (!generatedId || generatedId === (undefined as any)) {
+          generatedId = genId(roomData.name as any);
+        }
+        if (!generatedSlug || generatedSlug === (undefined as any)) {
+          generatedSlug = genSlug(roomData.name as any);
+        }
+      }
+
       const room = {
         ...roomData,
+        id: generatedId ?? roomData.id, // SQLite will ignore if numeric auto-increment is used elsewhere
+        // Defaults for PG schema columns
+        speakers: roomData.speakers ?? (this.type === 'postgresql' ? '[]' : roomData.speakers),
+        micQueue: roomData.micQueue ?? (this.type === 'postgresql' ? '[]' : roomData.micQueue),
         createdAt: this.type === 'postgresql' ? new Date() : new Date().toISOString(),
         updatedAt: this.type === 'postgresql' ? new Date() : new Date().toISOString(),
-      };
+        ...(this.type === 'postgresql' ? { slug: generatedSlug } : {}),
+      } as any;
 
       if (this.type === 'postgresql') {
         const result = await (this.db as any).insert(pgSchema.rooms).values(room).returning();
@@ -959,6 +999,59 @@ export class DatabaseService {
     } catch (error) {
       console.error('Error deleting room:', error);
       return false;
+    }
+  }
+
+  // Update specific room fields (e.g., icon) by id
+  async updateRoomById(roomId: string, updates: Partial<Room>): Promise<Room | null> {
+    if (!this.isConnected()) return null;
+
+    try {
+      if (this.type === 'postgresql') {
+        // Build a minimal updates object allowed in PG schema
+        const allowed: any = {};
+        if (typeof updates.name === 'string') allowed.name = updates.name;
+        if (typeof updates.description === 'string') allowed.description = updates.description;
+        if (typeof (updates as any).icon === 'string') allowed.icon = (updates as any).icon;
+        if (typeof (updates as any).isActive === 'boolean') allowed.isActive = (updates as any).isActive;
+        if (typeof (updates as any).isBroadcast === 'boolean') allowed.isBroadcast = (updates as any).isBroadcast;
+        if (typeof (updates as any).hostId !== 'undefined') allowed.hostId = (updates as any).hostId;
+        if (Object.keys(allowed).length === 0) {
+          // Nothing to update
+          const row = await this.getRoomById(roomId);
+          return row;
+        }
+        const result = await (this.db as any)
+          .update(pgSchema.rooms)
+          .set(allowed)
+          .where(eq(pgSchema.rooms.id, roomId))
+          .returning();
+        return result[0] || null;
+      } else {
+        // SQLite schema may not contain icon; update what exists
+        const allowed: any = {};
+        if (typeof updates.name === 'string') allowed.name = updates.name;
+        if (typeof updates.description === 'string') allowed.description = updates.description;
+        if (Object.keys(allowed).length === 0) {
+          const rows = await this.getRoomById(roomId);
+          return rows;
+        }
+        const maybeId = Number(roomId);
+        if (!Number.isFinite(maybeId)) return null;
+        await (this.db as any)
+          .update(sqliteSchema.rooms)
+          .set(allowed)
+          .where(eq(sqliteSchema.rooms.id, maybeId));
+        const rows = await (this.db as any)
+          .select()
+          .from(sqliteSchema.rooms)
+          .where(eq(sqliteSchema.rooms.id, maybeId))
+          .limit(1);
+        return rows[0] || null;
+      }
+    } catch (error) {
+      console.error('Error updating room:', error);
+      return null;
     }
   }
 

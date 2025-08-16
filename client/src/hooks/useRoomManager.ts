@@ -267,6 +267,49 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     }
   }, []);
 
+  // 🖼️ تحديث صورة/أيقونة الغرفة بعد الإنشاء
+  const updateRoomIcon = useCallback(async (roomId: string, imageFile: File, userId: number): Promise<ChatRoom | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      formData.append('userId', String(userId));
+
+      const data = await apiRequest(`/api/rooms/${roomId}/icon`, {
+        method: 'PUT',
+        body: formData,
+      });
+
+      if (!data?.room) {
+        throw new Error('استجابة غير صالحة من الخادم');
+      }
+
+      const updated: ChatRoom = mapApiRoom(data.room);
+
+      // تحديث الحالة المحلية
+      setRooms(prev => {
+        const updatedRooms = prev.map(r => r.id === roomId ? { ...r, icon: updated.icon } : r);
+        if (cacheRef.current) {
+          cacheRef.current.data = updatedRooms;
+          cacheRef.current.timestamp = Date.now();
+          cacheRef.current.version += 1;
+        }
+        return updatedRooms;
+      });
+
+      setLastUpdate(new Date());
+      return updated;
+    } catch (err: any) {
+      console.error('❌ خطأ في تحديث أيقونة الغرفة:', err);
+      setError(err.message || 'فشل في تحديث أيقونة الغرفة');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // 🔢 تحديث عدد المستخدمين في غرفة
   const updateRoomUserCount = useCallback((roomId: string, userCount: number) => {
     setRooms(prev => {
@@ -396,6 +439,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     updateRoomUserCount,
     searchRooms,
     filterRooms,
+    updateRoomIcon,
     clearCache,
     getCacheStats,
 
