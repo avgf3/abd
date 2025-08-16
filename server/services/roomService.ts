@@ -1,7 +1,8 @@
-import { storage } from '../storage';
-import { db, dbType } from '../database-adapter';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
+
+import { db, dbType } from '../database-adapter';
+import { storage } from '../storage';
 
 export interface Room {
   id: string;

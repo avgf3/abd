@@ -1,14 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { getEffectColor, getFinalUsernameColor, buildProfileBackgroundGradient } from '@/utils/themeUtils';
-import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
-import type { ChatUser } from '@/types/chat';
-import { Input } from '@/components/ui/input';
+import React, { useState, useRef, useEffect } from 'react';
+
 import { Button } from '@/components/ui/button';
-import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
+import { Input } from '@/components/ui/input';
 import PointsSentNotification from '@/components/ui/PointsSentNotification';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
+import type { ChatUser } from '@/types/chat';
+import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
+import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
+import { getEffectColor, getFinalUsernameColor, buildProfileBackgroundGradient } from '@/utils/themeUtils';
 
 interface ProfileModalProps {
   user: ChatUser | null;

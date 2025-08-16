@@ -2,16 +2,19 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
 import { drizzle as drizzleSQLite } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
-import * as pgSchema from "../shared/schema";
-import * as sqliteSchema from "../shared/sqlite-schema";
-import type { NeonQueryResultHKT } from 'drizzle-orm/neon-serverless';
-import type { PgDatabase } from 'drizzle-orm/pg-core';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-import { migrate as migratePostgres } from 'drizzle-orm/neon-serverless/migrator';
 import { migrate as migrateSQLite } from 'drizzle-orm/better-sqlite3/migrator';
+import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
+import type Database from 'better-sqlite3';
+import type { NeonQueryResultHKT } from 'drizzle-orm/neon-serverless';
+import { migrate as migratePostgres } from 'drizzle-orm/neon-serverless/migrator';
+import type { PgDatabase } from 'drizzle-orm/pg-core';
+
+import * as pgSchema from "../shared/schema";
+import type * as sqliteSchema from "../shared/sqlite-schema";
+
+
 import fs from 'fs';
 import path from 'path';
 

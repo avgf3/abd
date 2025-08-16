@@ -1,6 +1,7 @@
 import { eq, desc, and } from "drizzle-orm";
-import { db } from "../database-adapter";
+
 import { notifications, type Notification, type InsertNotification } from "../../shared/schema";
+import { db } from "../database-adapter";
 
 export class NotificationService {
   // إنشاء إشعار جديد

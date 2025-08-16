@@ -1,8 +1,10 @@
-import { Router } from 'express';
-import { roomService } from '../services/roomService';
-import multer from 'multer';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
+
+import { Router } from 'express';
+import multer from 'multer';
+
+import { roomService } from '../services/roomService';
 
 const router = Router();
 

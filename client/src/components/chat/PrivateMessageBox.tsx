@@ -1,11 +1,12 @@
+import { motion, AnimatePresence } from 'framer-motion';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
-import { formatTime } from '@/utils/timeUtils';
+import { Input } from '@/components/ui/input';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { formatTime } from '@/utils/timeUtils';
 
 interface PrivateMessageBoxProps {
   isOpen: boolean;

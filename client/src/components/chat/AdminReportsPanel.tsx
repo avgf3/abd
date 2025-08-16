@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -11,8 +12,8 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { formatDate } from '@/utils/timeUtils';
 import type { ChatUser } from '@/types/chat';
+import { formatDate } from '@/utils/timeUtils';
 
 interface Report {
   id: number;

@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
-import { useImageLoader } from '@/hooks/useImageLoader';
-import { getImageSrc } from '@/utils/imageUtils';
-import type { ChatUser } from '@/types/chat';
+
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
+import { useImageLoader } from '@/hooks/useImageLoader';
+import type { ChatUser } from '@/types/chat';
+import { getImageSrc } from '@/utils/imageUtils';
 
 interface ProfileImageProps {
   user: ChatUser;

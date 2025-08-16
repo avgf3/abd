@@ -1,5 +1,5 @@
-import { storage } from '../storage';
 import { db, dbType } from '../database-adapter';
+import { storage } from '../storage';
 
 export interface RoomMessage {
   id: number;

@@ -1,13 +1,16 @@
-import { Server as HttpServer } from "http";
-import { Server as IOServer, Socket } from "socket.io";
-import { storage } from "./storage";
-import { roomService } from "./services/roomService";
-import { roomMessageService } from "./services/roomMessageService";
-import { pointsService } from "./services/pointsService";
-import { sanitizeInput, validateMessageContent } from "./security";
+import type { Server as HttpServer } from "http";
+
+import type { Socket } from "socket.io";
+import { Server as IOServer } from "socket.io";
+
 import { moderationSystem } from "./moderation";
-import { getClientIpFromHeaders, getDeviceIdFromHeaders } from "./utils/device";
+import { sanitizeInput, validateMessageContent } from "./security";
+import { pointsService } from "./services/pointsService";
+import { roomMessageService } from "./services/roomMessageService";
+import { roomService } from "./services/roomService";
+import { storage } from "./storage";
 import { sanitizeUsersArray } from "./utils/data-sanitizer";
+import { getClientIpFromHeaders, getDeviceIdFromHeaders } from "./utils/device";
 
 interface CustomSocket extends Socket {
   userId?: number;

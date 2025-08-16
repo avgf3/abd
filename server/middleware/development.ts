@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 
 // Middleware لحماية endpoints التطوير في الإنتاج
 export const developmentOnly = (req: Request, res: Response, next: NextFunction) => {

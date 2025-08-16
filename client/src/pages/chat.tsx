@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import WelcomeScreen from '@/components/chat/WelcomeScreen';
+
 import ChatInterface from '@/components/chat/ChatInterface';
+import WelcomeScreen from '@/components/chat/WelcomeScreen';
 // حذف المحدد المحلي للغرف لتجنب التكرار
-import { useChat } from '@/hooks/useChat';
 import KickCountdown from '@/components/moderation/KickCountdown';
+import { useChat } from '@/hooks/useChat';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 
 export default function ChatPage() {

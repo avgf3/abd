@@ -1,6 +1,7 @@
 import { eq, desc, and, or } from "drizzle-orm";
-import { db } from "../database-adapter";
+
 import { friends, users, type Friend, type InsertFriend, type User } from "../../shared/schema";
+import { db } from "../database-adapter";
 
 export class FriendService {
   // إنشاء طلب صداقة

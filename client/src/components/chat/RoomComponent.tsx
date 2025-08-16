@@ -1,14 +1,15 @@
-import React, { useState, useCallback, useMemo } from 'react';
 import { X, Plus, Users, Mic, RefreshCw, MessageCircle, Search, Settings } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useGrabScroll } from '@/hooks/useGrabScroll';
 import type { ChatRoom, ChatUser } from '@/types/chat';
 import { dedupeRooms } from '@/utils/roomUtils';
-import { useGrabScroll } from '@/hooks/useGrabScroll';
 
 
 interface RoomComponentProps {

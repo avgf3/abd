@@ -1,4 +1,6 @@
+import { Globe, ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
+
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -6,7 +8,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Globe, ChevronDown } from 'lucide-react';
 
 interface Language {
   code: string;

@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
-import { Button } from '@/components/ui/button';
 import { Paperclip, Image, Video, FileText } from 'lucide-react';
+import React, { useRef } from 'react';
+
+import { Button } from '@/components/ui/button';
 
 interface FileUploadButtonProps {
   onFileSelect: (file: File, type: 'image' | 'video' | 'document') => void;

@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { buildProfileBackgroundGradient, getUserEffectStyles, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
 
 // قائمة الألوان المتاحة للاختبار

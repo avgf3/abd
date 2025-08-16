@@ -1,6 +1,7 @@
-import { ReactNode } from 'react';
-import type { ChatUser } from '@/types/chat';
+import type { ReactNode } from 'react';
+
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
+import type { ChatUser } from '@/types/chat';
 
 interface PremiumUserThemeProps {
   user: ChatUser | null;

@@ -2,10 +2,12 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+
 import { initializeSystem } from "./database-setup";
+import { registerRoutes } from "./routes";
 import { setupSecurity } from "./security";
+import { setupVite, serveStatic, log } from "./vite";
+
 import path from "path";
 import fs from "fs";
 import { Server } from "http";

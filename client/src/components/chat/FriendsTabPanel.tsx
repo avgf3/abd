@@ -1,21 +1,24 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { RefreshCw, Users, UserPlus, MessageCircle, Trash2, Check, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+
+import ProfileImage from './ProfileImage';
+import SimpleUserMenu from './SimpleUserMenu';
+import UserRoleBadge from './UserRoleBadge';
+
+import type { Friend, FriendRequest } from '@/../../shared/types';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useGrabScroll } from '@/hooks/useGrabScroll';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { apiRequest } from '@/lib/queryClient';
-import ProfileImage from './ProfileImage';
-import { getImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
-import type { Friend, FriendRequest } from '@/../../shared/types';
-import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
-import { useGrabScroll } from '@/hooks/useGrabScroll';
-import UserRoleBadge from './UserRoleBadge';
-import SimpleUserMenu from './SimpleUserMenu';
+import { getImageSrc } from '@/utils/imageUtils';
 import { getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
+import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
+
 
 // Using shared types for Friend and FriendRequest
 

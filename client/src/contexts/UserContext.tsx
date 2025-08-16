@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
-import type { ChatUser } from '@/types/chat';
-import { api } from '@/lib/queryClient';
+
 import { useErrorHandler } from '@/hooks/useErrorHandler';
+import { api } from '@/lib/queryClient';
+import type { ChatUser } from '@/types/chat';
 
 // أنواع الحالة
 interface UserState {

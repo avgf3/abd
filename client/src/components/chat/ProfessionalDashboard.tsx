@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+
 import AnalyticsPanel from './AnalyticsPanel';
-import SecurityPanel from './SecurityPanel';
 import PerformanceMonitor from './PerformanceMonitor';
-import type { ChatUser } from '@/types/chat';
+import SecurityPanel from './SecurityPanel';
+
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
+import { Button } from '@/components/ui/button';
+import type { ChatUser } from '@/types/chat';
 import { formatTime } from '@/utils/timeUtils';
 
 interface ProfessionalDashboardProps {

@@ -1,4 +1,5 @@
-import express, { type Express, Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
+import express, { type Express } from 'express';
 
 // Rate limiting maps
 const authRequestCounts = new Map<string, { count: number; resetTime: number }>();

@@ -1,6 +1,6 @@
-import { storage } from './storage';
 import type { User } from './services/databaseService';
 import { spamProtection } from './spam-protection';
+import { storage } from './storage';
 
 export interface ModerationAction {
   id: string;

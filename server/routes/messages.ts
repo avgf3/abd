@@ -1,8 +1,9 @@
 import { Router } from 'express';
+
+import { notificationService } from '../services/notificationService';
 import { roomMessageService } from '../services/roomMessageService';
 import { roomService } from '../services/roomService';
 import { storage } from '../storage';
-import { notificationService } from '../services/notificationService';
 
 const router = Router();
 

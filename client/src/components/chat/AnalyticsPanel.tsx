@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { useChatAnalytics } from '@/lib/chatAnalytics';
 import type { ChatUser } from '@/types/chat';

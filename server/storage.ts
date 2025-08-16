@@ -1,12 +1,17 @@
-import { databaseService, type User, type Message, type Friend, type Notification, type Room } from './services/databaseService';
 import bcrypt from 'bcrypt';
-import { friendService } from './services/friendService';
-import { userService } from './services/userService';
-import { notificationService } from './services/notificationService';
-import { db } from './database-adapter';
-import { friends as friendsTable } from '../shared/schema';
 import { eq } from 'drizzle-orm';
+
+import { friends as friendsTable } from '../shared/schema';
+
 import { SecurityManager } from './auth/security';
+import { db } from './database-adapter';
+import { databaseService, type User, type Message, type Friend, type Notification, type Room } from './services/databaseService';
+import { friendService } from './services/friendService';
+import { notificationService } from './services/notificationService';
+import { userService } from './services/userService';
+
+
+
 
 // Helper function
 function safeParseJsonArray(value: string): any[] {

@@ -1,6 +1,9 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Bell, X, Check, Trash2, Users } from 'lucide-react';
 import { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
+
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,10 +12,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { Bell, X, Check, Trash2, Users } from 'lucide-react';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
+import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { formatTimeAgo } from '@/utils/timeUtils';
 

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+
 import { useToast } from '@/hooks/use-toast';
 import type { ChatUser } from '@/types/chat';
 
