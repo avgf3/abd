@@ -237,10 +237,8 @@ export function useChat() {
   const [state, dispatch] = useReducer(chatReducer, initialState);
   const socketRef = useRef<Socket | null>(null);
   const sendTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const requestUsersTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastRequestedRoomId = useRef<string | null>(null);
-  const typingUsersMap = useRef<Map<number, NodeJS.Timeout>>(new Map());
-  const roomMessagesCache = useRef<Map<string, ChatMessage[]>>(new Map());
+  const pingIntervalRef = useRef<number | null>(null);
+  const broadcastHandlers = useRef<Map<string, (message: any) => void>>(new Map());
   
   // إضافة ref لـ debouncing تحديثات المستخدمين
   const pendingUsersUpdate = useRef<ChatUser[] | null>(null);
@@ -266,9 +264,6 @@ export function useChat() {
   const loadingRooms = useRef<Set<string>>(new Set());
   
   // Broadcast handlers registry
-  const broadcastHandlers = useRef<Set<(data: any) => void>>(new Set());
-
-  // WebRTC signaling handlers registries
   const webrtcOfferHandlers = useRef<Set<(data: any) => void>>(new Set());
   const webrtcAnswerHandlers = useRef<Set<(data: any) => void>>(new Set());
   const webrtcIceHandlers = useRef<Set<(data: any) => void>>(new Set());
@@ -328,7 +323,6 @@ export function useChat() {
   }, [state.roomMessages]);
 
       // Track ping interval to avoid leaks
-  const pingIntervalRef = useRef<number | null>(null);
   const onlineUsersIntervalRef = useRef<number | null>(null);
   const lastUserListRequestAtRef = useRef<number>(0);
   
@@ -1133,10 +1127,10 @@ export function useChat() {
 
     // Broadcast handlers registration
     addBroadcastMessageHandler: (handler: (data: any) => void) => {
-      broadcastHandlers.current.add(handler);
+      broadcastHandlers.current.set('roomUpdate', handler);
     },
     removeBroadcastMessageHandler: (handler: (data: any) => void) => {
-      broadcastHandlers.current.delete(handler);
+      broadcastHandlers.current.delete('roomUpdate');
     },
 
     // WebRTC signaling helpers
