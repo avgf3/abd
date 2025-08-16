@@ -79,7 +79,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
       socket.current = s;
 
       // حفظ نوع الحائط في الجلسة كحقل سياقي (اختياري)
-      saveSession({ roomId: activeTab });
+      saveSession({ wallTab: activeTab });
       
       // معالج المنشورات الجديدة
       s.on('message', (message: any) => {

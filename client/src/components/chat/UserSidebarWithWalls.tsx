@@ -253,8 +253,8 @@ export default function UnifiedSidebar({
 
       const s = socketRef.current!;
 
-      // حفظ سياق التبويب لسهولة التعافي بعد إعادة الاتصال
-      saveSession({ roomId: activeTab });
+      // حفظ سياق الحائط في الجلسة بدون العبث بـ roomId
+      saveSession({ wallTab: activeTab });
 
       const onMessage = (payload: any) => {
         try {

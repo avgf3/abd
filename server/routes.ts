@@ -264,10 +264,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "فشل في تحديث صورة البروفايل في قاعدة البيانات" });
       }
 
-      // إرسال إشعار للمستخدمين الآخرين عبر WebSocket
-      io.emit('user_profile_image_updated', {
-        userId: userId,
-        profileImage: imageUrl,
+      // إرسال إشعار موحد عبر WebSocket
+      io.emit('message', {
+        type: 'userUpdated',
         user: updatedUser,
         timestamp: new Date().toISOString()
       });
@@ -364,10 +363,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "فشل في تحديث صورة البانر في قاعدة البيانات" });
       }
 
-      // إرسال إشعار للمستخدمين الآخرين عبر WebSocket
-      io.emit('user_profile_banner_updated', {
-        userId: userId,
-        profileBanner: bannerUrl,
+      // إرسال إشعار موحد عبر WebSocket
+      io.emit('message', {
+        type: 'userUpdated',
         user: updatedUser,
         timestamp: new Date().toISOString()
       });
@@ -827,10 +825,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تحديث لون الاسم
       await storage.updateUser(userIdNum, { usernameColor: color });
       
-      // إرسال إشعار WebSocket لتحديث لون الاسم
-      io.emit('usernameColorChanged', {
-        userId: userIdNum,
-        color: color
+      // إرسال إشعار موحد WebSocket
+      const updated = await storage.getUser(userIdNum);
+      io.emit('message', {
+        type: 'userUpdated',
+        user: updated,
+        timestamp: new Date().toISOString()
       });
       
       res.json({ 
@@ -1348,12 +1348,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update username color
       await storage.updateUser(userId, { usernameColor: color });
       
-      // Broadcast the color change to all connected clients (unified via message envelope)
+      // Unified broadcast of updated user
+      const updated = await storage.getUser(userId);
       io.emit('message', {
-        type: 'usernameColorChanged',
-        userId: userId,
-        color: color,
-        username: user.username
+        type: 'userUpdated',
+        user: updated,
+        timestamp: new Date().toISOString()
       });
       
       res.json({ 
@@ -3242,54 +3242,20 @@ if (!existing) {
         return res.status(404).json({ error: 'User not found' });
       }
 
-      // Emit theme update
-      if (normalizedUpdates.userTheme) {
-        const updateMessage = {
-          type: 'theme_update',
-          userId: idNum,
-          userTheme: normalizedUpdates.userTheme,
-          timestamp: new Date().toISOString()
-        };
-        io.emit('message', updateMessage);
-      }
+      // Update connected cache copy
+      try {
+        const entry = connectedUsers.get(idNum);
+        if (entry && entry.user) {
+          connectedUsers.set(idNum, { ...entry, user: { ...entry.user, ...normalizedUpdates } });
+        }
+      } catch {}
 
-      // Emit profile effect update
-      if (normalizedUpdates.profileEffect) {
-        const updateMessage = {
-          type: 'profileEffectChanged',
-          userId: idNum,
-          profileEffect: normalizedUpdates.profileEffect,
-          user: user,
-          timestamp: new Date().toISOString()
-        };
-        io.emit('message', updateMessage);
-      }
-
-      // Emit username color update
-      if (normalizedUpdates.usernameColor) {
-        io.emit('message', {
-          type: 'usernameColorChanged',
-          userId: idNum,
-          color: normalizedUpdates.usernameColor,
-          username: user.username
-        });
-      }
-
-      // Emit background color update and update connectedUsers cache
-      if (normalizedUpdates.profileBackgroundColor) {
-        try {
-          const entry = connectedUsers.get(idNum);
-          if (entry && entry.user) {
-            entry.user.profileBackgroundColor = normalizedUpdates.profileBackgroundColor;
-            connectedUsers.set(idNum, entry);
-          }
-        } catch {}
-
-        io.emit('message', {
-          type: 'user_background_updated',
-          data: { userId: idNum, profileBackgroundColor: normalizedUpdates.profileBackgroundColor }
-        });
-      }
+      // Unified broadcast for any user data change
+      io.emit('message', {
+        type: 'userUpdated',
+        user,
+        timestamp: new Date().toISOString()
+      });
 
       res.json(user);
     } catch (error) {
@@ -3543,11 +3509,11 @@ if (!existing) {
         return res.status(500).json({ error: 'فشل في تحديث البيانات في قاعدة البيانات' });
       }
       
-      // إشعار المستخدمين الآخرين عبر WebSocket
-      io.emit('user_profile_updated', {
-        userId: userIdNum,
-        updates: validatedUpdates,
-        user: updatedUser
+      // إشعار موحد عبر WebSocket
+      io.emit('message', {
+        type: 'userUpdated',
+        user: updatedUser,
+        timestamp: new Date().toISOString()
       });
 
       res.json({ 
