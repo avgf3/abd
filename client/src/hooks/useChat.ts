@@ -382,6 +382,18 @@ export const useChat = () => {
             dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
           }
         }
+
+        // تحديث بيانات المستخدم الموحدة
+        if (envelope.type === 'userUpdated') {
+          const updatedUser: ChatUser | undefined = (envelope as any).user;
+          if (updatedUser && updatedUser.id) {
+            if (state.currentUser?.id === updatedUser.id) {
+              dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, ...updatedUser } as any });
+            }
+            const updatedOnline = state.onlineUsers.map(u => u.id === updatedUser.id ? { ...u, ...updatedUser } : u);
+            dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
+          }
+        }
         
         switch (envelope.type) {
           case 'newMessage': {
@@ -446,23 +458,19 @@ export const useChat = () => {
             break;
           }
           
-          case 'userJoined': {
-            if (envelope.user) {
-              dispatch({ 
-                type: 'SET_ONLINE_USERS', 
-                payload: [...state.onlineUsers.filter(u => u.id !== envelope.user.id), envelope.user] 
-              });
+          case 'roomJoined': {
+            // استبدال القائمة بالكامل بقائمة الغرفة المرسلة
+            const users = (envelope as any).users;
+            if (Array.isArray(users)) {
+              dispatch({ type: 'SET_ONLINE_USERS', payload: users });
             }
             break;
           }
-          
-          case 'userLeft': {
-            if (envelope.userId) {
-              dispatch({ 
-                type: 'SET_ONLINE_USERS', 
-                payload: state.onlineUsers.filter(u => u.id !== envelope.userId) 
-              });
-            }
+
+          case 'userJoinedRoom':
+          case 'userLeftRoom': {
+            // اطلب قائمة المتصلين للغرفة الحالية لتجنب مشاكل السباق
+            try { socketInstance.emit('requestOnlineUsers'); } catch {}
             break;
           }
           
@@ -775,10 +783,13 @@ export const useChat = () => {
       dispatch({ type: 'SET_CONNECTION_ERROR', payload: 'خطأ في الاتصال بالخادم' });
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [setupSocketListeners]);
+  }, [setupSocketListeners, state.currentRoomId]);
 
   // 🔥 SIMPLIFIED Join room function
   const joinRoom = useCallback((roomId: string) => {
+    if (!roomId || roomId === 'public' || roomId === 'friends') {
+      roomId = 'general';
+    }
     if (state.currentRoomId === roomId) {
       return;
     }
@@ -786,17 +797,14 @@ export const useChat = () => {
     dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
     saveSession({ roomId });
 
-    // لا نطلق طلب REST هنا، سنعتمد على Socket لإرسال آخر 10 رسائل بعد الانضمام
-    // loadRoomMessages(roomId);
-
-    if (socket.current?.connected) {
+    if (socket.current?.connected && state.currentUser?.id) {
       socket.current.emit('joinRoom', { 
         roomId,
-        userId: state.currentUser?.id,
-        username: state.currentUser?.username 
+        userId: state.currentUser.id,
+        username: state.currentUser.username 
       });
     }
-  }, [loadRoomMessages, state.currentRoomId, state.currentUser]);
+  }, [state.currentRoomId, state.currentUser]);
 
   // 🔥 SIMPLIFIED Send message function
   const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number, roomId?: string) => {

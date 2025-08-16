@@ -9,6 +9,7 @@ type StoredSession = {
   userType?: string;
   token?: string;
   roomId?: string;
+  wallTab?: string;
 };
 
 export function saveSession(partial: Partial<StoredSession>) {
@@ -64,7 +65,10 @@ function attachCoreListeners(socket: Socket) {
         reconnect: isReconnect,
       });
 
-      const joinRoomId = session.roomId || 'general';
+      let joinRoomId = session.roomId || 'general';
+      if (joinRoomId === 'public' || joinRoomId === 'friends') {
+        joinRoomId = 'general';
+      }
       socket.emit('joinRoom', {
         roomId: joinRoomId,
         userId: session.userId,
