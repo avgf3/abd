@@ -96,7 +96,6 @@ export interface WallPost {
   totalLikes: number;
   totalDislikes: number;
   totalHearts: number;
-  userProfileImage?: string;
   usernameColor?: string;
 }
 

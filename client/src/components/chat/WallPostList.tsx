@@ -58,9 +58,10 @@ export default function WallPostList({
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-primary/10">
-                    {post.userProfileImage ? (
+                    {/* TODO: يجب جلب صورة المستخدم من جدول users باستخدام post.userId */}
+                    {false ? (
                       <img 
-                        src={getImageSrc(post.userProfileImage)} 
+                        src={""} 
                         alt={post.username}
                         className="w-12 h-12 rounded-full object-cover"
                       />

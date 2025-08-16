@@ -2693,7 +2693,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imageUrl: computedImageUrl,
         type: type || 'public',
         timestamp: new Date(),
-        userProfileImage: user.profileImage,
         usernameColor: user.usernameColor
       };
 
