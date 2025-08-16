@@ -1,4 +1,3 @@
-
 import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
 import securityApiRoutes from "./api-security";
 import apiRoutes from "./routes/index";
@@ -186,53 +185,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "المستخدم غير موجود" });
       }
 
-      // حل مشكلة Render: تحويل الصورة إلى base64 وحفظها في قاعدة البيانات
-      let imageUrl: string;
-      
-      try {
-        // قراءة الملف كـ base64
-        const fileBuffer = fs.readFileSync(req.file.path);
-        const base64Image = fileBuffer.toString('base64');
-        const mimeType = req.file.mimetype;
-        
-        // إنشاء data URL
-        imageUrl = `data:${mimeType};base64,${base64Image}`;
-        
-        // حذف الملف الأصلي
-        fs.unlinkSync(req.file.path);
-        
-      } catch (fileError) {
-        console.error('❌ خطأ في معالجة الملف:', fileError);
-        
-        // في حالة فشل base64، استخدم المسار العادي
-        imageUrl = `/uploads/profiles/${req.file.filename}`;
-        
-        // حاول التأكد من وجود المجلد
-        const uploadsDir = path.dirname(req.file.path);
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
+      // حفظ الصورة بصيغة webp ثابتة + حساب hash/version
+      const avatarsDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'avatars');
+      if (!fs.existsSync(avatarsDir)) {
+        fs.mkdirSync(avatarsDir, { recursive: true });
       }
-      
-      // تحديث صورة البروفايل في قاعدة البيانات
-      const updatedUser = await storage.updateUser(userId, { profileImage: imageUrl });
+      const inputBuffer = fs.readFileSync(req.file.path);
+      let webpBuffer = inputBuffer;
+      try {
+        webpBuffer = await (sharp as any)(inputBuffer).resize(256, 256, { fit: 'cover' }).webp({ quality: 80 }).toBuffer();
+      } catch {}
+      const hash = (await import('crypto')).createHash('md5').update(webpBuffer).digest('hex').slice(0, 12);
+      const targetPath = path.join(avatarsDir, `${userId}.webp`);
+      fs.writeFileSync(targetPath, webpBuffer);
+
+      // حذف الملف المؤقت
+      try { fs.unlinkSync(req.file.path); } catch {}
+
+      // تحديث DB: avatarHash + زيادة avatarVersion
+      const nextVersion = (user as any).avatarVersion ? Number((user as any).avatarVersion) + 1 : 1;
+      const updatedUser = await storage.updateUser(userId, { profileImage: `/uploads/avatars/${userId}.webp`, avatarHash: hash, avatarVersion: nextVersion });
       
       if (!updatedUser) {
         return res.status(500).json({ error: "فشل في تحديث صورة البروفايل في قاعدة البيانات" });
       }
 
-      // إرسال إشعار موحد عبر WebSocket
-      getIO().emit('message', {
-        type: 'userUpdated',
-        user: updatedUser,
-        timestamp: new Date().toISOString()
-      });
+      // بث خفيف للغرف + كامل لصاحب التعديل
+      emitUserUpdatedToUser(userId, updatedUser);
+      await emitToUserRooms(userId, { type: 'userUpdated', user: { id: userId, profileImage: `${updatedUser.profileImage}?v=${hash}` } });
 
       res.json({
         success: true,
         message: "تم رفع الصورة بنجاح",
-        imageUrl: imageUrl,
-        filename: req.file.filename,
+        imageUrl: `${updatedUser.profileImage}?v=${hash}`,
+        filename: `${userId}.webp`,
+        avatarHash: hash,
         user: updatedUser
       });
 
@@ -320,12 +307,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "فشل في تحديث صورة البانر في قاعدة البيانات" });
       }
 
-      // إرسال إشعار موحد عبر WebSocket
-      getIO().emit('message', {
-        type: 'userUpdated',
-        user: updatedUser,
-        timestamp: new Date().toISOString()
-      });
+      // بث خفيف للغرف: الخلفية فقط + كامل لصاحب التعديل
+      emitUserUpdatedToUser(userId, updatedUser);
+      await emitToUserRooms(userId, { type: 'user_background_updated', data: { userId, profileBackgroundColor: updatedUser.profileBackgroundColor } });
 
       res.json({
         success: true,
@@ -782,13 +766,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تحديث لون الاسم
       await storage.updateUser(userIdNum, { usernameColor: color });
       
-      // إرسال إشعار موحد WebSocket
+      // بث خفيف مخصص للغرف + كامل لصاحب التعديل
       const updated = await storage.getUser(userIdNum);
-      getIO().emit('message', {
-        type: 'userUpdated',
-        user: updated,
-        timestamp: new Date().toISOString()
-      });
+      emitUserUpdatedToUser(userIdNum, updated);
+      await emitToUserRooms(userIdNum, { type: 'usernameColorChanged', userId: userIdNum, color });
       
       res.json({ 
         message: "تم تحديث لون اسم المستخدم بنجاح",
@@ -1214,8 +1195,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "فشل في تحديث الصورة" });
       }
 
-      // Broadcast user update to all connected clients
-      getIO().emit('userUpdated', { user });
+      // بث موجه للمستخدم + بث خفيف للجميع
+      emitUserUpdatedToUser(userId, user);
+      emitUserUpdatedToAll(user);
 
       res.json({ user, message: "تم تحديث الصورة الشخصية بنجاح" });
     } catch (error) {
@@ -1244,13 +1226,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update username color
       await storage.updateUser(userId, { usernameColor: color });
       
-      // Unified broadcast of updated user
+      // بث خفيف مخصص للغرف + كامل لصاحب التعديل
       const updated = await storage.getUser(userId);
-      getIO().emit('message', {
-        type: 'userUpdated',
-        user: updated,
-        timestamp: new Date().toISOString()
-      });
+      emitUserUpdatedToUser(userId, updated);
+      await emitToUserRooms(userId, { type: 'usernameColorChanged', userId, color });
       
       res.json({ 
         success: true, 
@@ -2048,12 +2027,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update connected cache copy in realtime module if needed (no-op here)
       try { /* no-op */ } catch {}
 
-             // Unified broadcast for any user data change
-       getIO().emit('message', {
-         type: 'userUpdated',
-         user,
-         timestamp: new Date().toISOString()
-       });
+                   // بث خفيف للجميع + بث كامل لصاحب التعديل
+      emitUserUpdatedToAll(user);
+      emitUserUpdatedToUser(idNum, user);
 
       res.json(user);
     } catch (error) {
@@ -2305,12 +2281,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: 'فشل في تحديث البيانات في قاعدة البيانات' });
       }
       
-      // إشعار موحد عبر WebSocket
-      io.emit('message', {
-        type: 'userUpdated',
-        user: updatedUser,
-        timestamp: new Date().toISOString()
-      });
+      // بث موجه للمستخدم + بث خفيف للجميع
+      emitUserUpdatedToUser(userIdNum, updatedUser);
+      emitUserUpdatedToAll(updatedUser);
 
       res.json({ 
         success: true, 
@@ -3158,6 +3131,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'فشل في تحديث ثيم الموقع' });
     }
   });
+
+  // Helper to avoid broadcasting heavy base64 images to all clients
+  function buildUserBroadcastPayload(user: any): any {
+    if (!user) return user;
+    const sanitized = sanitizeUserData(user);
+    const payload: any = {
+      id: sanitized.id,
+      username: sanitized.username,
+      userType: sanitized.userType,
+      role: sanitized.role,
+      usernameColor: sanitized.usernameColor,
+      profileBackgroundColor: sanitized.profileBackgroundColor,
+      profileEffect: sanitized.profileEffect,
+      isOnline: sanitized.isOnline,
+      lastSeen: sanitized.lastSeen,
+      points: sanitized.points,
+      level: sanitized.level,
+      totalPoints: sanitized.totalPoints,
+      levelProgress: sanitized.levelProgress,
+    };
+    if (
+      sanitized.profileImage &&
+      typeof sanitized.profileImage === 'string' &&
+      !sanitized.profileImage.startsWith('data:')
+    ) {
+      payload.profileImage = sanitized.profileImage;
+    }
+    if (
+      sanitized.profileBanner &&
+      typeof sanitized.profileBanner === 'string' &&
+      !sanitized.profileBanner.startsWith('data:')
+    ) {
+      payload.profileBanner = sanitized.profileBanner;
+    }
+    return payload;
+  }
+
+  function emitUserUpdatedToAll(user: any) {
+    try {
+      const payload = buildUserBroadcastPayload(user);
+      if (payload && payload.id) {
+        getIO().emit('message', {
+          type: 'userUpdated',
+          user: payload,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    } catch {}
+  }
+
+  function emitUserUpdatedToUser(userId: number, user: any) {
+    try {
+      getIO().to(userId.toString()).emit('message', {
+        type: 'userUpdated',
+        user,
+        timestamp: new Date().toISOString(),
+      });
+    } catch {}
+  }
+
+  async function emitToUserRooms(userId: number, payload: any) {
+    try {
+      let rooms = await storage.getUserRooms(userId);
+      if (!Array.isArray(rooms) || rooms.length === 0) {
+        rooms = ['general'];
+      }
+      for (const roomId of rooms) {
+        getIO().to(`room_${roomId}`).emit('message', payload);
+      }
+    } catch {
+      // fallback: عام كحل أخير
+      try { getIO().emit('message', payload); } catch {}
+    }
+  }
 
   return httpServer;
 }

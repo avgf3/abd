@@ -38,6 +38,11 @@ app.use('/uploads', (req, res, next) => {
     return res.status(404).json({ error: 'File not found' });
   }
   
+  // إذا كانت صورة أفاتار ومعها باراميتر نسخة v، فعّل كاش طويل وimmutable
+  if (req.path.includes('/avatars/') && typeof req.query.v === 'string' && req.query.v.length > 0) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+
   next();
 }, express.static(uploadsPath, {
   // إعدادات محسّنة للأداء

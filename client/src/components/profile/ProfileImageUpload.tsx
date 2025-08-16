@@ -80,6 +80,12 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       if (onImageUpdate && result.imageUrl) {
         onImageUpdate(result.imageUrl);
       }
+      // تحديث نسخة/هاش الصورة محلياً إن عاد من السيرفر
+      if ((result as any).avatarHash && currentUser?.id) {
+        try {
+          await api.apiRequest(`/api/users/${currentUser.id}`, { method: 'PUT', body: { avatarHash: (result as any).avatarHash } });
+        } catch {}
+      }
 
       toast({
         title: "تم رفع الصورة بنجاح",

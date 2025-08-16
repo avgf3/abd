@@ -12,6 +12,8 @@ export const users = pgTable("users", {
   profileImage: text("profile_image"),
   profileBanner: text("profile_banner"),
   profileBackgroundColor: text("profile_background_color").default('#3c0d0d'), // لون خلفية البروفايل
+  avatarHash: text("avatar_hash"),
+  avatarVersion: integer("avatar_version").default(1),
   status: text("status"),
   gender: text("gender"),
   age: integer("age"),

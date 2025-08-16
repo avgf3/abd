@@ -27,7 +27,15 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
 
   // تحديد مصدر الصورة بشكل مستقر
   const imageSrc = useMemo(() => {
-    return getImageSrc(user.profileImage, '');
+    const base = getImageSrc(user.profileImage, '');
+    const v = (user as any).avatarHash || (user as any).avatarVersion;
+    if (base && v && typeof v === 'string' && !base.includes('?v=')) {
+      return `${base}?v=${v}`;
+    }
+    if (base && v && typeof v === 'number' && !base.includes('?v=')) {
+      return `${base}?v=${v}`;
+    }
+    return base;
   }, [user.profileImage]);
 
   const fallbackSrc = '/default_avatar.svg';
