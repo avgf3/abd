@@ -318,13 +318,13 @@ export default function RoomComponent({
     if (!file) return;
     if (!currentUser) return;
     try {
-      const targetRoomId = roomIdToChangeIcon || room.id;
+      const targetRoomId = roomIdToChangeIcon || currentRoomId;
       await updateRoomIcon(targetRoomId, file, currentUser.id);
       toast({ title: 'نجاح', description: 'تم تحديث صورة الغرفة' });
     } catch (err) {
       toast({ title: 'خطأ', description: 'فشل تحديث صورة الغرفة', variant: 'destructive' });
     }
-  }, [updateRoomIcon, currentUser, room?.id, toast]);
+  }, [updateRoomIcon, currentUser, roomIdToChangeIcon, currentRoomId, toast]);
 
   // التحقق من الصلاحيات
   const isAdmin = currentUser && ['owner', 'admin'].includes(currentUser.userType);
