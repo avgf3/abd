@@ -4,7 +4,7 @@ import type { Socket } from 'socket.io-client';
 import type { PrivateConversation } from '../../../shared/types';
 
 import { apiRequest } from '@/lib/queryClient';
-import { getSocket, saveSession } from '@/lib/socket';
+import { getSocket, saveSession, clearSession } from '@/lib/socket';
 import type { ChatUser, ChatMessage, RoomWebSocketMessage as WebSocketMessage } from '@/types/chat';
 import type { Notification } from '@/types/chat';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
@@ -724,19 +724,19 @@ export const useChat = () => {
 
       // معالج حدث الطرد
       socketInstance.on('kicked', (data: any) => {
-        if (state.currentUser?.id) {
-          const duration = data.duration || 15;
+        if (state.currentUser?.id === data.userId) {
+          const kickerName = data.kickerName || 'مشرف';
           const reason = data.reason || 'بدون سبب';
-          const moderator = data.moderator || 'مشرف';
           
           // إظهار رسالة الطرد
-          alert(`تم طردك من الدردشة بواسطة ${moderator}\nالسبب: ${reason}\nالمدة: ${duration} دقيقة`);
+          alert(`تم طردك من الدردشة بواسطة ${kickerName}\nالسبب: ${reason}\nيمكنك العودة بعد 15 دقيقة`);
           
           // إظهار عداد الطرد
           dispatch({ type: 'SET_SHOW_KICK_COUNTDOWN', payload: true });
           
           // فصل المستخدم بعد 3 ثواني
           setTimeout(() => {
+            clearSession(); // مسح بيانات الجلسة
             socketInstance.disconnect();
             window.location.href = '/';
           }, 3000);
@@ -753,6 +753,7 @@ export const useChat = () => {
           alert(`تم حجبك نهائياً من الدردشة بواسطة ${moderator}\nالسبب: ${reason}`);
           
           // فصل المستخدم فوراً وإعادة توجيهه
+          clearSession(); // مسح بيانات الجلسة
           socketInstance.disconnect();
           setTimeout(() => {
             window.location.href = '/';
@@ -764,6 +765,7 @@ export const useChat = () => {
       socketInstance.on('error', (data: any) => {
         if (data.action === 'blocked' || data.action === 'device_blocked') {
           alert(data.message);
+          clearSession(); // مسح بيانات الجلسة
           socketInstance.disconnect();
           setTimeout(() => {
             window.location.href = '/';
@@ -973,6 +975,7 @@ export const useChat = () => {
 
   // 🔥 SIMPLIFIED Disconnect function
   const disconnect = useCallback(() => {
+    clearSession(); // مسح بيانات الجلسة
     if (socket.current) {
       socket.current.removeAllListeners();
       socket.current.disconnect();
