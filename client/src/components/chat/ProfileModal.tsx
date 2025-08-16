@@ -62,9 +62,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       setLocalUser(userData);
       if (onUpdate) onUpdate(userData);
       
-      // تحديث الثيم والتأثير المحلي
-      if (userData.userTheme) {
-        setSelectedTheme(userData.userTheme);
+      // تحديث لون الخلفية والتأثير المحلي
+      if (userData.profileBackgroundColor) {
+        setSelectedTheme(userData.profileBackgroundColor);
       }
       if (userData.profileEffect) {
         setSelectedEffect(userData.profileEffect);
