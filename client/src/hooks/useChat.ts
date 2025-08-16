@@ -75,7 +75,9 @@ type ChatAction =
   | { type: 'SET_SHOW_KICK_COUNTDOWN'; payload: boolean }
   | { type: 'IGNORE_USER'; payload: number }
   | { type: 'UNIGNORE_USER'; payload: number }
-  | { type: 'CLEAR_ALL'; payload: void };
+  | { type: 'CLEAR_ALL'; payload: void }
+  | { type: 'UPSERT_ONLINE_USER'; payload: ChatUser }
+  | { type: 'REMOVE_ONLINE_USER'; payload: number };
 
 // 🔥 SIMPLIFIED Initial state
 const initialState: ChatState = {
@@ -186,6 +188,31 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
       };
     }
     
+    case 'UPSERT_ONLINE_USER': {
+      const incoming = action.payload;
+      if (!incoming || !incoming.id) {
+        return state;
+      }
+      const existingIndex = state.onlineUsers.findIndex(u => u.id === incoming.id);
+      if (existingIndex === -1) {
+        // لا تضف مستخدمًا جديدًا إذا كانت البيانات منقوصة (تحديث جزئي مثل اللون/التأثير)
+        const hasMinimum = !!(incoming.username && incoming.userType);
+        if (!hasMinimum) {
+          return state;
+        }
+        return { ...state, onlineUsers: [...state.onlineUsers, incoming] };
+      }
+      const merged = { ...state.onlineUsers[existingIndex], ...incoming } as ChatUser;
+      const next = state.onlineUsers.slice();
+      next[existingIndex] = merged;
+      return { ...state, onlineUsers: next };
+    }
+
+    case 'REMOVE_ONLINE_USER': {
+      const userId = action.payload;
+      return { ...state, onlineUsers: state.onlineUsers.filter(u => u.id !== userId) };
+    }
+
     case 'SET_CONNECTION_STATUS':
       return { ...state, isConnected: action.payload };
     
@@ -369,15 +396,7 @@ export const useChat = () => {
                 } as any 
               });
             }
-            const updatedOnline = state.onlineUsers.map(u => 
-              u.id === targetId 
-                ? { 
-                    ...u, 
-                    profileEffect: (profileEffect ?? user?.profileEffect ?? u.profileEffect)
-                  }
-                : u
-            );
-            dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
+            dispatch({ type: 'UPSERT_ONLINE_USER', payload: { id: targetId, profileEffect: (profileEffect ?? user?.profileEffect) } as any });
           }
         }
 
@@ -389,8 +408,7 @@ export const useChat = () => {
             if (state.currentUser?.id === targetId) {
               dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, usernameColor: color } as any });
             }
-            const updatedOnline = state.onlineUsers.map(u => u.id === targetId ? { ...u, usernameColor: color } : u);
-            dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
+            dispatch({ type: 'UPSERT_ONLINE_USER', payload: { id: targetId, usernameColor: color } as any });
           }
         }
 
@@ -403,8 +421,7 @@ export const useChat = () => {
             if (state.currentUser?.id === targetId) {
               dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, profileBackgroundColor: color } as any });
             }
-            const updatedOnline = state.onlineUsers.map(u => u.id === targetId ? { ...u, profileBackgroundColor: color } : u);
-            dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
+            dispatch({ type: 'UPSERT_ONLINE_USER', payload: { id: targetId, profileBackgroundColor: color } as any });
           }
         }
 
@@ -417,8 +434,7 @@ export const useChat = () => {
             if (isCurrent) {
               dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, ...updatedUser } as any });
             }
-            const updatedOnline = state.onlineUsers.map(u => u.id === updatedUser.id ? { ...u, ...updatedUser } : u);
-            dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
+            dispatch({ type: 'UPSERT_ONLINE_USER', payload: updatedUser });
 
             // إذا كان البث خفيفاً (بدون profileImage/base64) والمستخدم الحالي يحتاج الصورة، اجلب نسخة كاملة مرة واحدة
             if (isCurrent && (!updatedUser.profileImage || (typeof updatedUser.profileImage === 'string' && !updatedUser.profileImage.startsWith('data:')))) {
@@ -522,15 +538,13 @@ export const useChat = () => {
           case 'userJoinedRoom': {
             const joinedId = (envelope as any).userId;
             const username = (envelope as any).username || (joinedId ? `User#${joinedId}` : 'User');
-            if (joinedId && !state.onlineUsers.find(u => u.id === joinedId)) {
+            if (joinedId) {
               const placeholder = { id: joinedId, username, role: 'member', userType: 'member', isOnline: true } as ChatUser;
-              dispatch({ type: 'SET_ONLINE_USERS', payload: [...state.onlineUsers, placeholder] });
-              // محاولة تحديث التفاصيل بسرعة ثم طلب القائمة كنسخة احتياطية
+              dispatch({ type: 'UPSERT_ONLINE_USER', payload: placeholder });
               try {
                 apiRequest(`/api/users/${joinedId}?t=${Date.now()}`).then((data: any) => {
                   if (data && data.id) {
-                    const replaced = state.onlineUsers.filter(u => u.id !== joinedId).concat([{ ...(data as any), isOnline: true } as ChatUser]);
-                    dispatch({ type: 'SET_ONLINE_USERS', payload: replaced });
+                    dispatch({ type: 'UPSERT_ONLINE_USER', payload: { ...(data as any), isOnline: true } as ChatUser });
                   } else {
                     requestUsersThrottled();
                   }
@@ -546,27 +560,21 @@ export const useChat = () => {
           case 'userLeftRoom': {
             const leftId = (envelope as any).userId;
             if (leftId) {
-              const next = state.onlineUsers.filter(u => u.id !== leftId);
-              dispatch({ type: 'SET_ONLINE_USERS', payload: next });
+              dispatch({ type: 'REMOVE_ONLINE_USER', payload: leftId });
             }
             break;
           }
           case 'userDisconnected': {
             const uid = (envelope as any).userId;
             if (uid) {
-              const next = state.onlineUsers.filter(u => u.id !== uid);
-              dispatch({ type: 'SET_ONLINE_USERS', payload: next });
+              dispatch({ type: 'REMOVE_ONLINE_USER', payload: uid });
             }
             break;
           }
           case 'userConnected': {
             const u = (envelope as any).user;
             if (u && u.id) {
-              if (!state.onlineUsers.find(x => x.id === u.id)) {
-                dispatch({ type: 'SET_ONLINE_USERS', payload: [...state.onlineUsers, u] });
-              } else {
-                dispatch({ type: 'SET_ONLINE_USERS', payload: state.onlineUsers.map(x => x.id === u.id ? { ...x, ...u } : x) });
-              }
+              dispatch({ type: 'UPSERT_ONLINE_USER', payload: u });
             }
             break;
           }
@@ -628,18 +636,13 @@ export const useChat = () => {
     socketInstance.on('userDisconnected', (payload: any) => {
       const uid = payload?.userId || payload?.id;
       if (uid) {
-        const next = state.onlineUsers.filter(u => u.id !== uid);
-        dispatch({ type: 'SET_ONLINE_USERS', payload: next });
+        dispatch({ type: 'REMOVE_ONLINE_USER', payload: uid });
       }
     });
     socketInstance.on('userConnected', (payload: any) => {
       const user = payload?.user || payload;
       if (user?.id) {
-        if (!state.onlineUsers.find(u => u.id === user.id)) {
-          dispatch({ type: 'SET_ONLINE_USERS', payload: [...state.onlineUsers, user] });
-        } else {
-          dispatch({ type: 'SET_ONLINE_USERS', payload: state.onlineUsers.map(u => u.id === user.id ? { ...u, ...user } : u) });
-        }
+        dispatch({ type: 'UPSERT_ONLINE_USER', payload: user });
       }
     });
 
