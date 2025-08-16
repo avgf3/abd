@@ -115,14 +115,32 @@ const hexToRgba = (hex: string, alpha: number): string => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+// دالة للتحقق من صحة كود HEX
+const isValidHexColor = (color: string): boolean => {
+  if (!color) return false;
+  const hexPattern = /^#?[0-9A-Fa-f]{6}$/;
+  return hexPattern.test(color.trim());
+};
+
+// دالة لتنظيف وتصحيح لون HEX
+const sanitizeHexColor = (color: string, defaultColor: string = '#3c0d0d'): string => {
+  if (!color || color === 'null' || color === 'undefined' || color === '') {
+    return defaultColor;
+  }
+  
+  const trimmed = color.trim();
+  if (isValidHexColor(trimmed)) {
+    return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+  }
+  
+  return defaultColor;
+};
+
 // بناء تدرّج خلفية موحد من لون HEX ليتطابق مع بطاقة البروفايل وصندوق القائمة
 export const buildProfileBackgroundGradient = (hex: string): string => {
-  const clean = String(hex).trim();
-  const isHex6 = /^#?[a-fA-F0-9]{6}$/.test(clean);
-  if (!isHex6) return '';
-  const normalized = clean.startsWith('#') ? clean : `#${clean}`;
-  const color20 = `${normalized}20`;
-  const color08 = `${normalized}08`;
+  const clean = sanitizeHexColor(hex);
+  const color20 = `${clean}20`;
+  const color08 = `${clean}08`;
   return `linear-gradient(0deg, ${color20}, ${color08})`;
 };
 
@@ -144,66 +162,63 @@ const gradientToTransparent = (gradient: string, opacity: number): string => {
 
 // دالة لحصول على لون الاسم النهائي (يعتمد فقط على usernameColor)
 export const getFinalUsernameColor = (user: any): string => {
-  return (user && user.usernameColor) ? String(user.usernameColor) : '#000000';
+  const color = (user && user.usernameColor) ? String(user.usernameColor) : '#000000';
+  return sanitizeHexColor(color, '#000000');
 };
 
-// ===== دوال تأثيرات صندوق المستخدم (بدلاً من ربطه بالثيم العام) =====
+// ===== نظام موحد جديد لتأثيرات صندوق المستخدم مع الملف الشخصي =====
 
-// إرجاع كلاسات CSS الخاصة بالتأثير ليتم تطبيق الحركة/التوهج
+// دالة للحصول على كلاسات CSS للتأثيرات
 export const getUserEffectClasses = (user: any): string => {
   const effect = (user && user.profileEffect) ? String(user.profileEffect) : 'none';
   if (!effect || effect === 'none') return '';
-  // هذه الكلاسات معرفة في index.css: .effect-glow, .effect-pulse, .effect-water, .effect-aurora ...
+  // هذه الكلاسات معرفة في index.css
   return effect;
 };
 
-// إرجاع أنماط خلفية لطيفة وفق التأثير (بدون استخدام userTheme)
+// دالة للحصول على أنماط التأثيرات بناءً على لون الخلفية والتأثير
 export const getUserEffectStyles = (user: any): Record<string, string> => {
-  const effect = (user && user.profileEffect) ? String(user.profileEffect) : 'none';
-  const backgrounds: Record<string, string> = {
-    'effect-glow': 'linear-gradient(135deg, rgba(255, 215, 0, 0.10), rgba(255, 215, 0, 0.05))',
-    'effect-pulse': 'linear-gradient(135deg, rgba(255, 105, 180, 0.10), rgba(255, 105, 180, 0.05))',
-    'effect-water': 'linear-gradient(135deg, rgba(0, 206, 209, 0.10), rgba(0, 206, 209, 0.05))',
-    'effect-aurora': 'linear-gradient(135deg, rgba(155, 89, 182, 0.10), rgba(155, 89, 182, 0.05))',
-    'effect-neon': 'linear-gradient(135deg, rgba(0, 255, 127, 0.12), rgba(0, 255, 127, 0.06))',
-    'effect-fire': 'linear-gradient(135deg, rgba(255, 69, 0, 0.10), rgba(255, 69, 0, 0.05))',
-    'effect-ice': 'linear-gradient(135deg, rgba(135, 206, 235, 0.10), rgba(135, 206, 235, 0.05))',
-    'effect-rainbow': 'linear-gradient(135deg, rgba(236, 72, 153, 0.10), rgba(139, 92, 246, 0.05))',
-    'effect-shadow': 'linear-gradient(135deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.03))',
-    'effect-electric': 'linear-gradient(135deg, rgba(0, 191, 255, 0.10), rgba(0, 191, 255, 0.05))',
-    'effect-crystal': 'linear-gradient(135deg, rgba(230, 230, 250, 0.10), rgba(230, 230, 250, 0.05))',
-  };
-
   const style: Record<string, string> = {};
-  if (effect && effect !== 'none') {
-    const base = backgrounds[effect] || 'rgba(255,255,255,0.05)';
-    style.background = base;
-    return style;
+  
+  // أولاً: تطبيق لون الخلفية من الملف الشخصي
+  if (user?.profileBackgroundColor) {
+    const sanitizedColor = sanitizeHexColor(user.profileBackgroundColor);
+    const bg = buildProfileBackgroundGradient(sanitizedColor);
+    if (bg) {
+      style.background = bg;
+    }
   }
-
-  // خلفية افتراضية خفيفة في حال عدم وجود تأثير
-  style.background = 'rgba(255,255,255,0.05)';
+  
+  // ثانياً: إضافة تأثيرات إضافية حسب نوع التأثير المختار
+  const effect = user?.profileEffect || 'none';
+  if (effect !== 'none' && effect !== 'null' && effect !== 'undefined') {
+    // إضافة ظلال ملونة حسب التأثير
+    const effectShadows: Record<string, string> = {
+      'effect-glow': '0 0 20px rgba(255, 215, 0, 0.5)',
+      'effect-pulse': '0 0 20px rgba(255, 105, 180, 0.5)',
+      'effect-water': '0 0 20px rgba(0, 206, 209, 0.5)',
+      'effect-aurora': '0 0 20px rgba(155, 89, 182, 0.5)',
+      'effect-neon': '0 0 20px rgba(0, 255, 127, 0.6)',
+      'effect-fire': '0 0 20px rgba(255, 69, 0, 0.5)',
+      'effect-ice': '0 0 20px rgba(135, 206, 235, 0.5)',
+      'effect-rainbow': '0 0 20px rgba(236, 72, 153, 0.5)',
+      'effect-shadow': '0 2px 10px rgba(0, 0, 0, 0.3)',
+      'effect-electric': '0 0 20px rgba(0, 191, 255, 0.5)',
+      'effect-crystal': '0 0 20px rgba(230, 230, 250, 0.5)',
+    };
+    
+    if (effectShadows[effect]) {
+      style.boxShadow = effectShadows[effect];
+    }
+  }
+  
   return style;
 };
 
 // دالة موحدة للحصول على أنماط عنصر المستخدم في القائمة
 export const getUserListItemStyles = (user: any): Record<string, string> => {
-  const style: Record<string, string> = {};
-
-  // أولاً: تأثيرات الصندوق إن وُجدت (مستقلة عن اللون والثيم)
-  if (user?.profileEffect && user.profileEffect !== 'none') {
-    return getUserEffectStyles(user);
-  }
-
-  // ثانياً: استخدام تدرّج موحّد مشتق من لون الملف الشخصي لضمان التطابق مع بطاقة البروفايل
-  if (user?.profileBackgroundColor) {
-    const bg = buildProfileBackgroundGradient(String(user.profileBackgroundColor));
-    style.background = bg || 'rgba(255,255,255,0.05)';
-  } else {
-    style.background = 'rgba(255,255,255,0.05)';
-  }
-
-  return style;
+  // استخدام نفس المنطق المستخدم في الملف الشخصي
+  return getUserEffectStyles(user);
 };
 
 // دالة للحصول على كلاسات CSS للمستخدم في القائمة
@@ -215,7 +230,11 @@ export const getUserListItemClasses = (user: any): string => {
     classes.push(user.profileEffect);
   }
 
-  // لا نضيف أي كلاسات مرتبطة بالثيم العام هنا
+  // إضافة كلاس خاص إذا كان هناك لون خلفية
+  if (user?.profileBackgroundColor) {
+    classes.push('has-custom-bg');
+  }
+
   return classes.join(' ');
 };
 
@@ -226,11 +245,35 @@ export const getUserThemeAndEffect = (user: any) => {
     effect: user?.profileEffect || 'none',
     effectColor: user?.profileEffect ? getEffectColor(user.profileEffect) : null,
     usernameColor: getFinalUsernameColor(user),
-    hasAnimation: getThemeData(user?.userTheme || 'default').hasAnimation || (user?.profileEffect && user.profileEffect !== 'none')
+    hasAnimation: getThemeData(user?.userTheme || 'default').hasAnimation || (user?.profileEffect && user.profileEffect !== 'none'),
+    backgroundColor: user?.profileBackgroundColor || null
   };
 };
 
 // دالة مساعدة للتحقق من وجود ثيم مخصص
 export const hasCustomTheme = (user: any): boolean => {
-  return (user?.userTheme && user.userTheme !== 'default') || (user?.profileEffect && user.profileEffect !== 'none');
+  return (user?.userTheme && user.userTheme !== 'default') || 
+         (user?.profileEffect && user.profileEffect !== 'none') || 
+         (user?.profileBackgroundColor);
+};
+
+// دالة للتحقق من تطابق الألوان بين الملف الشخصي وصندوق المستخدم
+export const verifyColorMatch = (profileColor: string, userBoxColor: string): boolean => {
+  if (!profileColor || !userBoxColor) return false;
+  
+  // بناء التدرج من لون الملف الشخصي
+  const expectedGradient = buildProfileBackgroundGradient(profileColor);
+  
+  // المقارنة
+  return expectedGradient === userBoxColor;
+};
+
+// دالة للحصول على معلومات اللون المطبق
+export const getAppliedColorInfo = (user: any) => {
+  return {
+    profileColor: user?.profileBackgroundColor || null,
+    appliedGradient: user?.profileBackgroundColor ? buildProfileBackgroundGradient(user.profileBackgroundColor) : null,
+    effect: user?.profileEffect || 'none',
+    hasCustomBackground: !!user?.profileBackgroundColor
+  };
 };

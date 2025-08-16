@@ -628,6 +628,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onUpdate={(updatedUser) => {
                 // تحديث بيانات المستخدم في قائمة المتصلون
                 if (updatedUser && updatedUser.id) {
+
                   chat.updateCurrentUser({
                     userTheme: updatedUser.userTheme,
                     profileEffect: updatedUser.profileEffect,

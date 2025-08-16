@@ -542,6 +542,8 @@ export default function UnifiedSidebar({
                   return null;
                 }
                 
+
+                
                 return (
                   <li key={user.id} className="relative -mx-4">
                     <SimpleUserMenu
