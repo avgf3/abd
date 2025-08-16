@@ -236,3 +236,24 @@ export const hasCustomTheme = (user: any): boolean => {
          (user?.profileEffect && user.profileEffect !== 'none') || 
          (user?.profileBackgroundColor);
 };
+
+// دالة للتحقق من تطابق الألوان بين الملف الشخصي وصندوق المستخدم
+export const verifyColorMatch = (profileColor: string, userBoxColor: string): boolean => {
+  if (!profileColor || !userBoxColor) return false;
+  
+  // بناء التدرج من لون الملف الشخصي
+  const expectedGradient = buildProfileBackgroundGradient(profileColor);
+  
+  // المقارنة
+  return expectedGradient === userBoxColor;
+};
+
+// دالة للحصول على معلومات اللون المطبق
+export const getAppliedColorInfo = (user: any) => {
+  return {
+    profileColor: user?.profileBackgroundColor || null,
+    appliedGradient: user?.profileBackgroundColor ? buildProfileBackgroundGradient(user.profileBackgroundColor) : null,
+    effect: user?.profileEffect || 'none',
+    hasCustomBackground: !!user?.profileBackgroundColor
+  };
+};
