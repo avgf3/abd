@@ -57,6 +57,8 @@ export default function FriendsTabPanel({
     enabled: !!currentUser?.id,
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
+    refetchOnMount: false,
+    initialData: () => queryClient.getQueryData(['/api/friends', currentUser?.id]) as any,
   });
 
   const rawFriends = (friendsData as any)?.friends || [];
@@ -80,6 +82,9 @@ export default function FriendsTabPanel({
     },
     enabled: !!currentUser?.id,
     staleTime: 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnMount: false,
+    initialData: () => queryClient.getQueryData(['/api/friend-requests/incoming', currentUser?.id]) as any,
   });
   const { data: outgoingData, isFetching: isFetchingOutgoing, refetch: refetchOutgoing } = useQuery<{ requests: FriendRequest[] }>({
     queryKey: ['/api/friend-requests/outgoing', currentUser?.id],
@@ -89,6 +94,9 @@ export default function FriendsTabPanel({
     },
     enabled: !!currentUser?.id,
     staleTime: 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnMount: false,
+    initialData: () => queryClient.getQueryData(['/api/friend-requests/outgoing', currentUser?.id]) as any,
   });
 
   const incomingRequests = (incomingData as any)?.requests || [];
@@ -229,12 +237,7 @@ export default function FriendsTabPanel({
   // تحديث حالة الاتصال للأصدقاء يتم الآن تلقائياً عبر friendsWithStatus المشتقة من الكاش
 
   // جلب البيانات عند التحميل (يعتمد على React Query)
-  useEffect(() => {
-    if (currentUser) {
-      fetchFriends();
-      fetchFriendRequests();
-    }
-  }, [currentUser, fetchFriends, fetchFriendRequests]);
+  // حذف تأثير الجلب القسري عند التركيب لمنع إعادة التحميل مع كل دخول للتبويب
 
   // قبول طلب صداقة
   const handleAcceptRequest = async (requestId: number) => {
@@ -264,6 +267,9 @@ export default function FriendsTabPanel({
   const filteredFriends = friendsWithStatus.filter(friend =>
     friend.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // لا تُظهر شاشة التحميل عند وجود بيانات مخبأة، بل اعرض القائمة وتحدّث في الخلفية
+  const showFriendsLoader = !friendsData && (isLoadingFriends || isFetchingFriends);
   
   return (
     <div className="h-full flex flex-col bg-card/95 backdrop-blur-sm">
@@ -349,7 +355,7 @@ export default function FriendsTabPanel({
             </div>
 
             {/* Friends List */}
-            {(isLoadingFriends || isFetchingFriends) ? (
+            {showFriendsLoader ? (
               <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
             ) : filteredFriends.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
