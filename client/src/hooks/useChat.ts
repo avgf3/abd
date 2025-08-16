@@ -638,6 +638,32 @@ export const useChat = () => {
             break;
           }
           
+          // ✅ بثوص الأصدقاء: تحويلها إلى أحداث متصفح لتفعيل إبطال الكاش عبر useNotificationManager
+          case 'friendRequestReceived': {
+            const targetId = (envelope as any).targetUserId;
+            if (targetId && targetId === currentUserRef.current?.id) {
+              const detail = { senderName: (envelope as any).senderName, senderId: (envelope as any).senderId } as any;
+              try { window.dispatchEvent(new CustomEvent('friendRequestReceived', { detail })); } catch {}
+            }
+            break;
+          }
+          case 'friendRequestAccepted': {
+            const targetId = (envelope as any).targetUserId;
+            if (targetId && targetId === currentUserRef.current?.id) {
+              const detail = { friendName: (envelope as any).senderName } as any;
+              try { window.dispatchEvent(new CustomEvent('friendRequestAccepted', { detail })); } catch {}
+            }
+            break;
+          }
+          case 'friendAdded': {
+            const targetId = (envelope as any).targetUserId;
+            if (targetId && targetId === currentUserRef.current?.id) {
+              const detail = { friendId: (envelope as any).friendId, friendName: (envelope as any).friendName } as any;
+              try { window.dispatchEvent(new CustomEvent('friendAdded', { detail })); } catch {}
+            }
+            break;
+          }
+
           default: {
             break;
           }
