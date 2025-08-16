@@ -11,6 +11,7 @@ import { roomService } from "./services/roomService";
 import { storage } from "./storage";
 import { sanitizeUsersArray } from "./utils/data-sanitizer";
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from "./utils/device";
+import { userService } from "./services/userService";
 
 interface CustomSocket extends Socket {
   userId?: number;
@@ -31,14 +32,25 @@ const connectedUsers = new Map<number, {
 
 function buildOnlineUsersForRoom(roomId: string) {
   const userMap = new Map<number, any>();
-  for (const { user, sockets } of connectedUsers.values()) {
-    for (const { room } of sockets.values()) {
-      if (room === roomId && user && user.id && user.username && user.userType) {
-        userMap.set(user.id, user);
-        break;
+  
+  for (const [userId, entry] of connectedUsers.entries()) {
+    // ابحث عن آخر socket نشط للمستخدم
+    let latestSocket: { room: string; lastSeen: Date } | null = null;
+    let latestTime = new Date(0);
+    
+    for (const socketData of entry.sockets.values()) {
+      if (socketData.lastSeen > latestTime) {
+        latestTime = socketData.lastSeen;
+        latestSocket = socketData;
       }
     }
+    
+    // أضف المستخدم للغرفة فقط إذا كان آخر socket نشط له في هذه الغرفة
+    if (latestSocket && latestSocket.room === roomId && entry.user && entry.user.id && entry.user.username && entry.user.userType) {
+      userMap.set(userId, entry.user);
+    }
   }
+  
   return sanitizeUsersArray(Array.from(userMap.values()));
 }
 
@@ -65,8 +77,20 @@ async function joinRoom(io: IOServer, socket: CustomSocket, userId: number, user
   // Update connectedUsers room for this socket
   const entry = connectedUsers.get(userId);
   if (entry) {
+    // تحديث الغرفة لهذا الـ socket
     entry.sockets.set(socket.id, { room: roomId, lastSeen: new Date() });
     entry.lastSeen = new Date();
+    
+    // تنظيف: تحديث جميع sockets المستخدم الأخرى لنفس الغرفة
+    // هذا يضمن أن المستخدم يظهر في غرفة واحدة فقط
+    for (const [socketId, socketData] of entry.sockets.entries()) {
+      if (socketId !== socket.id) {
+        // نقل الـ sockets الأخرى لنفس الغرفة
+        socketData.room = roomId;
+        socketData.lastSeen = new Date();
+      }
+    }
+    
     connectedUsers.set(userId, entry);
   }
 
@@ -80,6 +104,26 @@ async function joinRoom(io: IOServer, socket: CustomSocket, userId: number, user
 
   // Send confirmation with current users list
   const users = buildOnlineUsersForRoom(roomId);
+  
+  // جلب البيانات الكاملة للمستخدم الجديد
+  let joiningUser;
+  try {
+    joiningUser = await userService.getUserById(userId);
+  } catch (e) {
+    // في حالة الفشل، استخدم البيانات من connectedUsers
+    const entry = connectedUsers.get(userId);
+    joiningUser = entry?.user;
+  }
+  
+  // إرسال البيانات الكاملة للمستخدم الجديد لجميع المستخدمين في الغرفة
+  if (joiningUser) {
+    io.to(`room_${roomId}`).emit('message', {
+      type: 'userJoinedRoomWithDetails',
+      user: joiningUser,
+      roomId
+    });
+  }
+  
   socket.emit('message', { type: 'roomJoined', roomId, users });
 
   // Send last 10 messages for room

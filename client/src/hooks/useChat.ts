@@ -233,9 +233,34 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
   }
 }
 
-export const useChat = () => {
+export function useChat() {
   const [state, dispatch] = useReducer(chatReducer, initialState);
-  const socket = useRef<Socket | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const sendTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const requestUsersTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastRequestedRoomId = useRef<string | null>(null);
+  const typingUsersMap = useRef<Map<number, NodeJS.Timeout>>(new Map());
+  const roomMessagesCache = useRef<Map<string, ChatMessage[]>>(new Map());
+  
+  // إضافة ref لـ debouncing تحديثات المستخدمين
+  const pendingUsersUpdate = useRef<ChatUser[] | null>(null);
+  const usersUpdateTimer = useRef<NodeJS.Timeout | null>(null);
+  
+  // دالة debounced لتحديث قائمة المستخدمين
+  const debouncedSetOnlineUsers = useCallback((users: ChatUser[]) => {
+    pendingUsersUpdate.current = users;
+    
+    if (usersUpdateTimer.current) {
+      clearTimeout(usersUpdateTimer.current);
+    }
+    
+    usersUpdateTimer.current = setTimeout(() => {
+      if (pendingUsersUpdate.current) {
+        dispatch({ type: 'SET_ONLINE_USERS', payload: pendingUsersUpdate.current });
+        pendingUsersUpdate.current = null;
+      }
+    }, 100); // تأخير 100ms لتجميع التحديثات
+  }, []);
   
   // 🔥 SIMPLIFIED loading management - مصدر واحد
   const loadingRooms = useRef<Set<string>>(new Set());
@@ -498,7 +523,7 @@ export const useChat = () => {
               const dedup = new Map<number, ChatUser>();
               for (const u of filtered) { if (!dedup.has(u.id)) dedup.set(u.id, u); }
               const nextUsers = Array.from(dedup.values());
-              dispatch({ type: 'SET_ONLINE_USERS', payload: nextUsers });
+              debouncedSetOnlineUsers(nextUsers);
             }
             break;
           }
@@ -511,7 +536,7 @@ export const useChat = () => {
             // استبدال القائمة بالكامل بقائمة الغرفة المرسلة
             const users = (envelope as any).users;
             if (Array.isArray(users)) {
-              dispatch({ type: 'SET_ONLINE_USERS', payload: users });
+              debouncedSetOnlineUsers(users);
             }
             break;
           }
@@ -540,6 +565,21 @@ export const useChat = () => {
             }
             break;
           }
+          
+          case 'userJoinedRoomWithDetails': {
+            const user = (envelope as any).user;
+            if (user && user.id) {
+              // إذا كان المستخدم موجود، قم بتحديثه بالبيانات الكاملة
+              if (state.onlineUsers.find(u => u.id === user.id)) {
+                dispatch({ type: 'SET_ONLINE_USERS', payload: state.onlineUsers.map(u => u.id === user.id ? { ...user, isOnline: true } : u) });
+              } else {
+                // إذا لم يكن موجود، أضفه بالبيانات الكاملة
+                dispatch({ type: 'SET_ONLINE_USERS', payload: [...state.onlineUsers, { ...user, isOnline: true }] });
+              }
+            }
+            break;
+          }
+          
           case 'userLeftRoom': {
             const leftId = (envelope as any).userId;
             if (leftId) {
@@ -797,8 +837,8 @@ export const useChat = () => {
 
   useEffect(() => {
     const handleOnline = () => {
-      if (socket.current && !socket.current.connected) {
-        try { socket.current.connect(); } catch {}
+      if (socketRef.current && !socketRef.current.connected) {
+        try { socketRef.current.connect(); } catch {}
       }
     };
     const handleOffline = () => {
@@ -836,10 +876,10 @@ export const useChat = () => {
 
     try {
       // تنظيف الاتصال السابق
-      if (socket.current) {
-        socket.current.removeAllListeners();
-        socket.current.disconnect();
-        socket.current = null;
+      if (socketRef.current) {
+        socketRef.current.removeAllListeners();
+        socketRef.current.disconnect();
+        socketRef.current = null;
         if (pingIntervalRef.current) {
           clearInterval(pingIntervalRef.current);
           pingIntervalRef.current = null;
@@ -848,7 +888,7 @@ export const useChat = () => {
 
       // استخدام عميل Socket الموحد
       const s = getSocket();
-      socket.current = s;
+      socketRef.current = s;
 
       // حفظ الجلسة
       saveSession({ userId: user.id, username: user.username, userType: user.userType });
@@ -920,8 +960,8 @@ export const useChat = () => {
     dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
     saveSession({ roomId });
 
-    if (socket.current?.connected && state.currentUser?.id) {
-      socket.current.emit('joinRoom', { 
+    if (socketRef.current?.connected && state.currentUser?.id) {
+      socketRef.current.emit('joinRoom', { 
         roomId,
         userId: state.currentUser.id,
         username: state.currentUser.username 
@@ -931,7 +971,7 @@ export const useChat = () => {
 
   // 🔥 SIMPLIFIED Send message function
   const sendMessage = useCallback((content: string, messageType: string = 'text', receiverId?: number, roomId?: string) => {
-    if (!state.currentUser || !socket.current?.connected) {
+    if (!state.currentUser || !socketRef.current?.connected) {
       console.error('❌ لا يمكن إرسال الرسالة - المستخدم غير متصل');
       return;
     }
@@ -964,7 +1004,7 @@ export const useChat = () => {
         messageType: messageData.messageType || 'text'
       }}).catch(() => {});
     } else {
-      socket.current.emit('publicMessage', messageData);
+      socketRef.current.emit('publicMessage', messageData);
     }
   }, [state.currentUser, state.currentRoomId]);
 
@@ -976,10 +1016,10 @@ export const useChat = () => {
   // 🔥 SIMPLIFIED Disconnect function
   const disconnect = useCallback(() => {
     clearSession(); // مسح بيانات الجلسة
-    if (socket.current) {
-      socket.current.removeAllListeners();
-      socket.current.disconnect();
-      socket.current = null;
+    if (socketRef.current) {
+      socketRef.current.removeAllListeners();
+      socketRef.current.disconnect();
+      socketRef.current = null;
       if (pingIntervalRef.current) {
         clearInterval(pingIntervalRef.current);
         pingIntervalRef.current = null;
@@ -1012,8 +1052,8 @@ export const useChat = () => {
   }, [state.currentUser?.id]);
 
   const sendTyping = useCallback(() => {
-    if (socket.current?.connected) {
-      socket.current.emit('typing', { isTyping: true });
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('typing', { isTyping: true });
     }
   }, []);
 
@@ -1101,8 +1141,8 @@ export const useChat = () => {
 
     // WebRTC signaling helpers
     sendWebRTCOffer: (targetUserId: number, roomId: string, sdp: any) => {
-      if (!socket.current?.connected || !state.currentUser) return;
-      socket.current.emit('webrtc-offer', {
+      if (!socketRef.current?.connected || !state.currentUser) return;
+      socketRef.current.emit('webrtc-offer', {
         roomId,
         targetUserId,
         sdp,
@@ -1110,8 +1150,8 @@ export const useChat = () => {
       });
     },
     sendWebRTCAnswer: (targetUserId: number, roomId: string, sdp: any) => {
-      if (!socket.current?.connected || !state.currentUser) return;
-      socket.current.emit('webrtc-answer', {
+      if (!socketRef.current?.connected || !state.currentUser) return;
+      socketRef.current.emit('webrtc-answer', {
         roomId,
         targetUserId,
         sdp,
@@ -1119,8 +1159,8 @@ export const useChat = () => {
       });
     },
     sendWebRTCIceCandidate: (targetUserId: number, roomId: string, candidate: any) => {
-      if (!socket.current?.connected || !state.currentUser) return;
-      socket.current.emit('webrtc-ice-candidate', {
+      if (!socketRef.current?.connected || !state.currentUser) return;
+      socketRef.current.emit('webrtc-ice-candidate', {
         roomId,
         targetUserId,
         candidate,
