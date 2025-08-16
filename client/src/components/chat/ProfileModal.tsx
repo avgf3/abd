@@ -2,13 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { getEffectColor, getFinalUsernameColor, buildProfileBackgroundGradient } from '@/utils/themeUtils';
+import { getEffectColor, getFinalUsernameColor, buildProfileBackgroundGradient, extractFirstHexColor } from '@/utils/themeUtils';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
 import PointsSentNotification from '@/components/ui/PointsSentNotification';
+import UserRoleBadge from './UserRoleBadge';
+import TestColorSync from '../TestColorSync';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -564,16 +566,17 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         return;
       }
 
-      // نرسل قيمة HEX فقط. إذا تم تمرير تدرّج، سيُطبّق الخادم أول HEX صالح
-      const colorValue = theme;
+      // استخراج أول لون HEX من التدرج
+      const hexColor = extractFirstHexColor(theme);
+      
       const result = await apiRequest(`/api/users/${localUser?.id}`, {
         method: 'PUT',
-        body: { profileBackgroundColor: colorValue }
+        body: { profileBackgroundColor: hexColor }
       });
 
       const updated = (result as any)?.user ?? result;
       if (updated && (updated as any).id) {
-        updateUserData({ profileBackgroundColor: updated.profileBackgroundColor || colorValue });
+        updateUserData({ profileBackgroundColor: updated.profileBackgroundColor || hexColor });
         toast({ title: "نجح ✅", description: "تم تحديث لون الملف الشخصي" });
       } else {
         throw new Error('فشل في تحديث لون الملف الشخصي');
@@ -2169,6 +2172,14 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         recipientName={pointsSentNotification.recipientName}
         onClose={() => setPointsSentNotification({ show: false, points: 0, recipientName: '' })}
       />
+
+      {/* عرض معلومات الألوان في وضع التطوير فقط */}
+      {process.env.NODE_ENV === 'development' && localUser && (
+        <TestColorSync 
+          profileBackgroundColor={localUser.profileBackgroundColor} 
+          profileEffect={localUser.profileEffect}
+        />
+      )}
     </>
   );
 }
