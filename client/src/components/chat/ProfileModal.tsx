@@ -1765,7 +1765,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       
       {/* Main Modal */}
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-4 px-4 overflow-y-auto">
-        <div className={`profile-card ${selectedEffect}`} style={{ background: localUser?.profileBackgroundColor ? buildProfileBackgroundGradient(localUser.profileBackgroundColor) : undefined }}>
+        <div className={`profile-card ${selectedEffect}`} style={{ background: localUser?.profileBackgroundColor ? buildProfileBackgroundGradient(localUser.profileBackgroundColor) : undefined, backgroundBlendMode: 'normal' }}>
           {/* Close Button */}
           <button 
             onClick={onClose}
