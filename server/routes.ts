@@ -1,6 +1,5 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { Server as IOServer, Socket } from "socket.io";
 import { storage } from "./storage";
 import { setupDownloadRoute } from "./download-route";
 import { insertUserSchema, insertMessageSchema } from "../shared/schema";
@@ -33,6 +32,7 @@ import { protect } from "./middleware/enhancedSecurity";
 import { notificationService } from "./services/notificationService";
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { databaseService } from "./services/databaseService";
+import { getIO } from "./realtime";
 
 
 // إعداد multer موحد لرفع الصور
@@ -81,59 +81,15 @@ const wallUpload = createMulterConfig('wall', 'wall', 10 * 1024 * 1024);
 
 const bannerUpload = createMulterConfig('banners', 'banner', 8 * 1024 * 1024);
 
-// تتبع المستخدمين المتصلين حقاً عبر Socket
-const connectedUsers = new Map<number, {
-  user: any,
-  sockets: Map<string, { room: string; lastSeen: Date }>,
-  lastSeen: Date
-}>();
-
-// Grace period (5 minutes) before finalizing disconnect removals
-const GRACE_PERIOD_MS = 5 * 60 * 1000;
-const pendingDisconnects = new Map<number, NodeJS.Timeout>();
-
 // Storage initialization - using imported storage instance
   
 // I/O interface
-let io: IOServer;
-
-// تعريف Socket مخصص للطباعة
-interface CustomSocket extends Socket {
-  userId?: number;
-  username?: string;
-  userType?: string;
-  isAuthenticated?: boolean;
-}
+// Removed direct Socket.IO setup from this file; handled in realtime.ts
 
 // دالة broadcast للإرسال لجميع المستخدمين
 // removed duplicate broadcast; use io.emit('message', ...) or io.to(...).emit('message', ...) directly
 
-// الدالة الموحدة الوحيدة لإرسال قائمة المستخدمين المتصلين
-function sendRoomUsers(roomId: string, source: string = 'system') {
-  const userMap = new Map<number, any>();
-  for (const { user, sockets } of connectedUsers.values()) {
-    for (const { room } of sockets.values()) {
-      if (room === roomId && user && user.id && user.username && user.userType) {
-        userMap.set(user.id, user);
-        break;
-      }
-    }
-  }
-  const roomUsers = Array.from(userMap.values());
-  const sanitizedUsers = sanitizeUsersArray(roomUsers);
-  io.to(`room_${roomId}`).emit('message', {
-    type: 'onlineUsers',
-    users: sanitizedUsers,
-    roomId,
-    source
-  });
-}
-
-// بث تحديثات الغرف للمشتركين في الغرفة
-function broadcastRoomUpdate(roomId: string, updateType: string, payload: any): void {
-  if (!io) return;
-  io.to(`room_${roomId}`).emit('roomUpdate', { roomId, type: updateType, ...payload });
-}
+// تم نقل إدارة قائمة المتصلين وتحديثات الغرف إلى وحدة realtime الموحدة
 
 // إنشاء خدمات محسنة ومنظمة
 const authService = new (class AuthService {
@@ -265,7 +221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // إرسال إشعار موحد عبر WebSocket
-      io.emit('message', {
+      getIO().emit('message', {
         type: 'userUpdated',
         user: updatedUser,
         timestamp: new Date().toISOString()
@@ -364,7 +320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // إرسال إشعار موحد عبر WebSocket
-      io.emit('message', {
+      getIO().emit('message', {
         type: 'userUpdated',
         user: updatedUser,
         timestamp: new Date().toISOString()
@@ -619,7 +575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const moderator = await storage.getUser(moderatorId);
         
         // إشعار المستخدم المطرود
-        io.to(targetUserId.toString()).emit('kicked', {
+        getIO().to(targetUserId.toString()).emit('kicked', {
           moderator: moderator?.username || 'مشرف',
           reason: reason,
           duration: banDuration
@@ -674,14 +630,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const moderator = await storage.getUser(moderatorId);
         
         // إشعار المستخدم المحجوب
-        io.to(targetUserId.toString()).emit('blocked', {
+        getIO().to(targetUserId.toString()).emit('blocked', {
           moderator: moderator?.username || 'مشرف',
           reason: reason,
           permanent: true
         });
         
         // فصل المستخدم المحجوب فوراً
-        io.to(targetUserId.toString()).disconnectSockets();
+        getIO().to(targetUserId.toString()).disconnectSockets();
         
         res.json({ 
           success: true,
@@ -725,7 +681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             timestamp: new Date().toISOString()
           };
           
-          io.emit('message', promotionMessage);
+          getIO().emit('message', promotionMessage);
 
           // إنشاء إشعار في قاعدة البيانات للمستخدم المُرقى
           await notificationService.createPromotionNotification(
@@ -758,7 +714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const target = await storage.getUser(targetUserId);
         const moderator = await storage.getUser(moderatorId);
         if (target && moderator) {
-          io.emit('message', {
+          getIO().emit('message', {
             type: 'systemNotification',
             message: `ℹ️ تم تنزيل ${target.username} إلى عضو بواسطة ${moderator.username}`,
             timestamp: new Date().toISOString()
@@ -827,7 +783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // إرسال إشعار موحد WebSocket
       const updated = await storage.getUser(userIdNum);
-      io.emit('message', {
+      getIO().emit('message', {
         type: 'userUpdated',
         user: updated,
         timestamp: new Date().toISOString()
@@ -911,70 +867,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   
-  // إعداد Socket.IO محسن مع أمان وثبات أفضل
-  io = new IOServer(httpServer, {
-    // إعدادات CORS ديناميكية للسماح بنفس النطاق والإعدادات من المتغيرات
-    cors: {
-      origin: (_origin, callback) => {
-        // نسمح بالطلبات افتراضيًا، وسيتم ضبط التحقق الدقيق في allowRequest
-        callback(null, true);
-      },
-      methods: ["GET", "POST"],
-      credentials: true,
-    },
-    path: "/socket.io",
-
-    // إعدادات النقل محسنة للاستقرار
-    transports: ["websocket", "polling"],
-    allowEIO3: true,
-
-    // إعدادات الاتصال المحسنة
-    pingTimeout: 60000,
-    pingInterval: 25000,
-    upgradeTimeout: 10000,
-    allowUpgrades: true,
-
-    // إعدادات الأمان
-    cookie: false,
-    serveClient: false,
-
-    // إعدادات الأداء + تحكم أدق بالأصول المسموحة
-    maxHttpBufferSize: 1e6, // 1MB
-    allowRequest: (req, callback) => {
-      const originHeader = req.headers.origin || '';
-      const hostHeader = req.headers.host || '';
-
-      const envOrigins = [
-        process.env.RENDER_EXTERNAL_URL,
-        process.env.FRONTEND_URL,
-        process.env.CORS_ORIGIN,
-      ].filter(Boolean) as string[];
-
-      const envHosts = envOrigins
-        .map((u) => {
-          try { return new URL(u).host; } catch { return ''; }
-        })
-        .filter(Boolean);
-
-      const originHost = (() => {
-        try { return originHeader ? new URL(originHeader).host : ''; } catch { return ''; }
-      })();
-
-      const isDev = process.env.NODE_ENV !== 'production';
-      const isSameHost = originHost && hostHeader && originHost === hostHeader;
-      const isEnvAllowed = originHost && envHosts.includes(originHost);
-
-      const allowed = isDev || isSameHost || isEnvAllowed;
-      callback(null, allowed);
-    },
-  });
-
-  // بعد تهيئة Socket.IO، نمرر io الحقيقي لموديول الرسائل الخاصة
-  try {
-
-  } catch (e) {
-    console.error('Failed to setup private messages socket:', e);
-  }
+  // إعداد Socket.IO من خلال وحدة realtime الموحدة
+  const { setupRealtime } = await import('./realtime');
+  const io = setupRealtime(httpServer);
 
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);
@@ -1255,12 +1150,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const message = await storage.createMessage(messageData);
       
       // إرسال الرسالة عبر Socket.IO
-      if (isPrivate && receiverId) {
-        // رسالة خاصة - حدث موحّد فقط
-        io.to(receiverId.toString()).emit('privateMessage', { message: { ...message, sender } });
-        io.to(senderId.toString()).emit('privateMessage', { message: { ...message, sender } });
+              if (isPrivate && receiverId) {
+          // رسالة خاصة - حدث موحّد فقط
+          getIO().to(receiverId.toString()).emit('privateMessage', { message: { ...message, sender } });
+          getIO().to(senderId.toString()).emit('privateMessage', { message: { ...message, sender } });
 
-        // إنشاء إشعار في قاعدة البيانات للمستقبل
+          // إنشاء إشعار في قاعدة البيانات للمستقبل
         await notificationService.createMessageNotification(
           receiverId,
           sender.username,
@@ -1269,7 +1164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       } else {
         // رسالة عامة
-        io.emit('message', {
+        getIO().emit('message', {
           envelope: {
             type: 'newMessage',
             message: { ...message, sender }
@@ -1319,7 +1214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Broadcast user update to all connected clients
-      io.emit('userUpdated', { user });
+      getIO().emit('userUpdated', { user });
 
       res.json({ user, message: "تم تحديث الصورة الشخصية بنجاح" });
     } catch (error) {
@@ -1350,7 +1245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Unified broadcast of updated user
       const updated = await storage.getUser(userId);
-      io.emit('message', {
+      getIO().emit('message', {
         type: 'userUpdated',
         user: updated,
         timestamp: new Date().toISOString()
@@ -1367,1111 +1262,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // WebSocket handling محسن مع إدارة أفضل للأخطاء والاتصال
-  io.on("connection", (socket: CustomSocket) => {
-    // متغيرات محلية لتتبع حالة الاتصال
-    let isAuthenticated = false;
-    let heartbeatInterval: NodeJS.Timeout | null = null;
-    let connectionTimeout: NodeJS.Timeout | null = null;
+
     
-    // التحقق من IP والجهاز المحجوب
-    const clientIP = getClientIpFromHeaders(socket.handshake.headers as any, socket.handshake.address as any);
-    const deviceId = getDeviceIdFromHeaders(socket.handshake.headers as any);
-    
-    // التحقق من الحجب قبل السماح بالاتصال
-    if (moderationSystem.isBlocked(clientIP, deviceId)) {
-      socket.emit('error', {
-        type: 'error',
-        message: 'جهازك أو عنوان IP الخاص بك محجوب من الدردشة',
-        action: 'device_blocked'
-      });
-      socket.disconnect(true);
-      return;
-    }
-    
-    // إعداد timeout للمصادقة (60 ثانية - زيادة المهلة لتجنب قطع الاتصال المفرط)
-    connectionTimeout = setTimeout(() => {
-      if (!isAuthenticated) {
-        console.warn(`⚠️ انتهت مهلة المصادقة للاتصال ${socket.id}`);
-        socket.emit('error', { type: 'error', message: 'انتهت مهلة المصادقة', action: 'auth_timeout' });
-        socket.emit('message', { type: 'error', message: 'انتهت مهلة المصادقة' });
-        socket.disconnect(true);
-      }
-    }, 60000); // زيادة المهلة إلى 60 ثانية
-    
-    // إرسال رسالة ترحيب فورية
-    socket.emit('socketConnected', { 
-      message: 'متصل بنجاح',
-      socketId: socket.id,
-      timestamp: new Date().toISOString()
-    });
-    
-    // دالة تنظيف الموارد
-    const cleanup = () => {
-      if (heartbeatInterval) {
-        clearInterval(heartbeatInterval);
-        heartbeatInterval = null;
-      }
-      if (connectionTimeout) {
-        clearTimeout(connectionTimeout);
-        connectionTimeout = null;
-      }
-    };
-    
-    // Register client ping handler once per socket to avoid duplicate listeners
-    socket.on('client_ping', () => {
-      socket.emit('client_pong', { t: Date.now() });
-    });
-    
-    // heartbeat محسن للحفاظ على الاتصال
-    const startHeartbeat = () => {
-      if (heartbeatInterval) clearInterval(heartbeatInterval);
-      
-      // الاعتماد على heartbeat الداخلي لـ Socket.IO مع رد 'client_pong' فقط
-      heartbeatInterval = setInterval(() => {
-        if (!socket.connected) {
-          cleanup();
-        } else {
-          // تحديث آخر نشاط للمستخدم دورياً عند الاتصال
-          const userId = (socket as CustomSocket).userId;
-          if (userId && connectedUsers.has(userId)) {
-            const userConnection = connectedUsers.get(userId)!;
-            userConnection.lastSeen = new Date();
-            connectedUsers.set(userId, userConnection);
-          }
-        }
-      }, 30000);
-      
-      // Removed: socket.on('client_ping', ...) duplicate registration
-    };
-
-    // معالج المصادقة الموحد - يدعم الضيوف والمستخدمين المسجلين
-    socket.on('auth', async (userData: { userId?: number; username?: string; userType?: string; reconnect?: boolean }) => {
-      try {
-        // منع المصادقة المتكررة أو تبديل الهوية على نفس الاتصال
-        if (isAuthenticated) {
-          console.warn(`⚠️ محاولة مصادقة متكررة/تبديل هوية من ${socket.id}`);
-          return;
-        }
-        
-        let user;
-        
-        // إذا كان هناك userId، فهو مستخدم مسجل
-        if (userData.userId) {
-          user = await storage.getUser(userData.userId);
-          if (!user) {
-            socket.emit('error', { message: 'المستخدم غير موجود' });
-            return;
-          }
-
-          // فحص حالة المستخدم قبل السماح بالاتصال
-          const authUserStatus = await moderationSystem.checkUserStatus(user.id);
-          if (authUserStatus.isBlocked) {
-            socket.emit('error', {
-              type: 'error',
-              message: 'أنت محجوب نهائياً من الدردشة',
-              action: 'blocked'
-            });
-            socket.disconnect(true);
-            return;
-          }
-          
-          if (authUserStatus.isBanned && !authUserStatus.canJoin) {
-            socket.emit('error', {
-              type: 'error',
-              message: authUserStatus.reason || 'أنت مطرود من الدردشة',
-              action: 'banned',
-              timeLeft: authUserStatus.timeLeft
-            });
-            socket.disconnect(true);
-            return;
-          }
-
-          // السماح بالمصادقة للمستخدمين المسجلين حتى لو كانت حالة isOnline = false في حال إعادة الاتصال أو ضمن فترة السماح
-          const isReconnect = Boolean((userData as any)?.reconnect);
-          const hasPendingGrace = pendingDisconnects.has(user.id);
-          if (user.userType !== 'guest' && !user.isOnline && !(isReconnect || hasPendingGrace)) {
-            console.warn('محاولة دخول عبر Socket بدون جلسة فعالة', { userId: user.id, socketId: socket.id });
-            socket.emit('error', { message: 'يرجى تسجيل الدخول أولاً', action: 'invalid_session' });
-            try { socket.disconnect(true); } catch {}
-            return;
-          }
-        } 
-        // إذا كان هناك username فقط، نسمح بإنشاء ضيف جديد فقط ولا نسمح بتسجيل الدخول بحساب موجود عبر الاسم
-        else if (userData.username) {
-          const safeUsername = String(userData.username).trim();
-          const validName = /^[\u0600-\u06FFa-zA-Z0-9_]{3,20}$/.test(safeUsername);
-          if (!validName) {
-            socket.emit('error', { message: 'اسم مستخدم غير صالح' });
-            return;
-          }
-
-          // إذا كان الاسم موجوداً، نرفض المصادقة عبر الاسم فقط و نطلب تسجيل الدخول الرسمي
-          const existing = await storage.getUserByUsername(safeUsername);
-          if (existing) {
-            console.warn('محاولة انتحال عبر Socket باستخدام اسم مستخدم موجود', { username: safeUsername, socketId: socket.id });
-            socket.emit('error', { message: 'الرجاء تسجيل الدخول باستخدام الحساب' });
-            return;
-          }
-
-          // السماح بإنشاء حساب ضيف فقط عبر Socket
-          const requestedType = String(userData.userType || 'guest').toLowerCase();
-          if (requestedType !== 'guest') {
-            console.warn('محاولة تصعيد صلاحيات عبر Socket', { username: safeUsername, requestedType, socketId: socket.id });
-            socket.emit('error', { message: 'غير مسموح بإنشاء حسابات بامتيازات عبر Socket' });
-            return;
-          }
-
-          const newUser = {
-            username: safeUsername,
-            userType: 'guest',
-            role: 'guest',
-            isOnline: true,
-            joinDate: new Date(),
-            createdAt: new Date()
-          };
-
-          user = await storage.createUser(newUser);
-        } else {
-          socket.emit('error', { message: 'بيانات المصادقة غير مكتملة' });
-          return;
-        }
-
-        // تحديث معلومات Socket
-        (socket as CustomSocket).userId = user.id;
-        (socket as CustomSocket).username = user.username;
-        (socket as CustomSocket).userType = user.userType;
-        (socket as CustomSocket).isAuthenticated = true;
-        isAuthenticated = true;
-
-                 // الانضمام لغرفة المستخدم الخاصة لاستقبال الرسائل الخاصة
-         try { socket.join(user.id.toString()); } catch {}
-         
-         // تنظيف timeout المصادقة
-         if (connectionTimeout) {
-           clearTimeout(connectionTimeout);
-           connectionTimeout = null;
-         }
-         
-         // بدء heartbeat
-         startHeartbeat();
-         
-         // أرسل joinRoom تلقائياً للغرفة العامة إذا لم يُرسل من العميل بعد الاتصال
-         try {
-           const currentRoom = (socket as any).currentRoom;
-           if (!currentRoom) {
-             await handleRoomJoin(socket as CustomSocket, user.id, user.username, 'general');
-           }
-         } catch {}
-
-
-        // إذا كان هناك فصل قيد الانتظار ضمن فترة السماح، قم بإلغائه
-        if (pendingDisconnects.has(user.id)) {
-          clearTimeout(pendingDisconnects.get(user.id)!);
-          pendingDisconnects.delete(user.id);
-        }
-        
-        // إضافة/تحديث المستخدم لقائمة المتصلين الفعليين
-const existing = connectedUsers.get(user.id);
-if (!existing) {
-  connectedUsers.set(user.id, {
-    user,
-    sockets: new Map([[socket.id, { room: 'general', lastSeen: new Date() }]]),
-    lastSeen: new Date()
-  });
-} else {
-  existing.user = user; // sync latest user data
-  existing.sockets.set(socket.id, { room: 'general', lastSeen: new Date() });
-  existing.lastSeen = new Date();
-  connectedUsers.set(user.id, existing);
-}
-        // تحديث حالة المستخدم إلى متصل
-        try {
-          await storage.setUserOnlineStatus(user.id, true);
-        } catch (updateError) {
-          console.error('خطأ في تحديث حالة المستخدم:', updateError);
-        }
-
-        // جلب غرف المستخدم وانضمام إليها
-        try {
-          let userRooms: string[] = [];
-          try {
-            userRooms = await storage.getUserRooms(user.id);
-          } catch {}
-          // الانضمام للغرفة العامة عبر الدالة الموحدة لضمان حفظ الانضمام وإرسال الرسائل وقوائم المستخدمين
-          await handleRoomJoin(socket as CustomSocket, user.id, user.username, 'general');
-          
-          } catch (roomError) {
-          console.error('خطأ في انضمام للغرف:', roomError);
-          // انضمام للغرفة العامة على الأقل (مرة واحدة فقط)
-          await handleRoomJoin(socket as CustomSocket, user.id, user.username, 'general');
-        }
-
-        // إرسال تأكيد المصادقة
-        socket.emit('authenticated', { 
-          message: 'تم الاتصال بنجاح',
-          user: user 
-        });
-
-        // إذا كان العميل أرسل reconnect=true، لا نُخرج إشعارات مغادرة سابقة
-
-
-        // جلب وإرسال قائمة المستخدمين المتصلين في الغرفة العامة
-        const currentRoom = 'general'; // دائماً نبدأ بالغرفة العامة
-        // جلب قائمة المستخدمين المتصلين فعلياً في هذه الغرفة من الذاكرة فقط
-        const roomUsers = (() => {
-          const userMap = new Map<number, any>();
-          for (const { user, sockets } of connectedUsers.values()) {
-            for (const { room } of sockets.values()) {
-              if (room === currentRoom && user && user.id) { userMap.set(user.id, user); break; }
-            }
-          }
-          return Array.from(userMap.values());
-        })();
-        
-        // إرسال تأكيد الانضمام مع قائمة المستخدمين
-        // تم الانضمام للغرفة العامة عبر handleRoomJoin؛ لا حاجة لإرسال أحداث مكررة هنا
-
-      } catch (error) {
-        console.error('❌ خطأ في المصادقة:', error);
-        socket.emit('error', { message: 'خطأ في المصادقة' });
-      }
-    });
-
     // 🚀 تحسين: تقليل استدعاءات المستخدمين - زيادة الفترة الزمنية
     let lastUserListRequest = 0;
     const USER_LIST_THROTTLE = 5000; // زيادة إلى 5 ثوان لتقليل التحميل (server-enforced)
     
-    socket.on('requestOnlineUsers', async () => {
-      try {
-        if (!(socket as CustomSocket).isAuthenticated) {
-          console.warn('⚠️ طلب قائمة مستخدمين من مستخدم غير مصادق');
-          return;
-        }
 
-        // 🚀 تحسين: حماية أقوى من الطلبات المتكررة
-        const now = Date.now();
-        if (now - lastUserListRequest < USER_LIST_THROTTLE) {
-          return;
-        }
-        lastUserListRequest = now;
-
-        const currentRoom = (socket as any).currentRoom || 'general';
-
-        // بناء القائمة من تعدد الاتصالات
-        const userMap = new Map<number, any>();
-        for (const { user, sockets } of connectedUsers.values()) {
-          for (const { room } of sockets.values()) {
-            if (room === currentRoom && user && user.id && user.username && user.userType) {
-              userMap.set(user.id, user);
-              break;
-            }
-          }
-        }
-        const roomUsers = Array.from(userMap.values());
-        
-        socket.emit('message', { 
-          type: 'onlineUsers', 
-          users: sanitizeUsersArray(roomUsers),
-          roomId: currentRoom,
-          source: 'request'
-        });
-        
-        } catch (error) {
-        console.error('❌ خطأ في جلب المستخدمين المتصلين:', error);
-      }
-    });
-
-    socket.on('publicMessage', async (data) => {
-      try {
-        if (!socket.userId) return;
-        
-        // التحقق من حالة المستخدم باستخدام نظام الإدارة لضمان دقة الحالة وانتهاء المدة
-        const status = await moderationSystem.checkUserStatus(socket.userId);
-        if (!status.canChat) {
-          socket.emit('message', {
-            type: 'error',
-            message: status.reason || 'غير مسموح بإرسال الرسائل حالياً'
-          });
-          return;
-        }
-
-        // تنظيف المحتوى
-        const sanitizedContent = sanitizeInput(data.content);
-        
-        // فحص صحة المحتوى
-        const contentCheck = validateMessageContent(sanitizedContent);
-        if (!contentCheck.isValid) {
-          socket.emit('message', { type: 'error', message: contentCheck.reason });
-          return;
-        }
-        
-        // فحص الرسالة ضد السبام
-        const spamCheck = spamProtection.checkMessage(socket.userId, sanitizedContent);
-        if (!spamCheck.isAllowed) {
-          socket.emit('message', { type: 'error', message: spamCheck.reason, action: spamCheck.action });
-          return;
-        }
-
-        const roomId = data.roomId || 'general';
-        
-        // 🔥 FIXED: التحقق من صلاحيات البث المباشر (تجنب التأثير على الغرفة العامة)
-        if (roomId !== 'general' && roomId !== 'عام') { // ✅ إضافة فحص للاسم العربي أيضاً
-          try {
-            const room = await storage.getRoom(roomId);
-            if (room && room.is_broadcast) {
-              const broadcastInfo = await storage.getBroadcastRoomInfo(roomId);
-              if (broadcastInfo) {
-                const isHost = broadcastInfo.hostId === socket.userId;
-                const isSpeaker = broadcastInfo.speakers.includes(socket.userId);
-                
-                if (!isHost && !isSpeaker) {
-                  socket.emit('message', {
-                    type: 'error',
-                    message: 'فقط المضيف والمتحدثون يمكنهم إرسال الرسائل في غرفة البث المباشر'
-                  });
-                  return;
-                }
-              }
-            }
-          } catch (error) {
-            // ✅ تجنب توقف الرسائل بسبب خطأ في فحص البث
-            console.warn('تحذير: خطأ في فحص صلاحيات البث:', error);
-            // السماح بالمتابعة إذا حدث خطأ في الفحص
-          }
-        }
-        
-        const created = await roomMessageService.sendMessage({
-          senderId: socket.userId as number,
-          roomId,
-          content: sanitizedContent,
-          messageType: data.messageType || 'text',
-          isPrivate: false,
-        });
-
-        if (!created) {
-          socket.emit('message', { type: 'error', message: 'فشل في إرسال الرسالة' });
-          return;
-        }
-
-        const sender = await storage.getUser(socket.userId);
-        io.to(`room_${roomId}`).emit('message', {
-          type: 'newMessage',
-          message: { ...created, sender, roomId }
-        });
-
-        // إضافة نقاط وإشعارات المستوى بعد البث لعدم حجب الرسالة
-        try {
-          const pointsResult = await pointsService.addMessagePoints(socket.userId);
-          
-          // التحقق من إنجاز أول رسالة
-          const achievementResult = await pointsService.checkAchievement(socket.userId, 'FIRST_MESSAGE');
-          
-          // إرسال إشعار ترقية المستوى إذا حدثت
-          if (pointsResult?.leveledUp) {
-            socket.emit('message', {
-              type: 'levelUp',
-              oldLevel: pointsResult.oldLevel,
-              newLevel: pointsResult.newLevel,
-              levelInfo: pointsResult.levelInfo,
-              message: `🎉 تهانينا! وصلت للمستوى ${pointsResult.newLevel}: ${pointsResult.levelInfo?.title}`
-            });
-          }
-          
-          // إرسال إشعار إنجاز أول رسالة
-          if (achievementResult?.leveledUp) {
-            socket.emit('message', {
-              type: 'achievement',
-              message: `🏆 إنجاز جديد: أول رسالة! حصلت على ${achievementResult.newPoints - pointsResult.newPoints} نقطة إضافية!`
-            });
-          }
-          
-          // تحديث بيانات المستخدم في الذاكرة والإرسال للعملاء
-          const updatedSender = await storage.getUser(socket.userId);
-          if (updatedSender) {
-            // إرسال البيانات المحدثة للمستخدم
-            socket.emit('message', {
-              type: 'userUpdated',
-              user: updatedSender
-            });
-          }
-        } catch (pointsError) {
-          console.error('خطأ في إضافة النقاط:', pointsError);
-        }
-      } catch (error) {
-        console.error('خطأ في إرسال الرسالة العامة:', error);
-        socket.emit('message', { type: 'error', message: 'خطأ في إرسال الرسالة' });
-      }
-    });
 
     // socket.on('privateMessage', async (data) => {
     //   console.warn('[Deprecated] privateMessage handler is disabled. Use DM module events instead.');
     // });
 
-    socket.on('sendFriendRequest', async (data) => {
-      try {
-        if (!socket.userId) return;
-        
-        const { targetUserId } = data;
-        
-        // التحقق من المستخدم المستهدف
-        const targetUser = await storage.getUser(targetUserId);
-        if (!targetUser) {
-          socket.emit('message', { type: 'error', message: 'المستخدم غير موجود' });
-          return;
-        }
 
-        // منع إرسال طلب صداقة إذا كان المستهدف قد تجاهل المرسل
-        try {
-          const ignoredByTarget: number[] = await storage.getIgnoredUsers(targetUserId);
-          if (Array.isArray(ignoredByTarget) && ignoredByTarget.includes(socket.userId)) {
-            socket.emit('message', { type: 'error', message: 'لا يمكن إرسال طلب صداقة: هذا المستخدم قام بتجاهلك' });
-            return;
-          }
-        } catch (e) {
-          console.warn('تحذير: تعذر التحقق من قائمة التجاهل للمستخدم المستهدف:', e);
-        }
-        
-        // إنشاء طلب الصداقة
-        const friendRequest = await friendService.createFriendRequest(socket.userId, targetUserId);
-        
-        // إرسال إشعار للمستخدم المستهدف
-        const sender = await storage.getUser(socket.userId);
-        io.to(targetUserId.toString()).emit('message', {
-          type: 'friendRequest',
-          targetUserId: targetUserId,
-          senderId: socket.userId,
-          senderName: sender?.username,
-        });
-        
-        // إنشاء إشعار حقيقي في قاعدة البيانات
-        await notificationService.createFriendRequestNotification(
-          targetUserId,
-          sender?.username || 'مستخدم مجهول',
-          socket.userId
-        );
-        
-        socket.emit('message', { type: 'info', message: 'تم إرسال طلب الصداقة' });
-      } catch (error) {
-        console.error('خطأ في إرسال طلب الصداقة عبر Socket:', error);
-        socket.emit('message', { type: 'error', message: 'خطأ في إرسال طلب الصداقة' });
-      }
-    });
 
-    socket.on('typing', (data) => {
-      const { isTyping } = data;
-      const currentRoom = (socket as any).currentRoom || 'general';
-      io.to(`room_${currentRoom}`).emit('message', {
-        type: 'typing',
-        userId: socket.userId,
-        username: socket.username,
-        isTyping,
-        roomId: currentRoom
-      });
-    });
-
-    socket.on('message', async (data) => {
-      try {
-        const message = JSON.parse(data.toString());
-        switch (message.type) {
-          case 'auth': {
-            socket.userId = message.userId;
-            socket.username = message.username;
-            
-            // انضمام للغرفة الخاصة بالمستخدم للرسائل المباشرة
-            socket.join(message.userId.toString());
-            
-            // فحص حالة المستخدم قبل السماح بالاتصال
-            const authUserStatus = await moderationSystem.checkUserStatus(message.userId);
-            if (authUserStatus.isBlocked) {
-              socket.emit('error', {
-                type: 'error',
-                message: 'أنت محجوب نهائياً من الدردشة',
-                action: 'blocked'
-              });
-              socket.disconnect();
-              return;
-            }
-            
-            if (authUserStatus.isBanned) {
-              socket.emit('error', {
-                type: 'error',
-                message: `أنت مطرود من الدردشة لمدة ${authUserStatus.timeLeft} دقيقة`,
-                action: 'banned'
-              });
-              socket.disconnect();
-              return;
-            }
-            
-            await storage.setUserOnlineStatus(message.userId, true);
-            
-            // Broadcast user joined
-            const joinedUser = await storage.getUser(message.userId);
-            io.emit('message', { type: 'userJoined', user: joinedUser });
-            
-            // Send online users list with moderation status to all clients
-            const onlineUsers = await storage.getOnlineUsers();
-            const usersWithStatus = await Promise.all(
-              onlineUsers.map(async (user) => {
-                const status = await moderationSystem.checkUserStatus(user.id);
-                return {
-                  ...user,
-                  isMuted: status.isMuted,
-                  isBlocked: status.isBlocked,
-                  isBanned: status.isBanned
-                };
-              })
-            );
-            
-            // إزالة البث العالمي لقائمة المستخدمين لتفادي وميض القائمة
-            // سيتم إرسال قوائم المستخدمين حسب الغرفة فقط عبر أحداث roomJoined/room switches وrequestOnlineUsers
-            break;
-          }
-
-          // الـ case هذا محذوف لأنه مكرر - الأصل في أعلى الملف يعمل بشكل صحيح مع roomId
-          // case 'publicMessage': - REMOVED DUPLICATE
-
-          // case 'privateMessage' تمت إزالته لتجنب التكرار؛ معالج الرسائل الخاصة موجود في socket.on('privateMessage') أعلاه
-          break;
-
-          case 'typing':
-            // موحّد عبر حدث message.type='typing' في الغرفة، لا حاجة لبث عام إضافي
-            break;
-        }
-      } catch (error) {
-        console.error('WebSocket message error:', error);
-      }
-    });
-
-    // معالجة انضمام للغرفة
-    socket.on('joinRoom', async (data) => {
-      try {
-        const { roomId } = data;
-        const userId = (socket as CustomSocket).userId; // استخدام userId من الجلسة
-        const username = (socket as CustomSocket).username;
-        
-        if (!userId) {
-          socket.emit('message', { type: 'error', message: 'يجب تسجيل الدخول أولاً' });
-          return;
-        }
-        
-        // التحقق من أن الغرفة المطلوبة مختلفة عن الحالية
-        const currentRoom = (socket as any).currentRoom;
-        if (currentRoom === roomId) {
-          // إرسال تأكيد أنه في الغرفة بالفعل
-          socket.emit('message', {
-            type: 'roomJoined',
-            roomId: roomId,
-            message: 'أنت موجود في هذه الغرفة بالفعل'
-          });
-          return;
-        }
-        
-        // مغادرة الغرفة السابقة إن وجدت
-        if (currentRoom && currentRoom !== roomId) {
-          await handleRoomLeave(socket, userId, username, currentRoom, false);
-          // تحديث قائمة مستخدمي الغرفة السابقة
-          sendRoomUsers(currentRoom, 'switch_room');
-        }
-        
-        // التحقق من وجود الغرفة المطلوبة
-        const targetRoom = await storage.getRoom(roomId);
-        if (!targetRoom) {
-          socket.emit('message', { type: 'error', message: 'الغرفة غير موجودة' });
-          return;
-        }
-        
-        // الانضمام للغرفة الجديدة
-        await handleRoomJoin(socket, userId, username, roomId);
-        
-        // إرسال رسالة نظامية في الغرفة الجديدة تُفيد أن المستخدم انتقل من الغرفة السابقة (إن وجدت)
-        if (currentRoom && currentRoom !== roomId) {
-          const movedMessage = {
-            id: Date.now(),
-            senderId: -1,
-            content: `انتقل ${username} من الغرفة ${currentRoom} إلى الغرفة ${roomId} 🚪`,
-            messageType: 'system',
-            isPrivate: false,
-            roomId: roomId,
-            timestamp: new Date(),
-            sender: createSystemSender()
-          };
-          io.to(`room_${roomId}`).emit('message', {
-            type: 'newMessage',
-            message: movedMessage
-          });
-
-          // بث إشعار للحجرة العامة بأن المستخدم انتقل إلى الغرفة الجديدة
-          const generalNotice = {
-            id: Date.now() + 1,
-            senderId: -1,
-            content: `ℹ️ ${username} انتقل إلى الغرفة ${roomId}`,
-            messageType: 'system',
-            isPrivate: false,
-            roomId: 'general',
-            timestamp: new Date(),
-            sender: createSystemSender()
-          };
-          io.to(`room_general`).emit('message', {
-            type: 'newMessage',
-            message: generalNotice
-          });
-        }
-        
-      } catch (error) {
-        console.error('❌ خطأ في الانضمام للغرفة:', error);
-        socket.emit('message', { type: 'error', message: 'فشل الانضمام للغرفة' });
-      }
-    });
-
-    // دالة مساعدة للانضمام للغرفة
-    async function handleRoomJoin(socket: CustomSocket, userId: number, username: string, roomId: string) {
-      try {
-        // الانضمام للغرفة في Socket.IO
-        socket.join(`room_${roomId}`);
-        
-        // حفظ الغرفة الحالية في الـ socket
-        (socket as any).currentRoom = roomId;
-        
-        // حفظ في قاعدة البيانات (مرة واحدة فقط)
-        await roomService.joinRoom(userId, roomId);
-        
-        // تحديث الغرفة في قائمة المتصلين الفعليين
-        if (connectedUsers.has(userId)) {
-          const userConnection = connectedUsers.get(userId)!;
-          const prev = userConnection.sockets.get(socket.id) || { room: roomId, lastSeen: new Date() };
-          userConnection.sockets.set(socket.id, { room: roomId, lastSeen: new Date() });
-          userConnection.lastSeen = new Date();
-          connectedUsers.set(userId, userConnection);
-        }
-        
-        // إدارة غرف البث - تعيين مضيف إذا لم يكن موجود
-        await handleBroadcastHostAssignment(roomId, userId);
-        
-        // انتظار قصير للتأكد من التحديث
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // جلب قائمة المستخدمين المتصلين في الغرفة الجديدة من الذاكرة فقط
-        // بناء قائمة مستخدمي الغرفة من جميع الاتصالات
-          const roomUserMap = new Map<number, any>();
-          for (const { user, sockets } of connectedUsers.values()) {
-            for (const { room } of sockets.values()) {
-              if (room === roomId && user && user.id) { roomUserMap.set(user.id, user); break; }
-            }
-          }
-          const roomUsers = Array.from(roomUserMap.values());
-        
-        // إرسال تأكيد الانضمام مع قائمة المستخدمين
-        socket.emit('message', {
-          type: 'roomJoined',
-          roomId: roomId,
-          users: sanitizeUsersArray(roomUsers)
-        });
-        
-        // إشعار باقي المستخدمين في الغرفة (مرة واحدة فقط)
-        socket.to(`room_${roomId}`).emit('message', {
-          type: 'userJoinedRoom',
-          username: username,
-          userId: userId,
-          roomId: roomId
-        });
-        
-        // إرسال تأكيد الانضمام مع قائمة محدثة للمستخدمين في الغرفة
-        sendRoomUsers(roomId, 'join');
-        
-        // إرسال رسالة ترحيب واحدة فقط
-        const welcomeMessage = {
-          id: Date.now(),
-          senderId: -1,
-          content: `انضم ${username} إلى الغرفة 👋`,
-          messageType: 'system',
-          isPrivate: false,
-          roomId: roomId,
-          timestamp: new Date(),
-          sender: createSystemSender()
-        };
-        
-        socket.to(`room_${roomId}`).emit('message', {
-          type: 'newMessage',
-          message: welcomeMessage
-        });
-        
-        // جلب آخر 10 رسائل في الغرفة الجديدة فقط (مع استخدام الخدمة التي تدعم الذاكرة المؤقتة)
-        const recentMessages = await roomMessageService.getLatestRoomMessages(roomId, 10);
-        socket.emit('message', {
-          type: 'roomMessages',
-          roomId: roomId,
-          messages: recentMessages
-        });
-        
-      } catch (error) {
-        console.error('خطأ في handleRoomJoin:', error);
-        throw error;
-      }
-    }
-
-    // دالة مساعدة لمغادرة الغرفة
-    async function handleRoomLeave(socket: CustomSocket, userId: number, username: string, roomId: string, sendConfirmation = true) {
-      try {
-        // المغادرة من الغرفة في Socket.IO
-        socket.leave(`room_${roomId}`);
-        
-        // حذف من قاعدة البيانات (مرة واحدة فقط)
-        await roomService.leaveRoom(userId, roomId);
-        
-        // إدارة غرف البث - إعادة تعيين المضيف إذا لزم الأمر
-        await handleBroadcastHostReassignment(roomId, userId);
-        
-        // مسح الغرفة الحالية من الـ socket إذا كانت نفس الغرفة
-        if ((socket as any).currentRoom === roomId) {
-          (socket as any).currentRoom = null;
-        }
-        
-        // إرسال تأكيد المغادرة إذا مطلوب
-        if (sendConfirmation) {
-          socket.emit('message', {
-            type: 'roomLeft',
-            roomId: roomId
-          });
-        }
-        
-        // إشعار باقي المستخدمين في الغرفة (مرة واحدة فقط)
-        socket.to(`room_${roomId}`).emit('message', {
-          type: 'userLeftRoom',
-          username: username,
-          userId: userId,
-          roomId: roomId
-        });
-        
-        // إرسال رسالة وداع واحدة فقط
-        const goodbyeMessage = {
-          id: Date.now(),
-          senderId: -1,
-          content: `غادر ${username} الغرفة 👋`,
-          messageType: 'system',
-          isPrivate: false,
-          roomId: roomId,
-          timestamp: new Date(),
-          sender: createSystemSender()
-        };
-        
-        socket.to(`room_${roomId}`).emit('message', {
-          type: 'newMessage',
-          message: goodbyeMessage
-        });
-        
-        // إرسال قائمة محدثة للمستخدمين المتبقين في الغرفة
-        sendRoomUsers(roomId, 'leave');
-        
-      } catch (error) {
-        console.error('خطأ في handleRoomLeave:', error);
-        throw error;
-      }
-    }
-
-    // دالة مساعدة لإنشاء بيانات مرسل النظام
-    function createSystemSender() {
-      return {
-        id: -1,
-        username: 'النظام',
-        userType: 'moderator',
-        role: 'system',
-        level: 0,
-        points: 0,
-        achievements: [],
-        lastSeen: new Date(),
-        isOnline: true,
-        isBanned: false,
-        isActive: true,
-        currentRoom: '',
-        settings: {
-          theme: 'default',
-          language: 'ar',
-          notifications: true,
-          soundEnabled: true,
-          privateMessages: true
-        }
-      };
-    }
-
-    // دالة مساعدة لإدارة تعيين مضيف غرفة البث
-    async function handleBroadcastHostAssignment(roomId: string, userId: number) {
-      try {
-        const roomData = await storage.getRoom(roomId);
-        const isBroadcastRoom = (roomData as any)?.isBroadcast || (roomData as any)?.is_broadcast;
-        const currentHostId = (roomData as any)?.hostId ?? (roomData as any)?.host_id ?? null;
-        
-        if (isBroadcastRoom && (currentHostId == null)) {
-          const privilegedRoles = ['owner', 'admin', 'moderator'];
-          const userObj = (connectedUsers.get(userId) || ({} as any)).user;
-          
-          if (userObj && privilegedRoles.includes(userObj.userType)) {
-            const ok = await storage.setRoomHost(roomId, userId);
-            if (ok) {
-              await broadcastRoomUpdate(roomId, 'hostChanged', { hostId: userId });
-            }
-          } else {
-            // البحث عن مستخدم مؤهل آخر في الغرفة
-            const candidate = (() => {
-              for (const { user, sockets } of connectedUsers.values()) {
-                if (!user || !privilegedRoles.includes(user.userType)) continue;
-                for (const { room } of sockets.values()) {
-                  if (room === roomId) return user;
-                }
-              }
-              return undefined;
-            })();
-            
-            if (candidate) {
-              const ok = await storage.setRoomHost(roomId, candidate.id);
-              if (ok) {
-                await broadcastRoomUpdate(roomId, 'hostChanged', { hostId: candidate.id });
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.warn('⚠️ خطأ في تعيين مضيف البث:', error);
-      }
-    }
-
-    // دالة مساعدة لإعادة تعيين مضيف غرفة البث
-    async function handleBroadcastHostReassignment(roomId: string, leavingUserId: number) {
-      try {
-        const roomData = await storage.getRoom(roomId);
-        const isBroadcastRoom = (roomData as any)?.isBroadcast || (roomData as any)?.is_broadcast;
-        const currentHostId = (roomData as any)?.hostId ?? (roomData as any)?.host_id ?? null;
-        
-        if (isBroadcastRoom && currentHostId === leavingUserId) {
-          const privilegedRoles = ['owner', 'admin', 'moderator'];
-          const candidate = (() => {
-            for (const { user, sockets } of connectedUsers.values()) {
-              if (!user || user.id === leavingUserId || !privilegedRoles.includes(user.userType)) continue;
-              for (const { room } of sockets.values()) {
-                if (room === roomId) return user;
-              }
-            }
-            return undefined;
-          })();
-          
-          const newHostId = candidate ? candidate.id : null;
-          const ok = await storage.setRoomHost(roomId, newHostId);
-          
-          if (ok) {
-            await broadcastRoomUpdate(roomId, 'hostChanged', { hostId: newHostId });
-          }
-        }
-      } catch (error) {
-        console.warn('⚠️ خطأ في إعادة تعيين مضيف البث:', error);
-      }
-    }
-
-        // معالجة مغادرة الغرفة
-    socket.on('leaveRoom', async (data) => {
-      try {
-        const { roomId } = data;
-        const userId = (socket as CustomSocket).userId;
-        const username = (socket as CustomSocket).username;
-        
-        if (!userId) {
-          socket.emit('message', { type: 'error', message: 'يجب تسجيل الدخول أولاً' });
-          return;
-        }
-        
-        // استخدام الدالة المساعدة
-        await handleRoomLeave(socket, userId, username, roomId, true);
-        
-      } catch (error) {
-        console.error('خطأ في مغادرة الغرفة:', error);
-        socket.emit('message', { type: 'error', message: 'خطأ في مغادرة الغرفة' });
-      }
-    });
-
-     // معالج قطع الاتصال المحسن مع فترة سماح
-     socket.on('disconnect', async (reason) => {
-       // تنظيف موارد socket فقط
-       cleanup();
-       
-       const customSocket = socket as CustomSocket;
-       if (customSocket.userId && isAuthenticated) {
-         try {
-           const userId = customSocket.userId;
-           const username = customSocket.username;
-
-           // إزالة هذا الـ socket فقط من قائمة اتصالات المستخدم
-           const entry = connectedUsers.get(userId);
-           if (entry) {
-             entry.sockets.delete(socket.id);
-             entry.lastSeen = new Date();
-             connectedUsers.set(userId, entry);
-
-             // إذا بقيت اتصالات أخرى فعّالة لنفس المستخدم، لا نطلق فترة السماح
-             if (entry.sockets.size > 0) {
-               return;
-             }
-           }
-
-           // إذا كان هناك مؤقت سابق لنفس المستخدم، قم بإلغائه لإعادة جدولة فترة السماح
-           if (pendingDisconnects.has(userId)) {
-             clearTimeout(pendingDisconnects.get(userId)!);
-             pendingDisconnects.delete(userId);
-           }
-
-           // جدولة الإزالة النهائية بعد فترة السماح
-           const timeout = setTimeout(async () => {
-             try {
-               // تحقق مرة أخرى إذا عاد المستخدم باتصال جديد خلال فترة السماح
-               const stillEntry = connectedUsers.get(userId);
-               if (stillEntry && stillEntry.sockets.size > 0) {
-                 return; // عاد المستخدم
-               }
-
-               // تحديد الغرف المتأثرة من آخر حالة معروفة (قد لا تتوفر غرفة محددة لكل socket الآن)
-               const affectedRooms = new Set<string>();
-               if (entry) {
-                 for (const { room } of entry.sockets.values()) {
-                   if (room) affectedRooms.add(room);
-                 }
-               }
-
-               // إزالة من قائمة المتصلين فعلياً
-               connectedUsers.delete(userId);
-               // تحديث حالة المستخدم في قاعدة البيانات إلى غير متصل
-               await storage.setUserOnlineStatus(userId, false);
-
-               // بث تحديث قوائم المتصلين للغرف المتأثرة
-               for (const roomId of affectedRooms) {
-                 sendRoomUsers(roomId, 'disconnect_cleanup');
-               }
-
-               // لا نرسل userLeft عام؛ أحداث الغرف كافية
-             } catch (finalErr) {
-               console.error('❌ خطأ في الإزالة بعد فترة السماح:', finalErr);
-             } finally {
-               pendingDisconnects.delete(userId);
-             }
-           }, GRACE_PERIOD_MS);
-
-           pendingDisconnects.set(userId, timeout);
-
-           // ملاحظة: لا نزيل المستخدم فوراً من القائمة ولا نحدث قاعدة البيانات الآن
-           // للحفاظ على ظهوره متصلاً أثناء فترة السماح
-
-         } catch (error) {
-           console.error(`❌ خطأ في جدولة فصل جلسة ${customSocket.username}:`, error);
-         } finally {
-           // لا نقوم بتصفير معرّف المستخدم حتى انتهاء فترة السماح أو إعادة الاتصال
-           // للحفاظ على معلوماته إذا عاد بسرعة
-         }
-       }
-     });
-    
-    // معالج أخطاء Socket.IO
-    socket.on('error', (error) => {
-      const customSocket = socket as CustomSocket;
-      console.error(`❌ خطأ Socket.IO للمستخدم ${customSocket.username || socket.id}:`, error);
-      cleanup();
-    });
-    
-    // بدء heartbeat بعد الإعداد
-    startHeartbeat();
-
-    // ========== WebRTC signaling for Broadcast Room ==========
-    socket.on('webrtc-offer', async (payload) => {
-      try {
-        if (!socket.userId) return;
-        const { roomId, targetUserId, sdp, senderId } = payload || {};
-        if (!roomId || !targetUserId || !sdp || !senderId) return;
-
-        // Only allow relaying inside the same room
-        const currentRoom = (socket as any).currentRoom || 'general';
-        if (currentRoom !== roomId) return;
-
-        // Relay to the target user's private room
-        io.to(targetUserId.toString()).emit('webrtc-offer', { roomId, sdp, senderId });
-      } catch (err) {
-        console.error('WebRTC offer relay error:', err);
-      }
-    });
-
-    socket.on('webrtc-answer', async (payload) => {
-      try {
-        if (!socket.userId) return;
-        const { roomId, targetUserId, sdp, senderId } = payload || {};
-        if (!roomId || !targetUserId || !sdp || !senderId) return;
-
-        const currentRoom = (socket as any).currentRoom || 'general';
-        if (currentRoom !== roomId) return;
-
-        io.to(targetUserId.toString()).emit('webrtc-answer', { roomId, sdp, senderId });
-      } catch (err) {
-        console.error('WebRTC answer relay error:', err);
-      }
-    });
-
-    socket.on('webrtc-ice-candidate', async (payload) => {
-      try {
-        if (!socket.userId) return;
-        const { roomId, targetUserId, candidate, senderId } = payload || {};
-        if (!roomId || !targetUserId || !candidate || !senderId) return;
-
-        const currentRoom = (socket as any).currentRoom || 'general';
-        if (currentRoom !== roomId) return;
-
-        io.to(targetUserId.toString()).emit('webrtc-ice-candidate', { roomId, candidate, senderId });
-      } catch (err) {
-        console.error('WebRTC ICE relay error:', err);
-      }
-    });
-    // ==========================================================
-
-  });
-
-  // removed duplicate broadcast; use io.emit('message', ...) or io.to(...).emit('message', ...) directly
-
-  // فحص دوري محسن لتنظيف الجلسات المنتهية الصلاحية
-  const sessionCleanupInterval = setInterval(async () => {
-    try {
-      const connectedSockets = await io.fetchSockets();
-      const activeSocketUsers = new Set();
-      
-      // جمع معرفات المستخدمين المتصلين فعلياً
-      for (const socket of connectedSockets) {
-        const customSocket = socket as any;
-        if (customSocket.userId && customSocket.isAuthenticated) {
-          activeSocketUsers.add(customSocket.userId);
-        }
-      }
-      
-      // تنظيف connectedUsers من المستخدمين غير المتصلين
-      const disconnectedUsers = [];
-      for (const [userId, connection] of connectedUsers.entries()) {
-        // لا نحذف المستخدم إذا كان لديه فصل قيد الانتظار ضمن فترة السماح
-        if (!activeSocketUsers.has(userId) && !pendingDisconnects.has(userId)) {
-          disconnectedUsers.push({ userId, username: connection.user?.username });
-          connectedUsers.delete(userId);
-          
-          // تحديث قاعدة البيانات
-          try {
-            await storage.setUserOnlineStatus(userId, false);
-          } catch (dbError) {
-            console.error(`خطأ في تحديث حالة المستخدم ${userId}:`, dbError);
-          }
-        }
-      }
-      
-      if (disconnectedUsers.length > 0) {
-        // إرسال قائمة محدثة لجميع الغرف
-        const rooms = ['general']; // يمكن إضافة غرف أخرى
-        for (const roomId of rooms) {
-          sendRoomUsers(roomId, 'session_cleanup');
-        }
-      }
-      
-    } catch (error) {
-      console.error('❌ خطأ في تنظيف الجلسات:', error);
-    }
-  }, 120000); // كل دقيقتين بدلاً من 5 دقائق لتحسين التنظيف
 
   // بدء التنظيف الدوري لقاعدة البيانات
   const dbCleanupInterval = databaseCleanup.startPeriodicCleanup(6); // كل 6 ساعات
@@ -2486,14 +1290,12 @@ if (!existing) {
 
   // تنظيف الفترة الزمنية عند إغلاق الخادم
   process.on('SIGINT', () => {
-    clearInterval(sessionCleanupInterval);
     clearInterval(dbCleanupInterval);
     process.exit(0);
   });
 
   // Ensure cleanup on SIGTERM as well
   process.on('SIGTERM', () => {
-    clearInterval(sessionCleanupInterval);
     clearInterval(dbCleanupInterval);
     process.exit(0);
   });
@@ -2561,7 +1363,7 @@ if (!existing) {
       const request = await friendService.createFriendRequest(senderId, receiverId);
       // إرسال إشعار عبر WebSocket
       const sender = await storage.getUser(senderId);
-      io.emit('message', {
+      getIO().emit('message', {
         type: 'friendRequestReceived',
         targetUserId: receiverId,
         senderName: sender?.username,
@@ -2628,7 +1430,7 @@ if (!existing) {
       
       // إرسال إشعار عبر WebSocket
       const sender = await storage.getUser(senderId);
-      io.emit('message', {
+      getIO().emit('message', {
         type: 'friendRequestReceived',
         targetUserId: targetUser.id,
         senderName: sender?.username,
@@ -2706,20 +1508,20 @@ if (!existing) {
       const sender = await storage.getUser(request.userId);
       
       // إرسال إشعار WebSocket لتحديث قوائم الأصدقاء
-      io.emit('message', {
+      getIO().emit('message', {
         type: 'friendAdded',
         targetUserId: request.userId,
         friendId: request.friendId,
         friendName: receiver?.username
       });
       
-      io.emit('message', {
+      getIO().emit('message', {
         type: 'friendAdded', 
         targetUserId: request.friendId,
         friendId: request.userId,
         friendName: sender?.username
       });
-      io.emit('message', {
+      getIO().emit('message', {
         type: 'friendRequestAccepted',
         targetUserId: request.userId,
         senderName: receiver?.username
@@ -3242,20 +2044,15 @@ if (!existing) {
         return res.status(404).json({ error: 'User not found' });
       }
 
-      // Update connected cache copy
-      try {
-        const entry = connectedUsers.get(idNum);
-        if (entry && entry.user) {
-          connectedUsers.set(idNum, { ...entry, user: { ...entry.user, ...normalizedUpdates } });
-        }
-      } catch {}
+      // Update connected cache copy in realtime module if needed (no-op here)
+      try { /* no-op */ } catch {}
 
-      // Unified broadcast for any user data change
-      io.emit('message', {
-        type: 'userUpdated',
-        user,
-        timestamp: new Date().toISOString()
-      });
+             // Unified broadcast for any user data change
+       getIO().emit('message', {
+         type: 'userUpdated',
+         user,
+         timestamp: new Date().toISOString()
+       });
 
       res.json(user);
     } catch (error) {
@@ -3323,9 +2120,7 @@ if (!existing) {
       });
       
       // إرسال إشعار فوري عبر WebSocket
-      if (io) {
-        io.to(userId.toString()).emit('newNotification', { notification });
-      }
+      try { getIO().to(userId.toString()).emit('newNotification', { notification }); } catch {}
       
       res.json({ notification });
     } catch (error) {
@@ -3628,7 +2423,7 @@ if (!existing) {
         });
       }
       
-      io.to(targetUserId.toString()).emit('message', {
+      getIO().to(targetUserId.toString()).emit('message', {
         type: 'pointsAdded',
         points,
         reason: reason || 'مكافأة من الإدارة',
@@ -3691,7 +2486,7 @@ if (!existing) {
       }
       
       // إشعار وصول النقاط للمستقبل
-      io.to(receiverId.toString()).emit('message', {
+      getIO().to(receiverId.toString()).emit('message', {
         type: 'pointsReceived',
         points,
         senderName: sender.username,
@@ -3699,7 +2494,7 @@ if (!existing) {
       });
       
       // إشعار في المحادثة العامة
-      io.emit('message', {
+      getIO().emit('message', {
         type: 'pointsTransfer',
         senderName: sender.username,
         receiverName: receiver.username,
@@ -3729,12 +2524,12 @@ if (!existing) {
       const updatedSender = await storage.getUser(senderId);
       const updatedReceiver = await storage.getUser(receiverId);
       
-      io.to(senderId.toString()).emit('message', {
+      getIO().to(senderId.toString()).emit('message', {
         type: 'userUpdated',
         user: updatedSender
       });
       
-      io.to(receiverId.toString()).emit('message', {
+      getIO().to(receiverId.toString()).emit('message', {
         type: 'userUpdated',
         user: updatedReceiver
       });
@@ -3932,7 +2727,7 @@ if (!existing) {
         wallType: type || 'public'
       };
       
-      io.emit('message', messageData);
+      getIO().emit('message', messageData);
       
       res.json({ 
         success: true,
@@ -4002,7 +2797,7 @@ if (!existing) {
       const updatedPost = await storage.getWallPostWithReactions(parseInt(postId));
       
       // إرسال تحديث للمستخدمين المتصلين
-      io.emit('message', {
+      getIO().emit('message', {
         type: 'wallPostReaction',
         post: updatedPost,
         reactionType: type,
@@ -4070,7 +2865,7 @@ if (!existing) {
       await storage.deleteWallPost(parseInt(postId));
       
       // إرسال إشعار بالحذف
-      io.emit('message', {
+      getIO().emit('message', {
         type: 'wallPostDeleted',
         postId: parseInt(postId),
         deletedBy: user.username
@@ -4234,7 +3029,7 @@ if (!existing) {
         return res.status(400).json({ error: 'فشل في تحديث المستوى' });
       }
 
-      io.to(targetUserId.toString()).emit('message', {
+      getIO().to(targetUserId.toString()).emit('message', {
         type: 'systemNotification',
         message: `ℹ️ تم تعديل مستواك إلى ${level}`,
         timestamp: new Date().toISOString()
@@ -4297,8 +3092,8 @@ if (!existing) {
         });
         const sender = await storage.getUser(parsedSenderId);
         const messageWithSender = { ...newMessage, sender };
-        io.to(parsedReceiverId.toString()).emit('privateMessage', { message: messageWithSender });
-        io.to(parsedSenderId.toString()).emit('privateMessage', { message: messageWithSender });
+        getIO().to(parsedReceiverId.toString()).emit('privateMessage', { message: messageWithSender });
+        getIO().to(parsedSenderId.toString()).emit('privateMessage', { message: messageWithSender });
         return res.json({ success: true, imageUrl, message: messageWithSender });
       }
 
