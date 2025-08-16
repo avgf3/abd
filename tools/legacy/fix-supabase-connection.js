@@ -138,7 +138,6 @@ async function createTablesIfNotExist(pool) {
       device_id VARCHAR(100),
       ignored_users TEXT DEFAULT '[]',
       username_color TEXT DEFAULT '#FFFFFF',
-      user_theme TEXT DEFAULT 'default',
       profile_effect TEXT DEFAULT 'none',
       points INTEGER DEFAULT 0,
       level INTEGER DEFAULT 1,

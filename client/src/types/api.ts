@@ -91,7 +91,6 @@ export interface UserGameification {
 
 export interface UserPreferences {
   usernameColor: string;
-  userTheme: string;
   profileEffect: string;
   notifications: NotificationSettings;
   privacy: PrivacySettings;

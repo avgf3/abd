@@ -35,7 +35,6 @@ export interface User {
   deviceId?: string;
   ignoredUsers: string;
   usernameColor: string;
-  userTheme: string;
   profileEffect: string;
   points: number;
   level: number;

@@ -353,17 +353,7 @@ export const useChat = () => {
       try {
         const envelope = data.envelope || data;
         
-        // تحديث الثيم عند وصول بث theme_update
-        if (envelope.type === 'theme_update') {
-          const { userId, userTheme } = envelope as any;
-          if (userId && userTheme) {
-            if (state.currentUser?.id === userId) {
-              dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, userTheme } as any });
-            }
-            const updatedOnline = state.onlineUsers.map(u => u.id === userId ? { ...u, userTheme } : u);
-            dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
-          }
-        }
+
 
         // تحديث تأثير البروفايل فقط عند وصول بث profileEffectChanged
         if (envelope.type === 'profileEffectChanged') {

@@ -205,7 +205,6 @@ export function useOptimizedMessages(messages: ChatMessage[], containerRef: Reac
             isBlocked: false,
             ignoredUsers: [],
             usernameColor: '#666666',
-            userTheme: 'default',
             profileEffect: 'none',
             points: 0,
             level: 1,

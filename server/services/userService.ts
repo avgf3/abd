@@ -19,7 +19,6 @@ export class UserService {
         role: userData.role || userData.userType || 'guest',
         profileBackgroundColor: userData.profileBackgroundColor || '#3c0d0d',
         usernameColor: userData.usernameColor || '#000000',
-        userTheme: userData.userTheme || 'default',
       };
 
       const [newUser] = await db.insert(users).values(userToInsert as any).returning();

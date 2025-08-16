@@ -12,7 +12,6 @@ export interface ChatUser {
   profileBackgroundColor?: string;
   usernameColor?: string;
   profileEffect?: string;
-  userTheme?: string;
   status?: string;
   gender?: string; // تغيير: جعل النوع اختيارياً وقابلاً لأي نص لضمان التوافق
   age?: number;

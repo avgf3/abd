@@ -61,32 +61,7 @@ async function fixInconsistentData() {
         );
       }
 
-    // 3. إصلاح قيم userTheme الفارغة أو غير الصالحة
-    const usersWithInvalidThemes = await db
-      .select()
-      .from(users)
-      .where(
-        or(
-          isNull(users.userTheme),
-          eq(users.userTheme, ''),
-          eq(users.userTheme, 'null'),
-          eq(users.userTheme, 'undefined')
-        )
-      );
 
-    if (usersWithInvalidThemes.length > 0) {
-      await db
-        .update(users)
-        .set({ userTheme: 'default' })
-        .where(
-          or(
-            isNull(users.userTheme),
-            eq(users.userTheme, ''),
-            eq(users.userTheme, 'null'),
-            eq(users.userTheme, 'undefined')
-          )
-        );
-      }
 
     // 4. إصلاح قيم profileEffect الفارغة أو غير الصالحة
     const usersWithInvalidEffects = await db
