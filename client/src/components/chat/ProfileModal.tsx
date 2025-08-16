@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { getEffectColor, getFinalUsernameColor } from '@/utils/themeUtils';
+import { getEffectColor, getFinalUsernameColor, buildProfileBackgroundGradient } from '@/utils/themeUtils';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
 import type { ChatUser } from '@/types/chat';
 import { Input } from '@/components/ui/input';
@@ -1765,7 +1765,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       
       {/* Main Modal */}
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-4 px-4 overflow-y-auto">
-        <div className={`profile-card ${selectedEffect}`} style={{ background: localUser?.profileBackgroundColor ? `linear-gradient(0deg, ${localUser.profileBackgroundColor}20, ${localUser.profileBackgroundColor}08)` : undefined }}>
+        <div className={`profile-card ${selectedEffect}`} style={{ background: localUser?.profileBackgroundColor ? buildProfileBackgroundGradient(localUser.profileBackgroundColor) : undefined }}>
           {/* Close Button */}
           <button 
             onClick={onClose}
