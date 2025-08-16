@@ -1,4 +1,3 @@
-
 import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
 import securityApiRoutes from "./api-security";
 import apiRoutes from "./routes/index";
@@ -221,12 +220,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "فشل في تحديث صورة البروفايل في قاعدة البيانات" });
       }
 
-      // إرسال إشعار موحد عبر WebSocket
-      getIO().emit('message', {
-        type: 'userUpdated',
-        user: updatedUser,
-        timestamp: new Date().toISOString()
-      });
+      // بث موجه للمستخدم + بث خفيف للجميع
+      emitUserUpdatedToUser(userId, updatedUser);
+      emitUserUpdatedToAll(updatedUser);
 
       res.json({
         success: true,
@@ -320,12 +316,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "فشل في تحديث صورة البانر في قاعدة البيانات" });
       }
 
-      // إرسال إشعار موحد عبر WebSocket
-      getIO().emit('message', {
-        type: 'userUpdated',
-        user: updatedUser,
-        timestamp: new Date().toISOString()
-      });
+      // بث موجه للمستخدم + بث خفيف للجميع
+      emitUserUpdatedToUser(userId, updatedUser);
+      emitUserUpdatedToAll(updatedUser);
 
       res.json({
         success: true,
@@ -782,13 +775,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تحديث لون الاسم
       await storage.updateUser(userIdNum, { usernameColor: color });
       
-      // إرسال إشعار موحد WebSocket
+      // بث موجه للمستخدم + بث خفيف للجميع
       const updated = await storage.getUser(userIdNum);
-      getIO().emit('message', {
-        type: 'userUpdated',
-        user: updated,
-        timestamp: new Date().toISOString()
-      });
+      emitUserUpdatedToUser(userIdNum, updated);
+      emitUserUpdatedToAll(updated);
       
       res.json({ 
         message: "تم تحديث لون اسم المستخدم بنجاح",
@@ -1214,8 +1204,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "فشل في تحديث الصورة" });
       }
 
-      // Broadcast user update to all connected clients
-      getIO().emit('userUpdated', { user });
+      // بث موجه للمستخدم + بث خفيف للجميع
+      emitUserUpdatedToUser(userId, user);
+      emitUserUpdatedToAll(user);
 
       res.json({ user, message: "تم تحديث الصورة الشخصية بنجاح" });
     } catch (error) {
@@ -2048,12 +2039,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update connected cache copy in realtime module if needed (no-op here)
       try { /* no-op */ } catch {}
 
-             // Unified broadcast for any user data change
-       getIO().emit('message', {
-         type: 'userUpdated',
-         user,
-         timestamp: new Date().toISOString()
-       });
+                   // بث خفيف للجميع + بث كامل لصاحب التعديل
+      emitUserUpdatedToAll(user);
+      emitUserUpdatedToUser(idNum, user);
 
       res.json(user);
     } catch (error) {
@@ -2305,12 +2293,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: 'فشل في تحديث البيانات في قاعدة البيانات' });
       }
       
-      // إشعار موحد عبر WebSocket
-      io.emit('message', {
-        type: 'userUpdated',
-        user: updatedUser,
-        timestamp: new Date().toISOString()
-      });
+      // بث موجه للمستخدم + بث خفيف للجميع
+      emitUserUpdatedToUser(userIdNum, updatedUser);
+      emitUserUpdatedToAll(updatedUser);
 
       res.json({ 
         success: true, 
@@ -3158,6 +3143,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'فشل في تحديث ثيم الموقع' });
     }
   });
+
+  // Helper to avoid broadcasting heavy base64 images to all clients
+  function buildUserBroadcastPayload(user: any): any {
+    if (!user) return user;
+    const sanitized = sanitizeUserData(user);
+    const payload: any = {
+      id: sanitized.id,
+      username: sanitized.username,
+      userType: sanitized.userType,
+      role: sanitized.role,
+      usernameColor: sanitized.usernameColor,
+      profileBackgroundColor: sanitized.profileBackgroundColor,
+      profileEffect: sanitized.profileEffect,
+      isOnline: sanitized.isOnline,
+      lastSeen: sanitized.lastSeen,
+      points: sanitized.points,
+      level: sanitized.level,
+      totalPoints: sanitized.totalPoints,
+      levelProgress: sanitized.levelProgress,
+    };
+    if (
+      sanitized.profileImage &&
+      typeof sanitized.profileImage === 'string' &&
+      !sanitized.profileImage.startsWith('data:')
+    ) {
+      payload.profileImage = sanitized.profileImage;
+    }
+    if (
+      sanitized.profileBanner &&
+      typeof sanitized.profileBanner === 'string' &&
+      !sanitized.profileBanner.startsWith('data:')
+    ) {
+      payload.profileBanner = sanitized.profileBanner;
+    }
+    return payload;
+  }
+
+  function emitUserUpdatedToAll(user: any) {
+    try {
+      const payload = buildUserBroadcastPayload(user);
+      if (payload && payload.id) {
+        getIO().emit('message', {
+          type: 'userUpdated',
+          user: payload,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    } catch {}
+  }
+
+  function emitUserUpdatedToUser(userId: number, user: any) {
+    try {
+      getIO().to(userId.toString()).emit('message', {
+        type: 'userUpdated',
+        user,
+        timestamp: new Date().toISOString(),
+      });
+    } catch {}
+  }
 
   return httpServer;
 }

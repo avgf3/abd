@@ -412,11 +412,24 @@ export const useChat = () => {
         if (envelope.type === 'userUpdated') {
           const updatedUser: ChatUser | undefined = (envelope as any).user;
           if (updatedUser && updatedUser.id) {
-            if (state.currentUser?.id === updatedUser.id) {
+            const isCurrent = state.currentUser?.id === updatedUser.id;
+            // دمج فوري للحقول المتاحة
+            if (isCurrent) {
               dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, ...updatedUser } as any });
             }
             const updatedOnline = state.onlineUsers.map(u => u.id === updatedUser.id ? { ...u, ...updatedUser } : u);
             dispatch({ type: 'SET_ONLINE_USERS', payload: updatedOnline });
+
+            // إذا كان البث خفيفاً (بدون profileImage/base64) والمستخدم الحالي يحتاج الصورة، اجلب نسخة كاملة مرة واحدة
+            if (isCurrent && (!updatedUser.profileImage || (typeof updatedUser.profileImage === 'string' && !updatedUser.profileImage.startsWith('data:')))) {
+              try {
+                apiRequest(`/api/users/${updatedUser.id}?t=${Date.now()}`).then((full: any) => {
+                  if (full && full.id) {
+                    dispatch({ type: 'SET_CURRENT_USER', payload: { ...state.currentUser, ...full } as any });
+                  }
+                }).catch(() => {});
+              } catch {}
+            }
           }
         }
         
