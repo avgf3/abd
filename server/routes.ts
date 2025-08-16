@@ -220,9 +220,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "فشل في تحديث صورة البروفايل في قاعدة البيانات" });
       }
 
-      // بث خفيف: لا نرسل الصورة للجميع، فقط لصاحب التعديل
+      // بث خفيف للغرف: إعلام بتحديث الصورة فقط + كامل لصاحب التعديل
       emitUserUpdatedToUser(userId, updatedUser);
-      getIO().emit('message', { type: 'userUpdated', user: { id: userId, profileImage: updatedUser.profileImage } });
+      await emitToUserRooms(userId, { type: 'userUpdated', user: { id: userId, profileImage: updatedUser.profileImage } });
 
       res.json({
         success: true,
@@ -316,9 +316,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "فشل في تحديث صورة البانر في قاعدة البيانات" });
       }
 
-      // بث خفيف: الخلفية فقط + كامل لصاحب التعديل
+      // بث خفيف للغرف: الخلفية فقط + كامل لصاحب التعديل
       emitUserUpdatedToUser(userId, updatedUser);
-      getIO().emit('message', { type: 'user_background_updated', data: { userId, profileBackgroundColor: updatedUser.profileBackgroundColor } });
+      await emitToUserRooms(userId, { type: 'user_background_updated', data: { userId, profileBackgroundColor: updatedUser.profileBackgroundColor } });
 
       res.json({
         success: true,
@@ -775,10 +775,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تحديث لون الاسم
       await storage.updateUser(userIdNum, { usernameColor: color });
       
-      // بث خفيف مخصص + كامل لصاحب التعديل
+      // بث خفيف مخصص للغرف + كامل لصاحب التعديل
       const updated = await storage.getUser(userIdNum);
       emitUserUpdatedToUser(userIdNum, updated);
-      getIO().emit('message', { type: 'usernameColorChanged', userId: userIdNum, color });
+      await emitToUserRooms(userIdNum, { type: 'usernameColorChanged', userId: userIdNum, color });
       
       res.json({ 
         message: "تم تحديث لون اسم المستخدم بنجاح",
@@ -1235,10 +1235,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update username color
       await storage.updateUser(userId, { usernameColor: color });
       
-      // بث خفيف مخصص + كامل لصاحب التعديل
+      // بث خفيف مخصص للغرف + كامل لصاحب التعديل
       const updated = await storage.getUser(userId);
       emitUserUpdatedToUser(userId, updated);
-      getIO().emit('message', { type: 'usernameColorChanged', userId, color });
+      await emitToUserRooms(userId, { type: 'usernameColorChanged', userId, color });
       
       res.json({ 
         success: true, 
@@ -3198,6 +3198,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timestamp: new Date().toISOString(),
       });
     } catch {}
+  }
+
+  async function emitToUserRooms(userId: number, payload: any) {
+    try {
+      let rooms = await storage.getUserRooms(userId);
+      if (!Array.isArray(rooms) || rooms.length === 0) {
+        rooms = ['general'];
+      }
+      for (const roomId of rooms) {
+        getIO().to(`room_${roomId}`).emit('message', payload);
+      }
+    } catch {
+      // fallback: عام كحل أخير
+      try { getIO().emit('message', payload); } catch {}
+    }
   }
 
   return httpServer;
