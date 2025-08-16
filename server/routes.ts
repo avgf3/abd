@@ -33,6 +33,7 @@ import { spamProtection } from "./spam-protection";
 import { storage } from "./storage";
 import { databaseCleanup } from "./utils/database-cleanup";
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
+import { updateConnectedUserCache } from "./realtime";
 
 
 // إعداد multer موحد لرفع الصور
@@ -211,8 +212,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // بث خفيف للغرف + كامل لصاحب التعديل
+      try { updateConnectedUserCache(updatedUser); } catch {}
       emitUserUpdatedToUser(userId, updatedUser);
-      await emitToUserRooms(userId, { type: 'userUpdated', user: { id: userId, profileImage: `${updatedUser.profileImage}?v=${hash}` } });
+      await emitToUserRooms(userId, { type: 'userUpdated', user: buildUserBroadcastPayload(updatedUser) });
 
       res.json({
         success: true,
@@ -308,8 +310,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // بث خفيف للغرف: الخلفية فقط + كامل لصاحب التعديل
+      try { updateConnectedUserCache(updatedUser); } catch {}
       emitUserUpdatedToUser(userId, updatedUser);
-      await emitToUserRooms(userId, { type: 'user_background_updated', data: { userId, profileBackgroundColor: updatedUser.profileBackgroundColor } });
+      await emitToUserRooms(userId, { type: 'user_background_updated', data: { userId, profileBackgroundColor: buildUserBroadcastPayload(updatedUser).profileBackgroundColor } });
 
       res.json({
         success: true,
@@ -2025,13 +2028,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update connected cache copy in realtime module if needed (no-op here)
-      try { /* no-op */ } catch {}
+      try { updateConnectedUserCache(user); } catch {}
 
                    // بث خفيف للجميع + بث كامل لصاحب التعديل
-      emitUserUpdatedToAll(user);
+            emitUserUpdatedToAll(user);
       emitUserUpdatedToUser(idNum, user);
 
-      res.json(user);
+      const payload = buildUserBroadcastPayload(user);
+      res.json(payload);
     } catch (error) {
       console.error('Error updating user:', error);
       res.status(500).json({ error: 'Failed to update user', details: error instanceof Error ? error.message : 'Unknown error' });
@@ -2315,8 +2319,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // إرجاع بيانات المستخدم بدون كلمة المرور مع تنظيف البيانات
       const { password, ...userWithoutPassword } = user;
-      const sanitizedUser = sanitizeUserData(userWithoutPassword);
-      res.json(sanitizedUser);
+      const payload = buildUserBroadcastPayload(userWithoutPassword);
+      res.json(payload);
+
       
     } catch (error) {
       console.error('❌ خطأ في جلب بيانات المستخدم:', error);
@@ -3134,7 +3139,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Helper to avoid broadcasting heavy base64 images to all clients
   function buildUserBroadcastPayload(user: any): any {
-    if (!user) return user;
     const sanitized = sanitizeUserData(user);
     const payload: any = {
       id: sanitized.id,
@@ -3156,7 +3160,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       typeof sanitized.profileImage === 'string' &&
       !sanitized.profileImage.startsWith('data:')
     ) {
-      payload.profileImage = sanitized.profileImage;
+      const versionTag = (sanitized as any).avatarHash || (sanitized as any).avatarVersion;
+      if (versionTag && !String(sanitized.profileImage).includes('?v=')) {
+        payload.profileImage = `${sanitized.profileImage}?v=${versionTag}`;
+      } else {
+        payload.profileImage = sanitized.profileImage;
+      }
     }
     if (
       sanitized.profileBanner &&
@@ -3183,9 +3192,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   function emitUserUpdatedToUser(userId: number, user: any) {
     try {
+      const payload = buildUserBroadcastPayload(user);
       getIO().to(userId.toString()).emit('message', {
         type: 'userUpdated',
-        user,
+        user: payload,
         timestamp: new Date().toISOString(),
       });
     } catch {}
