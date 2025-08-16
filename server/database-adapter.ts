@@ -359,6 +359,28 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
             CREATE INDEX IF NOT EXISTS idx_notifications_user_time
             ON notifications (user_id, created_at DESC);
           `);
+
+          // Ensure users optional avatar columns
+          await (db as any).execute(`
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'users' AND column_name = 'avatar_hash'
+              ) THEN
+                ALTER TABLE users ADD COLUMN avatar_hash TEXT;
+              END IF;
+            END $$;
+          `);
+          await (db as any).execute(`
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'users' AND column_name = 'avatar_version'
+              ) THEN
+                ALTER TABLE users ADD COLUMN avatar_version INTEGER DEFAULT 1;
+              END IF;
+            END $$;
+          `);
         } catch (ensureError) {
           console.error('⚠️ فشل في ضمان المخطط بعد الـ migrations:', ensureError);
         }
