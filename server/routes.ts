@@ -3217,15 +3217,20 @@ if (!existing) {
 
       const updates = req.body || {};
 
-      // Normalize profileBackgroundColor: extract first HEX if gradient provided
+      // Normalize profileBackgroundColor: allow full linear-gradient strings, otherwise sanitize HEX or fallback
       const normalizedUpdates: any = { ...updates };
       if (typeof normalizedUpdates.profileBackgroundColor === 'string') {
-        const str = String(normalizedUpdates.profileBackgroundColor);
-        const firstHex = str.match(/#[0-9A-Fa-f]{6}/)?.[0];
-        if (firstHex) {
-          normalizedUpdates.profileBackgroundColor = firstHex;
+        const str = String(normalizedUpdates.profileBackgroundColor).trim();
+        if (str.startsWith('linear-gradient(')) {
+          // keep gradient as-is
+          normalizedUpdates.profileBackgroundColor = str;
         } else if (/^#[0-9A-Fa-f]{6}$/.test(str)) {
-          // already valid
+          // valid HEX
+          normalizedUpdates.profileBackgroundColor = str;
+        } else if (/#\s*[0-9A-Fa-f]{6}/.test(str)) {
+          // extract first HEX if mixed content
+          const firstHex = str.match(/#[0-9A-Fa-f]{6}/)?.[0];
+          normalizedUpdates.profileBackgroundColor = firstHex || '#4A90E2';
         } else {
           // fallback to a safe default color if invalid
           normalizedUpdates.profileBackgroundColor = '#4A90E2';

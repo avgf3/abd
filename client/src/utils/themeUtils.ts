@@ -136,10 +136,39 @@ const sanitizeHexColor = (color: string, defaultColor: string = '#3c0d0d'): stri
   return defaultColor;
 };
 
-// لون خلفية موحّد (بدون تدرّج) ليطابق اللون الحقيقي تماماً
-export const buildProfileBackgroundGradient = (hex: string): string => {
-  const clean = sanitizeHexColor(hex);
-  return clean;
+// بناء خلفية ملف شخصي: تمرير التدرج كما هو، أو توليد تدرج من لون HEX
+export const buildProfileBackgroundGradient = (colorOrGradient: string): string => {
+  const input = (colorOrGradient || '').trim();
+  if (input.toLowerCase().startsWith('linear-gradient(')) {
+    return input;
+  }
+  const cleanHex = sanitizeHexColor(input);
+  const start = lightenHexColor(cleanHex, 14);
+  const end = lightenHexColor(cleanHex, -12);
+  return `linear-gradient(135deg, ${start}, ${end})`;
+};
+
+// تفتيح/تعتيم لون HEX بنسبة مئوية
+const lightenHexColor = (hex: string, percent: number): string => {
+  const match = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex.trim());
+  if (!match) return hex;
+  let r = parseInt(match[1], 16);
+  let g = parseInt(match[2], 16);
+  let b = parseInt(match[3], 16);
+
+  const adjust = (value: number): number => {
+    if (percent >= 0) {
+      return Math.min(255, Math.round(value + (255 - value) * (percent / 100)));
+    }
+    return Math.max(0, Math.round(value * (1 + percent / 100)));
+  };
+
+  r = adjust(r);
+  g = adjust(g);
+  b = adjust(b);
+
+  const toHex = (value: number): string => value.toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 };
 
 // دالة لتحويل التدرج اللوني إلى تدرج شفاف
@@ -178,10 +207,9 @@ export const getUserEffectClasses = (user: any): string => {
 export const getUserEffectStyles = (user: any): Record<string, string> => {
   const style: Record<string, string> = {};
   
-  // أولاً: تطبيق لون الخلفية من الملف الشخصي
+  // أولاً: تطبيق خلفية الملف الشخصي (تدرج أو لون)
   if (user?.profileBackgroundColor) {
-    const sanitizedColor = sanitizeHexColor(user.profileBackgroundColor);
-    const bg = buildProfileBackgroundGradient(sanitizedColor);
+    const bg = buildProfileBackgroundGradient(String(user.profileBackgroundColor));
     if (bg) {
       style.background = bg;
     }
