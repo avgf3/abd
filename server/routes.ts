@@ -1235,13 +1235,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update username color
       await storage.updateUser(userId, { usernameColor: color });
       
-      // Unified broadcast of updated user
+      // بث موجه للمستخدم + بث خفيف للجميع
       const updated = await storage.getUser(userId);
-      getIO().emit('message', {
-        type: 'userUpdated',
-        user: updated,
-        timestamp: new Date().toISOString()
-      });
+      emitUserUpdatedToUser(userId, updated);
+      emitUserUpdatedToAll(updated);
       
       res.json({ 
         success: true, 
