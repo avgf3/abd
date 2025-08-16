@@ -88,8 +88,8 @@ const connectedUsers = new Map<number, {
   lastSeen: Date
 }>();
 
-// Grace period (5 minutes) before finalizing disconnect removals
-const GRACE_PERIOD_MS = 5 * 60 * 1000;
+// Grace period (30 seconds) before finalizing disconnect removals
+const GRACE_PERIOD_MS = 30 * 1000;
 const pendingDisconnects = new Map<number, NodeJS.Timeout>();
 
 // Storage initialization - using imported storage instance
@@ -112,20 +112,33 @@ interface CustomSocket extends Socket {
 function sendRoomUsers(roomId: string, source: string = 'system') {
   const userMap = new Map<number, any>();
   for (const { user, sockets } of connectedUsers.values()) {
+    // تحقق من أن المستخدم موجود في الغرفة المحددة فقط
+    let userInRoom = false;
     for (const { room } of sockets.values()) {
-      if (room === roomId && user && user.id && user.username && user.userType) {
-        userMap.set(user.id, user);
+      if (room === roomId) {
+        userInRoom = true;
         break;
+      }
+    }
+    
+    // إضافة المستخدم فقط إذا كان في الغرفة المحددة
+    if (userInRoom && user && user.id && user.username && user.userType) {
+      // تجنب المستخدمين الوهميين
+      if (user.username !== 'مستخدم' && user.username !== 'User' && user.id > 0) {
+        userMap.set(user.id, user);
       }
     }
   }
   const roomUsers = Array.from(userMap.values());
   const sanitizedUsers = sanitizeUsersArray(roomUsers);
+  
+  // إرسال لأعضاء الغرفة المحددة فقط
   io.to(`room_${roomId}`).emit('message', {
     type: 'onlineUsers',
     users: sanitizedUsers,
     roomId,
-    source
+    source,
+    timestamp: new Date().toISOString()
   });
 }
 
@@ -2039,7 +2052,7 @@ if (!existing) {
         // تحديث الغرفة في قائمة المتصلين الفعليين
         if (connectedUsers.has(userId)) {
           const userConnection = connectedUsers.get(userId)!;
-          const prev = userConnection.sockets.get(socket.id) || { room: roomId, lastSeen: new Date() };
+          // تحديث غرفة هذا الـ socket فقط
           userConnection.sockets.set(socket.id, { room: roomId, lastSeen: new Date() });
           userConnection.lastSeen = new Date();
           connectedUsers.set(userId, userConnection);
@@ -2305,17 +2318,35 @@ if (!existing) {
              entry.lastSeen = new Date();
              connectedUsers.set(userId, entry);
 
-             // إذا بقيت اتصالات أخرى فعّالة لنفس المستخدم، لا نطلق فترة السماح
-             if (entry.sockets.size > 0) {
-               return;
-             }
-           }
+                         // إذا بقيت اتصالات أخرى فعّالة لنفس المستخدم، لا نطلق فترة السماح
+            if (entry.sockets.size > 0) {
+              // لكن نحتاج لتحديث قائمة المستخدمين إذا غادر من غرفة
+              const currentRoom = (customSocket as any).currentRoom;
+              if (currentRoom) {
+                sendRoomUsers(currentRoom, 'socket_disconnect');
+              }
+              return;
+            }
+          }
 
-           // إذا كان هناك مؤقت سابق لنفس المستخدم، قم بإلغائه لإعادة جدولة فترة السماح
-           if (pendingDisconnects.has(userId)) {
-             clearTimeout(pendingDisconnects.get(userId)!);
-             pendingDisconnects.delete(userId);
-           }
+          // إذا كان هناك مؤقت سابق لنفس المستخدم، قم بإلغائه لإعادة جدولة فترة السماح
+          if (pendingDisconnects.has(userId)) {
+            clearTimeout(pendingDisconnects.get(userId)!);
+            pendingDisconnects.delete(userId);
+          }
+          
+          // إرسال تحديث فوري للغرف المتأثرة (مع بقاء المستخدم في الذاكرة)
+          const currentRoom = (customSocket as any).currentRoom;
+          if (currentRoom && entry) {
+            // إشعار مؤقت بأن المستخدم في وضع "قد يكون منفصل"
+            io.to(`room_${currentRoom}`).emit('message', {
+              type: 'userDisconnecting',
+              userId: userId,
+              username: username,
+              roomId: currentRoom,
+              timestamp: new Date().toISOString()
+            });
+          }
 
            // جدولة الإزالة النهائية بعد فترة السماح
            const timeout = setTimeout(async () => {
@@ -3246,16 +3277,34 @@ if (!existing) {
       try {
         const entry = connectedUsers.get(idNum);
         if (entry && entry.user) {
-          connectedUsers.set(idNum, { ...entry, user: { ...entry.user, ...normalizedUpdates } });
+          // تحديث بيانات المستخدم مع الاحتفاظ بمعلومات الاتصال
+          const updatedUser = { ...entry.user, ...normalizedUpdates };
+          connectedUsers.set(idNum, { ...entry, user: updatedUser });
+          
+          // إرسال التحديث فقط للغرف التي يتواجد فيها المستخدم
+          const userRooms = new Set<string>();
+          for (const socketInfo of entry.sockets.values()) {
+            if (socketInfo.room) {
+              userRooms.add(socketInfo.room);
+            }
+          }
+          
+          // بث التحديث للغرف المتأثرة فقط
+          for (const roomId of userRooms) {
+            io.to(`room_${roomId}`).emit('message', {
+              type: 'userUpdated',
+              user: updatedUser,
+              roomId,
+              timestamp: new Date().toISOString()
+            });
+          }
+        } else {
+          // إذا لم يكن المستخدم متصلاً، لا نرسل أي تحديث
+          console.log(`User ${idNum} not connected, skipping broadcast`);
         }
-      } catch {}
-
-      // Unified broadcast for any user data change
-      io.emit('message', {
-        type: 'userUpdated',
-        user,
-        timestamp: new Date().toISOString()
-      });
+      } catch (updateError) {
+        console.error('Error updating connected user cache:', updateError);
+      }
 
       res.json(user);
     } catch (error) {
