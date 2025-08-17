@@ -2,6 +2,18 @@ import { Router } from 'express';
 
 import { notificationService } from '../services/notificationService';
 import { storage } from '../storage';
+import { db, dbType } from '../database-adapter';
+
+// Helper type for conversation item (server-side internal)
+type ConversationItem = {
+  id: number;
+  sender_id: number;
+  receiver_id: number;
+  content: string;
+  message_type: string;
+  is_private: boolean;
+  timestamp: string | Date;
+};
 
 const router = Router();
 
@@ -184,6 +196,127 @@ router.get('/:userId/:otherUserId', async (req, res) => {
 
   } catch (error: any) {
     console.error('خطأ في جلب رسائل الخاص:', error);
+    return res.status(500).json({ error: error?.message || 'خطأ في الخادم' });
+  }
+});
+
+/**
+ * GET /api/private-messages/conversations/:userId?limit=50
+ * إرجاع قائمة المحادثات الخاصة الأخيرة (طرف واحد + آخر رسالة) لعرضها في تبويب الرسائل
+ */
+router.get('/conversations/:userId', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const limitParam = req.query.limit as string | undefined;
+    const limit = Math.min(100, Math.max(1, parseInt(limitParam || '50')));
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ error: 'معرّف المستخدم غير صالح' });
+    }
+
+    // PostgreSQL: استخدم DISTINCT ON مع فهرس pair للحصول على آخر رسالة لكل ثنائية
+    if (dbType === 'postgresql') {
+      try {
+        const sql = `
+          WITH pm AS (
+            SELECT id, sender_id, receiver_id, content, message_type, is_private, "timestamp"
+            FROM messages
+            WHERE is_private = TRUE AND (sender_id = ${userId} OR receiver_id = ${userId})
+          ),
+          pairs AS (
+            SELECT *, LEAST(sender_id, receiver_id) AS a, GREATEST(sender_id, receiver_id) AS b
+            FROM pm
+          ),
+          latest AS (
+            SELECT DISTINCT ON (a, b)
+              id, sender_id, receiver_id, content, message_type, is_private, "timestamp", a, b
+            FROM pairs
+            ORDER BY a, b, "timestamp" DESC
+          )
+          SELECT id, sender_id, receiver_id, content, message_type, is_private, "timestamp"
+          FROM latest
+          ORDER BY "timestamp" DESC
+          LIMIT ${limit};
+        `;
+        const result: any = await (db as any).execute(sql);
+        const rows: ConversationItem[] = (result?.rows ?? result ?? []) as any;
+
+        // تحديد الطرف الآخر وجلب بياناته دفعة واحدة
+        const otherUserIds = Array.from(new Set(rows.map(r => (r.sender_id === userId ? r.receiver_id : r.sender_id)).filter(Boolean)));
+        const users = await storage.getUsersByIds(otherUserIds as number[]);
+        const userMap = new Map<number, any>((users || []).map((u: any) => [u.id, u]));
+
+        const conversations = rows.map((r) => {
+          const otherUserId = r.sender_id === userId ? r.receiver_id : r.sender_id;
+          return {
+            otherUserId,
+            otherUser: userMap.get(otherUserId) || null,
+            lastMessage: {
+              id: r.id,
+              content: r.content,
+              messageType: r.message_type,
+              timestamp: r.timestamp,
+            }
+          };
+        });
+
+        return res.json({ success: true, conversations });
+      } catch (e) {
+        console.error('خطأ في جلب المحادثات (PG):', e);
+        return res.status(500).json({ error: 'خطأ في جلب المحادثات' });
+      }
+    }
+
+    // SQLite أو وضع بدون قاعدة بيانات: اجلب آخر الكثير من الرسائل ثم كوّن المحادثات في الذاكرة
+    try {
+      const sql = `
+        SELECT id, sender_id, receiver_id, content, message_type, is_private, timestamp
+        FROM messages
+        WHERE is_private = 1 AND (sender_id = ${userId} OR receiver_id = ${userId})
+        ORDER BY timestamp DESC
+        LIMIT ${Math.max(limit * 10, 200)};
+      `;
+      const result: any = await (db as any)?.execute?.(sql);
+      const rows: ConversationItem[] = (result?.rows ?? result ?? []) as any;
+
+      const seenPairs = new Set<string>();
+      const picked: ConversationItem[] = [];
+      for (const r of rows) {
+        const a = Math.min(r.sender_id, r.receiver_id);
+        const b = Math.max(r.sender_id, r.receiver_id);
+        const key = `${a}-${b}`;
+        if (!seenPairs.has(key)) {
+          seenPairs.add(key);
+          picked.push(r);
+          if (picked.length >= limit) break;
+        }
+      }
+
+      const otherUserIds = Array.from(new Set(picked.map(r => (r.sender_id === userId ? r.receiver_id : r.sender_id)).filter(Boolean)));
+      const users = await storage.getUsersByIds(otherUserIds as number[]);
+      const userMap = new Map<number, any>((users || []).map((u: any) => [u.id, u]));
+
+      const conversations = picked.map((r) => {
+        const otherUserId = r.sender_id === userId ? r.receiver_id : r.sender_id;
+        return {
+          otherUserId,
+          otherUser: userMap.get(otherUserId) || null,
+          lastMessage: {
+            id: r.id,
+            content: r.content,
+            messageType: r.message_type,
+            timestamp: r.timestamp,
+          }
+        };
+      });
+
+      return res.json({ success: true, conversations });
+    } catch (e) {
+      console.error('خطأ في جلب المحادثات (SQLite):', e);
+      return res.status(500).json({ error: 'خطأ في جلب المحادثات' });
+    }
+  } catch (error: any) {
+    console.error('خطأ غير متوقع في /conversations:', error);
     return res.status(500).json({ error: error?.message || 'خطأ في الخادم' });
   }
 });
