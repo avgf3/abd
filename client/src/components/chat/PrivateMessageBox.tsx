@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
@@ -28,7 +29,7 @@ export default function PrivateMessageBox({
   const [messageText, setMessageText] = useState('');
   const [isAtBottomPrivate, setIsAtBottomPrivate] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastMessageCountRef = useRef(0);
 
@@ -46,18 +47,11 @@ export default function PrivateMessageBox({
   }, [messages]);
 
   // محسن: دالة التمرير مع تحسين الأداء
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
-    const container = containerRef.current;
-    if (!container) return;
-    
-    requestAnimationFrame(() => {
-      if (behavior === 'smooth') {
-        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-      } else {
-        container.scrollTop = container.scrollHeight;
-      }
-    });
-  }, []);
+  type ScrollBehaviorStrict = 'auto' | 'smooth';
+  const scrollToBottom = useCallback((behavior: ScrollBehaviorStrict = 'auto') => {
+    if (!virtuosoRef.current || sortedMessages.length === 0) return;
+    virtuosoRef.current.scrollToIndex({ index: sortedMessages.length - 1, align: 'end', behavior });
+  }, [sortedMessages.length]);
 
   // التمرير للأسفل عند فتح النافذة
   useEffect(() => {
@@ -81,12 +75,7 @@ export default function PrivateMessageBox({
   }, [sortedMessages.length, isAtBottomPrivate, scrollToBottom]);
 
   // مُحسن: دالة مراقبة التمرير
-  const handlePrivateScroll = useCallback(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    
-    const threshold = 80;
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+  const handleAtBottomChange = useCallback((atBottom: boolean) => {
     setIsAtBottomPrivate(atBottom);
   }, []);
 
@@ -169,11 +158,7 @@ export default function PrivateMessageBox({
             </div>
           </DialogHeader>
 
-          <div 
-            ref={containerRef} 
-            onScroll={handlePrivateScroll} 
-            className="relative h-[55vh] w-full p-4 pb-4 overflow-y-auto bg-gradient-to-b from-gray-50 to-white"
-          >
+          <div className="relative h-[55vh] w-full p-4 pb-4 bg-gradient-to-b from-gray-50 to-white">
             {sortedMessages.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <motion.div 
@@ -187,59 +172,62 @@ export default function PrivateMessageBox({
                 <p className="text-sm opacity-70 mt-2">لا توجد رسائل سابقة</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                <AnimatePresence mode="popLayout">
-                  {sortedMessages.map((m, idx) => {
-                    const isMe = currentUser && m.senderId === currentUser.id;
-                    const key = m.id ?? `${m.senderId}-${m.timestamp}-${idx}`;
-                    const isImage = m.messageType === 'image' || (typeof m.content === 'string' && m.content.startsWith('data:image'));
-                    
-                    return (
-                      <motion.div
-                        key={key}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3 }}
-                        className={`flex items-start gap-3 p-3 rounded-lg transition-all duration-200 ${
-                          isMe 
-                            ? 'bg-blue-50 border-r-4 ml-4' 
-                            : 'bg-green-50 border-r-4 mr-4'
-                        }`}
-                        style={{ borderRightColor: getDynamicBorderColor(m.sender || (isMe ? currentUser : user)) }}
-                      >
-                        <img
-                          src={(m.sender?.profileImage as string) || '/default_avatar.svg'}
-                          alt="avatar"
-                          className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
-                          onError={(e) => { (e.target as HTMLImageElement).src = '/default_avatar.svg'; }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-sm truncate" style={{ color: getFinalUsernameColor(m.sender || user) }}>
-                              {m.sender?.username || (isMe ? currentUser?.username : user.username)}
-                            </span>
-                            <span className="text-xs text-gray-500 whitespace-nowrap">{formatTime(m.timestamp)}</span>
-                          </div>
-                          <div className="text-gray-800 break-words">
-                            {isImage ? (
-                              <img
-                                src={m.content}
-                                alt="صورة"
-                                className="max-h-40 rounded-lg cursor-pointer shadow-sm hover:shadow-md transition-shadow"
-                                loading="lazy"
-                                onClick={() => window.open(m.content, '_blank')}
-                              />
-                            ) : (
-                              <span className="text-sm leading-relaxed">{formatLastMessage(m.content)}</span>
-                            )}
-                          </div>
+              <Virtuoso
+                ref={virtuosoRef}
+                data={sortedMessages}
+                className="!h-full"
+                followOutput={'smooth'}
+                atBottomStateChange={handleAtBottomChange}
+                increaseViewportBy={{ top: 300, bottom: 300 }}
+                itemContent={(index, m) => {
+                  const isMe = currentUser && m.senderId === currentUser.id;
+                  const key = m.id ?? `${m.senderId}-${m.timestamp}-${index}`;
+                  const isImage = m.messageType === 'image' || (typeof m.content === 'string' && m.content.startsWith('data:image'));
+                  return (
+                    <motion.div
+                      key={key}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className={`flex items-start gap-3 p-3 rounded-lg transition-all duration-200 ${
+                        isMe 
+                          ? 'bg-blue-50 border-r-4 ml-4' 
+                          : 'bg-green-50 border-r-4 mr-4'
+                      }`}
+                      style={{ borderRightColor: getDynamicBorderColor(m.sender || (isMe ? currentUser : user)) }}
+                    >
+                      <img
+                        src={(m.sender?.profileImage as string) || '/default_avatar.svg'}
+                        alt="avatar"
+                        className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/default_avatar.svg'; }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-sm truncate" style={{ color: getFinalUsernameColor(m.sender || user) }}>
+                            {m.sender?.username || (isMe ? currentUser?.username : user.username)}
+                          </span>
+                          <span className="text-xs text-gray-500 whitespace-nowrap">{formatTime(m.timestamp)}</span>
                         </div>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-              </div>
+                        <div className="text-gray-800 break-words">
+                          {isImage ? (
+                            <img
+                              src={m.content}
+                              alt="صورة"
+                              className="max-h-40 rounded-lg cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+                              loading="lazy"
+                              onClick={() => window.open(m.content, '_blank')}
+                            />
+                          ) : (
+                            <span className="text-sm leading-relaxed">{formatLastMessage(m.content)}</span>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                }}
+              />
             )}
             
             {!isAtBottomPrivate && (

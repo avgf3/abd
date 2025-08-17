@@ -1,5 +1,6 @@
 import { Send, Image as ImageIcon, Smile } from "lucide-react";
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
 import EmojiPicker from './EmojiPicker';
 import ProfileImage from './ProfileImage';
@@ -53,7 +54,7 @@ export default function MessageArea({
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const lastTypingTime = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
 
   // State for improved scroll behavior
@@ -76,20 +77,15 @@ export default function MessageArea({
     return base;
   }, [messages, ignoredUserIds]);
 
-  // Scroll to bottom function - optimized
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
-    const el = messagesContainerRef.current;
-    if (el) {
-      el.scrollTo({ top: el.scrollHeight, behavior });
-    }
-  }, []);
+  // Scroll to bottom function - optimized via Virtuoso
+  type ScrollBehaviorStrict = 'auto' | 'smooth';
+  const scrollToBottom = useCallback((behavior: ScrollBehaviorStrict = 'smooth') => {
+    if (!virtuosoRef.current || validMessages.length === 0) return;
+    virtuosoRef.current.scrollToIndex({ index: validMessages.length - 1, align: 'end', behavior });
+  }, [validMessages.length]);
 
-  // Track scroll position to know if user is near the bottom
-  const handleScroll = useCallback(() => {
-    const el = messagesContainerRef.current;
-    if (!el) return;
-    const threshold = 80; // px
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+  // Track bottom state from Virtuoso
+  const handleAtBottomChange = useCallback((atBottom: boolean) => {
     setIsAtBottom(atBottom);
     if (atBottom) setUnreadCount(0);
   }, []);
@@ -119,7 +115,6 @@ export default function MessageArea({
     prevMessagesLenRef.current = validMessages.length;
     // If there are messages on first mount, jump to bottom without animation
     if (validMessages.length > 0) {
-      // Delay to allow layout to stabilize
       const t = setTimeout(() => scrollToBottom('auto'), 0);
       return () => clearTimeout(t);
     }
@@ -303,13 +298,8 @@ export default function MessageArea({
         </div>
       </div>
       
-      {/* Messages Container - إضافة مساحة كافية في الأسفل لمنطقة الإرسال */}
-      <div
-        ref={messagesContainerRef}
-        onScroll={handleScroll}
-        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} overflow-y-auto space-y-3 text-sm bg-gradient-to-b from-gray-50 to-white pb-32`}
-        style={{ marginBottom: '80px' }}
-      >
+      {/* Messages Container - Virtualized */}
+      <div className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} bg-gradient-to-b from-gray-50 to-white`}>
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
             <div className="text-6xl mb-4">💬</div>
@@ -317,107 +307,116 @@ export default function MessageArea({
             <p className="text-sm">ابدأ المحادثة بكتابة رسالتك الأولى</p>
           </div>
         ) : (
-          validMessages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex items-center gap-3 p-3 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
-              style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
-            >
-              {/* System message: one-line red without avatar/badge */}
-              {message.messageType === 'system' ? (
-                <div className="w-full flex items-center justify-between text-red-600">
-                  <div className="flex items-center gap-2 truncate">
-                    <span className="font-semibold">النظام:</span>
-                    <span className="truncate">{message.content}</span>
+          <Virtuoso
+            ref={virtuosoRef}
+            data={validMessages}
+            className="!h-full"
+            style={{ paddingBottom: '128px' }}
+            followOutput={'smooth'}
+            atBottomStateChange={handleAtBottomChange}
+            increaseViewportBy={{ top: 400, bottom: 400 }}
+            itemContent={(index, message) => (
+              <div
+                key={message.id}
+                className={`flex items-center gap-3 p-3 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
+                style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
+              >
+                {/* System message: one-line red without avatar/badge */}
+                {message.messageType === 'system' ? (
+                  <div className="w-full flex items-center justify-between text-red-600">
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="font-semibold">النظام:</span>
+                      <span className="truncate">{message.content}</span>
+                    </div>
+                    <span className="text-xs text-red-500 ml-2 whitespace-nowrap">{formatTime(message.timestamp)}</span>
                   </div>
-                  <span className="text-xs text-red-500 ml-2 whitespace-nowrap">{formatTime(message.timestamp)}</span>
-                </div>
-              ) : (
-                <>
-                  {/* Profile Image */}
-                  {message.sender && (
-                    <div className="flex-shrink-0">
-                      <ProfileImage 
-                        user={message.sender} 
-                        size="small"
-                        className="cursor-pointer hover:scale-110 transition-transform duration-200"
-                      />
-                    </div>
-                  )}
-
-                  {/* Inline row: badge, name, content */}
-                  <div className="flex-1 min-w-0 flex items-center gap-2">
-                    {message.sender && <UserRoleBadge user={message.sender} showOnlyIcon={true} />}
-                    <button
-                      onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                      className="font-semibold hover:underline transition-colors duration-200 truncate"
-                      style={{ color: getFinalUsernameColor(message.sender) }}
-                    >
-                      {message.sender?.username}
-                    </button>
-
-                    <div className="text-gray-800 break-words truncate flex-1">
-                      {message.messageType === 'image' ? (
-                        <img
-                          src={message.content}
-                          alt="صورة"
-                          className="max-h-10 rounded cursor-pointer"
-                          loading="lazy"
-                          onClick={() => window.open(message.content, '_blank')}
+                ) : (
+                  <>
+                    {/* Profile Image */}
+                    {message.sender && (
+                      <div className="flex-shrink-0">
+                        <ProfileImage 
+                          user={message.sender} 
+                          size="small"
+                          className="cursor-pointer hover:scale-110 transition-transform duration-200"
                         />
-                      ) : (
-                        <span className="truncate">
-                          {renderMessageWithMentions(message.content, currentUser, onlineUsers)}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Right side: time and report flag */}
-                    <span className="text-xs text-gray-500 whitespace-nowrap ml-2">{formatTime(message.timestamp)}</span>
-
-                    {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
-                      <button
-                        onClick={() => onReportMessage(message.sender!, message.content, message.id)}
-                        className="text-sm hover:opacity-80"
-                        title="تبليغ"
-                      >
-                        🚩
-                      </button>
+                      </div>
                     )}
 
-                    {currentUser && message.sender && (() => {
-                      const isOwner = currentUser.userType === 'owner';
-                      const isAdmin = currentUser.userType === 'admin';
-                      const isSender = currentUser.id === message.sender.id;
-                      const canDelete = isSender || isOwner || isAdmin;
-                      if (!canDelete) return null;
-                      const handleDelete = async () => {
-                        try {
-                          await apiRequest(`/api/messages/${message.id}`, {
-                            method: 'DELETE',
-                            body: { userId: currentUser.id, roomId: message.roomId || 'general' }
-                          });
-                        } catch (e) {
-                          console.error('خطأ في حذف الرسالة', e);
-                        }
-                      };
-                      return (
+                    {/* Inline row: badge, name, content */}
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      {message.sender && <UserRoleBadge user={message.sender} showOnlyIcon={true} />}
+                      <button
+                        onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
+                        className="font-semibold hover:underline transition-colors duration-200 truncate"
+                        style={{ color: getFinalUsernameColor(message.sender) }}
+                      >
+                        {message.sender?.username}
+                      </button>
+
+                      <div className="text-gray-800 break-words truncate flex-1">
+                        {message.messageType === 'image' ? (
+                          <img
+                            src={message.content}
+                            alt="صورة"
+                            className="max-h-10 rounded cursor-pointer"
+                            loading="lazy"
+                            onClick={() => window.open(message.content, '_blank')}
+                          />
+                        ) : (
+                          <span className="truncate">
+                            {renderMessageWithMentions(message.content, currentUser, onlineUsers)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Right side: time and report flag */}
+                      <span className="text-xs text-gray-500 whitespace-nowrap ml-2">{formatTime(message.timestamp)}</span>
+
+                      {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
                         <button
-                          onClick={handleDelete}
-                          className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                          title="حذف الرسالة"
+                          onClick={() => onReportMessage(message.sender!, message.content, message.id)}
+                          className="text-sm hover:opacity-80"
+                          title="تبليغ"
                         >
-                          🗑️
+                          🚩
                         </button>
-                      );
-                    })()}
-                  </div>
-                </>
-              )}
-            </div>
-          ))
+                      )}
+
+                      {currentUser && message.sender && (() => {
+                        const isOwner = currentUser.userType === 'owner';
+                        const isAdmin = currentUser.userType === 'admin';
+                        const isSender = currentUser.id === message.sender.id;
+                        const canDelete = isSender || isOwner || isAdmin;
+                        if (!canDelete) return null;
+                        const handleDelete = async () => {
+                          try {
+                            await apiRequest(`/api/messages/${message.id}`, {
+                              method: 'DELETE',
+                              body: { userId: currentUser.id, roomId: message.roomId || 'general' }
+                            });
+                          } catch (e) {
+                            console.error('خطأ في حذف الرسالة', e);
+                          }
+                        };
+                        return (
+                          <button
+                            onClick={handleDelete}
+                            className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                            title="حذف الرسالة"
+                          >
+                            🗑️
+                          </button>
+                        );
+                      })()}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          />
         )}
-        
+
         {/* Jump to bottom / New messages indicator */}
         {!isAtBottom && (
           <div className="absolute bottom-4 right-4 z-10">
@@ -429,9 +428,6 @@ export default function MessageArea({
             </button>
           </div>
         )}
-        
-        {/* Scroll anchor */}
-        <div ref={messagesEndRef} />
       </div>
       
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
