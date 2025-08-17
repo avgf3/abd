@@ -15,10 +15,10 @@ interface AvatarWithFrameProps {
 }
 
 const frameSizes = {
-  sm: { avatar: 'h-8 w-8', frame: 'h-12 w-12' },
-  md: { avatar: 'h-10 w-10', frame: 'h-14 w-14' },
-  lg: { avatar: 'h-12 w-12', frame: 'h-16 w-16' },
-  xl: { avatar: 'h-16 w-16', frame: 'h-20 w-20' }
+  sm: { avatar: 'h-8 w-8', frame: 'h-8 w-8' },
+  md: { avatar: 'h-10 w-10', frame: 'h-10 w-10' },
+  lg: { avatar: 'h-12 w-12', frame: 'h-12 w-12' },
+  xl: { avatar: 'h-16 w-16', frame: 'h-16 w-16' }
 };
 
 export function AvatarWithFrame({ 
@@ -28,7 +28,7 @@ export function AvatarWithFrame({
   frame = 'none', 
   size = 'md',
   pixelSize,
-  innerScale = 0.8,
+  innerScale = 1,
   className,
   onClick 
 }: AvatarWithFrameProps) {
