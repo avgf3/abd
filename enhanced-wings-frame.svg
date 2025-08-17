@@ -1,0 +1,204 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
+    <defs>
+        <!-- تدرجات ذهبية للأجنحة -->
+        <linearGradient id="goldWingGrad1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fff9e6"/>
+            <stop offset="30%" stop-color="#ffd700"/>
+            <stop offset="60%" stop-color="#ffb347"/>
+            <stop offset="100%" stop-color="#daa520"/>
+        </linearGradient>
+        
+        <linearGradient id="goldWingGrad2" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%" stop-color="#fffacd"/>
+            <stop offset="50%" stop-color="#ffd700"/>
+            <stop offset="100%" stop-color="#ff8c00"/>
+        </linearGradient>
+        
+        <radialGradient id="goldRadialWing" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fffaf0"/>
+            <stop offset="40%" stop-color="#ffd700"/>
+            <stop offset="100%" stop-color="#b8860b"/>
+        </radialGradient>
+        
+        <!-- تدرجات للإطار -->
+        <linearGradient id="ringGoldGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fffacd"/>
+            <stop offset="50%" stop-color="#ffd700"/>
+            <stop offset="100%" stop-color="#daa520"/>
+        </linearGradient>
+        
+        <linearGradient id="gemGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ff6b6b"/>
+            <stop offset="50%" stop-color="#dc143c"/>
+            <stop offset="100%" stop-color="#8b0000"/>
+        </linearGradient>
+        
+        <linearGradient id="bannerGoldGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fff9e6"/>
+            <stop offset="50%" stop-color="#ffd700"/>
+            <stop offset="100%" stop-color="#daa520"/>
+        </linearGradient>
+        
+        <!-- فلاتر للتأثيرات -->
+        <filter id="goldGlow">
+            <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        
+        <filter id="dropShadow">
+            <feDropShadow dx="3" dy="3" stdDeviation="4" flood-opacity="0.4"/>
+        </filter>
+        
+        <filter id="innerGlow">
+            <feFlood flood-color="#ffd700" flood-opacity="0.5"/>
+            <feComposite in2="SourceAlpha" operator="out"/>
+            <feGaussianBlur stdDeviation="3"/>
+            <feComposite operator="atop" in2="SourceGraphic"/>
+        </filter>
+        
+        <!-- نمط لامع -->
+        <pattern id="sparkle" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
+            <circle cx="15" cy="15" r="1" fill="#ffffff" opacity="0.8">
+                <animate attributeName="r" values="1;3;1" dur="2s" repeatCount="indefinite"/>
+            </circle>
+        </pattern>
+    </defs>
+    
+    <!-- خلفية متوهجة -->
+    <ellipse cx="300" cy="300" rx="250" ry="250" fill="url(#goldRadialWing)" opacity="0.1"/>
+    
+    <!-- إطار دائري ذهبي -->
+    <circle cx="300" cy="300" r="190" fill="none" stroke="#daa520" stroke-width="2" opacity="0.3"/>
+    <circle cx="300" cy="300" r="180" fill="url(#ringGoldGrad)" stroke="#b8860b" stroke-width="16" filter="url(#dropShadow)" opacity="0.9"/>
+    <circle cx="300" cy="300" r="180" fill="none" stroke="url(#goldWingGrad1)" stroke-width="14"/>
+    <circle cx="300" cy="300" r="172" fill="none" stroke="#fff9e6" stroke-width="1" opacity="0.7"/>
+    <circle cx="300" cy="300" r="188" fill="none" stroke="#fff9e6" stroke-width="1" opacity="0.7"/>
+    
+    <!-- زخارف الإطار -->
+    <g opacity="0.6">
+        <circle cx="300" cy="120" r="3" fill="#fff9e6"/>
+        <circle cx="300" cy="480" r="3" fill="#fff9e6"/>
+        <circle cx="120" cy="300" r="3" fill="#fff9e6"/>
+        <circle cx="480" cy="300" r="3" fill="#fff9e6"/>
+    </g>
+    
+    <!-- وصلة التاج الذهبية -->
+    <path d="M270 130 L330 130 L340 145 L260 145 Z" fill="url(#goldWingGrad1)" stroke="#b8860b" stroke-width="1" filter="url(#dropShadow)"/>
+    
+    <!-- الجناح الأيسر الذهبي -->
+    <g transform="translate(300,150)" filter="url(#goldGlow)">
+        <g>
+            <!-- ريشات الجناح بتدرجات ذهبية -->
+            <path d="M -200 -25 L -110 -25 L -100 -8 L -210 -8 Z" fill="url(#goldWingGrad1)" stroke="#b8860b" stroke-width="1.5"/>
+            <path d="M -195 -3 L -115 -3 L -105 14 L -205 14 Z" fill="url(#goldWingGrad2)" stroke="#b8860b" stroke-width="1.5"/>
+            <path d="M -190 19 L -120 19 L -110 36 L -200 36 Z" fill="url(#goldWingGrad1)" stroke="#b8860b" stroke-width="1.5"/>
+            <path d="M -185 41 L -125 41 L -115 58 L -195 58 Z" fill="url(#goldWingGrad2)" stroke="#b8860b" stroke-width="1.5"/>
+            <path d="M -180 63 L -130 63 L -120 80 L -190 80 Z" fill="url(#goldWingGrad1)" stroke="#b8860b" stroke-width="1.5"/>
+            
+            <!-- تفاصيل لامعة -->
+            <path d="M -196 -22 L -115 -22" stroke="#fffacd" stroke-width="2" opacity="0.8"/>
+            <path d="M -191 0 L -115 0" stroke="#fffacd" stroke-width="2" opacity="0.8"/>
+            <path d="M -186 22 L -120 22" stroke="#fffacd" stroke-width="2" opacity="0.8"/>
+            <path d="M -181 44 L -125 44" stroke="#fffacd" stroke-width="2" opacity="0.8"/>
+            <path d="M -176 66 L -130 66" stroke="#fffacd" stroke-width="2" opacity="0.8"/>
+            
+            <!-- نقاط لامعة -->
+            <circle cx="-150" cy="-15" r="2" fill="#ffffff" opacity="0.8"/>
+            <circle cx="-145" cy="10" r="2" fill="#ffffff" opacity="0.8"/>
+            <circle cx="-140" cy="35" r="2" fill="#ffffff" opacity="0.8"/>
+            <circle cx="-135" cy="60" r="2" fill="#ffffff" opacity="0.8"/>
+            
+            <!-- حركة الجناح -->
+            <animateTransform attributeName="transform" attributeType="XML" type="rotate" values="-20;-5;-20" dur="4s" repeatCount="indefinite"/>
+        </g>
+    </g>
+    
+    <!-- الجناح الأيمن الذهبي -->
+    <g transform="translate(300,150)" filter="url(#goldGlow)">
+        <g>
+            <!-- ريشات الجناح بتدرجات ذهبية -->
+            <path d="M 200 -25 L 110 -25 L 100 -8 L 210 -8 Z" fill="url(#goldWingGrad1)" stroke="#b8860b" stroke-width="1.5"/>
+            <path d="M 195 -3 L 115 -3 L 105 14 L 205 14 Z" fill="url(#goldWingGrad2)" stroke="#b8860b" stroke-width="1.5"/>
+            <path d="M 190 19 L 120 19 L 110 36 L 200 36 Z" fill="url(#goldWingGrad1)" stroke="#b8860b" stroke-width="1.5"/>
+            <path d="M 185 41 L 125 41 L 115 58 L 195 58 Z" fill="url(#goldWingGrad2)" stroke="#b8860b" stroke-width="1.5"/>
+            <path d="M 180 63 L 130 63 L 120 80 L 190 80 Z" fill="url(#goldWingGrad1)" stroke="#b8860b" stroke-width="1.5"/>
+            
+            <!-- تفاصيل لامعة -->
+            <path d="M 196 -22 L 115 -22" stroke="#fffacd" stroke-width="2" opacity="0.8"/>
+            <path d="M 191 0 L 115 0" stroke="#fffacd" stroke-width="2" opacity="0.8"/>
+            <path d="M 186 22 L 120 22" stroke="#fffacd" stroke-width="2" opacity="0.8"/>
+            <path d="M 181 44 L 125 44" stroke="#fffacd" stroke-width="2" opacity="0.8"/>
+            <path d="M 176 66 L 130 66" stroke="#fffacd" stroke-width="2" opacity="0.8"/>
+            
+            <!-- نقاط لامعة -->
+            <circle cx="150" cy="-15" r="2" fill="#ffffff" opacity="0.8"/>
+            <circle cx="145" cy="10" r="2" fill="#ffffff" opacity="0.8"/>
+            <circle cx="140" cy="35" r="2" fill="#ffffff" opacity="0.8"/>
+            <circle cx="135" cy="60" r="2" fill="#ffffff" opacity="0.8"/>
+            
+            <!-- حركة الجناح -->
+            <animateTransform attributeName="transform" attributeType="XML" type="rotate" values="20;5;20" dur="4s" repeatCount="indefinite"/>
+        </g>
+    </g>
+    
+    <!-- الجوهرة الحمراء الفاخرة -->
+    <g filter="url(#goldGlow)">
+        <polygon points="300,105 280,130 280,165 300,190 320,165 320,130" fill="url(#gemGrad)" stroke="#8b0000" stroke-width="2"/>
+        <polygon points="300,110 288,130 300,145" fill="#ff9999" opacity="0.7"/>
+        <polygon points="300,110 312,130 300,145" fill="#ffcccc" opacity="0.5"/>
+        
+        <!-- لمعان الجوهرة -->
+        <ellipse cx="300" cy="125" rx="8" ry="4" fill="#ffffff" opacity="0.6"/>
+        <circle cx="305" cy="120" r="3" fill="#ffffff" opacity="0.8"/>
+    </g>
+    
+    <!-- الشريط السفلي الذهبي -->
+    <g filter="url(#dropShadow)">
+        <path d="M200,455 L400,455 L425,490 L420,525 L180,525 L175,490 Z" fill="url(#bannerGoldGrad)" stroke="#b8860b" stroke-width="2"/>
+        <path d="M205,460 L395,460 L415,520 L185,520 Z" fill="url(#sparkle)" opacity="0.3"/>
+        
+        <!-- إطار داخلي -->
+        <path d="M210,465 L390,465 L410,515 L190,515 Z" fill="none" stroke="#fff9e6" stroke-width="1" opacity="0.6"/>
+        
+        <!-- النص VIP مع تأثيرات -->
+        <text x="300" y="495" text-anchor="middle" fill="#8b6914" font-size="38" font-family="Arial Black" font-weight="bold" letter-spacing="8" filter="url(#dropShadow)">VIP</text>
+        <text x="300" y="495" text-anchor="middle" fill="url(#goldRadialWing)" font-size="36" font-family="Arial Black" font-weight="bold" letter-spacing="8">VIP</text>
+        <text x="300" y="495" text-anchor="middle" fill="none" stroke="#fffacd" stroke-width="0.5" font-size="36" font-family="Arial Black" font-weight="bold" letter-spacing="8" opacity="0.7">VIP</text>
+        
+        <!-- نجوم صغيرة حول VIP -->
+        <g fill="#ffd700">
+            <path d="M 240,485 L241,487 L243,485 L241,483 Z"/>
+            <path d="M 360,485 L361,487 L363,485 L361,483 Z"/>
+            <path d="M 250,505 L251,507 L253,505 L251,503 Z"/>
+            <path d="M 350,505 L351,507 L353,505 L351,503 Z"/>
+        </g>
+    </g>
+    
+    <!-- جزيئات ذهبية متحركة -->
+    <g opacity="0.6">
+        <circle cx="150" cy="200" r="2" fill="#ffd700">
+            <animate attributeName="cy" values="200;150;200" dur="3s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="450" cy="250" r="2" fill="#ffd700">
+            <animate attributeName="cy" values="250;200;250" dur="3.5s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;1;0" dur="3.5s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="200" cy="400" r="2" fill="#ffd700">
+            <animate attributeName="cy" values="400;350;400" dur="4s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;1;0" dur="4s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="400" cy="380" r="2" fill="#ffd700">
+            <animate attributeName="cy" values="380;330;380" dur="3.2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;1;0" dur="3.2s" repeatCount="indefinite"/>
+        </circle>
+    </g>
+    
+    <!-- تأثير لمعان عام -->
+    <rect x="0" y="0" width="150" height="600" fill="url(#goldWingGrad1)" opacity="0.15">
+        <animateTransform attributeName="transform" type="translate" from="-150 0" to="750 0" dur="4s" repeatCount="indefinite"/>
+    </rect>
+</svg>
