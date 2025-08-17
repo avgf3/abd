@@ -717,96 +717,99 @@ export default function UnifiedSidebar({
                     لا توجد منشورات حتى الآن
                   </div>
                 ) : (
-                  posts.map((post) => (
-                    <Card key={post.id} className="border border-border bg-card">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                            {post.userProfileImage ? (
-                              <img src={getImageSrc(post.userProfileImage)} alt={post.username} className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-xs">{post.username.charAt(0)}</span>
+                  posts.map((post) => {
+                    const displayName = users.find(u => u.id === post.userId)?.username || post.username;
+                    return (
+                      <Card key={post.id} className="border border-border bg-card">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                              {post.userProfileImage ? (
+                                <img src={getImageSrc(post.userProfileImage)} alt={displayName} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-xs">{displayName.charAt(0)}</span>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span 
+                                  className="font-medium text-sm"
+                                  style={{ color: post.usernameColor || 'inherit' }}
+                                >
+                                  {displayName}
+                                </span>
+                                {/* 🏅 شارة الرتبة الموحدة */}
+                                <UserRoleBadge 
+                                  user={{ userType: post.userRole } as ChatUser} 
+                                  size={16} 
+                                />
+                              </div>
+                              <p className="text-xs text-gray-500">{formatTimeAgo(post.timestamp.toString())}</p>
+                            </div>
+                            {(currentUser?.id === post.userId || 
+                              currentUser?.userType === 'owner' || 
+                              currentUser?.userType === 'admin') && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeletePost(post.id)}
+                                className="text-red-500 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             )}
                           </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span 
-                                className="font-medium text-sm"
-                                style={{ color: post.usernameColor || 'inherit' }}
-                              >
-                                {post.username}
-                              </span>
-                              {/* 🏅 شارة الرتبة الموحدة */}
-                              <UserRoleBadge 
-                                user={{ userType: post.userRole } as ChatUser} 
-                                size={16} 
-                              />
-                            </div>
-                            <p className="text-xs text-gray-500">{formatTimeAgo(post.timestamp.toString())}</p>
-                          </div>
-                          {(currentUser?.id === post.userId || 
-                            currentUser?.userType === 'owner' || 
-                            currentUser?.userType === 'admin') && (
+                        </CardHeader>
+                        
+                        <CardContent className="pt-0">
+                          {post.content && (
+                            <p className="text-sm mb-3 whitespace-pre-wrap">{post.content}</p>
+                          )}
+                          
+                          {post.imageUrl && (
+                            <img
+                              src={post.imageUrl}
+                              alt="Post image"
+                              className="w-full max-h-60 object-cover rounded-lg mb-3"
+                            />
+                          )}
+                          
+                          {/* Reactions */}
+                          <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleDeletePost(post.id)}
-                              className="text-red-500 hover:bg-red-50"
+                              onClick={() => handleReaction(post.id, 'like')}
+                              className="flex items-center gap-1 text-blue-600 hover:bg-blue-50"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <ThumbsUp className="w-4 h-4" />
+                              <span className="text-xs">{post.totalLikes || 0}</span>
                             </Button>
-                          )}
-                        </div>
-                      </CardHeader>
-                      
-                      <CardContent className="pt-0">
-                        {post.content && (
-                          <p className="text-sm mb-3 whitespace-pre-wrap">{post.content}</p>
-                        )}
-                        
-                        {post.imageUrl && (
-                          <img
-                            src={post.imageUrl}
-                            alt="Post image"
-                            className="w-full max-h-60 object-cover rounded-lg mb-3"
-                          />
-                        )}
-                        
-                        {/* Reactions */}
-                        <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleReaction(post.id, 'like')}
-                            className="flex items-center gap-1 text-blue-600 hover:bg-blue-50"
-                          >
-                            <ThumbsUp className="w-4 h-4" />
-                            <span className="text-xs">{post.totalLikes || 0}</span>
-                          </Button>
-                          
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleReaction(post.id, 'heart')}
-                            className="flex items-center gap-1 text-red-600 hover:bg-red-50"
-                          >
-                            <Heart className="w-4 h-4" />
-                            <span className="text-xs">{post.totalHearts || 0}</span>
-                          </Button>
-                          
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleReaction(post.id, 'dislike')}
-                            className="flex items-center gap-1 text-gray-600 hover:bg-gray-50"
-                          >
-                            <ThumbsDown className="w-4 h-4" />
-                            <span className="text-xs">{post.totalDislikes || 0}</span>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
+                            
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleReaction(post.id, 'heart')}
+                              className="flex items-center gap-1 text-red-600 hover:bg-red-50"
+                            >
+                              <Heart className="w-4 h-4" />
+                              <span className="text-xs">{post.totalHearts || 0}</span>
+                            </Button>
+                            
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleReaction(post.id, 'dislike')}
+                              className="flex items-center gap-1 text-gray-600 hover:bg-gray-50"
+                            >
+                              <ThumbsDown className="w-4 h-4" />
+                              <span className="text-xs">{post.totalDislikes || 0}</span>
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
                 )}
               </TabsContent>
 

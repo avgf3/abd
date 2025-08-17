@@ -16,6 +16,7 @@ interface PrivateMessageBoxProps {
   messages: ChatMessage[];
   onSendMessage: (content: string) => void;
   onClose: () => void;
+  canonicalUsername?: string;
 }
 
 export default function PrivateMessageBox({
@@ -25,6 +26,7 @@ export default function PrivateMessageBox({
   messages,
   onSendMessage,
   onClose,
+  canonicalUsername,
 }: PrivateMessageBoxProps) {
   const [messageText, setMessageText] = useState('');
   const [isAtBottomPrivate, setIsAtBottomPrivate] = useState(true);
@@ -143,7 +145,7 @@ export default function PrivateMessageBox({
               />
               <div className="flex-1 min-w-0">
                 <span className="text-lg font-semibold truncate block" style={{ color: getFinalUsernameColor(user) }}>
-                  {user.username}
+                  {canonicalUsername || user.username}
                 </span>
                 <span className="text-xs text-gray-500">رسائل خاصة</span>
               </div>

@@ -100,7 +100,7 @@ export default function MessagesPanel({
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-3">
-                            <h3 className="font-medium text-gray-900 text-sm truncate">{user.username}</h3>
+                            <h3 className="font-medium text-gray-900 text-sm truncate">{(onlineUsers.find(u => u.id === user.id)?.username) || user.username}</h3>
                             <span className="text-xs text-gray-500 whitespace-nowrap">{formatTime(lastMessage.timestamp)}</span>
                           </div>
                           <p className="text-xs text-muted-foreground truncate mt-1">

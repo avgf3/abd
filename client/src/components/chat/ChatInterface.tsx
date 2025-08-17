@@ -152,7 +152,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     show: false,
     sender: null,
   });
-
+  const [ignoredUsersInfo, setIgnoredUsersInfo] = useState<Record<number, ChatUser | null>>({});
 
 
   // تفعيل التنبيه عند وصول رسالة جديدة
@@ -322,6 +322,39 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setReportedUser(null);
     setReportedMessage(null);
   };
+
+  // تحميل بيانات المتجاهلين غير المتصلين عند فتح النافذة لضمان تطابق الاسم مع قائمة المتصلين
+  useEffect(() => {
+    if (!showIgnoredUsers) return;
+    const ignoredIds = Array.from(chat.ignoredUsers || []);
+    const idsToFetch = ignoredIds.filter(
+      (id) => !chat.onlineUsers.some((u) => u.id === id) && !ignoredUsersInfo[id]
+    );
+    if (idsToFetch.length === 0) return;
+    let cancelled = false;
+    Promise.all(
+      idsToFetch.map(async (id) => {
+        try {
+          const data = await apiRequest(`/api/users/${id}`);
+          return [id, data] as const;
+        } catch {
+          return [id, null] as const;
+        }
+      })
+    ).then((pairs) => {
+      if (cancelled) return;
+      setIgnoredUsersInfo((prev) => {
+        const next = { ...prev } as Record<number, ChatUser | null>;
+        for (const [id, user] of pairs) {
+          next[id] = user as any;
+        }
+        return next;
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [showIgnoredUsers, chat.ignoredUsers, chat.onlineUsers, ignoredUsersInfo]);
 
   return (
       <div className="min-h-[100dvh] flex flex-col" onClick={closeUserPopup}>
@@ -716,6 +749,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           currentUser={chat.currentUser}
           messages={chat.privateConversations[selectedPrivateUser.id] || []}
           onSendMessage={(content) => chat.sendMessage(content, 'text', selectedPrivateUser.id)}
+          canonicalUsername={chat.onlineUsers.find(u => u.id === selectedPrivateUser.id)?.username}
         />
       )}
 
@@ -918,7 +952,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         </div>
         <div className="space-y-2 max-h-[60vh] overflow-y-auto">
           {Array.from(chat.ignoredUsers || []).map((id) => {
-            const u = chat.onlineUsers.find(u => u.id === id);
+            const u = chat.onlineUsers.find(u => u.id === id) || ignoredUsersInfo[id];
             return (
               <div key={id} className="flex items-center justify-between p-2 border rounded">
                 <div className="flex items-center gap-2">
