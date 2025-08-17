@@ -180,6 +180,9 @@ export default function UserPopup({
         top: `${y}px`,
         left: `${x - 160}px`,
       }}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
     >
       <Button
         onClick={onViewProfile}
