@@ -847,6 +847,38 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           isVisible={showReportsLog}
           onClose={() => setShowReportsLog(false)}
           currentUser={chat.currentUser}
+          onOpenProfile={(userId) => {
+            const user = chat.onlineUsers.find(u => u.id === userId);
+            if (user) {
+              setProfileUser(user);
+              setShowProfile(true);
+            } else {
+              // محاولة جلب المستخدم من الخادم عند عدم وجوده في المتصلين
+              apiRequest(`/api/users/${userId}?t=${Date.now()}`).then((data: any) => {
+                if (data && data.id) {
+                  setProfileUser(data as any);
+                  setShowProfile(true);
+                }
+              }).catch(() => {});
+            }
+          }}
+          onReportUser={(userId) => {
+            let user = chat.onlineUsers.find(u => u.id === userId) || null;
+            if (user) {
+              setReportedUser(user);
+              setReportedMessage(null);
+              setShowReportModal(true);
+            } else {
+              apiRequest(`/api/users/${userId}?t=${Date.now()}`).then((data: any) => {
+                if (data && data.id) {
+                  setReportedUser(data as any);
+                  setReportedMessage(null);
+                  setShowReportModal(true);
+                }
+              }).catch(() => {});
+            }
+          }}
+          onlineUsers={chat.onlineUsers}
         />
       )}
 
