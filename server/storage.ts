@@ -148,8 +148,8 @@ export async function getMessageCount(): Promise<number> {
 
 export async function getUserCount(): Promise<number> {
   try {
-    const allUsers = await databaseService.getAllUsers();
-    return allUsers.length;
+    const total = await databaseService.countUsers();
+    return Number(total) || 0;
   } catch (error) {
     console.error('Error getting user count:', error);
     return 0;

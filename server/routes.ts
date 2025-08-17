@@ -34,6 +34,7 @@ import { storage } from "./storage";
 import { databaseCleanup } from "./utils/database-cleanup";
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { updateConnectedUserCache } from "./realtime";
+import { promises as fsp } from "fs";
 
 
 // إعداد multer موحد لرفع الصور
@@ -168,7 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId || isNaN(userId)) {
         // حذف الملف المرفوع إذا فشل في الحصول على userId
         try {
-          fs.unlinkSync(req.file.path);
+          await fsp.unlink(req.file.path);
         } catch (unlinkError) {
           console.error('خطأ في حذف الملف:', unlinkError);
         }
@@ -179,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(userId);
       if (!user) {
         try {
-          fs.unlinkSync(req.file.path);
+          await fsp.unlink(req.file.path);
         } catch (unlinkError) {
           console.error('خطأ في حذف الملف:', unlinkError);
         }
@@ -188,20 +189,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // حفظ الصورة بصيغة webp ثابتة + حساب hash/version
       const avatarsDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'avatars');
-      if (!fs.existsSync(avatarsDir)) {
-        fs.mkdirSync(avatarsDir, { recursive: true });
-      }
-      const inputBuffer = fs.readFileSync(req.file.path);
+      await fsp.mkdir(avatarsDir, { recursive: true });
+      const inputBuffer = await fsp.readFile(req.file.path);
       let webpBuffer = inputBuffer;
       try {
         webpBuffer = await (sharp as any)(inputBuffer).resize(256, 256, { fit: 'cover' }).webp({ quality: 80 }).toBuffer();
       } catch {}
       const hash = (await import('crypto')).createHash('md5').update(webpBuffer).digest('hex').slice(0, 12);
       const targetPath = path.join(avatarsDir, `${userId}.webp`);
-      fs.writeFileSync(targetPath, webpBuffer);
+      await fsp.writeFile(targetPath, webpBuffer);
 
       // حذف الملف المؤقت
-      try { fs.unlinkSync(req.file.path); } catch {}
+      try { await fsp.unlink(req.file.path); } catch {}
 
       // تحديث DB: avatarHash + زيادة avatarVersion
       const nextVersion = (user as any).avatarVersion ? Number((user as any).avatarVersion) + 1 : 1;
@@ -229,9 +228,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('❌ خطأ في رفع صورة البروفايل:', error);
       
       // حذف الملف في حالة الخطأ
-      if (req.file && fs.existsSync(req.file.path)) {
+      if (req.file) {
         try {
-          fs.unlinkSync(req.file.path);
+          await fsp.unlink(req.file.path);
         } catch (unlinkError) {
           console.error('خطأ في حذف الملف:', unlinkError);
         }
@@ -257,7 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.body.userId);
       if (!userId || isNaN(userId)) {
         try {
-          fs.unlinkSync(req.file.path);
+          await fsp.unlink(req.file.path);
         } catch (unlinkError) {
           console.error('خطأ في حذف الملف:', unlinkError);
         }
@@ -268,7 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(userId);
       if (!user) {
         try {
-          fs.unlinkSync(req.file.path);
+          await fsp.unlink(req.file.path);
         } catch (unlinkError) {
           console.error('خطأ في حذف الملف:', unlinkError);
         }
@@ -280,7 +279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         // قراءة الملف كـ base64
-        const fileBuffer = fs.readFileSync(req.file.path);
+        const fileBuffer = await fsp.readFile(req.file.path);
         const base64Image = fileBuffer.toString('base64');
         const mimeType = req.file.mimetype;
         
@@ -288,7 +287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bannerUrl = `data:${mimeType};base64,${base64Image}`;
         
         // حذف الملف الأصلي
-        fs.unlinkSync(req.file.path);
+        await fsp.unlink(req.file.path);
         
       } catch (fileError) {
         console.error('❌ خطأ في معالجة الملف:', fileError);
@@ -298,9 +297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // حاول التأكد من وجود المجلد
         const uploadsDir = path.dirname(req.file.path);
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
+        await fsp.mkdir(uploadsDir, { recursive: true });
       }
       
       const updatedUser = await storage.updateUser(userId, { profileBanner: bannerUrl });
@@ -326,9 +323,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('❌ خطأ في رفع صورة البانر:', error);
       
       // حذف الملف في حالة الخطأ
-      if (req.file && fs.existsSync(req.file.path)) {
+      if (req.file) {
         try {
-          fs.unlinkSync(req.file.path);
+          await fsp.unlink(req.file.path);
         } catch (unlinkError) {
           console.error('خطأ في حذف الملف:', unlinkError);
         }
@@ -363,19 +360,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // قائمة ملفات البروفايل
       if (debugInfo.profilesExists) {
-        debugInfo.profileFiles = fs.readdirSync(profilesDir).map(file => ({
-          name: file,
-          path: `/uploads/profiles/${file}`,
-          size: fs.statSync(path.join(profilesDir, file)).size
+        const files = await fsp.readdir(profilesDir);
+        debugInfo.profileFiles = await Promise.all(files.map(async file => {
+          const stat = await fsp.stat(path.join(profilesDir, file));
+          return {
+            name: file,
+            path: `/uploads/profiles/${file}`,
+            size: stat.size
+          };
         }));
       }
       
       // قائمة ملفات البانر
       if (debugInfo.bannersExists) {
-        debugInfo.bannerFiles = fs.readdirSync(bannersDir).map(file => ({
-          name: file,
-          path: `/uploads/banners/${file}`,
-          size: fs.statSync(path.join(bannersDir, file)).size
+        const files = await fsp.readdir(bannersDir);
+        debugInfo.bannerFiles = await Promise.all(files.map(async file => {
+          const stat = await fsp.stat(path.join(bannersDir, file));
+          return {
+            name: file,
+            path: `/uploads/banners/${file}`,
+            size: stat.size
+          };
         }));
       }
       
@@ -1086,13 +1091,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = parseInt(req.query.limit as string) || 50;
       const messages = await storage.getPublicMessages(limit);
       
-      // Get user details for each message
-      const messagesWithUsers = await Promise.all(
-        messages.map(async (msg) => {
-          const sender = msg.senderId ? await storage.getUser(msg.senderId) : null;
-          return { ...msg, sender };
-        })
-      );
+      // Batch fetch senders to avoid N+1
+      const senderIds = Array.from(new Set((messages || []).map((m: any) => m.senderId).filter(Boolean)));
+      const senders = await storage.getUsersByIds(senderIds as number[]);
+      const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
+      const messagesWithUsers = (messages || []).map((msg: any) => ({
+        ...msg,
+        sender: msg.senderId ? (senderMap.get(msg.senderId) || null) : null
+      }));
 
       res.json({ messages: messagesWithUsers });
     } catch (error) {
@@ -2615,12 +2621,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .toFile(tempPath);
       
       // استبدال الملف الأصلي بالمضغوط
-      await fs.promises.rename(tempPath, filePath);
+      await fsp.rename(tempPath, filePath);
       } catch (error) {
       console.error('❌ فشل في ضغط الصورة:', error);
       // حذف الملف المؤقت إن وجد
       try {
-        await fs.promises.unlink(filePath + '.tmp');
+        await fsp.unlink(filePath + '.tmp');
       } catch {}
     }
   };
@@ -2673,14 +2679,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await compressImage(filePath);
 
           // قراءة الملف المضغوط وتحويله إلى base64
-          const buffer = await fs.promises.readFile(filePath);
+          const buffer = await fsp.readFile(filePath);
           // استخدم mimetype القادِم من multer وإلا فـ image/jpeg
           const mimeType = req.file.mimetype || 'image/jpeg';
           const base64 = buffer.toString('base64');
           computedImageUrl = `data:${mimeType};base64,${base64}`;
 
           // حذف الملف الفيزيائي لتجنب مشاكل نظام الملفات المؤقت على Render
-          try { await fs.promises.unlink(filePath); } catch {}
+          try { await fsp.unlink(filePath); } catch {}
         } catch (imgErr) {
           console.error('❌ فشل في تحويل صورة الحائط إلى base64، سيتم استخدام المسار المحلي كبديل:', imgErr);
           // مسار احتياطي في حالة فشل التحويل
@@ -2835,8 +2841,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const imagePath = path.join(process.cwd(), 'client', 'public', post.imageUrl);
           if (fs.existsSync(imagePath)) {
             // التحقق من أن الملف قابل للحذف
-            await fs.promises.access(imagePath, fs.constants.W_OK);
-            await fs.promises.unlink(imagePath);
+            await fsp.access(imagePath, fs.constants.W_OK);
+            await fsp.unlink(imagePath);
             }
         } catch (fileError) {
           console.warn('⚠️ فشل في حذف الصورة:', fileError);
@@ -3046,17 +3052,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const parsedSenderId = parseInt(senderId);
 
       if (!parsedSenderId || isNaN(parsedSenderId)) {
-        try { fs.unlinkSync(req.file.path); } catch {}
+        try { await fsp.unlink(req.file.path); } catch {}
         return res.status(400).json({ error: 'senderId مطلوب' });
       }
 
       let imageUrl: string;
       try {
-        const fileBuffer = fs.readFileSync(req.file.path);
+        const fileBuffer = await fsp.readFile(req.file.path);
         const base64Image = fileBuffer.toString('base64');
         const mimeType = req.file.mimetype;
         imageUrl = `data:${mimeType};base64,${base64Image}`;
-        fs.unlinkSync(req.file.path);
+        await fsp.unlink(req.file.path);
       } catch (e) {
         // fallback لمسار ملف ثابت
         imageUrl = `/uploads/messages/${req.file.filename}`;
