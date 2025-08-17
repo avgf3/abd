@@ -24,8 +24,8 @@ export default function VipAvatar({ src, alt = '', size = 48, frame = 1, classNa
   };
 
   const imgStyle: React.CSSProperties = {
-    width: size - 4,
-    height: size - 4,
+    width: size - 6,
+    height: size - 6,
   };
 
   return (

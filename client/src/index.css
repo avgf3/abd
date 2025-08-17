@@ -878,18 +878,19 @@ li > * > div.effect-crystal {
   z-index: 2;
 }
 
-/* Shared rotating border */
+/* Shared rotating border with enhanced thickness */
 .vip-frame.base::before {
   content: '';
   position: absolute;
-  inset: -2px;
+  inset: -3px;
   border-radius: 9999px;
   z-index: 1;
-  padding: 2px; /* frame thickness */
+  padding: 3px; /* increased frame thickness */
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
           mask-composite: exclude;
   animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite;
+  filter: blur(0.5px); /* slight blur for softer edges */
 }
 
 @keyframes vip-rotate {
@@ -897,18 +898,113 @@ li > * > div.effect-crystal {
   to { transform: rotate(360deg); }
 }
 
-/* 10 distinct gradient frames matching modern VIP look */
-.vip-frame-1::before { background: conic-gradient(from 0deg, #ffcc33, #ff6633, #ffcc33); box-shadow: 0 0 12px rgba(255, 204, 51, .5); }
-.vip-frame-2::before { background: conic-gradient(from 0deg, #66e0ff, #4488ff, #66e0ff); box-shadow: 0 0 12px rgba(68, 136, 255, .45); }
-.vip-frame-3::before { background: conic-gradient(from 0deg, #444, #999, #444); box-shadow: 0 0 12px rgba(200, 200, 200, .35); }
-.vip-frame-4::before { background: conic-gradient(from 0deg, #b45309, #065f46, #b45309); box-shadow: 0 0 12px rgba(6, 95, 70, .4); }
-.vip-frame-5::before { background: conic-gradient(from 0deg, #ec4899, #8b5cf6, #ec4899); box-shadow: 0 0 14px rgba(236, 72, 153, .5); }
-.vip-frame-6::before { background: conic-gradient(from 0deg, #7c2d12, #f59e0b, #7c2d12); box-shadow: 0 0 12px rgba(245, 158, 11, .4); }
-.vip-frame-7::before { background: conic-gradient(from 0deg, #b45309, #d97706, #b45309); box-shadow: 0 0 12px rgba(217, 119, 6, .45); }
-.vip-frame-8::before { background: conic-gradient(from 0deg, #000, #0f172a, #000); box-shadow: 0 0 12px rgba(0, 0, 0, .5); }
-.vip-frame-9::before { background: conic-gradient(from 0deg, #1f2937, #0b1220, #1f2937); box-shadow: 0 0 12px rgba(31, 41, 55, .45); }
-.vip-frame-10::before { background: conic-gradient(from 0deg, #0b1220, #000, #0b1220); box-shadow: 0 0 12px rgba(0, 0, 0, .6); }
+/* 10 distinct gradient frames matching the VIP look from the image */
+.vip-frame-1::before { 
+  background: conic-gradient(from 0deg, #ff0000, #ff6b6b, #ff0000, #ff4444, #ff0000); 
+  box-shadow: 0 0 20px rgba(255, 0, 0, .8), 0 0 40px rgba(255, 0, 0, .5), inset 0 0 15px rgba(255, 255, 255, .3);
+}
+.vip-frame-2::before { 
+  background: conic-gradient(from 0deg, #00d4ff, #0099ff, #00ffff, #00d4ff, #006699, #00d4ff); 
+  box-shadow: 0 0 20px rgba(0, 212, 255, .8), 0 0 40px rgba(0, 153, 255, .5), inset 0 0 15px rgba(255, 255, 255, .3);
+}
+.vip-frame-3::before { 
+  background: conic-gradient(from 0deg, #444444, #666666, #888888, #666666, #444444); 
+  box-shadow: 0 0 20px rgba(100, 100, 100, .6), 0 0 30px rgba(50, 50, 50, .4), inset 0 0 10px rgba(255, 255, 255, .2);
+}
+.vip-frame-4::before { 
+  background: conic-gradient(from 0deg, #16a34a, #065f46, #10b981, #059669, #16a34a); 
+  box-shadow: 0 0 20px rgba(16, 163, 74, .7), 0 0 35px rgba(5, 150, 105, .5), inset 0 0 12px rgba(255, 255, 255, .25);
+}
+.vip-frame-5::before { 
+  background: conic-gradient(from 0deg, #ec4899, #f472b6, #db2777, #f9a8d4, #ec4899); 
+  box-shadow: 0 0 25px rgba(236, 72, 153, .8), 0 0 45px rgba(219, 39, 119, .6), inset 0 0 15px rgba(255, 255, 255, .35);
+}
+.vip-frame-6::before { 
+  background: conic-gradient(from 0deg, #dc2626, #ef4444, #b91c1c, #f87171, #dc2626); 
+  box-shadow: 0 0 20px rgba(220, 38, 38, .8), 0 0 40px rgba(185, 28, 28, .5), inset 0 0 12px rgba(255, 255, 255, .3);
+}
+.vip-frame-7::before { 
+  background: conic-gradient(from 0deg, #eab308, #fbbf24, #f59e0b, #fcd34d, #eab308); 
+  box-shadow: 0 0 20px rgba(234, 179, 8, .8), 0 0 40px rgba(245, 158, 11, .6), inset 0 0 15px rgba(255, 255, 255, .4);
+}
+.vip-frame-8::before { 
+  background: conic-gradient(from 0deg, #000000, #1a1a1a, #333333, #1a1a1a, #000000); 
+  box-shadow: 0 0 20px rgba(255, 255, 255, .3), 0 0 35px rgba(100, 100, 100, .4), inset 0 0 10px rgba(255, 255, 255, .2);
+}
+.vip-frame-9::before { 
+  background: conic-gradient(from 0deg, #3b82f6, #2563eb, #60a5fa, #1d4ed8, #3b82f6); 
+  box-shadow: 0 0 20px rgba(59, 130, 246, .8), 0 0 40px rgba(29, 78, 216, .5), inset 0 0 12px rgba(255, 255, 255, .3);
+}
+.vip-frame-10::before { 
+  background: conic-gradient(from 0deg, #a855f7, #9333ea, #c084fc, #7c3aed, #a855f7); 
+  box-shadow: 0 0 25px rgba(168, 85, 247, .8), 0 0 45px rgba(124, 58, 237, .6), inset 0 0 15px rgba(255, 255, 255, .35);
+}
 
-/* Optional subtle pulsation */
-.vip-frame.base { animation: vip-pulse 3.6s ease-in-out infinite; }
-@keyframes vip-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.1); } }
+/* Enhanced animations and effects */
+.vip-frame.base { 
+  animation: vip-pulse 3.6s ease-in-out infinite;
+  transition: transform 0.3s ease;
+}
+
+.vip-frame.base:hover {
+  transform: scale(1.05);
+}
+
+@keyframes vip-pulse { 
+  0%, 100% { 
+    filter: brightness(1) contrast(1.1); 
+    transform: scale(1);
+  } 
+  50% { 
+    filter: brightness(1.2) contrast(1.2); 
+    transform: scale(1.02);
+  } 
+}
+
+/* Add shimmer effect for premium feel */
+.vip-frame.base::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+  background-size: 200% 200%;
+  animation: shimmer 3s infinite;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0.8;
+}
+
+/* Special effects for top 3 */
+.vip-frame-1.base::after,
+.vip-frame-2.base::after,
+.vip-frame-3.base::after {
+  background: linear-gradient(45deg, transparent 20%, rgba(255,255,255,0.5) 50%, transparent 80%);
+  animation: shimmer 2s infinite;
+  opacity: 1;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 50%; }
+  100% { background-position: -200% 50%; }
+}
+
+/* Special glow effects for top 3 ranks */
+.vip-frame-1::before { animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite, glow-red 2s ease-in-out infinite; }
+.vip-frame-2::before { animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite, glow-blue 2s ease-in-out infinite; }
+.vip-frame-3::before { animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite, glow-silver 2s ease-in-out infinite; }
+
+@keyframes glow-red {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 10px rgba(255,0,0,0.8)); }
+  50% { filter: brightness(1.3) drop-shadow(0 0 20px rgba(255,0,0,1)); }
+}
+
+@keyframes glow-blue {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 10px rgba(0,212,255,0.8)); }
+  50% { filter: brightness(1.3) drop-shadow(0 0 20px rgba(0,212,255,1)); }
+}
+
+@keyframes glow-silver {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 10px rgba(192,192,192,0.8)); }
+  50% { filter: brightness(1.3) drop-shadow(0 0 20px rgba(192,192,192,1)); }
+}
