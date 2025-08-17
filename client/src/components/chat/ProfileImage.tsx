@@ -4,6 +4,7 @@ import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import { useImageLoader } from '@/hooks/useImageLoader';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -11,23 +12,15 @@ interface ProfileImageProps {
   className?: string;
   onClick?: (e: any) => void;
   hideRoleBadgeOverlay?: boolean;
+  showFrame?: boolean; // إظهار إطار الصورة أم لا (افتراضي: نعم)
 }
 
-export default function ProfileImage({ user, size = 'medium', className = '', onClick, hideRoleBadgeOverlay = false }: ProfileImageProps) {
-  const sizeClasses = {
-    small: 'w-10 h-10',
-    medium: 'w-16 h-16',
-    large: 'w-20 h-20'
-  };
-
-  // تحديد لون الإطار حسب الجنس - كما كان سابقاً (ring + border color)
-  const borderColor = user.gender === 'female'
-    ? 'border-pink-400 ring-pink-200' 
-    : 'border-blue-400 ring-blue-200';
+export default function ProfileImage({ user, size = 'medium', className = '', onClick, hideRoleBadgeOverlay = false, showFrame = true }: ProfileImageProps) {
+  const sizePixels = size === 'small' ? 40 : size === 'large' ? 80 : 64;
 
   // تحديد مصدر الصورة بشكل مستقر مع مراقبة تغيّر الهاش/الإصدار
   const imageSrc = useMemo(() => {
-    const base = getImageSrc(user.profileImage, '');
+    const base = getImageSrc(user.profileImage, '/default_avatar.svg');
     const v = (user as any).avatarHash || (user as any).avatarVersion;
     if (base && v && typeof v === 'string' && !base.includes('?v=')) {
       return `${base}?v=${v}`;
@@ -35,38 +28,20 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
     if (base && v && typeof v === 'number' && !base.includes('?v=')) {
       return `${base}?v=${v}`;
     }
-    return base;
+    return base || '/default_avatar.svg';
   }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
-
-  const fallbackSrc = '/default_avatar.svg';
-  const { src: finalSrc, isLoading } = useImageLoader({ src: imageSrc, fallback: fallbackSrc });
 
   return (
     <div className="relative inline-block" onClick={onClick}>
-      {/* الصورة الأساسية */}
-      <img
-        src={finalSrc}
+      <AvatarWithFrame
+        src={imageSrc}
         alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className}`}
-        style={{
-          transition: 'none',
-          backfaceVisibility: 'hidden',
-          transform: 'translateZ(0)',
-          display: 'block'
-        }}
-        loading="lazy"
+        frame={showFrame ? (user.avatarFrame || 'none') : 'none'}
+        pixelSize={sizePixels}
+        innerScale={0.82}
+        className={className}
       />
-      
-      {/* مؤشر التحميل */}
-      {isLoading && (
-        <div className={`${sizeClasses[size]} rounded-full bg-gray-200 flex items-center justify-center absolute inset-0 z-10`}>
-          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      )}
-      
-      {/* بدون نقطة الحالة الخضراء */}
-      
-      {/* مؤشر الدور統一 */}
+
       {!hideRoleBadgeOverlay && (user.userType === 'owner' || user.userType === 'admin' || user.userType === 'moderator') && (
         <div className="absolute -top-1 -right-1 w-5 h-5 bg-white border-2 border-white rounded-full flex items-center justify-center overflow-hidden">
           <span className="scale-90">{getUserLevelIcon(user, 14)}</span>

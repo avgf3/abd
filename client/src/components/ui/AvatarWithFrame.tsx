@@ -8,6 +8,8 @@ interface AvatarWithFrameProps {
   fallback?: string;
   frame?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  pixelSize?: number; // قياس مخصص بالإمكانات
+  innerScale?: number; // نسبة حجم الصورة داخل الإطار (افتراض 0.8)
   className?: string;
   onClick?: () => void;
 }
@@ -25,16 +27,32 @@ export function AvatarWithFrame({
   fallback, 
   frame = 'none', 
   size = 'md',
+  pixelSize,
+  innerScale = 0.8,
   className,
   onClick 
 }: AvatarWithFrameProps) {
   const sizes = frameSizes[size];
 
+  const containerStyle: React.CSSProperties | undefined = typeof pixelSize === 'number' && pixelSize > 0
+    ? { width: `${pixelSize}px`, height: `${pixelSize}px` }
+    : undefined;
+
+  const avatarStyle: React.CSSProperties | undefined = typeof pixelSize === 'number' && pixelSize > 0
+    ? { width: `${Math.round(pixelSize * innerScale)}px`, height: `${Math.round(pixelSize * innerScale)}px` }
+    : undefined;
+
+  const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (img.src.includes('/default_avatar.svg')) return;
+    img.src = '/default_avatar.svg';
+  };
+
   return (
     <div 
-      className={cn('relative inline-flex items-center justify-center', sizes.frame, className)}
+      className={cn('relative inline-flex items-center justify-center', containerStyle ? '' : sizes.frame, className)}
       onClick={onClick}
-      style={{ cursor: onClick ? 'pointer' : 'default' }}
+      style={{ cursor: onClick ? 'pointer' : 'default', ...(containerStyle || {}) }}
     >
       {frame && frame !== 'none' && (
         <img 
@@ -44,8 +62,8 @@ export function AvatarWithFrame({
         />
       )}
 
-      <Avatar className={cn(sizes.avatar, 'z-10')}>
-        <AvatarImage src={src} alt={alt} />
+      <Avatar className={cn(containerStyle ? '' : sizes.avatar, 'z-10')} style={avatarStyle}>
+        <AvatarImage src={src || '/default_avatar.svg'} alt={alt} onError={handleImgError} />
         <AvatarFallback>{fallback}</AvatarFallback>
       </Avatar>
     </div>

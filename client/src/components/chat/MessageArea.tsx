@@ -338,6 +338,7 @@ export default function MessageArea({
                         <ProfileImage 
                           user={message.sender} 
                           size="small"
+                          showFrame={false}
                           className="cursor-pointer hover:scale-110 transition-transform duration-200"
                         />
                       </div>

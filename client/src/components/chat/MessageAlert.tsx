@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 
 interface MessageAlertProps {
   isOpen: boolean;
@@ -38,14 +39,12 @@ export default function MessageAlert({ isOpen, sender, onClose, onOpenMessages }
     <div className={`fixed top-4 right-4 z-50 transition-all duration-300 ${visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
       <div className="bg-red-500 border-2 border-red-600 rounded-lg shadow-2xl p-4 max-w-sm">
         <div className="flex items-center gap-3">
-          <img
+          <AvatarWithFrame
             src={getImageSrc(sender.profileImage)}
             alt="صورة المرسل"
-            className="w-12 h-12 rounded-full border-2 border-white object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = '/default_avatar.svg';
-            }}
+            frame={sender.avatarFrame || 'none'}
+            pixelSize={48}
+            innerScale={0.82}
           />
           <div className="flex-1 text-white">
             <h3 className="font-bold text-lg truncate">{sender.username}</h3>
