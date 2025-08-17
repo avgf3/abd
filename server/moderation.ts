@@ -1,6 +1,11 @@
 import type { User } from './services/databaseService';
 import { spamProtection } from './spam-protection';
 import { storage } from './storage';
+import { databaseService } from './services/databaseService';
+import * as pgSchema from '../shared/schema';
+import * as sqliteSchema from '../shared/sqlite-schema';
+import { db, dbType } from './database-adapter';
+import { desc } from 'drizzle-orm';
 
 export interface ModerationAction {
   id: string;
@@ -26,6 +31,9 @@ export class ModerationSystem {
     
     // تحميل الأجهزة المحجوبة من قاعدة البيانات عند بدء التشغيل
     this.loadBlockedDevices();
+
+    // تحميل سجل الإجراءات من قاعدة البيانات لعدم فقدانها بعد إعادة التشغيل
+    this.loadActionsFromDatabase();
   }
 
   // تحميل الأجهزة المحجوبة من قاعدة البيانات
@@ -42,6 +50,57 @@ export class ModerationSystem {
       }
       } catch (error) {
       console.error('خطأ في تحميل الأجهزة المحجوبة:', error);
+    }
+  }
+
+  // تحميل سجل الإجراءات المحفوظ في قاعدة البيانات إلى الذاكرة
+  private async loadActionsFromDatabase() {
+    try {
+      const status = databaseService.getStatus();
+      if (!status.connected || !db) return;
+      if (dbType === 'postgresql') {
+        const rows = await (db as any)
+          .select()
+          .from((pgSchema as any).moderationActions)
+          .orderBy(desc((pgSchema as any).moderationActions.timestamp))
+          .limit(1000);
+        for (const row of rows || []) {
+          const action: ModerationAction = {
+            id: row.id,
+            type: row.type,
+            targetUserId: row.targetUserId,
+            moderatorId: row.moderatorId,
+            reason: row.reason,
+            duration: row.duration ?? undefined,
+            timestamp: new Date(row.timestamp as any).getTime(),
+            ipAddress: row.ipAddress ?? undefined,
+            deviceId: row.deviceId ?? undefined,
+          };
+          this.actions.set(action.id, action);
+        }
+      } else if (dbType === 'sqlite') {
+        const rows = await (db as any)
+          .select()
+          .from((sqliteSchema as any).moderationActions)
+          .orderBy(desc((sqliteSchema as any).moderationActions.timestamp))
+          .limit(1000);
+        for (const row of rows || []) {
+          const action: ModerationAction = {
+            id: row.id,
+            type: row.type,
+            targetUserId: row.targetUserId,
+            moderatorId: row.moderatorId,
+            reason: row.reason,
+            duration: row.duration ?? undefined,
+            timestamp: Number(row.timestamp),
+            ipAddress: row.ipAddress ?? undefined,
+            deviceId: row.deviceId ?? undefined,
+          };
+          this.actions.set(action.id, action);
+        }
+      }
+    } catch (e) {
+      // تجاهل أخطاء التحميل، الذاكرة ستبدأ فارغة
     }
   }
 
@@ -473,6 +532,16 @@ export class ModerationSystem {
       // remove oldest 100 entries
       const keys = Array.from(this.actions.keys()).slice(0, 100);
       for (const key of keys) this.actions.delete(key);
+    }
+
+    // Persist to database if connected
+    try {
+      const status = databaseService.getStatus();
+      if (status.connected) {
+        void databaseService.insertModerationAction(action);
+      }
+    } catch (e) {
+      // ignore persistence errors to not break flow
     }
   }
 

@@ -1718,7 +1718,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "غير مسموح لك بالوصول - للإدمن والمالك فقط" });
       }
 
-      const log = moderationSystem.getModerationLog();
+      // حاول جلب السجل من قاعدة البيانات للحفاظ على الاستمرارية
+      const persistentLog = await databaseService.getModerationActions(1000);
+      const memoryLog = moderationSystem.getModerationLog();
+      const combined = (persistentLog.length > 0 ? persistentLog : memoryLog);
+      const log = combined.sort((a: any, b: any) => b.timestamp - a.timestamp);
       res.json({ log });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });

@@ -101,6 +101,19 @@ export const pointsHistory = pgTable("points_history", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// جدول لتخزين سجل إجراءات الإدارة بشكل دائم
+export const moderationActions = pgTable("moderation_actions", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(), // 'mute' | 'ban' | 'block' | 'kick' | 'promote' | 'demote'
+  targetUserId: integer("target_user_id").notNull().references(() => users.id),
+  moderatorId: integer("moderator_id").notNull().references(() => users.id),
+  reason: text("reason").notNull(),
+  duration: integer("duration"), // بالدقائق
+  timestamp: timestamp("timestamp").defaultNow(),
+  ipAddress: text("ip_address"),
+  deviceId: text("device_id"),
+});
+
 // جدول إعدادات مستويات النقاط
 export const levelSettings = pgTable("level_settings", {
   id: serial("id").primaryKey(),

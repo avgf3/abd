@@ -3,6 +3,7 @@ import { sql, eq, desc, asc, and, or, like, count, isNull, gte, lt, inArray } fr
 import * as pgSchema from '../../shared/schema';
 import * as sqliteSchema from '../../shared/sqlite-schema';
 import { dbAdapter, dbType } from '../database-adapter';
+import type { ModerationAction as ModAction } from '../moderation';
 
 
 // Type definitions for database operations
@@ -1441,6 +1442,153 @@ export class DatabaseService {
     } catch (e) {
       return themeId || 'default';
     }
+  }
+
+  // ===== Moderation actions persistence =====
+  async insertModerationAction(action: ModAction): Promise<void> {
+    if (!this.isConnected()) return;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any)
+          .insert(pgSchema.moderationActions)
+          .values({
+            id: action.id,
+            type: action.type,
+            targetUserId: action.targetUserId,
+            moderatorId: action.moderatorId,
+            reason: action.reason,
+            duration: action.duration ?? null,
+            timestamp: new Date(action.timestamp),
+            ipAddress: action.ipAddress ?? null,
+            deviceId: action.deviceId ?? null,
+          });
+      } else {
+        await (this.db as any)
+          .insert(sqliteSchema.moderationActions)
+          .values({
+            id: action.id,
+            type: action.type,
+            targetUserId: action.targetUserId,
+            moderatorId: action.moderatorId,
+            reason: action.reason,
+            duration: action.duration ?? null,
+            timestamp: action.timestamp,
+            ipAddress: action.ipAddress ?? null,
+            deviceId: action.deviceId ?? null,
+          });
+      }
+    } catch (e: any) {
+      try {
+        await this.ensureModerationActionsTable();
+        // retry once
+        if (this.type === 'postgresql') {
+          await (this.db as any)
+            .insert(pgSchema.moderationActions)
+            .values({
+              id: action.id,
+              type: action.type,
+              targetUserId: action.targetUserId,
+              moderatorId: action.moderatorId,
+              reason: action.reason,
+              duration: action.duration ?? null,
+              timestamp: new Date(action.timestamp),
+              ipAddress: action.ipAddress ?? null,
+              deviceId: action.deviceId ?? null,
+            });
+        } else {
+          await (this.db as any)
+            .insert(sqliteSchema.moderationActions)
+            .values({
+              id: action.id,
+              type: action.type,
+              targetUserId: action.targetUserId,
+              moderatorId: action.moderatorId,
+              reason: action.reason,
+              duration: action.duration ?? null,
+              timestamp: action.timestamp,
+              ipAddress: action.ipAddress ?? null,
+              deviceId: action.deviceId ?? null,
+            });
+        }
+      } catch {}
+    }
+  }
+
+  async getModerationActions(limit: number = 1000): Promise<ModAction[]> {
+    if (!this.isConnected()) return [];
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any)
+          .select()
+          .from(pgSchema.moderationActions)
+          .orderBy(pgSchema.moderationActions.timestamp as any)
+          .limit(limit);
+        return (rows || []).map((row: any) => ({
+          id: row.id,
+          type: row.type,
+          targetUserId: row.targetUserId,
+          moderatorId: row.moderatorId,
+          reason: row.reason,
+          duration: row.duration ?? undefined,
+          timestamp: new Date(row.timestamp as any).getTime(),
+          ipAddress: row.ipAddress ?? undefined,
+          deviceId: row.deviceId ?? undefined,
+        } as ModAction));
+      } else {
+        const rows = await (this.db as any)
+          .select()
+          .from(sqliteSchema.moderationActions)
+          .orderBy(sqliteSchema.moderationActions.timestamp as any)
+          .limit(limit);
+        return (rows || []).map((row: any) => ({
+          id: row.id,
+          type: row.type,
+          targetUserId: row.targetUserId,
+          moderatorId: row.moderatorId,
+          reason: row.reason,
+          duration: row.duration ?? undefined,
+          timestamp: Number(row.timestamp),
+          ipAddress: row.ipAddress ?? undefined,
+          deviceId: row.deviceId ?? undefined,
+        } as ModAction));
+      }
+    } catch (e) {
+      try {
+        await this.ensureModerationActionsTable();
+      } catch {}
+      return [];
+    }
+  }
+
+  private async ensureModerationActionsTable(): Promise<void> {
+    if (!this.isConnected()) return;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any).execute(sql`CREATE TABLE IF NOT EXISTS moderation_actions (
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          target_user_id INTEGER NOT NULL,
+          moderator_id INTEGER NOT NULL,
+          reason TEXT NOT NULL,
+          duration INTEGER,
+          timestamp TIMESTAMP DEFAULT now(),
+          ip_address TEXT,
+          device_id TEXT
+        )`);
+      } else {
+        await (this.db as any).execute?.(sql`CREATE TABLE IF NOT EXISTS moderation_actions (
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          target_user_id INTEGER NOT NULL,
+          moderator_id INTEGER NOT NULL,
+          reason TEXT NOT NULL,
+          duration INTEGER,
+          timestamp INTEGER NOT NULL,
+          ip_address TEXT,
+          device_id TEXT
+        )`);
+      }
+    } catch {}
   }
 }
 
