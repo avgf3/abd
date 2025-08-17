@@ -42,6 +42,7 @@ import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 import { useQueryClient } from '@tanstack/react-query';
+import RichestModal from '@/components/ui/RichestModal'; // تبويب الأثرياء
 
 interface ChatInterfaceProps {
   chat: ReturnType<typeof useChat>;
@@ -335,6 +336,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setReportedUser(null);
     setReportedMessage(null);
   };
+  
+  const [showRichest, setShowRichest] = useState(false);
 
   return (
       <div className="min-h-[100dvh] flex flex-col" onClick={closeUserPopup}>
@@ -347,6 +350,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           >
             <Settings className="w-4 h-4" />
             إعدادات
+          </Button>
+          
+          <Button
+            className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+            onClick={() => setShowRichest(true)}
+            title="الأثرياء"
+          >
+            <Crown className="w-4 h-4" />
+            الأثرياء
           </Button>
 
           {/* قائمة ثلاث شرائط للمالك */}
@@ -916,6 +928,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* إشعار الترحيب */}
       {chat.currentUser && <WelcomeNotification user={chat.currentUser} />}
+      
+      {/* نافذة الأثرياء */}
+      <RichestModal
+        isOpen={showRichest}
+        onClose={() => setShowRichest(false)}
+        users={Array.from({ length: 10 }).map((_, i) => ({
+          id: i + 1,
+          name: '',
+          avatar: '/default_avatar.svg',
+        }))}
+      />
 
       {showIgnoredUsers && (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
