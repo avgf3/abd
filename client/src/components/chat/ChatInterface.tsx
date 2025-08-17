@@ -1,4 +1,4 @@
-import { Menu, Settings, Bell, MessageSquare, MessageCircle, Crown, Shield, AlertTriangle, Eye, EyeOff, Lock } from 'lucide-react';
+import { Settings, Bell, MessageSquare, MessageCircle, Crown, Shield, AlertTriangle, Eye, EyeOff, Lock } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 
 import NotificationPanel from './NotificationPanel';
@@ -31,7 +31,7 @@ import WelcomeNotification from './WelcomeNotification';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -362,23 +362,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
 
           {/* قائمة ثلاث شرائط للمالك */}
-          {chat.currentUser && chat.currentUser.userType === 'owner' && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2">
-                  <Menu className="w-5 h-5" />
-                  المزيد
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" sideOffset={8}>
-                <DropdownMenuLabel>إجراءات</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setShowAddRoomDialog(true)}>
-                  إضافة غرفة جديدة
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+
 
           {/* زر خاص بالمالك فقط */}
           {chat.currentUser && chat.currentUser.userType === 'owner' && (
