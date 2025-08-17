@@ -4,6 +4,7 @@ import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 import UserRoleBadge from './UserRoleBadge';
 import { cn } from '@/lib/utils';
 import { getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
+import { getImageSrc } from '@/utils/imageUtils';
 
 interface UserListItemProps {
   user: ChatUser;
@@ -39,6 +40,18 @@ export const UserListItem: React.FC<UserListItemProps> = ({
     };
   }, [user.usernameColor, user.profileEffect]);
 
+  const avatarSrc = useMemo(() => {
+    const base = getImageSrc(user.profileImage, '/default_avatar.svg');
+    const v = (user as any).avatarHash || (user as any).avatarVersion;
+    if (base && v && typeof v === 'string' && !base.includes('?v=')) {
+      return `${base}?v=${v}`;
+    }
+    if (base && v && typeof v === 'number' && !base.includes('?v=')) {
+      return `${base}?v=${v}`;
+    }
+    return base;
+  }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
+
   return (
     <li
       onClick={onClick}
@@ -52,7 +65,7 @@ export const UserListItem: React.FC<UserListItemProps> = ({
     >
       {/* الصورة الشخصية مع الإطار */}
       <AvatarWithFrame
-        src={(user.profileImage && (user as any).avatarHash) ? `${user.profileImage}?v=${(user as any).avatarHash}` : (user.profileImage || '/default_avatar.svg')}
+        src={avatarSrc}
         alt={user.username}
         fallback={user.username.substring(0, 2).toUpperCase()}
         frame={user.avatarFrame}
