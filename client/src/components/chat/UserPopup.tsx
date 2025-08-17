@@ -172,6 +172,7 @@ export default function UserPopup({
     }
   };
   return (
+    <>
     <div
       className="user-popup"
       style={{
@@ -343,6 +344,6 @@ export default function UserPopup({
         </div>
       </DialogContent>
     </Dialog>
-  </>
+    </>
   );
 }
