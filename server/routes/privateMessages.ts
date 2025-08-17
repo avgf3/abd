@@ -140,7 +140,7 @@ router.get('/:userId/:otherUserId', async (req, res, next) => {
     if (userId === 'conversations' || userId === 'cache') {
       return next();
     }
-    const { limit = 50 } = req.query;
+    const { limit = 50, beforeTs, beforeId } = req.query as { limit?: any; beforeTs?: string; beforeId?: string };
 
     const uid = parseInt(userId);
     const oid = parseInt(otherUserId);
@@ -158,44 +158,86 @@ router.get('/:userId/:otherUserId', async (req, res, next) => {
     const conversationKey = `${Math.min(uid, oid)}-${Math.max(uid, oid)}`;
     const cachedData = conversationCache.get(conversationKey);
 
-    // التحقق من صحة cache
-    if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL) {
-      return res.json({ 
-        success: true, 
-        messages: cachedData.messages.slice(-lim), 
-        count: Math.min(cachedData.messages.length, lim),
-        cached: true
-      });
+    // إعدادات hasMore عبر جلب عنصر إضافي
+    const fetchLimitPlusOne = lim + 1;
+
+    let messages: any[] = [];
+    let fetchedFromCache = false;
+
+    // دعم الجلب للأقدم
+    if (beforeTs || beforeId) {
+      // إذا كان لدينا كاش، حاول التزويد منه أولاً
+      if (cachedData && Array.isArray(cachedData.messages) && cachedData.messages.length > 0) {
+        const thresholdTs = beforeTs ? new Date(beforeTs) : undefined;
+        const thresholdId = beforeId ? parseInt(beforeId) : undefined;
+        const filtered = cachedData.messages.filter((m: any) => {
+          if (thresholdTs) {
+            return new Date(m.timestamp).getTime() < new Date(thresholdTs).getTime();
+          }
+          if (typeof thresholdId === 'number' && !isNaN(thresholdId)) {
+            return (m.id as number) < thresholdId;
+          }
+          return false;
+        });
+        if (filtered.length >= lim) {
+          messages = filtered.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, fetchLimitPlusOne);
+          fetchedFromCache = true;
+        }
+      }
+
+      if (!fetchedFromCache) {
+        const older = await storage.getPrivateMessagesBefore(
+          uid,
+          oid,
+          fetchLimitPlusOne,
+          beforeTs ? new Date(beforeTs) : undefined,
+          beforeId ? parseInt(beforeId) : undefined
+        );
+        messages = older || [];
+
+        // دمج مع الكاش الحالي لتسريع الطلبات القادمة
+        const existing = (cachedData?.messages || []) as any[];
+        if (messages.length > 0 || existing.length > 0) {
+          const byId = new Map<number, any>();
+          [...existing, ...messages].forEach((m: any) => { if (m && typeof m.id === 'number') byId.set(m.id, m); });
+          const merged = Array.from(byId.values()).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+          conversationCache.set(conversationKey, { messages: merged, timestamp: Date.now() });
+          cleanOldCache();
+        }
+      }
+    } else {
+      // أحدث الرسائل
+      const latest = await storage.getPrivateMessages(uid, oid, fetchLimitPlusOne);
+      messages = latest || [];
+
+      // إثراء الرسائل بمعلومات المرسل بشكل محسن (Batch)
+      const uniqueSenderIds = Array.from(new Set(messages.map((m: any) => m.senderId).filter(Boolean)));
+      const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
+      const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
+      const finalMessages = messages.map((m: any) => ({ ...m, sender: senderMap.get(m.senderId) }));
+
+      // حفظ في cache كأحدث نسخة
+      conversationCache.set(conversationKey, { messages: finalMessages, timestamp: Date.now() });
+      cleanOldCache();
+      messages = finalMessages;
     }
 
-    // جلب الرسائل من قاعدة البيانات
-    const messages = await storage.getPrivateMessages(uid, oid, lim);
-
-    if (!messages) {
-      return res.status(500).json({ error: 'خطأ في جلب الرسائل' });
+    // إثراء الرسائل المجلوبة للأقدم بمعلومات المرسل إذا لزم (قد تكون موجودة بالفعل)
+    if (messages.length > 0 && !messages[0]?.sender) {
+      const uniqueSenderIds = Array.from(new Set(messages.map((m: any) => m.senderId).filter(Boolean)));
+      const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
+      const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
+      messages = messages.map((m: any) => ({ ...m, sender: m.sender || senderMap.get(m.senderId) }));
     }
 
-    // إثراء الرسائل بمعلومات المرسل بشكل محسن (Batch)
-    const uniqueSenderIds = Array.from(new Set(messages.map((m: any) => m.senderId).filter(Boolean)));
-    const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
-    const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
-
-    const finalMessages = messages.map((m: any) => ({ ...m, sender: senderMap.get(m.senderId) }));
-
-    // حفظ في cache للاستخدام المستقبلي
-    conversationCache.set(conversationKey, {
-      messages: finalMessages,
-      timestamp: Date.now()
-    });
-
-    // تنظيف cache القديم
-    cleanOldCache();
+    const hasMore = messages.length > lim;
+    const limited = hasMore ? messages.slice(0, lim) : messages;
 
     return res.json({ 
       success: true, 
-      messages: finalMessages, 
-      count: finalMessages.length,
-      cached: false
+      messages: limited, 
+      count: limited.length,
+      hasMore
     });
 
   } catch (error: any) {

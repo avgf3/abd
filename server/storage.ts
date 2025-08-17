@@ -489,6 +489,10 @@ export const storage: LegacyStorage = {
     return await databaseService.getPrivateMessages(userId1, userId2, limit);
   },
 
+  async getPrivateMessagesBefore(userId1: number, userId2: number, limit = 50, beforeTimestamp?: Date, beforeId?: number) {
+    return await databaseService.getPrivateMessagesBefore(userId1, userId2, limit, beforeTimestamp, beforeId);
+  },
+
   async getRoomMessages(roomId: string, limit = 50, offset = 0) {
     return await databaseService.getMessages(roomId, limit, offset);
   },
