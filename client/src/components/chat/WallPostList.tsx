@@ -64,7 +64,7 @@ export default function WallPostList({
                       alt={post.username}
                       frame={(post as any).avatarFrame || 'none'}
                       pixelSize={48}
-                      innerScale={0.82}
+                      innerScale={0.8}
                     />
                   </div>
                 </div>

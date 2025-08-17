@@ -48,15 +48,29 @@ export function AvatarWithFrame({
     img.src = '/default_avatar.svg';
   };
 
+  // منع عرض إطارات الأجنحة نهائياً حتى إن كانت محفوظة للمستخدم
+  const HIDDEN_FRAME_IDS = new Set([
+    'enhanced-wings-frame',
+    'wings-frame-silver',
+    'wings-frame-royalblue',
+    'wings-frame-ruby',
+    'wings-frame-turquoise',
+    'wings-frame-violet',
+    'wings-frame-king',
+    'wings-frame-queen'
+  ]);
+
+  const normalizedFrame = frame && !HIDDEN_FRAME_IDS.has(frame) ? frame : 'none';
+
   return (
     <div 
       className={cn('relative inline-flex items-center justify-center', containerStyle ? '' : sizes.frame, className)}
       onClick={onClick}
       style={{ cursor: onClick ? 'pointer' : 'default', ...(containerStyle || {}) }}
     >
-      {frame && frame !== 'none' && (
+      {normalizedFrame && normalizedFrame !== 'none' && (
         <img 
-          src={`/${frame}.svg`} 
+          src={`/${normalizedFrame}.svg`} 
           alt="Avatar Frame"
           className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none z-20"
         />
@@ -71,7 +85,8 @@ export function AvatarWithFrame({
 }
 
 // قائمة الإطارات المتاحة مع أسمائها بالعربية
-export const availableFrames = [
+// جميع الإطارات (بما فيها المخفية)
+const allFrames = [
   { id: 'none', name: 'بدون إطار', category: 'عام' },
   
   // إطارات التاج TOP
@@ -83,16 +98,16 @@ export const availableFrames = [
   { id: 'crown-frame-purple', name: 'تاج بنفسجي TOP', category: 'تاج TOP' },
   
   // إطارات الأجنحة VIP
-  { id: 'enhanced-wings-frame', name: 'أجنحة ذهبية VIP', category: 'أجنحة VIP' },
-  { id: 'wings-frame-silver', name: 'أجنحة فضية VIP', category: 'أجنحة VIP' },
-  { id: 'wings-frame-royalblue', name: 'أجنحة زرقاء ملكية VIP', category: 'أجنحة VIP' },
-  { id: 'wings-frame-ruby', name: 'أجنحة ياقوتية VIP', category: 'أجنحة VIP' },
-  { id: 'wings-frame-turquoise', name: 'أجنحة فيروزية VIP', category: 'أجنحة VIP' },
-  { id: 'wings-frame-violet', name: 'أجنحة بنفسجية VIP', category: 'أجنحة VIP' },
+  { id: 'enhanced-wings-frame', name: 'أجنحة ذهبية VIP', category: 'أجنحة VIP', hidden: true },
+  { id: 'wings-frame-silver', name: 'أجنحة فضية VIP', category: 'أجنحة VIP', hidden: true },
+  { id: 'wings-frame-royalblue', name: 'أجنحة زرقاء ملكية VIP', category: 'أجنحة VIP', hidden: true },
+  { id: 'wings-frame-ruby', name: 'أجنحة ياقوتية VIP', category: 'أجنحة VIP', hidden: true },
+  { id: 'wings-frame-turquoise', name: 'أجنحة فيروزية VIP', category: 'أجنحة VIP', hidden: true },
+  { id: 'wings-frame-violet', name: 'أجنحة بنفسجية VIP', category: 'أجنحة VIP', hidden: true },
   
   // إطارات خاصة
-  { id: 'wings-frame-king', name: 'أجنحة الملك KING', category: 'خاص' },
-  { id: 'wings-frame-queen', name: 'أجنحة الملكة QUEEN', category: 'خاص' },
+  { id: 'wings-frame-king', name: 'أجنحة الملك KING', category: 'خاص', hidden: true },
+  { id: 'wings-frame-queen', name: 'أجنحة الملكة QUEEN', category: 'خاص', hidden: true },
   { id: 'crown-frame-classic-gold', name: 'تاج كلاسيكي ذهبي', category: 'كلاسيك' },
   { id: 'crown-frame-classic-coolpink', name: 'تاج كلاسيكي وردي', category: 'كلاسيك' },
   
@@ -103,7 +118,10 @@ export const availableFrames = [
   { id: 'svip2-frame-pink', name: 'SVIP2 وردي', category: 'SVIP' }
 ];
 
+// الإطارات المتاحة للعرض والاختيار (بدون الأجنحة)
+export const availableFrames = (allFrames as any[]).filter((f) => !("hidden" in f && (f as any).hidden));
+
 // دالة مساعدة للحصول على معلومات الإطار
 export function getFrameInfo(frameId: string) {
-  return availableFrames.find(f => f.id === frameId) || availableFrames[0];
+  return (allFrames as any[]).find(f => f.id === frameId) || availableFrames[0];
 }
