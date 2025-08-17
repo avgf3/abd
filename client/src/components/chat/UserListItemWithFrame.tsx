@@ -52,7 +52,7 @@ export const UserListItem: React.FC<UserListItemProps> = ({
     >
       {/* الصورة الشخصية مع الإطار */}
       <AvatarWithFrame
-        src={user.profileImage}
+        src={(user.profileImage && (user as any).avatarHash) ? `${user.profileImage}?v=${(user as any).avatarHash}` : (user.profileImage || '/default_avatar.svg')}
         alt={user.username}
         fallback={user.username.substring(0, 2).toUpperCase()}
         frame={user.avatarFrame}

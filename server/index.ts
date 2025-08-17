@@ -24,6 +24,13 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // خدمة الملفات الثابتة للصور المرفوعة - محسّنة لـ Render
 const uploadsPath = path.join(process.cwd(), 'client/public/uploads');
+try {
+  fs.mkdirSync(uploadsPath, { recursive: true });
+  fs.mkdirSync(path.join(uploadsPath, 'avatars'), { recursive: true });
+  fs.mkdirSync(path.join(uploadsPath, 'profiles'), { recursive: true });
+  fs.mkdirSync(path.join(uploadsPath, 'banners'), { recursive: true });
+  fs.mkdirSync(path.join(uploadsPath, 'wall'), { recursive: true });
+} catch {}
 app.use('/uploads', async (req, res, next) => {
   // التحقق من وجود الملف
   const fullPath = path.join(uploadsPath, req.path);
@@ -32,8 +39,8 @@ app.use('/uploads', async (req, res, next) => {
   } catch {
     console.error('❌ الملف غير موجود:', fullPath);
     
-    // Return default avatar for profile images
-    if (req.path.includes('profile-') || req.path.includes('/profiles/')) {
+    // Return default avatar for missing profile/avatars images
+    if (req.path.includes('profile-') || req.path.includes('/profiles/') || req.path.includes('/avatars/')) {
       const defaultAvatarPath = path.join(process.cwd(), 'client/public/default_avatar.svg');
       try {
         await fsp.stat(defaultAvatarPath);
