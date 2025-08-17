@@ -1,0 +1,132 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'>
+  <defs>
+    <!-- تدرجات ذهبية محسنة -->
+    <linearGradient id='goldGradient' x1='0%' y1='0%' x2='100%' y2='100%'>
+      <stop offset='0%' stop-color='#FFD700'/>
+      <stop offset='25%' stop-color='#FFED4E'/>
+      <stop offset='50%' stop-color='#FFA500'/>
+      <stop offset='75%' stop-color='#FFED4E'/>
+      <stop offset='100%' stop-color='#FFD700'/>
+    </linearGradient>
+    
+    <linearGradient id='goldGradient2' x1='0%' y1='0%' x2='0%' y2='100%'>
+      <stop offset='0%' stop-color='#FFED4E'/>
+      <stop offset='50%' stop-color='#FFD700'/>
+      <stop offset='100%' stop-color='#B8860B'/>
+    </linearGradient>
+    
+    <radialGradient id='gemGradient'>
+      <stop offset='0%' stop-color='#FFFFFF'/>
+      <stop offset='30%' stop-color='#FFE4B5'/>
+      <stop offset='100%' stop-color='#FFD700'/>
+    </radialGradient>
+    
+    <!-- ظلال -->
+    <filter id='shadow'>
+      <feGaussianBlur in='SourceAlpha' stdDeviation='3'/>
+      <feOffset dx='2' dy='2'/>
+      <feComponentTransfer>
+        <feFuncA type='linear' slope='0.3'/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in='SourceGraphic'/>
+      </feMerge>
+    </filter>
+    
+    <!-- تأثير لمعان -->
+    <filter id='glow'>
+      <feGaussianBlur stdDeviation='4' result='coloredBlur'/>
+      <feMerge>
+        <feMergeNode in='coloredBlur'/>
+        <feMergeNode in='SourceGraphic'/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- الدائرة الرئيسية للتاج -->
+  <circle cx='300' cy='300' r='180' fill='none' stroke='url(#goldGradient)' stroke-width='35' filter='url(#shadow)'/>
+  
+  <!-- الدائرة الداخلية -->
+  <circle cx='300' cy='300' r='160' fill='none' stroke='url(#goldGradient2)' stroke-width='4'/>
+  
+  <!-- القاعدة العلوية للتاج -->
+  <rect x='200' y='100' width='200' height='40' rx='5' fill='url(#goldGradient)' filter='url(#shadow)'/>
+  
+  <!-- الزخارف العلوية المركزية -->
+  <g id='centerPeak'>
+    <!-- القمة المركزية الكبيرة -->
+    <path d='M300,40 L270,100 L330,100 Z' fill='url(#goldGradient)' filter='url(#shadow)'/>
+    <path d='M300,50 L280,90 L320,90 Z' fill='url(#goldGradient2)'/>
+    
+    <!-- الجوهرة المركزية -->
+    <circle cx='300' cy='75' r='15' fill='url(#gemGradient)' filter='url(#glow)'/>
+    <circle cx='300' cy='75' r='12' fill='none' stroke='#FFD700' stroke-width='1'/>
+  </g>
+  
+  <!-- القمم الجانبية -->
+  <g id='leftPeak'>
+    <path d='M240,60 L220,100 L260,100 Z' fill='url(#goldGradient)' filter='url(#shadow)'/>
+    <circle cx='240' cy='85' r='10' fill='url(#gemGradient)' filter='url(#glow)'/>
+  </g>
+  
+  <g id='rightPeak'>
+    <path d='M360,60 L340,100 L380,100 Z' fill='url(#goldGradient)' filter='url(#shadow)'/>
+    <circle cx='360' cy='85' r='10' fill='url(#gemGradient)' filter='url(#glow)'/>
+  </g>
+  
+  <!-- القمم الجانبية الصغيرة -->
+  <g id='farLeftPeak'>
+    <path d='M180,80 L170,100 L190,100 Z' fill='url(#goldGradient)' filter='url(#shadow)'/>
+    <circle cx='180' cy='92' r='6' fill='url(#gemGradient)'/>
+  </g>
+  
+  <g id='farRightPeak'>
+    <path d='M420,80 L410,100 L430,100 Z' fill='url(#goldGradient)' filter='url(#shadow)'/>
+    <circle cx='420' cy='92' r='6' fill='url(#gemGradient)'/>
+  </g>
+  
+  <!-- الزخارف السفلية -->
+  <g id='lowerDecoration'>
+    <!-- القاعدة السفلية -->
+    <path d='M180,480 L420,480 L380,560 L220,560 Z' fill='url(#goldGradient)' filter='url(#shadow)'/>
+    <path d='M200,490 L400,490 L370,550 L230,550 Z' fill='url(#goldGradient2)'/>
+    
+    <!-- الجوهرة السفلية الكبيرة -->
+    <ellipse cx='300' cy='520' rx='25' ry='20' fill='url(#gemGradient)' filter='url(#glow)'/>
+    <ellipse cx='300' cy='520' rx='22' ry='17' fill='none' stroke='#FFD700' stroke-width='1'/>
+  </g>
+  
+  <!-- الزخارف الجانبية -->
+  <g id='sideDecorations'>
+    <!-- اليسار -->
+    <path d='M120,280 Q100,300 120,320 L150,300 Z' fill='url(#goldGradient)' filter='url(#shadow)'/>
+    <circle cx='135' cy='300' r='8' fill='url(#gemGradient)'/>
+    
+    <!-- اليمين -->
+    <path d='M480,280 Q500,300 480,320 L450,300 Z' fill='url(#goldGradient)' filter='url(#shadow)'/>
+    <circle cx='465' cy='300' r='8' fill='url(#gemGradient)'/>
+  </g>
+  
+  <!-- نجوم زخرفية صغيرة -->
+  <g id='stars'>
+    <path d='M150,200 L152,206 L158,206 L153,210 L155,216 L150,212 L145,216 L147,210 L142,206 L148,206 Z' fill='#FFD700' opacity='0.8'/>
+    <path d='M450,200 L452,206 L458,206 L453,210 L455,216 L450,212 L445,216 L447,210 L442,206 L448,206 Z' fill='#FFD700' opacity='0.8'/>
+    <path d='M150,400 L152,406 L158,406 L153,410 L155,416 L150,412 L145,416 L147,410 L142,406 L148,406 Z' fill='#FFD700' opacity='0.8'/>
+    <path d='M450,400 L452,406 L458,406 L453,410 L455,416 L450,412 L445,416 L447,410 L442,406 L448,406 Z' fill='#FFD700' opacity='0.8'/>
+  </g>
+  
+  <!-- خطوط زخرفية -->
+  <g id='decorativeLines'>
+    <path d='M200,140 Q300,120 400,140' stroke='url(#goldGradient)' stroke-width='2' fill='none'/>
+    <path d='M200,460 Q300,440 400,460' stroke='url(#goldGradient)' stroke-width='2' fill='none'/>
+  </g>
+  
+  <!-- نقاط لامعة -->
+  <g id='sparkles' opacity='0.6'>
+    <circle cx='250' cy='250' r='2' fill='#FFFFFF'/>
+    <circle cx='350' cy='250' r='2' fill='#FFFFFF'/>
+    <circle cx='250' cy='350' r='2' fill='#FFFFFF'/>
+    <circle cx='350' cy='350' r='2' fill='#FFFFFF'/>
+  </g>
+</svg>

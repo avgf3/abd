@@ -2347,6 +2347,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // [removed] Legacy endpoint '/api/users/update-background-color' was deprecated. Use PUT /api/users/:id with { profileBackgroundColor } instead.
+
+  // إضافة/تحديث إطار الصورة الشخصية (للأونر فقط)
+  app.post('/api/users/:id/avatar-frame', authLimiter, async (req, res) => {
+    const currentUserId = (req as any).session?.userId || null;
+    
+    // التحقق من أن المستخدم مسجل دخول
+    if (!currentUserId) {
+      return res.status(401).json({ error: 'غير مصرح' });
+    }
+
+    // التحقق من أن المستخدم أونر
+    const currentUser = await storage.getUser(currentUserId);
+    if (!currentUser || currentUser.userType !== 'owner') {
+      return res.status(403).json({ error: 'غير مسموح - للأونر فقط' });
+    }
+
+    const targetUserId = parseInt(req.params.id);
+    const { frame } = req.body;
+
+    // التحقق من صحة الإطار
+    const validFrames = [
+      'none',
+      'enhanced-crown-frame',
+      'crown-frame-silver',
+      'crown-frame-rosegold',
+      'crown-frame-blue',
+      'crown-frame-emerald',
+      'crown-frame-purple',
+      'enhanced-wings-frame',
+      'wings-frame-silver',
+      'wings-frame-royalblue',
+      'wings-frame-ruby',
+      'wings-frame-turquoise',
+      'wings-frame-violet',
+      'wings-frame-king',
+      'wings-frame-queen',
+      'crown-frame-classic-gold',
+      'crown-frame-classic-coolpink',
+      'svip1-frame-gold',
+      'svip1-frame-pink',
+      'svip2-frame-gold',
+      'svip2-frame-pink'
+    ];
+
+    if (!validFrames.includes(frame)) {
+      return res.status(400).json({ error: 'إطار غير صالح' });
+    }
+
+    try {
+      // تحديث إطار المستخدم
+      const updatedUser = await storage.updateUser(targetUserId, { avatarFrame: frame });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      // إرسال التحديث لجميع المتصلين
+      const io = getIO();
+      io.emit('user_frame_updated', {
+        userId: targetUserId,
+        frame: frame,
+        updatedBy: currentUserId
+      });
+
+      res.json({ 
+        success: true, 
+        user: sanitizeUserData(updatedUser),
+        message: 'تم تحديث الإطار بنجاح'
+      });
+    } catch (error) {
+      console.error('Error updating avatar frame:', error);
+      res.status(500).json({ error: 'فشل تحديث الإطار' });
+    }
+  });
   // ========== API نظام النقاط والمستويات ==========
 
   // الحصول على معلومات النقاط والمستوى للمستخدم
