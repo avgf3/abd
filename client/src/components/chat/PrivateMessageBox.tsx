@@ -16,6 +16,7 @@ interface PrivateMessageBoxProps {
   messages: ChatMessage[];
   onSendMessage: (content: string) => void;
   onClose: () => void;
+  onLoadMore?: () => Promise<{ addedCount: number; hasMore: boolean }>; // تحميل رسائل أقدم
 }
 
 export default function PrivateMessageBox({
@@ -25,10 +26,13 @@ export default function PrivateMessageBox({
   messages,
   onSendMessage,
   onClose,
+  onLoadMore,
 }: PrivateMessageBoxProps) {
   const [messageText, setMessageText] = useState('');
   const [isAtBottomPrivate, setIsAtBottomPrivate] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastMessageCountRef = useRef(0);
@@ -106,6 +110,25 @@ export default function PrivateMessageBox({
     }
   }, [handleSend]);
 
+  // تحميل المزيد عند الوصول للأعلى
+  const handleLoadMore = useCallback(async () => {
+    if (isLoadingOlder || !hasMore || !onLoadMore) return;
+    setIsLoadingOlder(true);
+    try {
+      const res = await onLoadMore();
+      setHasMore(res.hasMore);
+      if (res.addedCount > 0) {
+        setTimeout(() => {
+          try {
+            virtuosoRef.current?.scrollToIndex({ index: res.addedCount, align: 'start', behavior: 'auto' as any });
+          } catch {}
+        }, 0);
+      }
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  }, [isLoadingOlder, hasMore, onLoadMore]);
+
   // لون حد الرسالة مرتبط بلون اسم المستخدم النهائي في الخاص
   const getDynamicBorderColor = useCallback((sender?: ChatUser | null) => {
     if (!sender) return '#4ade80';
@@ -179,6 +202,18 @@ export default function PrivateMessageBox({
                 followOutput={'smooth'}
                 atBottomStateChange={handleAtBottomChange}
                 increaseViewportBy={{ top: 300, bottom: 300 }}
+                startReached={handleLoadMore}
+                components={{
+                  Header: () => (
+                    isLoadingOlder ? (
+                      <div className="flex justify-center py-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-transparent"></div>
+                      </div>
+                    ) : hasMore ? (
+                      <div className="text-center py-1 text-xs text-gray-400">اسحب للأعلى لتحميل المزيد</div>
+                    ) : null
+                  )
+                }}
                 itemContent={(index, m) => {
                   const isMe = currentUser && m.senderId === currentUser.id;
                   const key = m.id ?? `${m.senderId}-${m.timestamp}-${index}`;

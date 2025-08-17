@@ -593,6 +593,54 @@ export class DatabaseService {
     }
   }
 
+  async getPrivateMessagesBefore(
+    userId1: number,
+    userId2: number,
+    limit: number = 50,
+    beforeTimestamp?: Date,
+    beforeId?: number
+  ): Promise<Message[]> {
+    if (!this.isConnected()) return [];
+
+    const applyWhere = (table: any) => {
+      const base = and(
+        eq(table.isPrivate, true),
+        or(
+          and(eq(table.senderId, userId1), eq(table.receiverId, userId2)),
+          and(eq(table.senderId, userId2), eq(table.receiverId, userId1))
+        )
+      );
+      if (beforeTimestamp) {
+        return and(base, lt(table.timestamp, beforeTimestamp as any));
+      }
+      if (typeof beforeId === 'number' && !isNaN(beforeId)) {
+        return and(base, lt(table.id, beforeId as any));
+      }
+      return base;
+    };
+
+    try {
+      if (this.type === 'postgresql') {
+        return await (this.db as any)
+          .select()
+          .from(pgSchema.messages)
+          .where(applyWhere(pgSchema.messages))
+          .orderBy(desc(pgSchema.messages.timestamp))
+          .limit(limit);
+      } else {
+        return await (this.db as any)
+          .select()
+          .from(sqliteSchema.messages)
+          .where(applyWhere(sqliteSchema.messages))
+          .orderBy(desc(sqliteSchema.messages.timestamp))
+          .limit(limit);
+      }
+    } catch (error) {
+      console.error('Error getting older private messages:', error);
+      return [];
+    }
+  }
+  
   // ===================== Room message helpers (counts/search/stats) =====================
   async getRoomMessageCount(roomId: string): Promise<number> {
     if (!this.isConnected()) return 0;

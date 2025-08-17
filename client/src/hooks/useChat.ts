@@ -65,6 +65,7 @@ type ChatAction =
   | { type: 'ADD_ROOM_MESSAGE'; payload: { roomId: string; message: ChatMessage } }
   | { type: 'SET_PRIVATE_MESSAGE'; payload: { userId: number; message: ChatMessage } }
   | { type: 'SET_PRIVATE_CONVERSATION'; payload: { userId: number; messages: ChatMessage[] } }
+  | { type: 'PREPEND_PRIVATE_MESSAGES'; payload: { userId: number; messages: ChatMessage[] } }
   | { type: 'SET_CONNECTION_STATUS'; payload: boolean }
   | { type: 'SET_TYPING_USERS'; payload: Set<string> }
   | { type: 'SET_CONNECTION_ERROR'; payload: string | null }
@@ -184,6 +185,20 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
         privateConversations: {
           ...state.privateConversations,
           [userId]: uniqueMessages
+        }
+      };
+    }
+    
+    case 'PREPEND_PRIVATE_MESSAGES': {
+      const { userId, messages } = action.payload;
+      const existing = state.privateConversations[userId] || [];
+      const existingIds = new Set(existing.map(m => m.id));
+      const toPrepend = messages.filter(m => !existingIds.has(m.id));
+      return {
+        ...state,
+        privateConversations: {
+          ...state.privateConversations,
+          [userId]: [...toPrepend, ...existing]
         }
       };
     }
@@ -907,6 +922,35 @@ export const useChat = () => {
     fetchIgnored();
   }, [state.currentUser?.id]);
 
+  // Prefetch recent private conversations messages on first entry
+  const prefetchedConversationsRef = useRef(false);
+  useEffect(() => {
+    const PREFETCH_CONVERSATIONS_MAX = 20; // قابل للتعديل
+    const prefetch = async () => {
+      if (!state.currentUser?.id || prefetchedConversationsRef.current) return;
+      prefetchedConversationsRef.current = true;
+      try {
+        const conv = await apiRequest(`/api/private-messages/conversations/${state.currentUser.id}?limit=50`);
+        const items: Array<{ otherUserId: number }> = Array.isArray((conv as any)?.conversations) ? (conv as any).conversations : [];
+        const targets = items.map(i => i.otherUserId).slice(0, PREFETCH_CONVERSATIONS_MAX);
+        await Promise.all(targets.map(async (otherId) => {
+          try {
+            const data = await apiRequest(`/api/private-messages/${state.currentUser!.id}/${otherId}?limit=20`);
+            const formatted = Array.isArray((data as any)?.messages)
+              ? mapDbMessagesToChatMessages((data as any).messages)
+              : [];
+            if (formatted.length > 0) {
+              dispatch({ type: 'SET_PRIVATE_CONVERSATION', payload: { userId: otherId, messages: formatted } });
+            }
+          } catch {}
+        }));
+      } catch (e) {
+        console.warn('تعذر الجلب المسبق لمحادثات الخاص:', e);
+      }
+    };
+    prefetch();
+  }, [state.currentUser?.id]);
+
   // 🔥 SIMPLIFIED Connect function
   const connect = useCallback((user: ChatUser) => {
     dispatch({ type: 'SET_CURRENT_USER', payload: user });
@@ -1122,6 +1166,27 @@ export const useChat = () => {
     }
   }, [state.currentUser?.id]);
 
+  const loadOlderPrivateConversation = useCallback(async (otherUserId: number, limit: number = 20) => {
+    if (!state.currentUser?.id) return { addedCount: 0, hasMore: false };
+    try {
+      const existing = state.privateConversations[otherUserId] || [];
+      const earliestTs = existing.length > 0 ? new Date(existing[0].timestamp).toISOString() : undefined;
+      const url = `/api/private-messages/${state.currentUser.id}/${otherUserId}?limit=${limit}${earliestTs ? `&beforeTs=${encodeURIComponent(earliestTs)}` : ''}`;
+      const data = await apiRequest(url);
+      const formatted = Array.isArray((data as any)?.messages)
+        ? mapDbMessagesToChatMessages((data as any).messages)
+        : [];
+      if (formatted.length > 0) {
+        dispatch({ type: 'PREPEND_PRIVATE_MESSAGES', payload: { userId: otherUserId, messages: formatted } });
+      }
+      const hasMore = !!(data as any)?.hasMore;
+      return { addedCount: formatted.length, hasMore };
+    } catch (error) {
+      console.error('❌ خطأ في تحميل رسائل أقدم للخاص:', error);
+      return { addedCount: 0, hasMore: false };
+    }
+  }, [state.currentUser?.id, state.privateConversations]);
+
   return {
     // State
     currentUser: state.currentUser,
@@ -1168,6 +1233,7 @@ export const useChat = () => {
     getCurrentRoomMessages,
     updateCurrentUser,
     loadPrivateConversation,
+    loadOlderPrivateConversation,
 
     // Broadcast handlers registration
     addBroadcastMessageHandler: (handler: (data: any) => void) => {
