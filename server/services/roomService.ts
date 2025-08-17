@@ -319,19 +319,8 @@ class RoomService {
         ...Array.from(connectedUserIds)
       ]);
 
-      // جلب بيانات جميع المستخدمين
-      const users = [];
-      for (const userId of allUserIds) {
-        try {
-          const user = await storage.getUser(userId);
-          if (user) {
-            users.push(user);
-          }
-        } catch (err) {
-          console.warn(`تعذر جلب بيانات المستخدم ${userId}:`, err);
-        }
-      }
-
+      // جلب بيانات جميع المستخدمين (إزالة N+1)
+      const users = await storage.getUsersByIds(Array.from(allUserIds));
       return users;
     } catch (error) {
       console.error(`خطأ في جلب مستخدمي الغرفة ${roomId}:`, error);

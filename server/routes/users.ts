@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { sanitizeInput } from "../security";
 import { storage } from "../storage";
+import { databaseService } from "../services/databaseService";
 
 const router = Router();
 
@@ -54,12 +55,8 @@ router.get("/search", async (req, res) => {
       return res.status(400).json({ error: "معطى البحث مطلوب" });
     }
     
-    const allUsers = await storage.getAllUsers();
-    const filteredUsers = allUsers.filter(user => 
-      user.username.toLowerCase().includes(q.toLowerCase())
-    );
-    
-    res.json(filteredUsers);
+    const users = await databaseService.listUsers(50, 0, q);
+    res.json(users);
   } catch (error) {
     console.error("Error searching users:", error);
     res.status(500).json({ error: "خطأ في الخادم" });
