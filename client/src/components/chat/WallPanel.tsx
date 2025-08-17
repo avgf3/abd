@@ -15,6 +15,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
 import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 
 interface WallPanelProps {
   isOpen: boolean;
