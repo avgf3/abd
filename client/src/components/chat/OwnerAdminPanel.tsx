@@ -387,10 +387,12 @@ export default function OwnerAdminPanel({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div className="relative">
-                            <img
+                            <AvatarWithFrame
                               src={getImageSrc(staff.profileImage)}
                               alt={staff.username}
-                              className="w-14 h-14 rounded-full ring-2 ring-purple-200 object-cover"
+                              frame={(staff as any).avatarFrame || 'none'}
+                              pixelSize={56}
+                              innerScale={0.82}
                             />
                           </div>
                           

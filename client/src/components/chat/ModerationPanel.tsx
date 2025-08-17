@@ -346,10 +346,12 @@ export default function ModerationPanel({
                     <div key={user.id} className="border border-red-200 rounded-lg p-3 bg-red-50">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <img
+                          <AvatarWithFrame
                             src={getImageSrc(user.profileImage)}
                             alt={user.username}
-                            className="w-10 h-10 rounded-full opacity-50"
+                            frame={(user as any).avatarFrame || 'none'}
+                            pixelSize={40}
+                            innerScale={0.82}
                           />
                           <div>
                             <div className="font-semibold flex items-center gap-2">
