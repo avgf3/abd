@@ -7,7 +7,7 @@ import PointsSentNotification from '@/components/ui/PointsSentNotification';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
-import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
+import { getImageUrl } from '@/utils/imageUtils';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
 import { getEffectColor, getFinalUsernameColor, buildProfileBackgroundGradient } from '@/utils/themeUtils';
 
@@ -58,7 +58,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   // دالة موحدة لجلب بيانات المستخدم من السيرفر وتحديث الحالة المحلية - محسّنة
   const fetchAndUpdateUser = async (userId: number) => {
     try {
-      const userData = await apiRequest(`/api/users/${userId}?t=${Date.now()}`); // إضافة timestamp لتجنب cache
+      const userData = await apiRequest(`/api/users/${userId}`);
       setLocalUser(userData);
       if (onUpdate) onUpdate(userData);
       
@@ -361,12 +361,12 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
   // Profile image fallback - محسّن للتعامل مع base64 و مشاكل الcache
   const getProfileImageSrcLocal = () => {
-    return getProfileImageSrc(localUser?.profileImage);
+    return getImageUrl(localUser?.profileImage, { type: 'profile' });
   };
 
   // Profile banner fallback - محسّن للتعامل مع base64 و مشاكل الcache
   const getProfileBannerSrcLocal = () => {
-    return getBannerImageSrc(localUser?.profileBanner);
+    return getImageUrl(localUser?.profileBanner, { type: 'banner' });
   };
 
   // Edit modal handlers
@@ -420,25 +420,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     const file = event.target.files?.[0];
     if (!file) return;
     
-    // التحقق من نوع الملف
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-    if (!allowedTypes.includes(file.type)) {
+    // استخدام التحقق المركزي
+    const { validateFile, getUploadTimeout } = await import('@/lib/uploadConfig');
+    const val = validateFile(file, uploadType === 'profile' ? 'profile_image' : 'profile_banner');
+    if (!val.isValid) {
       toast({ 
         title: "خطأ", 
-        description: "يرجى اختيار ملف صورة صحيح (JPG, PNG, GIF, WebP, SVG)", 
-        variant: "destructive" 
-      });
-      return;
-    }
-    
-    // التحقق من حجم الملف
-    const maxSize = uploadType === 'profile' ? 5 * 1024 * 1024 : 10 * 1024 * 1024; // 5MB للبروفايل، 10MB للبانر
-    if (file.size > maxSize) {
-      toast({ 
-        title: "خطأ", 
-        description: uploadType === 'profile' 
-          ? "حجم الصورة يجب أن يكون أقل من 5 ميجابايت" 
-          : "حجم الغلاف يجب أن يكون أقل من 10 ميجابايت", 
+        description: val.error || 'الملف غير صالح', 
         variant: "destructive" 
       });
       return;
@@ -459,17 +447,18 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       }
       
       const endpoint = uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
-      const result = await apiRequest(endpoint, { method: 'POST', body: formData });
+      const { api } = await import('@/lib/queryClient');
+      const result: any = await api.upload(endpoint, formData, { timeout: getUploadTimeout('image') });
       
-      if (!result.success) {
-        throw new Error(result.error || 'فشل في رفع الصورة');
+      if (!result?.success) {
+        throw new Error(result?.error || 'فشل في رفع الصورة');
       }
       
       // تحديث البيانات المحلية فوراً
       if (uploadType === 'profile' && result.imageUrl) {
-        updateUserData({ profileImage: result.imageUrl });
+        updateUserData({ profileImage: String(result.imageUrl) });
       } else if (uploadType === 'banner' && result.bannerUrl) {
-        updateUserData({ profileBanner: result.bannerUrl });
+        updateUserData({ profileBanner: String(result.bannerUrl) });
       }
       
       // انتظار قصير للتأكد من التحديث المحلي

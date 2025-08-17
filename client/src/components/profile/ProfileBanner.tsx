@@ -4,9 +4,9 @@ import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/queryClient';
-import { validateFile, formatFileSize } from '@/lib/uploadConfig';
+import { validateFile } from '@/lib/uploadConfig';
 import type { ChatUser } from '@/types/chat';
-import { getBannerImageSrc } from '@/utils/imageUtils';
+import { getImageUrl } from '@/utils/imageUtils';
 
 interface ProfileBannerProps {
   currentUser: ChatUser | null;
@@ -16,7 +16,6 @@ interface ProfileBannerProps {
 export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBannerProps) {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -62,13 +61,15 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       // رفع الصورة
       const result = await api.upload('/api/upload/profile-banner', formData);
 
-      if (!result.success) {
-        throw new Error(result.error || 'فشل في رفع صورة البانر');
+      if (!(result as any).success) {
+        throw new Error((result as any).error || 'فشل في رفع صورة البانر');
       }
 
-      // تحديث الصورة مباشرة في الواجهة مع timestamp لتجنب الكاش
-      if (onBannerUpdate && result.bannerUrl) {
-        onBannerUpdate(result.bannerUrl + '?t=' + Date.now());
+      // تحديث الصورة مباشرة في الواجهة مع إدارة الكاش بشكل صحيح
+      if (onBannerUpdate && (result as any).bannerUrl) {
+        const newUrl = String((result as any).bannerUrl);
+        // إذا كانت Base64 لا نضيف أي استعلام؛ وإلا نُجبر التحديث
+        onBannerUpdate(getImageUrl(newUrl, { type: 'banner', forceRefresh: true }));
       }
       setPreview(null);
       toast({
@@ -122,7 +123,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
           />
         ) : (currentUser?.profileBanner && currentUser.profileBanner !== '') ? (
           <img 
-            src={getBannerImageSrc(currentUser.profileBanner) + '?t=' + Date.now()} 
+            src={getImageUrl(currentUser.profileBanner, { type: 'banner' })} 
             alt="صورة البانر" 
             className="w-full h-full object-cover"
           />
