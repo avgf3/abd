@@ -81,7 +81,7 @@
     
     <!-- إطار دائري أزرق ملكي -->
     <circle cx="300" cy="300" r="190" fill="none" stroke="#191970" stroke-width="2" opacity="0.3"/>
-    <circle cx="300" cy="300" r="180" fill="url(#ringBlueGrad)" stroke="#000080" stroke-width="16" filter="url(#dropShadow)" opacity="0.9"/>
+    <circle cx="300" cy="300" r="180" fill="none" stroke="#000080" stroke-width="16" filter="url(#dropShadow)" opacity="0.9"/>
     <circle cx="300" cy="300" r="180" fill="none" stroke="url(#blueWingGrad1)" stroke-width="14"/>
     <circle cx="300" cy="300" r="172" fill="none" stroke="#e6f3ff" stroke-width="1" opacity="0.7"/>
     <circle cx="300" cy="300" r="188" fill="none" stroke="#e6f3ff" stroke-width="1" opacity="0.7"/>
