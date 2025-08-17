@@ -452,6 +452,18 @@ export const useChat = () => {
           }
         }
 
+        // تحديث إطار الصورة الشخصية فوراً
+        if (envelope.type === 'user_frame_updated') {
+          const { userId, frame } = envelope as any;
+          const targetId = userId;
+          if (targetId && typeof frame === 'string') {
+            if (currentUserRef.current?.id === targetId) {
+              dispatch({ type: 'SET_CURRENT_USER', payload: { ...currentUserRef.current!, avatarFrame: frame } as any });
+            }
+            dispatch({ type: 'UPSERT_ONLINE_USER', payload: { id: targetId, avatarFrame: frame } as any });
+          }
+        }
+
         // تحديث بيانات المستخدم الموحدة
         if (envelope.type === 'userUpdated') {
           const updatedUser: ChatUser | undefined = (envelope as any).user;

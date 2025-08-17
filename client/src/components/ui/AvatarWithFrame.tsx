@@ -29,38 +29,25 @@ export function AvatarWithFrame({
   onClick 
 }: AvatarWithFrameProps) {
   const sizes = frameSizes[size];
-  
-  if (frame === 'none' || !frame) {
-    return (
-      <Avatar className={cn(sizes.avatar, className)} onClick={onClick}>
-        <AvatarImage src={src} alt={alt} />
-        <AvatarFallback>{fallback}</AvatarFallback>
-      </Avatar>
-    );
-  }
 
   return (
     <div 
-      className={cn("relative inline-block", className)} 
+      className={cn('relative inline-flex items-center justify-center', sizes.frame, className)}
       onClick={onClick}
       style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
-      {/* الإطار */}
-      <div className={cn("absolute inset-0 flex items-center justify-center", sizes.frame)}>
+      {frame && frame !== 'none' && (
         <img 
           src={`/${frame}.svg`} 
           alt="Avatar Frame"
-          className="w-full h-full object-contain pointer-events-none"
+          className="absolute inset-0 w-full h-full object-contain pointer-events-none"
         />
-      </div>
-      
-      {/* الصورة الشخصية */}
-      <div className="relative flex items-center justify-center w-full h-full">
-        <Avatar className={cn(sizes.avatar, "z-10")}>
-          <AvatarImage src={src} alt={alt} />
-          <AvatarFallback>{fallback}</AvatarFallback>
-        </Avatar>
-      </div>
+      )}
+
+      <Avatar className={cn(sizes.avatar, 'z-10')}>
+        <AvatarImage src={src} alt={alt} />
+        <AvatarFallback>{fallback}</AvatarFallback>
+      </Avatar>
     </div>
   );
 }

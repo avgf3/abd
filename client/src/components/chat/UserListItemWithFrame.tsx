@@ -3,6 +3,7 @@ import { ChatUser } from '@/types/chat';
 import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 import UserRoleBadge from './UserRoleBadge';
 import { cn } from '@/lib/utils';
+import { getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
 
 interface UserListItemProps {
   user: ChatUser;
@@ -42,10 +43,12 @@ export const UserListItem: React.FC<UserListItemProps> = ({
     <li
       onClick={onClick}
       className={cn(
-        "px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors duration-200",
+        "px-3 py-2 cursor-pointer transition-colors duration-200",
         "flex items-center gap-2",
+        getUserListItemClasses(user) || 'hover:bg-gray-100 dark:hover:bg-gray-800',
         className
       )}
+      style={getUserListItemStyles(user)}
     >
       {/* الصورة الشخصية مع الإطار */}
       <AvatarWithFrame
