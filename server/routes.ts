@@ -2349,19 +2349,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // [removed] Legacy endpoint '/api/users/update-background-color' was deprecated. Use PUT /api/users/:id with { profileBackgroundColor } instead.
 
   // إضافة/تحديث إطار الصورة الشخصية (للأونر فقط)
-  app.post('/api/users/:id/avatar-frame', authLimiter, async (req, res) => {
-    const currentUserId = (req as any).session?.userId || null;
-    
-    // التحقق من أن المستخدم مسجل دخول
-    if (!currentUserId) {
-      return res.status(401).json({ error: 'غير مصرح' });
-    }
-
-    // التحقق من أن المستخدم أونر
-    const currentUser = await storage.getUser(currentUserId);
-    if (!currentUser || currentUser.userType !== 'owner') {
-      return res.status(403).json({ error: 'غير مسموح - للأونر فقط' });
-    }
+  app.post('/api/users/:id/avatar-frame', protect.owner, async (req, res) => {
+    // current user is validated by protect.owner and available as req.user
+    const currentUserId = req.user?.id;
 
     const targetUserId = parseInt(req.params.id);
     const { frame } = req.body;
@@ -2403,13 +2393,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
-      // إرسال التحديث لجميع المتصلين
+      // إرسال التحديث لجميع المتصلين عبر قناة الرسائل الموحدة
       const io = getIO();
-      io.emit('user_frame_updated', {
-        userId: targetUserId,
-        frame: frame,
-        updatedBy: currentUserId
-      });
+      io.emit('message', { type: 'user_frame_updated', userId: targetUserId, frame, updatedBy: currentUserId });
 
       res.json({ 
         success: true, 
