@@ -179,16 +179,7 @@
         </g>
     </g>
     
-    <!-- الجوهرة الوردية الفاخرة -->
-    <g filter="url(#turquoiseGlow)">
-        <polygon points="300,105 280,130 280,165 300,190 320,165 320,130" fill="url(#gemGrad)" stroke="#ff1493" stroke-width="2"/>
-        <polygon points="300,110 288,130 300,145" fill="#ffb6c1" opacity="0.7"/>
-        <polygon points="300,110 312,130 300,145" fill="#ffc0cb" opacity="0.5"/>
-        
-        <!-- لمعان الجوهرة -->
-        <ellipse cx="300" cy="125" rx="8" ry="4" fill="#ffffff" opacity="0.8"/>
-        <circle cx="305" cy="120" r="3" fill="#ffffff" opacity="0.9"/>
-    </g>
+
     
     <!-- الشريط السفلي الفيروزي -->
     <g filter="url(#dropShadow)">
