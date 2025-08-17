@@ -352,7 +352,7 @@ export default function ModerationPanel({
                             alt={user.username}
                             frame={(user as any).avatarFrame || 'none'}
                             pixelSize={40}
-                            innerScale={0.82}
+                            innerScale={0.8}
                           />
                           <div>
                             <div className="font-semibold flex items-center gap-2">

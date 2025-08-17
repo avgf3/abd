@@ -1808,7 +1808,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                 alt={localUser?.username}
                 frame={localUser?.avatarFrame || 'none'}
                 pixelSize={130}
-                innerScale={0.82}
+                innerScale={0.8}
               />
             </div>
             
