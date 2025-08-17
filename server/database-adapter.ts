@@ -382,6 +382,16 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
               END IF;
             END $$;
           `);
+          await (db as any).execute(`
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name = 'users' AND column_name = 'avatar_frame'
+              ) THEN
+                ALTER TABLE users ADD COLUMN avatar_frame TEXT DEFAULT 'none';
+              END IF;
+            END $$;
+          `);
         } catch (ensureError) {
           console.error('⚠️ فشل في ضمان المخطط بعد الـ migrations:', ensureError);
         }
