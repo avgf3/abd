@@ -142,7 +142,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
               <X className="w-4 h-4" />
             </Button>
             <Button
-              onClick={(e) => { e.stopPropagation(); onChangeIcon && onChangeIcon(room.id); }}
+              onClick={(e) => { e.stopPropagation(); if (onChangeIcon) { onChangeIcon(room.id); } }}
               variant="ghost"
               size="sm"
               className="opacity-0 group-hover:opacity-100 transition-opacity"

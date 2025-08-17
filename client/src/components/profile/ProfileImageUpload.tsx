@@ -83,7 +83,7 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       // تحديث نسخة/هاش الصورة محلياً إن عاد من السيرفر
       if ((result as any).avatarHash && currentUser?.id) {
         try {
-          await api.apiRequest(`/api/users/${currentUser.id}`, { method: 'PUT', body: { avatarHash: (result as any).avatarHash } });
+          await api.put(`/api/users/${currentUser.id}`, { avatarHash: (result as any).avatarHash });
         } catch {}
       }
 

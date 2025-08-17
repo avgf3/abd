@@ -15,6 +15,8 @@ export interface User {
   profileImage?: string;
   profileBanner?: string;
   profileBackgroundColor: string;
+  avatarHash?: string;
+  avatarVersion?: number;
   status?: string;
   gender?: string;
   age?: number;
