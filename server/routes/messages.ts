@@ -106,6 +106,11 @@ router.post('/room/:roomId', async (req, res) => {
       return res.status(400).json({ error: 'محتوى الرسالة مطلوب' });
     }
 
+    // منع استخدام هذا المسار لإرسال رسائل خاصة
+    if (isPrivate || receiverId) {
+      return res.status(400).json({ error: 'استخدم /api/private-messages/send لإرسال الرسائل الخاصة' });
+    }
+
     // التحقق من وجود الغرفة
     const room = await roomService.getRoom(roomId);
     if (!room) {
@@ -118,8 +123,8 @@ router.post('/room/:roomId', async (req, res) => {
       roomId,
       content: content.trim(),
       messageType,
-      isPrivate,
-      receiverId: receiverId ? parseInt(receiverId) : undefined
+      isPrivate: false,
+      receiverId: undefined
     });
 
     if (!message) {
@@ -136,25 +141,8 @@ router.post('/room/:roomId', async (req, res) => {
         timestamp: new Date().toISOString()
       };
 
-      if (isPrivate && receiverId) {
-        // رسالة خاصة - حدث موحّد فقط
-        io.to(String(senderId)).emit('privateMessage', { message });
-        io.to(String(receiverId)).emit('privateMessage', { message });
-
-        // إنشاء إشعار في قاعدة البيانات للمستقبل وبثّه فوراً
-        try {
-          const createdNotification = await notificationService.createMessageNotification(
-            parseInt(String(receiverId)),
-            (await storage.getUser(parseInt(String(senderId))))!.username,
-            parseInt(String(senderId)),
-            String(content).substring(0, 100)
-          );
-          io.to(String(receiverId)).emit('newNotification', { notification: createdNotification });
-        } catch {}
-      } else {
-        // رسالة عامة - إرسال لجميع أعضاء الغرفة
-        io.to(`room_${roomId}`).emit('message', socketData);
-      }
+      // رسالة عامة - إرسال لجميع أعضاء الغرفة
+      io.to(`room_${roomId}`).emit('message', socketData);
     }
 
     res.json({
