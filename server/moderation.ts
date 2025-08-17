@@ -92,15 +92,7 @@ export class ModerationSystem {
       muteExpiry: muteExpiry
     });
 
-    // حجب IP والجهاز مؤقتاً أثناء الكتم
-    if (ipAddress) {
-      this.blockedIPs.add(ipAddress);
-      setTimeout(() => this.blockedIPs.delete(ipAddress), durationMinutes * 60 * 1000);
-    }
-    if (deviceId) {
-      this.blockedDevices.add(deviceId);
-      setTimeout(() => this.blockedDevices.delete(deviceId), durationMinutes * 60 * 1000);
-    }
+    // لا نقوم بحجب IP أو الجهاز أثناء الكتم. الكتم يمنع الكتابة فقط.
 
     this.recordAction({
       id: `mute_${Date.now()}`,
