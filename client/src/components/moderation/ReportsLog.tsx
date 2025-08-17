@@ -26,9 +26,13 @@ interface ReportsLogProps {
   currentUser: ChatUser;
   isVisible: boolean;
   onClose: () => void;
+  // أسماء قابلة للنقر كما في قائمة المتصلين
+  onOpenProfile?: (userId: number) => void;
+  onReportUser?: (userId: number) => void;
+  onlineUsers?: ChatUser[];
 }
 
-export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsLogProps) {
+export default function ReportsLog({ currentUser, isVisible, onClose, onOpenProfile, onReportUser, onlineUsers = [] }: ReportsLogProps) {
   const [reports, setReports] = useState<ReportData[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -103,7 +107,7 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
   const pendingReports = reports.filter(r => r.status === 'pending');
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[12000] flex items-center justify-center p-4">
       <Card className="w-full max-w-4xl h-[80vh] bg-gray-900/95 border-gray-700">
         <CardHeader className="border-b border-gray-700">
           <div className="flex items-center justify-between">
@@ -150,71 +154,96 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
               </div>
             ) : (
               <div className="space-y-3">
-                {reports.map((report) => (
-                  <Card key={report.id} className={`bg-gray-800/50 border-gray-600 ${
-                    report.status === 'pending' ? 'border-red-500/50' : ''
-                  }`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <User className="w-4 h-4 text-blue-400" />
-                            <span className="font-medium text-gray-200">
-                              {report.reporterName || 'مجهول'}
-                            </span>
-                            <span className="text-gray-400">بلّغ عن</span>
-                            <span className="font-medium text-red-400">
-                              {report.reportedUserName || 'مجهول'}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 mb-2">
-                            <FileText className="w-4 h-4 text-yellow-400" />
-                            <span className="text-sm text-gray-300">
-                              السبب: {report.reason}
-                            </span>
-                          </div>
-                          
-                          {report.content && (
-                            <div className="bg-gray-700/50 p-2 rounded text-sm text-gray-300 mb-2">
-                              "{report.content}"
+                {reports.map((report) => {
+                  const reporter = onlineUsers.find(u => u.id === report.reporterId);
+                  const reported = onlineUsers.find(u => u.id === report.reportedUserId);
+                  const reporterLabel = reporter?.username || report.reporterName || 'مجهول';
+                  const reportedLabel = reported?.username || report.reportedUserName || 'مجهول';
+                  return (
+                    <Card key={report.id} className={`bg-gray-800/50 border-gray-600 ${
+                      report.status === 'pending' ? 'border-red-500/50' : ''
+                    }`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <User className="w-4 h-4 text-blue-400" />
+                              <button
+                                className="font-medium text-gray-200 hover:underline"
+                                onClick={() => onOpenProfile?.(report.reporterId)}
+                                title="عرض الملف الشخصي للمبلغ"
+                              >
+                                {reporterLabel}
+                              </button>
+                              <span className="text-gray-400">بلّغ عن</span>
+                              <button
+                                className="font-medium text-red-400 hover:underline"
+                                onClick={() => onOpenProfile?.(report.reportedUserId)}
+                                title="عرض الملف الشخصي للمُبلَّغ عليه"
+                              >
+                                {reportedLabel}
+                              </button>
                             </div>
-                          )}
+                            
+                            <div className="flex items-center gap-2 mb-2">
+                              <FileText className="w-4 h-4 text-yellow-400" />
+                              <span className="text-sm text-gray-300">
+                                السبب: {report.reason}
+                              </span>
+                              {onReportUser && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-xs text-red-300 hover:text-red-200"
+                                  onClick={() => onReportUser(report.reportedUserId)}
+                                  title="إنشاء بلاغ جديد على هذا المستخدم"
+                                >
+                                  تبليغ جديد
+                                </Button>
+                              )}
+                            </div>
+                            
+                            {report.content && (
+                              <div className="bg-gray-700/50 p-2 rounded text-sm text-gray-300 mb-2">
+                                "{report.content}"
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <Clock className="w-3 h-3" />
+                              {formatTimestamp(report.timestamp)}
+                            </div>
+                          </div>
                           
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <Clock className="w-3 h-3" />
-                            {formatTimestamp(report.timestamp)}
+                          <div className="flex flex-col items-end gap-2">
+                            {getStatusBadge(report.status)}
+                            
+                            {report.status === 'pending' && (
+                              <div className="flex gap-1">
+                                <Button
+                                  onClick={() => handleReportAction(report.id, 'reviewed')}
+                                  size="sm"
+                                  variant="default"
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  راجع
+                                </Button>
+                                <Button
+                                  onClick={() => handleReportAction(report.id, 'dismissed')}
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-red-600 text-red-400"
+                                >
+                                  ارفض
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
-                        
-                        <div className="flex flex-col items-end gap-2">
-                          {getStatusBadge(report.status)}
-                          
-                          {report.status === 'pending' && (
-                            <div className="flex gap-1">
-                              <Button
-                                onClick={() => handleReportAction(report.id, 'reviewed')}
-                                size="sm"
-                                variant="default"
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                راجع
-                              </Button>
-                              <Button
-                                onClick={() => handleReportAction(report.id, 'dismissed')}
-                                size="sm"
-                                variant="outline"
-                                className="border-red-600 text-red-400"
-                              >
-                                ارفض
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </ScrollArea>
