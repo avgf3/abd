@@ -58,11 +58,11 @@ export function AvatarWithFrame({
         <img 
           src={`/${frame}.svg`} 
           alt="Avatar Frame"
-          className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none z-20"
+          className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none z-10"
         />
       )}
 
-      <Avatar className={cn(containerStyle ? '' : sizes.avatar, 'z-10')} style={avatarStyle}>
+      <Avatar className={cn(containerStyle ? '' : sizes.avatar, 'z-20')} style={avatarStyle}>
         <AvatarImage src={src || '/default_avatar.svg'} alt={alt} onError={handleImgError} />
         <AvatarFallback>{fallback}</AvatarFallback>
       </Avatar>
