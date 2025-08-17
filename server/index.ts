@@ -10,6 +10,7 @@ import { setupVite, serveStatic, log } from "./vite";
 
 import path from "path";
 import fs from "fs";
+import { promises as fsp } from "fs";
 import { Server } from "http";
 
 const app = express();
@@ -23,18 +24,21 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // خدمة الملفات الثابتة للصور المرفوعة - محسّنة لـ Render
 const uploadsPath = path.join(process.cwd(), 'client/public/uploads');
-app.use('/uploads', (req, res, next) => {
+app.use('/uploads', async (req, res, next) => {
   // التحقق من وجود الملف
   const fullPath = path.join(uploadsPath, req.path);
-  if (!fs.existsSync(fullPath)) {
+  try {
+    await fsp.stat(fullPath);
+  } catch {
     console.error('❌ الملف غير موجود:', fullPath);
     
     // Return default avatar for profile images
     if (req.path.includes('profile-') || req.path.includes('/profiles/')) {
       const defaultAvatarPath = path.join(process.cwd(), 'client/public/default_avatar.svg');
-      if (fs.existsSync(defaultAvatarPath)) {
+      try {
+        await fsp.stat(defaultAvatarPath);
         return res.sendFile(defaultAvatarPath);
-      }
+      } catch {}
     }
     
     return res.status(404).json({ error: 'File not found' });
