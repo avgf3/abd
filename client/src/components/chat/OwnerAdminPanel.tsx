@@ -240,7 +240,7 @@ export default function OwnerAdminPanel({
           </DialogHeader>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-1">
+          <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-1">
             <TabsTrigger 
               value="staff" 
               className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all"
@@ -254,6 +254,13 @@ export default function OwnerAdminPanel({
             >
               <Shield className="w-4 h-4" />
               سجل الإجراءات
+            </TabsTrigger>
+            <TabsTrigger 
+              value="ban_tab" 
+              className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all"
+            >
+              <Ban className="w-4 h-4" />
+              تبويب الحظر
             </TabsTrigger>
           </TabsList>
 
@@ -465,9 +472,101 @@ export default function OwnerAdminPanel({
               )}
             </div>
           </TabsContent>
+
+          <TabsContent value="ban_tab" className="space-y-6">
+            <div className="bg-gradient-to-br from-rose-50 to-red-50 rounded-2xl p-6 border border-red-200">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-gradient-to-r from-red-500 to-rose-500 p-3 rounded-xl">
+                  <Ban className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">حظر نهائي</h3>
+                  <p className="text-gray-600">هذا الإجراء يمنع المستخدم بشكل دائم (IP + جهاز)</p>
+                </div>
+              </div>
+
+              <FinalBlockPanel currentUser={currentUser} onlineUsers={onlineUsers} onSuccess={() => {
+                toast({ title: 'تم الحظر النهائي ✅', description: 'تم تنفيذ الحظر الدائم بنجاح' });
+                fetchModerationData();
+              }} />
+            </div>
+          </TabsContent>
         </Tabs>
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function FinalBlockPanel({ currentUser, onlineUsers, onSuccess }: { currentUser: any; onlineUsers: any[]; onSuccess?: () => void; }) {
+  const { toast } = require('@/hooks/use-toast');
+  const React = require('react');
+  const [targetId, setTargetId] = React.useState<number | null>(null);
+  const [reason, setReason] = React.useState<string>('مخالفة القواعد');
+  const [loading, setLoading] = React.useState(false);
+
+  const candidates = React.useMemo(() => (onlineUsers || []).filter(u => u && u.id && u.username), [onlineUsers]);
+
+  const handleFinalBlock = async () => {
+    try {
+      if (!currentUser?.id || !targetId) return;
+      setLoading(true);
+      await apiRequest('/api/moderation/block', {
+        method: 'POST',
+        body: {
+          moderatorId: currentUser.id,
+          targetUserId: targetId,
+          reason: reason || 'حظر نهائي'
+        }
+      });
+      setLoading(false);
+      onSuccess?.();
+    } catch (e) {
+      setLoading(false);
+      toast.toast?.({ title: 'فشل الحظر', description: 'تعذر تنفيذ الحظر النهائي', variant: 'destructive' });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-1">
+          <label className="block text-sm text-gray-700 mb-2">اختر المستخدم</label>
+          <select
+            className="w-full p-2 bg-white rounded border border-gray-300 focus:border-red-400"
+            value={targetId ?? ''}
+            onChange={(e) => setTargetId(e.target.value ? Number(e.target.value) : null)}
+          >
+            <option value="">— اختر —</option>
+            {candidates.map((u: any) => (
+              <option key={u.id} value={u.id}>{u.username} (#{u.id})</option>
+            ))}
+          </select>
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-sm text-gray-700 mb-2">سبب الحظر</label>
+          <input
+            className="w-full p-2 bg-white rounded border border-gray-300 focus:border-red-400"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="سبب واضح للحظر النهائي"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button
+          onClick={handleFinalBlock}
+          disabled={!targetId || loading}
+          className="bg-red-600 hover:bg-red-700"
+        >
+          {loading ? '...جارٍ التنفيذ' : 'حظر نهائي'}
+        </Button>
+      </div>
+
+      <div className="text-xs text-gray-500">
+        سيتم تطبيق الحظر على عنوان IP والجهاز المرتبط بالمستخدم.
+      </div>
+    </div>
   );
 }

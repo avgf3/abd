@@ -264,13 +264,10 @@ export class AdvancedSecurityManager {
   
   // الحصول على IP العميل
   private getClientIP(req: Request): string {
-    return (
-      req.headers['x-forwarded-for'] as string ||
-      req.headers['x-real-ip'] as string ||
-      req.connection.remoteAddress ||
-      req.socket.remoteAddress ||
-      'unknown'
-    ).split(',')[0].trim();
+    const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
+    const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
+    const ip = forwarded || real || (req.ip as any) || (req.connection as any)?.remoteAddress || (req.socket as any)?.remoteAddress || 'unknown';
+    return (typeof ip === 'string' ? ip : 'unknown');
   }
   
   // فحص الروابط المشبوهة

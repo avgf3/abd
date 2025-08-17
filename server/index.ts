@@ -13,6 +13,8 @@ import fs from "fs";
 import { Server } from "http";
 
 const app = express();
+// Trust reverse proxy to get correct client IPs from x-forwarded-for
+try { (app as any).set('trust proxy', true); } catch {}
 
 // Setup security first
 setupSecurity(app);

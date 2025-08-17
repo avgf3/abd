@@ -500,8 +500,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "المدة يجب أن تكون بين 1 و 1440 دقيقة" });
       }
       
-      const clientIP = getClientIpFromHeaders(req.headers as any, (req.ip || (req.connection as any)?.remoteAddress) as any);
-      const deviceId = getDeviceIdFromHeaders(req.headers as any);
+      // استخدم IP والجهاز الخاصين بالمستخدم المستهدف لضمان دقة الحظر
+      const target = await storage.getUser(targetUserId);
+      const clientIP = (target?.ipAddress && target.ipAddress !== 'unknown') ? target.ipAddress : getClientIpFromHeaders(req.headers as any, (req.ip || (req.connection as any)?.remoteAddress) as any);
+      const deviceId = (target?.deviceId && target.deviceId !== 'unknown') ? target.deviceId : getDeviceIdFromHeaders(req.headers as any);
       
       const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, muteDuration, clientIP, deviceId);
       if (success) {
@@ -546,8 +548,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "مدة الطرد يجب أن تكون بين 5 و 60 دقيقة" });
       }
       
-      const clientIP = getClientIpFromHeaders(req.headers as any, (req.ip || (req.connection as any)?.remoteAddress) as any);
-      const deviceId = getDeviceIdFromHeaders(req.headers as any);
+      // استخدم IP والجهاز الخاصين بالمستخدم المستهدف لضمان دقة الحظر
+      const target = await storage.getUser(targetUserId);
+      const clientIP = (target?.ipAddress && target.ipAddress !== 'unknown') ? target.ipAddress : getClientIpFromHeaders(req.headers as any, (req.ip || (req.connection as any)?.remoteAddress) as any);
+      const deviceId = (target?.deviceId && target.deviceId !== 'unknown') ? target.deviceId : getDeviceIdFromHeaders(req.headers as any);
       
       const success = await moderationSystem.banUser(
         moderatorId, 
@@ -608,9 +612,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "لا يمكنك حجب نفسك" });
       }
       
-      // الحصول على IP والجهاز الحقيقيين
-      const clientIP = getClientIpFromHeaders(req.headers as any, (req.ip || (req.connection as any)?.remoteAddress) as any);
-      const deviceId = getDeviceIdFromHeaders(req.headers as any);
+      // الحصول على IP والجهاز الحقيقيين للمستخدم المستهدف (ليس المشرف)
+      const target = await storage.getUser(targetUserId);
+      const clientIP = (target?.ipAddress && target.ipAddress !== 'unknown') ? target.ipAddress : getClientIpFromHeaders(req.headers as any, (req.ip || (req.connection as any)?.remoteAddress) as any);
+      const deviceId = (target?.deviceId && target.deviceId !== 'unknown') ? target.deviceId : getDeviceIdFromHeaders(req.headers as any);
       
       const success = await moderationSystem.blockUser(moderatorId, targetUserId, reason, clientIP, deviceId);
       if (success) {

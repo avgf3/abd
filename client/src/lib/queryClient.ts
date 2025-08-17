@@ -49,6 +49,14 @@ export async function apiRequest<T = any>(
   const { method = 'GET', body, headers = {}, timeout = 30000, signal } = options || {};
   
   const requestHeaders: Record<string, string> = { ...headers };
+  try {
+    const existing = localStorage.getItem('deviceId');
+    const deviceId = existing || ('web-' + Math.random().toString(36).slice(2));
+    if (!existing) localStorage.setItem('deviceId', deviceId);
+    requestHeaders['x-device-id'] = deviceId;
+  } catch {
+    // ignore
+  }
   let requestBody: any = undefined;
 
   const upperMethod = method.toUpperCase();

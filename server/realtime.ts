@@ -169,6 +169,15 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         const isDev = process.env.NODE_ENV !== 'production';
         const isSameHost = originHost && hostHeader && originHost === hostHeader;
         const isEnvAllowed = originHost && envHosts.includes(originHost);
+
+        // Early block by IP/device before accepting socket transport
+        const ip = (req.headers['x-forwarded-for'] as string || req.headers['x-real-ip'] as string || (req as any).connection?.remoteAddress || 'unknown').split(',')[0].trim();
+        const authDeviceId = (req as any).auth?.deviceId;
+        const deviceId = (typeof authDeviceId === 'string' && authDeviceId.trim().length > 0) ? authDeviceId.trim() : (req.headers['x-device-id'] as string || 'unknown');
+        if (moderationSystem.isBlocked(ip, deviceId)) {
+          return callback(null, false);
+        }
+
         callback(null, isDev || isSameHost || isEnvAllowed);
       } catch {
         callback(null, false);
@@ -188,7 +197,8 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
 
     // Pre-connection checks
     const clientIP = getClientIpFromHeaders(socket.handshake.headers as any, socket.handshake.address as any);
-    const deviceId = getDeviceIdFromHeaders(socket.handshake.headers as any);
+    const authDeviceId = (socket.handshake as any).auth?.deviceId;
+    const deviceId = (typeof authDeviceId === 'string' && authDeviceId.trim().length > 0) ? authDeviceId.trim() : getDeviceIdFromHeaders(socket.handshake.headers as any);
     if (moderationSystem.isBlocked(clientIP, deviceId)) {
       socket.emit('error', { type: 'error', message: 'جهازك أو عنوان IP الخاص بك محجوب من الدردشة', action: 'device_blocked' });
       socket.disconnect(true);
@@ -270,6 +280,14 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           socket.emit('error', { message: 'بيانات المصادقة غير مكتملة' });
           return;
         }
+
+        // Update last known IP/device for this user
+        try {
+          const connectIP = getClientIpFromHeaders(socket.handshake.headers as any, socket.handshake.address as any);
+          const authDeviceId2 = (socket.handshake as any).auth?.deviceId;
+          const connectDevice = (typeof authDeviceId2 === 'string' && authDeviceId2.trim().length > 0) ? authDeviceId2.trim() : getDeviceIdFromHeaders(socket.handshake.headers as any);
+          await storage.updateUser(user.id, { ipAddress: connectIP, deviceId: connectDevice });
+        } catch {}
 
         socket.userId = user.id;
         socket.username = user.username;
