@@ -393,7 +393,7 @@ export default function OwnerAdminPanel({
                               alt={staff.username}
                               frame={(staff as any).avatarFrame || 'none'}
                               pixelSize={56}
-                              innerScale={0.82}
+                              innerScale={1}
                             />
                           </div>
                           
