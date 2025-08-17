@@ -13,13 +13,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { formatTime } from '@/utils/timeUtils';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 interface MessagesPanelProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: ChatUser | null;
-  privateConversations: PrivateConversation;
-  onlineUsers: ChatUser[];
+  privateConversations: PrivateConversation; // kept for compatibility but no longer the source
+  onlineUsers: ChatUser[]; // kept for avatar fallback if needed
   onStartPrivateChat: (user: ChatUser) => void;
 }
 
@@ -31,25 +33,27 @@ export default function MessagesPanel({
   onlineUsers,
   onStartPrivateChat,
 }: MessagesPanelProps) {
-  const conversations = useMemo(() => {
-    const items = Object.keys(privateConversations)
-      .map((userId) => {
-        const id = parseInt(userId);
-        if (Number.isNaN(id)) return null;
-        const user = onlineUsers.find((u) => u.id === id);
-        const conversation = privateConversations[id] || [];
-        const lastMessage = conversation[conversation.length - 1];
-        if (!user || !lastMessage) return null;
-        return {
-          user,
-          lastMessage,
-        };
-      })
-      .filter(Boolean) as Array<{ user: ChatUser; lastMessage: { content: string; timestamp: string } }>;
+  // جلب قائمة المحادثات الدائمة من الخادم
+  const { data: conversationsData, isLoading } = useQuery<{ success: boolean; conversations: Array<{ otherUserId: number; otherUser: ChatUser | null; lastMessage: { id: number; content: string; messageType: string; timestamp: string } }> }>({
+    queryKey: ['/api/private-messages/conversations', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) throw new Error('No user ID');
+      return await apiRequest(`/api/private-messages/conversations/${currentUser.id}?limit=50`);
+    },
+    enabled: !!currentUser?.id && isOpen,
+    staleTime: 30_000,
+    gcTime: 5 * 60 * 1000,
+  });
 
-    // Sort conversations by last message timestamp (most recent first)
+  const conversations = useMemo(() => {
+    const items = (conversationsData?.conversations || []).map((c) => {
+      // قد لا يكون otherUser موجوداً (غير متصل)؛ نحاول إيجاده من onlineUsers كنسخة احتياطية
+      const user = c.otherUser || onlineUsers.find(u => u.id === c.otherUserId) || null;
+      if (!user) return null;
+      return { user, lastMessage: { content: c.lastMessage.content, timestamp: String(c.lastMessage.timestamp) } };
+    }).filter(Boolean) as Array<{ user: ChatUser; lastMessage: { content: string; timestamp: string } }>;
     return items.sort((a, b) => new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime());
-  }, [privateConversations, onlineUsers]);
+  }, [conversationsData, onlineUsers]);
 
   const formatLastMessage = (content: string) => {
     if (!content) return '';
@@ -61,21 +65,20 @@ export default function MessagesPanel({
       <DialogContent className="max-w-md max-h-[560px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl overflow-hidden">
         <DialogHeader className="border-b border-accent pb-4">
           <DialogTitle className="text-2xl font-bold text-center text-primary-foreground">
-            ✉️ الرسائل الخاصة
+            ✉️ الرسائل
           </DialogTitle>
         </DialogHeader>
 
         <ScrollArea className="h-[460px] w-full">
           <div className="space-y-4 p-4">
             <section>
-              <h4 className="font-bold text-foreground text-base mb-3 border-b border-accent pb-2">
-                المحادثات النشطة {conversations.length > 0 ? `(${conversations.length})` : ''}
-              </h4>
-              {conversations.length === 0 ? (
+              {isLoading ? (
+                <div className="text-center py-10 text-muted-foreground">جارٍ التحميل…</div>
+              ) : conversations.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">
                   <div className="text-5xl mb-4">✉️</div>
-                  <p className="text-base">لا توجد محادثات خاصة حتى الآن</p>
-                  <p className="text-sm mt-2 opacity-70">اضغط على أي مستخدم في القائمة لبدء محادثة</p>
+                  <p className="text-base">لا توجد محادثات</p>
+                  <p className="text-sm mt-2 opacity-70">ابدأ محادثة عبر قائمة المستخدمين</p>
                 </div>
               ) : (
                 <div className="space-y-2">
