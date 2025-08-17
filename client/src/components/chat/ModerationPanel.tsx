@@ -36,7 +36,7 @@ export default function ModerationPanel({
   const [reason, setReason] = useState('');
   const [duration, setDuration] = useState('30');
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'users' | 'blocked' | 'actions'>('users');
+  const [activeTab, setActiveTab] = useState<'blocked' | 'actions'>('blocked');
   const [blockedUsers, setBlockedUsers] = useState<ChatUser[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
@@ -296,20 +296,13 @@ export default function ModerationPanel({
             </Badge>
           </DialogTitle>
           <DialogDescription>
-            إدارة المستخدمين وتطبيق القوانين
+            تطبيق القوانين وإدارة الحظر
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* التبويبات */}
           <div className="flex gap-2">
-            <Button
-              variant={activeTab === 'users' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setActiveTab('users')}
-            >
-              المستخدمين ({filteredUsers.length})
-            </Button>
             <Button
               variant={activeTab === 'blocked' ? 'default' : 'outline'}
               size="sm"
@@ -327,71 +320,7 @@ export default function ModerationPanel({
             </Button>
           </div>
 
-          {activeTab === 'users' && (
-            <div className="space-y-4">
-              {/* البحث */}
-              <Input
-                placeholder="البحث عن مستخدم..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
 
-              {/* قائمة المستخدمين */}
-              <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                {filteredUsers.map((user) => (
-                  <div key={user.id} className="border rounded-lg p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={getImageSrc(user.profileImage)}
-                          alt={user.username}
-                          className="w-10 h-10 rounded-full"
-                        />
-                        <div>
-                          <div className="font-semibold flex items-center gap-2">
-                            <span style={{ color: user.usernameColor || '#000000' }}>
-                              {user.username}
-                            </span>
-                            <UserRoleBadge user={user} />
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {user.status || 'بدون حالة'}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        {canModerateUser(user) && (
-                          <Button
-                            size="sm"
-                            onClick={() => setSelectedUser(user)}
-                            disabled={selectedUser?.id === user.id}
-                          >
-                            إدارة
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleUnmute(user)}
-                        >
-                          فك كتم
-                        </Button>
-                        {currentUser?.userType === 'owner' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleUnblock(user)}
-                          >
-                            فك حجب
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {activeTab === 'blocked' && (
             <div className="space-y-4">

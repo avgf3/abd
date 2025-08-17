@@ -102,19 +102,7 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
         </div>
 
         {/* القسم الثالث - الإدارة (للمشرفين فقط) */}
-        {currentUser?.userType === 'owner' && onOpenReports && (
-          <div className="p-3 border-b border-border">
-            <Button
-              onClick={onOpenReports}
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
-            >
-              <Shield className="w-4 h-4 text-primary" />
-              إدارة التبليغات
-            </Button>
-          </div>
-        )}
+
 
         {/* القسم الرابع - تسجيل الخروج */}
         <div className="p-3">
