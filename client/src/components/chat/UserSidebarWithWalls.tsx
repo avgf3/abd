@@ -21,6 +21,7 @@ import { getSocket, saveSession } from '@/lib/socket';
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { getUserEffectStyles, getUserEffectClasses, getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
+import { UserListItem } from './UserListItemWithFrame';
 import { formatTimeAgo } from '@/utils/timeUtils';
 
 
@@ -454,53 +455,7 @@ export default function UnifiedSidebar({
   // تم نقل دالة formatTimeAgo إلى utils/timeUtils.ts (تستخدم من الاستيراد أعلاه)
 
   // عنصر مستخدم فرعي معزول لتحسين الأداء
-  const UserListItem = useMemo(() => React.memo(({ user }: { user: ChatUser }) => {
-    if (!user?.username || !user?.userType) return null;
-    return (
-      <li key={user.id} className="relative -mx-4">
-        <SimpleUserMenu
-          targetUser={user}
-          currentUser={currentUser}
-          showModerationActions={isModerator}
-        >
-          <div
-            className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
-            style={getUserListItemStyles(user)}
-            onClick={(e) => handleUserClick(e as any, user)}
-          >
-            <ProfileImage 
-              user={user} 
-              size="small" 
-              className=""
-              hideRoleBadgeOverlay={true}
-            />
-            <div className="flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span 
-                    className="text-base font-medium transition-colors duration-300"
-                    style={{ 
-                      color: getFinalUsernameColor(user)
-                    }}
-                    title={user.username}
-                  >
-                    {user.username}
-                  </span>
-                  {user.isMuted && (
-                    <span className="text-yellow-400 text-xs">🔇</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-1">
-                  {renderUserBadge(user)}
-                  {renderCountryFlag(user)}
-                </div>
-              </div>
-            </div>
-          </div>
-        </SimpleUserMenu>
-      </li>
-    );
-  }), [currentUser, isModerator, renderCountryFlag, renderUserBadge]);
+  // إزالة UserListItem المحلي واستخدام المكون المستورد
 
   return (
     <aside className="w-full bg-card text-sm overflow-hidden border-l border-border shadow-lg flex flex-col h-full max-h-screen">
@@ -591,7 +546,17 @@ export default function UnifiedSidebar({
             
             <ul className="space-y-1">
               {filteredUsers.map((user) => (
-                <UserListItem key={user.id} user={user} />
+                <SimpleUserMenu
+                  key={user.id}
+                  targetUser={user}
+                  currentUser={currentUser}
+                  showModerationActions={isModerator}
+                >
+                  <UserListItem 
+                    user={user} 
+                    onClick={(e) => handleUserClick(e as any, user)}
+                  />
+                </SimpleUserMenu>
               ))}
             </ul>
             

@@ -2,6 +2,11 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AvatarWithFrame, availableFrames } from '@/components/ui/AvatarWithFrame';
+import { Label } from '@/components/ui/label';
 
 interface UserPopupProps {
   user: ChatUser;
@@ -27,12 +32,45 @@ export default function UserPopup({
   onClose,
 }: UserPopupProps) {
   const { toast } = useToast();
+  const [showFrameDialog, setShowFrameDialog] = useState(false);
+  const [selectedFrame, setSelectedFrame] = useState(user.avatarFrame || 'none');
+  const [isUpdatingFrame, setIsUpdatingFrame] = useState(false);
   
   const canModerate = currentUser && (
     currentUser.userType === 'owner' || 
     currentUser.userType === 'admin' || 
     currentUser.userType === 'moderator'
   ) && currentUser.id !== user.id;
+  
+  const isOwner = currentUser?.userType === 'owner';
+
+  const handleUpdateFrame = async () => {
+    if (!currentUser || !isOwner) return;
+    
+    setIsUpdatingFrame(true);
+    try {
+      await apiRequest(`/api/users/${user.id}/avatar-frame`, {
+        method: 'POST',
+        body: { frame: selectedFrame }
+      });
+      
+      toast({
+        title: 'تم تحديث الإطار',
+        description: 'تم تحديث إطار الصورة الشخصية بنجاح',
+      });
+      
+      setShowFrameDialog(false);
+      onClose?.();
+    } catch (error) {
+      toast({
+        title: 'خطأ',
+        description: 'فشل تحديث الإطار',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUpdatingFrame(false);
+    }
+  };
 
   const handleMute = async () => {
     if (!currentUser) return;
@@ -216,16 +254,95 @@ export default function UserPopup({
           )}
           
           {currentUser.userType === 'owner' && (
-            <Button
-              onClick={handleBlock}
-              variant="ghost"
-              className="user-popup-button text-red-600"
+            <>
+              <Button
+                onClick={handleBlock}
+                variant="ghost"
+                className="user-popup-button text-red-600"
             >
               🚫 حجب نهائي
             </Button>
+            
+            <Button
+              onClick={() => setShowFrameDialog(true)}
+              variant="ghost"
+              className="user-popup-button text-purple-600"
+            >
+              🖼️ إضافة إطار
+            </Button>
+          </>
           )}
         </>
       )}
     </div>
+
+    {/* Dialog إضافة الإطار */}
+    <Dialog open={showFrameDialog} onOpenChange={setShowFrameDialog}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>إضافة إطار للصورة الشخصية</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          {/* معاينة الصورة مع الإطار */}
+          <div className="flex justify-center p-4">
+            <AvatarWithFrame
+              src={user.profileImage}
+              alt={user.username}
+              fallback={user.username.substring(0, 2).toUpperCase()}
+              frame={selectedFrame}
+              size="xl"
+            />
+          </div>
+          
+          {/* اختيار الإطار */}
+          <div className="space-y-2">
+            <Label>اختر الإطار</Label>
+            <Select value={selectedFrame} onValueChange={setSelectedFrame}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {Object.entries(
+                  availableFrames.reduce((acc, frame) => {
+                    if (!acc[frame.category]) acc[frame.category] = [];
+                    acc[frame.category].push(frame);
+                    return acc;
+                  }, {} as Record<string, typeof availableFrames>)
+                ).map(([category, frames]) => (
+                  <div key={category}>
+                    <div className="px-2 py-1.5 text-sm font-semibold text-gray-500">
+                      {category}
+                    </div>
+                    {frames.map((frame) => (
+                      <SelectItem key={frame.id} value={frame.id}>
+                        {frame.name}
+                      </SelectItem>
+                    ))}
+                  </div>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* أزرار التحكم */}
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowFrameDialog(false)}
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleUpdateFrame}
+              disabled={isUpdatingFrame}
+            >
+              {isUpdatingFrame ? 'جاري التحديث...' : 'تحديث الإطار'}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  </>
   );
 }

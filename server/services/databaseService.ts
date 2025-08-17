@@ -39,6 +39,7 @@ export interface User {
   ignoredUsers: string;
   usernameColor: string;
   profileEffect: string;
+  avatarFrame?: string;
   points: number;
   level: number;
   totalPoints: number;

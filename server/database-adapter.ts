@@ -71,6 +71,7 @@ function createSQLiteTables(sqlite: Database.Database) {
         ignored_users TEXT DEFAULT '[]',
         username_color TEXT DEFAULT '#FFFFFF',
         profile_effect TEXT DEFAULT 'none',
+        avatar_frame TEXT DEFAULT 'none',
         points INTEGER DEFAULT 0,
         level INTEGER DEFAULT 1,
         total_points INTEGER DEFAULT 0,
