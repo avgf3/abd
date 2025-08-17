@@ -554,7 +554,7 @@ export default function UnifiedSidebar({
                 >
                   <UserListItem 
                     user={user} 
-                    onClick={(e) => handleUserClick(e as any, user)}
+                    onClick={(e) => handleUserClick(e, user)}
                   />
                 </SimpleUserMenu>
               ))}

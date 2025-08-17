@@ -15,12 +15,11 @@ export default function VipAvatar({ src, alt = '', size = 48, frame = 1, classNa
     return `${speeds[(frame - 1) % speeds.length]}s`;
   }, [frame]);
 
-  const containerStyle: React.CSSProperties = {
+  const containerStyle: React.CSSProperties & { [key: string]: string | number } = {
     width: size,
     height: size,
     // تمرير مدة الدوران عبر متغير CSS
-    // @ts-ignore - custom prop for CSS var
-    ['--vip-spin-duration' as any]: duration,
+    ['--vip-spin-duration']: duration,
   };
 
   const imgStyle: React.CSSProperties = {
