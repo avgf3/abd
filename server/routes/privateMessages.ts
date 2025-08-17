@@ -133,9 +133,13 @@ router.post('/send', async (req, res) => {
  * GET /api/private-messages/:userId/:otherUserId?limit=50
  * جلب سجل المحادثة الخاصة بين مستخدمين مع تحسين الأداء والتخزين المؤقت
  */
-router.get('/:userId/:otherUserId', async (req, res) => {
+router.get('/:userId/:otherUserId', async (req, res, next) => {
   try {
     const { userId, otherUserId } = req.params;
+    // تمرير المسارات الثابتة إلى معالجاتها الصحيحة لتفادي تطابق المسار الديناميكي
+    if (userId === 'conversations' || userId === 'cache') {
+      return next();
+    }
     const { limit = 50 } = req.query;
 
     const uid = parseInt(userId);
