@@ -289,26 +289,29 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         const userId = parseInt(profileMatch[1]);
         handleProfileLink(userId);
         window.history.replaceState(null, '', window.location.pathname);
-      } else if (pmMatch) {
-        const userId = parseInt(pmMatch[1]);
-        const openPm = async () => {
-          let user = chat.onlineUsers.find(u => u.id === userId);
-          if (!user) {
-            try {
-              const data = await apiRequest(`/api/users/${userId}?t=${Date.now()}`);
-              if (data && data.id) {
-                user = data as any;
+              } else if (pmMatch) {
+          const userId = parseInt(pmMatch[1]);
+          const openPm = async () => {
+            const userFromOnline = chat.onlineUsers.find(u => u.id === userId);
+            if (userFromOnline) {
+              setSelectedPrivateUser(userFromOnline);
+              setShowPmBox(true);
+            } else {
+              try {
+                const data = await apiRequest(`/api/users/${userId}?t=${Date.now()}`);
+                if (data && data.id) {
+                  const fetchedUser = data as any;
+                  setSelectedPrivateUser(fetchedUser);
+                  setShowPmBox(true);
+                } else {
+                  showErrorToast("لم نتمكن من العثور على هذا المستخدم", "مستخدم غير موجود");
+                }
+              } catch {
+                showErrorToast("لم نتمكن من العثور على هذا المستخدم", "مستخدم غير موجود");
               }
-            } catch {}
-          }
-          if (user) {
-            setSelectedPrivateUser(user);
-            setShowPmBox(true);
-          } else {
-            showErrorToast("لم نتمكن من العثور على هذا المستخدم", "مستخدم غير موجود");
-          }
-          window.history.replaceState(null, '', window.location.pathname);
-        };
+            }
+            window.history.replaceState(null, '', window.location.pathname);
+          };
         openPm();
       }
     };
@@ -495,7 +498,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </div>
         )}
                 {(!isMobile || activeView === 'hidden') ? (() => {
-           const currentRoom = rooms.find(room => room.id === chat.currentRoomId);
+           const currentRoom = rooms.find(room => room.id === chat.currentRoomId) as ChatRoom | undefined;
            
            // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
           if (currentRoom?.isBroadcast) {
@@ -847,9 +850,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             }
           }}
           onReportUser={(userId) => {
-            let user = chat.onlineUsers.find(u => u.id === userId) || null;
-            if (user) {
-              setReportedUser(user);
+            const found = chat.onlineUsers.find(u => u.id === userId) || null;
+            if (found) {
+              setReportedUser(found);
               setReportedMessage(null);
               setShowReportModal(true);
             } else {

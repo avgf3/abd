@@ -7,7 +7,7 @@ import { getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtil
 
 interface UserListItemProps {
   user: ChatUser;
-  onClick?: () => void;
+  onClick?: (event: React.MouseEvent<HTMLLIElement>) => void;
   showCountry?: boolean;
   className?: string;
 }
