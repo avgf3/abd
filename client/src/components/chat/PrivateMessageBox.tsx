@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
+import ProfileImage from '@/components/chat/ProfileImage';
 
 interface PrivateMessageBoxProps {
   isOpen: boolean;

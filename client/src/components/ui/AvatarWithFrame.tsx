@@ -58,7 +58,7 @@ export function AvatarWithFrame({
         <img 
           src={`/${frame}.svg`} 
           alt="Avatar Frame"
-          className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+          className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none z-20"
         />
       )}
 

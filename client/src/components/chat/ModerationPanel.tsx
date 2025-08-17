@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 
 interface ModerationPanelProps {
   isOpen: boolean;

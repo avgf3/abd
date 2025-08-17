@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
+import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
 import { getEffectColor, getFinalUsernameColor, buildProfileBackgroundGradient } from '@/utils/themeUtils';
 
@@ -1102,28 +1103,25 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         .profile-avatar {
           width: 130px;
           height: 130px;
-          border-radius: 16px;
-          overflow: hidden;
-          border: 4px solid rgba(255,255,255,0.9);
           position: absolute;
           top: calc(100% - 65px);
           right: 20px;
-          background-color: white;
+          background: transparent;
           box-shadow: 0 6px 20px rgba(0,0,0,0.6);
           z-index: 2;
           transition: transform 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: visible;
+          border: none;
         }
 
         .profile-avatar:hover {
           transform: scale(1.05);
         }
 
-        .profile-avatar img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-        }
+        /* أزلنا قواعد img داخل profile-avatar لتجنّب كسر مكوّن AvatarWithFrame */
 
         .change-avatar-btn {
           position: absolute;
@@ -1805,28 +1803,12 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
             )}
 
             <div className="profile-avatar">
-              <img 
-                src={getProfileImageSrcLocal()} 
-                alt="الصورة الشخصية"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  display: 'block',
-                  transition: 'none',
-                  backfaceVisibility: 'hidden',
-                  transform: 'translateZ(0)'
-                }}
-                onLoad={(e) => {
-                  }}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  console.error('❌ فشل في تحميل صورة البروفايل:', target.src);
-                  // منع إعادة التحميل المستمر عند الخطأ
-                  if (target.src !== '/default_avatar.svg' && !target.src.includes('default_avatar.svg')) {
-                    target.src = '/default_avatar.svg';
-                  }
-                }}
+              <AvatarWithFrame
+                src={getProfileImageSrcLocal()}
+                alt={localUser?.username}
+                frame={localUser?.avatarFrame || 'none'}
+                pixelSize={130}
+                innerScale={0.82}
               />
             </div>
             
