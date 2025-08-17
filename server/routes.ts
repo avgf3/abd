@@ -1009,25 +1009,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // جلب جميع المستخدمين
   app.get("/api/users", async (req, res) => {
     try {
-      const users = await storage.getAllUsers();
-      // إخفاء المعلومات الحساسة
-              const safeUsers = users.map(user => ({
-          id: user.id,
-          username: user.username,
-          userType: user.userType,
-          role: user.role,
-          isOnline: user.isOnline,
-          profileImage: user.profileImage,
-          level: user.level || 1,
-          gender: user.gender,
-          points: user.points || 0,
-          createdAt: user.createdAt,
-          lastActive: user.lastSeen || user.createdAt,
-          profileBackgroundColor: user.profileBackgroundColor,
-          profileEffect: user.profileEffect,
-          isHidden: user.isHidden
-        }));
-      res.json({ users: safeUsers });
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
+      const offset = Math.max(0, Number(req.query.offset) || 0);
+      const q = typeof req.query.q === 'string' ? req.query.q : undefined;
+
+      const [users, total] = await Promise.all([
+        databaseService.listUsers(limit, offset, q),
+        databaseService.countUsers(q)
+      ]);
+
+      const safeUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        userType: user.userType,
+        role: user.role,
+        isOnline: user.isOnline,
+        profileImage: user.profileImage,
+        level: user.level || 1,
+        gender: user.gender,
+        points: user.points || 0,
+        createdAt: user.createdAt,
+        lastActive: user.lastSeen || user.createdAt,
+        profileBackgroundColor: user.profileBackgroundColor,
+        profileEffect: user.profileEffect,
+        isHidden: user.isHidden
+      }));
+
+      res.json({ users: safeUsers, total, limit, offset, hasMore: offset + users.length < total });
     } catch (error) {
       console.error('خطأ في جلب جميع المستخدمين:', error);
       res.status(500).json({ error: "خطأ في الخادم" });
@@ -1046,29 +1054,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // جلب المستخدمين المحظورين
   app.get("/api/users/blocked", async (req, res) => {
     try {
-      const allUsers = await storage.getAllUsers();
-      const blockedUsers = allUsers.filter(user => user.isBlocked === true);
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
+      const offset = Math.max(0, Number(req.query.offset) || 0);
+
+      const users = await databaseService.listUsers(limit, offset);
+      const blockedUsers = users.filter(user => user.isBlocked === true);
       
-      // إخفاء المعلومات الحساسة
-      const safeBlockedUsers = blockedUsers.map(user => ({
+      const safeUsers = blockedUsers.map(user => ({
         id: user.id,
         username: user.username,
         userType: user.userType,
+        role: user.role,
+        isOnline: user.isOnline,
         profileImage: user.profileImage,
-        usernameColor: user.usernameColor,
-        ipAddress: user.ipAddress,
-        deviceId: user.deviceId,
-        joinDate: user.joinDate,
-        isBlocked: user.isBlocked
+        isHidden: user.isHidden
       }));
-      
-      res.json({ users: safeBlockedUsers });
+      res.json({ users: safeUsers, limit, offset });
     } catch (error) {
-      console.error('خطأ في جلب المستخدمين المحظورين:', error);
-      res.status(500).json({ 
-        error: 'خطأ في جلب المستخدمين المحظورين',
-        details: error instanceof Error ? error.message : 'خطأ غير معروف'
-      });
+      res.status(500).json({ error: "خطأ في الخادم" });
     }
   });
 
@@ -1294,13 +1297,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "معاملات البحث مطلوبة" });
       }
 
-      const allUsers = await storage.getAllUsers();
-      const searchTerm = (q as string).toLowerCase();
-      
-      const filteredUsers = allUsers.filter(user => 
-        user.id !== parseInt(userId as string) && // استبعاد المستخدم الحالي
-        user.username.toLowerCase().includes(searchTerm)
-      ).slice(0, 10); // حد أقصى 10 نتائج
+      const limit = 10;
+      const users = await databaseService.listUsers(limit, 0, String(q));
+      const filteredUsers = users.filter(user => user.id !== parseInt(userId as string));
 
       res.json({ users: filteredUsers });
     } catch (error) {

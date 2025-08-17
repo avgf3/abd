@@ -159,21 +159,12 @@ router.get('/:userId/:otherUserId', async (req, res) => {
       return res.status(500).json({ error: 'خطأ في جلب الرسائل' });
     }
 
-    // إثراء الرسائل بمعلومات المرسل بشكل محسن
-    const enriched = await Promise.allSettled(
-      messages.map(async (m: any) => {
-        try {
-          const sender = await storage.getUser(m.senderId);
-          return { ...m, sender };
-        } catch {
-          return m;
-        }
-      })
-    );
+    // إثراء الرسائل بمعلومات المرسل بشكل محسن (Batch)
+    const uniqueSenderIds = Array.from(new Set(messages.map((m: any) => m.senderId).filter(Boolean)));
+    const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
+    const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
 
-    const finalMessages = enriched
-      .filter(result => result.status === 'fulfilled')
-      .map(result => (result as PromiseFulfilledResult<any>).value);
+    const finalMessages = messages.map((m: any) => ({ ...m, sender: senderMap.get(m.senderId) }));
 
     // حفظ في cache للاستخدام المستقبلي
     conversationCache.set(conversationKey, {

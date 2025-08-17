@@ -20,3 +20,8 @@ WHERE is_private = true;
 -- Index for message deletion queries
 CREATE INDEX IF NOT EXISTS idx_messages_deleted ON messages (deleted_at) 
 WHERE deleted_at IS NOT NULL;
+
+-- Optimize LIKE searches on messages.content (PostgreSQL)
+-- Requires pg_trgm extension
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX IF NOT EXISTS idx_messages_content_trgm ON messages USING gin (content gin_trgm_ops);

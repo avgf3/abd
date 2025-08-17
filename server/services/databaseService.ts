@@ -384,6 +384,93 @@ export class DatabaseService {
     }
   }
 
+  // New: paginated and optional search user listing to avoid full scans
+  async listUsers(limit: number = 50, offset: number = 0, search?: string): Promise<User[]> {
+    if (!this.isConnected()) return [];
+    const safeLimit = Math.min(100, Math.max(1, Number(limit) || 50));
+    const safeOffset = Math.max(0, Number(offset) || 0);
+
+    try {
+      if (this.type === 'postgresql') {
+        const base = (this.db as any)
+          .select()
+          .from(pgSchema.users)
+          .orderBy(desc(pgSchema.users.joinDate))
+          .limit(safeLimit)
+          .offset(safeOffset);
+        if (search && search.trim()) {
+          const pattern = `%${search.trim()}%`;
+          return await (this.db as any)
+            .select()
+            .from(pgSchema.users)
+            .where(like(pgSchema.users.username, pattern))
+            .orderBy(desc(pgSchema.users.joinDate))
+            .limit(safeLimit)
+            .offset(safeOffset);
+        }
+        return await base;
+      } else {
+        const base = (this.db as any)
+          .select()
+          .from(sqliteSchema.users)
+          .orderBy(desc(sqliteSchema.users.joinDate))
+          .limit(safeLimit)
+          .offset(safeOffset);
+        if (search && search.trim()) {
+          const pattern = `%${search.trim()}%`;
+          return await (this.db as any)
+            .select()
+            .from(sqliteSchema.users)
+            .where(like(sqliteSchema.users.username, pattern))
+            .orderBy(desc(sqliteSchema.users.joinDate))
+            .limit(safeLimit)
+            .offset(safeOffset);
+        }
+        return await base;
+      }
+    } catch (error) {
+      console.error('Error listing users:', error);
+      return [];
+    }
+  }
+
+  // New: count for pagination
+  async countUsers(search?: string): Promise<number> {
+    if (!this.isConnected()) return 0;
+    try {
+      if (this.type === 'postgresql') {
+        if (search && search.trim()) {
+          const pattern = `%${search.trim()}%`;
+          const rows = await (this.db as any)
+            .select({ c: count() })
+            .from(pgSchema.users)
+            .where(like(pgSchema.users.username, pattern));
+          return Number(rows?.[0]?.c || 0);
+        }
+        const rows = await (this.db as any)
+          .select({ c: count() })
+          .from(pgSchema.users);
+        return Number(rows?.[0]?.c || 0);
+      } else {
+        if (search && search.trim()) {
+          const pattern = `%${search.trim()}%`;
+          const rows = await (this.db as any)
+            .select({ c: count() })
+            .from(sqliteSchema.users)
+            .where(like(sqliteSchema.users.username, pattern));
+          return Number(rows?.[0]?.c || 0);
+        }
+        const rows = await (this.db as any)
+          .select({ c: count() })
+          .from(sqliteSchema.users);
+        return Number(rows?.[0]?.c || 0);
+      }
+    } catch (error) {
+      console.error('Error counting users:', error);
+      return 0;
+    }
+  }
+
   async getOnlineUsers(): Promise<User[]> {
     if (!this.isConnected()) return [];
 

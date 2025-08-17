@@ -69,10 +69,7 @@ export async function getPointsHistory(userId: number): Promise<any[]> {
 
 export async function getTopUsersByPoints(limit: number = 10): Promise<User[]> {
   try {
-    const allUsers = await databaseService.getAllUsers();
-    return allUsers
-      .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
-      .slice(0, limit);
+    return await databaseService.getTopUsersByPoints(limit);
   } catch (error) {
     console.error('Error getting top users by points:', error);
     return [];
@@ -811,20 +808,14 @@ export const storage: LegacyStorage = {
       if (dbType === 'postgresql') {
         const { roomMembers } = await import('../shared/schema');
         const { eq } = await import('drizzle-orm');
-        const rows = await (db as any)
-          .select({ userId: (roomMembers as any).userId })
-          .from((roomMembers as any))
-          .where(eq((roomMembers as any).roomId, String(roomId) as any));
-        const userIds = (rows || []).map((r: any) => r.userId);
-        const users: any[] = [];
-        for (const id of userIds) {
-          const u = await databaseService.getUserById(id);
-          // تضمين فقط المستخدمين المتصلين فعلياً وغير المخفيين
-          if (u && u.isOnline && !(u as any).isHidden) {
-            users.push(u as any);
-          }
-        }
-        return users;
+                  const rows = await (db as any)
+            .select({ userId: (roomMembers as any).userId })
+            .from((roomMembers as any))
+            .where(eq((roomMembers as any).roomId, String(roomId) as any));
+          const userIds = (rows || []).map((r: any) => r.userId);
+          const fetchedUsers = await databaseService.getUsersByIds(userIds as number[]);
+          const users = (fetchedUsers || []).filter((u: any) => u && u.isOnline && !(u as any).isHidden);
+          return users as any[];
       }
       return [] as any[];
     } catch (error) {
