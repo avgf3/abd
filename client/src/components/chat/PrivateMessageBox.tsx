@@ -158,12 +158,7 @@ export default function PrivateMessageBox({
         >
           <DialogHeader className="border-b border-accent p-3 bg-gradient-to-r from-blue-50 to-green-50">
             <div className="flex items-center gap-3">
-              <img
-                src={user.profileImage || '/default_avatar.svg'}
-                alt="avatar"
-                className="w-10 h-10 rounded-full border-2 border-primary shadow-sm"
-                onError={(e) => { (e.target as HTMLImageElement).src = '/default_avatar.svg'; }}
-              />
+              <ProfileImage user={user} size="small" showFrame={false} />
               <div className="flex-1 min-w-0">
                 <span className="text-lg font-semibold truncate block" style={{ color: getFinalUsernameColor(user) }}>
                   {user.username}
@@ -232,12 +227,7 @@ export default function PrivateMessageBox({
                       }`}
                       style={{ borderRightColor: getDynamicBorderColor(m.sender || (isMe ? currentUser : user)) }}
                     >
-                      <img
-                        src={(m.sender?.profileImage as string) || '/default_avatar.svg'}
-                        alt="avatar"
-                        className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
-                        onError={(e) => { (e.target as HTMLImageElement).src = '/default_avatar.svg'; }}
-                      />
+                      <ProfileImage user={(m.sender || user) as ChatUser} size="small" showFrame={false} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-semibold text-sm truncate" style={{ color: getFinalUsernameColor(m.sender || user) }}>

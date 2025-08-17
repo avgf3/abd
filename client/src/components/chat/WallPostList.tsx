@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { WallPost, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
+import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 
 interface WallPostListProps {
   posts: WallPost[];
@@ -58,17 +59,13 @@ export default function WallPostList({
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-primary/10">
-                    {post.userProfileImage ? (
-                      <img 
-                        src={getImageSrc(post.userProfileImage)} 
-                        alt={post.username}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-lg font-bold text-primary">
-                        {post.username.charAt(0)}
-                      </span>
-                    )}
+                    <AvatarWithFrame
+                      src={getImageSrc(post.userProfileImage)}
+                      alt={post.username}
+                      frame={(post as any).avatarFrame || 'none'}
+                      pixelSize={48}
+                      innerScale={0.82}
+                    />
                   </div>
                 </div>
                 <div>

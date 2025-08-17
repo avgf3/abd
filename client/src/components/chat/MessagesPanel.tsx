@@ -91,7 +91,7 @@ export default function MessagesPanel({
                       onClick={() => { onClose(); setTimeout(() => onStartPrivateChat(user), 0); }}
                     >
                       <div className="flex items-center gap-3">
-                        <ProfileImage user={user} size="small" />
+                        <ProfileImage user={user} size="small" showFrame={false} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-3">
                             <h3 className="font-medium text-gray-900 text-sm truncate">{user.username}</h3>

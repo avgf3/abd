@@ -364,17 +364,14 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                        {currentUser.profileImage ? (
-                          <img 
-                            src={getImageSrc(currentUser.profileImage)} 
-                            alt={currentUser.username}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-sm font-bold text-primary">
-                            {currentUser.username.charAt(0)}
-                          </span>
-                        )}
+                        <AvatarWithFrame
+                          src={getImageSrc(currentUser.profileImage)}
+                          alt={currentUser.username}
+                          fallback={currentUser.username.charAt(0)}
+                          frame={currentUser.avatarFrame || 'none'}
+                          pixelSize={40}
+                          innerScale={0.82}
+                        />
                       </div>
                       <div className="flex-1">
                         <div className="text-sm font-semibold" style={{ color: currentUser.usernameColor || 'inherit' }}>
