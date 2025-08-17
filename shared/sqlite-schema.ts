@@ -101,6 +101,19 @@ export const pointsHistory = sqliteTable("points_history", {
   createdAt: text("created_at"), // ISO string في SQLite
 });
 
+// جدول لتخزين سجل إجراءات الإدارة بشكل دائم
+export const moderationActions = sqliteTable("moderation_actions", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  targetUserId: integer("target_user_id").notNull().references(() => users.id),
+  moderatorId: integer("moderator_id").notNull().references(() => users.id),
+  reason: text("reason").notNull(),
+  duration: integer("duration"),
+  timestamp: integer("timestamp", { mode: "timestamp" }).notNull(),
+  ipAddress: text("ip_address"),
+  deviceId: text("device_id"),
+});
+
 // جدول إعدادات مستويات النقاط
 export const levelSettings = sqliteTable("level_settings", {
   id: integer("id").primaryKey(),
