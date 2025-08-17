@@ -285,6 +285,7 @@ export const useChat = () => {
   const currentRoomIdRef = useRef<string>(initialState.currentRoomId);
   const ignoredUsersRef = useRef<Set<number>>(new Set());
   const roomMessagesRef = useRef<Record<string, ChatMessage[]>>({});
+  const typingTimersRef = useRef<Map<number, number>>(new Map());
 
   useEffect(() => { currentUserRef.current = state.currentUser; }, [state.currentUser]);
   useEffect(() => { currentRoomIdRef.current = state.currentRoomId; }, [state.currentRoomId]);
@@ -461,6 +462,33 @@ export const useChat = () => {
         }
         
         switch (envelope.type) {
+          case 'typing': {
+            const uid = (envelope as any).userId;
+            const isTyping = !!(envelope as any).isTyping;
+            const username = (envelope as any).username || (uid ? `User#${uid}` : '')
+            if (!uid || uid === currentUserRef.current?.id) break;
+            const next = new Set(state.typingUsers);
+            if (isTyping) {
+              next.add(username);
+              // clear previous timer
+              const t = typingTimersRef.current.get(uid);
+              if (t) { clearTimeout(t); typingTimersRef.current.delete(uid); }
+              const timeoutId = window.setTimeout(() => {
+                const after = new Set(currentRoomIdRef.current ? Array.from(next) : Array.from(state.typingUsers));
+                after.delete(username);
+                dispatch({ type: 'SET_TYPING_USERS', payload: after });
+                const tmp = typingTimersRef.current.get(uid);
+                if (tmp) { clearTimeout(tmp); typingTimersRef.current.delete(uid); }
+              }, 3000);
+              typingTimersRef.current.set(uid, timeoutId);
+            } else {
+              next.delete(username);
+              const t = typingTimersRef.current.get(uid);
+              if (t) { clearTimeout(t); typingTimersRef.current.delete(uid); }
+            }
+            dispatch({ type: 'SET_TYPING_USERS', payload: next });
+            break;
+          }
           case 'newMessage': {
             const { message } = envelope;
             if (message?.sender && message.content) {
@@ -839,6 +867,9 @@ export const useChat = () => {
           clearInterval(onlineUsersIntervalRef.current);
           onlineUsersIntervalRef.current = null;
         }
+        // clear typing timers
+        typingTimersRef.current.forEach((id) => { try { clearTimeout(id); } catch {} });
+        typingTimersRef.current.clear();
       };
     }, []);
 

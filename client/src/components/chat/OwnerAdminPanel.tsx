@@ -1,5 +1,5 @@
 import { Shield, Users, Ban, UserX, Clock, Crown, Settings } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 import {
   AlertDialog,
@@ -499,13 +499,12 @@ export default function OwnerAdminPanel({
 }
 
 function FinalBlockPanel({ currentUser, onlineUsers, onSuccess }: { currentUser: any; onlineUsers: any[]; onSuccess?: () => void; }) {
-  const { toast } = require('@/hooks/use-toast');
-  const React = require('react');
-  const [targetId, setTargetId] = React.useState<number | null>(null);
-  const [reason, setReason] = React.useState<string>('مخالفة القواعد');
-  const [loading, setLoading] = React.useState(false);
+  const { toast } = useToast();
+  const [targetId, setTargetId] = useState<number | null>(null);
+  const [reason, setReason] = useState<string>('مخالفة القواعد');
+  const [loading, setLoading] = useState(false);
 
-  const candidates = React.useMemo(() => (onlineUsers || []).filter(u => u && u.id && u.username), [onlineUsers]);
+  const candidates = useMemo(() => (onlineUsers || []).filter(u => u && u.id && u.username), [onlineUsers]);
 
   const handleFinalBlock = async () => {
     try {
@@ -523,7 +522,7 @@ function FinalBlockPanel({ currentUser, onlineUsers, onSuccess }: { currentUser:
       onSuccess?.();
     } catch (e) {
       setLoading(false);
-      toast.toast?.({ title: 'فشل الحظر', description: 'تعذر تنفيذ الحظر النهائي', variant: 'destructive' });
+      toast({ title: 'فشل الحظر', description: 'تعذر تنفيذ الحظر النهائي', variant: 'destructive' });
     }
   };
 
