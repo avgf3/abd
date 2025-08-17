@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ChatUser } from '@/types/chat';
-import { getImageSrc } from '@/utils/imageUtils';
+import ProfileImage from '@/components/chat/ProfileImage';
 import { formatTime } from '@/utils/timeUtils';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -89,15 +89,7 @@ export default function MessagesPanel({
                       onClick={() => { onClose(); setTimeout(() => onStartPrivateChat(user), 0); }}
                     >
                       <div className="flex items-center gap-3">
-                        <img
-                          src={getImageSrc(user.profileImage)}
-                          alt="صورة المستخدم"
-                          className="w-12 h-12 rounded-full border-2 border-primary ring-1 ring-accent shadow-sm object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = '/default_avatar.svg';
-                          }}
-                        />
+                        <ProfileImage user={user} size="small" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-3">
                             <h3 className="font-medium text-gray-900 text-sm truncate">{user.username}</h3>

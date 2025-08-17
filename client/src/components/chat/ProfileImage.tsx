@@ -25,7 +25,7 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
     ? 'border-pink-400 ring-pink-200' 
     : 'border-blue-400 ring-blue-200';
 
-  // تحديد مصدر الصورة بشكل مستقر
+  // تحديد مصدر الصورة بشكل مستقر مع مراقبة تغيّر الهاش/الإصدار
   const imageSrc = useMemo(() => {
     const base = getImageSrc(user.profileImage, '');
     const v = (user as any).avatarHash || (user as any).avatarVersion;
@@ -36,7 +36,7 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
       return `${base}?v=${v}`;
     }
     return base;
-  }, [user.profileImage]);
+  }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
 
   const fallbackSrc = '/default_avatar.svg';
   const { src: finalSrc, isLoading } = useImageLoader({ src: imageSrc, fallback: fallbackSrc });
