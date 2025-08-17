@@ -41,6 +41,7 @@ import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ChatInterfaceProps {
   chat: ReturnType<typeof useChat>;
@@ -62,6 +63,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [newRoomDescription, setNewRoomDescription] = useState('');
   const [newRoomImage, setNewRoomImage] = useState<File | null>(null);
   
+  const queryClient = useQueryClient();
   // 🚀 إدارة الغرف عبر hook موحّد محسن
   const {
     rooms,
@@ -164,6 +166,17 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       });
     }
   }, [chat.newMessageSender]);
+
+  // Prefetch private conversations on user entry
+  useEffect(() => {
+    if (chat.currentUser?.id) {
+      queryClient.prefetchQuery({
+        queryKey: ['/api/private-messages/conversations', chat.currentUser.id],
+        queryFn: async () => await apiRequest(`/api/private-messages/conversations/${chat.currentUser.id}?limit=50`),
+        staleTime: 30_000,
+      });
+    }
+  }, [chat.currentUser?.id, queryClient]);
 
   // Auto-switch to friends tab when friend request is accepted
   useEffect(() => {

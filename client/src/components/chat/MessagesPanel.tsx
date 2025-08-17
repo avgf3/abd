@@ -73,7 +73,9 @@ export default function MessagesPanel({
           <div className="space-y-4 p-4">
             <section>
               {isLoading ? (
-                <div className="text-center py-10 text-muted-foreground">جارٍ التحميل…</div>
+                <div className="flex justify-center py-10">
+                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-400 border-t-transparent"></div>
+                </div>
               ) : conversations.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">
                   <div className="text-5xl mb-4">✉️</div>
