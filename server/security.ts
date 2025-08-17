@@ -1,5 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import express, { type Express } from 'express';
+import { moderationSystem } from './moderation';
+import { getDeviceIdFromHeaders } from './utils/device';
 
 // Rate limiting maps
 const authRequestCounts = new Map<string, { count: number; resetTime: number }>();
@@ -9,7 +11,9 @@ const blockedIPs = new Set<string>();
 
 // Rate limiter for authentication endpoints
 export function authLimiter(req: Request, res: Response, next: NextFunction): void {
-  const clientId = req.ip || 'unknown';
+  const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
+  const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
+  const clientId = forwarded || real || req.ip || 'unknown';
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15 minutes
   const maxRequests = 50; // زيادة الحد للمصادقة
@@ -32,7 +36,9 @@ export function authLimiter(req: Request, res: Response, next: NextFunction): vo
 
 // Rate limiter for message endpoints
 export function messageLimiter(req: Request, res: Response, next: NextFunction): void {
-  const clientId = req.ip || 'unknown';
+  const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
+  const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
+  const clientId = forwarded || real || req.ip || 'unknown';
   const now = Date.now();
   const windowMs = 1 * 60 * 1000; // 1 minute
   const maxRequests = 30; // 30 messages per minute
@@ -55,7 +61,9 @@ export function messageLimiter(req: Request, res: Response, next: NextFunction):
 
 // Rate limiter for friend request endpoints
 export function friendRequestLimiter(req: Request, res: Response, next: NextFunction): void {
-  const clientId = req.ip || 'unknown';
+  const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
+  const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
+  const clientId = forwarded || real || req.ip || 'unknown';
   const now = Date.now();
   const windowMs = 5 * 60 * 1000; // 5 minutes
   const maxRequests = 100; // 100 friend requests per 5 minutes
@@ -78,22 +86,16 @@ export function friendRequestLimiter(req: Request, res: Response, next: NextFunc
 
 // IP security check middleware
 export function checkIPSecurity(req: Request, res: Response, next: NextFunction): void {
-  const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
+  // Honor reverse proxy headers first
+  const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
+  const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
+  const clientIp = forwarded || real || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
   
-  // Check if IP is blocked
-  if (blockedIPs.has(clientIp)) {
-    res.status(403).json({ error: 'عذراً، تم حظر هذا العنوان' });
+  // Check if IP or device is blocked (device based on header)
+  const deviceId = getDeviceIdFromHeaders(req.headers as any);
+  if (blockedIPs.has(clientIp) || moderationSystem.isBlocked(clientIp, deviceId)) {
+    res.status(403).json({ error: 'عذراً، تم حظر هذا العنوان أو جهازك' });
     return;
-  }
-  
-  // Add basic security checks
-  const userAgent = req.headers['user-agent'] || '';
-  const suspicious = [
-    'bot', 'crawler', 'spider', 'scraper', 'wget', 'curl'
-  ].some(term => userAgent.toLowerCase().includes(term));
-  
-  if (suspicious) {
-    // Don't block, just log for now
   }
   
   next();
@@ -147,7 +149,9 @@ export function setupSecurity(app: Express): void {
   const requestCounts = new Map<string, { count: number; resetTime: number }>();
   
   app.use('/api', (req: Request, res: Response, next: NextFunction) => {
-    const clientId = req.ip || 'unknown';
+    const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
+    const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
+    const clientId = forwarded || real || req.ip || 'unknown';
     const now = Date.now();
     const windowMs = 15 * 60 * 1000; // 15 minutes
     const maxRequests = 500; // زيادة الحد إلى 500 طلب

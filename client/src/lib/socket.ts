@@ -113,6 +113,18 @@ export function getSocket(): Socket {
   
   if (socketInstance) return socketInstance;
 
+  const deviceId = (() => {
+    try {
+      const existing = localStorage.getItem('deviceId');
+      if (existing) return existing;
+      const id = 'web-' + Math.random().toString(36).slice(2);
+      localStorage.setItem('deviceId', id);
+      return id;
+    } catch {
+      return 'web-unknown';
+    }
+  })();
+
   socketInstance = io(getServerUrl(), {
     path: '/socket.io',
     transports: ['websocket', 'polling'],
@@ -127,6 +139,8 @@ export function getSocket(): Socket {
     timeout: 20000,
     forceNew: true,
     withCredentials: true,
+    auth: { deviceId },
+    extraHeaders: { 'x-device-id': deviceId },
   });
 
   attachCoreListeners(socketInstance);
