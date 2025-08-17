@@ -65,26 +65,29 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       formData.append('userId', currentUser.id.toString());
 
       // استخدام api.upload مع شريط التقدم والإعدادات المركزية
-      const result = await api.upload('/api/upload/profile-image', formData, {
+      const result: any = await api.upload('/api/upload/profile-image', formData, {
         timeout: getUploadTimeout('image'),
         onProgress: (progress) => {
           setUploadProgress(Math.round(progress));
         }
       });
 
-      if (!result.success) {
-        throw new Error(result.error || 'فشل في رفع الصورة');
+      if (!result?.success) {
+        throw new Error(result?.error || 'فشل في رفع الصورة');
       }
       
       // تحديث الواجهة فوراً
       if (onImageUpdate && result.imageUrl) {
-        onImageUpdate(result.imageUrl);
+        onImageUpdate(String(result.imageUrl));
       }
       // تحديث نسخة/هاش الصورة محلياً إن عاد من السيرفر
-      if ((result as any).avatarHash && currentUser?.id) {
+      if (result.avatarHash && currentUser?.id) {
         try {
-          await api.put(`/api/users/${currentUser.id}`, { avatarHash: (result as any).avatarHash });
-        } catch {}
+          await api.put(`/api/users/${currentUser.id}`, { avatarHash: result.avatarHash });
+        } catch (e: any) {
+          // عرض رسالة تحذير خفيفة بدلاً من الكتم
+          console.warn('فشل تحديث avatarHash محلياً:', e?.message || e);
+        }
       }
 
       toast({
