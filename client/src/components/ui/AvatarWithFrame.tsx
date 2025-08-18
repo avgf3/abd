@@ -30,7 +30,7 @@ export function AvatarWithFrame({
   frame = 'none', 
   size,
   variant = 'profile',
-  ringOnly = true,
+  ringOnly = false,
   className,
   onClick
 }: AvatarWithFrameProps) {
