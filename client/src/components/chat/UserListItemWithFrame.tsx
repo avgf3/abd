@@ -68,9 +68,12 @@ export const UserListItem: React.FC<UserListItemProps> = ({
         src={avatarSrc}
         alt={user.username}
         fallback={user.username.substring(0, 2).toUpperCase()}
-        frame={user.avatarFrame || 'none'}
+        // استخدام إطار دائري CSS لضمان فرق الحجم الصحيح بصريًا
+        useCircularFrame
         imageSize={40}
-        frameThickness={6}
+        frameBorderWidth={3}
+        frameBorderColor={'gold'}
+        frameGap={3}
       />
 
       {/* معلومات المستخدم */}

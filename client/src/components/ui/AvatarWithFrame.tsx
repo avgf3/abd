@@ -11,6 +11,11 @@ interface AvatarWithFrameProps {
   frameThickness?: number; // سُمك الإطار بالبكسل (يضاف حول الصورة)
   className?: string;
   onClick?: () => void;
+  // إطار دائري بسيط باستخدام CSS border + padding
+  useCircularFrame?: boolean;
+  frameBorderWidth?: number; // سمك إطار CSS
+  frameBorderColor?: string; // لون إطار CSS
+  frameGap?: number; // مسافة بين الصورة والإطار
 }
 
 export function AvatarWithFrame({ 
@@ -21,18 +26,36 @@ export function AvatarWithFrame({
   imageSize,
   frameThickness = 8,
   className,
-  onClick 
+  onClick,
+  useCircularFrame = false,
+  frameBorderWidth = 3,
+  frameBorderColor = 'gold',
+  frameGap = 0
 }: AvatarWithFrameProps) {
-  // قاعدة موحّدة: حجم الحاوية = حجم الصورة + سُمك الإطار من الجانبين
-  const containerSize = frame && frame !== 'none'
-    ? imageSize + (frameThickness * 2)
-    : imageSize;
+  // عند استخدام إطار دائري بسيط، لا نزيد أبعاد المحتوى يدويًا
+  // لأن border + padding يزيدان الحجم تلقائيًا
+  // خلاف ذلك: حجم الحاوية = حجم الصورة + سُمك الإطار من الجانبين
+  const containerSize = useCircularFrame
+    ? imageSize
+    : (frame && frame !== 'none'
+      ? imageSize + (frameThickness * 2)
+      : imageSize);
 
-  const containerStyle: React.CSSProperties = {
-    width: `${containerSize}px`,
-    height: `${containerSize}px`,
-    position: 'relative'
-  };
+  const containerStyle: React.CSSProperties = useCircularFrame
+    ? {
+      width: `${containerSize}px`,
+      height: `${containerSize}px`,
+      position: 'relative',
+      borderRadius: '50%',
+      border: `${frameBorderWidth}px solid ${frameBorderColor}`,
+      padding: `${frameGap}px`,
+      boxSizing: 'content-box'
+    }
+    : {
+      width: `${containerSize}px`,
+      height: `${containerSize}px`,
+      position: 'relative'
+    };
 
   const avatarStyle: React.CSSProperties = {
     width: `${imageSize}px`,
@@ -60,7 +83,7 @@ export function AvatarWithFrame({
         <AvatarFallback>{fallback}</AvatarFallback>
       </Avatar>
 
-      {frame && frame !== 'none' && (
+      {!useCircularFrame && frame && frame !== 'none' && (
         <img 
           src={`/${frame}.svg`} 
           alt="Avatar Frame"
