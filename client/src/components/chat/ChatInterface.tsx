@@ -1,5 +1,6 @@
 import { Settings, Bell, MessageSquare, MessageCircle, Crown, Shield, AlertTriangle, Eye, EyeOff, Lock } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import NotificationPanel from './NotificationPanel';
 import MessagesPanel from './MessagesPanel';
@@ -58,6 +59,18 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAdminReports, setShowAdminReports] = useState(false);
   const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>(() => (typeof window !== 'undefined' && window.innerWidth < 768 ? 'hidden' : 'users'));
+  // عدد الإشعارات غير المقروءة للشارة (يُحدّث تلقائياً عند أي إشعار جديد)
+  const { data: unreadData } = useQuery<{ count: number }>({
+    queryKey: ['/api/notifications/unread-count', chat.currentUser?.id],
+    queryFn: async () => {
+      if (!chat.currentUser?.id) return { count: 0 } as any;
+      return await apiRequest(`/api/notifications/unread-count?userId=${chat.currentUser.id}`);
+    },
+    enabled: !!chat.currentUser?.id,
+    staleTime: 15000,
+    refetchInterval: 60000
+  });
+  const unreadCount = unreadData?.count || 0;
   const isMobile = useIsMobile();
   const [showAddRoomDialog, setShowAddRoomDialog] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
@@ -460,7 +473,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
             onClick={() => setShowNotifications(true)}
           >
-            <Bell className="w-4 h-4" />
+            <div className="relative">
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] leading-none px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{unreadCount}</span>
+              )}
+            </div>
             إشعارات
           </Button>
 

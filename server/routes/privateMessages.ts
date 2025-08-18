@@ -78,47 +78,11 @@ router.post('/send', async (req, res) => {
     const conversationKey = `${Math.min(parseInt(senderId), parseInt(receiverId))}-${Math.max(parseInt(senderId), parseInt(receiverId))}`;
     conversationCache.delete(conversationKey);
 
-    // إرسال إشعار وبث الرسالة بشكل متوازي
-    const promises = [];
-
-    // إنشاء إشعار للمستقبل
-    promises.push(
-      notificationService.createMessageNotification(
-        receiver.id,
-        sender.username,
-        sender.id,
-        text.substring(0, 100)
-      ).catch(() => null)
-    );
-
     // بث الرسالة عبر Socket.IO
     const io = req.app.get('io');
     if (io) {
-      promises.push(
-        Promise.all([
-          new Promise(resolve => {
-            try {
-              io.to(String(senderId)).emit('privateMessage', { message: messageWithSender });
-              resolve(true);
-            } catch { resolve(false); }
-          }),
-          new Promise(resolve => {
-            try {
-              io.to(String(receiverId)).emit('privateMessage', { message: messageWithSender });
-              resolve(true);
-            } catch { resolve(false); }
-          })
-        ])
-      );
-    }
-
-    const [createdNotification] = await Promise.all(promises);
-
-    // بث الإشعار إذا تم إنشاؤه بنجاح
-    if (io && createdNotification) {
-      try {
-        io.to(String(receiverId)).emit('newNotification', { notification: createdNotification });
-      } catch {}
+      try { io.to(String(senderId)).emit('privateMessage', { message: messageWithSender }); } catch {}
+      try { io.to(String(receiverId)).emit('privateMessage', { message: messageWithSender }); } catch {}
     }
 
     return res.json({ success: true, message: messageWithSender });

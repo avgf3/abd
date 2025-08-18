@@ -824,6 +824,17 @@ export const useChat = () => {
 
     socketInstance.on('privateMessage', handlePrivateMessage);
 
+    // استلام إشعار فوري وتحديث تبويب الإشعارات مباشرة
+    socketInstance.on('newNotification', (payload: any) => {
+      try {
+        const notif = payload?.notification || payload;
+        // تجاهل إشعارات الرسائل نهائيًا من الواجهة أيضًا
+        if (notif && notif.type && notif.type !== 'message') {
+          try { window.dispatchEvent(new CustomEvent('notificationReceived', { detail: notif })); } catch {}
+        }
+      } catch {}
+    });
+
       // معالج حدث الطرد
       socketInstance.on('kicked', (data: any) => {
         if (currentUserRef.current?.id === data.userId) {
