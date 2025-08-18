@@ -1,268 +1,216 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
     <defs>
-        <!-- تدرجات زهرية متعددة -->
-        <linearGradient id="pinkGradient1" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#ffe6f2"/>
-            <stop offset="50%" stop-color="#ff69b4"/>
-            <stop offset="100%" stop-color="#ff1493"/>
+        <!-- تدرجات وردية فائقة -->
+        <linearGradient id="supremePink" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fff0f5"/>
+            <stop offset="20%" stop-color="#ff69b4"/>
+            <stop offset="40%" stop-color="#ff1493"/>
+            <stop offset="60%" stop-color="#c71585"/>
+            <stop offset="80%" stop-color="#ff69b4"/>
+            <stop offset="100%" stop-color="#fff0f5"/>
         </linearGradient>
         
-        <radialGradient id="pinkRadial" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#fff0f5"/>
-            <stop offset="40%" stop-color="#ff69b4"/>
+        <radialGradient id="pinkRadial2" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="30%" stop-color="#ffb6c1"/>
+            <stop offset="60%" stop-color="#ff69b4"/>
             <stop offset="100%" stop-color="#c71585"/>
         </radialGradient>
         
-        <linearGradient id="pinkShine" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
-            <stop offset="50%" stop-color="#ffe6f2" stop-opacity="0.5"/>
-            <stop offset="100%" stop-color="#ff69b4" stop-opacity="0.3"/>
-        </linearGradient>
-        
-        <!-- تدرجات للأجنحة -->
-        <linearGradient id="pinkWingGrad1" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#ffe6f2"/>
-            <stop offset="30%" stop-color="#ff69b4"/>
-            <stop offset="60%" stop-color="#ff1493"/>
-            <stop offset="100%" stop-color="#c71585"/>
-        </linearGradient>
-        
-        <linearGradient id="pinkWingGrad2" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0%" stop-color="#ffb6c1"/>
-            <stop offset="50%" stop-color="#ff69b4"/>
+        <!-- تدرج فراشة ماسية -->
+        <radialGradient id="diamondButterflyGradient">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="40%" stop-color="#ffd6e7"/>
+            <stop offset="80%" stop-color="#ff69b4"/>
             <stop offset="100%" stop-color="#ff1493"/>
-        </linearGradient>
+        </radialGradient>
         
-        <linearGradient id="featherGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#fff0f5"/>
-            <stop offset="20%" stop-color="#ff69b4"/>
-            <stop offset="50%" stop-color="#ff1493"/>
-            <stop offset="80%" stop-color="#c71585"/>
-            <stop offset="100%" stop-color="#8b0037"/>
-        </linearGradient>
+        <!-- تدرج زهور الساكورا -->
+        <radialGradient id="sakuraGradient">
+            <stop offset="0%" stop-color="#ffe4e1"/>
+            <stop offset="50%" stop-color="#ffb6c1"/>
+            <stop offset="100%" stop-color="#ff69b4"/>
+        </radialGradient>
         
-        <!-- فلاتر التأثيرات -->
-        <filter id="glow">
-            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+        <filter id="shadow2">
+            <feDropShadow dx="3" dy="3" stdDeviation="4" flood-opacity="0.4"/>
+        </filter>
+        
+        <filter id="glow2">
+            <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
             <feMerge>
                 <feMergeNode in="coloredBlur"/>
                 <feMergeNode in="SourceGraphic"/>
             </feMerge>
         </filter>
         
-        <filter id="shadow">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
-            <feOffset dx="2" dy="2" result="offsetblur"/>
-            <feComponentTransfer>
-                <feFuncA type="linear" slope="0.5"/>
-            </feComponentTransfer>
-            <feMerge>
-                <feMergeNode/>
-                <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-        </filter>
+        <!-- فراشة ماسية -->
+        <g id="diamondButterfly">
+            <path d="M0,0 Q-6,-5 -8,-10 Q-4,-12 0,-8 Q4,-12 8,-10 Q6,-5 0,0" 
+                  fill="url(#diamondButterflyGradient)" stroke="#ff1493" stroke-width="0.5"/>
+            <path d="M0,0 Q-5,3 -7,6 Q-3,8 0,4 Q3,8 7,6 Q5,3 0,0" 
+                  fill="url(#diamondButterflyGradient)" stroke="#ff1493" stroke-width="0.5" opacity="0.8"/>
+            <rect x="-1" y="-8" width="2" height="12" fill="#c71585"/>
+            <circle cx="0" cy="-8" r="1" fill="url(#diamondButterflyGradient)"/>
+            <path d="M-4,-6 L4,-6" stroke="#ffffff" stroke-width="0.5" opacity="0.7"/>
+            <path d="M-3,3 L3,3" stroke="#ffffff" stroke-width="0.5" opacity="0.7"/>
+        </g>
         
-        <filter id="goldGlow">
-            <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
-            <feMerge>
-                <feMergeNode in="coloredBlur"/>
-                <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-        </filter>
+        <!-- زهرة ساكورا -->
+        <g id="sakuraFlower">
+            <path d="M0,-8 Q-3,-6 -4,-3 Q-3,0 0,0 Q3,0 4,-3 Q3,-6 0,-8" fill="url(#sakuraGradient)"/>
+            <path d="M0,-8 Q3,-6 4,-3 Q3,0 0,0 Q-3,0 -4,-3 Q-3,-6 0,-8" fill="url(#sakuraGradient)" transform="rotate(72)"/>
+            <path d="M0,-8 Q3,-6 4,-3 Q3,0 0,0 Q-3,0 -4,-3 Q-3,-6 0,-8" fill="url(#sakuraGradient)" transform="rotate(144)"/>
+            <path d="M0,-8 Q3,-6 4,-3 Q3,0 0,0 Q-3,0 -4,-3 Q-3,-6 0,-8" fill="url(#sakuraGradient)" transform="rotate(216)"/>
+            <path d="M0,-8 Q3,-6 4,-3 Q3,0 0,0 Q-3,0 -4,-3 Q-3,-6 0,-8" fill="url(#sakuraGradient)" transform="rotate(288)"/>
+            <circle cx="0" cy="0" r="2" fill="#ff69b4"/>
+            <circle cx="0" cy="0" r="1" fill="#ffffff" opacity="0.8"/>
+        </g>
         
-        <!-- نمط زخرفي -->
-        <pattern id="ornament" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-            <circle cx="10" cy="10" r="2" fill="#ff1493" opacity="0.3"/>
-            <circle cx="0" cy="0" r="1" fill="#ff69b4" opacity="0.5"/>
-            <circle cx="20" cy="20" r="1" fill="#ff69b4" opacity="0.5"/>
-        </pattern>
+        <!-- كريستال وردي -->
+        <g id="pinkCrystal">
+            <path d="M0,-10 L-4,-5 L-4,0 L0,5 L4,0 L4,-5 Z" 
+                  fill="url(#diamondButterflyGradient)" stroke="#ff1493" stroke-width="0.5"/>
+            <path d="M0,-10 L0,5 M-4,-5 L4,0 M-4,0 L4,-5" 
+                  stroke="#ffffff" stroke-width="0.5" opacity="0.6"/>
+        </g>
         
-        <!-- نمط لامع -->
-        <pattern id="sparkle" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
-            <circle cx="15" cy="15" r="1" fill="#ffffff" opacity="0.8">
-                <animate attributeName="r" values="1;3;1" dur="2s" repeatCount="indefinite"/>
-            </circle>
-        </pattern>
+        <!-- تاج وردي فاخر -->
+        <g id="luxuryPinkCrown">
+            <path d="M-10,0 L-8,-8 L-4,-6 L0,-10 L4,-6 L8,-8 L10,0" 
+                  fill="url(#supremePink)" stroke="#c71585" stroke-width="1"/>
+            <circle cx="-6" cy="-6" r="2" fill="url(#diamondButterflyGradient)"/>
+            <circle cx="0" cy="-8" r="3" fill="url(#diamondButterflyGradient)"/>
+            <circle cx="6" cy="-6" r="2" fill="url(#diamondButterflyGradient)"/>
+        </g>
     </defs>
     
-    <!-- خلفية شعاعية -->
-    <ellipse cx="300" cy="300" rx="280" ry="280" fill="url(#pinkRadial)" opacity="0.1"/>
+    <!-- إطار دائري فاخر متعدد الطبقات -->
+    <circle cx="300" cy="300" r="230" fill="none" stroke="#c71585" stroke-width="4" opacity="0.4"/>
+    <circle cx="300" cy="300" r="210" fill="none" stroke="url(#supremePink)" stroke-width="50" filter="url(#shadow2)"/>
+    <circle cx="300" cy="300" r="210" fill="none" stroke="url(#pinkRadial2)" stroke-width="45"/>
+    <circle cx="300" cy="300" r="235" fill="none" stroke="#fff0f5" stroke-width="2" opacity="0.8"/>
+    <circle cx="300" cy="300" r="185" fill="none" stroke="#fff0f5" stroke-width="2" opacity="0.8"/>
+    <circle cx="300" cy="300" r="175" fill="none" stroke="#ffb6c1" stroke-width="1" opacity="0.5"/>
     
-    <!-- إطار دائري زهري -->
-    <circle cx="300" cy="300" r="190" fill="none" stroke="#ff1493" stroke-width="2" opacity="0.3"/>
-    <circle cx="300" cy="300" r="180" fill="none" stroke="#c71585" stroke-width="16" filter="url(#shadow)" opacity="0.9"/>
-    <circle cx="300" cy="300" r="180" fill="none" stroke="url(#pinkGradient1)" stroke-width="14"/>
-    <circle cx="300" cy="300" r="172" fill="none" stroke="#ffe6f2" stroke-width="1" opacity="0.7"/>
-    <circle cx="300" cy="300" r="188" fill="none" stroke="#ffe6f2" stroke-width="1" opacity="0.7"/>
-    
-    <!-- زخارف دائرية -->
-    <g opacity="0.5">
-        <path d="M300,110 L305,105 L310,110 L305,115 Z" fill="#ff69b4"/>
-        <path d="M300,490 L305,485 L310,490 L305,495 Z" fill="#ff69b4"/>
-        <path d="M110,300 L115,295 L120,300 L115,305 Z" fill="#ff69b4"/>
-        <path d="M480,300 L485,295 L490,300 L485,305 Z" fill="#ff69b4"/>
-    </g>
-    
-    <!-- التاج المحسّن -->
-    <g filter="url(#glow)">
-        <!-- قاعدة التاج مع تفاصيل -->
-        <path d="M240,95 L360,95 L375,110 L370,115 L230,115 L225,110 Z" fill="url(#pinkGradient1)" stroke="#ff1493" stroke-width="1"/>
-        <rect x="240" y="100" width="120" height="5" fill="url(#ornament)"/>
+    <!-- زخارف وردية فائقة -->
+    <g id="supremePinkDecorations">
+        <!-- فراشات ماسية -->
+        <g filter="url(#glow2)">
+            <use href="#diamondButterfly" transform="translate(300,70) scale(1.8)"/>
+            <use href="#diamondButterfly" transform="translate(230,100) scale(1.4) rotate(-30)"/>
+            <use href="#diamondButterfly" transform="translate(370,100) scale(1.4) rotate(30)"/>
+            <use href="#diamondButterfly" transform="translate(180,150) scale(1.4) rotate(-60)"/>
+            <use href="#diamondButterfly" transform="translate(420,150) scale(1.4) rotate(60)"/>
+            <use href="#diamondButterfly" transform="translate(70,300) scale(1.8) rotate(90)"/>
+            <use href="#diamondButterfly" transform="translate(530,300) scale(1.8) rotate(-90)"/>
+            <use href="#diamondButterfly" transform="translate(180,450) scale(1.4) rotate(120)"/>
+            <use href="#diamondButterfly" transform="translate(420,450) scale(1.4) rotate(-120)"/>
+            <use href="#diamondButterfly" transform="translate(230,500) scale(1.4) rotate(150)"/>
+            <use href="#diamondButterfly" transform="translate(370,500) scale(1.4) rotate(-150)"/>
+            <use href="#diamondButterfly" transform="translate(300,530) scale(1.8) rotate(180)"/>
+        </g>
         
-        <!-- القمة الوسطى -->
-        <path d="M300,20 L270,70 L260,105 L340,105 L330,70 Z" fill="url(#pinkRadial)" stroke="#ff1493" stroke-width="1"/>
-        <path d="M300,30 L280,70 L320,70 Z" fill="url(#pinkShine)" opacity="0.7"/>
+        <!-- زهور الساكورا -->
+        <g opacity="0.8">
+            <use href="#sakuraFlower" transform="translate(200,120) scale(1.2)"/>
+            <use href="#sakuraFlower" transform="translate(400,120) scale(1.2)"/>
+            <use href="#sakuraFlower" transform="translate(150,200) scale(1.3)"/>
+            <use href="#sakuraFlower" transform="translate(450,200) scale(1.3)"/>
+            <use href="#sakuraFlower" transform="translate(120,300) scale(1.5)"/>
+            <use href="#sakuraFlower" transform="translate(480,300) scale(1.5)"/>
+            <use href="#sakuraFlower" transform="translate(150,400) scale(1.3)"/>
+            <use href="#sakuraFlower" transform="translate(450,400) scale(1.3)"/>
+            <use href="#sakuraFlower" transform="translate(200,480) scale(1.2)"/>
+            <use href="#sakuraFlower" transform="translate(400,480) scale(1.2)"/>
+        </g>
         
-        <!-- القمة اليسرى -->
-        <path d="M250,65 L220,85 L200,105 L275,105 L265,85 Z" fill="url(#pinkGradient1)" stroke="#ff1493" stroke-width="1"/>
-        <path d="M250,70 L235,85 L265,85 Z" fill="url(#pinkShine)" opacity="0.7"/>
+        <!-- كريستالات وردية -->
+        <g filter="url(#glow2)">
+            <use href="#pinkCrystal" transform="translate(260,130) scale(1)"/>
+            <use href="#pinkCrystal" transform="translate(340,130) scale(1)"/>
+            <use href="#pinkCrystal" transform="translate(130,260) scale(1) rotate(90)"/>
+            <use href="#pinkCrystal" transform="translate(470,260) scale(1) rotate(90)"/>
+            <use href="#pinkCrystal" transform="translate(130,340) scale(1) rotate(90)"/>
+            <use href="#pinkCrystal" transform="translate(470,340) scale(1) rotate(90)"/>
+            <use href="#pinkCrystal" transform="translate(260,470) scale(1) rotate(180)"/>
+            <use href="#pinkCrystal" transform="translate(340,470) scale(1) rotate(180)"/>
+        </g>
         
-        <!-- القمة اليمنى -->
-        <path d="M350,65 L380,85 L400,105 L325,105 L335,85 Z" fill="url(#pinkGradient1)" stroke="#ff1493" stroke-width="1"/>
-        <path d="M350,70 L365,85 L335,85 Z" fill="url(#pinkShine)" opacity="0.7"/>
+        <!-- تيجان وردية صغيرة -->
+        <g opacity="0.6">
+            <use href="#luxuryPinkCrown" transform="translate(220,180) scale(0.8)"/>
+            <use href="#luxuryPinkCrown" transform="translate(380,180) scale(0.8)"/>
+            <use href="#luxuryPinkCrown" transform="translate(180,220) scale(0.8) rotate(90)"/>
+            <use href="#luxuryPinkCrown" transform="translate(420,220) scale(0.8) rotate(-90)"/>
+            <use href="#luxuryPinkCrown" transform="translate(180,380) scale(0.8) rotate(90)"/>
+            <use href="#luxuryPinkCrown" transform="translate(420,380) scale(0.8) rotate(-90)"/>
+            <use href="#luxuryPinkCrown" transform="translate(220,420) scale(0.8) rotate(180)"/>
+            <use href="#luxuryPinkCrown" transform="translate(380,420) scale(0.8) rotate(180)"/>
+        </g>
         
-        <!-- جواهر التاج -->
-        <circle cx="300" cy="15" r="10" fill="url(#pinkRadial)" stroke="#ff1493" stroke-width="2" filter="url(#glow)"/>
-        <circle cx="300" cy="15" r="6" fill="#ffe6f2" opacity="0.8"/>
+        <!-- أشرطة حريرية -->
+        <g opacity="0.4">
+            <path d="M100,100 Q300,50 500,100" stroke="url(#supremePink)" stroke-width="3" fill="none"/>
+            <path d="M100,500 Q300,550 500,500" stroke="url(#supremePink)" stroke-width="3" fill="none"/>
+            <path d="M100,100 Q50,300 100,500" stroke="url(#supremePink)" stroke-width="3" fill="none"/>
+            <path d="M500,100 Q550,300 500,500" stroke="url(#supremePink)" stroke-width="3" fill="none"/>
+        </g>
         
-        <circle cx="250" cy="60" r="8" fill="url(#pinkRadial)" stroke="#ff1493" stroke-width="1.5" filter="url(#glow)"/>
-        <circle cx="250" cy="60" r="5" fill="#ffe6f2" opacity="0.8"/>
-        
-        <circle cx="350" cy="60" r="8" fill="url(#pinkRadial)" stroke="#ff1493" stroke-width="1.5" filter="url(#glow)"/>
-        <circle cx="350" cy="60" r="5" fill="#ffe6f2" opacity="0.8"/>
-        
-        <!-- زخارف إضافية على التاج -->
-        <circle cx="285" cy="85" r="3" fill="#ffe6f2" opacity="0.6"/>
-        <circle cx="315" cy="85" r="3" fill="#ffe6f2" opacity="0.6"/>
-        <circle cx="300" cy="90" r="4" fill="#ff69b4" opacity="0.7"/>
-    </g>
-    
-    <!-- الجناح الأيسر الذهبي الواقعي -->
-    <g transform="translate(100,200)" filter="url(#goldGlow)">
-        <g transform="rotate(-15)">
-            <!-- الهيكل الأساسي للجناح -->
-            <path d="M 0,0 C -30,-10 -60,-15 -90,-10 C -120,-5 -140,5 -150,20 C -155,28 -155,35 -150,42 
-                     C -140,55 -120,65 -90,70 C -60,75 -30,70 0,60 
-                     C -20,50 -40,40 -50,30 C -40,20 -20,10 0,0 Z" 
-                  fill="url(#featherGrad)" stroke="#c71585" stroke-width="1.5" opacity="0.9"/>
-            
-            <!-- الريشات الكبيرة -->
-            <path d="M -20,10 C -40,5 -60,3 -80,5 C -85,6 -87,8 -85,12 C -80,18 -60,22 -40,20 C -30,18 -25,15 -20,10 Z" 
-                  fill="url(#pinkWingGrad1)" stroke="#ff1493" stroke-width="0.5"/>
-            <path d="M -30,20 C -50,15 -70,13 -90,15 C -95,16 -97,18 -95,22 C -90,28 -70,32 -50,30 C -40,28 -35,25 -30,20 Z" 
-                  fill="url(#pinkWingGrad2)" stroke="#ff1493" stroke-width="0.5"/>
-            <path d="M -40,30 C -60,25 -80,23 -100,25 C -105,26 -107,28 -105,32 C -100,38 -80,42 -60,40 C -50,38 -45,35 -40,30 Z" 
-                  fill="url(#pinkWingGrad1)" stroke="#ff1493" stroke-width="0.5"/>
-            <path d="M -50,40 C -70,35 -90,33 -110,35 C -115,36 -117,38 -115,42 C -110,48 -90,52 -70,50 C -60,48 -55,45 -50,40 Z" 
-                  fill="url(#pinkWingGrad2)" stroke="#ff1493" stroke-width="0.5"/>
-            <path d="M -60,50 C -80,45 -100,43 -120,45 C -125,46 -127,48 -125,52 C -120,58 -100,62 -80,60 C -70,58 -65,55 -60,50 Z" 
-                  fill="url(#pinkWingGrad1)" stroke="#ff1493" stroke-width="0.5"/>
-            
-            <!-- الريشات الصغيرة والتفاصيل -->
-            <g opacity="0.7">
-                <path d="M -15,5 L -35,0" stroke="#ffe6f2" stroke-width="1"/>
-                <path d="M -25,15 L -45,10" stroke="#ffe6f2" stroke-width="1"/>
-                <path d="M -35,25 L -55,20" stroke="#ffe6f2" stroke-width="1"/>
-                <path d="M -45,35 L -65,30" stroke="#ffe6f2" stroke-width="1"/>
-                <path d="M -55,45 L -75,40" stroke="#ffe6f2" stroke-width="1"/>
-            </g>
-            
-            <!-- نقاط لامعة -->
-            <circle cx="-40" cy="15" r="1.5" fill="#ffffff" opacity="0.8"/>
-            <circle cx="-60" cy="25" r="1.5" fill="#ffffff" opacity="0.8"/>
-            <circle cx="-80" cy="35" r="1.5" fill="#ffffff" opacity="0.8"/>
-            <circle cx="-100" cy="45" r="1.5" fill="#ffffff" opacity="0.8"/>
-            
-            <!-- حركة الجناح -->
-            <animateTransform attributeName="transform" attributeType="XML" type="rotate" values="-15;-5;-15" dur="4s" repeatCount="indefinite"/>
+        <!-- قلوب كريستالية -->
+        <g opacity="0.7">
+            <path d="M300,150 Q295,145 290,150 Q290,155 300,165 Q310,155 310,150 Q305,145 300,150" 
+                  fill="url(#diamondButterflyGradient)" stroke="#ff1493" stroke-width="0.5"/>
+            <path d="M150,300 Q145,295 140,300 Q140,305 150,315 Q160,305 160,300 Q155,295 150,300" 
+                  fill="url(#diamondButterflyGradient)" stroke="#ff1493" stroke-width="0.5"/>
+            <path d="M450,300 Q445,295 440,300 Q440,305 450,315 Q460,305 460,300 Q455,295 450,300" 
+                  fill="url(#diamondButterflyGradient)" stroke="#ff1493" stroke-width="0.5"/>
+            <path d="M300,450 Q295,445 290,450 Q290,455 300,465 Q310,455 310,450 Q305,445 300,450" 
+                  fill="url(#diamondButterflyGradient)" stroke="#ff1493" stroke-width="0.5"/>
         </g>
     </g>
     
-    <!-- الجناح الأيمن الذهبي الواقعي -->
-    <g transform="translate(500,200)" filter="url(#goldGlow)">
-        <g transform="rotate(15)">
-            <!-- الهيكل الأساسي للجناح -->
-            <path d="M 0,0 C 30,-10 60,-15 90,-10 C 120,-5 140,5 150,20 C 155,28 155,35 150,42 
-                     C 140,55 120,65 90,70 C 60,75 30,70 0,60 
-                     C 20,50 40,40 50,30 C 40,20 20,10 0,0 Z" 
-                  fill="url(#featherGrad)" stroke="#c71585" stroke-width="1.5" opacity="0.9"/>
-            
-            <!-- الريشات الكبيرة -->
-            <path d="M 20,10 C 40,5 60,3 80,5 C 85,6 87,8 85,12 C 80,18 60,22 40,20 C 30,18 25,15 20,10 Z" 
-                  fill="url(#pinkWingGrad1)" stroke="#ff1493" stroke-width="0.5"/>
-            <path d="M 30,20 C 50,15 70,13 90,15 C 95,16 97,18 95,22 C 90,28 70,32 50,30 C 40,28 35,25 30,20 Z" 
-                  fill="url(#pinkWingGrad2)" stroke="#ff1493" stroke-width="0.5"/>
-            <path d="M 40,30 C 60,25 80,23 100,25 C 105,26 107,28 105,32 C 100,38 80,42 60,40 C 50,38 45,35 40,30 Z" 
-                  fill="url(#pinkWingGrad1)" stroke="#ff1493" stroke-width="0.5"/>
-            <path d="M 50,40 C 70,35 90,33 110,35 C 115,36 117,38 115,42 C 110,48 90,52 70,50 C 60,48 55,45 50,40 Z" 
-                  fill="url(#pinkWingGrad2)" stroke="#ff1493" stroke-width="0.5"/>
-            <path d="M 60,50 C 80,45 100,43 120,45 C 125,46 127,48 125,52 C 120,58 100,62 80,60 C 70,58 65,55 60,50 Z" 
-                  fill="url(#pinkWingGrad1)" stroke="#ff1493" stroke-width="0.5"/>
-            
-            <!-- الريشات الصغيرة والتفاصيل -->
-            <g opacity="0.7">
-                <path d="M 15,5 L 35,0" stroke="#ffe6f2" stroke-width="1"/>
-                <path d="M 25,15 L 45,10" stroke="#ffe6f2" stroke-width="1"/>
-                <path d="M 35,25 L 55,20" stroke="#ffe6f2" stroke-width="1"/>
-                <path d="M 45,35 L 65,30" stroke="#ffe6f2" stroke-width="1"/>
-                <path d="M 55,45 L 75,40" stroke="#ffe6f2" stroke-width="1"/>
-            </g>
-            
-            <!-- نقاط لامعة -->
-            <circle cx="40" cy="15" r="1.5" fill="#ffffff" opacity="0.8"/>
-            <circle cx="60" cy="25" r="1.5" fill="#ffffff" opacity="0.8"/>
-            <circle cx="80" cy="35" r="1.5" fill="#ffffff" opacity="0.8"/>
-            <circle cx="100" cy="45" r="1.5" fill="#ffffff" opacity="0.8"/>
-            
-            <!-- حركة الجناح -->
-            <animateTransform attributeName="transform" attributeType="XML" type="rotate" values="15;5;15" dur="4s" repeatCount="indefinite"/>
+    <!-- خطوط زخرفية وردية -->
+    <g opacity="0.15">
+        <circle cx="300" cy="300" r="220" fill="none" stroke="#ff69b4" stroke-width="0.5" stroke-dasharray="10,5"/>
+        <circle cx="300" cy="300" r="190" fill="none" stroke="#ff69b4" stroke-width="0.5" stroke-dasharray="10,5" transform="rotate(18 300 300)"/>
+        <path d="M300,80 L380,220 L520,300 L380,380 L300,520 L220,380 L80,300 L220,220 Z" 
+              fill="none" stroke="#ff69b4" stroke-width="1"/>
+    </g>
+    
+    <!-- شريط "SVIP2" وردي فاخر -->
+    <g filter="url(#shadow2)">
+        <path d="M120,460 L480,460 L505,505 L500,560 L100,560 L95,505 Z" fill="url(#supremePink)" stroke="#c71585" stroke-width="4"/>
+        <rect x="125" y="465" width="350" height="90" fill="url(#pinkRadial2)" opacity="0.15"/>
+        
+        <!-- إطارات داخلية متعددة -->
+        <path d="M130,470 L470,470 L490,550 L110,550 Z" fill="none" stroke="#fff0f5" stroke-width="2" opacity="0.7"/>
+        <path d="M140,480 L460,480 L475,540 L125,540 Z" fill="none" stroke="#ffb6c1" stroke-width="1" opacity="0.5"/>
+        
+        <!-- زخارف الشريط -->
+        <g opacity="0.5">
+            <use href="#diamondButterfly" transform="translate(160,510) scale(0.7)"/>
+            <use href="#sakuraFlower" transform="translate(220,510) scale(0.8)"/>
+            <use href="#luxuryPinkCrown" transform="translate(300,510) scale(0.6)"/>
+            <use href="#sakuraFlower" transform="translate(380,510) scale(0.8)"/>
+            <use href="#diamondButterfly" transform="translate(440,510) scale(0.7)"/>
         </g>
+        
+        <!-- النص الفاخر -->
+        <text x="300" y="525" text-anchor="middle" fill="#8b1468" font-size="52" font-family="Arial Black" font-weight="bold" filter="url(#shadow2)">SVIP2</text>
+        <text x="300" y="525" text-anchor="middle" fill="url(#pinkRadial2)" font-size="50" font-family="Arial Black" font-weight="bold">SVIP2</text>
+        <text x="300" y="525" text-anchor="middle" fill="none" stroke="#ffffff" stroke-width="1" font-size="50" font-family="Arial Black" font-weight="bold" opacity="0.8">SVIP2</text>
     </g>
     
-    <!-- الشريط السفلي -->
-    <g filter="url(#shadow)">
-        <path d="M200,455 L400,455 L425,490 L420,525 L180,525 L175,490 Z" fill="url(#pinkGradient1)" stroke="#c71585" stroke-width="2"/>
-        <path d="M205,460 L395,460 L415,520 L185,520 Z" fill="url(#sparkle)" opacity="0.3"/>
-        
-        <!-- إطار داخلي -->
-        <path d="M210,465 L390,465 L410,515 L190,515 Z" fill="none" stroke="#ffe6f2" stroke-width="1" opacity="0.6"/>
-        
-        <!-- النص SVIP2 -->
-        <text x="300" y="497" text-anchor="middle" fill="#8b0037" font-size="30" font-family="Arial Black" font-weight="bold" letter-spacing="3" filter="url(#shadow)">SVIP2</text>
-        <text x="300" y="497" text-anchor="middle" fill="url(#pinkRadial)" font-size="28" font-family="Arial Black" font-weight="bold" letter-spacing="3">SVIP2</text>
-        <text x="300" y="497" text-anchor="middle" fill="none" stroke="#ffb6c1" stroke-width="0.5" font-size="28" font-family="Arial Black" font-weight="bold" letter-spacing="3" opacity="0.7">SVIP2</text>
-        
-        <!-- نجوم حول النص -->
-        <g fill="#ff69b4">
-            <path d="M 210,485 L211,487 L213,485 L211,483 Z"/>
-            <path d="M 390,485 L391,487 L393,485 L391,483 Z"/>
-            <path d="M 220,505 L221,507 L223,505 L221,503 Z"/>
-            <path d="M 380,505 L381,507 L383,505 L381,503 Z"/>
-        </g>
+    <!-- بريق وردي -->
+    <g opacity="0.9">
+        <circle cx="300" cy="60" r="3" fill="#ffffff"/>
+        <circle cx="200" cy="110" r="2" fill="#ffb6c1"/>
+        <circle cx="400" cy="110" r="2" fill="#ffb6c1"/>
+        <circle cx="60" cy="300" r="3" fill="#ffffff"/>
+        <circle cx="540" cy="300" r="3" fill="#ffffff"/>
+        <circle cx="200" cy="490" r="2" fill="#ffb6c1"/>
+        <circle cx="400" cy="490" r="2" fill="#ffb6c1"/>
+        <circle cx="300" cy="540" r="3" fill="#ffffff"/>
     </g>
-    
-    <!-- جزيئات ذهبية متحركة -->
-    <g opacity="0.6">
-        <circle cx="150" cy="200" r="2" fill="#ff69b4">
-            <animate attributeName="cy" values="200;150;200" dur="3s" repeatCount="indefinite"/>
-            <animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite"/>
-        </circle>
-        <circle cx="450" cy="250" r="2" fill="#ff69b4">
-            <animate attributeName="cy" values="250;200;250" dur="3.5s" repeatCount="indefinite"/>
-            <animate attributeName="opacity" values="0;1;0" dur="3.5s" repeatCount="indefinite"/>
-        </circle>
-        <circle cx="200" cy="400" r="2" fill="#ff69b4">
-            <animate attributeName="cy" values="400;350;400" dur="4s" repeatCount="indefinite"/>
-            <animate attributeName="opacity" values="0;1;0" dur="4s" repeatCount="indefinite"/>
-        </circle>
-        <circle cx="400" cy="380" r="2" fill="#ff69b4">
-            <animate attributeName="cy" values="380;330;380" dur="3.2s" repeatCount="indefinite"/>
-            <animate attributeName="opacity" values="0;1;0" dur="3.2s" repeatCount="indefinite"/>
-        </circle>
-    </g>
-    
-    <!-- تأثير لمعان عام -->
-    <rect x="0" y="0" width="150" height="600" fill="url(#pinkShine)" opacity="0.15">
-        <animateTransform attributeName="transform" type="translate" from="-150 0" to="750 0" dur="4s" repeatCount="indefinite"/>
-    </rect>
 </svg>

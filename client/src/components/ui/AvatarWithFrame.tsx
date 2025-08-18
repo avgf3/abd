@@ -112,9 +112,13 @@ export const availableFrames = [
   { id: 'crown-frame-emerald', name: 'تاج زمردي TOP', category: 'تاج TOP' },
   { id: 'crown-frame-purple', name: 'تاج بنفسجي TOP', category: 'تاج TOP' },
   
-  // إطارات خاصة (بدون أجنحة)
+  // إطارات كلاسيك
   { id: 'crown-frame-classic-gold', name: 'تاج كلاسيكي ذهبي', category: 'كلاسيك' },
   { id: 'crown-frame-classic-coolpink', name: 'تاج كلاسيكي وردي', category: 'كلاسيك' },
+  
+  // إطارات خاصة
+  { id: 'wings-frame-king', name: 'إطار الملك KING', category: 'خاص' },
+  { id: 'wings-frame-queen', name: 'إطار الملكة QUEEN', category: 'خاص' },
   
   // إطارات SVIP
   { id: 'svip1-frame-gold', name: 'SVIP1 ذهبي', category: 'SVIP' },
