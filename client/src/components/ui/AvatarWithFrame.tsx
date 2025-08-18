@@ -35,40 +35,13 @@ export function AvatarWithFrame({
   const sizes = frameSizes[size];
 
   // استخدام imagePixelSize إذا كان متوفرًا، وإلا استخدام pixelSize
-  const actualImageSize = imagePixelSize || pixelSize;
+  const actualSize = imagePixelSize || pixelSize;
   
-  // حساب حجم الحاوية للإطار - نضيف مساحة إضافية للإطار
-  // الإطار يحتاج مساحة إضافية حوالي 20% من حجم الصورة
-  const frameMultiplier = frame && frame !== 'none' ? 1.2 : 1;
-  const containerSize = actualImageSize ? Math.round(actualImageSize * frameMultiplier) : undefined;
-
-  const containerStyle: React.CSSProperties | undefined = containerSize
+  const containerStyle: React.CSSProperties | undefined = actualSize
     ? { 
-        width: `${containerSize}px`, 
-        height: `${containerSize}px`,
+        width: `${actualSize}px`, 
+        height: `${actualSize}px`,
         position: 'relative' as const
-      }
-    : undefined;
-
-  const avatarStyle: React.CSSProperties | undefined = actualImageSize
-    ? { 
-        width: `${actualImageSize}px`, 
-        height: `${actualImageSize}px`,
-        position: 'absolute' as const,
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)'
-      }
-    : undefined;
-
-  const frameStyle: React.CSSProperties | undefined = containerSize
-    ? {
-        width: `${containerSize}px`,
-        height: `${containerSize}px`,
-        position: 'absolute' as const,
-        top: 0,
-        left: 0,
-        pointerEvents: 'none' as const
       }
     : undefined;
 
@@ -86,8 +59,7 @@ export function AvatarWithFrame({
     >
       {/* الصورة الشخصية */}
       <Avatar 
-        className={cn(containerStyle ? '' : sizes.avatar, 'z-10')} 
-        style={avatarStyle}
+        className={cn(containerStyle ? 'w-full h-full' : sizes.avatar, 'z-10')} 
       >
         <AvatarImage src={src || '/default_avatar.svg'} alt={alt} onError={handleImgError} />
         <AvatarFallback>{fallback}</AvatarFallback>
@@ -98,8 +70,7 @@ export function AvatarWithFrame({
         <img 
           src={`/${frame}.svg`} 
           alt="Avatar Frame"
-          className="z-20 select-none"
-          style={frameStyle}
+          className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none z-20"
         />
       )}
     </div>
