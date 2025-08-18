@@ -151,19 +151,15 @@
     <g id='diamonds'>
       <g transform='translate(200,200)' filter='url(#sparkle)'>
         <path d='M0,-5 L3,0 L0,5 L-3,0 Z' fill='url(#diamondGradient)'/>
-        <animateTransform attributeName='transform' type='rotate' from='0' to='360' dur='10s' repeatCount='indefinite'/>
       </g>
       <g transform='translate(400,200)' filter='url(#sparkle)'>
         <path d='M0,-5 L3,0 L0,5 L-3,0 Z' fill='url(#diamondGradient)'/>
-        <animateTransform attributeName='transform' type='rotate' from='0' to='-360' dur='12s' repeatCount='indefinite'/>
       </g>
       <g transform='translate(200,400)' filter='url(#sparkle)'>
         <path d='M0,-5 L3,0 L0,5 L-3,0 Z' fill='url(#diamondGradient)'/>
-        <animateTransform attributeName='transform' type='rotate' from='0' to='360' dur='11s' repeatCount='indefinite'/>
       </g>
       <g transform='translate(400,400)' filter='url(#sparkle)'>
         <path d='M0,-5 L3,0 L0,5 L-3,0 Z' fill='url(#diamondGradient)'/>
-        <animateTransform attributeName='transform' type='rotate' from='0' to='-360' dur='9s' repeatCount='indefinite'/>
       </g>
     </g>
     
@@ -187,33 +183,17 @@
   <!-- الدائرة الداخلية -->
   <circle cx='300' cy='300' r='160' fill='none' stroke='url(#goldGradient2)' stroke-width='4'/>
   
-  <!-- إضاءة متلألئة متحركة -->
+  <!-- إضاءة متلألئة ثابتة -->
   <g id='sparklingLights'>
-    <circle cx='300' cy='120' r='2' fill='#FFFFFF' opacity='0'>
-      <animate attributeName='opacity' values='0;1;0' dur='2s' repeatCount='indefinite'/>
-    </circle>
-    <circle cx='180' cy='180' r='2' fill='#FFFFFF' opacity='0'>
-      <animate attributeName='opacity' values='0;1;0' dur='2.5s' repeatCount='indefinite' begin='0.5s'/>
-    </circle>
-    <circle cx='420' cy='180' r='2' fill='#FFFFFF' opacity='0'>
-      <animate attributeName='opacity' values='0;1;0' dur='2.2s' repeatCount='indefinite' begin='1s'/>
-    </circle>
-    <circle cx='120' cy='300' r='2' fill='#FFFFFF' opacity='0'>
-      <animate attributeName='opacity' values='0;1;0' dur='2.8s' repeatCount='indefinite' begin='0.3s'/>
-    </circle>
-    <circle cx='480' cy='300' r='2' fill='#FFFFFF' opacity='0'>
-      <animate attributeName='opacity' values='0;1;0' dur='2.3s' repeatCount='indefinite' begin='0.7s'/>
-    </circle>
+    <circle cx='300' cy='120' r='2' fill='#FFFFFF' opacity='0.8'/>
+    <circle cx='180' cy='180' r='2' fill='#FFFFFF' opacity='0.6'/>
+    <circle cx='420' cy='180' r='2' fill='#FFFFFF' opacity='0.7'/>
+    <circle cx='120' cy='300' r='2' fill='#FFFFFF' opacity='0.6'/>
+    <circle cx='480' cy='300' r='2' fill='#FFFFFF' opacity='0.8'/>
+    <circle cx='180' cy='420' r='2' fill='#FFFFFF' opacity='0.7'/>
+    <circle cx='420' cy='420' r='2' fill='#FFFFFF' opacity='0.6'/>
+    <circle cx='300' cy='480' r='2' fill='#FFFFFF' opacity='0.8'/>
   </g>
-  
-  <!-- زخرفة متحركة دوران بطيء للإطار بالكامل -->
-  <animateTransform 
-    attributeName='transform' 
-    type='rotate' 
-    from='0 300 300' 
-    to='360 300 300' 
-    dur='120s' 
-    repeatCount='indefinite'/>
   
   <!-- باقي العناصر الأصلية -->
   <!-- القاعدة العلوية للتاج -->
