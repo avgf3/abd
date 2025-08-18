@@ -42,13 +42,50 @@
         <feMergeNode in='SourceGraphic'/>
       </feMerge>
     </filter>
+    
+    <!-- نمط زخرفي للإطار -->
+    <pattern id='framePattern' x='0' y='0' width='30' height='30' patternUnits='userSpaceOnUse'>
+      <circle cx='15' cy='15' r='2' fill='#FFE4E1' opacity='0.6'/>
+      <path d='M5,15 L25,15 M15,5 L15,25' stroke='#FFE4E1' stroke-width='0.5' opacity='0.3'/>
+    </pattern>
   </defs>
   
-  <!-- الدائرة الرئيسية للتاج -->
+  <!-- الدائرة الرئيسية للتاج مع زخرفة -->
   <circle cx='300' cy='300' r='180' fill='none' stroke='url(#pinkGradient)' stroke-width='35' filter='url(#shadow)'/>
+  
+  <!-- زخرفة داخل الإطار الدائري -->
+  <circle cx='300' cy='300' r='180' fill='none' stroke='url(#framePattern)' stroke-width='35' opacity='0.3'/>
   
   <!-- الدائرة الداخلية -->
   <circle cx='300' cy='300' r='160' fill='none' stroke='url(#pinkGradient2)' stroke-width='4'/>
+  
+  <!-- زخارف دائرية صغيرة على الإطار -->
+  <g id='frameDecorations'>
+    <!-- الزخارف العلوية -->
+    <circle cx='300' cy='120' r='4' fill='#FFC0CB' opacity='0.8'/>
+    <circle cx='270' cy='125' r='3' fill='#FFE4E1' opacity='0.6'/>
+    <circle cx='330' cy='125' r='3' fill='#FFE4E1' opacity='0.6'/>
+    
+    <!-- الزخارف الجانبية -->
+    <circle cx='120' cy='300' r='4' fill='#FFC0CB' opacity='0.8'/>
+    <circle cx='125' cy='270' r='3' fill='#FFE4E1' opacity='0.6'/>
+    <circle cx='125' cy='330' r='3' fill='#FFE4E1' opacity='0.6'/>
+    
+    <circle cx='480' cy='300' r='4' fill='#FFC0CB' opacity='0.8'/>
+    <circle cx='475' cy='270' r='3' fill='#FFE4E1' opacity='0.6'/>
+    <circle cx='475' cy='330' r='3' fill='#FFE4E1' opacity='0.6'/>
+    
+    <!-- الزخارف السفلية -->
+    <circle cx='300' cy='480' r='4' fill='#FFC0CB' opacity='0.8'/>
+    <circle cx='270' cy='475' r='3' fill='#FFE4E1' opacity='0.6'/>
+    <circle cx='330' cy='475' r='3' fill='#FFE4E1' opacity='0.6'/>
+    
+    <!-- زخارف قطرية -->
+    <circle cx='185' cy='185' r='3' fill='#FFE4E1' opacity='0.7'/>
+    <circle cx='415' cy='185' r='3' fill='#FFE4E1' opacity='0.7'/>
+    <circle cx='185' cy='415' r='3' fill='#FFE4E1' opacity='0.7'/>
+    <circle cx='415' cy='415' r='3' fill='#FFE4E1' opacity='0.7'/>
+  </g>
   
   <!-- القاعدة العلوية للتاج -->
   <rect x='200' y='100' width='200' height='40' rx='5' fill='url(#pinkGradient)' filter='url(#shadow)'/>
