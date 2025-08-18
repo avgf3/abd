@@ -69,8 +69,8 @@ export const UserListItem: React.FC<UserListItemProps> = ({
         alt={user.username}
         fallback={user.username.substring(0, 2).toUpperCase()}
         frame={user.avatarFrame || 'none'}
-        imagePixelSize={40}
-        frameRingWidthPx={6}
+        imageSize={40}
+        frameThickness={6}
       />
 
       {/* معلومات المستخدم */}

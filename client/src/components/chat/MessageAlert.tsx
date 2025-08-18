@@ -43,8 +43,8 @@ export default function MessageAlert({ isOpen, sender, onClose, onOpenMessages }
             src={getImageSrc(sender.profileImage)}
             alt="صورة المرسل"
             frame={sender.avatarFrame || 'none'}
-            imagePixelSize={48}
-            frameRingWidthPx={6}
+            imageSize={48}
+            frameThickness={6}
           />
           <div className="flex-1 text-white">
             <h3 className="font-bold text-lg truncate">{sender.username}</h3>

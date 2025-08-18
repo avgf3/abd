@@ -6,62 +6,42 @@ interface AvatarWithFrameProps {
   src?: string;
   alt?: string;
   fallback?: string;
-  frame?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  pixelSize?: number; // قياس مخصص بالبكسل
-  imagePixelSize?: number; // قطر الصورة الحقيقي المطلوب
-  frameThickness?: number; // سُمك حلقة الإطار (افتراضي 8px)
+  frame?: string; // معرف ملف SVG بدون الامتداد (مثال: 'crown-frame-gold')
+  imageSize: number; // قطر الصورة الحقيقي بالبكسل
+  frameThickness?: number; // سُمك الإطار بالبكسل (يضاف حول الصورة)
   className?: string;
   onClick?: () => void;
 }
-
-const frameSizes = {
-  sm: { avatar: 'h-8 w-8', frame: 'h-8 w-8' },
-  md: { avatar: 'h-10 w-10', frame: 'h-10 w-10' },
-  lg: { avatar: 'h-12 w-12', frame: 'h-12 w-12' },
-  xl: { avatar: 'h-16 w-16', frame: 'h-16 w-16' }
-};
 
 export function AvatarWithFrame({ 
   src, 
   alt, 
   fallback, 
   frame = 'none', 
-  size = 'md',
-  pixelSize,
-  imagePixelSize,
-  frameThickness = 8, // سُمك الإطار الافتراضي
+  imageSize,
+  frameThickness = 8,
   className,
   onClick 
 }: AvatarWithFrameProps) {
-  const sizes = frameSizes[size];
-
-  // استخدام imagePixelSize إذا كان متوفرًا، وإلا استخدام pixelSize
-  const imageSize = imagePixelSize || pixelSize;
-  
-  // حساب حجم الحاوية - إذا كان هناك إطار، نضيف سُمك الإطار من الجانبين
-  const containerSize = imageSize && frame && frame !== 'none' 
+  // قاعدة موحّدة: حجم الحاوية = حجم الصورة + سُمك الإطار من الجانبين
+  const containerSize = frame && frame !== 'none'
     ? imageSize + (frameThickness * 2)
     : imageSize;
 
-  const containerStyle: React.CSSProperties | undefined = containerSize
-    ? { 
-        width: `${containerSize}px`, 
-        height: `${containerSize}px`,
-        position: 'relative' as const
-      }
-    : undefined;
+  const containerStyle: React.CSSProperties = {
+    width: `${containerSize}px`,
+    height: `${containerSize}px`,
+    position: 'relative'
+  };
 
-  const avatarStyle: React.CSSProperties | undefined = imageSize
-    ? { 
-        width: `${imageSize}px`, 
-        height: `${imageSize}px`,
-        position: 'absolute' as const,
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)'
-      }
-    : undefined;
+  const avatarStyle: React.CSSProperties = {
+    width: `${imageSize}px`,
+    height: `${imageSize}px`,
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)'
+  };
 
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
@@ -71,20 +51,15 @@ export function AvatarWithFrame({
 
   return (
     <div 
-      className={cn('relative inline-flex items-center justify-center', containerStyle ? '' : sizes.frame, className)}
+      className={cn('relative inline-flex items-center justify-center', className)}
       onClick={onClick}
-      style={{ cursor: onClick ? 'pointer' : 'default', ...(containerStyle || {}) }}
+      style={{ cursor: onClick ? 'pointer' : 'default', ...containerStyle }}
     >
-      {/* الصورة الشخصية */}
-      <Avatar 
-        className={cn(containerStyle ? '' : sizes.avatar, 'z-10')} 
-        style={avatarStyle}
-      >
+      <Avatar className={cn('z-10')} style={avatarStyle}>
         <AvatarImage src={src || '/default_avatar.svg'} alt={alt} onError={handleImgError} />
         <AvatarFallback>{fallback}</AvatarFallback>
       </Avatar>
 
-      {/* الإطار */}
       {frame && frame !== 'none' && (
         <img 
           src={`/${frame}.svg`} 
