@@ -89,12 +89,14 @@ export function AvatarWithFrame({
       </div>
 
       {frame && frame !== 'none' && (
-        <img 
-          src={`/${frame}.svg`} 
-          alt="Avatar Frame"
+        <svg 
           className="pointer-events-none select-none"
           style={frameStyle}
-        />
+          viewBox="0 0 600 600"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <use href={`/all-frames.svg#${frame}`} />
+        </svg>
       )}
     </div>
   );
