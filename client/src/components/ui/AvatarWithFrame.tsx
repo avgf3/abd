@@ -38,13 +38,16 @@ export function AvatarWithFrame({
   };
 
   // الإطار يلتزم بحجم الحاوية 100% بدون أي تجاوز
+  // قص اختياري للجزء العلوي لإخفاء التيجان/الأجزاء العلوية غير المرغوبة
+  const shouldClipTop = !!frame && (frame.includes('crown') || frame.includes('svip'));
   const frameStyle: React.CSSProperties = {
     position: 'absolute',
     inset: 0,
     width: '100%',
     height: '100%',
     pointerEvents: 'none',
-    zIndex: 20
+    zIndex: 20,
+    clipPath: shouldClipTop ? 'polygon(0 18%, 100% 18%, 100% 100%, 0 100%)' : undefined
   };
 
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
