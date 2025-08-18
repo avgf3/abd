@@ -15,9 +15,7 @@ export type AvatarFrameId =
   | 'svip1-frame-gold'
   | 'svip1-frame-pink'
   | 'svip2-frame-gold'
-  | 'svip2-frame-pink'
-  | 'wings-frame-king'
-  | 'wings-frame-queen';
+  | 'svip2-frame-pink';
 
 export type AvatarVariant = 'profile' | 'list';
 
@@ -44,9 +42,7 @@ export const FRAME_CONFIG: Record<AvatarFrameId, FrameConfig> = {
   'svip1-frame-gold': { thicknessRatio: 0.16, listClipTopPercent: 28 },
   'svip1-frame-pink': { thicknessRatio: 0.16, listClipTopPercent: 28 },
   'svip2-frame-gold': { thicknessRatio: 0.16, listClipTopPercent: 28 },
-  'svip2-frame-pink': { thicknessRatio: 0.16, listClipTopPercent: 28 },
-  'wings-frame-king': { thicknessRatio: 0.18, listClipTopPercent: 45, compactFallback: 'crown-frame-classic-gold' },
-  'wings-frame-queen': { thicknessRatio: 0.18, listClipTopPercent: 45, compactFallback: 'crown-frame-classic-coolpink' }
+  'svip2-frame-pink': { thicknessRatio: 0.16, listClipTopPercent: 28 }
 };
 
 export function resolveFrameId(frameId: AvatarFrameId, sizePx: number): AvatarFrameId {
@@ -135,9 +131,7 @@ export function isAvatarFrameId(value: string): value is AvatarFrameId {
     'svip1-frame-gold',
     'svip1-frame-pink',
     'svip2-frame-gold',
-    'svip2-frame-pink',
-    'wings-frame-king',
-    'wings-frame-queen'
+    'svip2-frame-pink'
   ].includes(value as AvatarFrameId);
 }
 
