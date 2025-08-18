@@ -1,6 +1,6 @@
 import React from 'react';
 
-import VipAvatar from './VipAvatar';
+import { AvatarWithFrame } from './AvatarWithFrame';
 
 interface RichUserItem {
   id: string | number;
@@ -42,7 +42,7 @@ export default function RichestModal({ isOpen, onClose, users }: RichestModalPro
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-black/40 border border-white/20 text-yellow-300 font-bold">
                   {idx + 1}
                 </div>
-                <VipAvatar src={u.avatar} alt={u.name} size={54} frame={(idx + 1) as any} />
+                <AvatarWithFrame src={u.avatar} alt={u.name} frame={'crown-frame-gold'} imageSize={54} frameThickness={6} />
                 <div className="flex-1">
                   <div className="font-bold leading-snug">{u.name}</div>
                   <div className="text-xs opacity-70">VIP</div>

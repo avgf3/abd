@@ -45,7 +45,7 @@ export default function FrameTest() {
                         src={testImage}
                         alt="Test User"
                         frame={frame.id}
-                        imagePixelSize={sizeConfig.size}
+                        imageSize={sizeConfig.size}
                       />
                     </div>
                   </div>
