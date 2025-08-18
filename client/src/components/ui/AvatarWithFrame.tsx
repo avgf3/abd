@@ -163,7 +163,11 @@ export const availableFrames = [
   { id: 'svip1-frame-gold', name: 'SVIP1 ذهبي', category: 'SVIP' },
   { id: 'svip1-frame-pink', name: 'SVIP1 وردي', category: 'SVIP' },
   { id: 'svip2-frame-gold', name: 'SVIP2 ذهبي', category: 'SVIP' },
-  { id: 'svip2-frame-pink', name: 'SVIP2 وردي', category: 'SVIP' }
+  { id: 'svip2-frame-pink', name: 'SVIP2 وردي', category: 'SVIP' },
+  
+  // أجنحة KING/QUEEN
+  { id: 'wings-frame-king', name: 'أجنحة الملك KING', category: 'VIP' },
+  { id: 'wings-frame-queen', name: 'أجنحة الملكة QUEEN', category: 'VIP' }
 ];
 
 // دالة مساعدة للحصول على معلومات الإطار
