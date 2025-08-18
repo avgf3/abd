@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
+    <defs>
+        <linearGradient id="classicGoldGradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#ffd700"/>
+            <stop offset="50%" stop-color="#ffed4e"/>
+            <stop offset="100%" stop-color="#ffd700"/>
+        </linearGradient>
+        <radialGradient id="centerGradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fff8dc"/>
+            <stop offset="100%" stop-color="#ffd700"/>
+        </radialGradient>
+        <filter id="shadow">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+    
+    <!-- الإطار الخارجي الكلاسيكي -->
+    <circle cx="300" cy="300" r="230" fill="none" stroke="url(#classicGoldGradient)" stroke-width="50" filter="url(#shadow)"/>
+    <circle cx="300" cy="300" r="255" fill="none" stroke="#ffd700" stroke-width="2"/>
+    <circle cx="300" cy="300" r="205" fill="none" stroke="#ffd700" stroke-width="2"/>
+    
+    <!-- التاج البسيط في الأعلى -->
+    <g filter="url(#shadow)">
+        <path d="M250,20 Q250,0 270,-10 Q280,-5 290,-15 Q300,-20 300,-25 Q300,-20 310,-15 Q320,-5 330,-10 Q350,0 350,20" 
+              fill="url(#classicGoldGradient)" stroke="#ffd700" stroke-width="2"/>
+        <circle cx="270" cy="-5" r="5" fill="#ffd700"/>
+        <circle cx="300" cy="-15" r="7" fill="#ffd700"/>
+        <circle cx="330" cy="-5" r="5" fill="#ffd700"/>
+    </g>
+</svg>

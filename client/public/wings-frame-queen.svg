@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
+    <defs>
+        <linearGradient id="queenGradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#c71585"/>
+            <stop offset="50%" stop-color="#ff1493"/>
+            <stop offset="100%" stop-color="#c71585"/>
+        </linearGradient>
+        <radialGradient id="centerGradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffe0f0"/>
+            <stop offset="100%" stop-color="#c71585"/>
+        </radialGradient>
+        <filter id="shadow">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+    
+    <!-- الإطار الخارجي -->
+    <circle cx="300" cy="300" r="210" fill="none" stroke="url(#queenGradient)" stroke-width="40" filter="url(#shadow)"/>
+    <circle cx="300" cy="300" r="230" fill="none" stroke="#c71585" stroke-width="3"/>
+    <circle cx="300" cy="300" r="190" fill="none" stroke="#c71585" stroke-width="3"/>
+    
+    <!-- الشريط السفلي مع النص QUEEN -->
+    <g filter="url(#shadow)">
+        <rect x="180" y="480" width="240" height="60" rx="30" fill="url(#queenGradient)"/>
+        <text x="300" y="515" text-anchor="middle" fill="#ffffff" font-size="36" font-family="Arial Black" font-weight="bold">QUEEN</text>
+    </g>
+</svg>
