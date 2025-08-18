@@ -109,7 +109,7 @@
   <!-- شريط "TOP" محسّن -->
   <g filter='url(#shadow)'>
     <path d='M170,485 L430,485 L445,520 L440,555 L160,555 L155,520 Z' fill='url(#blueGradient1)' stroke='#191970' stroke-width='2'/>
-    <rect x='175' y='490' width='250' height='60' fill='url(#ornament)' opacity='0.3'/>
+    
     
     <!-- إطار داخلي للشريط -->
     <path d='M180,495 L420,495 L430,545 L170,545 Z' fill='none' stroke='#e0f0ff' stroke-width='1' opacity='0.5'/>
@@ -120,8 +120,5 @@
     <text x='300' y='527' text-anchor='middle' fill='none' stroke='#f0f8ff' stroke-width='0.5' font-size='40' font-family='Arial Black' font-weight='bold' opacity='0.6'>TOP</text>
   </g>
   
-  <!-- لمعان متحرك -->
-  <rect x='0' y='0' width='100' height='600' fill='url(#blueShine)' opacity='0.3'>
-    <animateTransform attributeName='transform' type='translate' from='-100 0' to='700 0' dur='3s' repeatCount='indefinite'/>
-  </rect>
+  
 </svg>
