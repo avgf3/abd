@@ -10,6 +10,7 @@ interface AvatarWithFrameProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   pixelSize?: number; // قياس مخصص بالبكسل
   imagePixelSize?: number; // قطر الصورة الحقيقي المطلوب
+  frameThickness?: number; // سُمك حلقة الإطار (افتراضي 8px)
   className?: string;
   onClick?: () => void;
 }
@@ -29,19 +30,36 @@ export function AvatarWithFrame({
   size = 'md',
   pixelSize,
   imagePixelSize,
+  frameThickness = 8, // سُمك الإطار الافتراضي
   className,
   onClick 
 }: AvatarWithFrameProps) {
   const sizes = frameSizes[size];
 
   // استخدام imagePixelSize إذا كان متوفرًا، وإلا استخدام pixelSize
-  const actualSize = imagePixelSize || pixelSize;
+  const imageSize = imagePixelSize || pixelSize;
   
-  const containerStyle: React.CSSProperties | undefined = actualSize
+  // حساب حجم الحاوية - إذا كان هناك إطار، نضيف سُمك الإطار من الجانبين
+  const containerSize = imageSize && frame && frame !== 'none' 
+    ? imageSize + (frameThickness * 2)
+    : imageSize;
+
+  const containerStyle: React.CSSProperties | undefined = containerSize
     ? { 
-        width: `${actualSize}px`, 
-        height: `${actualSize}px`,
+        width: `${containerSize}px`, 
+        height: `${containerSize}px`,
         position: 'relative' as const
+      }
+    : undefined;
+
+  const avatarStyle: React.CSSProperties | undefined = imageSize
+    ? { 
+        width: `${imageSize}px`, 
+        height: `${imageSize}px`,
+        position: 'absolute' as const,
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)'
       }
     : undefined;
 
@@ -59,7 +77,8 @@ export function AvatarWithFrame({
     >
       {/* الصورة الشخصية */}
       <Avatar 
-        className={cn(containerStyle ? 'w-full h-full' : sizes.avatar, 'z-10')} 
+        className={cn(containerStyle ? '' : sizes.avatar, 'z-10')} 
+        style={avatarStyle}
       >
         <AvatarImage src={src || '/default_avatar.svg'} alt={alt} onError={handleImgError} />
         <AvatarFallback>{fallback}</AvatarFallback>
