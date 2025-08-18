@@ -35,18 +35,17 @@ export function AvatarWithFrame({
   frameGap = 0,
   displayMode = 'full'
 }: AvatarWithFrameProps) {
-  // حساب سُمك الإطار الفعلي
+  // حساب سُمك الإطار الفعلي بناءً على حجم الصورة
   const effectiveFrameThickness = useCircularFrame
     ? 0
     : (frame && frame !== 'none'
-      ? (typeof frameThickness === 'number' ? frameThickness : Math.max(2, Math.round(imageSize * 0.15)))
+      ? (typeof frameThickness === 'number' ? frameThickness : Math.round(imageSize * 0.2))
       : 0);
 
-  // في الوضع المختصر، نستخدم نفس حجم الحاوية كحجم الصورة
-  // في الوضع الكامل، نزيد حجم الحاوية لاستيعاب الإطار
-  const containerSize = displayMode === 'compact' 
-    ? imageSize 
-    : (frame && frame !== 'none' ? imageSize + (effectiveFrameThickness * 2) : imageSize);
+  // حجم الحاوية يعتمد على الوضع والإطار
+  const containerSize = (frame && frame !== 'none' && displayMode === 'full')
+    ? imageSize + (effectiveFrameThickness * 2)
+    : imageSize;
 
   const containerStyle: React.CSSProperties = useCircularFrame
     ? {
@@ -62,54 +61,51 @@ export function AvatarWithFrame({
       width: `${containerSize}px`,
       height: `${containerSize}px`,
       position: 'relative',
-      overflow: displayMode === 'compact' ? 'visible' : 'visible'
+      overflow: 'visible'
     };
 
-  // في الوضع المختصر، الصورة تملأ الحاوية بالكامل
-  // في الوضع الكامل، الصورة أصغر من الحاوية لإفساح المجال للإطار
-  const avatarStyle: React.CSSProperties = displayMode === 'compact'
-    ? {
-      width: `${imageSize}px`,
-      height: `${imageSize}px`,
-      position: 'relative',
-      zIndex: 10
-    }
-    : {
-      width: `${imageSize}px`,
-      height: `${imageSize}px`,
-      position: 'absolute',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      zIndex: 10
-    };
+  // موضع وحجم الصورة
+  const avatarStyle: React.CSSProperties = {
+    width: `${imageSize}px`,
+    height: `${imageSize}px`,
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    zIndex: 10,
+    borderRadius: '50%',
+    overflow: 'hidden'
+  };
 
-  // حساب حجم الإطار SVG
-  const frameScale = displayMode === 'compact' ? 1.3 : 1.0;
-  const frameSize = displayMode === 'compact' 
-    ? imageSize * frameScale 
-    : containerSize;
+  // حساب حجم وموضع الإطار SVG
+  // الإطار SVG له viewBox 600x600 مع الصورة في المنتصف
+  // الدائرة الداخلية في SVG قطرها 330 بكسل (نصف القطر 165)
+  const svgInnerDiameter = 330;
+  const scale = imageSize / svgInnerDiameter;
+  const frameActualSize = 600 * scale;
 
   const frameStyle: React.CSSProperties = displayMode === 'compact'
     ? {
       position: 'absolute',
-      width: `${frameSize}px`,
-      height: `${frameSize}px`,
+      width: `${frameActualSize}px`,
+      height: `${frameActualSize}px`,
       top: '50%',
       left: '50%',
       transform: 'translate(-50%, -50%)',
       pointerEvents: 'none',
       zIndex: 20,
-      // في الوضع المختصر، نقص الجزء العلوي من الإطار
+      // في الوضع المختصر، نقص الجزء العلوي من الإطار (التاج)
       clipPath: frame?.includes('crown') || frame?.includes('svip') 
-        ? 'inset(15% 0 0 0)' 
+        ? 'polygon(0 25%, 100% 25%, 100% 100%, 0 100%)' 
         : 'none'
     }
     : {
       position: 'absolute',
-      inset: 0,
-      width: '100%',
-      height: '100%',
+      width: `${frameActualSize}px`,
+      height: `${frameActualSize}px`,
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
       pointerEvents: 'none',
       zIndex: 20
     };
