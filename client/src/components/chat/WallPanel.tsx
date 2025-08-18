@@ -16,6 +16,7 @@ import { getSocket, saveSession } from '@/lib/socket';
 import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
+import { normalizeFrameId } from '@/utils/avatarFrame';
 
 interface WallPanelProps {
   isOpen: boolean;
@@ -369,9 +370,9 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                           src={getImageSrc(currentUser.profileImage)}
                           alt={currentUser.username}
                           fallback={currentUser.username.charAt(0)}
-                          frame={currentUser.avatarFrame || 'none'}
-                          imageSize={40}
-                          frameThickness={Math.round(40 * 0.12)}
+                          frame={normalizeFrameId(currentUser.avatarFrame as any)}
+                          size={40}
+                          variant="list"
                         />
                       </div>
                       <div className="flex-1">

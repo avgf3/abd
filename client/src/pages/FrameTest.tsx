@@ -45,7 +45,8 @@ export default function FrameTest() {
                         src={testImage}
                         alt="Test User"
                         frame={frame.id}
-                        imageSize={sizeConfig.size}
+                        size={sizeConfig.size}
+                        variant={sizeConfig.size < 64 ? 'list' : 'profile'}
                       />
                     </div>
                   </div>

@@ -30,6 +30,7 @@ import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { formatDateTime } from '@/utils/timeUtils';
 import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
+import { normalizeFrameId } from '@/utils/avatarFrame';
 
 interface ModerationAction {
   id: string;
@@ -391,9 +392,9 @@ export default function OwnerAdminPanel({
                             <AvatarWithFrame
                               src={getImageSrc(staff.profileImage)}
                               alt={staff.username}
-                              frame={(staff as any).avatarFrame || 'none'}
-                              imageSize={56}
-                              frameThickness={Math.round(56 * 0.12)}
+                              frame={normalizeFrameId((staff as any).avatarFrame as any)}
+                              size={56}
+                              variant={56 < 64 ? 'list' : 'profile'}
                             />
                           </div>
                           

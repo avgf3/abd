@@ -9,6 +9,7 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
 import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
+import { normalizeFrameId } from '@/utils/avatarFrame';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
 import { getEffectColor, getFinalUsernameColor, buildProfileBackgroundGradient } from '@/utils/themeUtils';
 
@@ -1806,9 +1807,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               <AvatarWithFrame
                 src={getProfileImageSrcLocal()}
                 alt={localUser?.username}
-                frame={localUser?.avatarFrame || 'none'}
-                imageSize={130}
-                frameThickness={Math.round(130 * 0.12)}
+                frame={normalizeFrameId(localUser?.avatarFrame as any)}
+                size={130}
+                variant="profile"
               />
             </div>
             

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import type { ChatUser } from '@/types/chat';
 import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
+import { normalizeFrameId } from '@/utils/avatarFrame';
 import UserRoleBadge from './UserRoleBadge';
 import { cn } from '@/lib/utils';
 import { getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
@@ -68,9 +69,9 @@ export const UserListItem: React.FC<UserListItemProps> = ({
         src={avatarSrc}
         alt={user.username}
         fallback={user.username.substring(0, 2).toUpperCase()}
-        frame={user.avatarFrame || 'none'}
-        imageSize={40}
-        frameThickness={Math.round(40 * 0.12)}
+        frame={normalizeFrameId(user.avatarFrame as any)}
+        size={40}
+        variant="list"
       />
 
       {/* معلومات المستخدم */}

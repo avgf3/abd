@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
+import { normalizeFrameId } from '@/utils/avatarFrame';
 
 interface MessageAlertProps {
   isOpen: boolean;
@@ -42,9 +43,9 @@ export default function MessageAlert({ isOpen, sender, onClose, onOpenMessages }
           <AvatarWithFrame
             src={getImageSrc(sender.profileImage)}
             alt="صورة المرسل"
-            frame={sender.avatarFrame || 'none'}
-            imageSize={48}
-            frameThickness={Math.round(48 * 0.12)}
+            frame={normalizeFrameId(sender.avatarFrame as any)}
+            size={48}
+            variant="list"
           />
           <div className="flex-1 text-white">
             <h3 className="font-bold text-lg truncate">{sender.username}</h3>

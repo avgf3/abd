@@ -29,8 +29,8 @@ export default function FrameTestSimple() {
                   alt="Test"
                   fallback="TE"
                   frame="enhanced-crown-frame"
-                  imageSize={130}
-                  frameThickness={Math.round(130 * 0.12)}
+                  size={130}
+                  variant="profile"
                 />
               </div>
             </div>
@@ -52,8 +52,8 @@ export default function FrameTestSimple() {
                   alt="Test"
                   fallback="TE"
                   frame="enhanced-crown-frame"
-                  imageSize={40}
-                  frameThickness={Math.round(40 * 0.12)}
+                  size={40}
+                  variant="list"
                 />
               </div>
             </div>
@@ -77,8 +77,8 @@ export default function FrameTestSimple() {
                   alt="Test"
                   fallback="T"
                   frame="enhanced-crown-frame"
-                  imageSize={size}
-                  frameThickness={Math.round(size * 0.12)}
+                  size={size}
+                  variant={size < 64 ? 'list' : 'profile'}
                 />
                 <p className="text-xs mt-2">{size}px</p>
               </div>
@@ -97,7 +97,7 @@ export default function FrameTestSimple() {
                   alt="Test"
                   fallback="TE"
                   frame="none"
-                  imageSize={80}
+                  size={80}
                 />
               </div>
               <p className="text-sm mt-2">بدون إطار</p>
@@ -109,8 +109,8 @@ export default function FrameTestSimple() {
                   alt="Test"
                   fallback="TE"
                   frame="enhanced-crown-frame"
-                  imageSize={80}
-                  frameThickness={Math.round(80 * 0.12)}
+                  size={80}
+                  variant="profile"
                 />
               </div>
               <p className="text-sm mt-2">مع إطار</p>

@@ -5,6 +5,7 @@ import { useImageLoader } from '@/hooks/useImageLoader';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
+import { normalizeFrameId } from '@/utils/avatarFrame';
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -36,9 +37,9 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
       <AvatarWithFrame
         src={imageSrc}
         alt={`صورة ${user.username}`}
-        frame={showFrame ? (user.avatarFrame || 'none') : 'none'}
-        imageSize={sizePixels}
-        frameThickness={Math.round(sizePixels * 0.12)}
+        frame={showFrame ? normalizeFrameId(user.avatarFrame as any) : 'none'}
+        size={sizePixels}
+        variant={sizePixels < 64 ? 'list' : 'profile'}
         className={className}
       />
 
