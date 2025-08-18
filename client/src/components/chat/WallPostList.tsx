@@ -63,8 +63,8 @@ export default function WallPostList({
                       src={getImageSrc(post.userProfileImage)}
                       alt={post.username}
                       frame={(post as any).avatarFrame || 'none'}
-                      pixelSize={48}
-                      innerScale={0.82}
+                      imagePixelSize={48}
+                      frameRingWidthPx={6}
                     />
                   </div>
                 </div>

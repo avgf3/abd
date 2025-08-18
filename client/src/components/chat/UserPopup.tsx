@@ -295,7 +295,8 @@ export default function UserPopup({
               alt={user.username}
               fallback={user.username.substring(0, 2).toUpperCase()}
               frame={selectedFrame}
-              size="xl"
+              imagePixelSize={130}
+              frameRingWidthPx={8}
             />
           </div>
           
