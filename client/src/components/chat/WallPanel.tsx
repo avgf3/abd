@@ -371,7 +371,6 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                           fallback={currentUser.username.charAt(0)}
                           frame={currentUser.avatarFrame || 'none'}
                           imageSize={40}
-                          frameThickness={6}
                         />
                       </div>
                       <div className="flex-1">

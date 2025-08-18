@@ -20,8 +20,6 @@ export default function TestFrames() {
                   fallback="TE"
                   frame={frame.id}
                   imageSize={130}
-                  frameThickness={8}
-                  displayMode="full"
                 />
                 <p className="mt-2 text-sm">{frame.name}</p>
               </div>
@@ -43,8 +41,6 @@ export default function TestFrames() {
                   fallback="TE"
                   frame={frame.id}
                   imageSize={40}
-                  frameThickness={5}
-                  displayMode="compact"
                 />
                 <span className="text-sm">{frame.name}</span>
               </div>
@@ -67,8 +63,6 @@ export default function TestFrames() {
                   fallback="TE"
                   frame="enhanced-crown-frame"
                   imageSize={130}
-                  frameThickness={8}
-                  displayMode="full"
                 />
               </div>
             </div>
@@ -81,8 +75,6 @@ export default function TestFrames() {
                   fallback="TE"
                   frame="enhanced-crown-frame"
                   imageSize={40}
-                  frameThickness={5}
-                  displayMode="compact"
                 />
               </div>
             </div>

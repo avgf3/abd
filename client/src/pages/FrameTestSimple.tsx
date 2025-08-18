@@ -30,8 +30,6 @@ export default function FrameTestSimple() {
                   fallback="TE"
                   frame="enhanced-crown-frame"
                   imageSize={130}
-                  frameThickness={8}
-                  displayMode="full"
                 />
               </div>
             </div>
@@ -54,8 +52,6 @@ export default function FrameTestSimple() {
                   fallback="TE"
                   frame="enhanced-crown-frame"
                   imageSize={40}
-                  frameThickness={5}
-                  displayMode="compact"
                 />
               </div>
             </div>
@@ -80,8 +76,6 @@ export default function FrameTestSimple() {
                   fallback="T"
                   frame="enhanced-crown-frame"
                   imageSize={size}
-                  frameThickness={Math.round(size * 0.1)}
-                  displayMode="full"
                 />
                 <p className="text-xs mt-2">{size}px</p>
               </div>
@@ -101,7 +95,6 @@ export default function FrameTestSimple() {
                   fallback="TE"
                   frame="none"
                   imageSize={80}
-                  displayMode="full"
                 />
               </div>
               <p className="text-sm mt-2">بدون إطار</p>
@@ -114,8 +107,6 @@ export default function FrameTestSimple() {
                   fallback="TE"
                   frame="enhanced-crown-frame"
                   imageSize={80}
-                  frameThickness={10}
-                  displayMode="full"
                 />
               </div>
               <p className="text-sm mt-2">مع إطار</p>
@@ -125,12 +116,10 @@ export default function FrameTestSimple() {
         
         {/* ملاحظات مهمة */}
         <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mt-8">
-          <h3 className="font-semibold mb-2">ملاحظات للتحقق:</h3>
+          <h3 className="font-semibold mb-2">المعايير:</h3>
           <ul className="list-disc list-inside space-y-1 text-sm">
-            <li>الحدود الحمراء والزرقاء المنقطة تُظهر حجم الحاوية الفعلي</li>
-            <li>في الوضع الكامل: يجب أن يكون الإطار أكبر من الصورة</li>
-            <li>في الوضع المختصر: يجب أن يظهر فقط الحلقة السفلية</li>
-            <li>الحلقة الذهبية يجب أن تحيط بالصورة تماماً</li>
+            <li>الإطار لا يتجاوز الحاوية أبداً</li>
+            <li>الصورة ممتلئة داخل دائرة ثابتة</li>
           </ul>
         </div>
       </div>

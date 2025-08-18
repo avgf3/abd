@@ -2370,10 +2370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       'svip1-frame-gold',
       'svip1-frame-pink',
       'svip2-frame-gold',
-      'svip2-frame-pink',
-      // أجنحة KING/QUEEN
-      'wings-frame-king',
-      'wings-frame-queen'
+      'svip2-frame-pink'
     ];
 
     if (!validFrames.includes(frame)) {

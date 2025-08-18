@@ -352,7 +352,6 @@ export default function ModerationPanel({
                             alt={user.username}
                             frame={(user as any).avatarFrame || 'none'}
                             imageSize={40}
-                            frameThickness={6}
                           />
                           <div>
                             <div className="font-semibold flex items-center gap-2">
