@@ -6,9 +6,6 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AvatarWithFrame, availableFrames } from '@/components/ui/AvatarWithFrame';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface UserPopupProps {
   user: ChatUser;
@@ -37,10 +34,8 @@ export default function UserPopup({
   const [showFrameDialog, setShowFrameDialog] = useState(false);
   const [selectedFrame, setSelectedFrame] = useState(user.avatarFrame || 'none');
   const [isUpdatingFrame, setIsUpdatingFrame] = useState(false);
-  // إعدادات القياس للمعاينة
-  const [unit, setUnit] = useState<'px' | 'rem'>('px');
-  const [imageSizeValue, setImageSizeValue] = useState<number>(130);
-  const [thicknessValue, setThicknessValue] = useState<number>(8);
+  // معاينة بسيطة بدون إعدادات إضافية
+  const previewSize = 130;
   
   const canModerate = currentUser && (
     currentUser.userType === 'owner' || 
@@ -78,8 +73,7 @@ export default function UserPopup({
     }
   };
 
-  // تحويل القيم إلى px للمعاينة: في حال rem نفترض 1rem = 16px (كإعداد شائع)
-  const toPx = (value: number): number => unit === 'px' ? value : Math.round(value * 16);
+  // لا حاجة لتحويلات قياس؛ المعاينة ثابتة لسهولة الاستخدام
 
   const handleMute = async () => {
     if (!currentUser) return;
@@ -297,71 +291,21 @@ export default function UserPopup({
         </DialogHeader>
 
         <div className="space-y-4">
-          <Tabs defaultValue="preview" className="w-full">
-            <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="preview">المعاينة</TabsTrigger>
-              <TabsTrigger value="settings">إعدادات القياس</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="preview">
-              <div className="flex justify-center p-4">
-                <AvatarWithFrame
-                  src={user.profileImage}
-                  alt={user.username}
-                  fallback={user.username.substring(0, 2).toUpperCase()}
-                  frame={selectedFrame}
-                  imageSize={toPx(imageSizeValue)}
-                  frameThickness={toPx(thicknessValue)}
-                  displayMode="full"
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="settings">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>وحدة القياس</Label>
-                  <Select value={unit} onValueChange={(val) => setUnit(val as 'px' | 'rem')}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="px">px</SelectItem>
-                      <SelectItem value="rem">rem</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>حجم الصورة ({unit})</Label>
-                  <Input
-                    type="number"
-                    value={imageSizeValue}
-                    onChange={(e) => setImageSizeValue(Number(e.target.value) || 0)}
-                    min={unit === 'px' ? 16 : 1}
-                    max={unit === 'px' ? 512 : 32}
-                    step={unit === 'px' ? 1 : 0.1}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>سمك الإطار ({unit})</Label>
-                  <Input
-                    type="number"
-                    value={thicknessValue}
-                    onChange={(e) => setThicknessValue(Number(e.target.value) || 0)}
-                    min={unit === 'px' ? 0 : 0}
-                    max={unit === 'px' ? 64 : 4}
-                    step={unit === 'px' ? 1 : 0.1}
-                  />
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+          <div className="w-full">
+            <div className="flex justify-center p-4">
+              <AvatarWithFrame
+                src={user.profileImage}
+                alt={user.username}
+                fallback={user.username.substring(0, 2).toUpperCase()}
+                frame={selectedFrame}
+                imageSize={previewSize}
+              />
+            </div>
+          </div>
 
           {/* اختيار الإطار */}
           <div className="space-y-2">
-            <Label>اختر الإطار</Label>
+            <div className="text-sm text-gray-600">اختر الإطار</div>
             <Select value={selectedFrame} onValueChange={setSelectedFrame}>
               <SelectTrigger>
                 <SelectValue />

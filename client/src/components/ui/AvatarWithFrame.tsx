@@ -1,5 +1,4 @@
 import React from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import { cn } from '../../lib/utils';
 
 interface AvatarWithFrameProps {
@@ -8,16 +7,9 @@ interface AvatarWithFrameProps {
   fallback?: string;
   frame?: string; // معرف ملف SVG بدون الامتداد (مثال: 'crown-frame-gold')
   imageSize: number; // قطر الصورة الحقيقي بالبكسل
-  frameThickness?: number; // سُمك الإطار بالبكسل (يضاف حول الصورة)
+  frameThickness?: number; // سُمك الإطار الذي يزيد به حجم الحاوية من جميع الجهات
   className?: string;
   onClick?: () => void;
-  // إطار دائري بسيط باستخدام CSS border + padding
-  useCircularFrame?: boolean;
-  frameBorderWidth?: number; // سمك إطار CSS
-  frameBorderColor?: string; // لون إطار CSS
-  frameGap?: number; // مسافة بين الصورة والإطار
-  // وضع العرض: full للملف الشخصي (كامل)، compact لقائمة المتصلين (مختصر)
-  displayMode?: 'full' | 'compact';
 }
 
 export function AvatarWithFrame({ 
@@ -28,87 +20,52 @@ export function AvatarWithFrame({
   imageSize,
   frameThickness,
   className,
-  onClick,
-  useCircularFrame = false,
-  frameBorderWidth = 3,
-  frameBorderColor = 'gold',
-  frameGap = 0,
-  displayMode = 'full'
+  onClick
 }: AvatarWithFrameProps) {
-  // حساب سُمك الإطار الفعلي بناءً على حجم الصورة
-  const effectiveFrameThickness = useCircularFrame
-    ? 0
-    : (frame && frame !== 'none'
-      ? (typeof frameThickness === 'number' ? frameThickness : Math.round(imageSize * 0.2))
-      : 0);
+  // سمك افتراضي إذا لم يُمرر: نسبة من حجم الصورة
+  const effectiveThickness = typeof frameThickness === 'number' ? frameThickness : Math.round(imageSize * 0.12);
 
-  // حجم الحاوية يعتمد على الوضع والإطار
-  const containerSize = (frame && frame !== 'none' && displayMode === 'full')
-    ? imageSize + (effectiveFrameThickness * 2)
-    : imageSize;
-
-  const containerStyle: React.CSSProperties = useCircularFrame
-    ? {
-      width: `${imageSize}px`,
-      height: `${imageSize}px`,
-      position: 'relative',
-      borderRadius: '50%',
-      border: `${frameBorderWidth}px solid ${frameBorderColor}`,
-      padding: `${frameGap}px`,
-      boxSizing: 'content-box'
-    }
-    : {
-      width: `${containerSize}px`,
-      height: `${containerSize}px`,
-      position: 'relative',
-      overflow: 'visible'
-    };
-
-  // موضع وحجم الصورة
-  const avatarStyle: React.CSSProperties = {
-    width: `${imageSize}px`,
-    height: `${imageSize}px`,
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    zIndex: 10,
+  // الحاوية: أكبر من الصورة بمقدار السُمك من كل جانب
+  const containerSize = imageSize + (effectiveThickness * 2);
+  const containerStyle: React.CSSProperties = {
+    width: `${containerSize}px`,
+    height: `${containerSize}px`,
+    position: 'relative',
     borderRadius: '50%',
     overflow: 'hidden'
   };
 
-  // حساب حجم وموضع الإطار SVG
-  // الإطار SVG له viewBox 600x600 مع الصورة في المنتصف
-  // الدائرة الداخلية في SVG قطرها 330 بكسل (نصف القطر 165)
-  const svgInnerDiameter = 330;
-  const scale = imageSize / svgInnerDiameter;
-  const frameActualSize = 600 * scale;
+  // الصورة تتموضع في المركز بحجم الصورة الحقيقي
+  const avatarStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: `${imageSize}px`,
+    height: `${imageSize}px`,
+    borderRadius: '50%',
+    overflow: 'hidden'
+  };
 
-  const frameStyle: React.CSSProperties = displayMode === 'compact'
-    ? {
-      position: 'absolute',
-      width: `${frameActualSize}px`,
-      height: `${frameActualSize}px`,
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      pointerEvents: 'none',
-      zIndex: 20,
-      // في الوضع المختصر، نقص الجزء العلوي من الإطار (التاج)
-      clipPath: frame?.includes('crown') || frame?.includes('svip') 
-        ? 'polygon(0 25%, 100% 25%, 100% 100%, 0 100%)' 
-        : 'none'
-    }
-    : {
-      position: 'absolute',
-      width: `${frameActualSize}px`,
-      height: `${frameActualSize}px`,
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      pointerEvents: 'none',
-      zIndex: 20
-    };
+  // الإطار يلتزم بحجم الحاوية 100% بدون أي تجاوز
+  // قص علوي لإخفاء التيجان/الأجسام وترك الحلقة/القاعدة فقط
+  function getClipTopPercent(frameId?: string): number {
+    if (!frameId || frameId === 'none') return 0;
+    if (frameId.includes('svip')) return 22;
+    if (frameId.includes('classic')) return 12;
+    if (frameId.includes('crown')) return 18;
+    return 0;
+  }
+  const clipTopPercent = getClipTopPercent(frame);
+  const frameStyle: React.CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    pointerEvents: 'none',
+    zIndex: 20,
+    clipPath: clipTopPercent > 0 ? `polygon(0 ${clipTopPercent}%, 100% ${clipTopPercent}%, 100% 100%, 0 100%)` : undefined
+  };
 
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
@@ -131,7 +88,7 @@ export function AvatarWithFrame({
         />
       </div>
 
-      {!useCircularFrame && frame && frame !== 'none' && (
+      {frame && frame !== 'none' && (
         <img 
           src={`/${frame}.svg`} 
           alt="Avatar Frame"

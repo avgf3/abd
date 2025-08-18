@@ -393,7 +393,7 @@ export default function OwnerAdminPanel({
                               alt={staff.username}
                               frame={(staff as any).avatarFrame || 'none'}
                               imageSize={56}
-                              frameThickness={7}
+                              frameThickness={Math.round(56 * 0.12)}
                             />
                           </div>
                           
