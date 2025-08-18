@@ -240,7 +240,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
             </div>
           ) : (
             <div className="space-y-2">
-              {notifications.map((notification) => (
+              {notifications.filter(n => n.type !== 'message').map((notification) => (
                 <div
                   key={notification.id}
                   className={`p-3 border rounded-lg transition-colors ${
