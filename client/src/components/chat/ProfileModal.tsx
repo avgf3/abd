@@ -1807,8 +1807,8 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                 src={getProfileImageSrcLocal()}
                 alt={localUser?.username}
                 frame={localUser?.avatarFrame || 'none'}
-                pixelSize={130}
-                innerScale={0.82}
+                imagePixelSize={130}
+                frameRingWidthPx={8}
               />
             </div>
             

@@ -392,8 +392,8 @@ export default function OwnerAdminPanel({
                               src={getImageSrc(staff.profileImage)}
                               alt={staff.username}
                               frame={(staff as any).avatarFrame || 'none'}
-                              pixelSize={56}
-                              innerScale={0.82}
+                              imagePixelSize={56}
+                              frameRingWidthPx={7}
                             />
                           </div>
                           

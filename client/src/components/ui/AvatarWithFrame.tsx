@@ -10,6 +10,8 @@ interface AvatarWithFrameProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   pixelSize?: number; // قياس مخصص بالإمكانات
   innerScale?: number; // نسبة حجم الصورة داخل الإطار (افتراض 0.8)
+  imagePixelSize?: number; // قطر الصورة الحقيقي المطلوب (دون تصغيرها)
+  frameRingWidthPx?: number; // سُمك حلقة الإطار حول الصورة بالبكسل
   className?: string;
   onClick?: () => void;
 }
@@ -29,18 +31,27 @@ export function AvatarWithFrame({
   size = 'md',
   pixelSize,
   innerScale = 1,
+  imagePixelSize,
+  frameRingWidthPx,
   className,
   onClick 
 }: AvatarWithFrameProps) {
   const sizes = frameSizes[size];
 
-  const containerStyle: React.CSSProperties | undefined = typeof pixelSize === 'number' && pixelSize > 0
-    ? { width: `${pixelSize}px`, height: `${pixelSize}px` }
-    : undefined;
+  const useImagePlusRing = typeof imagePixelSize === 'number' && imagePixelSize > 0;
+  const ringWidth = typeof frameRingWidthPx === 'number' && frameRingWidthPx >= 0 ? frameRingWidthPx : 6;
 
-  const avatarStyle: React.CSSProperties | undefined = typeof pixelSize === 'number' && pixelSize > 0
-    ? { width: `${Math.round(pixelSize * innerScale)}px`, height: `${Math.round(pixelSize * innerScale)}px` }
-    : undefined;
+  const containerStyle: React.CSSProperties | undefined = useImagePlusRing
+    ? { width: `${imagePixelSize! + (ringWidth * 2)}px`, height: `${imagePixelSize! + (ringWidth * 2)}px` }
+    : (typeof pixelSize === 'number' && pixelSize > 0
+      ? { width: `${pixelSize}px`, height: `${pixelSize}px` }
+      : undefined);
+
+  const avatarStyle: React.CSSProperties | undefined = useImagePlusRing
+    ? { width: `${imagePixelSize}px`, height: `${imagePixelSize}px` }
+    : (typeof pixelSize === 'number' && pixelSize > 0
+      ? { width: `${Math.round(pixelSize * innerScale)}px`, height: `${Math.round(pixelSize * innerScale)}px` }
+      : undefined);
 
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;

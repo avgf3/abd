@@ -37,8 +37,8 @@ export default function ProfileImage({ user, size = 'medium', className = '', on
         src={imageSrc}
         alt={`صورة ${user.username}`}
         frame={showFrame ? (user.avatarFrame || 'none') : 'none'}
-        pixelSize={sizePixels}
-        innerScale={0.82}
+        imagePixelSize={sizePixels}
+        frameRingWidthPx={Math.round(sizePixels * 0.12)}
         className={className}
       />
 
