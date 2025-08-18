@@ -22,8 +22,42 @@ export function AvatarWithFrame({
   className,
   onClick
 }: AvatarWithFrameProps) {
-  // سمك افتراضي إذا لم يُمرر: نسبة من حجم الصورة
-  const effectiveThickness = typeof frameThickness === 'number' ? frameThickness : Math.round(imageSize * 0.12);
+  // إعدادات لكل إطار: سماكة نسبية وقص علوي حسب التصميم
+  const frameConfig: Record<string, { thicknessRatio?: number; clipTopPercent?: number; compactFallback?: string }> = {
+    // تيجان TOP المحسّنة
+    'enhanced-crown-frame': { thicknessRatio: 0.16, clipTopPercent: 0 },
+    'crown-frame-silver': { thicknessRatio: 0.14, clipTopPercent: 0 },
+    'crown-frame-rosegold': { thicknessRatio: 0.14, clipTopPercent: 0 },
+    'crown-frame-blue': { thicknessRatio: 0.14, clipTopPercent: 0 },
+    'crown-frame-emerald': { thicknessRatio: 0.14, clipTopPercent: 0 },
+    'crown-frame-purple': { thicknessRatio: 0.14, clipTopPercent: 0 },
+    // كلاسيك بدون أجنحة
+    'crown-frame-classic-gold': { thicknessRatio: 0.12, clipTopPercent: 0 },
+    'crown-frame-classic-coolpink': { thicknessRatio: 0.12, clipTopPercent: 0 },
+    // SVIP
+    'svip1-frame-gold': { thicknessRatio: 0.16, clipTopPercent: 0 },
+    'svip1-frame-pink': { thicknessRatio: 0.16, clipTopPercent: 0 },
+    'svip2-frame-gold': { thicknessRatio: 0.16, clipTopPercent: 0 },
+    'svip2-frame-pink': { thicknessRatio: 0.16, clipTopPercent: 0 },
+    // أجنحة: بديل مضغوط تلقائي إلى كلاسيك ذهبي
+    'wings-frame-king': { thicknessRatio: 0.18, clipTopPercent: 0, compactFallback: 'crown-frame-classic-gold' },
+    'wings-frame-queen': { thicknessRatio: 0.18, clipTopPercent: 0, compactFallback: 'crown-frame-classic-coolpink' },
+  };
+
+  // اختيار إطار مناسب تلقائياً في الوضع المضغوط
+  function resolveFrameId(baseId?: string, size?: number): string | undefined {
+    if (!baseId || baseId === 'none') return baseId;
+    const isCompact = typeof size === 'number' ? size < 64 : false;
+    if (isCompact && frameConfig[baseId]?.compactFallback) {
+      return frameConfig[baseId]!.compactFallback;
+    }
+    return baseId;
+  }
+
+  const resolvedFrame = resolveFrameId(frame, imageSize);
+  const thicknessRatio = resolvedFrame && frameConfig[resolvedFrame]?.thicknessRatio != null ? frameConfig[resolvedFrame]!.thicknessRatio! : 0.12;
+  // سمك افتراضي إذا لم يُمرر: نسبة من حجم الصورة (قابلة للتخصيص لكل إطار)
+  const effectiveThickness = typeof frameThickness === 'number' ? frameThickness : Math.round(imageSize * thicknessRatio);
 
   // الحاوية: أكبر من الصورة بمقدار السُمك من كل جانب
   const containerSize = imageSize + (effectiveThickness * 2);
@@ -31,8 +65,7 @@ export function AvatarWithFrame({
     width: `${containerSize}px`,
     height: `${containerSize}px`,
     position: 'relative',
-    borderRadius: '50%',
-    overflow: 'hidden'
+    // السماح بظهور الزينة خارج الدائرة (أجنحة/تيجان)
   };
 
   // الصورة تتموضع في المركز بحجم الصورة الحقيقي
@@ -51,12 +84,10 @@ export function AvatarWithFrame({
   // قص علوي لإخفاء التيجان/الأجسام وترك الحلقة/القاعدة فقط
   function getClipTopPercent(frameId?: string): number {
     if (!frameId || frameId === 'none') return 0;
-    if (frameId.includes('svip')) return 22;
-    if (frameId.includes('classic')) return 12;
-    if (frameId.includes('crown')) return 18;
-    return 0;
+    const cfg = frameConfig[frameId];
+    return cfg?.clipTopPercent ?? 0;
   }
-  const clipTopPercent = getClipTopPercent(frame);
+  const clipTopPercent = getClipTopPercent(resolvedFrame);
   const frameStyle: React.CSSProperties = {
     position: 'absolute',
     inset: 0,
@@ -88,9 +119,9 @@ export function AvatarWithFrame({
         />
       </div>
 
-      {frame && frame !== 'none' && (
+      {resolvedFrame && resolvedFrame !== 'none' && (
         <img 
-          src={`/${frame}.svg`} 
+          src={`/${resolvedFrame}.svg`} 
           alt="Avatar Frame"
           className="pointer-events-none select-none"
           style={frameStyle}
