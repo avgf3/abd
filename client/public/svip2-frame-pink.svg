@@ -1,11 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
     <defs>
-        <!-- تدرجات وردية فاخرة بسيطة -->
+        <!-- تدرجات وردية فاخرة -->
         <linearGradient id="pinkGradient2" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stop-color="#fff0f5"/>
-            <stop offset="30%" stop-color="#ff69b4"/>
-            <stop offset="70%" stop-color="#ff1493"/>
-            <stop offset="100%" stop-color="#db7093"/>
+            <stop offset="20%" stop-color="#ff69b4"/>
+            <stop offset="40%" stop-color="#ff1493"/>
+            <stop offset="60%" stop-color="#db7093"/>
+            <stop offset="80%" stop-color="#c71585"/>
+            <stop offset="100%" stop-color="#fff0f5"/>
         </linearGradient>
         
         <radialGradient id="pinkRadial2" cx="50%" cy="50%" r="50%">
@@ -14,42 +16,75 @@
             <stop offset="60%" stop-color="#ff69b4"/>
             <stop offset="100%" stop-color="#8b0051"/>
         </radialGradient>
+        
+        <linearGradient id="pinkShine2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+            <stop offset="50%" stop-color="#fff0f5" stop-opacity="0.6"/>
+            <stop offset="100%" stop-color="#ff69b4" stop-opacity="0.4"/>
+        </linearGradient>
+        
+        <!-- فلاتر متقدمة -->
+        <filter id="glow2">
+            <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        
+        <filter id="shadow2">
+            <feDropShadow dx="3" dy="3" stdDeviation="4" flood-opacity="0.4"/>
+        </filter>
+        
+        <!-- نمط زخرفي فاخر -->
+        <pattern id="luxuryPattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+            <circle cx="20" cy="20" r="4" fill="#fff0f5" opacity="0.5"/>
+            <path d="M15,20 L25,20 M20,15 L20,25" stroke="#fff0f5" stroke-width="1.5" opacity="0.3"/>
+            <circle cx="10" cy="10" r="2" fill="#fff0f5" opacity="0.3"/>
+            <circle cx="30" cy="30" r="2" fill="#fff0f5" opacity="0.3"/>
+        </pattern>
     </defs>
     
-    <!-- إطار دائري فاخر نظيف -->
-    <circle cx="300" cy="300" r="210" fill="none" stroke="url(#pinkGradient2)" stroke-width="35"/>
-    <circle cx="300" cy="300" r="227" fill="none" stroke="#8b0051" stroke-width="1.5" opacity="0.5"/>
-    <circle cx="300" cy="300" r="193" fill="none" stroke="#8b0051" stroke-width="1.5" opacity="0.5"/>
-    <circle cx="300" cy="300" r="185" fill="none" stroke="#ff69b4" stroke-width="0.5" opacity="0.3"/>
+    <!-- إطار دائري فاخر متعدد الطبقات -->
+    <circle cx="300" cy="300" r="230" fill="none" stroke="#8b0051" stroke-width="4" opacity="0.4"/>
+    <circle cx="300" cy="300" r="210" fill="none" stroke="url(#pinkGradient2)" stroke-width="50" filter="url(#shadow2)"/>
+    <circle cx="300" cy="300" r="210" fill="none" stroke="url(#pinkRadial2)" stroke-width="45"/>
+    <circle cx="300" cy="300" r="235" fill="none" stroke="#fff0f5" stroke-width="2" opacity="0.8"/>
+    <circle cx="300" cy="300" r="185" fill="none" stroke="#fff0f5" stroke-width="2" opacity="0.8"/>
+    <circle cx="300" cy="300" r="175" fill="none" stroke="#ff69b4" stroke-width="1" opacity="0.5"/>
     
-    <!-- تاج ملكي صغير وراقي -->
-    <g>
-        <!-- قاعدة التاج الفاخرة -->
-        <rect x="255" y="90" width="90" height="12" fill="url(#pinkGradient2)" rx="3"/>
-        
-        <!-- سبع قمم صغيرة -->
-        <path d="M265,90 L265,78 L272,90" fill="url(#pinkRadial2)"/>
-        <path d="M280,90 L280,74 L287,90" fill="url(#pinkRadial2)"/>
-        <path d="M295,90 L295,70 L302,90" fill="url(#pinkRadial2)"/>
-        <path d="M310,90 L310,68 L317,90" fill="url(#pinkRadial2)"/>
-        <path d="M325,90 L325,70 L332,90" fill="url(#pinkRadial2)"/>
-        <path d="M340,90 L340,74 L347,90" fill="url(#pinkRadial2)"/>
-        <path d="M355,90 L355,78 L362,90" fill="url(#pinkRadial2)"/>
-        
-        <!-- جواهر صغيرة -->
-        <circle cx="268" cy="78" r="1.5" fill="#ff69b4"/>
-        <circle cx="283" cy="74" r="1.5" fill="#ff69b4"/>
-        <circle cx="298" cy="70" r="2" fill="#ff69b4"/>
-        <circle cx="313" cy="68" r="2.5" fill="#ff69b4"/>
-        <circle cx="328" cy="70" r="2" fill="#ff69b4"/>
-        <circle cx="343" cy="74" r="1.5" fill="#ff69b4"/>
-        <circle cx="358" cy="78" r="1.5" fill="#ff69b4"/>
+    <!-- زخارف ماسية على الإطار -->
+    <g opacity="0.7">
+        <path d="M300,60 L305,70 L295,70 Z" fill="#fff0f5"/>
+        <path d="M200,90 L205,100 L195,100 Z" fill="#fff0f5"/>
+        <path d="M400,90 L405,100 L395,100 Z" fill="#fff0f5"/>
+        <path d="M120,170 L125,180 L115,180 Z" fill="#fff0f5"/>
+        <path d="M480,170 L485,180 L475,180 Z" fill="#fff0f5"/>
+        <path d="M60,300 L65,310 L55,310 Z" fill="#fff0f5"/>
+        <path d="M540,300 L545,310 L535,310 Z" fill="#fff0f5"/>
+        <path d="M120,430 L125,440 L115,440 Z" fill="#fff0f5"/>
+        <path d="M480,430 L485,440 L475,440 Z" fill="#fff0f5"/>
+        <path d="M200,510 L205,520 L195,520 Z" fill="#fff0f5"/>
+        <path d="M400,510 L405,520 L395,520 Z" fill="#fff0f5"/>
     </g>
     
-    <!-- شريط "SVIP2" فاخر بسيط -->
-    <g>
-        <rect x="150" y="480" width="300" height="55" rx="27" fill="url(#pinkGradient2)"/>
-        <rect x="160" y="490" width="280" height="35" rx="17" fill="none" stroke="#8b0051" stroke-width="1" opacity="0.3"/>
-        <text x="300" y="515" text-anchor="middle" fill="#8b0051" font-size="36" font-family="Arial" font-weight="bold">SVIP2</text>
+    <!-- شريط "SVIP2" فاخر -->
+    <g filter="url(#shadow2)">
+        <path d="M120,460 L480,460 L505,505 L500,560 L100,560 L95,505 Z" fill="url(#pinkGradient2)" stroke="#8b0051" stroke-width="4"/>
+        <rect x="125" y="465" width="350" height="90" fill="url(#luxuryPattern)" opacity="0.25"/>
+        
+        <!-- إطارات داخلية متعددة -->
+        <path d="M130,470 L470,470 L490,550 L110,550 Z" fill="none" stroke="#fff0f5" stroke-width="2" opacity="0.7"/>
+        <path d="M140,480 L460,480 L475,540 L125,540 Z" fill="none" stroke="#ff69b4" stroke-width="1" opacity="0.5"/>
+        
+        <!-- النص الفاخر -->
+        <text x="300" y="525" text-anchor="middle" fill="#8b0051" font-size="52" font-family="Arial Black" font-weight="bold" filter="url(#shadow2)">SVIP2</text>
+        <text x="300" y="525" text-anchor="middle" fill="url(#pinkRadial2)" font-size="50" font-family="Arial Black" font-weight="bold">SVIP2</text>
+        <text x="300" y="525" text-anchor="middle" fill="none" stroke="#ffffff" stroke-width="1" font-size="50" font-family="Arial Black" font-weight="bold" opacity="0.8">SVIP2</text>
     </g>
+    
+    <!-- تأثيرات لمعان متحركة -->
+    <rect x="0" y="0" width="150" height="600" fill="url(#pinkShine2)" opacity="0.5">
+        <animateTransform attributeName="transform" type="translate" from="-150 0" to="750 0" dur="5s" repeatCount="indefinite"/>
+    </rect>
 </svg>

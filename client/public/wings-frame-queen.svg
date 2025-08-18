@@ -4,25 +4,31 @@
             <stop offset="0%" stop-color="#ff69b4"/>
             <stop offset="100%" stop-color="#c71585"/>
         </linearGradient>
+        
+        <filter id="shadow">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
     </defs>
     
-    <!-- إطار دائري نظيف -->
-    <circle cx="300" cy="300" r="180" fill="none" stroke="url(#queenGrad)" stroke-width="25"/>
-    <circle cx="300" cy="300" r="192" fill="none" stroke="#c71585" stroke-width="1" opacity="0.5"/>
-    <circle cx="300" cy="300" r="168" fill="none" stroke="#c71585" stroke-width="1" opacity="0.5"/>
+    <!-- إطار دائري خارجي مزخرف -->
+    <circle cx="300" cy="300" r="180" fill="none" stroke="url(#queenGrad)" stroke-width="30" filter="url(#shadow)"/>
+    <circle cx="300" cy="300" r="195" fill="none" stroke="#c71585" stroke-width="2" opacity="0.5"/>
+    <circle cx="300" cy="300" r="165" fill="none" stroke="#c71585" stroke-width="2" opacity="0.5"/>
     
-    <!-- تاج صغير جداً -->
-    <g>
-        <rect x="280" y="98" width="40" height="5" fill="url(#queenGrad)" rx="1"/>
-        <path d="M288,98 L288,90 L292,98 M298,98 L298,87 L302,98 M308,98 L308,90 L312,98" fill="url(#queenGrad)"/>
-        <circle cx="290" cy="90" r="1" fill="#ff69b4"/>
-        <circle cx="300" cy="87" r="1.5" fill="#ff69b4"/>
-        <circle cx="310" cy="90" r="1" fill="#ff69b4"/>
+    <!-- زخارف ملكية -->
+    <g opacity="0.6">
+        <path d="M300,105 L305,115 L295,115 Z" fill="#ff69b4"/>
+        <path d="M235,125 L240,135 L230,135 Z" fill="#ff69b4"/>
+        <path d="M365,125 L370,135 L360,135 Z" fill="#ff69b4"/>
+        <path d="M185,185 L190,195 L180,195 Z" fill="#ff69b4"/>
+        <path d="M415,185 L420,195 L410,195 Z" fill="#ff69b4"/>
+        <path d="M185,415 L190,425 L180,425 Z" fill="#ff69b4"/>
+        <path d="M415,415 L420,425 L410,425 Z" fill="#ff69b4"/>
     </g>
     
     <!-- الشريط السفلي -->
-    <g>
-        <rect x="200" y="490" width="200" height="45" rx="22" fill="url(#queenGrad)"/>
-        <text x="300" y="518" text-anchor="middle" fill="#8b1468" font-size="30" font-family="Arial" font-weight="bold">QUEEN</text>
+    <g filter="url(#shadow)">
+        <path d="M180,480 L420,480 L435,515 L430,550 L170,550 L165,515 Z" fill="url(#queenGrad)" stroke="#c71585" stroke-width="2"/>
+        <text x="300" y="522" text-anchor="middle" fill="#8b1468" font-size="36" font-family="Arial Black" font-weight="bold" letter-spacing="2">QUEEN</text>
     </g>
 </svg>

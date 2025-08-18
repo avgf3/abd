@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
     <defs>
-        <!-- تدرجات ذهبية كلاسيكية بسيطة -->
+        <!-- تدرجات ذهبية كلاسيكية -->
         <linearGradient id="classicGold" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stop-color="#fff9e6"/>
             <stop offset="50%" stop-color="#ffd700"/>
@@ -12,32 +12,32 @@
             <stop offset="50%" stop-color="#ffd700"/>
             <stop offset="100%" stop-color="#daa520"/>
         </radialGradient>
+        
+        <!-- فلتر للظلال -->
+        <filter id="shadow">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
     </defs>
     
-    <!-- إطار دائري بسيط -->
-    <circle cx="300" cy="300" r="190" fill="none" stroke="url(#classicGold)" stroke-width="20"/>
-    <circle cx="300" cy="300" r="200" fill="none" stroke="#b8860b" stroke-width="1" opacity="0.5"/>
-    <circle cx="300" cy="300" r="180" fill="none" stroke="#b8860b" stroke-width="1" opacity="0.5"/>
+    <!-- إطار دائري بسيط مزخرف -->
+    <circle cx="300" cy="300" r="190" fill="none" stroke="url(#classicGold)" stroke-width="25" filter="url(#shadow)"/>
+    <circle cx="300" cy="300" r="202" fill="none" stroke="#b8860b" stroke-width="1" opacity="0.5"/>
+    <circle cx="300" cy="300" r="178" fill="none" stroke="#b8860b" stroke-width="1" opacity="0.5"/>
     
-    <!-- تاج كلاسيكي صغير جداً -->
-    <g>
-        <!-- قاعدة صغيرة -->
-        <rect x="275" y="98" width="50" height="6" fill="url(#classicGold)" rx="1"/>
-        
-        <!-- ثلاث قمم صغيرة جداً -->
-        <path d="M285,98 L285,88 L291,98" fill="url(#classicGoldRadial)"/>
-        <path d="M297,98 L297,85 L303,98" fill="url(#classicGoldRadial)"/>
-        <path d="M309,98 L309,88 L315,98" fill="url(#classicGoldRadial)"/>
-        
-        <!-- نقاط صغيرة -->
-        <circle cx="288" cy="88" r="1.5" fill="#ffd700"/>
-        <circle cx="300" cy="85" r="1.5" fill="#ffd700"/>
-        <circle cx="312" cy="88" r="1.5" fill="#ffd700"/>
+    <!-- زخارف بسيطة -->
+    <g opacity="0.5">
+        <circle cx="300" cy="100" r="3" fill="#ffd700"/>
+        <circle cx="230" cy="130" r="3" fill="#ffd700"/>
+        <circle cx="370" cy="130" r="3" fill="#ffd700"/>
+        <circle cx="180" cy="190" r="3" fill="#ffd700"/>
+        <circle cx="420" cy="190" r="3" fill="#ffd700"/>
+        <circle cx="180" cy="410" r="3" fill="#ffd700"/>
+        <circle cx="420" cy="410" r="3" fill="#ffd700"/>
     </g>
     
-    <!-- شريط سفلي بسيط -->
-    <g>
-        <rect x="210" y="492" width="180" height="40" rx="20" fill="url(#classicGold)"/>
-        <text x="300" y="517" text-anchor="middle" fill="#8b6914" font-size="24" font-family="Arial" font-weight="bold">CLASSIC</text>
+    <!-- شريط سفلي -->
+    <g filter="url(#shadow)">
+        <rect x="200" y="490" width="200" height="50" rx="25" fill="url(#classicGold)" stroke="#b8860b" stroke-width="2"/>
+        <text x="300" y="522" text-anchor="middle" fill="#8b6914" font-size="28" font-family="Arial" font-weight="bold">CLASSIC</text>
     </g>
 </svg>

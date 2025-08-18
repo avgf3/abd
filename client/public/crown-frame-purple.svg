@@ -1,10 +1,12 @@
 <svg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'>
   <defs>
-    <!-- تدرجات بنفسجية بسيطة -->
+    <!-- تدرجات بنفسجية -->
     <linearGradient id='purpleGradient1' x1='0' y1='0' x2='1' y2='1'>
       <stop offset='0%' stop-color='#f3e6ff'/>
-      <stop offset='50%' stop-color='#9370db'/>
-      <stop offset='100%' stop-color='#7b68ee'/>
+      <stop offset='20%' stop-color='#9370db'/>
+      <stop offset='50%' stop-color='#7b68ee'/>
+      <stop offset='80%' stop-color='#6a0dad'/>
+      <stop offset='100%' stop-color='#f3e6ff'/>
     </linearGradient>
     
     <radialGradient id='purpleRadial' cx='50%' cy='50%' r='50%'>
@@ -12,32 +14,69 @@
       <stop offset='50%' stop-color='#9370db'/>
       <stop offset='100%' stop-color='#4b0082'/>
     </radialGradient>
+    
+    <linearGradient id='purpleShine' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#9370db' stop-opacity='0'/>
+      <stop offset='50%' stop-color='#ffffff' stop-opacity='0.8'/>
+      <stop offset='100%' stop-color='#9370db' stop-opacity='0'/>
+    </linearGradient>
+    
+    <!-- فلتر للظلال والتوهج -->
+    <filter id='glow'>
+      <feGaussianBlur stdDeviation='4' result='coloredBlur'/>
+      <feMerge>
+        <feMergeNode in='coloredBlur'/>
+        <feMergeNode in='SourceGraphic'/>
+      </feMerge>
+    </filter>
+    
+    <filter id='shadow'>
+      <feDropShadow dx='2' dy='2' stdDeviation='3' flood-opacity='0.3'/>
+    </filter>
+    
+    <!-- نمط زخرفي -->
+    <pattern id='ornament' x='0' y='0' width='20' height='20' patternUnits='userSpaceOnUse'>
+      <circle cx='10' cy='10' r='2' fill='#f3e6ff' opacity='0.5'/>
+    </pattern>
   </defs>
   
-  <!-- إطار دائري رئيسي نظيف -->
-  <circle cx='300' cy='300' r='180' fill='none' stroke='url(#purpleGradient1)' stroke-width='25'/>
-  <circle cx='300' cy='300' r='192' fill='none' stroke='#4b0082' stroke-width='1' opacity='0.5'/>
-  <circle cx='300' cy='300' r='168' fill='none' stroke='#4b0082' stroke-width='1' opacity='0.5'/>
+  <!-- خلفية دائرية خفيفة -->
+  <circle cx='300' cy='300' r='280' fill='#fff' opacity='0.1'/>
   
-  <!-- تاج صغير وأنيق -->
-  <g>
-    <!-- قاعدة التاج الصغيرة -->
-    <rect x='270' y='100' width='60' height='8' fill='url(#purpleGradient1)' rx='2'/>
-    
-    <!-- ثلاث قمم صغيرة وبسيطة -->
-    <path d='M280,100 L280,85 L290,100' fill='url(#purpleRadial)'/>
-    <path d='M295,100 L295,80 L305,100' fill='url(#purpleRadial)'/>
-    <path d='M310,100 L310,85 L320,100' fill='url(#purpleRadial)'/>
-    
-    <!-- نقاط صغيرة للزينة -->
-    <circle cx='285' cy='85' r='2' fill='#9370db'/>
-    <circle cx='300' cy='80' r='2.5' fill='#9370db'/>
-    <circle cx='315' cy='85' r='2' fill='#9370db'/>
+  <!-- إطار دائري رئيسي مع طبقات -->
+  <circle cx='300' cy='300' r='200' fill='none' stroke='#4b0082' stroke-width='2' opacity='0.3'/>
+  <circle cx='300' cy='300' r='180' fill='none' stroke='url(#purpleGradient1)' stroke-width='35' filter='url(#shadow)'/>
+  <circle cx='300' cy='300' r='180' fill='none' stroke='url(#purpleRadial)' stroke-width='30'/>
+  <circle cx='300' cy='300' r='195' fill='none' stroke='#f3e6ff' stroke-width='1' opacity='0.6'/>
+  <circle cx='300' cy='300' r='165' fill='none' stroke='#f3e6ff' stroke-width='1' opacity='0.6'/>
+  
+  <!-- زخارف دائرية -->
+  <g opacity='0.4'>
+    <circle cx='300' cy='120' r='4' fill='#f3e6ff'/>
+    <circle cx='240' cy='140' r='4' fill='#f3e6ff'/>
+    <circle cx='360' cy='140' r='4' fill='#f3e6ff'/>
+    <circle cx='180' cy='300' r='4' fill='#f3e6ff'/>
+    <circle cx='420' cy='300' r='4' fill='#f3e6ff'/>
+    <circle cx='240' cy='460' r='4' fill='#f3e6ff'/>
+    <circle cx='360' cy='460' r='4' fill='#f3e6ff'/>
   </g>
   
-  <!-- شريط "TOP" بسيط -->
-  <g>
-    <rect x='200' y='490' width='200' height='45' rx='22' fill='url(#purpleGradient1)'/>
-    <text x='300' y='518' text-anchor='middle' fill='#2d004d' font-size='28' font-family='Arial' font-weight='bold'>TOP</text>
+  <!-- شريط "TOP" محسّن -->
+  <g filter='url(#shadow)'>
+    <path d='M170,485 L430,485 L445,520 L440,555 L160,555 L155,520 Z' fill='url(#purpleGradient1)' stroke='#4b0082' stroke-width='2'/>
+    <rect x='175' y='490' width='250' height='60' fill='url(#ornament)' opacity='0.3'/>
+    
+    <!-- إطار داخلي للشريط -->
+    <path d='M180,495 L420,495 L430,545 L170,545 Z' fill='none' stroke='#f3e6ff' stroke-width='1' opacity='0.5'/>
+    
+    <!-- النص مع تأثيرات -->
+    <text x='300' y='527' text-anchor='middle' fill='#2d004d' font-size='42' font-family='Arial Black' font-weight='bold' filter='url(#shadow)'>TOP</text>
+    <text x='300' y='527' text-anchor='middle' fill='url(#purpleRadial)' font-size='40' font-family='Arial Black' font-weight='bold'>TOP</text>
+    <text x='300' y='527' text-anchor='middle' fill='none' stroke='#f3e6ff' stroke-width='0.5' font-size='40' font-family='Arial Black' font-weight='bold' opacity='0.6'>TOP</text>
   </g>
+  
+  <!-- لمعان متحرك -->
+  <rect x='0' y='0' width='100' height='600' fill='url(#purpleShine)' opacity='0.3'>
+    <animateTransform attributeName='transform' type='translate' from='-100 0' to='700 0' dur='3s' repeatCount='indefinite'/>
+  </rect>
 </svg>
