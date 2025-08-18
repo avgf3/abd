@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
     <defs>
-        <!-- تدرجات وردية متعددة -->
+        <!-- تدرجات وردية بسيطة -->
         <linearGradient id="pinkGradient1" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stop-color="#ffe0ec"/>
             <stop offset="50%" stop-color="#ff69b4"/>
@@ -12,88 +12,36 @@
             <stop offset="40%" stop-color="#ff69b4"/>
             <stop offset="100%" stop-color="#c71585"/>
         </radialGradient>
-        
-        <linearGradient id="pinkShine" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
-            <stop offset="50%" stop-color="#ffe0ec" stop-opacity="0.5"/>
-            <stop offset="100%" stop-color="#ff69b4" stop-opacity="0.3"/>
-        </linearGradient>
-        
-        <!-- فلاتر التأثيرات -->
-        <filter id="glow">
-            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-            <feMerge>
-                <feMergeNode in="coloredBlur"/>
-                <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-        </filter>
-        
-        <filter id="shadow">
-            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
-        </filter>
-        
-        <!-- نمط زخرفي -->
-        <pattern id="ornamentPattern" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
-            <circle cx="15" cy="15" r="3" fill="#ffe0ec" opacity="0.4"/>
-            <path d="M10,15 L20,15 M15,10 L15,20" stroke="#ffe0ec" stroke-width="1" opacity="0.2"/>
-        </pattern>
     </defs>
     
-    <!-- إطار دائري رئيسي -->
-    <circle cx="300" cy="300" r="220" fill="none" stroke="#c71585" stroke-width="3" opacity="0.3"/>
-    <circle cx="300" cy="300" r="200" fill="none" stroke="url(#pinkGradient1)" stroke-width="40" filter="url(#shadow)"/>
-    <circle cx="300" cy="300" r="200" fill="none" stroke="url(#pinkRadial)" stroke-width="35"/>
-    <circle cx="300" cy="300" r="218" fill="none" stroke="#ffe0ec" stroke-width="2" opacity="0.7"/>
-    <circle cx="300" cy="300" r="182" fill="none" stroke="#ffe0ec" stroke-width="2" opacity="0.7"/>
+    <!-- إطار دائري رئيسي نظيف -->
+    <circle cx="300" cy="300" r="200" fill="none" stroke="url(#pinkGradient1)" stroke-width="30"/>
+    <circle cx="300" cy="300" r="215" fill="none" stroke="#c71585" stroke-width="1" opacity="0.5"/>
+    <circle cx="300" cy="300" r="185" fill="none" stroke="#c71585" stroke-width="1" opacity="0.5"/>
     
-    <!-- زخارف على الإطار -->
-    <g opacity="0.6">
-        <circle cx="300" cy="80" r="5" fill="#ffe0ec"/>
-        <circle cx="220" cy="100" r="5" fill="#ffe0ec"/>
-        <circle cx="380" cy="100" r="5" fill="#ffe0ec"/>
-        <circle cx="140" cy="180" r="5" fill="#ffe0ec"/>
-        <circle cx="460" cy="180" r="5" fill="#ffe0ec"/>
-        <circle cx="80" cy="300" r="5" fill="#ffe0ec"/>
-        <circle cx="520" cy="300" r="5" fill="#ffe0ec"/>
-    </g>
-    
-    <!-- التاج العلوي -->
-    <g filter="url(#glow)">
+    <!-- تاج صغير وراقي -->
+    <g>
         <!-- قاعدة التاج -->
-        <path d="M220,80 L380,80 L395,95 L390,100 L210,100 L205,95 Z" fill="url(#pinkGradient1)" stroke="#c71585" stroke-width="1"/>
+        <rect x="265" y="95" width="70" height="10" fill="url(#pinkGradient1)" rx="2"/>
         
-        <!-- القمم الثلاث -->
-        <path d="M300,10 L270,60 L260,90 L340,90 L330,60 Z" fill="url(#pinkRadial)" stroke="#c71585" stroke-width="1"/>
-        <path d="M240,55 L210,75 L190,90 L265,90 L255,75 Z" fill="url(#pinkGradient1)" stroke="#c71585" stroke-width="1"/>
-        <path d="M360,55 L390,75 L410,90 L335,90 L345,75 Z" fill="url(#pinkGradient1)" stroke="#c71585" stroke-width="1"/>
+        <!-- خمس قمم صغيرة -->
+        <path d="M275,95 L275,82 L283,95" fill="url(#pinkRadial)"/>
+        <path d="M290,95 L290,78 L298,95" fill="url(#pinkRadial)"/>
+        <path d="M305,95 L305,75 L313,95" fill="url(#pinkRadial)"/>
+        <path d="M320,95 L320,78 L328,95" fill="url(#pinkRadial)"/>
+        <path d="M335,95 L335,82 L343,95" fill="url(#pinkRadial)"/>
         
-        <!-- جواهر التاج -->
-        <circle cx="300" cy="5" r="12" fill="url(#pinkRadial)" stroke="#c71585" stroke-width="2" filter="url(#glow)"/>
-        <circle cx="300" cy="5" r="8" fill="#ffe0ec" opacity="0.9"/>
-        
-        <circle cx="240" cy="50" r="10" fill="url(#pinkRadial)" stroke="#c71585" stroke-width="1.5"/>
-        <circle cx="240" cy="50" r="6" fill="#ffe0ec" opacity="0.8"/>
-        
-        <circle cx="360" cy="50" r="10" fill="url(#pinkRadial)" stroke="#c71585" stroke-width="1.5"/>
-        <circle cx="360" cy="50" r="6" fill="#ffe0ec" opacity="0.8"/>
+        <!-- نقاط زينة صغيرة -->
+        <circle cx="279" cy="82" r="1.5" fill="#ff69b4"/>
+        <circle cx="294" cy="78" r="1.5" fill="#ff69b4"/>
+        <circle cx="309" cy="75" r="2" fill="#ff69b4"/>
+        <circle cx="324" cy="78" r="1.5" fill="#ff69b4"/>
+        <circle cx="339" cy="82" r="1.5" fill="#ff69b4"/>
     </g>
     
-    <!-- شريط "SVIP1" -->
-    <g filter="url(#shadow)">
-        <path d="M150,470 L450,470 L470,510 L465,550 L135,550 L130,510 Z" fill="url(#pinkGradient1)" stroke="#c71585" stroke-width="3"/>
-        <rect x="155" y="475" width="290" height="70" fill="url(#ornamentPattern)" opacity="0.2"/>
-        
-        <!-- إطار داخلي -->
-        <path d="M160,480 L440,480 L455,540 L145,540 Z" fill="none" stroke="#ffe0ec" stroke-width="1.5" opacity="0.6"/>
-        
-        <!-- النص -->
-        <text x="300" y="520" text-anchor="middle" fill="#8b1468" font-size="44" font-family="Arial Black" font-weight="bold" filter="url(#shadow)">SVIP1</text>
-        <text x="300" y="520" text-anchor="middle" fill="url(#pinkRadial)" font-size="42" font-family="Arial Black" font-weight="bold">SVIP1</text>
-        <text x="300" y="520" text-anchor="middle" fill="none" stroke="#ffe0ec" stroke-width="0.8" font-size="42" font-family="Arial Black" font-weight="bold" opacity="0.7">SVIP1</text>
+    <!-- شريط "SVIP1" بسيط -->
+    <g>
+        <rect x="175" y="485" width="250" height="50" rx="25" fill="url(#pinkGradient1)"/>
+        <text x="300" y="517" text-anchor="middle" fill="#8b1468" font-size="32" font-family="Arial" font-weight="bold">SVIP1</text>
     </g>
-    
-    <!-- تأثير لمعان -->
-    <rect x="0" y="0" width="120" height="600" fill="url(#pinkShine)" opacity="0.4">
-        <animateTransform attributeName="transform" type="translate" from="-120 0" to="720 0" dur="4s" repeatCount="indefinite"/>
-    </rect>
 </svg>
