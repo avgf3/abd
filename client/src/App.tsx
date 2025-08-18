@@ -9,6 +9,7 @@ import { UserProvider } from "@/contexts/UserContext";
 import ChatPage from "@/pages/chat";
 import FrameTest from "@/pages/FrameTest";
 import FrameTestSimple from "@/pages/FrameTestSimple";
+import AllFramesGallery from "@/pages/AllFramesGallery";
 
 function Router() {
   return (
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/" component={ChatPage} />
       <Route path="/frame-test" component={FrameTest} />
       <Route path="/frame-test-simple" component={FrameTestSimple} />
+      <Route path="/frames-gallery" component={AllFramesGallery} />
       <Route component={ChatPage} />
     </Switch>
   );
