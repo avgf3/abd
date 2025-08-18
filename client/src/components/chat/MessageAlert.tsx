@@ -44,6 +44,7 @@ export default function MessageAlert({ isOpen, sender, onClose, onOpenMessages }
             alt="صورة المرسل"
             frame={sender.avatarFrame || 'none'}
             imageSize={48}
+            frameThickness={Math.round(48 * 0.12)}
           />
           <div className="flex-1 text-white">
             <h3 className="font-bold text-lg truncate">{sender.username}</h3>

@@ -7,6 +7,7 @@ interface AvatarWithFrameProps {
   fallback?: string;
   frame?: string; // معرف ملف SVG بدون الامتداد (مثال: 'crown-frame-gold')
   imageSize: number; // قطر الصورة الحقيقي بالبكسل
+  frameThickness?: number; // سُمك الإطار الذي يزيد به حجم الحاوية من جميع الجهات
   className?: string;
   onClick?: () => void;
 }
@@ -17,29 +18,45 @@ export function AvatarWithFrame({
   fallback, 
   frame = 'none', 
   imageSize,
+  frameThickness,
   className,
   onClick
 }: AvatarWithFrameProps) {
-  // الحاوية: نفس حجم الصورة دائماً، مع قص دائري لمنع أي تسريب خارج الحدود
+  // سمك افتراضي إذا لم يُمرر: نسبة من حجم الصورة
+  const effectiveThickness = typeof frameThickness === 'number' ? frameThickness : Math.round(imageSize * 0.12);
+
+  // الحاوية: أكبر من الصورة بمقدار السُمك من كل جانب
+  const containerSize = imageSize + (effectiveThickness * 2);
   const containerStyle: React.CSSProperties = {
-    width: `${imageSize}px`,
-    height: `${imageSize}px`,
+    width: `${containerSize}px`,
+    height: `${containerSize}px`,
     position: 'relative',
     borderRadius: '50%',
     overflow: 'hidden'
   };
 
-  // الصورة تملأ الحاوية بالكامل
+  // الصورة تتموضع في المركز بحجم الصورة الحقيقي
   const avatarStyle: React.CSSProperties = {
     position: 'absolute',
-    inset: 0,
-    width: '100%',
-    height: '100%'
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: `${imageSize}px`,
+    height: `${imageSize}px`,
+    borderRadius: '50%',
+    overflow: 'hidden'
   };
 
   // الإطار يلتزم بحجم الحاوية 100% بدون أي تجاوز
-  // قص اختياري للجزء العلوي لإخفاء التيجان/الأجزاء العلوية غير المرغوبة
-  const shouldClipTop = !!frame && (frame.includes('crown') || frame.includes('svip'));
+  // قص علوي لإخفاء التيجان/الأجسام وترك الحلقة/القاعدة فقط
+  function getClipTopPercent(frameId?: string): number {
+    if (!frameId || frameId === 'none') return 0;
+    if (frameId.includes('svip')) return 22;
+    if (frameId.includes('classic')) return 12;
+    if (frameId.includes('crown')) return 18;
+    return 0;
+  }
+  const clipTopPercent = getClipTopPercent(frame);
   const frameStyle: React.CSSProperties = {
     position: 'absolute',
     inset: 0,
@@ -47,7 +64,7 @@ export function AvatarWithFrame({
     height: '100%',
     pointerEvents: 'none',
     zIndex: 20,
-    clipPath: shouldClipTop ? 'polygon(0 18%, 100% 18%, 100% 100%, 0 100%)' : undefined
+    clipPath: clipTopPercent > 0 ? `polygon(0 ${clipTopPercent}%, 100% ${clipTopPercent}%, 100% 100%, 0 100%)` : undefined
   };
 
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
