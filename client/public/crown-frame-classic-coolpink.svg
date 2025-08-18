@@ -1,169 +1,221 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'>
-  <defs>
-    <!-- تدرجات وردية باردة محسنة -->
-    <linearGradient id='pinkGradient' x1='0%' y1='0%' x2='100%' y2='100%'>
-      <stop offset='0%' stop-color='#FFB6C1'/>
-      <stop offset='25%' stop-color='#FFC0CB'/>
-      <stop offset='50%' stop-color='#FF69B4'/>
-      <stop offset='75%' stop-color='#FFC0CB'/>
-      <stop offset='100%' stop-color='#FFB6C1'/>
-    </linearGradient>
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
+    <defs>
+        <!-- تدرجات وردية كلاسيكية -->
+        <linearGradient id="classicPinkGradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#ffe0ec"/>
+            <stop offset="25%" stop-color="#ff69b4"/>
+            <stop offset="50%" stop-color="#ff1493"/>
+            <stop offset="75%" stop-color="#ff69b4"/>
+            <stop offset="100%" stop-color="#ffe0ec"/>
+        </linearGradient>
+        
+        <radialGradient id="classicPinkRadial" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffd6e7"/>
+            <stop offset="50%" stop-color="#ff69b4"/>
+            <stop offset="100%" stop-color="#c71585"/>
+        </radialGradient>
+        
+        <!-- باترن زخرفي داخلي -->
+        <pattern id="innerPinkPattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+            <circle cx="10" cy="10" r="2" fill="#ff69b4" opacity="0.3"/>
+            <path d="M0,0 L20,20 M20,0 L0,20" stroke="#ff1493" stroke-width="0.5" opacity="0.2"/>
+        </pattern>
+        
+        <!-- فلتر الظل -->
+        <filter id="classicPinkShadow">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+        
+        <!-- فلتر التوهج -->
+        <filter id="classicPinkGlow">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        
+        <!-- ورقة أكانثوس وردية -->
+        <g id="pinkAcanthusLeaf">
+            <path d="M0,0 Q-3,-4 -2,-8 Q-4,-10 -3,-14 Q-1,-16 0,-18 Q1,-16 3,-14 Q4,-10 2,-8 Q3,-4 0,0" 
+                  fill="url(#classicPinkGradient)" stroke="#c71585" stroke-width="0.5"/>
+            <path d="M0,0 L0,-17 M0,-4 Q-2,-5 -3,-7 M0,-8 Q2,-9 3,-11 M0,-12 Q-2,-13 -3,-15" 
+                  stroke="#ff1493" stroke-width="0.3" opacity="0.7"/>
+        </g>
+        
+        <!-- لؤلؤة متتابعة وردية -->
+        <g id="pinkPearl">
+            <circle cx="0" cy="0" r="3" fill="#ffffff" filter="url(#classicPinkGlow)"/>
+            <circle cx="0" cy="0" r="2.5" fill="#ffb6c1"/>
+            <circle cx="-0.8" cy="-0.8" r="0.8" fill="#ffffff" opacity="0.9"/>
+        </g>
+        
+        <!-- سلسلة ذهبية وردية -->
+        <g id="pinkGoldChain">
+            <ellipse cx="0" cy="0" rx="2" ry="3" fill="none" stroke="#ff69b4" stroke-width="0.8"/>
+            <ellipse cx="4" cy="0" rx="2" ry="3" fill="none" stroke="#ff69b4" stroke-width="0.8"/>
+            <ellipse cx="8" cy="0" rx="2" ry="3" fill="none" stroke="#ff69b4" stroke-width="0.8"/>
+        </g>
+        
+        <!-- ماسة متلألئة وردية -->
+        <g id="pinkSparklingDiamond">
+            <path d="M0,-4 L-3,0 L0,4 L3,0 Z" fill="#ffd6e7" stroke="#ff1493" stroke-width="0.5"/>
+            <path d="M0,-4 L0,4 M-3,0 L3,0" stroke="#ffffff" stroke-width="0.3" opacity="0.8"/>
+            <circle cx="0" cy="0" r="0.5" fill="#ffffff" opacity="0.9"/>
+        </g>
+        
+        <!-- ريشة طاووس مبسطة وردية -->
+        <g id="pinkPeacockFeather">
+            <ellipse cx="0" cy="0" rx="4" ry="8" fill="url(#classicPinkRadial)" opacity="0.6"/>
+            <ellipse cx="0" cy="0" rx="2.5" ry="5" fill="#ff1493" opacity="0.5"/>
+            <circle cx="0" cy="0" r="2" fill="#c71585"/>
+            <circle cx="0" cy="0" r="1" fill="#ff69b4"/>
+        </g>
+        
+        <!-- تاج مصغر وردي -->
+        <g id="pinkMiniCrown">
+            <path d="M-4,0 L-3,-3 L-1,-2 L0,-4 L1,-2 L3,-3 L4,0 Z" 
+                  fill="url(#classicPinkGradient)" stroke="#c71585" stroke-width="0.3"/>
+            <circle cx="0" cy="-3" r="0.8" fill="#ffffff" opacity="0.9"/>
+        </g>
+    </defs>
     
-    <linearGradient id='pinkGradient2' x1='0%' y1='0%' x2='0%' y2='100%'>
-      <stop offset='0%' stop-color='#FFE4E1'/>
-      <stop offset='50%' stop-color='#FFB6C1'/>
-      <stop offset='100%' stop-color='#C71585'/>
-    </linearGradient>
+    <!-- دائرة الخلفية -->
+    <circle cx="300" cy="300" r="280" fill="#fff" opacity="0.05"/>
     
-    <radialGradient id='gemGradient'>
-      <stop offset='0%' stop-color='#FFFFFF'/>
-      <stop offset='30%' stop-color='#FFE4E1'/>
-      <stop offset='100%' stop-color='#FFB6C1'/>
-    </radialGradient>
+    <!-- الإطار الخارجي الرئيسي -->
+    <circle cx="300" cy="300" r="250" fill="none" stroke="#c71585" stroke-width="3" opacity="0.3"/>
+    <circle cx="300" cy="300" r="230" fill="none" stroke="url(#classicPinkGradient)" stroke-width="60" filter="url(#classicPinkShadow)"/>
+    <circle cx="300" cy="300" r="230" fill="none" stroke="url(#classicPinkRadial)" stroke-width="55"/>
     
-    <!-- ظلال -->
-    <filter id='shadow'>
-      <feGaussianBlur in='SourceAlpha' stdDeviation='3'/>
-      <feOffset dx='2' dy='2'/>
-      <feComponentTransfer>
-        <feFuncA type='linear' slope='0.3'/>
-      </feComponentTransfer>
-      <feMerge>
-        <feMergeNode/>
-        <feMergeNode in='SourceGraphic'/>
-      </feMerge>
-    </filter>
+    <!-- خطوط زخرفية داخلية -->
+    <circle cx="300" cy="300" r="255" fill="none" stroke="#ffe0ec" stroke-width="1" opacity="0.6"/>
+    <circle cx="300" cy="300" r="205" fill="none" stroke="#ffe0ec" stroke-width="1" opacity="0.6"/>
+    <circle cx="300" cy="300" r="200" fill="none" stroke="#ff69b4" stroke-width="2" opacity="0.4"/>
     
-    <!-- تأثير لمعان -->
-    <filter id='glow'>
-      <feGaussianBlur stdDeviation='4' result='coloredBlur'/>
-      <feMerge>
-        <feMergeNode in='coloredBlur'/>
-        <feMergeNode in='SourceGraphic'/>
-      </feMerge>
-    </filter>
+    <!-- منطقة الزخرفة الداخلية -->
+    <circle cx="300" cy="300" r="195" fill="url(#innerPinkPattern)" opacity="0.15"/>
     
-    <!-- نمط زخرفي للإطار -->
-    <pattern id='framePattern' x='0' y='0' width='30' height='30' patternUnits='userSpaceOnUse'>
-      <circle cx='15' cy='15' r='2' fill='#FFE4E1' opacity='0.6'/>
-      <path d='M5,15 L25,15 M15,5 L15,25' stroke='#FFE4E1' stroke-width='0.5' opacity='0.3'/>
-    </pattern>
-  </defs>
-  
-  <!-- الدائرة الرئيسية للتاج مع زخرفة -->
-  <circle cx='300' cy='300' r='180' fill='none' stroke='url(#pinkGradient)' stroke-width='35' filter='url(#shadow)'/>
-  
-  <!-- زخرفة داخل الإطار الدائري -->
-  <circle cx='300' cy='300' r='180' fill='none' stroke='url(#framePattern)' stroke-width='35' opacity='0.3'/>
-  
-  <!-- الدائرة الداخلية -->
-  <circle cx='300' cy='300' r='160' fill='none' stroke='url(#pinkGradient2)' stroke-width='4'/>
-  
-  <!-- زخارف دائرية صغيرة على الإطار -->
-  <g id='frameDecorations'>
-    <!-- الزخارف العلوية -->
-    <circle cx='300' cy='120' r='4' fill='#FFC0CB' opacity='0.8'/>
-    <circle cx='270' cy='125' r='3' fill='#FFE4E1' opacity='0.6'/>
-    <circle cx='330' cy='125' r='3' fill='#FFE4E1' opacity='0.6'/>
+    <!-- الزخارف الفاخرة -->
+    <g id="luxuryPinkDecorations">
+        <!-- أوراق الأكانثوس الرومانية -->
+        <g opacity="0.8">
+            <use href="#pinkAcanthusLeaf" transform="translate(300,70) scale(1.8)"/>
+            <use href="#pinkAcanthusLeaf" transform="translate(250,85) scale(1.5) rotate(-25)"/>
+            <use href="#pinkAcanthusLeaf" transform="translate(350,85) scale(1.5) rotate(25)"/>
+            <use href="#pinkAcanthusLeaf" transform="translate(70,300) scale(1.8) rotate(90)"/>
+            <use href="#pinkAcanthusLeaf" transform="translate(530,300) scale(1.8) rotate(-90)"/>
+            <use href="#pinkAcanthusLeaf" transform="translate(300,530) scale(1.8) rotate(180)"/>
+            <use href="#pinkAcanthusLeaf" transform="translate(150,150) scale(1.3) rotate(-45)"/>
+            <use href="#pinkAcanthusLeaf" transform="translate(450,150) scale(1.3) rotate(45)"/>
+            <use href="#pinkAcanthusLeaf" transform="translate(150,450) scale(1.3) rotate(-135)"/>
+            <use href="#pinkAcanthusLeaf" transform="translate(450,450) scale(1.3) rotate(135)"/>
+        </g>
+        
+        <!-- لآلئ متتابعة -->
+        <g filter="url(#classicPinkGlow)">
+            <use href="#pinkPearl" transform="translate(300,100)"/>
+            <use href="#pinkPearl" transform="translate(280,103)"/>
+            <use href="#pinkPearl" transform="translate(320,103)"/>
+            <use href="#pinkPearl" transform="translate(260,110)"/>
+            <use href="#pinkPearl" transform="translate(340,110)"/>
+            <use href="#pinkPearl" transform="translate(100,280)"/>
+            <use href="#pinkPearl" transform="translate(103,300)"/>
+            <use href="#pinkPearl" transform="translate(100,320)"/>
+            <use href="#pinkPearl" transform="translate(500,280)"/>
+            <use href="#pinkPearl" transform="translate(497,300)"/>
+            <use href="#pinkPearl" transform="translate(500,320)"/>
+            <use href="#pinkPearl" transform="translate(300,500)"/>
+            <use href="#pinkPearl" transform="translate(280,497)"/>
+            <use href="#pinkPearl" transform="translate(320,497)"/>
+        </g>
+        
+        <!-- سلاسل ذهبية وردية متصلة -->
+        <g opacity="0.6">
+            <use href="#pinkGoldChain" transform="translate(160,170) rotate(30)"/>
+            <use href="#pinkGoldChain" transform="translate(180,160) rotate(25)"/>
+            <use href="#pinkGoldChain" transform="translate(350,148) rotate(-10)"/>
+            <use href="#pinkGoldChain" transform="translate(370,150) rotate(-15)"/>
+            <use href="#pinkGoldChain" transform="translate(160,430) rotate(-30)"/>
+            <use href="#pinkGoldChain" transform="translate(430,430) rotate(30)"/>
+        </g>
+        
+        <!-- ماسات صغيرة متلألئة -->
+        <g filter="url(#classicPinkGlow)">
+            <use href="#pinkSparklingDiamond" transform="translate(300,130) scale(1.2)"/>
+            <use href="#pinkSparklingDiamond" transform="translate(250,140) scale(0.8)"/>
+            <use href="#pinkSparklingDiamond" transform="translate(350,140) scale(0.8)"/>
+            <use href="#pinkSparklingDiamond" transform="translate(180,180) scale(1)"/>
+            <use href="#pinkSparklingDiamond" transform="translate(420,180) scale(1)"/>
+            <use href="#pinkSparklingDiamond" transform="translate(130,300) scale(1.2)"/>
+            <use href="#pinkSparklingDiamond" transform="translate(470,300) scale(1.2)"/>
+            <use href="#pinkSparklingDiamond" transform="translate(180,420) scale(1)"/>
+            <use href="#pinkSparklingDiamond" transform="translate(420,420) scale(1)"/>
+            <use href="#pinkSparklingDiamond" transform="translate(300,470) scale(1.2)"/>
+        </g>
+        
+        <!-- ريش طاووس مبسط -->
+        <g opacity="0.7">
+            <use href="#pinkPeacockFeather" transform="translate(220,190) scale(0.8) rotate(-20)"/>
+            <use href="#pinkPeacockFeather" transform="translate(380,190) scale(0.8) rotate(20)"/>
+            <use href="#pinkPeacockFeather" transform="translate(160,250) scale(0.9) rotate(-60)"/>
+            <use href="#pinkPeacockFeather" transform="translate(440,250) scale(0.9) rotate(60)"/>
+            <use href="#pinkPeacockFeather" transform="translate(160,350) scale(0.9) rotate(-120)"/>
+            <use href="#pinkPeacockFeather" transform="translate(440,350) scale(0.9) rotate(120)"/>
+            <use href="#pinkPeacockFeather" transform="translate(220,410) scale(0.8) rotate(-160)"/>
+            <use href="#pinkPeacockFeather" transform="translate(380,410) scale(0.8) rotate(160)"/>
+        </g>
+        
+        <!-- تيجان مصغرة -->
+        <g opacity="0.8">
+            <use href="#pinkMiniCrown" transform="translate(270,160) scale(1.5)"/>
+            <use href="#pinkMiniCrown" transform="translate(330,160) scale(1.5)"/>
+            <use href="#pinkMiniCrown" transform="translate(200,230) scale(1.3) rotate(-45)"/>
+            <use href="#pinkMiniCrown" transform="translate(400,230) scale(1.3) rotate(45)"/>
+            <use href="#pinkMiniCrown" transform="translate(160,300) scale(1.5) rotate(90)"/>
+            <use href="#pinkMiniCrown" transform="translate(440,300) scale(1.5) rotate(-90)"/>
+            <use href="#pinkMiniCrown" transform="translate(200,370) scale(1.3) rotate(-135)"/>
+            <use href="#pinkMiniCrown" transform="translate(400,370) scale(1.3) rotate(135)"/>
+            <use href="#pinkMiniCrown" transform="translate(270,440) scale(1.5) rotate(180)"/>
+            <use href="#pinkMiniCrown" transform="translate(330,440) scale(1.5) rotate(180)"/>
+        </g>
+        
+        <!-- دوائر زخرفية على محيط الإطار -->
+        <g opacity="0.5">
+            <circle cx="300" cy="50" r="4" fill="url(#classicPinkRadial)"/>
+            <circle cx="230" cy="70" r="3" fill="url(#classicPinkRadial)"/>
+            <circle cx="370" cy="70" r="3" fill="url(#classicPinkRadial)"/>
+            <circle cx="170" cy="120" r="3" fill="url(#classicPinkRadial)"/>
+            <circle cx="430" cy="120" r="3" fill="url(#classicPinkRadial)"/>
+            <circle cx="50" cy="300" r="4" fill="url(#classicPinkRadial)"/>
+            <circle cx="550" cy="300" r="4" fill="url(#classicPinkRadial)"/>
+            <circle cx="170" cy="480" r="3" fill="url(#classicPinkRadial)"/>
+            <circle cx="430" cy="480" r="3" fill="url(#classicPinkRadial)"/>
+            <circle cx="300" cy="550" r="4" fill="url(#classicPinkRadial)"/>
+        </g>
+    </g>
     
-    <!-- الزخارف الجانبية -->
-    <circle cx='120' cy='300' r='4' fill='#FFC0CB' opacity='0.8'/>
-    <circle cx='125' cy='270' r='3' fill='#FFE4E1' opacity='0.6'/>
-    <circle cx='125' cy='330' r='3' fill='#FFE4E1' opacity='0.6'/>
+    <!-- التاج الكلاسيكي الوردي في الأعلى -->
+    <g filter="url(#classicPinkShadow)">
+        <path d="M250,20 Q250,0 270,-10 Q280,-5 290,-15 Q300,-20 300,-25 Q300,-20 310,-15 Q320,-5 330,-10 Q350,0 350,20" 
+              fill="url(#classicPinkGradient)" stroke="#c71585" stroke-width="2"/>
+        <circle cx="270" cy="-5" r="5" fill="url(#classicPinkRadial)"/>
+        <circle cx="300" cy="-15" r="7" fill="url(#classicPinkRadial)"/>
+        <circle cx="330" cy="-5" r="5" fill="url(#classicPinkRadial)"/>
+        <path d="M260,10 Q300,-5 340,10" stroke="#ff69b4" stroke-width="1" fill="none" opacity="0.6"/>
+    </g>
     
-    <circle cx='480' cy='300' r='4' fill='#FFC0CB' opacity='0.8'/>
-    <circle cx='475' cy='270' r='3' fill='#FFE4E1' opacity='0.6'/>
-    <circle cx='475' cy='330' r='3' fill='#FFE4E1' opacity='0.6'/>
-    
-    <!-- الزخارف السفلية -->
-    <circle cx='300' cy='480' r='4' fill='#FFC0CB' opacity='0.8'/>
-    <circle cx='270' cy='475' r='3' fill='#FFE4E1' opacity='0.6'/>
-    <circle cx='330' cy='475' r='3' fill='#FFE4E1' opacity='0.6'/>
-    
-    <!-- زخارف قطرية -->
-    <circle cx='185' cy='185' r='3' fill='#FFE4E1' opacity='0.7'/>
-    <circle cx='415' cy='185' r='3' fill='#FFE4E1' opacity='0.7'/>
-    <circle cx='185' cy='415' r='3' fill='#FFE4E1' opacity='0.7'/>
-    <circle cx='415' cy='415' r='3' fill='#FFE4E1' opacity='0.7'/>
-  </g>
-  
-  <!-- القاعدة العلوية للتاج -->
-  <rect x='200' y='100' width='200' height='40' rx='5' fill='url(#pinkGradient)' filter='url(#shadow)'/>
-  
-  <!-- الزخارف العلوية المركزية -->
-  <g id='centerPeak'>
-    <!-- القمة المركزية الكبيرة -->
-    <path d='M300,40 L270,100 L330,100 Z' fill='url(#pinkGradient)' filter='url(#shadow)'/>
-    <path d='M300,50 L280,90 L320,90 Z' fill='url(#pinkGradient2)'/>
-    
-    <!-- الجوهرة المركزية -->
-    <circle cx='300' cy='75' r='15' fill='url(#gemGradient)' filter='url(#glow)'/>
-    <circle cx='300' cy='75' r='12' fill='none' stroke='#FFB6C1' stroke-width='1'/>
-  </g>
-  
-  <!-- القمم الجانبية -->
-  <g id='leftPeak'>
-    <path d='M240,60 L220,100 L260,100 Z' fill='url(#pinkGradient)' filter='url(#shadow)'/>
-    <circle cx='240' cy='85' r='10' fill='url(#gemGradient)' filter='url(#glow)'/>
-  </g>
-  
-  <g id='rightPeak'>
-    <path d='M360,60 L340,100 L380,100 Z' fill='url(#pinkGradient)' filter='url(#shadow)'/>
-    <circle cx='360' cy='85' r='10' fill='url(#gemGradient)' filter='url(#glow)'/>
-  </g>
-  
-  <!-- القمم الجانبية الصغيرة -->
-  <g id='farLeftPeak'>
-    <path d='M180,80 L170,100 L190,100 Z' fill='url(#pinkGradient)' filter='url(#shadow)'/>
-    <circle cx='180' cy='92' r='6' fill='url(#gemGradient)'/>
-  </g>
-  
-  <g id='farRightPeak'>
-    <path d='M420,80 L410,100 L430,100 Z' fill='url(#pinkGradient)' filter='url(#shadow)'/>
-    <circle cx='420' cy='92' r='6' fill='url(#gemGradient)'/>
-  </g>
-  
-  <!-- الزخارف السفلية -->
-  <g id='lowerDecoration'>
-    <!-- القاعدة السفلية -->
-    <path d='M180,480 L420,480 L380,560 L220,560 Z' fill='url(#pinkGradient)' filter='url(#shadow)'/>
-    <path d='M200,490 L400,490 L370,550 L230,550 Z' fill='url(#pinkGradient2)'/>
-    
-    <!-- الجوهرة السفلية الكبيرة -->
-    <ellipse cx='300' cy='520' rx='25' ry='20' fill='url(#gemGradient)' filter='url(#glow)'/>
-    <ellipse cx='300' cy='520' rx='22' ry='17' fill='none' stroke='#FFB6C1' stroke-width='1'/>
-  </g>
-  
-  <!-- الزخارف الجانبية -->
-  <g id='sideDecorations'>
-    <!-- اليسار -->
-    <path d='M120,280 Q100,300 120,320 L150,300 Z' fill='url(#pinkGradient)' filter='url(#shadow)'/>
-    <circle cx='135' cy='300' r='8' fill='url(#gemGradient)'/>
-    
-    <!-- اليمين -->
-    <path d='M480,280 Q500,300 480,320 L450,300 Z' fill='url(#pinkGradient)' filter='url(#shadow)'/>
-    <circle cx='465' cy='300' r='8' fill='url(#gemGradient)'/>
-  </g>
-  
-  <!-- نجوم زخرفية صغيرة -->
-  <g id='stars'>
-    <path d='M150,200 L152,206 L158,206 L153,210 L155,216 L150,212 L145,216 L147,210 L142,206 L148,206 Z' fill='#FFB6C1' opacity='0.8'/>
-    <path d='M450,200 L452,206 L458,206 L453,210 L455,216 L450,212 L445,216 L447,210 L442,206 L448,206 Z' fill='#FFB6C1' opacity='0.8'/>
-    <path d='M150,400 L152,406 L158,406 L153,410 L155,416 L150,412 L145,416 L147,410 L142,406 L148,406 Z' fill='#FFB6C1' opacity='0.8'/>
-    <path d='M450,400 L452,406 L458,406 L453,410 L455,416 L450,412 L445,416 L447,410 L442,406 L448,406 Z' fill='#FFB6C1' opacity='0.8'/>
-  </g>
-  
-  <!-- خطوط زخرفية -->
-  <g id='decorativeLines'>
-    <path d='M200,140 Q300,120 400,140' stroke='url(#pinkGradient)' stroke-width='2' fill='none'/>
-    <path d='M200,460 Q300,440 400,460' stroke='url(#pinkGradient)' stroke-width='2' fill='none'/>
-  </g>
-  
-  <!-- نقاط لامعة -->
-  <g id='sparkles' opacity='0.6'>
-    <circle cx='250' cy='250' r='2' fill='#FFFFFF'/>
-    <circle cx='350' cy='250' r='2' fill='#FFFFFF'/>
-    <circle cx='250' cy='350' r='2' fill='#FFFFFF'/>
-    <circle cx='350' cy='350' r='2' fill='#FFFFFF'/>
-  </g>
+    <!-- إضاءة متلألئة -->
+    <g opacity="0.6">
+        <circle cx="300" cy="40" r="2" fill="#ffffff"/>
+        <circle cx="250" cy="60" r="1.5" fill="#ffffff"/>
+        <circle cx="350" cy="60" r="1.5" fill="#ffffff"/>
+        <circle cx="100" cy="200" r="1" fill="#ffffff"/>
+        <circle cx="500" cy="200" r="1" fill="#ffffff"/>
+        <circle cx="60" cy="300" r="2" fill="#ffffff"/>
+        <circle cx="540" cy="300" r="2" fill="#ffffff"/>
+        <circle cx="100" cy="400" r="1" fill="#ffffff"/>
+        <circle cx="500" cy="400" r="1" fill="#ffffff"/>
+        <circle cx="300" cy="560" r="2" fill="#ffffff"/>
+    </g>
 </svg>

@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
     <defs>
-        <!-- تدرجات ذهبية فاخرة -->
-        <linearGradient id="goldGradient2" x1="0" y1="0" x2="1" y2="1">
+        <!-- تدرجات ذهبية إمبراطورية فائقة -->
+        <linearGradient id="supremeGold" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stop-color="#fffaf0"/>
             <stop offset="20%" stop-color="#ffdf00"/>
             <stop offset="40%" stop-color="#ffd700"/>
@@ -17,13 +17,25 @@
             <stop offset="100%" stop-color="#b8860b"/>
         </radialGradient>
         
-        <linearGradient id="goldShine2" x1="0" y1="0" x2="0" y2="1">
+        <!-- تدرج النجوم الماسية -->
+        <radialGradient id="starDiamondGradient">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="40%" stop-color="#f0f8ff"/>
+            <stop offset="80%" stop-color="#e0e0e0"/>
+            <stop offset="100%" stop-color="#c0c0c0"/>
+        </radialGradient>
+        
+        <!-- تدرج إمبراطوري -->
+        <linearGradient id="imperialShine" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
             <stop offset="50%" stop-color="#fffaf0" stop-opacity="0.6"/>
             <stop offset="100%" stop-color="#ffd700" stop-opacity="0.4"/>
         </linearGradient>
         
-        <!-- فلاتر متقدمة -->
+        <filter id="shadow2">
+            <feDropShadow dx="3" dy="3" stdDeviation="4" flood-opacity="0.4"/>
+        </filter>
+        
         <filter id="glow2">
             <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
             <feMerge>
@@ -32,50 +44,141 @@
             </feMerge>
         </filter>
         
-        <filter id="shadow2">
-            <feDropShadow dx="3" dy="3" stdDeviation="4" flood-opacity="0.4"/>
-        </filter>
+        <!-- شعار إمبراطوري -->
+        <g id="imperialEmblem">
+            <circle cx="0" cy="0" r="8" fill="url(#goldRadial2)" stroke="#b8860b" stroke-width="1"/>
+            <path d="M0,-8 L2,-2 L8,-2 L3,1 L5,7 L0,3 L-5,7 L-3,1 L-8,-2 L-2,-2 Z" 
+                  fill="url(#supremeGold)" stroke="#b8860b" stroke-width="0.5"/>
+            <circle cx="0" cy="0" r="2" fill="url(#starDiamondGradient)"/>
+        </g>
         
-        <!-- نمط زخرفي فاخر -->
-        <pattern id="luxuryPattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-            <circle cx="20" cy="20" r="4" fill="#fffaf0" opacity="0.5"/>
-            <path d="M15,20 L25,20 M20,15 L20,25" stroke="#fffaf0" stroke-width="1.5" opacity="0.3"/>
-            <circle cx="10" cy="10" r="2" fill="#fffaf0" opacity="0.3"/>
-            <circle cx="30" cy="30" r="2" fill="#fffaf0" opacity="0.3"/>
-        </pattern>
+        <!-- صولجان إمبراطوري كبير -->
+        <g id="grandScepter">
+            <rect x="-2" y="0" width="4" height="20" fill="url(#supremeGold)" stroke="#b8860b" stroke-width="0.5"/>
+            <circle cx="0" cy="0" r="6" fill="url(#goldRadial2)" stroke="#b8860b" stroke-width="1"/>
+            <path d="M0,-6 L4,-10 L0,-14 L-4,-10 Z" fill="url(#starDiamondGradient)" stroke="#b8860b" stroke-width="0.5"/>
+            <circle cx="0" cy="-10" r="2" fill="url(#starDiamondGradient)"/>
+        </g>
+        
+        <!-- نجمة ماسية -->
+        <g id="diamondStar">
+            <path d="M0,-10 L3,-3 L10,-2 L5,2 L6,9 L0,5 L-6,9 L-5,2 L-10,-2 L-3,-3 Z" 
+                  fill="url(#starDiamondGradient)" stroke="#c0c0c0" stroke-width="0.5"/>
+            <circle cx="0" cy="0" r="3" fill="url(#starDiamondGradient)" filter="url(#glow2)"/>
+        </g>
+        
+        <!-- زخرفة إمبراطورية معقدة -->
+        <g id="complexOrnament">
+            <path d="M0,0 Q-8,-8 -10,-15 Q-5,-18 0,-20 Q5,-18 10,-15 Q8,-8 0,0" 
+                  fill="url(#imperialShine)" stroke="#b8860b" stroke-width="1"/>
+            <circle cx="0" cy="-10" r="3" fill="url(#goldRadial2)"/>
+            <path d="M-5,-5 L5,-5 M0,-15 L0,-5" stroke="#b8860b" stroke-width="0.5"/>
+        </g>
     </defs>
     
     <!-- إطار دائري فاخر متعدد الطبقات -->
     <circle cx="300" cy="300" r="230" fill="none" stroke="#b8860b" stroke-width="4" opacity="0.4"/>
-    <circle cx="300" cy="300" r="210" fill="none" stroke="url(#goldGradient2)" stroke-width="50" filter="url(#shadow2)"/>
+    <circle cx="300" cy="300" r="210" fill="none" stroke="url(#supremeGold)" stroke-width="50" filter="url(#shadow2)"/>
     <circle cx="300" cy="300" r="210" fill="none" stroke="url(#goldRadial2)" stroke-width="45"/>
     <circle cx="300" cy="300" r="235" fill="none" stroke="#fffaf0" stroke-width="2" opacity="0.8"/>
     <circle cx="300" cy="300" r="185" fill="none" stroke="#fffaf0" stroke-width="2" opacity="0.8"/>
     <circle cx="300" cy="300" r="175" fill="none" stroke="#ffd700" stroke-width="1" opacity="0.5"/>
     
-    <!-- زخارف ماسية على الإطار -->
-    <g opacity="0.7">
-        <path d="M300,60 L305,70 L295,70 Z" fill="#fffaf0"/>
-        <path d="M200,90 L205,100 L195,100 Z" fill="#fffaf0"/>
-        <path d="M400,90 L405,100 L395,100 Z" fill="#fffaf0"/>
-        <path d="M120,170 L125,180 L115,180 Z" fill="#fffaf0"/>
-        <path d="M480,170 L485,180 L475,180 Z" fill="#fffaf0"/>
-        <path d="M60,300 L65,310 L55,310 Z" fill="#fffaf0"/>
-        <path d="M540,300 L545,310 L535,310 Z" fill="#fffaf0"/>
-        <path d="M120,430 L125,440 L115,440 Z" fill="#fffaf0"/>
-        <path d="M480,430 L485,440 L475,440 Z" fill="#fffaf0"/>
-        <path d="M200,510 L205,520 L195,520 Z" fill="#fffaf0"/>
-        <path d="M400,510 L405,520 L395,520 Z" fill="#fffaf0"/>
+    <!-- زخارف إمبراطورية فائقة -->
+    <g id="supremeDecorations">
+        <!-- شعارات إمبراطورية -->
+        <g filter="url(#glow2)">
+            <use href="#imperialEmblem" transform="translate(300,70) scale(2)"/>
+            <use href="#imperialEmblem" transform="translate(230,100) scale(1.5)"/>
+            <use href="#imperialEmblem" transform="translate(370,100) scale(1.5)"/>
+            <use href="#imperialEmblem" transform="translate(180,150) scale(1.5)"/>
+            <use href="#imperialEmblem" transform="translate(420,150) scale(1.5)"/>
+            <use href="#imperialEmblem" transform="translate(70,300) scale(2)"/>
+            <use href="#imperialEmblem" transform="translate(530,300) scale(2)"/>
+            <use href="#imperialEmblem" transform="translate(180,450) scale(1.5)"/>
+            <use href="#imperialEmblem" transform="translate(420,450) scale(1.5)"/>
+            <use href="#imperialEmblem" transform="translate(230,500) scale(1.5)"/>
+            <use href="#imperialEmblem" transform="translate(370,500) scale(1.5)"/>
+            <use href="#imperialEmblem" transform="translate(300,530) scale(2)"/>
+        </g>
+        
+        <!-- صولجانات كبيرة -->
+        <g opacity="0.8">
+            <use href="#grandScepter" transform="translate(260,90) scale(1) rotate(-25)"/>
+            <use href="#grandScepter" transform="translate(340,90) scale(1) rotate(25)"/>
+            <use href="#grandScepter" transform="translate(90,260) scale(1) rotate(-115)"/>
+            <use href="#grandScepter" transform="translate(510,260) scale(1) rotate(115)"/>
+            <use href="#grandScepter" transform="translate(90,340) scale(1) rotate(-65)"/>
+            <use href="#grandScepter" transform="translate(510,340) scale(1) rotate(65)"/>
+            <use href="#grandScepter" transform="translate(260,510) scale(1) rotate(-155)"/>
+            <use href="#grandScepter" transform="translate(340,510) scale(1) rotate(155)"/>
+        </g>
+        
+        <!-- نجوم ماسية -->
+        <g filter="url(#glow2)">
+            <use href="#diamondStar" transform="translate(210,130) scale(0.8)"/>
+            <use href="#diamondStar" transform="translate(390,130) scale(0.8)"/>
+            <use href="#diamondStar" transform="translate(130,210) scale(0.8)"/>
+            <use href="#diamondStar" transform="translate(470,210) scale(0.8)"/>
+            <use href="#diamondStar" transform="translate(130,390) scale(0.8)"/>
+            <use href="#diamondStar" transform="translate(470,390) scale(0.8)"/>
+            <use href="#diamondStar" transform="translate(210,470) scale(0.8)"/>
+            <use href="#diamondStar" transform="translate(390,470) scale(0.8)"/>
+        </g>
+        
+        <!-- زخارف معقدة -->
+        <g opacity="0.6">
+            <use href="#complexOrnament" transform="translate(160,160) scale(1.2)"/>
+            <use href="#complexOrnament" transform="translate(440,160) scale(1.2)"/>
+            <use href="#complexOrnament" transform="translate(160,440) scale(1.2) rotate(180)"/>
+            <use href="#complexOrnament" transform="translate(440,440) scale(1.2) rotate(180)"/>
+            <use href="#complexOrnament" transform="translate(300,200) scale(1.5)"/>
+            <use href="#complexOrnament" transform="translate(300,400) scale(1.5) rotate(180)"/>
+            <use href="#complexOrnament" transform="translate(200,300) scale(1.5) rotate(90)"/>
+            <use href="#complexOrnament" transform="translate(400,300) scale(1.5) rotate(-90)"/>
+        </g>
+        
+        <!-- سلاسل ماسية فاخرة -->
+        <g opacity="0.7">
+            <path d="M120,120 Q300,80 480,120" stroke="url(#supremeGold)" stroke-width="2" fill="none"/>
+            <path d="M120,480 Q300,520 480,480" stroke="url(#supremeGold)" stroke-width="2" fill="none"/>
+            <circle cx="180" cy="105" r="3" fill="url(#starDiamondGradient)"/>
+            <circle cx="240" cy="95" r="3" fill="url(#starDiamondGradient)"/>
+            <circle cx="300" cy="90" r="3" fill="url(#starDiamondGradient)"/>
+            <circle cx="360" cy="95" r="3" fill="url(#starDiamondGradient)"/>
+            <circle cx="420" cy="105" r="3" fill="url(#starDiamondGradient)"/>
+            <circle cx="180" cy="495" r="3" fill="url(#starDiamondGradient)"/>
+            <circle cx="240" cy="505" r="3" fill="url(#starDiamondGradient)"/>
+            <circle cx="300" cy="510" r="3" fill="url(#starDiamondGradient)"/>
+            <circle cx="360" cy="505" r="3" fill="url(#starDiamondGradient)"/>
+            <circle cx="420" cy="495" r="3" fill="url(#starDiamondGradient)"/>
+        </g>
     </g>
     
-    <!-- شريط "SVIP2" فاخر -->
+    <!-- خطوط هندسية إمبراطورية -->
+    <g opacity="0.15">
+        <path d="M60,60 L540,540 M540,60 L60,540" stroke="#b8860b" stroke-width="2"/>
+        <path d="M300,60 L300,540 M60,300 L540,300" stroke="#b8860b" stroke-width="2"/>
+        <polygon points="300,100 400,200 400,400 300,500 200,400 200,200" fill="none" stroke="#b8860b" stroke-width="1"/>
+    </g>
+    
+    <!-- شريط "SVIP2" إمبراطوري فاخر -->
     <g filter="url(#shadow2)">
-        <path d="M120,460 L480,460 L505,505 L500,560 L100,560 L95,505 Z" fill="url(#goldGradient2)" stroke="#b8860b" stroke-width="4"/>
-        <rect x="125" y="465" width="350" height="90" fill="url(#luxuryPattern)" opacity="0.25"/>
+        <path d="M120,460 L480,460 L505,505 L500,560 L100,560 L95,505 Z" fill="url(#supremeGold)" stroke="#b8860b" stroke-width="4"/>
+        <rect x="125" y="465" width="350" height="90" fill="url(#imperialShine)" opacity="0.25"/>
         
         <!-- إطارات داخلية متعددة -->
         <path d="M130,470 L470,470 L490,550 L110,550 Z" fill="none" stroke="#fffaf0" stroke-width="2" opacity="0.7"/>
         <path d="M140,480 L460,480 L475,540 L125,540 Z" fill="none" stroke="#ffd700" stroke-width="1" opacity="0.5"/>
+        
+        <!-- زخارف الشريط -->
+        <g opacity="0.4">
+            <use href="#imperialEmblem" transform="translate(160,510) scale(0.8)"/>
+            <use href="#diamondStar" transform="translate(220,510) scale(0.6)"/>
+            <use href="#grandScepter" transform="translate(300,510) scale(0.5)"/>
+            <use href="#diamondStar" transform="translate(380,510) scale(0.6)"/>
+            <use href="#imperialEmblem" transform="translate(440,510) scale(0.8)"/>
+        </g>
         
         <!-- النص الفاخر -->
         <text x="300" y="525" text-anchor="middle" fill="#8b6914" font-size="52" font-family="Arial Black" font-weight="bold" filter="url(#shadow2)">SVIP2</text>
@@ -83,8 +186,15 @@
         <text x="300" y="525" text-anchor="middle" fill="none" stroke="#ffffff" stroke-width="1" font-size="50" font-family="Arial Black" font-weight="bold" opacity="0.8">SVIP2</text>
     </g>
     
-    <!-- تأثيرات لمعان متحركة -->
-    <rect x="0" y="0" width="150" height="600" fill="url(#goldShine2)" opacity="0.5">
-        <animateTransform attributeName="transform" type="translate" from="-150 0" to="750 0" dur="5s" repeatCount="indefinite"/>
-    </rect>
+    <!-- بريق إمبراطوري -->
+    <g opacity="0.9">
+        <circle cx="300" cy="60" r="3" fill="#ffffff"/>
+        <circle cx="200" cy="110" r="2" fill="#ffffff"/>
+        <circle cx="400" cy="110" r="2" fill="#ffffff"/>
+        <circle cx="60" cy="300" r="3" fill="#ffffff"/>
+        <circle cx="540" cy="300" r="3" fill="#ffffff"/>
+        <circle cx="200" cy="490" r="2" fill="#ffffff"/>
+        <circle cx="400" cy="490" r="2" fill="#ffffff"/>
+        <circle cx="300" cy="540" r="3" fill="#ffffff"/>
+    </g>
 </svg>
