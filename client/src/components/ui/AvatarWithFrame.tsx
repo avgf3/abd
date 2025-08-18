@@ -90,7 +90,7 @@ export function AvatarWithFrame({
 
       {frame && frame !== 'none' && (
         <img 
-          src={`/${frame}.svg`} 
+          src={`/frames/${frame}.svg`} 
           alt="Avatar Frame"
           className="pointer-events-none select-none"
           style={frameStyle}
