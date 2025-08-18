@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
+  <defs>
+    <!-- تدرجات ذهبية -->
+    <linearGradient id="goldGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff9e6"/>
+      <stop offset="20%" stop-color="#ffd700"/>
+      <stop offset="50%" stop-color="#ffb347"/>
+      <stop offset="80%" stop-color="#ffa500"/>
+      <stop offset="100%" stop-color="#fff9e6"/>
+    </linearGradient>
+    
+    <radialGradient id="goldRadial" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fffacd"/>
+      <stop offset="50%" stop-color="#ffd700"/>
+      <stop offset="100%" stop-color="#daa520"/>
+    </radialGradient>
+    
+    <!-- فلتر للظلال -->
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- إطار دائري رئيسي -->
+  <circle cx="300" cy="300" r="200" fill="none" stroke="#daa520" stroke-width="2" opacity="0.3"/>
+  <circle cx="300" cy="300" r="180" fill="none" stroke="url(#goldGradient)" stroke-width="35" filter="url(#shadow)"/>
+  <circle cx="300" cy="300" r="180" fill="none" stroke="url(#goldRadial)" stroke-width="30"/>
+  <circle cx="300" cy="300" r="195" fill="none" stroke="#fff9e6" stroke-width="1" opacity="0.6"/>
+  <circle cx="300" cy="300" r="165" fill="none" stroke="#fff9e6" stroke-width="1" opacity="0.6"/>
+  
+  <!-- شريط سفلي -->
+  <g filter="url(#shadow)">
+    <path d="M170,485 L430,485 L445,520 L440,555 L160,555 L155,520 Z" fill="url(#goldGradient)" stroke="#daa520" stroke-width="2"/>
+    <text x="300" y="527" text-anchor="middle" fill="#8b6914" font-size="36" font-family="Arial Black" font-weight="bold">GOLD</text>
+  </g>
+</svg>
