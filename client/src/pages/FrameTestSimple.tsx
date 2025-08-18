@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 
 export default function FrameTestSimple() {

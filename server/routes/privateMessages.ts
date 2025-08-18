@@ -1,8 +1,8 @@
 import { Router } from 'express';
 
+import { db, dbType } from '../database-adapter';
 import { notificationService } from '../services/notificationService';
 import { storage } from '../storage';
-import { db, dbType } from '../database-adapter';
 
 // Helper type for conversation item (server-side internal)
 type ConversationItem = {

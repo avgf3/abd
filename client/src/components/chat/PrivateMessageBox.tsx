@@ -2,13 +2,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
+import ProfileImage from '@/components/chat/ProfileImage';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
-import ProfileImage from '@/components/chat/ProfileImage';
 
 interface PrivateMessageBoxProps {
   isOpen: boolean;

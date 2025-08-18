@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 
+import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 import { Button } from '@/components/ui/button';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
-import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 
 interface MessageAlertProps {
   isOpen: boolean;

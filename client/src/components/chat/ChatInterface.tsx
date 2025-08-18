@@ -1,21 +1,21 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { Settings, Bell, MessageSquare, MessageCircle, Crown, Shield, AlertTriangle, Eye, EyeOff, Lock } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 
-import NotificationPanel from './NotificationPanel';
-import MessagesPanel from './MessagesPanel';
-import UsernameColorPicker from '@/components/profile/UsernameColorPicker';
 
 
-import MessageAlert from './MessageAlert';
-import ModerationPanel from './ModerationPanel';
-import ReportsLog from '../moderation/ReportsLog';
 import ActiveModerationLog from '../moderation/ActiveModerationLog';
-import KickCountdown from '@/components/moderation/KickCountdown';
 import BlockNotification from '../moderation/BlockNotification';
 import PromoteUserPanel from '../moderation/PromoteUserPanel';
+import ReportsLog from '../moderation/ReportsLog';
+
 import AdminReportsPanel from './AdminReportsPanel';
 import BroadcastRoomInterface from './BroadcastRoomInterface';
+import MessageAlert from './MessageAlert';
 import MessageArea from './MessageArea';
+import MessagesPanel from './MessagesPanel';
+import ModerationPanel from './ModerationPanel';
+import NotificationPanel from './NotificationPanel';
 import OwnerAdminPanel from './OwnerAdminPanel';
 import PrivateMessageBox from './PrivateMessageBox';
 import ProfileImage from './ProfileImage';
@@ -26,14 +26,17 @@ import ThemeSelector from './ThemeSelector';
 import UserPopup from './UserPopup';
 import UnifiedSidebar from './UserSidebarWithWalls';
 import WelcomeNotification from './WelcomeNotification';
+
+import KickCountdown from '@/components/moderation/KickCountdown';
+import UsernameColorPicker from '@/components/profile/UsernameColorPicker';
 // import RoomComponent from './RoomComponent';
 
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import RichestModal from '@/components/ui/RichestModal'; // تبويب الأثرياء
 import { Textarea } from '@/components/ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { useChat } from '@/hooks/useChat';
@@ -41,8 +44,6 @@ import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
-import { useQueryClient } from '@tanstack/react-query';
-import RichestModal from '@/components/ui/RichestModal'; // تبويب الأثرياء
 
 interface ChatInterfaceProps {
   chat: ReturnType<typeof useChat>;

@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
-import { ChatUser } from '@/types/chat';
-import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
+
 import UserRoleBadge from './UserRoleBadge';
+
+import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 import { cn } from '@/lib/utils';
-import { getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
+import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import { getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
 
 interface UserListItemProps {
   user: ChatUser;

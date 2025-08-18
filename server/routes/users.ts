@@ -1,8 +1,8 @@
 import { Router } from "express";
 
 import { sanitizeInput } from "../security";
-import { storage } from "../storage";
 import { databaseService } from "../services/databaseService";
+import { storage } from "../storage";
 
 const router = Router();
 

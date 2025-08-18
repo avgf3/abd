@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
+import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 import { useImageLoader } from '@/hooks/useImageLoader';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
-import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 
 interface ProfileImageProps {
   user: ChatUser;

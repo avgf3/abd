@@ -1,7 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import type { PrivateConversation } from '../../../../shared/types';
 
+import ProfileImage from '@/components/chat/ProfileImage';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,11 +12,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import type { ChatUser } from '@/types/chat';
-import ProfileImage from '@/components/chat/ProfileImage';
-import { formatTime } from '@/utils/timeUtils';
-import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import type { ChatUser } from '@/types/chat';
+import { formatTime } from '@/utils/timeUtils';
 
 interface MessagesPanelProps {
   isOpen: boolean;

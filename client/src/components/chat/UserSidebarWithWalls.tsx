@@ -7,13 +7,14 @@ import FriendsTabPanel from './FriendsTabPanel';
 import ProfileImage from './ProfileImage';
 import RoomComponent from './RoomComponent';
 import SimpleUserMenu from './SimpleUserMenu';
+import { UserListItem } from './UserListItemWithFrame';
 import UserRoleBadge from './UserRoleBadge';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useGrabScroll } from '@/hooks/useGrabScroll';
 import { apiRequest } from '@/lib/queryClient';
@@ -21,7 +22,6 @@ import { getSocket, saveSession } from '@/lib/socket';
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { getUserEffectStyles, getUserEffectClasses, getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
-import { UserListItem } from './UserListItemWithFrame';
 import { formatTimeAgo } from '@/utils/timeUtils';
 
 
