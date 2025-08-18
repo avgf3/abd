@@ -8,10 +8,8 @@ interface AvatarWithFrameProps {
   fallback?: string;
   frame?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  pixelSize?: number; // قياس مخصص بالإمكانات
-  innerScale?: number; // نسبة حجم الصورة داخل الإطار (افتراض 0.8)
-  imagePixelSize?: number; // قطر الصورة الحقيقي المطلوب (دون تصغيرها)
-  frameRingWidthPx?: number; // سُمك حلقة الإطار حول الصورة بالبكسل
+  pixelSize?: number; // قياس مخصص بالبكسل
+  imagePixelSize?: number; // قطر الصورة الحقيقي المطلوب
   className?: string;
   onClick?: () => void;
 }
@@ -30,28 +28,49 @@ export function AvatarWithFrame({
   frame = 'none', 
   size = 'md',
   pixelSize,
-  innerScale = 1,
   imagePixelSize,
-  frameRingWidthPx,
   className,
   onClick 
 }: AvatarWithFrameProps) {
   const sizes = frameSizes[size];
 
-  const useImagePlusRing = typeof imagePixelSize === 'number' && imagePixelSize > 0;
-  const ringWidth = typeof frameRingWidthPx === 'number' && frameRingWidthPx >= 0 ? frameRingWidthPx : 6;
+  // استخدام imagePixelSize إذا كان متوفرًا، وإلا استخدام pixelSize
+  const actualImageSize = imagePixelSize || pixelSize;
+  
+  // حساب حجم الحاوية للإطار - نضيف مساحة إضافية للإطار
+  // الإطار يحتاج مساحة إضافية حوالي 20% من حجم الصورة
+  const frameMultiplier = frame && frame !== 'none' ? 1.2 : 1;
+  const containerSize = actualImageSize ? Math.round(actualImageSize * frameMultiplier) : undefined;
 
-  const containerStyle: React.CSSProperties | undefined = useImagePlusRing
-    ? { width: `${imagePixelSize! + (ringWidth * 2)}px`, height: `${imagePixelSize! + (ringWidth * 2)}px` }
-    : (typeof pixelSize === 'number' && pixelSize > 0
-      ? { width: `${pixelSize}px`, height: `${pixelSize}px` }
-      : undefined);
+  const containerStyle: React.CSSProperties | undefined = containerSize
+    ? { 
+        width: `${containerSize}px`, 
+        height: `${containerSize}px`,
+        position: 'relative' as const
+      }
+    : undefined;
 
-  const avatarStyle: React.CSSProperties | undefined = useImagePlusRing
-    ? { width: `${imagePixelSize}px`, height: `${imagePixelSize}px` }
-    : (typeof pixelSize === 'number' && pixelSize > 0
-      ? { width: `${Math.round(pixelSize * innerScale)}px`, height: `${Math.round(pixelSize * innerScale)}px` }
-      : undefined);
+  const avatarStyle: React.CSSProperties | undefined = actualImageSize
+    ? { 
+        width: `${actualImageSize}px`, 
+        height: `${actualImageSize}px`,
+        position: 'absolute' as const,
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)'
+      }
+    : undefined;
+
+  const frameStyle: React.CSSProperties | undefined = containerSize
+    ? {
+        width: `${containerSize}px`,
+        height: `${containerSize}px`,
+        position: 'absolute' as const,
+        top: 0,
+        left: 0,
+        pointerEvents: 'none' as const
+      }
+    : undefined;
 
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
@@ -65,18 +84,24 @@ export function AvatarWithFrame({
       onClick={onClick}
       style={{ cursor: onClick ? 'pointer' : 'default', ...(containerStyle || {}) }}
     >
+      {/* الصورة الشخصية */}
+      <Avatar 
+        className={cn(containerStyle ? '' : sizes.avatar, 'z-10')} 
+        style={avatarStyle}
+      >
+        <AvatarImage src={src || '/default_avatar.svg'} alt={alt} onError={handleImgError} />
+        <AvatarFallback>{fallback}</AvatarFallback>
+      </Avatar>
+
+      {/* الإطار */}
       {frame && frame !== 'none' && (
         <img 
           src={`/${frame}.svg`} 
           alt="Avatar Frame"
-          className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none z-20"
+          className="z-20 select-none"
+          style={frameStyle}
         />
       )}
-
-      <Avatar className={cn(containerStyle ? '' : sizes.avatar, 'z-10')} style={avatarStyle}>
-        <AvatarImage src={src || '/default_avatar.svg'} alt={alt} onError={handleImgError} />
-        <AvatarFallback>{fallback}</AvatarFallback>
-      </Avatar>
     </div>
   );
 }
