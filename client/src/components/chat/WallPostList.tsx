@@ -1,12 +1,12 @@
 import { Trash2, Globe } from 'lucide-react';
 import React from 'react';
 
+import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { WallPost, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
-import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 
 interface WallPostListProps {
   posts: WallPost[];

@@ -5,6 +5,7 @@ import type { Socket } from 'socket.io-client';
 
 import WallPostList from './WallPostList';
 
+import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,7 +16,6 @@ import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
 import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
-import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
 
 interface WallPanelProps {
   isOpen: boolean;
