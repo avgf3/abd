@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AvatarWithFrame, availableFrames } from '@/components/ui/AvatarWithFrame';
+import { normalizeFrameId } from '@/utils/avatarFrame';
 
 interface UserPopupProps {
   user: ChatUser;
@@ -297,8 +298,9 @@ export default function UserPopup({
                 src={user.profileImage}
                 alt={user.username}
                 fallback={user.username.substring(0, 2).toUpperCase()}
-                frame={selectedFrame}
-                imageSize={previewSize}
+                frame={normalizeFrameId(selectedFrame as any)}
+                size={previewSize}
+                variant={previewSize < 64 ? 'list' : 'profile'}
               />
             </div>
           </div>

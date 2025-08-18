@@ -7,6 +7,7 @@ import type { WallPost, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
 import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
+import { normalizeFrameId } from '@/utils/avatarFrame';
 
 interface WallPostListProps {
   posts: WallPost[];
@@ -62,9 +63,9 @@ export default function WallPostList({
                     <AvatarWithFrame
                       src={getImageSrc(post.userProfileImage)}
                       alt={post.username}
-                      frame={(post as any).avatarFrame || 'none'}
-                      imageSize={48}
-                      frameThickness={Math.round(48 * 0.12)}
+                      frame={normalizeFrameId((post as any).avatarFrame as any)}
+                      size={48}
+                      variant="list"
                     />
                   </div>
                 </div>

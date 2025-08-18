@@ -19,8 +19,8 @@ export default function TestFrames() {
                   alt="Test"
                   fallback="TE"
                   frame={frame.id}
-                  imageSize={130}
-                  frameThickness={Math.round(130 * 0.12)}
+                  size={130}
+                  variant="profile"
                 />
                 <p className="mt-2 text-sm">{frame.name}</p>
               </div>
@@ -41,8 +41,8 @@ export default function TestFrames() {
                   alt="Test"
                   fallback="TE"
                   frame={frame.id}
-                  imageSize={40}
-                  frameThickness={Math.round(40 * 0.12)}
+                  size={40}
+                  variant="list"
                 />
                 <span className="text-sm">{frame.name}</span>
               </div>
@@ -64,8 +64,8 @@ export default function TestFrames() {
                   alt="Test"
                   fallback="TE"
                   frame="enhanced-crown-frame"
-                  imageSize={130}
-                  frameThickness={Math.round(130 * 0.12)}
+                  size={130}
+                  variant="profile"
                 />
               </div>
             </div>
@@ -77,8 +77,8 @@ export default function TestFrames() {
                   alt="Test"
                   fallback="TE"
                   frame="enhanced-crown-frame"
-                  imageSize={40}
-                  frameThickness={Math.round(40 * 0.12)}
+                  size={40}
+                  variant="list"
                 />
               </div>
             </div>
