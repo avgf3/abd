@@ -1810,6 +1810,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                 frame={normalizeFrameId(localUser?.avatarFrame as any)}
                 size={130}
                 variant="profile"
+                ringOnly={false}
               />
             </div>
             
