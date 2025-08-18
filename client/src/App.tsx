@@ -8,12 +8,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { UserProvider } from "@/contexts/UserContext";
 import ChatPage from "@/pages/chat";
 import FrameTest from "@/pages/FrameTest";
+import FrameTestSimple from "@/pages/FrameTestSimple";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={ChatPage} />
       <Route path="/frame-test" component={FrameTest} />
+      <Route path="/frame-test-simple" component={FrameTestSimple} />
       <Route component={ChatPage} />
     </Switch>
   );

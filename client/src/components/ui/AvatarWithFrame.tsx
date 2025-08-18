@@ -16,6 +16,8 @@ interface AvatarWithFrameProps {
   frameBorderWidth?: number; // سمك إطار CSS
   frameBorderColor?: string; // لون إطار CSS
   frameGap?: number; // مسافة بين الصورة والإطار
+  // وضع العرض: full للملف الشخصي (كامل)، compact لقائمة المتصلين (مختصر)
+  displayMode?: 'full' | 'compact';
 }
 
 export function AvatarWithFrame({ 
@@ -30,27 +32,25 @@ export function AvatarWithFrame({
   useCircularFrame = false,
   frameBorderWidth = 3,
   frameBorderColor = 'gold',
-  frameGap = 0
+  frameGap = 0,
+  displayMode = 'full'
 }: AvatarWithFrameProps) {
-  // نحسب سُمك الإطار تلقائيًا بنسبة 10% من حجم الصورة إذا لم يُمرر يدويًا
+  // حساب سُمك الإطار الفعلي بناءً على حجم الصورة
   const effectiveFrameThickness = useCircularFrame
     ? 0
     : (frame && frame !== 'none'
-      ? (typeof frameThickness === 'number' ? frameThickness : Math.max(2, Math.round(imageSize * 0.1)))
+      ? (typeof frameThickness === 'number' ? frameThickness : Math.round(imageSize * 0.2))
       : 0);
-  // عند استخدام إطار دائري بسيط، لا نزيد أبعاد المحتوى يدويًا
-  // لأن border + padding يزيدان الحجم تلقائيًا
-  // خلاف ذلك: حجم الحاوية = حجم الصورة + سُمك الإطار من الجانبين
-  const containerSize = useCircularFrame
-    ? imageSize
-    : (frame && frame !== 'none'
-      ? imageSize + (effectiveFrameThickness * 2)
-      : imageSize);
+
+  // حجم الحاوية يعتمد على الوضع والإطار
+  const containerSize = (frame && frame !== 'none' && displayMode === 'full')
+    ? imageSize + (effectiveFrameThickness * 2)
+    : imageSize;
 
   const containerStyle: React.CSSProperties = useCircularFrame
     ? {
-      width: `${containerSize}px`,
-      height: `${containerSize}px`,
+      width: `${imageSize}px`,
+      height: `${imageSize}px`,
       position: 'relative',
       borderRadius: '50%',
       border: `${frameBorderWidth}px solid ${frameBorderColor}`,
@@ -60,17 +60,55 @@ export function AvatarWithFrame({
     : {
       width: `${containerSize}px`,
       height: `${containerSize}px`,
-      position: 'relative'
+      position: 'relative',
+      overflow: 'visible'
     };
 
+  // موضع وحجم الصورة
   const avatarStyle: React.CSSProperties = {
     width: `${imageSize}px`,
     height: `${imageSize}px`,
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transform: 'translate(-50%, -50%)'
+    transform: 'translate(-50%, -50%)',
+    zIndex: 10,
+    borderRadius: '50%',
+    overflow: 'hidden'
   };
+
+  // حساب حجم وموضع الإطار SVG
+  // الإطار SVG له viewBox 600x600 مع الصورة في المنتصف
+  // الدائرة الداخلية في SVG قطرها 330 بكسل (نصف القطر 165)
+  const svgInnerDiameter = 330;
+  const scale = imageSize / svgInnerDiameter;
+  const frameActualSize = 600 * scale;
+
+  const frameStyle: React.CSSProperties = displayMode === 'compact'
+    ? {
+      position: 'absolute',
+      width: `${frameActualSize}px`,
+      height: `${frameActualSize}px`,
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      pointerEvents: 'none',
+      zIndex: 20,
+      // في الوضع المختصر، نقص الجزء العلوي من الإطار (التاج)
+      clipPath: frame?.includes('crown') || frame?.includes('svip') 
+        ? 'polygon(0 25%, 100% 25%, 100% 100%, 0 100%)' 
+        : 'none'
+    }
+    : {
+      position: 'absolute',
+      width: `${frameActualSize}px`,
+      height: `${frameActualSize}px`,
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      pointerEvents: 'none',
+      zIndex: 20
+    };
 
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
@@ -84,16 +122,21 @@ export function AvatarWithFrame({
       onClick={onClick}
       style={{ cursor: onClick ? 'pointer' : 'default', ...containerStyle }}
     >
-      <Avatar className={cn('z-10')} style={avatarStyle}>
-        <AvatarImage src={src || '/default_avatar.svg'} alt={alt} onError={handleImgError} />
-        <AvatarFallback>{fallback}</AvatarFallback>
-      </Avatar>
+      <div className="rounded-full overflow-hidden" style={avatarStyle}>
+        <img 
+          src={src || '/default_avatar.svg'} 
+          alt={alt} 
+          onError={handleImgError}
+          className="w-full h-full object-cover"
+        />
+      </div>
 
       {!useCircularFrame && frame && frame !== 'none' && (
         <img 
           src={`/${frame}.svg`} 
           alt="Avatar Frame"
-          className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none z-20"
+          className="pointer-events-none select-none"
+          style={frameStyle}
         />
       )}
     </div>
