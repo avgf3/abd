@@ -14,6 +14,11 @@ interface AvatarWithFrameProps {
    * 'list' clips top ornaments so only ring/base fits inside the given size.
    */
   variant?: AvatarVariant;
+  /**
+   * When true, render only the ring part of the frame inside the given size (no container expansion).
+   * This forces clipping of top ornaments even if variant is 'profile'. Default: true.
+   */
+  ringOnly?: boolean;
   className?: string;
   onClick?: () => void;
 }
@@ -25,15 +30,17 @@ export function AvatarWithFrame({
   frame = 'none', 
   size,
   variant = 'profile',
+  ringOnly = true,
   className,
   onClick
 }: AvatarWithFrameProps) {
   const resolved = resolveFrameId(frame, size);
-  const { imageSize, thicknessPx, containerSize, clipPath } = computeFrameMetrics({ size, frameId: resolved, variant });
+  // Force list-like metrics when ringOnly to avoid container expansion and clip top ornaments
+  const { imageSize, thicknessPx, containerSize, clipPath } = computeFrameMetrics({ size, frameId: resolved, variant: ringOnly ? 'list' : variant });
 
   const containerStyle: React.CSSProperties = {
-    width: `${containerSize}px`,
-    height: `${containerSize}px`,
+    width: `${ringOnly ? size : containerSize}px`,
+    height: `${ringOnly ? size : containerSize}px`,
     position: 'relative'
   };
 
@@ -55,7 +62,7 @@ export function AvatarWithFrame({
     height: '100%',
     pointerEvents: 'none',
     zIndex: 20,
-    clipPath: variant === 'list' ? clipPath : undefined
+    clipPath: ringOnly ? clipPath : (variant === 'list' ? clipPath : undefined)
   };
 
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
