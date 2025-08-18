@@ -42,14 +42,9 @@
         <feMergeNode in='SourceGraphic'/>
       </feMerge>
     </filter>
-    <!-- قناع لإبقاء داخل الدائرة شفافاً بالكامل (دونات) -->
-    <mask id='innerHoleMaskClassicGold' maskUnits='userSpaceOnUse'>
-      <rect x='0' y='0' width='600' height='600' fill='white'/>
-      <circle cx='300' cy='300' r='242' fill='black'/>
-    </mask>
   </defs>
 
-  <g mask='url(#innerHoleMaskClassicGold)'>
+  <g>
     <!-- الدائرة الرئيسية للتاج -->
     <circle cx='300' cy='300' r='180' fill='none' stroke='url(#goldGradient)' stroke-width='35' filter='url(#shadow)'/>
 
