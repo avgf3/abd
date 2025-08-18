@@ -24,7 +24,7 @@ export function AvatarWithFrame({
   fallback, 
   frame = 'none', 
   imageSize,
-  frameThickness = 8,
+  frameThickness,
   className,
   onClick,
   useCircularFrame = false,
@@ -32,13 +32,19 @@ export function AvatarWithFrame({
   frameBorderColor = 'gold',
   frameGap = 0
 }: AvatarWithFrameProps) {
+  // نحسب سُمك الإطار تلقائيًا بنسبة 10% من حجم الصورة إذا لم يُمرر يدويًا
+  const effectiveFrameThickness = useCircularFrame
+    ? 0
+    : (frame && frame !== 'none'
+      ? (typeof frameThickness === 'number' ? frameThickness : Math.max(2, Math.round(imageSize * 0.1)))
+      : 0);
   // عند استخدام إطار دائري بسيط، لا نزيد أبعاد المحتوى يدويًا
   // لأن border + padding يزيدان الحجم تلقائيًا
   // خلاف ذلك: حجم الحاوية = حجم الصورة + سُمك الإطار من الجانبين
   const containerSize = useCircularFrame
     ? imageSize
     : (frame && frame !== 'none'
-      ? imageSize + (frameThickness * 2)
+      ? imageSize + (effectiveFrameThickness * 2)
       : imageSize);
 
   const containerStyle: React.CSSProperties = useCircularFrame
