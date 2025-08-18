@@ -8,6 +8,31 @@ import { storage } from '../storage';
 const router = Router();
 
 /**
+ * GET /api/messages/public
+ * جلب رسائل الغرفة العامة (general) مع تضمين بيانات المرسل
+ */
+router.get('/public', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 50;
+    const messages = await storage.getPublicMessages(limit);
+
+    const senderIds = Array.from(new Set((messages || []).map((m: any) => m.senderId).filter(Boolean)));
+    const senders = await storage.getUsersByIds(senderIds as number[]);
+    const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
+
+    const messagesWithUsers = (messages || []).map((msg: any) => ({
+      ...msg,
+      sender: msg.senderId ? (senderMap.get(msg.senderId) || null) : null
+    }));
+
+    res.json({ messages: messagesWithUsers });
+  } catch (error: any) {
+    console.error('خطأ في جلب رسائل العامة:', error);
+    res.status(500).json({ error: 'خطأ في الخادم' });
+  }
+});
+
+/**
  * GET /api/messages/room/:roomId
  * جلب رسائل الغرفة مع الصفحات
  */
