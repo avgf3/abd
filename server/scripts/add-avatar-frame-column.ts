@@ -1,8 +1,6 @@
 import { db } from '../database-adapter';
 
 async function addAvatarFrameColumn() {
-  console.log('🔄 إضافة عامود avatar_frame إلى جدول المستخدمين...');
-  
   try {
     // التحقق من نوع قاعدة البيانات
     if (!db || !db.type) {
@@ -15,8 +13,7 @@ async function addAvatarFrameColumn() {
       await db.db.exec(`
         ALTER TABLE users ADD COLUMN avatar_frame TEXT DEFAULT 'none';
       `);
-      console.log('✅ تم إضافة عامود avatar_frame لـ SQLite');
-    } else if (db.type === 'postgresql') {
+      } else if (db.type === 'postgresql') {
       // PostgreSQL
       await db.db.execute(`
         DO $$ 
@@ -29,11 +26,9 @@ async function addAvatarFrameColumn() {
           END IF;
         END $$;
       `);
-      console.log('✅ تم إضافة عامود avatar_frame لـ PostgreSQL');
-    }
+      }
 
-    console.log('✅ تمت العملية بنجاح');
-  } catch (error) {
+    } catch (error) {
     console.error('❌ خطأ في إضافة العامود:', error);
   } finally {
     // إغلاق الاتصال

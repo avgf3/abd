@@ -16,7 +16,7 @@ interface AvatarWithFrameProps {
   variant?: AvatarVariant;
   /**
    * When true, render only the ring part of the frame inside the given size (no container expansion).
-   * This forces clipping of top ornaments even if variant is 'profile'. Default: true.
+   * This forces clipping of top ornaments even if variant is 'profile'. Default: false.
    */
   ringOnly?: boolean;
   className?: string;
@@ -62,13 +62,15 @@ export function AvatarWithFrame({
     height: '100%',
     pointerEvents: 'none',
     zIndex: 20,
-    clipPath: ringOnly ? clipPath : (variant === 'list' ? clipPath : undefined)
+    clipPath: ringOnly ? clipPath : (variant === 'list' ? clipPath : undefined),
+    // Safari compatibility
+    WebkitClipPath: (ringOnly || variant === 'list') ? (clipPath as any) : undefined
   };
 
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
     if (img.src.includes('/default_avatar.svg')) return;
-    img.src = '/default_avatar.svg';
+    img.src = fallback || '/default_avatar.svg';
   };
 
   const frameSrc = getFrameImagePath(resolved);
