@@ -122,10 +122,14 @@ export function AvatarWithFrame({
       onClick={onClick}
       style={{ cursor: onClick ? 'pointer' : 'default', ...containerStyle }}
     >
-      <Avatar className={cn('rounded-full overflow-hidden')} style={avatarStyle}>
-        <AvatarImage src={src || '/default_avatar.svg'} alt={alt} onError={handleImgError} />
-        <AvatarFallback>{fallback}</AvatarFallback>
-      </Avatar>
+      <div className="rounded-full overflow-hidden" style={avatarStyle}>
+        <img 
+          src={src || '/default_avatar.svg'} 
+          alt={alt} 
+          onError={handleImgError}
+          className="w-full h-full object-cover"
+        />
+      </div>
 
       {!useCircularFrame && frame && frame !== 'none' && (
         <img 
