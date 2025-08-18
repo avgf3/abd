@@ -19,20 +19,25 @@
         </filter>
     </defs>
     
-    <!-- إطار دائري بسيط مزخرف -->
+    <!-- إطار دائري بسيط -->
     <circle cx="300" cy="300" r="190" fill="none" stroke="url(#classicGold)" stroke-width="25" filter="url(#shadow)"/>
     <circle cx="300" cy="300" r="202" fill="none" stroke="#b8860b" stroke-width="1" opacity="0.5"/>
     <circle cx="300" cy="300" r="178" fill="none" stroke="#b8860b" stroke-width="1" opacity="0.5"/>
     
-    <!-- زخارف بسيطة -->
-    <g opacity="0.5">
-        <circle cx="300" cy="100" r="3" fill="#ffd700"/>
-        <circle cx="230" cy="130" r="3" fill="#ffd700"/>
-        <circle cx="370" cy="130" r="3" fill="#ffd700"/>
-        <circle cx="180" cy="190" r="3" fill="#ffd700"/>
-        <circle cx="420" cy="190" r="3" fill="#ffd700"/>
-        <circle cx="180" cy="410" r="3" fill="#ffd700"/>
-        <circle cx="420" cy="410" r="3" fill="#ffd700"/>
+    <!-- تاج كلاسيكي بسيط -->
+    <g filter="url(#shadow)">
+        <!-- قاعدة التاج -->
+        <rect x="250" y="90" width="100" height="15" fill="url(#classicGold)" stroke="#b8860b" stroke-width="1"/>
+        
+        <!-- ثلاث قمم بسيطة -->
+        <path d="M260,90 L260,60 L280,90" fill="url(#classicGoldRadial)" stroke="#b8860b" stroke-width="1"/>
+        <path d="M290,90 L290,50 L310,90" fill="url(#classicGoldRadial)" stroke="#b8860b" stroke-width="1"/>
+        <path d="M320,90 L320,60 L340,90" fill="url(#classicGoldRadial)" stroke="#b8860b" stroke-width="1"/>
+        
+        <!-- نقاط زخرفية -->
+        <circle cx="270" cy="60" r="3" fill="#ffd700"/>
+        <circle cx="300" cy="50" r="4" fill="#ffd700"/>
+        <circle cx="330" cy="60" r="3" fill="#ffd700"/>
     </g>
     
     <!-- شريط سفلي -->
