@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
+    <defs>
+        <!-- تدرجات ذهبية كلاسيكية -->
+        <linearGradient id="classicGold" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fff9e6"/>
+            <stop offset="50%" stop-color="#ffd700"/>
+            <stop offset="100%" stop-color="#b8860b"/>
+        </linearGradient>
+        
+        <radialGradient id="classicGoldRadial" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fffacd"/>
+            <stop offset="50%" stop-color="#ffd700"/>
+            <stop offset="100%" stop-color="#daa520"/>
+        </radialGradient>
+        
+        <!-- فلتر للظلال -->
+        <filter id="shadow">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+    
+    <!-- إطار دائري بسيط -->
+    <circle cx="300" cy="300" r="190" fill="none" stroke="url(#classicGold)" stroke-width="25" filter="url(#shadow)"/>
+    <circle cx="300" cy="300" r="202" fill="none" stroke="#b8860b" stroke-width="1" opacity="0.5"/>
+    <circle cx="300" cy="300" r="178" fill="none" stroke="#b8860b" stroke-width="1" opacity="0.5"/>
+    
+    <!-- تاج كلاسيكي بسيط -->
+    <g filter="url(#shadow)">
+        <!-- قاعدة التاج -->
+        <rect x="250" y="90" width="100" height="15" fill="url(#classicGold)" stroke="#b8860b" stroke-width="1"/>
+        
+        <!-- ثلاث قمم بسيطة -->
+        <path d="M260,90 L260,60 L280,90" fill="url(#classicGoldRadial)" stroke="#b8860b" stroke-width="1"/>
+        <path d="M290,90 L290,50 L310,90" fill="url(#classicGoldRadial)" stroke="#b8860b" stroke-width="1"/>
+        <path d="M320,90 L320,60 L340,90" fill="url(#classicGoldRadial)" stroke="#b8860b" stroke-width="1"/>
+        
+        <!-- نقاط زخرفية -->
+        <circle cx="270" cy="60" r="3" fill="#ffd700"/>
+        <circle cx="300" cy="50" r="4" fill="#ffd700"/>
+        <circle cx="330" cy="60" r="3" fill="#ffd700"/>
+    </g>
+    
+    <!-- شريط سفلي -->
+    <g filter="url(#shadow)">
+        <rect x="200" y="490" width="200" height="50" rx="25" fill="url(#classicGold)" stroke="#b8860b" stroke-width="2"/>
+        <text x="300" y="522" text-anchor="middle" fill="#8b6914" font-size="28" font-family="Arial" font-weight="bold">CLASSIC</text>
+    </g>
+</svg>

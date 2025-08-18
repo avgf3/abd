@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" fill="none">
+    <defs>
+        <linearGradient id="queenGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#ff69b4"/>
+            <stop offset="100%" stop-color="#c71585"/>
+        </linearGradient>
+        
+        <filter id="shadow">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+    
+    <!-- إطار دائري خارجي -->
+    <circle cx="300" cy="300" r="180" fill="none" stroke="url(#queenGrad)" stroke-width="30" filter="url(#shadow)"/>
+    <circle cx="300" cy="300" r="195" fill="none" stroke="#c71585" stroke-width="2" opacity="0.5"/>
+    <circle cx="300" cy="300" r="165" fill="none" stroke="#c71585" stroke-width="2" opacity="0.5"/>
+    
+    <!-- تاج بسيط -->
+    <g filter="url(#shadow)">
+        <path d="M250,90 L350,90 L360,100 L355,105 L245,105 L240,100 Z" fill="url(#queenGrad)" stroke="#c71585" stroke-width="1"/>
+        <path d="M270,90 L270,70 L280,90 M300,90 L300,60 L310,90 M330,90 L330,70 L340,90" fill="url(#queenGrad)" stroke="#c71585" stroke-width="1"/>
+        <circle cx="275" cy="70" r="3" fill="#ff69b4"/>
+        <circle cx="300" cy="60" r="4" fill="#ff69b4"/>
+        <circle cx="325" cy="70" r="3" fill="#ff69b4"/>
+    </g>
+    
+    <!-- الشريط السفلي -->
+    <g filter="url(#shadow)">
+        <path d="M180,480 L420,480 L435,515 L430,550 L170,550 L165,515 Z" fill="url(#queenGrad)" stroke="#c71585" stroke-width="2"/>
+        <text x="300" y="522" text-anchor="middle" fill="#8b1468" font-size="36" font-family="Arial Black" font-weight="bold" letter-spacing="2">QUEEN</text>
+    </g>
+</svg>
