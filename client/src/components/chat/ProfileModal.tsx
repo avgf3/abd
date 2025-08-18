@@ -1809,6 +1809,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                 frame={localUser?.avatarFrame || 'none'}
                 imageSize={130}
                 frameThickness={8}
+                displayMode="full"
               />
             </div>
             

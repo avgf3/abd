@@ -312,6 +312,7 @@ export default function UserPopup({
                   frame={selectedFrame}
                   imageSize={toPx(imageSizeValue)}
                   frameThickness={toPx(thicknessValue)}
+                  displayMode="full"
                 />
               </div>
             </TabsContent>

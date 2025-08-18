@@ -71,6 +71,7 @@ export const UserListItem: React.FC<UserListItemProps> = ({
         frame={user.avatarFrame || 'none'}
         imageSize={40}
         frameThickness={Math.round(40 * 0.12)}
+        displayMode="compact"
       />
 
       {/* معلومات المستخدم */}
