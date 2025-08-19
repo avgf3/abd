@@ -52,8 +52,8 @@ export function calculateFrameDimensions(
 export function getFramePath(fileName: string): string {
   if (!fileName) return '';
   
-  // المسار الصحيح للملفات
-  return `/${fileName}`;
+  // المسار الصحيح للملفات داخل مجلد svgs (يخدمه الخادم مع كاش)
+  return `/svgs/${fileName}`;
 }
 
 /**
