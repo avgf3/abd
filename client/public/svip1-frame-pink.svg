@@ -33,27 +33,21 @@
         </pattern>
     </defs>
 
-    <ellipse cx="300" cy="300" rx="280" ry="280" fill="url(#pinkRadial)" opacity="0.08"/>
+    
 
     <!-- الإطار الدائري فقط -->
-    <circle cx="300" cy="300" r="190" fill="none" stroke="#ff1493" stroke-width="2" opacity="0.3"/>
-    <circle cx="300" cy="300" r="180" fill="none" stroke="#c71585" stroke-width="16" filter="url(#shadow)" opacity="0.9"/>
-    <circle cx="300" cy="300" r="180" fill="none" stroke="url(#pinkGradient1)" stroke-width="14"/>
-    <circle cx="300" cy="300" r="172" fill="none" stroke="#ffe6f2" stroke-width="1" opacity="0.7"/>
-    <circle cx="300" cy="300" r="188" fill="none" stroke="#ffe6f2" stroke-width="1" opacity="0.6"/>
+    <circle cx="300" cy="300" r="200" fill="none" stroke="#ff1493" stroke-width="2" opacity="0.3"/>
+    <circle cx="300" cy="300" r="180" fill="none" stroke="#c71585" stroke-width="35" filter="url(#shadow)" opacity="0.9"/>
+    <circle cx="300" cy="300" r="180" fill="none" stroke="url(#pinkGradient1)" stroke-width="30"/>
+    <circle cx="300" cy="300" r="195" fill="none" stroke="#ffe6f2" stroke-width="1" opacity="0.7"/>
+    <circle cx="300" cy="300" r="165" fill="none" stroke="#ffe6f2" stroke-width="1" opacity="0.6"/>
 
-    <!-- زخارف خفيفة -->
-    <g opacity="0.5">
-        <path d="M300,110 L305,105 L310,110 L305,115 Z" fill="#ff69b4"/>
-        <path d="M300,490 L305,485 L310,490 L305,495 Z" fill="#ff69b4"/>
-        <path d="M110,300 L115,295 L120,300 L115,305 Z" fill="#ff69b4"/>
-        <path d="M480,300 L485,295 L490,300 L485,305 Z" fill="#ff69b4"/>
-    </g>
+    
 
     <!-- الشريط السفلي SVIP1 بدون أجنحة/تاج -->
     <g filter="url(#shadow)">
         <path d="M200,455 L400,455 L425,490 L420,525 L180,525 L175,490 Z" fill="url(#pinkGradient1)" stroke="#c71585" stroke-width="2"/>
-        <path d="M205,460 L395,460 L415,520 L185,520 Z" fill="url(#sparkle)" opacity="0.25"/>
+        
         <path d="M210,465 L390,465 L410,515 L190,515 Z" fill="none" stroke="#ffe6f2" stroke-width="1" opacity="0.6"/>
         <text x="300" y="497" text-anchor="middle" fill="#8b0037" font-size="30" font-family="Arial Black" font-weight="bold" letter-spacing="3">SVIP1</text>
         <text x="300" y="497" text-anchor="middle" fill="url(#pinkRadial)" font-size="28" font-family="Arial Black" font-weight="bold" letter-spacing="3">SVIP1</text>

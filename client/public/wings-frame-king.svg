@@ -16,8 +16,7 @@
     
   </defs>
 
-  <!-- خلفية شعاعية خفيفة -->
-  <circle cx='300' cy='300' r='280' fill='#fff9e6' opacity='0.08'/>
+  
 
   <!-- حلقات الإطار متناسقة مع باقي التصاميم -->
   <circle cx='300' cy='300' r='200' fill='none' stroke='#daa520' stroke-width='2' opacity='0.3'/>

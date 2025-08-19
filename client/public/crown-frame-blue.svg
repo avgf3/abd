@@ -15,8 +15,7 @@
     </radialGradient>
   </defs>
   
-  <!-- خلفية خفيفة -->
-  <circle cx='300' cy='300' r='280' fill='#f0f8ff' opacity='0.08'/>
+  
   
   <!-- حلقات موحّدة السمك -->
   <circle cx='300' cy='300' r='200' fill='none' stroke='#191970' stroke-width='2' opacity='0.3'/>
