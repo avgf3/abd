@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import ChatInterface from '@/components/chat/ChatInterface';
 import WelcomeScreen from '@/components/chat/WelcomeScreen';
@@ -30,6 +30,16 @@ export default function ChatPage() {
     chat.disconnect();
     setShowWelcome(true);
   };
+
+  // إضافة/إزالة كلاس login-page على body عندما تكون شاشة الترحيب ظاهرة
+  useEffect(() => {
+    try {
+      document.body.classList.toggle('login-page', showWelcome);
+    } catch {}
+    return () => {
+      try { document.body.classList.remove('login-page'); } catch {}
+    };
+  }, [showWelcome]);
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo']" dir="rtl">

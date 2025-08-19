@@ -316,6 +316,69 @@
   box-shadow: 0 8px 25px hsla(0, 84%, 60%, 0.3);
 }
 
+/* =========================
+   تكييفات مظهر الهاتف فقط
+   دون تغيير المنطق أو المحتوى
+   - عامة
+   - صفحة الدخول (login-page)
+   ========================= */
+@media (max-width: 768px) {
+  /* عامة */
+  header .glass-effect {
+    padding: 8px 10px;
+  }
+  .welcome-gradient {
+    background-size: 300% 300%;
+  }
+  .glass-effect {
+    border-radius: 12px;
+  }
+  .chat-message {
+    padding: 10px 12px;
+    margin: 6px 0;
+    border-radius: 14px;
+  }
+  footer .glass-effect {
+    padding: 8px 10px;
+  }
+
+  /* صفحة الدخول فقط */
+  body.login-page .btn-primary,
+  body.login-page .btn-success,
+  body.login-page .btn-danger {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    border-radius: 14px !important;
+  }
+
+  body.login-page .glass-effect {
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+  }
+
+  body.login-page .welcome-gradient {
+    min-height: 100dvh;
+    padding: 16px;
+  }
+
+  body.login-page .dialog-content,
+  body.login-page .DialogContent,
+  body.login-page [role="dialog"] {
+    width: 100% !important;
+    max-width: 420px !important;
+    margin: 0 auto !important;
+  }
+
+  body.login-page input,
+  body.login-page .Input,
+  body.login-page .shadcn-input,
+  body.login-page .radix-input {
+    font-size: 16px; /* يمنع تكبير iOS */
+  }
+}
+
 .profile-tab {
   background: transparent;
   border: none;
