@@ -18,7 +18,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import AvatarFrame from '@/components/ui/AvatarFrame';
-import { getFramesByCategory, getAllFrames, getFrameInfo } from '@/data/frames';
+import { getFramesByCategory, getAllFrames, getFrameInfo, isValidFrameId } from '@/data/frames';
 import { apiRequest } from '@/lib/queryClient';
 
 interface FrameManagerProps {
@@ -68,11 +68,18 @@ const FrameManager: React.FC<FrameManagerProps> = ({
     setIsUpdating(true);
     
     try {
+      if (!isValidFrameId(selectedFrame)) {
+        toast({
+          title: 'إطار غير صالح',
+          description: 'يرجى اختيار إطار صالح من القائمة',
+          variant: 'destructive'
+        });
+        return;
+      }
       await apiRequest(`/api/users/${targetUser.id}/avatar-frame`, {
         method: 'POST',
         body: {
-          frame: selectedFrame,
-          moderatorId: currentUser.id
+          frame: selectedFrame
         }
       });
       
