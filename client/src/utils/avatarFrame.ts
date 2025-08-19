@@ -100,7 +100,8 @@ export function computeFrameMetrics(params: {
 
 export function getFrameImagePath(frameId: AvatarFrameId): string | undefined {
   if (!frameId || frameId === 'none') return undefined;
-  return `/svgs/${frameId}.svg`;
+  // Frame SVGs are stored at the public root (client/public) as /<frameId>.svg
+  return `/${frameId}.svg`;
 }
 
 export function getAvailableFrames(): Array<{ id: AvatarFrameId; name: string; category: string }>{

@@ -5,7 +5,6 @@ import { computeFrameMetrics, getAvailableFrames, getFrameImagePath, resolveFram
 interface AvatarWithFrameProps {
   src?: string;
   alt?: string;
-  fallback?: string;
   frame?: AvatarFrameId;
   /** Diameter of the avatar image itself in pixels */
   size: number;
@@ -27,7 +26,6 @@ interface AvatarWithFrameProps {
 export function AvatarWithFrame({ 
   src, 
   alt, 
-  fallback, 
   frame = 'none', 
   size,
   variant = 'profile',
@@ -94,7 +92,7 @@ export function AvatarWithFrame({
         height: `calc(100% + ${pad * 2}px)`,
         pointerEvents: 'none',
         zIndex: 20,
-        clipPath: ringOnly ? clipPath : clipPath
+        clipPath: clipPath
       } as React.CSSProperties;
     }
     return {
