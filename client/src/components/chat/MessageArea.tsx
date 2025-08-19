@@ -5,6 +5,7 @@ import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import EmojiPicker from './EmojiPicker';
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
+import TypingIndicator from './TypingIndicator';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -263,14 +264,7 @@ export default function MessageArea({
     }
   }, [onUserClick]);
 
-  // Format typing users display
-  const typingDisplay = useMemo(() => {
-    const typingArray = Array.from(typingUsers);
-    if (typingArray.length === 0) return '';
-    if (typingArray.length === 1) return `${typingArray[0]} يكتب...`;
-    if (typingArray.length === 2) return `${typingArray[0]} و ${typingArray[1]} يكتبان...`;
-    return `${typingArray.length} أشخاص يكتبون...`;
-  }, [typingUsers]);
+
 
   // Cleanup on unmount
   useEffect(() => {
@@ -293,7 +287,7 @@ export default function MessageArea({
             <h2 className={`font-bold ${compactHeader ? 'text-sm' : 'text-base'} text-black`}>{currentRoomName}</h2>
             {!compactHeader && (
               <p className="text-xs text-muted-foreground">
-                {validMessages.length} رسالة • {typingDisplay || 'جاهز للدردشة'}
+                {validMessages.length} رسالة • جاهز للدردشة
               </p>
             )}
           </div>
@@ -434,12 +428,11 @@ export default function MessageArea({
       
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg chat-input`} style={{ transform: 'translateY(-80px)' }}>
-        {/* Typing Indicator */}
-        {typingUsers.size > 0 && (
-          <div className="mb-1.5 text-[11px] text-gray-500 animate-pulse">
-            {typingDisplay}
-          </div>
-        )}
+        {/* Enhanced Typing Indicator */}
+        <TypingIndicator 
+          typingUsers={typingUsers} 
+          currentUser={currentUser?.username || null} 
+        />
         
         <div className={`flex ${isMobile ? 'gap-2' : 'gap-3'} items-end max-w-full mx-auto`} style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0' }}>
           {/* Emoji Picker */}
