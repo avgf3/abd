@@ -63,7 +63,7 @@ export default function TestFrames() {
                   src={testImage}
                   alt="Test"
                   fallback="TE"
-                  frame="enhanced-crown-frame"
+                  frame="crown-gold"
                   size={130}
                   variant="profile"
                 />
@@ -76,7 +76,7 @@ export default function TestFrames() {
                   src={testImage}
                   alt="Test"
                   fallback="TE"
-                  frame="enhanced-crown-frame"
+                  frame="crown-gold"
                   size={40}
                   variant="list"
                 />

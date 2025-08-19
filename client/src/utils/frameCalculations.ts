@@ -53,7 +53,7 @@ export function getFramePath(fileName: string): string {
   if (!fileName) return '';
   
   // المسار الصحيح للملفات
-  return `/uploads/frames/${fileName}`;
+  return `/${fileName}`;
 }
 
 /**
