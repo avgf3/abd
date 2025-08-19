@@ -123,12 +123,28 @@ export function AvatarWithFrame({
       style={{ cursor: onClick ? 'pointer' : 'default', ...containerStyle }}
     >
       <div className="rounded-full overflow-hidden" style={avatarStyle}>
-        <img 
-          src={src || '/default_avatar.svg'} 
-          alt={alt} 
-          onError={handleImgError}
-          className="w-full h-full object-cover"
-        />
+        {src ? (
+          <img 
+            src={src}
+            alt={alt}
+            onError={handleImgError}
+            className="w-full h-full object-cover"
+          />
+        ) : fallback ? (
+          <div 
+            className="w-full h-full flex items-center justify-center select-none"
+            style={{ backgroundColor: '#9CA3AF', color: '#FFFFFF', fontWeight: 700, fontSize: Math.max(10, Math.round(imageSize * 0.4)) }}
+            aria-label={alt}
+          >
+            {fallback}
+          </div>
+        ) : (
+          <img 
+            src={'/default_avatar.svg'} 
+            alt={alt}
+            className="w-full h-full object-cover"
+          />
+        )}
       </div>
 
       {frameSrc && (
