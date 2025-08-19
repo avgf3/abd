@@ -100,7 +100,7 @@ export function computeFrameMetrics(params: {
 
 export function getFrameImagePath(frameId: AvatarFrameId): string | undefined {
   if (!frameId || frameId === 'none') return undefined;
-  return `/${frameId}.svg`;
+  return `/svgs/${frameId}.svg`;
 }
 
 export function getAvailableFrames(): Array<{ id: AvatarFrameId; name: string; category: string }>{
@@ -117,7 +117,9 @@ export function getAvailableFrames(): Array<{ id: AvatarFrameId; name: string; c
     { id: 'svip1-frame-gold', name: 'SVIP1 ذهبي', category: 'SVIP' },
     { id: 'svip1-frame-pink', name: 'SVIP1 وردي', category: 'SVIP' },
     { id: 'svip2-frame-gold', name: 'SVIP2 ذهبي', category: 'SVIP' },
-    { id: 'svip2-frame-pink', name: 'SVIP2 وردي', category: 'SVIP' }
+    { id: 'svip2-frame-pink', name: 'SVIP2 وردي', category: 'SVIP' },
+    { id: 'wings-frame-king', name: 'أجنحة الملك', category: 'أجنحة' },
+    { id: 'wings-frame-queen', name: 'أجنحة الملكة', category: 'أجنحة' }
   ];
 }
 
