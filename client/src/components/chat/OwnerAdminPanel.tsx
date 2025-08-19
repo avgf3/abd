@@ -101,6 +101,14 @@ export default function OwnerAdminPanel({
       const response = await apiRequest(`/api/moderation/log?userId=${currentUser.id}`, {
         method: 'GET'
       });
+      
+      // معالجة أفضل للاستجابة
+      if (!response) {
+        console.warn('لا توجد بيانات في الاستجابة');
+        setModerationLog([]);
+        return;
+      }
+      
       const raw = (response as any)?.log ?? [];
       const normalized: ModerationAction[] = (Array.isArray(raw) ? raw : [])
         .map((a: any) => ({
@@ -119,11 +127,19 @@ export default function OwnerAdminPanel({
       setModerationLog(normalized);
     } catch (error) {
       console.error('Error fetching moderation log:', error);
+      
+      // معالجة أفضل للأخطاء
+      const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف';
+      
       toast({
-        title: 'خطأ',
-        description: 'فشل في جلب سجل الإدارة',
+        title: 'خطأ في جلب سجل الإدارة',
+        description: errorMessage.includes('403') 
+          ? 'ليس لديك صلاحية لعرض هذه البيانات' 
+          : 'فشل في جلب سجل الإدارة. حاول مرة أخرى.',
         variant: 'destructive'
       });
+      
+      setModerationLog([]);
     }
   };
 
@@ -132,23 +148,51 @@ export default function OwnerAdminPanel({
     try {
       // جلب جميع المستخدمين من الخادم ثم تصفية أعضاء الإدارة فقط
       const response = await apiRequest('/api/users', { method: 'GET' });
+      
+      // معالجة أفضل للاستجابة
+      if (!response) {
+        console.warn('لا توجد بيانات في استجابة المستخدمين');
+        setStaffMembers([]);
+        return;
+      }
+      
       const allUsers = (response?.users || []) as Array<any>;
+      
+      console.log('إجمالي المستخدمين المستلمين:', allUsers.length);
 
       const staff = allUsers
-        .filter((user) => ['moderator', 'admin', 'owner'].includes(user.userType))
+        .filter((user) => {
+          // التحقق من userType و role معاً
+          const isStaff = ['moderator', 'admin', 'owner'].includes(user.userType) || 
+                          ['moderator', 'admin', 'owner'].includes(user.role);
+          return isStaff;
+        })
         .map((user) => ({
           id: user.id,
           username: user.username,
-          userType: user.userType as 'moderator' | 'admin' | 'owner',
+          userType: (user.userType || user.role) as 'moderator' | 'admin' | 'owner',
           profileImage: user.profileImage,
           joinDate: (user.joinDate ?? user.createdAt) as string | Date | undefined,
           lastSeen: (user.lastSeen ?? user.lastActive ?? user.createdAt ?? null) as string | Date | null,
           isOnline: Boolean(user.isOnline),
         }));
 
+      console.log('أعضاء الإدارة المصفيين:', staff);
       setStaffMembers(staff);
     } catch (error) {
       console.error('Error fetching staff:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف';
+      
+      toast({
+        title: 'خطأ في جلب قائمة المشرفين',
+        description: errorMessage.includes('403') 
+          ? 'ليس لديك صلاحية لعرض هذه البيانات' 
+          : 'فشل في جلب قائمة المشرفين. حاول مرة أخرى.',
+        variant: 'destructive'
+      });
+      
+      setStaffMembers([]);
     } finally {
       setLoading(false);
     }
@@ -293,14 +337,27 @@ export default function OwnerAdminPanel({
 
           <TabsContent value="log" className="space-y-6">
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-3 rounded-xl">
-                  <Shield className="w-6 h-6 text-white" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-3 rounded-xl">
+                    <Shield className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-800">سجل الإجراءات</h3>
+                    <p className="text-gray-600">تسجيل جميع الإجراءات الإدارية</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800">سجل الإجراءات</h3>
-                  <p className="text-gray-600">تسجيل جميع الإجراءات الإدارية</p>
-                </div>
+                <Button
+                  onClick={fetchModerationData}
+                  variant="outline"
+                  size="sm"
+                  className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                >
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  تحديث
+                </Button>
               </div>
 
               {moderationLog.length === 0 ? (
@@ -382,14 +439,27 @@ export default function OwnerAdminPanel({
 
           <TabsContent value="staff" className="space-y-6">
             <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-6 border border-purple-200">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-3 rounded-xl">
-                  <Users className="w-6 h-6 text-white" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-3 rounded-xl">
+                    <Users className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-800">قائمة المشرفين</h3>
+                    <p className="text-gray-600">إدارة أعضاء الفريق الإداري</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800">قائمة المشرفين</h3>
-                  <p className="text-gray-600">إدارة أعضاء الفريق الإداري</p>
-                </div>
+                <Button
+                  onClick={fetchStaffMembers}
+                  variant="outline"
+                  size="sm"
+                  className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                >
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  تحديث
+                </Button>
               </div>
 
               {loading ? (
