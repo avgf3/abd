@@ -37,51 +37,13 @@ import { updateConnectedUserCache } from "./realtime";
 import { promises as fsp } from "fs";
 
 
-// إعداد multer موحد لرفع الصور
-const createMulterConfig = (destination: string, prefix: string, maxSize: number = 5 * 1024 * 1024) => {
-  const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', destination);
-      
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-      
-      cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const ext = path.extname(file.originalname);
-      cb(null, `${prefix}-${uniqueSuffix}${ext}`);
-    }
-  });
+// استيراد إعدادات multer الموحدة
+import { profileUpload, wallUpload, bannerUpload } from './middleware/upload';
 
-  return multer({
-    storage,
-    limits: {
-      fileSize: maxSize,
-      files: 1
-    },
-    fileFilter: (req, file, cb) => {
-      const allowedMimes = [
-        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
-        'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff'
-      ];
-      
-      if (allowedMimes.includes(file.mimetype)) {
-        cb(null, true);
-      } else {
-        cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`));
-      }
-    }
-  });
-};
-
-// إعداد multer للصور المختلفة
-const upload = createMulterConfig('profiles', 'profile', 5 * 1024 * 1024);
-const wallUpload = createMulterConfig('wall', 'wall', 10 * 1024 * 1024);
-
-const bannerUpload = createMulterConfig('banners', 'banner', 8 * 1024 * 1024);
+// استخدام الإعدادات الموحدة
+const upload = profileUpload.upload;
+const wallUploadHandler = wallUpload.upload;
+const bannerUploadHandler = bannerUpload.upload;
 
 // Storage initialization - using imported storage instance
   
@@ -147,7 +109,9 @@ const messageService = new (class MessageService {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // استخدام مسارات الغرف المنفصلة
-  app.use('/api/rooms', roomRoutes);
+  // استخدام مسارات الغرف المحسنة
+  const roomsOptimized = await import('./routes/rooms-final');
+  app.use('/api/rooms', roomsOptimized.default);
   
   // استخدام مسارات الرسائل المنفصلة والمحسنة
   app.use('/api/messages', messageRoutes);

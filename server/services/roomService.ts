@@ -527,6 +527,44 @@ class RoomService {
   }
 
   /**
+   * تحديث بيانات الغرفة
+   */
+  async updateRoom(roomId: string, updateData: Partial<Room>): Promise<Room | null> {
+    try {
+      if (!db || dbType === 'disabled') {
+        throw new Error('قاعدة البيانات غير متوفرة');
+      }
+
+      const room = await this.getRoom(roomId);
+      if (!room) {
+        throw new Error('الغرفة غير موجودة');
+      }
+
+      // تحديث البيانات في قاعدة البيانات
+      const updatedRoom = await storage.updateRoom(roomId, updateData);
+      return updatedRoom;
+    } catch (error) {
+      console.error('خطأ في تحديث الغرفة:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * جلب بيانات المستخدم
+   */
+  async getUser(userId: number): Promise<any> {
+    try {
+      if (!db || dbType === 'disabled') {
+        return null;
+      }
+      return await storage.getUser(userId);
+    } catch (error) {
+      console.error(`خطأ في جلب المستخدم ${userId}:`, error);
+      return null;
+    }
+  }
+
+  /**
    * تنظيف الغرف - إزالة المستخدمين غير المتصلين والعمليات المنتهية
    */
   cleanupRooms(): void {
