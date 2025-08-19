@@ -78,8 +78,10 @@ app.use('/uploads', async (req, res, next) => {
   }
 }));
 
-// خدمة SVG icons
-const svgPath = path.join(process.cwd(), 'client/public/svgs');
+// خدمة SVG icons - احرص على وجود مسار بديل إذا لم يكن موجوداً داخل client/public
+const svgPrimaryPath = path.join(process.cwd(), 'client/public/svgs');
+const svgFallbackPath = path.join(process.cwd(), 'svgs');
+const svgPath = fs.existsSync(svgPrimaryPath) ? svgPrimaryPath : svgFallbackPath;
 app.use('/svgs', express.static(svgPath, {
   maxAge: '7d',
   etag: true,

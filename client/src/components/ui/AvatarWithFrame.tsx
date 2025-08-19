@@ -16,7 +16,8 @@ interface AvatarWithFrameProps {
   variant?: AvatarVariant;
   /**
    * When true, render only the ring part of the frame inside the given size (no container expansion).
-   * This forces clipping of top ornaments even if variant is 'profile'. Default: true.
+   * In contacts list we still want the visual frame to be slightly larger than the avatar, so we
+   * expand by the computed thickness outside without covering the image.
    */
   ringOnly?: boolean;
   className?: string;
@@ -38,32 +39,74 @@ export function AvatarWithFrame({
   // Force list-like metrics when ringOnly to avoid container expansion and clip top ornaments
   const { imageSize, thicknessPx, containerSize, clipPath } = computeFrameMetrics({ size, frameId: resolved, variant: ringOnly ? 'list' : variant });
 
-  const containerStyle: React.CSSProperties = {
-    width: `${ringOnly ? size : containerSize}px`,
-    height: `${ringOnly ? size : containerSize}px`,
-    position: 'relative'
-  };
+  // In list variant, keep the avatar image at requested size, but visually allow the frame to extend outside
+  // by padding equal to thickness. This keeps layout consistent and makes frame bigger than the avatar.
+  const containerStyle: React.CSSProperties = (() => {
+    if (variant === 'list' || ringOnly) {
+      return {
+        width: `${size}px`,
+        height: `${size}px`,
+        position: 'relative',
+        overflow: 'visible'
+      } as React.CSSProperties;
+    }
+    return {
+      width: `${containerSize}px`,
+      height: `${containerSize}px`,
+      position: 'relative'
+    } as React.CSSProperties;
+  })();
 
-  const avatarStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: `${imageSize}px`,
-    height: `${imageSize}px`,
-    borderRadius: '50%',
-    overflow: 'hidden'
-  };
+  const avatarStyle: React.CSSProperties = (() => {
+    if (variant === 'list' || ringOnly) {
+      return {
+        position: 'relative',
+        width: `${imageSize}px`,
+        height: `${imageSize}px`,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        zIndex: 10
+      } as React.CSSProperties;
+    }
+    return {
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      width: `${imageSize}px`,
+      height: `${imageSize}px`,
+      borderRadius: '50%',
+      overflow: 'hidden'
+    } as React.CSSProperties;
+  })();
 
-  const frameStyle: React.CSSProperties = {
-    position: 'absolute',
-    inset: 0,
-    width: '100%',
-    height: '100%',
-    pointerEvents: 'none',
-    zIndex: 20,
-    clipPath: ringOnly ? clipPath : (variant === 'list' ? clipPath : undefined)
-  };
+  const frameStyle: React.CSSProperties = (() => {
+    if (variant === 'list' || ringOnly) {
+      // Draw the frame outside the avatar by expanding with negative offsets around the avatar box
+      const pad = thicknessPx;
+      return {
+        position: 'absolute',
+        top: `-${pad}px`,
+        left: `-${pad}px`,
+        right: `-${pad}px`,
+        bottom: `-${pad}px`,
+        width: `calc(100% + ${pad * 2}px)`,
+        height: `calc(100% + ${pad * 2}px)`,
+        pointerEvents: 'none',
+        zIndex: 20,
+        clipPath: ringOnly ? clipPath : clipPath
+      } as React.CSSProperties;
+    }
+    return {
+      position: 'absolute',
+      inset: 0,
+      width: '100%',
+      height: '100%',
+      pointerEvents: 'none',
+      zIndex: 20,
+      clipPath: undefined
+    } as React.CSSProperties;
+  })();
 
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
