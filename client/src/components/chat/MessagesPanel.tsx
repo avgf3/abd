@@ -15,6 +15,7 @@ import ProfileImage from '@/components/chat/ProfileImage';
 import { formatTime } from '@/utils/timeUtils';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { formatMessagePreview } from '@/utils/messageUtils';
 
 interface MessagesPanelProps {
   isOpen: boolean;
@@ -55,10 +56,7 @@ export default function MessagesPanel({
     return items.sort((a, b) => new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime());
   }, [conversationsData, onlineUsers]);
 
-  const formatLastMessage = (content: string) => {
-    if (!content) return '';
-    return content.length > 40 ? content.slice(0, 40) + '…' : content;
-  };
+  const formatLastMessage = (content: string) => formatMessagePreview(content, 40);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>

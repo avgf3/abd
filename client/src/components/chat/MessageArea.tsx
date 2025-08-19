@@ -14,6 +14,7 @@ import { api } from '@/lib/queryClient';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import { findMentions, playMentionSound, renderMessageWithMentions, insertMention } from '@/utils/mentionUtils';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
+import { getDynamicBorderColor } from '@/utils/messageUtils';
 import { formatTime } from '@/utils/timeUtils';
 
 interface MessageAreaProps {
@@ -239,12 +240,7 @@ export default function MessageArea({
 
   // تم نقل دالة formatTime إلى utils/timeUtils.ts لتجنب التكرار
 
-  // لون حد الرسالة مرتبط بلون اسم المستخدم النهائي
-  const getDynamicBorderColor = useCallback((sender?: ChatUser | null) => {
-    if (!sender) return '#4ade80';
-    const color = getFinalUsernameColor(sender);
-    return color === '#000000' ? '#4ade80' : color;
-  }, []);
+  // لون حد الرسالة موحد عبر أداة utils
 
   // Username click handler - معالج النقر على اسم المستخدم لإدراج المنشن
   const handleUsernameClick = useCallback((event: React.MouseEvent, user: ChatUser) => {
