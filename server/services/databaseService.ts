@@ -384,6 +384,60 @@ export class DatabaseService {
     }
   }
 
+  // Bulk moderation resets
+  async unbanAllUsers(): Promise<boolean> {
+    if (!this.isConnected()) return false;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any)
+          .update(pgSchema.users)
+          .set({ isBanned: false, banExpiry: null } as any);
+      } else {
+        await (this.db as any)
+          .update(sqliteSchema.users)
+          .set({ isBanned: false, banExpiry: null } as any);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error unbanning all users:', error);
+      return false;
+    }
+  }
+
+  async unblockAllUsers(): Promise<boolean> {
+    if (!this.isConnected()) return false;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any)
+          .update(pgSchema.users)
+          .set({ isBlocked: false, ipAddress: null, deviceId: null } as any);
+      } else {
+        await (this.db as any)
+          .update(sqliteSchema.users)
+          .set({ isBlocked: false, ipAddress: null, deviceId: null } as any);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error unblocking all users:', error);
+      return false;
+    }
+  }
+
+  async clearAllBlockedDevices(): Promise<boolean> {
+    if (!this.isConnected()) return false;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any).delete(pgSchema.blockedDevices);
+      } else {
+        await (this.db as any).delete(sqliteSchema.blockedDevices);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error clearing blocked devices:', error);
+      return false;
+    }
+  }
+
   // New: paginated and optional search user listing to avoid full scans
   async listUsers(limit: number = 50, offset: number = 0, search?: string): Promise<User[]> {
     if (!this.isConnected()) return [];
