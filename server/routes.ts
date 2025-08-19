@@ -2357,23 +2357,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { frame } = req.body;
 
     // التحقق من صحة الإطار
+    // قائمة الإطارات المسموحة - محدثة للنظام الجديد
     const validFrames = [
       'none',
-      'enhanced-crown-frame',
-      'crown-frame-silver',
-      'crown-frame-rosegold',
-      'crown-frame-blue',
-      'crown-frame-emerald',
-      'crown-frame-purple',
-      'crown-frame-classic-gold',
-      'crown-frame-classic-coolpink',
-      'svip1-frame-gold',
-      'svip1-frame-pink',
-      'svip2-frame-gold',
-      'svip2-frame-pink',
-      // أطر الأجنحة المتوفرة
-      'wings-frame-king',
-      'wings-frame-queen'
+      // إطارات التاج
+      'crown-gold',
+      'crown-silver',
+      'crown-rosegold',
+      'crown-blue',
+      'crown-emerald',
+      'crown-purple',
+      'crown-classic-gold',
+      'crown-classic-pink',
+      // إطارات SVIP
+      'svip1-gold',
+      'svip1-pink',
+      'svip2-gold',
+      'svip2-pink',
+      // إطارات خاصة
+      'wings-king',
+      'wings-queen'
     ];
 
     if (!validFrames.includes(frame)) {
