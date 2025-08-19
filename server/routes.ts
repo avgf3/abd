@@ -2988,12 +2988,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const fs = require('fs');
         const path = require('path');
-        const crownSvgPath = path.join(process.cwd(), 'client', 'public', 'svgs', 'crown.svg');
-        if (fs.existsSync(crownSvgPath)) {
+        const requiredPublicSvgs = [
+          'enhanced-crown-frame.svg',
+          'crown-frame-blue.svg',
+          'crown-frame-silver.svg',
+          'crown-frame-rosegold.svg',
+          'crown-frame-emerald.svg',
+          'crown-frame-purple.svg',
+          'crown-frame-king.svg',
+          'crown-frame-queen.svg',
+          'svip1-frame-gold.svg',
+          'svip1-frame-pink.svg',
+          'svip2-frame-gold.svg',
+          'svip2-frame-pink.svg',
+          'wings-frame-king.svg',
+          'wings-frame-queen.svg',
+        ];
+        const publicDir = path.join(process.cwd(), 'client', 'public');
+        const missing = requiredPublicSvgs.filter((name: string) => !fs.existsSync(path.join(publicDir, name)));
+        if (missing.length === 0) {
           healthCheck.services.static_files = 'healthy';
         } else {
           healthCheck.services.static_files = 'missing_files';
-          healthCheck.errors.push('Static Files: crown.svg not found');
+          healthCheck.errors.push('Static Files missing: ' + missing.join(', '));
         }
       } catch (fileError) {
         healthCheck.services.static_files = 'error';

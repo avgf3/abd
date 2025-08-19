@@ -10,6 +10,8 @@ export type AvatarFrameId =
   | 'crown-frame-blue'
   | 'crown-frame-emerald'
   | 'crown-frame-purple'
+  | 'crown-frame-king'
+  | 'crown-frame-queen'
   | 'crown-frame-classic-gold'
   | 'crown-frame-classic-coolpink'
   | 'svip1-frame-gold'
@@ -34,19 +36,21 @@ const DEFAULT_THICKNESS_RATIO = 0.12;
 export const FRAME_CONFIG: Record<AvatarFrameId, FrameConfig> = {
   none: { thicknessRatio: DEFAULT_THICKNESS_RATIO },
   'enhanced-crown-frame': { thicknessRatio: 0.16, listClipTopPercent: 35 },
-  'crown-frame-silver': { thicknessRatio: 0.14, listClipTopPercent: 30 },
-  'crown-frame-rosegold': { thicknessRatio: 0.14, listClipTopPercent: 30 },
-  'crown-frame-blue': { thicknessRatio: 0.14, listClipTopPercent: 30 },
-  'crown-frame-emerald': { thicknessRatio: 0.14, listClipTopPercent: 30 },
-  'crown-frame-purple': { thicknessRatio: 0.14, listClipTopPercent: 30 },
-  'crown-frame-classic-gold': { thicknessRatio: 0.12, listClipTopPercent: 0 },
-  'crown-frame-classic-coolpink': { thicknessRatio: 0.12, listClipTopPercent: 0 },
+  'crown-frame-silver': { thicknessRatio: 0.16, listClipTopPercent: 30 },
+  'crown-frame-rosegold': { thicknessRatio: 0.16, listClipTopPercent: 30 },
+  'crown-frame-blue': { thicknessRatio: 0.16, listClipTopPercent: 30 },
+  'crown-frame-emerald': { thicknessRatio: 0.16, listClipTopPercent: 30 },
+  'crown-frame-purple': { thicknessRatio: 0.16, listClipTopPercent: 30 },
+  'crown-frame-king': { thicknessRatio: 0.16, listClipTopPercent: 30 },
+  'crown-frame-queen': { thicknessRatio: 0.16, listClipTopPercent: 30 },
+  'crown-frame-classic-gold': { thicknessRatio: 0.16, listClipTopPercent: 0 },
+  'crown-frame-classic-coolpink': { thicknessRatio: 0.16, listClipTopPercent: 0 },
   'svip1-frame-gold': { thicknessRatio: 0.16, listClipTopPercent: 28 },
   'svip1-frame-pink': { thicknessRatio: 0.16, listClipTopPercent: 28 },
   'svip2-frame-gold': { thicknessRatio: 0.16, listClipTopPercent: 28 },
   'svip2-frame-pink': { thicknessRatio: 0.16, listClipTopPercent: 28 },
-  'wings-frame-king': { thicknessRatio: 0.18, listClipTopPercent: 45, compactFallback: 'crown-frame-classic-gold' },
-  'wings-frame-queen': { thicknessRatio: 0.18, listClipTopPercent: 45, compactFallback: 'crown-frame-classic-coolpink' }
+  'wings-frame-king': { thicknessRatio: 0.16, listClipTopPercent: 45, compactFallback: 'crown-frame-classic-gold' },
+  'wings-frame-queen': { thicknessRatio: 0.16, listClipTopPercent: 45, compactFallback: 'crown-frame-classic-coolpink' }
 };
 
 export function resolveFrameId(frameId: AvatarFrameId, sizePx: number): AvatarFrameId {
@@ -76,6 +80,15 @@ export function computeFrameMetrics(params: {
 }): FrameMetrics {
   const { size, frameId, variant } = params;
   const resolved = resolveFrameId(frameId, size);
+  // When there is no frame, keep image dimensions untouched and avoid container expansion
+  if (resolved === 'none') {
+    return {
+      imageSize: size,
+      thicknessPx: 0,
+      containerSize: size,
+      clipPath: undefined
+    };
+  }
   const ratio = FRAME_CONFIG[resolved]?.thicknessRatio ?? DEFAULT_THICKNESS_RATIO;
   const thicknessPx = Math.round(size * ratio);
 
@@ -112,12 +125,16 @@ export function getAvailableFrames(): Array<{ id: AvatarFrameId; name: string; c
     { id: 'crown-frame-blue', name: 'تاج أزرق TOP', category: 'تاج TOP' },
     { id: 'crown-frame-emerald', name: 'تاج زمردي TOP', category: 'تاج TOP' },
     { id: 'crown-frame-purple', name: 'تاج بنفسجي TOP', category: 'تاج TOP' },
+    { id: 'crown-frame-king', name: 'KING', category: 'تاج TOP' },
+    { id: 'crown-frame-queen', name: 'QUEEN', category: 'تاج TOP' },
     { id: 'crown-frame-classic-gold', name: 'تاج كلاسيكي ذهبي', category: 'كلاسيك' },
     { id: 'crown-frame-classic-coolpink', name: 'تاج كلاسيكي وردي', category: 'كلاسيك' },
     { id: 'svip1-frame-gold', name: 'SVIP1 ذهبي', category: 'SVIP' },
     { id: 'svip1-frame-pink', name: 'SVIP1 وردي', category: 'SVIP' },
     { id: 'svip2-frame-gold', name: 'SVIP2 ذهبي', category: 'SVIP' },
-    { id: 'svip2-frame-pink', name: 'SVIP2 وردي', category: 'SVIP' }
+    { id: 'svip2-frame-pink', name: 'SVIP2 وردي', category: 'SVIP' },
+    { id: 'wings-frame-king', name: 'أجنحة الملك', category: 'أجنحة' },
+    { id: 'wings-frame-queen', name: 'أجنحة الملكة', category: 'أجنحة' }
   ];
 }
 
@@ -130,6 +147,8 @@ export function isAvatarFrameId(value: string): value is AvatarFrameId {
     'crown-frame-blue',
     'crown-frame-emerald',
     'crown-frame-purple',
+    'crown-frame-king',
+    'crown-frame-queen',
     'crown-frame-classic-gold',
     'crown-frame-classic-coolpink',
     'svip1-frame-gold',

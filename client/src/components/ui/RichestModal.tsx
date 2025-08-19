@@ -26,7 +26,7 @@ export default function RichestModal({ isOpen, onClose, users }: RichestModalPro
       <div className="relative w-[90vw] max-w-[16rem] sm:max-w-[16rem] bg-white rounded-xl overflow-hidden shadow-2xl animate-fade-in">
         <div className="bg-gradient-to-r from-red-600 via-pink-600 to-purple-600 p-3 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/svgs/crown.svg" alt="crown" className="w-6 h-6" />
+            <span className="text-xl">👑</span>
             <h3 className="font-extrabold text-lg">الأثرياء</h3>
           </div>
           <button onClick={onClose} className="text-white/90 hover:text-white">✕</button>
@@ -47,7 +47,7 @@ export default function RichestModal({ isOpen, onClose, users }: RichestModalPro
                   <div className="font-bold leading-snug">{u.name}</div>
                   <div className="text-xs opacity-70">VIP</div>
                 </div>
-                <img src="/svgs/crown.svg" alt="crown" className="w-6 h-6 opacity-90" />
+                <span className="text-lg opacity-90">👑</span>
               </div>
             </div>
           ))}
