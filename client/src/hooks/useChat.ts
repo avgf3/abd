@@ -1084,7 +1084,9 @@ export const useChat = () => {
         receiverId,
         content: messageData.content,
         messageType: messageData.messageType || 'text'
-      }}).catch(() => {});
+      }}).catch((err) => {
+        console.warn('فشل إرسال الخاص:', err?.message || err);
+      });
     } else {
       socket.current.emit('publicMessage', messageData);
     }

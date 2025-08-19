@@ -14,6 +14,7 @@ import type { ChatUser } from '@/types/chat';
 import ProfileImage from '@/components/chat/ProfileImage';
 import { formatTime } from '@/utils/timeUtils';
 import { useQuery } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/badge';
 import { apiRequest } from '@/lib/queryClient';
 
 interface MessagesPanelProps {
@@ -55,6 +56,18 @@ export default function MessagesPanel({
     return items.sort((a, b) => new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime());
   }, [conversationsData, onlineUsers]);
 
+  // جلب عداد غير المقروء لكل محادثة (يعتمد على إشعارات الرسائل)
+  const { data: unreadData } = useQuery<{ success: boolean; items: Array<{ otherUserId: number; count: number }> }>({
+    queryKey: ['/api/private-messages/unread', currentUser?.id, isOpen],
+    queryFn: async () => {
+      if (!currentUser?.id) throw new Error('No user ID');
+      return await apiRequest(`/api/private-messages/unread/${currentUser.id}`);
+    },
+    enabled: !!currentUser?.id && isOpen,
+    staleTime: 15_000,
+  });
+  const unreadMap = useMemo(() => new Map<number, number>((unreadData?.items || []).map(i => [i.otherUserId, i.count])), [unreadData]);
+
   const formatLastMessage = (content: string) => {
     if (!content) return '';
     return content.length > 40 ? content.slice(0, 40) + '…' : content;
@@ -95,7 +108,14 @@ export default function MessagesPanel({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-3">
                             <h3 className="font-medium text-gray-900 text-sm truncate">{user.username}</h3>
-                            <span className="text-xs text-gray-500 whitespace-nowrap">{formatTime(lastMessage.timestamp)}</span>
+                            <div className="flex items-center gap-2">
+                              {unreadMap.get(user.id) ? (
+                                <Badge variant="destructive" className="px-2 py-0.5 text-[10px]">
+                                  {unreadMap.get(user.id)}
+                                </Badge>
+                              ) : null}
+                              <span className="text-xs text-gray-500 whitespace-nowrap">{formatTime(lastMessage.timestamp)}</span>
+                            </div>
                           </div>
                           <p className="text-xs text-muted-foreground truncate mt-1">
                             {formatLastMessage(lastMessage.content)}
