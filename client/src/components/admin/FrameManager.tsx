@@ -49,8 +49,7 @@ const FrameManager: React.FC<FrameManagerProps> = ({
       { id: 'all', name: 'جميع الإطارات', frames: getAllFrames() },
       { id: 'crown', name: 'التيجان', frames: getFramesByCategory('crown') },
       { id: 'svip', name: 'SVIP', frames: getFramesByCategory('svip') },
-      { id: 'wings', name: 'الأجنحة', frames: getFramesByCategory('wings') },
-      { id: 'special', name: 'خاص', frames: getFramesByCategory('special') }
+      { id: 'wings', name: 'الأجنحة', frames: getFramesByCategory('wings') }
     ];
   }, []);
   
