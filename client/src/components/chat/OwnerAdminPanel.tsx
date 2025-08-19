@@ -90,7 +90,22 @@ export default function OwnerAdminPanel({
       const response = await apiRequest(`/api/moderation/log?userId=${currentUser.id}`, {
         method: 'GET'
       });
-      setModerationLog(response.log || []);
+      const raw = (response as any)?.log ?? [];
+      const normalized: ModerationAction[] = (Array.isArray(raw) ? raw : [])
+        .map((a: any) => ({
+          id: String(a.id ?? `${a.type || 'action'}_${a.timestamp || Date.now()}`),
+          type: (a.type || 'mute') as ModerationAction['type'],
+          targetUserId: Number(a.targetUserId || a.targetId || 0),
+          targetUsername: a.targetUsername || a.targetName || 'مجهول',
+          moderatorId: Number(a.moderatorId || 0),
+          moderatorUsername: a.moderatorUsername || a.moderatorName || 'مجهول',
+          reason: a.reason || '—',
+          duration: typeof a.duration === 'number' ? a.duration : undefined,
+          timestamp: Number(a.timestamp || Date.now()),
+          ipAddress: a.ipAddress,
+          deviceId: a.deviceId,
+        }));
+      setModerationLog(normalized);
     } catch (error) {
       console.error('Error fetching moderation log:', error);
       toast({
