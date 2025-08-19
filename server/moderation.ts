@@ -494,6 +494,26 @@ export class ModerationSystem {
       blockedDevices: this.blockedDevices.size
     };
   }
+
+  // فك الطرد عن جميع المستخدمين (مالك فقط عبر endpoint)
+  async unbanAllUsers(moderatorId: number): Promise<boolean> {
+    const moderator = await storage.getUser(moderatorId);
+    if (!moderator || moderator.userType !== 'owner') return false;
+    const ok = await storage.unbanAllUsers();
+    return !!ok;
+  }
+
+  // فك الحجب عن جميع المستخدمين ومسح الأجهزة/IPs المحجوبة (مالك فقط)
+  async unblockAllUsers(moderatorId: number): Promise<boolean> {
+    const moderator = await storage.getUser(moderatorId);
+    if (!moderator || moderator.userType !== 'owner') return false;
+    const ok1 = await storage.unblockAllUsers();
+    const ok2 = await storage.clearAllBlockedDevices();
+    // تفريغ القوائم داخل الذاكرة
+    this.blockedIPs.clear();
+    this.blockedDevices.clear();
+    return !!ok1 && !!ok2;
+  }
 }
 
 export const moderationSystem = new ModerationSystem();

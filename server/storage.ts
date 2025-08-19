@@ -714,6 +714,33 @@ export const storage: LegacyStorage = {
       return null;
     }
   },
+
+  async unbanAllUsers() {
+    try {
+      return await databaseService.unbanAllUsers();
+    } catch (error) {
+      console.error('Error in storage.unbanAllUsers:', error);
+      return false;
+    }
+  },
+
+  async unblockAllUsers() {
+    try {
+      return await databaseService.unblockAllUsers();
+    } catch (error) {
+      console.error('Error in storage.unblockAllUsers:', error);
+      return false;
+    }
+  },
+
+  async clearAllBlockedDevices() {
+    try {
+      return await databaseService.clearAllBlockedDevices();
+    } catch (error) {
+      console.error('Error in storage.clearAllBlockedDevices:', error);
+      return false;
+    }
+  },
   
   // ========= Room helpers exposed on storage =========
   async getRooms() {

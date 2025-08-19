@@ -758,6 +758,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // فك الطرد عن الجميع - للمالك فقط
+  app.post("/api/moderation/unban-all", protect.owner, async (req, res) => {
+    try {
+      const { moderatorId } = req.body;
+      if (!moderatorId) return res.status(400).json({ error: "معاملات ناقصة" });
+      const success = await moderationSystem.unbanAllUsers(moderatorId);
+      if (success) {
+        res.json({ message: "تم فك الطرد عن جميع المستخدمين" });
+      } else {
+        res.status(400).json({ error: "فشل في فك الطرد عن الجميع" });
+      }
+    } catch (error) {
+      console.error('[UNBAN_ALL] خطأ:', error);
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // فك الحجب عن الجميع - للمالك فقط
+  app.post("/api/moderation/unblock-all", protect.owner, async (req, res) => {
+    try {
+      const { moderatorId } = req.body;
+      if (!moderatorId) return res.status(400).json({ error: "معاملات ناقصة" });
+      const success = await moderationSystem.unblockAllUsers(moderatorId);
+      if (success) {
+        res.json({ message: "تم إلغاء الحجب عن جميع المستخدمين ومسح الأجهزة المحجوبة" });
+      } else {
+        res.status(400).json({ error: "فشل في إلغاء الحجب عن الجميع" });
+      }
+    } catch (error) {
+      console.error('[UNBLOCK_ALL] خطأ:', error);
+      res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
   // API لتحديث لون اسم المستخدم
   app.post("/api/users/:userId/username-color", async (req, res) => {
     try {
