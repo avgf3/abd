@@ -46,7 +46,6 @@ export const findMentions = (text: string, users: ChatUser[]): ChatUser[] => {
 export const renderMessageWithMentions = (
   text: string, 
   currentUser: ChatUser | null,
-  users: ChatUser[]
 ): JSX.Element => {
   if (!currentUser) {
     return <span>{text}</span>;

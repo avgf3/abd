@@ -24,7 +24,7 @@ const MessageItem = memo<MessageItemProps>(({
   // Memoize expensive calculations
   const usernameColor = useMemo(() => 
     getFinalUsernameColor(message.sender),
-    [message.sender.id, message.sender.profile?.usernameColor, message.sender.userType]
+    [message.sender.id, message.sender.usernameColor, message.sender.userType]
   );
 
   const formattedTime = useMemo(() => 
@@ -33,8 +33,8 @@ const MessageItem = memo<MessageItemProps>(({
   );
 
   const messageContent = useMemo(() => 
-    renderMessageWithMentions(message.content, currentUser?.username),
-    [message.content, currentUser?.username]
+    renderMessageWithMentions(message.content, currentUser),
+    [message.content, currentUser]
   );
 
   // Memoize event handlers
@@ -70,7 +70,7 @@ const MessageItem = memo<MessageItemProps>(({
   }, [message.id, currentUser]);
 
   // System messages
-  if (message.type === 'system') {
+  if (message.messageType === 'system') {
     return (
       <div className="text-center text-sm text-muted-foreground py-2">
         {message.content}
@@ -79,7 +79,7 @@ const MessageItem = memo<MessageItemProps>(({
   }
 
   // Private messages styling
-  const isPrivate = message.type === 'private';
+  const isPrivate = !!message.isPrivate;
   const isOwnMessage = currentUser?.id === message.senderId;
 
   return (
@@ -91,9 +91,8 @@ const MessageItem = memo<MessageItemProps>(({
       {/* Profile Image */}
       <div className="flex-shrink-0 pt-1">
         <ProfileImage
-          src={message.sender.profile?.avatarUrl}
-          alt={message.sender.username}
-          size="sm"
+          user={message.sender}
+          size="small"
           onClick={handleUserClick}
           className="cursor-pointer hover:opacity-80 transition-opacity"
         />
@@ -126,17 +125,17 @@ const MessageItem = memo<MessageItemProps>(({
 
         {/* Message Text */}
         <div className="text-sm mt-0.5 break-words whitespace-pre-wrap">
-          {message.imageUrl ? (
+          {message.messageType === 'image' ? (
             <div className="mt-2">
               <img
-                src={message.imageUrl}
+                src={message.content}
                 alt="صورة مرفقة"
                 className="max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={() => window.open(message.imageUrl, '_blank')}
+                onClick={() => window.open(message.content, '_blank')}
               />
             </div>
           ) : (
-            <span dangerouslySetInnerHTML={{ __html: messageContent }} />
+            <>{messageContent}</>
           )}
         </div>
 

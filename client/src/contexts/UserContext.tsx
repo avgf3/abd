@@ -114,7 +114,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 // مزود المحتوى
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(userReducer, initialState);
-  const { handleError, handleSuccess } = useErrorHandler();
+  const { handleError } = useErrorHandler();
 
   // تحديث المستخدم
   const setUser = useCallback((user: ChatUser | null) => {
@@ -159,14 +159,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     try {
       const updatedUser = await api.put<ChatUser>(`/api/users/${state.currentUser.id}`, updates);
       dispatch({ type: 'SET_USER', payload: updatedUser });
-      handleSuccess('تم تحديث الملف الشخصي بنجاح');
     } catch (error) {
       handleError(error as Error, 'فشل في تحديث الملف الشخصي');
       throw error;
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [state.currentUser?.id, handleError, handleSuccess]);
+  }, [state.currentUser?.id, handleError]);
 
   // تحديث آخر ظهور
   const updateLastSeen = useCallback(() => {
