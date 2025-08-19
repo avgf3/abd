@@ -29,7 +29,31 @@ const PERMISSION_HIERARCHY = {
 // دالة للتحقق من مستوى الإذن
 function hasPermission(userRole: string, requiredLevel: ProtectionLevel): boolean {
   const userLevel = PERMISSION_HIERARCHY[userRole as keyof typeof PERMISSION_HIERARCHY] ?? -1;
-  const requiredLevelNum = PERMISSION_HIERARCHY[requiredLevel as keyof typeof PERMISSION_HIERARCHY] ?? 5;
+  
+  // تحويل ProtectionLevel إلى المفتاح المطابق في PERMISSION_HIERARCHY
+  let requiredRole: keyof typeof PERMISSION_HIERARCHY;
+  switch (requiredLevel) {
+    case ProtectionLevel.PUBLIC:
+    case ProtectionLevel.AUTHENTICATED:
+      requiredRole = 'guest';
+      break;
+    case ProtectionLevel.MEMBER:
+      requiredRole = 'member';
+      break;
+    case ProtectionLevel.MODERATOR:
+      requiredRole = 'moderator';
+      break;
+    case ProtectionLevel.ADMIN:
+      requiredRole = 'admin';
+      break;
+    case ProtectionLevel.OWNER:
+      requiredRole = 'owner';
+      break;
+    default:
+      requiredRole = 'owner'; // أعلى مستوى للأمان
+  }
+  
+  const requiredLevelNum = PERMISSION_HIERARCHY[requiredRole] ?? 5;
   
   return userLevel >= requiredLevelNum;
 }
