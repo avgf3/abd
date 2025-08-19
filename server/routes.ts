@@ -26,7 +26,7 @@ import { setupDownloadRoute } from "./download-route";
 import { protect } from "./middleware/enhancedSecurity";
 import { moderationSystem } from "./moderation";
 import { getIO } from "./realtime";
-import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter, friendRequestLimiter } from "./security";
+import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter, friendRequestLimiter, unblockIP } from "./security";
 import { databaseService } from "./services/databaseService";
 import { notificationService } from "./services/notificationService";
 import { spamProtection } from "./spam-protection";
@@ -749,6 +749,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const success = await moderationSystem.unblockUser(moderatorId, targetUserId);
       if (success) {
+        try {
+          // تنظيف أي حظر IP من طبقة الأمن العامة والمتقدمة
+          const target = await storage.getUser(targetUserId);
+          const ip = target?.ipAddress;
+          if (ip && ip !== 'unknown') {
+            try { unblockIP(ip); } catch {}
+            try { advancedSecurity.unblockIP(ip); } catch {}
+          }
+        } catch (e) {
+          console.warn('تحذير: فشل تنظيف حظر IP الإضافي:', e);
+        }
         res.json({ message: "تم إلغاء الحجب بنجاح" });
       } else {
         res.status(400).json({ error: "فشل في إلغاء الحجب" });
