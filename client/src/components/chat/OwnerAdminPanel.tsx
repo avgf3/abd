@@ -32,16 +32,19 @@ import { formatDateTime } from '@/utils/timeUtils';
 
 interface ModerationAction {
   id: string;
-  type: 'mute' | 'ban' | 'block' | 'kick' | 'promote' | 'demote';
+  type: 'mute' | 'ban' | 'block' | 'kick' | 'promote' | 'demote' | 'unblock';
   targetUserId: number;
-  targetUsername: string;
   moderatorId: number;
-  moderatorUsername: string;
   reason: string;
   duration?: number;
   timestamp: number;
   ipAddress?: string;
   deviceId?: string;
+  // أسماء قادمة من /api/moderation/actions
+  moderatorName?: string;
+  targetName?: string;
+  // حالة الإجراء (نشط/غير نشط) لبعض الأنواع
+  isActive?: boolean;
 }
 
 interface StaffMember {
@@ -71,6 +74,7 @@ export default function OwnerAdminPanel({
   const [moderationLog, setModerationLog] = useState<ModerationAction[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [moderationLoading, setModerationLoading] = useState(false);
   const [selectedTab, setSelectedTab] = useState('staff');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
@@ -85,19 +89,21 @@ export default function OwnerAdminPanel({
 
   const fetchModerationData = async () => {
     if (!currentUser) return;
-    
+    setModerationLoading(true);
     try {
-      const response = await apiRequest(`/api/moderation/log?userId=${currentUser.id}`, {
-        method: 'GET'
-      });
-      setModerationLog(response.log || []);
+      // استخدام endpoint الذي يعيد أسماء المنفذ والمستهدف
+      const response = await apiRequest(`/api/moderation/actions?userId=${currentUser.id}`, { method: 'GET' });
+      const actions = (response?.actions || []) as ModerationAction[];
+      setModerationLog(actions);
     } catch (error) {
-      console.error('Error fetching moderation log:', error);
+      console.error('Error fetching moderation actions:', error);
       toast({
         title: 'خطأ',
-        description: 'فشل في جلب سجل الإدارة',
+        description: 'فشل في جلب سجل الإجراءات',
         variant: 'destructive'
       });
+    } finally {
+      setModerationLoading(false);
     }
   };
 
@@ -118,11 +124,20 @@ export default function OwnerAdminPanel({
           joinDate: (user.joinDate ?? user.createdAt) as string | Date | undefined,
           lastSeen: (user.lastSeen ?? user.lastActive ?? user.createdAt ?? null) as string | Date | null,
           isOnline: Boolean(user.isOnline),
-        }));
+        }))
+        .sort((a, b) => {
+          const rank: Record<string, number> = { owner: 1, admin: 2, moderator: 3 };
+          const byRank = (rank[a.userType] || 99) - (rank[b.userType] || 99);
+          if (byRank !== 0) return byRank;
+          const byOnline = Number(b.isOnline) - Number(a.isOnline);
+          if (byOnline !== 0) return byOnline;
+          return a.username.localeCompare(b.username, 'ar');
+        });
 
       setStaffMembers(staff);
     } catch (error) {
       console.error('Error fetching staff:', error);
+      toast({ title: 'خطأ', description: 'تعذر جلب قائمة المشرفين', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -165,6 +180,7 @@ export default function OwnerAdminPanel({
       case 'block': return 'bg-red-100 text-red-800 border-red-200';
       case 'promote': return 'bg-green-100 text-green-800 border-green-200';
       case 'demote': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'unblock': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       default: return 'bg-blue-100 text-blue-800 border-blue-200';
     }
   };
@@ -176,6 +192,7 @@ export default function OwnerAdminPanel({
       case 'block': return <Ban className="w-4 h-4" />;
       case 'promote': return <Crown className="w-4 h-4" />;
       case 'demote': return <Users className="w-4 h-4" />;
+      case 'unblock': return <Shield className="w-4 h-4" />;
       default: return <Shield className="w-4 h-4" />;
     }
   };
@@ -275,9 +292,19 @@ export default function OwnerAdminPanel({
                   <h3 className="text-xl font-bold text-gray-800">سجل الإجراءات</h3>
                   <p className="text-gray-600">تسجيل جميع الإجراءات الإدارية</p>
                 </div>
+                <div className="ml-auto">
+                  <Button variant="outline" size="sm" onClick={fetchModerationData} disabled={moderationLoading}>
+                    تحديث
+                  </Button>
+                </div>
               </div>
 
-              {moderationLog.length === 0 ? (
+              {moderationLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+                  <p className="text-gray-600">جاري التحميل...</p>
+                </div>
+              ) : moderationLog.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="bg-gray-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                     <Shield className="w-8 h-8 text-gray-400" />
@@ -301,6 +328,7 @@ export default function OwnerAdminPanel({
                             {action.type === 'block' && 'حجب'}
                             {action.type === 'promote' && 'ترقية'}
                             {action.type === 'demote' && 'إلغاء إشراف'}
+                            {action.type === 'unblock' && 'إلغاء الحجب'}
                           </Badge>
                           <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">
                             {formatDateTime(action.timestamp)}
@@ -311,11 +339,11 @@ export default function OwnerAdminPanel({
                       <div className="grid grid-cols-2 gap-3 text-sm mb-3">
                         <div className="bg-red-50 p-2 rounded-lg">
                           <span className="font-semibold text-red-700">المستهدف: </span>
-                          <span className="text-red-800">{action.targetUsername}</span>
+                          <span className="text-red-800">{action.targetName ?? `#${action.targetUserId}`}</span>
                         </div>
                         <div className="bg-blue-50 p-2 rounded-lg">
                           <span className="font-semibold text-blue-700">المنفذ: </span>
-                          <span className="text-blue-800">{action.moderatorUsername}</span>
+                          <span className="text-blue-800">{action.moderatorName ?? `#${action.moderatorId}`}</span>
                         </div>
                       </div>
                       
@@ -363,6 +391,11 @@ export default function OwnerAdminPanel({
                 <div>
                   <h3 className="text-xl font-bold text-gray-800">قائمة المشرفين</h3>
                   <p className="text-gray-600">إدارة أعضاء الفريق الإداري</p>
+                </div>
+                <div className="ml-auto">
+                  <Button variant="outline" size="sm" onClick={fetchStaffMembers} disabled={loading}>
+                    تحديث
+                  </Button>
                 </div>
               </div>
 

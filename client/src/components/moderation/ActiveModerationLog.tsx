@@ -47,12 +47,12 @@ export default function ActiveModerationLog({ currentUser, isVisible, onClose }:
   const loadActiveActions = async () => {
     try {
       setLoading(true);
-      const data = await apiRequest(`/api/moderation/actions?userId=${currentUser.id}`);
+      const data = await apiRequest(`/api/moderation/active-actions?userId=${currentUser.id}`);
       const list = Array.isArray((data as any).actions) ? (data as any).actions : Array.isArray(data) ? data : [];
-      const onlyActive = list.filter((action: any) => action.isActive);
-      setActiveActions(onlyActive);
-    } catch (error) {
+      setActiveActions(list as ActiveModerationAction[]);
+    } catch (error: any) {
       console.error('خطأ في تحميل الإجراءات النشطة:', error);
+      toast({ title: 'خطأ', description: error?.message || 'تعذر جلب الإجراءات النشطة', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -204,10 +204,12 @@ export default function ActiveModerationLog({ currentUser, isVisible, onClose }:
                     {action.type === 'mute' ? 'كتم نشط' : 'حجب نشط'}
                   </Badge>
                   <Button
-                    onClick={() => handleRemoveAction(action.id as any, action.type as any, (action as any).targetUserId)}
+                    onClick={() => handleRemoveAction(action.id, action.type, action.targetUserId)}
                     size="sm"
                     variant="outline"
                     className={`border-green-600 text-green-400 hover:bg-green-600 hover:text-white`}
+                    disabled={action.type === 'block' && currentUser.userType !== 'owner'}
+                    title={action.type === 'block' && currentUser.userType !== 'owner' ? 'إلغاء الحجب متاح للمالك فقط' : undefined}
                   >
                     {action.type === 'mute' ? 'إلغاء الكتم' : 'إلغاء الحجب'}
                   </Button>
