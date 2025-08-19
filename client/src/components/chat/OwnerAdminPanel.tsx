@@ -49,8 +49,9 @@ interface StaffMember {
   username: string;
   userType: 'moderator' | 'admin' | 'owner';
   profileImage?: string;
-  joinDate?: Date;
-  lastSeen?: string | Date;
+  // السيرفر قد يعيد التاريخ كسلسلة JSON، لذا ندعم النوعين
+  joinDate?: string | Date;
+  lastSeen?: string | Date | null;
   isOnline: boolean;
 }
 
@@ -114,8 +115,8 @@ export default function OwnerAdminPanel({
           username: user.username,
           userType: user.userType as 'moderator' | 'admin' | 'owner',
           profileImage: user.profileImage,
-          joinDate: (user.joinDate ?? user.createdAt) as Date | undefined,
-          lastSeen: (user.lastSeen ?? user.lastActive ?? user.createdAt) as Date | string | undefined,
+          joinDate: (user.joinDate ?? user.createdAt) as string | Date | undefined,
+          lastSeen: (user.lastSeen ?? user.lastActive ?? user.createdAt ?? null) as string | Date | null,
           isOnline: Boolean(user.isOnline),
         }));
 
@@ -423,7 +424,14 @@ export default function OwnerAdminPanel({
                             
                             {!staff.isOnline && staff.lastSeen && (
                               <p className="text-xs text-gray-500 mt-1">
-                                آخر ظهور: {new Date(staff.lastSeen).toLocaleDateString('ar-SA')}
+                                آخر ظهور: {(() => {
+                                  try {
+                                    const d = new Date(staff.lastSeen as any);
+                                    return d.toLocaleString('ar-SA');
+                                  } catch {
+                                    return String(staff.lastSeen);
+                                  }
+                                })()}
                               </p>
                             )}
                           </div>
