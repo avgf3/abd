@@ -392,9 +392,7 @@ export default function FriendsTabPanel({
                               <span 
                                 className="text-base font-medium transition-all duration-300"
                                 style={{ 
-                                  color: getFinalUsernameColor(friend),
-                                  textShadow: getFinalUsernameColor(friend) ? `0 0 10px ${getFinalUsernameColor(friend)}40` : 'none',
-                                  filter: getFinalUsernameColor(friend) ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                                  color: getFinalUsernameColor(friend)
                                 }}
                                 title={friend.username}
                               >
@@ -509,9 +507,7 @@ export default function FriendsTabPanel({
                                   <span 
                                     className="font-semibold"
                                     style={{ 
-                                      color: getFinalUsernameColor(request.user),
-                                      textShadow: getFinalUsernameColor(request.user) ? `0 0 10px ${getFinalUsernameColor(request.user)}40` : 'none',
-                                      filter: getFinalUsernameColor(request.user) ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                                      color: getFinalUsernameColor(request.user)
                                     }}
                                   >
                                     {request.user.username}
@@ -587,9 +583,7 @@ export default function FriendsTabPanel({
                                   <span 
                                     className="font-semibold"
                                     style={{ 
-                                      color: getFinalUsernameColor(request.user),
-                                      textShadow: getFinalUsernameColor(request.user) ? `0 0 10px ${getFinalUsernameColor(request.user)}40` : 'none',
-                                      filter: getFinalUsernameColor(request.user) ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                                      color: getFinalUsernameColor(request.user)
                                     }}
                                   >
                                     {request.user.username}
