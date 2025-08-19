@@ -1710,7 +1710,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/moderation/log", protect.admin, async (req, res) => {
     try {
-      const userId = parseInt(req.query.userId as string);
+      const rawUserId = req.query.userId as string | undefined;
+      const userId = rawUserId ? parseInt(rawUserId, 10) : NaN;
+
+      if (!rawUserId || Number.isNaN(userId)) {
+        return res.status(400).json({ error: "userId مطلوب" });
+      }
+
       const user = await storage.getUser(userId);
       
       // للإدمن والمالك فقط
@@ -1718,8 +1724,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "غير مسموح لك بالوصول - للإدمن والمالك فقط" });
       }
 
-      const log = moderationSystem.getModerationLog();
-      res.json({ log });
+      const rawLog = moderationSystem.getModerationLog();
+
+      // إرجاع سجل غني بالأسماء لتوافق الواجهة
+      const enriched: any[] = [];
+      for (const action of rawLog) {
+        try {
+          const [moderator, target] = await Promise.all([
+            storage.getUser(action.moderatorId),
+            storage.getUser(action.targetUserId)
+          ]);
+          enriched.push({
+            ...action,
+            moderatorUsername: moderator?.username || 'مجهول',
+            targetUsername: target?.username || 'مجهول'
+          });
+        } catch {
+          enriched.push({
+            ...action,
+            moderatorUsername: 'مجهول',
+            targetUsername: 'مجهول'
+          });
+        }
+      }
+
+      res.json({ log: enriched });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
     }
