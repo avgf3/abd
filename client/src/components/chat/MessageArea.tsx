@@ -5,6 +5,7 @@ import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import EmojiPicker from './EmojiPicker';
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
+import MessageItem from './MessageItem';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,8 @@ import type { ChatMessage, ChatUser } from '@/types/chat';
 import { findMentions, playMentionSound, renderMessageWithMentions, insertMention } from '@/utils/mentionUtils';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
+import { useErrorHandler } from '@/hooks/useErrorHandler';
+import { useCleanup } from '@/hooks/useCleanup';
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -49,6 +52,8 @@ export default function MessageArea({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const isMobile = useIsMobile();
+  const { handleError, handleAsyncOperation } = useErrorHandler();
+  const { setTimeout, clearTimeout } = useCleanup();
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -203,65 +208,52 @@ export default function MessageArea({
     inputRef.current?.focus();
   }, []);
 
-  // File upload handler - محسن
+  // File upload handler - محسن مع معالجة أخطاء أفضل
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !currentUser) return;
 
+    // Validation
     if (!file.type.startsWith('image/')) {
-      alert('يرجى اختيار ملف صورة صحيح');
-      if (fileInputRef.current) { fileInputRef.current.value = ''; }
+      handleError(
+        new Error('نوع الملف غير مدعوم'),
+        'رفع الصورة',
+        { fallbackMessage: 'يرجى اختيار ملف صورة صحيح (JPG, PNG, GIF)' }
+      );
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('حجم الصورة كبير جداً. الحد الأقصى 5MB');
-      if (fileInputRef.current) { fileInputRef.current.value = ''; }
+      handleError(
+        new Error('حجم الملف كبير جداً'),
+        'رفع الصورة',
+        { fallbackMessage: 'حجم الصورة كبير جداً. الحد الأقصى 5MB' }
+      );
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
-    try {
-      const form = new FormData();
-      form.append('image', file);
-      form.append('senderId', String(currentUser.id));
-      form.append('roomId', currentRoomId || 'general');
-      await api.upload('/api/upload/message-image', form, { timeout: 60000 });
-      // سيتم بث الرسالة عبر الـ socket من الخادم فلا داعي لاستدعاء onSendMessage محلياً
-    } catch (err) {
-      console.error('رفع الصورة فشل:', err);
-      alert('تعذر رفع الصورة، حاول مرة أخرى');
-    } finally {
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+    // Upload with error handling
+    await handleAsyncOperation(
+      async () => {
+        const form = new FormData();
+        form.append('image', file);
+        form.append('senderId', String(currentUser.id));
+        form.append('roomId', currentRoomId || 'general');
+        await api.upload('/api/upload/message-image', form, { timeout: 60000 });
+      },
+      'رفع الصورة',
+      { fallbackMessage: 'تعذر رفع الصورة، تأكد من اتصالك بالإنترنت وحاول مرة أخرى' }
+    );
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
-  }, [currentUser, currentRoomId]);
+  }, [currentUser, currentRoomId, handleError, handleAsyncOperation]);
 
   // تم نقل دالة formatTime إلى utils/timeUtils.ts لتجنب التكرار
-
-  // لون حد الرسالة مرتبط بلون اسم المستخدم النهائي
-  const getDynamicBorderColor = useCallback((sender?: ChatUser | null) => {
-    if (!sender) return '#4ade80';
-    const color = getFinalUsernameColor(sender);
-    return color === '#000000' ? '#4ade80' : color;
-  }, []);
-
-  // Username click handler - معالج النقر على اسم المستخدم لإدراج المنشن
-  const handleUsernameClick = useCallback((event: React.MouseEvent, user: ChatUser) => {
-    event.stopPropagation();
-    
-    // إدراج اسم المستخدم في مربع النص
-    const mention = `@${user.username} `;
-    setMessageText(prev => prev + mention);
-    
-    // التركيز على مربع النص
-    inputRef.current?.focus();
-    
-    // استدعاء callback إضافي إذا كان موجود
-    if (onUserClick) {
-      onUserClick(event, user);
-    }
-  }, [onUserClick]);
 
 
 
@@ -310,104 +302,15 @@ export default function MessageArea({
             followOutput={'smooth'}
             atBottomStateChange={handleAtBottomChange}
             increaseViewportBy={{ top: 400, bottom: 400 }}
+            overscan={200}
             itemContent={(index, message) => (
-              <div
+              <MessageItem
                 key={message.id}
-                className={`flex items-center gap-3 p-3 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
-                style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
-              >
-                {/* System message: one-line red without avatar/badge */}
-                {message.messageType === 'system' ? (
-                  <div className="w-full flex items-center justify-between text-red-600">
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="font-semibold">النظام:</span>
-                      <span className="truncate">{message.content}</span>
-                    </div>
-                    <span className="text-xs text-red-500 ml-2 whitespace-nowrap">{formatTime(message.timestamp)}</span>
-                  </div>
-                ) : (
-                  <>
-                    {/* Profile Image */}
-                    {message.sender && (
-                      <div className="flex-shrink-0">
-                        <ProfileImage 
-                          user={message.sender} 
-                          size="small"
-                          className="cursor-pointer hover:scale-110 transition-transform duration-200"
-                        />
-                      </div>
-                    )}
-
-                    {/* Inline row: badge, name, content */}
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                      {message.sender && <UserRoleBadge user={message.sender} showOnlyIcon={true} />}
-                      <button
-                        onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                        className="font-semibold hover:underline transition-colors duration-200 truncate"
-                        style={{ color: getFinalUsernameColor(message.sender) }}
-                      >
-                        {message.sender?.username}
-                      </button>
-
-                      <div className="text-gray-800 break-words truncate flex-1">
-                        {message.messageType === 'image' ? (
-                          <img
-                            src={message.content}
-                            alt="صورة"
-                            className="max-h-10 rounded cursor-pointer"
-                            loading="lazy"
-                            onClick={() => window.open(message.content, '_blank')}
-                          />
-                        ) : (
-                          <span className="truncate">
-                            {renderMessageWithMentions(message.content, currentUser, onlineUsers)}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Right side: time and report flag */}
-                      <span className="text-xs text-gray-500 whitespace-nowrap ml-2">{formatTime(message.timestamp)}</span>
-
-                      {onReportMessage && message.sender && currentUser && message.sender.id !== currentUser.id && (
-                        <button
-                          onClick={() => onReportMessage(message.sender!, message.content, message.id)}
-                          className="text-sm hover:opacity-80"
-                          title="تبليغ"
-                        >
-                          🚩
-                        </button>
-                      )}
-
-                      {currentUser && message.sender && (() => {
-                        const isOwner = currentUser.userType === 'owner';
-                        const isAdmin = currentUser.userType === 'admin';
-                        const isSender = currentUser.id === message.sender.id;
-                        const canDelete = isSender || isOwner || isAdmin;
-                        if (!canDelete) return null;
-                        const handleDelete = async () => {
-                          try {
-                            await apiRequest(`/api/messages/${message.id}`, {
-                              method: 'DELETE',
-                              body: { userId: currentUser.id, roomId: message.roomId || 'general' }
-                            });
-                          } catch (e) {
-                            console.error('خطأ في حذف الرسالة', e);
-                          }
-                        };
-                        return (
-                          <button
-                            onClick={handleDelete}
-                            className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                            title="حذف الرسالة"
-                          >
-                            🗑️
-                          </button>
-                        );
-                      })()}
-                    </div>
-                  </>
-                )}
-              </div>
+                message={message}
+                currentUser={currentUser}
+                onUserClick={onUserClick}
+                onReportMessage={onReportMessage}
+              />
             )}
           />
         )}
