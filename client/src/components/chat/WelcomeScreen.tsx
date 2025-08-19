@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 
@@ -32,6 +33,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
   const [registerRelation, setRegisterRelation] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const handleGuestLogin = async () => {
     if (!guestName.trim()) {
@@ -174,7 +176,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col justify-center items-center welcome-gradient">
+    <div className={`min-h-[100dvh] flex flex-col justify-center items-center welcome-gradient ${isMobile ? 'px-4' : ''}`}>
       <div className="text-center animate-slide-up">
         <div className="mb-8">
           <div className="text-5xl sm:text-6xl mb-4 animate-pulse-slow">💬</div>
@@ -184,9 +186,9 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           <p className="text-xl text-muted-foreground mb-8">منصة التواصل العربية الأولى</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-3">
+        <div className={`flex ${isMobile ? 'flex-col w-full max-w-xs' : 'flex-col sm:flex-row'} gap-3 sm:gap-4 justify-center items-center px-3`}>
           <Button 
-            className="btn-success text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3"
+            className={`btn-success text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3 mobile-touch-button ${isMobile ? 'w-full justify-center' : ''}`}
             onClick={() => setShowGuestModal(true)}
           >
             <span>👤</span>
@@ -194,7 +196,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           </Button>
           
           <Button 
-            className="btn-primary text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3"
+            className={`btn-primary text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3 mobile-touch-button ${isMobile ? 'w-full justify-center' : ''}`}
             onClick={() => setShowMemberModal(true)}
           >
             <span>✅</span>
@@ -202,7 +204,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           </Button>
           
           <Button 
-            className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3 transition-all duration-300"
+            className={`bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3 transition-all duration-300 mobile-touch-button ${isMobile ? 'w-full justify-center' : ''}`}
             onClick={() => setShowRegisterModal(true)}
           >
             <span>📝</span>
@@ -210,7 +212,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           </Button>
           
           <Button 
-            className="btn-danger text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3"
+            className={`btn-danger text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3 mobile-touch-button ${isMobile ? 'w-full justify-center' : ''}`}
             onClick={handleGoogleLogin}
           >
             <span>🔐</span>

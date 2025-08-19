@@ -8,6 +8,7 @@ import UserRoleBadge from './UserRoleBadge';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { apiRequest } from '@/lib/queryClient';
 import { api } from '@/lib/queryClient';
 import type { ChatMessage, ChatUser } from '@/types/chat';
@@ -47,6 +48,7 @@ export default function MessageArea({
   const [messageText, setMessageText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const isMobile = useIsMobile();
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -431,7 +433,7 @@ export default function MessageArea({
       </div>
       
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
-      <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg`} style={{ transform: 'translateY(-80px)' }}>
+      <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg chat-input`} style={{ transform: 'translateY(-80px)' }}>
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
           <div className="mb-1.5 text-[11px] text-gray-500 animate-pulse">
@@ -439,7 +441,7 @@ export default function MessageArea({
           </div>
         )}
         
-        <div className="flex gap-3 items-end max-w-full mx-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className={`flex ${isMobile ? 'gap-2' : 'gap-3'} items-end max-w-full mx-auto`} style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0' }}>
           {/* Emoji Picker */}
           <div className="relative">
             <Button
@@ -447,7 +449,7 @@ export default function MessageArea({
               variant="outline"
               size="sm"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="aspect-square"
+              className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''}`}
             >
               <Smile className="w-4 h-4" />
             </Button>
@@ -464,7 +466,7 @@ export default function MessageArea({
             variant="outline"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
-            className="aspect-square"
+            className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''}`}
           >
             <ImageIcon className="w-4 h-4" />
           </Button>
@@ -476,17 +478,18 @@ export default function MessageArea({
              onChange={handleMessageChange}
              onKeyPress={handleKeyPress}
              placeholder="اكتب رسالتك هنا..."
-             className="flex-1 resize-none bg-white text-gray-900 placeholder:text-gray-500 ring-offset-white"
+             className={`flex-1 resize-none bg-white text-gray-900 placeholder:text-gray-500 ring-offset-white ${isMobile ? 'mobile-text' : ''}`}
              disabled={!currentUser}
              maxLength={1000}
              autoComplete="off"
+             style={isMobile ? { fontSize: '16px' } : {}}
            />
           
           {/* Send Button */}
           <Button
             onClick={handleSendMessage}
             disabled={!messageText.trim() || !currentUser}
-            className="aspect-square bg-primary hover:bg-primary/90"
+            className={`aspect-square bg-primary hover:bg-primary/90 mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''}`}
           >
             <Send className="w-4 h-4" />
           </Button>

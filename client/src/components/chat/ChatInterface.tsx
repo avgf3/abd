@@ -340,10 +340,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showRichest, setShowRichest] = useState(false);
 
   return (
-      <div className="min-h-[100dvh] flex flex-col" onClick={closeUserPopup}>
+      <div className={`min-h-[100dvh] flex flex-col chat-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`} onClick={closeUserPopup}>
       {/* Header - بدون التبويبات الأربعة */}
-      <header className="sticky top-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex flex-wrap gap-2 justify-between items-center shadow-2xl border-b border-accent">
-        <div className="flex gap-3 overflow-x-auto max-w-full pr-2">
+      <header className={`sticky top-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex ${isMobile ? 'flex-col gap-1' : 'flex-wrap gap-2'} justify-between items-center shadow-2xl border-b border-accent`}>
+        <div className={`flex gap-2 ${isMobile ? 'flex-wrap justify-center w-full' : 'overflow-x-auto max-w-full pr-2'}`}>
           <Button
             className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowSettings(!showSettings)}
@@ -488,7 +488,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       </header>
       
       {/* Main Content - تحسين التخطيط لمنع التداخل */}
-      <main className="flex flex-1 overflow-hidden min-h-0 flex-col sm:flex-row" style={{ paddingBottom: '80px' }}>
+      <main className={`flex flex-1 overflow-hidden min-h-0 ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'}`} style={{ paddingBottom: isMobile ? '80px' : '60px' }}>
         {/* الشريط الجانبي - على الجوال يعرض بملء الشاشة عند اختيار التبويب */}
         {activeView !== 'hidden' && (
           <div className={`${isMobile ? 'w-full flex-1 min-h-0' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`} style={{ maxHeight: 'calc(100vh - 160px)' }}>
@@ -567,7 +567,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
        </main>
 
       {/* Footer - تبويبات سفلية محسنة لتجنب التداخل مع منطقة الإرسال */}
-      <footer className="fixed bottom-0 left-0 right-0 z-10 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent">
+      <footer className={`fixed bottom-0 left-0 right-0 z-10 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent ${isMobile ? 'mobile-footer' : ''}`} style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0' }}>
         <div className="flex gap-2 sm:gap-3 overflow-x-auto max-w-full">
           {/* الحوائط */}
                      <Button 
