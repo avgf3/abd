@@ -10,6 +10,8 @@ export type AvatarFrameId =
   | 'crown-frame-blue'
   | 'crown-frame-emerald'
   | 'crown-frame-purple'
+  | 'crown-frame-king'
+  | 'crown-frame-queen'
   | 'crown-frame-classic-gold'
   | 'crown-frame-classic-coolpink'
   | 'svip1-frame-gold'
@@ -39,6 +41,8 @@ export const FRAME_CONFIG: Record<AvatarFrameId, FrameConfig> = {
   'crown-frame-blue': { thicknessRatio: 0.14, listClipTopPercent: 30 },
   'crown-frame-emerald': { thicknessRatio: 0.14, listClipTopPercent: 30 },
   'crown-frame-purple': { thicknessRatio: 0.14, listClipTopPercent: 30 },
+  'crown-frame-king': { thicknessRatio: 0.14, listClipTopPercent: 30 },
+  'crown-frame-queen': { thicknessRatio: 0.14, listClipTopPercent: 30 },
   'crown-frame-classic-gold': { thicknessRatio: 0.12, listClipTopPercent: 0 },
   'crown-frame-classic-coolpink': { thicknessRatio: 0.12, listClipTopPercent: 0 },
   'svip1-frame-gold': { thicknessRatio: 0.16, listClipTopPercent: 28 },
@@ -125,6 +129,8 @@ export function getAvailableFrames(): Array<{ id: AvatarFrameId; name: string; c
     { id: 'crown-frame-blue', name: 'تاج أزرق TOP', category: 'تاج TOP' },
     { id: 'crown-frame-emerald', name: 'تاج زمردي TOP', category: 'تاج TOP' },
     { id: 'crown-frame-purple', name: 'تاج بنفسجي TOP', category: 'تاج TOP' },
+    { id: 'crown-frame-king', name: 'KING', category: 'تاج TOP' },
+    { id: 'crown-frame-queen', name: 'QUEEN', category: 'تاج TOP' },
     { id: 'crown-frame-classic-gold', name: 'تاج كلاسيكي ذهبي', category: 'كلاسيك' },
     { id: 'crown-frame-classic-coolpink', name: 'تاج كلاسيكي وردي', category: 'كلاسيك' },
     { id: 'svip1-frame-gold', name: 'SVIP1 ذهبي', category: 'SVIP' },
@@ -145,6 +151,8 @@ export function isAvatarFrameId(value: string): value is AvatarFrameId {
     'crown-frame-blue',
     'crown-frame-emerald',
     'crown-frame-purple',
+    'crown-frame-king',
+    'crown-frame-queen',
     'crown-frame-classic-gold',
     'crown-frame-classic-coolpink',
     'svip1-frame-gold',
