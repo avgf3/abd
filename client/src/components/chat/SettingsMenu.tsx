@@ -6,8 +6,7 @@ import {
   LogOut, 
   Settings,
   Palette,
-  Brush,
-  Image as ImageIcon
+  Brush
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -22,11 +21,10 @@ interface SettingsMenuProps {
   onOpenThemeSelector?: () => void;
   onOpenUsernameColorPicker?: () => void;
   onOpenIgnoredUsers?: () => void;
-  onOpenAddFrame?: () => void;
   currentUser?: any;
 }
 
-export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenReports, onOpenThemeSelector, onOpenUsernameColorPicker, onOpenIgnoredUsers, onOpenAddFrame, currentUser }: SettingsMenuProps) {
+export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenReports, onOpenThemeSelector, onOpenUsernameColorPicker, onOpenIgnoredUsers, currentUser }: SettingsMenuProps) {
   const handleLogout = () => {
     if (confirm('🤔 هل أنت متأكد من تسجيل الخروج؟')) {
       onLogout();
@@ -81,16 +79,6 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
               اختيار الثيم
             </Button>
           )}
-
-          <Button
-            onClick={onOpenAddFrame}
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
-          >
-            <ImageIcon className="w-4 h-4 text-primary" />
-            إضافة إطار
-          </Button>
 
           <Button
             onClick={onOpenUsernameColorPicker}

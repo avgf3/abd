@@ -22,7 +22,6 @@ import ProfileImage from './ProfileImage';
 import ProfileModal from './ProfileModal';
 import ReportModal from './ReportModal';
 import SettingsMenu from './SettingsMenu';
-import AddFramePanel from '@/components/profile/AddFramePanel';
 import ThemeSelector from './ThemeSelector';
 import UserPopup from './UserPopup';
 import UnifiedSidebar from './UserSidebarWithWalls';
@@ -148,7 +147,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showPromotePanel, setShowPromotePanel] = useState(false);
   const [showIgnoredUsers, setShowIgnoredUsers] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
-  const [showAddFrame, setShowAddFrame] = useState(false);
   const [showUsernameColorPicker, setShowUsernameColorPicker] = useState(false);
   const [newMessageAlert, setNewMessageAlert] = useState<{
     show: boolean;
@@ -771,10 +769,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               setShowUsernameColorPicker(true);
               setShowSettings(false);
             }}
-            onOpenAddFrame={() => {
-              setShowAddFrame(true);
-              setShowSettings(false);
-            }}
             onOpenIgnoredUsers={() => {
               setShowIgnoredUsers(true);
               setShowSettings(false);
@@ -903,19 +897,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
-      {showAddFrame && (
-        <AddFramePanel
-          isOpen={showAddFrame}
-          onClose={() => setShowAddFrame(false)}
-          currentUser={chat.currentUser}
-          onFrameApplied={(frame) => {
-            // تحديث محلي لحقل إطار الصورة في المستخدم الحالي
-            if (chat.currentUser) {
-              (chat.currentUser as any).avatarFrame = frame;
-            }
-          }}
-        />
-      )}
+      
 
       {showUsernameColorPicker && chat.currentUser && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
