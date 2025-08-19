@@ -5,7 +5,6 @@ import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import EmojiPicker from './EmojiPicker';
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
-import TypingIndicator from './TypingIndicator';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -428,11 +427,6 @@ export default function MessageArea({
       
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg chat-input`} style={{ transform: 'translateY(-80px)' }}>
-        {/* Enhanced Typing Indicator */}
-        <TypingIndicator 
-          typingUsers={typingUsers} 
-          currentUser={currentUser?.username || null} 
-        />
         
         <div className={`flex ${isMobile ? 'gap-2' : 'gap-3'} items-end max-w-full mx-auto`} style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0' }}>
           {/* Emoji Picker */}
