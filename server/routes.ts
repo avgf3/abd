@@ -1,6 +1,5 @@
 import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
 import securityApiRoutes from "./api-security";
-import apiRoutes from "./routes/index";
 import roomRoutes from "./routes/rooms";
 import messageRoutes from "./routes/messages";
 import { pointsService } from "./services/pointsService";
@@ -1925,8 +1924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Security API routes
   app.use('/api/security', securityApiRoutes);
   
-  // New Modular Routes - نظام المسارات المعاد تنظيمه
-  app.use('/api/v2', apiRoutes);
+  // تمت إزالة نظام المسارات المعيارية v2 غير المستخدم لتفادي الازدواجية
 
 
 
