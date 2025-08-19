@@ -3,7 +3,7 @@
  * كل إطار له معلومات دقيقة للعرض الأمثل
  */
 
-import type { FrameInfo, FrameType } from '@/types/avatarFrame';
+import type { FrameInfo, FrameType, FrameCategory } from '@/types/avatarFrame';
 
 export const FRAMES_DATA: Record<FrameType, FrameInfo> = {
   'none': {

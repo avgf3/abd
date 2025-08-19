@@ -28,7 +28,7 @@ export default function FrameTestSimple() {
                   src={testImage}
                   alt="Test"
                   fallback="TE"
-                  frame="enhanced-crown-frame"
+                  frame="crown-gold"
                   size={130}
                   variant="profile"
                 />
@@ -51,7 +51,7 @@ export default function FrameTestSimple() {
                   src={testImage}
                   alt="Test"
                   fallback="TE"
-                  frame="enhanced-crown-frame"
+                  frame="crown-gold"
                   size={40}
                   variant="list"
                 />
@@ -76,7 +76,7 @@ export default function FrameTestSimple() {
                   src={testImage}
                   alt="Test"
                   fallback="T"
-                  frame="enhanced-crown-frame"
+                  frame="crown-gold"
                   size={size}
                   variant={size < 64 ? 'list' : 'profile'}
                 />
@@ -108,7 +108,7 @@ export default function FrameTestSimple() {
                   src={testImage}
                   alt="Test"
                   fallback="TE"
-                  frame="enhanced-crown-frame"
+                  frame="crown-gold"
                   size={80}
                   variant="profile"
                 />
