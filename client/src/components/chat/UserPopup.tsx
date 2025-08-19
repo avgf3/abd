@@ -3,10 +3,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AvatarWithFrame } from '@/components/ui/AvatarWithFrame';
-import { getAvailableFrames, normalizeFrameId, type AvatarFrameId } from '@/utils/avatarFrame';
+import FrameManager from '@/components/admin/FrameManager';
 
 interface UserPopupProps {
   user: ChatUser;
@@ -33,18 +30,6 @@ export default function UserPopup({
 }: UserPopupProps) {
   const { toast } = useToast();
   const [showFrameDialog, setShowFrameDialog] = useState(false);
-  const [selectedFrame, setSelectedFrame] = useState<AvatarFrameId>((user.avatarFrame as AvatarFrameId) || 'none');
-  const [isUpdatingFrame, setIsUpdatingFrame] = useState(false);
-  const frames = getAvailableFrames();
-  const categories = Object.entries(
-    frames.reduce((acc, frame) => {
-      if (!acc[frame.category]) acc[frame.category] = [] as Array<{ id: AvatarFrameId; name: string }>;
-      (acc[frame.category] as Array<{ id: AvatarFrameId; name: string }>).push({ id: frame.id as AvatarFrameId, name: frame.name });
-      return acc;
-    }, {} as Record<string, Array<{ id: AvatarFrameId; name: string }>>)
-  );
-  // معاينة بسيطة بدون إعدادات إضافية
-  const previewSize = 130;
   
   const canModerate = currentUser && (
     currentUser.userType === 'owner' || 
@@ -53,36 +38,6 @@ export default function UserPopup({
   ) && currentUser.id !== user.id;
   
   const isOwner = currentUser?.userType === 'owner';
-
-  const handleUpdateFrame = async () => {
-    if (!currentUser || !isOwner) return;
-    
-    setIsUpdatingFrame(true);
-    try {
-      await apiRequest(`/api/users/${user.id}/avatar-frame`, {
-        method: 'POST',
-        body: { frame: selectedFrame, moderatorId: currentUser.id }
-      });
-      
-      toast({
-        title: 'تم تحديث الإطار',
-        description: 'تم تحديث إطار الصورة الشخصية بنجاح',
-      });
-      
-      setShowFrameDialog(false);
-      onClose?.();
-    } catch (error) {
-      toast({
-        title: 'خطأ',
-        description: 'فشل تحديث الإطار',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsUpdatingFrame(false);
-    }
-  };
-
-  // لا حاجة لتحويلات قياس؛ المعاينة ثابتة لسهولة الاستخدام
 
   const handleMute = async () => {
     if (!currentUser) return;
@@ -292,73 +247,15 @@ export default function UserPopup({
       )}
     </div>
 
-    {/* Dialog إضافة الإطار - جديد */}
-    <Dialog open={showFrameDialog} onOpenChange={setShowFrameDialog}>
-      <DialogContent className="max-w-3xl" aria-describedby={undefined}>
-        <DialogHeader>
-          <DialogTitle>إضافة إطار للصورة الشخصية</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* المعاينة */}
-          <div className="flex justify-center p-3">
-            <AvatarWithFrame
-              src={user.profileImage}
-              alt={user.username}
-              fallback={user.username.substring(0, 2).toUpperCase()}
-              frame={normalizeFrameId(selectedFrame as any)}
-              size={previewSize}
-              variant={previewSize < 64 ? 'list' : 'profile'}
-            />
-          </div>
-
-          {/* التبويبات + الشبكة */}
-          <Tabs defaultValue={categories[0]?.[0] || 'عام'} className="w-full">
-            <TabsList className="w-full flex flex-wrap gap-2 justify-start">
-              {categories.map(([category]) => (
-                <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
-              ))}
-            </TabsList>
-
-            {categories.map(([category, items]) => (
-              <TabsContent key={category} value={category} className="mt-4">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {(items as Array<{ id: AvatarFrameId; name: string }>).map((f) => (
-                    <button
-                      key={f.id}
-                      onClick={() => setSelectedFrame(f.id)}
-                      className={`group border rounded-lg p-2 text-right hover:bg-accent transition-colors ${selectedFrame === f.id ? 'border-primary ring-1 ring-primary' : 'border-border'}`}
-                      aria-pressed={selectedFrame === f.id}
-                    >
-                      <div className="flex items-center justify-center mb-2">
-                        <AvatarWithFrame
-                          src={user.profileImage}
-                          alt={f.name}
-                          frame={f.id}
-                          size={72}
-                          variant="profile"
-                          ringOnly={false}
-                        />
-                      </div>
-                      <div className="text-xs font-medium truncate">{f.name}</div>
-                      <div className="text-[10px] text-muted-foreground">{f.id === 'none' ? 'بدون إطار' : f.id}</div>
-                    </button>
-                  ))}
-                </div>
-              </TabsContent>
-            ))}
-          </Tabs>
-
-          {/* أزرار التحكم */}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowFrameDialog(false)}>إلغاء</Button>
-            <Button onClick={handleUpdateFrame} disabled={isUpdatingFrame}>
-              {isUpdatingFrame ? 'جاري التحديث...' : 'تحديث الإطار'}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+    {/* مدير الإطارات الجديد */}
+    {currentUser && (
+      <FrameManager
+        isOpen={showFrameDialog}
+        onClose={() => setShowFrameDialog(false)}
+        targetUser={user}
+        currentUser={currentUser}
+      />
+    )}
     </>
   );
 }

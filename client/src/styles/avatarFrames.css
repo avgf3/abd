@@ -1,0 +1,200 @@
+/**
+ * أنماط CSS لنظام إطارات الصور الشخصية
+ * تصميم احترافي ومتجاوب
+ */
+
+/* حركات الإطارات */
+@keyframes frame-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+@keyframes frame-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px var(--frame-glow-color, #FFD700));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px var(--frame-glow-color, #FFD700));
+  }
+}
+
+@keyframes frame-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* الحاوية الأساسية للإطار */
+.avatar-frame-container {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  
+  /* منع السحب */
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+}
+
+/* صورة الإطار */
+.avatar-frame {
+  /* تحسين جودة العرض */
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  
+  /* منع التحديد */
+  pointer-events: none;
+  user-select: none;
+}
+
+/* الصورة الشخصية */
+.avatar-image-wrapper img {
+  /* تحسين الأداء */
+  will-change: transform;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* إطارات متحركة */
+.avatar-frame.animate-pulse {
+  animation: frame-pulse 3s ease-in-out infinite;
+}
+
+/* إطارات متوهجة */
+.avatar-frame-container[data-glow="true"] .avatar-frame {
+  animation: frame-glow 2s ease-in-out infinite;
+}
+
+/* أنماط قائمة المستخدمين */
+.user-list-item {
+  /* تحسين الأداء عند التمرير */
+  contain: layout style paint;
+  will-change: background-color;
+}
+
+.user-list-item:hover .avatar-frame {
+  filter: brightness(1.1);
+  transition: filter 0.2s ease;
+}
+
+/* أنماط الملف الشخصي */
+.profile-avatar-container .avatar-frame {
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+}
+
+/* أنماط خاصة للإطارات المميزة */
+/* إطارات الملك والملكة */
+.avatar-frame[src*="wings-frame-king"],
+.avatar-frame[src*="wings-frame-queen"] {
+  --frame-glow-color: #FFD700;
+}
+
+/* إطارات SVIP */
+.avatar-frame[src*="svip2"] {
+  --frame-glow-color: #FF1493;
+}
+
+.avatar-frame[src*="svip1"] {
+  --frame-glow-color: #FF69B4;
+}
+
+/* إطارات التيجان */
+.avatar-frame[src*="crown-frame-emerald"] {
+  --frame-glow-color: #50C878;
+}
+
+.avatar-frame[src*="crown-frame-blue"] {
+  --frame-glow-color: #4169E1;
+}
+
+.avatar-frame[src*="crown-frame-purple"] {
+  --frame-glow-color: #9370DB;
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 640px) {
+  .avatar-frame-container {
+    /* تقليل الحركات على الأجهزة المحمولة */
+    animation-duration: 4s;
+  }
+  
+  .avatar-frame {
+    /* تحسين الأداء */
+    filter: none !important;
+  }
+}
+
+/* دعم الوضع الداكن */
+@media (prefers-color-scheme: dark) {
+  .avatar-frame {
+    opacity: 0.95;
+  }
+  
+  .profile-avatar-container .avatar-frame {
+    filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.1));
+  }
+}
+
+/* تحسينات الأداء للأجهزة الضعيفة */
+@media (prefers-reduced-motion: reduce) {
+  .avatar-frame,
+  .avatar-frame-container {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* أنماط مدير الإطارات */
+.frame-option {
+  /* تحسين تجربة المستخدم */
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.frame-option:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* تأثيرات النص المتحرك (للأسماء) */
+.animated-text {
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.animated-text.shimmer {
+  background-image: linear-gradient(
+    90deg,
+    var(--username-color) 0%,
+    #fff 50%,
+    var(--username-color) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
