@@ -12,7 +12,7 @@ interface UserRoleBadgeProps {
 /**
  * نظام الشعارات الموحد للموقع
  * 
- * المالك (owner): تاج من client/public/svgs/crown.svg
+ * المالك (owner): تاج نصي 👑 (تم إزالة ملفات svg القديمة)
  * المشرف العام (admin): ⭐
  * المراقب (moderator): 🛡️
  * العضو (ذكر) مستوى 1–10: سهم أزرق client/public/svgs/blue_arrow.svg
@@ -43,20 +43,9 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
     return <span style={{color: '#10b981', fontSize: size * 0.8}}>●</span>;
   }
 
-  // owner: تاج SVG مع fallback
+  // owner: تاج نصي
   if (user.userType === 'owner') {
-    return (
-      <img 
-        src="/svgs/crown.svg" 
-        alt="owner" 
-        style={{width: size, height: size, display: 'inline'}} 
-        onError={(e) => {
-          const target = e.target as HTMLImageElement;
-          target.style.display = 'none';
-          target.outerHTML = '<span style="font-size: ' + size + 'px; display: inline;">👑</span>';
-        }}
-      />
-    );
+    return <span style={{fontSize: size, display: 'inline'}}>👑</span>;
   }
   // admin: نجمة
   if (user.userType === 'admin') {
@@ -74,73 +63,23 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
     
     // عضو ذكر لفل 1-10: سهم أزرق
     if (level >= 1 && level <= 10 && gender === 'male') {
-      return (
-        <img 
-          src="/svgs/blue_arrow.svg" 
-          alt="male-lvl1-10" 
-          style={{width: size, height: size, display: 'inline'}} 
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.outerHTML = '<span style="color: #3b82f6; font-size: ' + size + 'px; display: inline;">↗️</span>';
-          }}
-        />
-      );
+      return <span style={{color: '#3b82f6', fontSize: size, display: 'inline'}}>↗️</span>;
     }
     // عضو أنثى لفل 1-10: ميدالية وردية
     if (level >= 1 && level <= 10 && gender === 'female') {
-      return (
-        <img 
-          src="/svgs/pink_medal.svg" 
-          alt="female-lvl1-10" 
-          style={{width: size, height: size, display: 'inline'}} 
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.outerHTML = '<span style="color: #ec4899; font-size: ' + size + 'px; display: inline;">🏅</span>';
-          }}
-        />
-      );
+      return <span style={{color: '#ec4899', fontSize: size, display: 'inline'}}>🏅</span>;
     }
     // عضو لفل 11-20: ألماسة بيضاء
     if (level >= 11 && level <= 20) {
-      return (
-        <img 
-          src="/svgs/white.svg" 
-          alt="lvl11-20" 
-          style={{width: size, height: size, display: 'inline'}} 
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.outerHTML = '<span style="color: #f8fafc; font-size: ' + size + 'px; display: inline;">💎</span>';
-          }}
-        />
-      );
+      return <span style={{color: '#f8fafc', fontSize: size, display: 'inline'}}>💎</span>;
     }
     // عضو لفل 21-30: ألماسة خضراء
     if (level >= 21 && level <= 30) {
-      return (
-        <img 
-          src="/svgs/emerald.svg" 
-          alt="lvl21-30" 
-          style={{width: size, height: size, display: 'inline'}} 
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.outerHTML = '<span style="color: #10b981; font-size: ' + size + 'px; display: inline;">💚</span>';
-          }}
-        />
-      );
+      return <span style={{color: '#10b981', fontSize: size, display: 'inline'}}>💚</span>;
     }
     // عضو لفل 31-40: ألماسة برتقالية مضيئة
     if (level >= 31 && level <= 40) {
-      return (
-        <img 
-          src="/svgs/orange_shine.svg" 
-          alt="lvl31-40" 
-          style={{width: size, height: size, display: 'inline'}} 
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.outerHTML = '<span style="color: #f97316; font-size: ' + size + 'px; display: inline;">🔥</span>';
-          }}
-        />
-      );
+      return <span style={{color: '#f97316', fontSize: size, display: 'inline'}}>🔥</span>;
     }
   }
   
