@@ -59,39 +59,7 @@
     <circle cx='420' cy='300' r='4' fill='#87ceeb'/>
   </g>
   
-  <!-- التاج المحسّن -->
-  <g filter='url(#glow)'>
-    <!-- قاعدة التاج مع تفاصيل -->
-    <path d='M240,95 L360,95 L375,110 L370,115 L230,115 L225,110 Z' fill='url(#blueGradient1)' stroke='#191970' stroke-width='1'/>
-    <rect x='240' y='100' width='120' height='5' fill='url(#ornament)'/>
-    
-    <!-- القمة الوسطى -->
-    <path d='M300,20 L270,70 L260,105 L340,105 L330,70 Z' fill='url(#blueRadial)' stroke='#191970' stroke-width='1'/>
-    <path d='M300,30 L280,70 L320,70 Z' fill='url(#blueShine)' opacity='0.7'/>
-    
-    <!-- القمة اليسرى -->
-    <path d='M250,65 L220,85 L200,105 L275,105 L265,85 Z' fill='url(#blueGradient1)' stroke='#191970' stroke-width='1'/>
-    <path d='M250,70 L235,85 L265,85 Z' fill='url(#blueShine)' opacity='0.7'/>
-    
-    <!-- القمة اليمنى -->
-    <path d='M350,65 L380,85 L400,105 L325,105 L335,85 Z' fill='url(#blueGradient1)' stroke='#191970' stroke-width='1'/>
-    <path d='M350,70 L365,85 L335,85 Z' fill='url(#blueShine)' opacity='0.7'/>
-    
-    <!-- جواهر التاج -->
-    <circle cx='300' cy='15' r='10' fill='url(#blueRadial)' stroke='#191970' stroke-width='2' filter='url(#glow)'/>
-    <circle cx='300' cy='15' r='6' fill='#f0f8ff' opacity='0.8'/>
-    
-    <circle cx='250' cy='60' r='8' fill='url(#blueRadial)' stroke='#191970' stroke-width='1.5' filter='url(#glow)'/>
-    <circle cx='250' cy='60' r='5' fill='#f0f8ff' opacity='0.8'/>
-    
-    <circle cx='350' cy='60' r='8' fill='url(#blueRadial)' stroke='#191970' stroke-width='1.5' filter='url(#glow)'/>
-    <circle cx='350' cy='60' r='5' fill='#f0f8ff' opacity='0.8'/>
-    
-    <!-- زخارف إضافية على التاج -->
-    <circle cx='285' cy='85' r='3' fill='#e0f0ff' opacity='0.6'/>
-    <circle cx='315' cy='85' r='3' fill='#e0f0ff' opacity='0.6'/>
-    <circle cx='300' cy='90' r='4' fill='#4682b4' opacity='0.7'/>
-  </g>
+  
   
   <!-- شارات جانبية محسّنة -->
   <g filter='url(#shadow)'>
