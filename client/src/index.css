@@ -112,165 +112,7 @@
   100% { background-position: 0% 50%; }
 }
 
-/* تحسينات الهاتف المحمول - شاملة لتوحيد التجربة */
-@media (max-width: 768px) {
-  /* إزالة تأثيرات اللمس الافتراضية */
-  * {
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-  }
-  
-  /* السماح بتحديد النص في المدخلات والرسائل */
-  input, textarea, .message-content, .selectable-text {
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-    user-select: text;
-  }
-  
-  /* تحسين الأزرار للمس */
-  button, .mobile-touch-button, [role="button"] {
-    min-height: 44px;
-    min-width: 44px;
-    padding: 12px;
-    font-size: 16px;
-    touch-action: manipulation;
-    cursor: pointer;
-  }
-  
-  /* تحسين النصوص */
-  .mobile-text {
-    font-size: 16px;
-    line-height: 1.5;
-  }
-  
-  /* تحسين المدخلات - منع التكبير التلقائي */
-  input, textarea, select {
-    font-size: 16px !important;
-    padding: 12px;
-    border-radius: 8px;
-    -webkit-appearance: none;
-    appearance: none;
-  }
-  
-  /* تحسين المسافات */
-  .mobile-padding {
-    padding: 16px;
-  }
-  
-  /* تحسين العرض */
-  .mobile-full-width {
-    width: 100%;
-    max-width: none;
-  }
-  
-  /* تحسين الحوارات والمودال */
-  .mobile-dialog, [role="dialog"] {
-    margin: 8px;
-    max-height: calc(100vh - 32px);
-    max-width: calc(100vw - 16px);
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-  
-  /* تحسين التمرير */
-  .mobile-scroll, .overflow-auto, .overflow-y-auto {
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    scroll-behavior: smooth;
-  }
-  
-  /* تحسين القوائم المنسدلة */
-  .dropdown-menu, .popover {
-    position: fixed !important;
-    max-height: 50vh;
-    overflow-y: auto;
-  }
-  
-  /* تحسين الشريط الجانبي */
-  .sidebar {
-    width: 100vw !important;
-    height: 100vh !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    z-index: 50 !important;
-  }
-  
-  /* تحسين الشات */
-  .chat-container {
-    height: 100vh;
-    height: 100dvh;
-    overflow: hidden;
-  }
-  
-  .chat-messages {
-    height: calc(100vh - 120px);
-    height: calc(100dvh - 120px);
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  
-  .chat-input {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding-bottom: env(safe-area-inset-bottom);
-    background: var(--background);
-    border-top: 1px solid var(--border);
-  }
-  
-  /* تحسينات خاصة بالتخطيط الجديد */
-  .mobile-layout {
-    touch-action: pan-y;
-  }
-  
-  .mobile-footer {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-  }
-  
-  .desktop-layout .sidebar {
-    position: relative !important;
-    width: auto !important;
-    height: auto !important;
-  }
-  
-  /* تحسين الأزرار في الواجهة */
-  .mobile-layout button {
-    min-height: 44px;
-    font-size: 14px;
-  }
-  
-  .mobile-layout .glass-effect {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-  
-  /* تحسين التمرير للجوال */
-  .mobile-scroll::-webkit-scrollbar {
-    width: 4px;
-  }
-  
-  .mobile-scroll::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .mobile-scroll::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 2px;
-  }
-  
-  .mobile-scroll::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.3);
-  }
-}
+/* تمت إزالة جميع تحسينات الجوال لإبقاء الموقع على الوضع الافتراضي لسطح المكتب */
 
 /* تحسينات الأداء */
 .performance-optimized {
@@ -559,15 +401,7 @@ body.ltr {
   text-align: right;
 }
 
-/* Responsive language switcher */
-@media (max-width: 768px) {
-  .language-switcher-mobile {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-  }
-}
+/* تمت إزالة تموضع محول اللغة للجوال */
 
 /* ===== Profile Effects & Animations ===== */
 
@@ -756,34 +590,7 @@ body.ltr {
   animation: countdown 4s linear forwards;
 }
 
-/* Scrollbar visibility and style */
-/* WebKit-based browsers */
-*::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-*::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
-}
-
-*::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.25);
-  border-radius: 8px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.35);
-}
-
-/* Firefox */
-html {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.25) rgba(255, 255, 255, 0.06);
-}
+/* تمت إزالة تخصيصات أشرطة التمرير عبر المتصفحات */
 
 /* تأثيرات الثيمات المتحركة في قائمة المتصلين */
 .theme-animated {
@@ -895,20 +702,7 @@ html {
   box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
-/* Mobile improvements for chat */
-@media (max-width: 768px) {
-  .chat-main-container {
-    height: calc(100dvh - 160px);
-  }
-  
-  .chat-message-area {
-    height: calc(100dvh - 240px);
-  }
-  
-  .chat-sidebar {
-    height: calc(100dvh - 160px);
-  }
-}
+/* تمت إزالة تحسينات الدردشة للجوال */
 
 /* تأثيرات صندوق المستخدم المحسّنة */
 .has-custom-bg {
