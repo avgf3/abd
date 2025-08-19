@@ -171,7 +171,7 @@ export function getFrameInfo(frameId: FrameType): FrameInfo {
 // دالة للحصول على قائمة الإطارات حسب التصنيف
 export function getFramesByCategory(category: FrameCategory): FrameInfo[] {
   return Object.values(FRAMES_DATA)
-    .filter(frame => frame.category === category)
+    .filter(frame => frame.category === category && frame.id !== 'none')
     .sort((a, b) => b.priority - a.priority);
 }
 
