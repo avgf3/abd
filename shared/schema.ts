@@ -172,7 +172,6 @@ export const wallPosts = pgTable("wall_posts", {
   imageUrl: text("image_url"),
   type: text("type").notNull().default("public"), // 'public', 'friends'
   timestamp: timestamp("timestamp").defaultNow(),
-  userProfileImage: text("user_profile_image"),
   usernameColor: text("username_color").default('#FFFFFF'),
   totalLikes: integer("total_likes").default(0),
   totalDislikes: integer("total_dislikes").default(0),
@@ -347,7 +346,6 @@ export const insertWallPostSchema = z.object({
   content: z.string().optional(),
   imageUrl: z.string().optional(),
   type: z.string().default("public"),
-  userProfileImage: z.string().optional(),
   usernameColor: z.string().optional(),
 });
 
