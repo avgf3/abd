@@ -21,7 +21,7 @@ import { getSocket, saveSession } from '@/lib/socket';
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { getUserEffectStyles, getUserEffectClasses, getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
-import { UserListItem } from './UserListItemWithFrame';
+import UserListItem from './UserListItem';
 import { formatTimeAgo } from '@/utils/timeUtils';
 
 
