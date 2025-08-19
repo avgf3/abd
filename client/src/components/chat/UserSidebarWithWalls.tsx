@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useGrabScroll } from '@/hooks/useGrabScroll';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
@@ -66,6 +67,7 @@ export default function UnifiedSidebar({
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   // دالة ترتيب المستخدمين حسب الرتب
   const getRankOrder = (userType: string): number => {
@@ -503,16 +505,16 @@ export default function UnifiedSidebar({
   }), [currentUser, isModerator, renderCountryFlag, renderUserBadge]);
 
   return (
-    <aside className="w-full bg-card text-sm overflow-hidden border-l border-border shadow-lg flex flex-col h-full max-h-screen">
+    <aside className={`w-full bg-card text-sm overflow-hidden border-l border-border shadow-lg flex flex-col h-full max-h-screen ${isMobile ? 'sidebar mobile-scroll' : ''}`}>
       {/* Toggle Buttons - always visible now */}
-      <div className="flex border-b border-gray-200 flex-shrink-0">
+      <div className={`flex border-b border-gray-200 flex-shrink-0 ${isMobile ? 'flex-wrap' : ''}`}>
         <Button
           variant={activeView === 'users' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-none py-3 ${
+          className={`flex-1 rounded-none ${isMobile ? 'py-2 px-2 text-xs' : 'py-3'} ${
             activeView === 'users' 
               ? 'bg-blue-500 text-white' 
               : 'text-gray-600 hover:bg-gray-100'
-          }`}
+          } ${isMobile ? 'mobile-touch-button' : ''}`}
           onClick={() => setActiveView('users')}
         >
           <Users className="w-4 h-4 ml-2" />
@@ -520,11 +522,11 @@ export default function UnifiedSidebar({
         </Button>
         <Button
           variant={activeView === 'walls' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-none py-3 ${
+          className={`flex-1 rounded-none ${isMobile ? 'py-2 px-2 text-xs' : 'py-3'} ${
             activeView === 'walls' 
               ? 'bg-blue-500 text-white' 
               : 'text-gray-600 hover:bg-gray-100'
-          }`}
+          } ${isMobile ? 'mobile-touch-button' : ''}`}
           onClick={() => setActiveView('walls')}
         >
           <Home className="w-4 h-4 ml-2" />
@@ -532,11 +534,11 @@ export default function UnifiedSidebar({
         </Button>
         <Button
           variant={activeView === 'rooms' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-none py-3 ${
+          className={`flex-1 rounded-none ${isMobile ? 'py-2 px-2 text-xs' : 'py-3'} ${
             activeView === 'rooms' 
               ? 'bg-blue-500 text-white' 
               : 'text-gray-600 hover:bg-gray-100'
-          }`}
+          } ${isMobile ? 'mobile-touch-button' : ''}`}
           onClick={() => setActiveView('rooms')}
         >
           <Users className="w-4 h-4 ml-2" />
@@ -544,11 +546,11 @@ export default function UnifiedSidebar({
         </Button>
         <Button
           variant={activeView === 'friends' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-none py-3 ${
+          className={`flex-1 rounded-none ${isMobile ? 'py-2 px-2 text-xs' : 'py-3'} ${
             activeView === 'friends' 
               ? 'bg-blue-500 text-white' 
               : 'text-gray-600 hover:bg-gray-100'
-          }`}
+          } ${isMobile ? 'mobile-touch-button' : ''}`}
           onClick={() => setActiveView('friends')}
         >
           <UserPlus className="w-4 h-4 ml-2" />
@@ -560,20 +562,21 @@ export default function UnifiedSidebar({
       {activeView === 'users' && (
         <div className="flex-1 flex flex-col overflow-hidden min-h-0">
           {/* Search Bar - ثابت في الأعلى */}
-          <div className="p-4 bg-card border-b border-border flex-shrink-0">
+          <div className={`${isMobile ? 'p-2' : 'p-4'} bg-card border-b border-border flex-shrink-0`}>
             <div className="relative">
               <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="البحث عن المستخدمين..."
-                className="w-full pl-4 pr-10 py-2 rounded-lg bg-background border-input placeholder:text-muted-foreground text-foreground"
+                className={`w-full pl-4 pr-10 ${isMobile ? 'py-2 text-sm' : 'py-2'} rounded-lg bg-background border-input placeholder:text-muted-foreground text-foreground`}
+                style={isMobile ? { fontSize: '16px' } : {}}
               />
             </div>
           </div>
           
           {/* Users List - قابل للتمرير */}
-          <div ref={usersScrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 cursor-grab bg-background" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+          <div ref={usersScrollRef} className={`flex-1 overflow-y-auto ${isMobile ? 'p-2' : 'p-4'} space-y-3 cursor-grab bg-background mobile-scroll`} style={{ maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 200px)' }}>
           
           <div className="space-y-3">
             <div className="flex items-center justify-between">
