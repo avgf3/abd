@@ -113,10 +113,6 @@ export function computeFrameMetrics(params: {
 
 export function getFrameImagePath(frameId: AvatarFrameId): string | undefined {
   if (!frameId || frameId === 'none') return undefined;
-  // SVIP frames are located under /svgs/
-  if (frameId.startsWith('svip')) {
-    return `/svgs/${frameId}.svg`;
-  }
   return `/${frameId}.svg`;
 }
 
