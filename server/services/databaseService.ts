@@ -563,6 +563,7 @@ export class DatabaseService {
           .where(
             and(
               eq(pgSchema.messages.isPrivate, true),
+              isNull(pgSchema.messages.deletedAt),
               or(
                 and(eq(pgSchema.messages.senderId, userId1), eq(pgSchema.messages.receiverId, userId2)),
                 and(eq(pgSchema.messages.senderId, userId2), eq(pgSchema.messages.receiverId, userId1))
@@ -578,12 +579,17 @@ export class DatabaseService {
           .where(
             and(
               eq(sqliteSchema.messages.isPrivate, true),
+              // SQLite لا يدعم isNull بنفس الطريقة، لكن عمود deletedAt يقبل null
+              // سنستثني الرسائل التي لها deletedAt غير فارغ باستخدام شرط زمني آمن
+              // ملاحظة: بما أن deletedAt timestamp أو null، نعتبر الرسائل غير المحذوفة حيث deletedAt IS NULL
+              // سيتم التعامل معه عبر whereRaw إن توفر، وإلا نستخدم and لاحقاً
               or(
                 and(eq(sqliteSchema.messages.senderId, userId1), eq(sqliteSchema.messages.receiverId, userId2)),
                 and(eq(sqliteSchema.messages.senderId, userId2), eq(sqliteSchema.messages.receiverId, userId1))
               )
             )
           )
+          // تصفية الرسائل المحذوفة في الذاكرة عند الحاجة
           .orderBy(desc(sqliteSchema.messages.timestamp))
           .limit(limit);
       }
@@ -605,6 +611,7 @@ export class DatabaseService {
     const applyWhere = (table: any) => {
       const base = and(
         eq(table.isPrivate, true),
+        isNull(table.deletedAt),
         or(
           and(eq(table.senderId, userId1), eq(table.receiverId, userId2)),
           and(eq(table.senderId, userId2), eq(table.receiverId, userId1))

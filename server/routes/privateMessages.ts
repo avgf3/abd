@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import { notificationService } from '../services/notificationService';
 import { storage } from '../storage';
+import { messageLimiter, validateMessageContent } from '../security';
 import { db, dbType } from '../database-adapter';
 
 // Helper type for conversation item (server-side internal)
@@ -25,7 +26,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
  * POST /api/private-messages/send
  * إرسال رسالة خاصة بين مستخدمين مع تحسينات الأداء
  */
-router.post('/send', async (req, res) => {
+router.post('/send', messageLimiter, async (req, res) => {
   try {
     const { senderId, receiverId, content, messageType = 'text' } = req.body || {};
 
@@ -38,10 +39,12 @@ router.post('/send', async (req, res) => {
       return res.status(400).json({ error: 'لا يمكن إرسال رسالة لنفسك' });
     }
 
-    const text = typeof content === 'string' ? content.trim() : '';
-    if (!text) {
-      return res.status(400).json({ error: 'محتوى الرسالة مطلوب' });
+    const raw = typeof content === 'string' ? content : '';
+    const validation = validateMessageContent(raw);
+    if (!validation.isValid) {
+      return res.status(400).json({ error: validation.reason || 'محتوى الرسالة غير صالح' });
     }
+    const text = raw.trim();
 
     // التحقق من المستخدمين بشكل متوازي لتحسين السرعة
     const [sender, receiver] = await Promise.all([
@@ -55,6 +58,14 @@ router.post('/send', async (req, res) => {
     if (!receiver) {
       return res.status(404).json({ error: 'المستلم غير موجود' });
     }
+
+    // منع الإرسال إذا كان المستقبل قد تجاهل المُرسل
+    try {
+      const ignoredByReceiver: number[] = await storage.getIgnoredUsers(parseInt(receiverId));
+      if (Array.isArray(ignoredByReceiver) && ignoredByReceiver.includes(parseInt(senderId))) {
+        return res.status(403).json({ error: 'لا يمكن إرسال رسالة: هذا المستخدم قام بتجاهلك' });
+      }
+    } catch {}
 
     // إنشاء الرسالة في قاعدة البيانات مع تحسين البيانات
     const messageData = {
@@ -208,7 +219,7 @@ router.get('/:userId/:otherUserId', async (req, res, next) => {
     } else {
       // أحدث الرسائل
       const latest = await storage.getPrivateMessages(uid, oid, fetchLimitPlusOne);
-      messages = latest || [];
+      messages = latest?.filter((m: any) => !m.deletedAt) || [];
 
       // إثراء الرسائل بمعلومات المرسل بشكل محسن (Batch)
       const uniqueSenderIds = Array.from(new Set(messages.map((m: any) => m.senderId).filter(Boolean)));
@@ -227,7 +238,7 @@ router.get('/:userId/:otherUserId', async (req, res, next) => {
       const uniqueSenderIds = Array.from(new Set(messages.map((m: any) => m.senderId).filter(Boolean)));
       const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
       const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
-      messages = messages.map((m: any) => ({ ...m, sender: m.sender || senderMap.get(m.senderId) }));
+      messages = messages.map((m: any) => ({ ...m, sender: m.sender || senderMap.get(m.senderId) })).filter((m: any) => !m.deletedAt);
     }
 
     const hasMore = messages.length > lim;
@@ -404,6 +415,65 @@ router.get('/cache/stats', (req, res) => {
 router.post('/cache/clear', (req, res) => {
   conversationCache.clear();
   res.json({ success: true, message: 'تم مسح cache الرسائل الخاصة' });
+});
+
+/**
+ * GET /api/private-messages/unread/:userId
+ * جلب عدد الرسائل الخاصة غير المقروءة لكل محادثة
+ * ملاحظة: حالياً لا نملك حقل read receipts في جدول الرسائل،
+ * لذلك نستخدم إشعارات النوع message كمصدر بديل لعدّاد غير المقروء.
+ */
+router.get('/unread/:userId', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ error: 'معرّف المستخدم غير صالح' });
+    }
+
+    // جلب إشعارات الرسائل غير المقروءة كمصدر للعداد
+    const notes = await notificationService.getUserNotifications(userId, 500);
+    const unread = (notes || []).filter((n: any) => n.type === 'message' && n.isRead === false);
+    const bySender = new Map<number, number>();
+    for (const n of unread) {
+      const senderId = n?.data?.senderId;
+      if (typeof senderId === 'number') {
+        bySender.set(senderId, (bySender.get(senderId) || 0) + 1);
+      }
+    }
+
+    const result = Array.from(bySender.entries()).map(([otherUserId, count]) => ({ otherUserId, count }));
+    return res.json({ success: true, items: result });
+  } catch (error: any) {
+    console.error('خطأ في جلب عداد الرسائل غير المقروءة:', error);
+    return res.status(500).json({ error: error?.message || 'خطأ في الخادم' });
+  }
+});
+
+/**
+ * POST /api/private-messages/mark-read
+ * وسم رسائل محادثة كمقروءة عبر الإشعارات المقابلة
+ * body: { userId: number, otherUserId: number }
+ */
+router.post('/mark-read', async (req, res) => {
+  try {
+    const { userId, otherUserId } = req.body || {};
+    const uid = parseInt(userId);
+    const oid = parseInt(otherUserId);
+    if (!uid || !oid || isNaN(uid) || isNaN(oid)) {
+      return res.status(400).json({ error: 'معرّفات غير صالحة' });
+    }
+
+    // اجلب إشعارات المستخدم ثم علّم إشعارات رسائل هذا الطرف كمقروءة
+    const notes = await notificationService.getUserNotifications(uid, 1000);
+    const targets = (notes || []).filter((n: any) => n.type === 'message' && n.isRead === false && n?.data?.senderId === oid);
+    for (const n of targets) {
+      await notificationService.markNotificationAsRead(n.id);
+    }
+    return res.json({ success: true, updated: targets.length });
+  } catch (error: any) {
+    console.error('خطأ في وسم الرسائل كمقروءة:', error);
+    return res.status(500).json({ error: error?.message || 'خطأ في الخادم' });
+  }
 });
 
 export default router;
