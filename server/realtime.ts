@@ -41,19 +41,20 @@ export function updateConnectedUserCache(user: any) {
   } catch {}
 }
 
+// بناء قائمة المتصلين بكفاءة اعتماداً على sockets المسجلة
 async function buildOnlineUsersForRoom(roomId: string) {
   const userMap = new Map<number, any>();
-  for (const { user, sockets } of connectedUsers.values()) {
-    for (const { room } of sockets.values()) {
-      if (room === roomId && user && user.id && user.username && user.userType) {
-        userMap.set(user.id, user);
+  for (const [_, entry] of connectedUsers.entries()) {
+    // تحقق سريع عبر sockets دون مسح كامل
+    for (const socketMeta of entry.sockets.values()) {
+      if (socketMeta.room === roomId && entry.user && entry.user.id && entry.user.username && entry.user.userType) {
+        userMap.set(entry.user.id, entry.user);
         break;
       }
     }
   }
   const { sanitizeUsersArray } = await import('./utils/data-sanitizer');
   const sanitized = sanitizeUsersArray(Array.from(userMap.values()));
-  // Append version tag to profileImage for cache-busting consistency
   return sanitized.map((u: any) => {
     try {
       const versionTag = (u as any).avatarHash || (u as any).avatarVersion;
@@ -93,19 +94,14 @@ async function joinRoom(io: IOServer, socket: CustomSocket, userId: number, user
     connectedUsers.set(userId, entry);
   }
 
-  // Notify others in room
-  socket.to(`room_${roomId}`).emit('message', {
-    type: 'userJoinedRoom',
-    username,
-    userId,
-    roomId
-  });
+  // Notify others in room (مقتصد، ثم بث قائمة محدثة)
+  socket.to(`room_${roomId}`).emit('message', { type: 'userJoinedRoom', username, userId, roomId });
 
   // Send confirmation with current users list
   const users = await buildOnlineUsersForRoom(roomId);
   socket.emit('message', { type: 'roomJoined', roomId, users });
 
-  // Send last 10 messages for room
+  // رسائل حديثة (تجنب التكرار عند الانضمام السريع): لا داعي إذا لم تتغير الغرفة فعلياً
   try {
     const recentMessages = await roomMessageService.getLatestRoomMessages(roomId, 10);
     socket.emit('message', { type: 'roomMessages', roomId, messages: recentMessages });
@@ -329,11 +325,23 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
       socket.emit('message', { type: 'onlineUsers', users, roomId, source: 'request' });
     });
 
+    // انضمام للغرفة مع منع السبام والتكرار السريع
+    let lastJoinAt = 0;
     socket.on('joinRoom', async (data) => {
       if (!socket.userId) { socket.emit('message', { type: 'error', message: 'يجب تسجيل الدخول أولاً' }); return; }
       const roomId = (data && data.roomId) ? String(data.roomId) : GENERAL_ROOM;
       const username = socket.username || `User#${socket.userId}`;
       try {
+        // منع الانضمام المتكرر لنفس الغرفة أو الطلبات المتقاربة جداً
+        const now = Date.now();
+        if (socket.currentRoom === roomId) {
+          socket.emit('message', { type: 'roomJoined', roomId, users: await buildOnlineUsersForRoom(roomId) });
+          return;
+        }
+        if (now - lastJoinAt < 500) {
+          return;
+        }
+        lastJoinAt = now;
         // If switching, also refresh previous room list
         const previousRoom = socket.currentRoom;
         await joinRoom(io, socket, socket.userId, username, roomId);

@@ -42,6 +42,11 @@ class RoomService {
   private connectedRooms = new Map<string, Set<number>>(); // roomId -> Set of userIds
   private userRooms = new Map<number, string>(); // userId -> current roomId
   private operationLocks = new Map<string, boolean>(); // منع العمليات المتكررة
+  // 💾 كاش للغرف مع نسخة للتعامل مع ETag
+  private roomsCache?: { data: Room[]; expiresAt: number };
+  private roomsVersion = 1;
+  // 💾 كاش لمستخدمي الغرفة (TTL قصير)
+  private roomUsersCache = new Map<string, { data: any[]; expiresAt: number }>();
 
   /**
    * جلب جميع الغرف
@@ -51,7 +56,14 @@ class RoomService {
       if (!db || dbType === 'disabled') {
         return [];
       }
-      return await storage.getAllRooms();
+      const now = Date.now();
+      if (this.roomsCache && this.roomsCache.expiresAt > now) {
+        return this.roomsCache.data;
+      }
+      const list = await storage.getAllRooms();
+      // TTL 5s
+      this.roomsCache = { data: list, expiresAt: now + 5000 };
+      return list;
     } catch (error) {
       console.error('خطأ في جلب الغرف:', error);
       return [];
@@ -116,7 +128,8 @@ class RoomService {
         isBroadcast: roomData.isBroadcast || false,
         hostId: roomData.hostId || null
       });
-
+      // إبطال الكاش وزيادة النسخة
+      this.invalidateRoomsCache();
       return room;
     } catch (error) {
       console.error('خطأ في إنشاء الغرفة:', error);
@@ -179,6 +192,8 @@ class RoomService {
           this.userRooms.set(uId, 'general');
         }
       }
+      // إبطال الكاش وزيادة النسخة
+      this.invalidateRoomsCache();
     } catch (error) {
       console.error('خطأ في حذف الغرفة:', error);
       throw error;
@@ -238,6 +253,8 @@ class RoomService {
       // 💾 حفظ في قاعدة البيانات
       await storage.joinRoom(userId, roomId);
 
+      // إبطال كاش مستخدمي الغرفة
+      this.roomUsersCache.delete(roomId);
       } catch (error) {
       console.error('خطأ في الانضمام للغرفة:', error);
       throw error;
@@ -273,6 +290,8 @@ class RoomService {
         await storage.leaveRoom(userId, roomId);
       }
 
+      // إبطال كاش مستخدمي الغرفة
+      this.roomUsersCache.delete(roomId);
       } catch (error) {
       console.error('خطأ في مغادرة الغرفة:', error);
       throw error;
@@ -309,6 +328,12 @@ class RoomService {
         return [];
       }
 
+      const now = Date.now();
+      const cached = this.roomUsersCache.get(roomId);
+      if (cached && cached.expiresAt > now) {
+        return cached.data;
+      }
+
       // جلب معرفات المستخدمين من قاعدة البيانات أولاً
       const dbUserIds: number[] = await storage.getRoomUsers(roomId);
       
@@ -321,6 +346,9 @@ class RoomService {
 
       // جلب بيانات جميع المستخدمين (إزالة N+1)
       const users = await storage.getUsersByIds(Array.from(allUserIds));
+
+      // تخزين في كاش لمدة قصيرة (2s)
+      this.roomUsersCache.set(roomId, { data: users, expiresAt: now + 2000 });
       return users;
     } catch (error) {
       console.error(`خطأ في جلب مستخدمي الغرفة ${roomId}:`, error);
@@ -547,6 +575,29 @@ class RoomService {
     }
     
     }
+
+  /**
+   * إبطال كاش الغرف وزيادة النسخة
+   */
+  invalidateRoomsCache(): void {
+    this.roomsCache = undefined;
+    this.roomsVersion += 1;
+  }
+
+  /**
+   * الحصول على نسخة الغرف لاستخدامها مع ETag
+   */
+  getRoomsVersion(): number {
+    return this.roomsVersion;
+  }
+
+  /**
+   * إرجاع معرفات المستخدمين المتصلين في الغرفة من الذاكرة فقط
+   */
+  getConnectedUserIds(roomId: string): number[] {
+    const set = this.connectedRooms.get(roomId);
+    return set ? Array.from(set.values()) : [];
+  }
 }
 
 // تصدير instance واحد

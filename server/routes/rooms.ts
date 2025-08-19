@@ -52,11 +52,20 @@ const upload = multer({
  */
 router.get('/', async (req, res) => {
   try {
-    // 🚀 إضافة رؤوس التخزين المؤقت لتحسين الأداء
+    // 🚀 إضافة رؤوس التخزين المؤقت مع ETag مستقر بناءً على نسخة الغرف
+    const version = roomService.getRoomsVersion?.() || 1;
+    const etag = `rooms-v${version}`;
+
     res.set({
-      'Cache-Control': 'public, max-age=30', // 30 ثانية cache
-      'ETag': `rooms-${Date.now()}` // ETag للتحقق من التغييرات
+      'Cache-Control': 'public, max-age=5',
+      'ETag': etag
     });
+
+    // If-None-Match دعم
+    const incomingEtag = req.headers['if-none-match'];
+    if (incomingEtag && incomingEtag === etag) {
+      return res.status(304).end();
+    }
 
     const rooms = await roomService.getAllRooms();
     
