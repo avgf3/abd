@@ -728,6 +728,25 @@ export const useChat = () => {
       }
     });
 
+    // بث مخصص لتحديث إطار الصورة الشخصية لتجنب تضارب قناة 'message'
+    socketInstance.on('userFrameUpdated', (payload: any) => {
+      try {
+        const userId = payload?.userId;
+        const frame = payload?.frame;
+        if (userId && typeof frame === 'string') {
+          if (currentUserRef.current?.id === userId) {
+            dispatch({ type: 'SET_CURRENT_USER', payload: { ...currentUserRef.current!, avatarFrame: frame } as any });
+          }
+          dispatch({ type: 'UPSERT_ONLINE_USER', payload: { id: userId, avatarFrame: frame } as any });
+        }
+      } catch {}
+    });
+
+    // حدث إشعار جديد - نفصله عن قناة الرسائل ونحفّز تحديث الكاش عبر حدث متصفح
+    socketInstance.on('newNotification', (payload: any) => {
+      try { window.dispatchEvent(new CustomEvent('notificationReceived', { detail: { notificationId: payload?.notification?.id } })); } catch {}
+    });
+
     // أحداث مباشرة محتملة لتحديث قائمة المتصلين فوراً إن وُجدت على الخادم
     socketInstance.on('userDisconnected', (payload: any) => {
       const uid = payload?.userId || payload?.id;

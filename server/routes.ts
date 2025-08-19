@@ -2355,6 +2355,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const targetUserId = parseInt(req.params.id);
     const { frame } = req.body;
+    
+    if (!Number.isFinite(targetUserId)) {
+      return res.status(400).json({ error: 'معرّف المستخدم غير صالح' });
+    }
+    if (typeof frame !== 'string' || frame.trim() === '') {
+      return res.status(400).json({ error: 'قيمة الإطار مطلوبة' });
+    }
+    const normalizedFrame = String(frame).trim();
 
     // التحقق من صحة الإطار
     // قائمة الإطارات المسموحة - محدثة للنظام الجديد
@@ -2379,13 +2387,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       'wings-queen'
     ];
 
-    if (!validFrames.includes(frame)) {
+    if (!validFrames.includes(normalizedFrame)) {
       return res.status(400).json({ error: 'إطار غير صالح' });
     }
 
     try {
       // تحديث إطار المستخدم
-      const updatedUser = await storage.updateUser(targetUserId, { avatarFrame: frame });
+      const updatedUser = await storage.updateUser(targetUserId, { avatarFrame: normalizedFrame });
       
       if (!updatedUser) {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
@@ -2393,11 +2401,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // إرسال التحديث لجميع المتصلين عبر قناة الرسائل الموحدة
       const io = getIO();
-      io.emit('message', { type: 'user_frame_updated', userId: targetUserId, frame, updatedBy: currentUserId });
+      // قناة مخصصة لتحديث الإطارات لتجنب التضارب مع قناة الرسائل العامة
+      try { io.emit('userFrameUpdated', { userId: targetUserId, frame: normalizedFrame, updatedBy: currentUserId }); } catch {}
+      // إرسال عبر القناة الموحدة للرسائل للحفاظ على التوافق مع الإصدارات السابقة
+      try { io.emit('message', { type: 'user_frame_updated', userId: targetUserId, frame: normalizedFrame, updatedBy: currentUserId }); } catch {}
 
       res.json({ 
         success: true, 
         user: sanitizeUserData(updatedUser),
+        frame: normalizedFrame,
         message: 'تم تحديث الإطار بنجاح'
       });
     } catch (error) {
