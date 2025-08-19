@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, X, Check, Trash2, Users } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -137,6 +137,44 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     }
   });
 
+  // تحديد جميع الإشعارات المرئية (بعد الاستبعاد/الفلترة) كمقروءة فقط
+  const handleMarkAllVisibleAsRead = useCallback(async () => {
+    const unreadVisible = filteredByType.filter((n) => !n.isRead).map((n) => n.id);
+    if (unreadVisible.length === 0) return;
+    try {
+      await Promise.all(
+        unreadVisible.map((id) => apiRequest(`/api/notifications/${id}/read`, { method: 'PUT' }))
+      );
+
+      // تحديث الكاش محلياً
+      queryClient.setQueryData(
+        ['/api/notifications', currentUser?.id],
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            notifications: oldData.notifications.map((notif: Notification) =>
+              unreadVisible.includes(notif.id) ? { ...notif, isRead: true } : notif
+            )
+          };
+        }
+      );
+
+      queryClient.setQueryData(
+        ['/api/notifications/unread-count', currentUser?.id],
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          const next = Math.max(0, (oldData.count || 0) - unreadVisible.length);
+          return { count: next };
+        }
+      );
+
+      showSuccessToast("تم تحديد الإشعارات المرئية كمقروءة");
+    } catch {
+      showErrorToast("فشل في تحديد الإشعارات المرئية كمقروءة");
+    }
+  }, [filteredByType, queryClient, currentUser?.id, showSuccessToast, showErrorToast]);
+
   // حذف إشعار - محسن
   const deleteNotificationMutation = useMutation({
     mutationFn: async (notificationId: number) => {
@@ -171,7 +209,32 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
   }, [refetch]);
 
   const notifications = notificationsData?.notifications || [];
-  const unreadCount = unreadCountData?.count || 0;
+
+  // استبعاد إشعارات الرسائل من التبويب + مرشّح حسب الفئة
+  type FilterKey = 'all' | 'friends' | 'system' | 'rewards';
+  const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
+
+  const filteredByType = useMemo(() => {
+    // استبعاد رسائل الخاص من العرض فقط
+    const base = notifications.filter((n) => n.type !== 'message');
+    if (activeFilter === 'all') return base;
+    if (activeFilter === 'friends') {
+      const friendTypes = new Set(['friend_request', 'friend_accepted', 'friend', 'friendRequest', 'friendAccepted']);
+      return base.filter((n) => friendTypes.has(n.type));
+    }
+    if (activeFilter === 'system') {
+      const systemTypes = new Set(['system', 'moderation', 'promotion']);
+      return base.filter((n) => systemTypes.has(n.type));
+    }
+    if (activeFilter === 'rewards') {
+      const rewardTypes = new Set(['points_received', 'daily_bonus', 'achievement', 'level_up']);
+      return base.filter((n) => rewardTypes.has(n.type));
+    }
+    return base;
+  }, [notifications, activeFilter]);
+
+  // عدّاد غير المقروء الظاهر (بعد الاستبعاد/الفلترة) لعرضه في التبويب
+  const displayUnreadCount = useMemo(() => filteredByType.filter((n) => !n.isRead).length, [filteredByType]);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -179,6 +242,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
       case 'friend':
       case 'friendRequest':
       case 'friendAccepted':
+      case 'friend_accepted':
         return <Users className="w-4 h-4" />;
       case 'level_up':
         return <span className="text-base">🎉</span>;
@@ -192,8 +256,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
         return <span className="text-base">⬆️</span>;
       case 'moderation':
         return <span className="text-base">⚠️</span>;
-      case 'message':
-        return <span className="text-base">💬</span>;
+      // 'message' مستبعد من العرض
       case 'system':
         return <Bell className="w-4 h-4" />;
       default:
@@ -211,9 +274,9 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
             <div className="flex items-center gap-2">
               <Bell className="w-5 h-5" />
               الإشعارات
-              {unreadCount > 0 && (
+              {displayUnreadCount > 0 && (
                 <Badge variant="destructive" className="text-xs">
-                  {unreadCount}
+                  {displayUnreadCount}
                 </Badge>
               )}
             </div>
@@ -228,19 +291,29 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
           </DialogTitle>
         </DialogHeader>
 
+        {/* شريط المرشّحات البسيط */}
+        <div className="px-2 pb-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant={activeFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setActiveFilter('all')}>الكل</Button>
+            <Button variant={activeFilter === 'friends' ? 'default' : 'outline'} size="sm" onClick={() => setActiveFilter('friends')}>الأصدقاء</Button>
+            <Button variant={activeFilter === 'system' ? 'default' : 'outline'} size="sm" onClick={() => setActiveFilter('system')}>النظام</Button>
+            <Button variant={activeFilter === 'rewards' ? 'default' : 'outline'} size="sm" onClick={() => setActiveFilter('rewards')}>المكافآت</Button>
+          </div>
+        </div>
+
         <div className="flex-1 overflow-y-auto max-h-96">
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
             </div>
-          ) : notifications.length === 0 ? (
+          ) : filteredByType.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
               <Bell className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>لا توجد إشعارات</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {notifications.map((notification) => (
+              {filteredByType.map((notification) => (
                 <div
                   key={notification.id}
                   className={`p-3 border rounded-lg transition-colors ${
@@ -294,11 +367,11 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
         </div>
 
         <DialogFooter className="flex-row gap-2">
-          {unreadCount > 0 && (
+          {displayUnreadCount > 0 && (
             <Button
               variant="outline"
               size="sm"
-              onClick={() => markAllAsReadMutation.mutate()}
+              onClick={handleMarkAllVisibleAsRead}
               disabled={markAllAsReadMutation.isPending}
               className="flex-1"
             >
