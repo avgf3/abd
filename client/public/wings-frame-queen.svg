@@ -1,17 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220" fill="none">
-    <defs>
-        <linearGradient id="frameGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#ff69b4"/>
-            <stop offset="100%" stop-color="#c71585"/>
-        </linearGradient>
-    </defs>
-    
-    <!-- إطار دائري خارجي -->
-    <circle cx="110" cy="110" r="105" fill="none" stroke="url(#frameGrad)" stroke-width="3"/>
-    
-    <!-- الشريط السفلي -->
-    <g>
-        <path d="M60,170 L160,170 L175,190 L170,210 L50,210 L45,190 Z" fill="#ff69b4" stroke="#c71585" stroke-width="1"/>
-        <text x="110" y="195" text-anchor="middle" fill="#c71585" font-size="16" font-family="Arial Black" font-weight="bold" letter-spacing="2">QUEEN</text>
-    </g>
+<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'>
+  <defs>
+    <linearGradient id='pinkGradient1' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#ffe6f2'/>
+      <stop offset='50%' stop-color='#ff69b4'/>
+      <stop offset='100%' stop-color='#ff1493'/>
+    </linearGradient>
+
+    <radialGradient id='pinkRadial' cx='50%' cy='50%' r='50%'>
+      <stop offset='0%' stop-color='#fff0f5'/>
+      <stop offset='40%' stop-color='#ff69b4'/>
+      <stop offset='100%' stop-color='#c71585'/>
+    </radialGradient>
+
+    <linearGradient id='pinkShine' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#ff69b4' stop-opacity='0'/>
+      <stop offset='50%' stop-color='#ffffff' stop-opacity='0.85'/>
+      <stop offset='100%' stop-color='#ff69b4' stop-opacity='0'/>
+    </linearGradient>
+
+    <filter id='shadow'>
+      <feDropShadow dx='2' dy='2' stdDeviation='3' flood-opacity='0.35'/>
+    </filter>
+  </defs>
+
+  <!-- خلفية شعاعية خفيفة -->
+  <circle cx='300' cy='300' r='280' fill='#fff0f5' opacity='0.08'/>
+
+  <!-- حلقات الإطار متناسقة مع باقي التصاميم -->
+  <circle cx='300' cy='300' r='200' fill='none' stroke='#c71585' stroke-width='2' opacity='0.3'/>
+  <circle cx='300' cy='300' r='180' fill='none' stroke='url(#pinkGradient1)' stroke-width='35' filter='url(#shadow)'/>
+  <circle cx='300' cy='300' r='180' fill='none' stroke='url(#pinkRadial)' stroke-width='30' opacity='0.9'/>
+  <circle cx='300' cy='300' r='195' fill='none' stroke='#ffe6f2' stroke-width='1' opacity='0.6'/>
+  <circle cx='300' cy='300' r='165' fill='none' stroke='#ffe6f2' stroke-width='1' opacity='0.6'/>
+
+  <!-- لمعان عرضي خفيف -->
+  <rect x='0' y='0' width='120' height='600' fill='url(#pinkShine)' opacity='0.25'>
+    <animateTransform attributeName='transform' type='translate' from='-120 0' to='720 0' dur='4s' repeatCount='indefinite'/>
+  </rect>
+
+  <!-- الشريط السفلي QUEEN -->
+  <g filter='url(#shadow)'>
+    <path d='M170,485 L430,485 L445,520 L440,555 L160,555 L155,520 Z' fill='url(#pinkGradient1)' stroke='#c71585' stroke-width='2'/>
+    <path d='M175,490 L425,490 L435,545 L165,545 Z' fill='none' stroke='#ffe6f2' stroke-width='1' opacity='0.6'/>
+
+    <text x='300' y='525' text-anchor='middle' fill='#8b0037' font-size='36' font-family='Arial Black' font-weight='bold' letter-spacing='3'>QUEEN</text>
+    <text x='300' y='525' text-anchor='middle' fill='url(#pinkRadial)' font-size='34' font-family='Arial Black' font-weight='bold' letter-spacing='3'>QUEEN</text>
+    <text x='300' y='525' text-anchor='middle' fill='none' stroke='#ffb6c1' stroke-width='0.6' font-size='34' font-family='Arial Black' font-weight='bold' letter-spacing='3' opacity='0.7'>QUEEN</text>
+  </g>
 </svg>
