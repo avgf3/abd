@@ -36,21 +36,21 @@ const DEFAULT_THICKNESS_RATIO = 0.12;
 export const FRAME_CONFIG: Record<AvatarFrameId, FrameConfig> = {
   none: { thicknessRatio: DEFAULT_THICKNESS_RATIO },
   'enhanced-crown-frame': { thicknessRatio: 0.16, listClipTopPercent: 35 },
-  'crown-frame-silver': { thicknessRatio: 0.14, listClipTopPercent: 30 },
-  'crown-frame-rosegold': { thicknessRatio: 0.14, listClipTopPercent: 30 },
-  'crown-frame-blue': { thicknessRatio: 0.14, listClipTopPercent: 30 },
-  'crown-frame-emerald': { thicknessRatio: 0.14, listClipTopPercent: 30 },
-  'crown-frame-purple': { thicknessRatio: 0.14, listClipTopPercent: 30 },
-  'crown-frame-king': { thicknessRatio: 0.14, listClipTopPercent: 30 },
-  'crown-frame-queen': { thicknessRatio: 0.14, listClipTopPercent: 30 },
+  'crown-frame-silver': { thicknessRatio: 0.16, listClipTopPercent: 30 },
+  'crown-frame-rosegold': { thicknessRatio: 0.16, listClipTopPercent: 30 },
+  'crown-frame-blue': { thicknessRatio: 0.16, listClipTopPercent: 30 },
+  'crown-frame-emerald': { thicknessRatio: 0.16, listClipTopPercent: 30 },
+  'crown-frame-purple': { thicknessRatio: 0.16, listClipTopPercent: 30 },
+  'crown-frame-king': { thicknessRatio: 0.16, listClipTopPercent: 30 },
+  'crown-frame-queen': { thicknessRatio: 0.16, listClipTopPercent: 30 },
   'crown-frame-classic-gold': { thicknessRatio: 0.12, listClipTopPercent: 0 },
   'crown-frame-classic-coolpink': { thicknessRatio: 0.12, listClipTopPercent: 0 },
   'svip1-frame-gold': { thicknessRatio: 0.16, listClipTopPercent: 28 },
   'svip1-frame-pink': { thicknessRatio: 0.16, listClipTopPercent: 28 },
   'svip2-frame-gold': { thicknessRatio: 0.16, listClipTopPercent: 28 },
   'svip2-frame-pink': { thicknessRatio: 0.16, listClipTopPercent: 28 },
-  'wings-frame-king': { thicknessRatio: 0.18, listClipTopPercent: 45, compactFallback: 'crown-frame-classic-gold' },
-  'wings-frame-queen': { thicknessRatio: 0.18, listClipTopPercent: 45, compactFallback: 'crown-frame-classic-coolpink' }
+  'wings-frame-king': { thicknessRatio: 0.16, listClipTopPercent: 45, compactFallback: 'crown-frame-classic-gold' },
+  'wings-frame-queen': { thicknessRatio: 0.16, listClipTopPercent: 45, compactFallback: 'crown-frame-classic-coolpink' }
 };
 
 export function resolveFrameId(frameId: AvatarFrameId, sizePx: number): AvatarFrameId {
