@@ -1,149 +1,83 @@
 import { useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
-import { useToast } from './use-toast';
-
-export interface ApiError extends Error {
-  status?: number;
-  code?: string;
-  details?: any;
-  timestamp?: string;
+interface ErrorOptions {
+  showToast?: boolean;
+  logToConsole?: boolean;
+  fallbackMessage?: string;
 }
-
-// رسائل الأخطاء المحلية
-const ERROR_MESSAGES = {
-  NETWORK_ERROR: 'مشكلة في الاتصال بالإنترنت',
-  TIMEOUT: 'انتهت مهلة الطلب',
-  UNAUTHORIZED: 'يجب تسجيل الدخول أولاً',
-  FORBIDDEN: 'ليس لديك صلاحية لتنفيذ هذا الإجراء',
-  NOT_FOUND: 'المحتوى المطلوب غير موجود',
-  VALIDATION_ERROR: 'بيانات غير صحيحة',
-  SERVER_ERROR: 'خطأ في الخادم',
-  SERVICE_UNAVAILABLE: 'الخدمة غير متاحة حالياً',
-  DEFAULT: 'حدث خطأ غير متوقع'
-};
 
 export function useErrorHandler() {
   const { toast } = useToast();
 
-  const handleError = useCallback((error: ApiError | Error, customMessage?: string) => {
-    console.error('خطأ في التطبيق:', error);
+  const handleError = useCallback((
+    error: unknown,
+    context: string,
+    options: ErrorOptions = {}
+  ) => {
+    const {
+      showToast = true,
+      logToConsole = true,
+      fallbackMessage = 'حدث خطأ غير متوقع'
+    } = options;
 
-    let errorMessage = customMessage;
-    let errorTitle = 'خطأ';
+    // Extract error message
+    let errorMessage = fallbackMessage;
+    let errorDetails = '';
 
-    if (!customMessage) {
-      const apiError = error as ApiError;
-      
-      // تحديد الرسالة بناءً على نوع الخطأ
-      if (apiError.code) {
-        switch (apiError.code) {
-          case 'NETWORK_ERROR':
-            errorMessage = ERROR_MESSAGES.NETWORK_ERROR;
-            errorTitle = 'مشكلة في الاتصال';
-            break;
-          case 'TIMEOUT':
-            errorMessage = ERROR_MESSAGES.TIMEOUT;
-            errorTitle = 'انتهت المهلة';
-            break;
-          case 'UNAUTHORIZED':
-            errorMessage = ERROR_MESSAGES.UNAUTHORIZED;
-            errorTitle = 'غير مصرح';
-            break;
-          case 'FORBIDDEN':
-            errorMessage = ERROR_MESSAGES.FORBIDDEN;
-            errorTitle = 'غير مسموح';
-            break;
-          case 'NOT_FOUND':
-            errorMessage = ERROR_MESSAGES.NOT_FOUND;
-            errorTitle = 'غير موجود';
-            break;
-          case 'VALIDATION_ERROR':
-            errorMessage = ERROR_MESSAGES.VALIDATION_ERROR;
-            errorTitle = 'بيانات خاطئة';
-            break;
-          default:
-            errorMessage = apiError.message || ERROR_MESSAGES.DEFAULT;
-        }
-      } else if (apiError.status) {
-        // تحديد الرسالة بناءً على رمز الحالة
-        switch (apiError.status) {
-          case 0:
-            errorMessage = ERROR_MESSAGES.NETWORK_ERROR;
-            errorTitle = 'مشكلة في الاتصال';
-            break;
-          case 401:
-            errorMessage = ERROR_MESSAGES.UNAUTHORIZED;
-            errorTitle = 'غير مصرح';
-            break;
-          case 403:
-            errorMessage = ERROR_MESSAGES.FORBIDDEN;
-            errorTitle = 'غير مسموح';
-            break;
-          case 404:
-            errorMessage = ERROR_MESSAGES.NOT_FOUND;
-            errorTitle = 'غير موجود';
-            break;
-          case 408:
-            errorMessage = ERROR_MESSAGES.TIMEOUT;
-            errorTitle = 'انتهت المهلة';
-            break;
-          case 422:
-            errorMessage = ERROR_MESSAGES.VALIDATION_ERROR;
-            errorTitle = 'بيانات خاطئة';
-            break;
-          case 500:
-            errorMessage = ERROR_MESSAGES.SERVER_ERROR;
-            errorTitle = 'خطأ في الخادم';
-            break;
-          case 503:
-            errorMessage = ERROR_MESSAGES.SERVICE_UNAVAILABLE;
-            errorTitle = 'خدمة غير متاحة';
-            break;
-          default:
-            errorMessage = apiError.message || ERROR_MESSAGES.DEFAULT;
-        }
-      } else {
-        errorMessage = error.message || ERROR_MESSAGES.DEFAULT;
-      }
+    if (error instanceof Error) {
+      errorMessage = error.message || fallbackMessage;
+      errorDetails = error.stack || '';
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      errorMessage = String(error.message);
     }
 
-    // عرض الخطأ للمستخدم
-    toast({
-      title: errorTitle,
-      description: errorMessage,
-      variant: 'destructive',
-    });
+    // Log to console
+    if (logToConsole) {
+      console.error(`[${context}] Error:`, {
+        message: errorMessage,
+        details: errorDetails,
+        originalError: error,
+        timestamp: new Date().toISOString()
+      });
+    }
 
+    // Show toast notification
+    if (showToast) {
+      toast({
+        title: context,
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 5000
+      });
+    }
+
+    // Return formatted error for further handling
+    return {
+      message: errorMessage,
+      details: errorDetails,
+      context,
+      timestamp: new Date().toISOString()
+    };
   }, [toast]);
 
-  const handleSuccess = useCallback((message: string, title?: string) => {
-    toast({
-      title: title || 'نجح',
-      description: message,
-      variant: 'default',
-    });
-  }, [toast]);
-
-  const handleWarning = useCallback((message: string, title?: string) => {
-    toast({
-      title: title || 'تحذير',
-      description: message,
-      variant: 'default',
-    });
-  }, [toast]);
-
-  const handleInfo = useCallback((message: string, title?: string) => {
-    toast({
-      title: title || 'معلومة',
-      description: message,
-      variant: 'default',
-    });
-  }, [toast]);
+  const handleAsyncOperation = useCallback(async <T,>(
+    operation: () => Promise<T>,
+    context: string,
+    options: ErrorOptions = {}
+  ): Promise<T | null> => {
+    try {
+      return await operation();
+    } catch (error) {
+      handleError(error, context, options);
+      return null;
+    }
+  }, [handleError]);
 
   return {
     handleError,
-    handleSuccess,
-    handleWarning,
-    handleInfo
+    handleAsyncOperation
   };
 }
