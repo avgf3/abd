@@ -61,7 +61,7 @@ export default function UserPopup({
     try {
       await apiRequest(`/api/users/${user.id}/avatar-frame`, {
         method: 'POST',
-        body: { frame: selectedFrame, moderatorId: currentUser.id }
+        body: { frame: selectedFrame }
       });
       
       toast({

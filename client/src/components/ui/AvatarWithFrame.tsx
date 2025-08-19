@@ -94,7 +94,7 @@ export function AvatarWithFrame({
         height: `calc(100% + ${pad * 2}px)`,
         pointerEvents: 'none',
         zIndex: 20,
-        clipPath: ringOnly ? clipPath : clipPath
+        clipPath
       } as React.CSSProperties;
     }
     return {
