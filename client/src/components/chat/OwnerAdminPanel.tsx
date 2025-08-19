@@ -75,13 +75,24 @@ export default function OwnerAdminPanel({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
 
+  // مزامنة الحالة المحلية مع الخاصية القادمة من المكوّن الأب (إن وُجدت)
   useEffect(() => {
-    if (isOpen && currentUser?.userType === 'owner') {
-      setIsModalOpen(isOpen);
-      fetchModerationData();
-      fetchStaffMembers();
+    setIsModalOpen(Boolean(isOpen));
+  }, [isOpen]);
+
+  // جلب البيانات عند فتح النافذة فعلياً
+  useEffect(() => {
+    if (isModalOpen && currentUser?.userType === 'owner') {
+      // جلب بحسب التبويب الحالي لتجنب طلبات غير لازمة
+      if (selectedTab === 'log') {
+        fetchModerationData();
+      } else if (selectedTab === 'staff') {
+        fetchStaffMembers();
+      } else {
+        // تبويب الحظر لا يحتاج جلب أولي هنا
+      }
     }
-  }, [isOpen, currentUser]);
+  }, [isModalOpen, currentUser, selectedTab]);
 
   const fetchModerationData = async () => {
     if (!currentUser) return;
