@@ -89,11 +89,11 @@
     <ellipse cx="300" cy="300" rx="280" ry="280" fill="url(#goldRadial)" opacity="0.1"/>
     
     <!-- إطار دائري ذهبي -->
-    <circle cx="300" cy="300" r="190" fill="none" stroke="#daa520" stroke-width="2" opacity="0.3"/>
-    <circle cx="300" cy="300" r="180" fill="none" stroke="#b8860b" stroke-width="16" filter="url(#shadow)" opacity="0.9"/>
-    <circle cx="300" cy="300" r="180" fill="none" stroke="url(#goldGradient1)" stroke-width="14"/>
-    <circle cx="300" cy="300" r="172" fill="none" stroke="#fff9e6" stroke-width="1" opacity="0.7"/>
-    <circle cx="300" cy="300" r="188" fill="none" stroke="#fff9e6" stroke-width="1" opacity="0.7"/>
+    <circle cx="300" cy="300" r="200" fill="none" stroke="#daa520" stroke-width="2" opacity="0.3"/>
+    <circle cx="300" cy="300" r="180" fill="none" stroke="#b8860b" stroke-width="35" filter="url(#shadow)" opacity="0.9"/>
+    <circle cx="300" cy="300" r="180" fill="none" stroke="url(#goldGradient1)" stroke-width="30"/>
+    <circle cx="300" cy="300" r="195" fill="none" stroke="#fff9e6" stroke-width="1" opacity="0.7"/>
+    <circle cx="300" cy="300" r="165" fill="none" stroke="#fff9e6" stroke-width="1" opacity="0.7"/>
     
     <!-- زخارف دائرية -->
     <g opacity="0.5">
