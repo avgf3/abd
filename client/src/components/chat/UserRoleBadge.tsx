@@ -15,11 +15,11 @@ interface UserRoleBadgeProps {
  * المالك (owner): تاج نصي 👑 (تم إزالة ملفات svg القديمة)
  * المشرف العام (admin): ⭐
  * المراقب (moderator): 🛡️
- * العضو (ذكر) مستوى 1–10: سهم أزرق (↗️)
- * العضو (أنثى) مستوى 1–10: ميدالية وردية (🏅)
- * العضو مستوى 11–20: ألماسة بيضاء (💎)
- * العضو مستوى 21–30: قلب أخضر (💚)
- * العضو مستوى 31–40: نار برتقالية (🔥)
+ * العضو (ذكر) مستوى 1–10: سهم أزرق client/public/svgs/blue_arrow.svg
+ * العضو (أنثى) مستوى 1–10: ميدالية وردية client/public/svgs/pink_medal.svg
+ * العضو مستوى 11–20: ألماسة بيضاء client/public/svgs/white.svg
+ * العضو مستوى 21–30: ألماسة خضراء client/public/svgs/emerald.svg
+ * العضو مستوى 31–40: ألماسة برتقالية لامعة client/public/svgs/orange_shine.svg
  */
 
 // دالة للحصول على أيقونة الدور فقط (بدون مستوى)
@@ -63,23 +63,53 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
     
     // عضو ذكر لفل 1-10: سهم أزرق
     if (level >= 1 && level <= 10 && gender === 'male') {
-      return <span style={{color: '#3b82f6', fontSize: size, display: 'inline'}}>↗️</span>;
+      return (
+        <img 
+          src="/svgs/blue_arrow.svg" 
+          alt="male-lvl1-10" 
+          style={{width: size, height: size, display: 'inline'}} 
+        />
+      );
     }
     // عضو أنثى لفل 1-10: ميدالية وردية
     if (level >= 1 && level <= 10 && gender === 'female') {
-      return <span style={{color: '#ec4899', fontSize: size, display: 'inline'}}>🏅</span>;
+      return (
+        <img 
+          src="/svgs/pink_medal.svg" 
+          alt="female-lvl1-10" 
+          style={{width: size, height: size, display: 'inline'}} 
+        />
+      );
     }
     // عضو لفل 11-20: ألماسة بيضاء
     if (level >= 11 && level <= 20) {
-      return <span style={{color: '#f8fafc', fontSize: size, display: 'inline'}}>💎</span>;
+      return (
+        <img 
+          src="/svgs/white.svg" 
+          alt="lvl11-20" 
+          style={{width: size, height: size, display: 'inline'}} 
+        />
+      );
     }
     // عضو لفل 21-30: ألماسة خضراء
     if (level >= 21 && level <= 30) {
-      return <span style={{color: '#10b981', fontSize: size, display: 'inline'}}>💚</span>;
+      return (
+        <img 
+          src="/svgs/emerald.svg" 
+          alt="lvl21-30" 
+          style={{width: size, height: size, display: 'inline'}} 
+        />
+      );
     }
     // عضو لفل 31-40: ألماسة برتقالية مضيئة
     if (level >= 31 && level <= 40) {
-      return <span style={{color: '#f97316', fontSize: size, display: 'inline'}}>🔥</span>;
+      return (
+        <img 
+          src="/svgs/orange_shine.svg" 
+          alt="lvl31-40" 
+          style={{width: size, height: size, display: 'inline'}} 
+        />
+      );
     }
   }
   
