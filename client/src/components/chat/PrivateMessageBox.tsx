@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
+import { sortMessagesAscending, getDynamicBorderColor, formatMessagePreview } from '@/utils/messageUtils';
 import { formatTime } from '@/utils/timeUtils';
 
 interface PrivateMessageBoxProps {
@@ -35,20 +36,10 @@ export default function PrivateMessageBox({
   const [hasMore, setHasMore] = useState(true);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const lastMessageCountRef = useRef(0);
+  
 
   // محسن: ترتيب الرسائل مع تحسين الأداء
-  const sortedMessages = useMemo(() => {
-    if (!messages?.length) return [];
-    
-    // تخزين عدد الرسائل السابقة لتجنب إعادة الترتيب غير الضرورية
-    if (messages.length === lastMessageCountRef.current) {
-      return messages.slice().sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    }
-    
-    lastMessageCountRef.current = messages.length;
-    return messages.slice().sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-  }, [messages]);
+  const sortedMessages = useMemo(() => sortMessagesAscending(messages || []), [messages]);
 
   // محسن: دالة التمرير مع تحسين الأداء
   type ScrollBehaviorStrict = 'auto' | 'smooth';
@@ -129,18 +120,7 @@ export default function PrivateMessageBox({
     }
   }, [isLoadingOlder, hasMore, onLoadMore]);
 
-  // لون حد الرسالة مرتبط بلون اسم المستخدم النهائي في الخاص
-  const getDynamicBorderColor = useCallback((sender?: ChatUser | null) => {
-    if (!sender) return '#4ade80';
-    const color = getFinalUsernameColor(sender);
-    return color === '#000000' ? '#4ade80' : color;
-  }, []);
-
-  // محسن: دالة تنسيق الرسائل مع ذاكرة التخزين المؤقت
-  const formatLastMessage = useCallback((content: string) => {
-    if (!content) return '';
-    return content.length > 100 ? content.slice(0, 100) + '…' : content;
-  }, []);
+  // لون الحد والقص باستخدام دوال موحدة
 
   if (!isOpen) return null;
 
@@ -255,7 +235,7 @@ export default function PrivateMessageBox({
                               onClick={() => window.open(m.content, '_blank')}
                             />
                           ) : (
-                            <span className="text-sm leading-relaxed">{formatLastMessage(m.content)}</span>
+                            <span className="text-sm leading-relaxed">{formatMessagePreview(m.content, 100)}</span>
                           )}
                         </div>
                       </div>

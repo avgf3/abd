@@ -1,4 +1,5 @@
-import type { ChatMessage } from '@/types/chat';
+import type { ChatMessage, ChatUser } from '@/types/chat';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 export function mapDbMessageToChatMessage(msg: any, fallbackRoomId?: string): ChatMessage {
   const isoTs = (msg.timestamp instanceof Date ? msg.timestamp.toISOString() : (msg.timestamp ? new Date(msg.timestamp).toISOString() : new Date().toISOString()));
@@ -18,4 +19,25 @@ export function mapDbMessagesToChatMessages(messages: any[], fallbackRoomId?: st
   return messages
     .map((msg) => mapDbMessageToChatMessage(msg, fallbackRoomId))
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+}
+
+// Ensure ascending order by timestamp without mutating the original array
+export function sortMessagesAscending(messages: ChatMessage[]): ChatMessage[] {
+  if (!Array.isArray(messages) || messages.length === 0) return [];
+  return messages
+    .slice()
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+}
+
+// Consistent border color derived from username color with safe fallback
+export function getDynamicBorderColor(sender?: ChatUser | null): string {
+  if (!sender) return '#4ade80';
+  const color = getFinalUsernameColor(sender);
+  return color === '#000000' ? '#4ade80' : color;
+}
+
+// Truncate long message content for previews
+export function formatMessagePreview(content: string, maxLength: number = 100): string {
+  if (!content) return '';
+  return content.length > maxLength ? content.slice(0, maxLength) + '…' : content;
 }
