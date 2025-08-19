@@ -7,6 +7,7 @@ import React, { useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import type { ChatUser } from '@/types/chat';
 import type { FrameType } from '@/types/avatarFrame';
+import { normalizeFrameId } from '@/utils/avatarFrame';
 import AvatarFrame from '@/components/ui/AvatarFrame';
 import { Button } from '@/components/ui/button';
 import { Camera } from 'lucide-react';
@@ -30,7 +31,7 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
   
   // استخراج معلومات الصورة والإطار
   const avatarSrc = getImageSrc(user.profileImage, '/default_avatar.svg');
-  const frameType = (user.avatarFrame || 'none') as FrameType;
+  const frameType = normalizeFrameId(user.avatarFrame as any) as FrameType;
   
   // معالجة تغيير الصورة
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {

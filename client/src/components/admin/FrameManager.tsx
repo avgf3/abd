@@ -18,6 +18,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import AvatarFrame from '@/components/ui/AvatarFrame';
+import { getImageSrc } from '@/utils/imageUtils';
 import { getFramesByCategory, getAllFrames, getFrameInfo } from '@/data/frames';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -119,7 +120,7 @@ const FrameManager: React.FC<FrameManagerProps> = ({
           <div className="flex flex-col items-center space-y-4 p-6 bg-muted rounded-lg">
             <h3 className="text-sm font-medium">المعاينة</h3>
             <AvatarFrame
-              src={targetUser.profileImage}
+              src={getImageSrc(targetUser.profileImage, '/default_avatar.svg')}
               alt={targetUser.username}
               fallback={targetUser.username.substring(0, 2).toUpperCase()}
               frame={selectedFrame}
@@ -162,7 +163,7 @@ const FrameManager: React.FC<FrameManagerProps> = ({
                     >
                       <div className="flex flex-col items-center space-y-2">
                         <AvatarFrame
-                          src={targetUser.profileImage}
+                          src={getImageSrc(targetUser.profileImage, '/default_avatar.svg')}
                           alt="بدون إطار"
                           fallback={targetUser.username.substring(0, 2).toUpperCase()}
                           frame="none"
@@ -191,7 +192,7 @@ const FrameManager: React.FC<FrameManagerProps> = ({
                     >
                       <div className="flex flex-col items-center space-y-2">
                         <AvatarFrame
-                          src={targetUser.profileImage}
+                          src={getImageSrc(targetUser.profileImage, '/default_avatar.svg')}
                           alt={frameInfo.name}
                           fallback={targetUser.username.substring(0, 2).toUpperCase()}
                           frame={frameInfo.id}

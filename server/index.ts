@@ -37,7 +37,7 @@ app.use('/uploads', async (req, res, next) => {
   try {
     await fsp.stat(fullPath);
   } catch {
-    console.error('❌ الملف غير موجود:', fullPath);
+    console.warn('⚠️ الملف غير موجود:', fullPath);
     
     // Return default avatar for missing profile/avatars images
     if (req.path.includes('profile-') || req.path.includes('/profiles/') || req.path.includes('/avatars/')) {
