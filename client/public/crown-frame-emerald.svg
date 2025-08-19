@@ -23,8 +23,7 @@
     </pattern>
   </defs>
   
-  <!-- خلفية دائرية خفيفة -->
-  <circle cx='300' cy='300' r='280' fill='#f0fff0' opacity='0.1'/>
+  
   
   <!-- إطار دائري رئيسي مع طبقات -->
   <circle cx='300' cy='300' r='200' fill='none' stroke='#013220' stroke-width='2' opacity='0.3'/>
@@ -33,34 +32,16 @@
   <circle cx='300' cy='300' r='195' fill='none' stroke='#e0ffe0' stroke-width='1' opacity='0.6'/>
   <circle cx='300' cy='300' r='165' fill='none' stroke='#e0ffe0' stroke-width='1' opacity='0.6'/>
   
-  <!-- زخارف دائرية -->
-  <g opacity='0.4'>
-    <circle cx='300' cy='120' r='4' fill='#50c878'/>
-    <circle cx='240' cy='140' r='4' fill='#50c878'/>
-    <circle cx='360' cy='140' r='4' fill='#50c878'/>
-    <circle cx='180' cy='300' r='4' fill='#50c878'/>
-    <circle cx='420' cy='300' r='4' fill='#50c878'/>
-  </g>
   
   
   
-  <!-- شارات جانبية محسّنة -->
-  <g>
-    <!-- شارة يسرى -->
-    <path d='M135,465 L80,490 L75,505 L90,515 L100,515 L110,505 L140,475 Z' fill='url(#emeraldGradient1)' stroke='#013220' stroke-width='1'/>
-    
-    <circle cx='105' cy='495' r='5' fill='#f0fff0' opacity='0.7'/>
-    
-    <!-- شارة يمنى -->
-    <path d='M465,465 L520,490 L525,505 L510,515 L500,515 L490,505 L460,475 Z' fill='url(#emeraldGradient1)' stroke='#013220' stroke-width='1'/>
-    
-    <circle cx='495' cy='495' r='5' fill='#f0fff0' opacity='0.7'/>
-  </g>
+  
+  
   
   <!-- شريط "TOP" محسّن -->
   <g>
     <path d='M170,485 L430,485 L445,520 L440,555 L160,555 L155,520 Z' fill='url(#emeraldGradient1)' stroke='#013220' stroke-width='2'/>
-    <rect x='175' y='490' width='250' height='60' fill='url(#ornament)' opacity='0.3'/>
+    
     
     <!-- إطار داخلي للشريط -->
     <path d='M180,495 L420,495 L430,545 L170,545 Z' fill='none' stroke='#e0ffe0' stroke-width='1' opacity='0.5'/>
