@@ -44,6 +44,14 @@ export interface ChatMessage {
   timestamp: string;
   sender?: ChatUser;
   roomId?: string;
+  // اختياري: معلومات التفاعلات
+  reactions?: {
+    like: number;
+    dislike: number;
+    heart: number;
+  };
+  // تفاعل المستخدم الحالي إن وُجد
+  myReaction?: 'like' | 'dislike' | 'heart' | null;
 }
 
 export interface PrivateConversation {
@@ -89,6 +97,7 @@ export interface WebSocketMessage {
     | 'demotion'
     | 'ban'
     | 'unban'
+    | 'reactionUpdated'
     | 'mute'
     | 'unmute';
   userId?: number;
@@ -111,6 +120,11 @@ export interface WebSocketMessage {
   newRole?: string;
   oldRole?: string;
   isPrivate?: boolean;
+  // لرسائل التفاعلات
+  roomId?: string;
+  messageId?: number;
+  counts?: { like: number; dislike: number; heart: number };
+  myReaction?: 'like' | 'dislike' | 'heart' | null;
 }
 
 export interface FriendRequest {

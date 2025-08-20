@@ -161,6 +161,91 @@ router.post('/room/:roomId', protect.auth, async (req, res) => {
 });
 
 /**
+ * POST /api/messages/:messageId/reactions
+ * إضافة/تحديث تفاعل على رسالة (like/dislike/heart)
+ */
+router.post('/:messageId/reactions', protect.auth, async (req, res) => {
+  try {
+    const messageId = parseInt(req.params.messageId);
+    const { type } = req.body as { type?: string };
+    const userId = (req as any).user?.id as number;
+
+    if (!messageId || !['like', 'dislike', 'heart'].includes(String(type))) {
+      return res.status(400).json({ error: 'بيانات تفاعل غير صالحة' });
+    }
+    if (!userId) {
+      return res.status(401).json({ error: 'يجب تسجيل الدخول' });
+    }
+
+    const message = await storage.getMessage(messageId);
+    if (!message) return res.status(404).json({ error: 'الرسالة غير موجودة' });
+
+    const result = await storage.reactToMessage(messageId, userId, type as any);
+    if (!result) return res.status(500).json({ error: 'تعذر حفظ التفاعل' });
+
+    // بث التحديث عبر Socket.IO إلى الغرفة المناسبة فقط
+    const io = req.app.get('io');
+    const roomId = (message as any).roomId || 'general';
+    if (io && !message.isPrivate) {
+      io.to(`room_${roomId}`).emit('message', {
+        type: 'reactionUpdated',
+        roomId,
+        messageId,
+        counts: { like: result.like, dislike: result.dislike, heart: result.heart },
+        myReaction: result.myReaction,
+        reactorId: userId,
+      });
+    }
+
+    res.json({
+      success: true,
+      messageId,
+      counts: { like: result.like, dislike: result.dislike, heart: result.heart },
+      myReaction: result.myReaction,
+    });
+  } catch (error: any) {
+    console.error('خطأ في إضافة تفاعل:', error);
+    res.status(500).json({ error: error?.message || 'خطأ في الخادم' });
+  }
+});
+
+/**
+ * DELETE /api/messages/:messageId/reactions
+ * إزالة تفاعل المستخدم على رسالة
+ */
+router.delete('/:messageId/reactions', protect.auth, async (req, res) => {
+  try {
+    const messageId = parseInt(req.params.messageId);
+    const userId = (req as any).user?.id as number;
+    if (!messageId || !userId) return res.status(400).json({ error: 'بيانات غير صالحة' });
+
+    const message = await storage.getMessage(messageId);
+    if (!message) return res.status(404).json({ error: 'الرسالة غير موجودة' });
+
+    const counts = await storage.removeMessageReaction(messageId, userId);
+    if (!counts) return res.status(500).json({ error: 'تعذر إزالة التفاعل' });
+
+    const io = req.app.get('io');
+    const roomId = (message as any).roomId || 'general';
+    if (io && !message.isPrivate) {
+      io.to(`room_${roomId}`).emit('message', {
+        type: 'reactionUpdated',
+        roomId,
+        messageId,
+        counts,
+        myReaction: null,
+        reactorId: userId,
+      });
+    }
+
+    res.json({ success: true, messageId, counts, myReaction: null });
+  } catch (error: any) {
+    console.error('خطأ في إزالة التفاعل:', error);
+    res.status(500).json({ error: error?.message || 'خطأ في الخادم' });
+  }
+});
+
+/**
  * DELETE /api/messages/:messageId
  * حذف رسالة
  */

@@ -56,14 +56,14 @@ import { Label } from '@/components/ui/label';
 import RichestModal from '@/components/ui/RichestModal'; // تبويب الأثرياء
 import { Textarea } from '@/components/ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
-import type { useChat } from '@/hooks/useChat';
+import type { UseChatReturn } from '@/hooks/useChat';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 
 interface ChatInterfaceProps {
-  chat: ReturnType<typeof useChat>;
+  chat: UseChatReturn;
   onLogout: () => void;
 }
 

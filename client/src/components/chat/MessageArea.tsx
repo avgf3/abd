@@ -452,6 +452,44 @@ export default function MessageArea({
                             </button>
                           );
                         })()}
+                      {/* Reactions (like/dislike/heart) */}
+                      {currentUser && !message.isPrivate && (
+                        <div className="flex items-center gap-1 ml-2">
+                          {(['like', 'dislike', 'heart'] as const).map((r) => {
+                            const isMine = message.myReaction === r;
+                            const count = message.reactions?.[r] ?? 0;
+                            const label = r === 'like' ? '👍' : r === 'dislike' ? '👎' : '❤️';
+                            const toggle = async () => {
+                              try {
+                                if (isMine) {
+                                  const res = await apiRequest(`/api/messages/${message.id}/reactions`, {
+                                    method: 'DELETE',
+                                  });
+                                  // تفويض التحديث للبث عبر السوكت؛ لا نعدل محلياً لتجنب السباقات
+                                } else {
+                                  const res = await apiRequest(`/api/messages/${message.id}/reactions`, {
+                                    method: 'POST',
+                                    body: { type: r },
+                                  });
+                                }
+                              } catch (e) {
+                                console.error('reaction error', e);
+                              }
+                            };
+                            return (
+                              <button
+                                key={r}
+                                onClick={toggle}
+                                className={`text-xs px-1 py-0.5 rounded ${isMine ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:text-gray-800'}`}
+                                title={r}
+                              >
+                                <span className="mr-0.5">{label}</span>
+                                <span>{count}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </>
                 )}

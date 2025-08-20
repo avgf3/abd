@@ -5,7 +5,7 @@ import type { PrivateConversation } from '../../../shared/types';
 
 import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession, clearSession } from '@/lib/socket';
-import type { ChatUser, ChatMessage, RoomWebSocketMessage as WebSocketMessage } from '@/types/chat';
+import type { ChatUser, ChatMessage } from '@/types/chat';
 import type { Notification } from '@/types/chat';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
 
@@ -80,6 +80,8 @@ type ChatAction =
   | { type: 'UPSERT_ONLINE_USER'; payload: ChatUser }
   | { type: 'REMOVE_ONLINE_USER'; payload: number };
 
+type ReactionCounts = { like: number; dislike: number; heart: number };
+
 // 🔥 SIMPLIFIED Initial state
 const initialState: ChatState = {
   currentUser: null,
@@ -139,6 +141,8 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
         },
       };
     }
+
+    // ملاحظة: تحديثات التفاعلات تُطبّق داخل مستمع السوكت مباشرة عبر dispatch SET_ROOM_MESSAGES
 
     case 'SET_PRIVATE_MESSAGE': {
       const { userId, message } = action.payload;
@@ -574,6 +578,8 @@ export const useChat = () => {
                 sender: message.sender,
                 roomId,
                 isPrivate: Boolean(message.isPrivate),
+                reactions: message.reactions || { like: 0, dislike: 0, heart: 0 },
+                myReaction: message.myReaction ?? null,
               };
 
               // إضافة الرسالة للغرفة المناسبة (عام فقط)
@@ -593,6 +599,30 @@ export const useChat = () => {
                 playNotificationSound();
               }
             }
+            break;
+          }
+          case 'reactionUpdated': {
+            const { roomId, messageId, counts, myReaction, reactorId } = envelope as any;
+            const targetRoom = roomId || currentRoomIdRef.current;
+            if (!targetRoom || !messageId) break;
+            const existing = roomMessagesRef.current[targetRoom] || [];
+            const next = existing.map((m) =>
+              m.id === messageId
+                ? {
+                    ...m,
+                    reactions: {
+                      like: counts?.like ?? m.reactions?.like ?? 0,
+                      dislike: counts?.dislike ?? m.reactions?.dislike ?? 0,
+                      heart: counts?.heart ?? m.reactions?.heart ?? 0,
+                    },
+                    myReaction:
+                      reactorId && reactorId === currentUserRef.current?.id
+                        ? myReaction ?? null
+                        : m.myReaction ?? null,
+                  }
+                : m
+            );
+            dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId: targetRoom, messages: next } });
             break;
           }
           case 'messageDeleted': {
@@ -1347,7 +1377,9 @@ export const useChat = () => {
         const existing = state.privateConversations[otherUserId] || [];
         const earliestTs =
           existing.length > 0 ? new Date(existing[0].timestamp).toISOString() : undefined;
-        const url = `/api/private-messages/${state.currentUser.id}/${otherUserId}?limit=${limit}${earliestTs ? `&beforeTs=${encodeURIComponent(earliestTs)}` : ''}`;
+        const url = `/api/private-messages/${state.currentUser.id}/${otherUserId}?limit=${limit}${
+          earliestTs ? `&beforeTs=${encodeURIComponent(earliestTs)}` : ''
+        }`;
         const data = await apiRequest(url);
         const formatted = Array.isArray((data as any)?.messages)
           ? mapDbMessagesToChatMessages((data as any).messages)
@@ -1474,3 +1506,5 @@ export const useChat = () => {
     },
   };
 };
+
+export type UseChatReturn = ReturnType<typeof useChat>;

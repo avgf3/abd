@@ -72,6 +72,22 @@ export const messages = sqliteTable(
   })
 );
 
+// جدول تفاعلات الرسائل (SQLite)
+export const messageReactions = sqliteTable(
+  'message_reactions',
+  {
+    id: integer('id').primaryKey(),
+    messageId: integer('message_id').notNull(),
+    userId: integer('user_id').notNull(),
+    type: text('type').notNull(), // 'like' | 'dislike' | 'heart'
+    timestamp: text('timestamp'), // ISO string
+  },
+  (t) => ({
+    byMessage: index('idx_message_reactions_message').on(t.messageId),
+    byUser: index('idx_message_reactions_user').on(t.userId),
+  })
+);
+
 export const friends = sqliteTable('friends', {
   id: integer('id').primaryKey(),
   userId: integer('user_id').references(() => users.id),
@@ -178,6 +194,11 @@ export const messagesRelations = relations(messages, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// Zod schemas include reaction insert
+export const insertMessageReactionSchema = createInsertSchema(messageReactions);
+export type MessageReaction = typeof messageReactions.$inferSelect;
+export type NewMessageReaction = typeof messageReactions.$inferInsert;
 
 export const friendsRelations = relations(friends, ({ one }) => ({
   user: one(users, {

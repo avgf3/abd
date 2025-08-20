@@ -81,6 +81,28 @@ export const messages = pgTable(
   })
 );
 
+// تفاعلات الرسائل (غرف/خاص)
+export const messageReactions = pgTable(
+  'message_reactions',
+  {
+    id: serial('id').primaryKey(),
+    messageId: integer('message_id')
+      .notNull()
+      .references(() => messages.id, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(), // 'like' | 'dislike' | 'heart'
+    timestamp: timestamp('timestamp').defaultNow(),
+  },
+  (t) => ({
+    // فهرس فريد لضمان تفاعل واحد لكل مستخدم لكل رسالة
+    uniq: index('idx_message_reactions_unique').on(t.messageId, t.userId),
+    byMessage: index('idx_message_reactions_message').on(t.messageId),
+    byUser: index('idx_message_reactions_user').on(t.userId),
+  })
+);
+
 export const friends = pgTable('friends', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').references(() => users.id),
@@ -302,6 +324,12 @@ export const insertMessageSchema = z.object({
   roomId: z.string().optional(),
 });
 
+export const insertMessageReactionSchema = z.object({
+  messageId: z.number(),
+  userId: z.number(),
+  type: z.enum(['like', 'dislike', 'heart']),
+});
+
 export const insertFriendSchema = z.object({
   userId: z.number().optional(),
   friendId: z.number().optional(),
@@ -312,6 +340,8 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
+export type InsertMessageReaction = z.infer<typeof insertMessageReactionSchema>;
+export type MessageReaction = typeof messageReactions.$inferSelect;
 export type InsertFriend = z.infer<typeof insertFriendSchema>;
 export type Friend = typeof friends.$inferSelect;
 
