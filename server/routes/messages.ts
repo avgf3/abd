@@ -4,6 +4,7 @@ import { notificationService } from '../services/notificationService';
 import { roomMessageService } from '../services/roomMessageService';
 import { roomService } from '../services/roomService';
 import { storage } from '../storage';
+import { protect } from '../middleware/enhancedSecurity';
 
 const router = Router();
 
@@ -87,17 +88,18 @@ router.get('/room/:roomId/latest', async (req, res) => {
  * POST /api/messages/room/:roomId
  * إرسال رسالة لغرفة
  */
-router.post('/room/:roomId', async (req, res) => {
+router.post('/room/:roomId', protect.auth, async (req, res) => {
   try {
     const { roomId } = req.params;
-    const { senderId, content, messageType = 'text', isPrivate = false, receiverId } = req.body;
+    const { content, messageType = 'text', isPrivate = false, receiverId } = req.body;
+    const senderId = (req as any).user?.id as number;
 
     if (!roomId?.trim()) {
       return res.status(400).json({ error: 'معرف الغرفة مطلوب' });
     }
 
     if (!senderId) {
-      return res.status(400).json({ error: 'معرف المرسل مطلوب' });
+      return res.status(401).json({ error: 'يجب تسجيل الدخول' });
     }
 
     if (!content?.trim()) {
@@ -119,7 +121,7 @@ router.post('/room/:roomId', async (req, res) => {
 
     // إرسال الرسالة
     const message = await roomMessageService.sendMessage({
-      senderId: parseInt(senderId),
+      senderId: parseInt(String(senderId)),
       roomId,
       content: content.trim(),
       messageType,

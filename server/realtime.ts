@@ -11,6 +11,7 @@ import { roomService } from './services/roomService';
 import { storage } from './storage';
 import { sanitizeUsersArray } from './utils/data-sanitizer';
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
+import { verifyAuthToken } from './utils/auth-token';
 
 interface CustomSocket extends Socket {
   userId?: number;
@@ -276,6 +277,35 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
       timestamp: new Date().toISOString(),
     });
 
+    // Helper to extract bearer token or cookie-based auth token from handshake/headers
+    const getTokenFromHeaders = (): string | null => {
+      try {
+        const headers = socket.handshake.headers as any;
+        const auth = headers['authorization'];
+        if (typeof auth === 'string' && auth.toLowerCase().startsWith('bearer ')) {
+          return auth.slice(7).trim();
+        }
+        const cookieHeader: string | undefined = headers['cookie'];
+        if (cookieHeader && typeof cookieHeader === 'string') {
+          const parts = cookieHeader.split(';');
+          for (const part of parts) {
+            const idx = part.indexOf('=');
+            if (idx === -1) continue;
+            const k = part.slice(0, idx).trim();
+            const v = part.slice(idx + 1).trim();
+            if (k === 'auth_token') {
+              try {
+                return decodeURIComponent(v);
+              } catch {
+                return v;
+              }
+            }
+          }
+        }
+      } catch {}
+      return null;
+    };
+
     socket.on(
       'auth',
       async (payload: {
@@ -283,6 +313,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         username?: string;
         userType?: string;
         reconnect?: boolean;
+        token?: string;
       }) => {
         // السماح بإعادة المصادقة إذا كان المستخدم مختلفاً
         if (
@@ -320,60 +351,47 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         if (isAuthenticated) return;
 
         try {
-          let user: any | undefined;
-          if (payload.userId) {
-            user = await storage.getUser(payload.userId);
-            if (!user) {
-              socket.emit('error', { message: 'المستخدم غير موجود' });
-              return;
-            }
-            const status = await moderationSystem.checkUserStatus(user.id);
-            if (status.isBlocked) {
-              socket.emit('error', {
-                type: 'error',
-                message: 'أنت محجوب نهائياً من الدردشة',
-                action: 'blocked',
-              });
-              socket.disconnect(true);
-              return;
-            }
-            if (status.isBanned && !status.canJoin) {
-              socket.emit('error', {
-                type: 'error',
-                message: status.reason || 'أنت مطرود من الدردشة',
-                action: 'banned',
-                timeLeft: status.timeLeft,
-              });
-              socket.disconnect(true);
-              return;
-            }
-          } else if (payload.username) {
-            const safeUsername = String(payload.username).trim();
-            const validName = /^[\u0600-\u06FFa-zA-Z0-9_]{3,20}$/.test(safeUsername);
-            if (!validName) {
-              socket.emit('error', { message: 'اسم مستخدم غير صالح' });
-              return;
-            }
-            const existing = await storage.getUserByUsername(safeUsername);
-            if (existing) {
-              socket.emit('error', { message: 'الرجاء تسجيل الدخول باستخدام الحساب' });
-              return;
-            }
-            const requestedType = String(payload.userType || 'guest').toLowerCase();
-            if (requestedType !== 'guest') {
-              socket.emit('error', { message: 'غير مسموح بإنشاء حسابات بامتيازات عبر Socket' });
-              return;
-            }
-            user = await storage.createUser({
-              username: safeUsername,
-              userType: 'guest',
-              role: 'guest',
-              isOnline: true,
-              joinDate: new Date(),
-              createdAt: new Date(),
+          // Enforce token-based authentication: get token from Authorization or cookie or payload
+          const bearerOrCookieToken = getTokenFromHeaders() || (payload as any)?.token || null;
+          const verified = bearerOrCookieToken ? verifyAuthToken(bearerOrCookieToken) : null;
+          if (!verified?.userId) {
+            socket.emit('error', { message: 'المصادقة مطلوبة', action: 'unauthorized' });
+            socket.disconnect(true);
+            return;
+          }
+
+          // If payload.userId is provided, it MUST match the verified token subject
+          if (payload.userId && Number(payload.userId) !== Number(verified.userId)) {
+            socket.emit('error', { message: 'عدم تطابق الهوية', action: 'unauthorized' });
+            socket.disconnect(true);
+            return;
+          }
+
+          // Load user strictly by verified token's userId
+          const user = await storage.getUser(verified.userId);
+          if (!user) {
+            socket.emit('error', { message: 'المستخدم غير موجود' });
+            socket.disconnect(true);
+            return;
+          }
+          const status = await moderationSystem.checkUserStatus(user.id);
+          if (status.isBlocked) {
+            socket.emit('error', {
+              type: 'error',
+              message: 'أنت محجوب نهائياً من الدردشة',
+              action: 'blocked',
             });
-          } else {
-            socket.emit('error', { message: 'بيانات المصادقة غير مكتملة' });
+            socket.disconnect(true);
+            return;
+          }
+          if (status.isBanned && !status.canJoin) {
+            socket.emit('error', {
+              type: 'error',
+              message: status.reason || 'أنت مطرود من الدردشة',
+              action: 'banned',
+              timeLeft: status.timeLeft,
+            });
+            socket.disconnect(true);
             return;
           }
 

@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { db, dbType } from '../database-adapter';
 import { notificationService } from '../services/notificationService';
 import { storage } from '../storage';
+import { protect } from '../middleware/enhancedSecurity';
 
 // Helper type for conversation item (server-side internal)
 type ConversationItem = {
@@ -25,16 +26,17 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
  * POST /api/private-messages/send
  * إرسال رسالة خاصة بين مستخدمين مع تحسينات الأداء
  */
-router.post('/send', async (req, res) => {
+router.post('/send', protect.auth, async (req, res) => {
   try {
-    const { senderId, receiverId, content, messageType = 'text' } = req.body || {};
+    const { receiverId, content, messageType = 'text' } = req.body || {};
+    const senderId = (req as any).user?.id as number;
 
     // التحقق من صحة البيانات
     if (!senderId || !receiverId) {
       return res.status(400).json({ error: 'معرّف المرسل والمستلم مطلوبان' });
     }
 
-    if (senderId === receiverId) {
+    if (senderId === parseInt(receiverId)) {
       return res.status(400).json({ error: 'لا يمكن إرسال رسالة لنفسك' });
     }
 
@@ -45,7 +47,7 @@ router.post('/send', async (req, res) => {
 
     // التحقق من المستخدمين بشكل متوازي لتحسين السرعة
     const [sender, receiver] = await Promise.all([
-      storage.getUser(parseInt(senderId)),
+      storage.getUser(parseInt(String(senderId))),
       storage.getUser(parseInt(receiverId)),
     ]);
 
@@ -58,7 +60,7 @@ router.post('/send', async (req, res) => {
 
     // إنشاء الرسالة في قاعدة البيانات مع تحسين البيانات
     const messageData = {
-      senderId: parseInt(senderId),
+      senderId: parseInt(String(senderId)),
       receiverId: parseInt(receiverId),
       content: text,
       messageType,
@@ -75,7 +77,7 @@ router.post('/send', async (req, res) => {
     const messageWithSender = { ...newMessage, sender };
 
     // تنظيف cache للمحادثة عند إضافة رسالة جديدة
-    const conversationKey = `${Math.min(parseInt(senderId), parseInt(receiverId))}-${Math.max(parseInt(senderId), parseInt(receiverId))}`;
+    const conversationKey = `${Math.min(parseInt(String(senderId)), parseInt(receiverId))}-${Math.max(parseInt(String(senderId)), parseInt(receiverId))}`;
     conversationCache.delete(conversationKey);
 
     // إرسال إشعار وبث الرسالة بشكل متوازي
@@ -133,7 +135,7 @@ router.post('/send', async (req, res) => {
  * GET /api/private-messages/:userId/:otherUserId?limit=50
  * جلب سجل المحادثة الخاصة بين مستخدمين مع تحسين الأداء والتخزين المؤقت
  */
-router.get('/:userId/:otherUserId', async (req, res, next) => {
+router.get('/:userId/:otherUserId', protect.auth, async (req, res, next) => {
   try {
     const { userId, otherUserId } = req.params;
     // تمرير المسارات الثابتة إلى معالجاتها الصحيحة لتفادي تطابق المسار الديناميكي
@@ -152,6 +154,13 @@ router.get('/:userId/:otherUserId', async (req, res, next) => {
 
     if (!uid || !oid || isNaN(uid) || isNaN(oid)) {
       return res.status(400).json({ error: 'معرّفات المستخدمين غير صالحة' });
+    }
+
+    // السماح للمستخدم نفسه فقط أو للإدمن/المالك
+    const requester = (req as any).user;
+    const isPrivileged = requester && ['admin', 'owner'].includes(requester.userType);
+    if (!requester || (requester.id !== uid && !isPrivileged)) {
+      return res.status(403).json({ error: 'غير مسموح' });
     }
 
     if (uid === oid) {
@@ -268,7 +277,7 @@ router.get('/:userId/:otherUserId', async (req, res, next) => {
  * GET /api/private-messages/conversations/:userId?limit=50
  * إرجاع قائمة المحادثات الخاصة الأخيرة (طرف واحد + آخر رسالة) لعرضها في تبويب الرسائل
  */
-router.get('/conversations/:userId', async (req, res) => {
+router.get('/conversations/:userId', protect.auth, async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     const limitParam = req.query.limit as string | undefined;
@@ -276,6 +285,13 @@ router.get('/conversations/:userId', async (req, res) => {
 
     if (!userId || isNaN(userId)) {
       return res.status(400).json({ error: 'معرّف المستخدم غير صالح' });
+    }
+
+    // تحقق الملكية أو صلاحية إدارية
+    const requester = (req as any).user;
+    const isPrivileged = requester && ['admin', 'owner'].includes(requester.userType);
+    if (!requester || (requester.id !== userId && !isPrivileged)) {
+      return res.status(403).json({ error: 'غير مسموح' });
     }
 
     // PostgreSQL: استخدم DISTINCT ON مع فهرس pair للحصول على آخر رسالة لكل ثنائية
@@ -409,7 +425,7 @@ function cleanOldCache() {
  * GET /api/private-messages/cache/stats
  * إحصائيات cache للإدارة
  */
-router.get('/cache/stats', (req, res) => {
+router.get('/cache/stats', protect.admin, (req, res) => {
   const stats = {
     totalEntries: conversationCache.size,
     entries: Array.from(conversationCache.entries()).map(([key, value]) => ({
@@ -427,7 +443,7 @@ router.get('/cache/stats', (req, res) => {
  * POST /api/private-messages/cache/clear
  * مسح cache للإدارة
  */
-router.post('/cache/clear', (req, res) => {
+router.post('/cache/clear', protect.admin, (req, res) => {
   conversationCache.clear();
   res.json({ success: true, message: 'تم مسح cache الرسائل الخاصة' });
 });
