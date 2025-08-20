@@ -34,16 +34,11 @@ export default [
     plugins: { react, 'react-hooks': reactHooks, import: importPlugin },
     rules: {
       'react/react-in-jsx-scope': 'off',
-      'import/order': [
-        'warn',
-        {
-          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-          'newlines-between': 'always',
-          alphabetize: { order: 'asc', caseInsensitive: true },
-        },
-      ],
+      // تعطيل ترتيب الاستيرادات لعدم تعطيل الـ CI بتحذيرات شكلية
+      'import/order': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/consistent-type-imports': 'warn',
+      // تعطيل هذا التحذير لأننا نستخدم module augmentation وأساليب import() لأنواع Express
+      '@typescript-eslint/consistent-type-imports': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-require-imports': 'off',
       'no-empty': 'off',

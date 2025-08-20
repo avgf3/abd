@@ -19,7 +19,7 @@ export default function VipAvatar({ src, alt = '', size = 48, frame = 1, classNa
     width: size,
     height: size,
     // تمرير مدة الدوران عبر متغير CSS
-    // @ts-ignore - custom prop for CSS var
+    // @ts-expect-error - custom prop for CSS var
     ['--vip-spin-duration' as any]: duration,
   };
 

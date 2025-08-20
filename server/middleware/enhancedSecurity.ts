@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
 
 import { storage } from '../storage';
-import { log } from '../utils/productionLogger';
 import { getAuthTokenFromRequest, verifyAuthToken } from '../utils/auth-token';
+import { log } from '../utils/productionLogger';
 
 import { createError, ERROR_MESSAGES } from './errorHandler';
 
