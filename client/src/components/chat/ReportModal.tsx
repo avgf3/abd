@@ -133,7 +133,7 @@ export default function ReportModal({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-[425px]" dir="rtl">
+      <DialogContent className="sm:max-w-[425px] z-[12010]" dir="rtl">
         <DialogHeader>
           <DialogTitle>إبلاغ عن مستخدم</DialogTitle>
           <DialogDescription>
