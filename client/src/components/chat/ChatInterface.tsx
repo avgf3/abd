@@ -881,6 +881,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           currentUser={chat.currentUser}
           privateConversations={chat.privateConversations}
           onlineUsers={chat.onlineUsers}
+          isConnected={chat.isConnected}
           onStartPrivateChat={(user) => {
             setShowMessages(false);
             setSelectedPrivateUser(user);

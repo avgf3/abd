@@ -51,3 +51,32 @@ export function formatMessagePreview(content: string, maxLength: number = 100): 
   if (!content) return '';
   return content.length > maxLength ? content.slice(0, maxLength) + '…' : content;
 }
+
+// LocalStorage helpers to track last-opened timestamp for private conversations
+function pmLastOpenedKey(currentUserId: number, otherUserId: number): string {
+  return `pm_last_opened_${currentUserId}_${otherUserId}`;
+}
+
+export function getPmLastOpened(currentUserId: number, otherUserId: number): number {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const raw = window.localStorage.getItem(pmLastOpenedKey(currentUserId, otherUserId));
+    const num = raw ? parseInt(raw, 10) : 0;
+    return Number.isFinite(num) ? num : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function setPmLastOpened(
+  currentUserId: number,
+  otherUserId: number,
+  timestamp: number = Date.now()
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(pmLastOpenedKey(currentUserId, otherUserId), String(timestamp));
+  } catch {
+    // ignore storage errors
+  }
+}
