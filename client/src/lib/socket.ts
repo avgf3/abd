@@ -1,5 +1,6 @@
 import type { Socket } from 'socket.io-client';
 import { io } from 'socket.io-client';
+import { attachNotificationListeners, detachNotificationListeners } from './socketNotifications';
 
 // Simple session storage helpers
 const STORAGE_KEY = 'chat_session';
@@ -37,6 +38,7 @@ export function clearSession() {
   } catch {}
   // إعادة تعيين Socket instance عند مسح الجلسة
   if (socketInstance) {
+    detachNotificationListeners(socketInstance);
     socketInstance.removeAllListeners();
     socketInstance.disconnect();
     socketInstance = null;
@@ -148,6 +150,7 @@ export function getSocket(): Socket {
   });
 
   attachCoreListeners(socketInstance);
+  attachNotificationListeners(socketInstance);
   // Connect explicitly after listeners are attached
   try {
     socketInstance.connect();

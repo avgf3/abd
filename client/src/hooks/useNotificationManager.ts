@@ -122,8 +122,11 @@ export function useNotificationManager(currentUser: ChatUser | null) {
   const handleNotificationReceived = useCallback(
     (event: CustomEvent<NotificationEventDetail>) => {
       updateNotificationQueries();
+      
+      // Play sound for new notifications
+      playNotificationSound();
     },
-    [updateNotificationQueries]
+    [updateNotificationQueries, playNotificationSound]
   );
 
   // Handle friend request received event
@@ -162,6 +165,66 @@ export function useNotificationManager(currentUser: ChatUser | null) {
     [updateFriendQueries]
   );
 
+  // Handle points received event
+  const handlePointsReceived = useCallback(
+    (event: CustomEvent<NotificationEventDetail>) => {
+      updateNotificationQueries();
+      
+      showToast({
+        title: '💰 استلمت نقاط!',
+        description: `أرسل لك ${event.detail.senderName} ${event.detail.points} نقطة`,
+        playSound: true,
+      });
+    },
+    [updateNotificationQueries, showToast]
+  );
+
+  // Handle level up event
+  const handleLevelUp = useCallback(
+    (event: CustomEvent<NotificationEventDetail>) => {
+      updateNotificationQueries();
+      
+      showToast({
+        title: '🎉 ترقية مستوى!',
+        description: `تهانينا! وصلت إلى المستوى ${event.detail.newLevel} - ${event.detail.levelTitle}`,
+        playSound: true,
+      });
+    },
+    [updateNotificationQueries, showToast]
+  );
+
+  // Handle moderation action event
+  const handleModerationAction = useCallback(
+    (event: CustomEvent<NotificationEventDetail>) => {
+      updateNotificationQueries();
+      
+      const action = event.detail.action;
+      let title = '';
+      
+      switch (action) {
+        case 'mute':
+          title = '🔇 تم كتمك';
+          break;
+        case 'kick':
+          title = '🚫 تم طردك';
+          break;
+        case 'ban':
+          title = '⛔ تم حظرك';
+          break;
+        default:
+          title = '⚠️ إجراء إداري';
+      }
+      
+      showToast({
+        title,
+        description: event.detail.reason || 'تم اتخاذ إجراء إداري',
+        variant: 'destructive',
+        playSound: true,
+      });
+    },
+    [updateNotificationQueries, showToast]
+  );
+
   // Setup event listeners
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -171,6 +234,9 @@ export function useNotificationManager(currentUser: ChatUser | null) {
       { name: 'friendRequestReceived', handler: handleFriendRequestReceived },
       { name: 'friendRequestAccepted', handler: handleFriendRequestAccepted },
       { name: 'friendAdded', handler: handleFriendAdded },
+      { name: 'pointsReceived', handler: handlePointsReceived },
+      { name: 'levelUp', handler: handleLevelUp },
+      { name: 'moderationAction', handler: handleModerationAction },
     ];
 
     events.forEach(({ name, handler }) => {
@@ -188,6 +254,9 @@ export function useNotificationManager(currentUser: ChatUser | null) {
     handleFriendRequestReceived,
     handleFriendRequestAccepted,
     handleFriendAdded,
+    handlePointsReceived,
+    handleLevelUp,
+    handleModerationAction,
   ]);
 
   // Create notification in database
