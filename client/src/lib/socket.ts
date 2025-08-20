@@ -32,7 +32,9 @@ export function getSession(): StoredSession {
 }
 
 export function clearSession() {
-  try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {}
   // إعادة تعيين Socket instance عند مسح الجلسة
   if (socketInstance) {
     socketInstance.removeAllListeners();
@@ -97,7 +99,9 @@ function attachCoreListeners(socket: Socket) {
   // If network goes back online, try to connect
   window.addEventListener('online', () => {
     if (!socket.connected) {
-      try { socket.connect(); } catch {}
+      try {
+        socket.connect();
+      } catch {}
     }
   });
 }
@@ -110,7 +114,7 @@ export function getSocket(): Socket {
     socketInstance = null;
     listenersAttached = false;
   }
-  
+
   if (socketInstance) return socketInstance;
 
   const deviceId = (() => {
@@ -145,6 +149,8 @@ export function getSocket(): Socket {
 
   attachCoreListeners(socketInstance);
   // Connect explicitly after listeners are attached
-  try { socketInstance.connect(); } catch {}
+  try {
+    socketInstance.connect();
+  } catch {}
   return socketInstance;
 }

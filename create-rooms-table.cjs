@@ -5,11 +5,12 @@ console.log('🔄 إنشاء جدول الغرف...');
 
 async function createRoomsTable() {
   try {
-    const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/chat_db';
+    const connectionString =
+      process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/chat_db';
     const sql = postgres(connectionString, { max: 1 });
-    
+
     console.log('✅ تم الاتصال بقاعدة البيانات بنجاح');
-    
+
     // إنشاء جدول الغرف
     console.log('🔄 إنشاء جدول الغرف...');
     await sql`
@@ -28,7 +29,7 @@ async function createRoomsTable() {
         "created_at" timestamp DEFAULT now()
       )
     `;
-    
+
     // إنشاء جدول مستخدمي الغرف
     console.log('🔄 إنشاء جدول مستخدمي الغرف...');
     await sql`
@@ -40,10 +41,10 @@ async function createRoomsTable() {
         UNIQUE("user_id", "room_id")
       )
     `;
-    
+
     // إضافة الـ foreign keys
     console.log('🔄 إضافة الـ foreign keys...');
-    
+
     // التحقق من وجود الـ constraints قبل إضافتها
     const constraints = await sql`
       SELECT constraint_name 
@@ -51,9 +52,9 @@ async function createRoomsTable() {
       WHERE table_name = 'rooms' 
       AND constraint_type = 'FOREIGN KEY'
     `;
-    
-    const constraintNames = constraints.map(c => c.constraint_name);
-    
+
+    const constraintNames = constraints.map((c) => c.constraint_name);
+
     if (!constraintNames.includes('rooms_created_by_users_id_fk')) {
       await sql`
         ALTER TABLE "rooms" ADD CONSTRAINT "rooms_created_by_users_id_fk" 
@@ -62,7 +63,7 @@ async function createRoomsTable() {
       `;
       console.log('✅ تم إضافة foreign key للمنشئ');
     }
-    
+
     if (!constraintNames.includes('rooms_host_id_users_id_fk')) {
       await sql`
         ALTER TABLE "rooms" ADD CONSTRAINT "rooms_host_id_users_id_fk" 
@@ -71,7 +72,7 @@ async function createRoomsTable() {
       `;
       console.log('✅ تم إضافة foreign key للمضيف');
     }
-    
+
     // إضافة foreign keys لجدول room_users
     const roomUserConstraints = await sql`
       SELECT constraint_name 
@@ -79,9 +80,9 @@ async function createRoomsTable() {
       WHERE table_name = 'room_users' 
       AND constraint_type = 'FOREIGN KEY'
     `;
-    
-    const roomUserConstraintNames = roomUserConstraints.map(c => c.constraint_name);
-    
+
+    const roomUserConstraintNames = roomUserConstraints.map((c) => c.constraint_name);
+
     if (!roomUserConstraintNames.includes('room_users_user_id_users_id_fk')) {
       await sql`
         ALTER TABLE "room_users" ADD CONSTRAINT "room_users_user_id_users_id_fk" 
@@ -90,7 +91,7 @@ async function createRoomsTable() {
       `;
       console.log('✅ تم إضافة foreign key لمستخدم الغرفة');
     }
-    
+
     if (!roomUserConstraintNames.includes('room_users_room_id_rooms_id_fk')) {
       await sql`
         ALTER TABLE "room_users" ADD CONSTRAINT "room_users_room_id_rooms_id_fk" 
@@ -99,7 +100,7 @@ async function createRoomsTable() {
       `;
       console.log('✅ تم إضافة foreign key للغرفة');
     }
-    
+
     // إدراج الغرف الافتراضية
     console.log('🔄 إدراج الغرف الافتراضية...');
     await sql`
@@ -110,19 +111,18 @@ async function createRoomsTable() {
         ('music', 'أغاني وسهر', 'غرفة للموسيقى والترفيه', '', 1, false, true, false, null, '[]', '[]')
       ON CONFLICT (id) DO NOTHING
     `;
-    
+
     console.log('✅ تم إنشاء الغرف الافتراضية');
-    
+
     // التحقق من النتيجة
     const rooms = await sql`SELECT * FROM rooms ORDER BY id`;
     console.log('📋 الغرف الموجودة:');
-    rooms.forEach(room => {
+    rooms.forEach((room) => {
       console.log(`  - ${room.name} (${room.id}) - Broadcast: ${room.is_broadcast ? 'نعم' : 'لا'}`);
     });
-    
+
     await sql.end();
     console.log('✅ تم إغلاق الاتصال بنجاح');
-    
   } catch (error) {
     console.error('❌ خطأ في إنشاء جدول الغرف:', error);
   }

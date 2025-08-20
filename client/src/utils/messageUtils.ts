@@ -2,7 +2,12 @@ import type { ChatMessage, ChatUser } from '@/types/chat';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 export function mapDbMessageToChatMessage(msg: any, fallbackRoomId?: string): ChatMessage {
-  const isoTs = (msg.timestamp instanceof Date ? msg.timestamp.toISOString() : (msg.timestamp ? new Date(msg.timestamp).toISOString() : new Date().toISOString()));
+  const isoTs =
+    msg.timestamp instanceof Date
+      ? msg.timestamp.toISOString()
+      : msg.timestamp
+        ? new Date(msg.timestamp).toISOString()
+        : new Date().toISOString();
   return {
     id: msg.id,
     content: msg.content,
@@ -15,7 +20,10 @@ export function mapDbMessageToChatMessage(msg: any, fallbackRoomId?: string): Ch
   } as ChatMessage;
 }
 
-export function mapDbMessagesToChatMessages(messages: any[], fallbackRoomId?: string): ChatMessage[] {
+export function mapDbMessagesToChatMessages(
+  messages: any[],
+  fallbackRoomId?: string
+): ChatMessage[] {
   return messages
     .map((msg) => mapDbMessageToChatMessage(msg, fallbackRoomId))
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());

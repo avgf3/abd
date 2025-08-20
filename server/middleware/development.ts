@@ -3,9 +3,9 @@ import type { Request, Response, NextFunction } from 'express';
 // Middleware لحماية endpoints التطوير في الإنتاج
 export const developmentOnly = (req: Request, res: Response, next: NextFunction) => {
   if (process.env.NODE_ENV === 'production') {
-    return res.status(404).json({ 
+    return res.status(404).json({
       error: 'Not Found',
-      message: 'هذا الـ endpoint متاح فقط في بيئة التطوير' 
+      message: 'هذا الـ endpoint متاح فقط في بيئة التطوير',
     });
   }
   next();
@@ -19,5 +19,5 @@ export const isProduction = (): boolean => {
 // دالة لتسجيل endpoints التطوير
 export const logDevelopmentEndpoint = (endpoint: string) => {
   if (!isProduction()) {
-    }
+  }
 };

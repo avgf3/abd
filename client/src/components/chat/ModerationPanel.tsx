@@ -12,7 +12,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
@@ -25,11 +31,11 @@ interface ModerationPanelProps {
   onlineUsers: ChatUser[];
 }
 
-export default function ModerationPanel({ 
-  isOpen, 
-  onClose, 
-  currentUser, 
-  onlineUsers 
+export default function ModerationPanel({
+  isOpen,
+  onClose,
+  currentUser,
+  onlineUsers,
 }: ModerationPanelProps) {
   const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null);
   const [action, setAction] = useState<string>('');
@@ -41,25 +47,26 @@ export default function ModerationPanel({
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  const canUsePanel = currentUser && (currentUser.userType === 'owner' || currentUser.userType === 'admin');
+  const canUsePanel =
+    currentUser && (currentUser.userType === 'owner' || currentUser.userType === 'admin');
 
-  const filteredUsers = onlineUsers.filter(user => 
-    user.username.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    user.id !== currentUser?.id
+  const filteredUsers = onlineUsers.filter(
+    (user) =>
+      user.username.toLowerCase().includes(searchTerm.toLowerCase()) && user.id !== currentUser?.id
   );
 
   // جلب المستخدمين المحظورين
   const fetchBlockedUsers = async () => {
     if (!currentUser) return;
-    
+
     try {
       const response = await apiRequest('/api/users/blocked', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${currentUser.id}`
-        }
+          Authorization: `Bearer ${currentUser.id}`,
+        },
       });
-      
+
       if (response?.users) {
         setBlockedUsers(response.users);
       }
@@ -75,7 +82,7 @@ export default function ModerationPanel({
         toast({
           title: 'خطأ',
           description: 'فشل في جلب قائمة المستخدمين المحظورين',
-          variant: 'destructive'
+          variant: 'destructive',
         });
       }
     }
@@ -87,36 +94,37 @@ export default function ModerationPanel({
     }
   }, [isOpen, currentUser, activeTab]);
 
-
-
   const canModerateUser = (target: ChatUser) => {
     if (!currentUser) return false;
-    
+
     // المالك له صلاحية كاملة
     if (currentUser.userType === 'owner') {
       return true;
     }
-    
+
     // المشرف لا يستطيع التأثير على المالك أو مشرف آخر
-    if (currentUser.userType === 'admin' && (target.userType === 'owner' || target.userType === 'admin')) {
+    if (
+      currentUser.userType === 'admin' &&
+      (target.userType === 'owner' || target.userType === 'admin')
+    ) {
       return false;
     }
-    
+
     return currentUser.userType === 'admin' || currentUser.userType === 'owner';
   };
 
   const getAvailableActions = (target: ChatUser) => {
     if (!currentUser || !canModerateUser(target)) return [];
-    
+
     const actions = [];
-    
+
     if (currentUser.userType === 'admin' || currentUser.userType === 'owner') {
       actions.push(
         { value: 'mute', label: 'كتم (المشرف)' },
         { value: 'ban', label: 'طرد 15 دقيقة (الأدمن)' }
       );
     }
-    
+
     if (currentUser.userType === 'owner') {
       actions.push(
         { value: 'block', label: 'حجب كامل (المالك)' },
@@ -124,30 +132,28 @@ export default function ModerationPanel({
         { value: 'promote_admin', label: 'ترقية لإدمن' }
       );
     }
-    
+
     // المالك يستطيع حذف أي شخص
     if (currentUser.userType === 'owner') {
-      actions.push(
-        { value: 'remove', label: 'حذف من الدردشة' }
-      );
+      actions.push({ value: 'remove', label: 'حذف من الدردشة' });
     }
-    
+
     return actions;
   };
 
   const handleModerationAction = async () => {
     if (!selectedUser || !action || !currentUser) return;
-    
+
     setIsProcessing(true);
-    
+
     try {
       let endpoint = '';
       const body: any = {
         moderatorId: currentUser.id,
         targetUserId: selectedUser.id,
-        reason: reason || 'بدون سبب محدد'
+        reason: reason || 'بدون سبب محدد',
       };
-      
+
       switch (action) {
         case 'mute':
           endpoint = '/api/moderation/mute';
@@ -179,28 +185,27 @@ export default function ModerationPanel({
         default:
           throw new Error('إجراء غير مدعوم');
       }
-      
+
       const response = await apiRequest(endpoint, {
         method: 'POST',
-        body: body
+        body: body,
       });
-      
+
       toast({
         title: 'تم بنجاح',
         description: getActionMessage(action, selectedUser.username),
-        variant: 'default'
+        variant: 'default',
       });
-      
+
       setSelectedUser(null);
       setAction('');
       setReason('');
       setDuration('30');
-      
     } catch (error) {
       toast({
         title: 'خطأ',
         description: error instanceof Error ? error.message : 'فشل في تنفيذ الإجراء',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setIsProcessing(false);
@@ -228,55 +233,55 @@ export default function ModerationPanel({
 
   const handleUnmute = async (targetUser: ChatUser) => {
     if (!currentUser) return;
-    
+
     try {
       await apiRequest('/api/moderation/unmute', {
         method: 'POST',
         body: {
           moderatorId: currentUser.id,
-          targetUserId: targetUser.id
-        }
+          targetUserId: targetUser.id,
+        },
       });
-      
+
       toast({
         title: 'تم',
         description: `تم فك الكتم عن ${targetUser.username}`,
-        variant: 'default'
+        variant: 'default',
       });
     } catch (error) {
       toast({
         title: 'خطأ',
         description: 'فشل في فك الكتم',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
 
   const handleUnblock = async (targetUser: ChatUser) => {
     if (!currentUser) return;
-    
+
     try {
       await apiRequest('/api/moderation/unblock', {
         method: 'POST',
         body: {
           moderatorId: currentUser.id,
-          targetUserId: targetUser.id
-        }
+          targetUserId: targetUser.id,
+        },
       });
-      
+
       toast({
         title: 'تم إلغاء الحظر بنجاح ✅',
         description: `تم فك الحجب عن ${targetUser.username}`,
-        variant: 'default'
+        variant: 'default',
       });
-      
+
       // تحديث قائمة المحظورين
       fetchBlockedUsers();
     } catch (error) {
       toast({
         title: 'خطأ',
         description: 'فشل في فك الحجب',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
@@ -286,7 +291,12 @@ export default function ModerationPanel({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="sm:max-w-[700px] max-h-[600px] overflow-hidden" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -295,9 +305,7 @@ export default function ModerationPanel({
               {currentUser?.userType === 'owner' ? 'مالك' : 'مشرف'}
             </Badge>
           </DialogTitle>
-          <DialogDescription>
-            إدارة المستخدمين وتطبيق القوانين
-          </DialogDescription>
+          <DialogDescription>إدارة المستخدمين وتطبيق القوانين</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -354,9 +362,7 @@ export default function ModerationPanel({
                             </span>
                             <UserRoleBadge user={user} />
                           </div>
-                          <div className="text-sm text-gray-600">
-                            {user.status || 'بدون حالة'}
-                          </div>
+                          <div className="text-sm text-gray-600">{user.status || 'بدون حالة'}</div>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -369,19 +375,11 @@ export default function ModerationPanel({
                             إدارة
                           </Button>
                         )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleUnmute(user)}
-                        >
+                        <Button size="sm" variant="outline" onClick={() => handleUnmute(user)}>
                           فك كتم
                         </Button>
                         {currentUser?.userType === 'owner' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleUnblock(user)}
-                          >
+                          <Button size="sm" variant="outline" onClick={() => handleUnblock(user)}>
                             فك حجب
                           </Button>
                         )}
@@ -397,11 +395,7 @@ export default function ModerationPanel({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-red-700">المستخدمون المحظورون</h3>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={fetchBlockedUsers}
-                >
+                <Button size="sm" variant="outline" onClick={fetchBlockedUsers}>
                   تحديث القائمة
                 </Button>
               </div>
@@ -436,9 +430,7 @@ export default function ModerationPanel({
                               ID: {user.id} • {user.userType || 'عضو'}
                             </div>
                             {user.ipAddress && (
-                              <div className="text-xs text-red-600">
-                                IP: {user.ipAddress}
-                              </div>
+                              <div className="text-xs text-red-600">IP: {user.ipAddress}</div>
                             )}
                           </div>
                         </div>
@@ -465,10 +457,8 @@ export default function ModerationPanel({
           {/* نموذج الإجراء */}
           {selectedUser && (
             <div className="border rounded-lg p-4 space-y-4">
-              <h3 className="font-semibold">
-                إجراء على: {selectedUser.username}
-              </h3>
-              
+              <h3 className="font-semibold">إجراء على: {selectedUser.username}</h3>
+
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium mb-1">الإجراء</label>
@@ -509,16 +499,10 @@ export default function ModerationPanel({
                 </div>
 
                 <div className="flex gap-2">
-                  <Button
-                    onClick={handleModerationAction}
-                    disabled={!action || isProcessing}
-                  >
+                  <Button onClick={handleModerationAction} disabled={!action || isProcessing}>
                     {isProcessing ? 'جاري التنفيذ...' : 'تنفيذ'}
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedUser(null)}
-                  >
+                  <Button variant="outline" onClick={() => setSelectedUser(null)}>
                     إلغاء
                   </Button>
                 </div>

@@ -17,16 +17,15 @@ export default function AnalyticsPanel({ isOpen, onClose, currentUser }: Analyti
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" dir="rtl">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      dir="rtl"
+    >
       <div className="bg-secondary rounded-xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-white">📊 تحليلات الشات</h2>
           <div className="flex gap-2">
-            <Button
-              onClick={refreshAnalytics}
-              disabled={isLoading}
-              className="glass-effect"
-            >
+            <Button onClick={refreshAnalytics} disabled={isLoading} className="glass-effect">
               {isLoading ? '⏳' : '🔄'} تحديث
             </Button>
             <Button onClick={onClose} variant="ghost" className="text-white">
@@ -49,11 +48,15 @@ export default function AnalyticsPanel({ isOpen, onClose, currentUser }: Analyti
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-300">متوسط وقت الاستجابة:</span>
-                  <span className="text-blue-400 font-bold">{analytics.averageResponseTime.toFixed(1)}ms</span>
+                  <span className="text-blue-400 font-bold">
+                    {analytics.averageResponseTime.toFixed(1)}ms
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-300">إجمالي الجلسات:</span>
-                  <span className="text-purple-400 font-bold">{analytics.userEngagement.totalSessions}</span>
+                  <span className="text-purple-400 font-bold">
+                    {analytics.userEngagement.totalSessions}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-300">متوسط مدة الجلسة:</span>
@@ -84,8 +87,8 @@ export default function AnalyticsPanel({ isOpen, onClose, currentUser }: Analyti
                     <div className="flex-1 bg-gray-700 rounded-full h-2 overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
-                        style={{ 
-                          width: `${Math.max(5, (count / Math.max(...analytics.messagesPerHour)) * 100)}%` 
+                        style={{
+                          width: `${Math.max(5, (count / Math.max(...analytics.messagesPerHour)) * 100)}%`,
                         }}
                       />
                     </div>
@@ -106,9 +109,7 @@ export default function AnalyticsPanel({ isOpen, onClose, currentUser }: Analyti
                     <span className="text-lg">
                       {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '👤'}
                     </span>
-                    <span className="text-sm text-gray-300 flex-1 truncate">
-                      {user.username}
-                    </span>
+                    <span className="text-sm text-gray-300 flex-1 truncate">{user.username}</span>
                     <span className="text-xs bg-blue-600 px-2 py-1 rounded-full">
                       {user.messageCount}
                     </span>
@@ -125,9 +126,7 @@ export default function AnalyticsPanel({ isOpen, onClose, currentUser }: Analyti
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {analytics.popularWords.slice(0, 16).map((word) => (
                   <div key={word.word} className="bg-gray-700 rounded-lg p-2 text-center">
-                    <div className="text-sm text-white font-medium truncate">
-                      {word.word}
-                    </div>
+                    <div className="text-sm text-white font-medium truncate">{word.word}</div>
                     <div className="text-xs text-blue-400">{word.count}</div>
                   </div>
                 ))}
@@ -140,15 +139,9 @@ export default function AnalyticsPanel({ isOpen, onClose, currentUser }: Analyti
                 ℹ️ معلومات إضافية
               </h3>
               <div className="space-y-2 text-sm">
-                <div className="text-gray-300">
-                  📅 آخر تحديث: {formatTime(new Date())}
-                </div>
-                <div className="text-gray-300">
-                  🎯 فترة التحليل: آخر 24 ساعة
-                </div>
-                <div className="text-gray-300">
-                  🔄 تحديث تلقائي كل 5 دقائق
-                </div>
+                <div className="text-gray-300">📅 آخر تحديث: {formatTime(new Date())}</div>
+                <div className="text-gray-300">🎯 فترة التحليل: آخر 24 ساعة</div>
+                <div className="text-gray-300">🔄 تحديث تلقائي كل 5 دقائق</div>
                 <div className="text-gray-300">
                   👨‍💼 المحلل: {currentUser?.username || 'غير محدد'}
                 </div>

@@ -5,12 +5,7 @@ import type { PrivateConversation } from '../../../../shared/types';
 
 import ProfileImage from '@/components/chat/ProfileImage';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
@@ -35,7 +30,14 @@ export default function MessagesPanel({
   onStartPrivateChat,
 }: MessagesPanelProps) {
   // جلب قائمة المحادثات الدائمة من الخادم
-  const { data: conversationsData, isLoading } = useQuery<{ success: boolean; conversations: Array<{ otherUserId: number; otherUser: ChatUser | null; lastMessage: { id: number; content: string; messageType: string; timestamp: string } }> }>({
+  const { data: conversationsData, isLoading } = useQuery<{
+    success: boolean;
+    conversations: Array<{
+      otherUserId: number;
+      otherUser: ChatUser | null;
+      lastMessage: { id: number; content: string; messageType: string; timestamp: string };
+    }>;
+  }>({
     queryKey: ['/api/private-messages/conversations', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) throw new Error('No user ID');
@@ -47,19 +49,38 @@ export default function MessagesPanel({
   });
 
   const conversations = useMemo(() => {
-    const items = (conversationsData?.conversations || []).map((c) => {
-      // قد لا يكون otherUser موجوداً (غير متصل)؛ نحاول إيجاده من onlineUsers كنسخة احتياطية
-      const user = c.otherUser || onlineUsers.find(u => u.id === c.otherUserId) || null;
-      if (!user) return null;
-      return { user, lastMessage: { content: c.lastMessage.content, timestamp: String(c.lastMessage.timestamp) } };
-    }).filter(Boolean) as Array<{ user: ChatUser; lastMessage: { content: string; timestamp: string } }>;
-    return items.sort((a, b) => new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime());
+    const items = (conversationsData?.conversations || [])
+      .map((c) => {
+        // قد لا يكون otherUser موجوداً (غير متصل)؛ نحاول إيجاده من onlineUsers كنسخة احتياطية
+        const user = c.otherUser || onlineUsers.find((u) => u.id === c.otherUserId) || null;
+        if (!user) return null;
+        return {
+          user,
+          lastMessage: {
+            content: c.lastMessage.content,
+            timestamp: String(c.lastMessage.timestamp),
+          },
+        };
+      })
+      .filter(Boolean) as Array<{
+      user: ChatUser;
+      lastMessage: { content: string; timestamp: string };
+    }>;
+    return items.sort(
+      (a, b) =>
+        new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
+    );
   }, [conversationsData, onlineUsers]);
 
   const formatLastMessage = (content: string) => formatMessagePreview(content, 40);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="max-w-md max-h-[560px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl overflow-hidden">
         <DialogHeader className="border-b border-accent pb-4">
           <DialogTitle className="text-2xl font-bold text-center text-primary-foreground">
@@ -86,14 +107,21 @@ export default function MessagesPanel({
                     <button
                       key={user.id}
                       className="w-full text-right cursor-pointer hover:bg-accent/20 transition-all duration-200 p-3 rounded-lg border border-accent/30 bg-background/20"
-                      onClick={() => { onClose(); setTimeout(() => onStartPrivateChat(user), 0); }}
+                      onClick={() => {
+                        onClose();
+                        setTimeout(() => onStartPrivateChat(user), 0);
+                      }}
                     >
                       <div className="flex items-center gap-3">
                         <ProfileImage user={user} size="small" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-3">
-                            <h3 className="font-medium text-gray-900 text-sm truncate">{user.username}</h3>
-                            <span className="text-xs text-gray-500 whitespace-nowrap">{formatTime(lastMessage.timestamp)}</span>
+                            <h3 className="font-medium text-gray-900 text-sm truncate">
+                              {user.username}
+                            </h3>
+                            <span className="text-xs text-gray-500 whitespace-nowrap">
+                              {formatTime(lastMessage.timestamp)}
+                            </span>
                           </div>
                           <p className="text-xs text-muted-foreground truncate mt-1">
                             {formatLastMessage(lastMessage.content)}

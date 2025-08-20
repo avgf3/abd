@@ -6,7 +6,7 @@ export interface ChatUser {
   role: 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'system';
   isOnline: boolean;
   roomId?: string;
-  
+
   // معلومات إضافية - تحسين type safety
   profileBanner?: string;
   profileBackgroundColor?: string;
@@ -34,7 +34,7 @@ export interface ChatUser {
   level?: number; // جعل المستوى اختيارياً للتوافق بين الأنواع
   roomColor?: string;
   userType: string; // جعل نوع المستخدم مطلوب
-  
+
   // خصائص مفقودة - إضافة حديثة
   joinDate?: Date;
   createdAt?: Date;
@@ -51,7 +51,7 @@ export interface ChatUser {
   banExpiry?: Date | null;
   currentRoom?: string;
   settings?: any;
-  
+
   // تم إضافة خصائص جديدة
   ignoredUsers?: number[];
   blockedUsers?: number[];

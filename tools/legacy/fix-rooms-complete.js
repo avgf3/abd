@@ -8,21 +8,21 @@ import { eq, and } from 'drizzle-orm';
 
 async function fixRoomsSystem() {
   const databaseUrl = process.env.DATABASE_URL;
-  
+
   if (!databaseUrl) {
     console.error('❌ DATABASE_URL is not set');
     return;
   }
 
   console.log('🔧 إصلاح نظام الغرف بشكل شامل...');
-  
+
   try {
     const pool = new Pool({ connectionString: databaseUrl });
     const db = drizzle(pool);
-    
+
     // 1. فحص وإنشاء الغرف الافتراضية
     console.log('\n🏗️ إنشاء الغرف الافتراضية...');
-    
+
     const defaultRooms = [
       {
         id: 'general',
@@ -35,7 +35,7 @@ async function fixRoomsSystem() {
         icon: '',
         hostId: null,
         speakers: '[]',
-        micQueue: '[]'
+        micQueue: '[]',
       },
       {
         id: 'broadcast',
@@ -48,7 +48,7 @@ async function fixRoomsSystem() {
         icon: '',
         hostId: 1,
         speakers: '[]',
-        micQueue: '[]'
+        micQueue: '[]',
       },
       {
         id: 'music',
@@ -61,25 +61,26 @@ async function fixRoomsSystem() {
         icon: '',
         hostId: null,
         speakers: '[]',
-        micQueue: '[]'
-      }
+        micQueue: '[]',
+      },
     ];
-    
+
     for (const room of defaultRooms) {
       try {
         // محاولة إدراج الغرفة أو تحديثها إذا كانت موجودة
         const existingRoom = await db.select().from(rooms).where(eq(rooms.id, room.id)).limit(1);
-        
+
         if (existingRoom.length === 0) {
           await db.insert(rooms).values(room);
           console.log(`✅ تم إنشاء الغرفة: ${room.name}`);
         } else {
           // تحديث الغرفة الموجودة لضمان أنها نشطة
-          await db.update(rooms)
-            .set({ 
+          await db
+            .update(rooms)
+            .set({
               isActive: true,
               name: room.name,
-              description: room.description
+              description: room.description,
             })
             .where(eq(rooms.id, room.id));
           console.log(`🔄 تم تحديث الغرفة: ${room.name}`);
@@ -88,39 +89,42 @@ async function fixRoomsSystem() {
         console.log(`⚠️ خطأ في معالجة الغرفة ${room.name}:`, error.message);
       }
     }
-    
+
     // 2. فحص الغرف النشطة
     console.log('\n📁 فحص الغرف النشطة...');
     const activeRooms = await db.select().from(rooms).where(eq(rooms.isActive, true));
     console.log(`عدد الغرف النشطة: ${activeRooms.length}`);
-    
-    activeRooms.forEach(room => {
-      console.log(`- ${room.name} (${room.id}) - المنشئ: ${room.createdBy} - بث: ${room.isBroadcast}`);
+
+    activeRooms.forEach((room) => {
+      console.log(
+        `- ${room.name} (${room.id}) - المنشئ: ${room.createdBy} - بث: ${room.isBroadcast}`
+      );
     });
-    
+
     // 3. إضافة المستخدم الأول للغرفة العامة إذا لم يكن موجود
     console.log('\n👤 فحص انضمام المستخدمين للغرف...');
-    
-    const generalRoomUsers = await db.select()
+
+    const generalRoomUsers = await db
+      .select()
       .from(roomUsers)
       .where(eq(roomUsers.roomId, 'general'));
-    
+
     console.log(`عدد المستخدمين في الغرفة العامة: ${generalRoomUsers.length}`);
-    
+
     // إضافة المستخدم الأول (المالك) للغرفة العامة إذا لم يكن موجود
-    const ownerInGeneral = generalRoomUsers.find(ru => ru.userId === 1);
+    const ownerInGeneral = generalRoomUsers.find((ru) => ru.userId === 1);
     if (!ownerInGeneral) {
       try {
         await db.insert(roomUsers).values({
           userId: 1,
-          roomId: 'general'
+          roomId: 'general',
         });
         console.log('✅ تم إضافة المالك للغرفة العامة');
       } catch (error) {
         console.log('⚠️ المالك موجود مسبقاً في الغرفة العامة');
       }
     }
-    
+
     // 4. اختبار API
     console.log('\n🌐 اختبار API للغرف...');
     try {
@@ -128,9 +132,9 @@ async function fixRoomsSystem() {
       if (response.ok) {
         const data = await response.json();
         console.log(`✅ API يعمل بنجاح - عدد الغرف: ${data.rooms.length}`);
-        
+
         // عرض أول 3 غرف
-        data.rooms.slice(0, 3).forEach(room => {
+        data.rooms.slice(0, 3).forEach((room) => {
           console.log(`  - ${room.name} (${room.id}) - مستخدمين: ${room.userCount}`);
         });
       } else {
@@ -142,34 +146,32 @@ async function fixRoomsSystem() {
       console.log(`❌ خطأ في اتصال API:`, error.message);
       console.log('تأكد من أن الخادم يعمل على المنفذ 3000');
     }
-    
+
     // 5. إنشاء تقرير نهائي
     console.log('\n📊 التقرير النهائي:');
-    
+
     const finalRooms = await db.select().from(rooms).where(eq(rooms.isActive, true));
     const totalRoomUsers = await db.select().from(roomUsers);
-    
+
     console.log(`إجمالي الغرف النشطة: ${finalRooms.length}`);
     console.log(`إجمالي انضمامات الغرف: ${totalRoomUsers.length}`);
-    
+
     // إحصائيات مفصلة لكل غرفة
-    for (const room of finalRooms.slice(0, 5)) { // أول 5 غرف فقط
-      const roomUserCount = await db.select()
-        .from(roomUsers)
-        .where(eq(roomUsers.roomId, room.id));
-      
+    for (const room of finalRooms.slice(0, 5)) {
+      // أول 5 غرف فقط
+      const roomUserCount = await db.select().from(roomUsers).where(eq(roomUsers.roomId, room.id));
+
       console.log(`  📁 ${room.name}: ${roomUserCount.length} مستخدم`);
     }
-    
+
     await pool.end();
-    
+
     console.log('\n✅ تم إصلاح نظام الغرف بنجاح!');
     console.log('\n📝 الخطوات التالية:');
     console.log('1. تأكد من أن الخادم يعمل (npm run dev)');
     console.log('2. افتح المتصفح وتحقق من ظهور الغرف');
     console.log('3. جرب الانضمام لغرفة مختلفة');
     console.log('4. تحقق من وجود رسائل في console المتصفح');
-    
   } catch (error) {
     console.error('❌ خطأ في إصلاح نظام الغرف:', error);
   }

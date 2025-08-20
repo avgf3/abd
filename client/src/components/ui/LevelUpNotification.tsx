@@ -13,12 +13,18 @@ interface LevelUpNotificationProps {
   onClose: () => void;
 }
 
-export function LevelUpNotification({ oldLevel, newLevel, user, levelInfo, onClose }: LevelUpNotificationProps) {
+export function LevelUpNotification({
+  oldLevel,
+  newLevel,
+  user,
+  levelInfo,
+  onClose,
+}: LevelUpNotificationProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
-    
+
     // إغلاق تلقائي بعد 5 ثوان
     const timer = setTimeout(() => {
       setIsVisible(false);
@@ -35,27 +41,24 @@ export function LevelUpNotification({ oldLevel, newLevel, user, levelInfo, onClo
   const newLevelColor = getLevelColor(newLevel);
 
   return (
-    <div className={`fixed top-4 right-4 z-50 transform transition-all duration-300 ${
-      isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
-    }`}>
-      <div 
+    <div
+      className={`fixed top-4 right-4 z-50 transform transition-all duration-300 ${
+        isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+      }`}
+    >
+      <div
         className="bg-gradient-to-r from-yellow-400 to-orange-500 p-4 rounded-lg shadow-lg max-w-sm border-2"
         style={{ borderColor: newLevelColor }}
       >
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3 rtl:space-x-reverse">
-            <div className="text-4xl animate-bounce">
-              {newLevelIcon}
-            </div>
+            <div className="text-4xl animate-bounce">{newLevelIcon}</div>
             <div className="text-white">
               <h3 className="font-bold text-lg">ترقية مستوى! 🎉</h3>
               <p className="text-sm opacity-90">
                 من المستوى {oldLevel} إلى المستوى {newLevel}
               </p>
-              <p 
-                className="font-semibold"
-                style={{ color: newLevelColor }}
-              >
+              <p className="font-semibold" style={{ color: newLevelColor }}>
                 {newLevelInfo.title}
               </p>
             </div>
@@ -70,7 +73,7 @@ export function LevelUpNotification({ oldLevel, newLevel, user, levelInfo, onClo
             <X size={20} />
           </button>
         </div>
-        
+
         <div className="mt-3 p-2 bg-white/20 rounded text-center text-white text-sm">
           استمر في التفاعل لكسب المزيد من النقاط! 💪
         </div>
@@ -89,7 +92,7 @@ export function AchievementNotification({ message, onClose }: AchievementNotific
 
   useEffect(() => {
     setIsVisible(true);
-    
+
     const timer = setTimeout(() => {
       setIsVisible(false);
       setTimeout(onClose, 300);
@@ -99,9 +102,11 @@ export function AchievementNotification({ message, onClose }: AchievementNotific
   }, [onClose]);
 
   return (
-    <div className={`fixed top-20 right-4 z-50 transform transition-all duration-300 ${
-      isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
-    }`}>
+    <div
+      className={`fixed top-20 right-4 z-50 transform transition-all duration-300 ${
+        isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+      }`}
+    >
       <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-lg shadow-lg max-w-sm border-2 border-purple-300">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3 rtl:space-x-reverse">
@@ -136,7 +141,7 @@ export function DailyBonusNotification({ points, onClose }: DailyBonusNotificati
 
   useEffect(() => {
     setIsVisible(true);
-    
+
     const timer = setTimeout(() => {
       setIsVisible(false);
       setTimeout(onClose, 300);
@@ -146,9 +151,11 @@ export function DailyBonusNotification({ points, onClose }: DailyBonusNotificati
   }, [onClose]);
 
   return (
-    <div className={`fixed top-36 right-4 z-50 transform transition-all duration-300 ${
-      isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
-    }`}>
+    <div
+      className={`fixed top-36 right-4 z-50 transform transition-all duration-300 ${
+        isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+      }`}
+    >
       <div className="bg-gradient-to-r from-green-400 to-blue-500 p-3 rounded-lg shadow-lg max-w-sm border-2 border-green-300">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 rtl:space-x-reverse text-white">

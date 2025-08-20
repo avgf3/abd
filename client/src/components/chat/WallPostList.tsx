@@ -52,15 +52,18 @@ export default function WallPostList({
   return (
     <>
       {posts.map((post) => (
-        <Card key={post.id} className="hover:shadow-lg transition-all duration-300 border-0 bg-background/60 backdrop-blur-sm group">
+        <Card
+          key={post.id}
+          className="hover:shadow-lg transition-all duration-300 border-0 bg-background/60 backdrop-blur-sm group"
+        >
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-primary/10">
                     {post.userProfileImage ? (
-                      <img 
-                        src={getImageSrc(post.userProfileImage)} 
+                      <img
+                        src={getImageSrc(post.userProfileImage)}
                         alt={post.username}
                         className="w-12 h-12 rounded-full object-cover"
                       />
@@ -72,7 +75,7 @@ export default function WallPostList({
                   </div>
                 </div>
                 <div>
-                  <div 
+                  <div
                     className="font-bold text-base"
                     style={{ color: post.usernameColor || 'inherit' }}
                   >
@@ -82,9 +85,13 @@ export default function WallPostList({
                     <span>{formatTimeAgo(post.timestamp)}</span>
                     {post.userRole && post.userRole !== 'member' && (
                       <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
-                        {post.userRole === 'admin' ? 'مدير' : 
-                         post.userRole === 'owner' ? 'مالك' : 
-                         post.userRole === 'moderator' ? 'مراقب' : post.userRole}
+                        {post.userRole === 'admin'
+                          ? 'مدير'
+                          : post.userRole === 'owner'
+                            ? 'مالك'
+                            : post.userRole === 'moderator'
+                              ? 'مراقب'
+                              : post.userRole}
                       </span>
                     )}
                   </div>
@@ -113,9 +120,9 @@ export default function WallPostList({
 
             {post.imageUrl && (
               <div className="mb-4 rounded-xl overflow-hidden bg-muted/10">
-                <img 
-                  src={post.imageUrl} 
-                  alt="منشور" 
+                <img
+                  src={post.imageUrl}
+                  alt="منشور"
                   className="w-full h-auto object-cover max-h-80 hover:scale-105 transition-transform duration-300 cursor-pointer"
                   onClick={() => window.open(post.imageUrl!, '_blank')}
                 />
@@ -153,7 +160,7 @@ export default function WallPostList({
                 </Button>
               </div>
               <div className="text-xs text-muted-foreground">
-                {(post.totalLikes + post.totalHearts + post.totalDislikes)} تفاعل
+                {post.totalLikes + post.totalHearts + post.totalDislikes} تفاعل
               </div>
             </div>
           </CardContent>

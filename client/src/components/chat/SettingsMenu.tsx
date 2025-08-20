@@ -1,13 +1,4 @@
-import { 
-  User, 
-  Home, 
-  Moon, 
-  Shield, 
-  LogOut, 
-  Settings,
-  Palette,
-  Brush
-} from 'lucide-react';
+import { User, Home, Moon, Shield, LogOut, Settings, Palette, Brush } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,7 +15,16 @@ interface SettingsMenuProps {
   currentUser?: any;
 }
 
-export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenReports, onOpenThemeSelector, onOpenUsernameColorPicker, onOpenIgnoredUsers, currentUser }: SettingsMenuProps) {
+export default function SettingsMenu({
+  onOpenProfile,
+  onLogout,
+  onClose,
+  onOpenReports,
+  onOpenThemeSelector,
+  onOpenUsernameColorPicker,
+  onOpenIgnoredUsers,
+  currentUser,
+}: SettingsMenuProps) {
   const handleLogout = () => {
     if (confirm('🤔 هل أنت متأكد من تسجيل الخروج؟')) {
       onLogout();
@@ -67,7 +67,7 @@ export default function SettingsMenu({ onOpenProfile, onLogout, onClose, onOpenR
             <Home className="w-4 h-4 text-primary" />
             الغرف
           </Button>
-          
+
           {currentUser?.userType === 'owner' && (
             <Button
               onClick={onOpenThemeSelector}

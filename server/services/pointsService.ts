@@ -1,19 +1,23 @@
-import { 
-  calculateLevel, 
-  calculateLevelProgress, 
-  checkLevelUp, 
+import {
+  calculateLevel,
+  calculateLevelProgress,
+  checkLevelUp,
   DEFAULT_POINTS_CONFIG,
-  DEFAULT_LEVELS
+  DEFAULT_LEVELS,
 } from '../../shared/points-system';
 import { storage } from '../storage';
 
 export class PointsService {
   // إضافة نقاط لمستخدم
-  async addPoints(userId: number, points: number, reason: string): Promise<{ 
-    leveledUp: boolean; 
-    oldLevel: number; 
-    newLevel: number; 
-    newPoints: number; 
+  async addPoints(
+    userId: number,
+    points: number,
+    reason: string
+  ): Promise<{
+    leveledUp: boolean;
+    oldLevel: number;
+    newLevel: number;
+    newPoints: number;
     newTotalPoints: number;
     levelInfo?: any;
   }> {
@@ -39,7 +43,7 @@ export class PointsService {
         points: newCurrentPoints,
         level: newLevel,
         totalPoints: newTotalPoints,
-        levelProgress: newLevelProgress
+        levelProgress: newLevelProgress,
       });
 
       // إضافة سجل في تاريخ النقاط
@@ -51,7 +55,7 @@ export class PointsService {
         newLevel: levelUpInfo.newLevel,
         newPoints: newCurrentPoints,
         newTotalPoints,
-        levelInfo: levelUpInfo.levelInfo
+        levelInfo: levelUpInfo.levelInfo,
       };
     } catch (error) {
       console.error('خطأ في إضافة النقاط:', error);
@@ -69,12 +73,12 @@ export class PointsService {
     // التحقق من آخر تسجيل دخول
     const lastLogin = await storage.getUserLastDailyLogin(userId);
     const today = new Date().toDateString();
-    
+
     if (lastLogin !== today) {
       await storage.updateUserLastDailyLogin(userId, today);
       return this.addPoints(userId, DEFAULT_POINTS_CONFIG.DAILY_LOGIN, 'DAILY_LOGIN');
     }
-    
+
     return null; // لم يحصل على نقاط اليوم
   }
 
@@ -93,8 +97,8 @@ export class PointsService {
     const user = await storage.getUser(userId);
     if (!user) return null;
 
-    const levelInfo = DEFAULT_LEVELS.find(l => l.level === (user.level || 1));
-    const nextLevelInfo = DEFAULT_LEVELS.find(l => l.level === (user.level || 1) + 1);
+    const levelInfo = DEFAULT_LEVELS.find((l) => l.level === (user.level || 1));
+    const nextLevelInfo = DEFAULT_LEVELS.find((l) => l.level === (user.level || 1) + 1);
 
     return {
       points: user.points || 0,
@@ -103,7 +107,7 @@ export class PointsService {
       levelProgress: user.levelProgress || 0,
       levelInfo,
       nextLevelInfo,
-      pointsToNext: nextLevelInfo ? nextLevelInfo.requiredPoints - (user.totalPoints || 0) : 0
+      pointsToNext: nextLevelInfo ? nextLevelInfo.requiredPoints - (user.totalPoints || 0) : 0,
     };
   }
 
@@ -130,7 +134,7 @@ export class PointsService {
       points: user.points || 0, // النقاط الحالية تبقى كما هي
       level: newLevel,
       totalPoints,
-      levelProgress: newLevelProgress
+      levelProgress: newLevelProgress,
     });
 
     return { level: newLevel, levelProgress: newLevelProgress };

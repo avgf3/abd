@@ -5,6 +5,7 @@
 ## ✨ المميزات المضافة
 
 ### 📊 نظام النقاط
+
 - **نقاط إرسال الرسائل**: 1 نقطة لكل رسالة
 - **نقاط تسجيل الدخول اليومي**: 5 نقاط
 - **نقاط إكمال الملف الشخصي**: 10 نقاط
@@ -14,6 +15,7 @@
 - **نقاط النشاط الشهري**: 50 نقطة
 
 ### 🏆 نظام المستويات
+
 1. **مبتدئ** (0 نقطة) - اللون: `#8B4513`
 2. **عضو نشط** (50 نقطة) - اللون: `#CD853F`
 3. **عضو متميز** (150 نقطة) - اللون: `#DAA520`
@@ -28,6 +30,7 @@
 ## 🗄️ التغييرات في قاعدة البيانات
 
 ### إضافات جدول المستخدمين
+
 ```sql
 ALTER TABLE users ADD COLUMN points INTEGER DEFAULT 0;
 ALTER TABLE users ADD COLUMN level INTEGER DEFAULT 1;
@@ -36,6 +39,7 @@ ALTER TABLE users ADD COLUMN level_progress INTEGER DEFAULT 0;
 ```
 
 ### جدول تاريخ النقاط الجديد
+
 ```sql
 CREATE TABLE points_history (
   id SERIAL PRIMARY KEY,
@@ -48,6 +52,7 @@ CREATE TABLE points_history (
 ```
 
 ### جدول إعدادات المستويات الجديد
+
 ```sql
 CREATE TABLE level_settings (
   id SERIAL PRIMARY KEY,
@@ -63,11 +68,13 @@ CREATE TABLE level_settings (
 ## 🚀 التشغيل والإعداد
 
 ### للـ SQLite (قاعدة البيانات المحلية)
+
 ```bash
 node setup-points-system.js
 ```
 
 ### للـ PostgreSQL (قاعدة البيانات السحابية)
+
 ```bash
 node setup-points-system-pg.js
 ```
@@ -83,17 +90,19 @@ node setup-points-system-pg.js
 ## 🔧 الاستخدام في الكود
 
 ### استيراد النظام
+
 ```typescript
-import { 
-  calculateLevel, 
-  calculateLevelProgress, 
+import {
+  calculateLevel,
+  calculateLevelProgress,
   checkLevelUp,
   DEFAULT_POINTS_CONFIG,
-  DEFAULT_LEVELS
+  DEFAULT_LEVELS,
 } from './shared/points-system';
 ```
 
 ### حساب النقاط
+
 ```typescript
 // إضافة نقاط لمستخدم
 const pointsToAdd = DEFAULT_POINTS_CONFIG.MESSAGE_SENT;
@@ -111,6 +120,7 @@ if (levelUpInfo.leveledUp) {
 ```
 
 ### تتبع تاريخ النقاط
+
 ```typescript
 // إضافة سجل في تاريخ النقاط
 await db.insert(pointsHistory).values({
@@ -124,50 +134,54 @@ await db.insert(pointsHistory).values({
 ## 🎨 عرض النقاط في الواجهة
 
 ### معلومات المستخدم
+
 - النقاط الحالية: `user.points`
 - المستوى: `user.level`
 - إجمالي النقاط: `user.totalPoints`
 - تقدم المستوى: `user.levelProgress%`
 
 ### عرض شريط التقدم
+
 ```jsx
 <div className="level-progress">
-  <div 
-    className="progress-bar" 
-    style={{ width: `${user.levelProgress}%` }}
-  />
-  <span>المستوى {user.level} - {user.levelProgress}%</span>
+  <div className="progress-bar" style={{ width: `${user.levelProgress}%` }} />
+  <span>
+    المستوى {user.level} - {user.levelProgress}%
+  </span>
 </div>
 ```
 
 ## 📈 مراقبة النظام
 
 ### إحصائيات النقاط
+
 ```sql
 -- أعلى المستخدمين نقاطاً
-SELECT username, points, level, total_points 
-FROM users 
-ORDER BY total_points DESC 
+SELECT username, points, level, total_points
+FROM users
+ORDER BY total_points DESC
 LIMIT 10;
 
 -- تاريخ النقاط لمستخدم معين
-SELECT * FROM points_history 
-WHERE user_id = ? 
+SELECT * FROM points_history
+WHERE user_id = ?
 ORDER BY created_at DESC;
 ```
 
 ## 🔄 الصيانة
 
 ### إعادة حساب النقاط
+
 ```typescript
 import { recalculateUserStats } from './shared/points-system';
 
 // إعادة حساب إحصائيات مستخدم
 const stats = recalculateUserStats(user.totalPoints);
-await db.update(users)
+await db
+  .update(users)
   .set({
     level: stats.level,
-    levelProgress: stats.levelProgress
+    levelProgress: stats.levelProgress,
   })
   .where(eq(users.id, user.id));
 ```

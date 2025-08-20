@@ -7,26 +7,31 @@
 ## 🔄 التغييرات المُنجزة
 
 ### 1. ملف `.env`
+
 ```env
 # قاعدة البيانات - استبدل بالرابط الخاص بك من Supabase
 DATABASE_URL=postgresql://postgres:[كلمة_السر]@db.qzehjgmawnrihmepboca.supabase.co:5432/postgres
 ```
 
 ### 2. تحديث `database-adapter.ts`
+
 - ✅ إزالة دعم SQLite
 - ✅ استخدام PostgreSQL فقط مع `@neondatabase/serverless`
 - ✅ تحسين رسائل الخطأ
 
 ### 3. تحديث `drizzle.config.ts`
+
 - ✅ إزالة منطق SQLite
 - ✅ استخدام PostgreSQL schema فقط
 
 ### 4. حذف الملفات غير المطلوبة
+
 - ❌ `shared/schema-sqlite.ts`
 - ❌ `server/database-fallback.ts`
 - ❌ `chat.db`
 
 ### 5. سكريبت الإعداد الجديد
+
 - ✅ `setup-supabase.sh` للإعداد التلقائي
 - ✅ `test-supabase-connection.ts` لاختبار الاتصال
 
@@ -72,6 +77,7 @@ npm run dev
 2. **Connection String** → **URI**
 
 مثال:
+
 ```
 postgresql://postgres:[YOUR-PASSWORD]@db.qzehjgmawnrihmepboca.supabase.co:5432/postgres
 ```
@@ -92,7 +98,7 @@ console.log(users);
 ```json
 {
   "db:generate": "drizzle-kit generate",
-  "db:migrate": "drizzle-kit migrate", 
+  "db:migrate": "drizzle-kit migrate",
   "db:push": "drizzle-kit push",
   "test:supabase": "tsx test-supabase-connection.ts"
 }
@@ -108,18 +114,21 @@ console.log(users);
 ## 🐛 استكشاف الأخطاء
 
 ### خطأ: "DATABASE_URL غير محدد"
+
 ```bash
 # تأكد من وجود DATABASE_URL في .env
 echo $DATABASE_URL
 ```
 
 ### خطأ: "Connection refused"
+
 ```bash
 # تحقق من صحة رابط Supabase
 npm run test:supabase
 ```
 
 ### خطأ: "relation does not exist"
+
 ```bash
 # شغّل migrations
 npm run db:migrate
@@ -128,6 +137,7 @@ npm run db:migrate
 ## 🎉 النتيجة
 
 الآن مشروعك يعمل مع:
+
 - ✅ PostgreSQL على Supabase
 - ✅ schema متوافق مع PostgreSQL
 - ✅ migrations تلقائية

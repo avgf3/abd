@@ -18,7 +18,7 @@ type ConversationItem = {
 const router = Router();
 
 // Cache for recent conversations to reduce database queries
-const conversationCache = new Map<string, { messages: any[], timestamp: number }>();
+const conversationCache = new Map<string, { messages: any[]; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
@@ -46,7 +46,7 @@ router.post('/send', async (req, res) => {
     // التحقق من المستخدمين بشكل متوازي لتحسين السرعة
     const [sender, receiver] = await Promise.all([
       storage.getUser(parseInt(senderId)),
-      storage.getUser(parseInt(receiverId))
+      storage.getUser(parseInt(receiverId)),
     ]);
 
     if (!sender) {
@@ -63,7 +63,7 @@ router.post('/send', async (req, res) => {
       content: text,
       messageType,
       isPrivate: true,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     const newMessage = await storage.createMessage(messageData);
@@ -83,12 +83,9 @@ router.post('/send', async (req, res) => {
 
     // إنشاء إشعار للمستقبل
     promises.push(
-      notificationService.createMessageNotification(
-        receiver.id,
-        sender.username,
-        sender.id,
-        text.substring(0, 100)
-      ).catch(() => null)
+      notificationService
+        .createMessageNotification(receiver.id, sender.username, sender.id, text.substring(0, 100))
+        .catch(() => null)
     );
 
     // بث الرسالة عبر Socket.IO
@@ -96,18 +93,22 @@ router.post('/send', async (req, res) => {
     if (io) {
       promises.push(
         Promise.all([
-          new Promise(resolve => {
+          new Promise((resolve) => {
             try {
               io.to(String(senderId)).emit('privateMessage', { message: messageWithSender });
               resolve(true);
-            } catch { resolve(false); }
+            } catch {
+              resolve(false);
+            }
           }),
-          new Promise(resolve => {
+          new Promise((resolve) => {
             try {
               io.to(String(receiverId)).emit('privateMessage', { message: messageWithSender });
               resolve(true);
-            } catch { resolve(false); }
-          })
+            } catch {
+              resolve(false);
+            }
+          }),
         ])
       );
     }
@@ -122,7 +123,6 @@ router.post('/send', async (req, res) => {
     }
 
     return res.json({ success: true, message: messageWithSender });
-
   } catch (error: any) {
     console.error('خطأ في إرسال رسالة خاصة:', error);
     return res.status(500).json({ error: error?.message || 'خطأ في الخادم' });
@@ -140,7 +140,11 @@ router.get('/:userId/:otherUserId', async (req, res, next) => {
     if (userId === 'conversations' || userId === 'cache') {
       return next();
     }
-    const { limit = 50, beforeTs, beforeId } = req.query as { limit?: any; beforeTs?: string; beforeId?: string };
+    const {
+      limit = 50,
+      beforeTs,
+      beforeId,
+    } = req.query as { limit?: any; beforeTs?: string; beforeId?: string };
 
     const uid = parseInt(userId);
     const oid = parseInt(otherUserId);
@@ -180,7 +184,11 @@ router.get('/:userId/:otherUserId', async (req, res, next) => {
           return false;
         });
         if (filtered.length >= lim) {
-          messages = filtered.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, fetchLimitPlusOne);
+          messages = filtered
+            .sort(
+              (a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            )
+            .slice(0, fetchLimitPlusOne);
           fetchedFromCache = true;
         }
       }
@@ -199,8 +207,12 @@ router.get('/:userId/:otherUserId', async (req, res, next) => {
         const existing = (cachedData?.messages || []) as any[];
         if (messages.length > 0 || existing.length > 0) {
           const byId = new Map<number, any>();
-          [...existing, ...messages].forEach((m: any) => { if (m && typeof m.id === 'number') byId.set(m.id, m); });
-          const merged = Array.from(byId.values()).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+          [...existing, ...messages].forEach((m: any) => {
+            if (m && typeof m.id === 'number') byId.set(m.id, m);
+          });
+          const merged = Array.from(byId.values()).sort(
+            (a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
           conversationCache.set(conversationKey, { messages: merged, timestamp: Date.now() });
           cleanOldCache();
         }
@@ -211,7 +223,9 @@ router.get('/:userId/:otherUserId', async (req, res, next) => {
       messages = latest || [];
 
       // إثراء الرسائل بمعلومات المرسل بشكل محسن (Batch)
-      const uniqueSenderIds = Array.from(new Set(messages.map((m: any) => m.senderId).filter(Boolean)));
+      const uniqueSenderIds = Array.from(
+        new Set(messages.map((m: any) => m.senderId).filter(Boolean))
+      );
       const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
       const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
       const finalMessages = messages.map((m: any) => ({ ...m, sender: senderMap.get(m.senderId) }));
@@ -224,22 +238,26 @@ router.get('/:userId/:otherUserId', async (req, res, next) => {
 
     // إثراء الرسائل المجلوبة للأقدم بمعلومات المرسل إذا لزم (قد تكون موجودة بالفعل)
     if (messages.length > 0 && !messages[0]?.sender) {
-      const uniqueSenderIds = Array.from(new Set(messages.map((m: any) => m.senderId).filter(Boolean)));
+      const uniqueSenderIds = Array.from(
+        new Set(messages.map((m: any) => m.senderId).filter(Boolean))
+      );
       const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
       const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
-      messages = messages.map((m: any) => ({ ...m, sender: m.sender || senderMap.get(m.senderId) }));
+      messages = messages.map((m: any) => ({
+        ...m,
+        sender: m.sender || senderMap.get(m.senderId),
+      }));
     }
 
     const hasMore = messages.length > lim;
     const limited = hasMore ? messages.slice(0, lim) : messages;
 
-    return res.json({ 
-      success: true, 
-      messages: limited, 
+    return res.json({
+      success: true,
+      messages: limited,
       count: limited.length,
-      hasMore
+      hasMore,
     });
-
   } catch (error: any) {
     console.error('خطأ في جلب رسائل الخاص:', error);
     return res.status(500).json({ error: error?.message || 'خطأ في الخادم' });
@@ -288,7 +306,11 @@ router.get('/conversations/:userId', async (req, res) => {
         const rows: ConversationItem[] = (result?.rows ?? result ?? []) as any;
 
         // تحديد الطرف الآخر وجلب بياناته دفعة واحدة
-        const otherUserIds = Array.from(new Set(rows.map(r => (r.sender_id === userId ? r.receiver_id : r.sender_id)).filter(Boolean)));
+        const otherUserIds = Array.from(
+          new Set(
+            rows.map((r) => (r.sender_id === userId ? r.receiver_id : r.sender_id)).filter(Boolean)
+          )
+        );
         const users = await storage.getUsersByIds(otherUserIds as number[]);
         const userMap = new Map<number, any>((users || []).map((u: any) => [u.id, u]));
 
@@ -302,7 +324,7 @@ router.get('/conversations/:userId', async (req, res) => {
               content: r.content,
               messageType: r.message_type,
               timestamp: r.timestamp,
-            }
+            },
           };
         });
 
@@ -338,7 +360,11 @@ router.get('/conversations/:userId', async (req, res) => {
         }
       }
 
-      const otherUserIds = Array.from(new Set(picked.map(r => (r.sender_id === userId ? r.receiver_id : r.sender_id)).filter(Boolean)));
+      const otherUserIds = Array.from(
+        new Set(
+          picked.map((r) => (r.sender_id === userId ? r.receiver_id : r.sender_id)).filter(Boolean)
+        )
+      );
       const users = await storage.getUsersByIds(otherUserIds as number[]);
       const userMap = new Map<number, any>((users || []).map((u: any) => [u.id, u]));
 
@@ -352,7 +378,7 @@ router.get('/conversations/:userId', async (req, res) => {
             content: r.content,
             messageType: r.message_type,
             timestamp: r.timestamp,
-          }
+          },
         };
       });
 
@@ -389,9 +415,9 @@ router.get('/cache/stats', (req, res) => {
     entries: Array.from(conversationCache.entries()).map(([key, value]) => ({
       conversation: key,
       messageCount: value.messages.length,
-      ageInMinutes: Math.round((Date.now() - value.timestamp) / 60000)
+      ageInMinutes: Math.round((Date.now() - value.timestamp) / 60000),
     })),
-    cacheTtlMinutes: CACHE_TTL / 60000
+    cacheTtlMinutes: CACHE_TTL / 60000,
   };
 
   res.json({ success: true, stats });

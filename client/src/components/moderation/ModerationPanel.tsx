@@ -11,7 +11,6 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { formatTimestamp } from '@/utils/timeUtils';
 
-
 interface ModerationAction {
   id: string;
   type: 'mute' | 'ban' | 'block' | 'kick' | 'promote' | 'demote';
@@ -56,21 +55,31 @@ export default function ModerationPanel({ currentUser, isVisible, onClose }: Mod
 
   const getActionIcon = (type: string) => {
     switch (type) {
-      case 'mute': return <UserX className="w-4 h-4 text-orange-500" />;
-      case 'ban': return <Clock className="w-4 h-4 text-red-500" />;
-      case 'block': return <Ban className="w-4 h-4 text-red-700" />;
-      case 'kick': return <Clock className="w-4 h-4 text-yellow-500" />;
-      default: return <Shield className="w-4 h-4 text-gray-500" />;
+      case 'mute':
+        return <UserX className="w-4 h-4 text-orange-500" />;
+      case 'ban':
+        return <Clock className="w-4 h-4 text-red-500" />;
+      case 'block':
+        return <Ban className="w-4 h-4 text-red-700" />;
+      case 'kick':
+        return <Clock className="w-4 h-4 text-yellow-500" />;
+      default:
+        return <Shield className="w-4 h-4 text-gray-500" />;
     }
   };
 
   const getActionText = (action: ModerationAction) => {
     switch (action.type) {
-      case 'mute': return `كتم ${action.targetName}`;
-      case 'ban': return `طرد ${action.targetName}`;
-      case 'block': return `حجب ${action.targetName} نهائياً`;
-      case 'kick': return `طرد ${action.targetName} مؤقتاً`;
-      default: return action.type;
+      case 'mute':
+        return `كتم ${action.targetName}`;
+      case 'ban':
+        return `طرد ${action.targetName}`;
+      case 'block':
+        return `حجب ${action.targetName} نهائياً`;
+      case 'kick':
+        return `طرد ${action.targetName} مؤقتاً`;
+      default:
+        return action.type;
     }
   };
 
@@ -84,9 +93,7 @@ export default function ModerationPanel({ currentUser, isVisible, onClose }: Mod
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
         <Card className="w-96 bg-gray-900/95 border-gray-700">
           <CardHeader>
-            <CardTitle className="text-center text-red-400">
-              غير مصرح
-            </CardTitle>
+            <CardTitle className="text-center text-red-400">غير مصرح</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-gray-300 mb-4">هذه اللوحة مخصصة للمشرفين فقط</p>
@@ -121,15 +128,8 @@ export default function ModerationPanel({ currentUser, isVisible, onClose }: Mod
 
         <CardContent className="p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-200">
-              آخر الإجراءات الإدارية
-            </h3>
-            <Button 
-              onClick={loadModerationActions} 
-              variant="outline" 
-              size="sm"
-              disabled={loading}
-            >
+            <h3 className="text-lg font-semibold text-gray-200">آخر الإجراءات الإدارية</h3>
+            <Button onClick={loadModerationActions} variant="outline" size="sm" disabled={loading}>
               {loading ? 'جاري التحديث...' : 'تحديث'}
             </Button>
           </div>
@@ -144,13 +144,9 @@ export default function ModerationPanel({ currentUser, isVisible, onClose }: Mod
                   {getActionIcon(action.type)}
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-gray-200">
-                        {action.moderatorName}
-                      </span>
+                      <span className="font-medium text-gray-200">{action.moderatorName}</span>
                       <span className="text-gray-400">قام بـ</span>
-                      <span className="text-orange-400">
-                        {getActionText(action as any)}
-                      </span>
+                      <span className="text-orange-400">{getActionText(action as any)}</span>
                     </div>
                     <p className="text-sm text-gray-400 mb-2">السبب: {action.reason}</p>
                     {(action as any).duration && (
@@ -165,7 +161,9 @@ export default function ModerationPanel({ currentUser, isVisible, onClose }: Mod
                     )}
                   </div>
                 </div>
-                <div className="text-xs text-gray-500 text-left">{formatTimestamp((action as any).timestamp)}</div>
+                <div className="text-xs text-gray-500 text-left">
+                  {formatTimestamp((action as any).timestamp)}
+                </div>
               </div>
             )}
           />
@@ -174,19 +172,19 @@ export default function ModerationPanel({ currentUser, isVisible, onClose }: Mod
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-blue-400">
-                  {actions.filter(a => a.type === 'mute').length}
+                  {actions.filter((a) => a.type === 'mute').length}
                 </div>
                 <div className="text-sm text-gray-400">إجراءات كتم</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-yellow-400">
-                  {actions.filter(a => a.type === 'ban' || a.type === 'kick').length}
+                  {actions.filter((a) => a.type === 'ban' || a.type === 'kick').length}
                 </div>
                 <div className="text-sm text-gray-400">إجراءات طرد</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-red-400">
-                  {actions.filter(a => a.type === 'block').length}
+                  {actions.filter((a) => a.type === 'block').length}
                 </div>
                 <div className="text-sm text-gray-400">إجراءات حجب</div>
               </div>

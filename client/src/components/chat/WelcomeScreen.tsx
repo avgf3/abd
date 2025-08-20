@@ -38,9 +38,9 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
   const handleGuestLogin = async () => {
     if (!guestName.trim()) {
       toast({
-        title: "خطأ",
-        description: "يرجى إدخال اسم الزائر",
-        variant: "destructive",
+        title: 'خطأ',
+        description: 'يرجى إدخال اسم الزائر',
+        variant: 'destructive',
       });
       return;
     }
@@ -52,15 +52,15 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
         body: {
           username: guestName.trim(),
           gender: guestGender,
-        }
+        },
       });
       onUserLogin(data.user);
       setShowGuestModal(false);
     } catch (error: any) {
       toast({
-        title: "خطأ",
-        description: error.message || "حدث خطأ في تسجيل الدخول",
-        variant: "destructive",
+        title: 'خطأ',
+        description: error.message || 'حدث خطأ في تسجيل الدخول',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -70,9 +70,9 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
   const handleMemberLogin = async () => {
     if (!memberName.trim() || !memberPassword.trim()) {
       toast({
-        title: "خطأ",
-        description: "يرجى إدخال اسم المستخدم وكلمة المرور",
-        variant: "destructive",
+        title: 'خطأ',
+        description: 'يرجى إدخال اسم المستخدم وكلمة المرور',
+        variant: 'destructive',
       });
       return;
     }
@@ -84,15 +84,15 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
         body: {
           username: memberName.trim(),
           password: memberPassword.trim(),
-        }
+        },
       });
       onUserLogin(data.user);
       setShowMemberModal(false);
     } catch (error: any) {
       toast({
-        title: "خطأ",
-        description: error.message || "حدث خطأ في تسجيل الدخول",
-        variant: "destructive",
+        title: 'خطأ',
+        description: error.message || 'حدث خطأ في تسجيل الدخول',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -102,36 +102,36 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
   const handleRegister = async () => {
     if (!registerName.trim() || !registerPassword.trim() || !confirmPassword.trim()) {
       toast({
-        title: "خطأ",
-        description: "يرجى ملء جميع الحقول المطلوبة",
-        variant: "destructive",
+        title: 'خطأ',
+        description: 'يرجى ملء جميع الحقول المطلوبة',
+        variant: 'destructive',
       });
       return;
     }
 
     if (registerPassword !== confirmPassword) {
       toast({
-        title: "خطأ",
-        description: "كلمات المرور غير متطابقة",
-        variant: "destructive",
+        title: 'خطأ',
+        description: 'كلمات المرور غير متطابقة',
+        variant: 'destructive',
       });
       return;
     }
 
     if (registerPassword.length < 6) {
       toast({
-        title: "خطأ",
-        description: "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
-        variant: "destructive",
+        title: 'خطأ',
+        description: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+        variant: 'destructive',
       });
       return;
     }
 
     if (registerAge && (parseInt(registerAge) < 13 || parseInt(registerAge) > 100)) {
       toast({
-        title: "خطأ",
-        description: "العمر يجب أن يكون بين 13 و 100 سنة",
-        variant: "destructive",
+        title: 'خطأ',
+        description: 'العمر يجب أن يكون بين 13 و 100 سنة',
+        variant: 'destructive',
       });
       return;
     }
@@ -149,19 +149,19 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           country: registerCountry.trim() || undefined,
           status: registerStatus.trim() || undefined,
           relation: registerRelation.trim() || undefined,
-        }
+        },
       });
       toast({
-        title: "نجح التسجيل",
+        title: 'نجح التسجيل',
         description: data.message,
       });
       onUserLogin(data.user);
       setShowRegisterModal(false);
     } catch (error: any) {
       toast({
-        title: "خطأ",
-        description: error.message || "حدث خطأ في التسجيل",
-        variant: "destructive",
+        title: 'خطأ',
+        description: error.message || 'حدث خطأ في التسجيل',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -170,13 +170,15 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
 
   const handleGoogleLogin = () => {
     toast({
-      title: "قريباً",
-      description: "🔄 جاري تطوير خدمة تسجيل الدخول بـ Google",
+      title: 'قريباً',
+      description: '🔄 جاري تطوير خدمة تسجيل الدخول بـ Google',
     });
   };
 
   return (
-    <div className={`min-h-[100dvh] flex flex-col justify-center items-center welcome-gradient ${isMobile ? 'px-4' : ''}`}>
+    <div
+      className={`min-h-[100dvh] flex flex-col justify-center items-center welcome-gradient ${isMobile ? 'px-4' : ''}`}
+    >
       <div className="text-center animate-slide-up">
         <div className="mb-8">
           <div className="text-5xl sm:text-6xl mb-4 animate-pulse-slow">💬</div>
@@ -185,33 +187,35 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           </h1>
           <p className="text-xl text-muted-foreground mb-8">منصة التواصل العربية الأولى</p>
         </div>
-        
-        <div className={`flex ${isMobile ? 'flex-col w-full max-w-xs' : 'flex-col sm:flex-row'} gap-3 sm:gap-4 justify-center items-center px-3`}>
-          <Button 
+
+        <div
+          className={`flex ${isMobile ? 'flex-col w-full max-w-xs' : 'flex-col sm:flex-row'} gap-3 sm:gap-4 justify-center items-center px-3`}
+        >
+          <Button
             className={`btn-success text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3 mobile-touch-button ${isMobile ? 'w-full justify-center' : ''}`}
             onClick={() => setShowGuestModal(true)}
           >
             <span>👤</span>
             دخول كزائر
           </Button>
-          
-          <Button 
+
+          <Button
             className={`btn-primary text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3 mobile-touch-button ${isMobile ? 'w-full justify-center' : ''}`}
             onClick={() => setShowMemberModal(true)}
           >
             <span>✅</span>
             دخول كعضو
           </Button>
-          
-          <Button 
+
+          <Button
             className={`bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3 transition-all duration-300 mobile-touch-button ${isMobile ? 'w-full justify-center' : ''}`}
             onClick={() => setShowRegisterModal(true)}
           >
             <span>📝</span>
             تسجيل عضوية جديدة
           </Button>
-          
-          <Button 
+
+          <Button
             className={`btn-danger text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3 mobile-touch-button ${isMobile ? 'w-full justify-center' : ''}`}
             onClick={handleGoogleLogin}
           >
@@ -265,8 +269,8 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
                 </label>
               </div>
             </div>
-            <Button 
-              onClick={handleGuestLogin} 
+            <Button
+              onClick={handleGuestLogin}
               disabled={loading}
               className="btn-success w-full text-white px-6 py-3 rounded-xl font-semibold"
             >
@@ -301,8 +305,8 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
               className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
               onKeyPress={(e) => e.key === 'Enter' && handleMemberLogin()}
             />
-            <Button 
-              onClick={handleMemberLogin} 
+            <Button
+              onClick={handleMemberLogin}
               disabled={loading}
               className="btn-primary w-full text-white px-6 py-3 rounded-xl font-semibold"
             >
@@ -371,7 +375,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
                 </label>
               </div>
             </div>
-            
+
             <Input
               type="number"
               value={registerAge}
@@ -381,29 +385,29 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
               max="100"
               className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
             />
-            
+
             <Input
               value={registerCountry}
               onChange={(e) => setRegisterCountry(e.target.value)}
               placeholder="البلد (اختياري)"
               className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
             />
-            
+
             <Input
               value={registerStatus}
               onChange={(e) => setRegisterStatus(e.target.value)}
               placeholder="الحالة الاجتماعية (اختياري)"
               className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
             />
-            
+
             <Input
               value={registerRelation}
               onChange={(e) => setRegisterRelation(e.target.value)}
               placeholder="البحث عن (اختياري)"
               className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
             />
-            <Button 
-              onClick={handleRegister} 
+            <Button
+              onClick={handleRegister}
               disabled={loading}
               className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 w-full text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300"
             >

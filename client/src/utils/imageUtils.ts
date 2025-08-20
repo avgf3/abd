@@ -8,7 +8,10 @@
  * @param fallback - الصورة الافتراضية في حالة عدم وجود صورة
  * @returns URL صحيح للصورة
  */
-export function getImageSrc(imageSrc: string | null | undefined, fallback: string = '/default_avatar.svg'): string {
+export function getImageSrc(
+  imageSrc: string | null | undefined,
+  fallback: string = '/default_avatar.svg'
+): string {
   // إذا لم تكن هناك صورة، استخدم الافتراضي
   if (!imageSrc || imageSrc === '' || imageSrc === '/default_avatar.svg') {
     return fallback;
@@ -44,7 +47,10 @@ export function getImageSrc(imageSrc: string | null | undefined, fallback: strin
  * @param fallback - الصورة الافتراضية (اختياري)
  * @returns URL صحيح للصورة
  */
-export function getProfileImageSrc(imageSrc: string | null | undefined, fallback: string = '/default_avatar.svg'): string {
+export function getProfileImageSrc(
+  imageSrc: string | null | undefined,
+  fallback: string = '/default_avatar.svg'
+): string {
   return getImageSrc(imageSrc, fallback);
 }
 
@@ -55,11 +61,11 @@ export function getProfileImageSrc(imageSrc: string | null | undefined, fallback
  * @returns URL صحيح لصورة البانر
  */
 export function getBannerImageSrc(
-  bannerSrc: string | null | undefined, 
+  bannerSrc: string | null | undefined,
   fallback: string = 'https://i.imgur.com/rJKrUfs.jpeg'
 ): string {
   const src = getImageSrc(bannerSrc, fallback);
-  
+
   // إرجاع الصورة كما هي - base64 أو مسار عادي
   return src;
 }
@@ -79,12 +85,7 @@ export function getImageUrl(
     forceRefresh?: boolean;
   } = {}
 ): string {
-  const {
-    type = 'general',
-    addTimestamp = false,
-    fallback,
-    forceRefresh = false
-  } = options;
+  const { type = 'general', addTimestamp = false, fallback, forceRefresh = false } = options;
 
   // تحديد الصورة الافتراضية حسب النوع
   let defaultFallback = '/default_avatar.svg';
@@ -96,10 +97,11 @@ export function getImageUrl(
   const src = getImageSrc(imageSrc, finalFallback);
 
   // تحديد متى نضيف timestamp
-  const shouldAddTimestamp = (addTimestamp || forceRefresh) && 
-    !src.startsWith('data:') && 
-    !src.startsWith('http://') && 
-    !src.startsWith('https://') && 
+  const shouldAddTimestamp =
+    (addTimestamp || forceRefresh) &&
+    !src.startsWith('data:') &&
+    !src.startsWith('http://') &&
+    !src.startsWith('https://') &&
     src !== finalFallback;
 
   if (!shouldAddTimestamp) {
@@ -127,9 +129,12 @@ export function getImageTimestamp(refreshInterval: number = 5): number {
  * @param type - نوع الصورة
  * @returns URL مع timestamp فوري
  */
-export function refreshImageUrl(imageSrc: string | null | undefined, type: 'profile' | 'banner' | 'general' = 'general'): string {
+export function refreshImageUrl(
+  imageSrc: string | null | undefined,
+  type: 'profile' | 'banner' | 'general' = 'general'
+): string {
   return getImageUrl(imageSrc, {
     type,
-    forceRefresh: true
+    forceRefresh: true,
   });
 }

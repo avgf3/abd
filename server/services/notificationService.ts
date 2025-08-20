@@ -1,7 +1,7 @@
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and } from 'drizzle-orm';
 
-import { notifications, type Notification, type InsertNotification } from "../../shared/schema";
-import { db } from "../database-adapter";
+import { notifications, type Notification, type InsertNotification } from '../../shared/schema';
+import { db } from '../database-adapter';
 
 export class NotificationService {
   // إنشاء إشعار جديد
@@ -58,12 +58,7 @@ export class NotificationService {
       await db
         .update(notifications)
         .set({ isRead: true } as any)
-        .where(
-          and(
-            eq(notifications.userId, userId),
-            eq(notifications.isRead, false)
-          )
-        );
+        .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
 
       return true;
     } catch (error) {
@@ -89,12 +84,7 @@ export class NotificationService {
       const unreadNotifications = await db
         .select()
         .from(notifications)
-        .where(
-          and(
-            eq(notifications.userId, userId),
-            eq(notifications.isRead, false)
-          )
-        );
+        .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
 
       return unreadNotifications.length;
     } catch (error) {
@@ -105,9 +95,9 @@ export class NotificationService {
 
   // إنشاء إشعار نظام
   async createSystemNotification(
-    userId: number, 
-    title: string, 
-    message: string, 
+    userId: number,
+    title: string,
+    message: string,
     data?: any
   ): Promise<Notification> {
     return this.createNotification({
@@ -115,7 +105,7 @@ export class NotificationService {
       type: 'system',
       title,
       message,
-      data
+      data,
     });
   }
 
@@ -130,7 +120,7 @@ export class NotificationService {
       type: 'friend_request',
       title: 'طلب صداقة جديد',
       message: `${senderName} أرسل لك طلب صداقة`,
-      data: { senderId, senderName }
+      data: { senderId, senderName },
     });
   }
 
@@ -145,7 +135,7 @@ export class NotificationService {
       type: 'friend_accepted',
       title: 'تم قبول طلب الصداقة',
       message: `${friendName} قبل طلب صداقتك`,
-      data: { friendId, friendName }
+      data: { friendId, friendName },
     });
   }
 
@@ -160,10 +150,9 @@ export class NotificationService {
       userId,
       type: 'message',
       title: `رسالة من ${senderName}`,
-      message: messagePreview.length > 50 
-        ? messagePreview.substring(0, 50) + '...'
-        : messagePreview,
-      data: { senderId, senderName }
+      message:
+        messagePreview.length > 50 ? messagePreview.substring(0, 50) + '...' : messagePreview,
+      data: { senderId, senderName },
     });
   }
 
@@ -181,13 +170,13 @@ export class NotificationService {
     switch (action) {
       case 'mute':
         title = 'تم كتمك';
-        message = duration 
+        message = duration
           ? `تم كتمك لمدة ${duration} دقيقة. السبب: ${reason}`
           : `تم كتمك. السبب: ${reason}`;
         break;
       case 'kick':
         title = 'تم طردك';
-        message = duration 
+        message = duration
           ? `تم طردك لمدة ${duration} دقيقة. السبب: ${reason}`
           : `تم طردك. السبب: ${reason}`;
         break;
@@ -205,7 +194,7 @@ export class NotificationService {
       type: 'moderation',
       title,
       message,
-      data: { action, reason, moderatorName, duration }
+      data: { action, reason, moderatorName, duration },
     });
   }
 
@@ -220,7 +209,7 @@ export class NotificationService {
       type: 'promotion',
       title: 'تهانينا! تمت ترقيتك',
       message: `تمت ترقيتك إلى ${newRole} من قبل ${promotedBy}`,
-      data: { newRole, promotedBy }
+      data: { newRole, promotedBy },
     });
   }
 
@@ -235,20 +224,18 @@ export class NotificationService {
         .from(notifications)
         .where(
           and(
-            eq(notifications.isRead, true),
+            eq(notifications.isRead, true)
             // يحتاج تنفيذ مقارنة التاريخ حسب نوع قاعدة البيانات
           )
         );
 
       // حذف الإشعارات القديمة المقروءة
-      await db
-        .delete(notifications)
-        .where(
-          and(
-            eq(notifications.isRead, true),
-            // يحتاج تنفيذ مقارنة التاريخ
-          )
-        );
+      await db.delete(notifications).where(
+        and(
+          eq(notifications.isRead, true)
+          // يحتاج تنفيذ مقارنة التاريخ
+        )
+      );
 
       return oldNotifications.length;
     } catch (error) {
@@ -269,7 +256,7 @@ export class NotificationService {
       type: 'level_up',
       title: '🎉 ترقية مستوى!',
       message: `تهانينا! لقد وصلت إلى المستوى ${newLevel} - ${levelTitle}`,
-      data: { oldLevel, newLevel, levelTitle }
+      data: { oldLevel, newLevel, levelTitle },
     });
   }
 
@@ -285,7 +272,7 @@ export class NotificationService {
       type: 'points_received',
       title: '💰 استلمت نقاط!',
       message: `أرسل لك ${senderName} ${points} نقطة`,
-      data: { points, senderName, senderId }
+      data: { points, senderName, senderId },
     });
   }
 
@@ -300,7 +287,7 @@ export class NotificationService {
       type: 'daily_bonus',
       title: '🎁 مكافأة يومية!',
       message: `حصلت على ${points} نقطة كمكافأة ${bonusType === 'daily' ? 'يومية' : bonusType}`,
-      data: { points, bonusType }
+      data: { points, bonusType },
     });
   }
 
@@ -316,7 +303,7 @@ export class NotificationService {
       type: 'achievement',
       title: '🏆 إنجاز جديد!',
       message: achievementDescription,
-      data: { achievementName, reward }
+      data: { achievementName, reward },
     });
   }
 }

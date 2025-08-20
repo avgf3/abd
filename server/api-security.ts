@@ -22,7 +22,11 @@ router.get('/blocked-ips', async (req, res) => {
     // محاكاة قائمة العناوين المحظورة
     const blockedIPs = [
       { ip: '192.168.1.100', reason: 'نشاط مشبوه', blockedAt: new Date().toISOString() },
-      { ip: '10.0.0.50', reason: 'محاولات سبام', blockedAt: new Date(Date.now() - 86400000).toISOString() }
+      {
+        ip: '10.0.0.50',
+        reason: 'محاولات سبام',
+        blockedAt: new Date(Date.now() - 86400000).toISOString(),
+      },
     ];
     res.json(blockedIPs);
   } catch (error) {
@@ -30,11 +34,11 @@ router.get('/blocked-ips', async (req, res) => {
   }
 });
 
-// Block IP - Owner only  
+// Block IP - Owner only
 router.post('/block-ip', async (req, res) => {
   try {
     const { ip, reason } = req.body;
-    
+
     if (!ip || !reason) {
       return res.status(400).json({ error: 'عنوان IP والسبب مطلوبان' });
     }
@@ -50,7 +54,7 @@ router.post('/block-ip', async (req, res) => {
 router.post('/unblock-ip', async (req, res) => {
   try {
     const { ip } = req.body;
-    
+
     if (!ip) {
       return res.status(400).json({ error: 'عنوان IP مطلوب' });
     }

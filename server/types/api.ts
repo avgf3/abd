@@ -243,7 +243,7 @@ export interface SecurityFlag {
 }
 
 // أنواع التقارير
-export type ReportReason = 
+export type ReportReason =
   | 'spam'
   | 'harassment'
   | 'inappropriate_content'
@@ -253,7 +253,7 @@ export type ReportReason =
 export type ReportStatus = 'pending' | 'reviewing' | 'resolved' | 'dismissed';
 
 // أنواع الإجراءات الإدارية
-export type ModerationAction = 
+export type ModerationAction =
   | 'mute'
   | 'unmute'
   | 'ban'
@@ -360,29 +360,16 @@ export interface BackupInfo {
 }
 
 // تصدير الأنواع المفيدة
-export type {
-  Request as ExpressRequest,
-  Response as ExpressResponse
-};
+export type { Request as ExpressRequest, Response as ExpressResponse };
 
 // دوال مساعدة للأنواع
-export type RequestHandler<
-  P = any,
-  ResBody = any,
-  ReqBody = any,
-  ReqQuery = any
-> = (
+export type RequestHandler<P = any, ResBody = any, ReqBody = any, ReqQuery = any> = (
   req: Request<P, ResBody, ReqBody, ReqQuery>,
   res: Response<ResBody>,
   next: (error?: any) => void
 ) => void | Promise<void>;
 
-export type AsyncRequestHandler<
-  P = any,
-  ResBody = any,
-  ReqBody = any,
-  ReqQuery = any
-> = (
+export type AsyncRequestHandler<P = any, ResBody = any, ReqBody = any, ReqQuery = any> = (
   req: Request<P, ResBody, ReqBody, ReqQuery>,
   res: Response<ResBody>,
   next: (error?: any) => void

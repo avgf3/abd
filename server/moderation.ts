@@ -23,7 +23,7 @@ export class ModerationSystem {
     this.actions = new Map();
     this.blockedIPs = new Set();
     this.blockedDevices = new Set();
-    
+
     // تحميل الأجهزة المحجوبة من قاعدة البيانات عند بدء التشغيل
     this.loadBlockedDevices();
   }
@@ -40,7 +40,7 @@ export class ModerationSystem {
           this.blockedDevices.add(device.deviceId);
         }
       }
-      } catch (error) {
+    } catch (error) {
       console.error('خطأ في تحميل الأجهزة المحجوبة:', error);
     }
   }
@@ -58,19 +58,22 @@ export class ModerationSystem {
     }
 
     // الأدمن لا يستطيع إدارة المالك أو أدمن آخر
-    if (moderator.userType === 'admin' && (target.userType === 'owner' || target.userType === 'admin')) {
+    if (
+      moderator.userType === 'admin' &&
+      (target.userType === 'owner' || target.userType === 'admin')
+    ) {
       return false;
     }
 
     // تحديد الصلاحيات حسب النوع والإجراء
     const permissions = {
-      'mute': ['admin', 'moderator', 'owner'],
-      'unmute': ['admin', 'moderator', 'owner'],
-      'ban': ['admin', 'owner'],
-      'kick': ['admin', 'owner'],
-      'block': ['admin', 'owner'],
-      'promote': ['owner'],
-      'demote': ['owner']
+      mute: ['admin', 'moderator', 'owner'],
+      unmute: ['admin', 'moderator', 'owner'],
+      ban: ['admin', 'owner'],
+      kick: ['admin', 'owner'],
+      block: ['admin', 'owner'],
+      promote: ['owner'],
+      demote: ['owner'],
     };
 
     const hasPermission = permissions[action]?.includes(moderator.userType) || false;
@@ -78,7 +81,14 @@ export class ModerationSystem {
   }
 
   // كتم المستخدم (المشرف)
-  async muteUser(moderatorId: number, targetUserId: number, reason: string, durationMinutes: number = 30, ipAddress?: string, deviceId?: string): Promise<boolean> {
+  async muteUser(
+    moderatorId: number,
+    targetUserId: number,
+    reason: string,
+    durationMinutes: number = 30,
+    ipAddress?: string,
+    deviceId?: string
+  ): Promise<boolean> {
     const moderator = await storage.getUser(moderatorId);
     const target = await storage.getUser(targetUserId);
 
@@ -86,10 +96,10 @@ export class ModerationSystem {
     if (!this.canModerate(moderator, target, 'mute')) return false;
 
     const muteExpiry = new Date(Date.now() + durationMinutes * 60 * 1000);
-    
+
     await storage.updateUser(targetUserId, {
       isMuted: true,
-      muteExpiry: muteExpiry
+      muteExpiry: muteExpiry,
     });
 
     // لا نقوم بحجب IP أو الجهاز أثناء الكتم. الكتم يمنع الكتابة فقط.
@@ -103,14 +113,21 @@ export class ModerationSystem {
       duration: durationMinutes,
       timestamp: Date.now(),
       ipAddress,
-      deviceId
+      deviceId,
     });
 
     return true;
   }
 
   // طرد المستخدم (الأدمن - 15 دقيقة)
-  async banUser(moderatorId: number, targetUserId: number, reason: string, durationMinutes: number = 15, ipAddress?: string, deviceId?: string): Promise<boolean> {
+  async banUser(
+    moderatorId: number,
+    targetUserId: number,
+    reason: string,
+    durationMinutes: number = 15,
+    ipAddress?: string,
+    deviceId?: string
+  ): Promise<boolean> {
     const moderator = await storage.getUser(moderatorId);
     const target = await storage.getUser(targetUserId);
 
@@ -118,10 +135,10 @@ export class ModerationSystem {
     if (!this.canModerate(moderator, target, 'ban')) return false;
 
     const banExpiry = new Date(Date.now() + durationMinutes * 60 * 1000);
-    
+
     await storage.updateUser(targetUserId, {
       isBanned: true,
-      banExpiry: banExpiry
+      banExpiry: banExpiry,
     });
 
     // حجب IP والجهاز لمدة الطرد
@@ -143,14 +160,20 @@ export class ModerationSystem {
       duration: durationMinutes,
       timestamp: Date.now(),
       ipAddress,
-      deviceId
+      deviceId,
     });
 
     return true;
   }
 
   // حجب المستخدم (المالك - حجب كامل ونهائي)
-  async blockUser(moderatorId: number, targetUserId: number, reason: string, ipAddress?: string, deviceId?: string): Promise<boolean> {
+  async blockUser(
+    moderatorId: number,
+    targetUserId: number,
+    reason: string,
+    ipAddress?: string,
+    deviceId?: string
+  ): Promise<boolean> {
     const moderator = await storage.getUser(moderatorId);
     const target = await storage.getUser(targetUserId);
 
@@ -160,7 +183,7 @@ export class ModerationSystem {
     await storage.updateUser(targetUserId, {
       isBlocked: true,
       ipAddress,
-      deviceId
+      deviceId,
     });
 
     // حجب IP والجهاز نهائياً (بدون انتهاء صلاحية)
@@ -178,7 +201,7 @@ export class ModerationSystem {
           userId: targetUserId,
           reason: reason,
           blockedAt: new Date(),
-          blockedBy: moderatorId
+          blockedBy: moderatorId,
         });
       }
     } catch (error) {
@@ -193,30 +216,34 @@ export class ModerationSystem {
       reason,
       timestamp: Date.now(),
       ipAddress,
-      deviceId
+      deviceId,
     });
 
     return true;
   }
 
   // ترقية المستخدم (المالك فقط)
-  async promoteUser(moderatorId: number, targetUserId: number, newRole: 'admin' | 'moderator'): Promise<boolean> {
+  async promoteUser(
+    moderatorId: number,
+    targetUserId: number,
+    newRole: 'admin' | 'moderator'
+  ): Promise<boolean> {
     const moderator = await storage.getUser(moderatorId);
     const target = await storage.getUser(targetUserId);
 
     if (!moderator || !target) {
       return false;
     }
-    
+
     if (!this.canModerate(moderator, target, 'promote')) {
       return false;
     }
-    
+
     // التحقق من صحة الرتبة الجديدة
     if (!['admin', 'moderator'].includes(newRole)) {
       return false;
     }
-    
+
     // التحقق من أن المستخدم المستهدف عضو عادي
     if (target.userType !== 'member') {
       return false;
@@ -224,22 +251,22 @@ export class ModerationSystem {
 
     try {
       const updateResult = await storage.updateUser(targetUserId, {
-        userType: newRole as any
+        userType: newRole as any,
       });
-      
+
       if (!updateResult) {
         return false;
       }
-      
+
       this.recordAction({
         id: `promote_${Date.now()}`,
         type: 'promote',
         targetUserId,
         moderatorId,
         reason: `ترقية إلى ${newRole}`,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-      
+
       return true;
     } catch (error) {
       console.error(`[PROMOTE] خطأ في تحديث المستخدم:`, error);
@@ -272,7 +299,7 @@ export class ModerationSystem {
 
     try {
       const updateResult = await storage.updateUser(targetUserId, {
-        userType: 'member' as any
+        userType: 'member' as any,
       });
 
       if (!updateResult) {
@@ -285,7 +312,7 @@ export class ModerationSystem {
         targetUserId,
         moderatorId,
         reason: 'إلغاء إشراف',
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       return true;
@@ -299,13 +326,13 @@ export class ModerationSystem {
   async unmuteUser(moderatorId: number, targetUserId: number): Promise<boolean> {
     const moderator = await storage.getUser(moderatorId);
     const target = await storage.getUser(targetUserId);
-    
+
     if (!moderator || !target) return false;
     if (!this.canModerate(moderator, target, 'mute')) return false;
 
     await storage.updateUser(targetUserId, {
       isMuted: false,
-      muteExpiry: null
+      muteExpiry: null,
     });
 
     return true;
@@ -318,7 +345,7 @@ export class ModerationSystem {
 
     await storage.updateUser(targetUserId, {
       isBanned: false,
-      banExpiry: null
+      banExpiry: null,
     });
 
     return true;
@@ -336,7 +363,7 @@ export class ModerationSystem {
     await storage.updateUser(targetUserId, {
       isBlocked: false,
       ipAddress: null,
-      deviceId: null
+      deviceId: null,
     });
 
     // إزالة IP والجهاز من القائمة المحجوبة في الذاكرة
@@ -357,7 +384,7 @@ export class ModerationSystem {
       targetUserId,
       moderatorId,
       reason: 'إلغاء الحجب',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return true;
@@ -374,19 +401,27 @@ export class ModerationSystem {
     timeLeft?: number;
   }> {
     const user = await storage.getUser(userId);
-    if (!user) return { canChat: false, canJoin: false, isMuted: false, isBlocked: false, isBanned: false, reason: 'مستخدم غير موجود' };
+    if (!user)
+      return {
+        canChat: false,
+        canJoin: false,
+        isMuted: false,
+        isBlocked: false,
+        isBanned: false,
+        reason: 'مستخدم غير موجود',
+      };
 
     const now = new Date();
 
     // التحقق من الحجب
     if (user.isBlocked) {
-      return { 
-        canChat: false, 
-        canJoin: false, 
-        isMuted: false, 
-        isBlocked: true, 
-        isBanned: false, 
-        reason: 'تم حجبك من الدردشة نهائياً' 
+      return {
+        canChat: false,
+        canJoin: false,
+        isMuted: false,
+        isBlocked: true,
+        isBanned: false,
+        reason: 'تم حجبك من الدردشة نهائياً',
       };
     }
 
@@ -403,14 +438,14 @@ export class ModerationSystem {
     const banExpiry = toDate(user.banExpiry as any);
     if (user.isBanned && banExpiry && banExpiry.getTime() > now.getTime()) {
       const timeLeft = Math.ceil((banExpiry.getTime() - now.getTime()) / 60000);
-      return { 
-        canChat: false, 
-        canJoin: false, 
-        isMuted: false, 
-        isBlocked: false, 
-        isBanned: true, 
-        reason: `تم طردك من الدردشة`, 
-        timeLeft 
+      return {
+        canChat: false,
+        canJoin: false,
+        isMuted: false,
+        isBlocked: false,
+        isBanned: true,
+        reason: `تم طردك من الدردشة`,
+        timeLeft,
       };
     }
 
@@ -418,21 +453,21 @@ export class ModerationSystem {
     const muteExpiry = toDate(user.muteExpiry as any);
     if (user.isMuted && muteExpiry && muteExpiry.getTime() > now.getTime()) {
       const timeLeft = Math.ceil((muteExpiry.getTime() - now.getTime()) / 60000);
-      return { 
-        canChat: false, 
-        canJoin: true, 
-        isMuted: true, 
-        isBlocked: false, 
-        isBanned: false, 
-        reason: `تم كتمك من الدردشة`, 
-        timeLeft 
+      return {
+        canChat: false,
+        canJoin: true,
+        isMuted: true,
+        isBlocked: false,
+        isBanned: false,
+        reason: `تم كتمك من الدردشة`,
+        timeLeft,
       };
     }
 
     // تنظيف الحالات المنتهية الصلاحية
     let needsUpdate = false;
     const updates: any = {};
-    
+
     if (user.isBanned && banExpiry && banExpiry.getTime() <= now.getTime()) {
       updates.isBanned = false;
       updates.banExpiry = null;
@@ -444,18 +479,18 @@ export class ModerationSystem {
       updates.muteExpiry = null;
       needsUpdate = true;
     }
-    
+
     // تحديث قاعدة البيانات إذا انتهت المدة
     if (needsUpdate) {
       await storage.updateUser(userId, updates);
     }
 
-    return { 
-      canChat: true, 
-      canJoin: true, 
-      isMuted: false, 
-      isBlocked: false, 
-      isBanned: false 
+    return {
+      canChat: true,
+      canJoin: true,
+      isMuted: false,
+      isBlocked: false,
+      isBanned: false,
     };
   }
 
@@ -486,12 +521,12 @@ export class ModerationSystem {
     const users = Array.from(this.actions.values());
     return {
       totalActions: users.length,
-      mutes: users.filter(a => a.type === 'mute').length,
-      bans: users.filter(a => a.type === 'ban').length,
-      blocks: users.filter(a => a.type === 'block').length,
-      promotions: users.filter(a => a.type === 'promote').length,
+      mutes: users.filter((a) => a.type === 'mute').length,
+      bans: users.filter((a) => a.type === 'ban').length,
+      blocks: users.filter((a) => a.type === 'block').length,
+      promotions: users.filter((a) => a.type === 'promote').length,
       blockedIPs: this.blockedIPs.size,
-      blockedDevices: this.blockedDevices.size
+      blockedDevices: this.blockedDevices.size,
     };
   }
 }

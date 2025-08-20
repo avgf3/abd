@@ -1,11 +1,18 @@
 import bcrypt from 'bcrypt';
 import { sql } from 'drizzle-orm';
 
-import { users, messages, friends, notifications, blockedDevices, levelSettings, rooms } from '../shared/schema';
+import {
+  users,
+  messages,
+  friends,
+  notifications,
+  blockedDevices,
+  levelSettings,
+  rooms,
+} from '../shared/schema';
 import * as sqliteSchema from '../shared/sqlite-schema';
 
 import { db, dbType, initializeDatabase as initDB } from './database-adapter';
-
 
 // إعادة تصدير دالة التهيئة من المحول
 export { initializeDatabase } from './database-adapter';
@@ -19,38 +26,49 @@ export async function createDefaultOwner(): Promise<void> {
 
     if (dbType === 'postgresql') {
       // البحث عن مالك موجود في PostgreSQL
-      const existingOwner = await db.select().from(users).where(sql`user_type = 'owner'`).limit(1);
-      
+      const existingOwner = await db
+        .select()
+        .from(users)
+        .where(sql`user_type = 'owner'`)
+        .limit(1);
+
       if (existingOwner.length === 0) {
         const hashedPassword = await bcrypt.hash('admin123', 12);
-        
-        await (db as any).insert(users).values({
-          username: 'Owner',
-          password: hashedPassword,
-          userType: 'owner',
-          role: 'owner',
-          profileBackgroundColor: '#FFD700',
-          usernameColor: '#FFD700',
-          profileEffect: 'golden',
-          points: 50000,
-          level: 10,
-          totalPoints: 50000,
-          levelProgress: 100,
-          status: 'مالك الموقع',
-          bio: 'مالك الموقع - المشرف العام',
-          joinDate: new Date(),
-          createdAt: new Date(),
-          lastSeen: new Date(),
-        }).onConflictDoNothing();
-        } else {
-        }
+
+        await (db as any)
+          .insert(users)
+          .values({
+            username: 'Owner',
+            password: hashedPassword,
+            userType: 'owner',
+            role: 'owner',
+            profileBackgroundColor: '#FFD700',
+            usernameColor: '#FFD700',
+            profileEffect: 'golden',
+            points: 50000,
+            level: 10,
+            totalPoints: 50000,
+            levelProgress: 100,
+            status: 'مالك الموقع',
+            bio: 'مالك الموقع - المشرف العام',
+            joinDate: new Date(),
+            createdAt: new Date(),
+            lastSeen: new Date(),
+          })
+          .onConflictDoNothing();
+      } else {
+      }
     } else if (dbType === 'sqlite') {
       // البحث عن مالك موجود في SQLite
-      const existingOwner = await (db as any).select().from(sqliteSchema.users).where(sql`user_type = 'owner'`).limit(1);
-      
+      const existingOwner = await (db as any)
+        .select()
+        .from(sqliteSchema.users)
+        .where(sql`user_type = 'owner'`)
+        .limit(1);
+
       if (existingOwner.length === 0) {
         const hashedPassword = await bcrypt.hash('admin123', 12);
-        
+
         await (db as any).insert(sqliteSchema.users).values({
           username: 'Owner',
           password: hashedPassword,
@@ -69,8 +87,8 @@ export async function createDefaultOwner(): Promise<void> {
           createdAt: new Date().toISOString(),
           lastSeen: new Date().toISOString(),
         });
-        } else {
-        }
+      } else {
+      }
     }
   } catch (error) {
     console.error('❌ خطأ في إنشاء المالك الافتراضي:', error);
@@ -120,13 +138,17 @@ export async function createDefaultUsers(): Promise<void> {
         level: 2,
         totalPoints: 100,
         levelProgress: 20,
-      }
+      },
     ];
 
     for (const user of defaultUsers) {
       try {
         if (dbType === 'postgresql') {
-          const existing = await (db as any).select().from(users).where(sql`username = ${user.username}`).limit(1);
+          const existing = await (db as any)
+            .select()
+            .from(users)
+            .where(sql`username = ${user.username}`)
+            .limit(1);
           if (existing.length === 0) {
             await (db as any).insert(users).values({
               ...user,
@@ -134,9 +156,13 @@ export async function createDefaultUsers(): Promise<void> {
               createdAt: new Date(),
               lastSeen: new Date(),
             });
-            }
+          }
         } else if (dbType === 'sqlite') {
-          const existing = await (db as any).select().from(sqliteSchema.users).where(sql`username = ${user.username}`).limit(1);
+          const existing = await (db as any)
+            .select()
+            .from(sqliteSchema.users)
+            .where(sql`username = ${user.username}`)
+            .limit(1);
           if (existing.length === 0) {
             await (db as any).insert(sqliteSchema.users).values({
               ...user,
@@ -144,7 +170,7 @@ export async function createDefaultUsers(): Promise<void> {
               createdAt: new Date().toISOString(),
               lastSeen: new Date().toISOString(),
             });
-            }
+          }
         }
       } catch (error: any) {
         if (!error.message?.includes('UNIQUE') && !error.message?.includes('unique')) {
@@ -178,15 +204,21 @@ export async function createDefaultLevelSettings(): Promise<void> {
     for (const levelSetting of levelData) {
       try {
         if (dbType === 'postgresql') {
-          await (db as any).insert(levelSettings).values({
-            ...levelSetting,
-            createdAt: new Date(),
-          }).onConflictDoNothing();
+          await (db as any)
+            .insert(levelSettings)
+            .values({
+              ...levelSetting,
+              createdAt: new Date(),
+            })
+            .onConflictDoNothing();
         } else if (dbType === 'sqlite') {
-          await (db as any).insert(sqliteSchema.levelSettings).values({
-            ...levelSetting,
-            createdAt: new Date().toISOString(),
-          }).onConflictDoNothing();
+          await (db as any)
+            .insert(sqliteSchema.levelSettings)
+            .values({
+              ...levelSetting,
+              createdAt: new Date().toISOString(),
+            })
+            .onConflictDoNothing();
         }
       } catch (error: any) {
         // تجاهل أخطاء التكرار
@@ -195,8 +227,7 @@ export async function createDefaultLevelSettings(): Promise<void> {
         }
       }
     }
-
-    } catch (error) {
+  } catch (error) {
     console.error('❌ خطأ في إنشاء إعدادات المستويات:', error);
   }
 }
@@ -227,37 +258,52 @@ export async function createDefaultRooms(): Promise<void> {
         type: 'vip',
         maxUsers: 25,
         isPrivate: true,
-      }
+      },
     ];
 
     for (const room of defaultRooms) {
       try {
         if (dbType === 'postgresql') {
-          const existing = await (db as any).select().from(rooms).where(sql`name = ${room.name}`).limit(1);
+          const existing = await (db as any)
+            .select()
+            .from(rooms)
+            .where(sql`name = ${room.name}`)
+            .limit(1);
           if (existing.length === 0) {
             // اشتقاق معرف نصي ثابت للغرفة
-            const derivedId = room.name === 'العامة'
-              ? 'general'
-              : room.name === 'الترحيب'
-                ? 'welcome'
-                : room.name.toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '') || 'room';
-            await (db as any).insert(rooms).values({
-              id: derivedId,
-              name: room.name,
-              description: room.description,
-              icon: null,
-              createdBy: 1,
-              isDefault: room.name === 'العامة' || room.name === 'الترحيب',
-              isActive: true,
-              isBroadcast: room.name !== 'العامة' ? false : false,
-              hostId: null,
-              speakers: '[]',
-              micQueue: '[]',
-              createdAt: new Date(),
-            }).onConflictDoNothing();
+            const derivedId =
+              room.name === 'العامة'
+                ? 'general'
+                : room.name === 'الترحيب'
+                  ? 'welcome'
+                  : room.name
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/gi, '-')
+                      .replace(/^-+|-+$/g, '') || 'room';
+            await (db as any)
+              .insert(rooms)
+              .values({
+                id: derivedId,
+                name: room.name,
+                description: room.description,
+                icon: null,
+                createdBy: 1,
+                isDefault: room.name === 'العامة' || room.name === 'الترحيب',
+                isActive: true,
+                isBroadcast: room.name !== 'العامة' ? false : false,
+                hostId: null,
+                speakers: '[]',
+                micQueue: '[]',
+                createdAt: new Date(),
+              })
+              .onConflictDoNothing();
           }
         } else if (dbType === 'sqlite') {
-          const existing = await (db as any).select().from(sqliteSchema.rooms).where(sql`name = ${room.name}`).limit(1);
+          const existing = await (db as any)
+            .select()
+            .from(sqliteSchema.rooms)
+            .where(sql`name = ${room.name}`)
+            .limit(1);
           if (existing.length === 0) {
             await (db as any).insert(sqliteSchema.rooms).values({
               name: room.name,
@@ -278,8 +324,7 @@ export async function createDefaultRooms(): Promise<void> {
         }
       }
     }
-
-    } catch (error) {
+  } catch (error) {
     console.error('❌ خطأ في إنشاء الغرف الافتراضية:', error);
   }
 }
@@ -310,12 +355,12 @@ export async function initializeSystem(): Promise<boolean> {
 // للتوافق مع الكود الموجود
 export async function runMigrations(): Promise<void> {
   // يتم التعامل مع migrations في database-adapter الآن
-  }
+}
 
 export async function runDrizzlePush(): Promise<void> {
   // لا نحتاج هذا مع النظام الجديد
-  }
+}
 
 export async function addMissingColumns(): Promise<void> {
   // يتم التعامل مع هذا تلقائياً في إنشاء الجداول
-  }
+}

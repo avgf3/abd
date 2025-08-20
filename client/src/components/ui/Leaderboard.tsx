@@ -30,9 +30,9 @@ export function Leaderboard({ currentUser, onClose }: LeaderboardProps) {
       const data = await apiRequest('/api/points/leaderboard?limit=20');
       const rankedData = data.map((user: ChatUser, index: number) => ({
         ...user,
-        rank: index + 1
+        rank: index + 1,
       }));
-      
+
       setLeaderboard(rankedData);
     } catch (err) {
       setError('خطأ في تحميل لوحة الصدارة');
@@ -44,19 +44,27 @@ export function Leaderboard({ currentUser, onClose }: LeaderboardProps) {
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
-      case 1: return <Crown className="text-yellow-500" size={24} />;
-      case 2: return <Trophy className="text-gray-400" size={22} />;
-      case 3: return <Medal className="text-orange-500" size={20} />;
-      default: return <Award className="text-blue-500" size={18} />;
+      case 1:
+        return <Crown className="text-yellow-500" size={24} />;
+      case 2:
+        return <Trophy className="text-gray-400" size={22} />;
+      case 3:
+        return <Medal className="text-orange-500" size={20} />;
+      default:
+        return <Award className="text-blue-500" size={18} />;
     }
   };
 
   const getRankColor = (rank: number) => {
     switch (rank) {
-      case 1: return 'from-yellow-400 to-yellow-600';
-      case 2: return 'from-gray-300 to-gray-500';
-      case 3: return 'from-orange-400 to-orange-600';
-      default: return 'from-blue-400 to-blue-600';
+      case 1:
+        return 'from-yellow-400 to-yellow-600';
+      case 2:
+        return 'from-gray-300 to-gray-500';
+      case 3:
+        return 'from-orange-400 to-orange-600';
+      default:
+        return 'from-blue-400 to-blue-600';
     }
   };
 
@@ -66,7 +74,10 @@ export function Leaderboard({ currentUser, onClose }: LeaderboardProps) {
         <h2 className="text-xl font-bold mb-4 text-center">🏆 لوحة الصدارة</h2>
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="animate-pulse flex items-center space-x-3 rtl:space-x-reverse p-3 bg-gray-100 rounded">
+            <div
+              key={i}
+              className="animate-pulse flex items-center space-x-3 rtl:space-x-reverse p-3 bg-gray-100 rounded"
+            >
               <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
               <div className="flex-1 space-y-2">
                 <div className="h-4 bg-gray-300 rounded w-3/4"></div>
@@ -94,29 +105,20 @@ export function Leaderboard({ currentUser, onClose }: LeaderboardProps) {
     );
   }
 
-  const currentUserRank = leaderboard.find(user => user.id === currentUser?.id)?.rank;
+  const currentUserRank = leaderboard.find((user) => user.id === currentUser?.id)?.rank;
 
   return (
     <div className="bg-white rounded-lg shadow-lg max-w-md mx-auto">
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-t-lg">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            🏆 لوحة الصدارة
-          </h2>
+          <h2 className="text-xl font-bold flex items-center gap-2">🏆 لوحة الصدارة</h2>
           {onClose && (
-            <button
-              onClick={onClose}
-              className="text-white hover:text-gray-200 transition-colors"
-            >
+            <button onClick={onClose} className="text-white hover:text-gray-200 transition-colors">
               ✕
             </button>
           )}
         </div>
-        {currentUserRank && (
-          <p className="text-sm opacity-90 mt-1">
-            ترتيبك: #{currentUserRank}
-          </p>
-        )}
+        {currentUserRank && <p className="text-sm opacity-90 mt-1">ترتيبك: #{currentUserRank}</p>}
       </div>
 
       <div className="max-h-96 overflow-y-auto">
@@ -135,14 +137,16 @@ export function Leaderboard({ currentUser, onClose }: LeaderboardProps) {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r ${getRankColor(user.rank!)}`}>
+                  <div
+                    className={`flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r ${getRankColor(user.rank!)}`}
+                  >
                     {user.rank! <= 3 ? (
                       getRankIcon(user.rank!)
                     ) : (
                       <span className="text-white font-bold text-sm">#{user.rank}</span>
                     )}
                   </div>
-                  
+
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-sm">
@@ -152,9 +156,7 @@ export function Leaderboard({ currentUser, onClose }: LeaderboardProps) {
                       {levelIcon}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <span style={{ color: levelColor }}>
-                        {levelInfo.title}
-                      </span>
+                      <span style={{ color: levelColor }}>{levelInfo.title}</span>
                       <span>•</span>
                       <span>مستوى {user.level || 1}</span>
                     </div>
@@ -175,7 +177,7 @@ export function Leaderboard({ currentUser, onClose }: LeaderboardProps) {
                     className="h-1.5 rounded-full transition-all duration-300"
                     style={{
                       width: `${Math.min(user.levelProgress || 0, 100)}%`,
-                      backgroundColor: levelColor
+                      backgroundColor: levelColor,
                     }}
                   />
                 </div>
@@ -186,9 +188,7 @@ export function Leaderboard({ currentUser, onClose }: LeaderboardProps) {
       </div>
 
       <div className="p-4 bg-gray-50 rounded-b-lg text-center">
-        <p className="text-xs text-gray-600">
-          استمر في التفاعل لتحسين ترتيبك! 💪
-        </p>
+        <p className="text-xs text-gray-600">استمر في التفاعل لتحسين ترتيبك! 💪</p>
         <button
           onClick={fetchLeaderboard}
           className="mt-2 text-xs text-blue-600 hover:text-blue-800 transition-colors"
@@ -200,7 +200,11 @@ export function Leaderboard({ currentUser, onClose }: LeaderboardProps) {
   );
 }
 
-export function LeaderboardModal({ currentUser, isOpen, onClose }: LeaderboardProps & { isOpen: boolean }) {
+export function LeaderboardModal({
+  currentUser,
+  isOpen,
+  onClose,
+}: LeaderboardProps & { isOpen: boolean }) {
   if (!isOpen) return null;
 
   return (

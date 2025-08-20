@@ -1,11 +1,11 @@
 // إعادة تصدير من الملف المشترك لتجنب التكرار
-export { 
-  calculateLevel, 
-  calculateLevelProgress, 
-  getLevelInfo, 
+export {
+  calculateLevel,
+  calculateLevelProgress,
+  getLevelInfo,
   getPointsToNextLevel,
   DEFAULT_LEVELS as LEVELS,
-  type PointsAction
+  type PointsAction,
 } from '../../../shared/points-system';
 
 import { getLevelInfo as _getLevelInfo } from '../../../shared/points-system';

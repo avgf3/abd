@@ -27,109 +27,112 @@ export default function UserPopup({
   onClose,
 }: UserPopupProps) {
   const { toast } = useToast();
-  
-  const canModerate = currentUser && (
-    currentUser.userType === 'owner' || 
-    currentUser.userType === 'admin' || 
-    currentUser.userType === 'moderator'
-  ) && currentUser.id !== user.id;
+
+  const canModerate =
+    currentUser &&
+    (currentUser.userType === 'owner' ||
+      currentUser.userType === 'admin' ||
+      currentUser.userType === 'moderator') &&
+    currentUser.id !== user.id;
 
   const handleMute = async () => {
     if (!currentUser) return;
-    
+
     try {
       await apiRequest('/api/moderation/mute', {
         method: 'POST',
         body: {
           moderatorId: currentUser.id,
-          targetUserId: user.id,  // تصحيح: من userId إلى targetUserId
+          targetUserId: user.id, // تصحيح: من userId إلى targetUserId
           reason: 'كتم من المشرف',
-          duration: 30  // تصحيح: من 0 إلى 30 دقيقة كمدة افتراضية
-        }
+          duration: 30, // تصحيح: من 0 إلى 30 دقيقة كمدة افتراضية
+        },
       });
 
       toast({
         title: '🔇 تم الكتم',
         description: `${user.username} مكتوم من الدردشة العامة لمدة 30 دقيقة`,
       });
-      
+
       onClose?.();
     } catch (error) {
       console.error('Mute error:', error);
-      
+
       toast({
         title: 'فشل الكتم',
         description: 'حدث خطأ أثناء كتم المستخدم',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
 
   const handleKick = async () => {
     if (!currentUser) return;
-    
+
     try {
       await apiRequest('/api/moderation/ban', {
         method: 'POST',
         body: {
           moderatorId: currentUser.id,
-          targetUserId: user.id,  // تصحيح: من userId إلى targetUserId
+          targetUserId: user.id, // تصحيح: من userId إلى targetUserId
           reason: 'طرد من المشرف',
-          duration: 15
-        }
+          duration: 15,
+        },
       });
 
       toast({
         title: '⏰ تم الطرد',
         description: `${user.username} مطرود لمدة 15 دقيقة`,
       });
-      
+
       onClose?.();
     } catch (error) {
       console.error('Kick error:', error);
-      
+
       toast({
         title: 'فشل الطرد',
         description: 'حدث خطأ أثناء طرد المستخدم',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
 
   const handleBlock = async () => {
     if (!currentUser || currentUser.userType !== 'owner') return;
-    
+
     try {
       // الحصول على device ID من localStorage أو إنشاء واحد جديد
-      const deviceId = localStorage.getItem('deviceId') || (() => {
-        const id = 'web-' + Math.random().toString(36).slice(2);
-        localStorage.setItem('deviceId', id);
-        return id;
-      })();
+      const deviceId =
+        localStorage.getItem('deviceId') ||
+        (() => {
+          const id = 'web-' + Math.random().toString(36).slice(2);
+          localStorage.setItem('deviceId', id);
+          return id;
+        })();
 
       await apiRequest('/api/moderation/block', {
         method: 'POST',
-        headers: { 'x-device-id': deviceId },  // إضافة header للجهاز
+        headers: { 'x-device-id': deviceId }, // إضافة header للجهاز
         body: {
           moderatorId: currentUser.id,
-          targetUserId: user.id,  // تصحيح: من userId إلى targetUserId
-          reason: 'حظر من المشرف'
-        }
+          targetUserId: user.id, // تصحيح: من userId إلى targetUserId
+          reason: 'حظر من المشرف',
+        },
       });
 
       toast({
         title: '🚫 تم الحجب النهائي',
         description: `${user.username} محجوب نهائياً`,
       });
-      
+
       onClose?.();
     } catch (error) {
       console.error('Block error:', error);
-      
+
       toast({
         title: 'فشل الحجب',
         description: 'حدث خطأ أثناء حجب المستخدم',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
@@ -142,49 +145,32 @@ export default function UserPopup({
         left: `${x - 160}px`,
       }}
     >
-      <Button
-        onClick={onViewProfile}
-        variant="ghost"
-        className="user-popup-button"
-      >
+      <Button onClick={onViewProfile} variant="ghost" className="user-popup-button">
         👤 عرض الملف الشخصي
       </Button>
-      
+
       {/* إخفاء خيارات الرسائل والصداقة إذا كان المستخدم نفسه */}
       {currentUser && currentUser.id !== user.id && (
         <>
-          <Button
-            onClick={onPrivateMessage}
-            variant="ghost"
-            className="user-popup-button"
-          >
+          <Button onClick={onPrivateMessage} variant="ghost" className="user-popup-button">
             ✉️ ارسال رسالة
           </Button>
-          
-          <Button
-            onClick={onAddFriend}
-            variant="ghost"
-            className="user-popup-button"
-          >
+
+          <Button onClick={onAddFriend} variant="ghost" className="user-popup-button">
             👥 إضافة صديق
           </Button>
-          
-          <Button
-            onClick={onIgnore}
-            variant="ghost"
-            className="user-popup-button text-red-400"
-          >
+
+          <Button onClick={onIgnore} variant="ghost" className="user-popup-button text-red-400">
             🚫 تجاهل
           </Button>
-
         </>
       )}
-      
+
       {/* خيارات الإدارة */}
       {canModerate && (
         <>
           <div className="border-t border-gray-300 my-1"></div>
-          
+
           {currentUser.userType === 'moderator' && (
             <Button
               onClick={handleMute}
@@ -194,7 +180,7 @@ export default function UserPopup({
               🔇 كتم
             </Button>
           )}
-          
+
           {(currentUser.userType === 'admin' || currentUser.userType === 'owner') && (
             <>
               <Button
@@ -204,7 +190,7 @@ export default function UserPopup({
               >
                 🔇 كتم
               </Button>
-              
+
               <Button
                 onClick={handleKick}
                 variant="ghost"
@@ -214,7 +200,7 @@ export default function UserPopup({
               </Button>
             </>
           )}
-          
+
           {currentUser.userType === 'owner' && (
             <Button
               onClick={handleBlock}

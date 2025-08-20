@@ -34,13 +34,21 @@ interface NotificationPanelProps {
   currentUser: ChatUser | null;
 }
 
-export default function NotificationPanel({ isOpen, onClose, currentUser }: NotificationPanelProps) {
+export default function NotificationPanel({
+  isOpen,
+  onClose,
+  currentUser,
+}: NotificationPanelProps) {
   const queryClient = useQueryClient();
   const [lastChecked, setLastChecked] = useState<number>(Date.now());
   const { showErrorToast, showSuccessToast } = useNotificationManager(currentUser);
 
   // جلب الإشعارات - polling محسن
-  const { data: notificationsData, isLoading, refetch } = useQuery<{ notifications: Notification[] }>({
+  const {
+    data: notificationsData,
+    isLoading,
+    refetch,
+  } = useQuery<{ notifications: Notification[] }>({
     queryKey: ['/api/notifications', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) throw new Error('No user ID');
@@ -49,7 +57,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
     enabled: !!currentUser?.id && isOpen,
     refetchInterval: isOpen ? 30000 : false, // كل 30 ثانية بدلاً من 3 ثوانٍ عند فتح النافذة
     staleTime: 10000, // البيانات صالحة لمدة 10 ثوانٍ
-    gcTime: 5 * 60 * 1000 // حفظ في الكاش لمدة 5 دقائق
+    gcTime: 5 * 60 * 1000, // حفظ في الكاش لمدة 5 دقائق
   });
 
   // جلب عدد الإشعارات غير المقروءة - مُحسّن
@@ -70,24 +78,21 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: number) => {
       return await apiRequest(`/api/notifications/${notificationId}/read`, {
-        method: 'PUT'
+        method: 'PUT',
       });
     },
     onSuccess: (_data, variables) => {
       // تحديث فوري وذكي للكاش
-      queryClient.setQueryData(
-        ['/api/notifications', currentUser?.id],
-        (oldData: any) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            notifications: oldData.notifications.map((notif: Notification) =>
-              notif.id === variables ? { ...notif, isRead: true } : notif
-            )
-          };
-        }
-      );
-      
+      queryClient.setQueryData(['/api/notifications', currentUser?.id], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          notifications: oldData.notifications.map((notif: Notification) =>
+            notif.id === variables ? { ...notif, isRead: true } : notif
+          ),
+        };
+      });
+
       // تحديث عدد غير المقروءة
       queryClient.setQueryData(
         ['/api/notifications/unread-count', currentUser?.id],
@@ -98,70 +103,63 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
       );
     },
     onError: (error) => {
-      showErrorToast("فشل في تحديد الإشعار كمقروء");
-    }
+      showErrorToast('فشل في تحديد الإشعار كمقروء');
+    },
   });
 
   // تحديد جميع الإشعارات كمقروءة - محسن
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest(`/api/notifications/user/${currentUser?.id}/read-all`, {
-        method: 'PUT'
+        method: 'PUT',
       });
     },
     onSuccess: () => {
       // تحديث فوري للكاش
-      queryClient.setQueryData(
-        ['/api/notifications', currentUser?.id],
-        (oldData: any) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            notifications: oldData.notifications.map((notif: Notification) => ({
-              ...notif,
-              isRead: true
-            }))
-          };
-        }
-      );
-      
-      queryClient.setQueryData(
-        ['/api/notifications/unread-count', currentUser?.id],
-        { count: 0 }
-      );
-      
-      showSuccessToast("تم تحديد جميع الإشعارات كمقروءة");
+      queryClient.setQueryData(['/api/notifications', currentUser?.id], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          notifications: oldData.notifications.map((notif: Notification) => ({
+            ...notif,
+            isRead: true,
+          })),
+        };
+      });
+
+      queryClient.setQueryData(['/api/notifications/unread-count', currentUser?.id], { count: 0 });
+
+      showSuccessToast('تم تحديد جميع الإشعارات كمقروءة');
     },
     onError: () => {
-      showErrorToast("فشل في تحديد الإشعارات كمقروءة");
-    }
+      showErrorToast('فشل في تحديد الإشعارات كمقروءة');
+    },
   });
 
   // حذف إشعار - محسن
   const deleteNotificationMutation = useMutation({
     mutationFn: async (notificationId: number) => {
       return await apiRequest(`/api/notifications/${notificationId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       });
     },
     onSuccess: (_, notificationId) => {
       // تحديث فوري للكاش
-      queryClient.setQueryData(
-        ['/api/notifications', currentUser?.id],
-        (oldData: any) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            notifications: oldData.notifications.filter((notif: Notification) => notif.id !== notificationId)
-          };
-        }
-      );
-      
-      showSuccessToast("تم حذف الإشعار");
+      queryClient.setQueryData(['/api/notifications', currentUser?.id], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          notifications: oldData.notifications.filter(
+            (notif: Notification) => notif.id !== notificationId
+          ),
+        };
+      });
+
+      showSuccessToast('تم حذف الإشعار');
     },
     onError: () => {
-      showErrorToast("فشل في حذف الإشعار");
-    }
+      showErrorToast('فشل في حذف الإشعار');
+    },
   });
 
   // تحديث الإشعارات يدوياً
@@ -204,7 +202,12 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
   // تم حذف دالة formatTimeAgoLocal - نستخدم formatTimeAgo مباشرة من utils/timeUtils.ts
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="sm:max-w-md max-h-[80vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
@@ -217,12 +220,7 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
                 </Badge>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isLoading}
-            >
+            <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isLoading}>
               🔄
             </Button>
           </DialogTitle>
@@ -244,16 +242,18 @@ export default function NotificationPanel({ isOpen, onClose, currentUser }: Noti
                 <div
                   key={notification.id}
                   className={`p-3 border rounded-lg transition-colors ${
-                    notification.isRead 
-                      ? 'bg-muted/50 border-muted' 
+                    notification.isRead
+                      ? 'bg-muted/50 border-muted'
                       : 'bg-primary/5 border-primary/20'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-start gap-2 flex-1">
-                      <div className={`p-1 rounded ${
-                        notification.isRead ? 'text-muted-foreground' : 'text-primary'
-                      }`}>
+                      <div
+                        className={`p-1 rounded ${
+                          notification.isRead ? 'text-muted-foreground' : 'text-primary'
+                        }`}
+                      >
                         {getNotificationIcon(notification.type)}
                       </div>
                       <div className="flex-1 min-w-0">
