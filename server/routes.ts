@@ -1221,7 +1221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // جلب المستخدمين المحظورين
-  app.get('/api/users/blocked', async (req, res) => {
+  app.get('/api/users/blocked', protect.admin, async (req, res) => {
     try {
       const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
       const offset = Math.max(0, Number(req.query.offset) || 0);
@@ -1270,10 +1270,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ملاحظة: تم تبسيط نظام الخاص واعتماد /api/messages (isPrivate=true) بدلاً من /api/private-messages
 
   // POST endpoint for sending messages
-  app.post('/api/messages', async (req, res) => {
+  app.post('/api/messages', protect.auth, async (req, res) => {
     try {
       const {
-        senderId,
         receiverId,
         content,
         messageType = 'text',
@@ -1281,8 +1280,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         roomId = 'general',
       } = req.body;
 
+      const senderId = (req as any).user?.id;
       if (!senderId || !content?.trim()) {
-        return res.status(400).json({ error: 'معرف المرسل والمحتوى مطلوبان' });
+        return res.status(400).json({ error: 'المحتوى مطلوب' });
       }
 
       // التحقق من المرسل
@@ -1355,7 +1355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Profile picture upload (members only)
-  app.post('/api/users/:id/profile-image', async (req, res) => {
+  app.post('/api/users/:id/profile-image', protect.ownership, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
       const { imageData } = req.body;
@@ -1395,7 +1395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update username color
-  app.post('/api/users/:userId/color', async (req, res) => {
+  app.post('/api/users/:userId/color', protect.ownership, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const { color } = req.body;
@@ -2358,7 +2358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user profile - General endpoint - محسّن مع معالجة أفضل للأخطاء
-  app.post('/api/users/update-profile', async (req, res) => {
+  app.post('/api/users/update-profile', protect.ownership, async (req, res) => {
     try {
       const { userId, ...updates } = req.body;
 

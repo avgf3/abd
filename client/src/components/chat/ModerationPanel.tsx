@@ -62,9 +62,6 @@ export default function ModerationPanel({
     try {
       const response = await apiRequest('/api/users/blocked', {
         method: 'GET',
-        headers: {
-          Authorization: `Bearer ${currentUser.id}`,
-        },
       });
 
       if (response?.users) {
