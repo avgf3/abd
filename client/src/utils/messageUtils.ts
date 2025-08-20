@@ -17,6 +17,8 @@ export function mapDbMessageToChatMessage(msg: any, fallbackRoomId?: string): Ch
     messageType: msg.messageType || 'text',
     isPrivate: Boolean(msg.isPrivate),
     roomId: msg.roomId || fallbackRoomId,
+    reactions: msg.reactions || msg.reactionCounts || { like: 0, dislike: 0, heart: 0 },
+    myReaction: msg.myReaction ?? null,
   } as ChatMessage;
 }
 

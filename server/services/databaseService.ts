@@ -1022,6 +1022,207 @@ export class DatabaseService {
     }
   }
 
+  // ===================== Message Reactions =====================
+  async upsertMessageReaction(
+    messageId: number,
+    userId: number,
+    type: 'like' | 'dislike' | 'heart'
+  ): Promise<{ like: number; dislike: number; heart: number; myReaction: typeof type } | null> {
+    if (!this.isConnected()) return null;
+    try {
+      if (this.type === 'postgresql') {
+        // Upsert by (messageId,userId)
+        const existing = await (this.db as any)
+          .select()
+          .from(pgSchema.messageReactions)
+          .where(
+            and(
+              eq(pgSchema.messageReactions.messageId, messageId),
+              eq(pgSchema.messageReactions.userId, userId)
+            )
+          )
+          .limit(1);
+        if (existing && existing.length > 0) {
+          await (this.db as any)
+            .update(pgSchema.messageReactions)
+            .set({ type, timestamp: new Date() })
+            .where(
+              and(
+                eq(pgSchema.messageReactions.messageId, messageId),
+                eq(pgSchema.messageReactions.userId, userId)
+              )
+            );
+        } else {
+          await (this.db as any)
+            .insert(pgSchema.messageReactions)
+            .values({ messageId, userId, type, timestamp: new Date() });
+        }
+
+        // Counts per type
+        const rows = await (this.db as any)
+          .select({ t: pgSchema.messageReactions.type, c: count() })
+          .from(pgSchema.messageReactions)
+          .where(eq(pgSchema.messageReactions.messageId, messageId))
+          .groupBy(pgSchema.messageReactions.type);
+        const counts: any = { like: 0, dislike: 0, heart: 0 };
+        for (const r of rows || []) counts[r.t as string] = Number(r.c || 0);
+        return { ...counts, myReaction: type } as any;
+      } else {
+        // SQLite
+        const existing = await (this.db as any)
+          .select()
+          .from(sqliteSchema.messageReactions)
+          .where(
+            and(
+              eq(sqliteSchema.messageReactions.messageId, messageId),
+              eq(sqliteSchema.messageReactions.userId, userId)
+            )
+          )
+          .limit(1);
+        if (existing && existing.length > 0) {
+          await (this.db as any)
+            .update(sqliteSchema.messageReactions)
+            .set({ type, timestamp: new Date().toISOString() })
+            .where(
+              and(
+                eq(sqliteSchema.messageReactions.messageId, messageId),
+                eq(sqliteSchema.messageReactions.userId, userId)
+              )
+            );
+        } else {
+          await (this.db as any)
+            .insert(sqliteSchema.messageReactions)
+            .values({ messageId, userId, type, timestamp: new Date().toISOString() });
+        }
+        const rows = await (this.db as any)
+          .select({ t: sqliteSchema.messageReactions.type, c: count() })
+          .from(sqliteSchema.messageReactions)
+          .where(eq(sqliteSchema.messageReactions.messageId, messageId))
+          .groupBy(sqliteSchema.messageReactions.type);
+        const counts: any = { like: 0, dislike: 0, heart: 0 };
+        for (const r of rows || []) counts[r.t as string] = Number(r.c || 0);
+        return { ...counts, myReaction: type } as any;
+      }
+    } catch (error) {
+      console.error('Error upsertMessageReaction:', error);
+      return null;
+    }
+  }
+
+  async deleteMessageReaction(
+    messageId: number,
+    userId: number
+  ): Promise<{ like: number; dislike: number; heart: number } | null> {
+    if (!this.isConnected()) return null;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any)
+          .delete(pgSchema.messageReactions)
+          .where(
+            and(
+              eq(pgSchema.messageReactions.messageId, messageId),
+              eq(pgSchema.messageReactions.userId, userId)
+            )
+          );
+        const rows = await (this.db as any)
+          .select({ t: pgSchema.messageReactions.type, c: count() })
+          .from(pgSchema.messageReactions)
+          .where(eq(pgSchema.messageReactions.messageId, messageId))
+          .groupBy(pgSchema.messageReactions.type);
+        const counts: any = { like: 0, dislike: 0, heart: 0 };
+        for (const r of rows || []) counts[r.t as string] = Number(r.c || 0);
+        return counts;
+      } else {
+        await (this.db as any)
+          .delete(sqliteSchema.messageReactions)
+          .where(
+            and(
+              eq(sqliteSchema.messageReactions.messageId, messageId),
+              eq(sqliteSchema.messageReactions.userId, userId)
+            )
+          );
+        const rows = await (this.db as any)
+          .select({ t: sqliteSchema.messageReactions.type, c: count() })
+          .from(sqliteSchema.messageReactions)
+          .where(eq(sqliteSchema.messageReactions.messageId, messageId))
+          .groupBy(sqliteSchema.messageReactions.type);
+        const counts: any = { like: 0, dislike: 0, heart: 0 };
+        for (const r of rows || []) counts[r.t as string] = Number(r.c || 0);
+        return counts;
+      }
+    } catch (error) {
+      console.error('Error deleteMessageReaction:', error);
+      return null;
+    }
+  }
+
+  async getMessageReactionCounts(
+    messageId: number
+  ): Promise<{ like: number; dislike: number; heart: number } | null> {
+    if (!this.isConnected()) return null;
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any)
+          .select({ t: pgSchema.messageReactions.type, c: count() })
+          .from(pgSchema.messageReactions)
+          .where(eq(pgSchema.messageReactions.messageId, messageId))
+          .groupBy(pgSchema.messageReactions.type);
+        const counts: any = { like: 0, dislike: 0, heart: 0 };
+        for (const r of rows || []) counts[r.t as string] = Number(r.c || 0);
+        return counts;
+      } else {
+        const rows = await (this.db as any)
+          .select({ t: sqliteSchema.messageReactions.type, c: count() })
+          .from(sqliteSchema.messageReactions)
+          .where(eq(sqliteSchema.messageReactions.messageId, messageId))
+          .groupBy(sqliteSchema.messageReactions.type);
+        const counts: any = { like: 0, dislike: 0, heart: 0 };
+        for (const r of rows || []) counts[r.t as string] = Number(r.c || 0);
+        return counts;
+      }
+    } catch (error) {
+      console.error('Error getMessageReactionCounts:', error);
+      return null;
+    }
+  }
+
+  async getUserMessageReaction(
+    messageId: number,
+    userId: number
+  ): Promise<'like' | 'dislike' | 'heart' | null> {
+    if (!this.isConnected()) return null;
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any)
+          .select({ type: pgSchema.messageReactions.type })
+          .from(pgSchema.messageReactions)
+          .where(
+            and(
+              eq(pgSchema.messageReactions.messageId, messageId),
+              eq(pgSchema.messageReactions.userId, userId)
+            )
+          )
+          .limit(1);
+        return (rows?.[0]?.type as any) || null;
+      } else {
+        const rows = await (this.db as any)
+          .select({ type: sqliteSchema.messageReactions.type })
+          .from(sqliteSchema.messageReactions)
+          .where(
+            and(
+              eq(sqliteSchema.messageReactions.messageId, messageId),
+              eq(sqliteSchema.messageReactions.userId, userId)
+            )
+          )
+          .limit(1);
+        return (rows?.[0]?.type as any) || null;
+      }
+    } catch (error) {
+      console.error('Error getUserMessageReaction:', error);
+      return null;
+    }
+  }
+
   // Friend operations
   async sendFriendRequest(userId: number, friendId: number): Promise<Friend | null> {
     if (!this.isConnected()) return null;

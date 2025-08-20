@@ -542,7 +542,13 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         const sender = await storage.getUser(socket.userId);
         io.to(`room_${roomId}`).emit('message', {
           type: 'newMessage',
-          message: { ...created, sender, roomId },
+          message: {
+            ...created,
+            sender,
+            roomId,
+            reactions: { like: 0, dislike: 0, heart: 0 },
+            myReaction: null,
+          },
         });
 
         // Points/achievements (non-blocking)

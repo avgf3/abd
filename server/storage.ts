@@ -566,6 +566,24 @@ export const storage: LegacyStorage = {
     return await databaseService.deleteMessage(messageId);
   },
 
+  // ========= Message Reactions =========
+  async reactToMessage(
+    messageId: number,
+    userId: number,
+    type: 'like' | 'dislike' | 'heart'
+  ) {
+    return await databaseService.upsertMessageReaction(messageId, userId, type);
+  },
+  async removeMessageReaction(messageId: number, userId: number) {
+    return await databaseService.deleteMessageReaction(messageId, userId);
+  },
+  async getMessageReactionCounts(messageId: number) {
+    return await databaseService.getMessageReactionCounts(messageId);
+  },
+  async getUserMessageReaction(messageId: number, userId: number) {
+    return await databaseService.getUserMessageReaction(messageId, userId);
+  },
+
   // Friends
   async addFriend(userId: number, friendId: number) {
     return await friendService.addFriend(userId, friendId);
