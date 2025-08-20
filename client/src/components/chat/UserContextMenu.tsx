@@ -33,6 +33,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useModerationActions } from '@/hooks/useModerationActions';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 
@@ -65,6 +66,7 @@ export default function UserContextMenu({
   const [muteDuration, setMuteDuration] = useState(30);
   const [promoteRole, setPromoteRole] = useState<'moderator' | 'admin'>('moderator');
   const { toast } = useToast();
+  const { muteUser, kickUser, blockUser, getOrCreateDeviceId } = useModerationActions();
 
   // السماح للجميع بالوصول للقائمة السياقية
   if (targetUser.id === currentUser?.id) {
@@ -106,23 +108,11 @@ export default function UserContextMenu({
     }
 
     try {
-      const deviceId = (() => {
-        const existing = localStorage.getItem('deviceId');
-        if (existing) return existing;
-        const id = 'web-' + Math.random().toString(36).slice(2);
-        localStorage.setItem('deviceId', id);
-        return id;
-      })();
-
-      await apiRequest('/api/moderation/mute', {
-        method: 'POST',
-        headers: { 'x-device-id': deviceId },
-        body: {
-          moderatorId: currentUser.id,
-          targetUserId: targetUser.id,
-          reason: muteReason,
-          duration: muteDuration,
-        },
+      await muteUser({
+        moderatorId: currentUser.id,
+        targetUserId: targetUser.id,
+        reason: muteReason,
+        duration: muteDuration,
       });
 
       toast({
@@ -164,23 +154,11 @@ export default function UserContextMenu({
     }
 
     try {
-      const deviceId = (() => {
-        const existing = localStorage.getItem('deviceId');
-        if (existing) return existing;
-        const id = 'web-' + Math.random().toString(36).slice(2);
-        localStorage.setItem('deviceId', id);
-        return id;
-      })();
-
-      await apiRequest('/api/moderation/ban', {
-        method: 'POST',
-        headers: { 'x-device-id': deviceId },
-        body: {
-          moderatorId: currentUser.id,
-          targetUserId: targetUser.id,
-          reason: kickReason,
-          duration: 15,
-        },
+      await kickUser({
+        moderatorId: currentUser.id,
+        targetUserId: targetUser.id,
+        reason: kickReason,
+        duration: 15,
       });
 
       toast({
@@ -222,24 +200,10 @@ export default function UserContextMenu({
     }
 
     try {
-      const deviceId = (() => {
-        const existing = localStorage.getItem('deviceId');
-        if (existing) return existing;
-        const id = 'web-' + Math.random().toString(36).slice(2);
-        localStorage.setItem('deviceId', id);
-        return id;
-      })();
-
-      await apiRequest('/api/moderation/block', {
-        method: 'POST',
-        headers: { 'x-device-id': deviceId },
-        body: {
-          moderatorId: currentUser.id,
-          targetUserId: targetUser.id,
-          reason: blockReason,
-          ipAddress: 'unknown',
-          deviceId,
-        },
+      await blockUser({
+        moderatorId: currentUser.id,
+        targetUserId: targetUser.id,
+        reason: blockReason,
       });
 
       toast({

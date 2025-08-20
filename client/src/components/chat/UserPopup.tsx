@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { useModerationActions } from '@/hooks/useModerationActions';
 import type { ChatUser } from '@/types/chat';
 
 interface UserPopupProps {
@@ -39,15 +39,8 @@ export default function UserPopup({
     if (!currentUser) return;
 
     try {
-      await apiRequest('/api/moderation/mute', {
-        method: 'POST',
-        body: {
-          moderatorId: currentUser.id,
-          targetUserId: user.id, // تصحيح: من userId إلى targetUserId
-          reason: 'كتم من المشرف',
-          duration: 30, // تصحيح: من 0 إلى 30 دقيقة كمدة افتراضية
-        },
-      });
+      const { muteUser } = useModerationActions();
+      await muteUser({ moderatorId: currentUser.id, targetUserId: user.id, reason: 'كتم من المشرف', duration: 30 });
 
       toast({
         title: '🔇 تم الكتم',
@@ -70,15 +63,8 @@ export default function UserPopup({
     if (!currentUser) return;
 
     try {
-      await apiRequest('/api/moderation/ban', {
-        method: 'POST',
-        body: {
-          moderatorId: currentUser.id,
-          targetUserId: user.id, // تصحيح: من userId إلى targetUserId
-          reason: 'طرد من المشرف',
-          duration: 15,
-        },
-      });
+      const { kickUser } = useModerationActions();
+      await kickUser({ moderatorId: currentUser.id, targetUserId: user.id, reason: 'طرد من المشرف', duration: 15 });
 
       toast({
         title: '⏰ تم الطرد',
@@ -101,24 +87,8 @@ export default function UserPopup({
     if (!currentUser || currentUser.userType !== 'owner') return;
 
     try {
-      // الحصول على device ID من localStorage أو إنشاء واحد جديد
-      const deviceId =
-        localStorage.getItem('deviceId') ||
-        (() => {
-          const id = 'web-' + Math.random().toString(36).slice(2);
-          localStorage.setItem('deviceId', id);
-          return id;
-        })();
-
-      await apiRequest('/api/moderation/block', {
-        method: 'POST',
-        headers: { 'x-device-id': deviceId }, // إضافة header للجهاز
-        body: {
-          moderatorId: currentUser.id,
-          targetUserId: user.id, // تصحيح: من userId إلى targetUserId
-          reason: 'حظر من المشرف',
-        },
-      });
+      const { blockUser } = useModerationActions();
+      await blockUser({ moderatorId: currentUser.id, targetUserId: user.id, reason: 'حظر من المشرف' });
 
       toast({
         title: '🚫 تم الحجب النهائي',
