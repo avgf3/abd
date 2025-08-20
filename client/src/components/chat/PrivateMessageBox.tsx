@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import type { ChatMessage, ChatUser } from '@/types/chat';
-import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { sortMessagesAscending, getDynamicBorderColor, formatMessagePreview } from '@/utils/messageUtils';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
 
 interface PrivateMessageBoxProps {

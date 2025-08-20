@@ -13,8 +13,8 @@ import { apiRequest } from '@/lib/queryClient';
 import { api } from '@/lib/queryClient';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import { findMentions, playMentionSound, renderMessageWithMentions, insertMention } from '@/utils/mentionUtils';
-import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { getDynamicBorderColor } from '@/utils/messageUtils';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
 
 interface MessageAreaProps {

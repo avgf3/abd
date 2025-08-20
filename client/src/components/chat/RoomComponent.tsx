@@ -7,11 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 import { useGrabScroll } from '@/hooks/useGrabScroll';
+import { useRoomManager } from '@/hooks/useRoomManager';
 import type { ChatRoom, ChatUser } from '@/types/chat';
 import { dedupeRooms } from '@/utils/roomUtils';
-import { useRoomManager } from '@/hooks/useRoomManager';
-import { useToast } from '@/hooks/use-toast';
 
 
 interface RoomComponentProps {

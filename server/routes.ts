@@ -1,5 +1,8 @@
-import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
-import securityApiRoutes from "./api-security";
+import fs from "fs";
+import { promises as fsp } from "fs";
+import { createServer, type Server } from "http";
+import path from "path";
+
 import roomRoutes from "./routes/rooms";
 import messageRoutes from "./routes/messages";
 import { pointsService } from "./services/pointsService";
@@ -7,34 +10,37 @@ import { roomService } from "./services/roomService";
 import { roomMessageService } from "./services/roomMessageService";
 import { friendService } from "./services/friendService";
 import { developmentOnly, logDevelopmentEndpoint } from "./middleware/development";
-import { z } from "zod";
 import { sanitizeUserData, sanitizeUsersArray } from './utils/data-sanitizer';
-import multer from "multer";
-import path from "path";
-import fs from "fs";
-import { createServer, type Server } from "http";
+
+
+
 import bcrypt from "bcrypt";
 import type { Express } from "express";
+import multer from "multer";
 import sharp from "sharp";
+import { z } from "zod";
 
 // import { trackClick } from "./middleware/analytics"; // commented out as file doesn't exist
 import { DEFAULT_LEVELS, recalculateUserStats } from "../shared/points-system";
 import { insertUserSchema, insertMessageSchema } from "../shared/schema";
+import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
+import securityApiRoutes from "./api-security";
+
 import { db, dbType } from "./database-adapter";
 import { setupDownloadRoute } from "./download-route";
 import { protect } from "./middleware/enhancedSecurity";
 import { moderationSystem } from "./moderation";
 import { getIO } from "./realtime";
-import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter, friendRequestLimiter } from "./security";
-import { issueAuthToken, getAuthTokenFromRequest, verifyAuthToken } from './utils/auth-token';
-import { databaseService } from "./services/databaseService";
-import { notificationService } from "./services/notificationService";
 import { spamProtection } from "./spam-protection";
 import { storage } from "./storage";
 import { databaseCleanup } from "./utils/database-cleanup";
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { updateConnectedUserCache } from "./realtime";
-import { promises as fsp } from "fs";
+import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter, friendRequestLimiter } from "./security";
+import { databaseService } from "./services/databaseService";
+import { notificationService } from "./services/notificationService";
+import { issueAuthToken, getAuthTokenFromRequest, verifyAuthToken } from './utils/auth-token';
+
 
 
 // إعداد multer موحد لرفع الصور

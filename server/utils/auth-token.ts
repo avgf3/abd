@@ -1,6 +1,7 @@
+import crypto from 'crypto';
+
 import type { Request } from 'express';
 
-import crypto from 'crypto';
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
