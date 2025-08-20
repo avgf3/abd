@@ -498,26 +498,13 @@ export default function MessageArea({
           />
         )}
 
-        {/* Jump to bottom / New messages indicator */}
-        {!isAtBottom && (
-          <div className="absolute bottom-4 right-4 z-10">
-            <button
-              onClick={() => {
-                scrollToBottom('smooth');
-                setUnreadCount(0);
-              }}
-              className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow"
-            >
-              {unreadCount > 0 ? `عرض ${unreadCount} رسالة جديدة` : 'الانتقال لأسفل'}
-            </button>
-          </div>
-        )}
+        {/* تم إخفاء مؤشر "الانتقال لأسفل" لتقليل التشويش والاهتزازات */}
       </div>
 
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div
         className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg chat-input`}
-        style={{ transform: 'translateY(-80px)' }}
+        style={{ bottom: '80px' }}
       >
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
