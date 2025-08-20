@@ -1,4 +1,4 @@
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, not } from 'drizzle-orm';
 
 import { notifications, type Notification, type InsertNotification } from '../../shared/schema';
 import { db } from '../database-adapter';
@@ -25,7 +25,7 @@ export class NotificationService {
       const userNotifications = await db
         .select()
         .from(notifications)
-        .where(eq(notifications.userId, userId))
+        .where(and(eq(notifications.userId, userId), not(eq(notifications.type, 'message' as any))))
         .orderBy(desc(notifications.createdAt))
         .limit(limit);
 
@@ -84,7 +84,13 @@ export class NotificationService {
       const unreadNotifications = await db
         .select()
         .from(notifications)
-        .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+        .where(
+          and(
+            eq(notifications.userId, userId),
+            eq(notifications.isRead, false),
+            not(eq(notifications.type, 'message' as any))
+          )
+        );
 
       return unreadNotifications.length;
     } catch (error) {
