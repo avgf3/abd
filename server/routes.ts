@@ -26,6 +26,7 @@ import { protect } from "./middleware/enhancedSecurity";
 import { moderationSystem } from "./moderation";
 import { getIO } from "./realtime";
 import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter, friendRequestLimiter } from "./security";
+import { issueAuthToken } from './utils/auth-token';
 import { databaseService } from "./services/databaseService";
 import { notificationService } from "./services/notificationService";
 import { spamProtection } from "./spam-protection";
@@ -155,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
 
   // رفع صور البروفايل - محسّن مع حل مشكلة Render
-  app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
+  app.post('/api/upload/profile-image', protect.ownership, upload.single('profileImage'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ 
@@ -243,7 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // إصلاح رفع صورة البانر - تحويل إلى WebP وتخزين كملف بدل Base64 لسلامة وأداء أفضل
-  app.post('/api/upload/profile-banner', bannerUpload.single('banner'), async (req, res) => {
+  app.post('/api/upload/profile-banner', protect.ownership, bannerUpload.single('banner'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ 
@@ -398,7 +399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // تحديث بيانات المستخدم - للإصلاح
-  app.patch('/api/users/:userId', async (req, res) => {
+  app.patch('/api/users/:userId', protect.ownership, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       if (!userId || isNaN(userId)) {
@@ -909,6 +910,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileImage: "/default_avatar.svg",
       });
 
+      try {
+        const token = issueAuthToken(user.id);
+        res.setHeader('Set-Cookie', `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+      } catch {}
       res.json({ user: buildUserBroadcastPayload(user), message: "تم التسجيل بنجاح" });
     } catch (error) {
       console.error('Registration error:', error);
@@ -938,6 +943,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileImage: "/default_avatar.svg",
       });
 
+      try {
+        const token = issueAuthToken(user.id);
+        res.setHeader('Set-Cookie', `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+      } catch {}
       res.json({ user: buildUserBroadcastPayload(user) });
     } catch (error) {
       console.error("Guest login error:", error);
@@ -996,6 +1005,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('خطأ في تحديث حالة المستخدم:', updateError);
       }
 
+      try {
+        const token = issueAuthToken(user.id);
+        res.setHeader('Set-Cookie', `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+      } catch {}
       res.json({ user: buildUserBroadcastPayload(user) });
     } catch (error) {
       console.error('Member authentication error:', error);
