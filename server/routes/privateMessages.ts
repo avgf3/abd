@@ -83,12 +83,7 @@ router.post('/send', protect.auth, async (req, res) => {
     // إرسال إشعار وبث الرسالة بشكل متوازي
     const promises = [];
 
-    // إنشاء إشعار للمستقبل
-    promises.push(
-      notificationService
-        .createMessageNotification(receiver.id, sender.username, sender.id, text.substring(0, 100))
-        .catch(() => null)
-    );
+    // تم إيقاف إنشاء إشعار الرسائل: تبويب الإشعارات لا يعرض إشعارات الرسائل
 
     // بث الرسالة عبر Socket.IO
     const io = req.app.get('io');

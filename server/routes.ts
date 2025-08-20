@@ -1326,13 +1326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .to(senderId.toString())
           .emit('privateMessage', { message: { ...message, sender } });
 
-        // إنشاء إشعار في قاعدة البيانات للمستقبل
-        await notificationService.createMessageNotification(
-          receiverId,
-          sender.username,
-          senderId,
-          content.substring(0, 100) // معاينة من الرسالة
-        );
+        // تم إيقاف إنشاء إشعار الرسائل: تبويب الإشعارات لا يعرض إشعارات الرسائل
       } else {
         // رسالة عامة
         getIO().emit('message', {

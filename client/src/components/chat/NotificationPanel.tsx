@@ -168,7 +168,9 @@ export default function NotificationPanel({
     refetch();
   }, [refetch]);
 
-  const notifications = notificationsData?.notifications || [];
+  const allNotifications = notificationsData?.notifications || [];
+  // استبعاد إشعارات الرسائل نهائياً من الواجهة (حماية إضافية بجانب فلترة الخادم)
+  const notifications = allNotifications.filter((n) => n.type !== 'message');
   const unreadCount = unreadCountData?.count || 0;
 
   const getNotificationIcon = (type: string) => {
