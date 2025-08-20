@@ -8,6 +8,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { formatTimestamp } from '@/utils/timeUtils';
+import UserPopup from '@/components/chat/UserPopup';
+import { useToast } from '@/hooks/use-toast';
 
 interface ReportData {
   id: number;
@@ -31,6 +33,14 @@ interface ReportsLogProps {
 export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsLogProps) {
   const [reports, setReports] = useState<ReportData[]>([]);
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const [userPopup, setUserPopup] = useState<{
+    show: boolean;
+    user: ChatUser | null;
+    x: number;
+    y: number;
+  }>({ show: false, user: null, x: 0, y: 0 });
 
   useEffect(() => {
     if (isVisible && (currentUser.userType === 'admin' || currentUser.userType === 'owner')) {
@@ -63,6 +73,22 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
   };
 
   // تم نقل دالة formatTimestamp إلى utils/timeUtils.ts
+
+  const openUserPopupById = async (
+    e: React.MouseEvent,
+    userId: number
+  ) => {
+    e.stopPropagation();
+    try {
+      const data = (await apiRequest(`/api/users/${userId}?t=${Date.now()}`)) as any;
+      if (!data || !data.id) throw new Error('لم يتم العثور على المستخدم');
+      setUserPopup({ show: true, user: data as ChatUser, x: e.clientX, y: e.clientY });
+    } catch (error) {
+      toast({ title: 'خطأ', description: 'تعذر جلب بيانات المستخدم', variant: 'destructive' });
+    }
+  };
+
+  const closeUserPopup = () => setUserPopup((p) => ({ ...p, show: false }));
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -101,7 +127,7 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
   const pendingReports = reports.filter((r) => r.status === 'pending');
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[12000] flex items-center justify-center p-4">
       <Card className="w-full max-w-4xl h-[80vh] bg-gray-900/95 border-gray-700">
         <CardHeader className="border-b border-gray-700">
           <div className="flex items-center justify-between">
@@ -153,13 +179,23 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <User className="w-4 h-4 text-blue-400" />
-                            <span className="font-medium text-gray-200">
+                            <button
+                              type="button"
+                              className="font-medium text-blue-300 hover:underline"
+                              onClick={(e) => openUserPopupById(e, report.reporterId)}
+                              title="عرض خيارات المستخدم"
+                            >
                               {report.reporterName || 'مجهول'}
-                            </span>
+                            </button>
                             <span className="text-gray-400">بلّغ عن</span>
-                            <span className="font-medium text-red-400">
+                            <button
+                              type="button"
+                              className="font-medium text-red-400 hover:underline"
+                              onClick={(e) => openUserPopupById(e, report.reportedUserId)}
+                              title="عرض خيارات المستخدم"
+                            >
                               {report.reportedUserName || 'مجهول'}
-                            </span>
+                            </button>
                           </div>
 
                           <div className="flex items-center gap-2 mb-2">
@@ -235,6 +271,51 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
           </div>
         </CardContent>
       </Card>
+
+      {userPopup.show && userPopup.user && (
+        <UserPopup
+          user={userPopup.user}
+          x={userPopup.x}
+          y={userPopup.y}
+          currentUser={currentUser}
+          onClose={closeUserPopup}
+          onPrivateMessage={() => {
+            closeUserPopup();
+            setTimeout(() => {
+              window.location.hash = `#pm${userPopup.user!.id}`;
+            }, 0);
+          }}
+          onViewProfile={() => {
+            closeUserPopup();
+            setTimeout(() => {
+              window.location.hash = `#id${userPopup.user!.id}`;
+            }, 0);
+          }}
+          onAddFriend={async () => {
+            try {
+              await apiRequest('/api/friend-requests', {
+                method: 'POST',
+                body: { senderId: currentUser.id, receiverId: userPopup.user!.id },
+              });
+              toast({ title: 'تم الإرسال', description: `تم إرسال طلب صداقة إلى ${userPopup.user!.username}` });
+            } catch (error) {
+              toast({ title: 'خطأ', description: 'تعذر إرسال طلب الصداقة', variant: 'destructive' });
+            } finally {
+              closeUserPopup();
+            }
+          }}
+          onIgnore={async () => {
+            try {
+              await apiRequest(`/api/users/${currentUser.id}/ignore/${userPopup.user!.id}`, { method: 'POST' });
+              toast({ title: 'تم التجاهل', description: `${userPopup.user!.username} تم تجاهله` });
+            } catch (error) {
+              toast({ title: 'خطأ', description: 'تعذر تنفيذ عملية التجاهل', variant: 'destructive' });
+            } finally {
+              closeUserPopup();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
