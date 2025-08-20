@@ -912,6 +912,10 @@ export const useChat = () => {
             !isNaN(conversationId) &&
             conversationId !== currentUserRef.current.id
           ) {
+            // تجاهل الرسالة إذا كان المُرسل في قائمة المتجاهلين محلياً
+            if (ignoredUsersRef.current && ignoredUsersRef.current.has(chatMessage.senderId)) {
+              return;
+            }
             dispatch({
               type: 'SET_PRIVATE_MESSAGE',
               payload: { userId: conversationId, message: chatMessage },
@@ -920,6 +924,14 @@ export const useChat = () => {
             // تشغيل صوت الإشعار فقط للرسائل الواردة
             if (chatMessage.senderId !== currentUserRef.current.id) {
               playNotificationSound();
+              // تعيين مرسل جديد لإظهار تنبيه واجهة الرسائل
+              try {
+                dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: message.sender as ChatUser });
+                // إعادة التعيين بعد فترة قصيرة حتى لا يعلق التنبيه
+                setTimeout(() =>
+                  dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: null as any }), 2000
+                );
+              } catch {}
             }
           }
         }
