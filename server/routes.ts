@@ -64,7 +64,7 @@ const createMulterConfig = (destination: string, prefix: string, maxSize: number
     fileFilter: (req, file, cb) => {
       const allowedMimes = [
         'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
-        'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff'
+        'image/webp', 'image/bmp', 'image/tiff'
       ];
       
       if (allowedMimes.includes(file.mimetype)) {
@@ -220,7 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imageUrl: `${updatedUser.profileImage}?v=${hash}`,
         filename: `${userId}.webp`,
         avatarHash: hash,
-        user: updatedUser
+        user: buildUserBroadcastPayload(updatedUser)
       });
 
     } catch (error) {
@@ -242,7 +242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // إصلاح رفع صورة البانر - محسّن مع حل مشكلة Render
+  // إصلاح رفع صورة البانر - تحويل إلى WebP وتخزين كملف بدل Base64 لسلامة وأداء أفضل
   app.post('/api/upload/profile-banner', bannerUpload.single('banner'), async (req, res) => {
     try {
       if (!req.file) {
@@ -273,32 +273,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "المستخدم غير موجود" });
       }
 
-      // حل مشكلة Render: تحويل الصورة إلى base64 وحفظها في قاعدة البيانات
-      let bannerUrl: string;
-      
+      // تحويل الصورة إلى WebP ثابتة وتخزينها
+      const bannersDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'banners');
+      await fsp.mkdir(bannersDir, { recursive: true });
+      const inputBuffer = await fsp.readFile(req.file.path);
+      let webpBuffer = inputBuffer;
       try {
-        // قراءة الملف كـ base64
-        const fileBuffer = await fsp.readFile(req.file.path);
-        const base64Image = fileBuffer.toString('base64');
-        const mimeType = req.file.mimetype;
-        
-        // إنشاء data URL
-        bannerUrl = `data:${mimeType};base64,${base64Image}`;
-        
-        // حذف الملف الأصلي
-        await fsp.unlink(req.file.path);
-        
-      } catch (fileError) {
-        console.error('❌ خطأ في معالجة الملف:', fileError);
-        
-        // في حالة فشل base64، استخدم المسار العادي
-        bannerUrl = `/uploads/banners/${req.file.filename}`;
-        
-        // حاول التأكد من وجود المجلد
-        const uploadsDir = path.dirname(req.file.path);
-        await fsp.mkdir(uploadsDir, { recursive: true });
-      }
-      
+        webpBuffer = await (sharp as any)(inputBuffer).resize(1200, 400, { fit: 'cover' }).webp({ quality: 80 }).toBuffer();
+      } catch {}
+      const bannerTargetPath = path.join(bannersDir, `${userId}.webp`);
+      await fsp.writeFile(bannerTargetPath, webpBuffer);
+
+      // حذف الملف المؤقت
+      try { await fsp.unlink(req.file.path); } catch {}
+
+      const bannerUrl = `/uploads/banners/${userId}.webp`;
       const updatedUser = await storage.updateUser(userId, { profileBanner: bannerUrl });
       
       if (!updatedUser) {
@@ -313,9 +302,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         message: "تم رفع صورة البانر بنجاح",
-        bannerUrl: bannerUrl,
-        filename: req.file.filename,
-        user: updatedUser
+        bannerUrl: `${bannerUrl}?v=${Date.now()}`,
+        filename: `${userId}.webp`,
+        user: buildUserBroadcastPayload(updatedUser)
       });
 
     } catch (error) {
@@ -446,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         message: "تم تحديث بيانات المستخدم بنجاح",
-        user: updatedUser 
+        user: buildUserBroadcastPayload(updatedUser) 
       });
 
     } catch (error) {
@@ -920,7 +909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileImage: "/default_avatar.svg",
       });
 
-      res.json({ user, message: "تم التسجيل بنجاح" });
+      res.json({ user: buildUserBroadcastPayload(user), message: "تم التسجيل بنجاح" });
     } catch (error) {
       console.error('Registration error:', error);
       res.status(500).json({ error: "خطأ في الخادم" });
@@ -949,7 +938,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileImage: "/default_avatar.svg",
       });
 
-      res.json({ user });
+      res.json({ user: buildUserBroadcastPayload(user) });
     } catch (error) {
       console.error("Guest login error:", error);
       console.error("Error details:", error.message, error.stack);
@@ -1007,7 +996,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('خطأ في تحديث حالة المستخدم:', updateError);
       }
 
-      res.json({ user });
+      res.json({ user: buildUserBroadcastPayload(user) });
     } catch (error) {
       console.error('Member authentication error:', error);
       res.status(500).json({ error: "خطأ في الخادم" });
@@ -1054,7 +1043,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/online", async (req, res) => {
     try {
       const users = await storage.getOnlineUsers();
-      res.json({ users });
+      const safeUsers = sanitizeUsersArray(users);
+      res.json({ users: safeUsers });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
     }
@@ -1215,7 +1205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       emitUserUpdatedToUser(userId, user);
       emitUserUpdatedToAll(user);
 
-      res.json({ user, message: "تم تحديث الصورة الشخصية بنجاح" });
+      res.json({ user: buildUserBroadcastPayload(user), message: "تم تحديث الصورة الشخصية بنجاح" });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
     }
