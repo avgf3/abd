@@ -1,12 +1,7 @@
 name: Auto-create PR and auto-merge
 
 on:
-  push:
-    branches-ignore:
-      - main
-      - stable-main
-      - 'backup/**'
-      - 'revert-*'
+  # اجعل هذا الملف يقتصر على pull_request فقط لتفادي الازدواج مع auto-pr-per-push
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
 

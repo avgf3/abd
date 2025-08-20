@@ -1,0 +1,98 @@
+name: Auto-branch and PR per push
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - stable-main
+      - 'backup/**'
+      - 'revert-*'
+      - 'auto-pr/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-auto-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create auto branch and PR to main
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const base = 'main';
+            const sha = context.sha;
+            const sha7 = sha.substring(0,7);
+            const refFull = context.ref; // e.g. refs/heads/feature/x
+            const sourceBranch = refFull.replace('refs/heads/', '');
+
+            // Sanitize branch name for auto branch
+            const safe = sourceBranch.replace(/[^a-zA-Z0-9._\-\/]/g, '-').replace(/\/+$/,'');
+            const ts = new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,12);
+            const autoBranch = `auto-pr/${safe}-${ts}-${sha7}`.slice(0,240); // keep under length limits
+
+            // Create ref for auto branch at this commit
+            try {
+              await github.rest.git.createRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `refs/heads/${autoBranch}`,
+                sha,
+              });
+            } catch (e) {
+              // If already exists, append random suffix
+              const rnd = Math.random().toString(36).slice(2,6);
+              const fallback = `${autoBranch}-${rnd}`.slice(0,240);
+              await github.rest.git.createRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `refs/heads/${fallback}`,
+                sha,
+              });
+              core.setOutput('auto_branch', fallback);
+            }
+            if (!core.getOutput('auto_branch')) core.setOutput('auto_branch', autoBranch);
+
+      - name: Open PR from auto branch to main
+        if: steps.create-auto-pr.outputs.auto_branch != ''
+        id: openpr
+        uses: actions/github-script@v7
+        env:
+          AUTO_BRANCH: ${{ steps.create-auto-pr.outputs.auto_branch }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const head = process.env.AUTO_BRANCH;
+            const base = 'main';
+            const title = `Auto PR: ${head} -> ${base}`;
+            const body = `Automated PR created for commit ${context.sha.substring(0,7)} from ${head}.`;
+            const created = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head,
+              base,
+              title,
+              body,
+            });
+            core.setOutput('pr_number', String(created.data.number));
+
+      - name: Try auto-merge PR (best-effort)
+        if: steps.openpr.outputs.pr_number != ''
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.openpr.outputs.pr_number }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            try {
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: Number(process.env.PR_NUMBER),
+                merge_method: 'squash',
+              });
+            } catch (e) {
+              core.info(`Auto-merge skipped: ${e.message}`);
+            }
