@@ -4,6 +4,7 @@ import { db, dbType } from '../database-adapter';
 import { notificationService } from '../services/notificationService';
 import { storage } from '../storage';
 import { protect } from '../middleware/enhancedSecurity';
+import { sanitizeInput, validateMessageContent, messageLimiter } from '../security';
 
 // Helper type for conversation item (server-side internal)
 type ConversationItem = {
@@ -26,7 +27,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
  * POST /api/private-messages/send
  * إرسال رسالة خاصة بين مستخدمين مع تحسينات الأداء
  */
-router.post('/send', protect.auth, async (req, res) => {
+router.post('/send', protect.auth, messageLimiter, async (req, res) => {
   try {
     const { receiverId, content, messageType = 'text' } = req.body || {};
     const senderId = (req as any).user?.id as number;
@@ -40,9 +41,16 @@ router.post('/send', protect.auth, async (req, res) => {
       return res.status(400).json({ error: 'لا يمكن إرسال رسالة لنفسك' });
     }
 
-    const text = typeof content === 'string' ? content.trim() : '';
-    if (!text) {
+    const rawText = typeof content === 'string' ? content : '';
+    const text = sanitizeInput(rawText);
+    if (!text.trim()) {
       return res.status(400).json({ error: 'محتوى الرسالة مطلوب' });
+    }
+
+    // التحقق من صلاحية المحتوى (منع الرسائل المشبوهة/الروابط/الطول المفرط)
+    const contentCheck = validateMessageContent(text);
+    if (!contentCheck.isValid) {
+      return res.status(400).json({ error: contentCheck.reason || 'المحتوى غير صالح' });
     }
 
     // التحقق من المستخدمين بشكل متوازي لتحسين السرعة
@@ -56,6 +64,18 @@ router.post('/send', protect.auth, async (req, res) => {
     }
     if (!receiver) {
       return res.status(404).json({ error: 'المستلم غير موجود' });
+    }
+
+    // منع إرسال الخاص إذا كان المستقبل قد تجاهل المُرسل
+    try {
+      const ignoredByReceiver: number[] = await storage.getIgnoredUsers(receiver.id);
+      if (Array.isArray(ignoredByReceiver) && ignoredByReceiver.includes(parseInt(String(senderId)))) {
+        return res
+          .status(403)
+          .json({ error: 'قام هذا المستخدم بتجاهلك ولا يقبل رسائلك الخاصة' });
+      }
+    } catch {
+      // تجاهل أي خطأ في الجلب والمتابعة بشكل آمن
     }
 
     // إنشاء الرسالة في قاعدة البيانات مع تحسين البيانات
@@ -81,7 +101,7 @@ router.post('/send', protect.auth, async (req, res) => {
     conversationCache.delete(conversationKey);
 
     // إرسال إشعار وبث الرسالة بشكل متوازي
-    const promises = [];
+    const promises: Array<Promise<any>> = [];
 
     // إنشاء إشعار للمستقبل
     promises.push(
