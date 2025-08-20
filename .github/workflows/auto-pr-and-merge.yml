@@ -1,0 +1,95 @@
+name: Auto-create PR and auto-merge
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - stable-main
+      - 'backup/**'
+      - 'revert-*'
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-pr-and-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or update PR to main
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const base = 'main';
+            const ref = context.ref.replace('refs/heads/', '');
+
+            // Skip for base or excluded branches
+            if (context.eventName === 'push' && (ref === base || ref.startsWith('backup/') || ref.startsWith('revert-'))) {
+              core.info(`Skipping PR creation for branch ${ref}`);
+              return;
+            }
+
+            let pr = null;
+            if (context.eventName === 'pull_request') {
+              pr = context.payload.pull_request;
+            } else if (context.eventName === 'push') {
+              const { data: prs } = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head: `${context.repo.owner}:${ref}`,
+                base,
+                state: 'open',
+              });
+              pr = prs[0] || null;
+              if (!pr) {
+                const title = `Auto PR: ${ref} -> ${base}`;
+                const body = `Automated PR created by workflow for branch \`${ref}\` to \`${base}\`.`;
+                const created = await github.rest.pulls.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  head: ref,
+                  base,
+                  title,
+                  body,
+                });
+                pr = created.data;
+                core.info(`Created PR #${pr.number} for ${ref} -> ${base}`);
+              } else {
+                core.info(`Found existing PR #${pr.number} for ${ref}`);
+              }
+            }
+
+            if (pr) {
+              core.setOutput('pr_number', String(pr.number));
+            }
+
+      - name: Try auto-merge PR
+        if: steps.pr.outputs.pr_number != ''
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = Number(process.env.PR_NUMBER);
+            try {
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+              });
+              // Attempt merge (will fail gracefully if checks/branch protection prevent it)
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                merge_method: 'squash',
+              });
+              core.info(`Merged PR #${prNumber}`);
+            } catch (e) {
+              core.info(`Auto-merge not performed: ${e.message}`);
+            }
