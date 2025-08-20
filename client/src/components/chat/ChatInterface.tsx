@@ -209,6 +209,24 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     }
   }, [chat.currentUser?.id, queryClient]);
 
+  // إعادة جلب/إبطال كاش قائمة المحادثات فور استقبال رسالة خاصة (حتى ولو كانت النافذة مغلقة)
+  useEffect(() => {
+    const handler = () => {
+      if (!chat.currentUser?.id) return;
+      try {
+        queryClient.invalidateQueries({ queryKey: ['/api/private-messages/conversations', chat.currentUser.id] });
+        queryClient.prefetchQuery({
+          queryKey: ['/api/private-messages/conversations', chat.currentUser.id],
+          queryFn: async () =>
+            await apiRequest(`/api/private-messages/conversations/${chat.currentUser.id}?limit=50`),
+          staleTime: 0,
+        });
+      } catch {}
+    };
+    window.addEventListener('privateMessageReceived', handler);
+    return () => window.removeEventListener('privateMessageReceived', handler);
+  }, [chat.currentUser?.id, queryClient]);
+
   // Auto-switch to friends tab when friend request is accepted
   useEffect(() => {
     const handleFriendRequestAccepted = (event: CustomEvent) => {
