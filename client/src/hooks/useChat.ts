@@ -925,6 +925,7 @@ export const useChat = () => {
             timestamp: message.timestamp || new Date().toISOString(),
             messageType: message.messageType || 'text',
             sender: message.sender,
+            receiverId: message.receiverId,
             isPrivate: true,
           };
 
@@ -950,6 +951,10 @@ export const useChat = () => {
             // تشغيل صوت الإشعار فقط للرسائل الواردة
             if (chatMessage.senderId !== currentUserRef.current.id) {
               playNotificationSound();
+              // عرض تنبيه مرئي للمُرسل
+              try {
+                dispatch({ type: 'SET_NEW_MESSAGE_SENDER', payload: message.sender as any });
+              } catch {}
             }
 
             // إشعار الواجهة بوصول/إرسال رسالة خاصة لتحديث تبويب الرسائل فوراً

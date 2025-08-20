@@ -48,10 +48,19 @@ export default function MessagesPanel({
       return await apiRequest(`/api/private-messages/conversations/${currentUser.id}?limit=50`);
     },
     enabled: !!currentUser?.id && isOpen,
-    staleTime: 30_000,
+    // إجبار الجلب عند فتح التبويب لتفادي الاعتماد على كاش قديم
+    staleTime: 0,
     gcTime: 5 * 60 * 1000,
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
+
+  // جلب فوري عند فتح النافذة لضمان رؤية أحدث المحادثات دون انتظار
+  useEffect(() => {
+    if (isOpen) {
+      try { refetch(); } catch {}
+    }
+  }, [isOpen, refetch]);
 
   // تحديث فوري للقائمة عند وصول/إرسال رسالة خاصة
   useEffect(() => {
@@ -63,69 +72,67 @@ export default function MessagesPanel({
   }, [refetch]);
 
   const conversations = useMemo(() => {
-    // دمج المحادثات القادمة من الخادم مع الذاكرة المحلية لضمان ظهور المحادثة مباشرة بعد أول رسالة
-    const serverItems = (conversationsData?.conversations || [])
-      .map((c) => {
-        const user = c.otherUser || onlineUsers.find((u) => u.id === c.otherUserId) || null;
-        if (!user) return null;
-        const lastMessageTs = String(c.lastMessage.timestamp);
-        const lastOpened = currentUser?.id ? getPmLastOpened(currentUser.id, user.id) : 0;
-        const localMessages = (privateConversations && privateConversations[user.id]) || [];
-        const unreadCount = localMessages.length
-          ? localMessages.filter(
-              (m) =>
-                new Date(m.timestamp).getTime() > lastOpened && m.senderId === user.id
-            ).length
-          : new Date(lastMessageTs).getTime() > lastOpened
-            ? 1
-            : 0;
-        const isImage = c.lastMessage.messageType === 'image';
-        return {
-          user,
-          lastMessage: {
-            content: c.lastMessage.content,
-            timestamp: lastMessageTs,
-            isImage,
-          },
-          unreadCount,
-        };
-      })
-      .filter(Boolean) as Array<{
-      user: ChatUser;
-      lastMessage: { content: string; timestamp: string; isImage?: boolean };
-      unreadCount: number;
-    }>;
-    // أضف محادثات محلية غير موجودة في الخادم بعد (مثلاً بعد أول رسالة قبل تحديث الخادم)
+    // دمج المحادثات القادمة من الخادم مع الذاكرة المحلية، مع تفضيل أحدث رسالة فعلياً
+    const map = new Map<number, { user: ChatUser; lastMessage: { content: string; timestamp: string; isImage?: boolean }; unreadCount: number }>();
+
+    // مصدر الخادم
+    for (const c of conversationsData?.conversations || []) {
+      const user = c.otherUser || onlineUsers.find((u) => u.id === c.otherUserId) || null;
+      if (!user) continue;
+      const lastMessageTs = String(c.lastMessage.timestamp);
+      const lastOpened = currentUser?.id ? getPmLastOpened(currentUser.id, user.id) : 0;
+      const localMessages = (privateConversations && privateConversations[user.id]) || [];
+      const unreadCount = localMessages.length
+        ? localMessages.filter((m) => new Date(m.timestamp).getTime() > lastOpened && m.senderId === user.id).length
+        : new Date(lastMessageTs).getTime() > lastOpened
+          ? 1
+          : 0;
+      map.set(user.id, {
+        user,
+        lastMessage: {
+          content: c.lastMessage.content,
+          timestamp: lastMessageTs,
+          isImage: c.lastMessage.messageType === 'image',
+        },
+        unreadCount,
+      });
+    }
+
+    // دمج/إضافة أحدث رسالة محلية لضمان ظهورها فوراً
     const localUserIds = Object.keys(privateConversations || {}).map((k) => parseInt(k, 10));
-    const serverUserIds = new Set(serverItems.map((i) => i.user.id));
-    const localOnlyItems = localUserIds
-      .filter((uid) => Number.isFinite(uid) && !serverUserIds.has(uid))
-      .map((uid) => {
-        const user = onlineUsers.find((u) => u.id === uid) || null;
-        if (!user) return null;
-        const conv = privateConversations[uid] || [];
-        const latest = conv[conv.length - 1];
-        if (!latest) return null;
-        const lastOpened = currentUser?.id ? getPmLastOpened(currentUser.id, uid) : 0;
-        const unreadCount = conv.filter((m) => new Date(m.timestamp).getTime() > lastOpened && m.senderId === uid).length;
-        const isImage = latest.messageType === 'image';
-        return {
+    for (const uid of localUserIds) {
+      if (!Number.isFinite(uid)) continue;
+      const user =
+        map.get(uid)?.user ||
+        onlineUsers.find((u) => u.id === uid) ||
+        ({ id: uid, username: `مستخدم #${uid}`, userType: 'member', role: 'member', isOnline: false } as unknown as ChatUser);
+      const conv = privateConversations[uid] || [];
+      const latest = conv[conv.length - 1];
+      if (!latest) continue;
+      const lastOpened = currentUser?.id ? getPmLastOpened(currentUser.id, uid) : 0;
+      const unreadCount = conv.filter((m) => new Date(m.timestamp).getTime() > lastOpened && m.senderId === uid).length;
+
+      const existing = map.get(uid);
+      const existingTs = existing ? new Date(existing.lastMessage.timestamp).getTime() : -1;
+      const latestTs = new Date(String(latest.timestamp)).getTime();
+
+      if (!existing || latestTs > existingTs) {
+        map.set(uid, {
           user,
           lastMessage: {
             content: latest.content,
             timestamp: String(latest.timestamp),
-            isImage,
+            isImage: latest.messageType === 'image',
           },
           unreadCount,
-        };
-      })
-      .filter(Boolean) as Array<{
-        user: ChatUser;
-        lastMessage: { content: string; timestamp: string; isImage?: boolean };
-        unreadCount: number;
-      }>;
+        });
+      } else if (existing) {
+        // حدّث عداد غير المقروء حتى إن لم تكن الرسالة أحدث من منظور الطابع الزمني
+        map.set(uid, { ...existing, unreadCount });
+      }
+    }
 
-    const items = [...serverItems, ...localOnlyItems];
+    const items = Array.from(map.values());
 
     const filtered = search
       ? items.filter(
