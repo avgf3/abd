@@ -38,7 +38,7 @@ export default function ReportModal({
   reportedUser,
   currentUser,
   messageContent,
-  messageId
+  messageId,
 }: ReportModalProps) {
   const [reason, setReason] = useState('');
   const [customReason, setCustomReason] = useState('');
@@ -51,7 +51,7 @@ export default function ReportModal({
     { value: 'inappropriate', label: 'محتوى غير مناسب' },
     { value: 'harassment', label: 'مضايقة' },
     { value: 'advertising', label: 'إعلانات' },
-    { value: 'other', label: 'أخرى' }
+    { value: 'other', label: 'أخرى' },
   ];
 
   const handleSubmit = async () => {
@@ -59,7 +59,7 @@ export default function ReportModal({
       toast({
         title: 'غير مسموح',
         description: 'التبليغ متاح للأعضاء فقط. سجل كعضو أولاً',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -69,7 +69,7 @@ export default function ReportModal({
       toast({
         title: 'غير مسموح',
         description: 'لا يمكن الإبلاغ عن المشرفين أو المالكين',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -78,7 +78,7 @@ export default function ReportModal({
       toast({
         title: 'خطأ',
         description: 'يرجى اختيار سبب التبليغ',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -87,7 +87,7 @@ export default function ReportModal({
       toast({
         title: 'خطأ',
         description: 'يرجى كتابة سبب التبليغ',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -103,14 +103,14 @@ export default function ReportModal({
           reportedUserId: reportedUser.id,
           reason: finalReason,
           content: messageContent || 'تبليغ عام على المستخدم',
-          messageId: messageId
-        }
+          messageId: messageId,
+        },
       });
 
       toast({
         title: 'تم الإرسال',
         description: 'تم إرسال التبليغ بنجاح. سيتم مراجعته من قبل المشرفين.',
-        variant: 'default'
+        variant: 'default',
       });
       onClose();
       setReason('');
@@ -119,7 +119,7 @@ export default function ReportModal({
       toast({
         title: 'خطأ',
         description: (error as Error)?.message || 'خطأ في إرسال التبليغ',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
@@ -127,16 +127,19 @@ export default function ReportModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="sm:max-w-[425px]" dir="rtl">
         <DialogHeader>
           <DialogTitle>إبلاغ عن مستخدم</DialogTitle>
           <DialogDescription>
             إبلاغ عن المستخدم: {reportedUser?.username}
             {messageContent && (
-              <div className="mt-2 p-2 bg-muted rounded text-sm">
-                الرسالة: "{messageContent}"
-              </div>
+              <div className="mt-2 p-2 bg-muted rounded text-sm">الرسالة: "{messageContent}"</div>
             )}
           </DialogDescription>
         </DialogHeader>
@@ -176,17 +179,16 @@ export default function ReportModal({
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             إلغاء
           </Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             disabled={isSubmitting || !reason || currentUser?.userType === 'guest'}
             variant={currentUser?.userType === 'guest' ? 'secondary' : 'default'}
           >
-            {currentUser?.userType === 'guest' 
-              ? 'للأعضاء فقط' 
-              : isSubmitting 
-                ? 'جاري الإرسال...' 
-                : 'إرسال التبليغ'
-            }
+            {currentUser?.userType === 'guest'
+              ? 'للأعضاء فقط'
+              : isSubmitting
+                ? 'جاري الإرسال...'
+                : 'إرسال التبليغ'}
           </Button>
         </DialogFooter>
       </DialogContent>

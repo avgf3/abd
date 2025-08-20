@@ -41,7 +41,7 @@ export class SpamProtection {
       minMessageLength: 1,
       bannedWords: [
         // كلمات محظورة أساسية فقط
-        'سبام'
+        'سبام',
       ],
       maxDuplicateMessages: 10, // زيادة الحد المسموح
       duplicateTimeWindow: 30000, // 30 ثانية فقط
@@ -53,7 +53,10 @@ export class SpamProtection {
   }
 
   // فحص الرسالة قبل إرسالها (معطل مؤقتاً)
-  checkMessage(userId: number, content: string): {
+  checkMessage(
+    userId: number,
+    content: string
+  ): {
     isAllowed: boolean;
     reason?: string;
     action?: 'warn' | 'tempBan' | 'ban';
@@ -63,7 +66,10 @@ export class SpamProtection {
   }
 
   // فحص الرسائل المكررة
-  private checkDuplicateMessage(userId: number, content: string): {
+  private checkDuplicateMessage(
+    userId: number,
+    content: string
+  ): {
     isAllowed: boolean;
     reason?: string;
     action?: 'warn' | 'tempBan';
@@ -73,19 +79,19 @@ export class SpamProtection {
 
     // تنظيف الرسائل القديمة
     userData.recentMessages = userData.recentMessages.filter(
-      msg => now - msg.timestamp < this.config.duplicateTimeWindow
+      (msg) => now - msg.timestamp < this.config.duplicateTimeWindow
     );
 
     // عد الرسائل المكررة
     const duplicateCount = userData.recentMessages.filter(
-      msg => msg.content.toLowerCase() === content.toLowerCase()
+      (msg) => msg.content.toLowerCase() === content.toLowerCase()
     ).length;
 
     if (duplicateCount >= this.config.maxDuplicateMessages) {
       return {
         isAllowed: false,
         reason: 'لا يمكن إرسال نفس الرسالة عدة مرات',
-        action: duplicateCount >= 5 ? 'tempBan' : 'warn'
+        action: duplicateCount >= 5 ? 'tempBan' : 'warn',
       };
     }
 
@@ -97,7 +103,7 @@ export class SpamProtection {
     const userData = this.getUserData(userId);
     userData.recentMessages.push({
       content,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // الاحتفاظ بآخر 20 رسالة فقط
@@ -125,7 +131,7 @@ export class SpamProtection {
         userId,
         recentMessages: [],
         spamScore: 0,
-        warnings: 0
+        warnings: 0,
       });
     }
     return this.userSpamData.get(userId)!;
@@ -143,12 +149,18 @@ export class SpamProtection {
       spamScore: userData.spamScore,
       warnings: userData.warnings,
       isBanned: userData.spamScore >= 50,
-      isRestricted: userData.spamScore >= 20
+      isRestricted: userData.spamScore >= 20,
     };
   }
 
   // إضافة تبليغ (بدون نقاط تلقائية)
-  addReport(reporterId: number, reportedUserId: number, reason: string, content: string, messageId?: number): ReportData {
+  addReport(
+    reporterId: number,
+    reportedUserId: number,
+    reason: string,
+    content: string,
+    messageId?: number
+  ): ReportData {
     const report: ReportData = {
       id: this.currentReportId++,
       reporterId,
@@ -157,7 +169,7 @@ export class SpamProtection {
       reason,
       content,
       timestamp: Date.now(),
-      status: 'pending'
+      status: 'pending',
     };
 
     this.reports.set(report.id, report);
@@ -167,7 +179,7 @@ export class SpamProtection {
   // الحصول على التبليغات المعلقة
   getPendingReports(): ReportData[] {
     return Array.from(this.reports.values())
-      .filter(report => report.status === 'pending')
+      .filter((report) => report.status === 'pending')
       .sort((a, b) => b.timestamp - a.timestamp);
   }
 
@@ -194,10 +206,12 @@ export class SpamProtection {
   // الحصول على إحصائيات
   getStats() {
     const totalUsers = this.userSpamData.size;
-    const bannedUsers = Array.from(this.userSpamData.values())
-      .filter(user => user.spamScore >= 50).length;
-    const restrictedUsers = Array.from(this.userSpamData.values())
-      .filter(user => user.spamScore >= 20 && user.spamScore < 50).length;
+    const bannedUsers = Array.from(this.userSpamData.values()).filter(
+      (user) => user.spamScore >= 50
+    ).length;
+    const restrictedUsers = Array.from(this.userSpamData.values()).filter(
+      (user) => user.spamScore >= 20 && user.spamScore < 50
+    ).length;
     const pendingReports = this.getPendingReports().length;
 
     return {
@@ -205,13 +219,13 @@ export class SpamProtection {
       bannedUsers,
       restrictedUsers,
       pendingReports,
-      totalReports: this.reports.size
+      totalReports: this.reports.size,
     };
   }
 
   getReviewedReports(): ReportData[] {
     return Array.from(this.reports.values())
-      .filter(report => report.status === 'reviewed' || report.status === 'dismissed')
+      .filter((report) => report.status === 'reviewed' || report.status === 'dismissed')
       .sort((a, b) => b.timestamp - a.timestamp);
   }
 }

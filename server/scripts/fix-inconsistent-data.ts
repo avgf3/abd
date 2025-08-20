@@ -32,7 +32,7 @@ async function fixInconsistentData() {
             eq(users.profileBackgroundColor, 'undefined')
           )
         );
-      }
+    }
 
     // 2. إصلاح قيم usernameColor الفارغة أو غير الصالحة
     const usersWithInvalidUsernameColors = await db
@@ -59,9 +59,7 @@ async function fixInconsistentData() {
             eq(users.usernameColor, 'undefined')
           )
         );
-      }
-
-
+    }
 
     // 4. إصلاح قيم profileEffect الفارغة أو غير الصالحة
     const usersWithInvalidEffects = await db
@@ -88,7 +86,7 @@ async function fixInconsistentData() {
             eq(users.profileEffect, 'undefined')
           )
         );
-      }
+    }
 
     // 5. التحقق من صحة ألوان HEX
     const allUsers = await db.select().from(users);
@@ -116,16 +114,13 @@ async function fixInconsistentData() {
       }
 
       if (needsUpdate) {
-        await db
-          .update(users)
-          .set(updates)
-          .where(eq(users.id, user.id));
+        await db.update(users).set(updates).where(eq(users.id, user.id));
       }
     }
 
     if (invalidHexCount > 0) {
-      } else {
-      }
+    } else {
+    }
 
     // 6. عرض ملخص نهائي
     const summary = await db
@@ -136,8 +131,7 @@ async function fixInconsistentData() {
         usersWithCustomUsername: sql<number>`count(case when ${users.usernameColor} != '#000000' and ${users.usernameColor} != '#FFFFFF' then 1 end)`,
       })
       .from(users);
-
-    } catch (error) {
+  } catch (error) {
     console.error('❌ خطأ في إصلاح البيانات:', error);
     process.exit(1);
   }

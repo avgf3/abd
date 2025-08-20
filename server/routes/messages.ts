@@ -39,14 +39,13 @@ router.get('/room/:roomId', async (req, res) => {
     res.json({
       success: true,
       roomId,
-      ...result
+      ...result,
     });
-
   } catch (error: any) {
     console.error('خطأ في جلب رسائل الغرفة:', error);
     res.status(500).json({
       error: 'خطأ في الخادم',
-      details: error.message
+      details: error.message,
     });
   }
 });
@@ -73,14 +72,13 @@ router.get('/room/:roomId/latest', async (req, res) => {
       success: true,
       roomId,
       messages,
-      count: messages.length
+      count: messages.length,
     });
-
   } catch (error: any) {
     console.error('خطأ في جلب أحدث رسائل الغرفة:', error);
     res.status(500).json({
       error: 'خطأ في الخادم',
-      details: error.message
+      details: error.message,
     });
   }
 });
@@ -108,7 +106,9 @@ router.post('/room/:roomId', async (req, res) => {
 
     // منع استخدام هذا المسار لإرسال رسائل خاصة
     if (isPrivate || receiverId) {
-      return res.status(400).json({ error: 'استخدم /api/private-messages/send لإرسال الرسائل الخاصة' });
+      return res
+        .status(400)
+        .json({ error: 'استخدم /api/private-messages/send لإرسال الرسائل الخاصة' });
     }
 
     // التحقق من وجود الغرفة
@@ -124,7 +124,7 @@ router.post('/room/:roomId', async (req, res) => {
       content: content.trim(),
       messageType,
       isPrivate: false,
-      receiverId: undefined
+      receiverId: undefined,
     });
 
     if (!message) {
@@ -138,7 +138,7 @@ router.post('/room/:roomId', async (req, res) => {
         type: 'newMessage',
         roomId,
         message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       // رسالة عامة - إرسال لجميع أعضاء الغرفة
@@ -148,13 +148,12 @@ router.post('/room/:roomId', async (req, res) => {
     res.json({
       success: true,
       message,
-      roomId
+      roomId,
     });
-
   } catch (error: any) {
     console.error('خطأ في إرسال الرسالة:', error);
     res.status(400).json({
-      error: error.message || 'خطأ في إرسال الرسالة'
+      error: error.message || 'خطأ في إرسال الرسالة',
     });
   }
 });
@@ -170,15 +169,11 @@ router.delete('/:messageId', async (req, res) => {
 
     if (!messageId || !userId || !roomId) {
       return res.status(400).json({
-        error: 'معرف الرسالة ومعرف المستخدم ومعرف الغرفة مطلوبة'
+        error: 'معرف الرسالة ومعرف المستخدم ومعرف الغرفة مطلوبة',
       });
     }
 
-    await roomMessageService.deleteMessage(
-      parseInt(messageId),
-      parseInt(userId),
-      roomId
-    );
+    await roomMessageService.deleteMessage(parseInt(messageId), parseInt(userId), roomId);
 
     // إرسال إشعار بحذف الرسالة عبر Socket.IO
     const io = req.app.get('io');
@@ -188,19 +183,18 @@ router.delete('/:messageId', async (req, res) => {
         messageId: parseInt(messageId),
         roomId,
         deletedBy: parseInt(userId),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
 
     res.json({
       success: true,
-      message: 'تم حذف الرسالة بنجاح'
+      message: 'تم حذف الرسالة بنجاح',
     });
-
   } catch (error: any) {
     console.error('خطأ في حذف الرسالة:', error);
     res.status(400).json({
-      error: error.message || 'خطأ في حذف الرسالة'
+      error: error.message || 'خطأ في حذف الرسالة',
     });
   }
 });
@@ -235,14 +229,13 @@ router.get('/room/:roomId/search', async (req, res) => {
       success: true,
       roomId,
       searchQuery: qStr,
-      ...result
+      ...result,
     });
-
   } catch (error: any) {
     console.error('خطأ في البحث في رسائل الغرفة:', error);
     res.status(500).json({
       error: 'خطأ في الخادم',
-      details: error.message
+      details: error.message,
     });
   }
 });
@@ -270,14 +263,13 @@ router.get('/room/:roomId/stats', async (req, res) => {
     res.json({
       success: true,
       roomId,
-      stats
+      stats,
     });
-
   } catch (error: any) {
     console.error('خطأ في جلب إحصائيات رسائل الغرفة:', error);
     res.status(500).json({
       error: 'خطأ في الخادم',
-      details: error.message
+      details: error.message,
     });
   }
 });
@@ -318,13 +310,12 @@ router.post('/room/:roomId/cleanup', async (req, res) => {
       success: true,
       message: `تم حذف ${deletedCount} رسالة قديمة`,
       deletedCount,
-      roomId
+      roomId,
     });
-
   } catch (error: any) {
     console.error('خطأ في تنظيف رسائل الغرفة:', error);
     res.status(400).json({
-      error: error.message || 'خطأ في تنظيف الرسائل'
+      error: error.message || 'خطأ في تنظيف الرسائل',
     });
   }
 });
@@ -336,18 +327,17 @@ router.post('/room/:roomId/cleanup', async (req, res) => {
 router.get('/cache/stats', async (req, res) => {
   try {
     const cacheStats = roomMessageService.getCacheStats();
-    
+
     res.json({
       success: true,
       cacheStats,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error: any) {
     console.error('خطأ في جلب إحصائيات الذاكرة المؤقتة:', error);
     res.status(500).json({
       error: 'خطأ في الخادم',
-      details: error.message
+      details: error.message,
     });
   }
 });
@@ -378,17 +368,14 @@ router.post('/cache/clear', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'تم مسح الذاكرة المؤقتة بنجاح'
+      message: 'تم مسح الذاكرة المؤقتة بنجاح',
     });
-
   } catch (error: any) {
     console.error('خطأ في مسح الذاكرة المؤقتة:', error);
     res.status(400).json({
-      error: error.message || 'خطأ في مسح الذاكرة المؤقتة'
+      error: error.message || 'خطأ في مسح الذاكرة المؤقتة',
     });
   }
 });
-
-
 
 export default router;

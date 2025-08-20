@@ -40,14 +40,14 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
     try {
       const report = await apiRequest('/api/security/report', { method: 'GET' });
       setSecurityReport(report);
-      
+
       const blocked = await apiRequest('/api/security/blocked-ips', { method: 'GET' });
       setBlockedIPs(blocked);
     } catch (error) {
       toast({
-        title: "خطأ",
-        description: "فشل في تحميل تقرير الأمان",
-        variant: "destructive"
+        title: 'خطأ',
+        description: 'فشل في تحميل تقرير الأمان',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -58,9 +58,9 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
   const blockIP = async () => {
     if (!newBlockIP.trim() || !blockReason.trim()) {
       toast({
-        title: "خطأ",
-        description: "يرجى إدخال عنوان IP والسبب",
-        variant: "destructive"
+        title: 'خطأ',
+        description: 'يرجى إدخال عنوان IP والسبب',
+        variant: 'destructive',
       });
       return;
     }
@@ -70,13 +70,13 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
         method: 'POST',
         body: {
           ip: newBlockIP.trim(),
-          reason: blockReason.trim()
-        }
+          reason: blockReason.trim(),
+        },
       });
 
       toast({
-        title: "تم بنجاح",
-        description: `تم حظر العنوان ${newBlockIP}`
+        title: 'تم بنجاح',
+        description: `تم حظر العنوان ${newBlockIP}`,
       });
 
       setNewBlockIP('');
@@ -84,9 +84,9 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
       loadSecurityReport();
     } catch (error) {
       toast({
-        title: "خطأ",
-        description: "فشل في حظر العنوان",
-        variant: "destructive"
+        title: 'خطأ',
+        description: 'فشل في حظر العنوان',
+        variant: 'destructive',
       });
     }
   };
@@ -94,22 +94,22 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
   // إلغاء حظر IP
   const unblockIP = async (ip: string) => {
     try {
-      await apiRequest('/api/security/unblock-ip', { 
+      await apiRequest('/api/security/unblock-ip', {
         method: 'POST',
-        body: { ip }
+        body: { ip },
       });
 
       toast({
-        title: "تم بنجاح",
-        description: `تم إلغاء حظر العنوان ${ip}`
+        title: 'تم بنجاح',
+        description: `تم إلغاء حظر العنوان ${ip}`,
       });
 
       loadSecurityReport();
     } catch (error) {
       toast({
-        title: "خطأ",
-        description: "فشل في إلغاء الحظر",
-        variant: "destructive"
+        title: 'خطأ',
+        description: 'فشل في إلغاء الحظر',
+        variant: 'destructive',
       });
     }
   };
@@ -123,16 +123,15 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" dir="rtl">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      dir="rtl"
+    >
       <div className="bg-secondary rounded-xl p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-white">🛡️ لوحة الأمان</h2>
           <div className="flex gap-2">
-            <Button
-              onClick={loadSecurityReport}
-              disabled={isLoading}
-              className="glass-effect"
-            >
+            <Button onClick={loadSecurityReport} disabled={isLoading} className="glass-effect">
               {isLoading ? '⏳' : '🔄'} تحديث
             </Button>
             <Button onClick={onClose} variant="ghost" className="text-white">
@@ -184,12 +183,20 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
                     <h4 className="font-bold text-white mb-2">الأحداث حسب النوع</h4>
                     <div className="space-y-1">
                       {Object.entries(securityReport.eventsByType).map(([type, count]) => (
-                        <div key={type} className="flex justify-between items-center bg-gray-700 p-2 rounded">
+                        <div
+                          key={type}
+                          className="flex justify-between items-center bg-gray-700 p-2 rounded"
+                        >
                           <span className="text-gray-300">
-                            {type === 'suspicious_login' ? '🔐 دخول مشبوه' :
-                             type === 'spam_attempt' ? '📢 محاولة سبام' :
-                             type === 'multiple_accounts' ? '👥 حسابات متعددة' :
-                             type === 'unusual_activity' ? '⚠️ نشاط غير عادي' : type}
+                            {type === 'suspicious_login'
+                              ? '🔐 دخول مشبوه'
+                              : type === 'spam_attempt'
+                                ? '📢 محاولة سبام'
+                                : type === 'multiple_accounts'
+                                  ? '👥 حسابات متعددة'
+                                  : type === 'unusual_activity'
+                                    ? '⚠️ نشاط غير عادي'
+                                    : type}
                           </span>
                           <span className="font-bold text-red-400">{count}</span>
                         </div>
@@ -202,18 +209,32 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
                     <h4 className="font-bold text-white mb-2">الأحداث حسب الخطورة</h4>
                     <div className="space-y-1">
                       {Object.entries(securityReport.eventsBySeverity).map(([severity, count]) => (
-                        <div key={severity} className="flex justify-between items-center bg-gray-700 p-2 rounded">
+                        <div
+                          key={severity}
+                          className="flex justify-between items-center bg-gray-700 p-2 rounded"
+                        >
                           <span className="text-gray-300">
-                            {severity === 'low' ? '🟢 منخفض' :
-                             severity === 'medium' ? '🟡 متوسط' :
-                             severity === 'high' ? '🟠 عالي' :
-                             severity === 'critical' ? '🔴 حرج' : severity}
+                            {severity === 'low'
+                              ? '🟢 منخفض'
+                              : severity === 'medium'
+                                ? '🟡 متوسط'
+                                : severity === 'high'
+                                  ? '🟠 عالي'
+                                  : severity === 'critical'
+                                    ? '🔴 حرج'
+                                    : severity}
                           </span>
-                          <span className={`font-bold ${
-                            severity === 'critical' ? 'text-red-500' :
-                            severity === 'high' ? 'text-orange-500' :
-                            severity === 'medium' ? 'text-yellow-500' : 'text-green-500'
-                          }`}>
+                          <span
+                            className={`font-bold ${
+                              severity === 'critical'
+                                ? 'text-red-500'
+                                : severity === 'high'
+                                  ? 'text-orange-500'
+                                  : severity === 'medium'
+                                    ? 'text-yellow-500'
+                                    : 'text-green-500'
+                            }`}
+                          >
                             {count}
                           </span>
                         </div>
@@ -266,11 +287,14 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
               <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                 📋 العناوين المحظورة
               </h3>
-              
+
               {blockedIPs.length > 0 ? (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {blockedIPs.map((blocked) => (
-                    <div key={blocked.ip} className="bg-gray-700 p-3 rounded flex justify-between items-start">
+                    <div
+                      key={blocked.ip}
+                      className="bg-gray-700 p-3 rounded flex justify-between items-start"
+                    >
                       <div className="flex-1 min-w-0">
                         <div className="font-mono text-white">{blocked.ip}</div>
                         <div className="text-sm text-gray-300 truncate">{blocked.reason}</div>
@@ -290,9 +314,7 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
                   ))}
                 </div>
               ) : (
-                <div className="text-center text-gray-400 py-4">
-                  ✅ لا توجد عناوين محظورة
-                </div>
+                <div className="text-center text-gray-400 py-4">✅ لا توجد عناوين محظورة</div>
               )}
             </div>
 
@@ -305,8 +327,8 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
                 <Button
                   onClick={() => {
                     toast({
-                      title: "معلومات",
-                      description: "سيتم تنفيذ فحص أمني شامل..."
+                      title: 'معلومات',
+                      description: 'سيتم تنفيذ فحص أمني شامل...',
                     });
                   }}
                   className="w-full glass-effect"
@@ -316,8 +338,8 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
                 <Button
                   onClick={() => {
                     toast({
-                      title: "معلومات",
-                      description: "سيتم تنظيف البيانات القديمة..."
+                      title: 'معلومات',
+                      description: 'سيتم تنظيف البيانات القديمة...',
                     });
                   }}
                   className="w-full glass-effect"
@@ -329,8 +351,8 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
                     const report = JSON.stringify(securityReport, null, 2);
                     navigator.clipboard.writeText(report);
                     toast({
-                      title: "تم بنجاح",
-                      description: "تم نسخ التقرير إلى الحافظة"
+                      title: 'تم بنجاح',
+                      description: 'تم نسخ التقرير إلى الحافظة',
                     });
                   }}
                   className="w-full glass-effect"

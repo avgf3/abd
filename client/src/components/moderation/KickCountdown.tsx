@@ -49,7 +49,7 @@ export default function KickCountdown({ isVisible, onClose, durationMinutes }: K
             تم طردك من الدردشة
           </CardTitle>
         </CardHeader>
-        
+
         <CardContent className="text-center space-y-4">
           <div className="p-4 bg-red-800/50 rounded-lg">
             <div className="flex items-center justify-center gap-2 mb-2">
@@ -60,18 +60,18 @@ export default function KickCountdown({ isVisible, onClose, durationMinutes }: K
               {formatCountdownTime(timeLeft)}
             </div>
           </div>
-          
+
           <p className="text-red-200 text-sm">
-            لا يمكنك الدخول للدردشة حتى انتهاء المدة المحددة.
-            سيتم إعادة تحديث الصفحة تلقائياً عند انتهاء الوقت.
+            لا يمكنك الدخول للدردشة حتى انتهاء المدة المحددة. سيتم إعادة تحديث الصفحة تلقائياً عند
+            انتهاء الوقت.
           </p>
-          
+
           <Badge variant="destructive" className="bg-red-700">
             طرد مؤقت - {durationMinutes} دقيقة
           </Badge>
-          
+
           <div className="pt-4 border-t border-red-700">
-            <Button 
+            <Button
               onClick={onClose}
               variant="outline"
               className="border-red-600 text-red-300 hover:bg-red-800"

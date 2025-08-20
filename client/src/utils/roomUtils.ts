@@ -23,7 +23,7 @@ export function mapApiRoom(room: any): ChatRoom {
       ? room.micQueue
       : typeof room.micQueue === 'string'
         ? safeParseArray(room.micQueue)
-        : []
+        : [],
   };
 }
 
@@ -57,13 +57,13 @@ export function dedupeRooms(rooms: ChatRoom[]): ChatRoom[] {
       isBroadcast: Boolean(existing.isBroadcast || raw.isBroadcast),
       userCount: Math.max(existing.userCount || 0, raw.userCount || 0),
       speakers: Array.from(new Set([...(existing.speakers || []), ...(raw.speakers || [])])),
-      micQueue: Array.from(new Set([...(existing.micQueue || []), ...(raw.micQueue || [])]))
+      micQueue: Array.from(new Set([...(existing.micQueue || []), ...(raw.micQueue || [])])),
     };
 
     idToRoom.set(id, merged);
   }
 
-  const unique = Array.from(idToRoom.values()).filter(r => r && r.id && r.name);
+  const unique = Array.from(idToRoom.values()).filter((r) => r && r.id && r.name);
 
   unique.sort((a, b) => {
     if (a.isDefault && !b.isDefault) return -1;
@@ -79,13 +79,19 @@ export function mapApiRooms(apiRooms: any[]): ChatRoom[] {
   return dedupeRooms((apiRooms || []).map(mapApiRoom));
 }
 
-export function normalizeBroadcastInfo(info: any): { hostId: number | null; speakers: number[]; micQueue: number[] } {
+export function normalizeBroadcastInfo(info: any): {
+  hostId: number | null;
+  speakers: number[];
+  micQueue: number[];
+} {
   const toNumberArray = (val: any): number[] => {
     try {
       if (Array.isArray(val)) return val.map((v) => Number(v)).filter((n) => Number.isFinite(n));
       if (typeof val === 'string') {
         const parsed = JSON.parse(val || '[]');
-        return Array.isArray(parsed) ? parsed.map((v) => Number(v)).filter((n) => Number.isFinite(n)) : [];
+        return Array.isArray(parsed)
+          ? parsed.map((v) => Number(v)).filter((n) => Number.isFinite(n))
+          : [];
       }
       return [];
     } catch {
@@ -96,6 +102,6 @@ export function normalizeBroadcastInfo(info: any): { hostId: number | null; spea
   return {
     hostId: info?.hostId ?? info?.host_id ?? null,
     speakers: Array.from(new Set(toNumberArray(info?.speakers))),
-    micQueue: Array.from(new Set(toNumberArray(info?.micQueue ?? info?.mic_queue)))
+    micQueue: Array.from(new Set(toNumberArray(info?.micQueue ?? info?.mic_queue))),
   };
 }

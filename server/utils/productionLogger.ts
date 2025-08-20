@@ -11,12 +11,11 @@ class ProductionLogger {
   // تسجيل فقط في بيئة التطوير
   dev(message: string, ...args: any[]): void {
     if (!this.isProduction) {
-      }
+    }
   }
 
   // تسجيل المعلومات المهمة (الإنتاج والتطوير)
-  info(message: string, ...args: any[]): void {
-    }
+  info(message: string, ...args: any[]): void {}
 
   // تسجيل التحذيرات (الإنتاج والتطوير)
   warn(message: string, ...args: any[]): void {
@@ -36,55 +35,55 @@ class ProductionLogger {
   // تسجيل العمليات الناجحة (فقط في التطوير)
   success(message: string, ...args: any[]): void {
     if (!this.isProduction) {
-      }
+    }
   }
 
   // تسجيل بداية العمليات (فقط في التطوير)
   start(message: string, ...args: any[]): void {
     if (!this.isProduction) {
-      }
+    }
   }
 
   // تسجيل إنهاء العمليات (فقط في التطوير)
   end(message: string, ...args: any[]): void {
     if (!this.isProduction) {
-      }
+    }
   }
 
   // تسجيل العمليات الحساسة (فقط الضروري في الإنتاج)
   debug(message: string, ...args: any[]): void {
     if (!this.isProduction) {
-      }
+    }
   }
 
   // تسجيل الشبكة (فقط في التطوير)
   network(message: string, ...args: any[]): void {
     if (!this.isProduction) {
-      }
+    }
   }
 
   // تسجيل قاعدة البيانات (فقط في التطوير)
   database(message: string, ...args: any[]): void {
     if (!this.isProduction) {
-      }
+    }
   }
 
   // تسجيل الملفات (فقط في التطوير)
   file(message: string, ...args: any[]): void {
     if (!this.isProduction) {
-      }
+    }
   }
 
   // تسجيل المستخدمين (فقط في التطوير)
   user(message: string, ...args: any[]): void {
     if (!this.isProduction) {
-      }
+    }
   }
 
   // تسجيل الرسائل (فقط في التطوير)
   chat(message: string, ...args: any[]): void {
     if (!this.isProduction) {
-      }
+    }
   }
 }
 
@@ -106,5 +105,5 @@ export const log = {
   database: logger.database.bind(logger),
   file: logger.file.bind(logger),
   user: logger.user.bind(logger),
-  chat: logger.chat.bind(logger)
+  chat: logger.chat.bind(logger),
 };

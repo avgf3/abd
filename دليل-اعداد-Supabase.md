@@ -1,6 +1,7 @@
 # 📚 دليل إعداد قاعدة بيانات Supabase
 
 ## 🎯 المشكلة الحالية
+
 - تطبيق الدردشة يحاول الاتصال بقاعدة بيانات محلية غير موجودة
 - يحتاج إلى رابط قاعدة بيانات Supabase صالح للعمل بشكل صحيح
 
@@ -26,6 +27,7 @@
 3. **انسخ** "Connection string" من قسم "Connection pooling"
 
 الرابط سيكون بهذا الشكل:
+
 ```
 postgresql://postgres:[YOUR-PASSWORD]@[PROJECT-ID].supabase.co:5432/postgres
 ```
@@ -46,6 +48,7 @@ DATABASE_URL=postgresql://postgres:YOUR_ACTUAL_PASSWORD@your-project-id.supabase
 ### 4. إنشاء الجداول المطلوبة
 
 #### طريقة 1: استخدام SQL Editor في Supabase
+
 1. **اذهب إلى**: SQL Editor في لوحة تحكم Supabase
 2. **انسخ وألصق** هذا الكود:
 
@@ -128,13 +131,14 @@ CREATE TABLE blocked_devices (
 
 -- إنشاء مستخدم مدير افتراضي
 INSERT INTO users (username, password, user_type, role, gender, profile_image, is_online, last_seen, join_date, created_at)
-VALUES ('admin', 'admin123', 'owner', 'owner', 'male', '/default_avatar.svg', 0, 
+VALUES ('admin', 'admin123', 'owner', 'owner', 'male', '/default_avatar.svg', 0,
         datetime('now'), datetime('now'), datetime('now'));
 ```
 
 3. **اضغط على**: Run
 
 #### طريقة 2: استخدام Drizzle Migration (تلقائي)
+
 ```bash
 # من مجلد المشروع
 npm run db:push
@@ -145,11 +149,13 @@ npm run db:push
 ## 🧪 اختبار الاتصال
 
 ### 1. تشغيل الخادم
+
 ```bash
 npm run dev
 ```
 
 ### 2. اختبار تسجيل الدخول
+
 ```bash
 # اختبار المدير
 curl -X POST http://localhost:5000/api/auth/member \
@@ -158,6 +164,7 @@ curl -X POST http://localhost:5000/api/auth/member \
 ```
 
 **النتيجة المتوقعة**:
+
 ```json
 {
   "user": {
@@ -171,6 +178,7 @@ curl -X POST http://localhost:5000/api/auth/member \
 ```
 
 ### 3. اختبار تسجيل عضوية جديدة
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
@@ -187,20 +195,25 @@ curl -X POST http://localhost:5000/api/auth/register \
 ## 🔧 حل المشاكل الشائعة
 
 ### مشكلة: "connection refused"
+
 ```bash
 # تأكد من صحة رابط قاعدة البيانات
 echo $DATABASE_URL
 ```
 
 ### مشكلة: "password authentication failed"
+
 - تأكد من كلمة المرور في الرابط
 - استخدم كلمة المرور التي أدخلتها عند إنشاء المشروع
 
 ### مشكلة: "database does not exist"
+
 - تأكد من اسم قاعدة البيانات في الرابط (عادة `postgres`)
 
 ### مشكلة: "SSL connection required"
+
 - أضف `?sslmode=require` لنهاية الرابط:
+
 ```
 DATABASE_URL=postgresql://postgres:password@host:5432/postgres?sslmode=require
 ```
@@ -210,6 +223,7 @@ DATABASE_URL=postgresql://postgres:password@host:5432/postgres?sslmode=require
 ## ✅ علامات النجاح
 
 عند نجاح الإعداد ستظهر هذه الرسائل في الكونسول:
+
 ```
 ✅ تم الاتصال بقاعدة بيانات PostgreSQL
 ✅ تم إنشاء المستخدم في قاعدة البيانات: admin
@@ -221,6 +235,7 @@ DATABASE_URL=postgresql://postgres:password@host:5432/postgres?sslmode=require
 ## 📞 المساعدة
 
 إذا واجهت مشاكل:
+
 1. تأكد من صحة رابط قاعدة البيانات
 2. تحقق من أن المشروع في Supabase نشط
 3. راجع رسائل الخطأ في الكونسول
@@ -231,7 +246,8 @@ DATABASE_URL=postgresql://postgres:password@host:5432/postgres?sslmode=require
 ## 🎉 التأكيد النهائي
 
 بعد إتمام الإعداد:
+
 - ✅ تسجيل الدخول كمدير يعمل
-- ✅ تسجيل عضوية جديدة يعمل  
+- ✅ تسجيل عضوية جديدة يعمل
 - ✅ قاعدة البيانات متصلة
 - ✅ الرسائل محفوظة في قاعدة البيانات

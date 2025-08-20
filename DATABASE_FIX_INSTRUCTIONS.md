@@ -1,9 +1,11 @@
 # إصلاح مشكلة تسجيل دخول الأعضاء
 
 ## المشكلة
+
 الموقع يسمح بدخول الزوار فقط لكن لا يسمح للأعضاء بتسجيل الدخول بسبب عمود `role` مفقود في قاعدة البيانات.
 
 ## الخطأ المُسجل
+
 ```
 error: column "role" does not exist
 ```
@@ -13,6 +15,7 @@ error: column "role" does not exist
 ### الطريقة الأولى: تشغيل سكريبت الإصلاح
 
 1. **تأكد من متغير البيئة:**
+
    ```bash
    echo $DATABASE_URL
    ```
@@ -25,13 +28,14 @@ error: column "role" does not exist
 ### الطريقة الثانية: إصلاح يدوي
 
 1. **اتصل بقاعدة البيانات:**
+
    ```sql
    -- إضافة عمود role المفقود
    ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'guest';
-   
+
    -- تحديث القيم الموجودة
    UPDATE users SET role = COALESCE(user_type, 'guest');
-   
+
    -- إضافة أعمدة أخرى مفقودة (اختيارية)
    ALTER TABLE users ADD COLUMN profile_background_color TEXT DEFAULT '#3c0d0d';
    ALTER TABLE users ADD COLUMN username_color TEXT DEFAULT '#FFFFFF';
@@ -42,9 +46,9 @@ error: column "role" does not exist
 
 2. **تحقق من النتيجة:**
    ```sql
-   SELECT column_name, data_type 
-   FROM information_schema.columns 
-   WHERE table_name='users' 
+   SELECT column_name, data_type
+   FROM information_schema.columns
+   WHERE table_name='users'
    ORDER BY ordinal_position;
    ```
 
@@ -77,11 +81,13 @@ error: column "role" does not exist
 ## إذا استمرت المشكلة
 
 1. تحقق من سجلات الخادم:
+
    ```bash
    tail -f server.log
    ```
 
 2. تحقق من اتصال قاعدة البيانات:
+
    ```bash
    echo $DATABASE_URL
    ```

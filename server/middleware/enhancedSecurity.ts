@@ -10,28 +10,29 @@ import { createError, ERROR_MESSAGES } from './errorHandler';
 
 // أنواع الحماية المختلفة
 export enum ProtectionLevel {
-  PUBLIC = 'public',           // مفتوح للجميع
+  PUBLIC = 'public', // مفتوح للجميع
   AUTHENTICATED = 'authenticated', // يتطلب تسجيل دخول
-  MEMBER = 'member',           // يتطلب عضوية
-  MODERATOR = 'moderator',     // يتطلب صلاحيات إشراف
-  ADMIN = 'admin',             // يتطلب صلاحيات إدارية
-  OWNER = 'owner'              // يتطلب صلاحيات المالك
+  MEMBER = 'member', // يتطلب عضوية
+  MODERATOR = 'moderator', // يتطلب صلاحيات إشراف
+  ADMIN = 'admin', // يتطلب صلاحيات إدارية
+  OWNER = 'owner', // يتطلب صلاحيات المالك
 }
 
 // خريطة الأذونات
 const PERMISSION_HIERARCHY = {
-  'guest': 0,
-  'member': 1,
-  'moderator': 2,
-  'admin': 3,
-  'owner': 4
+  guest: 0,
+  member: 1,
+  moderator: 2,
+  admin: 3,
+  owner: 4,
 };
 
 // دالة للتحقق من مستوى الإذن
 function hasPermission(userRole: string, requiredLevel: ProtectionLevel): boolean {
   const userLevel = PERMISSION_HIERARCHY[userRole as keyof typeof PERMISSION_HIERARCHY] ?? -1;
-  const requiredLevelNum = PERMISSION_HIERARCHY[requiredLevel as keyof typeof PERMISSION_HIERARCHY] ?? 5;
-  
+  const requiredLevelNum =
+    PERMISSION_HIERARCHY[requiredLevel as keyof typeof PERMISSION_HIERARCHY] ?? 5;
+
   return userLevel >= requiredLevelNum;
 }
 
@@ -57,7 +58,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       log.security('محاولة وصول بدون معرف مستخدم صالح', {
         ip: req.ip,
         path: req.path,
-        method: req.method
+        method: req.method,
       });
       throw createError.unauthorized('معرف المستخدم مطلوب للوصول لهذه الخدمة');
     }
@@ -68,7 +69,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       log.security('محاولة وصول بمعرف مستخدم غير موجود', {
         userId,
         ip: req.ip,
-        path: req.path
+        path: req.path,
       });
       throw createError.unauthorized('المستخدم غير موجود');
     }
@@ -78,7 +79,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       log.security('محاولة وصول من مستخدم محظور', {
         userId: user.id,
         username: user.username,
-        ip: req.ip
+        ip: req.ip,
       });
       throw createError.forbidden('حسابك محظور مؤقتاً');
     }
@@ -92,10 +93,9 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       isBanned: user.isBanned,
       isMuted: user.isMuted,
       lastSeen: user.lastSeen ? new Date(user.lastSeen as any) : null,
-      createdAt: user.createdAt ? new Date(user.createdAt as any) : undefined
+      createdAt: user.createdAt ? new Date(user.createdAt as any) : undefined,
     };
     next();
-
   } catch (error) {
     next(error);
   }
@@ -108,7 +108,7 @@ export const requirePermission = (level: ProtectionLevel) => {
       // التحقق من المصادقة أولاً
       if (level !== ProtectionLevel.PUBLIC) {
         await requireAuth(req, res, () => {});
-        
+
         if (!req.user) {
           throw createError.unauthorized();
         }
@@ -117,7 +117,7 @@ export const requirePermission = (level: ProtectionLevel) => {
       // التحقق من مستوى الإذن
       if (level !== ProtectionLevel.PUBLIC && level !== ProtectionLevel.AUTHENTICATED) {
         const userRole = req.user?.userType || 'guest';
-        
+
         if (!hasPermission(userRole, level)) {
           log.security('محاولة وصول بصلاحيات غير كافية', {
             userId: req.user?.id,
@@ -125,15 +125,14 @@ export const requirePermission = (level: ProtectionLevel) => {
             userRole,
             requiredLevel: level,
             path: req.path,
-            ip: req.ip
+            ip: req.ip,
           });
-          
+
           throw createError.forbidden(`هذا الإجراء يتطلب صلاحيات ${level}`);
         }
       }
 
       next();
-
     } catch (error) {
       next(error);
     }
@@ -144,7 +143,7 @@ export const requirePermission = (level: ProtectionLevel) => {
 export const requireOwnership = async (req: Request, res: Response, next: NextFunction) => {
   try {
     await requireAuth(req, res, () => {});
-    
+
     if (!req.user) {
       throw createError.unauthorized();
     }
@@ -155,24 +154,24 @@ export const requireOwnership = async (req: Request, res: Response, next: NextFu
 
     if (resourceUserId !== currentUserId) {
       // السماح للمشرفين والمالكين بالوصول لبيانات المستخدمين الآخرين
-      const isPrivileged = req.user.userType === 'admin' || 
-                          req.user.userType === 'owner' || 
-                          req.user.userType === 'moderator';
-      
+      const isPrivileged =
+        req.user.userType === 'admin' ||
+        req.user.userType === 'owner' ||
+        req.user.userType === 'moderator';
+
       if (!isPrivileged) {
         log.security('محاولة وصول لبيانات مستخدم آخر', {
           userId: currentUserId,
           targetUserId: resourceUserId,
           path: req.path,
-          ip: req.ip
+          ip: req.ip,
         });
-        
+
         throw createError.forbidden('لا يمكنك الوصول لبيانات مستخدم آخر');
       }
     }
 
     next();
-
   } catch (error) {
     next(error);
   }
@@ -183,7 +182,7 @@ export const requireRecentAuth = (maxAgeMinutes: number = 30) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       await requireAuth(req, res, () => {});
-      
+
       if (!req.user) {
         throw createError.unauthorized();
       }
@@ -191,20 +190,19 @@ export const requireRecentAuth = (maxAgeMinutes: number = 30) => {
       // التحقق من آخر مرة قام فيها المستخدم بتسجيل الدخول
       const lastLoginTime = new Date(req.user.lastSeen || req.user.createdAt);
       const maxAge = maxAgeMinutes * 60 * 1000; // تحويل لميلي ثانية
-      
+
       if (Date.now() - lastLoginTime.getTime() > maxAge) {
         log.security('محاولة عملية حساسة بجلسة قديمة', {
           userId: req.user.id,
           lastLogin: lastLoginTime,
           maxAgeMinutes,
-          path: req.path
+          path: req.path,
         });
-        
+
         throw createError.unauthorized('يرجى تسجيل الدخول مرة أخرى لتنفيذ هذا الإجراء');
       }
 
       next();
-
     } catch (error) {
       next(error);
     }
@@ -215,7 +213,7 @@ export const requireRecentAuth = (maxAgeMinutes: number = 30) => {
 export const requireOnlineStatus = async (req: Request, res: Response, next: NextFunction) => {
   try {
     await requireAuth(req, res, () => {});
-    
+
     if (!req.user) {
       throw createError.unauthorized();
     }
@@ -224,14 +222,13 @@ export const requireOnlineStatus = async (req: Request, res: Response, next: Nex
       log.security('محاولة عملية من مستخدم غير متصل', {
         userId: req.user.id,
         username: req.user.username,
-        path: req.path
+        path: req.path,
       });
-      
+
       throw createError.unauthorized('يجب أن تكون متصلاً لتنفيذ هذا الإجراء');
     }
 
     next();
-
   } catch (error) {
     next(error);
   }
@@ -241,8 +238,8 @@ export const requireOnlineStatus = async (req: Request, res: Response, next: Nex
 export const logActivity = (actionType: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const originalSend = res.send;
-    
-    res.send = function(data: any) {
+
+    res.send = function (data: any) {
       // تسجيل النشاط عند إرسال الاستجابة
       if (req.user && res.statusCode < 400) {
         log.user(`نشاط مستخدم: ${actionType}`, {
@@ -252,13 +249,13 @@ export const logActivity = (actionType: string) => {
           path: req.path,
           method: req.method,
           statusCode: res.statusCode,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       }
-      
+
       return originalSend.call(this, data);
     };
-    
+
     next();
   };
 };
@@ -279,7 +276,7 @@ export const requireOwnerAboudOnly = async (req: Request, res: Response, next: N
         username: req.user.username,
         requiredLevel: 'ownerOnly',
         path: req.path,
-        ip: req.ip
+        ip: req.ip,
       });
 
       throw createError.forbidden('هذا الإجراء متاح فقط للمالك');
@@ -302,5 +299,5 @@ export const protect = {
   online: requireOnlineStatus,
   recentAuth: requireRecentAuth,
   log: logActivity,
-  ownerOnly: requireOwnerAboudOnly
+  ownerOnly: requireOwnerAboudOnly,
 };

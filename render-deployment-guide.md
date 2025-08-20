@@ -1,6 +1,7 @@
 # 🚀 دليل نشر تطبيق الدردشة العربية على Render مع Supabase
 
 ## 🎯 المشكلة المحددة
+
 - التطبيق لا يستطيع الاتصال بقاعدة بيانات Supabase عند النشر على Render
 - رسائل خطأ في الاتصال أو مشاكل في SSL
 
@@ -11,22 +12,26 @@
 ### 1. إعداد قاعدة بيانات Supabase
 
 #### 1.1 الحصول على رابط قاعدة البيانات الصحيح
+
 1. **اذهب إلى**: https://supabase.com/dashboard/project/qzehjgmawnrihmepboca
 2. **اضغط على**: Settings (الإعدادات)
 3. **اختر**: Database من القائمة الجانبية
 4. **انسخ**: Connection string من قسم "Connection pooling"
 
 الرابط يجب أن يكون بهذا الشكل:
+
 ```
 postgresql://postgres.qzehjgmawnrihmepboca:[YOUR-PASSWORD]@aws-0-us-west-1.pooler.supabase.com:5432/postgres
 ```
 
 #### 1.2 تحديث كلمة المرور
+
 **مهم جداً**: استبدل `[YOUR-PASSWORD]` بكلمة المرور الفعلية لقاعدة البيانات.
 
 ### 2. إعداد الجداول في Supabase
 
 #### 2.1 باستخدام SQL Editor
+
 1. **اذهب إلى**: SQL Editor في Supabase Dashboard
 2. **انسخ وألصق** الكود التالي:
 
@@ -136,7 +141,7 @@ CREATE TABLE IF NOT EXISTS points_history (
 );
 
 -- إنشاء المستخدم الافتراضي (المدير)
-INSERT INTO users (username, password, user_type, role, gender, profile_image, 
+INSERT INTO users (username, password, user_type, role, gender, profile_image,
                   is_online, points, level, total_points, level_progress)
 VALUES ('admin', 'admin123', 'owner', 'owner', 'male', '/default_avatar.svg',
         false, 1000, 3, 1000, 0)
@@ -169,6 +174,7 @@ ON CONFLICT (level) DO NOTHING;
 ### 3. اختبار الاتصال محلياً
 
 1. **حدث ملف `.env`**:
+
 ```bash
 DATABASE_URL=postgresql://postgres.qzehjgmawnrihmepboca:YOUR_ACTUAL_PASSWORD@aws-0-us-west-1.pooler.supabase.com:5432/postgres?sslmode=require
 NODE_ENV=development
@@ -176,6 +182,7 @@ PORT=3000
 ```
 
 2. **شغل سكريبت الاختبار**:
+
 ```bash
 node fix-supabase-connection.js
 ```
@@ -183,6 +190,7 @@ node fix-supabase-connection.js
 ### 4. إعداد النشر على Render
 
 #### 4.1 إعداد متغيرات البيئة في Render
+
 1. **اذهب إلى**: Render Dashboard
 2. **اختر مشروعك** أو أنشئ خدمة جديدة
 3. **في قسم Environment Variables**, أضف:
@@ -199,10 +207,12 @@ SOCKET_IO_POLLING_ONLY=false
 ```
 
 #### 4.2 إعداد Build وStart Commands
+
 - **Build Command**: `npm install && npm run build`
 - **Start Command**: `npm start`
 
 #### 4.3 تحديث ملف `render.yaml`
+
 استخدم الإعدادات المحدثة في ملف `render.yaml`:
 
 ```yaml
@@ -235,19 +245,23 @@ services:
 ### 5. تشخيص وحل المشاكل
 
 #### 5.1 مشكلة SSL
+
 إذا ظهرت رسالة خطأ SSL:
+
 ```bash
 # تأكد من وجود ?sslmode=require في نهاية الرابط
 DATABASE_URL=...?sslmode=require
 ```
 
 #### 5.2 مشكلة كلمة المرور
+
 ```bash
 # احصل على كلمة المرور من Supabase:
 # Settings > Database > Database password > Reset password
 ```
 
 #### 5.3 مشكلة الاتصال
+
 ```bash
 # تأكد من أن مشروع Supabase نشط ومتاح
 # اختبر الاتصال محلياً أولاً
@@ -256,7 +270,9 @@ DATABASE_URL=...?sslmode=require
 ### 6. التحقق من النجاح
 
 #### 6.1 فحص Logs في Render
+
 ابحث عن هذه الرسائل في السجلات:
+
 ```
 ✅ نجح الاتصال بقاعدة بيانات Supabase
 ✅ تم إنشاء/التحقق من جميع الجداول
@@ -264,6 +280,7 @@ DATABASE_URL=...?sslmode=require
 ```
 
 #### 6.2 اختبار الواجهة
+
 1. **افتح الرابط**: https://your-app-name.onrender.com
 2. **جرب تسجيل الدخول** بـ:
    - Username: `admin`
@@ -291,6 +308,7 @@ npm run dev
 ## 🎉 النتيجة المتوقعة
 
 بعد إتمام جميع الخطوات:
+
 - ✅ التطبيق يعمل على Render بدون أخطاء
 - ✅ قاعدة البيانات Supabase متصلة بنجاح
 - ✅ تسجيل الدخول وإنشاء الحسابات يعمل
@@ -302,6 +320,7 @@ npm run dev
 ## 📞 المساعدة الإضافية
 
 إذا واجهت أي مشاكل:
+
 1. **تحقق من السجلات** في Render Dashboard
 2. **اختبر الاتصال محلياً** أولاً
 3. **تأكد من صحة رابط قاعدة البيانات** وكلمة المرور

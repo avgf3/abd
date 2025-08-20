@@ -8,7 +8,10 @@ interface FileUploadButtonProps {
   disabled?: boolean;
 }
 
-export default function FileUploadButton({ onFileSelect, disabled = false }: FileUploadButtonProps) {
+export default function FileUploadButton({
+  onFileSelect,
+  disabled = false,
+}: FileUploadButtonProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileClick = () => {
@@ -23,7 +26,7 @@ export default function FileUploadButton({ onFileSelect, disabled = false }: Fil
 
     // تحديد نوع الملف
     let fileType: 'image' | 'video' | 'document';
-    
+
     if (file.type.startsWith('image/')) {
       fileType = 'image';
     } else if (file.type.startsWith('video/')) {
@@ -39,7 +42,7 @@ export default function FileUploadButton({ onFileSelect, disabled = false }: Fil
     }
 
     onFileSelect(file, fileType);
-    
+
     // إعادة تعيين قيمة input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -56,7 +59,7 @@ export default function FileUploadButton({ onFileSelect, disabled = false }: Fil
       >
         <Paperclip className="w-4 h-4" />
       </Button>
-      
+
       <input
         ref={fileInputRef}
         type="file"

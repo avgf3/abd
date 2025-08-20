@@ -2,7 +2,6 @@ import crypto from 'crypto';
 
 import type { Request } from 'express';
 
-
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 function getSecret(): string {
@@ -28,7 +27,10 @@ export function verifyAuthToken(token: string): { userId: number } | null {
     const exp = parseInt(expStr);
     if (!userId || isNaN(userId) || !exp || isNaN(exp)) return null;
     if (Date.now() > exp) return null;
-    const expected = crypto.createHmac('sha256', getSecret()).update(`${userId}.${exp}`).digest('hex');
+    const expected = crypto
+      .createHmac('sha256', getSecret())
+      .update(`${userId}.${exp}`)
+      .digest('hex');
     if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
     return { userId };
   } catch {
@@ -62,4 +64,3 @@ export function getAuthTokenFromRequest(req: Request): string | null {
   if (cookies['auth_token']) return cookies['auth_token'];
   return null;
 }
-

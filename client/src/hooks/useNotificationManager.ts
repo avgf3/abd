@@ -70,27 +70,30 @@ export function useNotificationManager(currentUser: ChatUser | null) {
   }, []);
 
   // Show toast notification
-  const showToast = useCallback((options: NotificationOptions) => {
-    toast({
-      title: options.title,
-      description: options.description,
-      variant: options.variant || 'default'
-    });
+  const showToast = useCallback(
+    (options: NotificationOptions) => {
+      toast({
+        title: options.title,
+        description: options.description,
+        variant: options.variant || 'default',
+      });
 
-    if (options.playSound) {
-      playNotificationSound();
-    }
-  }, [toast, playNotificationSound]);
+      if (options.playSound) {
+        playNotificationSound();
+      }
+    },
+    [toast, playNotificationSound]
+  );
 
   // Update notification queries
   const updateNotificationQueries = useCallback(() => {
     if (!currentUser?.id) return;
 
     queryClient.invalidateQueries({
-      queryKey: ['/api/notifications', currentUser.id]
+      queryKey: ['/api/notifications', currentUser.id],
     });
     queryClient.invalidateQueries({
-      queryKey: ['/api/notifications/unread-count', currentUser.id]
+      queryKey: ['/api/notifications/unread-count', currentUser.id],
     });
   }, [currentUser?.id, queryClient]);
 
@@ -99,13 +102,13 @@ export function useNotificationManager(currentUser: ChatUser | null) {
     if (!currentUser?.id) return;
 
     queryClient.invalidateQueries({
-      queryKey: ['/api/friends', currentUser.id]
+      queryKey: ['/api/friends', currentUser.id],
     });
     queryClient.invalidateQueries({
-      queryKey: ['/api/friend-requests/incoming', currentUser.id]
+      queryKey: ['/api/friend-requests/incoming', currentUser.id],
     });
     queryClient.invalidateQueries({
-      queryKey: ['/api/friend-requests/outgoing', currentUser.id]
+      queryKey: ['/api/friend-requests/outgoing', currentUser.id],
     });
   }, [currentUser?.id, queryClient]);
 
@@ -116,36 +119,48 @@ export function useNotificationManager(currentUser: ChatUser | null) {
   }, [updateNotificationQueries, updateFriendQueries]);
 
   // Handle notification received event
-  const handleNotificationReceived = useCallback((event: CustomEvent<NotificationEventDetail>) => {
-    updateNotificationQueries();
-  }, [updateNotificationQueries]);
+  const handleNotificationReceived = useCallback(
+    (event: CustomEvent<NotificationEventDetail>) => {
+      updateNotificationQueries();
+    },
+    [updateNotificationQueries]
+  );
 
   // Handle friend request received event
-  const handleFriendRequestReceived = useCallback((event: CustomEvent<NotificationEventDetail>) => {
-    updateAllQueries();
-    
-    showToast({
-      title: "طلب صداقة جديد",
-      description: `${event.detail.senderName} يريد إضافتك كصديق`,
-      playSound: true
-    });
-  }, [updateAllQueries, showToast]);
+  const handleFriendRequestReceived = useCallback(
+    (event: CustomEvent<NotificationEventDetail>) => {
+      updateAllQueries();
+
+      showToast({
+        title: 'طلب صداقة جديد',
+        description: `${event.detail.senderName} يريد إضافتك كصديق`,
+        playSound: true,
+      });
+    },
+    [updateAllQueries, showToast]
+  );
 
   // Handle friend request accepted event
-  const handleFriendRequestAccepted = useCallback((event: CustomEvent<NotificationEventDetail>) => {
-    updateAllQueries();
-    
-    showToast({
-      title: "تم قبول طلب الصداقة",
-      description: `${event.detail.friendName} قبل طلب صداقتك`,
-      playSound: true
-    });
-  }, [updateAllQueries, showToast]);
+  const handleFriendRequestAccepted = useCallback(
+    (event: CustomEvent<NotificationEventDetail>) => {
+      updateAllQueries();
+
+      showToast({
+        title: 'تم قبول طلب الصداقة',
+        description: `${event.detail.friendName} قبل طلب صداقتك`,
+        playSound: true,
+      });
+    },
+    [updateAllQueries, showToast]
+  );
 
   // Handle friend added event
-  const handleFriendAdded = useCallback((event: CustomEvent<NotificationEventDetail>) => {
-    updateFriendQueries();
-  }, [updateFriendQueries]);
+  const handleFriendAdded = useCallback(
+    (event: CustomEvent<NotificationEventDetail>) => {
+      updateFriendQueries();
+    },
+    [updateFriendQueries]
+  );
 
   // Setup event listeners
   useEffect(() => {
@@ -155,7 +170,7 @@ export function useNotificationManager(currentUser: ChatUser | null) {
       { name: 'notificationReceived', handler: handleNotificationReceived },
       { name: 'friendRequestReceived', handler: handleFriendRequestReceived },
       { name: 'friendRequestAccepted', handler: handleFriendRequestAccepted },
-      { name: 'friendAdded', handler: handleFriendAdded }
+      { name: 'friendAdded', handler: handleFriendAdded },
     ];
 
     events.forEach(({ name, handler }) => {
@@ -172,98 +187,105 @@ export function useNotificationManager(currentUser: ChatUser | null) {
     handleNotificationReceived,
     handleFriendRequestReceived,
     handleFriendRequestAccepted,
-    handleFriendAdded
+    handleFriendAdded,
   ]);
 
   // Create notification in database
-  const createNotification = useCallback(async (notificationData: {
-    userId: number;
-    type: string;
-    title: string;
-    message: string;
-    data?: any;
-  }) => {
-    try {
-      return await apiRequest('/api/notifications', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(notificationData)
-      });
-    } catch (error) {
-      console.error('Failed to create notification:', error);
-      throw error;
-    }
-  }, []);
+  const createNotification = useCallback(
+    async (notificationData: {
+      userId: number;
+      type: string;
+      title: string;
+      message: string;
+      data?: any;
+    }) => {
+      try {
+        return await apiRequest('/api/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(notificationData),
+        });
+      } catch (error) {
+        console.error('Failed to create notification:', error);
+        throw error;
+      }
+    },
+    []
+  );
 
   // Standard notification creators
-  const createFriendRequestNotification = useCallback(async (
-    receiverId: number, 
-    senderName: string, 
-    senderId: number,
-    requestId: number
-  ) => {
-    return createNotification({
-      userId: receiverId,
-      type: 'friendRequest',
-      title: '👫 طلب صداقة جديد',
-      message: `أرسل ${senderName} طلب صداقة إليك`,
-      data: { requestId, senderId, senderName }
-    });
-  }, [createNotification]);
+  const createFriendRequestNotification = useCallback(
+    async (receiverId: number, senderName: string, senderId: number, requestId: number) => {
+      return createNotification({
+        userId: receiverId,
+        type: 'friendRequest',
+        title: '👫 طلب صداقة جديد',
+        message: `أرسل ${senderName} طلب صداقة إليك`,
+        data: { requestId, senderId, senderName },
+      });
+    },
+    [createNotification]
+  );
 
-  const createFriendAcceptedNotification = useCallback(async (
-    userId: number,
-    friendName: string,
-    friendId: number
-  ) => {
-    return createNotification({
-      userId,
-      type: 'friendAccepted',
-      title: '✅ تم قبول طلب الصداقة',
-      message: `قبل ${friendName} طلب صداقتك`,
-      data: { friendId, friendName }
-    });
-  }, [createNotification]);
+  const createFriendAcceptedNotification = useCallback(
+    async (userId: number, friendName: string, friendId: number) => {
+      return createNotification({
+        userId,
+        type: 'friendAccepted',
+        title: '✅ تم قبول طلب الصداقة',
+        message: `قبل ${friendName} طلب صداقتك`,
+        data: { friendId, friendName },
+      });
+    },
+    [createNotification]
+  );
 
-  const createSystemNotification = useCallback(async (
-    userId: number,
-    title: string,
-    message: string,
-    data?: any
-  ) => {
-    return createNotification({
-      userId,
-      type: 'system',
-      title,
-      message,
-      data
-    });
-  }, [createNotification]);
+  const createSystemNotification = useCallback(
+    async (userId: number, title: string, message: string, data?: any) => {
+      return createNotification({
+        userId,
+        type: 'system',
+        title,
+        message,
+        data,
+      });
+    },
+    [createNotification]
+  );
 
   // Standard toast notifications
-  const showSuccessToast = useCallback((message: string, title?: string) => {
-    showToast({
-      title: title || "تم بنجاح",
-      description: message,
-      variant: 'default'
-    });
-  }, [showToast]);
+  const showSuccessToast = useCallback(
+    (message: string, title?: string) => {
+      showToast({
+        title: title || 'تم بنجاح',
+        description: message,
+        variant: 'default',
+      });
+    },
+    [showToast]
+  );
 
-  const showErrorToast = useCallback((message: string, title?: string) => {
-    showToast({
-      title: title || "خطأ",
-      description: message,
-      variant: 'destructive'
-    });
-  }, [showToast]);
+  const showErrorToast = useCallback(
+    (message: string, title?: string) => {
+      showToast({
+        title: title || 'خطأ',
+        description: message,
+        variant: 'destructive',
+      });
+    },
+    [showToast]
+  );
 
-  const showWarningToast = useCallback((message: string, title?: string) => {
-    showToast({
-      title: title || "تحذير",
-      description: message,
-      variant: 'default'
-    });
-  }, [showToast]);
+  const showWarningToast = useCallback(
+    (message: string, title?: string) => {
+      showToast({
+        title: title || 'تحذير',
+        description: message,
+        variant: 'default',
+      });
+    },
+    [showToast]
+  );
 
   return {
     // Core functions
@@ -272,16 +294,16 @@ export function useNotificationManager(currentUser: ChatUser | null) {
     showErrorToast,
     showWarningToast,
     playNotificationSound,
-    
+
     // Query updates
     updateNotificationQueries,
     updateFriendQueries,
     updateAllQueries,
-    
+
     // Notification creators
     createNotification,
     createFriendRequestNotification,
     createFriendAcceptedNotification,
-    createSystemNotification
+    createSystemNotification,
   };
 }

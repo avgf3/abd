@@ -1,8 +1,18 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Menu, Settings, Bell, MessageSquare, MessageCircle, Crown, Shield, AlertTriangle, Eye, EyeOff, Lock } from 'lucide-react';
+import {
+  Menu,
+  Settings,
+  Bell,
+  MessageSquare,
+  MessageCircle,
+  Crown,
+  Shield,
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  Lock,
+} from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
-
-
 
 import ActiveModerationLog from '../moderation/ActiveModerationLog';
 import BlockNotification from '../moderation/BlockNotification';
@@ -31,10 +41,16 @@ import KickCountdown from '@/components/moderation/KickCountdown';
 import UsernameColorPicker from '@/components/profile/UsernameColorPicker';
 // import RoomComponent from './RoomComponent';
 
-
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import RichestModal from '@/components/ui/RichestModal'; // تبويب الأثرياء
@@ -59,13 +75,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAdminReports, setShowAdminReports] = useState(false);
-  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>(() => (typeof window !== 'undefined' && window.innerWidth < 768 ? 'hidden' : 'users'));
+  const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>(
+    () => (typeof window !== 'undefined' && window.innerWidth < 768 ? 'hidden' : 'users')
+  );
   const isMobile = useIsMobile();
   const [showAddRoomDialog, setShowAddRoomDialog] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomDescription, setNewRoomDescription] = useState('');
   const [newRoomImage, setNewRoomImage] = useState<File | null>(null);
-  
+
   const queryClient = useQueryClient();
   // 🚀 إدارة الغرف عبر hook موحّد محسن
   const {
@@ -74,70 +92,81 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     fetchRooms,
     addRoom: addRoomViaManager,
     deleteRoom: deleteRoomViaManager,
-    isFetching
-  } = useRoomManager({ 
+    isFetching,
+  } = useRoomManager({
     autoRefresh: false, // تحديث يدوي فقط
-    cacheTimeout: 10 * 60 * 1000 // 10 دقائق cache
+    cacheTimeout: 10 * 60 * 1000, // 10 دقائق cache
   });
 
   // 🚀 دوال إدارة الغرف المحسنة
-  const handleRoomChange = useCallback(async (roomId: string) => {
-    chat.joinRoom(roomId);
-  }, [chat]);
+  const handleRoomChange = useCallback(
+    async (roomId: string) => {
+      chat.joinRoom(roomId);
+    },
+    [chat]
+  );
 
   // دالة تحديث الغرف مع منع التكرار
   const handleRefreshRooms = useCallback(async () => {
     if (isFetching) {
       return;
     }
-    
+
     await fetchRooms(true); // فرض التحديث
   }, [fetchRooms, isFetching]);
 
-
-
   // ➕ إضافة غرفة جديدة مع منع التكرار
-  const handleAddRoom = useCallback(async (roomData: { name: string; description: string; image: File | null }) => {
-    if (!chat.currentUser) return;
-    
-    try {
-      const newRoom = await addRoomViaManager({ ...roomData }, chat.currentUser.id);
-      if (newRoom) {
-        showSuccessToast(`تم إنشاء غرفة "${roomData.name}" بنجاح`, 'تم إنشاء الغرفة');
+  const handleAddRoom = useCallback(
+    async (roomData: { name: string; description: string; image: File | null }) => {
+      if (!chat.currentUser) return;
+
+      try {
+        const newRoom = await addRoomViaManager({ ...roomData }, chat.currentUser.id);
+        if (newRoom) {
+          showSuccessToast(`تم إنشاء غرفة "${roomData.name}" بنجاح`, 'تم إنشاء الغرفة');
+        }
+      } catch (error) {
+        console.error('خطأ في إنشاء الغرفة:', error);
+        showErrorToast('فشل في إنشاء الغرفة', 'خطأ');
       }
-    } catch (error) {
-      console.error('خطأ في إنشاء الغرفة:', error);
-      showErrorToast('فشل في إنشاء الغرفة', 'خطأ');
-    }
-  }, [chat.currentUser, addRoomViaManager, showSuccessToast, showErrorToast]);
+    },
+    [chat.currentUser, addRoomViaManager, showSuccessToast, showErrorToast]
+  );
 
   // ❌ حذف غرفة مع منع التكرار
-  const handleDeleteRoom = useCallback(async (roomId: string) => {
-    if (!chat.currentUser) return;
-    
-    try {
-      const ok = await deleteRoomViaManager(roomId, chat.currentUser.id);
-      if (ok) {
-        // الانتقال للغرفة العامة إذا تم حذف الغرفة الحالية
-        if (chat.currentRoomId === roomId) {
-          chat.joinRoom('general');
+  const handleDeleteRoom = useCallback(
+    async (roomId: string) => {
+      if (!chat.currentUser) return;
+
+      try {
+        const ok = await deleteRoomViaManager(roomId, chat.currentUser.id);
+        if (ok) {
+          // الانتقال للغرفة العامة إذا تم حذف الغرفة الحالية
+          if (chat.currentRoomId === roomId) {
+            chat.joinRoom('general');
+          }
+          showSuccessToast('تم حذف الغرفة بنجاح', 'تم حذف الغرفة');
         }
-        showSuccessToast('تم حذف الغرفة بنجاح', 'تم حذف الغرفة');
+      } catch (error) {
+        console.error('خطأ في حذف الغرفة:', error);
+        showErrorToast('فشل في حذف الغرفة', 'خطأ');
       }
-    } catch (error) {
-      console.error('خطأ في حذف الغرفة:', error);
-      showErrorToast('فشل في حذف الغرفة', 'خطأ');
-    }
-    }, [chat, deleteRoomViaManager, showSuccessToast, showErrorToast]);
-  
+    },
+    [chat, deleteRoomViaManager, showSuccessToast, showErrorToast]
+  );
+
   const submitNewRoom = useCallback(async () => {
-    await handleAddRoom({ name: newRoomName, description: newRoomDescription, image: newRoomImage });
+    await handleAddRoom({
+      name: newRoomName,
+      description: newRoomDescription,
+      image: newRoomImage,
+    });
     setShowAddRoomDialog(false);
     setNewRoomName('');
     setNewRoomDescription('');
     setNewRoomImage(null);
   }, [handleAddRoom, newRoomName, newRoomDescription, newRoomImage]);
-  
+
   const [showNotifications, setShowNotifications] = useState(false);
 
   const [showMessages, setShowMessages] = useState(false);
@@ -158,8 +187,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     sender: null,
   });
 
-
-
   // تفعيل التنبيه عند وصول رسالة جديدة
   useEffect(() => {
     if (chat.newMessageSender) {
@@ -175,7 +202,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     if (chat.currentUser?.id) {
       queryClient.prefetchQuery({
         queryKey: ['/api/private-messages/conversations', chat.currentUser.id],
-        queryFn: async () => await apiRequest(`/api/private-messages/conversations/${chat.currentUser.id}?limit=50`),
+        queryFn: async () =>
+          await apiRequest(`/api/private-messages/conversations/${chat.currentUser.id}?limit=50`),
         staleTime: 30_000,
       });
     }
@@ -189,11 +217,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
     window.addEventListener('friendRequestAccepted', handleFriendRequestAccepted as EventListener);
     return () => {
-      window.removeEventListener('friendRequestAccepted', handleFriendRequestAccepted as EventListener);
+      window.removeEventListener(
+        'friendRequestAccepted',
+        handleFriendRequestAccepted as EventListener
+      );
     };
   }, []);
   const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
-  const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(null);
+  const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(
+    null
+  );
   const [userPopup, setUserPopup] = useState<{
     show: boolean;
     user: ChatUser | null;
@@ -217,7 +250,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   const closeUserPopup = () => {
-    setUserPopup(prev => ({ ...prev, show: false }));
+    setUserPopup((prev) => ({ ...prev, show: false }));
   };
 
   const handlePrivateMessage = (user: ChatUser) => {
@@ -238,31 +271,35 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   const handleAddFriend = async (user: ChatUser) => {
     if (!chat.currentUser) return;
-    
+
     try {
       const response = await apiRequest('/api/friend-requests', {
         method: 'POST',
         body: {
           senderId: chat.currentUser.id,
           receiverId: user.id,
-        }
+        },
       });
-      
-      showSuccessToast(`تم إرسال طلب صداقة إلى ${user.username}`, "تمت الإضافة");
+
+      showSuccessToast(`تم إرسال طلب صداقة إلى ${user.username}`, 'تمت الإضافة');
     } catch (error) {
       console.error('Friend request error:', error);
-      showErrorToast(error instanceof Error ? error.message : "لم نتمكن من إرسال طلب الصداقة", "خطأ");
+      showErrorToast(
+        error instanceof Error ? error.message : 'لم نتمكن من إرسال طلب الصداقة',
+        'خطأ'
+      );
     }
     closeUserPopup();
   };
 
   const handleIgnoreUser = (user: ChatUser) => {
     chat.ignoreUser(user.id);
-    showSuccessToast(`تم تجاهل ${user.username}. لن ترى رسائله العامة أو الخاصة ولن يستطيع إرسال طلب صداقة لك.`, "تم التجاهل");
+    showSuccessToast(
+      `تم تجاهل ${user.username}. لن ترى رسائله العامة أو الخاصة ولن يستطيع إرسال طلب صداقة لك.`,
+      'تم التجاهل'
+    );
     closeUserPopup();
   };
-
-
 
   const handleViewProfile = (user: ChatUser) => {
     setProfileUser(user);
@@ -272,12 +309,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   // معالج للروابط الشخصية
   const handleProfileLink = (userId: number) => {
-    const user = chat.onlineUsers.find(u => u.id === userId);
+    const user = chat.onlineUsers.find((u) => u.id === userId);
     if (user) {
       setProfileUser(user);
       setShowProfile(true);
     } else {
-      showErrorToast("لم نتمكن من العثور على هذا المستخدم", "مستخدم غير موجود");
+      showErrorToast('لم نتمكن من العثور على هذا المستخدم', 'مستخدم غير موجود');
     }
   };
 
@@ -294,7 +331,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       } else if (pmMatch) {
         const userId = parseInt(pmMatch[1]);
         const openPm = async () => {
-          let user = chat.onlineUsers.find(u => u.id === userId);
+          let user = chat.onlineUsers.find((u) => u.id === userId);
           if (!user) {
             try {
               const data = await apiRequest(`/api/users/${userId}?t=${Date.now()}`);
@@ -307,7 +344,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             setSelectedPrivateUser(user);
             setShowPmBox(true);
           } else {
-            showErrorToast("لم نتمكن من العثور على هذا المستخدم", "مستخدم غير موجود");
+            showErrorToast('لم نتمكن من العثور على هذا المستخدم', 'مستخدم غير موجود');
           }
           window.history.replaceState(null, '', window.location.pathname);
         };
@@ -317,10 +354,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
     // فحص الهاش عند تحميل الصفحة
     handleHashChange();
-    
+
     // مراقبة تغييرات الهاش
     window.addEventListener('hashchange', handleHashChange);
-    
+
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
     };
@@ -328,7 +365,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   const handleReportUser = (user: ChatUser, messageContent?: string, messageId?: number) => {
     setReportedUser(user);
-    setReportedMessage(messageContent && messageId ? { content: messageContent, id: messageId } : null);
+    setReportedMessage(
+      messageContent && messageId ? { content: messageContent, id: messageId } : null
+    );
     setShowReportModal(true);
     closeUserPopup();
   };
@@ -338,14 +377,21 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setReportedUser(null);
     setReportedMessage(null);
   };
-  
+
   const [showRichest, setShowRichest] = useState(false);
 
   return (
-      <div className={`min-h-[100dvh] flex flex-col chat-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`} onClick={closeUserPopup}>
+    <div
+      className={`min-h-[100dvh] flex flex-col chat-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
+      onClick={closeUserPopup}
+    >
       {/* Header - بدون التبويبات الأربعة */}
-      <header className={`sticky top-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex ${isMobile ? 'flex-col gap-1' : 'flex-wrap gap-2'} justify-between items-center shadow-2xl border-b border-accent`}>
-        <div className={`flex gap-2 ${isMobile ? 'flex-wrap justify-center w-full' : 'overflow-x-auto max-w-full pr-2'}`}>
+      <header
+        className={`sticky top-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex ${isMobile ? 'flex-col gap-1' : 'flex-wrap gap-2'} justify-between items-center shadow-2xl border-b border-accent`}
+      >
+        <div
+          className={`flex gap-2 ${isMobile ? 'flex-wrap justify-center w-full' : 'overflow-x-auto max-w-full pr-2'}`}
+        >
           <Button
             className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowSettings(!showSettings)}
@@ -353,7 +399,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             <Settings className="w-4 h-4" />
             إعدادات
           </Button>
-          
+
           <Button
             className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowRichest(true)}
@@ -384,7 +430,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
           {/* زر خاص بالمالك فقط */}
           {chat.currentUser && chat.currentUser.userType === 'owner' && (
-            <Button 
+            <Button
               className="glass-effect px-4 py-2 rounded-lg hover:bg-purple-600 transition-all duration-200 flex items-center gap-2 border border-purple-400"
               onClick={() => setShowOwnerPanel(true)}
             >
@@ -392,77 +438,80 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               إدارة المالك
             </Button>
           )}
-          
+
           {/* زر لوحة الإدارة للمشرفين */}
-          {chat.currentUser && (chat.currentUser.userType === 'owner' || chat.currentUser.userType === 'admin') && (
-            <>
-              {/* زر ترقية المستخدمين - للمالك فقط */}
-              {chat.currentUser?.userType === 'owner' && (
-                <Button 
-                  className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2"
-                  onClick={() => setShowPromotePanel(true)}
-                >
-                  <Crown className="w-4 h-4" />
-                  ترقية المستخدمين
-                </Button>
-              )}
-
-              <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400"
-                onClick={() => setShowActiveActions(true)}
-              >
-                <Lock className="w-4 h-4" />
-                سجل الإجراءات النشطة
-              </Button>
-              
-              <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 border border-red-400 relative"
-                onClick={() => setShowReportsLog(true)}
-              >
-                <AlertTriangle className="w-4 h-4" />
-                سجل البلاغات
-              </Button>
-              
-              <Button 
-                className="glass-effect px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 border"
-                onClick={async () => {
-                  if (!chat.currentUser) return;
-                  try {
-                    const endpoint = chat.currentUser.isHidden ? `/api/users/${chat.currentUser.id}/show-online` : `/api/users/${chat.currentUser.id}/hide-online`;
-                    const res = await apiRequest(endpoint, { method: 'POST' });
-                    const nowHidden = (res as any)?.isHidden ?? !chat.currentUser.isHidden;
-                    // تحديث محلي بسيط لحالة المستخدم الحالي
-                    (chat.currentUser as any).isHidden = nowHidden;
-                  } catch (e) {
-                    console.error(e);
-                  }
-                }}
-                title="إخفائي من قائمة المتصلين للجميع"
-              >
-                {chat.currentUser?.isHidden ? (
-                  <>
-                    <Eye className="w-4 h-4" />
-                    <span>إظهار</span>
-                  </>
-                ) : (
-                  <>
-                    <EyeOff className="w-4 h-4" />
-                    <span>إخفاء</span>
-                  </>
+          {chat.currentUser &&
+            (chat.currentUser.userType === 'owner' || chat.currentUser.userType === 'admin') && (
+              <>
+                {/* زر ترقية المستخدمين - للمالك فقط */}
+                {chat.currentUser?.userType === 'owner' && (
+                  <Button
+                    className="glass-effect px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-2"
+                    onClick={() => setShowPromotePanel(true)}
+                  >
+                    <Crown className="w-4 h-4" />
+                    ترقية المستخدمين
+                  </Button>
                 )}
-              </Button>
-              
-              <Button 
-                className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
-                onClick={() => setShowModerationPanel(true)}
-              >
-                <Shield className="w-4 h-4" />
-                إدارة
-              </Button>
-            </>
-          )}
 
-          <Button 
+                <Button
+                  className="glass-effect px-4 py-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 flex items-center gap-2 border border-yellow-400"
+                  onClick={() => setShowActiveActions(true)}
+                >
+                  <Lock className="w-4 h-4" />
+                  سجل الإجراءات النشطة
+                </Button>
+
+                <Button
+                  className="glass-effect px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 flex items-center gap-2 border border-red-400 relative"
+                  onClick={() => setShowReportsLog(true)}
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  سجل البلاغات
+                </Button>
+
+                <Button
+                  className="glass-effect px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 border"
+                  onClick={async () => {
+                    if (!chat.currentUser) return;
+                    try {
+                      const endpoint = chat.currentUser.isHidden
+                        ? `/api/users/${chat.currentUser.id}/show-online`
+                        : `/api/users/${chat.currentUser.id}/hide-online`;
+                      const res = await apiRequest(endpoint, { method: 'POST' });
+                      const nowHidden = (res as any)?.isHidden ?? !chat.currentUser.isHidden;
+                      // تحديث محلي بسيط لحالة المستخدم الحالي
+                      (chat.currentUser as any).isHidden = nowHidden;
+                    } catch (e) {
+                      console.error(e);
+                    }
+                  }}
+                  title="إخفائي من قائمة المتصلين للجميع"
+                >
+                  {chat.currentUser?.isHidden ? (
+                    <>
+                      <Eye className="w-4 h-4" />
+                      <span>إظهار</span>
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="w-4 h-4" />
+                      <span>إخفاء</span>
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+                  onClick={() => setShowModerationPanel(true)}
+                >
+                  <Shield className="w-4 h-4" />
+                  إدارة
+                </Button>
+              </>
+            )}
+
+          <Button
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowMessages(true)}
             title="الرسائل"
@@ -470,8 +519,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             <MessageSquare className="w-4 h-4" />
             الرسائل
           </Button>
-          
-          <Button 
+
+          <Button
             className="glass-effect px-4 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2 relative"
             onClick={() => setShowNotifications(true)}
           >
@@ -480,7 +529,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
 
           {/* الشعار بجانب الإشعارات */}
-          <div className="flex items-center gap-2 cursor-pointer select-none" onClick={() => { if (isMobile) setActiveView('hidden'); }}>
+          <div
+            className="flex items-center gap-2 cursor-pointer select-none"
+            onClick={() => {
+              if (isMobile) setActiveView('hidden');
+            }}
+          >
             <MessageCircle className="w-5 h-5 text-primary" />
             <div className="text-lg sm:text-xl font-bold text-white truncate">
               Arabic<span className="text-primary">Chat</span>
@@ -488,13 +542,19 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </div>
         </div>
       </header>
-      
+
       {/* Main Content - تحسين التخطيط لمنع التداخل */}
-      <main className={`flex flex-1 overflow-hidden min-h-0 ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'}`} style={{ paddingBottom: isMobile ? '80px' : '60px' }}>
+      <main
+        className={`flex flex-1 overflow-hidden min-h-0 ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'}`}
+        style={{ paddingBottom: isMobile ? '80px' : '60px' }}
+      >
         {/* الشريط الجانبي - على الجوال يعرض بملء الشاشة عند اختيار التبويب */}
         {activeView !== 'hidden' && (
-          <div className={`${isMobile ? 'w-full flex-1 min-h-0' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`} style={{ maxHeight: 'calc(100vh - 160px)' }}>
-            <UnifiedSidebar 
+          <div
+            className={`${isMobile ? 'w-full flex-1 min-h-0' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}
+            style={{ maxHeight: 'calc(100vh - 160px)' }}
+          >
+            <UnifiedSidebar
               users={chat.onlineUsers}
               onUserClick={handleUserClick}
               currentUser={chat.currentUser}
@@ -512,90 +572,141 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             />
           </div>
         )}
-                {(!isMobile || activeView === 'hidden') ? (() => {
-           const currentRoom = rooms.find(room => room.id === chat.currentRoomId);
-           
-           // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
-          if (currentRoom?.isBroadcast) {
-            return (
-                            <BroadcastRoomInterface
-                 currentUser={chat.currentUser}
-                 room={currentRoom}
-                 onlineUsers={chat.onlineUsers}
-                 onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
-                 onTyping={(_isTyping) => chat.sendTyping()}
-                 typingUsers={Array.from(chat.typingUsers)}
-                 onReportMessage={handleReportUser}
-                 onUserClick={handleUserClick}
-                 messages={chat.publicMessages}
-                 chat={{
-                   sendPublicMessage: (content: string) => chat.sendRoomMessage(content, chat.currentRoomId),
-                   handleTyping: () => chat.sendTyping(),
-                   addBroadcastMessageHandler: (handler: (data: any) => void) => chat.addBroadcastMessageHandler?.(handler),
-                   removeBroadcastMessageHandler: (handler: (data: any) => void) => chat.removeBroadcastMessageHandler?.(handler),
-                   sendWebRTCIceCandidate: (toUserId: number, roomId: string, candidate: RTCIceCandidateInit) => chat.sendWebRTCIceCandidate?.(toUserId, roomId, candidate),
-                   sendWebRTCOffer: (toUserId: number, roomId: string, offer: RTCSessionDescriptionInit) => chat.sendWebRTCOffer?.(toUserId, roomId, offer),
-                   sendWebRTCAnswer: (toUserId: number, roomId: string, answer: RTCSessionDescriptionInit) => chat.sendWebRTCAnswer?.(toUserId, roomId, answer),
-                   onWebRTCOffer: (handler: (payload: any) => void) => chat.onWebRTCOffer?.(handler),
-                   offWebRTCOffer: (handler: (payload: any) => void) => chat.offWebRTCOffer?.(handler),
-                   onWebRTCIceCandidate: (handler: (payload: any) => void) => chat.onWebRTCIceCandidate?.(handler),
-                   offWebRTCIceCandidate: (handler: (payload: any) => void) => chat.offWebRTCIceCandidate?.(handler),
-                   onWebRTCAnswer: (handler: (payload: any) => void) => chat.onWebRTCAnswer?.(handler),
-                   offWebRTCAnswer: (handler: (payload: any) => void) => chat.offWebRTCAnswer?.(handler),
-                 }}
-               />
-            );
-          }
-          
-                      // وإلا استخدم MessageArea العادية مع حماية من التداخل
-            return (
-              <div className="flex-1 flex flex-col min-h-0 relative" style={{ maxHeight: 'calc(100vh - 160px)' }}>
-                <MessageArea 
-                  messages={chat.publicMessages}
-                  currentUser={chat.currentUser}
-                  onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
-                  onTyping={() => chat.sendTyping()}
-                  typingUsers={chat.typingUsers}
-                  onReportMessage={handleReportUser}
-                  onUserClick={handleUserClick}
-                  onlineUsers={chat.onlineUsers}
-                  currentRoomName={currentRoom?.name || 'الدردشة العامة'}
-                  currentRoomId={chat.currentRoomId}
-                  ignoredUserIds={chat.ignoredUsers}
-                />
-              </div>
-            );
-         })() : null}
-       </main>
+        {!isMobile || activeView === 'hidden'
+          ? (() => {
+              const currentRoom = rooms.find((room) => room.id === chat.currentRoomId);
+
+              // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
+              if (currentRoom?.isBroadcast) {
+                return (
+                  <BroadcastRoomInterface
+                    currentUser={chat.currentUser}
+                    room={currentRoom}
+                    onlineUsers={chat.onlineUsers}
+                    onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                    onTyping={(_isTyping) => chat.sendTyping()}
+                    typingUsers={Array.from(chat.typingUsers)}
+                    onReportMessage={handleReportUser}
+                    onUserClick={handleUserClick}
+                    messages={chat.publicMessages}
+                    chat={{
+                      sendPublicMessage: (content: string) =>
+                        chat.sendRoomMessage(content, chat.currentRoomId),
+                      handleTyping: () => chat.sendTyping(),
+                      addBroadcastMessageHandler: (handler: (data: any) => void) =>
+                        chat.addBroadcastMessageHandler?.(handler),
+                      removeBroadcastMessageHandler: (handler: (data: any) => void) =>
+                        chat.removeBroadcastMessageHandler?.(handler),
+                      sendWebRTCIceCandidate: (
+                        toUserId: number,
+                        roomId: string,
+                        candidate: RTCIceCandidateInit
+                      ) => chat.sendWebRTCIceCandidate?.(toUserId, roomId, candidate),
+                      sendWebRTCOffer: (
+                        toUserId: number,
+                        roomId: string,
+                        offer: RTCSessionDescriptionInit
+                      ) => chat.sendWebRTCOffer?.(toUserId, roomId, offer),
+                      sendWebRTCAnswer: (
+                        toUserId: number,
+                        roomId: string,
+                        answer: RTCSessionDescriptionInit
+                      ) => chat.sendWebRTCAnswer?.(toUserId, roomId, answer),
+                      onWebRTCOffer: (handler: (payload: any) => void) =>
+                        chat.onWebRTCOffer?.(handler),
+                      offWebRTCOffer: (handler: (payload: any) => void) =>
+                        chat.offWebRTCOffer?.(handler),
+                      onWebRTCIceCandidate: (handler: (payload: any) => void) =>
+                        chat.onWebRTCIceCandidate?.(handler),
+                      offWebRTCIceCandidate: (handler: (payload: any) => void) =>
+                        chat.offWebRTCIceCandidate?.(handler),
+                      onWebRTCAnswer: (handler: (payload: any) => void) =>
+                        chat.onWebRTCAnswer?.(handler),
+                      offWebRTCAnswer: (handler: (payload: any) => void) =>
+                        chat.offWebRTCAnswer?.(handler),
+                    }}
+                  />
+                );
+              }
+
+              // وإلا استخدم MessageArea العادية مع حماية من التداخل
+              return (
+                <div
+                  className="flex-1 flex flex-col min-h-0 relative"
+                  style={{ maxHeight: 'calc(100vh - 160px)' }}
+                >
+                  <MessageArea
+                    messages={chat.publicMessages}
+                    currentUser={chat.currentUser}
+                    onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                    onTyping={() => chat.sendTyping()}
+                    typingUsers={chat.typingUsers}
+                    onReportMessage={handleReportUser}
+                    onUserClick={handleUserClick}
+                    onlineUsers={chat.onlineUsers}
+                    currentRoomName={currentRoom?.name || 'الدردشة العامة'}
+                    currentRoomId={chat.currentRoomId}
+                    ignoredUserIds={chat.ignoredUsers}
+                  />
+                </div>
+              );
+            })()
+          : null}
+      </main>
 
       {/* Footer - تبويبات سفلية محسنة لتجنب التداخل مع منطقة الإرسال */}
-      <footer className={`fixed bottom-0 left-0 right-0 z-10 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent ${isMobile ? 'mobile-footer' : ''}`} style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0' }}>
+      <footer
+        className={`fixed bottom-0 left-0 right-0 z-10 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent ${isMobile ? 'mobile-footer' : ''}`}
+        style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0' }}
+      >
         <div className="flex gap-2 sm:gap-3 overflow-x-auto max-w-full">
           {/* الحوائط */}
-                     <Button 
-             className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
-               activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-             }`}
-             onClick={() => setActiveView(prev => (prev === 'walls' ? 'hidden' : 'walls'))}
-             title="الحوائط"
-           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Walls">
+          <Button
+            className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
+              activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            }`}
+            onClick={() => setActiveView((prev) => (prev === 'walls' ? 'hidden' : 'walls'))}
+            title="الحوائط"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-label="Walls"
+            >
               <line x1="3" y1="6" x2="21" y2="6"></line>
               <line x1="3" y1="12" x2="21" y2="12"></line>
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
             الحوائط
           </Button>
-          
+
           {/* المستخدمون */}
-                     <Button 
-             className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
-               activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-             }`}
-             onClick={() => setActiveView(prev => (prev === 'users' ? 'hidden' : 'users'))}
-             title="المستخدمون المتصلون"
-           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Users">
+          <Button
+            className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
+              activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            }`}
+            onClick={() => setActiveView((prev) => (prev === 'users' ? 'hidden' : 'users'))}
+            title="المستخدمون المتصلون"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-label="Users"
+            >
               <circle cx="9" cy="7" r="3"></circle>
               <path d="M2 21c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"></path>
               <circle cx="17" cy="7" r="3"></circle>
@@ -605,14 +716,25 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
 
           {/* الغرف */}
-          <Button 
+          <Button
             className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
               activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView(prev => (prev === 'rooms' ? 'hidden' : 'rooms'))}
+            onClick={() => setActiveView((prev) => (prev === 'rooms' ? 'hidden' : 'rooms'))}
             title="الغرف"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Rooms">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-label="Rooms"
+            >
               <path d="M3 11l9-8 9 8"></path>
               <path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"></path>
               <path d="M9 21v-6h6v6"></path>
@@ -621,14 +743,25 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
 
           {/* الأصدقاء */}
-          <Button 
+          <Button
             className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
               activeView === 'friends' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView(prev => (prev === 'friends' ? 'hidden' : 'friends'))}
+            onClick={() => setActiveView((prev) => (prev === 'friends' ? 'hidden' : 'friends'))}
             title="الأصدقاء"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Friends">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-label="Friends"
+            >
               <circle cx="9" cy="7" r="3"></circle>
               <path d="M2 21c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"></path>
               <path d="M19 8v6"></path>
@@ -656,11 +789,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onUpdate={(updatedUser) => {
                 // تحديث بيانات المستخدم في قائمة المتصلون
                 if (updatedUser && updatedUser.id) {
-
                   chat.updateCurrentUser({
                     profileEffect: updatedUser.profileEffect,
                     usernameColor: updatedUser.usernameColor,
-                    profileBackgroundColor: updatedUser.profileBackgroundColor
+                    profileBackgroundColor: updatedUser.profileBackgroundColor,
                   });
                 }
               }}
@@ -669,7 +801,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               onReportUser={(u) => handleReportUser(u)}
             />
           ) : (
-            <ProfileModal 
+            <ProfileModal
               user={profileUser || chat.currentUser}
               currentUser={chat.currentUser}
               onClose={() => {
@@ -685,7 +817,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   chat.updateCurrentUser({
                     profileEffect: updatedUser.profileEffect,
                     usernameColor: updatedUser.usernameColor,
-                    profileBackgroundColor: updatedUser.profileBackgroundColor
+                    profileBackgroundColor: updatedUser.profileBackgroundColor,
                   });
                 }
               }}
@@ -704,19 +836,38 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label htmlFor="room-name">اسم الغرفة</Label>
-              <Input id="room-name" value={newRoomName} onChange={(e) => setNewRoomName(e.target.value)} placeholder="مثال: الدردشة العامة 2" />
+              <Input
+                id="room-name"
+                value={newRoomName}
+                onChange={(e) => setNewRoomName(e.target.value)}
+                placeholder="مثال: الدردشة العامة 2"
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="room-desc">الوصف</Label>
-              <Textarea id="room-desc" value={newRoomDescription} onChange={(e) => setNewRoomDescription(e.target.value)} placeholder="نبذة قصيرة عن الغرفة" />
+              <Textarea
+                id="room-desc"
+                value={newRoomDescription}
+                onChange={(e) => setNewRoomDescription(e.target.value)}
+                placeholder="نبذة قصيرة عن الغرفة"
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="room-image">صورة الغرفة (اختياري)</Label>
-              <Input id="room-image" type="file" accept="image/*" onChange={(e) => setNewRoomImage(e.target.files?.[0] || null)} />
+              <Input
+                id="room-image"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setNewRoomImage(e.target.files?.[0] || null)}
+              />
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="ghost" onClick={() => setShowAddRoomDialog(false)}>إلغاء</Button>
-              <Button onClick={submitNewRoom} disabled={!newRoomName.trim()}>حفظ</Button>
+              <Button variant="ghost" onClick={() => setShowAddRoomDialog(false)}>
+                إلغاء
+              </Button>
+              <Button onClick={submitNewRoom} disabled={!newRoomName.trim()}>
+                حفظ
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -730,7 +881,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           currentUser={chat.currentUser}
           privateConversations={chat.privateConversations}
           onlineUsers={chat.onlineUsers}
-          onStartPrivateChat={(user) => { setShowMessages(false); setSelectedPrivateUser(user); setShowPmBox(true); }}
+          onStartPrivateChat={(user) => {
+            setShowMessages(false);
+            setSelectedPrivateUser(user);
+            setShowPmBox(true);
+          }}
         />
       )}
 
@@ -743,17 +898,21 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           currentUser={chat.currentUser}
           messages={chat.privateConversations[selectedPrivateUser.id] || []}
           onSendMessage={(content) => chat.sendMessage(content, 'text', selectedPrivateUser.id)}
-          onLoadMore={() => (chat as any).loadOlderPrivateConversation?.(selectedPrivateUser.id, 20)}
+          onLoadMore={() =>
+            (chat as any).loadOlderPrivateConversation?.(selectedPrivateUser.id, 20)
+          }
         />
       )}
-
 
       {userPopup.show && userPopup.user && (
         <UserPopup
           user={userPopup.user}
           x={userPopup.x}
           y={userPopup.y}
-          onPrivateMessage={() => { closeUserPopup(); setTimeout(() => handlePrivateMessage(userPopup.user!), 0); }}
+          onPrivateMessage={() => {
+            closeUserPopup();
+            setTimeout(() => handlePrivateMessage(userPopup.user!), 0);
+          }}
           onAddFriend={() => handleAddFriend(userPopup.user!)}
           onIgnore={() => {
             handleIgnoreUser(userPopup.user!);
@@ -764,33 +923,33 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
-              {showSettings && (
-          <SettingsMenu
-            onOpenProfile={() => {
-              setShowProfile(true);
-              setShowSettings(false);
-            }}
-            onLogout={onLogout}
-            onClose={() => setShowSettings(false)}
-            onOpenReports={() => {
-              setShowAdminReports(true);
-              setShowSettings(false);
-            }}
-            onOpenThemeSelector={() => {
-              setShowThemeSelector(true);
-              setShowSettings(false);
-            }}
-            onOpenUsernameColorPicker={() => {
-              setShowUsernameColorPicker(true);
-              setShowSettings(false);
-            }}
-            onOpenIgnoredUsers={() => {
-              setShowIgnoredUsers(true);
-              setShowSettings(false);
-            }}
-            currentUser={chat.currentUser}
-          />
-        )}
+      {showSettings && (
+        <SettingsMenu
+          onOpenProfile={() => {
+            setShowProfile(true);
+            setShowSettings(false);
+          }}
+          onLogout={onLogout}
+          onClose={() => setShowSettings(false)}
+          onOpenReports={() => {
+            setShowAdminReports(true);
+            setShowSettings(false);
+          }}
+          onOpenThemeSelector={() => {
+            setShowThemeSelector(true);
+            setShowSettings(false);
+          }}
+          onOpenUsernameColorPicker={() => {
+            setShowUsernameColorPicker(true);
+            setShowSettings(false);
+          }}
+          onOpenIgnoredUsers={() => {
+            setShowIgnoredUsers(true);
+            setShowSettings(false);
+          }}
+          currentUser={chat.currentUser}
+        />
+      )}
 
       {showReportModal && (
         <ReportModal
@@ -820,10 +979,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
 
-
-
-
-
       {/* ⚠️ لوحة الإدارة - إزالة التكرار */}
       {showModerationPanel && (
         <ModerationPanel
@@ -836,7 +991,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* 👑 لوحة المالك */}
       {showOwnerPanel && (
-        <OwnerAdminPanel 
+        <OwnerAdminPanel
           isOpen={showOwnerPanel}
           onClose={() => setShowOwnerPanel(false)}
           currentUser={chat.currentUser}
@@ -845,7 +1000,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       )}
 
       {showReportsLog && (
-        <ReportsLog 
+        <ReportsLog
           isVisible={showReportsLog}
           onClose={() => setShowReportsLog(false)}
           currentUser={chat.currentUser}
@@ -853,7 +1008,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       )}
 
       {showActiveActions && (
-        <ActiveModerationLog 
+        <ActiveModerationLog
           isVisible={showActiveActions}
           onClose={() => setShowActiveActions(false)}
           currentUser={chat.currentUser}
@@ -861,7 +1016,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       )}
 
       {showPromotePanel && (
-        <PromoteUserPanel 
+        <PromoteUserPanel
           isVisible={showPromotePanel}
           onClose={() => setShowPromotePanel(false)}
           currentUser={chat.currentUser}
@@ -890,15 +1045,15 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             >
               ×
             </button>
-                          <UsernameColorPicker
-                currentUser={chat.currentUser}
-                onColorUpdate={(color) => {
-                  chat.updateCurrentUser({ usernameColor: color } as any);
-                  // إذا كان لون الخلفية مضبوطاً ولم يكن لون الاسم مضبوطاً سابقاً (أبيض افتراضياً)، لا نغيّر الخلفية.
-                  // أما إذا كان لون الاسم أبيض افتراضياً والملف الشخصي بلا خلفية، فلا شيء نفعله هنا. البث سيحدّث القائمة.
-                  setShowUsernameColorPicker(false);
-                }}
-              />
+            <UsernameColorPicker
+              currentUser={chat.currentUser}
+              onColorUpdate={(color) => {
+                chat.updateCurrentUser({ usernameColor: color } as any);
+                // إذا كان لون الخلفية مضبوطاً ولم يكن لون الاسم مضبوطاً سابقاً (أبيض افتراضياً)، لا نغيّر الخلفية.
+                // أما إذا كان لون الاسم أبيض افتراضياً والملف الشخصي بلا خلفية، فلا شيء نفعله هنا. البث سيحدّث القائمة.
+                setShowUsernameColorPicker(false);
+              }}
+            />
           </div>
         </div>
       )}
@@ -912,25 +1067,29 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         />
       )}
       {/* إشعار الحجب (block) */}
-      {chat.notifications && chat.notifications.some(n => n.type === 'moderation' && n.content.includes('حظر')) && (
-        <BlockNotification
-          isVisible={true}
-          reason={chat.notifications.find(n => n.type === 'moderation' && n.content.includes('حظر'))?.content || ''}
-          onClose={() => {}}
-        />
-      )}
+      {chat.notifications &&
+        chat.notifications.some((n) => n.type === 'moderation' && n.content.includes('حظر')) && (
+          <BlockNotification
+            isVisible={true}
+            reason={
+              chat.notifications.find((n) => n.type === 'moderation' && n.content.includes('حظر'))
+                ?.content || ''
+            }
+            onClose={() => {}}
+          />
+        )}
 
       {/* تنبيه الرسائل الجديدة */}
-              <MessageAlert
-          isOpen={newMessageAlert.show}
-          sender={newMessageAlert.sender}
-          onClose={() => setNewMessageAlert({ show: false, sender: null })}
-          onOpenMessages={() => setShowMessages(true)}
-        />
+      <MessageAlert
+        isOpen={newMessageAlert.show}
+        sender={newMessageAlert.sender}
+        onClose={() => setNewMessageAlert({ show: false, sender: null })}
+        onOpenMessages={() => setShowMessages(true)}
+      />
 
       {/* إشعار الترحيب */}
       {chat.currentUser && <WelcomeNotification user={chat.currentUser} />}
-      
+
       {/* نافذة الأثرياء */}
       <RichestModal
         isOpen={showRichest}
@@ -943,40 +1102,45 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       />
 
       {showIgnoredUsers && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold">المستخدمون المتجاهلون</h3>
-          <button
-            onClick={() => setShowIgnoredUsers(false)}
-            className="text-gray-500 hover:text-gray-700"
-            aria-label="إغلاق"
-          >
-            ×
-          </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold">المستخدمون المتجاهلون</h3>
+              <button
+                onClick={() => setShowIgnoredUsers(false)}
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="إغلاق"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+              {Array.from(chat.ignoredUsers || []).map((id) => {
+                const u = chat.onlineUsers.find((u) => u.id === id);
+                return (
+                  <div key={id} className="flex items-center justify-between p-2 border rounded">
+                    <div className="flex items-center gap-2">
+                      {u ? (
+                        <ProfileImage user={u} size="small" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                          ?
+                        </div>
+                      )}
+                      <span className="font-medium">
+                        {u ? u.username : `مستخدم غير متصل #${id}`}
+                      </span>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => chat.unignoreUser?.(id)}>
+                      إلغاء التجاهل
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
-        <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-          {Array.from(chat.ignoredUsers || []).map((id) => {
-            const u = chat.onlineUsers.find(u => u.id === id);
-            return (
-              <div key={id} className="flex items-center justify-between p-2 border rounded">
-                <div className="flex items-center gap-2">
-                  {u ? (
-                    <ProfileImage user={u} size="small" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">?</div>
-                  )}
-                  <span className="font-medium">{u ? u.username : `مستخدم غير متصل #${id}`}</span>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => chat.unignoreUser?.(id)}>إلغاء التجاهل</Button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  )}
-
+      )}
     </div>
   );
 }

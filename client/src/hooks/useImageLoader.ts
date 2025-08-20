@@ -9,55 +9,58 @@ export function useImageLoader({ src, fallback }: UseImageLoaderProps) {
   const [imageState, setImageState] = useState({
     src: fallback,
     isLoading: false,
-    hasError: false
+    hasError: false,
   });
 
-  const loadImage = useCallback((imageSrc: string) => {
-    if (!imageSrc || imageSrc === fallback) {
-      setImageState({
-        src: fallback,
-        isLoading: false,
-        hasError: false
-      });
-      return;
-    }
+  const loadImage = useCallback(
+    (imageSrc: string) => {
+      if (!imageSrc || imageSrc === fallback) {
+        setImageState({
+          src: fallback,
+          isLoading: false,
+          hasError: false,
+        });
+        return;
+      }
 
-    // إذا كانت الصورة base64، استخدمها مباشرة دون تحميل
-    if (imageSrc.startsWith('data:')) {
-      setImageState({
-        src: imageSrc,
-        isLoading: false,
-        hasError: false
-      });
-      return;
-    }
+      // إذا كانت الصورة base64، استخدمها مباشرة دون تحميل
+      if (imageSrc.startsWith('data:')) {
+        setImageState({
+          src: imageSrc,
+          isLoading: false,
+          hasError: false,
+        });
+        return;
+      }
 
-    setImageState(prev => ({
-      ...prev,
-      isLoading: true,
-      hasError: false
-    }));
+      setImageState((prev) => ({
+        ...prev,
+        isLoading: true,
+        hasError: false,
+      }));
 
-    const img = new Image();
-    
-    img.onload = () => {
-      setImageState({
-        src: imageSrc,
-        isLoading: false,
-        hasError: false
-      });
-    };
+      const img = new Image();
 
-    img.onerror = () => {
-      setImageState({
-        src: fallback,
-        isLoading: false,
-        hasError: true
-      });
-    };
+      img.onload = () => {
+        setImageState({
+          src: imageSrc,
+          isLoading: false,
+          hasError: false,
+        });
+      };
 
-    img.src = imageSrc;
-  }, [fallback]);
+      img.onerror = () => {
+        setImageState({
+          src: fallback,
+          isLoading: false,
+          hasError: true,
+        });
+      };
+
+      img.src = imageSrc;
+    },
+    [fallback]
+  );
 
   useEffect(() => {
     loadImage(src);
@@ -67,6 +70,6 @@ export function useImageLoader({ src, fallback }: UseImageLoaderProps) {
     src: imageState.src,
     isLoading: imageState.isLoading,
     hasError: imageState.hasError,
-    reload: () => loadImage(src)
+    reload: () => loadImage(src),
   };
 }

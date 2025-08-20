@@ -3,16 +3,20 @@
 ## 📋 المشاكل المكتشفة وحلولها
 
 ### **1. مشكلة تحديث البروفايل (400 Bad Request)**
+
 #### **المشكلة:**
+
 - العميل يستدعي `/api/users/update-profile` لكن الخادم لا يحتوي على هذا endpoint
 
 #### **الحل المطبق:**
+
 ✅ **تم إضافة endpoint جديد في `server/routes.ts`:**
+
 ```typescript
 app.post('/api/users/update-profile', async (req, res) => {
   try {
     const { userId, ...updates } = req.body;
-    
+
     if (!userId) {
       return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
     }
@@ -23,10 +27,10 @@ app.post('/api/users/update-profile', async (req, res) => {
     }
 
     const updatedUser = await storage.updateUser(userId, updates);
-    
+
     broadcast({
       type: 'user_profile_updated',
-      data: { userId, updates }
+      data: { userId, updates },
     });
 
     res.json({ success: true, message: 'تم تحديث البروفايل بنجاح', user: updatedUser });
@@ -38,24 +42,29 @@ app.post('/api/users/update-profile', async (req, res) => {
 ```
 
 ✅ **تم إصلاح إرسال البيانات في العميل:**
+
 ```typescript
 // في client/src/components/chat/ProfileModal.tsx
 const response = await apiRequest('/api/users/update-profile', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ 
-    userId: currentUser?.id,  // ✅ إضافة userId
-    [fieldName]: editValue 
+  body: JSON.stringify({
+    userId: currentUser?.id, // ✅ إضافة userId
+    [fieldName]: editValue,
   }),
 });
 ```
 
 ### **2. مشكلة تحديث لون الخلفية (400 Bad Request)**
+
 #### **المشكلة:**
+
 - العميل يرسل `{ color: theme }` لكن الخادم يتوقع `{ userId, profileBackgroundColor }`
 
 #### **الحل المطبق:**
+
 ✅ **تم تحسين endpoint في الخادم لدعم كلا الصيغتين:**
+
 ```typescript
 // في server/routes.ts
 const { userId, profileBackgroundColor, color } = req.body;
@@ -69,43 +78,49 @@ if (!userId || !backgroundColorValue) {
 ```
 
 ✅ **تم إصلاح إرسال البيانات في العميل:**
+
 ```typescript
 // في client/src/components/chat/ProfileModal.tsx
 await apiRequest('/api/users/update-background-color', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ 
-    userId: currentUser?.id,  // ✅ إضافة userId
-    color: theme 
+  body: JSON.stringify({
+    userId: currentUser?.id, // ✅ إضافة userId
+    color: theme,
   }),
 });
 ```
 
 ### **3. مشكلة طلبات الصداقة (429 Too Many Requests)**
+
 #### **المشكلة:**
+
 - العميل يستدعي `/api/friend-requests/:userId` لكن الخادم لا يحتوي على هذا endpoint
 - Rate limiting مفرط (100 طلب/15 دقيقة)
 
 #### **الحل المطبق:**
+
 ✅ **تم إضافة endpoint مفقود:**
+
 ```typescript
 // في server/routes.ts
-app.get("/api/friend-requests/:userId", friendRequestLimiter, async (req, res) => {
+app.get('/api/friend-requests/:userId', friendRequestLimiter, async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     const [incoming, outgoing] = await Promise.all([
       storage.getIncomingFriendRequests(userId),
-      storage.getOutgoingFriendRequests(userId)
+      storage.getOutgoingFriendRequests(userId),
     ]);
     res.json({ incoming, outgoing });
   } catch (error) {
     console.error('خطأ في جلب طلبات الصداقة:', error);
-    res.status(500).json({ error: "خطأ في الخادم" });
+    res.status(500).json({ error: 'خطأ في الخادم' });
   }
 });
 ```
 
 ✅ **تم تحسين Rate Limiting:**
+
 ```typescript
 // في server/security.ts
 // زيادة الحد العام من 100 إلى 500 طلب
@@ -123,14 +138,19 @@ export function friendRequestLimiter(req: Request, res: Response, next: NextFunc
 ```
 
 ### **4. تحسين رفع الصور**
+
 #### **الحالة:**
+
 ✅ **كود رفع الصور يعمل بشكل صحيح:**
+
 - Endpoint `/api/upload/profile-image` موجود
 - Multer مكون بشكل صحيح
 - العميل يرسل FormData بالشكل الصحيح
 
 ### **5. تحسينات إضافية**
+
 ✅ **تم تطبيق rate limiting خاص لطلبات الصداقة على جميع endpoints ذات الصلة:**
+
 ```typescript
 app.get("/api/friend-requests/:userId", friendRequestLimiter, async (req, res) => {
 app.get("/api/friend-requests/incoming/:userId", friendRequestLimiter, async (req, res) => {

@@ -20,44 +20,42 @@ const sizeClasses = {
   sm: 'w-4 h-4',
   md: 'w-6 h-6',
   lg: 'w-8 h-8',
-  xl: 'w-12 h-12'
+  xl: 'w-12 h-12',
 };
 
 // مؤشر دوراني
-export const Spinner: React.FC<LoadingProps> = ({ 
-  size = 'md', 
+export const Spinner: React.FC<LoadingProps> = ({
+  size = 'md',
   className,
-  color = 'text-blue-600'
+  color = 'text-blue-600',
 }) => (
-  <div className={cn(
-    'animate-spin rounded-full border-2 border-gray-300 border-t-current',
-    sizeClasses[size],
-    color,
-    className
-  )} />
+  <div
+    className={cn(
+      'animate-spin rounded-full border-2 border-gray-300 border-t-current',
+      sizeClasses[size],
+      color,
+      className
+    )}
+  />
 );
 
 // نقاط متحركة
-export const DotsLoader: React.FC<LoadingProps> = ({ 
-  size = 'md', 
+export const DotsLoader: React.FC<LoadingProps> = ({
+  size = 'md',
   className,
-  color = 'bg-blue-600'
+  color = 'bg-blue-600',
 }) => {
   const dotSize = size === 'sm' ? 'w-1 h-1' : size === 'lg' ? 'w-3 h-3' : 'w-2 h-2';
-  
+
   return (
     <div className={cn('flex space-x-1', className)}>
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className={cn(
-            'rounded-full animate-pulse',
-            dotSize,
-            color
-          )}
+          className={cn('rounded-full animate-pulse', dotSize, color)}
           style={{
             animationDelay: `${i * 0.2}s`,
-            animationDuration: '1.2s'
+            animationDuration: '1.2s',
           }}
         />
       ))}
@@ -66,40 +64,29 @@ export const DotsLoader: React.FC<LoadingProps> = ({
 };
 
 // نبضات
-export const PulseLoader: React.FC<LoadingProps> = ({ 
-  size = 'md', 
+export const PulseLoader: React.FC<LoadingProps> = ({
+  size = 'md',
   className,
-  color = 'bg-blue-600'
-}) => (
-  <div className={cn(
-    'rounded-full animate-pulse',
-    sizeClasses[size],
-    color,
-    className
-  )} />
-);
+  color = 'bg-blue-600',
+}) => <div className={cn('rounded-full animate-pulse', sizeClasses[size], color, className)} />;
 
 // أشرطة متحركة
-export const BarsLoader: React.FC<LoadingProps> = ({ 
-  size = 'md', 
+export const BarsLoader: React.FC<LoadingProps> = ({
+  size = 'md',
   className,
-  color = 'bg-blue-600'
+  color = 'bg-blue-600',
 }) => {
   const barHeight = size === 'sm' ? 'h-3' : size === 'lg' ? 'h-6' : 'h-4';
-  
+
   return (
     <div className={cn('flex items-end space-x-1', className)}>
       {[0, 1, 2, 3].map((i) => (
         <div
           key={i}
-          className={cn(
-            'w-1 animate-pulse',
-            barHeight,
-            color
-          )}
+          className={cn('w-1 animate-pulse', barHeight, color)}
           style={{
             animationDelay: `${i * 0.15}s`,
-            animationDuration: '1s'
+            animationDuration: '1s',
           }}
         />
       ))}
@@ -108,9 +95,9 @@ export const BarsLoader: React.FC<LoadingProps> = ({
 };
 
 // هيكل تحميل النص
-export const TextSkeleton: React.FC<{ lines?: number; className?: string }> = ({ 
-  lines = 3, 
-  className 
+export const TextSkeleton: React.FC<{ lines?: number; className?: string }> = ({
+  lines = 3,
+  className,
 }) => (
   <div className={cn('space-y-2', className)}>
     {Array.from({ length: lines }).map((_, i) => (
@@ -126,16 +113,10 @@ export const TextSkeleton: React.FC<{ lines?: number; className?: string }> = ({
 );
 
 // هيكل تحميل الصورة
-export const ImageSkeleton: React.FC<{ className?: string; aspectRatio?: string }> = ({ 
+export const ImageSkeleton: React.FC<{ className?: string; aspectRatio?: string }> = ({
   className,
-  aspectRatio = 'aspect-square'
-}) => (
-  <div className={cn(
-    'bg-gray-300 rounded animate-pulse',
-    aspectRatio,
-    className
-  )} />
-);
+  aspectRatio = 'aspect-square',
+}) => <div className={cn('bg-gray-300 rounded animate-pulse', aspectRatio, className)} />;
 
 // هيكل تحميل البطاقة
 export const CardSkeleton: React.FC<{ className?: string }> = ({ className }) => (
@@ -158,7 +139,7 @@ export const Loading: React.FC<LoadingProps> = ({
   message,
   className,
   fullScreen = false,
-  color
+  color,
 }) => {
   const LoadingComponent = () => {
     switch (variant) {
@@ -176,16 +157,9 @@ export const Loading: React.FC<LoadingProps> = ({
   };
 
   const content = (
-    <div className={cn(
-      'flex flex-col items-center justify-center space-y-2',
-      className
-    )}>
+    <div className={cn('flex flex-col items-center justify-center space-y-2', className)}>
       <LoadingComponent />
-      {message && (
-        <p className="text-sm text-gray-600 animate-pulse">
-          {message}
-        </p>
-      )}
+      {message && <p className="text-sm text-gray-600 animate-pulse">{message}</p>}
     </div>
   );
 
@@ -201,16 +175,8 @@ export const Loading: React.FC<LoadingProps> = ({
 };
 
 // مؤشر تحميل الصفحة
-export const PageLoader: React.FC<{ message?: string }> = ({ 
-  message = 'جاري التحميل...' 
-}) => (
-  <Loading
-    fullScreen
-    size="lg"
-    variant="spinner"
-    message={message}
-    className="space-y-4"
-  />
+export const PageLoader: React.FC<{ message?: string }> = ({ message = 'جاري التحميل...' }) => (
+  <Loading fullScreen size="lg" variant="spinner" message={message} className="space-y-4" />
 );
 
 // مؤشر تحميل الزر
@@ -229,14 +195,14 @@ export const useLoading = (initialState = false) => {
 
   const startLoading = React.useCallback(() => setIsLoading(true), []);
   const stopLoading = React.useCallback(() => setIsLoading(false), []);
-  const toggleLoading = React.useCallback(() => setIsLoading(prev => !prev), []);
+  const toggleLoading = React.useCallback(() => setIsLoading((prev) => !prev), []);
 
   return {
     isLoading,
     startLoading,
     stopLoading,
     toggleLoading,
-    setIsLoading
+    setIsLoading,
   };
 };
 
@@ -246,19 +212,10 @@ export const ProgressBar: React.FC<{
   className?: string;
   showPercent?: boolean;
   color?: string;
-}> = ({ 
-  progress, 
-  className, 
-  showPercent = false,
-  color = 'bg-blue-600'
-}) => (
+}> = ({ progress, className, showPercent = false, color = 'bg-blue-600' }) => (
   <div className={cn('w-full', className)}>
     <div className="flex justify-between items-center mb-1">
-      {showPercent && (
-        <span className="text-sm text-gray-600">
-          {Math.round(progress)}%
-        </span>
-      )}
+      {showPercent && <span className="text-sm text-gray-600">{Math.round(progress)}%</span>}
     </div>
     <div className="w-full bg-gray-200 rounded-full h-2">
       <div
@@ -270,15 +227,11 @@ export const ProgressBar: React.FC<{
 );
 
 // مؤشر تحميل للقوائم
-export const ListLoader: React.FC<{ 
-  items?: number; 
+export const ListLoader: React.FC<{
+  items?: number;
   itemHeight?: string;
   className?: string;
-}> = ({ 
-  items = 5, 
-  itemHeight = 'h-16',
-  className 
-}) => (
+}> = ({ items = 5, itemHeight = 'h-16', className }) => (
   <div className={cn('space-y-2', className)}>
     {Array.from({ length: items }).map((_, i) => (
       <div key={i} className={cn('bg-gray-300 rounded animate-pulse', itemHeight)} />

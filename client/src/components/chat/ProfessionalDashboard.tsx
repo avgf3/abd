@@ -15,8 +15,14 @@ interface ProfessionalDashboardProps {
   onClose: () => void;
 }
 
-export default function ProfessionalDashboard({ currentUser, isVisible, onClose }: ProfessionalDashboardProps) {
-  const [activePanel, setActivePanel] = useState<'analytics' | 'security' | 'performance' | null>(null);
+export default function ProfessionalDashboard({
+  currentUser,
+  isVisible,
+  onClose,
+}: ProfessionalDashboardProps) {
+  const [activePanel, setActivePanel] = useState<'analytics' | 'security' | 'performance' | null>(
+    null
+  );
 
   if (!isVisible) return null;
 
@@ -25,7 +31,10 @@ export default function ProfessionalDashboard({ currentUser, isVisible, onClose 
   const isAdmin = currentUser?.userType === 'admin' || isOwner;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" dir="rtl">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      dir="rtl"
+    >
       <div className="bg-secondary rounded-xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-white">🎛️ لوحة التحكم الاحترافية</h2>
@@ -43,8 +52,11 @@ export default function ProfessionalDashboard({ currentUser, isVisible, onClose 
             <div>
               <div className="text-white font-bold">{currentUser?.username}</div>
               <div className="text-gray-300 text-sm">
-                {currentUser?.userType === 'owner' ? 'مالك النظام' :
-                 currentUser?.userType === 'admin' ? 'مدير' : 'عضو'}
+                {currentUser?.userType === 'owner'
+                  ? 'مالك النظام'
+                  : currentUser?.userType === 'admin'
+                    ? 'مدير'
+                    : 'عضو'}
               </div>
             </div>
             <div className="mr-auto">
@@ -91,17 +103,17 @@ export default function ProfessionalDashboard({ currentUser, isVisible, onClose 
             <div className="text-2xl font-bold text-green-400">✅</div>
             <div className="text-sm text-gray-300">النظام سليم</div>
           </div>
-          
+
           <div className="glass-effect p-4 rounded-lg text-center">
             <div className="text-2xl font-bold text-blue-400">🌐</div>
             <div className="text-sm text-gray-300">متصل</div>
           </div>
-          
+
           <div className="glass-effect p-4 rounded-lg text-center">
             <div className="text-2xl font-bold text-purple-400">⚡</div>
             <div className="text-sm text-gray-300">أداء ممتاز</div>
           </div>
-          
+
           <div className="glass-effect p-4 rounded-lg text-center">
             <div className="text-2xl font-bold text-yellow-400">🔒</div>
             <div className="text-sm text-gray-300">آمن</div>
@@ -115,7 +127,9 @@ export default function ProfessionalDashboard({ currentUser, isVisible, onClose 
             <div>
               <div className="text-gray-300">🔧 إصدار النظام: v2.0 Professional</div>
               <div className="text-gray-300">📅 تاريخ آخر تحديث: 11 يناير 2025</div>
-              <div className="text-gray-300">⏰ وقت التشغيل: {Math.floor(Date.now() / 1000 / 60)} دقيقة</div>
+              <div className="text-gray-300">
+                ⏰ وقت التشغيل: {Math.floor(Date.now() / 1000 / 60)} دقيقة
+              </div>
             </div>
             <div>
               <div className="text-gray-300">🌐 البروتوكول: WebSocket Secure</div>

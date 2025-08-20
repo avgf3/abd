@@ -8,16 +8,19 @@ export function isValidHexColor(color: string): boolean {
 }
 
 // دالة لتنظيف وتصحيح لون HEX
-export function sanitizeHexColor(color: string | null | undefined, defaultColor: string = '#3c0d0d'): string {
+export function sanitizeHexColor(
+  color: string | null | undefined,
+  defaultColor: string = '#3c0d0d'
+): string {
   if (!color || color === 'null' || color === 'undefined' || color === '') {
     return defaultColor;
   }
-  
+
   const trimmed = color.trim();
   if (isValidHexColor(trimmed)) {
     return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
   }
-  
+
   return defaultColor;
 }
 
@@ -26,7 +29,7 @@ export function sanitizeEffect(effect: string | null | undefined): string {
   if (!effect || effect === 'null' || effect === 'undefined' || effect === '') {
     return 'none';
   }
-  
+
   // قائمة التأثيرات المسموحة
   const validEffects = [
     'none',
@@ -40,9 +43,9 @@ export function sanitizeEffect(effect: string | null | undefined): string {
     'effect-rainbow',
     'effect-shadow',
     'effect-electric',
-    'effect-crystal'
+    'effect-crystal',
   ];
-  
+
   return validEffects.includes(effect) ? effect : 'none';
 }
 
@@ -51,52 +54,94 @@ export function sanitizeTheme(theme: string | null | undefined): string {
   if (!theme || theme === 'null' || theme === 'undefined' || theme === '') {
     return 'default';
   }
-  
+
   // قائمة الثيمات المسموحة
   const validThemes = [
-    'default', 'dark', 'golden', 'royal', 'ocean', 'sunset', 'forest', 
-    'rose', 'emerald', 'fire', 'galaxy', 'rainbow', 'aqua', 'crystal',
-    'amber', 'coral', 'jade', 'sapphire', 'bronze', 'silver', 'platinum',
-    'obsidian', 'mystical', 'tropical', 'aurora', 'phoenix', 'burgundy',
-    'midnight', 'arctic', 'wine', 'steel', 'navy', 'slate', 'storm',
-    'crimson', 'royal_blue', 'black_gradient', 'deep_black', 'charcoal',
-    'blush_pink', 'lavender', 'powder_blue', 'soft_mint', 'peach',
-    'lilac', 'ivory', 'ice'
+    'default',
+    'dark',
+    'golden',
+    'royal',
+    'ocean',
+    'sunset',
+    'forest',
+    'rose',
+    'emerald',
+    'fire',
+    'galaxy',
+    'rainbow',
+    'aqua',
+    'crystal',
+    'amber',
+    'coral',
+    'jade',
+    'sapphire',
+    'bronze',
+    'silver',
+    'platinum',
+    'obsidian',
+    'mystical',
+    'tropical',
+    'aurora',
+    'phoenix',
+    'burgundy',
+    'midnight',
+    'arctic',
+    'wine',
+    'steel',
+    'navy',
+    'slate',
+    'storm',
+    'crimson',
+    'royal_blue',
+    'black_gradient',
+    'deep_black',
+    'charcoal',
+    'blush_pink',
+    'lavender',
+    'powder_blue',
+    'soft_mint',
+    'peach',
+    'lilac',
+    'ivory',
+    'ice',
   ];
-  
+
   return validThemes.includes(theme) ? theme : 'default';
 }
 
 // دالة لتنظيف بيانات المستخدم قبل إرسالها
 export function sanitizeUserData(user: any): any {
   if (!user) return user;
-  
+
   return {
     ...user,
     profileBackgroundColor: sanitizeProfileBackgroundColor(user.profileBackgroundColor),
     usernameColor: sanitizeHexColor(user.usernameColor, '#000000'),
-    profileEffect: sanitizeEffect(user.profileEffect)
+    profileEffect: sanitizeEffect(user.profileEffect),
   };
 }
 
 // دالة لتنظيف مصفوفة من المستخدمين
 export function sanitizeUsersArray(users: any[]): any[] {
-  return users.map(user => sanitizeUserData(user));
+  return users.map((user) => sanitizeUserData(user));
 }
 
-export function sanitizeProfileBackgroundColor(color: string | null | undefined, defaultColor: string = '#3c0d0d'): string {
+export function sanitizeProfileBackgroundColor(
+  color: string | null | undefined,
+  defaultColor: string = '#3c0d0d'
+): string {
   if (!color || color === 'null' || color === 'undefined' || color === '') {
     return defaultColor;
   }
-  
+
   const trimmed = color.trim();
   if (trimmed.startsWith('linear-gradient(')) {
     return trimmed;
   }
-  
+
   if (isValidHexColor(trimmed)) {
     return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
   }
-  
+
   return defaultColor;
 }

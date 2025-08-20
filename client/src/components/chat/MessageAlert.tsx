@@ -11,7 +11,12 @@ interface MessageAlertProps {
   onOpenMessages: () => void;
 }
 
-export default function MessageAlert({ isOpen, sender, onClose, onOpenMessages }: MessageAlertProps) {
+export default function MessageAlert({
+  isOpen,
+  sender,
+  onClose,
+  onOpenMessages,
+}: MessageAlertProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -35,7 +40,9 @@ export default function MessageAlert({ isOpen, sender, onClose, onOpenMessages }
   };
 
   return (
-    <div className={`fixed top-4 right-4 z-50 transition-all duration-300 ${visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
+    <div
+      className={`fixed top-4 right-4 z-50 transition-all duration-300 ${visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}
+    >
       <div className="bg-red-500 border-2 border-red-600 rounded-lg shadow-2xl p-4 max-w-sm">
         <div className="flex items-center gap-3">
           <img
@@ -55,10 +62,19 @@ export default function MessageAlert({ isOpen, sender, onClose, onOpenMessages }
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <Button size="sm" onClick={handleOpen} className="bg-white text-red-600 hover:bg-gray-100 text-xs px-3 py-1">
+            <Button
+              size="sm"
+              onClick={handleOpen}
+              className="bg-white text-red-600 hover:bg-gray-100 text-xs px-3 py-1"
+            >
               عرض
             </Button>
-            <Button size="sm" onClick={onClose} variant="ghost" className="text-white hover:bg-red-600 text-xs px-2 py-1">
+            <Button
+              size="sm"
+              onClick={onClose}
+              variant="ghost"
+              className="text-white hover:bg-red-600 text-xs px-2 py-1"
+            >
               ❌
             </Button>
           </div>

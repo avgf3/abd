@@ -10,12 +10,12 @@ const path = require('path');
 const filesToCheck = [
   'client/src/hooks/useChat.ts',
   'server/routes.ts',
-  'client/src/components/chat/FriendsPanel.tsx'
+  'client/src/components/chat/FriendsPanel.tsx',
 ];
 
 console.log('📁 فحص الملفات المُعدّلة:');
 
-filesToCheck.forEach(file => {
+filesToCheck.forEach((file) => {
   const fullPath = path.join(__dirname, file);
   if (fs.existsSync(fullPath)) {
     console.log(`✅ ${file} - موجود`);
