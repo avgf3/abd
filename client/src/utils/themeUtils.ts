@@ -1,7 +1,7 @@
 // دوال مساعدة للتأثيرات
 export const getEffectColor = (effect: string): string => {
   const effectColors = {
-    'none': '#FFFFFF',
+    none: '#FFFFFF',
     'effect-glow': '#FFD700', // ذهبي للتوهج
     'effect-pulse': '#FF69B4', // وردي للنبض
     'effect-water': '#00CED1', // فيروزي للماء
@@ -39,12 +39,12 @@ const sanitizeHexColor = (color: string, defaultColor: string = '#3c0d0d'): stri
   if (!color || color === 'null' || color === 'undefined' || color === '') {
     return defaultColor;
   }
-  
+
   const trimmed = color.trim();
   if (isValidHexColor(trimmed)) {
     return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
   }
-  
+
   return defaultColor;
 };
 
@@ -88,20 +88,20 @@ const gradientToTransparent = (gradient: string, opacity: number): string => {
   // استخراج الألوان من التدرج
   const colors = gradient.match(/#[a-fA-F0-9]{6}/g);
   if (!colors) return gradient;
-  
+
   // تحويل كل لون إلى RGBA مع الشفافية المطلوبة
   let newGradient = gradient;
-  colors.forEach(color => {
+  colors.forEach((color) => {
     const rgba = hexToRgba(color, opacity);
     newGradient = newGradient.replace(color, rgba);
   });
-  
+
   return newGradient;
 };
 
 // دالة لحصول على لون الاسم النهائي (يعتمد فقط على usernameColor)
 export const getFinalUsernameColor = (user: any): string => {
-  const color = (user && user.usernameColor) ? String(user.usernameColor) : '#000000';
+  const color = user && user.usernameColor ? String(user.usernameColor) : '#000000';
   return sanitizeHexColor(color, '#000000');
 };
 
@@ -109,7 +109,7 @@ export const getFinalUsernameColor = (user: any): string => {
 
 // دالة للحصول على كلاسات CSS للتأثيرات
 export const getUserEffectClasses = (user: any): string => {
-  const effect = (user && user.profileEffect) ? String(user.profileEffect) : 'none';
+  const effect = user && user.profileEffect ? String(user.profileEffect) : 'none';
   if (!effect || effect === 'none') return '';
   // هذه الكلاسات معرفة في index.css
   return effect;
@@ -118,13 +118,13 @@ export const getUserEffectClasses = (user: any): string => {
 // دالة للحصول على أنماط التأثيرات بناءً على لون الخلفية والتأثير
 export const getUserEffectStyles = (user: any): Record<string, string> => {
   const style: Record<string, string> = {};
-  
+
   // أولاً: تطبيق خلفية الملف الشخصي (تدرج أو لون)
   if (user?.profileBackgroundColor) {
     const bg = buildProfileBackgroundGradient(String(user.profileBackgroundColor));
     if (bg) {
       // استخدام backgroundImage لضمان أولوية التدرج وعدم تجاوزه بسهولة
-      style.backgroundImage = bg.startsWith('linear-gradient(') ? bg : undefined as any;
+      style.backgroundImage = bg.startsWith('linear-gradient(') ? bg : (undefined as any);
       if (!style.backgroundImage) {
         style.background = bg;
       }
@@ -132,7 +132,7 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
       style.backgroundBlendMode = 'normal';
     }
   }
-  
+
   // ثانياً: إضافة تأثيرات إضافية حسب نوع التأثير المختار
   const effect = user?.profileEffect || 'none';
   if (effect !== 'none' && effect !== 'null' && effect !== 'undefined') {
@@ -150,12 +150,12 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
       'effect-electric': '0 0 20px rgba(0, 191, 255, 0.5)',
       'effect-crystal': '0 0 20px rgba(230, 230, 250, 0.5)',
     };
-    
+
     if (effectShadows[effect]) {
       style.boxShadow = effectShadows[effect];
     }
   }
-  
+
   return style;
 };
 
@@ -188,24 +188,23 @@ export const getUserThemeAndEffect = (user: any) => {
     effect: user?.profileEffect || 'none',
     effectColor: user?.profileEffect ? getEffectColor(user.profileEffect) : null,
     usernameColor: getFinalUsernameColor(user),
-    hasAnimation: (user?.profileEffect && user.profileEffect !== 'none'),
-    backgroundColor: user?.profileBackgroundColor || null
+    hasAnimation: user?.profileEffect && user.profileEffect !== 'none',
+    backgroundColor: user?.profileBackgroundColor || null,
   };
 };
 
 // دالة مساعدة للتحقق من وجود تخصيص
 export const hasCustomTheme = (user: any): boolean => {
-  return (user?.profileEffect && user.profileEffect !== 'none') || 
-         (user?.profileBackgroundColor);
+  return (user?.profileEffect && user.profileEffect !== 'none') || user?.profileBackgroundColor;
 };
 
 // دالة للتحقق من تطابق الألوان بين الملف الشخصي وصندوق المستخدم
 export const verifyColorMatch = (profileColor: string, userBoxColor: string): boolean => {
   if (!profileColor || !userBoxColor) return false;
-  
+
   // بناء التدرج من لون الملف الشخصي
   const expectedGradient = buildProfileBackgroundGradient(profileColor);
-  
+
   // المقارنة
   return expectedGradient === userBoxColor;
 };
@@ -214,8 +213,10 @@ export const verifyColorMatch = (profileColor: string, userBoxColor: string): bo
 export const getAppliedColorInfo = (user: any) => {
   return {
     profileColor: user?.profileBackgroundColor || null,
-    appliedGradient: user?.profileBackgroundColor ? buildProfileBackgroundGradient(user.profileBackgroundColor) : null,
+    appliedGradient: user?.profileBackgroundColor
+      ? buildProfileBackgroundGradient(user.profileBackgroundColor)
+      : null,
     effect: user?.profileEffect || 'none',
-    hasCustomBackground: !!user?.profileBackgroundColor
+    hasCustomBackground: !!user?.profileBackgroundColor,
   };
 };

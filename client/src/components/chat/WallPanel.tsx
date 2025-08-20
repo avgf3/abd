@@ -1,5 +1,15 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Users, Globe } from 'lucide-react';
+import {
+  Heart,
+  ThumbsUp,
+  ThumbsDown,
+  Send,
+  Image as ImageIcon,
+  Trash2,
+  X,
+  Users,
+  Globe,
+} from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Socket } from 'socket.io-client';
 
@@ -62,7 +72,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
     gcTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    initialData: () => queryClient.getQueryData(['/api/wall/posts', activeTab, currentUser.id]) as any,
+    initialData: () =>
+      queryClient.getQueryData(['/api/wall/posts', activeTab, currentUser.id]) as any,
   });
 
   useEffect(() => {
@@ -82,34 +93,39 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
       // حفظ نوع الحائط في الجلسة كحقل سياقي (اختياري)
       saveSession({ wallTab: activeTab });
-      
+
       // معالج المنشورات الجديدة
       s.on('message', (message: any) => {
         if (message.type === 'newWallPost') {
           const postType = message.wallType || message.post?.type || 'public';
           if (postType === activeTab) {
-            setPosts(prevPosts => [message.post, ...prevPosts]);
+            setPosts((prevPosts) => [message.post, ...prevPosts]);
             // تحديث الكاش
             queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
               const oldPosts = old?.posts || [];
               return { ...(old || {}), posts: [message.post, ...oldPosts] };
             });
             toast({
-              title: "منشور جديد ✨",
+              title: 'منشور جديد ✨',
               description: `منشور جديد من ${message.post.username}`,
             });
           }
         } else if (message.type === 'wallPostReaction') {
-          setPosts(prevPosts => prevPosts.map(post => post.id === message.post.id ? message.post : post));
+          setPosts((prevPosts) =>
+            prevPosts.map((post) => (post.id === message.post.id ? message.post : post))
+          );
           queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
             const oldPosts: WallPost[] = old?.posts || [];
-            return { ...(old || {}), posts: oldPosts.map(p => p.id === message.post.id ? message.post : p) };
+            return {
+              ...(old || {}),
+              posts: oldPosts.map((p) => (p.id === message.post.id ? message.post : p)),
+            };
           });
         } else if (message.type === 'wallPostDeleted') {
-          setPosts(prevPosts => prevPosts.filter(post => post.id !== message.postId));
+          setPosts((prevPosts) => prevPosts.filter((post) => post.id !== message.postId));
           queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
             const oldPosts: WallPost[] = old?.posts || [];
-            return { ...(old || {}), posts: oldPosts.filter(p => p.id !== message.postId) };
+            return { ...(old || {}), posts: oldPosts.filter((p) => p.id !== message.postId) };
           });
         }
       });
@@ -131,9 +147,9 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
       // فحص نوع الملف
       if (!file.type.startsWith('image/')) {
         toast({
-          title: "خطأ في نوع الملف",
-          description: "يرجى اختيار صورة صالحة فقط",
-          variant: "destructive",
+          title: 'خطأ في نوع الملف',
+          description: 'يرجى اختيار صورة صالحة فقط',
+          variant: 'destructive',
         });
         return;
       }
@@ -141,13 +157,13 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
       // فحص حجم الملف - 10MB حد أقصى
       if (file.size > 10 * 1024 * 1024) {
         toast({
-          title: "حجم الملف كبير",
-          description: "حجم الصورة يجب أن يكون أقل من 10 ميجابايت",
-          variant: "destructive",
+          title: 'حجم الملف كبير',
+          description: 'حجم الصورة يجب أن يكون أقل من 10 ميجابايت',
+          variant: 'destructive',
         });
         return;
       }
-      
+
       setSelectedImage(file);
       const reader = new FileReader();
       reader.onload = (e) => setImagePreview(e.target?.result as string);
@@ -165,27 +181,27 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const handleCreatePost = async () => {
     if (!newPostContent.trim() && !selectedImage) {
       toast({
-        title: "محتوى مطلوب",
-        description: "يجب إضافة نص أو صورة على الأقل",
-        variant: "destructive",
+        title: 'محتوى مطلوب',
+        description: 'يجب إضافة نص أو صورة على الأقل',
+        variant: 'destructive',
       });
       return;
     }
 
     if (currentUser.userType === 'guest') {
       toast({
-        title: "غير مسموح",
-        description: "يجب التسجيل كعضو للنشر على الحائط",
-        variant: "destructive",
+        title: 'غير مسموح',
+        description: 'يجب التسجيل كعضو للنشر على الحائط',
+        variant: 'destructive',
       });
       return;
     }
 
     if (newPostContent.length > 500) {
       toast({
-        title: "النص طويل",
-        description: "النص يجب أن يكون أقل من 500 حرف",
-        variant: "destructive",
+        title: 'النص طويل',
+        description: 'النص يجب أن يكون أقل من 500 حرف',
+        variant: 'destructive',
       });
       return;
     }
@@ -209,7 +225,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
       if (data?.post) {
         const newPost = data.post || data;
         // إضافة المنشور للقائمة فوراً
-        setPosts(prev => [newPost, ...prev]);
+        setPosts((prev) => [newPost, ...prev]);
         queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
           const oldPosts = old?.posts || [];
           return { ...(old || {}), posts: [newPost, ...oldPosts] };
@@ -217,32 +233,32 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
         setNewPostContent('');
         removeSelectedImage();
         toast({
-          title: "تم النشر بنجاح ✨",
-          description: "تم نشر المنشور على الحائط",
+          title: 'تم النشر بنجاح ✨',
+          description: 'تم نشر المنشور على الحائط',
         });
       } else {
         const errorText = result.error || result.message || 'Unknown error';
         console.error('❌ خطأ في النشر:', result.status, errorText);
-        
+
         let errorData;
         try {
           errorData = JSON.parse(errorText);
         } catch {
           errorData = { error: errorText };
         }
-        
+
         toast({
-          title: "فشل في النشر",
-          description: errorData.error || "حدث خطأ أثناء النشر",
-          variant: "destructive",
+          title: 'فشل في النشر',
+          description: errorData.error || 'حدث خطأ أثناء النشر',
+          variant: 'destructive',
         });
       }
     } catch (error) {
       console.error('خطأ في النشر:', error);
       toast({
-        title: "خطأ في الاتصال",
-        description: "تعذر الاتصال بالخادم",
-        variant: "destructive",
+        title: 'خطأ في الاتصال',
+        description: 'تعذر الاتصال بالخادم',
+        variant: 'destructive',
       });
     } finally {
       setSubmitting(false);
@@ -263,10 +279,10 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
 
       const data = result as any;
       if (data?.post) {
-        setPosts(prev => prev.map(post => post.id === postId ? data.post : post));
+        setPosts((prev) => prev.map((post) => (post.id === postId ? data.post : post)));
         queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
           const oldPosts: WallPost[] = old?.posts || [];
-          return { ...(old || {}), posts: oldPosts.map(p => p.id === postId ? data.post : p) };
+          return { ...(old || {}), posts: oldPosts.map((p) => (p.id === postId ? data.post : p)) };
         });
       }
     } catch (error) {
@@ -286,29 +302,31 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
         },
       });
 
-      setPosts(prev => prev.filter(post => post.id !== postId));
+      setPosts((prev) => prev.filter((post) => post.id !== postId));
       queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
         const oldPosts: WallPost[] = old?.posts || [];
-        return { ...(old || {}), posts: oldPosts.filter(p => p.id !== postId) };
+        return { ...(old || {}), posts: oldPosts.filter((p) => p.id !== postId) };
       });
       toast({
-        title: "تم الحذف",
-        description: "تم حذف المنشور بنجاح",
+        title: 'تم الحذف',
+        description: 'تم حذف المنشور بنجاح',
       });
     } catch (error) {
       console.error('خطأ في الحذف:', error);
       toast({
-        title: "خطأ في الحذف",
-        description: "فشل في حذف المنشور",
-        variant: "destructive",
+        title: 'خطأ في الحذف',
+        description: 'فشل في حذف المنشور',
+        variant: 'destructive',
       });
     }
   };
 
   // تحديد ما إذا كان المستخدم يستطيع حذف المنشور
   const canDeletePost = (post: WallPost) => {
-    return post.userId === currentUser.id || 
-           ['admin', 'owner', 'moderator'].includes(currentUser.userType);
+    return (
+      post.userId === currentUser.id ||
+      ['admin', 'owner', 'moderator'].includes(currentUser.userType)
+    );
   };
 
   // تحديد نسبة العرض للصورة
@@ -325,7 +343,10 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-6" dir="rtl">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-6"
+      dir="rtl"
+    >
       <div className="bg-background/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/50 w-full sm:w-[95vw] h-[92dvh] sm:h-[92vh] flex flex-col overflow-hidden min-h-0 max-w-[1200px]">
         {/* رأس النافذة المحسن */}
         <div className="flex items-center justify-between p-6 border-b border-border/50 bg-gradient-to-l from-primary/5 to-transparent">
@@ -338,7 +359,12 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
               <p className="text-sm text-muted-foreground">شارك أفكارك مع الجميع</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={onClose} className="rounded-xl hover:bg-destructive/10">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="rounded-xl hover:bg-destructive/10"
+          >
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -346,13 +372,23 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
         <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-0">
           {/* منطقة الحائط - أكثر من الثلث قليلاً */}
           <div className="w-full sm:w-2/5 border-l border-border/50 p-4 sm:p-6 flex flex-col bg-gradient-to-b from-muted/20 to-transparent min-h-0">
-                          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col min-h-0">
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) => setActiveTab(value as 'public' | 'friends')}
+              className="flex-1 flex flex-col min-h-0"
+            >
               <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50 backdrop-blur-sm rounded-xl p-1">
-                <TabsTrigger value="public" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2">
+                <TabsTrigger
+                  value="public"
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2"
+                >
                   <Globe className="h-4 w-4" />
                   الحائط العام
                 </TabsTrigger>
-                <TabsTrigger value="friends" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2">
+                <TabsTrigger
+                  value="friends"
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2"
+                >
                   <Users className="h-4 w-4" />
                   حائط الأصدقاء
                 </TabsTrigger>
@@ -365,8 +401,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
                         {currentUser.profileImage ? (
-                          <img 
-                            src={getImageSrc(currentUser.profileImage)} 
+                          <img
+                            src={getImageSrc(currentUser.profileImage)}
                             alt={currentUser.username}
                             className="w-10 h-10 rounded-full object-cover"
                           />
@@ -377,12 +413,13 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                         )}
                       </div>
                       <div className="flex-1">
-                        <div className="text-sm font-semibold" style={{ color: currentUser.usernameColor || 'inherit' }}>
+                        <div
+                          className="text-sm font-semibold"
+                          style={{ color: currentUser.usernameColor || 'inherit' }}
+                        >
                           {currentUser.username}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          ماذا تريد أن تشارك؟
-                        </div>
+                        <div className="text-xs text-muted-foreground">ماذا تريد أن تشارك؟</div>
                       </div>
                     </div>
 
@@ -393,17 +430,17 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                       className="mb-4 resize-none border-0 bg-muted/30 rounded-xl focus:bg-muted/50 transition-colors min-h-[100px]"
                       maxLength={500}
                     />
-                    
+
                     <div className="text-xs text-muted-foreground mb-4 text-left">
                       {newPostContent.length}/500 حرف
                     </div>
-                    
+
                     {imagePreview && (
                       <div className="relative mb-4 group">
                         <div className="rounded-xl overflow-hidden bg-muted/20 p-2">
-                          <img 
-                            src={imagePreview} 
-                            alt="معاينة" 
+                          <img
+                            src={imagePreview}
+                            alt="معاينة"
                             className="w-full h-auto max-h-48 object-contain rounded-lg"
                           />
                         </div>
@@ -417,7 +454,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                         </Button>
                       </div>
                     )}
-                    
+
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <input
@@ -437,8 +474,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                           إضافة صورة
                         </Button>
                       </div>
-                      
-                      <Button 
+
+                      <Button
                         onClick={handleCreatePost}
                         disabled={submitting || (!newPostContent.trim() && !selectedImage)}
                         size="sm"
@@ -462,7 +499,11 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
               )}
 
               <TabsContent value={activeTab} className="flex-1">
-                <div ref={panelScrollRef} onScroll={handleWallScroll} className="relative overflow-y-auto space-y-4 pr-2 pb-24 cursor-grab">
+                <div
+                  ref={panelScrollRef}
+                  onScroll={handleWallScroll}
+                  className="relative overflow-y-auto space-y-4 pr-2 pb-24 cursor-grab"
+                >
                   <WallPostList
                     posts={posts}
                     loading={loading}
@@ -474,7 +515,11 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                   />
                   {!isAtBottomWall && (
                     <div className="absolute bottom-4 right-4 z-10">
-                      <Button size="sm" onClick={() => scrollWallToBottom('smooth')} className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow">
+                      <Button
+                        size="sm"
+                        onClick={() => scrollWallToBottom('smooth')}
+                        className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow"
+                      >
                         الانتقال لأسفل
                       </Button>
                     </div>

@@ -1,12 +1,12 @@
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Switch, Route } from "wouter";
+import { QueryClientProvider } from '@tanstack/react-query';
+import { Switch, Route } from 'wouter';
 
-import { queryClient } from "./lib/queryClient";
+import { queryClient } from './lib/queryClient';
 
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { UserProvider } from "@/contexts/UserContext";
-import ChatPage from "@/pages/chat";
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { UserProvider } from '@/contexts/UserContext';
+import ChatPage from '@/pages/chat';
 
 function Router() {
   return (

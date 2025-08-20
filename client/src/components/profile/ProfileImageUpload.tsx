@@ -12,7 +12,10 @@ interface ProfileImageUploadProps {
   onImageUpdate?: (imageUrl: string) => void;
 }
 
-export default function ProfileImageUpload({ currentUser, onImageUpdate }: ProfileImageUploadProps) {
+export default function ProfileImageUpload({
+  currentUser,
+  onImageUpdate,
+}: ProfileImageUploadProps) {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -23,12 +26,12 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
   // التحقق من صحة الملف باستخدام الإعدادات المركزية
   const validateProfileImage = (file: File): boolean => {
     const validation = validateFile(file, 'profile_image');
-    
+
     if (!validation.isValid) {
       toast({
-        title: "خطأ في الملف",
+        title: 'خطأ في الملف',
         description: validation.error,
-        variant: "destructive",
+        variant: 'destructive',
       });
       return false;
     }
@@ -39,9 +42,9 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
   const handleFileSelect = async (file: File) => {
     if (!currentUser) {
       toast({
-        title: "خطأ",
-        description: "يجب تسجيل الدخول أولاً",
-        variant: "destructive",
+        title: 'خطأ',
+        description: 'يجب تسجيل الدخول أولاً',
+        variant: 'destructive',
       });
       return;
     }
@@ -69,13 +72,13 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
         timeout: getUploadTimeout('image'),
         onProgress: (progress) => {
           setUploadProgress(Math.round(progress));
-        }
+        },
       });
 
       if (!result.success) {
         throw new Error(result.error || 'فشل في رفع الصورة');
       }
-      
+
       // تحديث الواجهة فوراً
       if (onImageUpdate && result.imageUrl) {
         onImageUpdate(result.imageUrl);
@@ -88,27 +91,26 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
       }
 
       toast({
-        title: "تم رفع الصورة بنجاح",
-        description: "تم تحديث صورة البروفايل",
+        title: 'تم رفع الصورة بنجاح',
+        description: 'تم تحديث صورة البروفايل',
       });
 
       // إخفاء المعاينة وإعادة تعيين التقدم
       setPreview(null);
       setUploadProgress(0);
-
     } catch (error: any) {
       console.error('❌ خطأ في رفع الصورة:', error);
-      
+
       toast({
-        title: "خطأ في رفع الصورة",
-        description: error.message || "حدث خطأ أثناء رفع الصورة",
-        variant: "destructive",
+        title: 'خطأ في رفع الصورة',
+        description: error.message || 'حدث خطأ أثناء رفع الصورة',
+        variant: 'destructive',
       });
-      
+
       setPreview(null);
     } finally {
       setUploading(false);
-      
+
       // تنظيف input files
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -171,7 +173,7 @@ export default function ProfileImageUpload({ currentUser, onImageUpdate }: Profi
             <span>{uploadProgress}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
+            <div
               className="bg-primary h-2 rounded-full transition-all duration-300"
               style={{ width: `${uploadProgress}%` }}
             />

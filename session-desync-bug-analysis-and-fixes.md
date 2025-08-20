@@ -24,33 +24,32 @@
 // server/routes.ts - تحسين معالج disconnect
 socket.on('disconnect', async (reason) => {
   console.log(`🔌 المستخدم ${socket.username} قطع الاتصال - السبب: ${reason}`);
-  
+
   // تنظيف الجلسة بالكامل
   clearInterval(heartbeat);
-  
+
   if (socket.userId) {
     try {
       // تحديث حالة المستخدم في قاعدة البيانات
       await storage.setUserOnlineStatus(socket.userId, false);
-      
+
       // إزالة المستخدم من جميع الغرف
       socket.leave(socket.userId.toString());
-      
+
       // إشعار جميع المستخدمين بالخروج
       io.emit('userLeft', {
         userId: socket.userId,
         username: socket.username,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
-      
+
       // إرسال قائمة محدثة للمستخدمين المتصلين
       const onlineUsers = await storage.getOnlineUsers();
       io.emit('onlineUsers', { users: onlineUsers });
-      
+
       // تنظيف متغيرات الجلسة
       socket.userId = undefined;
       socket.username = undefined;
-      
     } catch (error) {
       console.error('خطأ في تنظيف الجلسة:', error);
     }
@@ -73,7 +72,7 @@ case 'publicMessage':
     socket.disconnect(true);
     break;
   }
-  
+
   // التحقق من وجود المستخدم في قاعدة البيانات
   const currentUser = await storage.getUser(socket.userId);
   if (!currentUser) {
@@ -85,7 +84,7 @@ case 'publicMessage':
     socket.disconnect(true);
     break;
   }
-  
+
   // التحقق من أن المستخدم متصل فعلياً
   if (!currentUser.isOnline) {
     socket.emit('error', {
@@ -96,7 +95,7 @@ case 'publicMessage':
     socket.disconnect(true);
     break;
   }
-  
+
   // باقي كود معالجة الرسالة...
 ```
 
@@ -107,12 +106,12 @@ case 'publicMessage':
 socket.current.on('disconnect', (reason) => {
   console.log('Socket.IO مقطوع - السبب:', reason);
   setIsConnected(false);
-  
+
   // تنظيف الحالة المحلية فوراً
   setCurrentUser(null);
   setOnlineUsers([]);
   setTypingUsers(new Set());
-  
+
   // معالجة أسباب مختلفة لقطع الاتصال
   if (reason === 'io server disconnect') {
     // الخادم قطع الاتصال عمداً (مثل حظر المستخدم)
@@ -120,11 +119,11 @@ socket.current.on('disconnect', (reason) => {
     // لا نعيد الاتصال تلقائياً
     return;
   }
-  
+
   if (reason === 'transport close' || reason === 'ping timeout') {
     // قطع اتصال غير متوقع - نحاول إعادة الاتصال
     setConnectionError('انقطع الاتصال - محاولة إعادة الاتصال...');
-    
+
     // إعادة الاتصال بعد تأخير قصير
     setTimeout(() => {
       if (socket.current && !socket.current.connected) {
@@ -141,7 +140,7 @@ socket.current.on('disconnect', (reason) => {
 // server/routes.ts - إضافة فحص دوري للجلسات
 const sessionCleanupInterval = setInterval(async () => {
   const connectedSockets = await io.fetchSockets();
-  
+
   for (const socket of connectedSockets) {
     if (socket.userId) {
       try {
@@ -165,19 +164,19 @@ const sessionCleanupInterval = setInterval(async () => {
 ```typescript
 // client/src/hooks/useChat.ts - فلترة الرسائل غير الصالحة
 const filterValidMessages = (messages: ChatMessage[]) => {
-  return messages.filter(message => {
+  return messages.filter((message) => {
     // التأكد من وجود بيانات المرسل
     if (!message.sender || !message.sender.username || message.sender.username === 'مستخدم') {
       console.warn('رسالة مرفوضة - بيانات مرسل غير صالحة:', message);
       return false;
     }
-    
+
     // التأكد من وجود محتوى الرسالة
     if (!message.content || message.content.trim() === '') {
       console.warn('رسالة مرفوضة - محتوى فارغ:', message);
       return false;
     }
-    
+
     return true;
   });
 };
@@ -185,13 +184,13 @@ const filterValidMessages = (messages: ChatMessage[]) => {
 // تطبيق الفلترة على الرسائل الواردة
 socket.current.on('newMessage', (data) => {
   const { message } = data;
-  
+
   if (filterValidMessages([message]).length === 0) {
     console.warn('رسالة مرفوضة من الخادم:', message);
     return;
   }
-  
-  setPublicMessages(prev => [...prev, message]);
+
+  setPublicMessages((prev) => [...prev, message]);
 });
 ```
 
@@ -199,13 +198,13 @@ socket.current.on('newMessage', (data) => {
 
 ```sql
 -- تنظيف الرسائل من مستخدمين غير موجودين
-DELETE FROM messages 
+DELETE FROM messages
 WHERE senderId NOT IN (SELECT id FROM users);
 
 -- تنظيف الرسائل الفارغة أو غير الصالحة
-DELETE FROM messages 
-WHERE content IS NULL 
-   OR content = '' 
+DELETE FROM messages
+WHERE content IS NULL
+   OR content = ''
    OR content = 'مستخدم';
 ```
 
@@ -217,21 +216,21 @@ WHERE content IS NULL
 // server/middleware/sessionValidation.ts
 export const validateSession = async (req: Request, res: Response, next: NextFunction) => {
   const { userId } = req.body;
-  
+
   if (!userId) {
     return res.status(401).json({ error: 'معرف المستخدم مطلوب' });
   }
-  
+
   try {
     const user = await storage.getUser(userId);
     if (!user) {
       return res.status(404).json({ error: 'المستخدم غير موجود' });
     }
-    
+
     if (!user.isOnline) {
       return res.status(401).json({ error: 'المستخدم غير متصل' });
     }
-    
+
     req.user = user;
     next();
   } catch (error) {
@@ -247,18 +246,18 @@ export const validateSession = async (req: Request, res: Response, next: NextFun
 socket.on('join', async (data) => {
   // إنشاء معرف جلسة فريد
   const sessionId = `${data.userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
+
   socket.userId = data.userId;
   socket.username = data.username;
   socket.sessionId = sessionId;
-  
+
   // حفظ معرف الجلسة في قاعدة البيانات
-  await storage.updateUser(data.userId, { 
+  await storage.updateUser(data.userId, {
     isOnline: true,
     lastSessionId: sessionId,
-    lastSeen: new Date()
+    lastSeen: new Date(),
   });
-  
+
   // باقي كود الانضمام...
 });
 ```
@@ -276,11 +275,11 @@ export const logSessionEvent = (event: string, userId: number, username: string,
     userId,
     username,
     details,
-    serverTime: Date.now()
+    serverTime: Date.now(),
   };
-  
+
   console.log(`📋 [SESSION] ${event}:`, logEntry);
-  
+
   // يمكن إضافة حفظ في ملف أو قاعدة بيانات
 };
 ```
@@ -295,23 +294,23 @@ class SessionStats {
     activeConnections: 0,
     disconnections: 0,
     invalidSessions: 0,
-    messagesFromInvalidSessions: 0
+    messagesFromInvalidSessions: 0,
   };
-  
+
   incrementConnection() {
     this.stats.totalConnections++;
     this.stats.activeConnections++;
   }
-  
+
   incrementDisconnection() {
     this.stats.disconnections++;
     this.stats.activeConnections = Math.max(0, this.stats.activeConnections - 1);
   }
-  
+
   incrementInvalidSession() {
     this.stats.invalidSessions++;
   }
-  
+
   getStats() {
     return { ...this.stats };
   }
@@ -323,16 +322,19 @@ export const sessionStats = new SessionStats();
 ## ✅ خطة التطبيق
 
 ### المرحلة 1: الإصلاحات الأساسية
+
 1. تحسين معالج `disconnect` في الخادم
 2. إضافة التحقق من صحة الجلسة قبل إرسال الرسائل
 3. تحسين معالجة قطع الاتصال في العميل
 
 ### المرحلة 2: التحسينات الأمنية
+
 1. إضافة middleware للتحقق من الجلسات
 2. تطبيق فلترة الرسائل في الواجهة
 3. تنظيف قاعدة البيانات
 
 ### المرحلة 3: المراقبة والتسجيل
+
 1. إضافة تسجيل مفصل للجلسات
 2. إحصائيات الجلسات
 3. فحص دوري للجلسات

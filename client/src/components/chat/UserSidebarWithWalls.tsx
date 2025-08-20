@@ -1,5 +1,17 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Heart, ThumbsUp, ThumbsDown, Send, Image as ImageIcon, Trash2, X, Users, Globe, Home, UserPlus } from 'lucide-react';
+import {
+  Heart,
+  ThumbsUp,
+  ThumbsDown,
+  Send,
+  Image as ImageIcon,
+  Trash2,
+  X,
+  Users,
+  Globe,
+  Home,
+  UserPlus,
+} from 'lucide-react';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { Socket } from 'socket.io-client';
 
@@ -21,13 +33,14 @@ import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
-import { getUserEffectStyles, getUserEffectClasses, getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
+import {
+  getUserEffectStyles,
+  getUserEffectClasses,
+  getFinalUsernameColor,
+  getUserListItemStyles,
+  getUserListItemClasses,
+} from '@/utils/themeUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
-
-
-
-
-
 
 interface UnifiedSidebarProps {
   users: ChatUser[];
@@ -43,10 +56,10 @@ interface UnifiedSidebarProps {
   onStartPrivateChat?: (friend: ChatUser) => void;
 }
 
-export default function UnifiedSidebar({ 
-  users, 
-  onUserClick, 
-  currentUser, 
+export default function UnifiedSidebar({
+  users,
+  onUserClick,
+  currentUser,
   activeView: propActiveView,
   rooms = [],
   currentRoomId = '',
@@ -54,9 +67,11 @@ export default function UnifiedSidebar({
   onAddRoom,
   onDeleteRoom,
   onRefreshRooms,
-  onStartPrivateChat
+  onStartPrivateChat,
 }: UnifiedSidebarProps) {
-  const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms' | 'friends'>(propActiveView || 'users');
+  const [activeView, setActiveView] = useState<'users' | 'walls' | 'rooms' | 'friends'>(
+    propActiveView || 'users'
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'public' | 'friends'>('public');
   const [posts, setPosts] = useState<WallPost[]>([]);
@@ -72,59 +87,67 @@ export default function UnifiedSidebar({
   // دالة ترتيب المستخدمين حسب الرتب
   const getRankOrder = (userType: string): number => {
     switch (userType) {
-      case 'owner': return 1;
-      case 'admin': return 2;
-      case 'moderator': return 3;
-      case 'member': return 4;
-      case 'guest': return 5;
-      default: return 6;
+      case 'owner':
+        return 1;
+      case 'admin':
+        return 2;
+      case 'moderator':
+        return 3;
+      case 'member':
+        return 4;
+      case 'guest':
+        return 5;
+      default:
+        return 6;
     }
   };
 
   // 🚀 تحسين: استخدام useMemo لفلترة وترتيب المستخدمين لتحسين الأداء
   const validUsers = useMemo(() => {
-    const filtered = users.filter(user => {
+    const filtered = users.filter((user) => {
       // فلترة صارمة للمستخدمين الصالحين
       if (!user?.id || !user?.username || !user?.userType) {
         console.warn('🚫 مستخدم بيانات غير صالحة في القائمة:', user);
         return false;
       }
-      
+
       // رفض الأسماء العامة
       if (user.username === 'مستخدم' || user.username === 'User' || user.username.trim() === '') {
         return false;
       }
-      
+
       // رفض المعرفات غير الصالحة
       if (user.id <= 0) {
         return false;
       }
-      
+
       return true;
     });
 
     // إزالة التكرارات حسب id
     const dedup = new Map<number, ChatUser>();
-    for (const u of filtered) { if (!dedup.has(u.id)) dedup.set(u.id, u); }
+    for (const u of filtered) {
+      if (!dedup.has(u.id)) dedup.set(u.id, u);
+    }
 
     // ترتيب المستخدمين حسب الرتب: المالك أولاً، ثم الإدمن، ثم المشرف، ثم الأعضاء، ثم الضيوف
     // وداخل كل رتبة ترتيب أبجدي بالاسم
     const sorted = Array.from(dedup.values()).sort((a, b) => {
       const rankA = getRankOrder(a.userType);
       const rankB = getRankOrder(b.userType);
-      
+
       // إذا كانت الرتب مختلفة، رتب حسب الرتبة
       if (rankA !== rankB) {
         return rankA - rankB;
       }
-      
+
       // إذا كانت الرتب متساوية، رتب أبجدياً بالاسم
       return a.username.localeCompare(b.username, 'ar');
     });
 
     // طباعة الترتيب للتحقق من صحته (فقط في وضع التطوير)
     if (process.env.NODE_ENV === 'development' && sorted.length > 0) {
-      }
+    }
 
     return sorted;
   }, [users]);
@@ -132,8 +155,8 @@ export default function UnifiedSidebar({
   const filteredUsers = useMemo(() => {
     // تطبيق البحث على المستخدمين الصالحين فقط
     if (!searchTerm.trim()) return validUsers;
-    
-    return validUsers.filter(user => {
+
+    return validUsers.filter((user) => {
       return user.username.toLowerCase().includes(searchTerm.toLowerCase());
     });
   }, [validUsers, searchTerm]);
@@ -150,48 +173,51 @@ export default function UnifiedSidebar({
     return token || null;
   }, []);
 
-  const renderCountryFlag = useCallback((user: ChatUser) => {
-    const emoji = getCountryEmoji(user.country);
-    const boxStyle: React.CSSProperties = {
-      width: 20,
-      height: 20,
-      borderRadius: 0,
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'transparent',
-      border: 'none'
-    };
+  const renderCountryFlag = useCallback(
+    (user: ChatUser) => {
+      const emoji = getCountryEmoji(user.country);
+      const boxStyle: React.CSSProperties = {
+        width: 20,
+        height: 20,
+        borderRadius: 0,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'transparent',
+        border: 'none',
+      };
 
-    if (emoji) {
+      if (emoji) {
+        return (
+          <span style={boxStyle} title={user.country}>
+            <span style={{ fontSize: 14, lineHeight: 1 }}>{emoji}</span>
+          </span>
+        );
+      }
+
       return (
-        <span style={boxStyle} title={user.country}>
-          <span style={{ fontSize: 14, lineHeight: 1 }}>{emoji}</span>
+        <span style={boxStyle} title="لم يتم تحديد الدولة">
+          <span style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1 }}>?</span>
         </span>
       );
-    }
-
-    return (
-      <span style={boxStyle} title="لم يتم تحديد الدولة">
-        <span style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1 }}>?</span>
-      </span>
-    );
-  }, [getCountryEmoji]);
+    },
+    [getCountryEmoji]
+  );
 
   // 🚀 تحسين: دالة formatLastSeen محسنة
   const formatLastSeen = useCallback((lastSeen?: string | Date) => {
     if (!lastSeen) return 'غير معروف';
-    
+
     const lastSeenDate = lastSeen instanceof Date ? lastSeen : new Date(lastSeen);
-    
+
     if (isNaN(lastSeenDate.getTime())) {
       return 'غير معروف';
     }
-    
+
     const now = new Date();
     const diff = now.getTime() - lastSeenDate.getTime();
     const minutes = Math.floor(diff / 60000);
-    
+
     if (minutes < 1) return 'متصل الآن';
     if (minutes < 60) return `قبل ${minutes} دقيقة`;
     const hours = Math.floor(minutes / 60);
@@ -201,15 +227,19 @@ export default function UnifiedSidebar({
   }, []);
 
   // معالج النقر مع إيقاف انتشار الحدث
-  const handleUserClick = useCallback((e: React.MouseEvent, user: ChatUser) => {
-    e.stopPropagation();
-    onUserClick(e, user);
-  }, [onUserClick]);
+  const handleUserClick = useCallback(
+    (e: React.MouseEvent, user: ChatUser) => {
+      e.stopPropagation();
+      onUserClick(e, user);
+    },
+    [onUserClick]
+  );
 
   // التحقق من صلاحيات الإشراف
-  const isModerator = useMemo(() => 
-    currentUser && ['moderator', 'admin', 'owner'].includes(currentUser.userType)
-  , [currentUser]);
+  const isModerator = useMemo(
+    () => currentUser && ['moderator', 'admin', 'owner'].includes(currentUser.userType),
+    [currentUser]
+  );
 
   // 🗑️ حذف useEffect فارغ
 
@@ -227,14 +257,15 @@ export default function UnifiedSidebar({
     queryKey: ['/api/wall/posts', activeTab, currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return { posts: [] } as any;
-      return await apiRequest(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`)
+      return await apiRequest(`/api/wall/posts/${activeTab}?userId=${currentUser.id}`);
     },
     enabled: activeView === 'walls' && !!currentUser?.id,
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    initialData: () => queryClient.getQueryData(['/api/wall/posts', activeTab, currentUser?.id]) as any,
+    initialData: () =>
+      queryClient.getQueryData(['/api/wall/posts', activeTab, currentUser?.id]) as any,
   });
 
   useEffect(() => {
@@ -270,20 +301,26 @@ export default function UnifiedSidebar({
           if (message.type === 'newWallPost') {
             const postType = message.wallType || message.post?.type || 'public';
             if (postType === activeTab) {
-              setPosts(prev => [message.post, ...prev]);
-              queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
-                const oldPosts: WallPost[] = old?.posts || [];
-                return { ...(old || {}), posts: [message.post, ...oldPosts] };
-              });
+              setPosts((prev) => [message.post, ...prev]);
+              queryClient.setQueryData(
+                ['/api/wall/posts', activeTab, currentUser.id],
+                (old: any) => {
+                  const oldPosts: WallPost[] = old?.posts || [];
+                  return { ...(old || {}), posts: [message.post, ...oldPosts] };
+                }
+              );
             }
           } else if (message.type === 'wallPostReaction') {
-            setPosts(prev => prev.map(p => p.id === message.post?.id ? message.post : p));
+            setPosts((prev) => prev.map((p) => (p.id === message.post?.id ? message.post : p)));
             queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
               const oldPosts: WallPost[] = old?.posts || [];
-              return { ...(old || {}), posts: oldPosts.map((p) => p.id === message.post?.id ? message.post : p) };
+              return {
+                ...(old || {}),
+                posts: oldPosts.map((p) => (p.id === message.post?.id ? message.post : p)),
+              };
             });
           } else if (message.type === 'wallPostDeleted') {
-            setPosts(prev => prev.filter(p => p.id !== message.postId));
+            setPosts((prev) => prev.filter((p) => p.id !== message.postId));
             queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
               const oldPosts: WallPost[] = old?.posts || [];
               return { ...(old || {}), posts: oldPosts.filter((p) => p.id !== message.postId) };
@@ -305,22 +342,22 @@ export default function UnifiedSidebar({
     if (file) {
       if (!file.type.startsWith('image/')) {
         toast({
-          title: "خطأ في نوع الملف",
-          description: "يرجى اختيار صورة صالحة فقط",
-          variant: "destructive",
+          title: 'خطأ في نوع الملف',
+          description: 'يرجى اختيار صورة صالحة فقط',
+          variant: 'destructive',
         });
         return;
       }
 
       if (file.size > 10 * 1024 * 1024) {
         toast({
-          title: "حجم الملف كبير",
-          description: "حجم الصورة يجب أن يكون أقل من 10 ميجابايت",
-          variant: "destructive",
+          title: 'حجم الملف كبير',
+          description: 'حجم الصورة يجب أن يكون أقل من 10 ميجابايت',
+          variant: 'destructive',
         });
         return;
       }
-      
+
       setSelectedImage(file);
       const reader = new FileReader();
       reader.onload = (e) => setImagePreview(e.target?.result as string);
@@ -338,18 +375,18 @@ export default function UnifiedSidebar({
   const handleCreatePost = async () => {
     if (!newPostContent.trim() && !selectedImage) {
       toast({
-        title: "محتوى مطلوب",
-        description: "يجب إضافة نص أو صورة على الأقل",
-        variant: "destructive",
+        title: 'محتوى مطلوب',
+        description: 'يجب إضافة نص أو صورة على الأقل',
+        variant: 'destructive',
       });
       return;
     }
 
     if (!currentUser || currentUser.userType === 'guest') {
       toast({
-        title: "غير مسموح",
-        description: "الضيوف لا يمكنهم نشر المنشورات",
-        variant: "destructive",
+        title: 'غير مسموح',
+        description: 'الضيوف لا يمكنهم نشر المنشورات',
+        variant: 'destructive',
       });
       return;
     }
@@ -360,7 +397,7 @@ export default function UnifiedSidebar({
       formData.append('content', newPostContent);
       formData.append('type', activeTab); // تم تغيير postType إلى type لمطابقة الخادم
       formData.append('userId', currentUser.id.toString());
-      
+
       if (selectedImage) {
         formData.append('image', selectedImage);
       }
@@ -373,14 +410,14 @@ export default function UnifiedSidebar({
       const data = result as any;
       if (data?.post) {
         const newPost = data.post || data;
-        setPosts(prev => [newPost, ...prev]);
+        setPosts((prev) => [newPost, ...prev]);
         queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
           const oldPosts = old?.posts || [];
           return { ...(old || {}), posts: [newPost, ...oldPosts] };
         });
         toast({
-          title: "تم النشر",
-          description: "تم نشر منشورك بنجاح",
+          title: 'تم النشر',
+          description: 'تم نشر منشورك بنجاح',
         });
         setNewPostContent('');
         removeSelectedImage();
@@ -389,9 +426,9 @@ export default function UnifiedSidebar({
       }
     } catch (error) {
       toast({
-        title: "خطأ في النشر",
-        description: "حدث خطأ أثناء نشر المنشور",
-        variant: "destructive",
+        title: 'خطأ في النشر',
+        description: 'حدث خطأ أثناء نشر المنشور',
+        variant: 'destructive',
       });
     } finally {
       setSubmitting(false);
@@ -401,7 +438,7 @@ export default function UnifiedSidebar({
   // التفاعل مع منشور
   const handleReaction = async (postId: number, type: 'like' | 'dislike' | 'heart') => {
     if (!currentUser) return;
-    
+
     try {
       const result = await apiRequest('/api/wall/react', {
         method: 'POST',
@@ -409,15 +446,15 @@ export default function UnifiedSidebar({
           postId,
           userId: currentUser.id,
           type: type, // تم تغيير reactionType إلى type لمطابقة الخادم
-        }
+        },
       });
 
       const data = result as any;
       if (data?.post) {
-        setPosts(prevPosts => prevPosts.map(post => post.id === postId ? data.post : post));
+        setPosts((prevPosts) => prevPosts.map((post) => (post.id === postId ? data.post : post)));
         queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
           const oldPosts: WallPost[] = old?.posts || [];
-          return { ...(old || {}), posts: oldPosts.map(p => p.id === postId ? data.post : p) };
+          return { ...(old || {}), posts: oldPosts.map((p) => (p.id === postId ? data.post : p)) };
         });
       }
     } catch (error) {
@@ -428,27 +465,27 @@ export default function UnifiedSidebar({
   // حذف منشور
   const handleDeletePost = async (postId: number) => {
     if (!currentUser) return;
-    
+
     try {
       await apiRequest(`/api/wall/posts/${postId}`, {
         method: 'DELETE',
-        body: { userId: currentUser.id }
+        body: { userId: currentUser.id },
       });
 
       toast({
-        title: "تم الحذف",
-        description: "تم حذف المنشور بنجاح",
+        title: 'تم الحذف',
+        description: 'تم حذف المنشور بنجاح',
       });
-      setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
       queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
         const oldPosts: WallPost[] = old?.posts || [];
-        return { ...(old || {}), posts: oldPosts.filter(p => p.id !== postId) };
+        return { ...(old || {}), posts: oldPosts.filter((p) => p.id !== postId) };
       });
     } catch (error) {
       toast({
-        title: "خطأ في الحذف",
-        description: "لم نتمكن من حذف المنشور",
-        variant: "destructive",
+        title: 'خطأ في الحذف',
+        description: 'لم نتمكن من حذف المنشور',
+        variant: 'destructive',
       });
     }
   };
@@ -456,64 +493,61 @@ export default function UnifiedSidebar({
   // تم نقل دالة formatTimeAgo إلى utils/timeUtils.ts (تستخدم من الاستيراد أعلاه)
 
   // عنصر مستخدم فرعي معزول لتحسين الأداء
-  const UserListItem = useMemo(() => React.memo(({ user }: { user: ChatUser }) => {
-    if (!user?.username || !user?.userType) return null;
-    return (
-      <li key={user.id} className="relative -mx-4">
-        <SimpleUserMenu
-          targetUser={user}
-          currentUser={currentUser}
-          showModerationActions={isModerator}
-        >
-          <div
-            className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
-            style={getUserListItemStyles(user)}
-            onClick={(e) => handleUserClick(e as any, user)}
-          >
-            <ProfileImage 
-              user={user} 
-              size="small" 
-              className=""
-              hideRoleBadgeOverlay={true}
-            />
-            <div className="flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span 
-                    className="text-base font-medium transition-colors duration-300"
-                    style={{ 
-                      color: getFinalUsernameColor(user)
-                    }}
-                    title={user.username}
-                  >
-                    {user.username}
-                  </span>
-                  {user.isMuted && (
-                    <span className="text-yellow-400 text-xs">🔇</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-1">
-                  {renderUserBadge(user)}
-                  {renderCountryFlag(user)}
+  const UserListItem = useMemo(
+    () =>
+      React.memo(({ user }: { user: ChatUser }) => {
+        if (!user?.username || !user?.userType) return null;
+        return (
+          <li key={user.id} className="relative -mx-4">
+            <SimpleUserMenu
+              targetUser={user}
+              currentUser={currentUser}
+              showModerationActions={isModerator}
+            >
+              <div
+                className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
+                style={getUserListItemStyles(user)}
+                onClick={(e) => handleUserClick(e as any, user)}
+              >
+                <ProfileImage user={user} size="small" className="" hideRoleBadgeOverlay={true} />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="text-base font-medium transition-colors duration-300"
+                        style={{
+                          color: getFinalUsernameColor(user),
+                        }}
+                        title={user.username}
+                      >
+                        {user.username}
+                      </span>
+                      {user.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {renderUserBadge(user)}
+                      {renderCountryFlag(user)}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </SimpleUserMenu>
-      </li>
-    );
-  }), [currentUser, isModerator, renderCountryFlag, renderUserBadge]);
+            </SimpleUserMenu>
+          </li>
+        );
+      }),
+    [currentUser, isModerator, renderCountryFlag, renderUserBadge]
+  );
 
   return (
-    <aside className={`w-full bg-card text-sm overflow-hidden border-l border-border shadow-lg flex flex-col h-full max-h-screen ${isMobile ? 'sidebar mobile-scroll' : ''}`}>
+    <aside
+      className={`w-full bg-card text-sm overflow-hidden border-l border-border shadow-lg flex flex-col h-full max-h-screen ${isMobile ? 'sidebar mobile-scroll' : ''}`}
+    >
       {/* Toggle Buttons - always visible now */}
       <div className={`flex border-b border-gray-200 flex-shrink-0 ${isMobile ? 'flex-wrap' : ''}`}>
         <Button
           variant={activeView === 'users' ? 'default' : 'ghost'}
           className={`flex-1 rounded-none ${isMobile ? 'py-2 px-2 text-xs' : 'py-3'} ${
-            activeView === 'users' 
-              ? 'bg-blue-500 text-white' 
-              : 'text-gray-600 hover:bg-gray-100'
+            activeView === 'users' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
           } ${isMobile ? 'mobile-touch-button' : ''}`}
           onClick={() => setActiveView('users')}
         >
@@ -523,9 +557,7 @@ export default function UnifiedSidebar({
         <Button
           variant={activeView === 'walls' ? 'default' : 'ghost'}
           className={`flex-1 rounded-none ${isMobile ? 'py-2 px-2 text-xs' : 'py-3'} ${
-            activeView === 'walls' 
-              ? 'bg-blue-500 text-white' 
-              : 'text-gray-600 hover:bg-gray-100'
+            activeView === 'walls' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
           } ${isMobile ? 'mobile-touch-button' : ''}`}
           onClick={() => setActiveView('walls')}
         >
@@ -535,9 +567,7 @@ export default function UnifiedSidebar({
         <Button
           variant={activeView === 'rooms' ? 'default' : 'ghost'}
           className={`flex-1 rounded-none ${isMobile ? 'py-2 px-2 text-xs' : 'py-3'} ${
-            activeView === 'rooms' 
-              ? 'bg-blue-500 text-white' 
-              : 'text-gray-600 hover:bg-gray-100'
+            activeView === 'rooms' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
           } ${isMobile ? 'mobile-touch-button' : ''}`}
           onClick={() => setActiveView('rooms')}
         >
@@ -547,9 +577,7 @@ export default function UnifiedSidebar({
         <Button
           variant={activeView === 'friends' ? 'default' : 'ghost'}
           className={`flex-1 rounded-none ${isMobile ? 'py-2 px-2 text-xs' : 'py-3'} ${
-            activeView === 'friends' 
-              ? 'bg-blue-500 text-white' 
-              : 'text-gray-600 hover:bg-gray-100'
+            activeView === 'friends' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
           } ${isMobile ? 'mobile-touch-button' : ''}`}
           onClick={() => setActiveView('friends')}
         >
@@ -562,9 +590,13 @@ export default function UnifiedSidebar({
       {activeView === 'users' && (
         <div className="flex-1 flex flex-col overflow-hidden min-h-0">
           {/* Search Bar - ثابت في الأعلى */}
-          <div className={`${isMobile ? 'p-2' : 'p-4'} bg-card border-b border-border flex-shrink-0`}>
+          <div
+            className={`${isMobile ? 'p-2' : 'p-4'} bg-card border-b border-border flex-shrink-0`}
+          >
             <div className="relative">
-              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                🔍
+              </span>
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -574,48 +606,49 @@ export default function UnifiedSidebar({
               />
             </div>
           </div>
-          
+
           {/* Users List - قابل للتمرير */}
-          <div ref={usersScrollRef} className={`flex-1 overflow-y-auto ${isMobile ? 'p-2' : 'p-4'} space-y-3 cursor-grab bg-background mobile-scroll`} style={{ maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 200px)' }}>
-          
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 font-bold text-green-600 text-base">
-                المتصلون الآن
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
-                  {validUsers.length}
-                </span>
-              </div>
-              <div className="text-xs text-gray-500 flex items-center gap-1">
-                <span>🏆</span>
-                <span>مرتب حسب الرتب</span>
-              </div>
-            </div>
-            
-            <ul className="space-y-1">
-              {filteredUsers.map((user) => (
-                <UserListItem key={user.id} user={user} />
-              ))}
-            </ul>
-            
-            {filteredUsers.length === 0 && (
-              <div className="text-center text-gray-500 py-8">
-                <div className="mb-3">
-                  {searchTerm ? '🔍' : '👥'}
+          <div
+            ref={usersScrollRef}
+            className={`flex-1 overflow-y-auto ${isMobile ? 'p-2' : 'p-4'} space-y-3 cursor-grab bg-background mobile-scroll`}
+            style={{ maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 200px)' }}
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 font-bold text-green-600 text-base">
+                  المتصلون الآن
+                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
+                    {validUsers.length}
+                  </span>
                 </div>
-                <p className="text-sm">
-                  {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمون متصلون حالياً'}
-                </p>
-                {searchTerm && (
-                  <button 
-                    onClick={() => setSearchTerm('')}
-                    className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
-                  >
-                    مسح البحث
-                  </button>
-                )}
+                <div className="text-xs text-gray-500 flex items-center gap-1">
+                  <span>🏆</span>
+                  <span>مرتب حسب الرتب</span>
+                </div>
               </div>
-            )}
+
+              <ul className="space-y-1">
+                {filteredUsers.map((user) => (
+                  <UserListItem key={user.id} user={user} />
+                ))}
+              </ul>
+
+              {filteredUsers.length === 0 && (
+                <div className="text-center text-gray-500 py-8">
+                  <div className="mb-3">{searchTerm ? '🔍' : '👥'}</div>
+                  <p className="text-sm">
+                    {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمون متصلون حالياً'}
+                  </p>
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
+                    >
+                      مسح البحث
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -625,7 +658,11 @@ export default function UnifiedSidebar({
       {activeView === 'walls' && (
         <div className="flex-1 overflow-hidden flex flex-col min-h-0 bg-card">
           {/* Wall Tabs */}
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'public' | 'friends')} className="flex-1 flex flex-col">
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as 'public' | 'friends')}
+            className="flex-1 flex flex-col"
+          >
             <TabsList className="grid w-full grid-cols-2 m-2 flex-shrink-0">
               <TabsTrigger value="public" className="flex items-center gap-2">
                 <Globe className="w-4 h-4" />
@@ -660,10 +697,14 @@ export default function UnifiedSidebar({
                       className="mb-3 min-h-[80px] resize-none text-sm bg-background text-foreground border-input"
                       maxLength={500}
                     />
-                    
+
                     {imagePreview && (
                       <div className="relative mb-3">
-                        <img src={imagePreview} alt="Preview" className="w-full max-h-40 object-cover rounded-lg" />
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full max-h-40 object-cover rounded-lg"
+                        />
                         <Button
                           size="sm"
                           variant="destructive"
@@ -674,7 +715,7 @@ export default function UnifiedSidebar({
                         </Button>
                       </div>
                     )}
-                    
+
                     <div className="flex justify-between items-center">
                       <div className="flex gap-2">
                         <input
@@ -692,14 +733,16 @@ export default function UnifiedSidebar({
                           <ImageIcon className="w-4 h-4" />
                         </Button>
                       </div>
-                      
+
                       <Button
                         size="sm"
                         onClick={handleCreatePost}
                         disabled={submitting || (!newPostContent.trim() && !selectedImage)}
                         className="bg-blue-500 hover:bg-blue-600"
                       >
-                        {submitting ? 'جاري النشر...' : (
+                        {submitting ? (
+                          'جاري النشر...'
+                        ) : (
                           <>
                             <Send className="w-4 h-4 ml-1" />
                             نشر
@@ -716,9 +759,7 @@ export default function UnifiedSidebar({
                 {loading ? (
                   <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
                 ) : posts.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    لا توجد منشورات حتى الآن
-                  </div>
+                  <div className="text-center py-8 text-gray-500">لا توجد منشورات حتى الآن</div>
                 ) : (
                   posts.map((post) => (
                     <Card key={post.id} className="border border-border bg-card">
@@ -726,29 +767,35 @@ export default function UnifiedSidebar({
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                             {post.userProfileImage ? (
-                              <img src={getImageSrc(post.userProfileImage)} alt={post.username} className="w-full h-full object-cover" />
+                              <img
+                                src={getImageSrc(post.userProfileImage)}
+                                alt={post.username}
+                                className="w-full h-full object-cover"
+                              />
                             ) : (
                               <span className="text-xs">{post.username.charAt(0)}</span>
                             )}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span 
+                              <span
                                 className="font-medium text-sm"
                                 style={{ color: post.usernameColor || 'inherit' }}
                               >
                                 {post.username}
                               </span>
                               {/* 🏅 شارة الرتبة الموحدة */}
-                              <UserRoleBadge 
-                                user={{ userType: post.userRole } as ChatUser} 
-                                size={16} 
+                              <UserRoleBadge
+                                user={{ userType: post.userRole } as ChatUser}
+                                size={16}
                               />
                             </div>
-                            <p className="text-xs text-gray-500">{formatTimeAgo(post.timestamp.toString())}</p>
+                            <p className="text-xs text-gray-500">
+                              {formatTimeAgo(post.timestamp.toString())}
+                            </p>
                           </div>
-                          {(currentUser?.id === post.userId || 
-                            currentUser?.userType === 'owner' || 
+                          {(currentUser?.id === post.userId ||
+                            currentUser?.userType === 'owner' ||
                             currentUser?.userType === 'admin') && (
                             <Button
                               size="sm"
@@ -761,12 +808,12 @@ export default function UnifiedSidebar({
                           )}
                         </div>
                       </CardHeader>
-                      
+
                       <CardContent className="pt-0">
                         {post.content && (
                           <p className="text-sm mb-3 whitespace-pre-wrap">{post.content}</p>
                         )}
-                        
+
                         {post.imageUrl && (
                           <img
                             src={post.imageUrl}
@@ -774,7 +821,7 @@ export default function UnifiedSidebar({
                             className="w-full max-h-60 object-cover rounded-lg mb-3"
                           />
                         )}
-                        
+
                         {/* Reactions */}
                         <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
                           <Button
@@ -786,7 +833,7 @@ export default function UnifiedSidebar({
                             <ThumbsUp className="w-4 h-4" />
                             <span className="text-xs">{post.totalLikes || 0}</span>
                           </Button>
-                          
+
                           <Button
                             size="sm"
                             variant="ghost"
@@ -796,7 +843,7 @@ export default function UnifiedSidebar({
                             <Heart className="w-4 h-4" />
                             <span className="text-xs">{post.totalHearts || 0}</span>
                           </Button>
-                          
+
                           <Button
                             size="sm"
                             variant="ghost"
@@ -815,10 +862,14 @@ export default function UnifiedSidebar({
 
               {!isAtBottomSidebarWall && (
                 <div className="absolute bottom-4 right-4 z-10">
-                  <Button size="sm" onClick={() => {
-                    const el = wallsScrollRef.current;
-                    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-                  }} className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const el = wallsScrollRef.current;
+                      if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+                    }}
+                    className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow"
+                  >
                     الانتقال لأسفل
                   </Button>
                 </div>
@@ -830,7 +881,10 @@ export default function UnifiedSidebar({
 
       {/* Rooms View - تحسين التمرير */}
       {activeView === 'rooms' && (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden" style={{ maxHeight: 'calc(100vh - 150px)' }}>
+        <div
+          className="flex-1 min-h-0 flex flex-col overflow-hidden"
+          style={{ maxHeight: 'calc(100vh - 150px)' }}
+        >
           <RoomComponent
             currentUser={currentUser}
             rooms={rooms}
@@ -848,7 +902,10 @@ export default function UnifiedSidebar({
 
       {/* Friends View - تحسين التمرير */}
       {activeView === 'friends' && (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden" style={{ maxHeight: 'calc(100vh - 150px)' }}>
+        <div
+          className="flex-1 min-h-0 flex flex-col overflow-hidden"
+          style={{ maxHeight: 'calc(100vh - 150px)' }}
+        >
           <FriendsTabPanel
             currentUser={currentUser}
             onlineUsers={users}

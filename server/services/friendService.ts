@@ -1,7 +1,7 @@
-import { eq, desc, and, or } from "drizzle-orm";
+import { eq, desc, and, or } from 'drizzle-orm';
 
-import { friends, users, type Friend, type InsertFriend, type User } from "../../shared/schema";
-import { db } from "../database-adapter";
+import { friends, users, type Friend, type InsertFriend, type User } from '../../shared/schema';
+import { db } from '../database-adapter';
 
 export class FriendService {
   // إنشاء طلب صداقة
@@ -18,7 +18,7 @@ export class FriendService {
         .values({
           userId: senderId,
           friendId: receiverId,
-          status: 'pending'
+          status: 'pending',
         })
         .returning();
 
@@ -77,11 +77,7 @@ export class FriendService {
   // الحصول على طلب صداقة بواسطة المعرف
   async getFriendRequestById(requestId: number): Promise<Friend | undefined> {
     try {
-      const [request] = await db
-        .select()
-        .from(friends)
-        .where(eq(friends.id, requestId))
-        .limit(1);
+      const [request] = await db.select().from(friends).where(eq(friends.id, requestId)).limit(1);
 
       return request;
     } catch (error) {
@@ -105,19 +101,14 @@ export class FriendService {
           senderProfileImage: users.profileImage,
           senderUserType: users.userType,
           senderUsernameColor: users.usernameColor,
-          senderProfileEffect: users.profileEffect
+          senderProfileEffect: users.profileEffect,
         })
         .from(friends)
         .leftJoin(users, eq(friends.userId, users.id))
-        .where(
-          and(
-            eq(friends.friendId, userId),
-            eq(friends.status, 'pending')
-          )
-        )
+        .where(and(eq(friends.friendId, userId), eq(friends.status, 'pending')))
         .orderBy(desc(friends.createdAt));
 
-      return incomingRequests.map(req => ({
+      return incomingRequests.map((req) => ({
         id: req.id,
         userId: req.userId,
         friendId: req.friendId,
@@ -129,8 +120,8 @@ export class FriendService {
           profileImage: req.senderProfileImage,
           userType: req.senderUserType,
           usernameColor: req.senderUsernameColor,
-          profileEffect: req.senderProfileEffect || 'none'
-        }
+          profileEffect: req.senderProfileEffect || 'none',
+        },
       }));
     } catch (error) {
       console.error('خطأ في الحصول على طلبات الصداقة الواردة:', error);
@@ -153,19 +144,14 @@ export class FriendService {
           receiverProfileImage: users.profileImage,
           receiverUserType: users.userType,
           receiverUsernameColor: users.usernameColor,
-          receiverProfileEffect: users.profileEffect
+          receiverProfileEffect: users.profileEffect,
         })
         .from(friends)
         .leftJoin(users, eq(friends.friendId, users.id))
-        .where(
-          and(
-            eq(friends.userId, userId),
-            eq(friends.status, 'pending')
-          )
-        )
+        .where(and(eq(friends.userId, userId), eq(friends.status, 'pending')))
         .orderBy(desc(friends.createdAt));
 
-      return outgoingRequests.map(req => ({
+      return outgoingRequests.map((req) => ({
         id: req.id,
         userId: req.userId,
         friendId: req.friendId,
@@ -177,8 +163,8 @@ export class FriendService {
           profileImage: req.receiverProfileImage,
           userType: req.receiverUserType,
           usernameColor: req.receiverUsernameColor,
-          profileEffect: req.receiverProfileEffect || 'none'
-        }
+          profileEffect: req.receiverProfileEffect || 'none',
+        },
       }));
     } catch (error) {
       console.error('خطأ في الحصول على طلبات الصداقة الصادرة:', error);
@@ -275,10 +261,11 @@ export class FriendService {
           isMuted: users.isMuted,
           isBanned: users.isBanned,
           isBlocked: users.isBlocked,
-          ignoredUsers: users.ignoredUsers
+          ignoredUsers: users.ignoredUsers,
         })
         .from(friends)
-        .leftJoin(users, 
+        .leftJoin(
+          users,
           or(
             and(eq(friends.userId, userId), eq(users.id, friends.friendId)),
             and(eq(friends.friendId, userId), eq(users.id, friends.userId))
@@ -325,13 +312,11 @@ export class FriendService {
       await this.removeFriend(userId, blockedUserId);
 
       // إنشاء علاقة حظر
-      await db
-        .insert(friends)
-        .values({
-          userId: userId,
-          friendId: blockedUserId,
-          status: 'blocked'
-        });
+      await db.insert(friends).values({
+        userId: userId,
+        friendId: blockedUserId,
+        status: 'blocked',
+      });
 
       return true;
     } catch (error) {
@@ -388,16 +373,11 @@ export class FriendService {
           isMuted: users.isMuted,
           isBanned: users.isBanned,
           isBlocked: users.isBlocked,
-          ignoredUsers: users.ignoredUsers
+          ignoredUsers: users.ignoredUsers,
         })
         .from(friends)
         .leftJoin(users, eq(friends.friendId, users.id))
-        .where(
-          and(
-            eq(friends.userId, userId),
-            eq(friends.status, 'blocked')
-          )
-        )
+        .where(and(eq(friends.userId, userId), eq(friends.status, 'blocked')))
         .orderBy(desc(friends.createdAt));
 
       return blockedUsers as User[];

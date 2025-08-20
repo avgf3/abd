@@ -13,7 +13,7 @@ const LOG_LEVELS: LogLevel = {
   DEBUG: 0,
   INFO: 1,
   WARN: 2,
-  ERROR: 3
+  ERROR: 3,
 };
 
 class Logger {
@@ -27,10 +27,12 @@ class Logger {
 
   private formatMessage(level: string, message: string, ...args: any[]): string {
     const timestamp = new Date().toISOString();
-    const formattedArgs = args.length > 0 ? ' ' + args.map(arg => 
-      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-    ).join(' ') : '';
-    
+    const formattedArgs =
+      args.length > 0
+        ? ' ' +
+          args.map((arg) => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ')
+        : '';
+
     return `[${timestamp}] ${level}: ${message}${formattedArgs}`;
   }
 
@@ -87,5 +89,5 @@ export const log = {
   warn: (msg: string, ...args: any[]) => logger.warn(msg, ...args),
   error: (msg: string, error?: any, ...args: any[]) => logger.error(msg, error, ...args),
   critical: (msg: string, error?: any, ...args: any[]) => logger.critical(msg, error, ...args),
-  production: (msg: string, ...args: any[]) => logger.production(msg, ...args)
+  production: (msg: string, ...args: any[]) => logger.production(msg, ...args),
 };

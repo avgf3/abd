@@ -4,7 +4,6 @@ import * as pgSchema from '../../shared/schema';
 import * as sqliteSchema from '../../shared/sqlite-schema';
 import { dbAdapter, dbType } from '../database-adapter';
 
-
 // Type definitions for database operations
 export interface User {
   id: number;
@@ -134,10 +133,18 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
-        const result = await (this.db as any).select().from(pgSchema.users).where(eq(pgSchema.users.id, id)).limit(1);
+        const result = await (this.db as any)
+          .select()
+          .from(pgSchema.users)
+          .where(eq(pgSchema.users.id, id))
+          .limit(1);
         return result[0] || null;
       } else {
-        const result = await (this.db as any).select().from(sqliteSchema.users).where(eq(sqliteSchema.users.id, id)).limit(1);
+        const result = await (this.db as any)
+          .select()
+          .from(sqliteSchema.users)
+          .where(eq(sqliteSchema.users.id, id))
+          .limit(1);
         return result[0] || null;
       }
     } catch (error) {
@@ -151,10 +158,18 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
-        const result = await (this.db as any).select().from(pgSchema.users).where(eq(pgSchema.users.username, username)).limit(1);
+        const result = await (this.db as any)
+          .select()
+          .from(pgSchema.users)
+          .where(eq(pgSchema.users.username, username))
+          .limit(1);
         return result[0] || null;
       } else {
-        const result = await (this.db as any).select().from(sqliteSchema.users).where(eq(sqliteSchema.users.username, username)).limit(1);
+        const result = await (this.db as any)
+          .select()
+          .from(sqliteSchema.users)
+          .where(eq(sqliteSchema.users.username, username))
+          .limit(1);
         return result[0] || null;
       }
     } catch (error) {
@@ -191,12 +206,15 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
-        const result = await (this.db as any).insert(pgSchema.users).values({
-          ...userData,
-          joinDate: userData.joinDate || new Date(),
-          createdAt: userData.createdAt || new Date(),
-          lastSeen: userData.lastSeen || new Date(),
-        }).returning();
+        const result = await (this.db as any)
+          .insert(pgSchema.users)
+          .values({
+            ...userData,
+            joinDate: userData.joinDate || new Date(),
+            createdAt: userData.createdAt || new Date(),
+            lastSeen: userData.lastSeen || new Date(),
+          })
+          .returning();
         return result[0] || null;
       } else {
         const result = await (this.db as any).insert(sqliteSchema.users).values({
@@ -251,17 +269,28 @@ export class DatabaseService {
     }
   }
 
-  async addPointsHistory(userId: number, points: number, reason: string, action: 'earn' | 'spend'): Promise<void> {
+  async addPointsHistory(
+    userId: number,
+    points: number,
+    reason: string,
+    action: 'earn' | 'spend'
+  ): Promise<void> {
     if (!this.isConnected()) return;
     try {
       if (this.type === 'postgresql') {
         await (this.db as any).insert(pgSchema.pointsHistory).values({
-          userId, points, reason, action,
+          userId,
+          points,
+          reason,
+          action,
           createdAt: new Date(),
         });
       } else {
         await (this.db as any).insert(sqliteSchema.pointsHistory).values({
-          userId, points, reason, action,
+          userId,
+          points,
+          reason,
+          action,
           createdAt: new Date().toISOString(),
         });
       }
@@ -294,14 +323,22 @@ export class DatabaseService {
     }
   }
 
-  async getLatestPointsHistoryByReason(userId: number, reason: string): Promise<{ createdAt: Date | string } | null> {
+  async getLatestPointsHistoryByReason(
+    userId: number,
+    reason: string
+  ): Promise<{ createdAt: Date | string } | null> {
     if (!this.isConnected()) return null;
     try {
       if (this.type === 'postgresql') {
         const rows = await (this.db as any)
           .select()
           .from(pgSchema.pointsHistory)
-          .where(and(eq(pgSchema.pointsHistory.userId, userId), eq(pgSchema.pointsHistory.reason, reason)))
+          .where(
+            and(
+              eq(pgSchema.pointsHistory.userId, userId),
+              eq(pgSchema.pointsHistory.reason, reason)
+            )
+          )
           .orderBy(desc(pgSchema.pointsHistory.createdAt))
           .limit(1);
         return rows[0] || null;
@@ -309,7 +346,12 @@ export class DatabaseService {
         const rows = await (this.db as any)
           .select()
           .from(sqliteSchema.pointsHistory)
-          .where(and(eq(sqliteSchema.pointsHistory.userId, userId), eq(sqliteSchema.pointsHistory.reason, reason)))
+          .where(
+            and(
+              eq(sqliteSchema.pointsHistory.userId, userId),
+              eq(sqliteSchema.pointsHistory.reason, reason)
+            )
+          )
           .orderBy(desc(sqliteSchema.pointsHistory.createdAt))
           .limit(1);
         return rows[0] || null;
@@ -374,9 +416,15 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
-        return await (this.db as any).select().from(pgSchema.users).orderBy(desc(pgSchema.users.joinDate));
+        return await (this.db as any)
+          .select()
+          .from(pgSchema.users)
+          .orderBy(desc(pgSchema.users.joinDate));
       } else {
-        return await (this.db as any).select().from(sqliteSchema.users).orderBy(desc(sqliteSchema.users.joinDate));
+        return await (this.db as any)
+          .select()
+          .from(sqliteSchema.users)
+          .orderBy(desc(sqliteSchema.users.joinDate));
       }
     } catch (error) {
       console.error('Error getting all users:', error);
@@ -447,9 +495,7 @@ export class DatabaseService {
             .where(like(pgSchema.users.username, pattern));
           return Number(rows?.[0]?.c || 0);
         }
-        const rows = await (this.db as any)
-          .select({ c: count() })
-          .from(pgSchema.users);
+        const rows = await (this.db as any).select({ c: count() }).from(pgSchema.users);
         return Number(rows?.[0]?.c || 0);
       } else {
         if (search && search.trim()) {
@@ -460,9 +506,7 @@ export class DatabaseService {
             .where(like(sqliteSchema.users.username, pattern));
           return Number(rows?.[0]?.c || 0);
         }
-        const rows = await (this.db as any)
-          .select({ c: count() })
-          .from(sqliteSchema.users);
+        const rows = await (this.db as any).select({ c: count() }).from(sqliteSchema.users);
         return Number(rows?.[0]?.c || 0);
       }
     } catch (error) {
@@ -484,7 +528,9 @@ export class DatabaseService {
         return await (this.db as any)
           .select()
           .from(sqliteSchema.users)
-          .where(and(eq(sqliteSchema.users.isOnline, true), eq(sqliteSchema.users.isHidden, false)));
+          .where(
+            and(eq(sqliteSchema.users.isOnline, true), eq(sqliteSchema.users.isHidden, false))
+          );
       }
     } catch (error) {
       console.error('Error getting online users:', error);
@@ -498,10 +544,13 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
-        const result = await (this.db as any).insert(pgSchema.messages).values({
-          ...messageData,
-          timestamp: messageData.timestamp || new Date(),
-        }).returning();
+        const result = await (this.db as any)
+          .insert(pgSchema.messages)
+          .values({
+            ...messageData,
+            timestamp: messageData.timestamp || new Date(),
+          })
+          .returning();
         return result[0] || null;
       } else {
         const result = await (this.db as any).insert(sqliteSchema.messages).values({
@@ -533,7 +582,13 @@ export class DatabaseService {
         return await (this.db as any)
           .select()
           .from(pgSchema.messages)
-          .where(and(eq(pgSchema.messages.roomId, roomId), isNull(pgSchema.messages.deletedAt), eq(pgSchema.messages.isPrivate, false)))
+          .where(
+            and(
+              eq(pgSchema.messages.roomId, roomId),
+              isNull(pgSchema.messages.deletedAt),
+              eq(pgSchema.messages.isPrivate, false)
+            )
+          )
           .orderBy(desc(pgSchema.messages.timestamp))
           .limit(limit)
           .offset(offset);
@@ -541,7 +596,12 @@ export class DatabaseService {
         return await (this.db as any)
           .select()
           .from(sqliteSchema.messages)
-          .where(and(eq(sqliteSchema.messages.roomId, roomId), eq(sqliteSchema.messages.isPrivate, false)))
+          .where(
+            and(
+              eq(sqliteSchema.messages.roomId, roomId),
+              eq(sqliteSchema.messages.isPrivate, false)
+            )
+          )
           .orderBy(desc(sqliteSchema.messages.timestamp))
           .limit(limit)
           .offset(offset);
@@ -552,7 +612,11 @@ export class DatabaseService {
     }
   }
 
-  async getPrivateMessages(userId1: number, userId2: number, limit: number = 50): Promise<Message[]> {
+  async getPrivateMessages(
+    userId1: number,
+    userId2: number,
+    limit: number = 50
+  ): Promise<Message[]> {
     if (!this.isConnected()) return [];
 
     try {
@@ -564,8 +628,14 @@ export class DatabaseService {
             and(
               eq(pgSchema.messages.isPrivate, true),
               or(
-                and(eq(pgSchema.messages.senderId, userId1), eq(pgSchema.messages.receiverId, userId2)),
-                and(eq(pgSchema.messages.senderId, userId2), eq(pgSchema.messages.receiverId, userId1))
+                and(
+                  eq(pgSchema.messages.senderId, userId1),
+                  eq(pgSchema.messages.receiverId, userId2)
+                ),
+                and(
+                  eq(pgSchema.messages.senderId, userId2),
+                  eq(pgSchema.messages.receiverId, userId1)
+                )
               )
             )
           )
@@ -579,8 +649,14 @@ export class DatabaseService {
             and(
               eq(sqliteSchema.messages.isPrivate, true),
               or(
-                and(eq(sqliteSchema.messages.senderId, userId1), eq(sqliteSchema.messages.receiverId, userId2)),
-                and(eq(sqliteSchema.messages.senderId, userId2), eq(sqliteSchema.messages.receiverId, userId1))
+                and(
+                  eq(sqliteSchema.messages.senderId, userId1),
+                  eq(sqliteSchema.messages.receiverId, userId2)
+                ),
+                and(
+                  eq(sqliteSchema.messages.senderId, userId2),
+                  eq(sqliteSchema.messages.receiverId, userId1)
+                )
               )
             )
           )
@@ -640,7 +716,7 @@ export class DatabaseService {
       return [];
     }
   }
-  
+
   // ===================== Room message helpers (counts/search/stats) =====================
   async getRoomMessageCount(roomId: string): Promise<number> {
     if (!this.isConnected()) return 0;
@@ -649,13 +725,24 @@ export class DatabaseService {
         const rows = await (this.db as any)
           .select({ c: count() })
           .from(pgSchema.messages)
-          .where(and(eq(pgSchema.messages.roomId, roomId), isNull(pgSchema.messages.deletedAt), eq(pgSchema.messages.isPrivate, false)));
+          .where(
+            and(
+              eq(pgSchema.messages.roomId, roomId),
+              isNull(pgSchema.messages.deletedAt),
+              eq(pgSchema.messages.isPrivate, false)
+            )
+          );
         return Number(rows?.[0]?.c || 0);
       } else {
         const rows = await (this.db as any)
           .select({ c: count() })
           .from(sqliteSchema.messages)
-          .where(and(eq(sqliteSchema.messages.roomId, roomId), eq(sqliteSchema.messages.isPrivate, false)));
+          .where(
+            and(
+              eq(sqliteSchema.messages.roomId, roomId),
+              eq(sqliteSchema.messages.isPrivate, false)
+            )
+          );
         return Number(rows?.[0]?.c || 0);
       }
     } catch (error) {
@@ -671,23 +758,27 @@ export class DatabaseService {
         const rows = await (this.db as any)
           .select({ c: count() })
           .from(pgSchema.messages)
-          .where(and(
-            eq(pgSchema.messages.roomId, roomId),
-            isNull(pgSchema.messages.deletedAt),
-            eq(pgSchema.messages.isPrivate, false),
-            gte(pgSchema.messages.timestamp, since as any)
-          ));
+          .where(
+            and(
+              eq(pgSchema.messages.roomId, roomId),
+              isNull(pgSchema.messages.deletedAt),
+              eq(pgSchema.messages.isPrivate, false),
+              gte(pgSchema.messages.timestamp, since as any)
+            )
+          );
         return Number(rows?.[0]?.c || 0);
       } else {
         const sinceIso = since.toISOString();
         const rows = await (this.db as any)
           .select({ c: count() })
           .from(sqliteSchema.messages)
-          .where(and(
-            eq(sqliteSchema.messages.roomId, roomId),
-            eq(sqliteSchema.messages.isPrivate, false),
-            sql`${sqliteSchema.messages.timestamp} >= ${sinceIso}`
-          ));
+          .where(
+            and(
+              eq(sqliteSchema.messages.roomId, roomId),
+              eq(sqliteSchema.messages.isPrivate, false),
+              sql`${sqliteSchema.messages.timestamp} >= ${sinceIso}`
+            )
+          );
         return Number(rows?.[0]?.c || 0);
       }
     } catch (error) {
@@ -703,23 +794,27 @@ export class DatabaseService {
         const rows = await (this.db as any)
           .select({ c: sql<number>`count(distinct ${pgSchema.messages.senderId})` })
           .from(pgSchema.messages)
-          .where(and(
-            eq(pgSchema.messages.roomId, roomId),
-            isNull(pgSchema.messages.deletedAt),
-            eq(pgSchema.messages.isPrivate, false),
-            gte(pgSchema.messages.timestamp, since as any)
-          ));
+          .where(
+            and(
+              eq(pgSchema.messages.roomId, roomId),
+              isNull(pgSchema.messages.deletedAt),
+              eq(pgSchema.messages.isPrivate, false),
+              gte(pgSchema.messages.timestamp, since as any)
+            )
+          );
         return Number(rows?.[0]?.c || 0);
       } else {
         const sinceIso = since.toISOString();
         const rows = await (this.db as any)
           .select({ c: sql<number>`count(distinct ${sqliteSchema.messages.senderId})` })
           .from(sqliteSchema.messages)
-          .where(and(
-            eq(sqliteSchema.messages.roomId, roomId),
-            eq(sqliteSchema.messages.isPrivate, false),
-            sql`${sqliteSchema.messages.timestamp} >= ${sinceIso}`
-          ));
+          .where(
+            and(
+              eq(sqliteSchema.messages.roomId, roomId),
+              eq(sqliteSchema.messages.isPrivate, false),
+              sql`${sqliteSchema.messages.timestamp} >= ${sinceIso}`
+            )
+          );
         return Number(rows?.[0]?.c || 0);
       }
     } catch (error) {
@@ -735,7 +830,13 @@ export class DatabaseService {
         const rows = await (this.db as any)
           .select()
           .from(pgSchema.messages)
-          .where(and(eq(pgSchema.messages.roomId, roomId), isNull(pgSchema.messages.deletedAt), eq(pgSchema.messages.isPrivate, false)))
+          .where(
+            and(
+              eq(pgSchema.messages.roomId, roomId),
+              isNull(pgSchema.messages.deletedAt),
+              eq(pgSchema.messages.isPrivate, false)
+            )
+          )
           .orderBy(desc(pgSchema.messages.timestamp))
           .limit(1);
         return rows?.[0] || null;
@@ -743,7 +844,12 @@ export class DatabaseService {
         const rows = await (this.db as any)
           .select()
           .from(sqliteSchema.messages)
-          .where(and(eq(sqliteSchema.messages.roomId, roomId), eq(sqliteSchema.messages.isPrivate, false)))
+          .where(
+            and(
+              eq(sqliteSchema.messages.roomId, roomId),
+              eq(sqliteSchema.messages.isPrivate, false)
+            )
+          )
           .orderBy(desc(sqliteSchema.messages.timestamp))
           .limit(1);
         return rows?.[0] || null;
@@ -754,7 +860,12 @@ export class DatabaseService {
     }
   }
 
-  async searchRoomMessages(roomId: string, searchQuery: string, limit: number = 20, offset: number = 0): Promise<Message[]> {
+  async searchRoomMessages(
+    roomId: string,
+    searchQuery: string,
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<Message[]> {
     if (!this.isConnected()) return [];
     const pattern = `%${searchQuery}%`;
     try {
@@ -762,12 +873,14 @@ export class DatabaseService {
         return await (this.db as any)
           .select()
           .from(pgSchema.messages)
-          .where(and(
-            eq(pgSchema.messages.roomId, roomId),
-            isNull(pgSchema.messages.deletedAt),
-            eq(pgSchema.messages.isPrivate, false),
-            like(pgSchema.messages.content, pattern)
-          ))
+          .where(
+            and(
+              eq(pgSchema.messages.roomId, roomId),
+              isNull(pgSchema.messages.deletedAt),
+              eq(pgSchema.messages.isPrivate, false),
+              like(pgSchema.messages.content, pattern)
+            )
+          )
           .orderBy(desc(pgSchema.messages.timestamp))
           .limit(limit)
           .offset(offset);
@@ -775,11 +888,13 @@ export class DatabaseService {
         return await (this.db as any)
           .select()
           .from(sqliteSchema.messages)
-          .where(and(
-            eq(sqliteSchema.messages.roomId, roomId),
-            eq(sqliteSchema.messages.isPrivate, false),
-            like(sqliteSchema.messages.content, pattern)
-          ))
+          .where(
+            and(
+              eq(sqliteSchema.messages.roomId, roomId),
+              eq(sqliteSchema.messages.isPrivate, false),
+              like(sqliteSchema.messages.content, pattern)
+            )
+          )
           .orderBy(desc(sqliteSchema.messages.timestamp))
           .limit(limit)
           .offset(offset);
@@ -798,22 +913,26 @@ export class DatabaseService {
         const rows = await (this.db as any)
           .select({ c: count() })
           .from(pgSchema.messages)
-          .where(and(
-            eq(pgSchema.messages.roomId, roomId),
-            isNull(pgSchema.messages.deletedAt),
-            eq(pgSchema.messages.isPrivate, false),
-            like(pgSchema.messages.content, pattern)
-          ));
+          .where(
+            and(
+              eq(pgSchema.messages.roomId, roomId),
+              isNull(pgSchema.messages.deletedAt),
+              eq(pgSchema.messages.isPrivate, false),
+              like(pgSchema.messages.content, pattern)
+            )
+          );
         return Number(rows?.[0]?.c || 0);
       } else {
         const rows = await (this.db as any)
           .select({ c: count() })
           .from(sqliteSchema.messages)
-          .where(and(
-            eq(sqliteSchema.messages.roomId, roomId),
-            eq(sqliteSchema.messages.isPrivate, false),
-            like(sqliteSchema.messages.content, pattern)
-          ));
+          .where(
+            and(
+              eq(sqliteSchema.messages.roomId, roomId),
+              eq(sqliteSchema.messages.isPrivate, false),
+              like(sqliteSchema.messages.content, pattern)
+            )
+          );
         return Number(rows?.[0]?.c || 0);
       }
     } catch (error) {
@@ -829,20 +948,24 @@ export class DatabaseService {
         const updated = await (this.db as any)
           .update(pgSchema.messages)
           .set({ deletedAt: new Date() })
-          .where(and(
-            eq(pgSchema.messages.roomId, roomId),
-            lt(pgSchema.messages.timestamp, cutoffDate as any)
-          ))
+          .where(
+            and(
+              eq(pgSchema.messages.roomId, roomId),
+              lt(pgSchema.messages.timestamp, cutoffDate as any)
+            )
+          )
           .returning({ id: pgSchema.messages.id });
         return Array.isArray(updated) ? updated.length : 0;
       } else {
         const cutoffIso = cutoffDate.toISOString();
         const deleted = await (this.db as any)
           .delete(sqliteSchema.messages)
-          .where(and(
-            eq(sqliteSchema.messages.roomId, roomId),
-            sql`${sqliteSchema.messages.timestamp} < ${cutoffIso}`
-          ));
+          .where(
+            and(
+              eq(sqliteSchema.messages.roomId, roomId),
+              sql`${sqliteSchema.messages.timestamp} < ${cutoffIso}`
+            )
+          );
         // Drizzle for SQLite returns number of changes on run/run? Fallback to 0 if unknown
         // Attempt to read changes count if available
         return Number((deleted?.rowsAffected ?? deleted?.changes ?? 0) as any);
@@ -912,7 +1035,10 @@ export class DatabaseService {
       };
 
       if (this.type === 'postgresql') {
-        const result = await (this.db as any).insert(pgSchema.friends).values(friendData).returning();
+        const result = await (this.db as any)
+          .insert(pgSchema.friends)
+          .values(friendData)
+          .returning();
         return result[0] || null;
       } else {
         const result = await (this.db as any).insert(sqliteSchema.friends).values(friendData);
@@ -952,7 +1078,10 @@ export class DatabaseService {
           .from(sqliteSchema.friends)
           .where(
             and(
-              or(eq(sqliteSchema.friends.userId, userId), eq(sqliteSchema.friends.friendId, userId)),
+              or(
+                eq(sqliteSchema.friends.userId, userId),
+                eq(sqliteSchema.friends.friendId, userId)
+              ),
               eq(sqliteSchema.friends.status, 'accepted')
             )
           );
@@ -979,7 +1108,7 @@ export class DatabaseService {
           .update(sqliteSchema.friends)
           .set({ status })
           .where(eq(sqliteSchema.friends.id, requestId));
-        
+
         const friends = await (this.db as any)
           .select()
           .from(sqliteSchema.friends)
@@ -1077,7 +1206,10 @@ export class DatabaseService {
           .where(isNull(pgSchema.rooms.deletedAt))
           .orderBy(asc(pgSchema.rooms.name));
       } else {
-        return await (this.db as any).select().from(sqliteSchema.rooms).orderBy(asc(sqliteSchema.rooms.name));
+        return await (this.db as any)
+          .select()
+          .from(sqliteSchema.rooms)
+          .orderBy(asc(sqliteSchema.rooms.name));
       }
     } catch (error) {
       console.error('Error getting rooms:', error);
@@ -1128,9 +1260,7 @@ export class DatabaseService {
       } else {
         const maybeId = Number(roomId);
         if (!Number.isFinite(maybeId)) return false;
-        await (this.db as any)
-          .delete(sqliteSchema.rooms)
-          .where(eq(sqliteSchema.rooms.id, maybeId));
+        await (this.db as any).delete(sqliteSchema.rooms).where(eq(sqliteSchema.rooms.id, maybeId));
         return true;
       }
     } catch (error) {
@@ -1150,9 +1280,12 @@ export class DatabaseService {
         if (typeof updates.name === 'string') allowed.name = updates.name;
         if (typeof updates.description === 'string') allowed.description = updates.description;
         if (typeof (updates as any).icon === 'string') allowed.icon = (updates as any).icon;
-        if (typeof (updates as any).isActive === 'boolean') allowed.isActive = (updates as any).isActive;
-        if (typeof (updates as any).isBroadcast === 'boolean') allowed.isBroadcast = (updates as any).isBroadcast;
-        if (typeof (updates as any).hostId !== 'undefined') allowed.hostId = (updates as any).hostId;
+        if (typeof (updates as any).isActive === 'boolean')
+          allowed.isActive = (updates as any).isActive;
+        if (typeof (updates as any).isBroadcast === 'boolean')
+          allowed.isBroadcast = (updates as any).isBroadcast;
+        if (typeof (updates as any).hostId !== 'undefined')
+          allowed.hostId = (updates as any).hostId;
         if (Object.keys(allowed).length === 0) {
           // Nothing to update
           const row = await this.getRoomById(roomId);
@@ -1193,7 +1326,10 @@ export class DatabaseService {
   }
 
   // Helper: check room membership and moderation status
-  async canSendInRoom(roomId: string, userId: number): Promise<{ allowed: boolean; reason?: string }> {
+  async canSendInRoom(
+    roomId: string,
+    userId: number
+  ): Promise<{ allowed: boolean; reason?: string }> {
     if (!this.isConnected()) return { allowed: true };
 
     try {
@@ -1227,9 +1363,7 @@ export class DatabaseService {
           .from(pgSchema.blockedDevices)
           .orderBy(desc(pgSchema.blockedDevices.blockedAt));
       } else {
-        return await (this.db as any)
-          .select()
-          .from(sqliteSchema.blockedDevices);
+        return await (this.db as any).select().from(sqliteSchema.blockedDevices);
       }
     } catch (error) {
       console.error('Error getting blocked devices:', error);
@@ -1250,7 +1384,10 @@ export class DatabaseService {
           blockedAt: data.blockedAt instanceof Date ? data.blockedAt : new Date(),
           blockedBy: data.blockedBy!,
         } as any;
-        const result = await (this.db as any).insert(pgSchema.blockedDevices).values(payload).returning();
+        const result = await (this.db as any)
+          .insert(pgSchema.blockedDevices)
+          .values(payload)
+          .returning();
         return result[0] || null;
       } else {
         const payload = {
@@ -1258,7 +1395,10 @@ export class DatabaseService {
           deviceId: data.deviceId!,
           userId: data.userId!,
           reason: data.reason || 'unspecified',
-          blockedAt: data.blockedAt instanceof Date ? data.blockedAt.toISOString() : (data.blockedAt || new Date().toISOString()),
+          blockedAt:
+            data.blockedAt instanceof Date
+              ? data.blockedAt.toISOString()
+              : data.blockedAt || new Date().toISOString(),
           blockedBy: data.blockedBy!,
         } as any;
         await (this.db as any).insert(sqliteSchema.blockedDevices).values(payload);
@@ -1301,10 +1441,15 @@ export class DatabaseService {
       };
 
       if (this.type === 'postgresql') {
-        const result = await (this.db as any).insert(pgSchema.notifications).values(notification).returning();
+        const result = await (this.db as any)
+          .insert(pgSchema.notifications)
+          .values(notification)
+          .returning();
         return result[0] || null;
       } else {
-        const result = await (this.db as any).insert(sqliteSchema.notifications).values(notification);
+        const result = await (this.db as any)
+          .insert(sqliteSchema.notifications)
+          .values(notification);
         if (result.lastInsertRowid) {
           const notifications = await (this.db as any)
             .select()
@@ -1353,17 +1498,29 @@ export class DatabaseService {
 
       if (this.type === 'postgresql') {
         const userCount = await (this.db as any).select({ count: count() }).from(pgSchema.users);
-        const messageCount = await (this.db as any).select({ count: count() }).from(pgSchema.messages);
-        const onlineCount = await (this.db as any).select({ count: count() }).from(pgSchema.users).where(eq(pgSchema.users.isOnline, true));
-        
+        const messageCount = await (this.db as any)
+          .select({ count: count() })
+          .from(pgSchema.messages);
+        const onlineCount = await (this.db as any)
+          .select({ count: count() })
+          .from(pgSchema.users)
+          .where(eq(pgSchema.users.isOnline, true));
+
         stats.users = userCount[0]?.count || 0;
         stats.messages = messageCount[0]?.count || 0;
         stats.onlineUsers = onlineCount[0]?.count || 0;
       } else {
-        const userCount = await (this.db as any).select({ count: count() }).from(sqliteSchema.users);
-        const messageCount = await (this.db as any).select({ count: count() }).from(sqliteSchema.messages);
-        const onlineCount = await (this.db as any).select({ count: count() }).from(sqliteSchema.users).where(eq(sqliteSchema.users.isOnline, true));
-        
+        const userCount = await (this.db as any)
+          .select({ count: count() })
+          .from(sqliteSchema.users);
+        const messageCount = await (this.db as any)
+          .select({ count: count() })
+          .from(sqliteSchema.messages);
+        const onlineCount = await (this.db as any)
+          .select({ count: count() })
+          .from(sqliteSchema.users)
+          .where(eq(sqliteSchema.users.isOnline, true));
+
         stats.users = userCount[0]?.count || 0;
         stats.messages = messageCount[0]?.count || 0;
         stats.onlineUsers = onlineCount[0]?.count || 0;
@@ -1381,7 +1538,7 @@ export class DatabaseService {
     return {
       connected: this.isConnected(),
       type: this.type,
-      adapter: dbAdapter.type
+      adapter: dbAdapter.type,
     };
   }
 
@@ -1400,7 +1557,9 @@ export class DatabaseService {
       } else {
         const rows = await (this.db as any).select().from(sqliteSchema.siteSettings).limit(1);
         if (rows && rows.length > 0) return rows[0].siteTheme || 'default';
-        await (this.db as any).insert(sqliteSchema.siteSettings).values({ siteTheme: 'default', updatedAt: new Date().toISOString() });
+        await (this.db as any)
+          .insert(sqliteSchema.siteSettings)
+          .values({ siteTheme: 'default', updatedAt: new Date().toISOString() });
         return 'default';
       }
     } catch (e) {
@@ -1435,7 +1594,9 @@ export class DatabaseService {
             .where(eq(sqliteSchema.siteSettings.id as any, rows[0].id));
           return themeId;
         }
-        await (this.db as any).insert(sqliteSchema.siteSettings).values({ siteTheme: themeId, updatedAt: new Date().toISOString() });
+        await (this.db as any)
+          .insert(sqliteSchema.siteSettings)
+          .values({ siteTheme: themeId, updatedAt: new Date().toISOString() });
         return themeId;
       }
     } catch (e) {

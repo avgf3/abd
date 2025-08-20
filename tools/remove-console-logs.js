@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 // الملفات والمجلدات التي نريد فحصها
 const TARGET_DIRS = [
   path.join(__dirname, '..', 'server'),
-  path.join(__dirname, '..', 'client', 'src')
+  path.join(__dirname, '..', 'client', 'src'),
 ];
 
 // أنماط console.log التي نريد إزالتها
@@ -26,27 +26,21 @@ const CONSOLE_PATTERNS = [
 ];
 
 // الملفات التي نتجاهلها
-const IGNORE_FILES = [
-  'logger.ts',
-  'remove-console-logs.js',
-  'test-',
-  '.test.',
-  '.spec.'
-];
+const IGNORE_FILES = ['logger.ts', 'remove-console-logs.js', 'test-', '.test.', '.spec.'];
 
 let totalRemoved = 0;
 let filesProcessed = 0;
 
 function shouldIgnoreFile(filePath) {
   const fileName = path.basename(filePath);
-  return IGNORE_FILES.some(pattern => fileName.includes(pattern));
+  return IGNORE_FILES.some((pattern) => fileName.includes(pattern));
 }
 
 function removeConsoleLogs(content) {
   let newContent = content;
   let removedCount = 0;
 
-  CONSOLE_PATTERNS.forEach(pattern => {
+  CONSOLE_PATTERNS.forEach((pattern) => {
     const matches = newContent.match(pattern);
     if (matches) {
       removedCount += matches.length;
@@ -82,7 +76,7 @@ function processDirectory(dirPath) {
 
   const items = fs.readdirSync(dirPath);
 
-  items.forEach(item => {
+  items.forEach((item) => {
     const fullPath = path.join(dirPath, item);
     const stat = fs.statSync(fullPath);
 
@@ -97,7 +91,7 @@ function processDirectory(dirPath) {
 function main() {
   console.log('🧹 بدء إزالة console.log للإنتاج...\n');
 
-  TARGET_DIRS.forEach(dir => {
+  TARGET_DIRS.forEach((dir) => {
     console.log(`📁 فحص المجلد: ${dir}`);
     processDirectory(dir);
   });
@@ -105,7 +99,7 @@ function main() {
   console.log('\n📊 النتائج النهائية:');
   console.log(`📁 ملفات مفحوصة: ${filesProcessed}`);
   console.log(`🗑️ console.log مُزالة: ${totalRemoved}`);
-  
+
   if (totalRemoved > 0) {
     console.log('\n✅ تم إزالة console.log بنجاح!');
     console.log('💡 تم الاحتفاظ بـ logger.ts للـ logging المحترف');

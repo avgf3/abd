@@ -1,6 +1,11 @@
 import React from 'react';
 
-import { buildProfileBackgroundGradient, getUserEffectStyles, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
+import {
+  buildProfileBackgroundGradient,
+  getUserEffectStyles,
+  getUserListItemStyles,
+  getUserListItemClasses,
+} from '@/utils/themeUtils';
 
 // قائمة الألوان المتاحة للاختبار
 const availableColors = [
@@ -28,14 +33,14 @@ const availableColors = [
   { hex: '#dc143c', name: 'الأحمر القرمزي' },
   { hex: '#1e90ff', name: 'الأزرق الدودجر' },
   { hex: '#b22222', name: 'الطوبي الناري' },
-  { hex: '#3c0d0d', name: 'البني الداكن (افتراضي)' }
+  { hex: '#3c0d0d', name: 'البني الداكن (افتراضي)' },
 ];
 
 // قائمة التأثيرات المتاحة
 const availableEffects = [
   'none',
   'effect-glow',
-  'effect-pulse', 
+  'effect-pulse',
   'effect-water',
   'effect-aurora',
   'effect-neon',
@@ -44,7 +49,7 @@ const availableEffects = [
   'effect-rainbow',
   'effect-shadow',
   'effect-electric',
-  'effect-crystal'
+  'effect-crystal',
 ];
 
 export default function TestColorSync() {
@@ -58,7 +63,7 @@ export default function TestColorSync() {
     profileBackgroundColor: selectedColor,
     profileEffect: selectedEffect,
     usernameColor: '#000000',
-    userType: 'member'
+    userType: 'member',
   };
 
   // الحصول على التدرج المطبق
@@ -69,7 +74,7 @@ export default function TestColorSync() {
   return (
     <div className="p-8 max-w-6xl mx-auto bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold mb-8 text-center">🎨 اختبار تزامن الألوان والتأثيرات</h1>
-      
+
       {/* قسم اختيار اللون */}
       <div className="mb-8 bg-white rounded-lg shadow-lg p-6">
         <h2 className="text-xl font-semibold mb-4">اختر لون الخلفية:</h2>
@@ -113,10 +118,19 @@ export default function TestColorSync() {
       <div className="mb-8 bg-white rounded-lg shadow-lg p-6">
         <h2 className="text-xl font-semibold mb-4">معلومات التطبيق:</h2>
         <div className="space-y-2 font-mono text-sm">
-          <div><strong>اللون المختار:</strong> {selectedColor}</div>
-          <div><strong>التأثير المختار:</strong> {selectedEffect}</div>
-          <div><strong>التدرج المُطبق:</strong> <code className="bg-gray-100 p-1 rounded">{gradient}</code></div>
-          <div><strong>الكلاسات:</strong> {userBoxClasses || 'none'}</div>
+          <div>
+            <strong>اللون المختار:</strong> {selectedColor}
+          </div>
+          <div>
+            <strong>التأثير المختار:</strong> {selectedEffect}
+          </div>
+          <div>
+            <strong>التدرج المُطبق:</strong>{' '}
+            <code className="bg-gray-100 p-1 rounded">{gradient}</code>
+          </div>
+          <div>
+            <strong>الكلاسات:</strong> {userBoxClasses || 'none'}
+          </div>
         </div>
       </div>
 
@@ -125,10 +139,7 @@ export default function TestColorSync() {
         {/* بطاقة الملف الشخصي */}
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h3 className="text-lg font-semibold mb-4">🖼️ بطاقة الملف الشخصي</h3>
-          <div 
-            className={`p-6 rounded-lg ${selectedEffect}`}
-            style={{ background: gradient }}
-          >
+          <div className={`p-6 rounded-lg ${selectedEffect}`} style={{ background: gradient }}>
             <div className="bg-white/90 backdrop-blur rounded-lg p-4">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-gray-300"></div>

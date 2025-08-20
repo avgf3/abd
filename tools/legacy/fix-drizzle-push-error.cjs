@@ -16,22 +16,21 @@ console.log('📝 تحديث npm scripts...');
 try {
   const packageJsonPath = './package.json';
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-  
+
   // استبدال scripts المشكلة
   const newScripts = {
     ...packageJson.scripts,
-    "db:push": "echo '✅ SQLite يُدار تلقائياً - لا حاجة للـ push'",
-    "db:generate": "echo '✅ SQLite يُدار تلقائياً - لا حاجة للـ generate'", 
-    "db:migrate": "echo '✅ SQLite يُدار تلقائياً - لا حاجة للـ migrate'",
-    "postbuild": "echo '✅ البناء مكتمل'",
-    "deploy": "npm run build"
+    'db:push': "echo '✅ SQLite يُدار تلقائياً - لا حاجة للـ push'",
+    'db:generate': "echo '✅ SQLite يُدار تلقائياً - لا حاجة للـ generate'",
+    'db:migrate': "echo '✅ SQLite يُدار تلقائياً - لا حاجة للـ migrate'",
+    postbuild: "echo '✅ البناء مكتمل'",
+    deploy: 'npm run build',
   };
-  
+
   packageJson.scripts = newScripts;
-  
+
   fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
   console.log('✅ تم تحديث package.json');
-  
 } catch (error) {
   console.log('⚠️ خطأ في تحديث package.json:', error.message);
 }

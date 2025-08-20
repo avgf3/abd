@@ -46,10 +46,10 @@ export function useRealTimeUpdates(currentUserId?: number) {
     if (!currentUserId) return;
 
     queryClient.invalidateQueries({
-      queryKey: ['/api/notifications', currentUserId]
+      queryKey: ['/api/notifications', currentUserId],
     });
     queryClient.invalidateQueries({
-      queryKey: ['/api/notifications/unread-count', currentUserId]
+      queryKey: ['/api/notifications/unread-count', currentUserId],
     });
   }, [currentUserId, queryClient]);
 
@@ -57,19 +57,19 @@ export function useRealTimeUpdates(currentUserId?: number) {
     if (!currentUserId) return;
 
     queryClient.invalidateQueries({
-      queryKey: ['/api/friends', currentUserId]
+      queryKey: ['/api/friends', currentUserId],
     });
     queryClient.invalidateQueries({
-      queryKey: ['/api/friend-requests/incoming', currentUserId]
+      queryKey: ['/api/friend-requests/incoming', currentUserId],
     });
     queryClient.invalidateQueries({
-      queryKey: ['/api/friend-requests/outgoing', currentUserId]
+      queryKey: ['/api/friend-requests/outgoing', currentUserId],
     });
   }, [currentUserId, queryClient]);
 
   const updateMessages = useCallback(() => {
     queryClient.invalidateQueries({
-      queryKey: ['/api/messages/public']
+      queryKey: ['/api/messages/public'],
     });
   }, [queryClient]);
 
@@ -77,6 +77,6 @@ export function useRealTimeUpdates(currentUserId?: number) {
     forceRefreshAll,
     updateNotifications,
     updateFriends,
-    updateMessages
+    updateMessages,
   };
 }

@@ -12,38 +12,42 @@ const router = Router();
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'rooms');
-    
+
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
-    
+
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     cb(null, `room-${uniqueSuffix}${ext}`);
-  }
+  },
 });
 
 const upload = multer({
   storage,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB
-    files: 1
+    files: 1,
   },
   fileFilter: (req, file, cb) => {
     const allowedMimes = [
-      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
-      'image/webp', 'image/svg+xml'
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
     ];
-    
+
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
       cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}`));
     }
-  }
+  },
 });
 
 /**
@@ -58,7 +62,7 @@ router.get('/', async (req, res) => {
 
     res.set({
       'Cache-Control': 'public, max-age=5',
-      'ETag': etag
+      ETag: etag,
     });
 
     // If-None-Match دعم
@@ -68,18 +72,18 @@ router.get('/', async (req, res) => {
     }
 
     const rooms = await roomService.getAllRooms();
-    
+
     // 📊 إضافة إحصائيات مفيدة
     const response = {
       rooms,
       meta: {
         total: rooms.length,
-        broadcast: rooms.filter(r => r.isBroadcast).length,
-        active: rooms.filter(r => r.isActive).length,
-        timestamp: new Date().toISOString()
-      }
+        broadcast: rooms.filter((r) => r.isBroadcast).length,
+        active: rooms.filter((r) => r.isActive).length,
+        timestamp: new Date().toISOString(),
+      },
     };
-    
+
     res.json(response);
   } catch (error) {
     console.error('خطأ في جلب الغرف:', error);
@@ -95,11 +99,11 @@ router.get('/:roomId', async (req, res) => {
   try {
     const { roomId } = req.params;
     const room = await roomService.getRoom(roomId);
-    
+
     if (!room) {
       return res.status(404).json({ error: 'الغرفة غير موجودة' });
     }
-    
+
     res.json({ room });
   } catch (error) {
     console.error('خطأ في جلب الغرفة:', error);
@@ -116,8 +120,8 @@ router.post('/', upload.single('image'), async (req, res) => {
     const { name, description, userId, isBroadcast } = req.body;
 
     if (!name || !userId) {
-      return res.status(400).json({ 
-        error: 'اسم الغرفة ومعرف المستخدم مطلوبان' 
+      return res.status(400).json({
+        error: 'اسم الغرفة ومعرف المستخدم مطلوبان',
       });
     }
 
@@ -132,7 +136,7 @@ router.post('/', upload.single('image'), async (req, res) => {
       description: description?.trim() || '',
       icon,
       createdBy: parseInt(userId),
-      isBroadcast: isBroadcast === 'true' || isBroadcast === true
+      isBroadcast: isBroadcast === 'true' || isBroadcast === true,
     };
 
     const room = await roomService.createRoom(roomData);
@@ -140,7 +144,7 @@ router.post('/', upload.single('image'), async (req, res) => {
     res.json({ room });
   } catch (error: any) {
     console.error('خطأ في إنشاء الغرفة:', error);
-    
+
     // حذف الملف المرفوع في حالة الخطأ
     if (req.file) {
       try {
@@ -149,7 +153,7 @@ router.post('/', upload.single('image'), async (req, res) => {
         console.warn('تعذر حذف الملف المرفوع:', deleteError);
       }
     }
-    
+
     res.status(400).json({ error: error.message || 'خطأ في إنشاء الغرفة' });
   }
 });
@@ -193,13 +197,17 @@ router.put('/:roomId/icon', upload.single('image'), async (req, res) => {
     // حذف أيقونة سابقة لو وجدت
     if ((room as any).icon) {
       try {
-        const rel = (room as any).icon.startsWith('/') ? (room as any).icon.slice(1) : (room as any).icon;
+        const rel = (room as any).icon.startsWith('/')
+          ? (room as any).icon.slice(1)
+          : (room as any).icon;
         const p = path.join(process.cwd(), 'client', 'public', rel);
         if (fs.existsSync(p)) fs.unlinkSync(p);
       } catch {}
     }
 
-    const updated = await (await import('../storage')).storage.updateRoom(String(roomId), { icon: iconPath } as any);
+    const updated = await (
+      await import('../storage')
+    ).storage.updateRoom(String(roomId), { icon: iconPath } as any);
     if (!updated) {
       return res.status(500).json({ error: 'فشل تحديث أيقونة الغرفة' });
     }
@@ -253,12 +261,12 @@ router.post('/:roomId/join', async (req, res) => {
 
     // 🔍 التحقق من أن المستخدم ليس في الغرفة بالفعل
     const roomUsers = await roomService.getRoomUsers(roomId);
-    const isAlreadyInRoom = roomUsers.some(user => user.id === parseInt(userId));
-    
+    const isAlreadyInRoom = roomUsers.some((user) => user.id === parseInt(userId));
+
     if (isAlreadyInRoom) {
-      return res.json({ 
+      return res.json({
         message: 'أنت موجود في الغرفة بالفعل',
-        alreadyJoined: true 
+        alreadyJoined: true,
       });
     }
 
@@ -266,10 +274,10 @@ router.post('/:roomId/join', async (req, res) => {
 
     // لا بث عبر REST لتفادي التعارض مع Socket.IO
     // إرجاع استجابة موحدة فقط
-    res.json({ 
+    res.json({
       message: 'تم الانضمام للغرفة بنجاح',
       roomId,
-      joined: true 
+      joined: true,
     });
   } catch (error: any) {
     console.error('خطأ في الانضمام للغرفة:', error);
@@ -292,22 +300,22 @@ router.post('/:roomId/leave', async (req, res) => {
 
     // 🔍 التحقق من أن المستخدم في الغرفة فعلاً
     const roomUsers = await roomService.getRoomUsers(roomId);
-    const isInRoom = roomUsers.some(user => user.id === parseInt(userId));
-    
+    const isInRoom = roomUsers.some((user) => user.id === parseInt(userId));
+
     if (!isInRoom) {
-      return res.json({ 
+      return res.json({
         message: 'أنت لست في هذه الغرفة',
-        notInRoom: true 
+        notInRoom: true,
       });
     }
 
     await roomService.leaveRoom(parseInt(userId), roomId);
 
     // لا بث عبر REST لتفادي التعارض مع Socket.IO
-    res.json({ 
+    res.json({
       message: 'تم مغادرة الغرفة بنجاح',
       roomId,
-      left: true 
+      left: true,
     });
   } catch (error: any) {
     console.error('خطأ في مغادرة الغرفة:', error);
@@ -338,11 +346,11 @@ router.get('/:roomId/broadcast-info', async (req, res) => {
   try {
     const { roomId } = req.params;
     const info = await roomService.getBroadcastInfo(roomId);
-    
+
     if (!info) {
       return res.status(404).json({ error: 'الغرفة ليست غرفة بث' });
     }
-    
+
     res.json({ info });
   } catch (error) {
     console.error('خطأ في جلب معلومات البث:', error);
@@ -370,7 +378,7 @@ router.post('/:roomId/request-mic', async (req, res) => {
     io?.to(`room_${roomId}`).emit('micRequested', {
       roomId,
       userId: parseInt(userId),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     res.json({ message: 'تم إرسال طلب الميكروفون' });
@@ -401,7 +409,7 @@ router.post('/:roomId/approve-mic/:userId', async (req, res) => {
       roomId,
       userId: parseInt(userId),
       approvedBy: parseInt(approvedBy),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     res.json({ message: 'تمت الموافقة على الميكروفون' });
@@ -432,7 +440,7 @@ router.post('/:roomId/reject-mic/:userId', async (req, res) => {
       roomId,
       userId: parseInt(userId),
       rejectedBy: parseInt(rejectedBy),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     res.json({ message: 'تم رفض طلب الميكروفون' });
@@ -463,7 +471,7 @@ router.post('/:roomId/remove-speaker/:userId', async (req, res) => {
       roomId,
       userId: parseInt(userId),
       removedBy: parseInt(removedBy),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     res.json({ message: 'تم إزالة المتحدث' });

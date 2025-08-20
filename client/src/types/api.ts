@@ -105,7 +105,13 @@ export interface UserSecurity {
 }
 
 // مستخدم كامل
-export interface FullUser extends UserBase, UserPresence, UserModeration, UserGameification, UserPreferences, UserSecurity {
+export interface FullUser
+  extends UserBase,
+    UserPresence,
+    UserModeration,
+    UserGameification,
+    UserPreferences,
+    UserSecurity {
   ignoredUsers: number[];
   friends?: Friend[];
   blockedUsers?: number[];
@@ -187,13 +193,13 @@ export interface Friend {
 }
 
 // أنواع الإشعارات
-export type NotificationType = 
-  | 'friend_request' 
-  | 'friend_accepted' 
-  | 'message' 
-  | 'mention' 
-  | 'system' 
-  | 'achievement' 
+export type NotificationType =
+  | 'friend_request'
+  | 'friend_accepted'
+  | 'message'
+  | 'mention'
+  | 'system'
+  | 'achievement'
   | 'level_up'
   | 'warning'
   | 'ban'
@@ -304,7 +310,7 @@ export interface FileUpload {
 }
 
 // أنواع التقارير
-export type ReportReason = 
+export type ReportReason =
   | 'spam'
   | 'harassment'
   | 'inappropriate_content'

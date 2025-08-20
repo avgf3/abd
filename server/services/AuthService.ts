@@ -13,7 +13,10 @@ export class AuthService {
   /**
    * تسجيل دخول محسن مع التحقق الأمني
    */
-  async login(username: string, password: string): Promise<{success: boolean, user?: User, error?: string}> {
+  async login(
+    username: string,
+    password: string
+  ): Promise<{ success: boolean; user?: User; error?: string }> {
     try {
       // التحقق من صحة البيانات
       const usernameValidation = SecurityManager.validateUsername(username);
@@ -57,14 +60,12 @@ export class AuthService {
           type: 'welcome_back',
           title: '🎉 أهلاً بعودتك',
           message: `مرحباً بك مرة أخرى ${user.username}! نسعد بعودتك إلى المنصة.`,
-
         });
       }
 
       // Add missing profileEffect property for compatibility
       const userWithEffect = { ...user, profileEffect: user.profileEffect || 'none' };
       return { success: true, user: userWithEffect };
-
     } catch (error) {
       console.error('خطأ في تسجيل الدخول:', error);
       return { success: false, error: 'حدث خطأ في الخادم' };
@@ -74,7 +75,7 @@ export class AuthService {
   /**
    * تسجيل مستخدم جديد مع التحقق الأمني
    */
-  async register(userData: InsertUser): Promise<{success: boolean, user?: User, error?: string}> {
+  async register(userData: InsertUser): Promise<{ success: boolean; user?: User; error?: string }> {
     try {
       // التحقق من صحة اسم المستخدم
       const usernameValidation = SecurityManager.validateUsername(userData.username);
@@ -105,13 +106,11 @@ export class AuthService {
         type: 'welcome',
         title: '🌟 مرحباً بك في منصة الدردشة العربية',
         message: `أهلاً وسهلاً ${newUser.username}! نتمنى لك تجربة رائعة معنا.`,
-
       });
 
       // Add missing profileEffect property for compatibility
       const userWithEffect = { ...newUser, profileEffect: newUser.profileEffect || 'none' };
       return { success: true, user: userWithEffect };
-
     } catch (error) {
       console.error('خطأ في التسجيل:', error);
       return { success: false, error: 'حدث خطأ في التسجيل' };
@@ -121,7 +120,7 @@ export class AuthService {
   /**
    * تسجيل خروج آمن
    */
-  async logout(userId: number): Promise<{success: boolean, error?: string}> {
+  async logout(userId: number): Promise<{ success: boolean; error?: string }> {
     try {
       await this.storage.setUserOnlineStatus(userId, false);
       return { success: true };

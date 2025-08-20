@@ -6,7 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import type { ChatMessage, ChatUser } from '@/types/chat';
-import { sortMessagesAscending, getDynamicBorderColor, formatMessagePreview } from '@/utils/messageUtils';
+import {
+  sortMessagesAscending,
+  getDynamicBorderColor,
+  formatMessagePreview,
+} from '@/utils/messageUtils';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
 
@@ -36,17 +40,23 @@ export default function PrivateMessageBox({
   const [hasMore, setHasMore] = useState(true);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  
 
   // محسن: ترتيب الرسائل مع تحسين الأداء
   const sortedMessages = useMemo(() => sortMessagesAscending(messages || []), [messages]);
 
   // محسن: دالة التمرير مع تحسين الأداء
   type ScrollBehaviorStrict = 'auto' | 'smooth';
-  const scrollToBottom = useCallback((behavior: ScrollBehaviorStrict = 'auto') => {
-    if (!virtuosoRef.current || sortedMessages.length === 0) return;
-    virtuosoRef.current.scrollToIndex({ index: sortedMessages.length - 1, align: 'end', behavior });
-  }, [sortedMessages.length]);
+  const scrollToBottom = useCallback(
+    (behavior: ScrollBehaviorStrict = 'auto') => {
+      if (!virtuosoRef.current || sortedMessages.length === 0) return;
+      virtuosoRef.current.scrollToIndex({
+        index: sortedMessages.length - 1,
+        align: 'end',
+        behavior,
+      });
+    },
+    [sortedMessages.length]
+  );
 
   // التمرير للأسفل عند فتح النافذة
   useEffect(() => {
@@ -78,7 +88,7 @@ export default function PrivateMessageBox({
   const handleSend = useCallback(async () => {
     const text = messageText.trim();
     if (!text || isSending) return;
-    
+
     setIsSending(true);
     try {
       await onSendMessage(text);
@@ -94,12 +104,15 @@ export default function PrivateMessageBox({
   }, [messageText, isSending, onSendMessage, scrollToBottom]);
 
   // محسن: معالج الضغط على Enter
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  }, [handleSend]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend]
+  );
 
   // تحميل المزيد عند الوصول للأعلى
   const handleLoadMore = useCallback(async () => {
@@ -111,7 +124,11 @@ export default function PrivateMessageBox({
       if (res.addedCount > 0) {
         setTimeout(() => {
           try {
-            virtuosoRef.current?.scrollToIndex({ index: res.addedCount, align: 'start', behavior: 'auto' as any });
+            virtuosoRef.current?.scrollToIndex({
+              index: res.addedCount,
+              align: 'start',
+              behavior: 'auto' as any,
+            });
           } catch {}
         }, 0);
       }
@@ -125,11 +142,16 @@ export default function PrivateMessageBox({
   if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="p-0 bg-transparent border-none shadow-none">
-        <motion.div 
-          drag 
-          dragMomentum={false} 
+        <motion.div
+          drag
+          dragMomentum={false}
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
@@ -142,17 +164,22 @@ export default function PrivateMessageBox({
                 src={user.profileImage || '/default_avatar.svg'}
                 alt="avatar"
                 className="w-10 h-10 rounded-full border-2 border-primary shadow-sm"
-                onError={(e) => { (e.target as HTMLImageElement).src = '/default_avatar.svg'; }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/default_avatar.svg';
+                }}
               />
               <div className="flex-1 min-w-0">
-                <span className="text-lg font-semibold truncate block" style={{ color: getFinalUsernameColor(user) }}>
+                <span
+                  className="text-lg font-semibold truncate block"
+                  style={{ color: getFinalUsernameColor(user) }}
+                >
                   {user.username}
                 </span>
                 <span className="text-xs text-gray-500">رسائل خاصة</span>
               </div>
-              <Button 
-                onClick={onClose} 
-                variant="ghost" 
+              <Button
+                onClick={onClose}
+                variant="ghost"
                 size="sm"
                 className="ml-auto px-2 py-1 hover:bg-red-100 text-red-600"
               >
@@ -164,11 +191,7 @@ export default function PrivateMessageBox({
           <div className="relative h-[55vh] w-full p-4 pb-4 bg-gradient-to-b from-gray-50 to-white">
             {sortedMessages.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                <motion.div 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="text-6xl mb-4"
-                >
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-6xl mb-4">
                   💬
                 </motion.div>
                 <p className="text-lg font-medium">ابدأ محادثتك الآن</p>
@@ -184,20 +207,23 @@ export default function PrivateMessageBox({
                 increaseViewportBy={{ top: 300, bottom: 300 }}
                 startReached={handleLoadMore}
                 components={{
-                  Header: () => (
+                  Header: () =>
                     isLoadingOlder ? (
                       <div className="flex justify-center py-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-transparent"></div>
                       </div>
                     ) : hasMore ? (
-                      <div className="text-center py-1 text-xs text-gray-400">اسحب للأعلى لتحميل المزيد</div>
-                    ) : null
-                  )
+                      <div className="text-center py-1 text-xs text-gray-400">
+                        اسحب للأعلى لتحميل المزيد
+                      </div>
+                    ) : null,
                 }}
                 itemContent={(index, m) => {
                   const isMe = currentUser && m.senderId === currentUser.id;
                   const key = m.id ?? `${m.senderId}-${m.timestamp}-${index}`;
-                  const isImage = m.messageType === 'image' || (typeof m.content === 'string' && m.content.startsWith('data:image'));
+                  const isImage =
+                    m.messageType === 'image' ||
+                    (typeof m.content === 'string' && m.content.startsWith('data:image'));
                   return (
                     <motion.div
                       key={key}
@@ -206,24 +232,33 @@ export default function PrivateMessageBox({
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.2 }}
                       className={`flex items-start gap-3 p-3 rounded-lg transition-all duration-200 ${
-                        isMe 
-                          ? 'bg-blue-50 border-r-4 ml-4' 
-                          : 'bg-green-50 border-r-4 mr-4'
+                        isMe ? 'bg-blue-50 border-r-4 ml-4' : 'bg-green-50 border-r-4 mr-4'
                       }`}
-                      style={{ borderRightColor: getDynamicBorderColor(m.sender || (isMe ? currentUser : user)) }}
+                      style={{
+                        borderRightColor: getDynamicBorderColor(
+                          m.sender || (isMe ? currentUser : user)
+                        ),
+                      }}
                     >
                       <img
                         src={(m.sender?.profileImage as string) || '/default_avatar.svg'}
                         alt="avatar"
                         className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
-                        onError={(e) => { (e.target as HTMLImageElement).src = '/default_avatar.svg'; }}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/default_avatar.svg';
+                        }}
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold text-sm truncate" style={{ color: getFinalUsernameColor(m.sender || user) }}>
+                          <span
+                            className="font-semibold text-sm truncate"
+                            style={{ color: getFinalUsernameColor(m.sender || user) }}
+                          >
                             {m.sender?.username || (isMe ? currentUser?.username : user.username)}
                           </span>
-                          <span className="text-xs text-gray-500 whitespace-nowrap">{formatTime(m.timestamp)}</span>
+                          <span className="text-xs text-gray-500 whitespace-nowrap">
+                            {formatTime(m.timestamp)}
+                          </span>
                         </div>
                         <div className="text-gray-800 break-words">
                           {isImage ? (
@@ -235,7 +270,9 @@ export default function PrivateMessageBox({
                               onClick={() => window.open(m.content, '_blank')}
                             />
                           ) : (
-                            <span className="text-sm leading-relaxed">{formatMessagePreview(m.content, 100)}</span>
+                            <span className="text-sm leading-relaxed">
+                              {formatMessagePreview(m.content, 100)}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -244,16 +281,16 @@ export default function PrivateMessageBox({
                 }}
               />
             )}
-            
+
             {!isAtBottomPrivate && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="sticky bottom-4 flex justify-center"
               >
-                <Button 
-                  size="sm" 
-                  onClick={() => scrollToBottom('smooth')} 
+                <Button
+                  size="sm"
+                  onClick={() => scrollToBottom('smooth')}
                   className="px-4 py-2 rounded-full text-xs bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all"
                 >
                   ⬇️ الانتقال لأسفل

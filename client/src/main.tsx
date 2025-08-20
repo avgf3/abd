@@ -1,10 +1,10 @@
-import { createRoot } from "react-dom/client";
+import { createRoot } from 'react-dom/client';
 
-import App from "./App";
+import App from './App';
 
-import "./index.css";
-import { getSocket } from "@/lib/socket";
-import { applyThemeById } from "@/utils/applyTheme";
+import './index.css';
+import { getSocket } from '@/lib/socket';
+import { applyThemeById } from '@/utils/applyTheme';
 
 // تطبيق الثيم المحفوظ عند بدء التطبيق
 try {
@@ -30,11 +30,13 @@ try {
       socket.on('message', (payload: any) => {
         if (payload?.type === 'site_theme_update' && payload?.siteTheme) {
           applyThemeById(payload.siteTheme, false);
-          try { localStorage.setItem('selectedTheme', payload.siteTheme); } catch {}
+          try {
+            localStorage.setItem('selectedTheme', payload.siteTheme);
+          } catch {}
         }
       });
     }
   } catch {}
 })();
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById('root')!).render(<App />);

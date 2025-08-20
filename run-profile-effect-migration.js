@@ -8,7 +8,9 @@ import { db } from './server/db.js';
 async function addProfileEffectColumn() {
   try {
     // محاولة إضافة العمود (PostgreSQL)
-    await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_effect TEXT DEFAULT 'none'`);
+    await db.execute(
+      sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_effect TEXT DEFAULT 'none'`
+    );
     console.log('✅ تم إضافة عمود profile_effect بنجاح في PostgreSQL');
   } catch (error) {
     console.log('📝 محاولة SQLite...');

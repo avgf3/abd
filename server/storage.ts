@@ -5,13 +5,17 @@ import { friends as friendsTable } from '../shared/schema';
 
 import { SecurityManager } from './auth/security';
 import { db } from './database-adapter';
-import { databaseService, type User, type Message, type Friend, type Notification, type Room } from './services/databaseService';
+import {
+  databaseService,
+  type User,
+  type Message,
+  type Friend,
+  type Notification,
+  type Room,
+} from './services/databaseService';
 import { friendService } from './services/friendService';
 import { notificationService } from './services/notificationService';
 import { userService } from './services/userService';
-
-
-
 
 // Helper function
 function safeParseJsonArray(value: string): any[] {
@@ -26,7 +30,7 @@ function safeParseJsonArray(value: string): any[] {
 export async function addPoints(userId: number, points: number, reason: string): Promise<void> {
   try {
     if (!userId || points <= 0) return;
-    
+
     const user = await databaseService.getUserById(userId);
     if (!user) {
       console.error('User not found for adding points:', userId);
@@ -35,17 +39,16 @@ export async function addPoints(userId: number, points: number, reason: string):
 
     const newPoints = (user.points || 0) + points;
     const newTotalPoints = (user.totalPoints || 0) + points;
-    
+
     // Update user points
     await databaseService.updateUser(userId, {
       points: newPoints,
-      totalPoints: newTotalPoints
+      totalPoints: newTotalPoints,
     });
 
     // Add to points history
     await databaseService.addPointsHistory(userId, points, reason, 'earn');
-    
-    } catch (error) {
+  } catch (error) {
     console.error('Error adding points:', error);
   }
 }
@@ -54,7 +57,7 @@ export async function deductPoints(userId: number, points: number, reason: strin
   try {
     const user = await databaseService.getUserById(userId);
     if (!user) return;
-    
+
     const newPoints = Math.max(0, (user.points || 0) - points);
     await databaseService.updateUser(userId, { points: newPoints });
     await databaseService.addPointsHistory(userId, -points, reason, 'spend');
@@ -87,11 +90,21 @@ export async function getUserLevel(userId: number): Promise<number> {
 }
 
 // Stats functions
-export async function getStats(): Promise<{ users: number; messages: number; onlineUsers: number }> {
+export async function getStats(): Promise<{
+  users: number;
+  messages: number;
+  onlineUsers: number;
+}> {
   return await databaseService.getStats();
 }
 
-export async function blockDevice(ipAddress: string, deviceId: string, userId: number, reason: string, blockedBy: number): Promise<void> {
+export async function blockDevice(
+  ipAddress: string,
+  deviceId: string,
+  userId: number,
+  reason: string,
+  blockedBy: number
+): Promise<void> {
   // This functionality needs to be implemented in databaseService
   console.warn('blockDevice not implemented in databaseService');
 }
@@ -116,11 +129,14 @@ export async function getAllBlockedDevices(): Promise<any[]> {
   }
 }
 
-export async function validateUserCredentials(username: string, password: string): Promise<User | null> {
+export async function validateUserCredentials(
+  username: string,
+  password: string
+): Promise<User | null> {
   try {
     const user = await databaseService.getUserByUsername(username);
     if (!user || !user.password) return null;
-    
+
     const isValid = await bcrypt.compare(password, user.password);
     return isValid ? user : null;
   } catch (error) {
@@ -167,11 +183,18 @@ export async function joinRoom(userId: number, roomId: number | string): Promise
       const { eq, and } = await import('drizzle-orm');
       const exists = await (db as any)
         .select({ userId: (roomMembers as any).userId })
-        .from((roomMembers as any))
-        .where(and(eq((roomMembers as any).roomId, String(roomId) as any), eq((roomMembers as any).userId, userId as any)))
+        .from(roomMembers as any)
+        .where(
+          and(
+            eq((roomMembers as any).roomId, String(roomId) as any),
+            eq((roomMembers as any).userId, userId as any)
+          )
+        )
         .limit(1);
       if (!exists || exists.length === 0) {
-        await (db as any).insert((roomMembers as any)).values({ roomId: String(roomId) as any, userId: userId as any });
+        await (db as any)
+          .insert(roomMembers as any)
+          .values({ roomId: String(roomId) as any, userId: userId as any });
       }
       return true;
     }
@@ -192,8 +215,13 @@ export async function leaveRoom(userId: number, roomId: number | string): Promis
       const { roomMembers } = await import('../shared/schema');
       const { eq, and } = await import('drizzle-orm');
       await (db as any)
-        .delete((roomMembers as any))
-        .where(and(eq((roomMembers as any).roomId, String(roomId) as any), eq((roomMembers as any).userId, userId as any)));
+        .delete(roomMembers as any)
+        .where(
+          and(
+            eq((roomMembers as any).roomId, String(roomId) as any),
+            eq((roomMembers as any).userId, userId as any)
+          )
+        );
       return true;
     }
     return true;
@@ -213,7 +241,7 @@ export async function getRoomUsers(roomId: number | string): Promise<number[]> {
       const { eq } = await import('drizzle-orm');
       const rows = await (db as any)
         .select({ userId: (roomMembers as any).userId })
-        .from((roomMembers as any))
+        .from(roomMembers as any)
         .where(eq((roomMembers as any).roomId, String(roomId) as any));
       return (rows || []).map((r: any) => r.userId);
     }
@@ -234,7 +262,7 @@ export async function getUserRooms(userId: number): Promise<string[]> {
       const { eq } = await import('drizzle-orm');
       const rows = await (db as any)
         .select({ roomId: (roomMembers as any).roomId })
-        .from((roomMembers as any))
+        .from(roomMembers as any)
         .where(eq((roomMembers as any).userId, userId as any));
       return (rows || []).map((r: any) => String(r.roomId));
     }
@@ -255,8 +283,13 @@ export async function isUserInRoom(userId: number, roomId: number | string): Pro
       const { eq, and } = await import('drizzle-orm');
       const rows = await (db as any)
         .select({ uid: (roomMembers as any).userId })
-        .from((roomMembers as any))
-        .where(and(eq((roomMembers as any).userId, userId as any), eq((roomMembers as any).roomId, String(roomId) as any)))
+        .from(roomMembers as any)
+        .where(
+          and(
+            eq((roomMembers as any).userId, userId as any),
+            eq((roomMembers as any).roomId, String(roomId) as any)
+          )
+        )
         .limit(1);
       return Array.isArray(rows) && rows.length > 0;
     }
@@ -281,7 +314,7 @@ export async function createWallPost(postData: any): Promise<any> {
     if (dbType === 'postgresql') {
       const { wallPosts } = await import('../shared/schema');
       const [inserted] = await (db as any)
-        .insert((wallPosts as any))
+        .insert(wallPosts as any)
         .values({
           userId: postData.userId,
           username: postData.username,
@@ -312,7 +345,7 @@ export async function getWallPosts(userId: number, limit: number = 10): Promise<
       const { desc } = await import('drizzle-orm');
       const rows = await (db as any)
         .select()
-        .from((wallPosts as any))
+        .from(wallPosts as any)
         .orderBy(desc((wallPosts as any).timestamp))
         .limit(limit);
       return rows || [];
@@ -333,7 +366,7 @@ export async function getWallPostsByUsers(userIds: number[], limit: number = 10)
       const { inArray, desc } = await import('drizzle-orm');
       const rows = await (db as any)
         .select()
-        .from((wallPosts as any))
+        .from(wallPosts as any)
         .where(inArray((wallPosts as any).userId, userIds as any))
         .orderBy(desc((wallPosts as any).timestamp))
         .limit(limit);
@@ -353,8 +386,10 @@ export async function deleteWallPost(postId: number): Promise<boolean> {
     if (dbType === 'postgresql') {
       const { wallPosts, wallReactions } = await import('../shared/schema');
       const { eq } = await import('drizzle-orm');
-      await (db as any).delete((wallReactions as any)).where(eq((wallReactions as any).postId, postId as any));
-      await (db as any).delete((wallPosts as any)).where(eq((wallPosts as any).id, postId as any));
+      await (db as any)
+        .delete(wallReactions as any)
+        .where(eq((wallReactions as any).postId, postId as any));
+      await (db as any).delete(wallPosts as any).where(eq((wallPosts as any).id, postId as any));
       return true;
     }
     return true;
@@ -364,7 +399,11 @@ export async function deleteWallPost(postId: number): Promise<boolean> {
   }
 }
 
-export async function reactToWallPost(postId: number, userId: number, reaction: string): Promise<boolean> {
+export async function reactToWallPost(
+  postId: number,
+  userId: number,
+  reaction: string
+): Promise<boolean> {
   try {
     const { db, dbType } = await import('./database-adapter');
     if (!db || dbType === 'disabled') return true;
@@ -373,17 +412,27 @@ export async function reactToWallPost(postId: number, userId: number, reaction: 
       const { eq, and } = await import('drizzle-orm');
       const existing = await (db as any)
         .select()
-        .from((wallReactions as any))
-        .where(and(eq((wallReactions as any).postId, postId as any), eq((wallReactions as any).userId, userId as any)))
+        .from(wallReactions as any)
+        .where(
+          and(
+            eq((wallReactions as any).postId, postId as any),
+            eq((wallReactions as any).userId, userId as any)
+          )
+        )
         .limit(1);
       if (existing && existing.length > 0) {
         await (db as any)
-          .update((wallReactions as any))
+          .update(wallReactions as any)
           .set({ type: reaction })
-          .where(and(eq((wallReactions as any).postId, postId as any), eq((wallReactions as any).userId, userId as any)));
+          .where(
+            and(
+              eq((wallReactions as any).postId, postId as any),
+              eq((wallReactions as any).userId, userId as any)
+            )
+          );
       } else {
         await (db as any)
-          .insert((wallReactions as any))
+          .insert(wallReactions as any)
           .values({ postId, userId, username: '', type: reaction });
       }
       return true;
@@ -489,8 +538,20 @@ export const storage: LegacyStorage = {
     return await databaseService.getPrivateMessages(userId1, userId2, limit);
   },
 
-  async getPrivateMessagesBefore(userId1: number, userId2: number, limit = 50, beforeTimestamp?: Date, beforeId?: number) {
-    return await databaseService.getPrivateMessagesBefore(userId1, userId2, limit, beforeTimestamp, beforeId);
+  async getPrivateMessagesBefore(
+    userId1: number,
+    userId2: number,
+    limit = 50,
+    beforeTimestamp?: Date,
+    beforeId?: number
+  ) {
+    return await databaseService.getPrivateMessagesBefore(
+      userId1,
+      userId2,
+      limit,
+      beforeTimestamp,
+      beforeId
+    );
   },
 
   async getRoomMessages(roomId: string, limit = 50, offset = 0) {
@@ -603,7 +664,7 @@ export const storage: LegacyStorage = {
         const { eq } = await import('drizzle-orm');
         const rows = await (db as any)
           .select()
-          .from((wallPosts as any))
+          .from(wallPosts as any)
           .where(eq((wallPosts as any).id, postId as any))
           .limit(1);
         return rows && rows[0] ? rows[0] : undefined;
@@ -615,7 +676,12 @@ export const storage: LegacyStorage = {
     }
   },
 
-  async addWallReaction(reaction: { postId: number; userId: number; username: string; type: string; }) {
+  async addWallReaction(reaction: {
+    postId: number;
+    userId: number;
+    username: string;
+    type: string;
+  }) {
     try {
       const { db, dbType } = await import('./database-adapter');
       if (!db || dbType === 'disabled') return true;
@@ -625,46 +691,69 @@ export const storage: LegacyStorage = {
 
         const existing = await (db as any)
           .select()
-          .from((wallReactions as any))
-          .where(and(eq((wallReactions as any).postId, reaction.postId as any), eq((wallReactions as any).userId, reaction.userId as any)))
+          .from(wallReactions as any)
+          .where(
+            and(
+              eq((wallReactions as any).postId, reaction.postId as any),
+              eq((wallReactions as any).userId, reaction.userId as any)
+            )
+          )
           .limit(1);
 
         if (existing && existing.length > 0) {
           await (db as any)
-            .update((wallReactions as any))
+            .update(wallReactions as any)
             .set({ type: reaction.type })
-            .where(and(eq((wallReactions as any).postId, reaction.postId as any), eq((wallReactions as any).userId, reaction.userId as any)));
+            .where(
+              and(
+                eq((wallReactions as any).postId, reaction.postId as any),
+                eq((wallReactions as any).userId, reaction.userId as any)
+              )
+            );
         } else {
-          await (db as any)
-            .insert((wallReactions as any))
-            .values({
-              postId: reaction.postId,
-              userId: reaction.userId,
-              username: reaction.username,
-              type: reaction.type,
-            });
+          await (db as any).insert(wallReactions as any).values({
+            postId: reaction.postId,
+            userId: reaction.userId,
+            username: reaction.username,
+            type: reaction.type,
+          });
         }
 
         // Recompute counts
         const [likesRow] = await (db as any)
           .select({ c: count() })
-          .from((wallReactions as any))
-          .where(and(eq((wallReactions as any).postId, reaction.postId as any), eq((wallReactions as any).type, 'like' as any)));
+          .from(wallReactions as any)
+          .where(
+            and(
+              eq((wallReactions as any).postId, reaction.postId as any),
+              eq((wallReactions as any).type, 'like' as any)
+            )
+          );
         const [heartsRow] = await (db as any)
           .select({ c: count() })
-          .from((wallReactions as any))
-          .where(and(eq((wallReactions as any).postId, reaction.postId as any), eq((wallReactions as any).type, 'heart' as any)));
+          .from(wallReactions as any)
+          .where(
+            and(
+              eq((wallReactions as any).postId, reaction.postId as any),
+              eq((wallReactions as any).type, 'heart' as any)
+            )
+          );
         const [dislikesRow] = await (db as any)
           .select({ c: count() })
-          .from((wallReactions as any))
-          .where(and(eq((wallReactions as any).postId, reaction.postId as any), eq((wallReactions as any).type, 'dislike' as any)));
+          .from(wallReactions as any)
+          .where(
+            and(
+              eq((wallReactions as any).postId, reaction.postId as any),
+              eq((wallReactions as any).type, 'dislike' as any)
+            )
+          );
 
         await (db as any)
-          .update((wallPosts as any))
+          .update(wallPosts as any)
           .set({
-            totalLikes: (likesRow?.c ?? 0),
-            totalHearts: (heartsRow?.c ?? 0),
-            totalDislikes: (dislikesRow?.c ?? 0),
+            totalLikes: likesRow?.c ?? 0,
+            totalHearts: heartsRow?.c ?? 0,
+            totalDislikes: dislikesRow?.c ?? 0,
             updatedAt: new Date(),
           })
           .where(eq((wallPosts as any).id, reaction.postId as any));
@@ -705,7 +794,7 @@ export const storage: LegacyStorage = {
       return null;
     }
   },
-  
+
   async deleteBlockedDevice(userId: number) {
     try {
       return await databaseService.deleteBlockedDevice(userId);
@@ -714,7 +803,7 @@ export const storage: LegacyStorage = {
       return null;
     }
   },
-  
+
   // ========= Room helpers exposed on storage =========
   async getRooms() {
     return await databaseService.getRooms();
@@ -766,7 +855,7 @@ export const storage: LegacyStorage = {
           hostId: null,
           speakers: '[]',
           micQueue: '[]',
-          createdAt: new Date()
+          createdAt: new Date(),
         } as any;
       }
       return null as any;
@@ -812,14 +901,16 @@ export const storage: LegacyStorage = {
       if (dbType === 'postgresql') {
         const { roomMembers } = await import('../shared/schema');
         const { eq } = await import('drizzle-orm');
-                  const rows = await (db as any)
-            .select({ userId: (roomMembers as any).userId })
-            .from((roomMembers as any))
-            .where(eq((roomMembers as any).roomId, String(roomId) as any));
-          const userIds = (rows || []).map((r: any) => r.userId);
-          const fetchedUsers = await databaseService.getUsersByIds(userIds as number[]);
-          const users = (fetchedUsers || []).filter((u: any) => u && u.isOnline && !(u as any).isHidden);
-          return users as any[];
+        const rows = await (db as any)
+          .select({ userId: (roomMembers as any).userId })
+          .from(roomMembers as any)
+          .where(eq((roomMembers as any).roomId, String(roomId) as any));
+        const userIds = (rows || []).map((r: any) => r.userId);
+        const fetchedUsers = await databaseService.getUsersByIds(userIds as number[]);
+        const users = (fetchedUsers || []).filter(
+          (u: any) => u && u.isOnline && !(u as any).isHidden
+        );
+        return users as any[];
       }
       return [] as any[];
     } catch (error) {
@@ -829,7 +920,7 @@ export const storage: LegacyStorage = {
   },
 
   // ========= Broadcast Room / Mic Management =========
-  
+
   // تمت إزالة التكرار هنا. انظر القسم الأعلى لتعريفات البث الموحدة.
 
   // Per-room moderation helpers (PostgreSQL only)
@@ -840,9 +931,14 @@ export const storage: LegacyStorage = {
         const { roomMembers } = await import('../shared/schema');
         const { eq, and } = await import('drizzle-orm');
         await (db as any)
-          .update((roomMembers as any))
+          .update(roomMembers as any)
           .set({ mutedUntil: new Date(Date.now() + minutes * 60000) } as any)
-          .where(and(eq((roomMembers as any).roomId, roomId as any), eq((roomMembers as any).userId, targetUserId as any)));
+          .where(
+            and(
+              eq((roomMembers as any).roomId, roomId as any),
+              eq((roomMembers as any).userId, targetUserId as any)
+            )
+          );
         return true;
       }
       return false;
@@ -859,9 +955,14 @@ export const storage: LegacyStorage = {
         const { roomMembers } = await import('../shared/schema');
         const { eq, and } = await import('drizzle-orm');
         await (db as any)
-          .update((roomMembers as any))
+          .update(roomMembers as any)
           .set({ mutedUntil: null } as any)
-          .where(and(eq((roomMembers as any).roomId, roomId as any), eq((roomMembers as any).userId, targetUserId as any)));
+          .where(
+            and(
+              eq((roomMembers as any).roomId, roomId as any),
+              eq((roomMembers as any).userId, targetUserId as any)
+            )
+          );
         return true;
       }
       return false;
@@ -878,9 +979,14 @@ export const storage: LegacyStorage = {
         const { roomMembers } = await import('../shared/schema');
         const { eq, and } = await import('drizzle-orm');
         await (db as any)
-          .update((roomMembers as any))
+          .update(roomMembers as any)
           .set({ bannedUntil: new Date(Date.now() + minutes * 60000) } as any)
-          .where(and(eq((roomMembers as any).roomId, roomId as any), eq((roomMembers as any).userId, targetUserId as any)));
+          .where(
+            and(
+              eq((roomMembers as any).roomId, roomId as any),
+              eq((roomMembers as any).userId, targetUserId as any)
+            )
+          );
         return true;
       }
       return false;
@@ -897,9 +1003,14 @@ export const storage: LegacyStorage = {
         const { roomMembers } = await import('../shared/schema');
         const { eq, and } = await import('drizzle-orm');
         await (db as any)
-          .update((roomMembers as any))
+          .update(roomMembers as any)
           .set({ bannedUntil: null } as any)
-          .where(and(eq((roomMembers as any).roomId, roomId as any), eq((roomMembers as any).userId, targetUserId as any)));
+          .where(
+            and(
+              eq((roomMembers as any).roomId, roomId as any),
+              eq((roomMembers as any).userId, targetUserId as any)
+            )
+          );
         return true;
       }
       return false;
@@ -924,7 +1035,7 @@ export const storage: LegacyStorage = {
         roomId,
         hostId,
         speakers,
-        micQueue
+        micQueue,
       };
     } catch (e) {
       console.error('getBroadcastRoomInfo error:', e);
@@ -977,7 +1088,7 @@ export const storage: LegacyStorage = {
   },
 
   // ========= Broadcast Room / Mic Management =========
-  
+
   // تمت إزالة التكرار هنا. انظر القسم الأعلى لتعريفات البث الموحدة.
 
   // ========= Broadcast Room helpers (queue/speakers) =========
@@ -990,10 +1101,21 @@ export const storage: LegacyStorage = {
         const { rooms } = await import('../shared/schema');
         const { eq } = await import('drizzle-orm');
         // Read current queue
-        const rows = await (db as any).select({ micQueue: (rooms as any).micQueue }).from((rooms as any)).where(eq((rooms as any).id, roomId as any)).limit(1);
-        const current = rows?.[0]?.micQueue ? (typeof rows[0].micQueue === 'string' ? JSON.parse(rows[0].micQueue) : rows[0].micQueue) : [];
+        const rows = await (db as any)
+          .select({ micQueue: (rooms as any).micQueue })
+          .from(rooms as any)
+          .where(eq((rooms as any).id, roomId as any))
+          .limit(1);
+        const current = rows?.[0]?.micQueue
+          ? typeof rows[0].micQueue === 'string'
+            ? JSON.parse(rows[0].micQueue)
+            : rows[0].micQueue
+          : [];
         if (!current.includes(userId)) current.push(userId);
-        await (db as any).update(rooms).set({ micQueue: JSON.stringify(current) }).where(eq((rooms as any).id, roomId as any));
+        await (db as any)
+          .update(rooms)
+          .set({ micQueue: JSON.stringify(current) })
+          .where(eq((rooms as any).id, roomId as any));
         return true;
       }
       return false;
@@ -1011,10 +1133,21 @@ export const storage: LegacyStorage = {
       if (dbType === 'postgresql') {
         const { rooms } = await import('../shared/schema');
         const { eq } = await import('drizzle-orm');
-        const rows = await (db as any).select({ micQueue: (rooms as any).micQueue }).from((rooms as any)).where(eq((rooms as any).id, roomId as any)).limit(1);
-        const current = rows?.[0]?.micQueue ? (typeof rows[0].micQueue === 'string' ? JSON.parse(rows[0].micQueue) : rows[0].micQueue) : [];
+        const rows = await (db as any)
+          .select({ micQueue: (rooms as any).micQueue })
+          .from(rooms as any)
+          .where(eq((rooms as any).id, roomId as any))
+          .limit(1);
+        const current = rows?.[0]?.micQueue
+          ? typeof rows[0].micQueue === 'string'
+            ? JSON.parse(rows[0].micQueue)
+            : rows[0].micQueue
+          : [];
         const next = current.filter((id: number) => id !== userId);
-        await (db as any).update(rooms).set({ micQueue: JSON.stringify(next) }).where(eq((rooms as any).id, roomId as any));
+        await (db as any)
+          .update(rooms)
+          .set({ micQueue: JSON.stringify(next) })
+          .where(eq((rooms as any).id, roomId as any));
         return true;
       }
       return false;
@@ -1032,10 +1165,21 @@ export const storage: LegacyStorage = {
       if (dbType === 'postgresql') {
         const { rooms } = await import('../shared/schema');
         const { eq } = await import('drizzle-orm');
-        const rows = await (db as any).select({ speakers: (rooms as any).speakers }).from((rooms as any)).where(eq((rooms as any).id, roomId as any)).limit(1);
-        const current = rows?.[0]?.speakers ? (typeof rows[0].speakers === 'string' ? JSON.parse(rows[0].speakers) : rows[0].speakers) : [];
+        const rows = await (db as any)
+          .select({ speakers: (rooms as any).speakers })
+          .from(rooms as any)
+          .where(eq((rooms as any).id, roomId as any))
+          .limit(1);
+        const current = rows?.[0]?.speakers
+          ? typeof rows[0].speakers === 'string'
+            ? JSON.parse(rows[0].speakers)
+            : rows[0].speakers
+          : [];
         if (!current.includes(userId)) current.push(userId);
-        await (db as any).update(rooms).set({ speakers: JSON.stringify(current) }).where(eq((rooms as any).id, roomId as any));
+        await (db as any)
+          .update(rooms)
+          .set({ speakers: JSON.stringify(current) })
+          .where(eq((rooms as any).id, roomId as any));
         return true;
       }
       return false;
@@ -1055,11 +1199,13 @@ export const storage: LegacyStorage = {
         const { eq } = await import('drizzle-orm');
         const rows = await (db as any)
           .select({ speakers: (rooms as any).speakers })
-          .from((rooms as any))
+          .from(rooms as any)
           .where(eq((rooms as any).id, roomId as any))
           .limit(1);
         const current: number[] = rows?.[0]?.speakers
-          ? (typeof rows[0].speakers === 'string' ? JSON.parse(rows[0].speakers) : rows[0].speakers)
+          ? typeof rows[0].speakers === 'string'
+            ? JSON.parse(rows[0].speakers)
+            : rows[0].speakers
           : [];
         const next = (current || []).filter((id: number) => id !== userId);
         await (db as any)
@@ -1095,7 +1241,6 @@ export const storage: LegacyStorage = {
       return false;
     }
   },
-
 };
 
 // Export the database service for direct access if needed

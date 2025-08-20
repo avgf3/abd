@@ -1,154 +1,192 @@
-import { relations } from "drizzle-orm";
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, jsonb, primaryKey, index } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+import { relations } from 'drizzle-orm';
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  timestamp,
+  varchar,
+  jsonb,
+  primaryKey,
+  index,
+} from 'drizzle-orm/pg-core';
+import { createInsertSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password"),
-  userType: text("user_type").notNull().default("guest"), // 'guest', 'member', 'owner'
-  role: text("role").notNull().default("guest"), // إضافة role للتوافق مع ChatUser
-  profileImage: text("profile_image"),
-  profileBanner: text("profile_banner"),
-  profileBackgroundColor: text("profile_background_color").default('#3c0d0d'), // لون خلفية البروفايل
-  avatarHash: text("avatar_hash"),
-  avatarVersion: integer("avatar_version").default(1),
-  status: text("status"),
-  gender: text("gender"),
-  age: integer("age"),
-  country: text("country"),
-  relation: text("relation"),
-  bio: text("bio"), // نبذة شخصية
-  isOnline: boolean("is_online").default(false),
-  isHidden: boolean("is_hidden").default(false), // خاصية الإخفاء للمراقبة
-  lastSeen: timestamp("last_seen"),
-  joinDate: timestamp("join_date").defaultNow(), // إضافة joinDate للتوافق مع ChatUser
-  createdAt: timestamp("created_at").defaultNow(),
-  isMuted: boolean("is_muted").default(false),
-  muteExpiry: timestamp("mute_expiry"),
-  isBanned: boolean("is_banned").default(false),
-  banExpiry: timestamp("ban_expiry"),
-  isBlocked: boolean("is_blocked").default(false),
-  ipAddress: varchar("ip_address", { length: 45 }),
-  deviceId: varchar("device_id", { length: 100 }),
-  ignoredUsers: text("ignored_users").default('[]'), // قائمة المستخدمين المتجاهلين - JSON string للتوافق مع SQLite
-  usernameColor: text("username_color").default('#FFFFFF'), // لون اسم المستخدم
-  profileEffect: text("profile_effect").default('none'), // تأثير البروفايل
-  points: integer("points").default(0), // نقاط المستخدم الحالية
-  level: integer("level").default(1), // مستوى المستخدم
-  totalPoints: integer("total_points").default(0), // إجمالي النقاط التي كسبها المستخدم
-  levelProgress: integer("level_progress").default(0), // تقدم المستخدم في المستوى الحالي
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  username: text('username').notNull().unique(),
+  password: text('password'),
+  userType: text('user_type').notNull().default('guest'), // 'guest', 'member', 'owner'
+  role: text('role').notNull().default('guest'), // إضافة role للتوافق مع ChatUser
+  profileImage: text('profile_image'),
+  profileBanner: text('profile_banner'),
+  profileBackgroundColor: text('profile_background_color').default('#3c0d0d'), // لون خلفية البروفايل
+  avatarHash: text('avatar_hash'),
+  avatarVersion: integer('avatar_version').default(1),
+  status: text('status'),
+  gender: text('gender'),
+  age: integer('age'),
+  country: text('country'),
+  relation: text('relation'),
+  bio: text('bio'), // نبذة شخصية
+  isOnline: boolean('is_online').default(false),
+  isHidden: boolean('is_hidden').default(false), // خاصية الإخفاء للمراقبة
+  lastSeen: timestamp('last_seen'),
+  joinDate: timestamp('join_date').defaultNow(), // إضافة joinDate للتوافق مع ChatUser
+  createdAt: timestamp('created_at').defaultNow(),
+  isMuted: boolean('is_muted').default(false),
+  muteExpiry: timestamp('mute_expiry'),
+  isBanned: boolean('is_banned').default(false),
+  banExpiry: timestamp('ban_expiry'),
+  isBlocked: boolean('is_blocked').default(false),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  deviceId: varchar('device_id', { length: 100 }),
+  ignoredUsers: text('ignored_users').default('[]'), // قائمة المستخدمين المتجاهلين - JSON string للتوافق مع SQLite
+  usernameColor: text('username_color').default('#FFFFFF'), // لون اسم المستخدم
+  profileEffect: text('profile_effect').default('none'), // تأثير البروفايل
+  points: integer('points').default(0), // نقاط المستخدم الحالية
+  level: integer('level').default(1), // مستوى المستخدم
+  totalPoints: integer('total_points').default(0), // إجمالي النقاط التي كسبها المستخدم
+  levelProgress: integer('level_progress').default(0), // تقدم المستخدم في المستوى الحالي
 });
 
-export const messages = pgTable("messages", {
-  id: serial("id").primaryKey(),
-  senderId: integer("sender_id").references(() => users.id),
-  receiverId: integer("receiver_id").references(() => users.id), // null for public messages
-  content: text("content").notNull(),
-  messageType: text("message_type").notNull().default("text"), // 'text', 'image'
-  isPrivate: boolean("is_private").default(false),
-  roomId: text("room_id").default("general"), // معرف الغرفة
-  attachments: jsonb("attachments").default([]),
-  editedAt: timestamp("edited_at"),
-  deletedAt: timestamp("deleted_at"),
-  timestamp: timestamp("timestamp").defaultNow(),
-}, (table) => ({
-  // Indexes for optimizing private message queries
-  privateMessagesIndex: index("idx_private_messages").on(table.isPrivate, table.senderId, table.receiverId, table.timestamp),
-  roomMessagesIndex: index("idx_room_messages").on(table.roomId, table.timestamp),
-  senderReceiverIndex: index("idx_sender_receiver").on(table.senderId, table.receiverId),
-  timestampIndex: index("idx_messages_timestamp").on(table.timestamp),
-}));
+export const messages = pgTable(
+  'messages',
+  {
+    id: serial('id').primaryKey(),
+    senderId: integer('sender_id').references(() => users.id),
+    receiverId: integer('receiver_id').references(() => users.id), // null for public messages
+    content: text('content').notNull(),
+    messageType: text('message_type').notNull().default('text'), // 'text', 'image'
+    isPrivate: boolean('is_private').default(false),
+    roomId: text('room_id').default('general'), // معرف الغرفة
+    attachments: jsonb('attachments').default([]),
+    editedAt: timestamp('edited_at'),
+    deletedAt: timestamp('deleted_at'),
+    timestamp: timestamp('timestamp').defaultNow(),
+  },
+  (table) => ({
+    // Indexes for optimizing private message queries
+    privateMessagesIndex: index('idx_private_messages').on(
+      table.isPrivate,
+      table.senderId,
+      table.receiverId,
+      table.timestamp
+    ),
+    roomMessagesIndex: index('idx_room_messages').on(table.roomId, table.timestamp),
+    senderReceiverIndex: index('idx_sender_receiver').on(table.senderId, table.receiverId),
+    timestampIndex: index('idx_messages_timestamp').on(table.timestamp),
+  })
+);
 
-export const friends = pgTable("friends", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
-  friendId: integer("friend_id").references(() => users.id),
-  status: text("status").notNull().default("pending"), // 'pending', 'accepted', 'blocked'
-  createdAt: timestamp("created_at").defaultNow(),
+export const friends = pgTable('friends', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id),
+  friendId: integer('friend_id').references(() => users.id),
+  status: text('status').notNull().default('pending'), // 'pending', 'accepted', 'blocked'
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
-export const notifications = pgTable("notifications", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  type: text("type").notNull(), // 'system', 'friend_request', 'message', 'promotion', etc.
-  title: text("title").notNull(),
-  message: text("message").notNull(),
-  isRead: boolean("is_read").default(false),
-  data: jsonb("data"), // معلومات إضافية 
-  createdAt: timestamp("created_at").defaultNow(),
+export const notifications = pgTable('notifications', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  type: text('type').notNull(), // 'system', 'friend_request', 'message', 'promotion', etc.
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  isRead: boolean('is_read').default(false),
+  data: jsonb('data'), // معلومات إضافية
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
 // إضافة جدول blocked_devices المفقود
-export const blockedDevices = pgTable("blocked_devices", {
-  id: serial("id").primaryKey(),
-  ipAddress: text("ip_address").notNull(),
-  deviceId: text("device_id").notNull(),
-  userId: integer("user_id").notNull(),
-  reason: text("reason").notNull(),
-  blockedAt: timestamp("blocked_at").notNull(),
-  blockedBy: integer("blocked_by").notNull(),
+export const blockedDevices = pgTable('blocked_devices', {
+  id: serial('id').primaryKey(),
+  ipAddress: text('ip_address').notNull(),
+  deviceId: text('device_id').notNull(),
+  userId: integer('user_id').notNull(),
+  reason: text('reason').notNull(),
+  blockedAt: timestamp('blocked_at').notNull(),
+  blockedBy: integer('blocked_by').notNull(),
 });
 
 // جدول تاريخ النقاط لتتبع كيفية كسب/فقدان النقاط
-export const pointsHistory = pgTable("points_history", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  points: integer("points").notNull(), // النقاط المكتسبة/المفقودة (يمكن أن تكون سالبة)
-  reason: text("reason").notNull(), // سبب الحصول على النقاط (رسالة، تسجيل دخول، إلخ)
-  action: text("action").notNull(), // 'earn' أو 'lose'
-  createdAt: timestamp("created_at").defaultNow(),
+export const pointsHistory = pgTable('points_history', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  points: integer('points').notNull(), // النقاط المكتسبة/المفقودة (يمكن أن تكون سالبة)
+  reason: text('reason').notNull(), // سبب الحصول على النقاط (رسالة، تسجيل دخول، إلخ)
+  action: text('action').notNull(), // 'earn' أو 'lose'
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
 // جدول إعدادات مستويات النقاط
-export const levelSettings = pgTable("level_settings", {
-  id: serial("id").primaryKey(),
-  level: integer("level").notNull().unique(),
-  requiredPoints: integer("required_points").notNull(), // النقاط المطلوبة للوصول لهذا المستوى
-  title: text("title").notNull(), // لقب المستوى (مبتدئ، متقدم، خبير، إلخ)
-  color: text("color").default('#FFFFFF'), // لون خاص بالمستوى
-  benefits: jsonb("benefits"), // مزايا المستوى (JSON)
-  createdAt: timestamp("created_at").defaultNow(),
+export const levelSettings = pgTable('level_settings', {
+  id: serial('id').primaryKey(),
+  level: integer('level').notNull().unique(),
+  requiredPoints: integer('required_points').notNull(), // النقاط المطلوبة للوصول لهذا المستوى
+  title: text('title').notNull(), // لقب المستوى (مبتدئ، متقدم، خبير، إلخ)
+  color: text('color').default('#FFFFFF'), // لون خاص بالمستوى
+  benefits: jsonb('benefits'), // مزايا المستوى (JSON)
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
 // جداول الغرف الجديدة
-export const rooms = pgTable("rooms", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  icon: text("icon"),
-  createdBy: integer("created_by").notNull().references(() => users.id),
-  isDefault: boolean("is_default").default(false),
-  isActive: boolean("is_active").default(true),
-  isBroadcast: boolean("is_broadcast").default(false),
-  hostId: integer("host_id").references(() => users.id),
-  speakers: text("speakers").default('[]'), // JSON string
-  micQueue: text("mic_queue").default('[]'), // JSON string
-  slug: text("slug"),
-  deletedAt: timestamp("deleted_at"),
-  lastMessageAt: timestamp("last_message_at"),
-  createdAt: timestamp("created_at").defaultNow(),
+export const rooms = pgTable('rooms', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  icon: text('icon'),
+  createdBy: integer('created_by')
+    .notNull()
+    .references(() => users.id),
+  isDefault: boolean('is_default').default(false),
+  isActive: boolean('is_active').default(true),
+  isBroadcast: boolean('is_broadcast').default(false),
+  hostId: integer('host_id').references(() => users.id),
+  speakers: text('speakers').default('[]'), // JSON string
+  micQueue: text('mic_queue').default('[]'), // JSON string
+  slug: text('slug'),
+  deletedAt: timestamp('deleted_at'),
+  lastMessageAt: timestamp('last_message_at'),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
-export const roomUsers = pgTable("room_users", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  roomId: text("room_id").notNull().references(() => rooms.id),
-  joinedAt: timestamp("joined_at").defaultNow(),
+export const roomUsers = pgTable('room_users', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  roomId: text('room_id')
+    .notNull()
+    .references(() => rooms.id),
+  joinedAt: timestamp('joined_at').defaultNow(),
 });
 
 // New: room_members pivot with per-room moderation
-export const roomMembers = pgTable("room_members", {
-  roomId: text("room_id").notNull().references(() => rooms.id, { onDelete: 'cascade' }),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  role: text("role").notNull().default('member'),
-  mutedUntil: timestamp("muted_until"),
-  bannedUntil: timestamp("banned_until"),
-  joinedAt: timestamp("joined_at").defaultNow().notNull(),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.roomId, t.userId] }),
-}));
+export const roomMembers = pgTable(
+  'room_members',
+  {
+    roomId: text('room_id')
+      .notNull()
+      .references(() => rooms.id, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: text('role').notNull().default('member'),
+    mutedUntil: timestamp('muted_until'),
+    bannedUntil: timestamp('banned_until'),
+    joinedAt: timestamp('joined_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.roomId, t.userId] }),
+  })
+);
 
 // إضافة unique constraint لـ room_users
 export const roomUsersRelations = relations(roomUsers, ({ one }) => ({
@@ -163,39 +201,45 @@ export const roomUsersRelations = relations(roomUsers, ({ one }) => ({
 }));
 
 // جداول الحوائط
-export const wallPosts = pgTable("wall_posts", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  username: text("username").notNull(),
-  userRole: text("user_role").notNull(),
-  content: text("content"),
-  imageUrl: text("image_url"),
-  type: text("type").notNull().default("public"), // 'public', 'friends'
-  timestamp: timestamp("timestamp").defaultNow(),
-  userProfileImage: text("user_profile_image"),
-  usernameColor: text("username_color").default('#FFFFFF'),
-  totalLikes: integer("total_likes").default(0),
-  totalDislikes: integer("total_dislikes").default(0),
-  totalHearts: integer("total_hearts").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+export const wallPosts = pgTable('wall_posts', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  username: text('username').notNull(),
+  userRole: text('user_role').notNull(),
+  content: text('content'),
+  imageUrl: text('image_url'),
+  type: text('type').notNull().default('public'), // 'public', 'friends'
+  timestamp: timestamp('timestamp').defaultNow(),
+  userProfileImage: text('user_profile_image'),
+  usernameColor: text('username_color').default('#FFFFFF'),
+  totalLikes: integer('total_likes').default(0),
+  totalDislikes: integer('total_dislikes').default(0),
+  totalHearts: integer('total_hearts').default(0),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-export const wallReactions = pgTable("wall_reactions", {
-  id: serial("id").primaryKey(),
-  postId: integer("post_id").notNull().references(() => wallPosts.id, { onDelete: 'cascade' }),
-  userId: integer("user_id").notNull().references(() => users.id),
-  username: text("username").notNull(),
-  type: text("type").notNull(), // 'like', 'dislike', 'heart'
-  timestamp: timestamp("timestamp").defaultNow(),
-  createdAt: timestamp("created_at").defaultNow(),
+export const wallReactions = pgTable('wall_reactions', {
+  id: serial('id').primaryKey(),
+  postId: integer('post_id')
+    .notNull()
+    .references(() => wallPosts.id, { onDelete: 'cascade' }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  username: text('username').notNull(),
+  type: text('type').notNull(), // 'like', 'dislike', 'heart'
+  timestamp: timestamp('timestamp').defaultNow(),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
 // جدول إعدادات الموقع العامة (لتخزين ثيم الموقع العام)
-export const siteSettings = pgTable("site_settings", {
-  id: serial("id").primaryKey(),
-  siteTheme: text("site_theme").default('default'),
-  updatedAt: timestamp("updated_at").defaultNow(),
+export const siteSettings = pgTable('site_settings', {
+  id: serial('id').primaryKey(),
+  siteTheme: text('site_theme').default('default'),
+  updatedAt: timestamp('updated_at').defaultNow(),
 });
 
 // العلاقات للحوائط
@@ -346,7 +390,7 @@ export const insertWallPostSchema = z.object({
   userRole: z.string(),
   content: z.string().optional(),
   imageUrl: z.string().optional(),
-  type: z.string().default("public"),
+  type: z.string().default('public'),
   userProfileImage: z.string().optional(),
   usernameColor: z.string().optional(),
 });

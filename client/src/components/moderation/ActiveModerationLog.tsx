@@ -12,7 +12,6 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { formatTimestamp } from '@/utils/timeUtils';
 
-
 interface ActiveModerationAction {
   id: string;
   type: 'mute' | 'block';
@@ -33,7 +32,11 @@ interface ActiveModerationLogProps {
   onClose: () => void;
 }
 
-export default function ActiveModerationLog({ currentUser, isVisible, onClose }: ActiveModerationLogProps) {
+export default function ActiveModerationLog({
+  currentUser,
+  isVisible,
+  onClose,
+}: ActiveModerationLogProps) {
   const [activeActions, setActiveActions] = useState<ActiveModerationAction[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -48,60 +51,81 @@ export default function ActiveModerationLog({ currentUser, isVisible, onClose }:
     try {
       setLoading(true);
       const data = await apiRequest(`/api/moderation/active-actions?userId=${currentUser.id}`);
-      const list = Array.isArray((data as any).actions) ? (data as any).actions : Array.isArray(data) ? data : [];
+      const list = Array.isArray((data as any).actions)
+        ? (data as any).actions
+        : Array.isArray(data)
+          ? data
+          : [];
       setActiveActions(list as ActiveModerationAction[]);
     } catch (error: any) {
       console.error('خطأ في تحميل الإجراءات النشطة:', error);
-      toast({ title: 'خطأ', description: error?.message || 'تعذر جلب الإجراءات النشطة', variant: 'destructive' });
+      toast({
+        title: 'خطأ',
+        description: error?.message || 'تعذر جلب الإجراءات النشطة',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRemoveAction = async (actionId: string, type: 'mute' | 'block', targetUserId: number) => {
+  const handleRemoveAction = async (
+    actionId: string,
+    type: 'mute' | 'block',
+    targetUserId: number
+  ) => {
     try {
       const endpoint = type === 'mute' ? '/api/moderation/unmute' : '/api/moderation/unblock';
       await apiRequest(endpoint, {
         method: 'POST',
-        body: { moderatorId: currentUser.id, targetUserId }
+        body: { moderatorId: currentUser.id, targetUserId },
       });
       toast({
-        title: "تم بنجاح",
-        description: type === 'mute' ? "تم إلغاء الكتم" : "تم إلغاء الحجب",
-        variant: "default"
+        title: 'تم بنجاح',
+        description: type === 'mute' ? 'تم إلغاء الكتم' : 'تم إلغاء الحجب',
+        variant: 'default',
       });
       await loadActiveActions();
     } catch (error: any) {
       console.error('خطأ في إزالة الإجراء:', error);
       toast({
-        title: "خطأ",
-        description: error?.message || "حدث خطأ في الاتصال",
-        variant: "destructive"
+        title: 'خطأ',
+        description: error?.message || 'حدث خطأ في الاتصال',
+        variant: 'destructive',
       });
     }
   };
 
   const getActionIcon = (type: string) => {
     switch (type) {
-      case 'mute': return <UserX className="w-4 h-4 text-orange-500" />;
-      case 'block': return <Ban className="w-4 h-4 text-red-700" />;
-      default: return <Shield className="w-4 h-4 text-gray-500" />;
+      case 'mute':
+        return <UserX className="w-4 h-4 text-orange-500" />;
+      case 'block':
+        return <Ban className="w-4 h-4 text-red-700" />;
+      default:
+        return <Shield className="w-4 h-4 text-gray-500" />;
     }
   };
 
   const getActionText = (type: string) => {
     switch (type) {
-      case 'mute': return 'مكتوم';
-      case 'block': return 'محجوب نهائياً';
-      default: return type;
+      case 'mute':
+        return 'مكتوم';
+      case 'block':
+        return 'محجوب نهائياً';
+      default:
+        return type;
     }
   };
 
   const getActionColor = (type: string) => {
     switch (type) {
-      case 'mute': return 'text-orange-400';
-      case 'block': return 'text-red-400';
-      default: return 'text-gray-400';
+      case 'mute':
+        return 'text-orange-400';
+      case 'block':
+        return 'text-red-400';
+      default:
+        return 'text-gray-400';
     }
   };
 
@@ -115,9 +139,7 @@ export default function ActiveModerationLog({ currentUser, isVisible, onClose }:
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
         <Card className="w-96 bg-gray-900/95 border-gray-700">
           <CardHeader>
-            <CardTitle className="text-center text-red-400">
-              غير مصرح
-            </CardTitle>
+            <CardTitle className="text-center text-red-400">غير مصرح</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-gray-300 mb-4">هذه اللوحة مخصصة للمشرفين فقط</p>
@@ -160,12 +182,7 @@ export default function ActiveModerationLog({ currentUser, isVisible, onClose }:
             <h3 className="text-lg font-semibold text-gray-200">
               المستخدمون المكتومون والمحجوبون حالياً
             </h3>
-            <Button 
-              onClick={loadActiveActions} 
-              variant="outline" 
-              size="sm"
-              disabled={loading}
-            >
+            <Button onClick={loadActiveActions} variant="outline" size="sm" disabled={loading}>
               {loading ? 'جاري التحديث...' : 'تحديث'}
             </Button>
           </div>
@@ -182,7 +199,9 @@ export default function ActiveModerationLog({ currentUser, isVisible, onClose }:
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-gray-200">{action.moderatorName}</span>
                       <span className="text-gray-400">قام بـ</span>
-                      <span className={`font-medium ${getActionColor(action.type)}`}>{getActionText(action.type)}</span>
+                      <span className={`font-medium ${getActionColor(action.type)}`}>
+                        {getActionText(action.type)}
+                      </span>
                       <span className="text-gray-400">→</span>
                       <span className="font-medium text-white">{action.targetName}</span>
                     </div>
@@ -192,12 +211,14 @@ export default function ActiveModerationLog({ currentUser, isVisible, onClose }:
                       {formatTimestamp(action.timestamp)}
                     </div>
                     {(action as any).ipAddress && action.type === 'block' && (
-                      <div className="mt-1 text-xs text-red-400">🚫 حجب IP: {(action as any).ipAddress.substring(0, 15)}...</div>
+                      <div className="mt-1 text-xs text-red-400">
+                        🚫 حجب IP: {(action as any).ipAddress.substring(0, 15)}...
+                      </div>
                     )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge 
+                  <Badge
                     variant={action.type === 'mute' ? 'secondary' : 'destructive'}
                     className={action.type === 'mute' ? 'bg-orange-600' : 'bg-red-600'}
                   >
@@ -209,7 +230,11 @@ export default function ActiveModerationLog({ currentUser, isVisible, onClose }:
                     variant="outline"
                     className={`border-green-600 text-green-400 hover:bg-green-600 hover:text-white`}
                     disabled={action.type === 'block' && currentUser.userType !== 'owner'}
-                    title={action.type === 'block' && currentUser.userType !== 'owner' ? 'إلغاء الحجب متاح للمالك فقط' : undefined}
+                    title={
+                      action.type === 'block' && currentUser.userType !== 'owner'
+                        ? 'إلغاء الحجب متاح للمالك فقط'
+                        : undefined
+                    }
                   >
                     {action.type === 'mute' ? 'إلغاء الكتم' : 'إلغاء الحجب'}
                   </Button>
@@ -222,13 +247,13 @@ export default function ActiveModerationLog({ currentUser, isVisible, onClose }:
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-orange-400">
-                  {activeActions.filter(a => a.type === 'mute').length}
+                  {activeActions.filter((a) => a.type === 'mute').length}
                 </div>
                 <div className="text-sm text-gray-400">مستخدمون مكتومون</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-red-400">
-                  {activeActions.filter(a => a.type === 'block').length}
+                  {activeActions.filter((a) => a.type === 'block').length}
                 </div>
                 <div className="text-sm text-gray-400">مستخدمون محجوبون</div>
               </div>

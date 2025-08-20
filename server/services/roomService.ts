@@ -111,10 +111,10 @@ class RoomService {
 
       // التحقق من عدم تكرار اسم الغرفة
       const existingRooms = await this.getAllRooms();
-      const nameExists = existingRooms.some(room => 
-        room.name.toLowerCase().trim() === roomData.name.toLowerCase().trim()
+      const nameExists = existingRooms.some(
+        (room) => room.name.toLowerCase().trim() === roomData.name.toLowerCase().trim()
       );
-      
+
       if (nameExists) {
         throw new Error('اسم الغرفة موجود مسبقاً');
       }
@@ -126,7 +126,7 @@ class RoomService {
         isDefault: roomData.isDefault || false,
         isActive: roomData.isActive !== false, // default true
         isBroadcast: roomData.isBroadcast || false,
-        hostId: roomData.hostId || null
+        hostId: roomData.hostId || null,
       });
       // إبطال الكاش وزيادة النسخة
       this.invalidateRoomsCache();
@@ -185,7 +185,7 @@ class RoomService {
 
       // تنظيف ذاكرة الغرف المتصلة
       this.connectedRooms.delete(roomId);
-      
+
       // نقل المستخدمين المتصلين للغرفة العامة
       for (const [uId, currentRoomId] of this.userRooms.entries()) {
         if (currentRoomId === roomId) {
@@ -205,14 +205,14 @@ class RoomService {
    */
   async joinRoom(userId: number, roomId: string): Promise<void> {
     const lockKey = `join_${userId}_${roomId}`;
-    
+
     // 🚫 منع العمليات المتكررة
     if (this.operationLocks.get(lockKey)) {
       return;
     }
-    
+
     this.operationLocks.set(lockKey, true);
-    
+
     try {
       if (!db || dbType === 'disabled') {
         throw new Error('قاعدة البيانات غير متوفرة');
@@ -255,7 +255,7 @@ class RoomService {
 
       // إبطال كاش مستخدمي الغرفة
       this.roomUsersCache.delete(roomId);
-      } catch (error) {
+    } catch (error) {
       console.error('خطأ في الانضمام للغرفة:', error);
       throw error;
     } finally {
@@ -268,14 +268,14 @@ class RoomService {
    */
   async leaveRoom(userId: number, roomId: string): Promise<void> {
     const lockKey = `leave_${userId}_${roomId}`;
-    
+
     // 🚫 منع العمليات المتكررة
     if (this.operationLocks.get(lockKey)) {
       return;
     }
-    
+
     this.operationLocks.set(lockKey, true);
-    
+
     try {
       // ✅ فحص مسبق - هل المستخدم في الغرفة أصلاً؟
       if (!this.connectedRooms.has(roomId) || !this.connectedRooms.get(roomId)!.has(userId)) {
@@ -292,7 +292,7 @@ class RoomService {
 
       // إبطال كاش مستخدمي الغرفة
       this.roomUsersCache.delete(roomId);
-      } catch (error) {
+    } catch (error) {
       console.error('خطأ في مغادرة الغرفة:', error);
       throw error;
     } finally {
@@ -306,7 +306,7 @@ class RoomService {
   private leaveRoomMemory(userId: number, roomId: string): void {
     if (this.connectedRooms.has(roomId)) {
       this.connectedRooms.get(roomId)!.delete(userId);
-      
+
       // حذف الغرفة من الذاكرة إذا أصبحت فارغة (عدا الغرفة العامة)
       if (this.connectedRooms.get(roomId)!.size === 0 && roomId !== 'general') {
         this.connectedRooms.delete(roomId);
@@ -336,13 +336,10 @@ class RoomService {
 
       // جلب معرفات المستخدمين من قاعدة البيانات أولاً
       const dbUserIds: number[] = await storage.getRoomUsers(roomId);
-      
+
       // دمج مع المستخدمين المتصلين في الذاكرة
       const connectedUserIds = this.connectedRooms.get(roomId) || new Set<number>();
-      const allUserIds = new Set<number>([
-        ...dbUserIds,
-        ...Array.from(connectedUserIds)
-      ]);
+      const allUserIds = new Set<number>([...dbUserIds, ...Array.from(connectedUserIds)]);
 
       // جلب بيانات جميع المستخدمين (إزالة N+1)
       const users = await storage.getUsersByIds(Array.from(allUserIds));
@@ -389,7 +386,7 @@ class RoomService {
       }
 
       await storage.addToMicQueue(roomId, userId);
-      } catch (error) {
+    } catch (error) {
       console.error('خطأ في طلب الميكروفون:', error);
       throw error;
     }
@@ -411,15 +408,15 @@ class RoomService {
         throw new Error('المستخدم غير موجود');
       }
 
-      const canApprove = room.hostId === approvedBy || ['admin', 'owner', 'moderator'].includes(approver.userType);
+      const canApprove =
+        room.hostId === approvedBy || ['admin', 'owner', 'moderator'].includes(approver.userType);
       if (!canApprove) {
         throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
       }
 
       await storage.removeFromMicQueue(roomId, userId);
       await storage.addSpeaker(roomId, userId);
-
-      } catch (error) {
+    } catch (error) {
       console.error('خطأ في الموافقة على الميكروفون:', error);
       throw error;
     }
@@ -441,14 +438,14 @@ class RoomService {
         throw new Error('المستخدم غير موجود');
       }
 
-      const canReject = room.hostId === rejectedBy || ['admin', 'owner', 'moderator'].includes(rejecter.userType);
+      const canReject =
+        room.hostId === rejectedBy || ['admin', 'owner', 'moderator'].includes(rejecter.userType);
       if (!canReject) {
         throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
       }
 
       await storage.removeFromMicQueue(roomId, userId);
-
-      } catch (error) {
+    } catch (error) {
       console.error('خطأ في رفض الميكروفون:', error);
       throw error;
     }
@@ -470,14 +467,14 @@ class RoomService {
         throw new Error('المستخدم غير موجود');
       }
 
-      const canRemove = room.hostId === removedBy || ['admin', 'owner', 'moderator'].includes(remover.userType);
+      const canRemove =
+        room.hostId === removedBy || ['admin', 'owner', 'moderator'].includes(remover.userType);
       if (!canRemove) {
         throw new Error('ليس لديك صلاحية لإدارة الميكروفونات');
       }
 
       await storage.removeSpeaker(roomId, userId);
-
-      } catch (error) {
+    } catch (error) {
       console.error('خطأ في إزالة المتحدث:', error);
       throw error;
     }
@@ -495,10 +492,13 @@ class RoomService {
 
       const toArray = (val: any): number[] => {
         try {
-          if (Array.isArray(val)) return val.map((v) => Number(v)).filter((n) => Number.isFinite(n));
+          if (Array.isArray(val))
+            return val.map((v) => Number(v)).filter((n) => Number.isFinite(n));
           if (typeof val === 'string') {
             const parsed = JSON.parse(val || '[]');
-            return Array.isArray(parsed) ? parsed.map((v) => Number(v)).filter((n) => Number.isFinite(n)) : [];
+            return Array.isArray(parsed)
+              ? parsed.map((v) => Number(v)).filter((n) => Number.isFinite(n))
+              : [];
           }
           return [];
         } catch {
@@ -509,7 +509,7 @@ class RoomService {
       return {
         hostId: room.hostId || null,
         speakers: Array.from(new Set(toArray((room as any).speakers))),
-        micQueue: Array.from(new Set(toArray((room as any).micQueue ?? (room as any).mic_queue)))
+        micQueue: Array.from(new Set(toArray((room as any).micQueue ?? (room as any).mic_queue))),
       };
     } catch (error) {
       console.error(`خطأ في جلب معلومات البث للغرفة ${roomId}:`, error);
@@ -529,9 +529,9 @@ class RoomService {
     try {
       const rooms = await this.getAllRooms();
       const totalRooms = rooms.length;
-      const activeRooms = rooms.filter(r => r.isActive).length;
-      const broadcastRooms = rooms.filter(r => r.isBroadcast).length;
-      
+      const activeRooms = rooms.filter((r) => r.isActive).length;
+      const broadcastRooms = rooms.filter((r) => r.isBroadcast).length;
+
       let totalConnectedUsers = 0;
       for (const userSet of this.connectedRooms.values()) {
         totalConnectedUsers += userSet.size;
@@ -541,7 +541,7 @@ class RoomService {
         totalRooms,
         activeRooms,
         broadcastRooms,
-        totalConnectedUsers
+        totalConnectedUsers,
       };
     } catch (error) {
       console.error('خطأ في جلب إحصائيات الغرف:', error);
@@ -549,7 +549,7 @@ class RoomService {
         totalRooms: 0,
         activeRooms: 0,
         broadcastRooms: 0,
-        totalConnectedUsers: 0
+        totalConnectedUsers: 0,
       };
     }
   }
@@ -562,19 +562,18 @@ class RoomService {
     for (const [roomId, userSet] of this.connectedRooms.entries()) {
       if (userSet.size === 0 && roomId !== 'general') {
         this.connectedRooms.delete(roomId);
-        }
+      }
     }
 
     // 🔒 تنظيف locks القديمة (أكثر من 5 دقائق)
     const now = Date.now();
-    const fiveMinutesAgo = now - (5 * 60 * 1000);
-    
+    const fiveMinutesAgo = now - 5 * 60 * 1000;
+
     for (const [lockKey] of this.operationLocks.entries()) {
       // يمكن إضافة timestamp للـ locks في المستقبل
       // للآن نحذف جميع locks عند التنظيف
     }
-    
-    }
+  }
 
   /**
    * إبطال كاش الغرف وزيادة النسخة

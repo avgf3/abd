@@ -11,9 +11,8 @@ import type { NeonQueryResultHKT } from 'drizzle-orm/neon-serverless';
 import { migrate as migratePostgres } from 'drizzle-orm/neon-serverless/migrator';
 import type { PgDatabase } from 'drizzle-orm/pg-core';
 
-import * as pgSchema from "../shared/schema";
-import type * as sqliteSchema from "../shared/sqlite-schema";
-
+import * as pgSchema from '../shared/schema';
+import type * as sqliteSchema from '../shared/sqlite-schema';
 
 import fs from 'fs';
 import path from 'path';
@@ -33,7 +32,7 @@ export interface DatabaseAdapter {
 
 // إنشاء محول SQLite
 function createSQLiteAdapter(): DatabaseAdapter {
-  throw new Error("SQLite adapter is disabled in production build");
+  throw new Error('SQLite adapter is disabled in production build');
 }
 
 // إنشاء جداول SQLite
@@ -181,7 +180,6 @@ function createSQLiteTables(sqlite: Database.Database) {
         UNIQUE(user_id, room_id)
       )
     `);
-
   } catch (error) {
     console.error('❌ خطأ في إنشاء جداول SQLite:', error);
   }
@@ -190,19 +188,22 @@ function createSQLiteTables(sqlite: Database.Database) {
 // إنشاء محول PostgreSQL
 function createPostgreSQLAdapter(): DatabaseAdapter {
   const databaseUrl = process.env.DATABASE_URL;
-  
-  if (!databaseUrl || (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://'))) {
-    console.warn("⚠️ DATABASE_URL غير محدد أو غير صحيح");
+
+  if (
+    !databaseUrl ||
+    (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://'))
+  ) {
+    console.warn('⚠️ DATABASE_URL غير محدد أو غير صحيح');
     return { db: null, type: 'disabled' };
   }
-  
+
   try {
     // إعداد Neon للإنتاج
     neonConfig.fetchConnectionCache = true;
-    
+
     const pool = new Pool({ connectionString: databaseUrl });
     const db = drizzleNeon({ client: pool, schema: pgSchema });
-    
+
     return {
       db: db as DatabaseType,
       type: 'postgresql',
@@ -280,21 +281,33 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
               PRIMARY KEY (room_id, user_id)
             );
           `);
-          await (db as any).execute(`CREATE INDEX IF NOT EXISTS idx_room_members_roles ON room_members (room_id, role);`);
-          await (db as any).execute(`CREATE INDEX IF NOT EXISTS idx_room_members_user ON room_members (user_id);`);
-          await (db as any).execute(`CREATE INDEX IF NOT EXISTS idx_room_members_mute ON room_members (room_id, muted_until) WHERE muted_until IS NOT NULL;`);
-          await (db as any).execute(`CREATE INDEX IF NOT EXISTS idx_room_members_ban  ON room_members (room_id, banned_until) WHERE banned_until IS NOT NULL;`);
+          await (db as any).execute(
+            `CREATE INDEX IF NOT EXISTS idx_room_members_roles ON room_members (room_id, role);`
+          );
+          await (db as any).execute(
+            `CREATE INDEX IF NOT EXISTS idx_room_members_user ON room_members (user_id);`
+          );
+          await (db as any).execute(
+            `CREATE INDEX IF NOT EXISTS idx_room_members_mute ON room_members (room_id, muted_until) WHERE muted_until IS NOT NULL;`
+          );
+          await (db as any).execute(
+            `CREATE INDEX IF NOT EXISTS idx_room_members_ban  ON room_members (room_id, banned_until) WHERE banned_until IS NOT NULL;`
+          );
           await (db as any).execute(`
             CREATE UNIQUE INDEX IF NOT EXISTS uniq_room_owner ON room_members (room_id) WHERE role = 'owner';
           `);
           // Backfill owner membership when missing
-          await (db as any).execute(`
+          await (db as any)
+            .execute(
+              `
             INSERT INTO room_members (room_id, user_id, role)
             SELECT r.id, r.created_by, 'owner'
             FROM rooms r
             LEFT JOIN room_members rm ON rm.room_id = r.id AND rm.role = 'owner'
             WHERE r.created_by IS NOT NULL AND rm.room_id IS NULL
-          `).catch(() => {});
+          `
+            )
+            .catch(() => {});
 
           // Ensure messages optional columns
           await (db as any).execute(`
@@ -327,7 +340,9 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
               END IF;
             END $$;
           `);
-          await (db as any).execute(`ALTER TABLE messages ALTER COLUMN attachments SET DEFAULT '[]'::jsonb;`).catch(() => {});
+          await (db as any)
+            .execute(`ALTER TABLE messages ALTER COLUMN attachments SET DEFAULT '[]'::jsonb;`)
+            .catch(() => {});
 
           // Helpful index for room messages
           await (db as any).execute(`
@@ -348,11 +363,15 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
             WHERE is_private = TRUE;
           `);
           // Expression index to speed symmetric conversations
-          await (db as any).execute(`
+          await (db as any)
+            .execute(
+              `
             CREATE INDEX IF NOT EXISTS idx_messages_private_pair
             ON messages ((LEAST(sender_id, receiver_id)), (GREATEST(sender_id, receiver_id)), "timestamp" DESC)
             WHERE is_private = TRUE;
-          `).catch(() => {});
+          `
+            )
+            .catch(() => {});
 
           // Helpful index for notifications
           await (db as any).execute(`
@@ -384,10 +403,10 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
         } catch (ensureError) {
           console.error('⚠️ فشل في ضمان المخطط بعد الـ migrations:', ensureError);
         }
-      }
+      },
     };
   } catch (error) {
-    console.error("❌ فشل في الاتصال بـ PostgreSQL:", error);
+    console.error('❌ فشل في الاتصال بـ PostgreSQL:', error);
     return { db: null, type: 'disabled' };
   }
 }
@@ -414,16 +433,16 @@ export async function checkDatabaseHealth(): Promise<boolean> {
     if (!db || dbType === 'disabled') {
       return false;
     }
-    
+
     if (dbType === 'postgresql') {
       await (db as PostgreSQLDatabase).execute('SELECT 1' as any);
     } else if (dbType === 'sqlite') {
       (db as any).exec('SELECT 1');
     }
-    
+
     return true;
   } catch (error) {
-    console.error("❌ خطأ في فحص صحة قاعدة البيانات:", error);
+    console.error('❌ خطأ في فحص صحة قاعدة البيانات:', error);
     return false;
   }
 }
@@ -432,10 +451,11 @@ export async function checkDatabaseHealth(): Promise<boolean> {
 export function getDatabaseStatus() {
   return {
     connected: !!db && dbType !== 'disabled',
-    type: dbType === 'disabled' ? 'معطلة' : dbType === 'postgresql' ? 'PostgreSQL/Supabase' : 'SQLite',
+    type:
+      dbType === 'disabled' ? 'معطلة' : dbType === 'postgresql' ? 'PostgreSQL/Supabase' : 'SQLite',
     url: process.env.DATABASE_URL ? '***محددة***' : 'غير محددة',
     environment: process.env.NODE_ENV || 'development',
-    dbType: dbType
+    dbType: dbType,
   };
 }
 
@@ -450,7 +470,7 @@ export async function initializeDatabase(): Promise<boolean> {
     if (dbAdapter.migrate) {
       await dbAdapter.migrate();
     }
-    
+
     return true;
   } catch (error) {
     console.error('❌ Database initialization failed:', error);

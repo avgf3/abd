@@ -9,7 +9,11 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
-import { getEffectColor, getFinalUsernameColor, buildProfileBackgroundGradient } from '@/utils/themeUtils';
+import {
+  getEffectColor,
+  getFinalUsernameColor,
+  buildProfileBackgroundGradient,
+} from '@/utils/themeUtils';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -22,14 +26,23 @@ interface ProfileModalProps {
   onReportUser?: (user: ChatUser) => void;
 }
 
-export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser, onUpdate, onPrivateMessage, onAddFriend, onReportUser }: ProfileModalProps) {
+export default function ProfileModal({
+  user,
+  currentUser,
+  onClose,
+  onIgnoreUser,
+  onUpdate,
+  onPrivateMessage,
+  onAddFriend,
+  onReportUser,
+}: ProfileModalProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentEditType, setCurrentEditType] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
-  
+
   // حالة محلية للمستخدم للتحديث الفوري
   const [localUser, setLocalUser] = useState<ChatUser | null>(user);
   const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
@@ -61,7 +74,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       const userData = await apiRequest(`/api/users/${userId}?t=${Date.now()}`); // إضافة timestamp لتجنب cache
       setLocalUser(userData);
       if (onUpdate) onUpdate(userData);
-      
+
       // تحديث لون الخلفية والتأثير المحلي
       if (userData.profileBackgroundColor) {
         setSelectedTheme(userData.profileBackgroundColor);
@@ -69,13 +82,12 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       if (userData.profileEffect) {
         setSelectedEffect(userData.profileEffect);
       }
-      
     } catch (err: any) {
       console.error('❌ خطأ في جلب بيانات المستخدم:', err);
-      toast({ 
-        title: 'خطأ', 
-        description: err.message || 'فشل في تحديث بيانات الملف الشخصي من السيرفر', 
-        variant: 'destructive' 
+      toast({
+        title: 'خطأ',
+        description: err.message || 'فشل في تحديث بيانات الملف الشخصي من السيرفر',
+        variant: 'destructive',
       });
     }
   };
@@ -84,279 +96,278 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   const updateUserData = (updates: Partial<ChatUser>) => {
     const updatedUser = { ...localUser, ...updates };
     setLocalUser(updatedUser);
-    
+
     if (onUpdate) {
       onUpdate(updatedUser);
     }
-    
-          // تحديث لون الخلفية والتأثير إذا تم تغييرهما
-      if (updates.profileBackgroundColor) {
-        setSelectedTheme(updates.profileBackgroundColor);
-      }
-      if (updates.profileEffect) {
-        setSelectedEffect(updates.profileEffect);
-      }
-    
-    };
+
+    // تحديث لون الخلفية والتأثير إذا تم تغييرهما
+    if (updates.profileBackgroundColor) {
+      setSelectedTheme(updates.profileBackgroundColor);
+    }
+    if (updates.profileEffect) {
+      setSelectedEffect(updates.profileEffect);
+    }
+  };
 
   // Complete themes collection from original code
   const themes = [
-    { 
-      value: 'theme-sunset-glow', 
+    {
+      value: 'theme-sunset-glow',
       name: 'توهج الغروب',
       preview: 'linear-gradient(135deg, #ff6b6b, #ff8e53, #ffa726, #ffcc02, #ff6b6b)',
-      emoji: '🌅'
+      emoji: '🌅',
     },
-    { 
-      value: 'theme-ocean-depths', 
+    {
+      value: 'theme-ocean-depths',
       name: 'أعماق المحيط',
       preview: 'linear-gradient(135deg, #667eea, #764ba2, #f093fb, #667eea)',
-      emoji: '🌊'
+      emoji: '🌊',
     },
-    { 
-      value: 'theme-aurora-borealis', 
+    {
+      value: 'theme-aurora-borealis',
       name: 'الشفق القطبي',
       preview: 'linear-gradient(135deg, #a8edea, #fed6e3, #ffecd2, #fcb69f, #a8edea)',
-      emoji: '✨'
+      emoji: '✨',
     },
-    { 
-      value: 'theme-cosmic-night', 
+    {
+      value: 'theme-cosmic-night',
       name: 'الليل الكوني',
       preview: 'linear-gradient(135deg, #667eea, #764ba2, #f093fb, #667eea, #764ba2)',
-      emoji: '🌌'
+      emoji: '🌌',
     },
-    { 
-      value: 'theme-emerald-forest', 
+    {
+      value: 'theme-emerald-forest',
       name: 'الغابة الزمردية',
       preview: 'linear-gradient(135deg, #11998e, #38ef7d, #11998e, #38ef7d)',
-      emoji: '🌿'
+      emoji: '🌿',
     },
-    { 
-      value: 'theme-rose-gold', 
+    {
+      value: 'theme-rose-gold',
       name: 'الوردي الذهبي',
       preview: 'linear-gradient(135deg, #ff9a9e, #fecfef, #fecfef, #ff9a9e)',
-      emoji: '🌸'
+      emoji: '🌸',
     },
-    { 
-      value: 'theme-midnight-purple', 
+    {
+      value: 'theme-midnight-purple',
       name: 'البنفسجي الليلي',
       preview: 'linear-gradient(135deg, #4facfe, #00f2fe, #4facfe, #00f2fe)',
-      emoji: '🔮'
+      emoji: '🔮',
     },
-    { 
-      value: 'theme-golden-hour', 
+    {
+      value: 'theme-golden-hour',
       name: 'الساعة الذهبية',
       preview: 'linear-gradient(135deg, #fa709a, #fee140, #fa709a, #fee140)',
-      emoji: '🌟'
+      emoji: '🌟',
     },
-    { 
-      value: 'theme-neon-dreams', 
+    {
+      value: 'theme-neon-dreams',
       name: 'أحلام النيون',
       preview: 'linear-gradient(135deg, #ff0099, #493240, #ff0099, #493240)',
-      emoji: '💫'
+      emoji: '💫',
     },
-    { 
-      value: 'theme-silver-mist', 
+    {
+      value: 'theme-silver-mist',
       name: 'الضباب الفضي',
       preview: 'linear-gradient(135deg, #c3cfe2, #c3cfe2, #e0c3fc, #c3cfe2)',
-      emoji: '☁️'
+      emoji: '☁️',
     },
-    { 
-      value: 'theme-fire-opal', 
+    {
+      value: 'theme-fire-opal',
       name: 'الأوبال الناري',
       preview: 'linear-gradient(135deg, #ff416c, #ff4b2b, #ff416c, #ff4b2b)',
-      emoji: '🔥'
+      emoji: '🔥',
     },
-    { 
-      value: 'theme-crystal-clear', 
+    {
+      value: 'theme-crystal-clear',
       name: 'البلور الصافي',
       preview: 'linear-gradient(135deg, #89f7fe, #66a6ff, #89f7fe, #66a6ff)',
-      emoji: '💎'
+      emoji: '💎',
     },
-    { 
-      value: 'theme-burgundy-velvet', 
+    {
+      value: 'theme-burgundy-velvet',
       name: 'الخمري المخملي',
       preview: 'linear-gradient(135deg, #800020, #8b0000, #a52a2a, #800020)',
-      emoji: '🍷'
+      emoji: '🍷',
     },
-    { 
-      value: 'theme-golden-velvet', 
+    {
+      value: 'theme-golden-velvet',
       name: 'الذهبي المخملي',
       preview: 'linear-gradient(135deg, #ffd700, #daa520, #b8860b, #ffd700)',
-      emoji: '👑'
+      emoji: '👑',
     },
-    { 
-      value: 'theme-royal-black', 
+    {
+      value: 'theme-royal-black',
       name: 'الأسود الملكي',
       preview: 'linear-gradient(135deg, #191970, #2f4f4f, #000000, #191970)',
-      emoji: '⚜️'
+      emoji: '⚜️',
     },
-    { 
-      value: 'theme-berry-velvet', 
+    {
+      value: 'theme-berry-velvet',
       name: 'التوتي المخملي',
       preview: 'linear-gradient(135deg, #8a2be2, #4b0082, #800080, #8a2be2)',
-      emoji: '🫐'
+      emoji: '🫐',
     },
-    { 
-      value: 'theme-crimson-velvet', 
+    {
+      value: 'theme-crimson-velvet',
       name: 'العنابي المخملي',
       preview: 'linear-gradient(135deg, #dc143c, #b22222, #8b0000, #dc143c)',
-      emoji: '🔴'
+      emoji: '🔴',
     },
-    { 
-      value: 'theme-emerald-velvet', 
+    {
+      value: 'theme-emerald-velvet',
       name: 'الزمردي المخملي',
       preview: 'linear-gradient(135deg, #008000, #228b22, #006400, #008000)',
-      emoji: '💚'
+      emoji: '💚',
     },
-    { 
-      value: 'theme-sapphire-velvet', 
+    {
+      value: 'theme-sapphire-velvet',
       name: 'الياقوتي المخملي',
       preview: 'linear-gradient(135deg, #0047ab, #191970, #00008b, #0047ab)',
-      emoji: '💙'
+      emoji: '💙',
     },
-    { 
-      value: 'theme-ruby-velvet', 
+    {
+      value: 'theme-ruby-velvet',
       name: 'الياقوت الأحمر',
       preview: 'linear-gradient(135deg, #9b111e, #8b0000, #800000, #9b111e)',
-      emoji: '❤️'
+      emoji: '❤️',
     },
-    { 
-      value: 'theme-amethyst-velvet', 
+    {
+      value: 'theme-amethyst-velvet',
       name: 'الأميثيست المخملي',
       preview: 'linear-gradient(135deg, #9966cc, #8a2be2, #4b0082, #9966cc)',
-      emoji: '💜'
+      emoji: '💜',
     },
-    { 
-      value: 'theme-onyx-velvet', 
+    {
+      value: 'theme-onyx-velvet',
       name: 'الأونيكس المخملي',
       preview: 'linear-gradient(135deg, #2f4f4f, #191919, #000000, #2f4f4f)',
-      emoji: '🖤'
+      emoji: '🖤',
     },
-    { 
-      value: 'theme-sunset-fire', 
+    {
+      value: 'theme-sunset-fire',
       name: 'توهج النار البرتقالي - محدث',
       preview: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)',
-      emoji: '🔥'
+      emoji: '🔥',
     },
-    { 
-      value: 'theme-perfect-gradient', 
+    {
+      value: 'theme-perfect-gradient',
       name: 'التدرج المثالي - محدث',
       preview: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)',
-      emoji: '🌟'
+      emoji: '🌟',
     },
-    { 
-      value: 'theme-image-gradient', 
+    {
+      value: 'theme-image-gradient',
       name: 'تدرج الصورة - محدث',
       preview: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)',
-      emoji: '🖼️'
+      emoji: '🖼️',
     },
-    { 
-      value: 'theme-new-gradient', 
+    {
+      value: 'theme-new-gradient',
       name: 'التدرج الجديد المطابق للصورة',
       preview: 'linear-gradient(to bottom, #ff7c00 0%, #e10026 30%, #800e8c 65%, #1a004d 100%)',
-      emoji: '🎨'
-    }
+      emoji: '🎨',
+    },
   ];
 
   // Complete effects collection from original code
   const effects = [
-    { 
-      value: 'none', 
+    {
+      value: 'none',
       name: 'بدون تأثيرات',
       emoji: '🚫',
-      description: 'بدون أي تأثيرات حركية'
+      description: 'بدون أي تأثيرات حركية',
     },
-    { 
-      value: 'effect-pulse', 
+    {
+      value: 'effect-pulse',
       name: 'النبض الناعم',
       emoji: '💓',
-      description: 'نبض خفيف ومريح'
+      description: 'نبض خفيف ومريح',
     },
-    { 
-      value: 'effect-glow', 
+    {
+      value: 'effect-glow',
       name: 'التوهج الذهبي',
       emoji: '✨',
-      description: 'توهج ذهبي جميل'
+      description: 'توهج ذهبي جميل',
     },
-    { 
-      value: 'effect-water', 
+    {
+      value: 'effect-water',
       name: 'التموج المائي',
       emoji: '🌊',
-      description: 'حركة مائية سلسة'
+      description: 'حركة مائية سلسة',
     },
-    { 
-      value: 'effect-aurora', 
+    {
+      value: 'effect-aurora',
       name: 'الشفق القطبي',
       emoji: '🌌',
-      description: 'تأثير الشفق الملون'
+      description: 'تأثير الشفق الملون',
     },
-    { 
-      value: 'effect-neon', 
+    {
+      value: 'effect-neon',
       name: 'النيون المتوهج',
       emoji: '💖',
-      description: 'توهج نيون وردي'
+      description: 'توهج نيون وردي',
     },
-    { 
-      value: 'effect-crystal', 
+    {
+      value: 'effect-crystal',
       name: 'البلور المتلألئ',
       emoji: '💎',
-      description: 'لمعة بلورية جميلة'
+      description: 'لمعة بلورية جميلة',
     },
-    { 
-      value: 'effect-fire', 
+    {
+      value: 'effect-fire',
       name: 'النار المتوهجة',
       emoji: '🔥',
-      description: 'توهج ناري حارق'
+      description: 'توهج ناري حارق',
     },
-    { 
-      value: 'effect-magnetic', 
+    {
+      value: 'effect-magnetic',
       name: 'المغناطيس',
       emoji: '🧲',
-      description: 'حركة عائمة مغناطيسية'
+      description: 'حركة عائمة مغناطيسية',
     },
-    { 
-      value: 'effect-heartbeat', 
+    {
+      value: 'effect-heartbeat',
       name: 'القلب النابض',
       emoji: '❤️',
-      description: 'نبض مثل القلب'
+      description: 'نبض مثل القلب',
     },
-    { 
-      value: 'effect-stars', 
+    {
+      value: 'effect-stars',
       name: 'النجوم المتلألئة',
       emoji: '⭐',
-      description: 'نجوم متحركة'
+      description: 'نجوم متحركة',
     },
-    { 
-      value: 'effect-rainbow', 
+    {
+      value: 'effect-rainbow',
       name: 'قوس قزح',
       emoji: '🌈',
-      description: 'تدرج قوس قزح متحرك'
+      description: 'تدرج قوس قزح متحرك',
     },
-    { 
-      value: 'effect-snow', 
+    {
+      value: 'effect-snow',
       name: 'الثلج المتساقط',
       emoji: '❄️',
-      description: 'ثلج متساقط جميل'
+      description: 'ثلج متساقط جميل',
     },
-    { 
-      value: 'effect-lightning', 
+    {
+      value: 'effect-lightning',
       name: 'البرق',
       emoji: '⚡',
-      description: 'وميض البرق'
+      description: 'وميض البرق',
     },
-    { 
-      value: 'effect-smoke', 
+    {
+      value: 'effect-smoke',
       name: 'الدخان',
       emoji: '💨',
-      description: 'دخان متصاعد'
+      description: 'دخان متصاعد',
     },
-    { 
-      value: 'effect-butterfly', 
+    {
+      value: 'effect-butterfly',
       name: 'الفراشة',
       emoji: '🦋',
-      description: 'فراشة متحركة'
-    }
+      description: 'فراشة متحركة',
+    },
   ];
 
   // Profile image fallback - محسّن للتعامل مع base64 و مشاكل الcache
@@ -372,7 +383,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   // Edit modal handlers
   const openEditModal = (type: string) => {
     setCurrentEditType(type);
-    
+
     switch (type) {
       case 'name':
         setEditValue(localUser?.username || '');
@@ -404,7 +415,10 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   const [previewProfile, setPreviewProfile] = useState<string | null>(null);
   const [previewBanner, setPreviewBanner] = useState<string | null>(null);
 
-  const handlePreview = (event: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'banner') => {
+  const handlePreview = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    type: 'profile' | 'banner'
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -416,85 +430,96 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   };
 
   // عند رفع صورة جديدة، أضمن تحديث بيانات المستخدم من السيرفر بعد نجاح الرفع
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, uploadType: 'profile' | 'banner') => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    uploadType: 'profile' | 'banner'
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
+
     // التحقق من نوع الملف
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    const allowedTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
+    ];
     if (!allowedTypes.includes(file.type)) {
-      toast({ 
-        title: "خطأ", 
-        description: "يرجى اختيار ملف صورة صحيح (JPG, PNG, GIF, WebP, SVG)", 
-        variant: "destructive" 
+      toast({
+        title: 'خطأ',
+        description: 'يرجى اختيار ملف صورة صحيح (JPG, PNG, GIF, WebP, SVG)',
+        variant: 'destructive',
       });
       return;
     }
-    
+
     // التحقق من حجم الملف
     const maxSize = uploadType === 'profile' ? 5 * 1024 * 1024 : 10 * 1024 * 1024; // 5MB للبروفايل، 10MB للبانر
     if (file.size > maxSize) {
-      toast({ 
-        title: "خطأ", 
-        description: uploadType === 'profile' 
-          ? "حجم الصورة يجب أن يكون أقل من 5 ميجابايت" 
-          : "حجم الغلاف يجب أن يكون أقل من 10 ميجابايت", 
-        variant: "destructive" 
+      toast({
+        title: 'خطأ',
+        description:
+          uploadType === 'profile'
+            ? 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت'
+            : 'حجم الغلاف يجب أن يكون أقل من 10 ميجابايت',
+        variant: 'destructive',
       });
       return;
     }
-    
+
     try {
       setIsLoading(true);
-      
+
       const formData = new FormData();
       if (uploadType === 'profile') {
         formData.append('profileImage', file);
       } else {
         formData.append('banner', file);
       }
-      
+
       if (currentUser?.id) {
         formData.append('userId', currentUser.id.toString());
       }
-      
-      const endpoint = uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
+
+      const endpoint =
+        uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
       const result = await apiRequest(endpoint, { method: 'POST', body: formData });
-      
+
       if (!result.success) {
         throw new Error(result.error || 'فشل في رفع الصورة');
       }
-      
+
       // تحديث البيانات المحلية فوراً
       if (uploadType === 'profile' && result.imageUrl) {
         updateUserData({ profileImage: result.imageUrl });
       } else if (uploadType === 'banner' && result.bannerUrl) {
         updateUserData({ profileBanner: result.bannerUrl });
       }
-      
+
       // انتظار قصير للتأكد من التحديث المحلي
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // جلب البيانات المحدثة من السيرفر للتأكد
       if (currentUser?.id) {
         await fetchAndUpdateUser(currentUser.id);
       }
-      
-      toast({ 
-        title: "نجح ✅", 
-        description: uploadType === 'profile' ? "تم تحديث الصورة الشخصية" : "تم تحديث صورة الغلاف" 
+
+      toast({
+        title: 'نجح ✅',
+        description: uploadType === 'profile' ? 'تم تحديث الصورة الشخصية' : 'تم تحديث صورة الغلاف',
       });
-      
+
       // إزالة المعاينة
       if (uploadType === 'profile') setPreviewProfile(null);
       else setPreviewBanner(null);
-      
     } catch (error: any) {
       console.error(`❌ خطأ في رفع ${uploadType}:`, error);
-      toast({ 
-        title: "خطأ", 
-        description: error.message || "فشل في تحميل الصورة", 
-        variant: "destructive" 
+      toast({
+        title: 'خطأ',
+        description: error.message || 'فشل في تحميل الصورة',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -507,35 +532,51 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   // حفظ تعديل البيانات - محسّن بدون إعادة تحميل
   const handleSaveEdit = async () => {
     if (!editValue.trim()) {
-      toast({ title: "خطأ", description: "يرجى إدخال قيمة صحيحة", variant: "destructive" });
-    return;
+      toast({ title: 'خطأ', description: 'يرجى إدخال قيمة صحيحة', variant: 'destructive' });
+      return;
     }
     setIsLoading(true);
     try {
       let fieldName = '';
       switch (currentEditType) {
-        case 'name': fieldName = 'username'; break;
-        case 'status': fieldName = 'status'; break;
-        case 'gender': fieldName = 'gender'; break;
-        case 'country': fieldName = 'country'; break;
-        case 'age': fieldName = 'age'; break;
-        case 'socialStatus': fieldName = 'relation'; break;
+        case 'name':
+          fieldName = 'username';
+          break;
+        case 'status':
+          fieldName = 'status';
+          break;
+        case 'gender':
+          fieldName = 'gender';
+          break;
+        case 'country':
+          fieldName = 'country';
+          break;
+        case 'age':
+          fieldName = 'age';
+          break;
+        case 'socialStatus':
+          fieldName = 'relation';
+          break;
       }
       const response = await apiRequest('/api/users/update-profile', {
         method: 'POST',
-        body: { userId: currentUser?.id, [fieldName]: editValue }
+        body: { userId: currentUser?.id, [fieldName]: editValue },
       });
       if ((response as any).success) {
         if (currentUser?.id) {
           await fetchAndUpdateUser(currentUser.id);
         }
-        toast({ title: "نجح ✅", description: "تم تحديث الملف الشخصي" });
+        toast({ title: 'نجح ✅', description: 'تم تحديث الملف الشخصي' });
         closeEditModal();
       } else {
         throw new Error((response as any).error || 'فشل في التحديث');
       }
     } catch (error) {
-      toast({ title: "خطأ", description: "فشل في تحديث البيانات. تحقق من اتصال الإنترنت.", variant: "destructive" });
+      toast({
+        title: 'خطأ',
+        description: 'فشل في تحديث البيانات. تحقق من اتصال الإنترنت.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -549,18 +590,18 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
       if (!currentUser?.id) {
         toast({
-          title: "خطأ",
-          description: "لم يتم العثور على معرف المستخدم. يرجى تسجيل الدخول مرة أخرى.",
-          variant: "destructive",
+          title: 'خطأ',
+          description: 'لم يتم العثور على معرف المستخدم. يرجى تسجيل الدخول مرة أخرى.',
+          variant: 'destructive',
         });
         return;
       }
 
       if (!theme || theme.trim() === '') {
         toast({
-          title: "خطأ", 
-          description: "يرجى اختيار لون صحيح.",
-          variant: "destructive",
+          title: 'خطأ',
+          description: 'يرجى اختيار لون صحيح.',
+          variant: 'destructive',
         });
         return;
       }
@@ -569,19 +610,23 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       const colorValue = theme;
       const result = await apiRequest(`/api/users/${localUser?.id}`, {
         method: 'PUT',
-        body: { profileBackgroundColor: colorValue }
+        body: { profileBackgroundColor: colorValue },
       });
 
       const updated = (result as any)?.user ?? result;
       if (updated && (updated as any).id) {
         updateUserData({ profileBackgroundColor: updated.profileBackgroundColor || colorValue });
-        toast({ title: "نجح ✅", description: "تم تحديث لون الملف الشخصي" });
+        toast({ title: 'نجح ✅', description: 'تم تحديث لون الملف الشخصي' });
       } else {
         throw new Error('فشل في تحديث لون الملف الشخصي');
       }
     } catch (error) {
       console.error('❌ خطأ في تحديث لون الملف الشخصي:', error);
-      toast({ title: "خطأ", description: "فشل في تحديث اللون. تحقق من اتصال الإنترنت.", variant: "destructive" });
+      toast({
+        title: 'خطأ',
+        description: 'فشل في تحديث اللون. تحقق من اتصال الإنترنت.',
+        variant: 'destructive',
+      });
       setSelectedTheme(localUser?.profileBackgroundColor || '');
     } finally {
       setIsLoading(false);
@@ -593,23 +638,23 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     try {
       setIsLoading(true);
       setSelectedEffect(effect);
-      
+
       const result = await apiRequest(`/api/users/${localUser?.id}`, {
         method: 'PUT',
-        body: { 
-          profileEffect: effect
-        }
+        body: {
+          profileEffect: effect,
+        },
       });
 
       const updated = (result as any)?.user ?? result;
       if (updated && (updated as any).id) {
-        updateUserData({ 
-          profileEffect: effect
+        updateUserData({
+          profileEffect: effect,
         });
-        
+
         toast({
-          title: "نجح ✅",
-          description: "تم تحديث التأثيرات ولون الاسم",
+          title: 'نجح ✅',
+          description: 'تم تحديث التأثيرات ولون الاسم',
         });
       } else {
         throw new Error('فشل في تحديث التأثيرات');
@@ -617,9 +662,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
     } catch (error) {
       console.error('❌ خطأ في تحديث التأثير:', error);
       toast({
-        title: "خطأ",
-        description: "فشل في تحديث التأثيرات",
-        variant: "destructive",
+        title: 'خطأ',
+        description: 'فشل في تحديث التأثيرات',
+        variant: 'destructive',
       });
       // إرجاع التأثير للحالة السابقة
       setSelectedEffect(localUser?.profileEffect || 'none');
@@ -631,36 +676,39 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
   // دالة إرسال النقاط
   const handleSendPoints = async () => {
     const points = parseInt(pointsToSend);
-    
+
     if (!points || points <= 0) {
       toast({
-        title: "خطأ",
-        description: "يرجى إدخال عدد صحيح من النقاط",
-        variant: "destructive"
+        title: 'خطأ',
+        description: 'يرجى إدخال عدد صحيح من النقاط',
+        variant: 'destructive',
       });
       return;
     }
 
-    if (!((currentUser?.userType === 'owner') || (currentUser?.role === 'owner')) && points > (currentUser?.points || 0)) {
+    if (
+      !(currentUser?.userType === 'owner' || currentUser?.role === 'owner') &&
+      points > (currentUser?.points || 0)
+    ) {
       toast({
-        title: "نقاط غير كافية",
+        title: 'نقاط غير كافية',
         description: `لديك ${currentUser?.points || 0} نقطة فقط`,
-        variant: "destructive"
+        variant: 'destructive',
       });
       return;
     }
 
     try {
       setSendingPoints(true);
-      
+
       const response = await apiRequest('/api/points/send', {
         method: 'POST',
         body: {
           senderId: currentUser?.id,
           receiverId: localUser?.id,
           points: points,
-          reason: `نقاط مُهداة من ${currentUser?.username}`
-        }
+          reason: `نقاط مُهداة من ${currentUser?.username}`,
+        },
       });
 
       if (response.success) {
@@ -668,20 +716,20 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
         setPointsSentNotification({
           show: true,
           points: points,
-          recipientName: localUser?.username || ''
+          recipientName: localUser?.username || '',
         });
-        
+
         setPointsToSend('');
-        
+
         // Update current user points locally for immediate UI feedback
         if (currentUser && (window as any).updateUserPoints) {
-          if ((currentUser?.userType === 'owner') || (currentUser?.role === 'owner')) {
+          if (currentUser?.userType === 'owner' || currentUser?.role === 'owner') {
             (window as any).updateUserPoints(currentUser.points);
           } else {
             (window as any).updateUserPoints(currentUser.points - points);
           }
         }
-        
+
         // إغلاق البروفايل بعد الإرسال الناجح
         setTimeout(() => {
           onClose();
@@ -689,9 +737,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
       }
     } catch (error: any) {
       toast({
-        title: "خطأ في الإرسال",
-        description: error.message || "فشل في إرسال النقاط",
-        variant: "destructive"
+        title: 'خطأ في الإرسال',
+        description: error.message || 'فشل في إرسال النقاط',
+        variant: 'destructive',
       });
     } finally {
       setSendingPoints(false);
@@ -1763,12 +1811,20 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
       {/* Modal Background - completely transparent */}
       <div className="fixed inset-0 z-50 bg-black/80" onClick={onClose} />
-      
+
       {/* Main Modal */}
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-4 px-4 overflow-y-auto">
-        <div className={`profile-card ${selectedEffect}`} style={{ background: localUser?.profileBackgroundColor ? buildProfileBackgroundGradient(localUser.profileBackgroundColor) : undefined, backgroundBlendMode: 'normal' }}>
+        <div
+          className={`profile-card ${selectedEffect}`}
+          style={{
+            background: localUser?.profileBackgroundColor
+              ? buildProfileBackgroundGradient(localUser.profileBackgroundColor)
+              : undefined,
+            backgroundBlendMode: 'normal',
+          }}
+        >
           {/* Close Button */}
-          <button 
+          <button
             onClick={onClose}
             className="absolute top-2 right-2 z-20 p-2 rounded-full bg-red-500/80 hover:bg-red-600 text-white transition-colors shadow-lg"
           >
@@ -1776,17 +1832,17 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           </button>
 
           {/* Cover Section - completely stable */}
-          <div 
+          <div
             className="profile-cover"
-            style={{ 
-                              backgroundImage: `url(${getProfileBannerSrcLocal()})`,
+            style={{
+              backgroundImage: `url(${getProfileBannerSrcLocal()})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat'
+              backgroundRepeat: 'no-repeat',
             }}
           >
             {localUser?.id === currentUser?.id && (
-              <button 
+              <button
                 className="change-cover-btn"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
@@ -1797,16 +1853,24 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
 
             {localUser?.id !== currentUser?.id && (
               <div className="profile-actions">
-                <button className="btn-chat" onClick={() => onPrivateMessage?.(localUser)}>💬 محادثة خاصة</button>
-                <button className="btn-add" onClick={() => onAddFriend?.(localUser)}>👥 إضافة صديق</button>
-                <button className="btn-ignore" onClick={() => onIgnoreUser?.(localUser?.id || 0)}>🚫 تجاهل</button>
-                <button className="btn-report" onClick={() => onReportUser?.(localUser)}>🚩 إبلاغ</button>
+                <button className="btn-chat" onClick={() => onPrivateMessage?.(localUser)}>
+                  💬 محادثة خاصة
+                </button>
+                <button className="btn-add" onClick={() => onAddFriend?.(localUser)}>
+                  👥 إضافة صديق
+                </button>
+                <button className="btn-ignore" onClick={() => onIgnoreUser?.(localUser?.id || 0)}>
+                  🚫 تجاهل
+                </button>
+                <button className="btn-report" onClick={() => onReportUser?.(localUser)}>
+                  🚩 إبلاغ
+                </button>
               </div>
             )}
 
             <div className="profile-avatar">
-              <img 
-                src={getProfileImageSrcLocal()} 
+              <img
+                src={getProfileImageSrcLocal()}
                 alt="الصورة الشخصية"
                 style={{
                   width: '100%',
@@ -1815,23 +1879,25 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                   display: 'block',
                   transition: 'none',
                   backfaceVisibility: 'hidden',
-                  transform: 'translateZ(0)'
+                  transform: 'translateZ(0)',
                 }}
-                onLoad={(e) => {
-                  }}
+                onLoad={(e) => {}}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   console.error('❌ فشل في تحميل صورة البروفايل:', target.src);
                   // منع إعادة التحميل المستمر عند الخطأ
-                  if (target.src !== '/default_avatar.svg' && !target.src.includes('default_avatar.svg')) {
+                  if (
+                    target.src !== '/default_avatar.svg' &&
+                    !target.src.includes('default_avatar.svg')
+                  ) {
                     target.src = '/default_avatar.svg';
                   }
                 }}
               />
             </div>
-            
+
             {localUser?.id === currentUser?.id && (
-              <button 
+              <button
                 className="change-avatar-btn"
                 onClick={() => avatarInputRef.current?.click()}
                 title="تغيير الصورة"
@@ -1845,13 +1911,16 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
           {/* Profile Body - exact match to original */}
           <div className="profile-body">
             <div className="profile-info">
-              <h3 
+              <h3
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('name')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default', color: getFinalUsernameColor(localUser || {}) }}
+                style={{
+                  cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default',
+                  color: getFinalUsernameColor(localUser || {}),
+                }}
               >
                 {localUser?.username || 'اسم المستخدم'}
               </h3>
-              <small 
+              <small
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('status')}
                 style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
               >
@@ -1859,47 +1928,47 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               </small>
             </div>
 
-            {localUser?.id !== currentUser?.id && (
-              <></>
-            )}
+            {localUser?.id !== currentUser?.id && <></>}
 
             <div className="profile-details">
-              <p 
+              <p
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('gender')}
                 style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
               >
                 🧍‍♀️ الجنس: <span>{localUser?.gender || 'غير محدد'}</span>
               </p>
-              <p 
+              <p
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('country')}
                 style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
               >
                 🌍 البلد: <span>{localUser?.country || 'غير محدد'}</span>
               </p>
-              <p 
+              <p
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('age')}
                 style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
               >
                 🎂 العمر: <span>{localUser?.age ? `${localUser.age} سنة` : 'غير محدد'}</span>
               </p>
-              <p 
+              <p
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('socialStatus')}
                 style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
               >
                 💍 الحالة الاجتماعية: <span>{localUser?.relation || 'غير محدد'}</span>
               </p>
               <p>
-                📅 تاريخ الإنضمام: <span>{localUser?.createdAt ? new Date(localUser.createdAt).toLocaleDateString('ar-SA') : 'غير محدد'}</span>
+                📅 تاريخ الإنضمام:{' '}
+                <span>
+                  {localUser?.createdAt
+                    ? new Date(localUser.createdAt).toLocaleDateString('ar-SA')
+                    : 'غير محدد'}
+                </span>
               </p>
               <p>
                 🎁 نقاط الهدايا: <span>{localUser?.points || 0}</span>
               </p>
               {/* إرسال النقاط - يظهر فقط للمستخدمين الآخرين */}
               {currentUser && currentUser.id !== localUser?.id && (
-                <p 
-                  onClick={() => setCurrentEditType('sendPoints')}
-                  style={{ cursor: 'pointer' }}
-                >
+                <p onClick={() => setCurrentEditType('sendPoints')} style={{ cursor: 'pointer' }}>
                   💰 إرسال النقاط: <span>اضغط للإرسال</span>
                 </p>
               )}
@@ -1908,12 +1977,14 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               </p>
             </div>
 
-
-
             {localUser?.id === currentUser?.id && (
               <div className="additional-details">
-                <p>💬 عدد الرسائل: <span>0</span></p>
-                <p>⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span></p>
+                <p>
+                  💬 عدد الرسائل: <span>0</span>
+                </p>
+                <p>
+                  ⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span>
+                </p>
                 <p onClick={() => setCurrentEditType('theme')} style={{ cursor: 'pointer' }}>
                   🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
                 </p>
@@ -1971,45 +2042,46 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               {currentEditType === 'effects' && '✨ تعديل التأثيرات الحركية'}
               {currentEditType === 'sendPoints' && '💰 إرسال النقاط'}
             </h3>
-            
+
             {currentEditType === 'theme' ? (
               <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                {themes.map(theme => (
+                {themes.map((theme) => (
                   <div
                     key={theme.value}
                     className={`theme-option ${selectedTheme === theme.preview ? 'selected' : ''}`}
                     onClick={() => handleThemeChange(theme.preview)}
                   >
-                    <div 
-                      className="theme-preview"
-                      style={{ background: theme.preview }}
-                    />
-                    <div className="theme-name">{theme.emoji} {theme.name}</div>
+                    <div className="theme-preview" style={{ background: theme.preview }} />
+                    <div className="theme-name">
+                      {theme.emoji} {theme.name}
+                    </div>
                   </div>
                 ))}
               </div>
             ) : currentEditType === 'effects' ? (
               <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                {effects.map(effect => (
+                {effects.map((effect) => (
                   <div
                     key={effect.value}
                     className={`theme-option ${selectedEffect === effect.value ? 'selected' : ''}`}
                     onClick={() => handleEffectChange(effect.value)}
                   >
-                    <div 
+                    <div
                       className="theme-preview"
-                      style={{ 
+                      style={{
                         background: 'linear-gradient(45deg, #ff7c00, #e10026, #800e8c, #1a004d)',
                         fontSize: '12px',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
                       }}
                     >
                       {effect.emoji}
                     </div>
                     <div>
-                      <div className="theme-name">{effect.emoji} {effect.name}</div>
+                      <div className="theme-name">
+                        {effect.emoji} {effect.name}
+                      </div>
                       <div style={{ fontSize: '11px', color: '#ccc', marginTop: '2px' }}>
                         {effect.description}
                       </div>
@@ -2019,12 +2091,14 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
               </div>
             ) : currentEditType === 'sendPoints' ? (
               <div>
-                <div style={{ 
-                  background: 'rgba(255,255,255,0.05)', 
-                  padding: '12px', 
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255,255,255,0.1)'
-                }}>
+                <div
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}
+                >
                   <div style={{ fontSize: '11px', color: '#ccc', marginBottom: '8px' }}>
                     {currentUser?.userType === 'owner' || currentUser?.role === 'owner' ? (
                       <>نقاطك الحالية: غير محدودة للمالك</>
@@ -2032,7 +2106,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                       <>نقاطك الحالية: {formatPoints(currentUser?.points || 0)}</>
                     )}
                   </div>
-                  
+
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                     <input
                       type="number"
@@ -2046,10 +2120,12 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                         border: '1px solid rgba(255,255,255,0.2)',
                         background: 'rgba(255,255,255,0.1)',
                         color: '#fff',
-                        fontSize: '12px'
+                        fontSize: '12px',
                       }}
                       min="1"
-                      {...((currentUser?.userType === 'owner' || currentUser?.role === 'owner') ? {} : { max: currentUser?.points || 0 })}
+                      {...(currentUser?.userType === 'owner' || currentUser?.role === 'owner'
+                        ? {}
+                        : { max: currentUser?.points || 0 })}
                       disabled={sendingPoints}
                       autoFocus
                     />
@@ -2057,7 +2133,9 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                       onClick={handleSendPoints}
                       disabled={sendingPoints || !pointsToSend || parseInt(pointsToSend) <= 0}
                       style={{
-                        background: sendingPoints ? 'rgba(255,193,7,0.5)' : 'linear-gradient(135deg, #ffc107, #ff8f00)',
+                        background: sendingPoints
+                          ? 'rgba(255,193,7,0.5)'
+                          : 'linear-gradient(135deg, #ffc107, #ff8f00)',
                         color: '#000',
                         border: 'none',
                         padding: '8px 12px',
@@ -2065,13 +2143,13 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                         fontSize: '12px',
                         fontWeight: 'bold',
                         cursor: sendingPoints ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.3s ease'
+                        transition: 'all 0.3s ease',
                       }}
                     >
                       {sendingPoints ? '⏳' : '🎁'} إرسال
                     </button>
                   </div>
-                  
+
                   <div style={{ fontSize: '10px', color: '#aaa' }}>
                     {currentUser?.userType === 'owner' || currentUser?.role === 'owner' ? (
                       <>💡 لن يتم خصم النقاط من رصيدك، كونك المالك</>
@@ -2080,7 +2158,7 @@ export default function ProfileModal({ user, currentUser, onClose, onIgnoreUser,
                     )}
                   </div>
                 </div>
-                
+
                 <div className="edit-buttons" style={{ marginTop: '12px' }}>
                   <button className="cancel-btn" onClick={closeEditModal}>
                     ❌ إلغاء

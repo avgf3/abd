@@ -1,4 +1,17 @@
-import { Mic, MicOff, Users, Crown, Clock, Check, X, Volume2, VolumeX, ChevronDown, ChevronUp, PlayCircle } from 'lucide-react';
+import {
+  Mic,
+  MicOff,
+  Users,
+  Crown,
+  Clock,
+  Check,
+  X,
+  Volume2,
+  VolumeX,
+  ChevronDown,
+  ChevronUp,
+  PlayCircle,
+} from 'lucide-react';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import MessageArea from './MessageArea';
@@ -10,16 +23,20 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import type { ChatUser, ChatRoom, RoomWebSocketMessage as WebSocketMessage, ChatMessage } from '@/types/chat';
+import type {
+  ChatUser,
+  ChatRoom,
+  RoomWebSocketMessage as WebSocketMessage,
+  ChatMessage,
+} from '@/types/chat';
 import { normalizeBroadcastInfo } from '@/utils/roomUtils';
-
 
 // ICE servers helper with optional TURN support via env
 const getIceServers = (): RTCIceServer[] => {
   const servers: RTCIceServer[] = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }
+    { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
   ];
   try {
     const env = (import.meta as any)?.env || {};
@@ -48,9 +65,17 @@ interface BroadcastRoomInterfaceProps {
     handleTyping?: () => void;
     addBroadcastMessageHandler?: (handler: (data: any) => void) => void;
     removeBroadcastMessageHandler?: (handler: (data: any) => void) => void;
-    sendWebRTCIceCandidate?: (toUserId: number, roomId: string, candidate: RTCIceCandidateInit) => void;
+    sendWebRTCIceCandidate?: (
+      toUserId: number,
+      roomId: string,
+      candidate: RTCIceCandidateInit
+    ) => void;
     sendWebRTCOffer?: (toUserId: number, roomId: string, offer: RTCSessionDescriptionInit) => void;
-    sendWebRTCAnswer?: (toUserId: number, roomId: string, answer: RTCSessionDescriptionInit) => void;
+    sendWebRTCAnswer?: (
+      toUserId: number,
+      roomId: string,
+      answer: RTCSessionDescriptionInit
+    ) => void;
     onWebRTCOffer?: (handler: (payload: any) => void) => void;
     offWebRTCOffer?: (handler: (payload: any) => void) => void;
     onWebRTCIceCandidate?: (handler: (payload: any) => void) => void;
@@ -76,7 +101,7 @@ export default function BroadcastRoomInterface({
   onReportMessage,
   onUserClick,
   messages,
-  chat
+  chat,
 }: BroadcastRoomInterfaceProps) {
   const [broadcastInfo, setBroadcastInfo] = useState<BroadcastInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -111,7 +136,7 @@ export default function BroadcastRoomInterface({
       const data = await apiRequest(`/api/rooms/${room.id}/broadcast-info`, { method: 'GET' });
       if (data?.info) {
         setBroadcastInfo(normalizeBroadcastInfo(data.info));
-        } else {
+      } else {
         console.warn('⚠️ لم يتم استلام معلومات غرفة البث صحيحة من الخادم');
         setBroadcastInfo({ hostId: null, speakers: [], micQueue: [] });
       }
@@ -119,13 +144,13 @@ export default function BroadcastRoomInterface({
       console.error('❌ خطأ في جلب معلومات غرفة البث:', error);
       // fallback آمن بدون قيم افتراضية خاطئة
       setBroadcastInfo({ hostId: null, speakers: [], micQueue: [] });
-      
+
       // عرض toast تحذيري فقط للأخطاء المهمة
       if (error.status !== 404) {
         toast({
           title: 'تحذير',
           description: 'تعذر جلب آخر تحديثات غرفة البث. سيتم استخدام البيانات المحفوظة.',
-          variant: 'default'
+          variant: 'default',
         });
       }
     } finally {
@@ -157,12 +182,13 @@ export default function BroadcastRoomInterface({
         updateBroadcastInfo(data);
         switch (data.type) {
           case 'micRequest': {
-            if (currentUser && (
-              currentUser.id === broadcastInfo?.hostId ||
-              currentUser.userType === 'admin' ||
-              currentUser.userType === 'moderator' ||
-              currentUser.userType === 'owner'
-            )) {
+            if (
+              currentUser &&
+              (currentUser.id === broadcastInfo?.hostId ||
+                currentUser.userType === 'admin' ||
+                currentUser.userType === 'moderator' ||
+                currentUser.userType === 'owner')
+            ) {
               showToast('طلب مايك جديد', data.content || `${data.username} يطلب المايك`);
             }
             break;
@@ -196,13 +222,14 @@ export default function BroadcastRoomInterface({
         chat.removeBroadcastMessageHandler(handleBroadcastMessage);
       }
     };
-  // تقليل التبعيات لمنع إعادة التسجيل المتكرر
+    // تقليل التبعيات لمنع إعادة التسجيل المتكرر
   }, [room.id, chat, toast, currentUser?.id, currentUser?.userType]);
 
   // التحقق من صلاحيات المستخدم
   const speakers = Array.isArray(broadcastInfo?.speakers) ? broadcastInfo!.speakers : [];
   const micQueue = Array.isArray(broadcastInfo?.micQueue) ? broadcastInfo!.micQueue : [];
-  const isHost = !!currentUser && broadcastInfo?.hostId != null && broadcastInfo.hostId === currentUser.id;
+  const isHost =
+    !!currentUser && broadcastInfo?.hostId != null && broadcastInfo.hostId === currentUser.id;
   const isAdmin = !!currentUser && currentUser.userType === 'admin';
   const isModerator = !!currentUser && currentUser.userType === 'moderator';
   const isOwner = !!currentUser && currentUser.userType === 'owner';
@@ -239,7 +266,9 @@ export default function BroadcastRoomInterface({
     }
   };
 
-  const queryMicrophonePermission = async (): Promise<'granted' | 'denied' | 'prompt' | 'unknown'> => {
+  const queryMicrophonePermission = async (): Promise<
+    'granted' | 'denied' | 'prompt' | 'unknown'
+  > => {
     try {
       // Not universally supported (e.g., Safari), so guard it
       const perms: any = (navigator as any).permissions;
@@ -267,9 +296,16 @@ export default function BroadcastRoomInterface({
     }
 
     const constraintsList: MediaStreamConstraints[] = [
-      { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } as MediaTrackConstraints, video: false },
+      {
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        } as MediaTrackConstraints,
+        video: false,
+      },
       { audio: { channelCount: 1, sampleRate: 44100 } as MediaTrackConstraints, video: false },
-      { audio: true, video: false }
+      { audio: true, video: false },
     ];
 
     let lastError: any = null;
@@ -295,16 +331,22 @@ export default function BroadcastRoomInterface({
       throw new Error('تم رفض إذن الميكروفون. افتح إعدادات الموقع ومنح الإذن ثم أعد تحميل الصفحة.');
     }
     if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
-      throw new Error('لم يتم العثور على جهاز ميكروفون متاح. تأكد من توصيل الميكروفون أو اختيار الجهاز الصحيح.');
+      throw new Error(
+        'لم يتم العثور على جهاز ميكروفون متاح. تأكد من توصيل الميكروفون أو اختيار الجهاز الصحيح.'
+      );
     }
     if (name === 'NotReadableError') {
-      throw new Error('يتعذر الوصول إلى الميكروفون (قد يكون مشغولاً بتطبيق آخر). أغلق التطبيقات الأخرى وحاول مجدداً.');
+      throw new Error(
+        'يتعذر الوصول إلى الميكروفون (قد يكون مشغولاً بتطبيق آخر). أغلق التطبيقات الأخرى وحاول مجدداً.'
+      );
     }
     if (name === 'OverconstrainedError') {
       throw new Error('إعدادات الميكروفون غير مدعومة على هذا الجهاز. حاول مرة أخرى.');
     }
     if (name === 'SecurityError') {
-      throw new Error('لا يمكن الوصول إلى الميكروفون بسبب إعدادات الأمان. تأكد من استخدام اتصال آمن (HTTPS).');
+      throw new Error(
+        'لا يمكن الوصول إلى الميكروفون بسبب إعدادات الأمان. تأكد من استخدام اتصال آمن (HTTPS).'
+      );
     }
     throw new Error(message || 'تعذر الحصول على صوت من الميكروفون.');
   };
@@ -315,7 +357,7 @@ export default function BroadcastRoomInterface({
     toast({
       title: 'فشل بدء البث الصوتي',
       description: msg || 'تحقق من صلاحيات الميكروفون',
-      variant: 'destructive'
+      variant: 'destructive',
     });
   };
 
@@ -323,12 +365,16 @@ export default function BroadcastRoomInterface({
     if (!currentUser || !room.id) return;
     try {
       if (!isSecureContext()) {
-        throw new Error('يتطلب الميكروفون اتصالاً آمناً. افتح الموقع عبر HTTPS (أو محلياً على localhost).');
+        throw new Error(
+          'يتطلب الميكروفون اتصالاً آمناً. افتح الموقع عبر HTTPS (أو محلياً على localhost).'
+        );
       }
 
       const perm = await queryMicrophonePermission();
       if (perm === 'denied') {
-        throw new Error('تم رفض إذن الميكروفون. افتح إعدادات الموقع ومنح الإذن ثم أعد تحميل الصفحة.');
+        throw new Error(
+          'تم رفض إذن الميكروفون. افتح إعدادات الموقع ومنح الإذن ثم أعد تحميل الصفحة.'
+        );
       }
 
       const hasInput = await hasAudioInputDevice();
@@ -342,41 +388,42 @@ export default function BroadcastRoomInterface({
 
       // Create peer connections per listener (lazy: on offer request)
       // Actively send offers to currently online listeners (non-speakers)
-      const listeners = onlineUsers.filter(u => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId);
+      const listeners = onlineUsers.filter(
+        (u) => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId
+      );
       for (const listener of listeners) {
         const pc = new RTCPeerConnection({ iceServers: getIceServers() });
-        
+
         // Add connection state monitoring
         pc.onconnectionstatechange = () => {
           if (pc.connectionState === 'failed') {
             toast({
               title: 'مشكلة في الاتصال',
               description: `فشل الاتصال مع ${listener.username}`,
-              variant: 'destructive'
+              variant: 'destructive',
             });
           }
         };
-        
-        pc.oniceconnectionstatechange = () => {
-          };
-        
-        stream.getTracks().forEach(track => {
+
+        pc.oniceconnectionstatechange = () => {};
+
+        stream.getTracks().forEach((track) => {
           pc.addTrack(track, stream);
         });
-        
+
         pc.onicecandidate = (event) => {
           if (event.candidate) {
             chat.sendWebRTCIceCandidate?.(listener.id, room.id, event.candidate);
           }
         };
-        
+
         peersRef.current.set(listener.id, pc);
-        
+
         const offer = await pc.createOffer({ offerToReceiveAudio: false });
         await pc.setLocalDescription(offer);
         chat.sendWebRTCOffer?.(listener.id, room.id, offer);
       }
-      
+
       toast({
         title: 'بدأ البث الصوتي',
         description: 'تم بدء البث الصوتي بنجاح',
@@ -391,11 +438,13 @@ export default function BroadcastRoomInterface({
   useEffect(() => {
     const run = async () => {
       if (!isBroadcasting || !localStream || !currentUser || !room.id) return;
-      const listeners = onlineUsers.filter(u => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId);
+      const listeners = onlineUsers.filter(
+        (u) => u.id !== currentUser.id && !speakers.includes(u.id) && u.id !== broadcastInfo?.hostId
+      );
       for (const listener of listeners) {
         if (peersRef.current.has(listener.id)) continue;
         const pc = new RTCPeerConnection({ iceServers: getIceServers() });
-        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
         pc.onicecandidate = (event) => {
           if (event.candidate) {
             chat.sendWebRTCIceCandidate?.(listener.id, room.id, event.candidate);
@@ -408,7 +457,16 @@ export default function BroadcastRoomInterface({
       }
     };
     run();
-  }, [isBroadcasting, localStream, onlineUsers, currentUser?.id, room.id, speakers, broadcastInfo?.hostId, chat]);
+  }, [
+    isBroadcasting,
+    localStream,
+    onlineUsers,
+    currentUser?.id,
+    room.id,
+    speakers,
+    broadcastInfo?.hostId,
+    chat,
+  ]);
 
   // Listener side: handle offers/answers/ice
   useEffect(() => {
@@ -420,14 +478,12 @@ export default function BroadcastRoomInterface({
         let pc = peersRef.current.get(fromUserId);
         if (!pc) {
           pc = new RTCPeerConnection({ iceServers: getIceServers() });
-          
+
           // Add connection state monitoring
-          pc.onconnectionstatechange = () => {
-            };
-          
-          pc.oniceconnectionstatechange = () => {
-            };
-          
+          pc.onconnectionstatechange = () => {};
+
+          pc.oniceconnectionstatechange = () => {};
+
           pc.ontrack = (event) => {
             // Play the first audio track
             if (!audioRef.current) {
@@ -437,17 +493,20 @@ export default function BroadcastRoomInterface({
             const [remoteStream] = event.streams;
             audioRef.current.srcObject = remoteStream;
             audioRef.current.muted = isMuted;
-            audioRef.current.play().then(() => {
-              setPlaybackBlocked(false);
-            }).catch((err) => {
-              console.error('❌ Audio playback blocked:', err);
-              setPlaybackBlocked(true);
-              toast({
-                title: 'تشغيل الصوت محظور',
-                description: 'اضغط على زر "تشغيل الصوت" للسماح بالتشغيل',
-                variant: 'default'
+            audioRef.current
+              .play()
+              .then(() => {
+                setPlaybackBlocked(false);
+              })
+              .catch((err) => {
+                console.error('❌ Audio playback blocked:', err);
+                setPlaybackBlocked(true);
+                toast({
+                  title: 'تشغيل الصوت محظور',
+                  description: 'اضغط على زر "تشغيل الصوت" للسماح بالتشغيل',
+                  variant: 'default',
+                });
               });
-            });
           };
           pc.onicecandidate = (event) => {
             if (event.candidate) {
@@ -465,7 +524,7 @@ export default function BroadcastRoomInterface({
         toast({
           title: 'خطأ في الاتصال',
           description: 'حدث خطأ في إنشاء اتصال الصوت',
-          variant: 'destructive'
+          variant: 'destructive',
         });
       }
     };
@@ -535,7 +594,7 @@ export default function BroadcastRoomInterface({
       toast({
         title: 'خطأ',
         description: 'يجب تسجيل الدخول أولاً لطلب المايك',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -544,7 +603,7 @@ export default function BroadcastRoomInterface({
       toast({
         title: 'خطأ',
         description: 'معرف الغرفة غير صحيح',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -554,7 +613,7 @@ export default function BroadcastRoomInterface({
       toast({
         title: 'تنبيه',
         description: 'أنت بالفعل في قائمة انتظار المايك',
-        variant: 'default'
+        variant: 'default',
       });
       return;
     }
@@ -563,7 +622,7 @@ export default function BroadcastRoomInterface({
       toast({
         title: 'تنبيه',
         description: 'أنت تملك المايك بالفعل',
-        variant: 'default'
+        variant: 'default',
       });
       return;
     }
@@ -572,14 +631,14 @@ export default function BroadcastRoomInterface({
       setIsLoading(true);
       await apiRequest(`/api/rooms/${room.id}/request-mic`, {
         method: 'POST',
-        body: { userId: currentUser.id }
+        body: { userId: currentUser.id },
       });
 
       toast({
         title: 'تم إرسال الطلب',
         description: 'تم إرسال طلب المايك للمسؤولين بنجاح',
       });
-      
+
       // تحديث معلومات الغرفة
       await fetchBroadcastInfo();
     } catch (error: any) {
@@ -587,7 +646,7 @@ export default function BroadcastRoomInterface({
       toast({
         title: 'خطأ في طلب المايك',
         description: error?.message || error?.error || 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -601,7 +660,11 @@ export default function BroadcastRoomInterface({
       return;
     }
     if (!canManageMic) {
-      toast({ title: 'غير مسموح', description: 'ليس لديك صلاحية للموافقة على طلبات المايك', variant: 'destructive' });
+      toast({
+        title: 'غير مسموح',
+        description: 'ليس لديك صلاحية للموافقة على طلبات المايك',
+        variant: 'destructive',
+      });
       return;
     }
     const targetUser = getUserById(userId);
@@ -611,12 +674,22 @@ export default function BroadcastRoomInterface({
     }
     try {
       setIsLoading(true);
-      await apiRequest(`/api/rooms/${room.id}/approve-mic/${userId}`, { method: 'POST', body: { approvedBy: currentUser.id } });
-      toast({ title: 'تمت الموافقة', description: `تمت الموافقة على طلب ${targetUser.username} للمايك` });
+      await apiRequest(`/api/rooms/${room.id}/approve-mic/${userId}`, {
+        method: 'POST',
+        body: { approvedBy: currentUser.id },
+      });
+      toast({
+        title: 'تمت الموافقة',
+        description: `تمت الموافقة على طلب ${targetUser.username} للمايك`,
+      });
       await fetchBroadcastInfo();
     } catch (error: any) {
       console.error('خطأ في الموافقة على المايك:', error);
-      toast({ title: 'خطأ في الموافقة', description: error?.message || error?.error || 'حدث خطأ في الموافقة على الطلب', variant: 'destructive' });
+      toast({
+        title: 'خطأ في الموافقة',
+        description: error?.message || error?.error || 'حدث خطأ في الموافقة على الطلب',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -629,7 +702,11 @@ export default function BroadcastRoomInterface({
       return;
     }
     if (!canManageMic) {
-      toast({ title: 'غير مسموح', description: 'ليس لديك صلاحية لرفض طلبات المايك', variant: 'destructive' });
+      toast({
+        title: 'غير مسموح',
+        description: 'ليس لديك صلاحية لرفض طلبات المايك',
+        variant: 'destructive',
+      });
       return;
     }
     const targetUser = getUserById(userId);
@@ -639,12 +716,19 @@ export default function BroadcastRoomInterface({
     }
     try {
       setIsLoading(true);
-      await apiRequest(`/api/rooms/${room.id}/reject-mic/${userId}`, { method: 'POST', body: { rejectedBy: currentUser.id } });
+      await apiRequest(`/api/rooms/${room.id}/reject-mic/${userId}`, {
+        method: 'POST',
+        body: { rejectedBy: currentUser.id },
+      });
       toast({ title: 'تم الرفض', description: `تم رفض طلب ${targetUser.username} للمايك` });
       await fetchBroadcastInfo();
     } catch (error: any) {
       console.error('خطأ في رفض المايك:', error);
-      toast({ title: 'خطأ في الرفض', description: error?.message || error?.error || 'حدث خطأ في رفض الطلب', variant: 'destructive' });
+      toast({
+        title: 'خطأ في الرفض',
+        description: error?.message || error?.error || 'حدث خطأ في رفض الطلب',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -657,11 +741,19 @@ export default function BroadcastRoomInterface({
       return;
     }
     if (!canManageMic) {
-      toast({ title: 'غير مسموح', description: 'ليس لديك صلاحية لإزالة المتحدثين', variant: 'destructive' });
+      toast({
+        title: 'غير مسموح',
+        description: 'ليس لديك صلاحية لإزالة المتحدثين',
+        variant: 'destructive',
+      });
       return;
     }
     if (userId === broadcastInfo?.hostId) {
-      toast({ title: 'غير مسموح', description: 'لا يمكن إزالة مضيف الغرفة من المتحدثين', variant: 'destructive' });
+      toast({
+        title: 'غير مسموح',
+        description: 'لا يمكن إزالة مضيف الغرفة من المتحدثين',
+        variant: 'destructive',
+      });
       return;
     }
     const targetUser = getUserById(userId);
@@ -671,12 +763,22 @@ export default function BroadcastRoomInterface({
     }
     try {
       setIsLoading(true);
-      await apiRequest(`/api/rooms/${room.id}/remove-speaker/${userId}`, { method: 'POST', body: { removedBy: currentUser.id } });
-      toast({ title: 'تم الإزالة', description: `تم إزالة ${targetUser.username} من المتحدثين بنجاح` });
+      await apiRequest(`/api/rooms/${room.id}/remove-speaker/${userId}`, {
+        method: 'POST',
+        body: { removedBy: currentUser.id },
+      });
+      toast({
+        title: 'تم الإزالة',
+        description: `تم إزالة ${targetUser.username} من المتحدثين بنجاح`,
+      });
       await fetchBroadcastInfo();
     } catch (error: any) {
       console.error('خطأ في إزالة المتحدث:', error);
-      toast({ title: 'خطأ في الإزالة', description: error?.message || error?.error || 'حدث خطأ في إزالة المتحدث', variant: 'destructive' });
+      toast({
+        title: 'خطأ في الإزالة',
+        description: error?.message || error?.error || 'حدث خطأ في إزالة المتحدث',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -685,14 +787,15 @@ export default function BroadcastRoomInterface({
   // إرسال رسالة - تمت إزالته لصالح MessageArea
   // جلب معلومات المستخدم
   const getUserById = (userId: number) => {
-    return onlineUsers.find(user => user.id === userId);
+    return onlineUsers.find((user) => user.id === userId);
   };
 
   // UI Helpers
-  const listenerCount = onlineUsers.filter(user => 
-    !speakers.includes(user.id) && 
-    !micQueue.includes(user.id) &&
-    broadcastInfo?.hostId !== user.id
+  const listenerCount = onlineUsers.filter(
+    (user) =>
+      !speakers.includes(user.id) &&
+      !micQueue.includes(user.id) &&
+      broadcastInfo?.hostId !== user.id
   ).length;
 
   const toggleMute = () => {
@@ -717,17 +820,37 @@ export default function BroadcastRoomInterface({
             </CardTitle>
             <div className="flex items-center gap-2">
               {isListener && playbackBlocked && (
-                <Button size="sm" variant="outline" onClick={() => { try { audioRef.current?.play(); setPlaybackBlocked(false); } catch {} }}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    try {
+                      audioRef.current?.play();
+                      setPlaybackBlocked(false);
+                    } catch {}
+                  }}
+                >
                   <PlayCircle className="w-4 h-4" /> تشغيل الصوت
                 </Button>
               )}
-              <Button size="sm" variant="ghost" onClick={() => setIsInfoCollapsed(v => !v)} title={isInfoCollapsed ? 'عرض التفاصيل' : 'إخفاء التفاصيل'}>
-                {isInfoCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setIsInfoCollapsed((v) => !v)}
+                title={isInfoCollapsed ? 'عرض التفاصيل' : 'إخفاء التفاصيل'}
+              >
+                {isInfoCollapsed ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronUp className="w-4 h-4" />
+                )}
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent className={isInfoCollapsed ? "space-y-2" : "space-y-3 max-h-56 overflow-y-auto"}>
+        <CardContent
+          className={isInfoCollapsed ? 'space-y-2' : 'space-y-3 max-h-56 overflow-y-auto'}
+        >
           {/* المضيف */}
           <div className="flex items-center gap-2">
             <Crown className="w-4 h-4 text-yellow-500" />
@@ -742,9 +865,15 @@ export default function BroadcastRoomInterface({
           {/* المتحدثون */}
           {isInfoCollapsed ? (
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1"><Mic className="w-4 h-4 text-green-500" /> {speakers.length} متحدث</span>
-              <span className="flex items-center gap-1"><Clock className="w-4 h-4 text-orange-500" /> {micQueue.length} انتظار</span>
-              <span className="flex items-center gap-1"><Users className="w-4 h-4 text-blue-500" /> {listenerCount} مستمع</span>
+              <span className="flex items-center gap-1">
+                <Mic className="w-4 h-4 text-green-500" /> {speakers.length} متحدث
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-4 h-4 text-orange-500" /> {micQueue.length} انتظار
+              </span>
+              <span className="flex items-center gap-1">
+                <Users className="w-4 h-4 text-blue-500" /> {listenerCount} مستمع
+              </span>
             </div>
           ) : (
             <div className="flex items-start gap-2">
@@ -752,7 +881,7 @@ export default function BroadcastRoomInterface({
               <div className="flex-1">
                 <span className="font-medium">المتحدثون:</span>
                 <div className="mt-1 flex gap-1 flex-wrap">
-                  {speakers.map(userId => {
+                  {speakers.map((userId) => {
                     const user = getUserById(userId);
                     return user ? (
                       <Badge key={userId} variant="outline" className="flex items-center gap-1">
@@ -786,7 +915,7 @@ export default function BroadcastRoomInterface({
               <div className="flex-1">
                 <span className="font-medium">قائمة الانتظار:</span>
                 <div className="mt-1 flex gap-1 flex-wrap">
-                  {micQueue.map(userId => {
+                  {micQueue.map((userId) => {
                     const user = getUserById(userId);
                     return user ? (
                       <Badge key={userId} variant="outline" className="flex items-center gap-1">
@@ -845,13 +974,24 @@ export default function BroadcastRoomInterface({
               </Button>
             )}
             {isListener && (
-              <Button type="button" onClick={toggleMute} variant="ghost" className="flex items-center gap-2">
+              <Button
+                type="button"
+                onClick={toggleMute}
+                variant="ghost"
+                className="flex items-center gap-2"
+              >
                 {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                 {isMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
               </Button>
             )}
           </div>
-          <audio ref={audioRef} playsInline autoPlay controlsList="nodownload noplaybackrate" className="w-0 h-0 opacity-0 pointer-events-none" />
+          <audio
+            ref={audioRef}
+            playsInline
+            autoPlay
+            controlsList="nodownload noplaybackrate"
+            className="w-0 h-0 opacity-0 pointer-events-none"
+          />
         </CardContent>
       </Card>
 
