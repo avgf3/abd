@@ -61,7 +61,19 @@ export class SpamProtection {
     reason?: string;
     action?: 'warn' | 'tempBan' | 'ban';
   } {
-    // السماح بجميع الرسائل بدون فحص مؤقتاً
+    // تفعيل فحص التكرار فقط
+    const duplicateCheck = this.checkDuplicateMessage(userId, content);
+    if (!duplicateCheck.isAllowed) {
+      return {
+        isAllowed: false,
+        reason: duplicateCheck.reason,
+        action: duplicateCheck.action,
+      };
+    }
+
+    // إضافة الرسالة للسجل بعد الفحص
+    this.addMessage(userId, content);
+
     return { isAllowed: true };
   }
 

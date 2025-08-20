@@ -5,6 +5,7 @@ import { Server as IOServer } from 'socket.io';
 
 import { moderationSystem } from './moderation';
 import { sanitizeInput, validateMessageContent } from './security';
+import { spamProtection } from './spam-protection';
 import { pointsService } from './services/pointsService';
 import { roomMessageService } from './services/roomMessageService';
 import { roomService } from './services/roomService';
@@ -524,6 +525,13 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         const contentCheck = validateMessageContent(sanitizedContent);
         if (!contentCheck.isValid) {
           socket.emit('message', { type: 'error', message: contentCheck.reason });
+          return;
+        }
+
+        // فحص التكرار فقط
+        const spamCheck = spamProtection.checkMessage(socket.userId, sanitizedContent);
+        if (!spamCheck.isAllowed) {
+          socket.emit('message', { type: 'error', message: spamCheck.reason });
           return;
         }
 

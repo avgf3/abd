@@ -5,6 +5,8 @@ import { roomMessageService } from '../services/roomMessageService';
 import { roomService } from '../services/roomService';
 import { storage } from '../storage';
 import { protect } from '../middleware/enhancedSecurity';
+import { sanitizeInput, validateMessageContent } from '../security';
+import { spamProtection } from '../spam-protection';
 
 const router = Router();
 
@@ -119,11 +121,24 @@ router.post('/room/:roomId', protect.auth, async (req, res) => {
       return res.status(404).json({ error: 'الغرفة غير موجودة' });
     }
 
+    // تنظيف المحتوى والتحقق من الروابط
+    const sanitized = sanitizeInput(content.trim());
+    const check = validateMessageContent(sanitized);
+    if (!check.isValid) {
+      return res.status(400).json({ error: check.reason || 'محتوى غير مسموح' });
+    }
+
+    // فحص التكرار فقط عبر نظام السبام
+    const spamCheck = spamProtection.checkMessage(parseInt(String(senderId)), sanitized);
+    if (!spamCheck.isAllowed) {
+      return res.status(429).json({ error: spamCheck.reason || 'تم رفض الرسالة بسبب التكرار' });
+    }
+
     // إرسال الرسالة
     const message = await roomMessageService.sendMessage({
       senderId: parseInt(String(senderId)),
       roomId,
-      content: content.trim(),
+      content: sanitized,
       messageType,
       isPrivate: false,
       receiverId: undefined,

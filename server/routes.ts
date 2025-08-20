@@ -1304,11 +1304,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // تنظيف المحتوى والتحقق من الروابط فقط
+      const sanitizedContent = sanitizeInput(String(content || ''));
+      const contentCheck = validateMessageContent(sanitizedContent);
+      if (!contentCheck.isValid) {
+        return res.status(400).json({ error: contentCheck.reason || 'محتوى غير مسموح' });
+      }
+
+      // فحص التكرار فقط
+      const spamCheck = spamProtection.checkMessage(senderId, sanitizedContent);
+      if (!spamCheck.isAllowed) {
+        return res.status(429).json({ error: spamCheck.reason || 'تم رفض الرسالة بسبب التكرار' });
+      }
+
       // إنشاء الرسالة
       const messageData = {
         senderId,
         receiverId: isPrivate ? receiverId : null,
-        content: content.trim(),
+        content: sanitizedContent,
         messageType,
         isPrivate,
         roomId: isPrivate ? null : roomId, // للرسائل العامة فقط

@@ -122,17 +122,10 @@ export function validateMessageContent(content: string): { isValid: boolean; rea
     };
   }
 
-  // Check for spam patterns
-  const spamPatterns = [
-    /(.)\1{10,}/gi, // Repeated characters
-    /https?:\/\/[^\s]+/gi, // URLs (adjust based on your needs)
-    /[^\w\s\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/gi, // Non-Arabic/alphanumeric chars (allowing Arabic)
-  ];
-
-  for (const pattern of spamPatterns) {
-    if (pattern.test(trimmedContent)) {
-      return { isValid: false, reason: 'المحتوى يحتوي على نص مشبوه' };
-    }
+  // Filter only links (URLs)
+  const linkPattern = /https?:\/\/[^\s]+/gi;
+  if (linkPattern.test(trimmedContent)) {
+    return { isValid: false, reason: 'الروابط غير مسموح بها في الدردشة' };
   }
 
   return { isValid: true };
