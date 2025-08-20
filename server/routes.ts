@@ -26,6 +26,7 @@ import { protect } from "./middleware/enhancedSecurity";
 import { moderationSystem } from "./moderation";
 import { getIO } from "./realtime";
 import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter, friendRequestLimiter } from "./security";
+import { issueAuthToken, getAuthTokenFromRequest, verifyAuthToken } from './utils/auth-token';
 import { databaseService } from "./services/databaseService";
 import { notificationService } from "./services/notificationService";
 import { spamProtection } from "./spam-protection";
@@ -64,7 +65,7 @@ const createMulterConfig = (destination: string, prefix: string, maxSize: number
     fileFilter: (req, file, cb) => {
       const allowedMimes = [
         'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
-        'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff'
+        'image/webp', 'image/bmp', 'image/tiff'
       ];
       
       if (allowedMimes.includes(file.mimetype)) {
@@ -155,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
 
   // رفع صور البروفايل - محسّن مع حل مشكلة Render
-  app.post('/api/upload/profile-image', upload.single('profileImage'), async (req, res) => {
+  app.post('/api/upload/profile-image', protect.ownership, upload.single('profileImage'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ 
@@ -220,7 +221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imageUrl: `${updatedUser.profileImage}?v=${hash}`,
         filename: `${userId}.webp`,
         avatarHash: hash,
-        user: updatedUser
+        user: buildUserBroadcastPayload(updatedUser)
       });
 
     } catch (error) {
@@ -242,8 +243,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // إصلاح رفع صورة البانر - محسّن مع حل مشكلة Render
-  app.post('/api/upload/profile-banner', bannerUpload.single('banner'), async (req, res) => {
+  // إصلاح رفع صورة البانر - تحويل إلى WebP وتخزين كملف بدل Base64 لسلامة وأداء أفضل
+  app.post('/api/upload/profile-banner', protect.ownership, bannerUpload.single('banner'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ 
@@ -273,32 +274,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "المستخدم غير موجود" });
       }
 
-      // حل مشكلة Render: تحويل الصورة إلى base64 وحفظها في قاعدة البيانات
-      let bannerUrl: string;
-      
+      // تحويل الصورة إلى WebP ثابتة وتخزينها
+      const bannersDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'banners');
+      await fsp.mkdir(bannersDir, { recursive: true });
+      const inputBuffer = await fsp.readFile(req.file.path);
+      let webpBuffer = inputBuffer;
       try {
-        // قراءة الملف كـ base64
-        const fileBuffer = await fsp.readFile(req.file.path);
-        const base64Image = fileBuffer.toString('base64');
-        const mimeType = req.file.mimetype;
-        
-        // إنشاء data URL
-        bannerUrl = `data:${mimeType};base64,${base64Image}`;
-        
-        // حذف الملف الأصلي
-        await fsp.unlink(req.file.path);
-        
-      } catch (fileError) {
-        console.error('❌ خطأ في معالجة الملف:', fileError);
-        
-        // في حالة فشل base64، استخدم المسار العادي
-        bannerUrl = `/uploads/banners/${req.file.filename}`;
-        
-        // حاول التأكد من وجود المجلد
-        const uploadsDir = path.dirname(req.file.path);
-        await fsp.mkdir(uploadsDir, { recursive: true });
-      }
-      
+        webpBuffer = await (sharp as any)(inputBuffer).resize(1200, 400, { fit: 'cover' }).webp({ quality: 80 }).toBuffer();
+      } catch {}
+      const bannerTargetPath = path.join(bannersDir, `${userId}.webp`);
+      await fsp.writeFile(bannerTargetPath, webpBuffer);
+
+      // حذف الملف المؤقت
+      try { await fsp.unlink(req.file.path); } catch {}
+
+      const bannerUrl = `/uploads/banners/${userId}.webp`;
       const updatedUser = await storage.updateUser(userId, { profileBanner: bannerUrl });
       
       if (!updatedUser) {
@@ -313,9 +303,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         message: "تم رفع صورة البانر بنجاح",
-        bannerUrl: bannerUrl,
-        filename: req.file.filename,
-        user: updatedUser
+        bannerUrl: `${bannerUrl}?v=${Date.now()}`,
+        filename: `${userId}.webp`,
+        user: buildUserBroadcastPayload(updatedUser)
       });
 
     } catch (error) {
@@ -409,7 +399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // تحديث بيانات المستخدم - للإصلاح
-  app.patch('/api/users/:userId', async (req, res) => {
+  app.patch('/api/users/:userId', protect.ownership, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       if (!userId || isNaN(userId)) {
@@ -446,7 +436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         message: "تم تحديث بيانات المستخدم بنجاح",
-        user: updatedUser 
+        user: buildUserBroadcastPayload(updatedUser) 
       });
 
     } catch (error) {
@@ -920,7 +910,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileImage: "/default_avatar.svg",
       });
 
-      res.json({ user, message: "تم التسجيل بنجاح" });
+      try {
+        const token = issueAuthToken(user.id);
+        res.setHeader('Set-Cookie', `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+      } catch {}
+      res.json({ user: buildUserBroadcastPayload(user), message: "تم التسجيل بنجاح" });
     } catch (error) {
       console.error('Registration error:', error);
       res.status(500).json({ error: "خطأ في الخادم" });
@@ -949,11 +943,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileImage: "/default_avatar.svg",
       });
 
-      res.json({ user });
+      try {
+        const token = issueAuthToken(user.id);
+        res.setHeader('Set-Cookie', `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+      } catch {}
+      res.json({ user: buildUserBroadcastPayload(user) });
     } catch (error) {
       console.error("Guest login error:", error);
       console.error("Error details:", error.message, error.stack);
       res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // Logout route - يمسح التوكن ويحدث حالة الاتصال
+  app.post('/api/auth/logout', async (req, res) => {
+    try {
+      const token = getAuthTokenFromRequest(req as any);
+      if (token) {
+        const verified = verifyAuthToken(token);
+        if (verified?.userId) {
+          try { await storage.setUserOnlineStatus(verified.userId, false); } catch {}
+        }
+      }
+      res.setHeader('Set-Cookie', `auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+      res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
+    } catch (error) {
+      res.setHeader('Set-Cookie', `auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+      res.status(200).json({ success: true, message: 'تم مسح الجلسة' });
     }
   });
 
@@ -1007,7 +1023,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('خطأ في تحديث حالة المستخدم:', updateError);
       }
 
-      res.json({ user });
+      try {
+        const token = issueAuthToken(user.id);
+        res.setHeader('Set-Cookie', `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+      } catch {}
+      res.json({ user: buildUserBroadcastPayload(user) });
     } catch (error) {
       console.error('Member authentication error:', error);
       res.status(500).json({ error: "خطأ في الخادم" });
@@ -1054,7 +1074,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/online", async (req, res) => {
     try {
       const users = await storage.getOnlineUsers();
-      res.json({ users });
+      const safeUsers = sanitizeUsersArray(users);
+      res.json({ users: safeUsers });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
     }
@@ -1215,7 +1236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       emitUserUpdatedToUser(userId, user);
       emitUserUpdatedToAll(user);
 
-      res.json({ user, message: "تم تحديث الصورة الشخصية بنجاح" });
+      res.json({ user: buildUserBroadcastPayload(user), message: "تم تحديث الصورة الشخصية بنجاح" });
     } catch (error) {
       res.status(500).json({ error: "خطأ في الخادم" });
     }

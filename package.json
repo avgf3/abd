@@ -27,7 +27,6 @@
     "db:fix-issues": "node fix-database-issues.js",
     "db:fix-data": "cd server && npx tsx scripts/fix-inconsistent-data.ts",
     "test:supabase": "tsx test-supabase-connection.ts",
-    
     "clean-logs": "node tools/remove-console-logs.js",
     "build-production": "npm run clean-logs && npm run build"
   },

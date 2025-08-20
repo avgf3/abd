@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 
 import { storage } from '../storage';
 import { log } from '../utils/productionLogger';
+import { getAuthTokenFromRequest, verifyAuthToken } from '../utils/auth-token';
 
 import { createError, ERROR_MESSAGES } from './errorHandler';
 
@@ -37,24 +38,19 @@ function hasPermission(userRole: string, requiredLevel: ProtectionLevel): boolea
 // Middleware للتحقق من المصادقة الأساسية
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // البحث عن معرف المستخدم في الجسم، المعاملات، أو الجلسة
+    // قبول الهوية فقط من جلسة موثوقة أو توكن (يُستكمل لاحقاً)
     let userId: number | undefined;
-    
-    if (req.body?.userId) {
-      userId = parseInt(req.body.userId);
-    } else if (req.body?.moderatorId) {
-      // السماح باستخدام moderatorId كبديل في مسارات الإدارة
-      userId = parseInt(req.body.moderatorId);
-    } else if (req.query?.userId) {
-      userId = parseInt(req.query.userId as string);
-    } else if (req.query?.moderatorId) {
-      userId = parseInt(req.query.moderatorId as string);
-    } else if (req.params?.userId) {
-      userId = parseInt(req.params.userId);
-    } else if (req.params?.id) {
-      userId = parseInt(req.params.id);
-    } else if (req.session?.userId) {
-      userId = parseInt(req.session.userId);
+    // أولوية: Authorization Bearer أو كوكي auth_token
+    const token = getAuthTokenFromRequest(req);
+    if (token) {
+      const verified = verifyAuthToken(token);
+      if (verified?.userId) {
+        userId = verified.userId;
+      }
+    }
+    // لاحقاً يمكن دعم جلسة خادم إذا كانت مفعلة
+    if (!userId && (req as any).session?.userId) {
+      userId = parseInt((req as any).session.userId);
     }
 
     if (!userId || isNaN(userId)) {
