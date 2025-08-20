@@ -1,8 +1,5 @@
 // نظام مكافحة السبام
 export interface SpamProtectionConfig {
-  maxMessageLength: number;
-  minMessageLength: number;
-  bannedWords: string[];
   maxDuplicateMessages: number;
   duplicateTimeWindow: number; // بالميلي ثانية
 }
@@ -37,12 +34,6 @@ export class SpamProtection {
 
   constructor() {
     this.config = {
-      maxMessageLength: 1000,
-      minMessageLength: 1,
-      bannedWords: [
-        // كلمات محظورة أساسية فقط
-        'سبام',
-      ],
       maxDuplicateMessages: 10, // زيادة الحد المسموح
       duplicateTimeWindow: 30000, // 30 ثانية فقط
     };
