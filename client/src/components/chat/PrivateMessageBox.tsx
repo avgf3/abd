@@ -10,6 +10,7 @@ import {
   sortMessagesAscending,
   getDynamicBorderColor,
   formatMessagePreview,
+  setPmLastOpened,
 } from '@/utils/messageUtils';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
@@ -38,8 +39,10 @@ export default function PrivateMessageBox({
   const [isSending, setIsSending] = useState(false);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // محسن: ترتيب الرسائل مع تحسين الأداء
   const sortedMessages = useMemo(() => sortMessagesAscending(messages || []), [messages]);
@@ -69,6 +72,13 @@ export default function PrivateMessageBox({
     }
   }, [isOpen, scrollToBottom]);
 
+  // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
+  useEffect(() => {
+    if (isOpen && currentUser?.id && user?.id) {
+      try { setPmLastOpened(currentUser.id, user.id); } catch {}
+    }
+  }, [isOpen, currentUser?.id, user?.id]);
+
   // التمرير عند وصول رسائل جديدة (محسن)
   useEffect(() => {
     if (sortedMessages.length > 0 && isAtBottomPrivate) {
@@ -86,14 +96,30 @@ export default function PrivateMessageBox({
 
   // محسن: دالة الإرسال مع منع الإرسال المتكرر
   const handleSend = useCallback(async () => {
+    if (isSending) return;
     const text = messageText.trim();
-    if (!text || isSending) return;
+    const hasText = !!text;
+    const hasImage = !!imageFile;
+    if (!hasText && !hasImage) return;
 
     setIsSending(true);
     try {
-      await onSendMessage(text);
-      setMessageText('');
-      // تمرير سريع للأسفل بعد الإرسال
+      if (hasImage) {
+        const reader = new FileReader();
+        const file = imageFile!;
+        const asDataUrl: string = await new Promise((resolve, reject) => {
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error('failed to read file'));
+          reader.readAsDataURL(file);
+        });
+        await onSendMessage(asDataUrl);
+        setImageFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+      if (hasText) {
+        await onSendMessage(text);
+        setMessageText('');
+      }
       setTimeout(() => scrollToBottom('smooth'), 100);
     } catch (error) {
       console.error('خطأ في إرسال الرسالة:', error);
@@ -101,7 +127,7 @@ export default function PrivateMessageBox({
       setIsSending(false);
       inputRef.current?.focus();
     }
-  }, [messageText, isSending, onSendMessage, scrollToBottom]);
+  }, [messageText, imageFile, isSending, onSendMessage, scrollToBottom]);
 
   // محسن: معالج الضغط على Enter
   const handleKeyDown = useCallback(
@@ -112,6 +138,28 @@ export default function PrivateMessageBox({
       }
     },
     [handleSend]
+  );
+
+  // دعم لصق الصور مباشرة في صندوق الإدخال
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent<HTMLInputElement>) => {
+      try {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (let i = 0; i < items.length; i++) {
+          const it = items[i];
+          if (it.type.startsWith('image/')) {
+            const file = it.getAsFile();
+            if (file) {
+              setImageFile(file);
+              e.preventDefault();
+              break;
+            }
+          }
+        }
+      } catch {}
+    },
+    []
   );
 
   // تحميل المزيد عند الوصول للأعلى
@@ -306,18 +354,48 @@ export default function PrivateMessageBox({
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 onKeyDown={handleKeyDown}
+                onPaste={handlePaste}
                 placeholder="اكتب رسالتك هنا..."
                 className="flex-1 bg-gray-50 border border-gray-300 text-foreground placeholder:text-muted-foreground rounded-lg"
                 disabled={isSending}
               />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-3"
+                title="إرسال صورة"
+              >
+                🖼️
+              </Button>
               <Button
                 onClick={handleSend}
-                disabled={!messageText.trim() || isSending}
+                disabled={(!messageText.trim() && !imageFile) || isSending}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
               >
                 {isSending ? '⌛' : '📤'} إرسال
               </Button>
             </div>
+            {imageFile && (
+              <div className="mt-2 text-xs text-gray-600 flex items-center gap-2">
+                <span>سيتم إرسال صورة:</span>
+                <span className="font-medium truncate max-w-[200px]">{imageFile.name}</span>
+                <button
+                  className="text-red-600 hover:underline"
+                  onClick={() => setImageFile(null)}
+                  type="button"
+                >
+                  إزالة
+                </button>
+              </div>
+            )}
           </div>
         </motion.div>
       </DialogContent>
