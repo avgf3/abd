@@ -35,6 +35,8 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           utils: ['@tanstack/react-query'],
+          charts: ['recharts'],
+          socket: ['socket.io-client'],
         },
       },
     },

@@ -208,6 +208,11 @@ export function setupSecurity(app: Express): void {
       ].join('; ')
     );
 
+    // Enforce HTTPS strictly in production
+    if (process.env.NODE_ENV === 'production') {
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+
     next();
   });
 

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 
-import ChatInterface from '@/components/chat/ChatInterface';
-import WelcomeScreen from '@/components/chat/WelcomeScreen';
+const ChatInterface = lazy(() => import('@/components/chat/ChatInterface'));
+const WelcomeScreen = lazy(() => import('@/components/chat/WelcomeScreen'));
 // حذف المحدد المحلي للغرف لتجنب التكرار
 import KickCountdown from '@/components/moderation/KickCountdown';
 import { useChat } from '@/hooks/useChat';
@@ -33,11 +33,13 @@ export default function ChatPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo']" dir="rtl">
-      {showWelcome ? (
-        <WelcomeScreen onUserLogin={handleUserLogin} />
-      ) : (
-        <ChatInterface chat={chat} onLogout={handleLogout} />
-      )}
+      <Suspense fallback={<div className="p-6 text-center">...جاري التحميل</div>}>
+        {showWelcome ? (
+          <WelcomeScreen onUserLogin={handleUserLogin} />
+        ) : (
+          <ChatInterface chat={chat} onLogout={handleLogout} />
+        )}
+      </Suspense>
 
       {/* عداد الطرد */}
       <KickCountdown
