@@ -7,6 +7,7 @@ import compression from 'compression';
 import { initializeSystem } from './database-setup';
 import { registerRoutes } from './routes';
 import { setupSecurity } from './security';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { setupVite, serveStatic, log } from './vite';
 
 import path from 'path';
@@ -190,6 +191,10 @@ async function startServer() {
         })
         .catch(() => {});
     });
+
+    // API not-found and error handlers (mounted after routes)
+    app.use('/api', notFoundHandler);
+    app.use(errorHandler);
 
     // Handle graceful shutdown
     process.on('SIGTERM', () => {
