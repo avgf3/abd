@@ -26,7 +26,7 @@ import { protect } from "./middleware/enhancedSecurity";
 import { moderationSystem } from "./moderation";
 import { getIO } from "./realtime";
 import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter, friendRequestLimiter } from "./security";
-import { issueAuthToken } from './utils/auth-token';
+import { issueAuthToken, getAuthTokenFromRequest, verifyAuthToken } from './utils/auth-token';
 import { databaseService } from "./services/databaseService";
 import { notificationService } from "./services/notificationService";
 import { spamProtection } from "./spam-protection";
@@ -952,6 +952,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Guest login error:", error);
       console.error("Error details:", error.message, error.stack);
       res.status(500).json({ error: "خطأ في الخادم" });
+    }
+  });
+
+  // Logout route - يمسح التوكن ويحدث حالة الاتصال
+  app.post('/api/auth/logout', async (req, res) => {
+    try {
+      const token = getAuthTokenFromRequest(req as any);
+      if (token) {
+        const verified = verifyAuthToken(token);
+        if (verified?.userId) {
+          try { await storage.setUserOnlineStatus(verified.userId, false); } catch {}
+        }
+      }
+      res.setHeader('Set-Cookie', `auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+      res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
+    } catch (error) {
+      res.setHeader('Set-Cookie', `auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+      res.status(200).json({ success: true, message: 'تم مسح الجلسة' });
     }
   });
 
