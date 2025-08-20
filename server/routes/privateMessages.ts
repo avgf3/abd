@@ -4,6 +4,8 @@ import { db, dbType } from '../database-adapter';
 import { notificationService } from '../services/notificationService';
 import { storage } from '../storage';
 import { protect } from '../middleware/enhancedSecurity';
+import { sanitizeInput, validateMessageContent } from '../security';
+import { spamProtection } from '../spam-protection';
 
 // Helper type for conversation item (server-side internal)
 type ConversationItem = {
@@ -40,9 +42,22 @@ router.post('/send', protect.auth, async (req, res) => {
       return res.status(400).json({ error: 'لا يمكن إرسال رسالة لنفسك' });
     }
 
-    const text = typeof content === 'string' ? content.trim() : '';
+    const textRaw = typeof content === 'string' ? content.trim() : '';
+    const text = sanitizeInput(textRaw);
     if (!text) {
       return res.status(400).json({ error: 'محتوى الرسالة مطلوب' });
+    }
+
+    // منع الروابط فقط
+    const check = validateMessageContent(text);
+    if (!check.isValid) {
+      return res.status(400).json({ error: check.reason || 'محتوى غير مسموح' });
+    }
+
+    // فحص التكرار فقط
+    const spamCheck = spamProtection.checkMessage(parseInt(String(senderId)), text);
+    if (!spamCheck.isAllowed) {
+      return res.status(429).json({ error: spamCheck.reason || 'تم رفض الرسالة بسبب التكرار' });
     }
 
     // التحقق من المستخدمين بشكل متوازي لتحسين السرعة

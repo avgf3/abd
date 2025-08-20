@@ -1,12 +1,10 @@
 // نظام أمان متقدم للشات
 import type { Request, Response, NextFunction } from 'express';
 
-import { storage } from './storage';
-
 // نظام تتبع الأنشطة المشبوهة
 interface SecurityEvent {
   id: string;
-  type: 'suspicious_login' | 'spam_attempt' | 'multiple_accounts' | 'unusual_activity';
+  type: 'suspicious_login' | 'multiple_accounts' | 'unusual_activity';
   userId?: number;
   ipAddress: string;
   userAgent: string;
@@ -131,77 +129,6 @@ export class AdvancedSecurityManager {
     };
   }
 
-  // تحليل محتوى الرسائل للكشف عن التهديدات
-  analyzeMessageSecurity(
-    content: string,
-    userId: number
-  ): {
-    allowed: boolean;
-    threats: string[];
-    confidence: number;
-  } {
-    const threats: string[] = [];
-    let confidence = 0;
-
-    // فحص الروابط المشبوهة
-    const urlPattern = /(https?:\/\/[^\s]+)/gi;
-    const urls = content.match(urlPattern) || [];
-
-    for (const url of urls) {
-      if (this.isSuspiciousURL(url)) {
-        threats.push('رابط مشبوه');
-        confidence += 30;
-      }
-    }
-
-    // فحص أنماط السبام
-    const spamPatterns = [
-      /اربح المال/gi,
-      /مجاني 100%/gi,
-      /اضغط هنا/gi,
-      /عرض محدود/gi,
-      /احصل على/gi,
-    ];
-
-    for (const pattern of spamPatterns) {
-      if (pattern.test(content)) {
-        threats.push('محتوى سبام محتمل');
-        confidence += 20;
-      }
-    }
-
-    // فحص الكلمات المسيئة المتقدم
-    const offensiveWords = this.detectOffensiveContent(content);
-    if (offensiveWords.length > 0) {
-      threats.push('محتوى مسيء');
-      confidence += 40;
-    }
-
-    // فحص الرسائل المكررة
-    if (this.isDuplicateMessage(content, userId)) {
-      threats.push('رسالة مكررة');
-      confidence += 25;
-    }
-
-    // تسجيل التهديد إذا تم اكتشافه
-    if (threats.length > 0) {
-      this.logSecurityEvent({
-        type: 'spam_attempt',
-        userId,
-        ipAddress: 'unknown',
-        userAgent: 'unknown',
-        details: { content: content.substring(0, 100), threats },
-        severity: confidence > 50 ? 'high' : 'medium',
-      });
-    }
-
-    return {
-      allowed: confidence < 70,
-      threats,
-      confidence,
-    };
-  }
-
   // فحص الحسابات المتعددة
   async detectMultipleAccounts(
     ip: string,
@@ -285,48 +212,7 @@ export class AdvancedSecurityManager {
     return typeof ip === 'string' ? ip : 'unknown';
   }
 
-  // فحص الروابط المشبوهة
-  private isSuspiciousURL(url: string): boolean {
-    const suspiciousDomains = [
-      'bit.ly',
-      'tinyurl.com',
-      'short.link',
-      // يمكن إضافة المزيد من النطاقات المشبوهة
-    ];
-
-    try {
-      const urlObj = new URL(url);
-      return suspiciousDomains.includes(urlObj.hostname);
-    } catch {
-      return true; // URL غير صالح
-    }
-  }
-
-  // اكتشاف المحتوى المسيء المتقدم
-  private detectOffensiveContent(content: string): string[] {
-    const offensive: string[] = [];
-
-    // قاموس الكلمات المسيئة (يمكن توسيعه)
-    const offensivePatterns = [
-      /(\b|\s)(كلب|حقير|غبي)(\b|\s)/gi,
-      // يمكن إضافة المزيد من الأنماط
-    ];
-
-    for (const pattern of offensivePatterns) {
-      if (pattern.test(content)) {
-        offensive.push('لغة مسيئة');
-        break;
-      }
-    }
-
-    return offensive;
-  }
-
-  // فحص الرسائل المكررة
-  private isDuplicateMessage(content: string, userId: number): boolean {
-    // يمكن تنفيذ منطق أكثر تعقيداً هنا
-    return false;
-  }
+  // تم حذف تحليل محتوى الرسائل والكلمات المسيئة والروابط المشبوهة للإبقاء فقط على فحص الروابط عبر validateMessageContent وفحص التكرار عبر spam-protection
 
   // إنشاء معرف الحدث
   private generateEventId(): string {

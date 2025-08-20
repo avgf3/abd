@@ -1,8 +1,5 @@
 // نظام مكافحة السبام
 export interface SpamProtectionConfig {
-  maxMessageLength: number;
-  minMessageLength: number;
-  bannedWords: string[];
   maxDuplicateMessages: number;
   duplicateTimeWindow: number; // بالميلي ثانية
 }
@@ -37,12 +34,6 @@ export class SpamProtection {
 
   constructor() {
     this.config = {
-      maxMessageLength: 1000,
-      minMessageLength: 1,
-      bannedWords: [
-        // كلمات محظورة أساسية فقط
-        'سبام',
-      ],
       maxDuplicateMessages: 10, // زيادة الحد المسموح
       duplicateTimeWindow: 30000, // 30 ثانية فقط
     };
@@ -61,7 +52,19 @@ export class SpamProtection {
     reason?: string;
     action?: 'warn' | 'tempBan' | 'ban';
   } {
-    // السماح بجميع الرسائل بدون فحص مؤقتاً
+    // تفعيل فحص التكرار فقط
+    const duplicateCheck = this.checkDuplicateMessage(userId, content);
+    if (!duplicateCheck.isAllowed) {
+      return {
+        isAllowed: false,
+        reason: duplicateCheck.reason,
+        action: duplicateCheck.action,
+      };
+    }
+
+    // إضافة الرسالة للسجل بعد الفحص
+    this.addMessage(userId, content);
+
     return { isAllowed: true };
   }
 

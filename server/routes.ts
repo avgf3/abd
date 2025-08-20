@@ -45,6 +45,7 @@ import {
 import { databaseService } from './services/databaseService';
 import { notificationService } from './services/notificationService';
 import { issueAuthToken, getAuthTokenFromRequest, verifyAuthToken } from './utils/auth-token';
+import { detectSexualImage } from './utils/adult-content';
 
 // إعداد multer موحد لرفع الصور
 const createMulterConfig = (
@@ -210,6 +211,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: 'المستخدم غير موجود' });
         }
 
+        // فحص محتوى جنسي مبسط قبل الحفظ
+        try {
+          const quickBuffer = await fsp.readFile(req.file.path);
+          const check = await detectSexualImage(quickBuffer);
+          if (check.isSexual) {
+            try { await fsp.unlink(req.file.path); } catch {}
+            return res.status(400).json({ error: 'عذراً، لا يُسمح بالصور غير اللائقة' });
+          }
+        } catch {}
+
         // حفظ الصورة بصيغة webp ثابتة + حساب hash/version
         const avatarsDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'avatars');
         await fsp.mkdir(avatarsDir, { recursive: true });
@@ -320,6 +331,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           return res.status(404).json({ error: 'المستخدم غير موجود' });
         }
+
+        // فحص محتوى جنسي مبسط قبل الحفظ
+        try {
+          const quickBuffer = await fsp.readFile(req.file.path);
+          const check = await detectSexualImage(quickBuffer);
+          if (check.isSexual) {
+            try { await fsp.unlink(req.file.path); } catch {}
+            return res.status(400).json({ error: 'عذراً، لا يُسمح بالصور غير اللائقة' });
+          }
+        } catch {}
 
         // تحويل الصورة إلى WebP ثابتة وتخزينها
         const bannersDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'banners');
@@ -1304,11 +1325,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // تنظيف المحتوى والتحقق من الروابط فقط
+      const sanitizedContent = sanitizeInput(String(content || ''));
+      const contentCheck = validateMessageContent(sanitizedContent);
+      if (!contentCheck.isValid) {
+        return res.status(400).json({ error: contentCheck.reason || 'محتوى غير مسموح' });
+      }
+
+      // فحص التكرار فقط
+      const spamCheck = spamProtection.checkMessage(senderId, sanitizedContent);
+      if (!spamCheck.isAllowed) {
+        return res.status(429).json({ error: spamCheck.reason || 'تم رفض الرسالة بسبب التكرار' });
+      }
+
       // إنشاء الرسالة
       const messageData = {
         senderId,
         receiverId: isPrivate ? receiverId : null,
-        content: content.trim(),
+        content: sanitizedContent,
         messageType,
         isPrivate,
         roomId: isPrivate ? null : roomId, // للرسائل العامة فقط
@@ -2850,6 +2884,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (req.file) {
         try {
+          // فحص محتوى جنسي مبسط قبل الضغط
+          try {
+            const quickBuffer = await fsp.readFile(req.file.path);
+            const check = await detectSexualImage(quickBuffer);
+            if (check.isSexual) {
+              try { await fsp.unlink(req.file.path); } catch {}
+              return res.status(400).json({ error: 'عذراً، لا يُسمح بالصور غير اللائقة' });
+            }
+          } catch {}
+
           // ضغط الصورة أولاً إلى JPEG مناسب (إن أمكن)
           const filePath = path.join(
             process.cwd(),
