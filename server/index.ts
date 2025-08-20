@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express, { type Request, Response, NextFunction } from 'express';
+import compression from 'compression';
 
 import { initializeSystem } from './database-setup';
 import { registerRoutes } from './routes';
@@ -21,6 +22,7 @@ try {
 
 // Setup security first
 setupSecurity(app);
+app.use(compression({ threshold: 1024 }));
 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
