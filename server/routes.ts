@@ -1,85 +1,101 @@
-import fs from "fs";
-import { promises as fsp } from "fs";
-import { createServer, type Server } from "http";
-import path from "path";
+import fs from 'fs';
+import { promises as fsp } from 'fs';
+import { createServer, type Server } from 'http';
+import path from 'path';
 
-import roomRoutes from "./routes/rooms";
-import messageRoutes from "./routes/messages";
-import { pointsService } from "./services/pointsService";
-import { roomService } from "./services/roomService";
-import { roomMessageService } from "./services/roomMessageService";
-import { friendService } from "./services/friendService";
-import { developmentOnly, logDevelopmentEndpoint } from "./middleware/development";
+import roomRoutes from './routes/rooms';
+import messageRoutes from './routes/messages';
+import { pointsService } from './services/pointsService';
+import { roomService } from './services/roomService';
+import { roomMessageService } from './services/roomMessageService';
+import { friendService } from './services/friendService';
+import { developmentOnly, logDevelopmentEndpoint } from './middleware/development';
 import { sanitizeUserData, sanitizeUsersArray } from './utils/data-sanitizer';
 
-
-
-import bcrypt from "bcrypt";
-import type { Express } from "express";
-import multer from "multer";
-import sharp from "sharp";
-import { z } from "zod";
+import bcrypt from 'bcrypt';
+import type { Express } from 'express';
+import multer from 'multer';
+import sharp from 'sharp';
+import { z } from 'zod';
 
 // import { trackClick } from "./middleware/analytics"; // commented out as file doesn't exist
-import { DEFAULT_LEVELS, recalculateUserStats } from "../shared/points-system";
-import { insertUserSchema, insertMessageSchema } from "../shared/schema";
-import { advancedSecurity, advancedSecurityMiddleware } from "./advanced-security";
-import securityApiRoutes from "./api-security";
+import { DEFAULT_LEVELS, recalculateUserStats } from '../shared/points-system';
+import { insertUserSchema, insertMessageSchema } from '../shared/schema';
+import { advancedSecurity, advancedSecurityMiddleware } from './advanced-security';
+import securityApiRoutes from './api-security';
 
-import { db, dbType } from "./database-adapter";
-import { setupDownloadRoute } from "./download-route";
-import { protect } from "./middleware/enhancedSecurity";
-import { moderationSystem } from "./moderation";
-import { getIO } from "./realtime";
-import { spamProtection } from "./spam-protection";
-import { storage } from "./storage";
-import { databaseCleanup } from "./utils/database-cleanup";
+import { db, dbType } from './database-adapter';
+import { setupDownloadRoute } from './download-route';
+import { protect } from './middleware/enhancedSecurity';
+import { moderationSystem } from './moderation';
+import { getIO } from './realtime';
+import { spamProtection } from './spam-protection';
+import { storage } from './storage';
+import { databaseCleanup } from './utils/database-cleanup';
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
-import { updateConnectedUserCache } from "./realtime";
-import { sanitizeInput, validateMessageContent, checkIPSecurity, authLimiter, messageLimiter, friendRequestLimiter } from "./security";
-import { databaseService } from "./services/databaseService";
-import { notificationService } from "./services/notificationService";
+import { updateConnectedUserCache } from './realtime';
+import {
+  sanitizeInput,
+  validateMessageContent,
+  checkIPSecurity,
+  authLimiter,
+  messageLimiter,
+  friendRequestLimiter,
+} from './security';
+import { databaseService } from './services/databaseService';
+import { notificationService } from './services/notificationService';
 import { issueAuthToken, getAuthTokenFromRequest, verifyAuthToken } from './utils/auth-token';
 
-
-
 // إعداد multer موحد لرفع الصور
-const createMulterConfig = (destination: string, prefix: string, maxSize: number = 5 * 1024 * 1024) => {
+const createMulterConfig = (
+  destination: string,
+  prefix: string,
+  maxSize: number = 5 * 1024 * 1024
+) => {
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
       const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', destination);
-      
+
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
-      
+
       cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const ext = path.extname(file.originalname);
       cb(null, `${prefix}-${uniqueSuffix}${ext}`);
-    }
+    },
   });
 
   return multer({
     storage,
     limits: {
       fileSize: maxSize,
-      files: 1
+      files: 1,
     },
     fileFilter: (req, file, cb) => {
       const allowedMimes = [
-        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
-        'image/webp', 'image/bmp', 'image/tiff'
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/bmp',
+        'image/tiff',
       ];
-      
+
       if (allowedMimes.includes(file.mimetype)) {
         cb(null, true);
       } else {
-        cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`));
+        cb(
+          new Error(
+            `نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`
+          )
+        );
       }
-    }
+    },
   });
 };
 
@@ -90,7 +106,7 @@ const wallUpload = createMulterConfig('wall', 'wall', 10 * 1024 * 1024);
 const bannerUpload = createMulterConfig('banners', 'banner', 8 * 1024 * 1024);
 
 // Storage initialization - using imported storage instance
-  
+
 // I/O interface
 // Removed direct Socket.IO setup from this file; handled in realtime.ts
 
@@ -106,7 +122,7 @@ const authService = new (class AuthService {
     if (!user) {
       throw new Error('بيانات الدخول غير صحيحة');
     }
-    
+
     // التحقق من كلمة المرور - دعم التشفير والنص العادي
     let passwordValid = false;
     if (user.password) {
@@ -118,15 +134,15 @@ const authService = new (class AuthService {
         passwordValid = user.password === password.trim();
       }
     }
-    
+
     if (!passwordValid) {
       throw new Error('بيانات الدخول غير صحيحة');
     }
-    
+
     await storage.setUserOnlineStatus(user.id, true);
     return user;
   }
-  
+
   async register(userData: any) {
     const existingUser = await storage.getUserByUsername(userData.username);
     if (existingUser) {
@@ -140,198 +156,236 @@ const messageService = new (class MessageService {
   async sendMessage(senderId: number, messageData: any) {
     const sender = await storage.getUser(senderId);
     if (!sender) throw new Error('المرسل غير موجود');
-    
+
     if (sender.isMuted && !messageData.isPrivate) {
       throw new Error('أنت مكتوم ولا يمكنك إرسال رسائل عامة');
     }
-    
+
     return await storage.createMessage({ ...messageData, senderId });
   }
 })();
 
-
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // استخدام مسارات الغرف المنفصلة
   app.use('/api/rooms', roomRoutes);
-  
+
   // استخدام مسارات الرسائل المنفصلة والمحسنة
   app.use('/api/messages', messageRoutes);
   // مسارات الرسائل الخاصة مفصولة بالكامل
   app.use('/api/private-messages', (await import('./routes/privateMessages')).default);
-  
 
   // رفع صور البروفايل - محسّن مع حل مشكلة Render
-  app.post('/api/upload/profile-image', protect.ownership, upload.single('profileImage'), async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ 
-          error: "لم يتم رفع أي ملف",
-          details: "تأكد من إرسال الملف في حقل 'profileImage'"
+  app.post(
+    '/api/upload/profile-image',
+    protect.ownership,
+    upload.single('profileImage'),
+    async (req, res) => {
+      try {
+        if (!req.file) {
+          return res.status(400).json({
+            error: 'لم يتم رفع أي ملف',
+            details: "تأكد من إرسال الملف في حقل 'profileImage'",
+          });
+        }
+
+        const userId = parseInt(req.body.userId);
+        if (!userId || isNaN(userId)) {
+          // حذف الملف المرفوع إذا فشل في الحصول على userId
+          try {
+            await fsp.unlink(req.file.path);
+          } catch (unlinkError) {
+            console.error('خطأ في حذف الملف:', unlinkError);
+          }
+          return res.status(400).json({ error: 'معرف المستخدم مطلوب ويجب أن يكون رقم صحيح' });
+        }
+
+        // التحقق من وجود المستخدم
+        const user = await storage.getUser(userId);
+        if (!user) {
+          try {
+            await fsp.unlink(req.file.path);
+          } catch (unlinkError) {
+            console.error('خطأ في حذف الملف:', unlinkError);
+          }
+          return res.status(404).json({ error: 'المستخدم غير موجود' });
+        }
+
+        // حفظ الصورة بصيغة webp ثابتة + حساب hash/version
+        const avatarsDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'avatars');
+        await fsp.mkdir(avatarsDir, { recursive: true });
+        const inputBuffer = await fsp.readFile(req.file.path);
+        let webpBuffer = inputBuffer;
+        try {
+          webpBuffer = await (sharp as any)(inputBuffer)
+            .resize(256, 256, { fit: 'cover' })
+            .webp({ quality: 80 })
+            .toBuffer();
+        } catch {}
+        const hash = (await import('crypto'))
+          .createHash('md5')
+          .update(webpBuffer)
+          .digest('hex')
+          .slice(0, 12);
+        const targetPath = path.join(avatarsDir, `${userId}.webp`);
+        await fsp.writeFile(targetPath, webpBuffer);
+
+        // حذف الملف المؤقت
+        try {
+          await fsp.unlink(req.file.path);
+        } catch {}
+
+        // تحديث DB: avatarHash + زيادة avatarVersion
+        const nextVersion = (user as any).avatarVersion
+          ? Number((user as any).avatarVersion) + 1
+          : 1;
+        const updatedUser = await storage.updateUser(userId, {
+          profileImage: `/uploads/avatars/${userId}.webp`,
+          avatarHash: hash,
+          avatarVersion: nextVersion,
+        });
+
+        if (!updatedUser) {
+          return res.status(500).json({ error: 'فشل في تحديث صورة البروفايل في قاعدة البيانات' });
+        }
+
+        // بث خفيف للغرف + كامل لصاحب التعديل
+        try {
+          updateConnectedUserCache(updatedUser);
+        } catch {}
+        emitUserUpdatedToUser(userId, updatedUser);
+        await emitToUserRooms(userId, {
+          type: 'userUpdated',
+          user: buildUserBroadcastPayload(updatedUser),
+        });
+
+        res.json({
+          success: true,
+          message: 'تم رفع الصورة بنجاح',
+          imageUrl: `${updatedUser.profileImage}?v=${hash}`,
+          filename: `${userId}.webp`,
+          avatarHash: hash,
+          user: buildUserBroadcastPayload(updatedUser),
+        });
+      } catch (error) {
+        console.error('❌ خطأ في رفع صورة البروفايل:', error);
+
+        // حذف الملف في حالة الخطأ
+        if (req.file) {
+          try {
+            await fsp.unlink(req.file.path);
+          } catch (unlinkError) {
+            console.error('خطأ في حذف الملف:', unlinkError);
+          }
+        }
+
+        res.status(500).json({
+          error: 'خطأ في رفع الصورة',
+          details: error instanceof Error ? error.message : 'خطأ غير معروف',
         });
       }
-
-      const userId = parseInt(req.body.userId);
-      if (!userId || isNaN(userId)) {
-        // حذف الملف المرفوع إذا فشل في الحصول على userId
-        try {
-          await fsp.unlink(req.file.path);
-        } catch (unlinkError) {
-          console.error('خطأ في حذف الملف:', unlinkError);
-        }
-        return res.status(400).json({ error: "معرف المستخدم مطلوب ويجب أن يكون رقم صحيح" });
-      }
-
-      // التحقق من وجود المستخدم
-      const user = await storage.getUser(userId);
-      if (!user) {
-        try {
-          await fsp.unlink(req.file.path);
-        } catch (unlinkError) {
-          console.error('خطأ في حذف الملف:', unlinkError);
-        }
-        return res.status(404).json({ error: "المستخدم غير موجود" });
-      }
-
-      // حفظ الصورة بصيغة webp ثابتة + حساب hash/version
-      const avatarsDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'avatars');
-      await fsp.mkdir(avatarsDir, { recursive: true });
-      const inputBuffer = await fsp.readFile(req.file.path);
-      let webpBuffer = inputBuffer;
-      try {
-        webpBuffer = await (sharp as any)(inputBuffer).resize(256, 256, { fit: 'cover' }).webp({ quality: 80 }).toBuffer();
-      } catch {}
-      const hash = (await import('crypto')).createHash('md5').update(webpBuffer).digest('hex').slice(0, 12);
-      const targetPath = path.join(avatarsDir, `${userId}.webp`);
-      await fsp.writeFile(targetPath, webpBuffer);
-
-      // حذف الملف المؤقت
-      try { await fsp.unlink(req.file.path); } catch {}
-
-      // تحديث DB: avatarHash + زيادة avatarVersion
-      const nextVersion = (user as any).avatarVersion ? Number((user as any).avatarVersion) + 1 : 1;
-      const updatedUser = await storage.updateUser(userId, { profileImage: `/uploads/avatars/${userId}.webp`, avatarHash: hash, avatarVersion: nextVersion });
-      
-      if (!updatedUser) {
-        return res.status(500).json({ error: "فشل في تحديث صورة البروفايل في قاعدة البيانات" });
-      }
-
-      // بث خفيف للغرف + كامل لصاحب التعديل
-      try { updateConnectedUserCache(updatedUser); } catch {}
-      emitUserUpdatedToUser(userId, updatedUser);
-      await emitToUserRooms(userId, { type: 'userUpdated', user: buildUserBroadcastPayload(updatedUser) });
-
-      res.json({
-        success: true,
-        message: "تم رفع الصورة بنجاح",
-        imageUrl: `${updatedUser.profileImage}?v=${hash}`,
-        filename: `${userId}.webp`,
-        avatarHash: hash,
-        user: buildUserBroadcastPayload(updatedUser)
-      });
-
-    } catch (error) {
-      console.error('❌ خطأ في رفع صورة البروفايل:', error);
-      
-      // حذف الملف في حالة الخطأ
-      if (req.file) {
-        try {
-          await fsp.unlink(req.file.path);
-        } catch (unlinkError) {
-          console.error('خطأ في حذف الملف:', unlinkError);
-        }
-      }
-
-      res.status(500).json({ 
-        error: "خطأ في رفع الصورة",
-        details: error instanceof Error ? error.message : 'خطأ غير معروف'
-      });
     }
-  });
+  );
 
   // إصلاح رفع صورة البانر - تحويل إلى WebP وتخزين كملف بدل Base64 لسلامة وأداء أفضل
-  app.post('/api/upload/profile-banner', protect.ownership, bannerUpload.single('banner'), async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ 
-          error: "لم يتم رفع أي ملف",
-          details: "تأكد من إرسال الملف في حقل 'banner'"
+  app.post(
+    '/api/upload/profile-banner',
+    protect.ownership,
+    bannerUpload.single('banner'),
+    async (req, res) => {
+      try {
+        if (!req.file) {
+          return res.status(400).json({
+            error: 'لم يتم رفع أي ملف',
+            details: "تأكد من إرسال الملف في حقل 'banner'",
+          });
+        }
+
+        const userId = parseInt(req.body.userId);
+        if (!userId || isNaN(userId)) {
+          try {
+            await fsp.unlink(req.file.path);
+          } catch (unlinkError) {
+            console.error('خطأ في حذف الملف:', unlinkError);
+          }
+          return res.status(400).json({ error: 'معرف المستخدم مطلوب ويجب أن يكون رقم صحيح' });
+        }
+
+        // التحقق من وجود المستخدم
+        const user = await storage.getUser(userId);
+        if (!user) {
+          try {
+            await fsp.unlink(req.file.path);
+          } catch (unlinkError) {
+            console.error('خطأ في حذف الملف:', unlinkError);
+          }
+          return res.status(404).json({ error: 'المستخدم غير موجود' });
+        }
+
+        // تحويل الصورة إلى WebP ثابتة وتخزينها
+        const bannersDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'banners');
+        await fsp.mkdir(bannersDir, { recursive: true });
+        const inputBuffer = await fsp.readFile(req.file.path);
+        let webpBuffer = inputBuffer;
+        try {
+          webpBuffer = await (sharp as any)(inputBuffer)
+            .resize(1200, 400, { fit: 'cover' })
+            .webp({ quality: 80 })
+            .toBuffer();
+        } catch {}
+        const bannerTargetPath = path.join(bannersDir, `${userId}.webp`);
+        await fsp.writeFile(bannerTargetPath, webpBuffer);
+
+        // حذف الملف المؤقت
+        try {
+          await fsp.unlink(req.file.path);
+        } catch {}
+
+        const bannerUrl = `/uploads/banners/${userId}.webp`;
+        const updatedUser = await storage.updateUser(userId, { profileBanner: bannerUrl });
+
+        if (!updatedUser) {
+          return res.status(500).json({ error: 'فشل في تحديث صورة البانر في قاعدة البيانات' });
+        }
+
+        // بث خفيف للغرف: الخلفية فقط + كامل لصاحب التعديل
+        try {
+          updateConnectedUserCache(updatedUser);
+        } catch {}
+        emitUserUpdatedToUser(userId, updatedUser);
+        await emitToUserRooms(userId, {
+          type: 'user_background_updated',
+          data: {
+            userId,
+            profileBackgroundColor: buildUserBroadcastPayload(updatedUser).profileBackgroundColor,
+          },
+        });
+
+        res.json({
+          success: true,
+          message: 'تم رفع صورة البانر بنجاح',
+          bannerUrl: `${bannerUrl}?v=${Date.now()}`,
+          filename: `${userId}.webp`,
+          user: buildUserBroadcastPayload(updatedUser),
+        });
+      } catch (error) {
+        console.error('❌ خطأ في رفع صورة البانر:', error);
+
+        // حذف الملف في حالة الخطأ
+        if (req.file) {
+          try {
+            await fsp.unlink(req.file.path);
+          } catch (unlinkError) {
+            console.error('خطأ في حذف الملف:', unlinkError);
+          }
+        }
+
+        res.status(500).json({
+          error: 'خطأ في رفع صورة البانر',
+          details: error instanceof Error ? error.message : 'خطأ غير معروف',
         });
       }
-
-      const userId = parseInt(req.body.userId);
-      if (!userId || isNaN(userId)) {
-        try {
-          await fsp.unlink(req.file.path);
-        } catch (unlinkError) {
-          console.error('خطأ في حذف الملف:', unlinkError);
-        }
-        return res.status(400).json({ error: "معرف المستخدم مطلوب ويجب أن يكون رقم صحيح" });
-      }
-
-      // التحقق من وجود المستخدم
-      const user = await storage.getUser(userId);
-      if (!user) {
-        try {
-          await fsp.unlink(req.file.path);
-        } catch (unlinkError) {
-          console.error('خطأ في حذف الملف:', unlinkError);
-        }
-        return res.status(404).json({ error: "المستخدم غير موجود" });
-      }
-
-      // تحويل الصورة إلى WebP ثابتة وتخزينها
-      const bannersDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'banners');
-      await fsp.mkdir(bannersDir, { recursive: true });
-      const inputBuffer = await fsp.readFile(req.file.path);
-      let webpBuffer = inputBuffer;
-      try {
-        webpBuffer = await (sharp as any)(inputBuffer).resize(1200, 400, { fit: 'cover' }).webp({ quality: 80 }).toBuffer();
-      } catch {}
-      const bannerTargetPath = path.join(bannersDir, `${userId}.webp`);
-      await fsp.writeFile(bannerTargetPath, webpBuffer);
-
-      // حذف الملف المؤقت
-      try { await fsp.unlink(req.file.path); } catch {}
-
-      const bannerUrl = `/uploads/banners/${userId}.webp`;
-      const updatedUser = await storage.updateUser(userId, { profileBanner: bannerUrl });
-      
-      if (!updatedUser) {
-        return res.status(500).json({ error: "فشل في تحديث صورة البانر في قاعدة البيانات" });
-      }
-
-      // بث خفيف للغرف: الخلفية فقط + كامل لصاحب التعديل
-      try { updateConnectedUserCache(updatedUser); } catch {}
-      emitUserUpdatedToUser(userId, updatedUser);
-      await emitToUserRooms(userId, { type: 'user_background_updated', data: { userId, profileBackgroundColor: buildUserBroadcastPayload(updatedUser).profileBackgroundColor } });
-
-      res.json({
-        success: true,
-        message: "تم رفع صورة البانر بنجاح",
-        bannerUrl: `${bannerUrl}?v=${Date.now()}`,
-        filename: `${userId}.webp`,
-        user: buildUserBroadcastPayload(updatedUser)
-      });
-
-    } catch (error) {
-      console.error('❌ خطأ في رفع صورة البانر:', error);
-      
-      // حذف الملف في حالة الخطأ
-      if (req.file) {
-        try {
-          await fsp.unlink(req.file.path);
-        } catch (unlinkError) {
-          console.error('خطأ في حذف الملف:', unlinkError);
-        }
-      }
-
-      res.status(500).json({ 
-        error: "خطأ في رفع صورة البانر",
-        details: error instanceof Error ? error.message : 'خطأ غير معروف'
-      });
     }
-  });
+  );
 
   // Debug endpoint للتحقق من الصور - متاح في التطوير فقط
   app.get('/api/debug/images', developmentOnly, async (req, res) => {
@@ -340,7 +394,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const uploadsDir = path.join(process.cwd(), 'client', 'public', 'uploads');
       const profilesDir = path.join(uploadsDir, 'profiles');
       const bannersDir = path.join(uploadsDir, 'banners');
-      
+
       const debugInfo = {
         uploadsDir: uploadsDir,
         profilesDir: profilesDir,
@@ -350,56 +404,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bannersExists: fs.existsSync(bannersDir),
         profileFiles: [],
         bannerFiles: [],
-        dbImages: []
+        dbImages: [],
       };
-      
+
       // قائمة ملفات البروفايل
       if (debugInfo.profilesExists) {
         const files = await fsp.readdir(profilesDir);
-        debugInfo.profileFiles = await Promise.all(files.map(async file => {
-          const stat = await fsp.stat(path.join(profilesDir, file));
-          return {
-            name: file,
-            path: `/uploads/profiles/${file}`,
-            size: stat.size
-          };
-        }));
+        debugInfo.profileFiles = await Promise.all(
+          files.map(async (file) => {
+            const stat = await fsp.stat(path.join(profilesDir, file));
+            return {
+              name: file,
+              path: `/uploads/profiles/${file}`,
+              size: stat.size,
+            };
+          })
+        );
       }
-      
+
       // قائمة ملفات البانر
       if (debugInfo.bannersExists) {
         const files = await fsp.readdir(bannersDir);
-        debugInfo.bannerFiles = await Promise.all(files.map(async file => {
-          const stat = await fsp.stat(path.join(bannersDir, file));
-          return {
-            name: file,
-            path: `/uploads/banners/${file}`,
-            size: stat.size
-          };
-        }));
+        debugInfo.bannerFiles = await Promise.all(
+          files.map(async (file) => {
+            const stat = await fsp.stat(path.join(bannersDir, file));
+            return {
+              name: file,
+              path: `/uploads/banners/${file}`,
+              size: stat.size,
+            };
+          })
+        );
       }
-      
+
       // جلب الصور من قاعدة البيانات
       try {
         const users = await storage.getAllUsers();
         debugInfo.dbImages = users
-          .filter(user => user.profileImage || user.profileBanner)
-          .map(user => ({
+          .filter((user) => user.profileImage || user.profileBanner)
+          .map((user) => ({
             id: user.id,
             username: user.username,
             profileImage: user.profileImage,
-            profileBanner: user.profileBanner
+            profileBanner: user.profileBanner,
           }));
       } catch (dbError) {
         debugInfo.dbImages = [`خطأ في قاعدة البيانات: ${(dbError as Error).message}`];
       }
-      
+
       res.json(debugInfo);
     } catch (error) {
       console.error('خطأ في debug endpoint:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Internal server error',
-        message: 'خطأ في تشغيل endpoint التشخيص' 
+        message: 'خطأ في تشغيل endpoint التشخيص',
       });
     }
   });
@@ -409,19 +467,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       if (!userId || isNaN(userId)) {
-        return res.status(400).json({ error: "معرف المستخدم مطلوب ويجب أن يكون رقم صحيح" });
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب ويجب أن يكون رقم صحيح' });
       }
 
       // التحقق من وجود المستخدم
       const user = await storage.getUser(userId);
       if (!user) {
-        return res.status(404).json({ error: "المستخدم غير موجود" });
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
       // فلترة البيانات المسموح بتحديثها
       const allowedUpdates = ['profileImage', 'profileBanner'];
       const updateData: Record<string, any> = {};
-      
+
       for (const key of allowedUpdates) {
         if (Object.prototype.hasOwnProperty.call(req.body, key)) {
           updateData[key] = (req.body as any)[key];
@@ -429,83 +487,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (Object.keys(updateData).length === 0) {
-        return res.status(400).json({ error: "لا توجد بيانات للتحديث" });
+        return res.status(400).json({ error: 'لا توجد بيانات للتحديث' });
       }
 
       // تحديث المستخدم
       const updatedUser = await storage.updateUser(userId, updateData);
-      
+
       if (!updatedUser) {
-        return res.status(500).json({ error: "فشل في تحديث بيانات المستخدم" });
+        return res.status(500).json({ error: 'فشل في تحديث بيانات المستخدم' });
       }
 
-      res.json({ 
-        success: true, 
-        message: "تم تحديث بيانات المستخدم بنجاح",
-        user: buildUserBroadcastPayload(updatedUser) 
+      res.json({
+        success: true,
+        message: 'تم تحديث بيانات المستخدم بنجاح',
+        user: buildUserBroadcastPayload(updatedUser),
       });
-
     } catch (error) {
       console.error('❌ خطأ في تحديث المستخدم:', error);
-      res.status(500).json({ error: "خطأ في الخادم أثناء تحديث المستخدم" });
+      res.status(500).json({ error: 'خطأ في الخادم أثناء تحديث المستخدم' });
     }
   });
-
 
   // API endpoints للإدارة
   // Removed duplicate moderation actions endpoint - kept the more detailed one below
 
-  app.get("/api/moderation/reports", protect.admin, async (req, res) => {
+  app.get('/api/moderation/reports', protect.admin, async (req, res) => {
     try {
       const { userId } = req.query;
       if (!userId) {
-        return res.status(401).json({ error: "غير مسموح - للإدمن والمالك فقط" });
+        return res.status(401).json({ error: 'غير مسموح - للإدمن والمالك فقط' });
       }
-      
+
       const user = await storage.getUser(parseInt(userId as string));
       if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
-        return res.status(403).json({ error: "غير مسموح - للإدمن والمالك فقط" });
+        return res.status(403).json({ error: 'غير مسموح - للإدمن والمالك فقط' });
       }
-      
+
       const reports = spamProtection.getPendingReports();
       res.json({ reports });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في جلب التقارير" });
+      res.status(500).json({ error: 'خطأ في جلب التقارير' });
     }
   });
 
-  app.post("/api/moderation/report", async (req, res) => {
+  app.post('/api/moderation/report', async (req, res) => {
     try {
       const { reporterId, reportedUserId, reason, content, messageId } = req.body;
-      
-      const report = spamProtection.addReport(reporterId, reportedUserId, reason, content, messageId);
-      res.json({ message: "تم إرسال التقرير بنجاح", report });
+
+      const report = spamProtection.addReport(
+        reporterId,
+        reportedUserId,
+        reason,
+        content,
+        messageId
+      );
+      res.json({ message: 'تم إرسال التقرير بنجاح', report });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في إرسال التقرير" });
+      res.status(500).json({ error: 'خطأ في إرسال التقرير' });
     }
   });
 
-  app.post("/api/moderation/mute", protect.moderator, async (req, res) => {
+  app.post('/api/moderation/mute', protect.moderator, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
-      
+
       // التحقق من المعاملات المطلوبة
       if (!moderatorId || !targetUserId || !reason) {
-        return res.status(400).json({ error: "معاملات ناقصة: moderatorId, targetUserId, reason مطلوبة" });
+        return res
+          .status(400)
+          .json({ error: 'معاملات ناقصة: moderatorId, targetUserId, reason مطلوبة' });
       }
-      
+
       // التحقق من صحة المدة
       const muteDuration = duration && !isNaN(duration) ? parseInt(duration) : 30;
-      if (muteDuration < 1 || muteDuration > 1440) { // بين دقيقة و24 ساعة
-        return res.status(400).json({ error: "المدة يجب أن تكون بين 1 و 1440 دقيقة" });
+      if (muteDuration < 1 || muteDuration > 1440) {
+        // بين دقيقة و24 ساعة
+        return res.status(400).json({ error: 'المدة يجب أن تكون بين 1 و 1440 دقيقة' });
       }
-      
+
       // استخدم IP والجهاز الخاصين بالمستخدم المستهدف لضمان دقة الحظر
       const target = await storage.getUser(targetUserId);
-      const clientIP = (target?.ipAddress && target.ipAddress !== 'unknown') ? target.ipAddress : getClientIpFromHeaders(req.headers as any, (req.ip || (req.connection as any)?.remoteAddress) as any);
-      const deviceId = (target?.deviceId && target.deviceId !== 'unknown') ? target.deviceId : getDeviceIdFromHeaders(req.headers as any);
-      
-      const success = await moderationSystem.muteUser(moderatorId, targetUserId, reason, muteDuration, clientIP, deviceId);
+      const clientIP =
+        target?.ipAddress && target.ipAddress !== 'unknown'
+          ? target.ipAddress
+          : getClientIpFromHeaders(
+              req.headers as any,
+              (req.ip || (req.connection as any)?.remoteAddress) as any
+            );
+      const deviceId =
+        target?.deviceId && target.deviceId !== 'unknown'
+          ? target.deviceId
+          : getDeviceIdFromHeaders(req.headers as any);
+
+      const success = await moderationSystem.muteUser(
+        moderatorId,
+        targetUserId,
+        reason,
+        muteDuration,
+        clientIP,
+        deviceId
+      );
       if (success) {
         // إنشاء إشعار في قاعدة البيانات
         const moderator = await storage.getUser(moderatorId);
@@ -519,59 +600,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
         }
 
-        res.json({ 
+        res.json({
           success: true,
-          message: "تم كتم المستخدم بنجاح",
-          duration: muteDuration 
+          message: 'تم كتم المستخدم بنجاح',
+          duration: muteDuration,
         });
       } else {
-        res.status(400).json({ error: "فشل في كتم المستخدم - تحقق من الصلاحيات أو حالة المستخدم" });
+        res.status(400).json({ error: 'فشل في كتم المستخدم - تحقق من الصلاحيات أو حالة المستخدم' });
       }
     } catch (error) {
       console.error('خطأ في كتم المستخدم:', error);
-      res.status(500).json({ error: "خطأ في كتم المستخدم: " + (error as any).message });
+      res.status(500).json({ error: 'خطأ في كتم المستخدم: ' + (error as any).message });
     }
   });
 
-  app.post("/api/moderation/ban", protect.admin, async (req, res) => {
+  app.post('/api/moderation/ban', protect.admin, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason, duration } = req.body;
-      
+
       // التحقق من المعاملات المطلوبة
       if (!moderatorId || !targetUserId || !reason) {
-        return res.status(400).json({ error: "معاملات ناقصة: moderatorId, targetUserId, reason مطلوبة" });
+        return res
+          .status(400)
+          .json({ error: 'معاملات ناقصة: moderatorId, targetUserId, reason مطلوبة' });
       }
-      
+
       // للأدمن: المدة الافتراضية 15 دقيقة
       const banDuration = duration && !isNaN(duration) ? parseInt(duration) : 15;
-      if (banDuration < 5 || banDuration > 60) { // بين 5 دقائق وساعة
-        return res.status(400).json({ error: "مدة الطرد يجب أن تكون بين 5 و 60 دقيقة" });
+      if (banDuration < 5 || banDuration > 60) {
+        // بين 5 دقائق وساعة
+        return res.status(400).json({ error: 'مدة الطرد يجب أن تكون بين 5 و 60 دقيقة' });
       }
-      
+
       // استخدم IP والجهاز الخاصين بالمستخدم المستهدف لضمان دقة الحظر
       const target = await storage.getUser(targetUserId);
-      const clientIP = (target?.ipAddress && target.ipAddress !== 'unknown') ? target.ipAddress : getClientIpFromHeaders(req.headers as any, (req.ip || (req.connection as any)?.remoteAddress) as any);
-      const deviceId = (target?.deviceId && target.deviceId !== 'unknown') ? target.deviceId : getDeviceIdFromHeaders(req.headers as any);
-      
+      const clientIP =
+        target?.ipAddress && target.ipAddress !== 'unknown'
+          ? target.ipAddress
+          : getClientIpFromHeaders(
+              req.headers as any,
+              (req.ip || (req.connection as any)?.remoteAddress) as any
+            );
+      const deviceId =
+        target?.deviceId && target.deviceId !== 'unknown'
+          ? target.deviceId
+          : getDeviceIdFromHeaders(req.headers as any);
+
       const success = await moderationSystem.banUser(
-        moderatorId, 
-        targetUserId, 
-        reason, 
-        banDuration, 
-        clientIP, 
+        moderatorId,
+        targetUserId,
+        reason,
+        banDuration,
+        clientIP,
         deviceId
       );
-      
+
       if (success) {
         const target = await storage.getUser(targetUserId);
         const moderator = await storage.getUser(moderatorId);
-        
+
         // إشعار المستخدم المطرود
-        getIO().to(targetUserId.toString()).emit('kicked', {
-          moderator: moderator?.username || 'مشرف',
-          reason: reason,
-          duration: banDuration
-        });
+        getIO()
+          .to(targetUserId.toString())
+          .emit('kicked', {
+            moderator: moderator?.username || 'مشرف',
+            reason: reason,
+            duration: banDuration,
+          });
 
         // إنشاء إشعار في قاعدة البيانات
         if (moderator) {
@@ -584,96 +679,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
         }
 
-        res.json({ 
+        res.json({
           success: true,
-          message: "تم طرد المستخدم بنجاح",
-          duration: banDuration 
+          message: 'تم طرد المستخدم بنجاح',
+          duration: banDuration,
         });
       } else {
-        res.status(400).json({ error: "فشل في طرد المستخدم - تحقق من الصلاحيات أو حالة المستخدم" });
+        res.status(400).json({ error: 'فشل في طرد المستخدم - تحقق من الصلاحيات أو حالة المستخدم' });
       }
     } catch (error) {
       console.error('خطأ في طرد المستخدم:', error);
-      res.status(500).json({ error: "خطأ في طرد المستخدم: " + (error as any).message });
+      res.status(500).json({ error: 'خطأ في طرد المستخدم: ' + (error as any).message });
     }
   });
 
-  app.post("/api/moderation/block", protect.owner, async (req, res) => {
+  app.post('/api/moderation/block', protect.owner, async (req, res) => {
     try {
       const { moderatorId, targetUserId, reason } = req.body;
-      
+
       // التحقق من المعاملات المطلوبة
       if (!moderatorId || !targetUserId || !reason) {
-        return res.status(400).json({ error: "معاملات ناقصة: moderatorId, targetUserId, reason مطلوبة" });
+        return res
+          .status(400)
+          .json({ error: 'معاملات ناقصة: moderatorId, targetUserId, reason مطلوبة' });
       }
-      
+
       // التحقق من أن المستخدم لا يحاول حجب نفسه
       if (moderatorId === targetUserId) {
-        return res.status(400).json({ error: "لا يمكنك حجب نفسك" });
+        return res.status(400).json({ error: 'لا يمكنك حجب نفسك' });
       }
-      
+
       // الحصول على IP والجهاز الحقيقيين للمستخدم المستهدف (ليس المشرف)
       const target = await storage.getUser(targetUserId);
-      const clientIP = (target?.ipAddress && target.ipAddress !== 'unknown') ? target.ipAddress : getClientIpFromHeaders(req.headers as any, (req.ip || (req.connection as any)?.remoteAddress) as any);
-      const deviceId = (target?.deviceId && target.deviceId !== 'unknown') ? target.deviceId : getDeviceIdFromHeaders(req.headers as any);
-      
-      const success = await moderationSystem.blockUser(moderatorId, targetUserId, reason, clientIP, deviceId);
+      const clientIP =
+        target?.ipAddress && target.ipAddress !== 'unknown'
+          ? target.ipAddress
+          : getClientIpFromHeaders(
+              req.headers as any,
+              (req.ip || (req.connection as any)?.remoteAddress) as any
+            );
+      const deviceId =
+        target?.deviceId && target.deviceId !== 'unknown'
+          ? target.deviceId
+          : getDeviceIdFromHeaders(req.headers as any);
+
+      const success = await moderationSystem.blockUser(
+        moderatorId,
+        targetUserId,
+        reason,
+        clientIP,
+        deviceId
+      );
       if (success) {
         const target = await storage.getUser(targetUserId);
         const moderator = await storage.getUser(moderatorId);
-        
+
         // إشعار المستخدم المحجوب
-        getIO().to(targetUserId.toString()).emit('blocked', {
-          moderator: moderator?.username || 'مشرف',
-          reason: reason,
-          permanent: true
-        });
-        
+        getIO()
+          .to(targetUserId.toString())
+          .emit('blocked', {
+            moderator: moderator?.username || 'مشرف',
+            reason: reason,
+            permanent: true,
+          });
+
         // فصل المستخدم المحجوب فوراً
         getIO().to(targetUserId.toString()).disconnectSockets();
-        
-        res.json({ 
+
+        res.json({
           success: true,
-          message: "تم حجب المستخدم بنجاح",
+          message: 'تم حجب المستخدم بنجاح',
           blocked: {
             userId: targetUserId,
             username: target?.username,
             ipAddress: clientIP,
-            deviceId: deviceId
-          }
+            deviceId: deviceId,
+          },
         });
       } else {
-        res.status(400).json({ error: "فشل في حجب المستخدم - تحقق من الصلاحيات أو حالة المستخدم" });
+        res.status(400).json({ error: 'فشل في حجب المستخدم - تحقق من الصلاحيات أو حالة المستخدم' });
       }
     } catch (error) {
       console.error('خطأ في حجب المستخدم:', error);
-      res.status(500).json({ error: "خطأ في حجب المستخدم: " + (error as any).message });
+      res.status(500).json({ error: 'خطأ في حجب المستخدم: ' + (error as any).message });
     }
   });
 
-  app.post("/api/moderation/promote", protect.owner, async (req, res) => {
+  app.post('/api/moderation/promote', protect.owner, async (req, res) => {
     try {
       const { moderatorId, targetUserId, newRole } = req.body;
-      
+
       // التحقق من وجود المعاملات المطلوبة
       if (!moderatorId || !targetUserId || !newRole) {
-        return res.status(400).json({ error: "معاملات ناقصة" });
+        return res.status(400).json({ error: 'معاملات ناقصة' });
       }
-      
+
       const success = await moderationSystem.promoteUser(moderatorId, targetUserId, newRole);
-      
+
       if (success) {
         // إرسال إشعار عبر WebSocket
         const target = await storage.getUser(targetUserId);
         const moderator = await storage.getUser(moderatorId);
-        
+
         if (target && moderator) {
           const promotionMessage = {
             type: 'systemNotification',
             message: `🎉 تم ترقية ${target.username} إلى ${newRole === 'admin' ? 'إدمن' : 'مشرف'} بواسطة ${moderator.username}`,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           };
-          
+
           getIO().emit('message', promotionMessage);
 
           // إنشاء إشعار في قاعدة البيانات للمستخدم المُرقى
@@ -683,23 +797,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             moderator.username
           );
         }
-        
-        res.json({ message: "تم ترقية المستخدم بنجاح" });
+
+        res.json({ message: 'تم ترقية المستخدم بنجاح' });
       } else {
-        res.status(400).json({ error: "فشل في ترقية المستخدم" });
+        res.status(400).json({ error: 'فشل في ترقية المستخدم' });
       }
     } catch (error) {
-      console.error("[PROMOTE_ENDPOINT] خطأ في ترقية المستخدم:", error);
-      res.status(500).json({ error: "خطأ في ترقية المستخدم" });
+      console.error('[PROMOTE_ENDPOINT] خطأ في ترقية المستخدم:', error);
+      res.status(500).json({ error: 'خطأ في ترقية المستخدم' });
     }
   });
 
   // مسار جديد لإلغاء الإشراف (تنزيل الرتبة) - للمالك فقط
-  app.post("/api/moderation/demote", protect.owner, async (req, res) => {
+  app.post('/api/moderation/demote', protect.owner, async (req, res) => {
     try {
       const { moderatorId, targetUserId } = req.body;
       if (!moderatorId || !targetUserId) {
-        return res.status(400).json({ error: "معاملات ناقصة" });
+        return res.status(400).json({ error: 'معاملات ناقصة' });
       }
 
       const success = await moderationSystem.demoteUser(moderatorId, targetUserId);
@@ -710,83 +824,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
           getIO().emit('message', {
             type: 'systemNotification',
             message: `ℹ️ تم تنزيل ${target.username} إلى عضو بواسطة ${moderator.username}`,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           });
         }
-        res.json({ message: "تم إلغاء الإشراف بنجاح" });
+        res.json({ message: 'تم إلغاء الإشراف بنجاح' });
       } else {
-        res.status(400).json({ error: "فشل في إلغاء الإشراف" });
+        res.status(400).json({ error: 'فشل في إلغاء الإشراف' });
       }
     } catch (error) {
-      console.error("[DEMOTE_ENDPOINT] خطأ في إلغاء الإشراف:", error);
-      res.status(500).json({ error: "خطأ في إلغاء الإشراف" });
+      console.error('[DEMOTE_ENDPOINT] خطأ في إلغاء الإشراف:', error);
+      res.status(500).json({ error: 'خطأ في إلغاء الإشراف' });
     }
   });
 
-  app.post("/api/moderation/unmute", protect.moderator, async (req, res) => {
+  app.post('/api/moderation/unmute', protect.moderator, async (req, res) => {
     try {
       const { moderatorId, targetUserId } = req.body;
-      
+
       const success = await moderationSystem.unmuteUser(moderatorId, targetUserId);
       if (success) {
-        res.json({ message: "تم إلغاء الكتم بنجاح" });
+        res.json({ message: 'تم إلغاء الكتم بنجاح' });
       } else {
-        res.status(400).json({ error: "فشل في إلغاء الكتم" });
+        res.status(400).json({ error: 'فشل في إلغاء الكتم' });
       }
     } catch (error) {
-      res.status(500).json({ error: "خطأ في إلغاء الكتم" });
+      res.status(500).json({ error: 'خطأ في إلغاء الكتم' });
     }
   });
 
-  app.post("/api/moderation/unblock", protect.owner, async (req, res) => {
+  app.post('/api/moderation/unblock', protect.owner, async (req, res) => {
     try {
       const { moderatorId, targetUserId } = req.body;
-      
+
       const success = await moderationSystem.unblockUser(moderatorId, targetUserId);
       if (success) {
-        res.json({ message: "تم إلغاء الحجب بنجاح" });
+        res.json({ message: 'تم إلغاء الحجب بنجاح' });
       } else {
-        res.status(400).json({ error: "فشل في إلغاء الحجب" });
+        res.status(400).json({ error: 'فشل في إلغاء الحجب' });
       }
     } catch (error) {
-      res.status(500).json({ error: "خطأ في إلغاء الحجب" });
+      res.status(500).json({ error: 'خطأ في إلغاء الحجب' });
     }
   });
 
   // API لتحديث لون اسم المستخدم
-  app.post("/api/users/:userId/username-color", async (req, res) => {
+  app.post('/api/users/:userId/username-color', async (req, res) => {
     try {
       const { userId } = req.params;
       const { color } = req.body;
       const userIdNum = parseInt(userId);
-      
+
       // التحقق من صحة اللون (hex color)
       if (!color || !/^#[0-9A-F]{6}$/i.test(color)) {
-        return res.status(400).json({ error: "لون غير صحيح" });
+        return res.status(400).json({ error: 'لون غير صحيح' });
       }
-      
+
       // التحقق من وجود المستخدم
       const user = await storage.getUser(userIdNum);
       if (!user) {
-        return res.status(404).json({ error: "المستخدم غير موجود" });
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
-      
+
       // تحديث لون الاسم
       await storage.updateUser(userIdNum, { usernameColor: color });
-      
+
       // بث خفيف مخصص للغرف + كامل لصاحب التعديل
       const updated = await storage.getUser(userIdNum);
       emitUserUpdatedToUser(userIdNum, updated);
       await emitToUserRooms(userIdNum, { type: 'usernameColorChanged', userId: userIdNum, color });
-      
-      res.json({ 
-        message: "تم تحديث لون اسم المستخدم بنجاح",
-        color: color
+
+      res.json({
+        message: 'تم تحديث لون اسم المستخدم بنجاح',
+        color: color,
       });
-      
     } catch (error) {
       console.error('خطأ في تحديث لون الاسم:', error);
-      res.status(500).json({ error: "خطأ في تحديث لون الاسم" });
+      res.status(500).json({ error: 'خطأ في تحديث لون الاسم' });
     }
   });
 
@@ -798,9 +911,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ error: 'مستخدم غير موجود' });
       }
-      
+
       const userStatus = await moderationSystem.checkUserStatus(userId);
-      
+
       res.json({
         user: {
           id: user.id,
@@ -810,9 +923,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           muteExpiry: user.muteExpiry,
           isBanned: user.isBanned,
           banExpiry: user.banExpiry,
-          isBlocked: user.isBlocked
+          isBlocked: user.isBlocked,
         },
-        status: userStatus
+        status: userStatus,
       });
     } catch (error) {
       console.error('خطأ في فحص حالة المستخدم:', error);
@@ -828,7 +941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ error: 'مستخدم غير موجود' });
       }
-      
+
       // إزالة جميع قيود المراقبة للمستخدمين العاديين
       if (user.userType === 'guest' || user.userType === 'member') {
         await storage.updateUser(userId, {
@@ -836,17 +949,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           muteExpiry: null,
           isBanned: false,
           banExpiry: null,
-          isBlocked: false
+          isBlocked: false,
         });
-        
-        res.json({ 
-          success: true, 
-          message: `تم إصلاح حالة المراقبة للمستخدم ${user.username}` 
+
+        res.json({
+          success: true,
+          message: `تم إصلاح حالة المراقبة للمستخدم ${user.username}`,
         });
       } else {
-        res.json({ 
-          success: false, 
-          message: 'هذا المستخدم من الإدارة - لا يمكن تعديل حالته' 
+        res.json({
+          success: false,
+          message: 'هذا المستخدم من الإدارة - لا يمكن تعديل حالته',
         });
       }
     } catch (error) {
@@ -856,7 +969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
-  
+
   // إعداد Socket.IO من خلال وحدة realtime الموحدة
   const { setupRealtime } = await import('./realtime');
   const io = setupRealtime(httpServer);
@@ -866,98 +979,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(advancedSecurityMiddleware);
 
   // Member registration route - مع أمان محسن
-  app.post("/api/auth/register", async (req, res) => {
+  app.post('/api/auth/register', async (req, res) => {
     try {
-      const { username, password, confirmPassword, gender, age, country, status, relation } = req.body;
-      
+      const { username, password, confirmPassword, gender, age, country, status, relation } =
+        req.body;
+
       // فحص الأمان الأساسي
       if (!username?.trim() || !password?.trim() || !confirmPassword?.trim()) {
-        return res.status(400).json({ error: "جميع الحقول المطلوبة" });
+        return res.status(400).json({ error: 'جميع الحقول المطلوبة' });
       }
 
       // فحص اسم المستخدم - منع الأحرف الخاصة
       if (!/^[\u0600-\u06FFa-zA-Z0-9_]{3,20}$/.test(username.trim())) {
-        return res.status(400).json({ error: "اسم المستخدم يجب أن يكون بين 3-20 حرف ولا يحتوي على رموز خاصة" });
+        return res
+          .status(400)
+          .json({ error: 'اسم المستخدم يجب أن يكون بين 3-20 حرف ولا يحتوي على رموز خاصة' });
       }
 
       if (password !== confirmPassword) {
-        return res.status(400).json({ error: "كلمات المرور غير متطابقة" });
+        return res.status(400).json({ error: 'كلمات المرور غير متطابقة' });
       }
 
       // فحص قوة كلمة المرور
       if (password.length < 6) {
-        return res.status(400).json({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" });
+        return res.status(400).json({ error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' });
       }
-      
+
       if (!/(?=.*[0-9])/.test(password)) {
-        return res.status(400).json({ error: "كلمة المرور يجب أن تحتوي على رقم واحد على الأقل" });
+        return res.status(400).json({ error: 'كلمة المرور يجب أن تحتوي على رقم واحد على الأقل' });
       }
 
       // فحص العمر إذا تم إدخاله
       if (age && (age < 13 || age > 100)) {
-        return res.status(400).json({ error: "العمر يجب أن يكون بين 13 و 100 سنة" });
+        return res.status(400).json({ error: 'العمر يجب أن يكون بين 13 و 100 سنة' });
       }
 
       // Check if username already exists
       const existing = await storage.getUserByUsername(username);
       if (existing) {
-        return res.status(400).json({ error: "اسم المستخدم موجود بالفعل" });
+        return res.status(400).json({ error: 'اسم المستخدم موجود بالفعل' });
       }
 
       const user = await storage.createUser({
         username,
         password,
-        userType: "member",
-        gender: gender || "male",
+        userType: 'member',
+        gender: gender || 'male',
         age: age || undefined,
         country: country?.trim() || undefined,
         status: status?.trim() || undefined,
         relation: relation?.trim() || undefined,
-        profileImage: "/default_avatar.svg",
+        profileImage: '/default_avatar.svg',
       });
 
       try {
         const token = issueAuthToken(user.id);
-        res.setHeader('Set-Cookie', `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+        res.setHeader(
+          'Set-Cookie',
+          `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+        );
       } catch {}
-      res.json({ user: buildUserBroadcastPayload(user), message: "تم التسجيل بنجاح" });
+      res.json({ user: buildUserBroadcastPayload(user), message: 'تم التسجيل بنجاح' });
     } catch (error) {
       console.error('Registration error:', error);
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // Authentication routes
-  app.post("/api/auth/guest", authLimiter, async (req, res) => {
+  app.post('/api/auth/guest', authLimiter, async (req, res) => {
     try {
       const { username, gender } = req.body;
-      
+
       if (!username?.trim()) {
-        return res.status(400).json({ error: "اسم المستخدم مطلوب" });
+        return res.status(400).json({ error: 'اسم المستخدم مطلوب' });
       }
 
       // Check if username already exists
       const existing = await storage.getUserByUsername(username);
       if (existing) {
-        return res.status(400).json({ error: "الاسم مستخدم بالفعل" });
+        return res.status(400).json({ error: 'الاسم مستخدم بالفعل' });
       }
 
       const user = await storage.createUser({
         username,
-        userType: "guest",
-        gender: gender || "male",
-        profileImage: "/default_avatar.svg",
+        userType: 'guest',
+        gender: gender || 'male',
+        profileImage: '/default_avatar.svg',
       });
 
       try {
         const token = issueAuthToken(user.id);
-        res.setHeader('Set-Cookie', `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+        res.setHeader(
+          'Set-Cookie',
+          `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+        );
       } catch {}
       res.json({ user: buildUserBroadcastPayload(user) });
     } catch (error) {
-      console.error("Guest login error:", error);
-      console.error("Error details:", error.message, error.stack);
-      res.status(500).json({ error: "خطأ في الخادم" });
+      console.error('Guest login error:', error);
+      console.error('Error details:', error.message, error.stack);
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
@@ -968,31 +1090,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (token) {
         const verified = verifyAuthToken(token);
         if (verified?.userId) {
-          try { await storage.setUserOnlineStatus(verified.userId, false); } catch {}
+          try {
+            await storage.setUserOnlineStatus(verified.userId, false);
+          } catch {}
         }
       }
-      res.setHeader('Set-Cookie', `auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+      res.setHeader(
+        'Set-Cookie',
+        `auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+      );
       res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
     } catch (error) {
-      res.setHeader('Set-Cookie', `auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+      res.setHeader(
+        'Set-Cookie',
+        `auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+      );
       res.status(200).json({ success: true, message: 'تم مسح الجلسة' });
     }
   });
 
-  app.post("/api/auth/member", authLimiter, async (req, res) => {
+  app.post('/api/auth/member', authLimiter, async (req, res) => {
     try {
       const { username, password } = req.body;
-      
+
       if (!username?.trim() || !password?.trim()) {
-        return res.status(400).json({ error: "اسم المستخدم وكلمة المرور مطلوبان" });
+        return res.status(400).json({ error: 'اسم المستخدم وكلمة المرور مطلوبان' });
       }
 
       const user = await storage.getUserByUsername(username.trim());
       if (!user) {
-        return res.status(401).json({ error: "اسم المستخدم غير موجود" });
+        return res.status(401).json({ error: 'اسم المستخدم غير موجود' });
       }
 
-              // التحقق من كلمة المرور - دعم التشفير والنص العادي
+      // التحقق من كلمة المرور - دعم التشفير والنص العادي
       let passwordValid = false;
       if (user.password) {
         if (user.password.startsWith('$2b$')) {
@@ -1005,13 +1135,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!passwordValid) {
-        return res.status(401).json({ error: "كلمة المرور غير صحيحة" });
+        return res.status(401).json({ error: 'كلمة المرور غير صحيحة' });
       }
 
       // Check if user is actually a member or owner
-              const userType = user.userType;
+      const userType = user.userType;
       if (userType === 'guest') {
-        return res.status(401).json({ error: "هذا المستخدم ضيف وليس عضو" });
+        return res.status(401).json({ error: 'هذا المستخدم ضيف وليس عضو' });
       }
 
       // التأكد من أن الأعضاء العاديين غير مخفيين (فقط الإدمن والمالك يمكنهم الإخفاء)
@@ -1025,24 +1155,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تحديث حالة المستخدم إلى متصل
       try {
         await storage.setUserOnlineStatus(user.id, true);
-        } catch (updateError) {
+      } catch (updateError) {
         console.error('خطأ في تحديث حالة المستخدم:', updateError);
       }
 
       try {
         const token = issueAuthToken(user.id);
-        res.setHeader('Set-Cookie', `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+        res.setHeader(
+          'Set-Cookie',
+          `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+        );
       } catch {}
       res.json({ user: buildUserBroadcastPayload(user) });
     } catch (error) {
       console.error('Member authentication error:', error);
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // User routes
   // جلب جميع المستخدمين
-  app.get("/api/users", async (req, res) => {
+  app.get('/api/users', async (req, res) => {
     try {
       const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
       const offset = Math.max(0, Number(req.query.offset) || 0);
@@ -1050,10 +1183,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const [users, total] = await Promise.all([
         databaseService.listUsers(limit, offset, q),
-        databaseService.countUsers(q)
+        databaseService.countUsers(q),
       ]);
 
-      const safeUsers = users.map(user => ({
+      const safeUsers = users.map((user) => ({
         id: user.id,
         username: user.username,
         userType: user.userType,
@@ -1067,98 +1200,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastActive: user.lastSeen || user.createdAt,
         profileBackgroundColor: user.profileBackgroundColor,
         profileEffect: user.profileEffect,
-        isHidden: user.isHidden
+        isHidden: user.isHidden,
       }));
 
       res.json({ users: safeUsers, total, limit, offset, hasMore: offset + users.length < total });
     } catch (error) {
       console.error('خطأ في جلب جميع المستخدمين:', error);
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
-  app.get("/api/users/online", async (req, res) => {
+  app.get('/api/users/online', async (req, res) => {
     try {
       const users = await storage.getOnlineUsers();
       const safeUsers = sanitizeUsersArray(users);
       res.json({ users: safeUsers });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // جلب المستخدمين المحظورين
-  app.get("/api/users/blocked", async (req, res) => {
+  app.get('/api/users/blocked', async (req, res) => {
     try {
       const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
       const offset = Math.max(0, Number(req.query.offset) || 0);
 
       const users = await databaseService.listUsers(limit, offset);
-      const blockedUsers = users.filter(user => user.isBlocked === true);
-      
-      const safeUsers = blockedUsers.map(user => ({
+      const blockedUsers = users.filter((user) => user.isBlocked === true);
+
+      const safeUsers = blockedUsers.map((user) => ({
         id: user.id,
         username: user.username,
         userType: user.userType,
         role: user.role,
         isOnline: user.isOnline,
         profileImage: user.profileImage,
-        isHidden: user.isHidden
+        isHidden: user.isHidden,
       }));
       res.json({ users: safeUsers, limit, offset });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // Message routes
-  app.get("/api/messages/public", async (req, res) => {
+  app.get('/api/messages/public', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
       const messages = await storage.getPublicMessages(limit);
-      
+
       // Batch fetch senders to avoid N+1
-      const senderIds = Array.from(new Set((messages || []).map((m: any) => m.senderId).filter(Boolean)));
+      const senderIds = Array.from(
+        new Set((messages || []).map((m: any) => m.senderId).filter(Boolean))
+      );
       const senders = await storage.getUsersByIds(senderIds as number[]);
       const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
       const messagesWithUsers = (messages || []).map((msg: any) => ({
         ...msg,
-        sender: msg.senderId ? (senderMap.get(msg.senderId) || null) : null
+        sender: msg.senderId ? senderMap.get(msg.senderId) || null : null,
       }));
 
       res.json({ messages: messagesWithUsers });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // ملاحظة: تم تبسيط نظام الخاص واعتماد /api/messages (isPrivate=true) بدلاً من /api/private-messages
 
   // POST endpoint for sending messages
-  app.post("/api/messages", async (req, res) => {
+  app.post('/api/messages', async (req, res) => {
     try {
-      const { senderId, receiverId, content, messageType = 'text', isPrivate = false, roomId = 'general' } = req.body;
-      
+      const {
+        senderId,
+        receiverId,
+        content,
+        messageType = 'text',
+        isPrivate = false,
+        roomId = 'general',
+      } = req.body;
+
       if (!senderId || !content?.trim()) {
-        return res.status(400).json({ error: "معرف المرسل والمحتوى مطلوبان" });
+        return res.status(400).json({ error: 'معرف المرسل والمحتوى مطلوبان' });
       }
 
       // التحقق من المرسل
       const sender = await storage.getUser(senderId);
       if (!sender) {
-        return res.status(404).json({ error: "المرسل غير موجود" });
+        return res.status(404).json({ error: 'المرسل غير موجود' });
       }
 
       // فحص الكتم للرسائل العامة
       if (!isPrivate && sender.isMuted) {
-        return res.status(403).json({ error: "أنت مكتوم ولا يمكنك إرسال رسائل عامة" });
+        return res.status(403).json({ error: 'أنت مكتوم ولا يمكنك إرسال رسائل عامة' });
       }
 
       // التحقق من المستقبل للرسائل الخاصة
       if (isPrivate && receiverId) {
         const receiver = await storage.getUser(receiverId);
         if (!receiver) {
-          return res.status(404).json({ error: "المستقبل غير موجود" });
+          return res.status(404).json({ error: 'المستقبل غير موجود' });
         }
       }
 
@@ -1169,18 +1311,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: content.trim(),
         messageType,
         isPrivate,
-        roomId: isPrivate ? null : roomId // للرسائل العامة فقط
+        roomId: isPrivate ? null : roomId, // للرسائل العامة فقط
       };
 
       const message = await storage.createMessage(messageData);
-      
-      // إرسال الرسالة عبر Socket.IO
-              if (isPrivate && receiverId) {
-          // رسالة خاصة - حدث موحّد فقط
-          getIO().to(receiverId.toString()).emit('privateMessage', { message: { ...message, sender } });
-          getIO().to(senderId.toString()).emit('privateMessage', { message: { ...message, sender } });
 
-          // إنشاء إشعار في قاعدة البيانات للمستقبل
+      // إرسال الرسالة عبر Socket.IO
+      if (isPrivate && receiverId) {
+        // رسالة خاصة - حدث موحّد فقط
+        getIO()
+          .to(receiverId.toString())
+          .emit('privateMessage', { message: { ...message, sender } });
+        getIO()
+          .to(senderId.toString())
+          .emit('privateMessage', { message: { ...message, sender } });
+
+        // إنشاء إشعار في قاعدة البيانات للمستقبل
         await notificationService.createMessageNotification(
           receiverId,
           sender.username,
@@ -1192,19 +1338,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         getIO().emit('message', {
           envelope: {
             type: 'newMessage',
-            message: { ...message, sender }
-          }
+            message: { ...message, sender },
+          },
         });
       }
 
-      res.json({ 
-        success: true, 
-        message: "تم إرسال الرسالة بنجاح",
-        data: { ...message, sender }
+      res.json({
+        success: true,
+        message: 'تم إرسال الرسالة بنجاح',
+        data: { ...message, sender },
       });
     } catch (error) {
-      console.error("خطأ في إرسال الرسالة:", error);
-      res.status(500).json({ error: "خطأ في الخادم" });
+      console.error('خطأ في إرسال الرسالة:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
@@ -1213,50 +1359,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.id);
       const { imageData } = req.body;
-      
+
       if (!imageData) {
-        return res.status(400).json({ error: "صورة مطلوبة" });
+        return res.status(400).json({ error: 'صورة مطلوبة' });
       }
 
       // Check if user is a member
       const existingUser = await storage.getUser(userId);
       if (!existingUser) {
-        return res.status(404).json({ error: "المستخدم غير موجود" });
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
       // Allow members and owners to upload profile pictures (not guests)
       if (existingUser.userType === 'guest') {
-        return res.status(403).json({ 
-          error: "رفع الصور الشخصية متاح للأعضاء فقط",
+        return res.status(403).json({
+          error: 'رفع الصور الشخصية متاح للأعضاء فقط',
           userType: existingUser.userType,
-          userId: userId
+          userId: userId,
         });
       }
 
       const user = await storage.updateUser(userId, { profileImage: imageData });
       if (!user) {
-        return res.status(500).json({ error: "فشل في تحديث الصورة" });
+        return res.status(500).json({ error: 'فشل في تحديث الصورة' });
       }
 
       // بث موجه للمستخدم + بث خفيف للجميع
       emitUserUpdatedToUser(userId, user);
       emitUserUpdatedToAll(user);
 
-      res.json({ user: buildUserBroadcastPayload(user), message: "تم تحديث الصورة الشخصية بنجاح" });
+      res.json({ user: buildUserBroadcastPayload(user), message: 'تم تحديث الصورة الشخصية بنجاح' });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
-
-
-
 
   // Update username color
   app.post('/api/users/:userId/color', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const { color } = req.body;
-      
+
       if (!userId || !color) {
         return res.status(400).json({ message: 'معرف المستخدم واللون مطلوبان' });
       }
@@ -1268,16 +1411,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update username color
       await storage.updateUser(userId, { usernameColor: color });
-      
+
       // بث خفيف مخصص للغرف + كامل لصاحب التعديل
       const updated = await storage.getUser(userId);
       emitUserUpdatedToUser(userId, updated);
       await emitToUserRooms(userId, { type: 'usernameColorChanged', userId, color });
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: 'تم تحديث لون الاسم بنجاح',
-        color 
+        color,
       });
     } catch (error) {
       console.error('Error updating username color:', error);
@@ -1285,31 +1428,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 🚀 تحسين: تقليل استدعاءات المستخدمين - زيادة الفترة الزمنية
+  const lastUserListRequest = 0;
+  const USER_LIST_THROTTLE = 5000; // زيادة إلى 5 ثوان لتقليل التحميل (server-enforced)
 
-    
-    // 🚀 تحسين: تقليل استدعاءات المستخدمين - زيادة الفترة الزمنية
-    const lastUserListRequest = 0;
-    const USER_LIST_THROTTLE = 5000; // زيادة إلى 5 ثوان لتقليل التحميل (server-enforced)
-    
-
-
-    // socket.on('privateMessage', async (data) => {
-    //   console.warn('[Deprecated] privateMessage handler is disabled. Use DM module events instead.');
-    // });
-
-
-
+  // socket.on('privateMessage', async (data) => {
+  //   console.warn('[Deprecated] privateMessage handler is disabled. Use DM module events instead.');
+  // });
 
   // بدء التنظيف الدوري لقاعدة البيانات
   const dbCleanupInterval = databaseCleanup.startPeriodicCleanup(6); // كل 6 ساعات
-  
+
   // تنظيف فوري عند بدء الخادم
   setTimeout(async () => {
     await databaseCleanup.performFullCleanup();
-    
+
     // عرض الإحصائيات
     const stats = await databaseCleanup.getDatabaseStats();
-    }, 5000); // بعد 5 ثوانٍ من بدء الخادم
+  }, 5000); // بعد 5 ثوانٍ من بدء الخادم
 
   // تنظيف الفترة الزمنية عند إغلاق الخادم
   process.on('SIGINT', () => {
@@ -1324,56 +1460,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Friend system APIs
-  
+
   // البحث عن المستخدمين
-  app.get("/api/users/search", async (req, res) => {
+  app.get('/api/users/search', async (req, res) => {
     try {
       const { q, userId } = req.query;
-      
+
       if (!q || !userId) {
-        return res.status(400).json({ error: "معاملات البحث مطلوبة" });
+        return res.status(400).json({ error: 'معاملات البحث مطلوبة' });
       }
 
       const limit = 10;
       const users = await databaseService.listUsers(limit, 0, String(q));
-      const filteredUsers = users.filter(user => user.id !== parseInt(userId as string));
+      const filteredUsers = users.filter((user) => user.id !== parseInt(userId as string));
 
       res.json({ users: filteredUsers });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // إرسال طلب صداقة
-  app.post("/api/friend-requests", async (req, res) => {
+  app.post('/api/friend-requests', async (req, res) => {
     try {
       const { senderId, receiverId } = req.body;
-      
+
       if (!senderId || !receiverId) {
-        return res.status(400).json({ error: "معلومات المرسل والمستقبل مطلوبة" });
+        return res.status(400).json({ error: 'معلومات المرسل والمستقبل مطلوبة' });
       }
 
       if (senderId === receiverId) {
-        return res.status(400).json({ error: "لا يمكنك إرسال طلب صداقة لنفسك" });
+        return res.status(400).json({ error: 'لا يمكنك إرسال طلب صداقة لنفسك' });
       }
 
       // التحقق من وجود طلب سابق
       const existingRequest = await friendService.getFriendRequest(senderId, receiverId);
       if (existingRequest) {
-        return res.status(400).json({ error: "طلب الصداقة موجود بالفعل" });
+        return res.status(400).json({ error: 'طلب الصداقة موجود بالفعل' });
       }
 
       // التحقق من الصداقة الموجودة
       const friendship = await friendService.getFriendship(senderId, receiverId);
       if (friendship) {
-        return res.status(400).json({ error: "أنتما أصدقاء بالفعل" });
+        return res.status(400).json({ error: 'أنتما أصدقاء بالفعل' });
       }
 
       // منع إرسال طلب صداقة إذا كان المستقبل قد تجاهل المرسل
       try {
         const ignoredByReceiver: number[] = await storage.getIgnoredUsers(receiverId);
         if (Array.isArray(ignoredByReceiver) && ignoredByReceiver.includes(senderId)) {
-          return res.status(403).json({ error: 'لا يمكن إرسال طلب صداقة: هذا المستخدم قام بتجاهلك' });
+          return res
+            .status(403)
+            .json({ error: 'لا يمكن إرسال طلب صداقة: هذا المستخدم قام بتجاهلك' });
         }
       } catch (e) {
         console.warn('تحذير: تعذر التحقق من قائمة التجاهل للمستقبل:', e);
@@ -1386,7 +1524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'friendRequestReceived',
         targetUserId: receiverId,
         senderName: sender?.username,
-        senderId: senderId
+        senderId: senderId,
       });
 
       // إنشاء إشعار حقيقي في قاعدة البيانات
@@ -1396,64 +1534,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         senderId
       );
 
-      res.json({ message: "تم إرسال طلب الصداقة", request });
+      res.json({ message: 'تم إرسال طلب الصداقة', request });
     } catch (error) {
       console.error('❌ Friend request error:', error);
       console.error('Stack trace:', (error as Error).stack);
-      res.status(500).json({ error: "خطأ في الخادم", details: (error as Error).message });
+      res.status(500).json({ error: 'خطأ في الخادم', details: (error as Error).message });
     }
   });
 
   // إرسال طلب صداقة باستخدام اسم المستخدم
-  app.post("/api/friend-requests/by-username", async (req, res) => {
+  app.post('/api/friend-requests/by-username', async (req, res) => {
     try {
       const { senderId, targetUsername } = req.body;
-      
+
       if (!senderId || !targetUsername) {
-        return res.status(400).json({ error: "معرف المرسل واسم المستخدم المستهدف مطلوبان" });
+        return res.status(400).json({ error: 'معرف المرسل واسم المستخدم المستهدف مطلوبان' });
       }
 
       // البحث عن المستخدم المستهدف
       const targetUser = await storage.getUserByUsername(targetUsername);
       if (!targetUser) {
-        return res.status(404).json({ error: "المستخدم غير موجود" });
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
       if (senderId === targetUser.id) {
-        return res.status(400).json({ error: "لا يمكنك إرسال طلب صداقة لنفسك" });
+        return res.status(400).json({ error: 'لا يمكنك إرسال طلب صداقة لنفسك' });
       }
 
       // التحقق من وجود طلب سابق
       const existingRequest = await friendService.getFriendRequest(senderId, targetUser.id);
       if (existingRequest) {
-        return res.status(400).json({ error: "طلب الصداقة موجود بالفعل" });
+        return res.status(400).json({ error: 'طلب الصداقة موجود بالفعل' });
       }
 
       // التحقق من الصداقة الموجودة
       const friendship = await friendService.getFriendship(senderId, targetUser.id);
       if (friendship) {
-        return res.status(400).json({ error: "أنتما أصدقاء بالفعل" });
+        return res.status(400).json({ error: 'أنتما أصدقاء بالفعل' });
       }
 
       // منع إرسال طلب صداقة إذا كان المستهدف قد تجاهل المُرسل
       try {
         const ignoredByTarget: number[] = await storage.getIgnoredUsers(targetUser.id);
         if (Array.isArray(ignoredByTarget) && ignoredByTarget.includes(senderId)) {
-          return res.status(403).json({ error: 'لا يمكن إرسال طلب صداقة: هذا المستخدم قام بتجاهلك' });
+          return res
+            .status(403)
+            .json({ error: 'لا يمكن إرسال طلب صداقة: هذا المستخدم قام بتجاهلك' });
         }
       } catch (e) {
         console.warn('تحذير: تعذر التحقق من قائمة التجاهل للمستخدم المستهدف:', e);
       }
 
       const request = await friendService.createFriendRequest(senderId, targetUser.id);
-      
+
       // إرسال إشعار عبر WebSocket
       const sender = await storage.getUser(senderId);
       getIO().emit('message', {
         type: 'friendRequestReceived',
         targetUserId: targetUser.id,
         senderName: sender?.username,
-        senderId: senderId
+        senderId: senderId,
       });
 
       // إنشاء إشعار حقيقي في قاعدة البيانات
@@ -1463,87 +1603,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
         senderId
       );
 
-      res.json({ message: "تم إرسال طلب الصداقة", request });
+      res.json({ message: 'تم إرسال طلب الصداقة', request });
     } catch (error) {
       console.error('خطأ في إرسال طلب الصداقة:', error);
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // الحصول على جميع طلبات الصداقة للمستخدم (واردة + صادرة)
-  app.get("/api/friend-requests/:userId", friendRequestLimiter, async (req, res) => {
+  app.get('/api/friend-requests/:userId', friendRequestLimiter, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const [incoming, outgoing] = await Promise.all([
         friendService.getIncomingFriendRequests(userId),
-        friendService.getOutgoingFriendRequests(userId)
+        friendService.getOutgoingFriendRequests(userId),
       ]);
       res.json({ incoming, outgoing });
     } catch (error) {
       console.error('خطأ في جلب طلبات الصداقة:', error);
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // الحصول على طلبات الصداقة الواردة
-  app.get("/api/friend-requests/incoming/:userId", friendRequestLimiter, async (req, res) => {
+  app.get('/api/friend-requests/incoming/:userId', friendRequestLimiter, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const requests = await friendService.getIncomingFriendRequests(userId);
       res.json({ requests });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // الحصول على طلبات الصداقة الصادرة
-  app.get("/api/friend-requests/outgoing/:userId", friendRequestLimiter, async (req, res) => {
+  app.get('/api/friend-requests/outgoing/:userId', friendRequestLimiter, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const requests = await friendService.getOutgoingFriendRequests(userId);
       res.json({ requests });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // قبول طلب صداقة
-  app.post("/api/friend-requests/:requestId/accept", async (req, res) => {
+  app.post('/api/friend-requests/:requestId/accept', async (req, res) => {
     try {
       const requestId = parseInt(req.params.requestId);
       const { userId } = req.body;
-      
+
       const request = await friendService.getFriendRequestById(requestId);
       if (!request || request.friendId !== userId) {
-        return res.status(403).json({ error: "غير مسموح" });
+        return res.status(403).json({ error: 'غير مسموح' });
       }
 
       // قبول طلب الصداقة وإضافة الصداقة
       await friendService.acceptFriendRequest(requestId);
       await friendService.addFriend(request.userId, request.friendId);
-      
+
       // الحصول على بيانات المستخدمين
       const receiver = await storage.getUser(userId);
       const sender = await storage.getUser(request.userId);
-      
+
       // إرسال إشعار WebSocket لتحديث قوائم الأصدقاء
       getIO().emit('message', {
         type: 'friendAdded',
         targetUserId: request.userId,
         friendId: request.friendId,
-        friendName: receiver?.username
+        friendName: receiver?.username,
       });
-      
+
       getIO().emit('message', {
-        type: 'friendAdded', 
+        type: 'friendAdded',
         targetUserId: request.friendId,
         friendId: request.userId,
-        friendName: sender?.username
+        friendName: sender?.username,
       });
       getIO().emit('message', {
         type: 'friendRequestAccepted',
         targetUserId: request.userId,
-        senderName: receiver?.username
+        senderName: receiver?.username,
       });
 
       // إنشاء إشعار حقيقي في قاعدة البيانات
@@ -1553,248 +1693,250 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId
       );
 
-      res.json({ message: "تم قبول طلب الصداقة" });
+      res.json({ message: 'تم قبول طلب الصداقة' });
     } catch (error) {
-      console.error("خطأ في قبول طلب الصداقة:", error);
-      res.status(500).json({ error: "خطأ في الخادم" });
+      console.error('خطأ في قبول طلب الصداقة:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // رفض طلب صداقة
-  app.post("/api/friend-requests/:requestId/decline", async (req, res) => {
+  app.post('/api/friend-requests/:requestId/decline', async (req, res) => {
     try {
       const requestId = parseInt(req.params.requestId);
       const { userId } = req.body;
-      
+
       const request = await friendService.getFriendRequestById(requestId);
       if (!request || request.friendId !== userId) {
-        return res.status(403).json({ error: "غير مسموح" });
+        return res.status(403).json({ error: 'غير مسموح' });
       }
 
       await friendService.declineFriendRequest(requestId);
-      res.json({ message: "تم رفض طلب الصداقة" });
+      res.json({ message: 'تم رفض طلب الصداقة' });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // إلغاء طلب صداقة
-  app.post("/api/friend-requests/:requestId/cancel", async (req, res) => {
+  app.post('/api/friend-requests/:requestId/cancel', async (req, res) => {
     try {
       const requestId = parseInt(req.params.requestId);
       const { userId } = req.body;
-      
+
       const request = await friendService.getFriendRequestById(requestId);
       if (!request || request.userId !== userId) {
-        return res.status(403).json({ error: "غير مسموح" });
+        return res.status(403).json({ error: 'غير مسموح' });
       }
 
       await friendService.deleteFriendRequest(requestId);
-      res.json({ message: "تم إلغاء طلب الصداقة" });
+      res.json({ message: 'تم إلغاء طلب الصداقة' });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // تجاهل طلب صداقة
-  app.post("/api/friend-requests/:requestId/ignore", async (req, res) => {
+  app.post('/api/friend-requests/:requestId/ignore', async (req, res) => {
     try {
       const requestId = parseInt(req.params.requestId);
       const { userId } = req.body;
-      
+
       const request = await friendService.getFriendRequestById(requestId);
       if (!request || request.friendId !== userId) {
-        return res.status(403).json({ error: "غير مسموح" });
+        return res.status(403).json({ error: 'غير مسموح' });
       }
 
       await friendService.ignoreFriendRequest(requestId);
-      res.json({ message: "تم تجاهل طلب الصداقة" });
+      res.json({ message: 'تم تجاهل طلب الصداقة' });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // الحصول على قائمة الأصدقاء
 
   // API routes for spam protection and reporting
-  
+
   // إضافة تبليغ
-  app.post("/api/reports", async (req, res) => {
+  app.post('/api/reports', async (req, res) => {
     try {
       const { reporterId, reportedUserId, reason, content, messageId } = req.body;
-      
+
       if (!reporterId || !reportedUserId || !reason || !content) {
-        return res.status(400).json({ error: "جميع الحقول مطلوبة" });
+        return res.status(400).json({ error: 'جميع الحقول مطلوبة' });
       }
 
       // منع البلاغ على الإدمن والمشرف والمالك
       const reportedUser = await storage.getUser(reportedUserId);
       if (reportedUser && ['admin', 'moderator', 'owner'].includes(reportedUser.userType)) {
-        return res.status(403).json({ 
-          error: "لا يمكن الإبلاغ عن أعضاء الإدارة (المشرف، الإدمن، المالك)" 
+        return res.status(403).json({
+          error: 'لا يمكن الإبلاغ عن أعضاء الإدارة (المشرف، الإدمن، المالك)',
         });
       }
 
-      const report = spamProtection.addReport(reporterId, reportedUserId, reason, content, messageId);
-      res.json({ report, message: "تم إرسال التبليغ بنجاح" });
+      const report = spamProtection.addReport(
+        reporterId,
+        reportedUserId,
+        reason,
+        content,
+        messageId
+      );
+      res.json({ report, message: 'تم إرسال التبليغ بنجاح' });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // الحصول على التبليغات المعلقة (للمشرفين)
-  app.get("/api/reports/pending", async (req, res) => {
+  app.get('/api/reports/pending', async (req, res) => {
     try {
       const { userId } = req.query;
-      
+
       // التحقق من أن المستخدم مشرف
       const user = await storage.getUser(parseInt(userId as string));
       if (!user || user.userType !== 'owner') {
-        return res.status(403).json({ error: "غير مسموح" });
+        return res.status(403).json({ error: 'غير مسموح' });
       }
 
       const reports = spamProtection.getPendingReports();
       res.json({ reports });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // مراجعة تبليغ (للمشرفين)
-  app.patch("/api/reports/:reportId", async (req, res) => {
+  app.patch('/api/reports/:reportId', async (req, res) => {
     try {
       const { reportId } = req.params;
       const { action, userId } = req.body;
-      
+
       // التحقق من أن المستخدم مشرف
       const user = await storage.getUser(userId);
       if (!user || user.userType !== 'owner') {
-        return res.status(403).json({ error: "غير مسموح" });
+        return res.status(403).json({ error: 'غير مسموح' });
       }
 
       const success = spamProtection.reviewReport(parseInt(reportId), action);
       if (success) {
-        res.json({ message: "تم مراجعة التبليغ" });
+        res.json({ message: 'تم مراجعة التبليغ' });
       } else {
-        res.status(404).json({ error: "التبليغ غير موجود" });
+        res.status(404).json({ error: 'التبليغ غير موجود' });
       }
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // الحصول على حالة المستخدم
-  app.get("/api/users/:userId/spam-status", async (req, res) => {
+  app.get('/api/users/:userId/spam-status', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const status = spamProtection.getUserStatus(userId);
       res.json({ status });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // إعادة تعيين نقاط السبام (للمشرفين)
-  app.post("/api/users/:userId/reset-spam", async (req, res) => {
+  app.post('/api/users/:userId/reset-spam', async (req, res) => {
     try {
       const { userId } = req.params;
       const { adminId } = req.body;
-      
+
       // التحقق من أن المستخدم مشرف
       const admin = await storage.getUser(adminId);
       if (!admin || admin.userType !== 'owner') {
-        return res.status(403).json({ error: "غير مسموح" });
+        return res.status(403).json({ error: 'غير مسموح' });
       }
 
       spamProtection.resetUserSpamScore(parseInt(userId));
-      res.json({ message: "تم إعادة تعيين نقاط السبام" });
+      res.json({ message: 'تم إعادة تعيين نقاط السبام' });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // إحصائيات السبام (للمشرفين)
-  app.get("/api/spam-stats", async (req, res) => {
+  app.get('/api/spam-stats', async (req, res) => {
     try {
       const { userId } = req.query;
-      
+
       // التحقق من أن المستخدم مشرف
       const user = await storage.getUser(parseInt(userId as string));
       if (!user || user.userType !== 'owner') {
-        return res.status(403).json({ error: "غير مسموح" });
+        return res.status(403).json({ error: 'غير مسموح' });
       }
 
       const stats = spamProtection.getStats();
       res.json({ stats });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // Moderation routes
   // DUPLICATE BLOCK REMOVED: Using the canonical moderation endpoints defined earlier in the file.
 
-  app.get("/api/moderation/log", protect.admin, async (req, res) => {
+  app.get('/api/moderation/log', protect.admin, async (req, res) => {
     try {
       const userId = parseInt(req.query.userId as string);
       const user = await storage.getUser(userId);
-      
+
       // للإدمن والمالك فقط
       if (!user || (user.userType !== 'owner' && user.userType !== 'admin')) {
-        return res.status(403).json({ error: "غير مسموح لك بالوصول - للإدمن والمالك فقط" });
+        return res.status(403).json({ error: 'غير مسموح لك بالوصول - للإدمن والمالك فقط' });
       }
 
       const log = moderationSystem.getModerationLog();
       res.json({ log });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // Removed second duplicate moderation actions endpoint - kept the more complete one
 
   // Friends routes
-  app.get("/api/friends/:userId", async (req, res) => {
+  app.get('/api/friends/:userId', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const friends = await friendService.getFriends(userId);
-      
+
       res.json({ friends });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
-
-
-  app.delete("/api/friends/:userId/:friendId", async (req, res) => {
+  app.delete('/api/friends/:userId/:friendId', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const friendId = parseInt(req.params.friendId);
-      
+
       const success = await friendService.removeFriend(userId, friendId);
-      
+
       if (success) {
-        res.json({ message: "تم حذف الصديق" });
+        res.json({ message: 'تم حذف الصديق' });
       } else {
-        res.status(404).json({ error: "الصداقة غير موجودة" });
+        res.status(404).json({ error: 'الصداقة غير موجودة' });
       }
     } catch (error) {
-      res.status(500).json({ error: "خطأ في الخادم" });
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
-
-
   // إضافة endpoint لوحة إجراءات المشرفين
-  app.get("/api/moderation/actions", protect.admin, async (req, res) => {
+  app.get('/api/moderation/actions', protect.admin, async (req, res) => {
     try {
       const { userId } = req.query;
       const user = await storage.getUser(Number(userId));
-      
+
       // التحقق من أن المستخدم مشرف أو مالك
       if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
-        return res.status(403).json({ error: "غير مسموح - للمشرفين فقط" });
+        return res.status(403).json({ error: 'غير مسموح - للمشرفين فقط' });
       }
 
       const now = new Date();
@@ -1827,35 +1969,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...action,
           moderatorName: moderator?.username || 'مجهول',
           targetName: target?.username || 'مجهول',
-          isActive
+          isActive,
         });
       }
 
       res.json({ actions });
     } catch (error) {
-      console.error("خطأ في الحصول على تاريخ الإجراءات:", error);
-      res.status(500).json({ error: "خطأ في الخادم" });
+      console.error('خطأ في الحصول على تاريخ الإجراءات:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // إضافة endpoint لسجل البلاغات
-  app.get("/api/reports", protect.admin, async (req, res) => {
+  app.get('/api/reports', protect.admin, async (req, res) => {
     try {
       const { userId } = req.query;
       const user = await storage.getUser(Number(userId));
-      
+
       if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
-        return res.status(403).json({ error: "غير مسموح - للمشرفين فقط" });
+        return res.status(403).json({ error: 'غير مسموح - للمشرفين فقط' });
       }
 
-      const reports = spamProtection.getPendingReports()
+      const reports = spamProtection
+        .getPendingReports()
         .concat(spamProtection.getReviewedReports())
-        .map(report => ({
+        .map((report) => ({
           ...report,
           reporterName: '',
-          reportedUserName: ''
+          reportedUserName: '',
         }));
-      
+
       // إضافة أسماء المستخدمين للبلاغات
       for (const report of reports) {
         const reporter = await storage.getUser(report.reporterId);
@@ -1866,45 +2009,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(reports);
     } catch (error) {
-      console.error("خطأ في الحصول على البلاغات:", error);
-      res.status(500).json({ error: "خطأ في الخادم" });
+      console.error('خطأ في الحصول على البلاغات:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // إضافة endpoint لمراجعة البلاغات
-  app.post("/api/reports/:id/review", protect.admin, async (req, res) => {
+  app.post('/api/reports/:id/review', protect.admin, async (req, res) => {
     try {
       const reportId = parseInt(req.params.id);
       const { action, moderatorId } = req.body;
-      
+
       const user = await storage.getUser(moderatorId);
       if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
-        return res.status(403).json({ error: "غير مسموح" });
+        return res.status(403).json({ error: 'غير مسموح' });
       }
 
       const success = spamProtection.reviewReport(reportId, action);
-      
+
       if (success) {
-        res.json({ message: "تمت مراجعة البلاغ" });
+        res.json({ message: 'تمت مراجعة البلاغ' });
       } else {
-        res.status(404).json({ error: "البلاغ غير موجود" });
+        res.status(404).json({ error: 'البلاغ غير موجود' });
       }
     } catch (error) {
-      console.error("خطأ في مراجعة البلاغ:", error);
-      res.status(500).json({ error: "خطأ في الخادم" });
+      console.error('خطأ في مراجعة البلاغ:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
-
-
   // إضافة endpoint للإجراءات النشطة
-  app.get("/api/moderation/active-actions", protect.admin, async (req, res) => {
+  app.get('/api/moderation/active-actions', protect.admin, async (req, res) => {
     try {
       const { userId } = req.query;
       const user = await storage.getUser(Number(userId));
-      
+
       if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
-        return res.status(403).json({ error: "غير مسموح - للمشرفين فقط" });
+        return res.status(403).json({ error: 'غير مسموح - للمشرفين فقط' });
       }
 
       const now = new Date();
@@ -1936,24 +2077,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...action,
             moderatorName: moderator?.username || 'مجهول',
             targetName: target?.username || 'مجهول',
-            isActive: true
+            isActive: true,
           });
         }
       }
 
       res.json({ actions: activeActions });
     } catch (error) {
-      console.error("خطأ في الحصول على الإجراءات النشطة:", error);
-      res.status(500).json({ error: "خطأ في الخادم" });
+      console.error('خطأ في الحصول على الإجراءات النشطة:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
   // Security API routes
   app.use('/api/security', securityApiRoutes);
-  
+
   // تمت إزالة نظام المسارات المعيارية v2 غير المستخدم لتفادي الازدواجية
-
-
 
   // إخفاء/إظهار من قائمة المتصلين للجميع (للإدمن/المالك فقط)
   app.post('/api/users/:userId/hide-online', async (req, res) => {
@@ -1990,9 +2129,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const targetId = parseInt(req.params.targetId);
-      
+
       await storage.addIgnoredUser(userId, targetId);
-      
+
       res.json({ success: true, message: 'تم تجاهل المستخدم' });
     } catch (error) {
       console.error('خطأ في تجاهل المستخدم:', error);
@@ -2004,9 +2143,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const targetId = parseInt(req.params.targetId);
-      
+
       await storage.removeIgnoredUser(userId, targetId);
-      
+
       res.json({ success: true, message: 'تم إلغاء تجاهل المستخدم' });
     } catch (error) {
       console.error('خطأ في إلغاء تجاهل المستخدم:', error);
@@ -2018,7 +2157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const ignoredUsers = await storage.getIgnoredUsers(userId);
-      
+
       res.json({ ignoredUsers });
     } catch (error) {
       console.error('خطأ في جلب المستخدمين المتجاهلين:', error);
@@ -2063,149 +2202,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update connected cache copy in realtime module if needed (no-op here)
-      try { updateConnectedUserCache(user); } catch {}
+      try {
+        updateConnectedUserCache(user);
+      } catch {}
 
-                   // بث خفيف للجميع + بث كامل لصاحب التعديل
-            emitUserUpdatedToAll(user);
+      // بث خفيف للجميع + بث كامل لصاحب التعديل
+      emitUserUpdatedToAll(user);
       emitUserUpdatedToUser(idNum, user);
 
       const payload = buildUserBroadcastPayload(user);
       res.json(payload);
     } catch (error) {
       console.error('Error updating user:', error);
-      res.status(500).json({ error: 'Failed to update user', details: error instanceof Error ? error.message : 'Unknown error' });
+      res
+        .status(500)
+        .json({
+          error: 'Failed to update user',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        });
     }
   });
 
   // Notifications API
-  app.get("/api/notifications/:userId", async (req, res) => {
+  app.get('/api/notifications/:userId', async (req, res) => {
     try {
       // Check database availability
       if (!db || dbType === 'disabled') {
         return res.json({ notifications: [] });
       }
-      
+
       const userId = parseInt(req.params.userId);
-      
+
       // التحقق من صحة userId
       if (isNaN(userId) || userId <= 0) {
-        return res.status(400).json({ error: "معرف المستخدم غير صحيح" });
+        return res.status(400).json({ error: 'معرف المستخدم غير صحيح' });
       }
-      
+
       const notifications = await storage.getUserNotifications(userId);
       res.json({ notifications });
     } catch (error) {
       console.error('خطأ في جلب الإشعارات:', error);
-      res.status(500).json({ error: "خطأ في جلب الإشعارات" });
+      res.status(500).json({ error: 'خطأ في جلب الإشعارات' });
     }
   });
 
   // إضافة endpoint للإشعارات بدون userId (للحالات التي تستدعى بدون معامل)
-  app.get("/api/notifications", async (req, res) => {
+  app.get('/api/notifications', async (req, res) => {
     try {
       // Check database availability
       if (!db || dbType === 'disabled') {
         return res.json({ notifications: [] });
       }
-      
+
       const { userId } = req.query;
-      
+
       if (!userId || isNaN(parseInt(userId as string))) {
-        return res.status(400).json({ error: "معرف المستخدم مطلوب وغير صحيح" });
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب وغير صحيح' });
       }
-      
+
       const userIdInt = parseInt(userId as string);
       const notifications = await storage.getUserNotifications(userIdInt);
       res.json({ notifications });
     } catch (error) {
       console.error('خطأ في جلب الإشعارات:', error);
-      res.status(500).json({ error: "خطأ في جلب الإشعارات" });
+      res.status(500).json({ error: 'خطأ في جلب الإشعارات' });
     }
   });
 
-  app.post("/api/notifications", async (req, res) => {
+  app.post('/api/notifications', async (req, res) => {
     try {
       const { userId, type, title, message, data } = req.body;
-      
+
       const notification = await storage.createNotification({
         userId,
         type,
         title,
         message,
-        data
+        data,
       });
-      
+
       // إرسال إشعار فوري عبر WebSocket
-      try { getIO().to(userId.toString()).emit('newNotification', { notification }); } catch {}
-      
+      try {
+        getIO().to(userId.toString()).emit('newNotification', { notification });
+      } catch {}
+
       res.json({ notification });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في إنشاء الإشعار" });
+      res.status(500).json({ error: 'خطأ في إنشاء الإشعار' });
     }
   });
 
-  app.put("/api/notifications/:id/read", async (req, res) => {
+  app.put('/api/notifications/:id/read', async (req, res) => {
     try {
       const notificationId = parseInt(req.params.id);
       const success = await storage.markNotificationAsRead(notificationId);
       res.json({ success });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في تحديث الإشعار" });
+      res.status(500).json({ error: 'خطأ في تحديث الإشعار' });
     }
   });
 
-  app.put("/api/notifications/user/:userId/read-all", async (req, res) => {
+  app.put('/api/notifications/user/:userId/read-all', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const success = await storage.markAllNotificationsAsRead(userId);
       res.json({ success });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في تحديث الإشعارات" });
+      res.status(500).json({ error: 'خطأ في تحديث الإشعارات' });
     }
   });
 
-  app.delete("/api/notifications/:id", async (req, res) => {
+  app.delete('/api/notifications/:id', async (req, res) => {
     try {
       const notificationId = parseInt(req.params.id);
       const success = await storage.deleteNotification(notificationId);
       res.json({ success });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في حذف الإشعار" });
+      res.status(500).json({ error: 'خطأ في حذف الإشعار' });
     }
   });
 
-  app.get("/api/notifications/:userId/unread-count", async (req, res) => {
+  app.get('/api/notifications/:userId/unread-count', async (req, res) => {
     try {
       // Check database availability
       if (!db || dbType === 'disabled') {
         return res.json({ count: 0 });
       }
-      
+
       const userId = parseInt(req.params.userId);
       const count = await storage.getUnreadNotificationCount(userId);
       res.json({ count });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في جلب عدد الإشعارات" });
+      res.status(500).json({ error: 'خطأ في جلب عدد الإشعارات' });
     }
   });
 
   // Alternative endpoint with userId in query parameter (for client compatibility)
-  app.get("/api/notifications/unread-count", async (req, res) => {
+  app.get('/api/notifications/unread-count', async (req, res) => {
     try {
       // Check database availability
       if (!db || dbType === 'disabled') {
         return res.json({ count: 0 });
       }
-      
+
       const userId = parseInt(req.query.userId as string);
       if (!userId) {
-        return res.status(400).json({ error: "معرف المستخدم مطلوب" });
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
       }
-      
+
       const count = await storage.getUnreadNotificationCount(userId);
       res.json({ count });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في جلب عدد الإشعارات" });
+      res.status(500).json({ error: 'خطأ في جلب عدد الإشعارات' });
     }
   });
 
@@ -2213,21 +2361,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/users/update-profile', async (req, res) => {
     try {
       const { userId, ...updates } = req.body;
-      
+
       if (!userId) {
         console.error('❌ معرف المستخدم مفقود');
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'معرف المستخدم مطلوب',
-          received: { userId, type: typeof userId }
+          received: { userId, type: typeof userId },
         });
       }
-      
+
       const userIdNum = parseInt(userId);
       if (isNaN(userIdNum)) {
         console.error('❌ معرف المستخدم ليس رقم:', userId);
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'معرف المستخدم يجب أن يكون رقم صحيح',
-          received: { userId, type: typeof userId }
+          received: { userId, type: typeof userId },
         });
       }
 
@@ -2239,40 +2387,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // التحقق من صحة البيانات المُدخلة
       const validatedUpdates: any = {};
-      
+
       if (updates.username !== undefined) {
         if (typeof updates.username !== 'string' || updates.username.trim().length === 0) {
           return res.status(400).json({ error: 'اسم المستخدم يجب أن يكون نص غير فارغ' });
         }
         validatedUpdates.username = updates.username.trim();
       }
-      
+
       if (updates.status !== undefined) {
         if (typeof updates.status !== 'string') {
           return res.status(400).json({ error: 'الحالة يجب أن تكون نص' });
         }
         validatedUpdates.status = updates.status.trim();
       }
-      
+
       if (updates.gender !== undefined) {
         const validGenders = ['ذكر', 'أنثى', ''];
         if (!validGenders.includes(updates.gender)) {
-          return res.status(400).json({ 
+          return res.status(400).json({
             error: 'الجنس يجب أن يكون "ذكر" أو "أنثى"',
             received: updates.gender,
-            valid: validGenders
+            valid: validGenders,
           });
         }
         validatedUpdates.gender = updates.gender;
       }
-      
+
       if (updates.country !== undefined) {
         if (typeof updates.country !== 'string') {
           return res.status(400).json({ error: 'البلد يجب أن يكون نص' });
         }
         validatedUpdates.country = updates.country.trim();
       }
-      
+
       if (updates.age !== undefined) {
         let age;
         if (typeof updates.age === 'string') {
@@ -2280,28 +2428,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else if (typeof updates.age === 'number') {
           age = updates.age;
         } else {
-          return res.status(400).json({ 
+          return res.status(400).json({
             error: 'العمر يجب أن يكون رقم',
-            received: { age: updates.age, type: typeof updates.age }
+            received: { age: updates.age, type: typeof updates.age },
           });
         }
-        
+
         if (isNaN(age) || age < 13 || age > 120) {
-          return res.status(400).json({ 
+          return res.status(400).json({
             error: 'العمر يجب أن يكون رقم بين 13 و 120',
-            received: age
+            received: age,
           });
         }
         validatedUpdates.age = age;
       }
-      
+
       if (updates.relation !== undefined) {
         if (typeof updates.relation !== 'string') {
           return res.status(400).json({ error: 'الحالة الاجتماعية يجب أن تكون نص' });
         }
         validatedUpdates.relation = updates.relation.trim();
       }
-      
+
       if (updates.bio !== undefined) {
         if (typeof updates.bio !== 'string') {
           return res.status(400).json({ error: 'السيرة الذاتية يجب أن تكون نص' });
@@ -2314,26 +2462,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // تحديث البيانات
       const updatedUser = await storage.updateUser(userIdNum, validatedUpdates);
-      
+
       if (!updatedUser) {
         console.error('❌ فشل في تحديث قاعدة البيانات');
         return res.status(500).json({ error: 'فشل في تحديث البيانات في قاعدة البيانات' });
       }
-      
+
       // بث موجه للمستخدم + بث خفيف للجميع
       emitUserUpdatedToUser(userIdNum, updatedUser);
       emitUserUpdatedToAll(updatedUser);
 
-      res.json({ 
-        success: true, 
-        message: 'تم تحديث البروفايل بنجاح', 
-        user: updatedUser 
+      res.json({
+        success: true,
+        message: 'تم تحديث البروفايل بنجاح',
+        user: updatedUser,
       });
     } catch (error) {
       console.error('❌ خطأ في تحديث البروفايل:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'خطأ في الخادم',
-        details: error instanceof Error ? error.message : 'خطأ غير معروف'
+        details: error instanceof Error ? error.message : 'خطأ غير معروف',
       });
     }
   });
@@ -2342,7 +2490,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/users/:id', async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
-      
+
       if (!userId || isNaN(userId)) {
         return res.status(400).json({ error: 'معرف المستخدم يجب أن يكون رقم صحيح' });
       }
@@ -2356,13 +2504,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password, ...userWithoutPassword } = user;
       const payload = buildUserBroadcastPayload(userWithoutPassword);
       res.json(payload);
-
-      
     } catch (error) {
       console.error('❌ خطأ في جلب بيانات المستخدم:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'خطأ في الخادم',
-        details: error instanceof Error ? error.message : 'خطأ غير معروف'
+        details: error instanceof Error ? error.message : 'خطأ غير معروف',
       });
     }
   });
@@ -2375,11 +2521,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const pointsInfo = await pointsService.getUserPointsInfo(userId);
-      
+
       if (!pointsInfo) {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
-      
+
       res.json(pointsInfo);
     } catch (error) {
       console.error('خطأ في جلب معلومات النقاط:', error);
@@ -2392,7 +2538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const limit = parseInt(req.query.limit as string) || 50;
-      
+
       const history = await pointsService.getUserPointsHistory(userId, limit);
       res.json(history);
     } catch (error) {
@@ -2417,15 +2563,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/points/add', async (req, res) => {
     try {
       const { moderatorId, targetUserId, points, reason } = req.body;
-      
+
       // التحقق من صلاحيات المشرف
       const moderator = await storage.getUser(moderatorId);
       if (!moderator || !['owner', 'admin'].includes(moderator.userType)) {
         return res.status(403).json({ error: 'غير مصرح لك بهذا الإجراء' });
       }
-      
-      const result = await pointsService.addPoints(targetUserId, points, reason || 'إضافة يدوية من المشرف');
-      
+
+      const result = await pointsService.addPoints(
+        targetUserId,
+        points,
+        reason || 'إضافة يدوية من المشرف'
+      );
+
       // إرسال إشعار للمستخدم
       if (result.leveledUp) {
         io.to(targetUserId.toString()).emit('message', {
@@ -2433,17 +2583,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           oldLevel: result.oldLevel,
           newLevel: result.newLevel,
           levelInfo: result.levelInfo,
-          message: `🎉 تهانينا! وصلت للمستوى ${result.newLevel}: ${result.levelInfo?.title}`
+          message: `🎉 تهانينا! وصلت للمستوى ${result.newLevel}: ${result.levelInfo?.title}`,
         });
       }
-      
-      getIO().to(targetUserId.toString()).emit('message', {
-        type: 'pointsAdded',
-        points,
-        reason: reason || 'مكافأة من الإدارة',
-        message: `🎁 حصلت على ${points} نقطة من الإدارة!`
-      });
-      
+
+      getIO()
+        .to(targetUserId.toString())
+        .emit('message', {
+          type: 'pointsAdded',
+          points,
+          reason: reason || 'مكافأة من الإدارة',
+          message: `🎁 حصلت على ${points} نقطة من الإدارة!`,
+        });
+
       res.json({ success: true, result });
     } catch (error) {
       console.error('خطأ في إضافة النقاط:', error);
@@ -2455,39 +2607,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/points/send', async (req, res) => {
     try {
       const { senderId, receiverId, points, reason } = req.body;
-      
+
       // التحقق من صحة البيانات
       if (!senderId || !receiverId || !points || points <= 0) {
         return res.status(400).json({ error: 'بيانات غير صحيحة' });
       }
-      
+
       if (senderId === receiverId) {
         return res.status(400).json({ error: 'لا يمكنك إرسال نقاط لنفسك' });
       }
-      
+
       // التحقق من وجود المستخدمين
       const sender = await storage.getUser(senderId);
       const receiver = await storage.getUser(receiverId);
-      
+
       if (!sender || !receiver) {
         return res.status(404).json({ error: 'مستخدم غير موجود' });
       }
-      
-      const senderIsOwner = (sender.userType === 'owner') || (sender.role === 'owner');
-      
+
+      const senderIsOwner = sender.userType === 'owner' || sender.role === 'owner';
+
       // التحقق من وجود نقاط كافية للمرسل (إلا إذا كان المرسل هو المالك)
       if (!senderIsOwner && (sender.points || 0) < points) {
         return res.status(400).json({ error: 'نقاط غير كافية' });
       }
-      
+
       // خصم النقاط من المرسل (يُتجاوز للمالك)
       if (!senderIsOwner) {
         await pointsService.addPoints(senderId, -points, `إرسال نقاط إلى ${receiver.username}`);
       }
-      
+
       // إضافة النقاط للمستقبل
-      const receiverResult = await pointsService.addPoints(receiverId, points, reason || `نقاط من ${sender.username}`);
-      
+      const receiverResult = await pointsService.addPoints(
+        receiverId,
+        points,
+        reason || `نقاط من ${sender.username}`
+      );
+
       // إرسال إشعار للمستقبل
       if (receiverResult.leveledUp) {
         io.to(receiverId.toString()).emit('message', {
@@ -2495,27 +2651,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           oldLevel: receiverResult.oldLevel,
           newLevel: receiverResult.newLevel,
           levelInfo: receiverResult.levelInfo,
-          message: `🎉 تهانينا! وصلت للمستوى ${receiverResult.newLevel}: ${receiverResult.levelInfo?.title}`
+          message: `🎉 تهانينا! وصلت للمستوى ${receiverResult.newLevel}: ${receiverResult.levelInfo?.title}`,
         });
       }
-      
+
       // إشعار وصول النقاط للمستقبل
-      getIO().to(receiverId.toString()).emit('message', {
-        type: 'pointsReceived',
-        points,
-        senderName: sender.username,
-        message: `🎁 تم استلام ${points} نقطة من ${sender.username}`
-      });
-      
+      getIO()
+        .to(receiverId.toString())
+        .emit('message', {
+          type: 'pointsReceived',
+          points,
+          senderName: sender.username,
+          message: `🎁 تم استلام ${points} نقطة من ${sender.username}`,
+        });
+
       // إشعار في المحادثة العامة
       getIO().emit('message', {
         type: 'pointsTransfer',
         senderName: sender.username,
         receiverName: receiver.username,
         points,
-        message: `💰 تم إرسال ${points} نقطة من ${sender.username} إلى ${receiver.username}`
+        message: `💰 تم إرسال ${points} نقطة من ${sender.username} إلى ${receiver.username}`,
       });
-      
+
       // إنشاء إشعار في قاعدة البيانات للمستقبل
       await notificationService.createPointsReceivedNotification(
         receiverId,
@@ -2533,28 +2691,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           receiverResult.levelInfo.title
         );
       }
-      
+
       // تحديث بيانات المستخدمين في real-time
       const updatedSender = await storage.getUser(senderId);
       const updatedReceiver = await storage.getUser(receiverId);
-      
+
       getIO().to(senderId.toString()).emit('message', {
         type: 'userUpdated',
-        user: updatedSender
+        user: updatedSender,
       });
-      
+
       getIO().to(receiverId.toString()).emit('message', {
         type: 'userUpdated',
-        user: updatedReceiver
+        user: updatedReceiver,
       });
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: `تم إرسال ${points} نقطة إلى ${receiver.username} بنجاح`,
         senderPoints: updatedSender?.points || 0,
-        receiverPoints: updatedReceiver?.points || 0
+        receiverPoints: updatedReceiver?.points || 0,
       });
-      
     } catch (error) {
       console.error('خطأ في إرسال النقاط:', error);
       res.status(500).json({ error: error.message || 'خطأ في الخادم' });
@@ -2566,13 +2723,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { moderatorId } = req.body;
       const userId = parseInt(req.params.userId);
-      
+
       // التحقق من صلاحيات المشرف
       const moderator = await storage.getUser(moderatorId);
       if (!moderator || moderator.userType !== 'owner') {
         return res.status(403).json({ error: 'هذه الميزة للمالك فقط' });
       }
-      
+
       const result = await pointsService.recalculateUserPoints(userId);
       res.json({ success: true, result });
     } catch (error) {
@@ -2590,7 +2747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!db || dbType === 'disabled') {
         return res.json({ success: true, posts: [], count: 0, type: req.params.type });
       }
-      
+
       const { type } = req.params; // 'public' أو 'friends'
       const { userId } = req.query;
 
@@ -2610,18 +2767,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (type === 'friends') {
         // جلب منشورات الأصدقاء فقط
         const friends = await storage.getUserFriends(user.id);
-        const friendIds = friends.map(f => f.id);
+        const friendIds = friends.map((f) => f.id);
         friendIds.push(user.id); // إضافة منشورات المستخدم نفسه
         posts = await storage.getWallPostsByUsers(friendIds);
       } else {
         return res.status(400).json({ error: 'نوع الحائط غير صحيح' });
       }
 
-      res.json({ 
+      res.json({
         success: true,
         posts: posts || [],
         count: posts?.length || 0,
-        type: type
+        type: type,
       });
     } catch (error) {
       console.error('خطأ في جلب المنشورات:', error);
@@ -2633,21 +2790,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const compressImage = async (filePath: string): Promise<void> => {
     try {
       const tempPath = filePath + '.tmp';
-      
+
       await sharp(filePath)
-        .resize(1200, 1200, { 
-          fit: 'inside', 
-          withoutEnlargement: true 
+        .resize(1200, 1200, {
+          fit: 'inside',
+          withoutEnlargement: true,
         })
-        .jpeg({ 
-          quality: 85, 
-          progressive: true 
+        .jpeg({
+          quality: 85,
+          progressive: true,
         })
         .toFile(tempPath);
-      
+
       // استبدال الملف الأصلي بالمضغوط
       await fsp.rename(tempPath, filePath);
-      } catch (error) {
+    } catch (error) {
       console.error('❌ فشل في ضغط الصورة:', error);
       // حذف الملف المؤقت إن وجد
       try {
@@ -2677,7 +2834,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // تنظيف وتحقق من المحتوى
       const cleanContent = content?.trim();
-      
+
       if (!cleanContent && !req.file) {
         return res.status(400).json({ error: 'يجب إضافة محتوى أو صورة' });
       }
@@ -2700,7 +2857,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.file) {
         try {
           // ضغط الصورة أولاً إلى JPEG مناسب (إن أمكن)
-          const filePath = path.join(process.cwd(), 'client', 'public', 'uploads', 'wall', req.file.filename);
+          const filePath = path.join(
+            process.cwd(),
+            'client',
+            'public',
+            'uploads',
+            'wall',
+            req.file.filename
+          );
           await compressImage(filePath);
 
           // قراءة الملف المضغوط وتحويله إلى base64
@@ -2711,9 +2875,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           computedImageUrl = `data:${mimeType};base64,${base64}`;
 
           // حذف الملف الفيزيائي لتجنب مشاكل نظام الملفات المؤقت على Render
-          try { await fsp.unlink(filePath); } catch {}
+          try {
+            await fsp.unlink(filePath);
+          } catch {}
         } catch (imgErr) {
-          console.error('❌ فشل في تحويل صورة الحائط إلى base64، سيتم استخدام المسار المحلي كبديل:', imgErr);
+          console.error(
+            '❌ فشل في تحويل صورة الحائط إلى base64، سيتم استخدام المسار المحلي كبديل:',
+            imgErr
+          );
           // مسار احتياطي في حالة فشل التحويل
           computedImageUrl = `/uploads/wall/${req.file.filename}`;
         }
@@ -2729,7 +2898,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: type || 'public',
         timestamp: new Date(),
         userProfileImage: user.profileImage,
-        usernameColor: user.usernameColor
+        usernameColor: user.usernameColor,
       };
 
       // حفظ المنشور
@@ -2738,15 +2907,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const messageData = {
         type: 'newWallPost',
         post,
-        wallType: type || 'public'
+        wallType: type || 'public',
       };
-      
+
       getIO().emit('message', messageData);
-      
-      res.json({ 
+
+      res.json({
         success: true,
-        post, 
-        message: 'تم نشر المنشور بنجاح' 
+        post,
+        message: 'تم نشر المنشور بنجاح',
       });
     } catch (error) {
       console.error('خطأ في إنشاء المنشور:', error);
@@ -2761,9 +2930,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // التحقق من صحة البيانات
       if (!postId || !type || !userId) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'بيانات غير مكتملة',
-          required: ['postId', 'type', 'userId']
+          required: ['postId', 'type', 'userId'],
         });
       }
 
@@ -2787,9 +2956,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // التحقق من صحة نوع التفاعل
       const validReactionTypes = ['like', 'dislike', 'heart'];
       if (!validReactionTypes.includes(type)) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'نوع التفاعل غير صحيح',
-          validTypes: validReactionTypes
+          validTypes: validReactionTypes,
         });
       }
 
@@ -2804,18 +2973,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         postId: parseInt(postId),
         userId: user.id,
         username: user.username,
-        type
+        type,
       });
 
       // جلب المنشور المحدث مع التفاعلات
       const updatedPost = await storage.getWallPostWithReactions(parseInt(postId));
-      
+
       // إرسال تحديث للمستخدمين المتصلين
       getIO().emit('message', {
         type: 'wallPostReaction',
         post: updatedPost,
         reactionType: type,
-        username: user.username
+        username: user.username,
       });
 
       res.json({ post: updatedPost });
@@ -2849,14 +3018,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isOwner = post.userId === user.id;
       const isAdmin = ['admin', 'owner'].includes(user.userType);
       const isModerator = user.userType === 'moderator';
-      
+
       // المالك يمكنه حذف منشوره، والإدمن يحذف أي منشور، والمشرف يحذف منشورات الأعضاء فقط
-      const canDelete = isOwner || isAdmin || (isModerator && !['admin', 'owner'].includes(post.userRole));
-      
+      const canDelete =
+        isOwner || isAdmin || (isModerator && !['admin', 'owner'].includes(post.userRole));
+
       if (!canDelete) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           error: 'ليس لديك صلاحية لحذف هذا المنشور',
-          details: `نوع المستخدم: ${user.userType}, صاحب المنشور: ${post.userRole}`
+          details: `نوع المستخدم: ${user.userType}, صاحب المنشور: ${post.userRole}`,
         });
       }
 
@@ -2868,7 +3038,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // التحقق من أن الملف قابل للحذف
             await fsp.access(imagePath, fs.constants.W_OK);
             await fsp.unlink(imagePath);
-            }
+          }
         } catch (fileError) {
           console.warn('⚠️ فشل في حذف الصورة:', fileError);
           // لا نوقف العملية، فقط نسجل التحذير
@@ -2877,12 +3047,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // حذف المنشور
       await storage.deleteWallPost(parseInt(postId));
-      
+
       // إرسال إشعار بالحذف
       getIO().emit('message', {
         type: 'wallPostDeleted',
         postId: parseInt(postId),
-        deletedBy: user.username
+        deletedBy: user.username,
       });
 
       res.json({ message: 'تم حذف المنشور بنجاح' });
@@ -2899,16 +3069,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // تمت إزالة مسارات الغرف المكررة
 
   // رفع صور البروفايل يتم في ملف منفصل الآن
-  
+
   // جعل IO متاحاً للمسارات الجديدة
   app.set('io', io);
 
   // تمت إزالة مسارات الغرف المكررة - انتقل إلى ملف منفصل
-  
+
   // تمت إزالة جميع المسارات المكررة ونقلها لملف منفصل محسن
 
   // ========== صحة النظام والتشخيص ==========
-  
+
   // نقطة فحص صحة النظام الشاملة
   app.get('/api/health', async (req, res) => {
     const healthCheck = {
@@ -2922,9 +3092,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       services: {
         database: 'unknown',
         websocket: 'unknown',
-        static_files: 'unknown'
+        static_files: 'unknown',
       },
-      errors: []
+      errors: [],
     };
 
     try {
@@ -2934,7 +3104,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         healthCheck.services.database = 'healthy';
       } catch (dbError) {
         healthCheck.services.database = 'error';
-        healthCheck.errors.push(`Database: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`);
+        healthCheck.errors.push(
+          `Database: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`
+        );
       }
 
       // فحص WebSocket/Socket.IO
@@ -2947,7 +3119,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (wsError) {
         healthCheck.services.websocket = 'error';
-        healthCheck.errors.push(`WebSocket: ${wsError instanceof Error ? wsError.message : 'Unknown error'}`);
+        healthCheck.errors.push(
+          `WebSocket: ${wsError instanceof Error ? wsError.message : 'Unknown error'}`
+        );
       }
 
       // فحص الملفات الثابتة
@@ -2963,7 +3137,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (fileError) {
         healthCheck.services.static_files = 'error';
-        healthCheck.errors.push(`Static Files: ${fileError instanceof Error ? fileError.message : 'Unknown error'}`);
+        healthCheck.errors.push(
+          `Static Files: ${fileError instanceof Error ? fileError.message : 'Unknown error'}`
+        );
       }
 
       // تحديد الحالة العامة
@@ -2973,23 +3149,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // إرسال الاستجابة
       res.status(healthCheck.status === 'ok' ? 200 : 503).json(healthCheck);
-
     } catch (error) {
       console.error('❌ خطأ في فحص صحة النظام:', error);
       res.status(500).json({
         status: 'error',
         timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : 'Unknown health check error'
+        error: error instanceof Error ? error.message : 'Unknown health check error',
       });
     }
   });
 
   // نقطة فحص بسيطة للتحقق السريع
   app.get('/api/ping', (req, res) => {
-    res.json({ 
-      status: 'pong', 
+    res.json({
+      status: 'pong',
       timestamp: new Date().toISOString(),
-      server: 'running'
+      server: 'running',
     });
   });
 
@@ -3000,14 +3175,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         initialized: !!io,
         connected_clients: io ? io.engine.clientsCount : 0,
         transport_types: io ? ['websocket', 'polling'] : [],
-        status: io ? 'running' : 'not_initialized'
+        status: io ? 'running' : 'not_initialized',
       };
-      
+
       res.json(socketInfo);
     } catch (error) {
       res.status(500).json({
         status: 'error',
-        error: error instanceof Error ? error.message : 'Unknown socket error'
+        error: error instanceof Error ? error.message : 'Unknown socket error',
       });
     }
   });
@@ -3015,7 +3190,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // تعيين مستوى المستخدم مباشرة (للمالك فقط)
   app.post('/api/points/set-level', async (req, res) => {
     try {
-      const { moderatorId, targetUserId, level } = req.body as { moderatorId: number; targetUserId: number; level: number };
+      const { moderatorId, targetUserId, level } = req.body as {
+        moderatorId: number;
+        targetUserId: number;
+        level: number;
+      };
 
       if (!moderatorId || !targetUserId || typeof level !== 'number') {
         return res.status(400).json({ error: 'معاملات ناقصة' });
@@ -3026,7 +3205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: 'هذا الإجراء متاح للمالك فقط' });
       }
 
-      const targetLevel = DEFAULT_LEVELS.find(l => l.level === level);
+      const targetLevel = DEFAULT_LEVELS.find((l) => l.level === level);
       if (!targetLevel) {
         return res.status(400).json({ error: 'مستوى غير صالح' });
       }
@@ -3036,18 +3215,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updated = await storage.updateUser(targetUserId, {
         totalPoints: requiredPoints,
         level: recalculateUserStats(requiredPoints).level,
-        levelProgress: recalculateUserStats(requiredPoints).levelProgress
+        levelProgress: recalculateUserStats(requiredPoints).levelProgress,
       });
 
       if (!updated) {
         return res.status(400).json({ error: 'فشل في تحديث المستوى' });
       }
 
-      getIO().to(targetUserId.toString()).emit('message', {
-        type: 'systemNotification',
-        message: `ℹ️ تم تعديل مستواك إلى ${level}`,
-        timestamp: new Date().toISOString()
-      });
+      getIO()
+        .to(targetUserId.toString())
+        .emit('message', {
+          type: 'systemNotification',
+          message: `ℹ️ تم تعديل مستواك إلى ${level}`,
+          timestamp: new Date().toISOString(),
+        });
 
       res.json({ success: true });
     } catch (error) {
@@ -3056,12 +3237,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/moderation/blocked-devices", protect.owner, async (req, res) => {
+  app.get('/api/moderation/blocked-devices', protect.owner, async (req, res) => {
     try {
       const list = await storage.getAllBlockedDevices();
       res.json({ blockedDevices: list });
     } catch (error) {
-      res.status(500).json({ error: "خطأ في جلب الأجهزة/العناوين المحجوبة" });
+      res.status(500).json({ error: 'خطأ في جلب الأجهزة/العناوين المحجوبة' });
     }
   });
 
@@ -3070,14 +3251,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/upload/message-image', messageImageUpload.single('image'), async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: "لم يتم رفع أي ملف", details: "أرسل الملف في الحقل 'image'" });
+        return res
+          .status(400)
+          .json({ error: 'لم يتم رفع أي ملف', details: "أرسل الملف في الحقل 'image'" });
       }
 
       const { senderId, receiverId, roomId } = req.body as any;
       const parsedSenderId = parseInt(senderId);
 
       if (!parsedSenderId || isNaN(parsedSenderId)) {
-        try { await fsp.unlink(req.file.path); } catch {}
+        try {
+          await fsp.unlink(req.file.path);
+        } catch {}
         return res.status(400).json({ error: 'senderId مطلوب' });
       }
 
@@ -3102,30 +3287,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           content: imageUrl,
           messageType: 'image',
           isPrivate: true,
-          roomId: 'general'
+          roomId: 'general',
         });
         const sender = await storage.getUser(parsedSenderId);
         const messageWithSender = { ...newMessage, sender };
-        getIO().to(parsedReceiverId.toString()).emit('privateMessage', { message: messageWithSender });
-        getIO().to(parsedSenderId.toString()).emit('privateMessage', { message: messageWithSender });
+        getIO()
+          .to(parsedReceiverId.toString())
+          .emit('privateMessage', { message: messageWithSender });
+        getIO()
+          .to(parsedSenderId.toString())
+          .emit('privateMessage', { message: messageWithSender });
         return res.json({ success: true, imageUrl, message: messageWithSender });
       }
 
       // خلاف ذلك: نعتبرها صورة غرفة
-      const targetRoomId = (roomId && typeof roomId === 'string') ? roomId : 'general';
+      const targetRoomId = roomId && typeof roomId === 'string' ? roomId : 'general';
       const newMessage = await storage.createMessage({
         senderId: parsedSenderId,
         content: imageUrl,
         messageType: 'image',
         isPrivate: false,
-        roomId: targetRoomId
+        roomId: targetRoomId,
       });
       const sender = await storage.getUser(parsedSenderId);
       const socketData = {
         type: 'newMessage',
         roomId: targetRoomId,
         message: { ...newMessage, sender },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       io.to(`room_${targetRoomId}`).emit('message', socketData);
 
@@ -3163,7 +3352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       io.emit('message', {
         type: 'site_theme_update',
         siteTheme: saved,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       res.json({ success: true, siteTheme: saved });
@@ -3247,7 +3436,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch {
       // fallback: عام كحل أخير
-      try { getIO().emit('message', payload); } catch {}
+      try {
+        getIO().emit('message', payload);
+      } catch {}
     }
   }
 

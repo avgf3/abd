@@ -8,7 +8,7 @@ export function setupCompleteDownload(app: Express) {
   // تحميل المشروع كاملاً
   app.get('/api/download/complete-project', (req, res) => {
     const archive = archiver('zip', {
-      zlib: { level: 9 }
+      zlib: { level: 9 },
     });
 
     res.attachment('arabic-chat-complete-project.zip');
@@ -20,11 +20,11 @@ export function setupCompleteDownload(app: Express) {
       'client/src',
       'client/public',
       'client/index.html',
-      
+
       // Backend files
       'server',
       'shared',
-      
+
       // Configuration files
       'package.json',
       'package-lock.json',
@@ -34,19 +34,19 @@ export function setupCompleteDownload(app: Express) {
       'postcss.config.js',
       'components.json',
       'drizzle.config.ts',
-      
+
       // Documentation
       'replit.md',
-      'README.md'
+      'README.md',
     ];
 
     // إضافة الملفات والمجلدات
-    filesToInclude.forEach(item => {
+    filesToInclude.forEach((item) => {
       const itemPath = path.join(process.cwd(), item);
-      
+
       if (fs.existsSync(itemPath)) {
         const stats = fs.statSync(itemPath);
-        
+
         if (stats.isDirectory()) {
           archive.directory(itemPath, item);
         } else {
@@ -89,7 +89,7 @@ export function setupCompleteDownload(app: Express) {
   // تحميل الكود المصدري فقط
   app.get('/api/download/source-code', (req, res) => {
     const archive = archiver('zip', {
-      zlib: { level: 9 }
+      zlib: { level: 9 },
     });
 
     res.attachment('arabic-chat-source-code.zip');
@@ -103,15 +103,15 @@ export function setupCompleteDownload(app: Express) {
       'package.json',
       'tsconfig.json',
       'vite.config.ts',
-      'tailwind.config.ts'
+      'tailwind.config.ts',
     ];
 
-    sourceFiles.forEach(item => {
+    sourceFiles.forEach((item) => {
       const itemPath = path.join(process.cwd(), item);
-      
+
       if (fs.existsSync(itemPath)) {
         const stats = fs.statSync(itemPath);
-        
+
         if (stats.isDirectory()) {
           archive.directory(itemPath, item);
         } else {

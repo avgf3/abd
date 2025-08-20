@@ -14,7 +14,7 @@ interface UserState {
 }
 
 // أنواع الإجراءات
-type UserAction = 
+type UserAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_USER'; payload: ChatUser | null }
   | { type: 'UPDATE_USER'; payload: Partial<ChatUser> }
@@ -30,7 +30,7 @@ const initialState: UserState = {
   isLoading: false,
   isAuthenticated: false,
   error: null,
-  lastUpdated: 0
+  lastUpdated: 0,
 };
 
 // مخفض الحالة
@@ -38,49 +38,49 @@ function userReducer(state: UserState, action: UserAction): UserState {
   switch (action.type) {
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
-    
+
     case 'SET_USER':
       return {
         ...state,
         currentUser: action.payload,
         isAuthenticated: !!action.payload,
         error: null,
-        lastUpdated: Date.now()
+        lastUpdated: Date.now(),
       };
-    
+
     case 'UPDATE_USER':
       if (!state.currentUser) return state;
       return {
         ...state,
         currentUser: { ...state.currentUser, ...action.payload },
-        lastUpdated: Date.now()
+        lastUpdated: Date.now(),
       };
-    
+
     case 'SET_ERROR':
       return { ...state, error: action.payload, isLoading: false };
-    
+
     case 'SET_AUTHENTICATED':
       return { ...state, isAuthenticated: action.payload };
-    
+
     case 'CLEAR_USER':
       return {
         ...initialState,
-        lastUpdated: Date.now()
+        lastUpdated: Date.now(),
       };
-    
+
     case 'UPDATE_LAST_SEEN':
       if (!state.currentUser) return state;
       return {
         ...state,
         currentUser: {
           ...state.currentUser,
-          lastSeen: new Date()
-        }
+          lastSeen: new Date(),
+        },
       };
-    
+
     case 'UPDATE_TIMESTAMP':
       return { ...state, lastUpdated: Date.now() };
-    
+
     default:
       return state;
   }
@@ -94,7 +94,7 @@ interface UserContextType {
   isAuthenticated: boolean;
   error: string | null;
   lastUpdated: number;
-  
+
   // Actions
   setUser: (user: ChatUser | null) => void;
   updateUser: (updates: Partial<ChatUser>) => void;
@@ -102,7 +102,7 @@ interface UserContextType {
   refreshUser: () => Promise<void>;
   updateProfile: (updates: Partial<ChatUser>) => Promise<void>;
   updateLastSeen: () => void;
-  
+
   // Utilities
   hasPermission: (requiredRole: ChatUser['userType']) => boolean;
   isCurrentUser: (userId: number) => boolean;
@@ -136,7 +136,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (!state.currentUser?.id) return;
 
     dispatch({ type: 'SET_LOADING', payload: true });
-    
+
     try {
       const updatedUser = await api.get<ChatUser>(`/api/users/${state.currentUser.id}`);
       dispatch({ type: 'SET_USER', payload: updatedUser });
@@ -149,24 +149,27 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [state.currentUser?.id, handleError]);
 
   // تحديث الملف الشخصي
-  const updateProfile = useCallback(async (updates: Partial<ChatUser>) => {
-    if (!state.currentUser?.id) {
-      throw new Error('المستخدم غير مسجل');
-    }
+  const updateProfile = useCallback(
+    async (updates: Partial<ChatUser>) => {
+      if (!state.currentUser?.id) {
+        throw new Error('المستخدم غير مسجل');
+      }
 
-    dispatch({ type: 'SET_LOADING', payload: true });
-    
-    try {
-      const updatedUser = await api.put<ChatUser>(`/api/users/${state.currentUser.id}`, updates);
-      dispatch({ type: 'SET_USER', payload: updatedUser });
-      handleSuccess('تم تحديث الملف الشخصي بنجاح');
-    } catch (error) {
-      handleError(error as Error, 'فشل في تحديث الملف الشخصي');
-      throw error;
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  }, [state.currentUser?.id, handleError, handleSuccess]);
+      dispatch({ type: 'SET_LOADING', payload: true });
+
+      try {
+        const updatedUser = await api.put<ChatUser>(`/api/users/${state.currentUser.id}`, updates);
+        dispatch({ type: 'SET_USER', payload: updatedUser });
+        handleSuccess('تم تحديث الملف الشخصي بنجاح');
+      } catch (error) {
+        handleError(error as Error, 'فشل في تحديث الملف الشخصي');
+        throw error;
+      } finally {
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
+    },
+    [state.currentUser?.id, handleError, handleSuccess]
+  );
 
   // تحديث آخر ظهور
   const updateLastSeen = useCallback(() => {
@@ -174,27 +177,33 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // التحقق من الصلاحيات
-  const hasPermission = useCallback((requiredRole: ChatUser['userType']): boolean => {
-    if (!state.currentUser) return false;
+  const hasPermission = useCallback(
+    (requiredRole: ChatUser['userType']): boolean => {
+      if (!state.currentUser) return false;
 
-    const roleHierarchy = {
-      'guest': 0,
-      'member': 1,
-      'moderator': 2,
-      'admin': 3,
-      'owner': 4
-    };
+      const roleHierarchy = {
+        guest: 0,
+        member: 1,
+        moderator: 2,
+        admin: 3,
+        owner: 4,
+      };
 
-    const userLevel = roleHierarchy[state.currentUser.userType] || 0;
-    const requiredLevel = roleHierarchy[requiredRole] || 0;
+      const userLevel = roleHierarchy[state.currentUser.userType] || 0;
+      const requiredLevel = roleHierarchy[requiredRole] || 0;
 
-    return userLevel >= requiredLevel;
-  }, [state.currentUser]);
+      return userLevel >= requiredLevel;
+    },
+    [state.currentUser]
+  );
 
   // التحقق من كون المستخدم هو المستخدم الحالي
-  const isCurrentUser = useCallback((userId: number): boolean => {
-    return state.currentUser?.id === userId;
-  }, [state.currentUser?.id]);
+  const isCurrentUser = useCallback(
+    (userId: number): boolean => {
+      return state.currentUser?.id === userId;
+    },
+    [state.currentUser?.id]
+  );
 
   // تحديث آخر ظهور تلقائياً كل دقيقة
   useEffect(() => {
@@ -215,7 +224,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: state.isAuthenticated,
     error: state.error,
     lastUpdated: state.lastUpdated,
-    
+
     // Actions
     setUser,
     updateUser,
@@ -223,34 +232,30 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     refreshUser,
     updateProfile,
     updateLastSeen,
-    
+
     // Utilities
     hasPermission,
-    isCurrentUser
+    isCurrentUser,
   };
 
-  return (
-    <UserContext.Provider value={contextValue}>
-      {children}
-    </UserContext.Provider>
-  );
+  return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>;
 }
 
 // Hook لاستخدام المحتوى
 export function useUser() {
   const context = useContext(UserContext);
-  
+
   if (context === undefined) {
     throw new Error('useUser must be used within a UserProvider');
   }
-  
+
   return context;
 }
 
 // Hook للتحقق من المصادقة
 export function useAuth() {
   const { user, isAuthenticated, isLoading } = useUser();
-  
+
   return {
     user,
     isAuthenticated,
@@ -259,6 +264,6 @@ export function useAuth() {
     isMember: user?.userType === 'member',
     isModerator: user?.userType === 'moderator',
     isAdmin: user?.userType === 'admin',
-    isOwner: user?.userType === 'owner'
+    isOwner: user?.userType === 'owner',
   };
 }

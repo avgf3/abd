@@ -48,6 +48,7 @@ services:
 ### 2. تحسين إعدادات Socket.IO Server
 
 المشاكل في الكود الحالي:
+
 - `pingTimeout: 60000` مرتفع جداً للـ free tier
 - عدم وجود error handling كافي للاتصالات الفاشلة
 - CORS settings قد تكون محدودة
@@ -55,6 +56,7 @@ services:
 ### 3. تحسين إعدادات Socket.IO Client
 
 المشاكل في الكود الحالي:
+
 - `timeout: 20000` قد يكون قصير جداً
 - `rejectUnauthorized: false` غير آمن في الإنتاج
 - عدم وجود fallback للـ polling فقط
@@ -62,16 +64,19 @@ services:
 ## 🎯 خطة التنفيذ
 
 ### المرحلة 1: إصلاح Server Configuration
+
 1. تقليل timeout values
 2. تحسين error handling
 3. إضافة sticky sessions support
 
-### المرحلة 2: إصلاح Client Configuration  
+### المرحلة 2: إصلاح Client Configuration
+
 1. إضافة polling-only fallback
 2. تحسين reconnection logic
 3. إصلاح HTTPS/Security settings
 
 ### المرحلة 3: اختبار وتحقق
+
 1. اختبار polling transport
 2. اختبار WebSocket upgrade
 3. اختبار stability
@@ -79,6 +84,7 @@ services:
 ## 📝 التوقعات
 
 بعد تنفيذ هذه الحلول:
+
 - ✅ Polling transport سيعمل بشكل مستقر
 - ✅ WebSocket upgrades ستنجح
 - ✅ أخطاء 502 ستقل بشكل كبير

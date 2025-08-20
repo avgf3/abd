@@ -32,7 +32,11 @@ interface AdminReportsPanelProps {
   currentUser: ChatUser | null;
 }
 
-export default function AdminReportsPanel({ isOpen, onClose, currentUser }: AdminReportsPanelProps) {
+export default function AdminReportsPanel({
+  isOpen,
+  onClose,
+  currentUser,
+}: AdminReportsPanelProps) {
   const [reports, setReports] = useState<Report[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -56,7 +60,7 @@ export default function AdminReportsPanel({ isOpen, onClose, currentUser }: Admi
       toast({
         title: 'خطأ',
         description: (error as Error)?.message || 'خطأ في تحميل التبليغات',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -80,20 +84,20 @@ export default function AdminReportsPanel({ isOpen, onClose, currentUser }: Admi
     try {
       await apiRequest(`/api/reports/${reportId}`, {
         method: 'PATCH',
-        body: { action, userId: currentUser.id }
+        body: { action, userId: currentUser.id },
       });
       toast({
         title: 'تم',
         description: `تم ${action === 'approved' ? 'قبول' : 'رفض'} التبليغ`,
-        variant: 'default'
+        variant: 'default',
       });
-      setReports(prev => prev.filter(r => r.id !== reportId));
+      setReports((prev) => prev.filter((r) => r.id !== reportId));
       loadStats();
     } catch (error) {
       toast({
         title: 'خطأ',
         description: (error as Error)?.message || 'خطأ في مراجعة التبليغ',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
@@ -105,13 +109,16 @@ export default function AdminReportsPanel({ isOpen, onClose, currentUser }: Admi
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="sm:max-w-[800px] max-h-[600px] overflow-hidden" dir="rtl">
         <DialogHeader>
           <DialogTitle>لوحة إدارة التبليغات</DialogTitle>
-          <DialogDescription>
-            مراجعة التبليغات وإدارة نظام مكافحة السبام
-          </DialogDescription>
+          <DialogDescription>مراجعة التبليغات وإدارة نظام مكافحة السبام</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -155,7 +162,7 @@ export default function AdminReportsPanel({ isOpen, onClose, currentUser }: Admi
                     </div>
                     <Badge variant="secondary">معلق</Badge>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div>
                       <span className="font-medium">السبب: </span>
@@ -163,13 +170,11 @@ export default function AdminReportsPanel({ isOpen, onClose, currentUser }: Admi
                     </div>
                     <div>
                       <span className="font-medium">المحتوى المبلغ عنه: </span>
-                      <div className="bg-gray-100 p-2 rounded text-sm">
-                        "{report.content}"
-                      </div>
+                      <div className="bg-gray-100 p-2 rounded text-sm">"{report.content}"</div>
                     </div>
                     <div className="text-sm text-gray-600">
-                      المبلغ: المستخدم {report.reporterId} | 
-                      المبلغ عنه: المستخدم {report.reportedUserId}
+                      المبلغ: المستخدم {report.reporterId} | المبلغ عنه: المستخدم{' '}
+                      {report.reportedUserId}
                     </div>
                   </div>
 
@@ -199,9 +204,7 @@ export default function AdminReportsPanel({ isOpen, onClose, currentUser }: Admi
           <Button variant="outline" onClick={onClose}>
             إغلاق
           </Button>
-          <Button onClick={loadReports}>
-            تحديث
-          </Button>
+          <Button onClick={loadReports}>تحديث</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

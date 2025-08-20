@@ -18,7 +18,7 @@ export class OperationalError extends Error implements AppError {
     super(message);
     this.statusCode = statusCode;
     this.code = code;
-    
+
     Error.captureStackTrace(this, this.constructor);
   }
 }
@@ -30,39 +30,39 @@ export const ERROR_MESSAGES = {
   FORBIDDEN: 'ليس لديك صلاحية لتنفيذ هذا الإجراء',
   INVALID_CREDENTIALS: 'بيانات تسجيل الدخول غير صحيحة',
   SESSION_EXPIRED: 'انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى',
-  
+
   // أخطاء البيانات
   VALIDATION_ERROR: 'البيانات المدخلة غير صحيحة',
   MISSING_REQUIRED_FIELDS: 'حقول مطلوبة مفقودة',
   INVALID_FORMAT: 'تنسيق البيانات غير صحيح',
-  
+
   // أخطاء قاعدة البيانات
   DATABASE_ERROR: 'خطأ في قاعدة البيانات',
   RECORD_NOT_FOUND: 'السجل المطلوب غير موجود',
   DUPLICATE_ENTRY: 'البيانات موجودة مسبقاً',
-  
+
   // أخطاء الملفات
   FILE_UPLOAD_ERROR: 'فشل في رفع الملف',
   FILE_TOO_LARGE: 'حجم الملف كبير جداً',
   INVALID_FILE_TYPE: 'نوع الملف غير مدعوم',
-  
+
   // أخطاء الشبكة
   NETWORK_ERROR: 'خطأ في الاتصال',
   TIMEOUT_ERROR: 'انتهت مهلة الطلب',
-  
+
   // أخطاء عامة
   INTERNAL_ERROR: 'خطأ داخلي في الخادم',
   SERVICE_UNAVAILABLE: 'الخدمة غير متاحة حالياً',
-  RATE_LIMIT_EXCEEDED: 'تم تجاوز الحد المسموح من الطلبات'
+  RATE_LIMIT_EXCEEDED: 'تم تجاوز الحد المسموح من الطلبات',
 } as const;
 
 // دالة لتنسيق أخطاء Zod
 function formatZodError(error: ZodError): string {
-  const errors = error.errors.map(err => {
+  const errors = error.errors.map((err) => {
     const path = err.path.join('.');
     return `${path}: ${err.message}`;
   });
-  
+
   return `أخطاء في البيانات: ${errors.join(', ')}`;
 }
 
@@ -77,19 +77,14 @@ function getStatusCode(error: any): number {
 }
 
 // معالج الأخطاء الرئيسي
-export const errorHandler = (
-  error: any,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const errorHandler = (error: any, req: Request, res: Response, next: NextFunction) => {
   console.error('🚨 خطأ في الخادم:', {
     message: error.message,
     stack: error.stack,
     url: req.url,
     method: req.method,
     userAgent: req.get('User-Agent'),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 
   let statusCode = getStatusCode(error);
@@ -120,7 +115,7 @@ export const errorHandler = (
     error: true,
     message: showDetails ? message : ERROR_MESSAGES.INTERNAL_ERROR,
     code: error.code,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   // إضافة التفاصيل في بيئة التطوير فقط
@@ -139,7 +134,7 @@ export const notFoundHandler = (req: Request, res: Response) => {
     message: 'المسار المطلوب غير موجود',
     code: 'NOT_FOUND',
     path: req.originalUrl,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 };
 
@@ -158,21 +153,21 @@ export const uncaughtErrorHandler = () => {
 
 // دالة مساعدة لإنشاء أخطاء منظمة
 export const createError = {
-  badRequest: (message: string = ERROR_MESSAGES.VALIDATION_ERROR) => 
+  badRequest: (message: string = ERROR_MESSAGES.VALIDATION_ERROR) =>
     new OperationalError(message, 400, 'BAD_REQUEST'),
-    
-  unauthorized: (message: string = ERROR_MESSAGES.UNAUTHORIZED) => 
+
+  unauthorized: (message: string = ERROR_MESSAGES.UNAUTHORIZED) =>
     new OperationalError(message, 401, 'UNAUTHORIZED'),
-    
-  forbidden: (message: string = ERROR_MESSAGES.FORBIDDEN) => 
+
+  forbidden: (message: string = ERROR_MESSAGES.FORBIDDEN) =>
     new OperationalError(message, 403, 'FORBIDDEN'),
-    
-  notFound: (message: string = ERROR_MESSAGES.RECORD_NOT_FOUND) => 
+
+  notFound: (message: string = ERROR_MESSAGES.RECORD_NOT_FOUND) =>
     new OperationalError(message, 404, 'NOT_FOUND'),
-    
-  conflict: (message: string = ERROR_MESSAGES.DUPLICATE_ENTRY) => 
+
+  conflict: (message: string = ERROR_MESSAGES.DUPLICATE_ENTRY) =>
     new OperationalError(message, 409, 'CONFLICT'),
-    
-  internal: (message: string = ERROR_MESSAGES.INTERNAL_ERROR) => 
-    new OperationalError(message, 500, 'INTERNAL_ERROR')
+
+  internal: (message: string = ERROR_MESSAGES.INTERNAL_ERROR) =>
+    new OperationalError(message, 500, 'INTERNAL_ERROR'),
 };

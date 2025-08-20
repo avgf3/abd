@@ -14,13 +14,13 @@ export default function WelcomeNotification({ user }: WelcomeNotificationProps) 
     // إشعار ترحيب بالمستخدم الجديد
     if (user.userType === 'guest') {
       toast({
-        title: "🎉 أهلاً وسهلاً",
+        title: '🎉 أهلاً وسهلاً',
         description: `مرحباً بك ${user.username} كضيف في منصة الدردشة العربية!`,
         duration: 5000,
       });
     } else if (user.userType === 'member') {
       toast({
-        title: "🌟 مرحباً بعودتك",
+        title: '🌟 مرحباً بعودتك',
         description: `أهلاً بك ${user.username}! اطلع على الرسائل الجديدة والأصدقاء المتصلين`,
         duration: 5000,
       });
@@ -32,7 +32,7 @@ export default function WelcomeNotification({ user }: WelcomeNotificationProps) 
         if (permission === 'granted') {
           new Notification('مرحباً بك في الدردشة العربية! 💬', {
             body: 'ستحصل على إشعارات للرسائل الجديدة وطلبات الصداقة',
-            icon: '/favicon.ico'
+            icon: '/favicon.ico',
           });
         }
       });

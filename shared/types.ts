@@ -62,13 +62,35 @@ export interface Notification {
 }
 
 export interface WebSocketMessage {
-  type: 'auth' | 'publicMessage' | 'privateMessage' | 'typing' | 'userJoined' | 
-        'userLeft' | 'newMessage' | 'onlineUsers' | 'userUpdated' | 'error' | 
-        'warning' | 'userVisibilityChanged' | 'usernameColorChanged' | 
-        'theme_update' | 'moderationAction' | 'notification' | 'systemMessage' | 
-        'kicked' | 'blocked' | 'friendRequest' | 'friendRequestAccepted' | 
-        'friendRequestDeclined' | 'promotion' | 'demotion' | 'ban' | 'unban' | 
-        'mute' | 'unmute';
+  type:
+    | 'auth'
+    | 'publicMessage'
+    | 'privateMessage'
+    | 'typing'
+    | 'userJoined'
+    | 'userLeft'
+    | 'newMessage'
+    | 'onlineUsers'
+    | 'userUpdated'
+    | 'error'
+    | 'warning'
+    | 'userVisibilityChanged'
+    | 'usernameColorChanged'
+    | 'theme_update'
+    | 'moderationAction'
+    | 'notification'
+    | 'systemMessage'
+    | 'kicked'
+    | 'blocked'
+    | 'friendRequest'
+    | 'friendRequestAccepted'
+    | 'friendRequestDeclined'
+    | 'promotion'
+    | 'demotion'
+    | 'ban'
+    | 'unban'
+    | 'mute'
+    | 'unmute';
   userId?: number;
   username?: string;
   content?: string;

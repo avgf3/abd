@@ -23,11 +23,12 @@ export default function MediaUploadButton({ onMediaSelect, disabled }: MediaUplo
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
+        // 5MB limit
         toast({
           title: 'حجم الملف كبير',
           description: 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت',
-          variant: 'destructive'
+          variant: 'destructive',
         });
         return;
       }
@@ -38,11 +39,12 @@ export default function MediaUploadButton({ onMediaSelect, disabled }: MediaUplo
   const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 20 * 1024 * 1024) { // 20MB limit
+      if (file.size > 20 * 1024 * 1024) {
+        // 20MB limit
         toast({
           title: 'حجم الملف كبير',
           description: 'حجم الفيديو يجب أن يكون أقل من 20 ميجابايت',
-          variant: 'destructive'
+          variant: 'destructive',
         });
         return;
       }
@@ -65,14 +67,14 @@ export default function MediaUploadButton({ onMediaSelect, disabled }: MediaUplo
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="bg-gray-900/95 border-gray-700">
-          <DropdownMenuItem 
+          <DropdownMenuItem
             onClick={() => imageInputRef.current?.click()}
             className="flex items-center gap-2 text-gray-200 hover:bg-gray-800"
           >
             <Image className="h-4 w-4" />
             إرسال صورة
           </DropdownMenuItem>
-          <DropdownMenuItem 
+          <DropdownMenuItem
             onClick={() => videoInputRef.current?.click()}
             className="flex items-center gap-2 text-gray-200 hover:bg-gray-800"
           >
@@ -89,7 +91,7 @@ export default function MediaUploadButton({ onMediaSelect, disabled }: MediaUplo
         onChange={handleImageUpload}
         style={{ display: 'none' }}
       />
-      
+
       <input
         ref={videoInputRef}
         type="file"

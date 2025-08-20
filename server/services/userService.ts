@@ -1,8 +1,8 @@
-import bcrypt from "bcrypt";
-import { eq, desc, and } from "drizzle-orm";
+import bcrypt from 'bcrypt';
+import { eq, desc, and } from 'drizzle-orm';
 
-import { users, type User, type InsertUser } from "../../shared/schema";
-import { db } from "../database-adapter";
+import { users, type User, type InsertUser } from '../../shared/schema';
+import { db } from '../database-adapter';
 
 export class UserService {
   // إنشاء مستخدم جديد
@@ -21,7 +21,10 @@ export class UserService {
         usernameColor: userData.usernameColor || '#000000',
       };
 
-      const [newUser] = await db.insert(users).values(userToInsert as any).returning();
+      const [newUser] = await db
+        .insert(users)
+        .values(userToInsert as any)
+        .returning();
       return newUser;
     } catch (error) {
       console.error('خطأ في إنشاء المستخدم:', error);
@@ -43,7 +46,11 @@ export class UserService {
   // الحصول على مستخدم باسم المستخدم
   async getUserByUsername(username: string): Promise<User | undefined> {
     try {
-      const [user] = await db.select().from(users).where(eq(users.username, username.trim())).limit(1);
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username.trim()))
+        .limit(1);
       return user;
     } catch (error) {
       console.error('خطأ في الحصول على المستخدم باسم المستخدم:', error);
@@ -56,13 +63,13 @@ export class UserService {
     try {
       // إزالة المعرف من التحديثات
       const { id: userId, ...updateData } = updates as any;
-      
+
       const [updatedUser] = await db
         .update(users)
         .set(updateData)
         .where(eq(users.id, id))
         .returning();
-      
+
       return updatedUser;
     } catch (error) {
       console.error('خطأ في تحديث المستخدم:', error);
@@ -75,9 +82,9 @@ export class UserService {
     try {
       await db
         .update(users)
-        .set({ 
+        .set({
           isOnline,
-          lastSeen: isOnline ? undefined : new Date()
+          lastSeen: isOnline ? undefined : new Date(),
         } as any)
         .where(eq(users.id, id));
     } catch (error) {
@@ -104,7 +111,7 @@ export class UserService {
         .select()
         .from(users)
         .where(and(eq(users.isOnline, true), eq(users.isHidden, false)));
-      
+
       return onlineUsers;
     } catch (error) {
       console.error('خطأ في الحصول على المستخدمين المتصلين:', error);
@@ -127,17 +134,17 @@ export class UserService {
   async verifyUserCredentials(username: string, password: string): Promise<User | null> {
     try {
       const user = await this.getUserByUsername(username);
-      
+
       if (!user || !user.password) {
         return null;
       }
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
-      
+
       if (isPasswordValid) {
         return user;
       }
-      
+
       return null;
     } catch (error) {
       console.error('خطأ في التحقق من بيانات الاعتماد:', error);
@@ -154,7 +161,7 @@ export class UserService {
       const ignoredUsers = JSON.parse(user.ignoredUsers || '[]');
       if (!ignoredUsers.includes(ignoredUserId.toString())) {
         ignoredUsers.push(ignoredUserId.toString());
-        
+
         await db
           .update(users)
           .set({ ignoredUsers: JSON.stringify(ignoredUsers) } as any)
@@ -174,7 +181,7 @@ export class UserService {
       const ignoredUsers = JSON.parse(user.ignoredUsers || '[]').filter(
         (id: string) => id !== ignoredUserId.toString()
       );
-      
+
       await db
         .update(users)
         .set({ ignoredUsers: JSON.stringify(ignoredUsers) } as any)
@@ -189,7 +196,7 @@ export class UserService {
     try {
       const user = await this.getUserById(userId);
       if (!user || !user.ignoredUsers) return [];
-      
+
       const ignoredArray = JSON.parse(user.ignoredUsers);
       return ignoredArray.map((id: string) => parseInt(id));
     } catch (error) {

@@ -29,7 +29,9 @@ export default function RichestModal({ isOpen, onClose, users }: RichestModalPro
             <img src="/svgs/crown.svg" alt="crown" className="w-6 h-6" />
             <h3 className="font-extrabold text-lg">الأثرياء</h3>
           </div>
-          <button onClick={onClose} className="text-white/90 hover:text-white">✕</button>
+          <button onClick={onClose} className="text-white/90 hover:text-white">
+            ✕
+          </button>
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto bg-gradient-to-b from-zinc-900 via-zinc-800 to-black p-2">
@@ -60,16 +62,27 @@ export default function RichestModal({ isOpen, onClose, users }: RichestModalPro
 function getRowBackground(rank: number): string {
   // ألوان قريبة من الصورة: أشرطة متدرجة مختلفة
   switch (rank) {
-    case 1: return 'bg-gradient-to-r from-red-600 to-red-500';
-    case 2: return 'bg-gradient-to-r from-cyan-500 to-blue-500';
-    case 3: return 'bg-gradient-to-r from-zinc-800 to-zinc-700';
-    case 4: return 'bg-gradient-to-r from-amber-800 to-emerald-900';
-    case 5: return 'bg-gradient-to-r from-pink-600 to-fuchsia-600';
-    case 6: return 'bg-gradient-to-r from-red-800 to-amber-900';
-    case 7: return 'bg-gradient-to-r from-amber-700 to-amber-800';
-    case 8: return 'bg-gradient-to-r from-black to-zinc-900';
-    case 9: return 'bg-gradient-to-r from-slate-800 to-slate-900';
-    case 10: return 'bg-gradient-to-r from-slate-900 to-black';
-    default: return 'bg-zinc-800';
+    case 1:
+      return 'bg-gradient-to-r from-red-600 to-red-500';
+    case 2:
+      return 'bg-gradient-to-r from-cyan-500 to-blue-500';
+    case 3:
+      return 'bg-gradient-to-r from-zinc-800 to-zinc-700';
+    case 4:
+      return 'bg-gradient-to-r from-amber-800 to-emerald-900';
+    case 5:
+      return 'bg-gradient-to-r from-pink-600 to-fuchsia-600';
+    case 6:
+      return 'bg-gradient-to-r from-red-800 to-amber-900';
+    case 7:
+      return 'bg-gradient-to-r from-amber-700 to-amber-800';
+    case 8:
+      return 'bg-gradient-to-r from-black to-zinc-900';
+    case 9:
+      return 'bg-gradient-to-r from-slate-800 to-slate-900';
+    case 10:
+      return 'bg-gradient-to-r from-slate-900 to-black';
+    default:
+      return 'bg-zinc-800';
   }
 }

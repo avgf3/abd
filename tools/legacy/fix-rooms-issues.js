@@ -17,7 +17,7 @@ const requiredFiles = [
   'server/storage.ts',
   'client/src/components/chat/RoomsPanel.tsx',
   'client/src/components/chat/BroadcastRoomInterface.tsx',
-  'migrations/0005_fix_rooms_tables.sql'
+  'migrations/0005_fix_rooms_tables.sql',
 ];
 
 console.log('📋 التحقق من الملفات المطلوبة...');
@@ -44,7 +44,7 @@ console.log('\n🗄️ تنفيذ migration SQL مباشرة...');
 try {
   const migrationPath = path.join(__dirname, 'migrations/0005_fix_rooms_tables.sql');
   const migrationContent = fs.readFileSync(migrationPath, 'utf8');
-  
+
   // هنا يمكن إضافة كود لتنفيذ SQL مباشرة على قاعدة البيانات
   console.log('✅ تم قراءة migration SQL');
 } catch (error) {
@@ -100,7 +100,7 @@ testRooms().catch(console.error);
 
   fs.writeFileSync('test-rooms-temp.js', testFile);
   console.log('✅ تم إنشاء ملف اختبار مؤقت');
-  
+
   // حذف الملف المؤقت
   fs.unlinkSync('test-rooms-temp.js');
 } catch (error) {

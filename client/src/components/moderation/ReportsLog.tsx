@@ -54,7 +54,7 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
     try {
       await apiRequest(`/api/reports/${reportId}/review`, {
         method: 'POST',
-        body: { action, moderatorId: currentUser.id }
+        body: { action, moderatorId: currentUser.id },
       });
       await loadReports();
     } catch (error) {
@@ -85,9 +85,7 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
         <Card className="w-96 bg-gray-900/95 border-gray-700">
           <CardHeader>
-            <CardTitle className="text-center text-red-400">
-              غير مصرح
-            </CardTitle>
+            <CardTitle className="text-center text-red-400">غير مصرح</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-gray-300 mb-4">هذه اللوحة مخصصة للمشرفين فقط</p>
@@ -100,7 +98,7 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
     );
   }
 
-  const pendingReports = reports.filter(r => r.status === 'pending');
+  const pendingReports = reports.filter((r) => r.status === 'pending');
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -129,15 +127,8 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
 
         <CardContent className="p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-200">
-              قائمة البلاغات المُستلمة
-            </h3>
-            <Button 
-              onClick={loadReports} 
-              variant="outline" 
-              size="sm"
-              disabled={loading}
-            >
+            <h3 className="text-lg font-semibold text-gray-200">قائمة البلاغات المُستلمة</h3>
+            <Button onClick={loadReports} variant="outline" size="sm" disabled={loading}>
               {loading ? 'جاري التحديث...' : 'تحديث'}
             </Button>
           </div>
@@ -151,9 +142,12 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
             ) : (
               <div className="space-y-3">
                 {reports.map((report) => (
-                  <Card key={report.id} className={`bg-gray-800/50 border-gray-600 ${
-                    report.status === 'pending' ? 'border-red-500/50' : ''
-                  }`}>
+                  <Card
+                    key={report.id}
+                    className={`bg-gray-800/50 border-gray-600 ${
+                      report.status === 'pending' ? 'border-red-500/50' : ''
+                    }`}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -167,29 +161,27 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
                               {report.reportedUserName || 'مجهول'}
                             </span>
                           </div>
-                          
+
                           <div className="flex items-center gap-2 mb-2">
                             <FileText className="w-4 h-4 text-yellow-400" />
-                            <span className="text-sm text-gray-300">
-                              السبب: {report.reason}
-                            </span>
+                            <span className="text-sm text-gray-300">السبب: {report.reason}</span>
                           </div>
-                          
+
                           {report.content && (
                             <div className="bg-gray-700/50 p-2 rounded text-sm text-gray-300 mb-2">
                               "{report.content}"
                             </div>
                           )}
-                          
+
                           <div className="flex items-center gap-2 text-xs text-gray-500">
                             <Clock className="w-3 h-3" />
                             {formatTimestamp(report.timestamp)}
                           </div>
                         </div>
-                        
+
                         <div className="flex flex-col items-end gap-2">
                           {getStatusBadge(report.status)}
-                          
+
                           {report.status === 'pending' && (
                             <div className="flex gap-1">
                               <Button
@@ -223,19 +215,19 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-red-400">
-                  {reports.filter(r => r.status === 'pending').length}
+                  {reports.filter((r) => r.status === 'pending').length}
                 </div>
                 <div className="text-sm text-gray-400">بلاغات جديدة</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-green-400">
-                  {reports.filter(r => r.status === 'reviewed').length}
+                  {reports.filter((r) => r.status === 'reviewed').length}
                 </div>
                 <div className="text-sm text-gray-400">تمت مراجعتها</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-400">
-                  {reports.filter(r => r.status === 'dismissed').length}
+                  {reports.filter((r) => r.status === 'dismissed').length}
                 </div>
                 <div className="text-sm text-gray-400">مرفوضة</div>
               </div>

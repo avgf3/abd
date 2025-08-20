@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
@@ -18,11 +24,11 @@ interface PromoteUserPanelProps {
   onlineUsers: ChatUser[];
 }
 
-export default function PromoteUserPanel({ 
-  isVisible, 
-  onClose, 
-  currentUser, 
-  onlineUsers 
+export default function PromoteUserPanel({
+  isVisible,
+  onClose,
+  currentUser,
+  onlineUsers,
 }: PromoteUserPanelProps) {
   const [selectedUser, setSelectedUser] = useState<string>('');
   const [selectedRole, setSelectedRole] = useState<string>('');
@@ -35,7 +41,12 @@ export default function PromoteUserPanel({
   const roleOptions = [
     { value: 'moderator', label: 'مشرف 🛡️', icon: Shield, description: 'يمكنه كتم المستخدمين فقط' },
     { value: 'admin', label: 'إدمن ⭐', icon: Crown, description: 'يمكنه كتم وطرد المستخدمين' },
-    { value: 'member', label: 'إلغاء إشراف ↘️', icon: UsersIcon, description: 'إرجاع المستخدم إلى عضو عادي' }
+    {
+      value: 'member',
+      label: 'إلغاء إشراف ↘️',
+      icon: UsersIcon,
+      description: 'إرجاع المستخدم إلى عضو عادي',
+    },
   ];
 
   const handlePromote = async () => {
@@ -43,7 +54,7 @@ export default function PromoteUserPanel({
       toast({
         title: 'خطأ',
         description: 'يرجى اختيار المستخدم والرتبة',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -56,13 +67,13 @@ export default function PromoteUserPanel({
           method: 'POST',
           body: {
             moderatorId: currentUser.id,
-            targetUserId: parseInt(selectedUser)
-          }
+            targetUserId: parseInt(selectedUser),
+          },
         });
         toast({
           title: 'تم إلغاء الإشراف',
           description: `تم تحويل المستخدم إلى عضو عادي ✅`,
-          variant: 'default'
+          variant: 'default',
         });
       } else {
         // ترقية إلى مشرف/إدمن
@@ -71,15 +82,15 @@ export default function PromoteUserPanel({
           body: {
             moderatorId: currentUser.id,
             targetUserId: parseInt(selectedUser),
-            newRole: selectedRole
-          }
+            newRole: selectedRole,
+          },
         });
 
         const roleDisplay = selectedRole === 'admin' ? 'إدمن ⭐' : 'مشرف 🛡️';
         toast({
           title: 'تم ترقية المستخدم بنجاح',
           description: `تمت ترقية المستخدم إلى ${roleDisplay}`,
-          variant: 'default'
+          variant: 'default',
         });
       }
       setSelectedUser('');
@@ -89,7 +100,7 @@ export default function PromoteUserPanel({
       toast({
         title: 'خطأ',
         description: (error as Error)?.message || 'حدث خطأ',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
@@ -101,7 +112,7 @@ export default function PromoteUserPanel({
       toast({
         title: 'خطأ',
         description: 'يرجى اختيار المستخدم والمستوى الجديد',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -111,7 +122,7 @@ export default function PromoteUserPanel({
       toast({
         title: 'مستوى غير صالح',
         description: 'أدخل مستوى بين 1 و 40',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -123,14 +134,14 @@ export default function PromoteUserPanel({
         body: {
           moderatorId: currentUser.id,
           targetUserId: parseInt(selectedLevelUser),
-          level: levelNum
-        }
+          level: levelNum,
+        },
       });
 
       toast({
         title: 'تم تعديل المستوى',
         description: `تم تعيين المستوى إلى ${levelNum} بنجاح`,
-        variant: 'default'
+        variant: 'default',
       });
 
       setSelectedLevelUser('');
@@ -139,7 +150,7 @@ export default function PromoteUserPanel({
       toast({
         title: 'خطأ',
         description: (error as Error)?.message || 'حدث خطأ أثناء تعديل المستوى',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setIsLevelSubmitting(false);
@@ -148,12 +159,30 @@ export default function PromoteUserPanel({
 
   const getRoleBadge = (userType: string) => {
     switch (userType) {
-      case 'owner': return <Badge variant="destructive" className="bg-red-600">مالك</Badge>;
-      case 'admin': return <Badge variant="default" className="bg-blue-600">إدمن</Badge>;
-      case 'moderator': return <Badge variant="default" className="bg-green-600">مشرف</Badge>;
-      case 'member': return <Badge variant="secondary">عضو</Badge>;
-      case 'guest': return <Badge variant="outline">زائر</Badge>;
-      default: return <Badge variant="outline">{userType}</Badge>;
+      case 'owner':
+        return (
+          <Badge variant="destructive" className="bg-red-600">
+            مالك
+          </Badge>
+        );
+      case 'admin':
+        return (
+          <Badge variant="default" className="bg-blue-600">
+            إدمن
+          </Badge>
+        );
+      case 'moderator':
+        return (
+          <Badge variant="default" className="bg-green-600">
+            مشرف
+          </Badge>
+        );
+      case 'member':
+        return <Badge variant="secondary">عضو</Badge>;
+      case 'guest':
+        return <Badge variant="outline">زائر</Badge>;
+      default:
+        return <Badge variant="outline">{userType}</Badge>;
     }
   };
 
@@ -165,9 +194,7 @@ export default function PromoteUserPanel({
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
         <Card className="w-96 bg-gray-900/95 border-gray-700">
           <CardHeader>
-            <CardTitle className="text-center text-red-400">
-              غير مصرح
-            </CardTitle>
+            <CardTitle className="text-center text-red-400">غير مصرح</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-gray-300 mb-4">هذه الميزة مخصصة للمالك فقط</p>
@@ -181,7 +208,7 @@ export default function PromoteUserPanel({
   }
 
   // اختر المستخدمين حسب الدور المطلوب
-  const eligibleUsers = onlineUsers.filter(user => {
+  const eligibleUsers = onlineUsers.filter((user) => {
     if (user.id === currentUser.id) return false;
     if (selectedRole === 'member') {
       // إلغاء الإشراف يستهدف الإداريين فقط
@@ -204,9 +231,7 @@ export default function PromoteUserPanel({
         <CardContent className="p-6 space-y-6 flex-1 overflow-y-auto">
           <div className="grid gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-200 mb-2 block">
-                اختر المستخدم
-              </label>
+              <label className="text-sm font-medium text-gray-200 mb-2 block">اختر المستخدم</label>
               <Select value={selectedUser} onValueChange={setSelectedUser}>
                 <SelectTrigger className="bg-gray-800 border-gray-600">
                   <SelectValue placeholder="اختر مستخدم للترقية" />
@@ -248,10 +273,10 @@ export default function PromoteUserPanel({
             {selectedRole && (
               <div className="p-3 bg-blue-900/30 border border-blue-700 rounded-lg">
                 <h4 className="font-medium text-blue-200 mb-1">
-                  صلاحيات {roleOptions.find(r => r.value === selectedRole)?.label}:
+                  صلاحيات {roleOptions.find((r) => r.value === selectedRole)?.label}:
                 </h4>
                 <p className="text-sm text-blue-300">
-                  {roleOptions.find(r => r.value === selectedRole)?.description}
+                  {roleOptions.find((r) => r.value === selectedRole)?.description}
                 </p>
               </div>
             )}
@@ -267,7 +292,10 @@ export default function PromoteUserPanel({
               ) : (
                 <div className="space-y-2">
                   {eligibleUsers.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-2 bg-gray-800/50 rounded">
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between p-2 bg-gray-800/50 rounded"
+                    >
                       <div className="flex items-center gap-2">
                         <span style={{ color: user.usernameColor || '#E5E7EB' }}>
                           {user.username}
@@ -289,25 +317,31 @@ export default function PromoteUserPanel({
             <h3 className="text-lg font-medium text-gray-200 mb-3">تعديل مستوى المستخدم</h3>
             <div className="grid md:grid-cols-3 grid-cols-1 gap-3">
               <div>
-                <label className="text-sm font-medium text-gray-200 mb-2 block">اختر المستخدم</label>
+                <label className="text-sm font-medium text-gray-200 mb-2 block">
+                  اختر المستخدم
+                </label>
                 <Select value={selectedLevelUser} onValueChange={setSelectedLevelUser}>
                   <SelectTrigger className="bg-gray-800 border-gray-600">
                     <SelectValue placeholder="اختر مستخدم لتعديل المستوى" />
                   </SelectTrigger>
                   <SelectContent>
-                    {onlineUsers.filter(u => u.id !== currentUser.id).map((user) => (
-                      <SelectItem key={user.id} value={user.id.toString()}>
-                        <div className="flex items-center gap-2">
-                          <span>{user.username}</span>
-                          {getRoleBadge(user.userType)}
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {onlineUsers
+                      .filter((u) => u.id !== currentUser.id)
+                      .map((user) => (
+                        <SelectItem key={user.id} value={user.id.toString()}>
+                          <div className="flex items-center gap-2">
+                            <span>{user.username}</span>
+                            {getRoleBadge(user.userType)}
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-200 mb-2 block">المستوى الجديد (1-40)</label>
+                <label className="text-sm font-medium text-gray-200 mb-2 block">
+                  المستوى الجديد (1-40)
+                </label>
                 <Input
                   type="number"
                   min={1}
@@ -334,7 +368,7 @@ export default function PromoteUserPanel({
           <Button onClick={onClose} variant="outline">
             إلغاء
           </Button>
-          <Button 
+          <Button
             onClick={handlePromote}
             disabled={!selectedUser || !selectedRole || isSubmitting}
             className="bg-blue-600 hover:bg-blue-700"

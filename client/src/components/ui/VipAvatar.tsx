@@ -8,7 +8,13 @@ interface VipAvatarProps {
   className?: string;
 }
 
-export default function VipAvatar({ src, alt = '', size = 48, frame = 1, className = '' }: VipAvatarProps) {
+export default function VipAvatar({
+  src,
+  alt = '',
+  size = 48,
+  frame = 1,
+  className = '',
+}: VipAvatarProps) {
   const duration = useMemo(() => {
     // منح كل إطار سرعة مختلفة قليلاً
     const speeds = [6, 7, 5.5, 7.5, 6.5, 5.8, 6.8, 7.2, 6.2, 5.6];
@@ -19,7 +25,6 @@ export default function VipAvatar({ src, alt = '', size = 48, frame = 1, classNa
     width: size,
     height: size,
     // تمرير مدة الدوران عبر متغير CSS
-    // @ts-expect-error - custom prop for CSS var
     ['--vip-spin-duration' as any]: duration,
   };
 

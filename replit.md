@@ -9,6 +9,7 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Frontend Architecture
+
 - **Framework**: React 18 with TypeScript
 - **Routing**: Wouter for client-side routing
 - **State Management**: TanStack React Query for server state, React hooks for local state
@@ -18,6 +19,7 @@ Preferred communication style: Simple, everyday language.
 - **Language Support**: Right-to-left (RTL) layout for Arabic interface
 
 ### Backend Architecture
+
 - **Framework**: Express.js with TypeScript
 - **Real-time Communication**: WebSocket server using 'ws' library
 - **Module System**: ESM (ES Modules)
@@ -25,6 +27,7 @@ Preferred communication style: Simple, everyday language.
 - **Production**: esbuild for server bundling
 
 ### Database & ORM
+
 - **ORM**: Drizzle ORM with PostgreSQL dialect
 - **Database**: Configured for PostgreSQL (likely Neon Database based on dependencies)
 - **Migrations**: Drizzle-kit for schema management
@@ -33,12 +36,14 @@ Preferred communication style: Simple, everyday language.
 ## Key Components
 
 ### Authentication System
+
 - **Guest Mode**: Quick access with username only, temporary accounts
 - **Member Mode**: Registered users with username/password authentication
 - **Google OAuth**: Social login integration (configured but implementation not shown)
 - **User Types**: Three-tier system (guest, member, owner) with different privileges
 
 ### Real-time Communication
+
 - **WebSocket Server**: Custom implementation at `/ws` endpoint
 - **Message Types**: Text and image support
 - **Public Chat**: General chat room for all users
@@ -47,12 +52,14 @@ Preferred communication style: Simple, everyday language.
 - **User Presence**: Online/offline status tracking
 
 ### User Management
+
 - **User Profiles**: Comprehensive profile system with personal information
 - **Friend System**: Add friends, manage relationships, blocking functionality
 - **User Ranks**: Visual badges for different user types (owner, member, guest)
 - **Search**: Real-time user search functionality
 
 ### UI Components
+
 - **Chat Interface**: Modern dark theme with glass-effect styling
 - **Responsive Design**: Mobile-first approach with responsive breakpoints
 - **Modal System**: Profile editing, settings, and authentication modals
@@ -62,6 +69,7 @@ Preferred communication style: Simple, everyday language.
 ## Data Flow
 
 ### Authentication Flow
+
 1. User selects login method (guest, member, or Google)
 2. Frontend sends credentials to `/api/auth/{method}` endpoint
 3. Backend validates and creates/retrieves user record
@@ -69,6 +77,7 @@ Preferred communication style: Simple, everyday language.
 5. WebSocket connection established with user credentials
 
 ### Message Flow
+
 1. User types message in chat input
 2. Frontend sends message via WebSocket with type and content
 3. Backend processes message and stores in database
@@ -76,6 +85,7 @@ Preferred communication style: Simple, everyday language.
 5. All connected clients receive and display the message
 
 ### User Presence
+
 1. WebSocket connection establishes user as online
 2. Backend tracks connected users and broadcasts updates
 3. Users see real-time online/offline status changes
@@ -84,6 +94,7 @@ Preferred communication style: Simple, everyday language.
 ## External Dependencies
 
 ### Frontend Dependencies
+
 - **React Ecosystem**: React 18, React DOM, React Query
 - **UI Framework**: Radix UI primitives with shadcn/ui components
 - **Styling**: Tailwind CSS, clsx for conditional classes
@@ -92,6 +103,7 @@ Preferred communication style: Simple, everyday language.
 - **Icons**: Lucide React icon library
 
 ### Backend Dependencies
+
 - **Core**: Express.js, WebSocket (ws), TypeScript
 - **Database**: Drizzle ORM, @neondatabase/serverless
 - **Session Management**: connect-pg-simple for PostgreSQL sessions
@@ -99,31 +111,36 @@ Preferred communication style: Simple, everyday language.
 - **Development**: tsx for TypeScript execution
 
 ### Shared Dependencies
+
 - **Validation**: Zod schemas shared between frontend and backend
 - **Types**: TypeScript interfaces for type safety across stack
 
 ## Deployment Strategy
 
 ### Development Environment
+
 - **Frontend**: Vite dev server with HMR (Hot Module Replacement)
 - **Backend**: tsx for TypeScript execution with nodemon-like restart
 - **Database**: Development database with Drizzle push for schema updates
 - **Integration**: Vite proxy configuration for API routes
 
 ### Production Build
+
 - **Frontend**: Vite build to static assets in `dist/public`
 - **Backend**: esbuild bundling to single Node.js file in `dist`
 - **Static Serving**: Express serves frontend build from `dist/public`
 - **Environment**: NODE_ENV=production for optimized builds
 
 ### Database Management
+
 - **Schema**: Drizzle schema defined in shared folder
-- **Migrations**: Generated in `/migrations` folder  
+- **Migrations**: Generated in `/migrations` folder
 - **Deployment**: `db:push` command for schema deployment
 - **Connection**: Environment variable DATABASE_URL for database connection
 - **Mixed Storage**: PostgreSQL for member data persistence, in-memory for temporary guest data
 
 ### Recent Changes (January 10, 2025)
+
 - **Database Integration**: Successfully implemented PostgreSQL database for member data persistence
 - **Mixed Storage System**: Guests stored in memory (temporary), members stored in database (persistent)
 - **Profile Picture Upload**: Fixed upload restrictions - now available for members and owners only
@@ -133,6 +150,7 @@ Preferred communication style: Simple, everyday language.
 - **Code Backup**: Created comprehensive code backup with all latest updates and fixes
 
 ### Latest Updates (January 10, 2025)
+
 - **Spam Protection System**: Complete filtering system with 25+ banned words, duplicate message prevention, and message length limits
 - **Reporting System**: Full reporting functionality for messages and users with admin review panel
 - **Admin Panel**: Created temporary admin account "عبود" (password: 22333) for system management
@@ -143,6 +161,7 @@ Preferred communication style: Simple, everyday language.
 - **UI Enhancements**: Added notification badges, friend counters, and admin controls
 
 ### Final Updates (January 10, 2025)
+
 - **Hierarchical Admin System**: Complete admin hierarchy with specific permissions
   - **Moderator**: Mute users only (prevents them from sending public messages)
   - **Admin**: Can mute + kick users for 15 minutes with countdown timer
@@ -155,8 +174,9 @@ Preferred communication style: Simple, everyday language.
 - **Complete Admin Controls**: Full moderation panel with all hierarchical permissions implemented
 
 ### Smart Private Messaging System (January 10, 2025)
+
 - **Intelligent Conversation Detection**: System automatically detects existing conversation history
-- **Smart User Click Behavior**: 
+- **Smart User Click Behavior**:
   - If conversation exists → Opens chat directly with history count notification
   - If no conversation → Shows "Start Conversation" popup menu
 - **Automatic Conversation Creation**: New conversations appear in "المحادثات" panel after first message
@@ -165,10 +185,11 @@ Preferred communication style: Simple, everyday language.
 - **Conversation Status Indicators**: Shows message count, new/existing conversation status
 
 ### Performance and Security Enhancements (January 10, 2025)
+
 - **Message Speed Optimization**: Implemented message batching and rate limiting (500ms between messages)
 - **Enhanced Connection Stability**: Smart reconnection with network status detection and heartbeat system
 - **Mobile Experience Improvements**: Touch-optimized buttons, responsive text sizes, iOS zoom prevention
-- **Advanced Security System**: 
+- **Advanced Security System**:
   - Content sanitization and validation
   - Enhanced username restrictions (3-20 chars, no special symbols)
   - Password strength requirements (minimum 6 chars + 1 number)
@@ -178,6 +199,7 @@ Preferred communication style: Simple, everyday language.
 - **Performance Optimization Library**: Created dedicated performance utilities for smooth scrolling and optimized updates
 
 ### Professional Enhancement System (January 11, 2025)
+
 - **Advanced Analytics System**: Complete chat analytics with user activity tracking, message patterns, and real-time insights
 - **Enterprise Security Framework**: Advanced threat detection, IP monitoring, suspicious activity analysis, and automated security responses
 - **Performance Optimization Engine**: Memory management, network latency monitoring, FPS tracking, and smart caching systems
@@ -186,6 +208,7 @@ Preferred communication style: Simple, everyday language.
 - **Enhanced User Experience**: Intelligent notifications, performance indicators, and professional UI components
 
 ### Friend Request System Fix (January 12, 2025)
+
 - **Complete Friend Request Notifications**: Fixed notification system to properly show accept/decline buttons
 - **Backward Compatibility**: Added support for both `requestId` and `friendRequestId` data fields
 - **Real-time Updates**: Friend request notifications now properly integrate with WebSocket for instant UI updates
@@ -194,6 +217,7 @@ Preferred communication style: Simple, everyday language.
 - **API Integration**: All friend request endpoints working correctly with proper data validation
 
 ### Profile System Enhancements (January 12, 2025)
+
 - **Narrowed Profile Width**: Reduced ProfileModal and ViewProfileModal width from max-w-3xl to max-w-md for better mobile experience
 - **Compact Banner Design**: Reduced banner height from h-64 to h-32 for more focused profile layout
 - **Bio Field Addition**: Added bio field to database schema and user types across the application
@@ -206,6 +230,7 @@ Preferred communication style: Simple, everyday language.
 - **Profile Image Enhancement**: Improved profile image positioning and removed dark overlays for cleaner appearance
 
 ### Contextual Language Switcher with Smooth Transitions (January 12, 2025)
+
 - **Multi-Language Support**: Added comprehensive language switcher supporting 11 languages (Arabic, English, French, Spanish, German, Italian, Portuguese, Russian, Chinese, Japanese, Korean)
 - **Smooth Transitions**: Implemented smooth fade and scale animations during language changes with CSS transitions
 - **RTL/LTR Support**: Automatic direction switching with proper text alignment for right-to-left and left-to-right languages
@@ -217,6 +242,7 @@ Preferred communication style: Simple, everyday language.
 - **Performance Optimized**: Efficient language application with minimal re-renders and smooth transitions
 
 ### Latest System Status (January 11, 2025)
+
 - **All Core Features Working**: Authentication, messaging, moderation, and friend systems fully functional
 - **WebSocket Connection**: Stable and reliable real-time communication with advanced optimization
 - **Enhanced Moderation System**: Complete permissions system with IP/device blocking capabilities
@@ -236,6 +262,7 @@ Preferred communication style: Simple, everyday language.
 - **Professional Grade**: Enterprise-level moderation, security, performance monitoring, and reporting
 
 ### Final Launch Preparation (January 11, 2025)
+
 - **Real Database Notifications**: Complete notification system with PostgreSQL database integration
 - **Welcome Notifications**: Automatic welcome messages for new users (guests and members)
 - **Friend System Integration**: Complete notifications for friend requests and acceptances
@@ -246,6 +273,7 @@ Preferred communication style: Simple, everyday language.
 - **Complete Integration**: Authentication, messaging, friends, notifications, and moderation fully connected
 
 ### Code Organization and Security Improvements (January 12, 2025)
+
 - **Service Layer Architecture**: Created organized service classes (AuthService, MessageService, FriendService, NotificationService)
 - **Security Manager**: Advanced security system with password encryption using bcrypt, session validation, and permission checking
 - **Duplicate Code Removal**: Eliminated all duplicate functions in storage.ts and routes.ts
@@ -258,6 +286,7 @@ Preferred communication style: Simple, everyday language.
 - **Clean Architecture**: Separated concerns between authentication, messaging, friends, and notifications
 
 ### Complete Profile Modal Redesign (January 14, 2025)
+
 - **HTML/CSS/JS to React Conversion**: Successfully converted complete HTML template to React/TypeScript implementation
 - **Professional Profile Interface**: New Instagram-style design with gradient backgrounds and glass effects
 - **Transparent Modal Design**: Completely transparent profile modals without gray backgrounds or borders
@@ -272,6 +301,7 @@ Preferred communication style: Simple, everyday language.
 - **Mobile Responsive**: Optimized layout for mobile devices with touch-friendly interactions
 
 ### Username Color System (January 11, 2025)
+
 - **Comprehensive Color Implementation**: Username colors now appear in ALL interface locations:
   - Public chat messages (NewMessageArea)
   - User sidebar list (UserSidebar)
@@ -287,25 +317,27 @@ Preferred communication style: Simple, everyday language.
 - **Performance Optimized**: Efficient color rendering with CSS inline styles for instant display
 
 ### Profile Picture System (January 11, 2025)
-- **Dual Image System**: 
+
+- **Dual Image System**:
   - **Profile Banner**: Large cover image at top of profile modal with camera/upload functionality
   - **Avatar Image**: Traditional circular profile picture for chat and sidebar display
-- **Professional Upload Interface**: 
+- **Professional Upload Interface**:
   - Camera capture functionality for both image types
   - File upload with drag-and-drop support
   - Real-time preview before upload confirmation
   - Automatic image compression and optimization
-- **Smart Storage**: 
+- **Smart Storage**:
   - Members and owners can upload custom images
   - Guests restricted to default avatars for security
   - Automatic cleanup of old images when updated
 - **Database Integration**: Full schema support with profileBanner and profileImage fields
-- **API Endpoints**: 
+- **API Endpoints**:
   - `/api/upload/profile-image` for avatar images
   - `/api/upload/profile-banner` for cover images
 - **Enhanced UI Layout**: Profile modal redesigned with banner on top, avatar and info below
 
 ### Modern Profile Interface (January 11, 2025)
+
 - **Instagram-Style Profile Design**: Complete redesign matching professional social media layouts
 - **Large Banner Background**: Full-width cover image with gradient overlays and professional styling
 - **Floating Profile Image**: Circular avatar positioned on the right with online status indicator
@@ -318,8 +350,9 @@ Preferred communication style: Simple, everyday language.
 - **Real-time Status**: Live online/offline indicators with proper styling
 
 ### Premium User Theme System - Adaptive Golden Gradient (January 11, 2025)
+
 - **Owner-Only Golden Theme**: Exclusive beautiful gradient background (yellow-400 to yellow-600) with animated glow for Owner 👑 users only
-- **Adaptive Coverage**: 
+- **Adaptive Coverage**:
   - UserSidebar: Full comprehensive coverage for entire user box excluding profile image area
   - ProfileModal: Compact styling with smaller padding for cleaner profile appearance
   - Messages: Standard username area coverage with clean styling
@@ -331,6 +364,7 @@ Preferred communication style: Simple, everyday language.
 - **User Preference**: Full theme coverage in user list, compact in profile modal, clean styling without borders
 
 ### Comprehensive Theme System - 46 Beautiful Themes (January 11, 2025)
+
 - **Complete Theme Collection**: 46 professionally designed themes with gradient backgrounds and animations
 - **Theme Categories**:
   - **Classic Themes**: Default, Golden, Royal, Ocean, Sunset, Forest, Rose, Emerald, Fire, Galaxy, Rainbow
@@ -344,6 +378,7 @@ Preferred communication style: Simple, everyday language.
 - **Performance Optimized**: Efficient theme application with CSS inline styles and WebSocket broadcasting
 
 ### UI Improvements - Optimized User Sidebar (January 11, 2025)
+
 - **Compact Design**: Reduced sidebar width from 320px to 256px for better screen utilization
 - **Enhanced Styling**: Changed from dark theme to clean white background with subtle shadows
 - **Improved User Boxes**: Expanded padding for better touch interaction while reducing vertical spacing
@@ -352,6 +387,7 @@ Preferred communication style: Simple, everyday language.
 - **Better Typography**: Improved text contrast and readability with proper color schemes
 
 ### Replit Integration
+
 - **Development**: Special Replit plugins for development environment
 - **Cartographer**: Replit's code mapping tool integration
 - **Runtime Errors**: Replit error overlay for development debugging

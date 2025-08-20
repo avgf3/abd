@@ -1,16 +1,16 @@
-import type { Server as HttpServer } from "http";
+import type { Server as HttpServer } from 'http';
 
-import type { Socket } from "socket.io";
-import { Server as IOServer } from "socket.io";
+import type { Socket } from 'socket.io';
+import { Server as IOServer } from 'socket.io';
 
-import { moderationSystem } from "./moderation";
-import { sanitizeInput, validateMessageContent } from "./security";
-import { pointsService } from "./services/pointsService";
-import { roomMessageService } from "./services/roomMessageService";
-import { roomService } from "./services/roomService";
-import { storage } from "./storage";
-import { sanitizeUsersArray } from "./utils/data-sanitizer";
-import { getClientIpFromHeaders, getDeviceIdFromHeaders } from "./utils/device";
+import { moderationSystem } from './moderation';
+import { sanitizeInput, validateMessageContent } from './security';
+import { pointsService } from './services/pointsService';
+import { roomMessageService } from './services/roomMessageService';
+import { roomService } from './services/roomService';
+import { storage } from './storage';
+import { sanitizeUsersArray } from './utils/data-sanitizer';
+import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 
 interface CustomSocket extends Socket {
   userId?: number;
@@ -20,14 +20,17 @@ interface CustomSocket extends Socket {
   currentRoom?: string | null;
 }
 
-const GENERAL_ROOM = "general";
+const GENERAL_ROOM = 'general';
 
 // Track connected users and their sockets/rooms
-const connectedUsers = new Map<number, {
-  user: any,
-  sockets: Map<string, { room: string; lastSeen: Date }>,
-  lastSeen: Date
-}>();
+const connectedUsers = new Map<
+  number,
+  {
+    user: any;
+    sockets: Map<string, { room: string; lastSeen: Date }>;
+    lastSeen: Date;
+  }
+>();
 
 export function updateConnectedUserCache(user: any) {
   try {
@@ -47,7 +50,13 @@ async function buildOnlineUsersForRoom(roomId: string) {
   for (const [_, entry] of connectedUsers.entries()) {
     // تحقق سريع عبر sockets دون مسح كامل
     for (const socketMeta of entry.sockets.values()) {
-      if (socketMeta.room === roomId && entry.user && entry.user.id && entry.user.username && entry.user.userType) {
+      if (
+        socketMeta.room === roomId &&
+        entry.user &&
+        entry.user.id &&
+        entry.user.username &&
+        entry.user.userType
+      ) {
         userMap.set(entry.user.id, entry.user);
         break;
       }
@@ -58,7 +67,13 @@ async function buildOnlineUsersForRoom(roomId: string) {
   return sanitized.map((u: any) => {
     try {
       const versionTag = (u as any).avatarHash || (u as any).avatarVersion;
-      if (u?.profileImage && typeof u.profileImage === 'string' && !u.profileImage.startsWith('data:') && versionTag && !String(u.profileImage).includes('?v=')) {
+      if (
+        u?.profileImage &&
+        typeof u.profileImage === 'string' &&
+        !u.profileImage.startsWith('data:') &&
+        versionTag &&
+        !String(u.profileImage).includes('?v=')
+      ) {
         return { ...u, profileImage: `${u.profileImage}?v=${versionTag}` };
       }
     } catch {}
@@ -66,7 +81,13 @@ async function buildOnlineUsersForRoom(roomId: string) {
   });
 }
 
-async function joinRoom(io: IOServer, socket: CustomSocket, userId: number, username: string, roomId: string) {
+async function joinRoom(
+  io: IOServer,
+  socket: CustomSocket,
+  userId: number,
+  username: string,
+  roomId: string
+) {
   // Leave previous room on this socket if any
   if (socket.currentRoom && socket.currentRoom !== roomId) {
     try {
@@ -75,7 +96,7 @@ async function joinRoom(io: IOServer, socket: CustomSocket, userId: number, user
         type: 'userLeftRoom',
         username,
         userId,
-        roomId: socket.currentRoom
+        roomId: socket.currentRoom,
       });
     } catch {}
   }
@@ -84,7 +105,9 @@ async function joinRoom(io: IOServer, socket: CustomSocket, userId: number, user
   socket.join(`room_${roomId}`);
   socket.currentRoom = roomId;
 
-  try { await roomService.joinRoom(userId, roomId); } catch {}
+  try {
+    await roomService.joinRoom(userId, roomId);
+  } catch {}
 
   // Update connectedUsers room for this socket
   const entry = connectedUsers.get(userId);
@@ -108,9 +131,19 @@ async function joinRoom(io: IOServer, socket: CustomSocket, userId: number, user
   } catch {}
 }
 
-async function leaveRoom(io: IOServer, socket: CustomSocket, userId: number, username: string, roomId: string) {
-  try { socket.leave(`room_${roomId}`); } catch {}
-  try { await roomService.leaveRoom(userId, roomId); } catch {}
+async function leaveRoom(
+  io: IOServer,
+  socket: CustomSocket,
+  userId: number,
+  username: string,
+  roomId: string
+) {
+  try {
+    socket.leave(`room_${roomId}`);
+  } catch {}
+  try {
+    await roomService.leaveRoom(userId, roomId);
+  } catch {}
 
   if (socket.currentRoom === roomId) socket.currentRoom = null;
 
@@ -119,7 +152,7 @@ async function leaveRoom(io: IOServer, socket: CustomSocket, userId: number, use
     type: 'userLeftRoom',
     username,
     userId,
-    roomId
+    roomId,
   });
 
   // Push updated online users for the room
@@ -138,11 +171,11 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
   const io = new IOServer(httpServer, {
     cors: {
       origin: (_origin, callback) => callback(null, true),
-      methods: ["GET", "POST"],
+      methods: ['GET', 'POST'],
       credentials: true,
     },
-    path: "/socket.io",
-    transports: ["websocket", "polling"],
+    path: '/socket.io',
+    transports: ['websocket', 'polling'],
     allowEIO3: true,
     pingTimeout: 60000,
     pingInterval: 25000,
@@ -160,16 +193,40 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           process.env.FRONTEND_URL,
           process.env.CORS_ORIGIN,
         ].filter(Boolean) as string[];
-        const envHosts = envOrigins.map(u => { try { return new URL(u).host; } catch { return ''; } }).filter(Boolean);
-        const originHost = (() => { try { return originHeader ? new URL(originHeader).host : ''; } catch { return ''; } })();
+        const envHosts = envOrigins
+          .map((u) => {
+            try {
+              return new URL(u).host;
+            } catch {
+              return '';
+            }
+          })
+          .filter(Boolean);
+        const originHost = (() => {
+          try {
+            return originHeader ? new URL(originHeader).host : '';
+          } catch {
+            return '';
+          }
+        })();
         const isDev = process.env.NODE_ENV !== 'production';
         const isSameHost = originHost && hostHeader && originHost === hostHeader;
         const isEnvAllowed = originHost && envHosts.includes(originHost);
 
         // Early block by IP/device before accepting socket transport
-        const ip = (req.headers['x-forwarded-for'] as string || req.headers['x-real-ip'] as string || (req as any).connection?.remoteAddress || 'unknown').split(',')[0].trim();
+        const ip = (
+          (req.headers['x-forwarded-for'] as string) ||
+          (req.headers['x-real-ip'] as string) ||
+          (req as any).connection?.remoteAddress ||
+          'unknown'
+        )
+          .split(',')[0]
+          .trim();
         const authDeviceId = (req as any).auth?.deviceId;
-        const deviceId = (typeof authDeviceId === 'string' && authDeviceId.trim().length > 0) ? authDeviceId.trim() : (req.headers['x-device-id'] as string || 'unknown');
+        const deviceId =
+          typeof authDeviceId === 'string' && authDeviceId.trim().length > 0
+            ? authDeviceId.trim()
+            : (req.headers['x-device-id'] as string) || 'unknown';
         if (moderationSystem.isBlocked(ip, deviceId)) {
           return callback(null, false);
         }
@@ -192,11 +249,21 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
     });
 
     // Pre-connection checks
-    const clientIP = getClientIpFromHeaders(socket.handshake.headers as any, socket.handshake.address as any);
+    const clientIP = getClientIpFromHeaders(
+      socket.handshake.headers as any,
+      socket.handshake.address as any
+    );
     const authDeviceId = (socket.handshake as any).auth?.deviceId;
-    const deviceId = (typeof authDeviceId === 'string' && authDeviceId.trim().length > 0) ? authDeviceId.trim() : getDeviceIdFromHeaders(socket.handshake.headers as any);
+    const deviceId =
+      typeof authDeviceId === 'string' && authDeviceId.trim().length > 0
+        ? authDeviceId.trim()
+        : getDeviceIdFromHeaders(socket.handshake.headers as any);
     if (moderationSystem.isBlocked(clientIP, deviceId)) {
-      socket.emit('error', { type: 'error', message: 'جهازك أو عنوان IP الخاص بك محجوب من الدردشة', action: 'device_blocked' });
+      socket.emit('error', {
+        type: 'error',
+        message: 'جهازك أو عنوان IP الخاص بك محجوب من الدردشة',
+        action: 'device_blocked',
+      });
       socket.disconnect(true);
       return;
     }
@@ -206,117 +273,161 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
     socket.emit('socketConnected', {
       message: 'متصل بنجاح',
       socketId: socket.id,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
-    socket.on('auth', async (payload: { userId?: number; username?: string; userType?: string; reconnect?: boolean }) => {
-      // السماح بإعادة المصادقة إذا كان المستخدم مختلفاً
-      if (isAuthenticated && payload.userId && socket.userId && payload.userId !== socket.userId) {
-        // مستخدم مختلف يحاول المصادقة - نظف البيانات القديمة
-        try {
-          const oldUserId = socket.userId;
-          const oldEntry = connectedUsers.get(oldUserId);
-          if (oldEntry) {
-            oldEntry.sockets.delete(socket.id);
-            if (oldEntry.sockets.size === 0) {
-              connectedUsers.delete(oldUserId);
-              await storage.setUserOnlineStatus(oldUserId, false);
+    socket.on(
+      'auth',
+      async (payload: {
+        userId?: number;
+        username?: string;
+        userType?: string;
+        reconnect?: boolean;
+      }) => {
+        // السماح بإعادة المصادقة إذا كان المستخدم مختلفاً
+        if (
+          isAuthenticated &&
+          payload.userId &&
+          socket.userId &&
+          payload.userId !== socket.userId
+        ) {
+          // مستخدم مختلف يحاول المصادقة - نظف البيانات القديمة
+          try {
+            const oldUserId = socket.userId;
+            const oldEntry = connectedUsers.get(oldUserId);
+            if (oldEntry) {
+              oldEntry.sockets.delete(socket.id);
+              if (oldEntry.sockets.size === 0) {
+                connectedUsers.delete(oldUserId);
+                await storage.setUserOnlineStatus(oldUserId, false);
+              }
             }
-          }
-          // مغادرة الغرف القديمة
-          socket.leave(oldUserId.toString());
-          if (socket.currentRoom) {
-            socket.leave(`room_${socket.currentRoom}`);
-          }
-        } catch {}
-        
-        // إعادة تعيين حالة المصادقة
-        isAuthenticated = false;
-        socket.userId = undefined;
-        socket.username = undefined;
-        socket.userType = undefined;
-        socket.isAuthenticated = false;
-      }
-      
-      if (isAuthenticated) return;
-      
-      try {
-        let user: any | undefined;
-        if (payload.userId) {
-          user = await storage.getUser(payload.userId);
-          if (!user) { socket.emit('error', { message: 'المستخدم غير موجود' }); return; }
-          const status = await moderationSystem.checkUserStatus(user.id);
-          if (status.isBlocked) {
-            socket.emit('error', { type: 'error', message: 'أنت محجوب نهائياً من الدردشة', action: 'blocked' });
-            socket.disconnect(true);
-            return;
-          }
-          if (status.isBanned && !status.canJoin) {
-            socket.emit('error', { type: 'error', message: status.reason || 'أنت مطرود من الدردشة', action: 'banned', timeLeft: status.timeLeft });
-            socket.disconnect(true);
-            return;
-          }
-        } else if (payload.username) {
-          const safeUsername = String(payload.username).trim();
-          const validName = /^[\u0600-\u06FFa-zA-Z0-9_]{3,20}$/.test(safeUsername);
-          if (!validName) { socket.emit('error', { message: 'اسم مستخدم غير صالح' }); return; }
-          const existing = await storage.getUserByUsername(safeUsername);
-          if (existing) { socket.emit('error', { message: 'الرجاء تسجيل الدخول باستخدام الحساب' }); return; }
-          const requestedType = String(payload.userType || 'guest').toLowerCase();
-          if (requestedType !== 'guest') { socket.emit('error', { message: 'غير مسموح بإنشاء حسابات بامتيازات عبر Socket' }); return; }
-          user = await storage.createUser({
-            username: safeUsername,
-            userType: 'guest',
-            role: 'guest',
-            isOnline: true,
-            joinDate: new Date(),
-            createdAt: new Date()
-          });
-        } else {
-          socket.emit('error', { message: 'بيانات المصادقة غير مكتملة' });
-          return;
+            // مغادرة الغرف القديمة
+            socket.leave(oldUserId.toString());
+            if (socket.currentRoom) {
+              socket.leave(`room_${socket.currentRoom}`);
+            }
+          } catch {}
+
+          // إعادة تعيين حالة المصادقة
+          isAuthenticated = false;
+          socket.userId = undefined;
+          socket.username = undefined;
+          socket.userType = undefined;
+          socket.isAuthenticated = false;
         }
 
-        // Update last known IP/device for this user
+        if (isAuthenticated) return;
+
         try {
-          const connectIP = getClientIpFromHeaders(socket.handshake.headers as any, socket.handshake.address as any);
-          const authDeviceId2 = (socket.handshake as any).auth?.deviceId;
-          const connectDevice = (typeof authDeviceId2 === 'string' && authDeviceId2.trim().length > 0) ? authDeviceId2.trim() : getDeviceIdFromHeaders(socket.handshake.headers as any);
-          await storage.updateUser(user.id, { ipAddress: connectIP, deviceId: connectDevice });
-        } catch {}
+          let user: any | undefined;
+          if (payload.userId) {
+            user = await storage.getUser(payload.userId);
+            if (!user) {
+              socket.emit('error', { message: 'المستخدم غير موجود' });
+              return;
+            }
+            const status = await moderationSystem.checkUserStatus(user.id);
+            if (status.isBlocked) {
+              socket.emit('error', {
+                type: 'error',
+                message: 'أنت محجوب نهائياً من الدردشة',
+                action: 'blocked',
+              });
+              socket.disconnect(true);
+              return;
+            }
+            if (status.isBanned && !status.canJoin) {
+              socket.emit('error', {
+                type: 'error',
+                message: status.reason || 'أنت مطرود من الدردشة',
+                action: 'banned',
+                timeLeft: status.timeLeft,
+              });
+              socket.disconnect(true);
+              return;
+            }
+          } else if (payload.username) {
+            const safeUsername = String(payload.username).trim();
+            const validName = /^[\u0600-\u06FFa-zA-Z0-9_]{3,20}$/.test(safeUsername);
+            if (!validName) {
+              socket.emit('error', { message: 'اسم مستخدم غير صالح' });
+              return;
+            }
+            const existing = await storage.getUserByUsername(safeUsername);
+            if (existing) {
+              socket.emit('error', { message: 'الرجاء تسجيل الدخول باستخدام الحساب' });
+              return;
+            }
+            const requestedType = String(payload.userType || 'guest').toLowerCase();
+            if (requestedType !== 'guest') {
+              socket.emit('error', { message: 'غير مسموح بإنشاء حسابات بامتيازات عبر Socket' });
+              return;
+            }
+            user = await storage.createUser({
+              username: safeUsername,
+              userType: 'guest',
+              role: 'guest',
+              isOnline: true,
+              joinDate: new Date(),
+              createdAt: new Date(),
+            });
+          } else {
+            socket.emit('error', { message: 'بيانات المصادقة غير مكتملة' });
+            return;
+          }
 
-        socket.userId = user.id;
-        socket.username = user.username;
-        socket.userType = user.userType;
-        socket.isAuthenticated = true;
-        isAuthenticated = true;
+          // Update last known IP/device for this user
+          try {
+            const connectIP = getClientIpFromHeaders(
+              socket.handshake.headers as any,
+              socket.handshake.address as any
+            );
+            const authDeviceId2 = (socket.handshake as any).auth?.deviceId;
+            const connectDevice =
+              typeof authDeviceId2 === 'string' && authDeviceId2.trim().length > 0
+                ? authDeviceId2.trim()
+                : getDeviceIdFromHeaders(socket.handshake.headers as any);
+            await storage.updateUser(user.id, { ipAddress: connectIP, deviceId: connectDevice });
+          } catch {}
 
-        try { socket.join(user.id.toString()); } catch {}
-        try { await storage.setUserOnlineStatus(user.id, true); } catch {}
+          socket.userId = user.id;
+          socket.username = user.username;
+          socket.userType = user.userType;
+          socket.isAuthenticated = true;
+          isAuthenticated = true;
 
-        // Track connection
-        const existing = connectedUsers.get(user.id);
-        if (!existing) {
-          connectedUsers.set(user.id, {
-            user,
-            sockets: new Map([[socket.id, { room: GENERAL_ROOM, lastSeen: new Date() }]]),
-            lastSeen: new Date()
-          });
-        } else {
-          existing.user = user;
-          existing.sockets.set(socket.id, { room: GENERAL_ROOM, lastSeen: new Date() });
-          existing.lastSeen = new Date();
-          connectedUsers.set(user.id, existing);
+          try {
+            socket.join(user.id.toString());
+          } catch {}
+          try {
+            await storage.setUserOnlineStatus(user.id, true);
+          } catch {}
+
+          // Track connection
+          const existing = connectedUsers.get(user.id);
+          if (!existing) {
+            connectedUsers.set(user.id, {
+              user,
+              sockets: new Map([[socket.id, { room: GENERAL_ROOM, lastSeen: new Date() }]]),
+              lastSeen: new Date(),
+            });
+          } else {
+            existing.user = user;
+            existing.sockets.set(socket.id, { room: GENERAL_ROOM, lastSeen: new Date() });
+            existing.lastSeen = new Date();
+            connectedUsers.set(user.id, existing);
+          }
+
+          // Auto join general room
+          await joinRoom(io, socket, user.id, user.username, GENERAL_ROOM);
+
+          socket.emit('authenticated', { message: 'تم الاتصال بنجاح', user });
+        } catch (err) {
+          socket.emit('error', { message: 'خطأ في المصادقة' });
         }
-
-        // Auto join general room
-        await joinRoom(io, socket, user.id, user.username, GENERAL_ROOM);
-
-        socket.emit('authenticated', { message: 'تم الاتصال بنجاح', user });
-      } catch (err) {
-        socket.emit('error', { message: 'خطأ في المصادقة' });
       }
-    });
+    );
 
     socket.on('requestOnlineUsers', async () => {
       if (!socket.isAuthenticated) return;
@@ -328,14 +439,21 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
     // انضمام للغرفة مع منع السبام والتكرار السريع
     let lastJoinAt = 0;
     socket.on('joinRoom', async (data) => {
-      if (!socket.userId) { socket.emit('message', { type: 'error', message: 'يجب تسجيل الدخول أولاً' }); return; }
-      const roomId = (data && data.roomId) ? String(data.roomId) : GENERAL_ROOM;
+      if (!socket.userId) {
+        socket.emit('message', { type: 'error', message: 'يجب تسجيل الدخول أولاً' });
+        return;
+      }
+      const roomId = data && data.roomId ? String(data.roomId) : GENERAL_ROOM;
       const username = socket.username || `User#${socket.userId}`;
       try {
         // منع الانضمام المتكرر لنفس الغرفة أو الطلبات المتقاربة جداً
         const now = Date.now();
         if (socket.currentRoom === roomId) {
-          socket.emit('message', { type: 'roomJoined', roomId, users: await buildOnlineUsersForRoom(roomId) });
+          socket.emit('message', {
+            type: 'roomJoined',
+            roomId,
+            users: await buildOnlineUsersForRoom(roomId),
+          });
           return;
         }
         if (now - lastJoinAt < 500) {
@@ -347,7 +465,12 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         await joinRoom(io, socket, socket.userId, username, roomId);
         if (previousRoom && previousRoom !== roomId) {
           const prevUsers = await buildOnlineUsersForRoom(previousRoom);
-          io.to(`room_${previousRoom}`).emit('message', { type: 'onlineUsers', users: prevUsers, roomId: previousRoom, source: 'switch_room' });
+          io.to(`room_${previousRoom}`).emit('message', {
+            type: 'onlineUsers',
+            users: prevUsers,
+            roomId: previousRoom,
+            source: 'switch_room',
+          });
         }
       } catch (e) {
         socket.emit('message', { type: 'error', message: 'فشل الانضمام للغرفة' });
@@ -356,9 +479,11 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
 
     socket.on('leaveRoom', async (data) => {
       if (!socket.userId) return;
-      const roomId = (data && data.roomId) ? String(data.roomId) : (socket.currentRoom || GENERAL_ROOM);
+      const roomId = data && data.roomId ? String(data.roomId) : socket.currentRoom || GENERAL_ROOM;
       const username = socket.username || `User#${socket.userId}`;
-      try { await leaveRoom(io, socket, socket.userId, username, roomId); } catch {
+      try {
+        await leaveRoom(io, socket, socket.userId, username, roomId);
+      } catch {
         socket.emit('message', { type: 'error', message: 'خطأ في مغادرة الغرفة' });
       }
     });
@@ -370,7 +495,10 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
 
         const status = await moderationSystem.checkUserStatus(socket.userId);
         if (!status.canChat) {
-          socket.emit('message', { type: 'error', message: status.reason || 'غير مسموح بإرسال الرسائل حالياً' });
+          socket.emit('message', {
+            type: 'error',
+            message: status.reason || 'غير مسموح بإرسال الرسائل حالياً',
+          });
           return;
         }
 
@@ -388,16 +516,27 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           messageType: data?.messageType || 'text',
           isPrivate: false,
         });
-        if (!created) { socket.emit('message', { type: 'error', message: 'فشل في إرسال الرسالة' }); return; }
+        if (!created) {
+          socket.emit('message', { type: 'error', message: 'فشل في إرسال الرسالة' });
+          return;
+        }
 
         const sender = await storage.getUser(socket.userId);
-        io.to(`room_${roomId}`).emit('message', { type: 'newMessage', message: { ...created, sender, roomId } });
+        io.to(`room_${roomId}`).emit('message', {
+          type: 'newMessage',
+          message: { ...created, sender, roomId },
+        });
 
         // Points/achievements (non-blocking)
         try {
           const pointsResult = await pointsService.addMessagePoints(socket.userId);
           if (pointsResult?.leveledUp) {
-            socket.emit('message', { type: 'levelUp', oldLevel: pointsResult.oldLevel, newLevel: pointsResult.newLevel, levelInfo: pointsResult.levelInfo });
+            socket.emit('message', {
+              type: 'levelUp',
+              oldLevel: pointsResult.oldLevel,
+              newLevel: pointsResult.newLevel,
+              levelInfo: pointsResult.levelInfo,
+            });
           }
         } catch {}
       } catch (e) {
@@ -408,7 +547,13 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
     socket.on('typing', (data) => {
       const isTyping = !!data?.isTyping;
       const roomId = socket.currentRoom || GENERAL_ROOM;
-      io.to(`room_${roomId}`).emit('message', { type: 'typing', userId: socket.userId, username: socket.username, isTyping, roomId });
+      io.to(`room_${roomId}`).emit('message', {
+        type: 'typing',
+        userId: socket.userId,
+        username: socket.username,
+        isTyping,
+        roomId,
+      });
     });
 
     // Basic WebRTC relays scoped to same room
@@ -441,7 +586,11 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         if (!roomId || !targetUserId || !candidate || !senderId) return;
         const currentRoom = socket.currentRoom || GENERAL_ROOM;
         if (currentRoom !== roomId) return;
-        io.to(targetUserId.toString()).emit('webrtc-ice-candidate', { roomId, candidate, senderId });
+        io.to(targetUserId.toString()).emit('webrtc-ice-candidate', {
+          roomId,
+          candidate,
+          senderId,
+        });
       } catch {}
     });
 
@@ -455,11 +604,18 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           entry.lastSeen = new Date();
           if (entry.sockets.size === 0) {
             connectedUsers.delete(userId);
-            try { await storage.setUserOnlineStatus(userId, false); } catch {}
+            try {
+              await storage.setUserOnlineStatus(userId, false);
+            } catch {}
             // Update any room the user was in last (best effort)
             const lastRoom = socket.currentRoom || GENERAL_ROOM;
             const users = await buildOnlineUsersForRoom(lastRoom);
-            io.to(`room_${lastRoom}`).emit('message', { type: 'onlineUsers', users, roomId: lastRoom, source: 'disconnect' });
+            io.to(`room_${lastRoom}`).emit('message', {
+              type: 'onlineUsers',
+              users,
+              roomId: lastRoom,
+              source: 'disconnect',
+            });
           } else {
             connectedUsers.set(userId, entry);
           }

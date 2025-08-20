@@ -27,9 +27,9 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
   const handleFileSelect = async (file: File) => {
     if (!currentUser) {
       toast({
-        title: "خطأ",
-        description: "يجب تسجيل الدخول أولاً",
-        variant: "destructive",
+        title: 'خطأ',
+        description: 'يجب تسجيل الدخول أولاً',
+        variant: 'destructive',
       });
       return;
     }
@@ -37,9 +37,9 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
     const validation = validateFile(file, 'profile_banner');
     if (!validation.isValid) {
       toast({
-        title: "خطأ",
-        description: validation.error || "الملف غير صحيح",
-        variant: "destructive",
+        title: 'خطأ',
+        description: validation.error || 'الملف غير صحيح',
+        variant: 'destructive',
       });
       return;
     }
@@ -72,15 +72,15 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       }
       setPreview(null);
       toast({
-        title: "تم بنجاح",
-        description: "تم تحديث صورة البانر",
-        variant: "default",
+        title: 'تم بنجاح',
+        description: 'تم تحديث صورة البانر',
+        variant: 'default',
       });
     } catch (error: any) {
       toast({
-        title: "خطأ",
-        description: error.message || "فشل في رفع صورة البانر، يرجى المحاولة مرة أخرى",
-        variant: "destructive",
+        title: 'خطأ',
+        description: error.message || 'فشل في رفع صورة البانر، يرجى المحاولة مرة أخرى',
+        variant: 'destructive',
       });
       setPreview(null);
     } finally {
@@ -115,15 +115,11 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       {/* صورة البروفايل البانر */}
       <div className="relative h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 shadow-2xl border border-white/20">
         {preview ? (
-          <img 
-            src={preview} 
-            alt="معاينة صورة البانر" 
-            className="w-full h-full object-cover"
-          />
-        ) : (currentUser?.profileBanner && currentUser.profileBanner !== '') ? (
-          <img 
-            src={getBannerImageSrc(currentUser.profileBanner) + '?t=' + Date.now()} 
-            alt="صورة البانر" 
+          <img src={preview} alt="معاينة صورة البانر" className="w-full h-full object-cover" />
+        ) : currentUser?.profileBanner && currentUser.profileBanner !== '' ? (
+          <img
+            src={getBannerImageSrc(currentUser.profileBanner) + '?t=' + Date.now()}
+            alt="صورة البانر"
             className="w-full h-full object-cover"
           />
         ) : (
@@ -137,7 +133,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
             <div className="absolute inset-0 bg-black/10"></div>
           </div>
         )}
-        
+
         {/* زر إزالة المعاينة */}
         {preview && (
           <button
@@ -181,7 +177,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
         onChange={handleCameraCapture}
         className="hidden"
       />
-      
+
       <input
         ref={fileInputRef}
         type="file"

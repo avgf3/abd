@@ -3,6 +3,7 @@
 ## المشاكل التي تم حلها
 
 ### 1. مشكلة `this.db` غير المعرف
+
 **المشكلة:** `TypeError: Cannot read properties of undefined (reading 'run')`
 
 **الحل:** استبدال جميع استخدامات `this.db` بـ `getDirectSqliteConnection()` في دوال SQLite:
@@ -20,14 +21,17 @@
 - `removeSpeaker()`
 
 ### 2. مشكلة `value.toISOString is not a function`
+
 **المشكلة:** `TypeError: value.toISOString is not a function` في `setUserOnlineStatus`
 
 **الحل:** إزالة `as any` من `db.update(users).set()` لتجنب تمرير `Date` مباشرة إلى Drizzle ORM.
 
 ### 3. مشكلة الكتابة في غرفة البث المباشر
+
 **المشكلة:** المستخدمون لا يستطيعون الكتابة في غرفة البث المباشر
 
-**الحل:** 
+**الحل:**
+
 - إلغاء التحقق من الصلاحيات في الخادم (`routes.ts`)
 - إلغاء تعطيل حقل الكتابة في الواجهة (`BroadcastRoomInterface.tsx`)
 - السماح للجميع بالكتابة مثل باقي الغرف
@@ -35,6 +39,7 @@
 ## التغييرات المطبقة
 
 ### في `server/storage.ts`:
+
 ```typescript
 // قبل
 await this.db.run(`INSERT OR IGNORE INTO rooms...`);
@@ -47,6 +52,7 @@ if (sqliteDb) {
 ```
 
 ### في `server/routes.ts`:
+
 ```typescript
 // تم إلغاء التحقق من الصلاحيات
 // const room = await storage.getRoom(roomId);
@@ -56,6 +62,7 @@ if (sqliteDb) {
 ```
 
 ### في `client/src/components/chat/BroadcastRoomInterface.tsx`:
+
 ```typescript
 // تم إلغاء التحقق من canSpeak
 const handleSendMessage = (e: React.FormEvent) => {
@@ -84,6 +91,7 @@ const handleSendMessage = (e: React.FormEvent) => {
 ## النتيجة النهائية
 
 ✅ **غرفة البث المباشر تعمل الآن بشكل صحيح:**
+
 - جميع المستخدمين يمكنهم الكتابة في غرفة البث المباشر
 - نظام المايك يعمل للعرض فقط (تمييز المتحدثين/المستمعين)
 - لا توجد أخطاء في قاعدة البيانات

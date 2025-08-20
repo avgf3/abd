@@ -37,10 +37,10 @@ interface LanguageSwitcherProps {
   className?: string;
 }
 
-export default function LanguageSwitcher({ 
-  onLanguageChange, 
-  compact = false, 
-  className = "" 
+export default function LanguageSwitcher({
+  onLanguageChange,
+  compact = false,
+  className = '',
 }: LanguageSwitcherProps) {
   const [currentLanguage, setCurrentLanguage] = useState<Language>(languages[0]); // Default to Arabic
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -49,7 +49,7 @@ export default function LanguageSwitcher({
   useEffect(() => {
     const savedLanguage = localStorage.getItem('preferred-language');
     if (savedLanguage) {
-      const found = languages.find(lang => lang.code === savedLanguage);
+      const found = languages.find((lang) => lang.code === savedLanguage);
       if (found) {
         setCurrentLanguage(found);
         applyLanguageSettings(found);
@@ -61,11 +61,11 @@ export default function LanguageSwitcher({
     // Update document direction
     document.documentElement.dir = language.direction;
     document.documentElement.lang = language.code;
-    
+
     // Update body class for RTL/LTR styling
     document.body.classList.remove('rtl', 'ltr');
     document.body.classList.add(language.direction);
-    
+
     // Save to localStorage
     localStorage.setItem('preferred-language', language.code);
   };
@@ -82,12 +82,12 @@ export default function LanguageSwitcher({
     }
 
     // Wait for animation
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
     // Apply new language
     setCurrentLanguage(language);
     applyLanguageSettings(language);
-    
+
     if (onLanguageChange) {
       onLanguageChange(language);
     }
@@ -123,8 +123,8 @@ export default function LanguageSwitcher({
                 key={language.code}
                 onClick={() => handleLanguageChange(language)}
                 className={`flex items-center gap-3 cursor-pointer ${
-                  currentLanguage.code === language.code 
-                    ? 'bg-blue-50 text-blue-700' 
+                  currentLanguage.code === language.code
+                    ? 'bg-blue-50 text-blue-700'
                     : 'hover:bg-gray-50'
                 }`}
               >
@@ -170,8 +170,8 @@ export default function LanguageSwitcher({
                 key={language.code}
                 onClick={() => handleLanguageChange(language)}
                 className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-150 ${
-                  currentLanguage.code === language.code 
-                    ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' 
+                  currentLanguage.code === language.code
+                    ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'
                     : 'hover:bg-gray-50'
                 }`}
               >
@@ -180,9 +180,7 @@ export default function LanguageSwitcher({
                   <span className="font-medium">{language.nativeName}</span>
                   <span className="text-sm text-gray-500">{language.name}</span>
                 </div>
-                <div className="text-xs text-gray-400">
-                  {language.direction.toUpperCase()}
-                </div>
+                <div className="text-xs text-gray-400">{language.direction.toUpperCase()}</div>
                 {currentLanguage.code === language.code && (
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
                 )}
@@ -226,24 +224,26 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
     if (language.code === currentLanguage.code) return;
 
     setIsTransitioning(true);
-    
+
     // Apply language settings
     document.documentElement.dir = language.direction;
     document.documentElement.lang = language.code;
     document.body.classList.remove('rtl', 'ltr');
     document.body.classList.add(language.direction);
     localStorage.setItem('preferred-language', language.code);
-    
+
     setCurrentLanguage(language);
-    
+
     setTimeout(() => setIsTransitioning(false), 300);
   };
 
   return (
     <LanguageContext.Provider value={{ currentLanguage, changeLanguage, isTransitioning }}>
-      <div className={`language-transition-content transition-all duration-300 ${
-        isTransitioning ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
-      }`}>
+      <div
+        className={`language-transition-content transition-all duration-300 ${
+          isTransitioning ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
+        }`}
+      >
         {children}
       </div>
     </LanguageContext.Provider>

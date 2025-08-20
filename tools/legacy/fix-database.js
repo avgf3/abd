@@ -15,7 +15,7 @@ async function fixDatabase() {
       console.log('🐘 محاولة الاتصال بـ PostgreSQL...');
       client = postgres(process.env.DATABASE_URL, { max: 1 });
       db = drizzle(client);
-      
+
       // اختبار الاتصال
       await db.execute(sql`SELECT 1`);
       console.log('✅ تم الاتصال بـ PostgreSQL بنجاح');
@@ -31,12 +31,12 @@ async function fixDatabase() {
       await db.execute(sql`
         ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'guest'
       `);
-      
+
       // تحديث role ليطابق user_type
       await db.execute(sql`
         UPDATE users SET role = user_type WHERE role IS NULL OR role = ''
       `);
-      
+
       console.log('✅ تم إصلاح عمود role');
     } catch (error) {
       console.log('⚠️ عمود role موجود مسبقاً أو تم إنشاؤه');
@@ -44,13 +44,13 @@ async function fixDatabase() {
 
     // إضافة أعمدة أخرى مفقودة
     const columnsToAdd = [
-      { name: 'profile_background_color', sql: 'profile_background_color TEXT DEFAULT \'#3c0d0d\'' },
-      { name: 'username_color', sql: 'username_color TEXT DEFAULT \'#FFFFFF\'' },
-      { name: 'profile_effect', sql: 'profile_effect TEXT DEFAULT \'none\'' },
+      { name: 'profile_background_color', sql: "profile_background_color TEXT DEFAULT '#3c0d0d'" },
+      { name: 'username_color', sql: "username_color TEXT DEFAULT '#FFFFFF'" },
+      { name: 'profile_effect', sql: "profile_effect TEXT DEFAULT 'none'" },
       { name: 'points', sql: 'points INTEGER DEFAULT 0' },
       { name: 'level', sql: 'level INTEGER DEFAULT 1' },
       { name: 'total_points', sql: 'total_points INTEGER DEFAULT 0' },
-      { name: 'level_progress', sql: 'level_progress INTEGER DEFAULT 0' }
+      { name: 'level_progress', sql: 'level_progress INTEGER DEFAULT 0' },
     ];
 
     for (const column of columnsToAdd) {
@@ -71,11 +71,11 @@ async function fixDatabase() {
 
       if (existingOwner.length === 0) {
         console.log('🔑 إنشاء مالك افتراضي...');
-        
+
         // استيراد bcrypt فقط عند الحاجة
         const bcrypt = await import('bcrypt');
         const hashedPassword = await bcrypt.hash('admin123', 12);
-        
+
         await db.execute(sql`
           INSERT INTO users (
             username, password, user_type, role, profile_background_color,
@@ -89,7 +89,7 @@ async function fixDatabase() {
             false, false, false, false, false, '[]'
           )
         `);
-        
+
         console.log('✅ تم إنشاء المالك الافتراضي بنجاح');
         console.log('👑 بيانات الدخول: Username: Owner, Password: admin123');
       } else {
@@ -110,7 +110,6 @@ async function fixDatabase() {
     console.log('1. تشغيل الخادم: npm run dev');
     console.log('2. فتح الموقع: http://localhost:5000');
     console.log('3. تسجيل دخول كمالك: Owner / admin123');
-
   } catch (error) {
     console.error('❌ فشل في إصلاح قاعدة البيانات:', error);
     process.exit(1);

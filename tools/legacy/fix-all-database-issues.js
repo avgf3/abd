@@ -19,7 +19,7 @@ class DatabaseFixer {
       success: '✅',
       warning: '⚠️',
       error: '❌',
-      fix: '🔧'
+      fix: '🔧',
     };
     console.log(`${icons[type]} ${message}`);
   }
@@ -36,7 +36,7 @@ class DatabaseFixer {
 
   async checkPostgreSQLConnection() {
     this.log('فحص اتصال PostgreSQL...', 'info');
-    
+
     if (!this.databaseUrl || !this.databaseUrl.startsWith('postgresql://')) {
       this.addIssue('DATABASE_URL غير محدد أو غير صحيح للـ PostgreSQL');
       return false;
@@ -47,14 +47,14 @@ class DatabaseFixer {
         connectionString: this.databaseUrl,
         ssl: { rejectUnauthorized: false },
         connectionTimeoutMillis: 10000,
-        max: 1
+        max: 1,
       });
 
       const client = await pool.connect();
       await client.query('SELECT 1');
       client.release();
       await pool.end();
-      
+
       this.log('اتصال PostgreSQL يعمل بشكل صحيح', 'success');
       return true;
     } catch (error) {
@@ -65,11 +65,11 @@ class DatabaseFixer {
 
   async fixPostgreSQLSchema() {
     this.log('إصلاح مخطط PostgreSQL...', 'info');
-    
+
     try {
       const pool = new Pool({
         connectionString: this.databaseUrl,
-        ssl: { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: false },
       });
 
       const client = await pool.connect();
@@ -189,35 +189,49 @@ class DatabaseFixer {
         { level: 2, required_points: 100, title: 'متحمس', color: '#00FF00' },
         { level: 3, required_points: 250, title: 'نشيط', color: '#0080FF' },
         { level: 4, required_points: 500, title: 'متقدم', color: '#8000FF' },
-        { level: 5, required_points: 1000, title: 'خبير', color: '#FF8000' }
+        { level: 5, required_points: 1000, title: 'خبير', color: '#FF8000' },
       ];
 
       for (const levelData of defaultLevels) {
-        await client.query(`
+        await client.query(
+          `
           INSERT INTO level_settings (level, required_points, title, color)
           VALUES ($1, $2, $3, $4)
           ON CONFLICT (level) DO NOTHING
-        `, [levelData.level, levelData.required_points, levelData.title, levelData.color]);
+        `,
+          [levelData.level, levelData.required_points, levelData.title, levelData.color]
+        );
       }
 
       this.addFix('تم إدراج المستويات الافتراضية');
 
       // إنشاء مستخدم المالك إذا لم يكن موجوداً
       const ownerExists = await client.query(
-        "SELECT id FROM users WHERE username = $1 OR user_type = $2",
+        'SELECT id FROM users WHERE username = $1 OR user_type = $2',
         ['المالك', 'owner']
       );
 
       if (ownerExists.rows.length === 0) {
-        await client.query(`
+        await client.query(
+          `
           INSERT INTO users (
             username, password, user_type, role, profile_image, 
             gender, points, level, profile_effect, username_color
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        `, [
-          'المالك', 'owner123', 'owner', 'owner', '/default_avatar.svg',
-          'male', 50000, 10, 'golden', '#FFD700'
-        ]);
+        `,
+          [
+            'المالك',
+            'owner123',
+            'owner',
+            'owner',
+            '/default_avatar.svg',
+            'male',
+            50000,
+            10,
+            'golden',
+            '#FFD700',
+          ]
+        );
         this.addFix('تم إنشاء مستخدم المالك الافتراضي');
       }
 
@@ -232,11 +246,11 @@ class DatabaseFixer {
 
   async setupSQLiteFallback() {
     this.log('إعداد SQLite كبديل...', 'info');
-    
+
     try {
       const dbPath = './chat.db';
       const dbDir = dirname(dbPath);
-      
+
       if (!existsSync(dbDir) && dbDir !== '.') {
         mkdirSync(dbDir, { recursive: true });
       }
@@ -306,17 +320,29 @@ class DatabaseFixer {
       `);
 
       // إنشاء مستخدم المالك إذا لم يكن موجوداً
-      const ownerExists = db.prepare('SELECT id FROM users WHERE username = ? OR user_type = ?').get('المالك', 'owner');
-      
+      const ownerExists = db
+        .prepare('SELECT id FROM users WHERE username = ? OR user_type = ?')
+        .get('المالك', 'owner');
+
       if (!ownerExists) {
-        db.prepare(`
+        db.prepare(
+          `
           INSERT INTO users (
             username, password, user_type, role, profile_image, 
             gender, points, level, profile_effect, username_color
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          'المالك', 'owner123', 'owner', 'owner', '/default_avatar.svg',
-          'male', 50000, 10, 'golden', '#FFD700'
+        `
+        ).run(
+          'المالك',
+          'owner123',
+          'owner',
+          'owner',
+          '/default_avatar.svg',
+          'male',
+          50000,
+          10,
+          'golden',
+          '#FFD700'
         );
         this.addFix('تم إنشاء مستخدم المالك في SQLite');
       }
@@ -333,7 +359,7 @@ class DatabaseFixer {
   async generateReport() {
     this.log('\n📊 تقرير الإصلاح الشامل', 'info');
     this.log('='.repeat(50), 'info');
-    
+
     this.log(`\n⚠️  المشاكل المكتشفة (${this.issues.length}):`, 'warning');
     this.issues.forEach((issue, index) => {
       console.log(`   ${index + 1}. ${issue}`);
@@ -349,25 +375,25 @@ class DatabaseFixer {
     console.log('   2. تأكد من أن Supabase يعمل بشكل صحيح');
     console.log('   3. استخدم SQLite للتطوير المحلي');
     console.log('   4. راقب السجلات للتأكد من عدم وجود أخطاء');
-    
+
     this.log('\n✅ تم إكمال الإصلاح الشامل!', 'success');
   }
 
   async runComprehensiveFix() {
     this.log('🚀 بدء الإصلاح الشامل لقاعدة البيانات...', 'info');
-    
+
     // فحص PostgreSQL
     const pgWorking = await this.checkPostgreSQLConnection();
-    
+
     if (pgWorking) {
       await this.fixPostgreSQLSchema();
     } else {
       this.addFix('سيتم استخدام SQLite كبديل');
     }
-    
+
     // إعداد SQLite كبديل
     await this.setupSQLiteFallback();
-    
+
     // إنشاء التقرير
     await this.generateReport();
   }

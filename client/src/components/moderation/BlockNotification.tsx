@@ -22,23 +22,23 @@ export default function BlockNotification({ isVisible, reason, onClose }: BlockN
             تم حجبك نهائياً
           </CardTitle>
         </CardHeader>
-        
+
         <CardContent className="text-center space-y-4">
           <div className="p-4 bg-red-800/50 rounded-lg">
             <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-400" />
-            <p className="text-red-200 font-semibold">
-              تم حجبك من الموقع نهائياً
-            </p>
+            <p className="text-red-200 font-semibold">تم حجبك من الموقع نهائياً</p>
           </div>
-          
+
           <div className="text-sm text-red-300 space-y-2">
-            <p><strong>السبب:</strong> {reason}</p>
+            <p>
+              <strong>السبب:</strong> {reason}
+            </p>
             <p>تم حجب عنوان IP والجهاز الخاص بك</p>
             <p>لا يمكنك الدخول مرة أخرى بأي اسم مستخدم</p>
           </div>
-          
+
           <div className="pt-4 border-t border-red-700">
-            <Button 
+            <Button
               onClick={() => {
                 onClose();
                 window.location.href = '/';

@@ -4,26 +4,26 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 async function fixPostgreSQLMigrationErrors() {
-    console.log('🔧 إصلاح أخطاء الهجرة في PostgreSQL...');
-    
-    const databaseUrl = process.env.DATABASE_URL;
-    if (!databaseUrl) {
-        console.error('❌ DATABASE_URL غير محدد');
-        return;
-    }
+  console.log('🔧 إصلاح أخطاء الهجرة في PostgreSQL...');
 
-    const client = new Client({
-        connectionString: databaseUrl,
-        ssl: { rejectUnauthorized: false }
-    });
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    console.error('❌ DATABASE_URL غير محدد');
+    return;
+  }
 
-    try {
-        await client.connect();
-        console.log('✅ متصل بقاعدة البيانات');
+  const client = new Client({
+    connectionString: databaseUrl,
+    ssl: { rejectUnauthorized: false },
+  });
 
-        // 1. فحص وجود جدول level_settings
-        console.log('🔍 فحص جدول level_settings...');
-        const checkTable = await client.query(`
+  try {
+    await client.connect();
+    console.log('✅ متصل بقاعدة البيانات');
+
+    // 1. فحص وجود جدول level_settings
+    console.log('🔍 فحص جدول level_settings...');
+    const checkTable = await client.query(`
             SELECT EXISTS (
                 SELECT FROM information_schema.tables 
                 WHERE table_schema = 'public' 
@@ -31,17 +31,17 @@ async function fixPostgreSQLMigrationErrors() {
             );
         `);
 
-        if (checkTable.rows[0].exists) {
-            console.log('⚠️ جدول level_settings موجود، سيتم إعادة إنشاؤه...');
-            
-            // حذف الجدول الموجود
-            await client.query('DROP TABLE IF EXISTS level_settings CASCADE;');
-            console.log('🗑️ تم حذف الجدول القديم');
-        }
+    if (checkTable.rows[0].exists) {
+      console.log('⚠️ جدول level_settings موجود، سيتم إعادة إنشاؤه...');
 
-        // 2. إنشاء جدول level_settings جديد
-        console.log('🆕 إنشاء جدول level_settings جديد...');
-        await client.query(`
+      // حذف الجدول الموجود
+      await client.query('DROP TABLE IF EXISTS level_settings CASCADE;');
+      console.log('🗑️ تم حذف الجدول القديم');
+    }
+
+    // 2. إنشاء جدول level_settings جديد
+    console.log('🆕 إنشاء جدول level_settings جديد...');
+    await client.query(`
             CREATE TABLE level_settings (
                 id SERIAL PRIMARY KEY,
                 level INTEGER NOT NULL UNIQUE,
@@ -53,9 +53,9 @@ async function fixPostgreSQLMigrationErrors() {
             );
         `);
 
-        // 3. إدراج البيانات الافتراضية
-        console.log('📝 إدراج البيانات الافتراضية...');
-        await client.query(`
+    // 3. إدراج البيانات الافتراضية
+    console.log('📝 إدراج البيانات الافتراضية...');
+    await client.query(`
             INSERT INTO level_settings (level, required_points, title, color, benefits) VALUES
             (1, 0, 'مبتدئ', '#808080', '{"description": "مستوى البداية", "features": ["دردشة أساسية"]}'),
             (2, 100, 'نشيط', '#4169E1', '{"description": "عضو نشيط", "features": ["دردشة", "صور شخصية"]}'),
@@ -65,36 +65,39 @@ async function fixPostgreSQLMigrationErrors() {
             (6, 5000, 'أسطورة', '#9400D3', '{"description": "عضو أسطوري", "features": ["جميع المميزات", "تأثيرات خاصة"]}');
         `);
 
-        // 4. فحص وإصلاح أعمدة المستخدمين المفقودة
-        console.log('🔍 فحص أعمدة جدول users...');
-        const requiredColumns = [
-            { name: 'profile_effect', type: 'TEXT', default: "'none'" },
-            { name: 'points', type: 'INTEGER', default: '0' },
-            { name: 'level', type: 'INTEGER', default: '1' },
-            { name: 'total_points', type: 'INTEGER', default: '0' },
-            { name: 'level_progress', type: 'INTEGER', default: '0' }
-        ];
+    // 4. فحص وإصلاح أعمدة المستخدمين المفقودة
+    console.log('🔍 فحص أعمدة جدول users...');
+    const requiredColumns = [
+      { name: 'profile_effect', type: 'TEXT', default: "'none'" },
+      { name: 'points', type: 'INTEGER', default: '0' },
+      { name: 'level', type: 'INTEGER', default: '1' },
+      { name: 'total_points', type: 'INTEGER', default: '0' },
+      { name: 'level_progress', type: 'INTEGER', default: '0' },
+    ];
 
-        for (const column of requiredColumns) {
-            const checkColumn = await client.query(`
+    for (const column of requiredColumns) {
+      const checkColumn = await client.query(
+        `
                 SELECT column_name FROM information_schema.columns 
                 WHERE table_name = 'users' AND column_name = $1;
-            `, [column.name]);
+            `,
+        [column.name]
+      );
 
-            if (checkColumn.rows.length === 0) {
-                console.log(`➕ إضافة عمود ${column.name}...`);
-                await client.query(`
+      if (checkColumn.rows.length === 0) {
+        console.log(`➕ إضافة عمود ${column.name}...`);
+        await client.query(`
                     ALTER TABLE users ADD COLUMN ${column.name} ${column.type} DEFAULT ${column.default};
                 `);
-                console.log(`✅ تم إضافة عمود ${column.name}`);
-            } else {
-                console.log(`✅ عمود ${column.name} موجود`);
-            }
-        }
+        console.log(`✅ تم إضافة عمود ${column.name}`);
+      } else {
+        console.log(`✅ عمود ${column.name} موجود`);
+      }
+    }
 
-        // 5. تحديث القيم الفارغة
-        console.log('🔄 تحديث القيم الفارغة...');
-        await client.query(`
+    // 5. تحديث القيم الفارغة
+    console.log('🔄 تحديث القيم الفارغة...');
+    await client.query(`
             UPDATE users SET 
                 profile_effect = COALESCE(profile_effect, 'none'),
                 points = COALESCE(points, 0),
@@ -105,13 +108,13 @@ async function fixPostgreSQLMigrationErrors() {
                OR total_points IS NULL OR level_progress IS NULL;
         `);
 
-        // 6. فحص جدول __drizzle_migrations وإصلاحه
-        console.log('🔍 فحص جدول الهجرات...');
-        await client.query(`
+    // 6. فحص جدول __drizzle_migrations وإصلاحه
+    console.log('🔍 فحص جدول الهجرات...');
+    await client.query(`
             CREATE SCHEMA IF NOT EXISTS drizzle;
         `);
 
-        const checkMigrations = await client.query(`
+    const checkMigrations = await client.query(`
             SELECT EXISTS (
                 SELECT FROM information_schema.tables 
                 WHERE table_schema = 'drizzle' 
@@ -119,57 +122,56 @@ async function fixPostgreSQLMigrationErrors() {
             );
         `);
 
-        if (!checkMigrations.rows[0].exists) {
-            console.log('🆕 إنشاء جدول الهجرات...');
-            await client.query(`
+    if (!checkMigrations.rows[0].exists) {
+      console.log('🆕 إنشاء جدول الهجرات...');
+      await client.query(`
                 CREATE TABLE drizzle.__drizzle_migrations (
                     id SERIAL PRIMARY KEY,
                     hash TEXT NOT NULL,
                     created_at BIGINT
                 );
             `);
-        }
+    }
 
-        // 7. تسجيل الهجرة الحالية
-        await client.query(`
+    // 7. تسجيل الهجرة الحالية
+    await client.query(`
             INSERT INTO drizzle.__drizzle_migrations (hash, created_at) 
             VALUES ('level_settings_fix_' || extract(epoch from now()), extract(epoch from now())::bigint)
             ON CONFLICT DO NOTHING;
         `);
 
-        console.log('✅ تم إصلاح جميع أخطاء الهجرة بنجاح!');
-        
-        // فحص نهائي
-        const finalCheck = await client.query(`
+    console.log('✅ تم إصلاح جميع أخطاء الهجرة بنجاح!');
+
+    // فحص نهائي
+    const finalCheck = await client.query(`
             SELECT 
                 (SELECT COUNT(*) FROM level_settings) as level_settings_count,
                 (SELECT COUNT(*) FROM users) as users_count;
         `);
-        
-        console.log('📊 النتائج النهائية:');
-        console.log(`   - إعدادات المستويات: ${finalCheck.rows[0].level_settings_count}`);
-        console.log(`   - المستخدمين: ${finalCheck.rows[0].users_count}`);
 
-    } catch (error) {
-        console.error('❌ خطأ في إصلاح الهجرة:', error.message);
-        throw error;
-    } finally {
-        await client.end();
-        console.log('🔌 تم قطع الاتصال');
-    }
+    console.log('📊 النتائج النهائية:');
+    console.log(`   - إعدادات المستويات: ${finalCheck.rows[0].level_settings_count}`);
+    console.log(`   - المستخدمين: ${finalCheck.rows[0].users_count}`);
+  } catch (error) {
+    console.error('❌ خطأ في إصلاح الهجرة:', error.message);
+    throw error;
+  } finally {
+    await client.end();
+    console.log('🔌 تم قطع الاتصال');
+  }
 }
 
 // تشغيل الإصلاح
 if (import.meta.url === `file://${process.argv[1]}`) {
-    fixPostgreSQLMigrationErrors()
-        .then(() => {
-            console.log('🎉 تم إصلاح أخطاء الهجرة بنجاح!');
-            process.exit(0);
-        })
-        .catch((error) => {
-            console.error('💥 فشل في إصلاح أخطاء الهجرة:', error);
-            process.exit(1);
-        });
+  fixPostgreSQLMigrationErrors()
+    .then(() => {
+      console.log('🎉 تم إصلاح أخطاء الهجرة بنجاح!');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('💥 فشل في إصلاح أخطاء الهجرة:', error);
+      process.exit(1);
+    });
 }
 
 export default fixPostgreSQLMigrationErrors;

@@ -9,8 +9,13 @@ require('dotenv').config();
 const { Pool } = require('@neondatabase/serverless');
 
 const REQUIRED_TABLES = [
-  'users', 'messages', 'friends', 'notifications', 'blocked_devices',
-  'level_settings', 'points_history'
+  'users',
+  'messages',
+  'friends',
+  'notifications',
+  'blocked_devices',
+  'level_settings',
+  'points_history',
 ];
 
 async function fixSupabaseConnection() {
@@ -21,7 +26,9 @@ async function fixSupabaseConnection() {
   if (!databaseUrl) {
     console.error('❌ متغير DATABASE_URL غير محدد');
     console.log('💡 يرجى تحديث ملف .env بالرابط الصحيح:');
-    console.log('   DATABASE_URL=postgresql://postgres:PASSWORD@qzehjgmawnrihmepboca.supabase.co:5432/postgres?sslmode=require\n');
+    console.log(
+      '   DATABASE_URL=postgresql://postgres:PASSWORD@qzehjgmawnrihmepboca.supabase.co:5432/postgres?sslmode=require\n'
+    );
     process.exit(1);
   }
 
@@ -37,11 +44,11 @@ async function fixSupabaseConnection() {
   // 2. اختبار الاتصال
   let pool;
   try {
-    pool = new Pool({ 
+    pool = new Pool({
       connectionString: databaseUrl,
-      ssl: { rejectUnauthorized: false }
+      ssl: { rejectUnauthorized: false },
     });
-    
+
     const result = await pool.query('SELECT NOW() as current_time, version() as version');
     console.log('✅ نجح الاتصال بقاعدة بيانات Supabase');
     console.log(`⏰ التوقيت: ${result.rows[0].current_time}`);
@@ -49,7 +56,7 @@ async function fixSupabaseConnection() {
   } catch (error) {
     console.error('❌ فشل في الاتصال بقاعدة البيانات:');
     console.error(`   الخطأ: ${error.message}\n`);
-    
+
     console.log('💡 حلول مقترحة:');
     if (error.message.includes('password authentication failed')) {
       console.log('   - تحقق من كلمة المرور في Supabase Dashboard');
@@ -62,13 +69,13 @@ async function fixSupabaseConnection() {
     if (error.message.includes('SSL')) {
       console.log('   - تأكد من وجود ?sslmode=require في نهاية الرابط');
     }
-    
+
     process.exit(1);
   }
 
   // 3. فحص وإنشاء الجداول المطلوبة
   console.log('🔍 فحص وإنشاء الجداول المطلوبة...');
-  
+
   try {
     await createTablesIfNotExist(pool);
     console.log('✅ تم إنشاء/التحقق من جميع الجداول\n');
@@ -94,7 +101,7 @@ async function fixSupabaseConnection() {
   }
 
   await pool.end();
-  
+
   console.log('🎉 تم إكمال إعداد قاعدة البيانات بنجاح!');
   console.log('\n📋 الخطوات التالية للنشر على Render:');
   console.log('   1. ادفع الكود إلى GitHub');
@@ -273,30 +280,33 @@ async function setupLevelSettings(pool) {
       { level: 7, points: 4000, title: 'أسطورة', color: '#EC4899' },
       { level: 8, points: 8000, title: 'بطل', color: '#6366F1' },
       { level: 9, points: 15000, title: 'ملك', color: '#F97316' },
-      { level: 10, points: 30000, title: 'إمبراطور', color: '#DC2626' }
+      { level: 10, points: 30000, title: 'إمبراطور', color: '#DC2626' },
     ];
 
     for (const level of levels) {
-      await pool.query(`
+      await pool.query(
+        `
         INSERT INTO level_settings (level, required_points, title, color, benefits)
         VALUES ($1, $2, $3, $4, $5)
-      `, [
-        level.level,
-        level.points,
-        level.title,
-        level.color,
-        JSON.stringify({
-          dailyBonus: level.level * 10,
-          specialFeatures: level.level > 5 ? ['custom_colors', 'profile_effects'] : []
-        })
-      ]);
+      `,
+        [
+          level.level,
+          level.points,
+          level.title,
+          level.color,
+          JSON.stringify({
+            dailyBonus: level.level * 10,
+            specialFeatures: level.level > 5 ? ['custom_colors', 'profile_effects'] : [],
+          }),
+        ]
+      );
     }
     console.log('✅ تم إعداد إعدادات المستويات (10 مستويات)');
   }
 }
 
 // تشغيل السكريبت
-fixSupabaseConnection().catch(error => {
+fixSupabaseConnection().catch((error) => {
   console.error('\n💥 خطأ غير متوقع:', error);
   process.exit(1);
 });

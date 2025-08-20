@@ -23,6 +23,34 @@ export interface MessagePagination {
   nextOffset?: number;
 }
 
+/**
+ * تحويل سجل قاعدة البيانات إلى RoomMessage موحد
+ */
+function mapDbMessageToRoomMessage({
+  dbMessage,
+  roomId,
+  sender,
+}: {
+  dbMessage: any;
+  roomId: string;
+  sender?: any;
+}): RoomMessage {
+  return {
+    id: dbMessage.id,
+    senderId: dbMessage.senderId,
+    roomId,
+    content: dbMessage.content,
+    messageType: dbMessage.messageType || 'text',
+    timestamp: new Date(dbMessage.timestamp),
+    isPrivate: dbMessage.isPrivate || false,
+    receiverId: dbMessage.receiverId || null,
+    senderUsername: sender?.username || 'مستخدم محذوف',
+    senderUserType: sender?.userType || 'user',
+    senderAvatar: (sender as any)?.profileImage || null,
+    sender,
+  };
+}
+
 class RoomMessageService {
   private messageCache = new Map<string, RoomMessage[]>(); // roomId -> messages
   private readonly MAX_CACHE_SIZE = 100; // رسائل لكل غرفة
@@ -76,7 +104,7 @@ class RoomMessageService {
         messageType: messageData.messageType || 'text',
         isPrivate: messageData.isPrivate || false,
         receiverId: messageData.receiverId || null,
-        roomId: messageData.roomId
+        roomId: messageData.roomId,
       });
 
       if (!message) {
@@ -84,26 +112,16 @@ class RoomMessageService {
       }
 
       // تحويل الرسالة للتنسيق المطلوب
-      const roomMessage: RoomMessage = {
-        id: message.id,
-        senderId: message.senderId,
+      const roomMessage: RoomMessage = mapDbMessageToRoomMessage({
+        dbMessage: message,
         roomId: messageData.roomId,
-        content: message.content,
-        messageType: message.messageType,
-        timestamp: new Date(message.timestamp),
-        isPrivate: message.isPrivate,
-        receiverId: message.receiverId,
-        senderUsername: sender.username,
-        senderUserType: sender.userType,
-        senderAvatar: (sender as any).profileImage || null,
-        sender
-      };
+        sender,
+      });
 
       // إضافة الرسالة للذاكرة المؤقتة
       this.addToCache(messageData.roomId, roomMessage);
 
       return roomMessage;
-
     } catch (error) {
       console.error('خطأ في إرسال الرسالة:', error);
       throw error;
@@ -114,8 +132,8 @@ class RoomMessageService {
    * جلب رسائل الغرفة مع الصفحات
    */
   async getRoomMessages(
-    roomId: string, 
-    limit: number = 20, 
+    roomId: string,
+    limit: number = 20,
     offset: number = 0,
     useCache: boolean = true
   ): Promise<MessagePagination> {
@@ -132,12 +150,12 @@ class RoomMessageService {
       if (useCache && safeOffset === 0 && this.messageCache.has(roomId)) {
         const cachedMessages = this.messageCache.get(roomId)!;
         const slicedMessages = cachedMessages.slice(0, safeLimit);
-        
+
         return {
           messages: slicedMessages,
           totalCount: cachedMessages.length,
           hasMore: cachedMessages.length > safeLimit,
-          nextOffset: slicedMessages.length
+          nextOffset: slicedMessages.length,
         };
       }
 
@@ -145,7 +163,7 @@ class RoomMessageService {
         return {
           messages: [],
           totalCount: 0,
-          hasMore: false
+          hasMore: false,
         };
       }
 
@@ -154,7 +172,9 @@ class RoomMessageService {
       const totalCount = await storage.getRoomMessageCount(roomId);
 
       // Batch fetch senders to avoid N+1
-      const uniqueSenderIds = Array.from(new Set((dbMessages || []).map((m: any) => m.senderId).filter(Boolean)));
+      const uniqueSenderIds = Array.from(
+        new Set((dbMessages || []).map((m: any) => m.senderId).filter(Boolean))
+      );
       const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
       const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
 
@@ -163,21 +183,7 @@ class RoomMessageService {
       for (const msg of dbMessages) {
         try {
           const sender = senderMap.get(msg.senderId);
-          const roomMessage: RoomMessage = {
-            id: msg.id,
-            senderId: msg.senderId,
-            roomId: roomId,
-            content: msg.content,
-            messageType: msg.messageType || 'text',
-            timestamp: new Date(msg.timestamp),
-            isPrivate: msg.isPrivate || false,
-            receiverId: msg.receiverId || null,
-            senderUsername: sender?.username || 'مستخدم محذوف',
-            senderUserType: sender?.userType || 'user',
-            senderAvatar: (sender as any)?.profileImage || null,
-            sender
-          };
-          messages.push(roomMessage);
+          messages.push(mapDbMessageToRoomMessage({ dbMessage: msg, roomId, sender }));
         } catch (err) {
           console.warn(`تعذر معالجة الرسالة ${msg.id}:`, err);
         }
@@ -191,16 +197,15 @@ class RoomMessageService {
       return {
         messages,
         totalCount,
-        hasMore: (safeOffset + messages.length) < totalCount,
-        nextOffset: safeOffset + messages.length
+        hasMore: safeOffset + messages.length < totalCount,
+        nextOffset: safeOffset + messages.length,
       };
-
     } catch (error) {
       console.error(`خطأ في جلب رسائل الغرفة ${roomId}:`, error);
       return {
         messages: [],
         totalCount: 0,
-        hasMore: false
+        hasMore: false,
       };
     }
   }
@@ -210,7 +215,12 @@ class RoomMessageService {
    */
   async getLatestRoomMessages(roomId: string, limit: number = 20): Promise<RoomMessage[]> {
     try {
-      const result = await this.getRoomMessages(roomId, Math.min(20, Math.max(1, Number(limit) || 20)), 0, true);
+      const result = await this.getRoomMessages(
+        roomId,
+        Math.min(20, Math.max(1, Number(limit) || 20)),
+        0,
+        true
+      );
       return result.messages;
     } catch (error) {
       console.error(`خطأ في جلب أحدث رسائل الغرفة ${roomId}:`, error);
@@ -249,8 +259,7 @@ class RoomMessageService {
 
       // إزالة الرسالة من الذاكرة المؤقتة
       this.removeFromCache(roomId, messageId);
-
-      } catch (error) {
+    } catch (error) {
       console.error('خطأ في حذف الرسالة:', error);
       throw error;
     }
@@ -260,9 +269,9 @@ class RoomMessageService {
    * البحث في رسائل الغرفة
    */
   async searchRoomMessages(
-    roomId: string, 
-    searchQuery: string, 
-    limit: number = 20, 
+    roomId: string,
+    searchQuery: string,
+    limit: number = 20,
     offset: number = 0
   ): Promise<MessagePagination> {
     try {
@@ -270,7 +279,7 @@ class RoomMessageService {
         return {
           messages: [],
           totalCount: 0,
-          hasMore: false
+          hasMore: false,
         };
       }
 
@@ -278,7 +287,7 @@ class RoomMessageService {
         return {
           messages: [],
           totalCount: 0,
-          hasMore: false
+          hasMore: false,
         };
       }
 
@@ -287,7 +296,9 @@ class RoomMessageService {
       const totalCount = await storage.countSearchRoomMessages(roomId, searchQuery);
 
       // Batch fetch senders
-      const uniqueSenderIds = Array.from(new Set((results || []).map((m: any) => m.senderId).filter(Boolean)));
+      const uniqueSenderIds = Array.from(
+        new Set((results || []).map((m: any) => m.senderId).filter(Boolean))
+      );
       const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
       const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
 
@@ -296,21 +307,7 @@ class RoomMessageService {
       for (const msg of results) {
         try {
           const sender = senderMap.get(msg.senderId);
-          const roomMessage: RoomMessage = {
-            id: msg.id,
-            senderId: msg.senderId,
-            roomId: roomId,
-            content: msg.content,
-            messageType: msg.messageType || 'text',
-            timestamp: new Date(msg.timestamp),
-            isPrivate: msg.isPrivate || false,
-            receiverId: msg.receiverId || null,
-            senderUsername: sender?.username || 'مستخدم محذوف',
-            senderUserType: sender?.userType || 'user',
-            senderAvatar: (sender as any)?.profileImage || null,
-            sender
-          };
-          messages.push(roomMessage);
+          messages.push(mapDbMessageToRoomMessage({ dbMessage: msg, roomId, sender }));
         } catch (err) {
           console.warn(`تعذر معالجة نتيجة البحث ${msg.id}:`, err);
         }
@@ -319,16 +316,15 @@ class RoomMessageService {
       return {
         messages,
         totalCount,
-        hasMore: (offset + messages.length) < totalCount,
-        nextOffset: offset + messages.length
+        hasMore: offset + messages.length < totalCount,
+        nextOffset: offset + messages.length,
       };
-
     } catch (error) {
       console.error(`خطأ في البحث في رسائل الغرفة ${roomId}:`, error);
       return {
         messages: [],
         totalCount: 0,
-        hasMore: false
+        hasMore: false,
       };
     }
   }
@@ -336,7 +332,9 @@ class RoomMessageService {
   /**
    * الحصول على إحصائيات رسائل الغرفة
    */
-  async getRoomStats(roomId: string): Promise<{
+  async getRoomStats(
+    roomId: string
+  ): Promise<{
     totalMessages: number;
     messagesLast24h: number;
     activeUsers: number;
@@ -347,7 +345,7 @@ class RoomMessageService {
         return {
           totalMessages: 0,
           messagesLast24h: 0,
-          activeUsers: 0
+          activeUsers: 0,
         };
       }
 
@@ -355,7 +353,7 @@ class RoomMessageService {
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const messagesLast24h = await storage.getRoomMessageCountSince(roomId, yesterday);
       const activeUsers = await storage.getRoomActiveUserCount(roomId, yesterday);
-      
+
       const lastMessage = await storage.getLastRoomMessage(roomId);
       const lastMessageTime = lastMessage ? new Date(lastMessage.timestamp) : undefined;
 
@@ -363,15 +361,14 @@ class RoomMessageService {
         totalMessages,
         messagesLast24h,
         activeUsers,
-        lastMessageTime
+        lastMessageTime,
       };
-
     } catch (error) {
       console.error(`خطأ في جلب إحصائيات الغرفة ${roomId}:`, error);
       return {
         totalMessages: 0,
         messagesLast24h: 0,
-        activeUsers: 0
+        activeUsers: 0,
       };
     }
   }
@@ -392,7 +389,6 @@ class RoomMessageService {
       this.clearCache(roomId);
 
       return deletedCount;
-
     } catch (error) {
       console.error(`خطأ في تنظيف رسائل الغرفة ${roomId}:`, error);
       return 0;
@@ -420,7 +416,6 @@ class RoomMessageService {
 
       // إدارة عدد الغرف المحفوظة
       this.manageCacheSize();
-
     } catch (error) {
       console.warn(`تعذر إضافة الرسالة للذاكرة المؤقتة للغرفة ${roomId}:`, error);
     }
@@ -445,7 +440,7 @@ class RoomMessageService {
     try {
       if (this.messageCache.has(roomId)) {
         const messages = this.messageCache.get(roomId)!;
-        const index = messages.findIndex(msg => msg.id === messageId);
+        const index = messages.findIndex((msg) => msg.id === messageId);
         if (index !== -1) {
           messages.splice(index, 1);
         }
@@ -469,7 +464,7 @@ class RoomMessageService {
     if (this.messageCache.size > this.MAX_CACHE_ROOMS) {
       // حذف أقدم الغرف المحفوظة (LRU)
       const roomsToDelete = Array.from(this.messageCache.keys()).slice(this.MAX_CACHE_ROOMS);
-      roomsToDelete.forEach(roomId => this.messageCache.delete(roomId));
+      roomsToDelete.forEach((roomId) => this.messageCache.delete(roomId));
     }
   }
 
@@ -483,7 +478,7 @@ class RoomMessageService {
   } {
     const cachedRooms = this.messageCache.size;
     let totalCachedMessages = 0;
-    
+
     for (const messages of this.messageCache.values()) {
       totalCachedMessages += messages.length;
     }
@@ -491,7 +486,7 @@ class RoomMessageService {
     return {
       cachedRooms,
       totalCachedMessages,
-      cacheHitRatio: 0 // يمكن تطويره لاحقاً لحساب نسبة الإصابة
+      cacheHitRatio: 0, // يمكن تطويره لاحقاً لحساب نسبة الإصابة
     };
   }
 
@@ -500,7 +495,7 @@ class RoomMessageService {
    */
   clearAllCache(): void {
     this.messageCache.clear();
-    }
+  }
 }
 
 // تصدير instance واحد

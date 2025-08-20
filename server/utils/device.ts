@@ -1,6 +1,8 @@
 export function getDeviceIdFromHeaders(headers: Record<string, any>): string {
   try {
-    const raw = (headers['x-device-id'] || headers['X-Device-Id'] || headers['x_device_id']) as string | undefined;
+    const raw = (headers['x-device-id'] || headers['X-Device-Id'] || headers['x_device_id']) as
+      | string
+      | undefined;
     if (typeof raw === 'string' && raw.trim().length > 0) return raw.trim();
 
     const userAgent = (headers['user-agent'] as string | undefined) || '';

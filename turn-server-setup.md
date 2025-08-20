@@ -71,22 +71,22 @@ const getIceServers = (): RTCIceServer[] => {
   const servers: RTCIceServer[] = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }
+    { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
   ];
-  
+
   // TURN server من متغيرات البيئة
   const turnUrl = import.meta.env.VITE_TURN_URL;
   const turnUsername = import.meta.env.VITE_TURN_USERNAME;
   const turnCredential = import.meta.env.VITE_TURN_CREDENTIAL;
-  
+
   if (turnUrl && turnUsername && turnCredential) {
     servers.push({
       urls: turnUrl,
       username: turnUsername,
-      credential: turnCredential
+      credential: turnCredential,
     });
   }
-  
+
   return servers;
 };
 ```
@@ -100,12 +100,12 @@ const getIceServers = (): RTCIceServer[] => {
 const pc = new RTCPeerConnection({
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    { 
+    {
       urls: 'turn:your-server:3478',
       username: 'username',
-      credential: 'password'
-    }
-  ]
+      credential: 'password',
+    },
+  ],
 });
 
 pc.onicecandidate = (e) => {
@@ -115,8 +115,7 @@ pc.onicecandidate = (e) => {
   }
 };
 
-pc.createOffer({ offerToReceiveAudio: true })
-  .then(offer => pc.setLocalDescription(offer));
+pc.createOffer({ offerToReceiveAudio: true }).then((offer) => pc.setLocalDescription(offer));
 ```
 
 ### 2. مراقبة الإحصائيات:
@@ -124,7 +123,7 @@ pc.createOffer({ offerToReceiveAudio: true })
 ```javascript
 // بعد إنشاء الاتصال
 const stats = await pc.getStats();
-stats.forEach(report => {
+stats.forEach((report) => {
   if (report.type === 'candidate-pair' && report.state === 'succeeded') {
     console.log('Connected via:', report.remoteCandidateType);
     // "relay" يعني استخدام TURN
@@ -142,20 +141,24 @@ stats.forEach(report => {
 ## حل المشاكل الشائعة
 
 ### 1. "ICE gathering state: failed"
+
 - تحقق من صحة بيانات TURN
 - تأكد من فتح المنافذ (3478 UDP/TCP)
 
 ### 2. "No audio on remote side"
+
 - تحقق من إعدادات جدار الحماية
 - جرب TURN عبر TCP بدلاً من UDP
 
 ### 3. "Connection state: failed"
+
 - قد تحتاج TURN server
 - تحقق من إعدادات NAT
 
 ## الخلاصة
 
 لحل مشكلة البث الصوتي:
+
 1. أضف ملف `.env.local` مع بيانات TURN
 2. أعد تشغيل الخادم
 3. اختبر من شبكات مختلفة

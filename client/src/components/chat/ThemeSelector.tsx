@@ -24,8 +24,8 @@ const themes = [
       '--primary': '#667eea',
       '--primary-foreground': '#ffffff',
       '--background': '#ffffff',
-      '--text': '#1a202c'
-    }
+      '--text': '#1a202c',
+    },
   },
   {
     id: 'dark',
@@ -36,8 +36,8 @@ const themes = [
       '--primary': '#2c3e50',
       '--primary-foreground': '#ffffff',
       '--background': '#1a202c',
-      '--text': '#ffffff'
-    }
+      '--text': '#ffffff',
+    },
   },
   {
     id: 'ocean',
@@ -48,8 +48,8 @@ const themes = [
       '--primary': '#4facfe',
       '--primary-foreground': '#ffffff',
       '--background': '#f0f9ff',
-      '--text': '#0c4a6e'
-    }
+      '--text': '#0c4a6e',
+    },
   },
   {
     id: 'sunset',
@@ -60,8 +60,8 @@ const themes = [
       '--primary': '#f093fb',
       '--primary-foreground': '#ffffff',
       '--background': '#fef7ff',
-      '--text': '#831843'
-    }
+      '--text': '#831843',
+    },
   },
   {
     id: 'forest',
@@ -72,8 +72,8 @@ const themes = [
       '--primary': '#11998e',
       '--primary-foreground': '#ffffff',
       '--background': '#f0fdf4',
-      '--text': '#14532d'
-    }
+      '--text': '#14532d',
+    },
   },
   {
     id: 'royal',
@@ -84,8 +84,8 @@ const themes = [
       '--primary': '#8b5cf6',
       '--primary-foreground': '#ffffff',
       '--background': '#faf5ff',
-      '--text': '#581c87'
-    }
+      '--text': '#581c87',
+    },
   },
   {
     id: 'fire',
@@ -96,8 +96,8 @@ const themes = [
       '--primary': '#ff9a9e',
       '--primary-foreground': '#ffffff',
       '--background': '#fef2f2',
-      '--text': '#991b1b'
-    }
+      '--text': '#991b1b',
+    },
   },
   {
     id: 'ice',
@@ -108,12 +108,17 @@ const themes = [
       '--primary': '#a8edea',
       '--primary-foreground': '#0f172a',
       '--background': '#f0fdfa',
-      '--text': '#134e4a'
-    }
-  }
+      '--text': '#134e4a',
+    },
+  },
 ];
 
-export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpdate }: ThemeSelectorProps) {
+export default function ThemeSelector({
+  isOpen,
+  onClose,
+  currentUser,
+  onThemeUpdate,
+}: ThemeSelectorProps) {
   const [selectedTheme, setSelectedTheme] = useState('default');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -148,19 +153,25 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
     try {
       const result = await apiRequest(`/api/settings/site-theme`, {
         method: 'PUT',
-        body: { userId: currentUser.id, theme: themeId }
+        body: { userId: currentUser.id, theme: themeId },
       });
 
       onThemeUpdate?.(themeId);
 
       toast({
         title: 'تم تحديث ثيم الموقع',
-        description: `تم تطبيق ثيم ${themes.find(t => t.id === themeId)?.name} على الجميع`,
+        description: `تم تطبيق ثيم ${themes.find((t) => t.id === themeId)?.name} على الجميع`,
       });
 
-      setTimeout(() => { onClose(); }, 600);
+      setTimeout(() => {
+        onClose();
+      }, 600);
     } catch (error: any) {
-      toast({ title: 'خطأ', description: error.message || 'فشل في تحديث ثيم الموقع', variant: 'destructive' });
+      toast({
+        title: 'خطأ',
+        description: error.message || 'فشل في تحديث ثيم الموقع',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
       selectingRef.current = false;
@@ -178,7 +189,12 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="sm:max-w-2xl bg-slate-900/95 backdrop-blur-lg border-slate-700/50 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-white text-xl font-bold text-center flex items-center justify-center gap-2">
@@ -199,7 +215,10 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
               onMouseEnter={() => handleThemeHover(theme.id)}
               onMouseLeave={handleThemeLeave}
             >
-              <div className="w-full h-16 rounded-lg mb-3 shadow-lg" style={{ background: theme.preview }} />
+              <div
+                className="w-full h-16 rounded-lg mb-3 shadow-lg"
+                style={{ background: theme.preview }}
+              />
               <h3 className="text-white font-semibold text-center text-sm mb-1">{theme.name}</h3>
               <p className="text-slate-400 text-xs text-center">{theme.description}</p>
               {selectedTheme === theme.id && (
@@ -216,8 +235,22 @@ export default function ThemeSelector({ isOpen, onClose, currentUser, onThemeUpd
           ))}
         </div>
         <div className="flex justify-center p-4 gap-3">
-          <Button onClick={() => applyThemeById(selectedTheme, false)} variant="outline" className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600" disabled={loading}>معاينة</Button>
-          <Button onClick={onClose} variant="outline" className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600" disabled={loading}>إغلاق</Button>
+          <Button
+            onClick={() => applyThemeById(selectedTheme, false)}
+            variant="outline"
+            className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+            disabled={loading}
+          >
+            معاينة
+          </Button>
+          <Button
+            onClick={onClose}
+            variant="outline"
+            className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+            disabled={loading}
+          >
+            إغلاق
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

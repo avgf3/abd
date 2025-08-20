@@ -2,7 +2,12 @@ import React from 'react';
 
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
-import { getLevelInfo, getLevelColor, formatPoints, getPointsToNextLevel } from '@/utils/pointsUtils';
+import {
+  getLevelInfo,
+  getLevelColor,
+  formatPoints,
+  getPointsToNextLevel,
+} from '@/utils/pointsUtils';
 
 interface LevelProgressBarProps {
   user: ChatUser;
@@ -10,7 +15,11 @@ interface LevelProgressBarProps {
   compact?: boolean;
 }
 
-export function LevelProgressBar({ user, showDetails = true, compact = false }: LevelProgressBarProps) {
+export function LevelProgressBar({
+  user,
+  showDetails = true,
+  compact = false,
+}: LevelProgressBarProps) {
   const levelInfo = getLevelInfo(user.level || 1);
   const levelIcon = getUserLevelIcon(user, compact ? 14 : 24);
   const levelColor = getLevelColor(user.level || 1);
@@ -25,13 +34,11 @@ export function LevelProgressBar({ user, showDetails = true, compact = false }: 
             className="h-1.5 rounded-full transition-all duration-300"
             style={{
               width: `${Math.min(user.levelProgress || 0, 100)}%`,
-              backgroundColor: levelColor
+              backgroundColor: levelColor,
             }}
           />
         </div>
-        <span className="text-gray-600 text-xs">
-          {user.levelProgress || 0}%
-        </span>
+        <span className="text-gray-600 text-xs">{user.levelProgress || 0}%</span>
       </div>
     );
   }
@@ -42,16 +49,13 @@ export function LevelProgressBar({ user, showDetails = true, compact = false }: 
         <div className="flex items-center gap-3">
           <span className="text-2xl">{levelIcon}</span>
           <div>
-            <h3 
-              className="font-bold text-lg"
-              style={{ color: levelColor }}
-            >
+            <h3 className="font-bold text-lg" style={{ color: levelColor }}>
               {levelInfo.title}
             </h3>
             <p className="text-sm text-gray-600">مستوى {user.level || 1}</p>
           </div>
         </div>
-        
+
         {showDetails && (
           <div className="text-right">
             <p className="text-lg font-bold" style={{ color: levelColor }}>
@@ -71,25 +75,22 @@ export function LevelProgressBar({ user, showDetails = true, compact = false }: 
             <span>🎉 المستوى الأقصى!</span>
           )}
         </div>
-        
+
         <div className="w-full bg-gray-200 rounded-full h-3">
           <div
             className="h-3 rounded-full transition-all duration-500 relative overflow-hidden"
             style={{
               width: `${Math.min(user.levelProgress || 0, 100)}%`,
-              backgroundColor: levelColor
+              backgroundColor: levelColor,
             }}
           >
             {/* تأثير التألق */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
           </div>
         </div>
-        
+
         <div className="text-center">
-          <span 
-            className="text-sm font-medium"
-            style={{ color: levelColor }}
-          >
+          <span className="text-sm font-medium" style={{ color: levelColor }}>
             {user.levelProgress || 0}% مكتمل
           </span>
         </div>
@@ -117,10 +118,10 @@ export function MiniLevelBadge({ user, onClick }: MiniLevelBadgeProps) {
     <button
       onClick={onClick}
       className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all hover:scale-105"
-      style={{ 
+      style={{
         backgroundColor: `${levelColor}20`,
         color: levelColor,
-        border: `1px solid ${levelColor}40`
+        border: `1px solid ${levelColor}40`,
       }}
     >
       {levelIcon}

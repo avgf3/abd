@@ -20,7 +20,7 @@ export function authLimiter(req: Request, res: Response, next: NextFunction): vo
   const maxRequests = 50; // زيادة الحد للمصادقة
 
   const current = authRequestCounts.get(clientId);
-  
+
   if (!current || now > current.resetTime) {
     authRequestCounts.set(clientId, { count: 1, resetTime: now + windowMs });
     next();
@@ -28,9 +28,9 @@ export function authLimiter(req: Request, res: Response, next: NextFunction): vo
     current.count++;
     next();
   } else {
-    res.status(429).json({ 
+    res.status(429).json({
       error: 'تم تجاوز حد طلبات المصادقة، حاول مرة أخرى لاحقاً',
-      retryAfter: Math.ceil((current.resetTime - now) / 1000)
+      retryAfter: Math.ceil((current.resetTime - now) / 1000),
     });
   }
 }
@@ -45,7 +45,7 @@ export function messageLimiter(req: Request, res: Response, next: NextFunction):
   const maxRequests = 30; // 30 messages per minute
 
   const current = messageRequestCounts.get(clientId);
-  
+
   if (!current || now > current.resetTime) {
     messageRequestCounts.set(clientId, { count: 1, resetTime: now + windowMs });
     next();
@@ -53,9 +53,9 @@ export function messageLimiter(req: Request, res: Response, next: NextFunction):
     current.count++;
     next();
   } else {
-    res.status(429).json({ 
+    res.status(429).json({
       error: 'تم تجاوز حد إرسال الرسائل، حاول مرة أخرى لاحقاً',
-      retryAfter: Math.ceil((current.resetTime - now) / 1000)
+      retryAfter: Math.ceil((current.resetTime - now) / 1000),
     });
   }
 }
@@ -70,7 +70,7 @@ export function friendRequestLimiter(req: Request, res: Response, next: NextFunc
   const maxRequests = 100; // 100 friend requests per 5 minutes
 
   const current = friendRequestCounts.get(clientId);
-  
+
   if (!current || now > current.resetTime) {
     friendRequestCounts.set(clientId, { count: 1, resetTime: now + windowMs });
     next();
@@ -78,9 +78,9 @@ export function friendRequestLimiter(req: Request, res: Response, next: NextFunc
     current.count++;
     next();
   } else {
-    res.status(429).json({ 
+    res.status(429).json({
       error: 'تم تجاوز حد طلبات الصداقة، حاول مرة أخرى لاحقاً',
-      retryAfter: Math.ceil((current.resetTime - now) / 1000)
+      retryAfter: Math.ceil((current.resetTime - now) / 1000),
     });
   }
 }
@@ -90,15 +90,16 @@ export function checkIPSecurity(req: Request, res: Response, next: NextFunction)
   // Honor reverse proxy headers first
   const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
   const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
-  const clientIp = forwarded || real || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
-  
+  const clientIp =
+    forwarded || real || req.ip || (req.connection as any)?.remoteAddress || 'unknown';
+
   // Check if IP or device is blocked (device based on header)
   const deviceId = getDeviceIdFromHeaders(req.headers as any);
   if (blockedIPs.has(clientIp) || moderationSystem.isBlocked(clientIp, deviceId)) {
     res.status(403).json({ error: 'عذراً، تم حظر هذا العنوان أو جهازك' });
     return;
   }
-  
+
   next();
 }
 
@@ -107,48 +108,51 @@ export function validateMessageContent(content: string): { isValid: boolean; rea
   if (!content || typeof content !== 'string') {
     return { isValid: false, reason: 'المحتوى غير صالح' };
   }
-  
+
   const trimmedContent = content.trim();
-  
+
   if (trimmedContent.length === 0) {
     return { isValid: false, reason: 'لا يمكن إرسال رسالة فارغة' };
   }
-  
+
   if (trimmedContent.length > SecurityConfig.MAX_MESSAGE_LENGTH) {
-    return { isValid: false, reason: `الرسالة طويلة جداً (الحد الأقصى ${SecurityConfig.MAX_MESSAGE_LENGTH} حرف)` };
+    return {
+      isValid: false,
+      reason: `الرسالة طويلة جداً (الحد الأقصى ${SecurityConfig.MAX_MESSAGE_LENGTH} حرف)`,
+    };
   }
-  
+
   // Check for spam patterns
   const spamPatterns = [
     /(.)\1{10,}/gi, // Repeated characters
     /https?:\/\/[^\s]+/gi, // URLs (adjust based on your needs)
-    /[^\w\s\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/gi // Non-Arabic/alphanumeric chars (allowing Arabic)
+    /[^\w\s\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/gi, // Non-Arabic/alphanumeric chars (allowing Arabic)
   ];
-  
+
   for (const pattern of spamPatterns) {
     if (pattern.test(trimmedContent)) {
       return { isValid: false, reason: 'المحتوى يحتوي على نص مشبوه' };
     }
   }
-  
+
   return { isValid: true };
 }
 
 // Add IP to block list
 export function blockIP(ip: string): void {
   blockedIPs.add(ip);
-  }
+}
 
 // Remove IP from block list
 export function unblockIP(ip: string): void {
   blockedIPs.delete(ip);
-  }
+}
 
 // Security middleware to prevent common attacks
 export function setupSecurity(app: Express): void {
   // Rate limiting for API endpoints
   const requestCounts = new Map<string, { count: number; resetTime: number }>();
-  
+
   app.use('/api', (req: Request, res: Response, next: NextFunction) => {
     const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
     const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
@@ -158,7 +162,7 @@ export function setupSecurity(app: Express): void {
     const maxRequests = 500; // زيادة الحد إلى 500 طلب
 
     const current = requestCounts.get(clientId);
-    
+
     if (!current || now > current.resetTime) {
       requestCounts.set(clientId, { count: 1, resetTime: now + windowMs });
       next();
@@ -166,9 +170,9 @@ export function setupSecurity(app: Express): void {
       current.count++;
       next();
     } else {
-      res.status(429).json({ 
+      res.status(429).json({
         error: 'تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً',
-        retryAfter: Math.ceil((current.resetTime - now) / 1000)
+        retryAfter: Math.ceil((current.resetTime - now) / 1000),
       });
     }
   });
@@ -177,30 +181,33 @@ export function setupSecurity(app: Express): void {
   app.use((req: Request, res: Response, next: NextFunction) => {
     // Prevent clickjacking
     res.setHeader('X-Frame-Options', 'DENY');
-    
+
     // Prevent MIME type sniffing
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    
+
     // XSS Protection
     res.setHeader('X-XSS-Protection', '1; mode=block');
-    
+
     // Referrer Policy
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    
+
     // Content Security Policy
-    res.setHeader('Content-Security-Policy', [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "img-src 'self' data: https:",
-      // allow connect to same-origin + websockets on same-origin
-      "connect-src 'self' ws: wss: https:",
-      "font-src 'self' https://fonts.gstatic.com",
-      "object-src 'none'",
-      "media-src 'self'",
-      "frame-src 'none'"
-    ].join('; '));
-    
+    res.setHeader(
+      'Content-Security-Policy',
+      [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline'",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "img-src 'self' data: https:",
+        // allow connect to same-origin + websockets on same-origin
+        "connect-src 'self' ws: wss: https:",
+        "font-src 'self' https://fonts.gstatic.com",
+        "object-src 'none'",
+        "media-src 'self'",
+        "frame-src 'none'",
+      ].join('; ')
+    );
+
     next();
   });
 
@@ -216,11 +223,21 @@ export function setupSecurity(app: Express): void {
     ].filter(Boolean) as string[];
 
     const envHosts = envOrigins
-      .map((u) => { try { return new URL(u).host; } catch { return ''; } })
+      .map((u) => {
+        try {
+          return new URL(u).host;
+        } catch {
+          return '';
+        }
+      })
       .filter(Boolean);
 
     const originHost = (() => {
-      try { return originHeader ? new URL(originHeader).host : ''; } catch { return ''; }
+      try {
+        return originHeader ? new URL(originHeader).host : '';
+      } catch {
+        return '';
+      }
     })();
 
     const isDev = process.env.NODE_ENV === 'development';
@@ -233,7 +250,10 @@ export function setupSecurity(app: Express): void {
 
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+    );
 
     if (req.method === 'OPTIONS') {
       res.sendStatus(200);
@@ -243,31 +263,32 @@ export function setupSecurity(app: Express): void {
   });
 
   // Input sanitization
-  app.use(express.json({ 
-    limit: '10mb',
-    verify: (req: any, res: Response, buf: Buffer) => {
-      // Prevent JSON pollution attacks, but only when body is non-empty and method expects a body
-      try {
-        const method = (req.method || 'GET').toUpperCase();
-        const hasBody = buf && buf.length > 0;
-        const shouldParse = hasBody && method !== 'GET' && method !== 'HEAD';
-        if (!shouldParse) {
-          return;
+  app.use(
+    express.json({
+      limit: '10mb',
+      verify: (req: any, res: Response, buf: Buffer) => {
+        // Prevent JSON pollution attacks, but only when body is non-empty and method expects a body
+        try {
+          const method = (req.method || 'GET').toUpperCase();
+          const hasBody = buf && buf.length > 0;
+          const shouldParse = hasBody && method !== 'GET' && method !== 'HEAD';
+          if (!shouldParse) {
+            return;
+          }
+          JSON.parse(buf.toString());
+        } catch (e) {
+          res.status(400).json({ error: 'Invalid JSON format' });
+          throw new Error('Invalid JSON');
         }
-        JSON.parse(buf.toString());
-      } catch (e) {
-        res.status(400).json({ error: 'Invalid JSON format' });
-        throw new Error('Invalid JSON');
-      }
-    }
-  }));
-
-  }
+      },
+    })
+  );
+}
 
 // Utility function to validate user input
 export function sanitizeInput(input: string): string {
   if (typeof input !== 'string') return '';
-  
+
   return input
     .trim()
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
@@ -284,16 +305,16 @@ export function isIpBlocked(ip: string, blockedIPs: Set<string>): boolean {
 // Validate session
 export function validateSession(session: any): boolean {
   if (!session || !session.userId) return false;
-  
+
   // Check session expiry
   const sessionAge = Date.now() - (session.lastAccess || 0);
   const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-  
+
   if (sessionAge > maxAge) return false;
-  
+
   // Update last access
   session.lastAccess = Date.now();
-  
+
   return true;
 }
 
@@ -304,5 +325,5 @@ export const SecurityConfig = {
   ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
   SESSION_TIMEOUT: 24 * 60 * 60 * 1000, // 24 hours
   RATE_LIMIT_WINDOW: 15 * 60 * 1000, // 15 minutes
-  RATE_LIMIT_MAX: 100
+  RATE_LIMIT_MAX: 100,
 };

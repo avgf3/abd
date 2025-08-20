@@ -17,9 +17,12 @@ import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
-import { getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
+import {
+  getFinalUsernameColor,
+  getUserListItemStyles,
+  getUserListItemClasses,
+} from '@/utils/themeUtils';
 import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
-
 
 // Using shared types for Friend and FriendRequest
 
@@ -32,13 +35,14 @@ interface FriendsTabPanelProps {
 export default function FriendsTabPanel({
   currentUser,
   onlineUsers,
-  onStartPrivateChat
+  onStartPrivateChat,
 }: FriendsTabPanelProps) {
   const friendsScrollRef = useRef<HTMLDivElement>(null);
   useGrabScroll(friendsScrollRef);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'friends' | 'requests'>('friends');
-  const { showErrorToast, showSuccessToast, updateFriendQueries } = useNotificationManager(currentUser);
+  const { showErrorToast, showSuccessToast, updateFriendQueries } =
+    useNotificationManager(currentUser);
   const [isAtBottomFriends, setIsAtBottomFriends] = useState(true);
   const queryClient = useQueryClient();
 
@@ -47,7 +51,7 @@ export default function FriendsTabPanel({
     data: friendsData,
     isLoading: isLoadingFriends,
     isFetching: isFetchingFriends,
-    refetch: refetchFriends
+    refetch: refetchFriends,
   } = useQuery<{ friends: Friend[] }>({
     queryKey: ['/api/friends', currentUser?.id],
     queryFn: async () => {
@@ -62,17 +66,21 @@ export default function FriendsTabPanel({
   const rawFriends = (friendsData as any)?.friends || [];
   const friendsWithStatus = useMemo(() => {
     return rawFriends.map((friend: any) => {
-      const onlineUser = onlineUsers.find(u => u.id === friend.id);
+      const onlineUser = onlineUsers.find((u) => u.id === friend.id);
       return {
         ...friend,
         isOnline: !!onlineUser,
-        status: onlineUser ? 'online' : 'offline'
+        status: onlineUser ? 'online' : 'offline',
       };
     });
   }, [rawFriends, onlineUsers]);
 
   // جلب طلبات الصداقة (واردة وصادرة)
-  const { data: incomingData, isFetching: isFetchingIncoming, refetch: refetchIncoming } = useQuery<{ requests: FriendRequest[] }>({
+  const {
+    data: incomingData,
+    isFetching: isFetchingIncoming,
+    refetch: refetchIncoming,
+  } = useQuery<{ requests: FriendRequest[] }>({
     queryKey: ['/api/friend-requests/incoming', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) throw new Error('No user ID');
@@ -81,7 +89,11 @@ export default function FriendsTabPanel({
     enabled: !!currentUser?.id,
     staleTime: 60 * 1000,
   });
-  const { data: outgoingData, isFetching: isFetchingOutgoing, refetch: refetchOutgoing } = useQuery<{ requests: FriendRequest[] }>({
+  const {
+    data: outgoingData,
+    isFetching: isFetchingOutgoing,
+    refetch: refetchOutgoing,
+  } = useQuery<{ requests: FriendRequest[] }>({
     queryKey: ['/api/friend-requests/outgoing', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) throw new Error('No user ID');
@@ -100,19 +112,23 @@ export default function FriendsTabPanel({
       if (!currentUser?.id) throw new Error('No user ID');
       return await apiRequest(`/api/friend-requests/${requestId}/accept`, {
         method: 'POST',
-        body: { userId: currentUser.id }
+        body: { userId: currentUser.id },
       });
     },
     onSuccess: () => {
       showSuccessToast('تم قبول طلب الصداقة بنجاح', 'تم قبول الطلب');
       queryClient.invalidateQueries({ queryKey: ['/api/friends', currentUser?.id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/friend-requests/incoming', currentUser?.id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/friend-requests/outgoing', currentUser?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/friend-requests/incoming', currentUser?.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/friend-requests/outgoing', currentUser?.id],
+      });
       updateFriendQueries();
     },
     onError: (error: any) => {
       showErrorToast(error?.message || 'فشل في قبول طلب الصداقة');
-    }
+    },
   });
 
   const rejectRequestMutation = useMutation({
@@ -120,24 +136,26 @@ export default function FriendsTabPanel({
       if (!currentUser?.id) throw new Error('No user ID');
       return await apiRequest(`/api/friend-requests/${requestId}/decline`, {
         method: 'POST',
-        body: { userId: currentUser.id }
+        body: { userId: currentUser.id },
       });
     },
     onSuccess: () => {
       showSuccessToast('تم رفض طلب الصداقة بنجاح', 'تم رفض الطلب');
-      queryClient.invalidateQueries({ queryKey: ['/api/friend-requests/incoming', currentUser?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/friend-requests/incoming', currentUser?.id],
+      });
       updateFriendQueries();
     },
     onError: (error: any) => {
       showErrorToast(error?.message || 'فشل في رفض طلب الصداقة');
-    }
+    },
   });
 
   const removeFriendMutation = useMutation({
     mutationFn: async (friendId: number) => {
       if (!currentUser?.id) throw new Error('No user ID');
       return await apiRequest(`/api/friends/${currentUser.id}/${friendId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       });
     },
     onSuccess: (_data, friendId) => {
@@ -147,14 +165,14 @@ export default function FriendsTabPanel({
         if (!oldData?.friends) return oldData;
         return {
           ...oldData,
-          friends: oldData.friends.filter((f: any) => f.id !== friendId)
+          friends: oldData.friends.filter((f: any) => f.id !== friendId),
         };
       });
       updateFriendQueries();
     },
     onError: () => {
       showErrorToast('فشل في حذف الصديق');
-    }
+    },
   });
 
   // دوال التحديث اليدوي (تستخدم في زر التحديث)
@@ -181,37 +199,40 @@ export default function FriendsTabPanel({
     return token || null;
   }, []);
 
-  const renderCountryFlag = useCallback((user: ChatUser) => {
-    const emoji = getCountryEmoji(user.country);
-    const boxStyle: React.CSSProperties = {
-      width: 20,
-      height: 20,
-      borderRadius: 0,
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'transparent',
-      border: 'none'
-    };
+  const renderCountryFlag = useCallback(
+    (user: ChatUser) => {
+      const emoji = getCountryEmoji(user.country);
+      const boxStyle: React.CSSProperties = {
+        width: 20,
+        height: 20,
+        borderRadius: 0,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'transparent',
+        border: 'none',
+      };
 
-    if (emoji) {
+      if (emoji) {
+        return (
+          <span style={boxStyle} title={user.country}>
+            <span style={{ fontSize: 14, lineHeight: 1 }}>{emoji}</span>
+          </span>
+        );
+      }
+
       return (
-        <span style={boxStyle} title={user.country}>
-          <span style={{ fontSize: 14, lineHeight: 1 }}>{emoji}</span>
+        <span style={boxStyle} title="لم يتم تحديد الدولة">
+          <span style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1 }}>?</span>
         </span>
       );
-    }
-
-    return (
-      <span style={boxStyle} title="لم يتم تحديد الدولة">
-        <span style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1 }}>?</span>
-      </span>
-    );
-  }, [getCountryEmoji]);
+    },
+    [getCountryEmoji]
+  );
 
   // التحقق من صلاحيات الإشراف
   const isModerator = currentUser && ['moderator', 'admin', 'owner'].includes(currentUser.userType);
-  
+
   // مراقبة إشعارات طلبات الصداقة للتبديل التلقائي للطلبات
   useEffect(() => {
     const handleFriendRequestReceived = () => {
@@ -220,7 +241,7 @@ export default function FriendsTabPanel({
     };
 
     window.addEventListener('friendRequestReceived', handleFriendRequestReceived);
-    
+
     return () => {
       window.removeEventListener('friendRequestReceived', handleFriendRequestReceived);
     };
@@ -261,10 +282,10 @@ export default function FriendsTabPanel({
   };
 
   // تصفية الأصدقاء
-  const filteredFriends = friendsWithStatus.filter(friend =>
+  const filteredFriends = friendsWithStatus.filter((friend) =>
     friend.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   return (
     <div className="h-full flex flex-col bg-card/95 backdrop-blur-sm">
       {/* Header */}
@@ -294,9 +315,7 @@ export default function FriendsTabPanel({
         <Button
           variant={activeTab === 'friends' ? 'default' : 'ghost'}
           className={`flex-1 rounded-none py-3 ${
-            activeTab === 'friends' 
-              ? 'bg-blue-500 text-white' 
-              : 'text-gray-600 hover:bg-gray-100'
+            activeTab === 'friends' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
           }`}
           onClick={() => setActiveTab('friends')}
         >
@@ -306,9 +325,7 @@ export default function FriendsTabPanel({
         <Button
           variant={activeTab === 'requests' ? 'default' : 'ghost'}
           className={`flex-1 rounded-none py-3 relative ${
-            activeTab === 'requests' 
-              ? 'bg-blue-500 text-white' 
-              : 'text-gray-600 hover:bg-gray-100'
+            activeTab === 'requests' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
           }`}
           onClick={() => setActiveTab('requests')}
         >
@@ -339,7 +356,9 @@ export default function FriendsTabPanel({
           <div className="space-y-3">
             {/* Search */}
             <div className="relative">
-              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                🔍
+              </span>
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -349,7 +368,7 @@ export default function FriendsTabPanel({
             </div>
 
             {/* Friends List */}
-            {(isLoadingFriends || isFetchingFriends) ? (
+            {isLoadingFriends || isFetchingFriends ? (
               <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
             ) : filteredFriends.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
@@ -358,7 +377,7 @@ export default function FriendsTabPanel({
                   {searchTerm ? 'لا توجد نتائج للبحث' : 'لا توجد أصدقاء بعد'}
                 </p>
                 {searchTerm && (
-                  <button 
+                  <button
                     onClick={() => setSearchTerm('')}
                     className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
                   >
@@ -380,21 +399,25 @@ export default function FriendsTabPanel({
                         style={getUserListItemStyles(friend)}
                         onClick={(e) => onStartPrivateChat(friend)}
                       >
-                        <ProfileImage 
-                          user={friend} 
-                          size="small" 
+                        <ProfileImage
+                          user={friend}
+                          size="small"
                           className=""
                           hideRoleBadgeOverlay={true}
                         />
                         <div className="flex-1">
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <span 
+                              <span
                                 className="text-base font-medium transition-all duration-300"
-                                style={{ 
+                                style={{
                                   color: getFinalUsernameColor(friend),
-                                  textShadow: getFinalUsernameColor(friend) ? `0 0 10px ${getFinalUsernameColor(friend)}40` : 'none',
-                                  filter: getFinalUsernameColor(friend) ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                                  textShadow: getFinalUsernameColor(friend)
+                                    ? `0 0 10px ${getFinalUsernameColor(friend)}40`
+                                    : 'none',
+                                  filter: getFinalUsernameColor(friend)
+                                    ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
+                                    : 'none',
                                 }}
                                 title={friend.username}
                               >
@@ -478,40 +501,38 @@ export default function FriendsTabPanel({
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>الطلبات الواردة</span>
-                  <Badge variant="secondary">
-                    {incomingRequests.length}
-                  </Badge>
+                  <Badge variant="secondary">{incomingRequests.length}</Badge>
                 </CardTitle>
-                <CardDescription>
-                  طلبات الصداقة التي وصلتك من مستخدمين آخرين
-                </CardDescription>
+                <CardDescription>طلبات الصداقة التي وصلتك من مستخدمين آخرين</CardDescription>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[200px]">
                   {incomingRequests.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      لا توجد طلبات صداقة واردة
-                    </div>
+                    <div className="text-center py-8 text-gray-500">لا توجد طلبات صداقة واردة</div>
                   ) : (
                     <div className="space-y-3">
                       {incomingRequests.map((request) => (
                         <div key={request.id} className="border rounded-lg p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <ProfileImage 
-                                user={request.user} 
-                                size="small" 
+                              <ProfileImage
+                                user={request.user}
+                                size="small"
                                 className=""
                                 hideRoleBadgeOverlay={true}
                               />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <span 
+                                  <span
                                     className="font-semibold"
-                                    style={{ 
+                                    style={{
                                       color: getFinalUsernameColor(request.user),
-                                      textShadow: getFinalUsernameColor(request.user) ? `0 0 10px ${getFinalUsernameColor(request.user)}40` : 'none',
-                                      filter: getFinalUsernameColor(request.user) ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                                      textShadow: getFinalUsernameColor(request.user)
+                                        ? `0 0 10px ${getFinalUsernameColor(request.user)}40`
+                                        : 'none',
+                                      filter: getFinalUsernameColor(request.user)
+                                        ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
+                                        : 'none',
                                     }}
                                   >
                                     {request.user.username}
@@ -556,40 +577,38 @@ export default function FriendsTabPanel({
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>الطلبات الصادرة</span>
-                  <Badge variant="secondary">
-                    {outgoingRequests.length}
-                  </Badge>
+                  <Badge variant="secondary">{outgoingRequests.length}</Badge>
                 </CardTitle>
-                <CardDescription>
-                  طلبات الصداقة التي أرسلتها لمستخدمين آخرين
-                </CardDescription>
+                <CardDescription>طلبات الصداقة التي أرسلتها لمستخدمين آخرين</CardDescription>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[200px]">
                   {outgoingRequests.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      لا توجد طلبات صداقة صادرة
-                    </div>
+                    <div className="text-center py-8 text-gray-500">لا توجد طلبات صداقة صادرة</div>
                   ) : (
                     <div className="space-y-3">
                       {outgoingRequests.map((request) => (
                         <div key={request.id} className="border rounded-lg p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <ProfileImage 
-                                user={request.user} 
-                                size="small" 
+                              <ProfileImage
+                                user={request.user}
+                                size="small"
                                 className=""
                                 hideRoleBadgeOverlay={true}
                               />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <span 
+                                  <span
                                     className="font-semibold"
-                                    style={{ 
+                                    style={{
                                       color: getFinalUsernameColor(request.user),
-                                      textShadow: getFinalUsernameColor(request.user) ? `0 0 10px ${getFinalUsernameColor(request.user)}40` : 'none',
-                                      filter: getFinalUsernameColor(request.user) ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' : 'none'
+                                      textShadow: getFinalUsernameColor(request.user)
+                                        ? `0 0 10px ${getFinalUsernameColor(request.user)}40`
+                                        : 'none',
+                                      filter: getFinalUsernameColor(request.user)
+                                        ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
+                                        : 'none',
                                     }}
                                   >
                                     {request.user.username}
@@ -604,9 +623,13 @@ export default function FriendsTabPanel({
                             </div>
                             <div className="flex items-center gap-2">
                               <Badge variant="outline">
-                                {request.status === 'pending' ? 'في الانتظار' : 
-                                 request.status === 'accepted' ? 'مقبول' : 
-                                 request.status === 'declined' ? 'مرفوض' : 'مجاهل'}
+                                {request.status === 'pending'
+                                  ? 'في الانتظار'
+                                  : request.status === 'accepted'
+                                    ? 'مقبول'
+                                    : request.status === 'declined'
+                                      ? 'مرفوض'
+                                      : 'مجاهل'}
                               </Badge>
                             </div>
                           </div>
@@ -623,10 +646,14 @@ export default function FriendsTabPanel({
 
       {!isAtBottomFriends && (
         <div className="absolute bottom-4 right-4 z-10">
-          <Button size="sm" onClick={() => {
-            const el = friendsScrollRef.current;
-            if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-          }} className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow">
+          <Button
+            size="sm"
+            onClick={() => {
+              const el = friendsScrollRef.current;
+              if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+            }}
+            className="px-3 py-1.5 rounded-full text-xs bg-primary text-primary-foreground shadow"
+          >
             الانتقال لأسفل
           </Button>
         </div>
