@@ -1,4 +1,4 @@
-import { Shield, UserX, Ban, Clock } from 'lucide-react';
+import { Shield, Clock } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
 import ModerationList from './ModerationList';
@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { formatTimestamp } from '@/utils/timeUtils';
+import { getModerationActionIcon, getModerationActionColor } from '@/utils/moderationUtils';
 
 interface ActiveModerationAction {
   id: string;
@@ -96,16 +97,7 @@ export default function ActiveModerationLog({
     }
   };
 
-  const getActionIcon = (type: string) => {
-    switch (type) {
-      case 'mute':
-        return <UserX className="w-4 h-4 text-orange-500" />;
-      case 'block':
-        return <Ban className="w-4 h-4 text-red-700" />;
-      default:
-        return <Shield className="w-4 h-4 text-gray-500" />;
-    }
-  };
+  const getActionIcon = getModerationActionIcon;
 
   const getActionText = (type: string) => {
     switch (type) {
@@ -118,16 +110,7 @@ export default function ActiveModerationLog({
     }
   };
 
-  const getActionColor = (type: string) => {
-    switch (type) {
-      case 'mute':
-        return 'text-orange-400';
-      case 'block':
-        return 'text-red-400';
-      default:
-        return 'text-gray-400';
-    }
-  };
+  const getActionColor = getModerationActionColor;
 
   // تم نقل دالة formatTimestamp إلى utils/timeUtils.ts
 

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import { formatDateTime } from '@/utils/timeUtils';
 
 interface SecurityPanelProps {
   isOpen: boolean;
@@ -298,9 +299,7 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
                       <div className="flex-1 min-w-0">
                         <div className="font-mono text-white">{blocked.ip}</div>
                         <div className="text-sm text-gray-300 truncate">{blocked.reason}</div>
-                        <div className="text-xs text-gray-400">
-                          {new Date(blocked.blockedAt).toLocaleString('ar-SA')}
-                        </div>
+                        <div className="text-xs text-gray-400">{formatDateTime(blocked.blockedAt)}</div>
                       </div>
                       <Button
                         onClick={() => unblockIP(blocked.ip)}

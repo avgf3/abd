@@ -29,6 +29,8 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { formatDateTime } from '@/utils/timeUtils';
+import { getModerationActionBadgeClasses } from '@/utils/moderationUtils';
+import { getRoleIconComponent, getRoleTextLabel } from '@/utils/roleUtils';
 
 interface ModerationAction {
   id: string;
@@ -178,25 +180,7 @@ export default function OwnerAdminPanel({
 
   // تم نقل دالة formatDateTime إلى utils/timeUtils.ts
 
-  const getActionColor = (type: string) => {
-    switch (type) {
-      case 'mute':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'ban':
-      case 'kick':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'block':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'promote':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'demote':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'unblock':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      default:
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-    }
-  };
+  const getActionColor = getModerationActionBadgeClasses;
 
   const getActionIcon = (type: string) => {
     switch (type) {
@@ -218,31 +202,9 @@ export default function OwnerAdminPanel({
     }
   };
 
-  const getRoleIcon = (userType: string) => {
-    switch (userType) {
-      case 'owner':
-        return <Crown className="w-5 h-5 text-purple-600" />;
-      case 'admin':
-        return <Shield className="w-5 h-5 text-blue-600" />;
-      case 'moderator':
-        return <Settings className="w-5 h-5 text-green-600" />;
-      default:
-        return <Users className="w-5 h-5 text-gray-600" />;
-    }
-  };
+  const getRoleIcon = getRoleIconComponent;
 
-  const getRoleText = (userType: string) => {
-    switch (userType) {
-      case 'owner':
-        return 'مالك';
-      case 'admin':
-        return 'مشرف عام';
-      case 'moderator':
-        return 'مشرف';
-      default:
-        return 'عضو';
-    }
-  };
+  const getRoleText = getRoleTextLabel;
 
   if (!currentUser || currentUser.userType !== 'owner') {
     return null;
@@ -518,15 +480,7 @@ export default function OwnerAdminPanel({
 
                               {!staff.isOnline && staff.lastSeen && (
                                 <p className="text-xs text-gray-500 mt-1">
-                                  آخر ظهور:{' '}
-                                  {(() => {
-                                    try {
-                                      const d = new Date(staff.lastSeen as any);
-                                      return d.toLocaleString('ar-SA');
-                                    } catch {
-                                      return String(staff.lastSeen);
-                                    }
-                                  })()}
+                                  آخر ظهور: {formatDateTime(staff.lastSeen)}
                                 </p>
                               )}
                             </div>

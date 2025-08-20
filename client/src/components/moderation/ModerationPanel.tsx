@@ -1,4 +1,4 @@
-import { Shield, Clock, Ban, UserX } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
 import ModerationList from './ModerationList';
@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { formatTimestamp } from '@/utils/timeUtils';
+import { getModerationActionIcon } from '@/utils/moderationUtils';
 import AdminPanelShell from './AdminPanelShell';
 
 interface ModerationAction {
@@ -53,20 +54,7 @@ export default function ModerationPanel({ currentUser, isVisible, onClose }: Mod
     }
   };
 
-  const getActionIcon = (type: string) => {
-    switch (type) {
-      case 'mute':
-        return <UserX className="w-4 h-4 text-orange-500" />;
-      case 'ban':
-        return <Clock className="w-4 h-4 text-red-500" />;
-      case 'block':
-        return <Ban className="w-4 h-4 text-red-700" />;
-      case 'kick':
-        return <Clock className="w-4 h-4 text-yellow-500" />;
-      default:
-        return <Shield className="w-4 h-4 text-gray-500" />;
-    }
-  };
+  const getActionIcon = getModerationActionIcon;
 
   const getActionText = (action: ModerationAction) => {
     switch (action.type) {

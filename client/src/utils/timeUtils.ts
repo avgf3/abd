@@ -26,20 +26,31 @@ export function formatTime(date?: Date | string | number): string {
   });
 }
 
-export function formatDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleDateString('ar-SA', {
+function toValidDate(input: Date | string | number): Date | null {
+  const date = input instanceof Date ? input : new Date(input);
+  return isNaN(date.getTime()) ? null : date;
+}
+
+export function formatDate(input: Date | string | number): string {
+  const date = toValidDate(input);
+  if (!date) return '';
+  return date.toLocaleDateString('ar-SA', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   });
 }
 
-export function formatTimestamp(timestamp: number): string {
-  return new Date(timestamp).toLocaleString('ar-SA');
+export function formatTimestamp(input: Date | string | number): string {
+  const date = toValidDate(input);
+  if (!date) return '';
+  return date.toLocaleString('ar-SA');
 }
 
-export function formatDateTime(timestamp: number): string {
-  return new Date(timestamp).toLocaleString('ar-SA', {
+export function formatDateTime(input: Date | string | number): string {
+  const date = toValidDate(input);
+  if (!date) return '';
+  return date.toLocaleString('ar-SA', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
