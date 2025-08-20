@@ -951,6 +951,16 @@ export const useChat = () => {
             if (chatMessage.senderId !== currentUserRef.current.id) {
               playNotificationSound();
             }
+
+            // إشعار الواجهة بوصول/إرسال رسالة خاصة لتحديث تبويب الرسائل فوراً
+            try {
+              const detail = {
+                otherUserId: conversationId,
+                senderId: message.senderId,
+                receiverId: message.receiverId,
+              } as any;
+              window.dispatchEvent(new CustomEvent('privateMessageReceived', { detail }));
+            } catch {}
           }
         }
       } catch (error) {

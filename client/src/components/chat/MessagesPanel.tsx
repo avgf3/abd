@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 import type { PrivateConversation } from '../../../../shared/types';
 
@@ -53,8 +53,18 @@ export default function MessagesPanel({
     refetchOnWindowFocus: false,
   });
 
+  // تحديث فوري للقائمة عند وصول/إرسال رسالة خاصة
+  useEffect(() => {
+    const handler = () => {
+      try { refetch(); } catch {}
+    };
+    window.addEventListener('privateMessageReceived', handler);
+    return () => window.removeEventListener('privateMessageReceived', handler);
+  }, [refetch]);
+
   const conversations = useMemo(() => {
-    const items = (conversationsData?.conversations || [])
+    // دمج المحادثات القادمة من الخادم مع الذاكرة المحلية لضمان ظهور المحادثة مباشرة بعد أول رسالة
+    const serverItems = (conversationsData?.conversations || [])
       .map((c) => {
         const user = c.otherUser || onlineUsers.find((u) => u.id === c.otherUserId) || null;
         if (!user) return null;
@@ -85,6 +95,37 @@ export default function MessagesPanel({
       lastMessage: { content: string; timestamp: string; isImage?: boolean };
       unreadCount: number;
     }>;
+    // أضف محادثات محلية غير موجودة في الخادم بعد (مثلاً بعد أول رسالة قبل تحديث الخادم)
+    const localUserIds = Object.keys(privateConversations || {}).map((k) => parseInt(k, 10));
+    const serverUserIds = new Set(serverItems.map((i) => i.user.id));
+    const localOnlyItems = localUserIds
+      .filter((uid) => Number.isFinite(uid) && !serverUserIds.has(uid))
+      .map((uid) => {
+        const user = onlineUsers.find((u) => u.id === uid) || null;
+        if (!user) return null;
+        const conv = privateConversations[uid] || [];
+        const latest = conv[conv.length - 1];
+        if (!latest) return null;
+        const lastOpened = currentUser?.id ? getPmLastOpened(currentUser.id, uid) : 0;
+        const unreadCount = conv.filter((m) => new Date(m.timestamp).getTime() > lastOpened && m.senderId === uid).length;
+        const isImage = latest.messageType === 'image';
+        return {
+          user,
+          lastMessage: {
+            content: latest.content,
+            timestamp: String(latest.timestamp),
+            isImage,
+          },
+          unreadCount,
+        };
+      })
+      .filter(Boolean) as Array<{
+        user: ChatUser;
+        lastMessage: { content: string; timestamp: string; isImage?: boolean };
+        unreadCount: number;
+      }>;
+
+    const items = [...serverItems, ...localOnlyItems];
 
     const filtered = search
       ? items.filter(

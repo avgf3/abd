@@ -330,21 +330,7 @@ export default function PrivateMessageBox({
               />
             )}
 
-            {!isAtBottomPrivate && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="sticky bottom-4 flex justify-center"
-              >
-                <Button
-                  size="sm"
-                  onClick={() => scrollToBottom('smooth')}
-                  className="px-4 py-2 rounded-full text-xs bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all"
-                >
-                  ⬇️ الانتقال لأسفل
-                </Button>
-              </motion.div>
-            )}
+            {/* تم إخفاء زر "الانتقال لأسفل" بناءً على رغبتك لتقليل الإزعاج */}
           </div>
 
           <div className="p-4 border-t border-gray-200 bg-white">
