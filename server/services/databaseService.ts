@@ -544,15 +544,25 @@ export class DatabaseService {
     if (!this.isConnected()) return [];
     try {
       if (this.type === 'postgresql') {
-        const result = await (this.db as any).execute(
-          sql`SELECT u.id, u.username, u.user_type as "userType", u.role, u.profile_image as "profileImage", u.is_online as "isOnline", u.last_seen as "lastSeen", u.points, u.level, u.total_points as "totalPoints"
-              FROM users u
-              JOIN vip_users v ON v.user_id = u.id
-              ORDER BY u.total_points DESC NULLS LAST, u.username ASC
-              LIMIT ${Math.min(100, Math.max(1, limit))}`
-        );
-        const rows = (result as any)?.rows ?? result;
-        return Array.isArray(rows) ? (rows as any) : [];
+        const result = await (this.db as any)
+          .select({
+            id: pgSchema.users.id,
+            username: pgSchema.users.username,
+            userType: pgSchema.users.userType,
+            role: pgSchema.users.role,
+            profileImage: pgSchema.users.profileImage,
+            isOnline: pgSchema.users.isOnline,
+            lastSeen: pgSchema.users.lastSeen,
+            points: pgSchema.users.points,
+            level: pgSchema.users.level,
+            totalPoints: pgSchema.users.totalPoints,
+          })
+          .from(pgSchema.users)
+          .innerJoin(pgSchema.vipUsers, eq(pgSchema.vipUsers.userId, pgSchema.users.id))
+          .orderBy(desc(pgSchema.users.totalPoints), asc(pgSchema.users.username))
+          .limit(Math.min(100, Math.max(1, limit)));
+        
+        return result || [];
       }
       return [];
     } catch (error) {
@@ -565,10 +575,13 @@ export class DatabaseService {
     if (!this.isConnected() || !targetUserId) return false;
     try {
       if (this.type === 'postgresql') {
-        await (this.db as any).execute(
-          sql`INSERT INTO vip_users (user_id, created_by) VALUES (${targetUserId}, ${createdBy || null})
-              ON CONFLICT (user_id) DO NOTHING`
-        );
+        await (this.db as any)
+          .insert(pgSchema.vipUsers)
+          .values({
+            userId: targetUserId,
+            createdBy: createdBy || null,
+          })
+          .onConflictDoNothing();
         return true;
       }
       return false;
@@ -582,7 +595,9 @@ export class DatabaseService {
     if (!this.isConnected() || !targetUserId) return false;
     try {
       if (this.type === 'postgresql') {
-        await (this.db as any).execute(sql`DELETE FROM vip_users WHERE user_id = ${targetUserId}`);
+        await (this.db as any)
+          .delete(pgSchema.vipUsers)
+          .where(eq(pgSchema.vipUsers.userId, targetUserId));
         return true;
       }
       return false;

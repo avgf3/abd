@@ -19,7 +19,7 @@
     "db:push": "npx drizzle-kit push",
     "db:migrate-production": "node migrate-production.js",
     "db:check-production": "node check-production-db.js",
-    "db:fix": "node fix-database.js",
+    "db:fix": "node apply-database-fix.js",
     "db:fix-production": "node fix-production-database.mjs",
     "db:add-profile-effect": "node run-profile-effect-migration.js",
     "db:fix-issues": "node fix-database-issues.js",
