@@ -544,13 +544,14 @@ export class DatabaseService {
     if (!this.isConnected()) return [];
     try {
       if (this.type === 'postgresql') {
-        const rows = await (this.db as any).execute(
+        const result = await (this.db as any).execute(
           sql`SELECT u.id, u.username, u.user_type as "userType", u.role, u.profile_image as "profileImage", u.is_online as "isOnline", u.last_seen as "lastSeen", u.points, u.level, u.total_points as "totalPoints"
               FROM users u
               JOIN vip_users v ON v.user_id = u.id
               ORDER BY u.total_points DESC NULLS LAST, u.username ASC
               LIMIT ${Math.min(100, Math.max(1, limit))}`
         );
+        const rows = (result as any)?.rows ?? result;
         return Array.isArray(rows) ? (rows as any) : [];
       }
       return [];
