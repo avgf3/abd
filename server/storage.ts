@@ -503,6 +503,11 @@ export const storage: LegacyStorage = {
   },
 
   async createUser(user: any) {
+    // تشفير كلمة المرور إذا كانت موجودة
+    if (user.password && !user.password.startsWith('$2b$')) {
+      user.password = await bcrypt.hash(user.password, 10);
+    }
+    
     const newUser = await databaseService.createUser(user);
     if (!newUser) throw new Error('Failed to create user');
     return newUser;
