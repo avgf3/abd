@@ -33,20 +33,64 @@ import { normalizeBroadcastInfo } from '@/utils/roomUtils';
 
 // ICE servers helper with optional TURN support via env
 const getIceServers = (): RTCIceServer[] => {
-  const servers: RTCIceServer[] = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
-  ];
+  const servers: RTCIceServer[] = [];
+  
   try {
     const env = (import.meta as any)?.env || {};
+    
+    // إضافة STUN servers
+    servers.push(
+      { urls: env.VITE_STUN_URL_1 || 'stun:stun.l.google.com:19302' },
+      { urls: env.VITE_STUN_URL_2 || 'stun:stun1.l.google.com:19302' },
+      { urls: env.VITE_STUN_URL_3 || 'stun:stun.relay.metered.ca:80' }
+    );
+    
+    // إضافة TURN server الأساسي
     const turnUrl = env?.VITE_TURN_URL || (window as any)?.__TURN_URL__;
     const turnUsername = env?.VITE_TURN_USERNAME || (window as any)?.__TURN_USERNAME__;
     const turnCredential = env?.VITE_TURN_CREDENTIAL || (window as any)?.__TURN_CREDENTIAL__;
+    
     if (turnUrl && turnUsername && turnCredential) {
-      servers.push({ urls: turnUrl, username: turnUsername, credential: turnCredential });
+      // إضافة TURN عبر UDP و TCP
+      servers.push(
+        { 
+          urls: turnUrl, 
+          username: turnUsername, 
+          credential: turnCredential 
+        }
+      );
+      
+      // إضافة نفس الخادم عبر TCP إذا كان UDP
+      if (turnUrl.includes('udp')) {
+        const tcpUrl = turnUrl.replace('udp', 'tcp').replace(':80', ':80?transport=tcp');
+        servers.push({
+          urls: tcpUrl,
+          username: turnUsername,
+          credential: turnCredential
+        });
+      }
     }
-  } catch {}
+    
+    // إضافة TURN server احتياطي
+    const backupUrl = env?.VITE_TURN_URL_BACKUP;
+    const backupUsername = env?.VITE_TURN_USERNAME_BACKUP;
+    const backupCredential = env?.VITE_TURN_CREDENTIAL_BACKUP;
+    
+    if (backupUrl && backupUsername && backupCredential) {
+      servers.push({
+        urls: backupUrl,
+        username: backupUsername,
+        credential: backupCredential
+      });
+    }
+    
+    console.log('🎙️ ICE Servers configured:', servers.length, 'servers');
+  } catch (error) {
+    console.error('❌ Error configuring ICE servers:', error);
+    // Fallback to basic STUN
+    servers.push({ urls: 'stun:stun.l.google.com:19302' });
+  }
+  
   return servers;
 };
 
@@ -115,6 +159,11 @@ export default function BroadcastRoomInterface({
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const [isInfoCollapsed, setIsInfoCollapsed] = useState(true);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
+  
+  // حالات إعادة الاتصال
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'failed' | 'disconnected'>('disconnected');
+  const reconnectAttemptsRef = React.useRef(0);
+  const maxReconnectAttempts = 5;
 
   // جلب معلومات غرفة البث
   // 🚀 جلب معلومات البث مع منع التكرار
@@ -365,9 +414,36 @@ export default function BroadcastRoomInterface({
     if (!currentUser || !room.id) return;
     try {
       if (!isSecureContext()) {
-        throw new Error(
-          'يتطلب الميكروفون اتصالاً آمناً. افتح الموقع عبر HTTPS (أو محلياً على localhost).'
-        );
+        // إظهار رسالة مفصلة مع حلول
+        const currentUrl = window.location.href;
+        const httpsUrl = currentUrl.replace('http://', 'https://');
+        
+        let errorMessage = 'لا يمكن استخدام الميكروفون على اتصال غير آمن.\n\n';
+        errorMessage += '🔐 الحلول المتاحة:\n';
+        errorMessage += '1. افتح الموقع عبر HTTPS:\n   ' + httpsUrl + '\n\n';
+        errorMessage += '2. أو استخدم Chrome مع هذا الإعداد:\n';
+        errorMessage += '   - افتح: chrome://flags\n';
+        errorMessage += '   - ابحث عن: "Insecure origins treated as secure"\n';
+        errorMessage += '   - أضف رابط الموقع: ' + window.location.origin + '\n';
+        errorMessage += '   - أعد تشغيل Chrome\n\n';
+        errorMessage += '3. أو استخدم نفق آمن مؤقت:\n';
+        errorMessage += '   - ngrok http 5173\n';
+        errorMessage += '   - localtunnel --port 5173';
+        
+        // عرض نافذة بالتعليمات
+        toast({
+          title: '⚠️ يتطلب اتصال آمن (HTTPS)',
+          description: 'انقر لنسخ رابط HTTPS',
+          variant: 'destructive',
+          duration: 10000,
+        });
+        
+        // محاولة نسخ رابط HTTPS
+        try {
+          navigator.clipboard.writeText(httpsUrl);
+        } catch {}
+        
+        throw new Error(errorMessage);
       }
 
       const perm = await queryMicrophonePermission();
@@ -394,14 +470,60 @@ export default function BroadcastRoomInterface({
       for (const listener of listeners) {
         const pc = new RTCPeerConnection({ iceServers: getIceServers() });
 
-        // Add connection state monitoring
+        // Add connection state monitoring with auto-reconnect
         pc.onconnectionstatechange = () => {
-          if (pc.connectionState === 'failed') {
-            toast({
-              title: 'مشكلة في الاتصال',
-              description: `فشل الاتصال مع ${listener.username}`,
-              variant: 'destructive',
-            });
+          console.log(`🔌 Connection state with ${listener.username}: ${pc.connectionState}`);
+          
+          if (pc.connectionState === 'connected') {
+            setConnectionStatus('connected');
+            reconnectAttemptsRef.current = 0;
+          } else if (pc.connectionState === 'failed') {
+            setConnectionStatus('failed');
+            
+            // محاولة إعادة الاتصال
+            if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+              reconnectAttemptsRef.current++;
+              toast({
+                title: 'إعادة الاتصال',
+                description: `محاولة ${reconnectAttemptsRef.current} من ${maxReconnectAttempts}`,
+              });
+              
+              // إعادة المحاولة بعد تأخير
+              setTimeout(async () => {
+                try {
+                  // إغلاق الاتصال القديم
+                  pc.close();
+                  peersRef.current.delete(listener.id);
+                  
+                  // إنشاء اتصال جديد
+                  const newPc = new RTCPeerConnection({ iceServers: getIceServers() });
+                  localStream.getTracks().forEach((track) => newPc.addTrack(track, localStream));
+                  
+                  newPc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                      chat.sendWebRTCIceCandidate?.(listener.id, room.id, event.candidate);
+                    }
+                  };
+                  
+                  peersRef.current.set(listener.id, newPc);
+                  const offer = await newPc.createOffer({ offerToReceiveAudio: false });
+                  await newPc.setLocalDescription(offer);
+                  chat.sendWebRTCOffer?.(listener.id, room.id, offer);
+                } catch (error) {
+                  console.error('❌ فشلت إعادة الاتصال:', error);
+                }
+              }, 2000 * reconnectAttemptsRef.current);
+            } else {
+              toast({
+                title: 'فشل الاتصال نهائياً',
+                description: `تعذر الاتصال مع ${listener.username}`,
+                variant: 'destructive',
+              });
+            }
+          } else if (pc.connectionState === 'disconnected') {
+            setConnectionStatus('disconnected');
+          } else if (pc.connectionState === 'connecting') {
+            setConnectionStatus('connecting');
           }
         };
 
