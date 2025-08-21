@@ -288,16 +288,16 @@ router.delete('/:messageId', protect.auth, async (req, res) => {
       });
     }
 
-    await roomMessageService.deleteMessage(parseInt(messageId), parseInt(userId), roomId);
+    await roomMessageService.deleteMessage(parseInt(messageId, 10), userId, roomId);
 
     // إرسال إشعار بحذف الرسالة عبر Socket.IO
     const io = req.app.get('io');
     if (io) {
       io.to(`room_${roomId}`).emit('message', {
         type: 'messageDeleted',
-        messageId: parseInt(messageId),
+        messageId: parseInt(messageId, 10),
         roomId,
-        deletedBy: parseInt(userId),
+        deletedBy: userId,
         timestamp: new Date().toISOString(),
       });
     }
