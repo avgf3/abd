@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>اختبار النظام الصوتي</title>
+    <style>
+        body { font-family: Arial; background: #667eea; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: white; padding: 40px; border-radius: 20px; max-width: 600px; }
+        button { background: #667eea; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار النظام الصوتي</h1>
+        <button onclick="testMic()">اختبار الميكروفون</button>
+        <button onclick="testTURN()">اختبار TURN</button>
+        <div id="result"></div>
+    </div>
+    <script>
+        async function testMic() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+                stream.getTracks().forEach(t => t.stop());
+                document.getElementById('result').innerHTML = '<div class="status success">✅ الميكروفون يعمل</div>';
+            } catch(e) {
+                document.getElementById('result').innerHTML = '<div class="status error">❌ ' + e.message + '</div>';
+            }
+        }
+        async function testTURN() {
+            const pc = new RTCPeerConnection({
+                iceServers: [{urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject'}]
+            });
+            await pc.createOffer({offerToReceiveAudio: true}).then(o => pc.setLocalDescription(o));
+            setTimeout(() => {
+                document.getElementById('result').innerHTML += '<div class="status success">✅ TURN متاح</div>';
+                pc.close();
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
