@@ -70,26 +70,38 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null;
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-    return color ? `  --color-${key}: ${color};` : null;
-  })
-  .join('\n')}
-}
-`
-          )
-          .join('\n'),
-      }}
-    />
-  );
+  // Escape potentially unsafe characters in CSS variable values
+  const escapeCssValue = (value: string) => {
+    return String(value)
+      .replace(/[`$]/g, '')
+      .replace(/[<>]/g, '')
+      .replace(/["'\\]/g, '')
+      .trim()
+      .slice(0, 100);
+  };
+
+  // Build CSS content safely
+  const cssContent = Object.entries(THEMES)
+    .map(([theme, prefix]) => {
+      const lines = colorConfig
+        .map(([key, itemConfig]) => {
+          const raw = (itemConfig as any).theme?.[theme as keyof typeof THEMES] || (itemConfig as any).color;
+          if (!raw || typeof raw !== 'string') return null;
+          const safe = escapeCssValue(raw);
+          if (!safe) return null;
+          return `  --color-${key}: ${safe};`;
+        })
+        .filter(Boolean)
+        .join('\n');
+      if (!lines) return '';
+      return `\n${prefix} [data-chart=${id}] {\n${lines}\n}`;
+    })
+    .filter(Boolean)
+    .join('\n');
+
+  if (!cssContent) return null;
+
+  return <style dangerouslySetInnerHTML={{ __html: cssContent }} />;
 };
 
 const ChartTooltip = RechartsPrimitive.Tooltip;

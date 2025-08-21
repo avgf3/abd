@@ -10,6 +10,16 @@ const messageRequestCounts = new Map<string, { count: number; resetTime: number 
 const friendRequestCounts = new Map<string, { count: number; resetTime: number }>();
 const blockedIPs = new Set<string>();
 
+// Sweep limiter maps periodically to prevent unbounded growth
+setInterval(() => {
+  const now = Date.now();
+  [authRequestCounts, messageRequestCounts, friendRequestCounts].forEach((m) => {
+    for (const [k, v] of m.entries()) {
+      if (v.resetTime < now) m.delete(k);
+    }
+  });
+}, 10 * 60 * 1000).unref();
+
 // Rate limiter for authentication endpoints
 export function authLimiter(req: Request, res: Response, next: NextFunction): void {
   const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
@@ -146,6 +156,14 @@ export function setupSecurity(app: Express): void {
   // Rate limiting for API endpoints
   const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
+  // Sweep API limiter map as well
+  setInterval(() => {
+    const now = Date.now();
+    for (const [k, v] of requestCounts.entries()) {
+      if (v.resetTime < now) requestCounts.delete(k);
+    }
+  }, 10 * 60 * 1000).unref();
+
   app.use('/api', (req: Request, res: Response, next: NextFunction) => {
     const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
     const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
@@ -184,15 +202,30 @@ export function setupSecurity(app: Express): void {
     // Referrer Policy
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 
+    // Permissions Policy (subset)
+    res.setHeader(
+      'Permissions-Policy',
+      [
+        'geolocation=()',
+        'camera=()',
+        'microphone=()',
+        'payment=()',
+        'usb=()',
+        'gyroscope=()',
+        'accelerometer=()',
+        'fullscreen=(self)'
+      ].join(', ')
+    );
+
     // Content Security Policy
+    const isDev = process.env.NODE_ENV !== 'production';
     res.setHeader(
       'Content-Security-Policy',
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline'",
+        `script-src 'self'${isDev ? " 'unsafe-inline'" : ''}`,
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "img-src 'self' data: https:",
-        // allow connect to same-origin + websockets on same-origin
         "connect-src 'self' ws: wss: https:",
         "font-src 'self' https://fonts.gstatic.com",
         "object-src 'none'",

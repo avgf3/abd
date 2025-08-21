@@ -27,23 +27,46 @@ app.use(compression({ threshold: 1024 }));
 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// خدمة الملفات الثابتة للصور المرفوعة - محسّنة لـ Render
+// خدمة الملفات الثابتة للصور المرفوعة - محسّنة ومُقيدة
 const uploadsPath = path.join(process.cwd(), 'client/public/uploads');
+const ALLOWED_UPLOAD_DIRS = new Set(['avatars', 'profiles', 'wall', 'rooms', 'banners']);
+const ALLOWED_UPLOAD_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp']);
 app.use(
   '/uploads',
   async (req, res, next) => {
-    // التحقق من وجود الملف
-    const fullPath = path.join(uploadsPath, req.path);
+    const requestedPathRaw = typeof req.path === 'string' ? req.path : '';
+    const requestedPath = decodeURIComponent(requestedPathRaw);
+
+    // منع الاجتياز والتأكد من أن المسار داخل uploads
+    if (requestedPath.includes('..')) {
+      return res.status(400).json({ error: 'Invalid path' });
+    }
+
+    const trimmed = requestedPath.replace(/^\/+/, '');
+    const resolved = path.resolve(uploadsPath, trimmed);
+    if (!resolved.startsWith(uploadsPath + path.sep)) {
+      return res.status(400).json({ error: 'Invalid path' });
+    }
+
+    // السماح فقط بمجلدات معروفة وامتدادات صور آمنة
+    const segments = trimmed.split('/').filter(Boolean);
+    const baseDir = segments[0] || '';
+    const ext = path.extname(trimmed).toLowerCase();
+
+    if (!ALLOWED_UPLOAD_DIRS.has(baseDir) || !ALLOWED_UPLOAD_EXTS.has(ext)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
     try {
-      await fsp.stat(fullPath);
+      await fsp.stat(resolved);
     } catch {
-      console.error('❌ الملف غير موجود:', fullPath);
+      console.error('❌ الملف غير موجود:', resolved);
 
       // Return default avatar for profile images
       if (
-        req.path.includes('profile-') ||
-        req.path.includes('/profiles/') ||
-        req.path.includes('/avatars/')
+        requestedPath.includes('profile-') ||
+        requestedPath.includes('/profiles/') ||
+        requestedPath.includes('/avatars/')
       ) {
         const defaultAvatarPath = path.join(process.cwd(), 'client/public/default_avatar.svg');
         try {
@@ -57,9 +80,9 @@ app.use(
 
     // إذا كانت صورة أفاتار ومعها باراميتر نسخة v، فعّل كاش طويل وimmutable
     if (
-      req.path.includes('/avatars/') &&
+      requestedPath.includes('/avatars/') &&
       typeof req.query.v === 'string' &&
-      req.query.v.length > 0
+      (req.query.v as string).length > 0
     ) {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     }
@@ -71,18 +94,16 @@ app.use(
     maxAge: '1d', // cache لمدة يوم واحد
     etag: true,
     lastModified: true,
-    setHeaders: (res, path) => {
+    setHeaders: (res, filePath) => {
       // إعداد headers مناسبة للصور
-      if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
         res.setHeader('Content-Type', 'image/jpeg');
-      } else if (path.endsWith('.png')) {
+      } else if (filePath.endsWith('.png')) {
         res.setHeader('Content-Type', 'image/png');
-      } else if (path.endsWith('.gif')) {
+      } else if (filePath.endsWith('.gif')) {
         res.setHeader('Content-Type', 'image/gif');
-      } else if (path.endsWith('.webp')) {
+      } else if (filePath.endsWith('.webp')) {
         res.setHeader('Content-Type', 'image/webp');
-      } else if (path.endsWith('.svg')) {
-        res.setHeader('Content-Type', 'image/svg+xml');
       }
     },
   })
