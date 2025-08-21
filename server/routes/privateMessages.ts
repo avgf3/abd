@@ -4,7 +4,7 @@ import { db, dbType } from '../database-adapter';
 import { notificationService } from '../services/notificationService';
 import { storage } from '../storage';
 import { protect } from '../middleware/enhancedSecurity';
-import { sanitizeInput, validateMessageContent } from '../security';
+import { sanitizeInput, validateMessageContent, messageLimiter } from '../security';
 import { spamProtection } from '../spam-protection';
 
 // Helper type for conversation item (server-side internal)
@@ -28,7 +28,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
  * POST /api/private-messages/send
  * إرسال رسالة خاصة بين مستخدمين مع تحسينات الأداء
  */
-router.post('/send', protect.auth, async (req, res) => {
+router.post('/send', protect.auth, messageLimiter, async (req, res) => {
   try {
     const { receiverId, content, messageType = 'text' } = req.body || {};
     const senderId = (req as any).user?.id as number;
@@ -43,13 +43,15 @@ router.post('/send', protect.auth, async (req, res) => {
     }
 
     const textRaw = typeof content === 'string' ? content.trim() : '';
-    const text = sanitizeInput(textRaw);
+    const isImageDataUrl = /^data:image\//i.test(textRaw);
+    // السماح بمحتوى data:image أطول للخاص دون قصّ
+    const text = isImageDataUrl ? textRaw : sanitizeInput(textRaw);
     if (!text) {
       return res.status(400).json({ error: 'محتوى الرسالة مطلوب' });
     }
 
     // منع الروابط فقط
-    const check = validateMessageContent(text);
+    const check = isImageDataUrl ? { isValid: true } : validateMessageContent(text);
     if (!check.isValid) {
       return res.status(400).json({ error: check.reason || 'محتوى غير مسموح' });
     }
@@ -60,11 +62,18 @@ router.post('/send', protect.auth, async (req, res) => {
       return res.status(429).json({ error: spamCheck.reason || 'تم رفض الرسالة بسبب التكرار' });
     }
 
-    // التحقق من المستخدمين بشكل متوازي لتحسين السرعة
-    const [sender, receiver] = await Promise.all([
+    // التحقق من المستخدمين بشكل متوازي مع احترام التجاهل
+    const [sender, receiver, ignoredByReceiver] = await Promise.all([
       storage.getUser(parseInt(String(senderId))),
       storage.getUser(parseInt(receiverId)),
+      storage.getIgnoredUsers(parseInt(receiverId)).catch(() => [] as number[]),
     ]);
+    // منع الإرسال إذا كان المستقبل قد تجاهل المرسل
+    try {
+      if (Array.isArray(ignoredByReceiver) && ignoredByReceiver.includes(senderId)) {
+        return res.status(403).json({ error: 'هذا المستخدم قام بتجاهلك، لا يمكن إرسال رسالة' });
+      }
+    } catch {}
 
     if (!sender) {
       return res.status(404).json({ error: 'المرسل غير موجود' });
@@ -95,43 +104,11 @@ router.post('/send', protect.auth, async (req, res) => {
     const conversationKey = `${Math.min(parseInt(String(senderId)), parseInt(receiverId))}-${Math.max(parseInt(String(senderId)), parseInt(receiverId))}`;
     conversationCache.delete(conversationKey);
 
-    // إرسال إشعار وبث الرسالة بشكل متوازي
-    const promises = [];
-
-    // تم إيقاف إنشاء إشعار الرسائل: تبويب الإشعارات لا يعرض إشعارات الرسائل
-
     // بث الرسالة عبر Socket.IO
     const io = req.app.get('io');
     if (io) {
-      promises.push(
-        Promise.all([
-          new Promise((resolve) => {
-            try {
-              io.to(String(senderId)).emit('privateMessage', { message: messageWithSender });
-              resolve(true);
-            } catch {
-              resolve(false);
-            }
-          }),
-          new Promise((resolve) => {
-            try {
-              io.to(String(receiverId)).emit('privateMessage', { message: messageWithSender });
-              resolve(true);
-            } catch {
-              resolve(false);
-            }
-          }),
-        ])
-      );
-    }
-
-    const [createdNotification] = await Promise.all(promises);
-
-    // بث الإشعار إذا تم إنشاؤه بنجاح
-    if (io && createdNotification) {
-      try {
-        io.to(String(receiverId)).emit('newNotification', { notification: createdNotification });
-      } catch {}
+      try { io.to(String(senderId)).emit('privateMessage', { message: messageWithSender }); } catch {}
+      try { io.to(String(receiverId)).emit('privateMessage', { message: messageWithSender }); } catch {}
     }
 
     return res.json({ success: true, message: messageWithSender });

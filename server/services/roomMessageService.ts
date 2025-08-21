@@ -1,5 +1,6 @@
 import { db, dbType } from '../database-adapter';
 import { storage } from '../storage';
+import { sanitizeUserData } from '../utils/data-sanitizer';
 
 export interface RoomMessage {
   id: number;
@@ -27,6 +28,47 @@ class RoomMessageService {
   private messageCache = new Map<string, RoomMessage[]>(); // roomId -> messages
   private readonly MAX_CACHE_SIZE = 100; // رسائل لكل غرفة
   private readonly MAX_CACHE_ROOMS = 50; // عدد الغرف المحفوظة في الذاكرة
+
+  // بناء حمولة مستخدم آمنة للإرسال للعميل (تجنب الحقول الحساسة)
+  private buildSafeUserPayload(user: any): any {
+    if (!user) return null;
+    const sanitized = sanitizeUserData(user);
+    const payload: any = {
+      id: sanitized.id,
+      username: sanitized.username,
+      userType: sanitized.userType,
+      role: sanitized.role,
+      usernameColor: sanitized.usernameColor,
+      profileBackgroundColor: sanitized.profileBackgroundColor,
+      profileEffect: sanitized.profileEffect,
+      isOnline: sanitized.isOnline,
+      lastSeen: sanitized.lastSeen,
+      points: sanitized.points,
+      level: sanitized.level,
+      totalPoints: sanitized.totalPoints,
+      levelProgress: sanitized.levelProgress,
+    };
+    try {
+      if (
+        sanitized.profileImage &&
+        typeof sanitized.profileImage === 'string' &&
+        !sanitized.profileImage.startsWith('data:')
+      ) {
+        const versionTag = (sanitized as any).avatarHash || (sanitized as any).avatarVersion;
+        payload.profileImage = versionTag && !String(sanitized.profileImage).includes('?v=')
+          ? `${sanitized.profileImage}?v=${versionTag}`
+          : sanitized.profileImage;
+      }
+      if (
+        sanitized.profileBanner &&
+        typeof sanitized.profileBanner === 'string' &&
+        !sanitized.profileBanner.startsWith('data:')
+      ) {
+        payload.profileBanner = sanitized.profileBanner;
+      }
+    } catch {}
+    return payload;
+  }
 
   /**
    * إرسال رسالة لغرفة
@@ -96,7 +138,7 @@ class RoomMessageService {
         senderUsername: sender.username,
         senderUserType: sender.userType,
         senderAvatar: (sender as any).profileImage || null,
-        sender,
+        sender: this.buildSafeUserPayload(sender),
       };
 
       // إضافة الرسالة للذاكرة المؤقتة
@@ -157,7 +199,7 @@ class RoomMessageService {
         new Set((dbMessages || []).map((m: any) => m.senderId).filter(Boolean))
       );
       const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
-      const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
+      const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, this.buildSafeUserPayload(u)]));
 
       // تحويل الرسائل للتنسيق المطلوب
       const messages: RoomMessage[] = [];
@@ -173,8 +215,8 @@ class RoomMessageService {
             timestamp: new Date(msg.timestamp),
             isPrivate: msg.isPrivate || false,
             receiverId: msg.receiverId || null,
-            senderUsername: sender?.username || 'مستخدم محذوف',
-            senderUserType: sender?.userType || 'user',
+            senderUsername: (sender as any)?.username || 'مستخدم محذوف',
+            senderUserType: (sender as any)?.userType || 'user',
             senderAvatar: (sender as any)?.profileImage || null,
             sender,
           };
