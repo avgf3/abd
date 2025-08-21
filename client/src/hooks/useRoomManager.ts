@@ -140,8 +140,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
         // 📏 تحديد حجم الذاكرة المؤقتة
         if (uniqueRooms.length > maxCachedRooms) {
           cacheRef.current.data = uniqueRooms.slice(0, maxCachedRooms);
-          console.warn(`⚠️ تم تحديد الغرف المحفوظة إلى ${maxCachedRooms} غرفة`);
-        }
+          }
 
         setRooms(cacheRef.current.data);
         setLastUpdate(new Date());

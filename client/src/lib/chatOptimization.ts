@@ -265,8 +265,7 @@ export function usePerformanceOptimization() {
       const renderTime = now - lastRenderTime.current;
       if (renderTime > 100) {
         // إذا كان الرسم يستغرق أكثر من 100ms
-        console.warn(`رسم بطيء: ${renderTime.toFixed(2)}ms`);
-      }
+        }
     }
 
     lastRenderTime.current = now;
@@ -328,7 +327,6 @@ export class NotificationManager {
 
       return true;
     } catch (error) {
-      console.warn('خطأ في إظهار الإشعار:', error);
       return false;
     }
   }

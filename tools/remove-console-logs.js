@@ -23,6 +23,8 @@ const CONSOLE_PATTERNS = [
   /console\.log\([^;]*\);?\s*\n?/g,
   /console\.debug\([^;]*\);?\s*\n?/g,
   /console\.info\([^;]*\);?\s*\n?/g,
+  /console\.warn\([^;]*\);?\s*\n?/g,
+  // ملاحظة: نحتفظ بـ console.error لمعالجة الأخطاء
 ];
 
 // الملفات التي نتجاهلها

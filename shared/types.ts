@@ -99,7 +99,18 @@ export interface WebSocketMessage {
     | 'unban'
     | 'reactionUpdated'
     | 'mute'
-    | 'unmute';
+    | 'unmute'
+    | 'profileEffectChanged'
+    | 'user_background_updated'
+    | 'messageDeleted'
+    | 'roomMessages'
+    | 'roomJoined'
+    | 'userJoinedRoom'
+    | 'userLeftRoom'
+    | 'userDisconnected'
+    | 'userConnected'
+    | 'friendRequestReceived'
+    | 'friendAdded';
   userId?: number;
   username?: string;
   content?: string;
@@ -125,6 +136,20 @@ export interface WebSocketMessage {
   messageId?: number;
   counts?: { like: number; dislike: number; heart: number };
   myReaction?: 'like' | 'dislike' | 'heart' | null;
+  // خصائص إضافية
+  profileEffect?: string;
+  color?: string;
+  profileBackgroundColor?: string;
+  isTyping?: boolean;
+  messages?: ChatMessage[];
+  reactorId?: number;
+  action?: string;
+  targetUserId?: number;
+  senderName?: string;
+  senderId?: number;
+  friendName?: string;
+  friendId?: number;
+  moderator?: string;
 }
 
 export interface FriendRequest {

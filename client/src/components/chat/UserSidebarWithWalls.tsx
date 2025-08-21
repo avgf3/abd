@@ -107,7 +107,6 @@ export default function UnifiedSidebar({
     const filtered = users.filter((user) => {
       // فلترة صارمة للمستخدمين الصالحين
       if (!user?.id || !user?.username || !user?.userType) {
-        console.warn('🚫 مستخدم بيانات غير صالحة في القائمة:', user);
         return false;
       }
 

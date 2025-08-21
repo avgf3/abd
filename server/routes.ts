@@ -1461,8 +1461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const USER_LIST_THROTTLE = 5000; // زيادة إلى 5 ثوان لتقليل التحميل (server-enforced)
 
   // socket.on('privateMessage', async (data) => {
-  //   console.warn('[Deprecated] privateMessage handler is disabled. Use DM module events instead.');
-  // });
+  //   // });
 
   // بدء التنظيف الدوري لقاعدة البيانات
   const dbCleanupInterval = databaseCleanup.startPeriodicCleanup(6); // كل 6 ساعات
@@ -1542,8 +1541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .json({ error: 'لا يمكن إرسال طلب صداقة: هذا المستخدم قام بتجاهلك' });
         }
       } catch (e) {
-        console.warn('تحذير: تعذر التحقق من قائمة التجاهل للمستقبل:', e);
-      }
+        }
 
       const request = await friendService.createFriendRequest(senderId, receiverId);
       // إرسال إشعار عبر WebSocket
@@ -1610,8 +1608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .json({ error: 'لا يمكن إرسال طلب صداقة: هذا المستخدم قام بتجاهلك' });
         }
       } catch (e) {
-        console.warn('تحذير: تعذر التحقق من قائمة التجاهل للمستخدم المستهدف:', e);
-      }
+        }
 
       const request = await friendService.createFriendRequest(senderId, targetUser.id);
 
@@ -2890,8 +2887,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (cleanContent) {
         const sanitizedContent = sanitizeInput(cleanContent);
         if (sanitizedContent !== cleanContent) {
-          console.warn('⚠️ تم تنظيف محتوى منشور من:', user.username);
-        }
+          }
       }
 
       // إعداد رابط الصورة (مع دعم Render عبر base64)
@@ -3093,7 +3089,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await fsp.unlink(imagePath);
           }
         } catch (fileError) {
-          console.warn('⚠️ فشل في حذف الصورة:', fileError);
           // لا نوقف العملية، فقط نسجل التحذير
         }
       }

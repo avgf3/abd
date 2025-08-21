@@ -180,8 +180,7 @@ class RoomMessageService {
           };
           messages.push(roomMessage);
         } catch (err) {
-          console.warn(`تعذر معالجة الرسالة ${msg.id}:`, err);
-        }
+          }
       }
 
       // إضافة الرسائل للذاكرة المؤقتة (إذا كان offset = 0)
@@ -318,8 +317,7 @@ class RoomMessageService {
           };
           messages.push(roomMessage);
         } catch (err) {
-          console.warn(`تعذر معالجة نتيجة البحث ${msg.id}:`, err);
-        }
+          }
       }
 
       return {
@@ -424,8 +422,7 @@ class RoomMessageService {
       // إدارة عدد الغرف المحفوظة
       this.manageCacheSize();
     } catch (error) {
-      console.warn(`تعذر إضافة الرسالة للذاكرة المؤقتة للغرفة ${roomId}:`, error);
-    }
+      }
   }
 
   /**
@@ -436,8 +433,7 @@ class RoomMessageService {
       this.messageCache.set(roomId, [...messages]);
       this.manageCacheSize();
     } catch (error) {
-      console.warn(`تعذر تحديث الذاكرة المؤقتة للغرفة ${roomId}:`, error);
-    }
+      }
   }
 
   /**
@@ -453,8 +449,7 @@ class RoomMessageService {
         }
       }
     } catch (error) {
-      console.warn(`تعذر إزالة الرسالة من الذاكرة المؤقتة للغرفة ${roomId}:`, error);
-    }
+      }
   }
 
   /**

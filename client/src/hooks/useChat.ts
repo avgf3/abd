@@ -16,7 +16,7 @@ const playNotificationSound = () => {
     audio.volume = 0.3;
     audio.play().catch(() => {
       try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
         const oscillator = audioContext.createOscillator();
         const gain = audioContext.createGain();
 
@@ -291,17 +291,17 @@ export const useChat = () => {
   const loadingRooms = useRef<Set<string>>(new Set());
 
   // Broadcast handlers registry
-  const broadcastHandlers = useRef<Set<(data: any) => void>>(new Set());
+  const broadcastHandlers = useRef<Set<(data: WebSocketMessage) => void>>(new Set());
 
   // WebRTC signaling handlers registries
-  const webrtcOfferHandlers = useRef<Set<(data: any) => void>>(new Set());
-  const webrtcAnswerHandlers = useRef<Set<(data: any) => void>>(new Set());
-  const webrtcIceHandlers = useRef<Set<(data: any) => void>>(new Set());
+  const webrtcOfferHandlers = useRef<Set<(data: WebSocketMessage) => void>>(new Set());
+  const webrtcAnswerHandlers = useRef<Set<(data: WebSocketMessage) => void>>(new Set());
+  const webrtcIceHandlers = useRef<Set<(data: WebSocketMessage) => void>>(new Set());
 
   // Notification states
-  const [levelUpNotification, setLevelUpNotification] = useState<any>(null);
-  const [achievementNotification, setAchievementNotification] = useState<any>(null);
-  const [dailyBonusNotification, setDailyBonusNotification] = useState<any>(null);
+  const [levelUpNotification, setLevelUpNotification] = useState<{ level: number; points: number } | null>(null);
+  const [achievementNotification, setAchievementNotification] = useState<{ title: string; description: string } | null>(null);
+  const [dailyBonusNotification, setDailyBonusNotification] = useState<{ points: number; streak: number } | null>(null);
 
   // Refs to avoid stale closures in socket listeners
   const currentUserRef = useRef<ChatUser | null>(null);
@@ -424,13 +424,13 @@ export const useChat = () => {
     };
 
     // ✅ معالج واحد للرسائل - حذف التضارب
-    socketInstance.on('message', (data: any) => {
+    socketInstance.on('message', (data: WebSocketMessage) => {
       try {
         const envelope = data.envelope || data;
 
         // تحديث تأثير البروفايل فقط عند وصول بث profileEffectChanged
         if (envelope.type === 'profileEffectChanged') {
-          const { userId, profileEffect, user } = envelope as any;
+          const { userId, profileEffect, user } = envelope;
           const targetId = userId || user?.id;
           if (targetId) {
             if (currentUserRef.current?.id === targetId) {
@@ -808,7 +808,6 @@ export const useChat = () => {
 
           case 'error':
           case 'warning': {
-            console.warn('⚠️ خطأ من السيرفر:', envelope.message);
             break;
           }
 
@@ -908,8 +907,7 @@ export const useChat = () => {
         try {
           h(payload);
         } catch (e) {
-          console.warn('webrtc offer handler error', e);
-        }
+          }
       });
     });
     socketInstance.on('webrtc-answer', (payload: any) => {
@@ -917,8 +915,7 @@ export const useChat = () => {
         try {
           h(payload);
         } catch (e) {
-          console.warn('webrtc answer handler error', e);
-        }
+          }
       });
     });
     socketInstance.on('webrtc-ice-candidate', (payload: any) => {
@@ -926,8 +923,7 @@ export const useChat = () => {
         try {
           h(payload);
         } catch (e) {
-          console.warn('webrtc ice handler error', e);
-        }
+          }
       });
     });
 
@@ -1111,8 +1107,7 @@ export const useChat = () => {
             : [];
         ids.forEach((id) => dispatch({ type: 'IGNORE_USER', payload: id }));
       } catch (e) {
-        console.warn('تعذر جلب قائمة المتجاهلين:', e);
-      }
+        }
     };
     fetchIgnored();
   }, [state.currentUser?.id]);
@@ -1151,8 +1146,7 @@ export const useChat = () => {
           })
         );
       } catch (e) {
-        console.warn('تعذر الجلب المسبق لمحادثات الخاص:', e);
-      }
+        }
     };
     prefetch();
   }, [state.currentUser?.id]);
@@ -1212,7 +1206,6 @@ export const useChat = () => {
 
         // معالج فشل إعادة الاتصال النهائي
         s.on('reconnect_failed', () => {
-          console.warn('⚠️ فشل في إعادة الاتصال بعد عدة محاولات');
           dispatch({
             type: 'SET_CONNECTION_ERROR',
             payload: 'فقدان الاتصال. يرجى إعادة تحميل الصفحة.',
@@ -1272,7 +1265,6 @@ export const useChat = () => {
 
       const trimmed = typeof content === 'string' ? content.trim() : '';
       if (!trimmed) {
-        console.warn('⚠️ محتوى الرسالة فارغ');
         return;
       }
 

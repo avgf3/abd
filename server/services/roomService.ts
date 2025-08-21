@@ -175,8 +175,7 @@ class RoomService {
           try {
             fs.unlinkSync(imagePath);
           } catch (err) {
-            console.warn(`⚠️ تعذر حذف صورة الغرفة: ${err}`);
-          }
+            }
         }
       }
 

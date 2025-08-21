@@ -106,13 +106,11 @@ export async function blockDevice(
   blockedBy: number
 ): Promise<void> {
   // This functionality needs to be implemented in databaseService
-  console.warn('blockDevice not implemented in databaseService');
-}
+  }
 
 export async function isDeviceBlocked(ipAddress: string, deviceId: string): Promise<boolean> {
   try {
     // This functionality needs to be implemented in databaseService
-    console.warn('isDeviceBlocked not implemented in databaseService');
     return false;
   } catch (error) {
     console.error('Error checking device block:', error);

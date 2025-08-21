@@ -24,7 +24,10 @@ export const playMentionSound = () => {
     // تشغيل الصوت لمدة 300ms
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.3);
-  } catch (error) {}
+  } catch (error) {
+    // فشل تشغيل صوت التنبيه - لا نريد أن يؤثر هذا على تجربة المستخدم
+    console.error('Failed to play mention sound:', error);
+  }
 };
 
 // البحث عن المناشين في النص
