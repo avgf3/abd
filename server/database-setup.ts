@@ -10,7 +10,6 @@ import {
   levelSettings,
   rooms,
 } from '../shared/schema';
-import * as sqliteSchema from '../shared/sqlite-schema';
 
 import { db, dbType, initializeDatabase as initDB } from './database-adapter';
 
@@ -56,37 +55,6 @@ export async function createDefaultOwner(): Promise<void> {
             lastSeen: new Date(),
           })
           .onConflictDoNothing();
-      } else {
-      }
-    } else if (dbType === 'sqlite') {
-      // البحث عن مالك موجود في SQLite
-      const existingOwner = await (db as any)
-        .select()
-        .from(sqliteSchema.users)
-        .where(sql`user_type = 'owner'`)
-        .limit(1);
-
-      if (existingOwner.length === 0) {
-        const hashedPassword = await bcrypt.hash('admin123', 12);
-
-        await (db as any).insert(sqliteSchema.users).values({
-          username: 'Owner',
-          password: hashedPassword,
-          userType: 'owner',
-          role: 'owner',
-          profileBackgroundColor: '#FFD700',
-          usernameColor: '#FFD700',
-          profileEffect: 'golden',
-          points: 50000,
-          level: 10,
-          totalPoints: 50000,
-          levelProgress: 100,
-          status: 'مالك الموقع',
-          bio: 'مالك الموقع - المشرف العام',
-          joinDate: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          lastSeen: new Date().toISOString(),
-        });
       } else {
       }
     }
@@ -157,20 +125,6 @@ export async function createDefaultUsers(): Promise<void> {
               lastSeen: new Date(),
             });
           }
-        } else if (dbType === 'sqlite') {
-          const existing = await (db as any)
-            .select()
-            .from(sqliteSchema.users)
-            .where(sql`username = ${user.username}`)
-            .limit(1);
-          if (existing.length === 0) {
-            await (db as any).insert(sqliteSchema.users).values({
-              ...user,
-              joinDate: new Date().toISOString(),
-              createdAt: new Date().toISOString(),
-              lastSeen: new Date().toISOString(),
-            });
-          }
         }
       } catch (error: any) {
         if (!error.message?.includes('UNIQUE') && !error.message?.includes('unique')) {
@@ -209,14 +163,6 @@ export async function createDefaultLevelSettings(): Promise<void> {
             .values({
               ...levelSetting,
               createdAt: new Date(),
-            })
-            .onConflictDoNothing();
-        } else if (dbType === 'sqlite') {
-          await (db as any)
-            .insert(sqliteSchema.levelSettings)
-            .values({
-              ...levelSetting,
-              createdAt: new Date().toISOString(),
             })
             .onConflictDoNothing();
         }
@@ -297,25 +243,6 @@ export async function createDefaultRooms(): Promise<void> {
                 createdAt: new Date(),
               })
               .onConflictDoNothing();
-          }
-        } else if (dbType === 'sqlite') {
-          const existing = await (db as any)
-            .select()
-            .from(sqliteSchema.rooms)
-            .where(sql`name = ${room.name}`)
-            .limit(1);
-          if (existing.length === 0) {
-            await (db as any).insert(sqliteSchema.rooms).values({
-              name: room.name,
-              description: room.description,
-              type: room.type,
-              ownerId: 1,
-              maxUsers: room.maxUsers,
-              isPrivate: room.isPrivate,
-              password: null,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            });
           }
         }
       } catch (error: any) {

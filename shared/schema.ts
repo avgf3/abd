@@ -43,7 +43,7 @@ export const users = pgTable('users', {
   isBlocked: boolean('is_blocked').default(false),
   ipAddress: varchar('ip_address', { length: 45 }),
   deviceId: varchar('device_id', { length: 100 }),
-  ignoredUsers: text('ignored_users').default('[]'), // قائمة المستخدمين المتجاهلين - JSON string للتوافق مع SQLite
+  ignoredUsers: text('ignored_users').default('[]'), // قائمة المستخدمين المتجاهلين - JSON string
   usernameColor: text('username_color').default('#FFFFFF'), // لون اسم المستخدم
   profileEffect: text('profile_effect').default('none'), // تأثير البروفايل
   points: integer('points').default(0), // نقاط المستخدم الحالية

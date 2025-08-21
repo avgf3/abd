@@ -50,12 +50,18 @@ export async function apiRequest<T = any>(
 
   const requestHeaders: Record<string, string> = { ...headers };
   try {
-    const existing = localStorage.getItem('deviceId');
-    const deviceId = existing || 'web-' + Math.random().toString(36).slice(2);
-    if (!existing) localStorage.setItem('deviceId', deviceId);
-    requestHeaders['x-device-id'] = deviceId;
+    // استخدام النظام المركزي لإدارة deviceId
+    const { getDeviceHeaders } = await import('../utils/deviceManager');
+    Object.assign(requestHeaders, getDeviceHeaders());
   } catch {
-    // ignore
+    // fallback في حالة فشل التحميل
+    try {
+      const { getDeviceId } = await import('../utils/settingsManager');
+      requestHeaders['x-device-id'] = getDeviceId();
+    } catch {
+      // fallback نهائي
+      requestHeaders['x-device-id'] = 'web-fallback-' + Date.now();
+    }
   }
   let requestBody: any = undefined;
 

@@ -16,7 +16,7 @@ export function formatDateForDB(
     return date;
   }
 
-  // SQLite يحتاج string format
+  // تحويل إلى string format للتوافق
   return date.toISOString();
 }
 

@@ -196,7 +196,7 @@ export async function joinRoom(userId: number, roomId: number | string): Promise
       }
       return true;
     }
-    // No SQLite fallback in production
+    // No fallback in production
     return true;
   } catch (error) {
     console.error('Error joinRoom:', error);
