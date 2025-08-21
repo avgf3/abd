@@ -68,7 +68,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
 
       // تحديث الصورة مباشرة في الواجهة مع timestamp لتجنب الكاش
       if (onBannerUpdate && result.bannerUrl) {
-        onBannerUpdate(result.bannerUrl + '?t=' + Date.now());
+        onBannerUpdate(result.bannerUrl);
       }
       setPreview(null);
       toast({
@@ -172,7 +172,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       <input
         ref={cameraInputRef}
         type="file"
-        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
+        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
         capture="user"
         onChange={handleCameraCapture}
         className="hidden"
@@ -181,7 +181,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
+        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
         onChange={handleFileUpload}
         className="hidden"
       />

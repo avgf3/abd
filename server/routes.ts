@@ -83,8 +83,7 @@ const createMulterConfig = (
         'image/png',
         'image/gif',
         'image/webp',
-        'image/bmp',
-        'image/tiff',
+        // Note: intentionally excluding SVG for safety
       ];
 
       if (allowedMimes.includes(file.mimetype)) {
@@ -92,7 +91,7 @@ const createMulterConfig = (
       } else {
         cb(
           new Error(
-            `نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`
+            `نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP`
           )
         );
       }
@@ -225,13 +224,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const avatarsDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'avatars');
         await fsp.mkdir(avatarsDir, { recursive: true });
         const inputBuffer = await fsp.readFile(req.file.path);
-        let webpBuffer = inputBuffer;
+        // enforce real image decoding; reject invalid images
+        let webpBuffer: Buffer;
         try {
           webpBuffer = await (sharp as any)(inputBuffer)
+            .rotate()
             .resize(256, 256, { fit: 'cover' })
             .webp({ quality: 80 })
             .toBuffer();
-        } catch {}
+        } catch (e) {
+          try { await fsp.unlink(req.file.path); } catch {}
+          return res.status(400).json({ error: 'ملف صورة غير صالح أو تالف' });
+        }
         const hash = (await import('crypto'))
           .createHash('md5')
           .update(webpBuffer)
@@ -346,13 +350,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const bannersDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'banners');
         await fsp.mkdir(bannersDir, { recursive: true });
         const inputBuffer = await fsp.readFile(req.file.path);
-        let webpBuffer = inputBuffer;
+        let webpBuffer: Buffer;
         try {
           webpBuffer = await (sharp as any)(inputBuffer)
+            .rotate()
             .resize(1200, 400, { fit: 'cover' })
             .webp({ quality: 80 })
             .toBuffer();
-        } catch {}
+        } catch (e) {
+          try { await fsp.unlink(req.file.path); } catch {}
+          return res.status(400).json({ error: 'ملف صورة البانر غير صالح أو تالف' });
+        }
         const bannerTargetPath = path.join(bannersDir, `${userId}.webp`);
         await fsp.writeFile(bannerTargetPath, webpBuffer);
 
@@ -361,6 +369,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await fsp.unlink(req.file.path);
         } catch {}
 
+        // compute deterministic content hash for cache-busting
+        const hash = (await import('crypto'))
+          .createHash('md5')
+          .update(webpBuffer)
+          .digest('hex')
+          .slice(0, 12);
         const bannerUrl = `/uploads/banners/${userId}.webp`;
         const updatedUser = await storage.updateUser(userId, { profileBanner: bannerUrl });
 
@@ -384,8 +398,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({
           success: true,
           message: 'تم رفع صورة البانر بنجاح',
-          bannerUrl: `${bannerUrl}?v=${Date.now()}`,
+          bannerUrl: `${bannerUrl}?v=${hash}`,
           filename: `${userId}.webp`,
+          bannerHash: hash,
           user: buildUserBroadcastPayload(updatedUser),
         });
       } catch (error) {
@@ -1382,45 +1397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Profile picture upload (members only)
-  app.post('/api/users/:id/profile-image', protect.ownership, async (req, res) => {
-    try {
-      const userId = parseInt(req.params.id);
-      const { imageData } = req.body;
-
-      if (!imageData) {
-        return res.status(400).json({ error: 'صورة مطلوبة' });
-      }
-
-      // Check if user is a member
-      const existingUser = await storage.getUser(userId);
-      if (!existingUser) {
-        return res.status(404).json({ error: 'المستخدم غير موجود' });
-      }
-
-      // Allow members and owners to upload profile pictures (not guests)
-      if (existingUser.userType === 'guest') {
-        return res.status(403).json({
-          error: 'رفع الصور الشخصية متاح للأعضاء فقط',
-          userType: existingUser.userType,
-          userId: userId,
-        });
-      }
-
-      const user = await storage.updateUser(userId, { profileImage: imageData });
-      if (!user) {
-        return res.status(500).json({ error: 'فشل في تحديث الصورة' });
-      }
-
-      // بث موجه للمستخدم + بث خفيف للجميع
-      emitUserUpdatedToUser(userId, user);
-      emitUserUpdatedToAll(user);
-
-      res.json({ user: buildUserBroadcastPayload(user), message: 'تم تحديث الصورة الشخصية بنجاح' });
-    } catch (error) {
-      res.status(500).json({ error: 'خطأ في الخادم' });
-    }
-  });
+  // Legacy base64 profile-image endpoint removed in favor of /api/upload/profile-image
 
   // Update username color
   app.post('/api/users/:userId/color', protect.ownership, async (req, res) => {
