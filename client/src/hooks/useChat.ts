@@ -8,6 +8,7 @@ import { getSocket, saveSession, clearSession } from '@/lib/socket';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import type { Notification } from '@/types/chat';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
+import type { WebSocketMessage } from '../../../shared/types';
 
 // Audio notification function
 const playNotificationSound = () => {

@@ -144,12 +144,13 @@ export interface WebSocketMessage {
   messages?: ChatMessage[];
   reactorId?: number;
   action?: string;
-  targetUserId?: number;
   senderName?: string;
   senderId?: number;
   friendName?: string;
   friendId?: number;
   moderator?: string;
+  // غلاف اختياري لبعض البنى التي ترسل { envelope: ... }
+  envelope?: any;
 }
 
 export interface FriendRequest {
