@@ -63,14 +63,13 @@ export class DatabaseCleanup {
     try {
       if (!db || !getDatabaseStatus().connected) return 0;
       // حذف المستخدمين الضيوف القدامى (معرف أكبر من 1000 وغير متصلين لأكثر من 24 ساعة)
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
+      // استخدم تعبير زمني من Postgres لتجنب تمرير كائن Date مباشرة
       const deletedUsers = await db
         .delete(users)
         .where(
           sql`${users.id} >= 1000 
               AND ${users.isOnline} = false 
-              AND (${users.lastSeen} IS NULL OR ${users.lastSeen} < ${oneDayAgo})`
+              AND (${users.lastSeen} IS NULL OR ${users.lastSeen} < now() - interval '24 hours')`
         )
         .returning({ id: users.id });
 
