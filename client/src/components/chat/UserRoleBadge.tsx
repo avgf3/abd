@@ -11,9 +11,9 @@ interface UserRoleBadgeProps {
 /**
  * نظام الشعارات الموحد للموقع
  *
- * المالك (owner): تاج من client/public/svgs/crown.svg
- * المشرف العام (admin): ⭐
- * المراقب (moderator): 🛡️
+ * المالك (owner): تاج ذهبي من client/public/svgs/crown.svg
+ * المشرف العام (admin): نجمة ذهبية من client/public/svgs/star.svg
+ * المراقب (moderator): درع أزرق من client/public/svgs/shield.svg
  * العضو (ذكر) مستوى 1–10: سهم أزرق client/public/svgs/blue_arrow.svg
  * العضو (أنثى) مستوى 1–10: ميدالية وردية client/public/svgs/pink_medal.svg
  * العضو مستوى 11–20: ألماسة بيضاء client/public/svgs/white.svg
@@ -25,11 +25,11 @@ interface UserRoleBadgeProps {
 export function getUserRoleIcon(userType: string): string {
   switch (userType) {
     case 'owner':
-      return '👑';
+      return '👑'; // يستخدم SVG في getUserLevelIcon
     case 'admin':
-      return '⭐';
+      return '⭐'; // يستخدم SVG في getUserLevelIcon
     case 'moderator':
-      return '🛡️';
+      return '🛡️'; // يستخدم SVG في getUserLevelIcon
     default:
       return '';
   }
@@ -57,13 +57,35 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
       />
     );
   }
-  // admin: نجمة
+  // admin: نجمة SVG
   if (user.userType === 'admin') {
-    return <span style={{ fontSize: size, display: 'inline' }}>⭐</span>;
+    return (
+      <img
+        src="/svgs/star.svg"
+        alt="admin"
+        style={{ width: size, height: size, display: 'inline' }}
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.style.display = 'none';
+          target.outerHTML = '<span style="font-size: ' + size + 'px; display: inline;">⭐</span>';
+        }}
+      />
+    );
   }
-  // moderator: درع
+  // moderator: درع SVG أزرق
   if (user.userType === 'moderator') {
-    return <span style={{ fontSize: size, display: 'inline' }}>🛡️</span>;
+    return (
+      <img
+        src="/svgs/shield.svg"
+        alt="moderator"
+        style={{ width: size, height: size, display: 'inline' }}
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.style.display = 'none';
+          target.outerHTML = '<span style="font-size: ' + size + 'px; display: inline;">🛡️</span>';
+        }}
+      />
+    );
   }
 
   // للأعضاء - نفحص المستوى والجنس
