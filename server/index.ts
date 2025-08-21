@@ -21,6 +21,11 @@ try {
   (app as any).set('trust proxy', true);
 } catch {}
 
+// Hide Express signature
+try {
+  app.disable('x-powered-by');
+} catch {}
+
 // Setup security first
 setupSecurity(app);
 app.use(compression({ threshold: 1024 }));
