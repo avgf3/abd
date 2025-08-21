@@ -150,8 +150,7 @@ router.post('/', upload.single('image'), async (req, res) => {
       try {
         fs.unlinkSync(req.file.path);
       } catch (deleteError) {
-        console.warn('تعذر حذف الملف المرفوع:', deleteError);
-      }
+        }
     }
 
     res.status(400).json({ error: error.message || 'خطأ في إنشاء الغرفة' });

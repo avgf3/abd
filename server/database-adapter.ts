@@ -193,7 +193,6 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
     !databaseUrl ||
     (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://'))
   ) {
-    console.warn('⚠️ DATABASE_URL غير محدد أو غير صحيح');
     return { db: null, type: 'disabled' };
   }
 

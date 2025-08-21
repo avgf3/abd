@@ -221,13 +221,6 @@ export class AdvancedSecurityManager {
 
   // تنبيه المديرين
   private alertAdministrators(event: SecurityEvent) {
-    console.warn('🚨 حدث أمان حرج:', {
-      type: event.type,
-      severity: event.severity,
-      timestamp: event.timestamp,
-      details: event.details,
-    });
-
     // يمكن إضافة إرسال إيميل أو إشعار push هنا
   }
 

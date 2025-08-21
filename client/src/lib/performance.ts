@@ -77,7 +77,6 @@ export class PerformanceManager {
 
         // تنبيه إذا تجاوز الاستخدام 150MB
         if (usage.used > 150) {
-          console.warn(`⚠️ استخدام ذاكرة عالي: ${usage.used}MB`);
           this.triggerMemoryCleanup();
         }
 
@@ -146,7 +145,6 @@ export class PerformanceManager {
 
       return latency;
     } catch (error) {
-      console.warn('فشل في قياس زمن الاستجابة:', error);
       return -1;
     }
   }

@@ -120,7 +120,6 @@ export default function BroadcastRoomInterface({
   // 🚀 جلب معلومات البث مع منع التكرار
   const fetchBroadcastInfo = useCallback(async () => {
     if (!room?.id) {
-      console.warn('⚠️ لا يمكن جلب معلومات البث - معرف الغرفة غير صحيح');
       return;
     }
 
@@ -137,7 +136,6 @@ export default function BroadcastRoomInterface({
       if (data?.info) {
         setBroadcastInfo(normalizeBroadcastInfo(data.info));
       } else {
-        console.warn('⚠️ لم يتم استلام معلومات غرفة البث صحيحة من الخادم');
         setBroadcastInfo({ hostId: null, speakers: [], micQueue: [] });
       }
     } catch (error: any) {
@@ -487,7 +485,6 @@ export default function BroadcastRoomInterface({
           pc.ontrack = (event) => {
             // Play the first audio track
             if (!audioRef.current) {
-              console.warn('⚠️ Audio element not ready');
               return;
             }
             const [remoteStream] = event.streams;
@@ -566,7 +563,9 @@ export default function BroadcastRoomInterface({
         if (pc) {
           await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
         }
-      } catch (err) {}
+      } catch (err) {
+        console.error('Failed to set remote description:', err);
+      }
     };
     const handleIce = async (payload: any) => {
       try {

@@ -19,8 +19,7 @@ class ProductionLogger {
 
   // تسجيل التحذيرات (الإنتاج والتطوير)
   warn(message: string, ...args: any[]): void {
-    console.warn(`⚠️ [WARN] ${message}`, ...args);
-  }
+    }
 
   // تسجيل الأخطاء (الإنتاج والتطوير)
   error(message: string, ...args: any[]): void {
@@ -29,8 +28,7 @@ class ProductionLogger {
 
   // تسجيل الأحداث الأمنية (الإنتاج والتطوير)
   security(message: string, ...args: any[]): void {
-    console.warn(`🚨 [SECURITY] ${message}`, ...args);
-  }
+    }
 
   // تسجيل العمليات الناجحة (فقط في التطوير)
   success(message: string, ...args: any[]): void {

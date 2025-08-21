@@ -158,8 +158,7 @@ async function startServer() {
 
     if (systemInitialized) {
     } else {
-      console.warn('⚠️ تم بدء الخادم مع تحذيرات في تهيئة النظام');
-    }
+      }
 
     // Register routes and get the server
     const server = await registerRoutes(app);
