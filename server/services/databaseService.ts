@@ -538,6 +538,79 @@ export class DatabaseService {
     }
   }
 
+  // ===== VIP management =====
+  async getVipUsers(limit: number = 50): Promise<User[]> {
+    if (!this.isConnected()) return [];
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any).execute(
+          sql`SELECT u.id, u.username, u.user_type as "userType", u.role, u.profile_image as "profileImage", u.is_online as "isOnline", u.last_seen as "lastSeen", u.points, u.level, u.total_points as "totalPoints"
+              FROM users u
+              JOIN vip_users v ON v.user_id = u.id
+              ORDER BY u.total_points DESC NULLS LAST, u.username ASC
+              LIMIT ${Math.min(100, Math.max(1, limit))}`
+        );
+        return Array.isArray(rows) ? (rows as any) : [];
+      }
+      return [];
+    } catch (error) {
+      console.error('Error getVipUsers:', error);
+      return [];
+    }
+  }
+
+  async addVipUser(targetUserId: number, createdBy?: number): Promise<boolean> {
+    if (!this.isConnected() || !targetUserId) return false;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any).execute(
+          sql`INSERT INTO vip_users (user_id, created_by) VALUES (${targetUserId}, ${createdBy || null})
+              ON CONFLICT (user_id) DO NOTHING`
+        );
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error addVipUser:', error);
+      return false;
+    }
+  }
+
+  async removeVipUser(targetUserId: number): Promise<boolean> {
+    if (!this.isConnected() || !targetUserId) return false;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any).execute(sql`DELETE FROM vip_users WHERE user_id = ${targetUserId}`);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error removeVipUser:', error);
+      return false;
+    }
+  }
+
+  // اقتراح مرشحين لإضافة VIP: فقط owners/admins
+  async getVipCandidates(limit: number = 100): Promise<User[]> {
+    if (!this.isConnected()) return [];
+    try {
+      if (this.type === 'postgresql') {
+        return await (this.db as any)
+          .select()
+          .from(pgSchema.users)
+          .where(
+            or(eq(pgSchema.users.userType, 'owner' as any), eq(pgSchema.users.userType, 'admin' as any))
+          )
+          .orderBy(asc(pgSchema.users.userType), asc(pgSchema.users.username as any))
+          .limit(Math.min(200, Math.max(1, limit)));
+      }
+      return [];
+    } catch (error) {
+      console.error('Error getVipCandidates:', error);
+      return [];
+    }
+  }
+
   // Message operations
   async createMessage(messageData: Partial<Message>): Promise<Message | null> {
     if (!this.isConnected()) return null;

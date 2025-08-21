@@ -1113,11 +1113,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       <RichestModal
         isOpen={showRichest}
         onClose={() => setShowRichest(false)}
-        users={Array.from({ length: 10 }).map((_, i) => ({
-          id: i + 1,
-          name: '',
-          avatar: '/default_avatar.svg',
-        }))}
+        currentUser={chat.currentUser}
       />
 
       {showIgnoredUsers && (
