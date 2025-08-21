@@ -2132,6 +2132,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: 'غير مسموح' });
       }
       await storage.setUserHiddenStatus(userId, true);
+      // بث تحديث خفيف للمستخدم لجميع الغرف ليتم تحديث القوائم فوراً
+      try {
+        const updated = await storage.getUser(userId);
+        if (updated) {
+          updateConnectedUserCache(updated);
+          emitToUserRooms(userId, { type: 'userUpdated', user: buildUserBroadcastPayload(updated) });
+        }
+      } catch {}
       res.json({ success: true, isHidden: true, message: 'تم إخفاؤك من قائمة المتصلين' });
     } catch (error) {
       res.status(500).json({ error: 'خطأ في الخادم' });
@@ -2147,6 +2155,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: 'غير مسموح' });
       }
       await storage.setUserHiddenStatus(userId, false);
+      try {
+        const updated = await storage.getUser(userId);
+        if (updated) {
+          updateConnectedUserCache(updated);
+          emitToUserRooms(userId, { type: 'userUpdated', user: buildUserBroadcastPayload(updated) });
+        }
+      } catch {}
       res.json({ success: true, isHidden: false, message: 'تم إظهارك في قائمة المتصلين' });
     } catch (error) {
       res.status(500).json({ error: 'خطأ في الخادم' });

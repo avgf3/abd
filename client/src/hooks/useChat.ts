@@ -492,14 +492,19 @@ export const useChat = () => {
           const updatedUser: ChatUser | undefined = (envelope as any).user;
           if (updatedUser && updatedUser.id) {
             const isCurrent = currentUserRef.current?.id === updatedUser.id;
-            // دمج فوري للحقول المتاحة
-            if (isCurrent && currentUserRef.current) {
-              dispatch({
-                type: 'SET_CURRENT_USER',
-                payload: { ...currentUserRef.current, ...updatedUser } as any,
-              });
+            // إذا كان المستخدم مخفياً، لا نُظهره في القائمة إلا إذا كان هو المستخدم الحالي
+            if ((updatedUser as any).isHidden && !isCurrent) {
+              dispatch({ type: 'REMOVE_ONLINE_USER', payload: updatedUser.id });
+            } else {
+              // دمج فوري للحقول المتاحة
+              if (isCurrent && currentUserRef.current) {
+                dispatch({
+                  type: 'SET_CURRENT_USER',
+                  payload: { ...currentUserRef.current, ...updatedUser } as any,
+                });
+              }
+              dispatch({ type: 'UPSERT_ONLINE_USER', payload: updatedUser });
             }
-            dispatch({ type: 'UPSERT_ONLINE_USER', payload: updatedUser });
 
             // إذا كان البث خفيفاً (بدون profileImage/base64) والمستخدم الحالي يحتاج الصورة، اجلب نسخة كاملة مرة واحدة
             if (
@@ -656,9 +661,13 @@ export const useChat = () => {
             if (Array.isArray(envelope.users)) {
               const rawUsers = envelope.users as ChatUser[];
               // فلترة صارمة + إزالة المتجاهلين + إزالة التكرارات
-              const filtered = rawUsers.filter(
-                (u) => u && u.id && u.username && u.userType && !ignoredUsersRef.current.has(u.id)
-              );
+              const filtered = rawUsers.filter((u) => {
+                if (!(u && u.id && u.username && u.userType)) return false;
+                if (ignoredUsersRef.current.has(u.id)) return false;
+                // استبعاد المخفيين باستثناء المستخدم الحالي
+                if ((u as any).isHidden && u.id !== currentUserRef.current?.id) return false;
+                return true;
+              });
               const dedup = new Map<number, ChatUser>();
               for (const u of filtered) {
                 if (!dedup.has(u.id)) dedup.set(u.id, u);
@@ -694,6 +703,10 @@ export const useChat = () => {
             const joinedId = (envelope as any).userId;
             const username = (envelope as any).username || (joinedId ? `User#${joinedId}` : 'User');
             if (joinedId) {
+              // لا تُدرج المستخدمين المخفيين كمكان حامل
+              if ((envelope as any).user?.isHidden) {
+                break;
+              }
               const placeholder = {
                 id: joinedId,
                 username,
@@ -706,6 +719,10 @@ export const useChat = () => {
                 apiRequest(`/api/users/${joinedId}?t=${Date.now()}`)
                   .then((data: any) => {
                     if (data && data.id) {
+                      if ((data as any).isHidden && data.id !== currentUserRef.current?.id) {
+                        dispatch({ type: 'REMOVE_ONLINE_USER', payload: data.id });
+                        return;
+                      }
                       dispatch({
                         type: 'UPSERT_ONLINE_USER',
                         payload: { ...(data as any), isOnline: true } as ChatUser,
@@ -740,7 +757,11 @@ export const useChat = () => {
           case 'userConnected': {
             const u = (envelope as any).user;
             if (u && u.id) {
-              dispatch({ type: 'UPSERT_ONLINE_USER', payload: u });
+              if ((u as any).isHidden && u.id !== currentUserRef.current?.id) {
+                // لا تُظهر المستخدم المخفي
+              } else {
+                dispatch({ type: 'UPSERT_ONLINE_USER', payload: u });
+              }
             }
             break;
           }
