@@ -11,17 +11,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useGrabScroll } from '@/hooks/useGrabScroll';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
-import {
-  getFinalUsernameColor,
-  getUserListItemStyles,
-  getUserListItemClasses,
-} from '@/utils/themeUtils';
+import { getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
+import { parseCountryEmoji } from '@/utils/countryUtils';
 import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
 
 // Using shared types for Friend and FriendRequest
@@ -193,11 +191,7 @@ export default function FriendsTabPanel({
     return <UserRoleBadge user={user} size={20} />;
   }, []);
 
-  const getCountryEmoji = useCallback((country?: string): string | null => {
-    if (!country) return null;
-    const token = country.trim().split(' ')[0];
-    return token || null;
-  }, []);
+  const getCountryEmoji = useCallback((country?: string): string | null => parseCountryEmoji(country), []);
 
   const renderCountryFlag = useCallback(
     (user: ChatUser) => {
@@ -311,190 +305,183 @@ export default function FriendsTabPanel({
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200">
-        <Button
-          variant={activeTab === 'friends' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-none py-3 ${
-            activeTab === 'friends' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-          }`}
-          onClick={() => setActiveTab('friends')}
-        >
-          <Users className="w-4 h-4 ml-2" />
-          الأصدقاء ({friendsWithStatus.length})
-        </Button>
-        <Button
-          variant={activeTab === 'requests' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-none py-3 relative ${
-            activeTab === 'requests' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-          }`}
-          onClick={() => setActiveTab('requests')}
-        >
-          <UserPlus className="w-4 h-4 ml-2" />
-          الطلبات
-          {incomingRequests.length > 0 && (
-            <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs min-w-[20px] h-5">
-              {incomingRequests.length}
-            </Badge>
-          )}
-        </Button>
-      </div>
-
-      {/* Content */}
-      <div
-        ref={friendsScrollRef}
-        onScroll={() => {
-          const el = friendsScrollRef.current;
-          if (!el) return;
-          const threshold = 80;
-          const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
-          setIsAtBottomFriends(atBottom);
-        }}
-        className="relative flex-1 overflow-y-auto p-4 pb-24 cursor-grab"
-      >
-        {/* Friends Tab */}
-        {activeTab === 'friends' && (
-          <div className="space-y-3">
-            {/* Search */}
-            <div className="relative">
-              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                🔍
-              </span>
-              <Input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="البحث عن صديق..."
-                className="w-full pl-4 pr-10 py-2 rounded-lg bg-background border-input placeholder:text-muted-foreground text-foreground"
-              />
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+        <TabsList className="grid grid-cols-2 w-full rounded-none border-b border-gray-200">
+          <TabsTrigger value="friends" className="py-3">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span>الأصدقاء ({friendsWithStatus.length})</span>
             </div>
-
-            {/* Friends List */}
-            {isLoadingFriends || isFetchingFriends ? (
-              <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
-            ) : filteredFriends.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <div className="mb-3">👥</div>
-                <p className="text-sm">
-                  {searchTerm ? 'لا توجد نتائج للبحث' : 'لا توجد أصدقاء بعد'}
-                </p>
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
-                  >
-                    مسح البحث
-                  </button>
-                )}
+          </TabsTrigger>
+          <TabsTrigger value="requests" className="py-3 relative">
+            <div className="flex items-center gap-2">
+              <UserPlus className="w-4 h-4" />
+              <span>الطلبات</span>
+            </div>
+            {incomingRequests.length > 0 && (
+              <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs min-w-[20px] h-5">
+                {incomingRequests.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+      
+        {/* Content */}
+        <TabsContent value="friends" asChild>
+          <div
+            ref={friendsScrollRef}
+            onScroll={() => {
+              const el = friendsScrollRef.current;
+              if (!el) return;
+              const threshold = 80;
+              const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+              setIsAtBottomFriends(atBottom);
+            }}
+            className="relative flex-1 overflow-y-auto p-4 pb-24 cursor-grab"
+          >
+            {/* Friends Tab */}
+            <div className="space-y-3">
+              {/* Search */}
+              <div className="relative">
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                  🔍
+                </span>
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="البحث عن صديق..."
+                  className="w-full pl-4 pr-10 py-2 rounded-lg bg-background border-input placeholder:text-muted-foreground text-foreground"
+                />
               </div>
-            ) : (
-              <ul className="space-y-0">
-                {filteredFriends.map((friend) => (
-                  <li key={friend.id} className="relative -mx-4">
-                    <SimpleUserMenu
-                      targetUser={friend}
-                      currentUser={currentUser}
-                      showModerationActions={isModerator}
+
+              {/* Friends List */}
+              {isLoadingFriends || isFetchingFriends ? (
+                <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
+              ) : filteredFriends.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="mb-3">👥</div>
+                  <p className="text-sm">
+                    {searchTerm ? 'لا توجد نتائج للبحث' : 'لا توجد أصدقاء بعد'}
+                  </p>
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
                     >
-                      <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(friend) || 'bg-white hover:bg-gray-50'}`}
-                        style={getUserListItemStyles(friend)}
-                        onClick={(e) => onStartPrivateChat(friend)}
+                      مسح البحث
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <ul className="space-y-0">
+                  {filteredFriends.map((friend) => (
+                    <li key={friend.id} className="relative -mx-4">
+                      <SimpleUserMenu
+                        targetUser={friend}
+                        currentUser={currentUser}
+                        showModerationActions={isModerator}
                       >
-                        <ProfileImage
-                          user={friend}
-                          size="small"
-                          className=""
-                          hideRoleBadgeOverlay={true}
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="text-base font-medium transition-all duration-300"
-                                style={{
-                                  color: getFinalUsernameColor(friend),
-                                  textShadow: getFinalUsernameColor(friend)
-                                    ? `0 0 10px ${getFinalUsernameColor(friend)}40`
-                                    : 'none',
-                                  filter: getFinalUsernameColor(friend)
-                                    ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
-                                    : 'none',
-                                }}
-                                title={friend.username}
-                              >
-                                {friend.username}
-                              </span>
-                              {/* إشارة المكتوم */}
-                              {friend.isMuted && (
-                                <span className="text-yellow-400 text-xs">🔇</span>
-                              )}
-                              {friend.unreadCount && friend.unreadCount > 0 && (
-                                <Badge variant="destructive" className="text-xs">
-                                  {friend.unreadCount}
-                                </Badge>
+                        <div
+                          className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(friend) || 'bg-white hover:bg-gray-50'}`}
+                          style={getUserListItemStyles(friend)}
+                          onClick={(e) => onStartPrivateChat(friend)}
+                        >
+                          <ProfileImage
+                            user={friend}
+                            size="small"
+                            className=""
+                            hideRoleBadgeOverlay={true}
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="text-base font-medium transition-all duration-300"
+                                  style={{
+                                    color: getFinalUsernameColor(friend),
+                                    textShadow: getFinalUsernameColor(friend)
+                                      ? `0 0 10px ${getFinalUsernameColor(friend)}40`
+                                      : 'none',
+                                    filter: getFinalUsernameColor(friend)
+                                      ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
+                                      : 'none',
+                                  }}
+                                  title={friend.username}
+                                >
+                                  {friend.username}
+                                </span>
+                                {/* إشارة المكتوم */}
+                                {friend.isMuted && (
+                                  <span className="text-yellow-400 text-xs">🔇</span>
+                                )}
+                                {friend.unreadCount && friend.unreadCount > 0 && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    {friend.unreadCount}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {renderUserBadge(friend)}
+                                {renderCountryFlag(friend)}
+                              </div>
+                            </div>
+                            {/* حالة الاتصال */}
+                            <div className="text-xs text-gray-500 mt-1">
+                              {friend.isOnline ? (
+                                <span className="flex items-center gap-1">
+                                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                  {friend.status === 'away' ? 'بعيد' : 'متصل الآن'}
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                                  غير متصل
+                                </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-1">
-                              {renderUserBadge(friend)}
-                              {renderCountryFlag(friend)}
-                            </div>
-                          </div>
-                          {/* حالة الاتصال */}
-                          <div className="text-xs text-gray-500 mt-1">
-                            {friend.isOnline ? (
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                {friend.status === 'away' ? 'بعيد' : 'متصل الآن'}
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                                غير متصل
-                              </span>
+                            {friend.lastMessage && (
+                              <div className="text-xs text-gray-500 truncate">
+                                {friend.lastMessage}
+                              </div>
                             )}
                           </div>
-                          {friend.lastMessage && (
-                            <div className="text-xs text-gray-500 truncate">
-                              {friend.lastMessage}
-                            </div>
-                          )}
+                          {/* Actions */}
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onStartPrivateChat(friend);
+                              }}
+                              className="bg-blue-500 hover:bg-blue-600"
+                              title="محادثة خاصة"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveFriend(friend.id);
+                              }}
+                              className="text-red-500 hover:bg-red-50"
+                              title="حذف الصديق"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                        {/* Actions */}
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onStartPrivateChat(friend);
-                            }}
-                            className="bg-blue-500 hover:bg-blue-600"
-                            title="محادثة خاصة"
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveFriend(friend.id);
-                            }}
-                            className="text-red-500 hover:bg-red-50"
-                            title="حذف الصديق"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </SimpleUserMenu>
-                  </li>
-                ))}
-              </ul>
-            )}
+                      </SimpleUserMenu>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
-        )}
+        </TabsContent>
 
-        {/* Friend Requests Tab */}
-        {activeTab === 'requests' && (
+        <TabsContent value="requests" asChild>
           <div className="space-y-4">
             {/* Incoming Requests */}
             <Card>
@@ -641,8 +628,9 @@ export default function FriendsTabPanel({
               </CardContent>
             </Card>
           </div>
-        )}
-      </div>
+        </TabsContent>
+      </Tabs>
+
 
       {!isAtBottomFriends && (
         <div className="absolute bottom-4 right-4 z-10">

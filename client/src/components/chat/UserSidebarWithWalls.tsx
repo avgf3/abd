@@ -33,13 +33,8 @@ import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
-import {
-  getUserEffectStyles,
-  getUserEffectClasses,
-  getFinalUsernameColor,
-  getUserListItemStyles,
-  getUserListItemClasses,
-} from '@/utils/themeUtils';
+import { getUserEffectStyles, getUserEffectClasses, getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
+import { parseCountryEmoji } from '@/utils/countryUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
 
 interface UnifiedSidebarProps {
@@ -166,11 +161,7 @@ export default function UnifiedSidebar({
     return <UserRoleBadge user={user} size={20} />;
   }, []);
 
-  const getCountryEmoji = useCallback((country?: string): string | null => {
-    if (!country) return null;
-    const token = country.trim().split(' ')[0];
-    return token || null;
-  }, []);
+  const getCountryEmoji = useCallback((country?: string): string | null => parseCountryEmoji(country), []);
 
   const renderCountryFlag = useCallback(
     (user: ChatUser) => {
