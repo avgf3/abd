@@ -1,29 +1,78 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import VipAvatar from './VipAvatar';
-
-interface RichUserItem {
-  id: string | number;
-  name: string; // placeholder; user will edit names externally
-  avatar: string;
-}
+import { apiRequest } from '@/lib/queryClient';
+import type { ChatUser } from '@/types/chat';
+import { getImageSrc } from '@/utils/imageUtils';
 
 interface RichestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  users: RichUserItem[]; // expected up to 10
+  currentUser?: ChatUser | null;
 }
 
-export default function RichestModal({ isOpen, onClose, users }: RichestModalProps) {
+export default function RichestModal({ isOpen, onClose, currentUser }: RichestModalProps) {
+  const [vipUsers, setVipUsers] = useState<ChatUser[]>([]);
+  const [candidates, setCandidates] = useState<ChatUser[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const canManage = useMemo(
+    () => !!currentUser && ['owner', 'admin'].includes(currentUser.userType),
+    [currentUser]
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let ignore = false;
+    const fetchVip = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip`);
+        if (!ignore) setVipUsers(res.users || []);
+        if (canManage) {
+          try {
+            const cand = await apiRequest<{ users: ChatUser[] }>(`/api/vip/candidates`);
+            if (!ignore) setCandidates(cand.users || []);
+          } catch {}
+        }
+      } catch (e: any) {
+        if (!ignore) setError(e?.message || 'فشل في جلب قائمة VIP');
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+    fetchVip();
+    return () => {
+      ignore = true;
+    };
+  }, [isOpen, canManage]);
+
+  const handleAddVip = async (userId: number) => {
+    try {
+      await apiRequest(`/api/vip`, { method: 'POST', body: { targetUserId: userId } });
+      const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip`);
+      setVipUsers(res.users || []);
+    } catch (e) {}
+  };
+
+  const handleRemoveVip = async (userId: number) => {
+    try {
+      await apiRequest(`/api/vip/${userId}`, { method: 'DELETE' });
+      setVipUsers((prev) => prev.filter((u) => u.id !== userId));
+    } catch (e) {}
+  };
+
   if (!isOpen) return null;
 
-  const topTen = users.slice(0, 10);
+  const topTen = vipUsers.slice(0, 10);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 modal-overlay" onClick={onClose} />
 
-      <div className="relative w-[90vw] max-w-[16rem] sm:max-w-[16rem] bg-white rounded-xl overflow-hidden shadow-2xl animate-fade-in">
+      <div className="relative w-[90vw] max-w-[20rem] sm:max-w-[22rem] bg-white rounded-xl overflow-hidden shadow-2xl animate-fade-in">
         <div className="bg-gradient-to-r from-red-600 via-pink-600 to-purple-600 p-3 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src="/svgs/crown.svg" alt="crown" className="w-6 h-6" />
@@ -35,6 +84,12 @@ export default function RichestModal({ isOpen, onClose, users }: RichestModalPro
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto bg-gradient-to-b from-zinc-900 via-zinc-800 to-black p-2">
+          {loading && (
+            <div className="text-center text-white/80 py-4">جاري التحميل...</div>
+          )}
+          {error && (
+            <div className="text-center text-red-300 py-2 text-sm">{error}</div>
+          )}
           {topTen.map((u, idx) => (
             <div
               key={u.id}
@@ -44,15 +99,52 @@ export default function RichestModal({ isOpen, onClose, users }: RichestModalPro
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-black/40 border border-white/20 text-yellow-300 font-bold">
                   {idx + 1}
                 </div>
-                <VipAvatar src={u.avatar} alt={u.name} size={54} frame={(idx + 1) as any} />
+                <VipAvatar
+                  src={getImageSrc(u.profileImage || '/default_avatar.svg')}
+                  alt={u.username}
+                  size={54}
+                  frame={(idx + 1) as any}
+                />
                 <div className="flex-1">
-                  <div className="font-bold leading-snug">{u.name}</div>
+                  <div className="font-bold leading-snug">{u.username}</div>
                   <div className="text-xs opacity-70">VIP</div>
                 </div>
-                <img src="/svgs/crown.svg" alt="crown" className="w-6 h-6 opacity-90" />
+                {canManage ? (
+                  <button
+                    className="text-white/90 hover:text-white text-sm px-2 py-1 rounded bg-red-600/80 hover:bg-red-600"
+                    onClick={() => handleRemoveVip(u.id)}
+                  >
+                    إزالة
+                  </button>
+                ) : (
+                  <img src="/svgs/crown.svg" alt="crown" className="w-6 h-6 opacity-90" />
+                )}
               </div>
             </div>
           ))}
+          {canManage && candidates.length > 0 && (
+            <div className="mt-3 rounded-xl p-2 bg-zinc-800/80 text-white">
+              <div className="text-xs opacity-80 mb-2">مرشحون (Owners/Admins)</div>
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                {candidates.map((c) => (
+                  <div key={c.id} className="flex items-center gap-2">
+                    <img
+                      src={getImageSrc(c.profileImage || '/default_avatar.svg')}
+                      alt={c.username}
+                      className="w-7 h-7 rounded-full"
+                    />
+                    <div className="flex-1 text-sm">{c.username}</div>
+                    <button
+                      className="text-xs px-2 py-1 rounded bg-emerald-600/80 hover:bg-emerald-600"
+                      onClick={() => handleAddVip(c.id)}
+                    >
+                      إضافة VIP
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

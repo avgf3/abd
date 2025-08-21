@@ -1220,6 +1220,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // VIP endpoints
+  app.get('/api/vip', async (req, res) => {
+    try {
+      const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 50));
+      const users = await databaseService.getVipUsers(limit);
+      const safe = users.map((u) => buildUserBroadcastPayload(u));
+      res.json({ users: safe });
+    } catch (error) {
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // لائحة المرشحين (الأونر/الإدمن فقط) لإضافة VIP
+  app.get('/api/vip/candidates', protect.admin, async (req, res) => {
+    try {
+      const list = await databaseService.getVipCandidates(200);
+      const safe = list.map((u) => buildUserBroadcastPayload(u));
+      res.json({ users: safe });
+    } catch (error) {
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // إضافة مستخدم إلى VIP (للأونر/الإدمن)
+  app.post('/api/vip', protect.admin, async (req, res) => {
+    try {
+      const { targetUserId } = req.body;
+      const adminId = (req as any).user?.id as number;
+      if (!targetUserId) return res.status(400).json({ error: 'targetUserId مطلوب' });
+      const success = await databaseService.addVipUser(parseInt(String(targetUserId)), adminId);
+      if (!success) return res.status(500).json({ error: 'تعذر الإضافة إلى VIP' });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // إزالة مستخدم من VIP (للأونر/الإدمن)
+  app.delete('/api/vip/:userId', protect.admin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (!userId) return res.status(400).json({ error: 'userId غير صالح' });
+      const success = await databaseService.removeVipUser(userId);
+      if (!success) return res.status(500).json({ error: 'تعذر الحذف من VIP' });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
   // جلب المستخدمين المحظورين
   app.get('/api/users/blocked', protect.admin, async (req, res) => {
     try {
