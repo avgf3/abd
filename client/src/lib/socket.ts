@@ -1,5 +1,6 @@
 import type { Socket } from 'socket.io-client';
 import { io } from 'socket.io-client';
+import { getDeviceId } from '../utils/settingsManager';
 
 // Simple session storage helpers
 const STORAGE_KEY = 'chat_session';
@@ -118,7 +119,6 @@ export function getSocket(): Socket {
   if (socketInstance) return socketInstance;
 
   // استخدام النظام المركزي لإدارة deviceId
-  const { getDeviceId } = await import('../utils/settingsManager');
   const deviceId = getDeviceId();
 
   socketInstance = io(getServerUrl(), {
