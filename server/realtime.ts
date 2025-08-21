@@ -65,7 +65,10 @@ async function buildOnlineUsersForRoom(roomId: string) {
     }
   }
   const { sanitizeUsersArray } = await import('./utils/data-sanitizer');
-  const sanitized = sanitizeUsersArray(Array.from(userMap.values()));
+  // تنظيف + استبعاد المخفيين من القائمة العامة للغرفة
+  const sanitized = sanitizeUsersArray(Array.from(userMap.values())).filter(
+    (u: any) => !(u && (u as any).isHidden)
+  );
   return sanitized.map((u: any) => {
     try {
       const versionTag = (u as any).avatarHash || (u as any).avatarVersion;
