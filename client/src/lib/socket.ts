@@ -117,17 +117,9 @@ export function getSocket(): Socket {
 
   if (socketInstance) return socketInstance;
 
-  const deviceId = (() => {
-    try {
-      const existing = localStorage.getItem('deviceId');
-      if (existing) return existing;
-      const id = 'web-' + Math.random().toString(36).slice(2);
-      localStorage.setItem('deviceId', id);
-      return id;
-    } catch {
-      return 'web-unknown';
-    }
-  })();
+  // استخدام النظام المركزي لإدارة deviceId
+  const { getDeviceId } = await import('../utils/settingsManager');
+  const deviceId = getDeviceId();
 
   socketInstance = io(getServerUrl(), {
     path: '/socket.io',
