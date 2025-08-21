@@ -37,15 +37,27 @@ app.use(
     try {
       await fsp.stat(fullPath);
     } catch {
-      console.error('❌ الملف غير موجود:', fullPath);
+      // الملف غير موجود - سنستخدم الصورة الافتراضية بصمت
 
-      // Return default avatar for profile images
-      if (req.path.includes('profile-') || req.path.includes('/profiles/')) {
+      // Return default avatar for any missing image
+      if (req.path.includes('/avatars/') || 
+          req.path.includes('/profiles/') || 
+          req.path.includes('/banners/') ||
+          req.path.includes('profile-')) {
         const defaultAvatarPath = path.join(process.cwd(), 'client/public/default_avatar.svg');
         try {
           await fsp.stat(defaultAvatarPath);
           return res.sendFile(defaultAvatarPath);
-        } catch {}
+        } catch {
+          // إذا لم توجد الصورة الافتراضية، أنشئها
+          const defaultSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#3c0d0d"/>
+  <circle cx="50" cy="35" r="20" fill="#666"/>
+  <ellipse cx="50" cy="80" rx="35" ry="25" fill="#666"/>
+</svg>`;
+          await fsp.writeFile(defaultAvatarPath, defaultSVG);
+          return res.sendFile(defaultAvatarPath);
+        }
       }
 
       return res.status(404).json({ error: 'File not found' });
