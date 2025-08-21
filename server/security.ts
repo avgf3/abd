@@ -172,6 +172,11 @@ export function setupSecurity(app: Express): void {
 
   // Security headers
   app.use((req: Request, res: Response, next: NextFunction) => {
+    // Remove Express signature
+    try {
+      res.removeHeader('X-Powered-By');
+    } catch {}
+
     // Prevent clickjacking
     res.setHeader('X-Frame-Options', 'DENY');
 
