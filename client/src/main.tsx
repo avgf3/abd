@@ -7,10 +7,10 @@ import { getSocket } from '@/lib/socket';
 import { applyThemeById } from '@/utils/applyTheme';
 
 // تطبيق الثيم المحفوظ عند بدء التطبيق
-try {
-  const saved = localStorage.getItem('selectedTheme');
-  if (saved) applyThemeById(saved, false);
-} catch {}
+import('./utils/settingsManager').then(({ settingsManager }) => {
+  settingsManager.loadSavedTheme();
+  settingsManager.loadSavedLanguage();
+}).catch(console.warn);
 
 // جلب ثيم الموقع العام وتطبيقه ثم الاستماع لتحديثاته
 (async () => {
