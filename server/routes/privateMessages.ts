@@ -345,59 +345,8 @@ router.get('/conversations/:userId', protect.auth, async (req, res) => {
         return res.status(500).json({ error: 'خطأ في جلب المحادثات' });
       }
     }
-
-    // SQLite أو وضع بدون قاعدة بيانات: اجلب آخر الكثير من الرسائل ثم كوّن المحادثات في الذاكرة
-    try {
-      const sql = `
-        SELECT id, sender_id, receiver_id, content, message_type, is_private, timestamp
-        FROM messages
-        WHERE is_private = 1 AND (sender_id = ${userId} OR receiver_id = ${userId})
-        ORDER BY timestamp DESC
-        LIMIT ${Math.max(limit * 10, 200)};
-      `;
-      const result: any = await (db as any)?.execute?.(sql);
-      const rows: ConversationItem[] = (result?.rows ?? result ?? []) as any;
-
-      const seenPairs = new Set<string>();
-      const picked: ConversationItem[] = [];
-      for (const r of rows) {
-        const a = Math.min(r.sender_id, r.receiver_id);
-        const b = Math.max(r.sender_id, r.receiver_id);
-        const key = `${a}-${b}`;
-        if (!seenPairs.has(key)) {
-          seenPairs.add(key);
-          picked.push(r);
-          if (picked.length >= limit) break;
-        }
-      }
-
-      const otherUserIds = Array.from(
-        new Set(
-          picked.map((r) => (r.sender_id === userId ? r.receiver_id : r.sender_id)).filter(Boolean)
-        )
-      );
-      const users = await storage.getUsersByIds(otherUserIds as number[]);
-      const userMap = new Map<number, any>((users || []).map((u: any) => [u.id, u]));
-
-      const conversations = picked.map((r) => {
-        const otherUserId = r.sender_id === userId ? r.receiver_id : r.sender_id;
-        return {
-          otherUserId,
-          otherUser: userMap.get(otherUserId) || null,
-          lastMessage: {
-            id: r.id,
-            content: r.content,
-            messageType: r.message_type,
-            timestamp: r.timestamp,
-          },
-        };
-      });
-
-      return res.json({ success: true, conversations });
-    } catch (e) {
-      console.error('خطأ في جلب المحادثات (SQLite):', e);
-      return res.status(500).json({ error: 'خطأ في جلب المحادثات' });
-    }
+    // إذا لم تكن قاعدة البيانات متصلة أو ليست PostgreSQL
+    return res.status(503).json({ error: 'قاعدة البيانات غير متاحة' });
   } catch (error: any) {
     console.error('خطأ غير متوقع في /conversations:', error);
     return res.status(500).json({ error: error?.message || 'خطأ في الخادم' });
