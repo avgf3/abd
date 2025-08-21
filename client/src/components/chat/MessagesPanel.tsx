@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 
 import type { PrivateConversation } from '../../../../shared/types';
 
@@ -34,7 +35,7 @@ export default function MessagesPanel({
 }: MessagesPanelProps) {
   const [search, setSearch] = useState('');
   // جلب قائمة المحادثات الدائمة من الخادم
-  const { data: conversationsData, isLoading, refetch, isRefetching } = useQuery<{
+  const { data: conversationsData, isLoading, refetch, isRefetching, error } = useQuery<{
     success: boolean;
     conversations: Array<{
       otherUserId: number;
@@ -48,45 +49,61 @@ export default function MessagesPanel({
       return await apiRequest(`/api/private-messages/conversations/${currentUser.id}?limit=50`);
     },
     enabled: !!currentUser?.id && isOpen,
-    // إجبار الجلب عند فتح التبويب لتفادي الاعتماد على كاش قديم
-    staleTime: 0,
+    // تحسين: استخدام cache مع تحديث ذكي
+    staleTime: 30 * 1000, // البيانات صالحة لمدة 30 ثانية
     gcTime: 5 * 60 * 1000,
-    refetchOnMount: true,
+    refetchOnMount: 'always', // جلب عند الفتح فقط إذا كانت البيانات قديمة
     refetchOnWindowFocus: false,
   });
 
-  // جلب فوري عند فتح النافذة لضمان رؤية أحدث المحادثات دون انتظار
-  useEffect(() => {
-    if (isOpen) {
-      try { refetch(); } catch {}
-    }
-  }, [isOpen, refetch]);
+  // تحسين: إزالة التحميل المزدوج - React Query يتعامل مع هذا تلقائياً
+  // useEffect تم إزالته لمنع التحميل المزدوج
 
   // تحديث فوري للقائمة عند وصول/إرسال رسالة خاصة
   useEffect(() => {
-    const handler = () => {
-      try { refetch(); } catch {}
+    const handler = async () => {
+      try {
+        await refetch();
+      } catch (error) {
+        console.error('خطأ في تحديث المحادثات:', error);
+        toast.error('فشل تحديث قائمة المحادثات');
+      }
     };
     window.addEventListener('privateMessageReceived', handler);
     return () => window.removeEventListener('privateMessageReceived', handler);
   }, [refetch]);
 
-  const conversations = useMemo(() => {
-    // دمج المحادثات القادمة من الخادم مع الذاكرة المحلية، مع تفضيل أحدث رسالة فعلياً
-    const map = new Map<number, { user: ChatUser; lastMessage: { content: string; timestamp: string; isImage?: boolean }; unreadCount: number }>();
+  // معالج تحديث المحادثات مع إشعار
+  const handleRefresh = useCallback(async () => {
+    try {
+      await refetch();
+      toast.success('تم تحديث المحادثات');
+    } catch (error) {
+      console.error('خطأ في التحديث:', error);
+      toast.error('فشل تحديث المحادثات. حاول مرة أخرى.');
+    }
+  }, [refetch]);
 
-    // مصدر الخادم
+  // عرض رسالة خطأ إذا فشل الجلب
+  useEffect(() => {
+    if (error) {
+      toast.error('حدث خطأ في جلب المحادثات');
+      console.error('Query error:', error);
+    }
+  }, [error]);
+
+  // تحسين: فصل معالجة البيانات لتحسين الأداء
+  const serverConversations = useMemo(() => {
+    const map = new Map<number, { user: ChatUser; lastMessage: { content: string; timestamp: string; isImage?: boolean }; unreadCount: number }>();
+    
+    // معالجة بيانات الخادم فقط
     for (const c of conversationsData?.conversations || []) {
       const user = c.otherUser || onlineUsers.find((u) => u.id === c.otherUserId) || null;
       if (!user) continue;
       const lastMessageTs = String(c.lastMessage.timestamp);
       const lastOpened = currentUser?.id ? getPmLastOpened(currentUser.id, user.id) : 0;
-      const localMessages = (privateConversations && privateConversations[user.id]) || [];
-      const unreadCount = localMessages.length
-        ? localMessages.filter((m) => new Date(m.timestamp).getTime() > lastOpened && m.senderId === user.id).length
-        : new Date(lastMessageTs).getTime() > lastOpened
-          ? 1
-          : 0;
+      const unreadCount = new Date(lastMessageTs).getTime() > lastOpened ? 1 : 0;
+      
       map.set(user.id, {
         user,
         lastMessage: {
@@ -97,43 +114,71 @@ export default function MessagesPanel({
         unreadCount,
       });
     }
+    
+    return map;
+  }, [conversationsData, onlineUsers, currentUser?.id]);
 
-    // دمج/إضافة أحدث رسالة محلية لضمان ظهورها فوراً
+  const localConversations = useMemo(() => {
+    const map = new Map<number, { user: ChatUser; lastMessage: { content: string; timestamp: string; isImage?: boolean }; unreadCount: number }>();
+    
+    // معالجة البيانات المحلية فقط
     const localUserIds = Object.keys(privateConversations || {}).map((k) => parseInt(k, 10));
     for (const uid of localUserIds) {
       if (!Number.isFinite(uid)) continue;
-      const user =
-        map.get(uid)?.user ||
-        onlineUsers.find((u) => u.id === uid) ||
+      
+      const user = onlineUsers.find((u) => u.id === uid) ||
         ({ id: uid, username: `مستخدم #${uid}`, userType: 'member', role: 'member', isOnline: false } as unknown as ChatUser);
       const conv = privateConversations[uid] || [];
       const latest = conv[conv.length - 1];
       if (!latest) continue;
+      
       const lastOpened = currentUser?.id ? getPmLastOpened(currentUser.id, uid) : 0;
       const unreadCount = conv.filter((m) => new Date(m.timestamp).getTime() > lastOpened && m.senderId === uid).length;
+      
+      map.set(uid, {
+        user,
+        lastMessage: {
+          content: latest.content,
+          timestamp: String(latest.timestamp),
+          isImage: latest.messageType === 'image',
+        },
+        unreadCount,
+      });
+    }
+    
+    return map;
+  }, [privateConversations, onlineUsers, currentUser?.id]);
 
-      const existing = map.get(uid);
-      const existingTs = existing ? new Date(existing.lastMessage.timestamp).getTime() : -1;
-      const latestTs = new Date(String(latest.timestamp)).getTime();
-
-      if (!existing || latestTs > existingTs) {
-        map.set(uid, {
-          user,
-          lastMessage: {
-            content: latest.content,
-            timestamp: String(latest.timestamp),
-            isImage: latest.messageType === 'image',
-          },
-          unreadCount,
-        });
-      } else if (existing) {
-        // حدّث عداد غير المقروء حتى إن لم تكن الرسالة أحدث من منظور الطابع الزمني
-        map.set(uid, { ...existing, unreadCount });
+  const conversations = useMemo(() => {
+    // دمج المحادثات من المصدرين
+    const merged = new Map<number, { user: ChatUser; lastMessage: { content: string; timestamp: string; isImage?: boolean }; unreadCount: number }>();
+    
+    // أضف من الخادم أولاً
+    for (const [id, conv] of serverConversations) {
+      merged.set(id, conv);
+    }
+    
+    // ثم أضف/حدث من المحلي
+    for (const [id, localConv] of localConversations) {
+      const existing = merged.get(id);
+      if (!existing) {
+        merged.set(id, localConv);
+      } else {
+        // قارن التوقيت واستخدم الأحدث
+        const existingTs = new Date(existing.lastMessage.timestamp).getTime();
+        const localTs = new Date(localConv.lastMessage.timestamp).getTime();
+        if (localTs > existingTs) {
+          merged.set(id, localConv);
+        } else {
+          // حدث عداد غير المقروء على الأقل
+          merged.set(id, { ...existing, unreadCount: Math.max(existing.unreadCount, localConv.unreadCount) });
+        }
       }
     }
-
-    const items = Array.from(map.values());
-
+    
+    const items = Array.from(merged.values());
+    
+    // تطبيق البحث
     const filtered = search
       ? items.filter(
           (i) =>
@@ -143,7 +188,8 @@ export default function MessagesPanel({
               .includes(search.toLowerCase())
         )
       : items;
-
+    
+    // ترتيب: غير المقروء أولاً، ثم حسب الوقت
     return filtered.sort((a, b) => {
       if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
       if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
@@ -152,7 +198,7 @@ export default function MessagesPanel({
         new Date(a.lastMessage.timestamp).getTime()
       );
     });
-  }, [conversationsData, onlineUsers, privateConversations, currentUser?.id, search]);
+  }, [serverConversations, localConversations, search]);
 
   const formatLastMessage = (content: string) => formatMessagePreview(content, 40);
 
@@ -180,11 +226,12 @@ export default function MessagesPanel({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => refetch()}
+              onClick={handleRefresh}
               className="ml-1"
               title="تحديث"
+              disabled={isRefetching}
             >
-              ⟳
+              {isRefetching ? '⌛' : '⟳'}
             </Button>
           </div>
           <div className="mt-2">
@@ -219,11 +266,16 @@ export default function MessagesPanel({
                         unreadCount > 0 ? 'border-primary' : 'border-accent/30'
                       }`}
                       onClick={() => {
-                        onClose();
-                        if (currentUser?.id) {
-                          try { setPmLastOpened(currentUser.id, user.id); } catch {}
+                        try {
+                          onClose();
+                          if (currentUser?.id) {
+                            setPmLastOpened(currentUser.id, user.id);
+                          }
+                          setTimeout(() => onStartPrivateChat(user), 0);
+                        } catch (error) {
+                          console.error('خطأ في فتح المحادثة:', error);
+                          toast.error('فشل فتح المحادثة');
                         }
-                        setTimeout(() => onStartPrivateChat(user), 0);
                       }}
                     >
                       <div className="flex items-center gap-3">
