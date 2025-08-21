@@ -514,7 +514,14 @@ export const storage: LegacyStorage = {
   },
 
   async setUserOnlineStatus(id: number, isOnline: boolean) {
-    await databaseService.updateUser(id, { isOnline, lastSeen: new Date() });
+    try {
+      const { dbType } = await import('./database-adapter');
+      const now = dbType === 'postgresql' ? new Date() : new Date().toISOString();
+      const updates: any = isOnline ? { isOnline } : { isOnline, lastSeen: now };
+      await databaseService.updateUser(id, updates);
+    } catch (e) {
+      console.error('setUserOnlineStatus error:', e);
+    }
   },
 
   async createMessage(message: any) {
