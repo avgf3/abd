@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import VipAvatar from './VipAvatar';
 import { apiRequest } from '@/lib/queryClient';
+import { getSocket } from '@/lib/socket';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 
@@ -16,6 +17,7 @@ export default function RichestModal({ isOpen, onClose, currentUser }: RichestMo
   const [candidates, setCandidates] = useState<ChatUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
 
   const canManage = useMemo(
     () => !!currentUser && ['owner', 'admin'].includes(currentUser.userType),
@@ -44,24 +46,48 @@ export default function RichestModal({ isOpen, onClose, currentUser }: RichestMo
       }
     };
     fetchVip();
+
+    // Listen to realtime vipUpdated
+    try {
+      const s = getSocket();
+      socketRef.current = s;
+      s.on('message', (payload: any) => {
+        if (payload?.type === 'vipUpdated') {
+          setVipUsers(payload.users || []);
+        }
+      });
+    } catch {}
+
     return () => {
       ignore = true;
+      if (socketRef.current) {
+        try {
+          socketRef.current.off('message');
+        } catch {}
+        socketRef.current = null;
+      }
     };
   }, [isOpen, canManage]);
 
   const handleAddVip = async (userId: number) => {
     try {
+      setError(null);
       await apiRequest(`/api/vip`, { method: 'POST', body: { targetUserId: userId } });
       const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip`);
       setVipUsers(res.users || []);
-    } catch (e) {}
+    } catch (e: any) {
+      setError(e?.message || 'فشل إضافة VIP. تأكد من اتصال قاعدة البيانات.');
+    }
   };
 
   const handleRemoveVip = async (userId: number) => {
     try {
+      setError(null);
       await apiRequest(`/api/vip/${userId}`, { method: 'DELETE' });
       setVipUsers((prev) => prev.filter((u) => u.id !== userId));
-    } catch (e) {}
+    } catch (e: any) {
+      setError(e?.message || 'فشل حذف VIP. تأكد من اتصال قاعدة البيانات.');
+    }
   };
 
   if (!isOpen) return null;
