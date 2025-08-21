@@ -2,187 +2,26 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle as drizzleSQLite } from 'drizzle-orm/better-sqlite3';
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-import { migrate as migrateSQLite } from 'drizzle-orm/better-sqlite3/migrator';
 import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
-import type Database from 'better-sqlite3';
 import type { NeonQueryResultHKT } from 'drizzle-orm/neon-serverless';
 import { migrate as migratePostgres } from 'drizzle-orm/neon-serverless/migrator';
 import type { PgDatabase } from 'drizzle-orm/pg-core';
 
 import * as pgSchema from '../shared/schema';
-import type * as sqliteSchema from '../shared/sqlite-schema';
 
 import fs from 'fs';
 import path from 'path';
 
 // تعريف أنواع قواعد البيانات
 export type PostgreSQLDatabase = PgDatabase<NeonQueryResultHKT, typeof pgSchema>;
-export type SQLiteDatabase = BetterSQLite3Database<typeof sqliteSchema>;
 export type DatabaseType = PostgreSQLDatabase | null;
 
 // واجهة موحدة للعمليات
 export interface DatabaseAdapter {
   db: DatabaseType;
-  type: 'postgresql' | 'sqlite' | 'disabled';
+  type: 'postgresql' | 'disabled';
   close?: () => void;
   migrate?: () => Promise<void>;
-}
-
-// إنشاء محول SQLite
-function createSQLiteAdapter(): DatabaseAdapter {
-  throw new Error('SQLite adapter is disabled in production build');
-}
-
-// إنشاء جداول SQLite
-function createSQLiteTables(sqlite: Database.Database) {
-  try {
-    // إنشاء جدول المستخدمين
-    sqlite.exec(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT,
-        user_type TEXT NOT NULL DEFAULT 'guest',
-        role TEXT NOT NULL DEFAULT 'guest',
-        profile_image TEXT,
-        profile_banner TEXT,
-        profile_background_color TEXT DEFAULT '#3c0d0d',
-        status TEXT,
-        gender TEXT,
-        age INTEGER,
-        country TEXT,
-        relation TEXT,
-        bio TEXT,
-        is_online BOOLEAN DEFAULT FALSE,
-        is_hidden BOOLEAN DEFAULT FALSE,
-        last_seen DATETIME,
-        join_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        is_muted BOOLEAN DEFAULT FALSE,
-        mute_expiry DATETIME,
-        is_banned BOOLEAN DEFAULT FALSE,
-        ban_expiry DATETIME,
-        is_blocked BOOLEAN DEFAULT FALSE,
-        ip_address TEXT,
-        device_id TEXT,
-        ignored_users TEXT DEFAULT '[]',
-        username_color TEXT DEFAULT '#FFFFFF',
-        profile_effect TEXT DEFAULT 'none',
-        points INTEGER DEFAULT 0,
-        level INTEGER DEFAULT 1,
-        total_points INTEGER DEFAULT 0,
-        level_progress INTEGER DEFAULT 0
-      )
-    `);
-
-    // إنشاء جدول الرسائل
-    sqlite.exec(`
-      CREATE TABLE IF NOT EXISTS messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sender_id INTEGER REFERENCES users(id),
-        receiver_id INTEGER REFERENCES users(id),
-        content TEXT NOT NULL,
-        message_type TEXT NOT NULL DEFAULT 'text',
-        is_private BOOLEAN DEFAULT FALSE,
-        room_id TEXT DEFAULT 'general',
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // إنشاء جدول الأصدقاء
-    sqlite.exec(`
-      CREATE TABLE IF NOT EXISTS friends (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER REFERENCES users(id),
-        friend_id INTEGER REFERENCES users(id),
-        status TEXT NOT NULL DEFAULT 'pending',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // إنشاء جدول الإشعارات
-    sqlite.exec(`
-      CREATE TABLE IF NOT EXISTS notifications (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL REFERENCES users(id),
-        type TEXT NOT NULL,
-        title TEXT NOT NULL,
-        message TEXT NOT NULL,
-        is_read BOOLEAN DEFAULT FALSE,
-        data TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // إنشاء جدول الأجهزة المحظورة
-    sqlite.exec(`
-      CREATE TABLE IF NOT EXISTS blocked_devices (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        ip_address TEXT NOT NULL,
-        device_id TEXT NOT NULL,
-        user_id INTEGER NOT NULL,
-        reason TEXT NOT NULL,
-        blocked_at DATETIME NOT NULL,
-        blocked_by INTEGER NOT NULL
-      )
-    `);
-
-    // إنشاء جدول تاريخ النقاط
-    sqlite.exec(`
-      CREATE TABLE IF NOT EXISTS points_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL REFERENCES users(id),
-        points INTEGER NOT NULL,
-        reason TEXT NOT NULL,
-        action TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // إنشاء جدول إعدادات المستويات
-    sqlite.exec(`
-      CREATE TABLE IF NOT EXISTS level_settings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        level INTEGER NOT NULL UNIQUE,
-        required_points INTEGER NOT NULL,
-        title TEXT NOT NULL,
-        color TEXT DEFAULT '#FFFFFF',
-        badge TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // إنشاء جدول الغرف
-    sqlite.exec(`
-      CREATE TABLE IF NOT EXISTS rooms (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        description TEXT,
-        type TEXT NOT NULL DEFAULT 'public',
-        owner_id INTEGER REFERENCES users(id),
-        max_users INTEGER DEFAULT 50,
-        is_private BOOLEAN DEFAULT FALSE,
-        password TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // إنشاء جدول room_users لتتبع عضوية الغرف
-    sqlite.exec(`
-      CREATE TABLE IF NOT EXISTS room_users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL REFERENCES users(id),
-        room_id TEXT NOT NULL,
-        joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(user_id, room_id)
-      )
-    `);
-  } catch (error) {
-    console.error('❌ خطأ في إنشاء جداول SQLite:', error);
-  }
 }
 
 // إنشاء محول PostgreSQL
@@ -410,13 +249,13 @@ function createPostgreSQLAdapter(): DatabaseAdapter {
   }
 }
 
-// إنشاء محول قاعدة البيانات مع fallback
+// إنشاء محول قاعدة البيانات
 export function createDatabaseAdapter(): DatabaseAdapter {
   const pgAdapter = createPostgreSQLAdapter();
   if (pgAdapter.db && pgAdapter.type !== 'disabled') {
     return pgAdapter;
   }
-  // No SQLite fallback
+  // PostgreSQL is required
   console.error('DATABASE_URL is missing or invalid. PostgreSQL is required.');
   return { db: null, type: 'disabled' } as any;
 }
@@ -435,8 +274,6 @@ export async function checkDatabaseHealth(): Promise<boolean> {
 
     if (dbType === 'postgresql') {
       await (db as PostgreSQLDatabase).execute('SELECT 1' as any);
-    } else if (dbType === 'sqlite') {
-      (db as any).exec('SELECT 1');
     }
 
     return true;
@@ -450,8 +287,7 @@ export async function checkDatabaseHealth(): Promise<boolean> {
 export function getDatabaseStatus() {
   return {
     connected: !!db && dbType !== 'disabled',
-    type:
-      dbType === 'disabled' ? 'معطلة' : dbType === 'postgresql' ? 'PostgreSQL/Supabase' : 'SQLite',
+    type: dbType === 'disabled' ? 'معطلة' : 'PostgreSQL/Supabase',
     url: process.env.DATABASE_URL ? '***محددة***' : 'غير محددة',
     environment: process.env.NODE_ENV || 'development',
     dbType: dbType,

@@ -361,7 +361,7 @@ router.get('/conversations/:userId', protect.auth, async (req, res) => {
       }
     }
 
-    // SQLite أو وضع بدون قاعدة بيانات: اجلب آخر الكثير من الرسائل ثم كوّن المحادثات في الذاكرة
+    // وضع بدون قاعدة بيانات: اجلب آخر الكثير من الرسائل ثم كوّن المحادثات في الذاكرة
     try {
       const sql = `
         SELECT id, sender_id, receiver_id, content, message_type, is_private, timestamp
@@ -410,7 +410,7 @@ router.get('/conversations/:userId', protect.auth, async (req, res) => {
 
       return res.json({ success: true, conversations });
     } catch (e) {
-      console.error('خطأ في جلب المحادثات (SQLite):', e);
+      console.error('خطأ في جلب المحادثات:', e);
       return res.status(500).json({ error: 'خطأ في جلب المحادثات' });
     }
   } catch (error: any) {
