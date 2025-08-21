@@ -37,8 +37,8 @@ export function getImageSrc(
     return imageSrc;
   }
 
-  // إذا كانت اسم ملف فقط، أضف المسار
-  return `/uploads/profiles/${imageSrc}`;
+  // إذا كانت اسم ملف فقط، أضف المسار (ولكن الافتراضي لأفاتار الآن avatars)
+  return `/uploads/avatars/${imageSrc}`;
 }
 
 /**
@@ -65,8 +65,11 @@ export function getBannerImageSrc(
   fallback: string = 'https://i.imgur.com/rJKrUfs.jpeg'
 ): string {
   const src = getImageSrc(bannerSrc, fallback);
-
-  // إرجاع الصورة كما هي - base64 أو مسار عادي
+  // أضف timestamp خفيف إذا كانت من uploads لتجنب الكاش الطويل
+  if (src.startsWith('/uploads/') && !src.includes('?t=')) {
+    const sep = src.includes('?') ? '&' : '?';
+    return `${src}${sep}t=${Math.floor(Date.now() / (1000 * 60 * 5))}`;
+  }
   return src;
 }
 

@@ -11,7 +11,7 @@ export const UPLOAD_CONFIG = {
 
   // الأنواع المسموحة
   ALLOWED_TYPES: {
-    IMAGES: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
+    IMAGES: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
     VIDEOS: ['video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/webm'],
   },
 
@@ -55,7 +55,7 @@ export function validateFile(
   if (isImage && !UPLOAD_CONFIG.ALLOWED_TYPES.IMAGES.includes(file.type)) {
     return {
       isValid: false,
-      error: `${UPLOAD_CONFIG.ERROR_MESSAGES.INVALID_TYPE} (المسموح: JPG, PNG, GIF, WebP, SVG)`,
+      error: `${UPLOAD_CONFIG.ERROR_MESSAGES.INVALID_TYPE} (المسموح: JPG, PNG, GIF, WebP)`,
     };
   }
 

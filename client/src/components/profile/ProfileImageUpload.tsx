@@ -214,7 +214,7 @@ export default function ProfileImageUpload({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
+        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
         onChange={handleFileInputChange}
         className="hidden"
       />
@@ -223,7 +223,7 @@ export default function ProfileImageUpload({
       <input
         ref={cameraInputRef}
         type="file"
-        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
+        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
         capture="user"
         onChange={handleCameraCapture}
         className="hidden"

@@ -47,64 +47,13 @@ import { notificationService } from './services/notificationService';
 import { issueAuthToken, getAuthTokenFromRequest, verifyAuthToken } from './utils/auth-token';
 import { detectSexualImage } from './utils/adult-content';
 
-// إعداد multer موحد لرفع الصور
-const createMulterConfig = (
-  destination: string,
-  prefix: string,
-  maxSize: number = 5 * 1024 * 1024
-) => {
-  const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', destination);
+// إعداد multer موحد عبر أداة مركزية
+import { createMulterConfig as createUnifiedMulter } from './utils/upload';
 
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
-      cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const ext = path.extname(file.originalname);
-      cb(null, `${prefix}-${uniqueSuffix}${ext}`);
-    },
-  });
-
-  return multer({
-    storage,
-    limits: {
-      fileSize: maxSize,
-      files: 1,
-    },
-    fileFilter: (req, file, cb) => {
-      const allowedMimes = [
-        'image/jpeg',
-        'image/jpg',
-        'image/png',
-        'image/gif',
-        'image/webp',
-        'image/bmp',
-        'image/tiff',
-      ];
-
-      if (allowedMimes.includes(file.mimetype)) {
-        cb(null, true);
-      } else {
-        cb(
-          new Error(
-            `نوع الملف غير مدعوم: ${file.mimetype}. الأنواع المدعومة: JPG, PNG, GIF, WebP, SVG`
-          )
-        );
-      }
-    },
-  });
-};
-
-// إعداد multer للصور المختلفة
-const upload = createMulterConfig('profiles', 'profile', 5 * 1024 * 1024);
-const wallUpload = createMulterConfig('wall', 'wall', 10 * 1024 * 1024);
-
-const bannerUpload = createMulterConfig('banners', 'banner', 8 * 1024 * 1024);
+// إعداد multer للصور المختلفة (موحد)
+const upload = createUnifiedMulter('profiles', 'profile', 5 * 1024 * 1024);
+const wallUpload = createUnifiedMulter('wall', 'wall', 10 * 1024 * 1024);
+const bannerUpload = createUnifiedMulter('banners', 'banner', 8 * 1024 * 1024);
 
 // Storage initialization - using imported storage instance
 
@@ -1382,42 +1331,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Profile picture upload (members only)
+  // Profile picture upload (legacy base64) -> normalize to WebP avatar with hash/version
   app.post('/api/users/:id/profile-image', protect.ownership, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
-      const { imageData } = req.body;
+      const { imageData } = req.body as any;
 
-      if (!imageData) {
-        return res.status(400).json({ error: 'صورة مطلوبة' });
+      if (!imageData || typeof imageData !== 'string' || !imageData.startsWith('data:')) {
+        return res.status(400).json({ error: "صورة مطلوبة على شكل data URL في الحقل 'imageData'" });
       }
 
-      // Check if user is a member
       const existingUser = await storage.getUser(userId);
       if (!existingUser) {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
-
-      // Allow members and owners to upload profile pictures (not guests)
       if (existingUser.userType === 'guest') {
-        return res.status(403).json({
-          error: 'رفع الصور الشخصية متاح للأعضاء فقط',
-          userType: existingUser.userType,
-          userId: userId,
-        });
+        return res.status(403).json({ error: 'رفع الصور الشخصية متاح للأعضاء فقط' });
       }
 
-      const user = await storage.updateUser(userId, { profileImage: imageData });
-      if (!user) {
-        return res.status(500).json({ error: 'فشل في تحديث الصورة' });
+      // Decode base64 data URL
+      const base64Index = imageData.indexOf('base64,');
+      if (base64Index === -1) {
+        return res.status(400).json({ error: 'صيغة الصورة غير صحيحة' });
+      }
+      const base64 = imageData.slice(base64Index + 'base64,'.length);
+      const inputBuffer = Buffer.from(base64, 'base64');
+
+      // Convert to 256x256 WebP
+      let webpBuffer = inputBuffer;
+      try {
+        webpBuffer = await (sharp as any)(inputBuffer)
+          .resize(256, 256, { fit: 'cover' })
+          .webp({ quality: 80 })
+          .toBuffer();
+      } catch {}
+
+      const { createHash } = await import('crypto');
+      const hash = createHash('md5').update(webpBuffer).digest('hex').slice(0, 12);
+
+      const avatarsDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'avatars');
+      await fsp.mkdir(avatarsDir, { recursive: true });
+      const targetPath = path.join(avatarsDir, `${userId}.webp`);
+      await fsp.writeFile(targetPath, webpBuffer);
+
+      const nextVersion = (existingUser as any).avatarVersion
+        ? Number((existingUser as any).avatarVersion) + 1
+        : 1;
+
+      const updatedUser = await storage.updateUser(userId, {
+        profileImage: `/uploads/avatars/${userId}.webp`,
+        avatarHash: hash,
+        avatarVersion: nextVersion,
+      });
+
+      if (!updatedUser) {
+        return res.status(500).json({ error: 'فشل في تحديث صورة البروفايل في قاعدة البيانات' });
       }
 
-      // بث موجه للمستخدم + بث خفيف للجميع
-      emitUserUpdatedToUser(userId, user);
-      emitUserUpdatedToAll(user);
+      try {
+        updateConnectedUserCache(updatedUser);
+      } catch {}
+      emitUserUpdatedToUser(userId, updatedUser);
+      await emitToUserRooms(userId, {
+        type: 'userUpdated',
+        user: buildUserBroadcastPayload(updatedUser),
+      });
 
-      res.json({ user: buildUserBroadcastPayload(user), message: 'تم تحديث الصورة الشخصية بنجاح' });
+      res.json({
+        success: true,
+        message: 'تم تحديث الصورة الشخصية بنجاح',
+        imageUrl: `${updatedUser.profileImage}?v=${hash}`,
+        filename: `${userId}.webp`,
+        avatarHash: hash,
+        user: buildUserBroadcastPayload(updatedUser),
+      });
     } catch (error) {
+      console.error('❌ خطأ في رفع صورة البروفايل (base64):', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
@@ -3295,7 +3284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // رفع صورة رسالة (خاص/عام) - يحول الصورة إلى base64 لتوافق بيئات الاستضافة
-  const messageImageUpload = createMulterConfig('messages', 'message', 8 * 1024 * 1024);
+  const messageImageUpload = createUnifiedMulter('messages', 'message', 8 * 1024 * 1024);
   app.post('/api/upload/message-image', messageImageUpload.single('image'), async (req, res) => {
     try {
       if (!req.file) {

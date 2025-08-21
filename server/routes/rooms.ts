@@ -8,47 +8,9 @@ import { roomService } from '../services/roomService';
 
 const router = Router();
 
-// إعداد multer لرفع صور الغرف
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'rooms');
-
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, `room-${uniqueSuffix}${ext}`);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
-    files: 1,
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedMimes = [
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/svg+xml',
-    ];
-
-    if (allowedMimes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error(`نوع الملف غير مدعوم: ${file.mimetype}`));
-    }
-  },
-});
+// إعداد multer لرفع صور الغرف (موحد)
+import { createMulterConfig as createUnifiedMulter } from '../utils/upload';
+const upload = createUnifiedMulter('rooms', 'room', 5 * 1024 * 1024);
 
 /**
  * GET /api/rooms
