@@ -60,6 +60,7 @@ import type { UseChatReturn } from '@/hooks/useChat';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
+import { getSocket } from '@/lib/socket';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 
 interface ChatInterfaceProps {
@@ -498,8 +499,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                         : `/api/users/${chat.currentUser.id}/hide-online`;
                       const res = await apiRequest(endpoint, { method: 'POST' });
                       const nowHidden = (res as any)?.isHidden ?? !chat.currentUser.isHidden;
-                      // تحديث محلي بسيط لحالة المستخدم الحالي
-                      (chat.currentUser as any).isHidden = nowHidden;
+                      // تحديث حالة المستخدم الحالي عبر hook وضمان إعادة التصيير
+                      chat.updateCurrentUser?.({ isHidden: nowHidden } as any);
+                      // طلب تحديث فوري لقائمة المتصلين لضمان التزامن
+                      try {
+                        const s = getSocket();
+                        s.emit('requestOnlineUsers');
+                      } catch {}
                     } catch (e) {
                       console.error(e);
                     }
@@ -683,7 +689,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
               activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView((prev) => (prev === 'walls' ? 'hidden' : 'walls'))}
+            onClick={() =>
+              setActiveView((prev) => (isMobile && prev === 'walls' ? 'hidden' : 'walls'))
+            }
             title="الحوائط"
           >
             <svg
@@ -710,7 +718,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
               activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView((prev) => (prev === 'users' ? 'hidden' : 'users'))}
+            onClick={() =>
+              setActiveView((prev) => (isMobile && prev === 'users' ? 'hidden' : 'users'))
+            }
             title="المستخدمون المتصلون"
           >
             <svg
@@ -738,7 +748,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
               activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView((prev) => (prev === 'rooms' ? 'hidden' : 'rooms'))}
+            onClick={() =>
+              setActiveView((prev) => (isMobile && prev === 'rooms' ? 'hidden' : 'rooms'))
+            }
             title="الغرف"
           >
             <svg
@@ -765,7 +777,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
               activeView === 'friends' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
             }`}
-            onClick={() => setActiveView((prev) => (prev === 'friends' ? 'hidden' : 'friends'))}
+            onClick={() =>
+              setActiveView((prev) => (isMobile && prev === 'friends' ? 'hidden' : 'friends'))
+            }
             title="الأصدقاء"
           >
             <svg
