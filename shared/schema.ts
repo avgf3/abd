@@ -135,6 +135,17 @@ export const blockedDevices = pgTable('blocked_devices', {
   blockedBy: integer('blocked_by').notNull(),
 });
 
+// جدول المستخدمين VIP
+export const vipUsers = pgTable('vip_users', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  createdBy: integer('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
 // جدول تاريخ النقاط لتتبع كيفية كسب/فقدان النقاط
 export const pointsHistory = pgTable('points_history', {
   id: serial('id').primaryKey(),
@@ -264,6 +275,18 @@ export const siteSettings = pgTable('site_settings', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
+// علاقات VIP Users
+export const vipUsersRelations = relations(vipUsers, ({ one }) => ({
+  user: one(users, {
+    fields: [vipUsers.userId],
+    references: [users.id],
+  }),
+  createdByUser: one(users, {
+    fields: [vipUsers.createdBy],
+    references: [users.id],
+  }),
+}));
+
 // العلاقات للحوائط
 export const wallPostsRelations = relations(wallPosts, ({ one, many }) => ({
   user: one(users, {
@@ -368,6 +391,15 @@ export const insertBlockedDeviceSchema = z.object({
 
 export type InsertBlockedDevice = z.infer<typeof insertBlockedDeviceSchema>;
 export type BlockedDevice = typeof blockedDevices.$inferSelect;
+
+// أنواع بيانات VIP Users
+export const insertVipUserSchema = z.object({
+  userId: z.number(),
+  createdBy: z.number().optional(),
+});
+
+export type InsertVipUser = z.infer<typeof insertVipUserSchema>;
+export type VipUser = typeof vipUsers.$inferSelect;
 
 // إضافة نماذج النقاط والمستويات
 export const insertPointsHistorySchema = z.object({
