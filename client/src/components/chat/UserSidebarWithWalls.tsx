@@ -84,7 +84,7 @@ export default function UnifiedSidebar({
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
-  // دالة ترتيب المستخدمين حسب الرتب
+  // دالة ترتيب المستخدمين حسب الأدوار
   const getRankOrder = (userType: string): number => {
     switch (userType) {
       case 'owner':
@@ -129,18 +129,18 @@ export default function UnifiedSidebar({
       if (!dedup.has(u.id)) dedup.set(u.id, u);
     }
 
-    // ترتيب المستخدمين حسب الرتب: المالك أولاً، ثم الإدمن، ثم المشرف، ثم الأعضاء، ثم الضيوف
-    // وداخل كل رتبة ترتيب أبجدي بالاسم
+    // ترتيب المستخدمين حسب الأدوار: المالك أولاً، ثم الإدمن، ثم المشرف، ثم الأعضاء، ثم الضيوف
+    // وداخل كل دور ترتيب أبجدي بالاسم
     const sorted = Array.from(dedup.values()).sort((a, b) => {
       const rankA = getRankOrder(a.userType);
       const rankB = getRankOrder(b.userType);
 
-      // إذا كانت الرتب مختلفة، رتب حسب الرتبة
+      // إذا كانت الأدوار مختلفة، رتب حسب الدور
       if (rankA !== rankB) {
         return rankA - rankB;
       }
 
-      // إذا كانت الرتب متساوية، رتب أبجدياً بالاسم
+      // إذا كانت الأدوار متساوية، رتب أبجدياً بالاسم
       return a.username.localeCompare(b.username, 'ar');
     });
 
@@ -622,7 +622,7 @@ export default function UnifiedSidebar({
                 </div>
                 <div className="text-xs text-gray-500 flex items-center gap-1">
                   <span>🏆</span>
-                  <span>مرتب حسب الرتب</span>
+                  <span>مرتب حسب الأدوار</span>
                 </div>
               </div>
 
@@ -783,7 +783,7 @@ export default function UnifiedSidebar({
                               >
                                 {post.username}
                               </span>
-                              {/* 🏅 شارة الرتبة الموحدة */}
+                              {/* 🏅 شارة الدور الموحدة */}
                               <UserRoleBadge
                                 user={{ userType: post.userRole } as ChatUser}
                                 size={16}

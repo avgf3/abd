@@ -53,7 +53,7 @@ export default function PromoteUserPanel({
     if (!selectedUser || !selectedRole) {
       toast({
         title: 'خطأ',
-        description: 'يرجى اختيار المستخدم والرتبة',
+        description: 'يرجى اختيار المستخدم والدور',
         variant: 'destructive',
       });
       return;
@@ -251,11 +251,11 @@ export default function PromoteUserPanel({
 
             <div>
               <label className="text-sm font-medium text-gray-200 mb-2 block">
-                اختر الرتبة الجديدة
+                اختر الدور الجديد
               </label>
               <Select value={selectedRole} onValueChange={setSelectedRole}>
                 <SelectTrigger className="bg-gray-800 border-gray-600">
-                  <SelectValue placeholder="اختر الرتبة" />
+                  <SelectValue placeholder="اختر الدور" />
                 </SelectTrigger>
                 <SelectContent>
                   {roleOptions.map((role) => (
