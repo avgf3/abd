@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
@@ -37,6 +38,8 @@ export default function PrivateMessageBox({
   const [messageText, setMessageText] = useState('');
   const [isAtBottomPrivate, setIsAtBottomPrivate] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -94,7 +97,23 @@ export default function PrivateMessageBox({
     setIsAtBottomPrivate(atBottom);
   }, []);
 
-  // محسن: دالة الإرسال مع منع الإرسال المتكرر
+  // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
+  const sendMessageWithRetry = useCallback(async (content: string, retries = 3): Promise<boolean> => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        await onSendMessage(content);
+        return true;
+      } catch (error) {
+        if (i === retries - 1) {
+          throw error;
+        }
+        // انتظر قبل إعادة المحاولة (زيادة تدريجية)
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
+    }
+    return false;
+  }, [onSendMessage]);
+
   const handleSend = useCallback(async () => {
     if (isSending) return;
     const text = messageText.trim();
@@ -103,31 +122,47 @@ export default function PrivateMessageBox({
     if (!hasText && !hasImage) return;
 
     setIsSending(true);
+    setSendError(null);
+    clearTimeout(retryTimeoutRef.current);
+    
     try {
       if (hasImage) {
         const reader = new FileReader();
         const file = imageFile!;
         const asDataUrl: string = await new Promise((resolve, reject) => {
           reader.onload = () => resolve(String(reader.result));
-          reader.onerror = () => reject(new Error('failed to read file'));
+          reader.onerror = () => reject(new Error('فشل قراءة الملف'));
           reader.readAsDataURL(file);
         });
-        await onSendMessage(asDataUrl);
-        setImageFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        
+        const success = await sendMessageWithRetry(asDataUrl, 2);
+        if (success) {
+          setImageFile(null);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          toast.success('تم إرسال الصورة');
+        }
       }
       if (hasText) {
-        await onSendMessage(text);
-        setMessageText('');
+        const success = await sendMessageWithRetry(text);
+        if (success) {
+          setMessageText('');
+          // لا نعرض toast للرسائل العادية لتجنب الإزعاج
+        }
       }
       setTimeout(() => scrollToBottom('smooth'), 100);
     } catch (error) {
       console.error('خطأ في إرسال الرسالة:', error);
+      const errorMessage = error instanceof Error ? error.message : 'فشل إرسال الرسالة';
+      setSendError(errorMessage);
+      toast.error(errorMessage);
+      
+      // إعادة تعيين حالة الخطأ بعد 5 ثوان
+      retryTimeoutRef.current = setTimeout(() => setSendError(null), 5000);
     } finally {
       setIsSending(false);
       inputRef.current?.focus();
     }
-  }, [messageText, imageFile, isSending, onSendMessage, scrollToBottom]);
+  }, [messageText, imageFile, isSending, sendMessageWithRetry, scrollToBottom]);
 
   // محسن: معالج الضغط على Enter
   const handleKeyDown = useCallback(
@@ -334,6 +369,18 @@ export default function PrivateMessageBox({
           </div>
 
           <div className="p-4 border-t border-gray-200 bg-white">
+            {/* عرض رسالة الخطأ إن وجدت */}
+            {sendError && (
+              <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center justify-between">
+                <span>⚠️ {sendError}</span>
+                <button
+                  onClick={() => setSendError(null)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
             <div className="flex gap-3 items-end">
               <Input
                 ref={inputRef}
@@ -342,7 +389,9 @@ export default function PrivateMessageBox({
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
                 placeholder="اكتب رسالتك هنا..."
-                className="flex-1 bg-gray-50 border border-gray-300 text-foreground placeholder:text-muted-foreground rounded-lg"
+                className={`flex-1 bg-gray-50 border text-foreground placeholder:text-muted-foreground rounded-lg ${
+                  sendError ? 'border-red-300' : 'border-gray-300'
+                }`}
                 disabled={isSending}
               />
               <input
@@ -366,7 +415,13 @@ export default function PrivateMessageBox({
                 disabled={(!messageText.trim() && !imageFile) || isSending}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
               >
-                {isSending ? '⌛' : '📤'} إرسال
+                {isSending ? (
+                  <>
+                    <span className="animate-spin">⌛</span> جاري الإرسال...
+                  </>
+                ) : (
+                  <>📤 إرسال</>
+                )}
               </Button>
             </div>
             {imageFile && (
