@@ -414,9 +414,36 @@ export default function BroadcastRoomInterface({
     if (!currentUser || !room.id) return;
     try {
       if (!isSecureContext()) {
-        throw new Error(
-          'يتطلب الميكروفون اتصالاً آمناً. افتح الموقع عبر HTTPS (أو محلياً على localhost).'
-        );
+        // إظهار رسالة مفصلة مع حلول
+        const currentUrl = window.location.href;
+        const httpsUrl = currentUrl.replace('http://', 'https://');
+        
+        let errorMessage = 'لا يمكن استخدام الميكروفون على اتصال غير آمن.\n\n';
+        errorMessage += '🔐 الحلول المتاحة:\n';
+        errorMessage += '1. افتح الموقع عبر HTTPS:\n   ' + httpsUrl + '\n\n';
+        errorMessage += '2. أو استخدم Chrome مع هذا الإعداد:\n';
+        errorMessage += '   - افتح: chrome://flags\n';
+        errorMessage += '   - ابحث عن: "Insecure origins treated as secure"\n';
+        errorMessage += '   - أضف رابط الموقع: ' + window.location.origin + '\n';
+        errorMessage += '   - أعد تشغيل Chrome\n\n';
+        errorMessage += '3. أو استخدم نفق آمن مؤقت:\n';
+        errorMessage += '   - ngrok http 5173\n';
+        errorMessage += '   - localtunnel --port 5173';
+        
+        // عرض نافذة بالتعليمات
+        toast({
+          title: '⚠️ يتطلب اتصال آمن (HTTPS)',
+          description: 'انقر لنسخ رابط HTTPS',
+          variant: 'destructive',
+          duration: 10000,
+        });
+        
+        // محاولة نسخ رابط HTTPS
+        try {
+          navigator.clipboard.writeText(httpsUrl);
+        } catch {}
+        
+        throw new Error(errorMessage);
       }
 
       const perm = await queryMicrophonePermission();
