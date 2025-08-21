@@ -3,32 +3,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Golden Glow Animation (used by effect-glow) */
-@keyframes golden-glow {
-  0%,
-  100% {
-    box-shadow:
-      0 0 15px rgba(255, 215, 0, 0.5),
-      inset 0 0 10px rgba(255, 215, 0, 0.2);
-    transform: scale(1);
-  }
-  50% {
-    box-shadow:
-      0 0 25px rgba(255, 215, 0, 0.8),
-      inset 0 0 15px rgba(255, 215, 0, 0.4);
-    transform: scale(1.02);
-  }
-}
-
-/* تحسينات للرسائل الخاصة */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
+/* ==================== CSS Variables ==================== */
 :root {
+  /* Base colors */
   --background: hsl(208, 100%, 7%);
   --foreground: hsl(0, 0%, 98%);
   --muted: hsl(208, 87%, 15%);
@@ -50,7 +27,7 @@
   --ring: hsl(197, 100%, 55%);
   --radius: 0.75rem;
 
-  /* Custom chat colors */
+  /* Chat specific colors */
   --chat-primary: hsl(208, 100%, 7%);
   --chat-secondary: hsl(208, 87%, 15%);
   --chat-accent: hsl(208, 60%, 31%);
@@ -60,28 +37,7 @@
   --chat-danger: hsl(0, 84%, 60%);
 }
 
-.dark {
-  --background: hsl(208, 100%, 7%);
-  --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(208, 87%, 15%);
-  --muted-foreground: hsl(208, 20%, 65%);
-  --popover: hsl(208, 87%, 15%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(208, 87%, 15%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(208, 50%, 25%);
-  --input: hsl(208, 50%, 25%);
-  --primary: hsl(197, 100%, 55%);
-  --primary-foreground: hsl(208, 100%, 7%);
-  --secondary: hsl(208, 87%, 15%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(208, 60%, 31%);
-  --accent-foreground: hsl(0, 0%, 98%);
-  --destructive: hsl(0, 62%, 30%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(208, 50%, 25%);
-}
-
+/* ==================== Base Styles ==================== */
 @layer base {
   * {
     @apply border-border;
@@ -96,882 +52,296 @@
   html {
     direction: rtl;
   }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+    border-radius: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted));
+    border-radius: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--accent));
+  }
 }
 
-/* Custom animations */
+/* ==================== Animations ==================== */
+@keyframes golden-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 15px rgba(255, 215, 0, 0.5),
+      inset 0 0 10px rgba(255, 215, 0, 0.2);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow:
+      0 0 25px rgba(255, 215, 0, 0.8),
+      inset 0 0 15px rgba(255, 215, 0, 0.4);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes rainbow {
+  0% { color: #ff0000; }
+  16.666% { color: #ff8c00; }
+  33.333% { color: #ffff00; }
+  50% { color: #00ff00; }
+  66.666% { color: #00ffff; }
+  83.333% { color: #0000ff; }
+  100% { color: #ff00ff; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    text-shadow: 0 0 5px currentColor;
+    opacity: 1;
+  }
+  50% {
+    text-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+    opacity: 0.8;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    text-shadow: 0 0 5px currentColor, 0 0 10px currentColor;
+  }
+  50% {
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(-10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-@keyframes slide-up {
-  from {
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.3);
     opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes gradient-shift {
-  0% {
-    background-position: 0% 50%;
   }
   50% {
-    background-position: 100% 50%;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
   }
   100% {
-    background-position: 0% 50%;
-  }
-}
-
-/* تمت إزالة جميع تحسينات الجوال لإبقاء الموقع على الوضع الافتراضي لسطح المكتب */
-
-/* تحسينات الأداء */
-.performance-optimized {
-  will-change: transform;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-/* تحسينات التحميل */
-.loading-skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-}
-
-@keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-@keyframes pulse-slow {
-  0%,
-  100% {
+    transform: scale(1);
     opacity: 1;
   }
-  50% {
-    opacity: 0.7;
-  }
 }
 
-/* Custom classes */
-.animate-fade-in {
-  animation: fade-in 0.4s ease-out;
+/* ==================== Text Effects ==================== */
+.effect-glow {
+  animation: glow 2s ease-in-out infinite;
 }
 
-.animate-slide-up {
-  animation: slide-up 0.3s ease-out;
+.effect-pulse {
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
-.animate-pulse-slow {
-  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.effect-rainbow {
+  animation: rainbow 3s linear infinite;
 }
 
-.welcome-gradient {
+.effect-shimmer {
   background: linear-gradient(
-    135deg,
-    var(--chat-primary),
-    var(--chat-secondary),
-    var(--chat-accent)
+    to right,
+    transparent 0%,
+    currentColor 50%,
+    transparent 100%
   );
-  background-size: 400% 400%;
-  animation: gradient-shift 8s ease infinite;
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
 }
 
-.glass-effect {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+/* ==================== Utility Classes ==================== */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.modal-overlay {
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-}
-
-.user-rank {
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 11px;
-  display: inline-block;
-  margin-left: 6px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.crown {
-  background: linear-gradient(135deg, hsl(51, 100%, 50%), hsl(48, 100%, 67%));
-  color: hsl(0, 0%, 0%);
-}
-
-.star {
-  background: linear-gradient(135deg, hsl(0, 0%, 75%), hsl(0, 0%, 90%));
-  color: hsl(0, 0%, 0%);
-}
-
-.shield {
-  background: linear-gradient(135deg, hsl(225, 100%, 60%), hsl(225, 100%, 75%));
-  color: hsl(0, 0%, 100%);
-}
-
-.user-img {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-left: 8px;
-  border: 2px solid var(--chat-highlight);
-  background: linear-gradient(135deg, var(--chat-secondary), var(--chat-accent));
-  transition: all 0.2s ease;
-}
-
-.user-img:hover {
-  transform: scale(1.05);
-  border-color: hsl(197, 100%, 75%);
-}
-
-.clickable-username {
-  color: var(--chat-highlight);
-  cursor: pointer;
-  font-weight: 600;
-  transition: color 0.2s ease;
-}
-
-.clickable-username:hover {
-  color: hsl(197, 100%, 75%);
-}
-
-.chat-message {
-  padding: 12px 16px;
-  margin: 8px 0;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.2s ease;
-}
-
-.chat-message:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-1px);
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--chat-highlight), hsl(197, 100%, 45%));
-  border: none;
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-  background: linear-gradient(135deg, hsl(197, 100%, 45%), var(--chat-highlight));
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px hsla(197, 100%, 55%, 0.3);
-}
-
-.btn-success {
-  background: linear-gradient(135deg, var(--chat-success), hsl(142, 76%, 30%));
-  border: none;
-  transition: all 0.3s ease;
-}
-
-.btn-success:hover {
-  background: linear-gradient(135deg, hsl(142, 76%, 30%), var(--chat-success));
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px hsla(142, 76%, 36%, 0.3);
-}
-
-.btn-danger {
-  background: linear-gradient(135deg, var(--chat-danger), hsl(0, 84%, 50%));
-  border: none;
-  transition: all 0.3s ease;
-}
-
-.btn-danger:hover {
-  background: linear-gradient(135deg, hsl(0, 84%, 50%), var(--chat-danger));
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px hsla(0, 84%, 60%, 0.3);
-}
-
-.profile-tab {
-  background: transparent;
-  border: none;
-  color: hsl(208, 20%, 65%);
-  padding: 12px 16px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.profile-tab.active {
-  background: linear-gradient(135deg, var(--chat-highlight), hsl(197, 100%, 45%));
-  color: white;
-}
-
-.profile-tab:hover:not(.active) {
-  background: hsla(197, 100%, 55%, 0.1);
-  color: var(--chat-highlight);
-}
-
-.user-popup {
-  position: absolute;
-  background: linear-gradient(135deg, var(--chat-secondary), var(--chat-accent));
-  color: white;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 8px;
-  font-size: 14px;
-  z-index: 9999;
-  display: none;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 160px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(10px);
-}
-
-.user-popup button {
-  text-align: right;
-  padding: 8px 12px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  border: none;
-  background: transparent;
-  color: white;
-}
-
-.user-popup button:hover {
-  background: hsla(197, 100%, 55%, 0.2);
-  transform: translateX(-2px);
-}
-
-.private-message-box {
-  position: fixed;
-  bottom: 80px;
-  right: 20px;
-  width: 320px;
-  background: linear-gradient(135deg, var(--chat-secondary), var(--chat-accent));
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  color: white;
-  padding: 16px;
-  z-index: 10000;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(15px);
-}
-
-/* Language Transition Animations */
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes fadeOutScale {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-}
-
-.language-transition-content {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.language-fade-in {
-  animation: fadeInScale 0.3s ease-out;
-}
-
-.language-fade-out {
-  animation: fadeOutScale 0.3s ease-in;
-}
-
-/* RTL/LTR Direction Transitions */
-body {
-  transition: all 0.3s ease;
-}
-
-body.rtl {
+.rtl {
   direction: rtl;
 }
 
-body.ltr {
+.ltr {
   direction: ltr;
 }
 
-/* Text alignment based on direction */
-.rtl .text-align-start {
-  text-align: right;
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-.ltr .text-align-start {
-  text-align: left;
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
-.rtl .text-align-end {
-  text-align: left;
+/* ==================== Chat Specific Styles ==================== */
+.chat-message {
+  @apply relative rounded-lg p-3 mb-2 break-words;
+  animation: slide-in 0.3s ease-out;
 }
 
-.ltr .text-align-end {
-  text-align: right;
+.chat-message-owner {
+  @apply bg-primary/20 border border-primary/30;
 }
 
-/* تمت إزالة تموضع محول اللغة للجوال */
-
-/* ===== Profile Effects & Animations ===== */
-
-/* تأثير كهربائي إضافي */
-.effect-electric {
-  animation: electricPulse 2s ease-in-out infinite;
-  box-shadow: 0 0 18px rgba(0, 191, 255, 0.4);
-}
-@keyframes electricPulse {
-  0%,
-  100% {
-    box-shadow: 0 0 18px rgba(0, 191, 255, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 28px rgba(0, 191, 255, 0.7);
-  }
+.chat-message-admin {
+  @apply bg-destructive/20 border border-destructive/30;
 }
 
-/* تأثير مغناطيسي إضافي لطيف */
-.effect-magnetic {
-  animation: magneticFloat 4s ease-in-out infinite;
-}
-@keyframes magneticFloat {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-2px);
-  }
+.chat-message-moderator {
+  @apply bg-accent/20 border border-accent/30;
 }
 
-/* تأثير النبض الناعم */
-.effect-pulse {
-  animation: gentlePulse 3s ease-in-out infinite;
+.chat-message-member {
+  @apply bg-card;
 }
 
-@keyframes gentlePulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.02);
-  }
+.chat-input {
+  @apply w-full px-4 py-2 bg-input border border-border rounded-lg;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+  @apply placeholder-muted-foreground;
 }
 
-/* تأثير التوهج الذهبي */
-.effect-glow {
-  animation: goldenGlow 4s ease-in-out infinite;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.8),
-    0 0 20px rgba(255, 215, 0, 0.3);
+/* ==================== Profile Styles ==================== */
+.profile-gradient {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
 }
 
-@keyframes goldenGlow {
-  0%,
-  100% {
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.8),
-      0 0 20px rgba(255, 215, 0, 0.3);
-  }
-  50% {
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.8),
-      0 0 30px rgba(255, 215, 0, 0.6);
-  }
+.profile-card {
+  @apply relative overflow-hidden rounded-lg;
+  @apply bg-card border border-border;
+  @apply transition-all duration-300;
 }
 
-/* تأثير التموج المائي */
-.effect-water {
-  animation: waterWave 6s ease-in-out infinite;
-  background-size: 400% 400% !important;
+.profile-card:hover {
+  @apply border-primary shadow-lg;
+  transform: translateY(-2px);
 }
 
-@keyframes waterWave {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  25% {
-    background-position: 100% 50%;
-  }
-  50% {
-    background-position: 100% 100%;
-  }
-  75% {
-    background-position: 0% 100%;
-  }
+/* ==================== Button Styles ==================== */
+.btn-primary {
+  @apply bg-primary text-primary-foreground;
+  @apply hover:bg-primary/90 active:bg-primary/80;
+  @apply transition-colors duration-200;
 }
 
-/* تأثير الشفق القطبي */
-.effect-aurora {
-  animation: auroraShift 8s ease-in-out infinite;
-  background-size: 300% 300% !important;
+.btn-secondary {
+  @apply bg-secondary text-secondary-foreground;
+  @apply hover:bg-secondary/90 active:bg-secondary/80;
+  @apply transition-colors duration-200;
 }
 
-@keyframes auroraShift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-    filter: hue-rotate(0deg);
-  }
-  25% {
-    background-position: 100% 50%;
-    filter: hue-rotate(90deg);
-  }
-  50% {
-    background-position: 100% 100%;
-    filter: hue-rotate(180deg);
-  }
-  75% {
-    background-position: 0% 100%;
-    filter: hue-rotate(270deg);
-  }
+.btn-danger {
+  @apply bg-destructive text-destructive-foreground;
+  @apply hover:bg-destructive/90 active:bg-destructive/80;
+  @apply transition-colors duration-200;
 }
 
-/* تأثير النيون المتوهج */
-.effect-neon {
-  animation: neonFlicker 2s ease-in-out infinite;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.8),
-    0 0 20px rgba(255, 20, 147, 0.5);
+/* ==================== Room Styles ==================== */
+.room-card {
+  @apply p-4 rounded-lg bg-card border border-border;
+  @apply hover:border-primary transition-colors duration-200;
+  @apply cursor-pointer;
 }
 
-@keyframes neonFlicker {
-  0%,
-  100% {
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.8),
-      0 0 20px rgba(255, 20, 147, 0.5);
-  }
-  50% {
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.8),
-      0 0 30px rgba(255, 20, 147, 0.8);
-  }
+.room-card-active {
+  @apply border-primary bg-primary/10;
 }
 
-/* تأثير البلور المتلألئ */
-.effect-crystal {
-  animation: crystalShimmer 5s ease-in-out infinite;
-  position: relative;
-  overflow: hidden;
+.room-badge {
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium;
 }
 
-.effect-crystal::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  animation: crystalSweep 3s ease-in-out infinite;
-  z-index: 1;
+/* ==================== Notification Styles ==================== */
+.notification-enter {
+  animation: bounce-in 0.4s ease-out;
 }
 
-@keyframes crystalShimmer {
-  0%,
-  100% {
-    filter: brightness(1) contrast(1);
-  }
-  50% {
-    filter: brightness(1.1) contrast(1.1);
-  }
+.notification-exit {
+  animation: fade-out 0.3s ease-out forwards;
 }
 
-@keyframes crystalSweep {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
-}
-
-/* تأثير النار المتوهجة */
-.effect-fire {
-  animation: fireFlicker 1.5s ease-in-out infinite;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.8),
-    0 0 20px rgba(255, 69, 0, 0.5);
-}
-
-@keyframes fireFlicker {
-  0%,
-  100% {
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.8),
-      0 0 20px rgba(255, 69, 0, 0.5);
-    filter: brightness(1);
-  }
-  50% {
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.8),
-      0 0 30px rgba(255, 69, 0, 0.8);
-    filter: brightness(1.1);
-  }
-}
-
-/* تأثير الجليد البارد */
-.effect-ice {
-  animation: iceShimmer 4s ease-in-out infinite;
-  box-shadow: 0 8px 24px rgba(135, 206, 235, 0.25);
-}
-
-@keyframes iceShimmer {
-  0%,
-  100% {
-    filter: brightness(1);
-  }
-  50% {
-    filter: brightness(1.08);
-  }
-}
-
-/* تأثير قوس قزح */
-.effect-rainbow {
-  animation: rainbowShift 6s ease-in-out infinite;
-  background-size: 300% 300% !important;
-}
-
-@keyframes rainbowShift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-/* تأثير الظل الغامض */
-.effect-shadow {
-  animation: shadowPulse 3.5s ease-in-out infinite;
-}
-
-@keyframes shadowPulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-  }
-  50% {
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
-  }
-}
-
-/* أنيميشن إشعار إرسال النقاط */
-@keyframes countdown {
-  from {
-    width: 100%;
-  }
+@keyframes fade-out {
   to {
-    width: 0%;
+    opacity: 0;
+    transform: translateY(-10px);
   }
 }
 
-.animate-countdown {
-  animation: countdown 4s linear forwards;
+/* ==================== Loading States ==================== */
+.skeleton {
+  @apply animate-pulse bg-muted rounded;
 }
 
-/* تمت إزالة تخصيصات أشرطة التمرير عبر المتصفحات */
-
-/* تأثيرات الثيمات المتحركة في قائمة المتصلين */
-.theme-animated {
-  position: relative;
-  overflow: hidden;
-  animation: themeGlow 3s ease-in-out infinite;
+.spinner {
+  @apply inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin;
 }
 
-.theme-animated::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: inherit;
-  filter: blur(10px);
-  opacity: 0.5;
-  z-index: -1;
-  animation: themePulse 3s ease-in-out infinite;
-}
-
-@keyframes themeGlow {
-  0%,
-  100% {
-    transform: translateX(0);
-    filter: brightness(1);
-  }
-  50% {
-    transform: translateX(2px);
-    filter: brightness(1.1);
+/* ==================== Responsive Utilities ==================== */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
   }
 }
 
-@keyframes themePulse {
-  0%,
-  100% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.02);
+@media (min-width: 769px) {
+  .hide-desktop {
+    display: none !important;
   }
 }
 
-/* تحسين التوافق مع التأثيرات الموجودة */
-.theme-animated.effect-glow,
-.theme-animated.effect-pulse,
-.theme-animated.effect-water,
-.theme-animated.effect-aurora,
-.theme-animated.effect-neon,
-.theme-animated.effect-fire,
-.theme-animated.effect-ice,
-.theme-animated.effect-rainbow,
-.theme-animated.effect-shadow,
-.theme-animated.effect-electric,
-.theme-animated.effect-crystal {
-  animation: none;
-}
-
-/* تأثير التحويم على عناصر القائمة */
-.theme-animated:hover {
-  filter: brightness(1.15);
-  transform: translateX(5px);
-}
-
-/* Force hide context menu and text selection for audio-only controls */
-.scroll-area,
-.overflow-y-auto {
-  overscroll-behavior: contain;
-  /* Ensure wheel events work properly */
-  touch-action: auto;
-}
-
-/* Chat layout improvements - تحسينات خاصة بتخطيط الدردشة */
-.chat-main-container {
-  height: calc(100vh - 160px);
-  overflow: hidden;
-}
-
-.chat-message-area {
-  height: calc(100vh - 240px);
-  overflow-y: auto;
-}
-
-.chat-sidebar {
-  height: calc(100vh - 160px);
-  overflow: hidden;
-}
-
-.chat-input-fixed {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 20;
-  background: white;
-  border-top: 1px solid #e5e7eb;
-  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.chat-footer-tabs {
-  position: fixed;
-  bottom: 80px;
-  left: 0;
-  right: 0;
-  z-index: 10;
-  background: var(--secondary);
-  border-top: 1px solid var(--accent);
-  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.3);
-}
-
-/* تمت إزالة تحسينات الدردشة للجوال */
-
-/* تأثيرات صندوق المستخدم المحسّنة */
-.has-custom-bg {
-  position: relative;
-  overflow: hidden;
-}
-
-.has-custom-bg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: inherit;
-  opacity: 1; /* يجب أن تبقى 1 لضمان تطابق اللون تماماً */
-  z-index: -1;
-}
-
-/* تطبيق التأثيرات على صناديق المستخدمين */
-li > * > div.effect-glow,
-li > * > div.effect-pulse,
-li > * > div.effect-water,
-li > * > div.effect-aurora,
-li > * > div.effect-neon,
-li > * > div.effect-fire,
-li > * > div.effect-ice,
-li > * > div.effect-rainbow,
-li > * > div.effect-shadow,
-li > * > div.effect-electric,
-li > * > div.effect-crystal {
-  transition: all 0.3s ease;
-}
-
-/* تحسين عرض التأثيرات في قائمة المستخدمين */
-.effect-glow.has-custom-bg,
-.effect-pulse.has-custom-bg,
-.effect-water.has-custom-bg,
-.effect-aurora.has-custom-bg,
-.effect-neon.has-custom-bg,
-.effect-fire.has-custom-bg,
-.effect-ice.has-custom-bg,
-.effect-rainbow.has-custom-bg,
-.effect-shadow.has-custom-bg,
-.effect-electric.has-custom-bg,
-.effect-crystal.has-custom-bg {
-  background-blend-mode: normal;
-}
-
-/* تأثير hover محسّن للصناديق بألوان مخصصة */
-.has-custom-bg:hover {
-  filter: none;
-}
-
-/* التأكد من أن لون النص يظهر بوضوح على الخلفيات الملونة */
-.has-custom-bg span {
-  position: relative;
-  z-index: 1;
-}
-
-/* ===== VIP Animated Frames (10 styles) ===== */
-.vip-frame.base {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.vip-frame-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.vip-frame-img {
-  border-radius: 9999px;
-  object-fit: cover;
-  background: #0b1220;
-  position: relative;
-  z-index: 2;
-}
-
-/* Shared rotating border */
-.vip-frame.base::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: 9999px;
-  z-index: 1;
-  padding: 2px; /* frame thickness */
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: vip-rotate var(--vip-spin-duration, 6s) linear infinite;
-}
-
-@keyframes vip-rotate {
-  from {
-    transform: rotate(0deg);
+/* ==================== Print Styles ==================== */
+@media print {
+  .no-print {
+    display: none !important;
   }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* 10 distinct gradient frames matching modern VIP look */
-.vip-frame-1::before {
-  background: conic-gradient(from 0deg, #ffcc33, #ff6633, #ffcc33);
-  box-shadow: 0 0 12px rgba(255, 204, 51, 0.5);
-}
-.vip-frame-2::before {
-  background: conic-gradient(from 0deg, #66e0ff, #4488ff, #66e0ff);
-  box-shadow: 0 0 12px rgba(68, 136, 255, 0.45);
-}
-.vip-frame-3::before {
-  background: conic-gradient(from 0deg, #444, #999, #444);
-  box-shadow: 0 0 12px rgba(200, 200, 200, 0.35);
-}
-.vip-frame-4::before {
-  background: conic-gradient(from 0deg, #b45309, #065f46, #b45309);
-  box-shadow: 0 0 12px rgba(6, 95, 70, 0.4);
-}
-.vip-frame-5::before {
-  background: conic-gradient(from 0deg, #ec4899, #8b5cf6, #ec4899);
-  box-shadow: 0 0 14px rgba(236, 72, 153, 0.5);
-}
-.vip-frame-6::before {
-  background: conic-gradient(from 0deg, #7c2d12, #f59e0b, #7c2d12);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
-}
-.vip-frame-7::before {
-  background: conic-gradient(from 0deg, #b45309, #d97706, #b45309);
-  box-shadow: 0 0 12px rgba(217, 119, 6, 0.45);
-}
-.vip-frame-8::before {
-  background: conic-gradient(from 0deg, #000, #0f172a, #000);
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
-}
-.vip-frame-9::before {
-  background: conic-gradient(from 0deg, #1f2937, #0b1220, #1f2937);
-  box-shadow: 0 0 12px rgba(31, 41, 55, 0.45);
-}
-.vip-frame-10::before {
-  background: conic-gradient(from 0deg, #0b1220, #000, #0b1220);
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
-}
-
-/* Optional subtle pulsation */
-.vip-frame.base {
-  animation: vip-pulse 3.6s ease-in-out infinite;
-}
-@keyframes vip-pulse {
-  0%,
-  100% {
-    filter: brightness(1);
-  }
-  50% {
-    filter: brightness(1.1);
+  
+  body {
+    background: white;
+    color: black;
   }
 }
