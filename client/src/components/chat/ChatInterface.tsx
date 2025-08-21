@@ -242,6 +242,21 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       );
     };
   }, []);
+
+  // Auto-switch to friends tab when a new friend request is received
+  useEffect(() => {
+    const handleFriendRequestReceived = () => {
+      setActiveView('friends');
+    };
+    window.addEventListener('friendRequestReceived', handleFriendRequestReceived as EventListener);
+    return () => {
+      window.removeEventListener(
+        'friendRequestReceived',
+        handleFriendRequestReceived as EventListener
+      );
+    };
+  }, []);
+
   const [reportedUser, setReportedUser] = useState<ChatUser | null>(null);
   const [reportedMessage, setReportedMessage] = useState<{ content: string; id: number } | null>(
     null

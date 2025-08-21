@@ -48,16 +48,16 @@ export default function NotificationPanel({
     data: notificationsData,
     isLoading,
     refetch,
-  } = useQuery<{ notifications: Notification[] }>({
+  } = useQuery<{ notifications: Notification[]}>({
     queryKey: ['/api/notifications', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) throw new Error('No user ID');
       return await apiRequest(`/api/notifications?userId=${currentUser.id}&after=${lastChecked}`);
     },
     enabled: !!currentUser?.id && isOpen,
-    refetchInterval: isOpen ? 30000 : false, // كل 30 ثانية بدلاً من 3 ثوانٍ عند فتح النافذة
-    staleTime: 10000, // البيانات صالحة لمدة 10 ثوانٍ
-    gcTime: 5 * 60 * 1000, // حفظ في الكاش لمدة 5 دقائق
+    refetchInterval: isOpen ? 30000 : false,
+    staleTime: 10000,
+    gcTime: 5 * 60 * 1000,
   });
 
   // جلب عدد الإشعارات غير المقروءة - مُحسّن
@@ -68,8 +68,8 @@ export default function NotificationPanel({
       return await apiRequest(`/api/notifications/unread-count?userId=${currentUser.id}`);
     },
     enabled: !!currentUser?.id,
-    refetchInterval: 60000, // كل دقيقة بدلاً من ثانيتين
-    staleTime: 30000, // البيانات صالحة لمدة 30 ثانية
+    refetchInterval: 60000,
+    staleTime: 30000,
   });
 
   // Real-time notifications are now handled by useNotificationManager hook
@@ -169,8 +169,10 @@ export default function NotificationPanel({
   }, [refetch]);
 
   const allNotifications = notificationsData?.notifications || [];
-  // استبعاد إشعارات الرسائل نهائياً من الواجهة (حماية إضافية بجانب فلترة الخادم)
-  const notifications = allNotifications.filter((n) => n.type !== 'message');
+  // استبعاد إشعارات الرسائل وإشعارات الأصدقاء من النافذة
+  const notifications = allNotifications.filter(
+    (n) => n.type !== 'message' && !/^friend/i.test(n.type)
+  );
   const unreadCount = unreadCountData?.count || 0;
 
   const getNotificationIcon = (type: string) => {
