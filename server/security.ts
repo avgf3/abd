@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import express, { type Express } from 'express';
+import helmet from 'helmet';
 
 import { moderationSystem } from './moderation';
 import { getDeviceIdFromHeaders } from './utils/device';

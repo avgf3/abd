@@ -253,6 +253,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updateConnectedUserCache(updatedUser);
         } catch {}
         emitUserUpdatedToUser(userId, updatedUser);
+        
+        // بث event مخصص لتحديث الصور
+        await emitToUserRooms(userId, {
+          type: 'user_avatar_updated',
+          avatarHash: hash,
+          avatarVersion: nextVersion
+        });
+        
         await emitToUserRooms(userId, {
           type: 'userUpdated',
           user: buildUserBroadcastPayload(updatedUser),
