@@ -57,13 +57,17 @@ export async function detectSexualImage(
   const threshold = Math.min(0.9, Math.max(0.05, opts?.threshold ?? (strict ? 0.28 : 0.38)));
 
   try {
-    const { data, info } = await sharp(buffer)
+    const result = (await sharp(buffer)
       .removeAlpha()
       .resize({ width: sampleSize, height: sampleSize, fit: 'inside' })
       .ensureAlpha()
       .toColourspace('srgb')
       .raw()
-      .toBuffer({ resolveWithObject: true } as any);
+      .toBuffer({ resolveWithObject: true } as any)) as unknown as {
+      data: Buffer;
+      info: { width: number; height: number; channels: number };
+    };
+    const { data, info } = result;
 
     const channels = info.channels; // قد تكون 4 بسبب ensureAlpha
     const width = info.width;

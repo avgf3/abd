@@ -5,7 +5,7 @@ import { roomMessageService } from '../services/roomMessageService';
 import { roomService } from '../services/roomService';
 import { storage } from '../storage';
 import { protect } from '../middleware/enhancedSecurity';
-import { sanitizeInput, validateMessageContent } from '../security';
+import { sanitizeInput, validateMessageContent, messageLimiter } from '../security';
 import { spamProtection } from '../spam-protection';
 
 const router = Router();
@@ -14,7 +14,7 @@ const router = Router();
  * GET /api/messages/room/:roomId
  * جلب رسائل الغرفة مع الصفحات
  */
-router.get('/room/:roomId', async (req, res) => {
+router.get('/room/:roomId', protect.auth, async (req, res) => {
   try {
     const { roomId } = req.params;
     const { limit = 20, offset = 0, useCache = 'true' } = req.query;
@@ -28,6 +28,17 @@ router.get('/room/:roomId', async (req, res) => {
     if (!room) {
       return res.status(404).json({ error: 'الغرفة غير موجودة' });
     }
+
+    // optional: تحقق من أن المستخدم عضو بالغرفة عندما تكون الغرفة غير عامة
+    try {
+      if ((room as any).isPrivate) {
+        const userId = (req as any).user?.id as number;
+        const inRoom = await storage.isUserInRoom?.(userId, roomId as any);
+        if (!inRoom) {
+          return res.status(403).json({ error: 'غير مسموح بالاطلاع على رسائل هذه الغرفة' });
+        }
+      }
+    } catch {}
 
     const limitValue = Math.min(20, Math.max(1, parseInt(limit as string)));
     const offsetValue = Math.max(0, parseInt(offset as string));
@@ -57,7 +68,7 @@ router.get('/room/:roomId', async (req, res) => {
  * GET /api/messages/room/:roomId/latest
  * جلب أحدث رسائل الغرفة
  */
-router.get('/room/:roomId/latest', async (req, res) => {
+router.get('/room/:roomId/latest', protect.auth, async (req, res) => {
   try {
     const { roomId } = req.params;
     const { limit = 20 } = req.query;
@@ -90,7 +101,7 @@ router.get('/room/:roomId/latest', async (req, res) => {
  * POST /api/messages/room/:roomId
  * إرسال رسالة لغرفة
  */
-router.post('/room/:roomId', protect.auth, async (req, res) => {
+router.post('/room/:roomId', protect.auth, messageLimiter, async (req, res) => {
   try {
     const { roomId } = req.params;
     const { content, messageType = 'text', isPrivate = false, receiverId } = req.body;
@@ -122,8 +133,9 @@ router.post('/room/:roomId', protect.auth, async (req, res) => {
     }
 
     // تنظيف المحتوى والتحقق من الروابط
-    const sanitized = sanitizeInput(content.trim());
-    const check = validateMessageContent(sanitized);
+    const isImageDataUrl = /^data:image\//i.test(String(content || ''));
+    const sanitized = isImageDataUrl ? String(content).trim() : sanitizeInput(String(content).trim());
+    const check = isImageDataUrl ? { isValid: true } : validateMessageContent(sanitized);
     if (!check.isValid) {
       return res.status(400).json({ error: check.reason || 'محتوى غير مسموح' });
     }
@@ -179,7 +191,7 @@ router.post('/room/:roomId', protect.auth, async (req, res) => {
  * POST /api/messages/:messageId/reactions
  * إضافة/تحديث تفاعل على رسالة (like/dislike/heart)
  */
-router.post('/:messageId/reactions', protect.auth, async (req, res) => {
+router.post('/:messageId/reactions', protect.auth, messageLimiter, async (req, res) => {
   try {
     const messageId = parseInt(req.params.messageId);
     const { type } = req.body as { type?: string };
@@ -264,10 +276,11 @@ router.delete('/:messageId/reactions', protect.auth, async (req, res) => {
  * DELETE /api/messages/:messageId
  * حذف رسالة
  */
-router.delete('/:messageId', async (req, res) => {
+router.delete('/:messageId', protect.auth, async (req, res) => {
   try {
     const { messageId } = req.params;
-    const { userId, roomId } = req.body;
+    const { roomId } = req.body;
+    const userId = (req as any).user?.id as number;
 
     if (!messageId || !userId || !roomId) {
       return res.status(400).json({
@@ -275,16 +288,16 @@ router.delete('/:messageId', async (req, res) => {
       });
     }
 
-    await roomMessageService.deleteMessage(parseInt(messageId), parseInt(userId), roomId);
+    await roomMessageService.deleteMessage(parseInt(messageId, 10), userId, roomId);
 
     // إرسال إشعار بحذف الرسالة عبر Socket.IO
     const io = req.app.get('io');
     if (io) {
       io.to(`room_${roomId}`).emit('message', {
         type: 'messageDeleted',
-        messageId: parseInt(messageId),
+        messageId: parseInt(messageId, 10),
         roomId,
-        deletedBy: parseInt(userId),
+        deletedBy: userId,
         timestamp: new Date().toISOString(),
       });
     }
@@ -305,7 +318,7 @@ router.delete('/:messageId', async (req, res) => {
  * GET /api/messages/room/:roomId/search
  * البحث في رسائل الغرفة
  */
-router.get('/room/:roomId/search', async (req, res) => {
+router.get('/room/:roomId/search', protect.auth, async (req, res) => {
   try {
     const { roomId } = req.params;
     const { q: searchQuery, limit = 20, offset = 0 } = req.query;
@@ -346,7 +359,7 @@ router.get('/room/:roomId/search', async (req, res) => {
  * GET /api/messages/room/:roomId/stats
  * جلب إحصائيات رسائل الغرفة
  */
-router.get('/room/:roomId/stats', async (req, res) => {
+router.get('/room/:roomId/stats', protect.auth, async (req, res) => {
   try {
     const { roomId } = req.params;
 
@@ -380,28 +393,16 @@ router.get('/room/:roomId/stats', async (req, res) => {
  * POST /api/messages/room/:roomId/cleanup
  * تنظيف الرسائل القديمة للغرفة
  */
-router.post('/room/:roomId/cleanup', async (req, res) => {
+router.post('/room/:roomId/cleanup', protect.admin, async (req, res) => {
   try {
     const { roomId } = req.params;
-    const { userId, keepLastDays = 30 } = req.body;
+    const { keepLastDays = 30 } = req.body;
 
     if (!roomId?.trim()) {
       return res.status(400).json({ error: 'معرف الغرفة مطلوب' });
     }
 
-    if (!userId) {
-      return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
-    }
-
-    // التحقق من الصلاحيات
-    const user = await storage.getUser(parseInt(userId));
-    if (!user) {
-      return res.status(404).json({ error: 'المستخدم غير موجود' });
-    }
-
-    if (!['admin', 'owner'].includes(user.userType)) {
-      return res.status(403).json({ error: 'ليس لديك صلاحية لتنظيف الرسائل' });
-    }
+    // الصلاحيات مضمونة عبر protect.admin
 
     const deletedCount = await roomMessageService.cleanupOldMessages(
       roomId,
@@ -426,7 +427,7 @@ router.post('/room/:roomId/cleanup', async (req, res) => {
  * GET /api/messages/cache/stats
  * جلب إحصائيات الذاكرة المؤقتة
  */
-router.get('/cache/stats', async (req, res) => {
+router.get('/cache/stats', protect.admin, async (req, res) => {
   try {
     const cacheStats = roomMessageService.getCacheStats();
 
@@ -448,24 +449,8 @@ router.get('/cache/stats', async (req, res) => {
  * POST /api/messages/cache/clear
  * مسح الذاكرة المؤقتة
  */
-router.post('/cache/clear', async (req, res) => {
+router.post('/cache/clear', protect.admin, async (req, res) => {
   try {
-    const { userId } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
-    }
-
-    // التحقق من الصلاحيات
-    const user = await storage.getUser(parseInt(userId));
-    if (!user) {
-      return res.status(404).json({ error: 'المستخدم غير موجود' });
-    }
-
-    if (!['admin', 'owner'].includes(user.userType)) {
-      return res.status(403).json({ error: 'ليس لديك صلاحية لمسح الذاكرة المؤقتة' });
-    }
-
     roomMessageService.clearAllCache();
 
     res.json({

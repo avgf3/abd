@@ -555,7 +555,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           type: 'newMessage',
           message: {
             ...created,
-            sender,
+            sender: (roomMessageService as any).buildSafeUserPayload
+              ? (roomMessageService as any).buildSafeUserPayload(sender)
+              : sender,
             roomId,
             reactions: { like: 0, dislike: 0, heart: 0 },
             myReaction: null,
