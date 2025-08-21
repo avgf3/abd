@@ -40,7 +40,11 @@ app.use(
       console.error('❌ الملف غير موجود:', fullPath);
 
       // Return default avatar for profile images
-      if (req.path.includes('profile-') || req.path.includes('/profiles/')) {
+      if (
+        req.path.includes('profile-') ||
+        req.path.includes('/profiles/') ||
+        req.path.includes('/avatars/')
+      ) {
         const defaultAvatarPath = path.join(process.cwd(), 'client/public/default_avatar.svg');
         try {
           await fsp.stat(defaultAvatarPath);

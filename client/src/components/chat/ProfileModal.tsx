@@ -438,14 +438,7 @@ export default function ProfileModal({
     if (!file) return;
 
     // التحقق من نوع الملف
-    const allowedTypes = [
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/svg+xml',
-    ];
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       toast({
         title: 'خطأ',
@@ -495,7 +488,7 @@ export default function ProfileModal({
       if (uploadType === 'profile' && result.imageUrl) {
         updateUserData({ profileImage: result.imageUrl });
       } else if (uploadType === 'banner' && result.bannerUrl) {
-        updateUserData({ profileBanner: result.bannerUrl });
+        updateUserData({ profileBanner: result.bannerUrl + (result.bannerUrl.includes('?') ? '' : `?t=${Date.now()}`) });
       }
 
       // انتظار قصير للتأكد من التحديث المحلي
