@@ -199,12 +199,6 @@ export class DatabaseService {
           })
           .returning();
         return result[0] || null;
-      });
-        // Get the created user by ID
-        if (result.lastInsertRowid) {
-          return await this.getUserById(Number(result.lastInsertRowid));
-        }
-        return null;
       }
     } catch (error) {
       console.error('Error creating user:', error);
@@ -256,7 +250,6 @@ export class DatabaseService {
           action,
           createdAt: new Date(),
         });
-      });
       }
     } catch (error) {
       console.error('Error adding points history:', error);
@@ -312,10 +305,6 @@ export class DatabaseService {
       if (this.type === 'postgresql') {
         const rows = await (this.db as any)
           .select({ c: count() })
-          .from(pgSchema.messages)
-          .where(eq(pgSchema.messages.senderId, userId));
-        return Number(rows?.[0]?.c || 0);
-      })
           .from(pgSchema.messages)
           .where(eq(pgSchema.messages.senderId, userId));
         return Number(rows?.[0]?.c || 0);
@@ -476,17 +465,6 @@ export class DatabaseService {
           })
           .returning();
         return result[0] || null;
-      });
-        // Get the message by ID
-        if (result.lastInsertRowid) {
-          const messages = await (this.db as any)
-            .select()
-            .from(pgSchema.messages)
-            .where(eq(pgSchema.messages.id, Number(result.lastInsertRowid)))
-            .limit(1);
-          return messages[0] || null;
-        }
-        return null;
       }
     } catch (error) {
       console.error('Error creating message:', error);
@@ -612,15 +590,6 @@ export class DatabaseService {
             )
           );
         return Number(rows?.[0]?.c || 0);
-      })
-          .from(pgSchema.messages)
-          .where(
-            and(
-              eq(pgSchema.messages.roomId, roomId),
-              eq(pgSchema.messages.isPrivate, false)
-            )
-          );
-        return Number(rows?.[0]?.c || 0);
       }
     } catch (error) {
       console.error('Error getRoomMessageCount:', error);
@@ -641,16 +610,6 @@ export class DatabaseService {
               isNull(pgSchema.messages.deletedAt),
               eq(pgSchema.messages.isPrivate, false),
               gte(pgSchema.messages.timestamp, since as any)
-            )
-          );
-        return Number(rows?.[0]?.c || 0);
-      })
-          .from(pgSchema.messages)
-          .where(
-            and(
-              eq(pgSchema.messages.roomId, roomId),
-              eq(pgSchema.messages.isPrivate, false),
-              sql`${pgSchema.messages.timestamp} >= ${sinceIso}`
             )
           );
         return Number(rows?.[0]?.c || 0);
@@ -769,16 +728,6 @@ export class DatabaseService {
             )
           );
         return Number(rows?.[0]?.c || 0);
-      })
-          .from(pgSchema.messages)
-          .where(
-            and(
-              eq(pgSchema.messages.roomId, roomId),
-              eq(pgSchema.messages.isPrivate, false),
-              like(pgSchema.messages.content, pattern)
-            )
-          );
-        return Number(rows?.[0]?.c || 0);
       }
     } catch (error) {
       console.error('Error countSearchRoomMessages:', error);
@@ -801,12 +750,6 @@ export class DatabaseService {
           )
           .returning({ id: pgSchema.messages.id });
         return Array.isArray(updated) ? updated.length : 0;
-      } < ${cutoffIso}`
-            )
-          );
-        // Drizzle returns number of changes on run. Fallback to 0 if unknown
-        // Attempt to read changes count if available
-        return Number((deleted?.rowsAffected ?? deleted?.changes ?? 0) as any);
       }
     } catch (error) {
       console.error('Error deleteOldRoomMessages:', error);
@@ -878,7 +821,6 @@ export class DatabaseService {
                 eq(pgSchema.messageReactions.userId, userId)
               )
             );
-        });
         }
 
         // Counts per type
@@ -955,13 +897,6 @@ export class DatabaseService {
         const counts: any = { like: 0, dislike: 0, heart: 0 };
         for (const r of rows || []) counts[r.t as string] = Number(r.c || 0);
         return counts;
-      })
-          .from(pgSchema.messageReactions)
-          .where(eq(pgSchema.messageReactions.messageId, messageId))
-          .groupBy(pgSchema.messageReactions.type);
-        const counts: any = { like: 0, dislike: 0, heart: 0 };
-        for (const r of rows || []) counts[r.t as string] = Number(r.c || 0);
-        return counts;
       }
     } catch (error) {
       console.error('Error deleteMessageReaction:', error);
@@ -977,13 +912,6 @@ export class DatabaseService {
       if (this.type === 'postgresql') {
         const rows = await (this.db as any)
           .select({ t: pgSchema.messageReactions.type, c: count() })
-          .from(pgSchema.messageReactions)
-          .where(eq(pgSchema.messageReactions.messageId, messageId))
-          .groupBy(pgSchema.messageReactions.type);
-        const counts: any = { like: 0, dislike: 0, heart: 0 };
-        for (const r of rows || []) counts[r.t as string] = Number(r.c || 0);
-        return counts;
-      })
           .from(pgSchema.messageReactions)
           .where(eq(pgSchema.messageReactions.messageId, messageId))
           .groupBy(pgSchema.messageReactions.type);
@@ -1006,16 +934,6 @@ export class DatabaseService {
       if (this.type === 'postgresql') {
         const rows = await (this.db as any)
           .select({ type: pgSchema.messageReactions.type })
-          .from(pgSchema.messageReactions)
-          .where(
-            and(
-              eq(pgSchema.messageReactions.messageId, messageId),
-              eq(pgSchema.messageReactions.userId, userId)
-            )
-          )
-          .limit(1);
-        return (rows?.[0]?.type as any) || null;
-      })
           .from(pgSchema.messageReactions)
           .where(
             and(
@@ -1050,8 +968,6 @@ export class DatabaseService {
           .values(friendData)
           .returning();
         return result[0] || null;
-      }
-        return null;
       }
     } catch (error) {
       console.error('Error sending friend request:', error);
@@ -1091,15 +1007,6 @@ export class DatabaseService {
           .where(eq(pgSchema.friends.id, requestId))
           .returning();
         return result[0] || null;
-      })
-          .where(eq(pgSchema.friends.id, requestId));
-
-        const friends = await (this.db as any)
-          .select()
-          .from(pgSchema.friends)
-          .where(eq(pgSchema.friends.id, requestId))
-          .limit(1);
-        return friends[0] || null;
       }
     } catch (error) {
       console.error('Error updating friend request:', error);
@@ -1162,8 +1069,7 @@ export class DatabaseService {
         const result = await (this.db as any).insert(pgSchema.rooms).values(room).returning();
         return result[0] || null;
       }
-        return null;
-      }
+      return null;
     } catch (error) {
       console.error('Error creating room:', error);
       return null;
