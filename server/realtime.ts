@@ -33,6 +33,18 @@ const connectedUsers = new Map<
   }
 >();
 
+// Cache لقوائم المتصلين حسب الغرفة
+const roomUsersCache = new Map<string, {
+  users: any[];
+  lastUpdated: number;
+  version: number;
+}>();
+
+// مدة صلاحية الcache بالميللي ثانية (5 ثواني)
+const CACHE_TTL = 5000;
+// الحد الأقصى لعدد الغرف في الcache
+const MAX_CACHED_ROOMS = 50;
+
 export function updateConnectedUserCache(user: any) {
   try {
     if (!user || !user.id) return;
@@ -45,8 +57,16 @@ export function updateConnectedUserCache(user: any) {
   } catch {}
 }
 
-// بناء قائمة المتصلين بكفاءة اعتماداً على sockets المسجلة
-async function buildOnlineUsersForRoom(roomId: string) {
+// بناء قائمة المتصلين بكفاءة اعتماداً على sockets المسجلة مع cache
+async function buildOnlineUsersForRoom(roomId: string, forceRefresh: boolean = false) {
+  // التحقق من الcache أولاً
+  if (!forceRefresh) {
+    const cached = roomUsersCache.get(roomId);
+    if (cached && (Date.now() - cached.lastUpdated) < CACHE_TTL) {
+      return cached.users;
+    }
+  }
+  
   const userMap = new Map<number, any>();
   for (const [_, entry] of connectedUsers.entries()) {
     // تحقق سريع عبر sockets دون مسح كامل
@@ -65,7 +85,7 @@ async function buildOnlineUsersForRoom(roomId: string) {
   }
   const { sanitizeUsersArray } = await import('./utils/data-sanitizer');
   const sanitized = sanitizeUsersArray(Array.from(userMap.values()));
-  return sanitized.map((u: any) => {
+  const users = sanitized.map((u: any) => {
     try {
       const versionTag = (u as any).avatarHash || (u as any).avatarVersion;
       if (
@@ -80,6 +100,32 @@ async function buildOnlineUsersForRoom(roomId: string) {
     } catch {}
     return u;
   });
+  
+  // تحديث الcache
+  const currentCache = roomUsersCache.get(roomId);
+  roomUsersCache.set(roomId, {
+    users,
+    lastUpdated: Date.now(),
+    version: currentCache ? currentCache.version + 1 : 1
+  });
+  
+  // تنظيف الcache إذا تجاوز الحد الأقصى
+  if (roomUsersCache.size > MAX_CACHED_ROOMS) {
+    const sortedEntries = Array.from(roomUsersCache.entries())
+      .sort((a, b) => a[1].lastUpdated - b[1].lastUpdated);
+    // حذف أقدم 10% من الإدخالات
+    const toDelete = Math.ceil(MAX_CACHED_ROOMS * 0.1);
+    for (let i = 0; i < toDelete; i++) {
+      roomUsersCache.delete(sortedEntries[i][0]);
+    }
+  }
+  
+  return users;
+}
+
+// دالة لإبطال cache غرفة معينة
+function invalidateRoomCache(roomId: string) {
+  roomUsersCache.delete(roomId);
 }
 
 async function joinRoom(
@@ -118,6 +164,9 @@ async function joinRoom(
     connectedUsers.set(userId, entry);
   }
 
+  // إبطال cache الغرفة عند انضمام مستخدم جديد
+  invalidateRoomCache(roomId);
+  
   // Notify others in room (مقتصد، ثم بث قائمة محدثة)
   socket.to(`room_${roomId}`).emit('message', { type: 'userJoinedRoom', username, userId, roomId });
 
@@ -616,6 +665,58 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           senderId,
         });
       } catch {}
+    });
+
+    // Event لتحديث صورة المستخدم
+    socket.on('user_avatar_updated', async (data) => {
+      try {
+        if (!socket.userId) return;
+        
+        const { avatarHash, avatarVersion } = data || {};
+        if (!avatarHash && !avatarVersion) return;
+        
+        // تحديث cache المستخدم
+        const user = await storage.getUser(socket.userId);
+        if (user) {
+          const updatedUser = {
+            ...user,
+            avatarHash: avatarHash || (user as any).avatarHash,
+            avatarVersion: avatarVersion || (user as any).avatarVersion
+          };
+          
+          updateConnectedUserCache(updatedUser);
+          
+          // بث التحديث لجميع الغرف التي ينتمي إليها المستخدم
+          const entry = connectedUsers.get(socket.userId);
+          if (entry) {
+            const rooms = new Set<string>();
+            for (const socketMeta of entry.sockets.values()) {
+              rooms.add(socketMeta.room);
+            }
+            
+            for (const roomId of rooms) {
+              const users = await buildOnlineUsersForRoom(roomId);
+              io.to(`room_${roomId}`).emit('message', {
+                type: 'userAvatarUpdated',
+                userId: socket.userId,
+                avatarHash,
+                avatarVersion,
+                users,
+                roomId
+              });
+            }
+          }
+          
+          // بث للمستخدم نفسه في جميع أجهزته
+          io.to(socket.userId.toString()).emit('message', {
+            type: 'selfAvatarUpdated',
+            avatarHash,
+            avatarVersion
+          });
+        }
+      } catch (error) {
+        console.error('Error in user_avatar_updated:', error);
+      }
     });
 
     socket.on('disconnect', async () => {
