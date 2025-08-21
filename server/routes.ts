@@ -1480,8 +1480,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   console.warn('[Deprecated] privateMessage handler is disabled. Use DM module events instead.');
   // });
 
-  // بدء التنظيف الدوري لقاعدة البيانات
-  const dbCleanupInterval = databaseCleanup.startPeriodicCleanup(6); // كل 6 ساعات
+  // بدء التنظيف الدوري لقاعدة البيانات (فقط عند اتصال القاعدة)
+  let dbCleanupInterval: NodeJS.Timeout | null = null;
+  try {
+    const { getDatabaseStatus } = await import('./database-adapter');
+    if (getDatabaseStatus().connected) {
+      dbCleanupInterval = databaseCleanup.startPeriodicCleanup(6); // كل 6 ساعات
+    }
+  } catch {}
 
   // تنظيف فوري عند بدء الخادم
   setTimeout(async () => {
@@ -1493,13 +1499,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // تنظيف الفترة الزمنية عند إغلاق الخادم
   process.on('SIGINT', () => {
-    clearInterval(dbCleanupInterval);
+    if (dbCleanupInterval) clearInterval(dbCleanupInterval);
     process.exit(0);
   });
 
   // Ensure cleanup on SIGTERM as well
   process.on('SIGTERM', () => {
-    clearInterval(dbCleanupInterval);
+    if (dbCleanupInterval) clearInterval(dbCleanupInterval);
     process.exit(0);
   });
 
