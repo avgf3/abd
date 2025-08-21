@@ -1,7 +1,8 @@
 import { sql, eq, desc, asc, and, or, like, count, isNull, gte, lt, inArray } from 'drizzle-orm';
 
 import * as pgSchema from '../../shared/schema';
-import * as sqliteSchema from '../../shared/sqlite-schema';
+// إزالة دعم SQLite بالكامل: نستخدم نفس مخطط PostgreSQL كمرجع لتجنّب الاستيراد
+const sqliteSchema = pgSchema as any;
 import { dbAdapter, dbType } from '../database-adapter';
 
 // Type definitions for database operations

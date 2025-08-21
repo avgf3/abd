@@ -11,7 +11,7 @@ import {
   rooms,
 } from '../shared/schema';
 
-import { db, dbType, initializeDatabase as initDB } from './database-adapter';
+import { db, dbType, initializeDatabase as initDB, runMigrationsIfAvailable } from './database-adapter';
 
 // إعادة تصدير دالة التهيئة من المحول
 export { initializeDatabase } from './database-adapter';
@@ -264,6 +264,13 @@ export async function initializeSystem(): Promise<boolean> {
     if (!dbInitialized) {
       console.error('❌ فشل في تهيئة قاعدة البيانات');
       return false;
+    }
+
+    // تشغيل الهجرات إن وُجدت
+    try {
+      await runMigrationsIfAvailable();
+    } catch (e) {
+      console.warn('⚠️ تعذر تشغيل الهجرات تلقائياً:', (e as any)?.message || e);
     }
 
     // إنشاء البيانات الافتراضية

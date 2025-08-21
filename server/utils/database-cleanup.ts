@@ -1,7 +1,7 @@
 import { sql, eq, notInArray } from 'drizzle-orm';
 
 import { messages, users } from '../../shared/schema';
-import { db } from '../database-adapter';
+import { db, getDatabaseStatus } from '../database-adapter';
 
 export class DatabaseCleanup {
   /**
@@ -9,6 +9,7 @@ export class DatabaseCleanup {
    */
   async cleanupOrphanedMessages(): Promise<number> {
     try {
+      if (!db || !getDatabaseStatus().connected) return 0;
       // الحصول على جميع معرفات المستخدمين الموجودين
       const existingUsers = await db.select({ id: users.id }).from(users);
       const existingUserIds = existingUsers.map((user) => user.id);
@@ -35,6 +36,7 @@ export class DatabaseCleanup {
    */
   async cleanupInvalidMessages(): Promise<number> {
     try {
+      if (!db || !getDatabaseStatus().connected) return 0;
       // حذف الرسائل الفارغة أو غير الصالحة
       const deletedMessages = await db
         .delete(messages)
@@ -59,6 +61,7 @@ export class DatabaseCleanup {
    */
   async cleanupOldGuestUsers(): Promise<number> {
     try {
+      if (!db || !getDatabaseStatus().connected) return 0;
       // حذف المستخدمين الضيوف القدامى (معرف أكبر من 1000 وغير متصلين لأكثر من 24 ساعة)
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -86,6 +89,11 @@ export class DatabaseCleanup {
     invalidMessages: number;
     oldGuestUsers: number;
   }> {
+    const connected = getDatabaseStatus().connected;
+    if (!connected || !db) {
+      return { orphanedMessages: 0, invalidMessages: 0, oldGuestUsers: 0 };
+    }
+
     const results = {
       orphanedMessages: await this.cleanupOrphanedMessages(),
       invalidMessages: await this.cleanupInvalidMessages(),
@@ -123,6 +131,15 @@ export class DatabaseCleanup {
     registeredUsers: number;
   }> {
     try {
+      if (!db || !getDatabaseStatus().connected) {
+        return {
+          totalUsers: 0,
+          totalMessages: 0,
+          onlineUsers: 0,
+          guestUsers: 0,
+          registeredUsers: 0,
+        };
+      }
       const [totalUsersResult] = await db.select({ count: sql<number>`count(*)` }).from(users);
 
       const [totalMessagesResult] = await db
