@@ -2,7 +2,7 @@
 > rest-express@1.0.0 dev
 > NODE_ENV=development tsx server/index.ts
 
-[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
 ✅ تم الاتصال بقاعدة بيانات PostgreSQL
 {
   severity_local: 'NOTICE',
@@ -23,5 +23,23 @@
   routine: 'transformCreateStmt'
 }
 ✅ تم تشغيل الهجرات بنجاح
-[2025-08-22T14:27:35.135Z] INFO: [express] 🚀 الخادم يعمل على المنفذ 3000 في وضع development
-[2025-08-22T14:27:35.135Z] INFO: [express] 📱 رابط التطبيق: http://localhost:3000
+node:events:496
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at node:net:2205:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1975:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -98,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+
+Node.js v22.16.0
