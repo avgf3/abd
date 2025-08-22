@@ -16,7 +16,7 @@ interface DatabaseStatus {
 
 interface DbAdapter {
   db: ReturnType<typeof drizzle<typeof schema>> | null;
-  client: postgres.Sql<{}> | null;
+  client: postgres.Sql<Record<string, never>> | null;
 }
 
 export let dbType: DatabaseType = 'disabled';

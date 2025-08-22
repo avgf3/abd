@@ -1591,7 +1591,7 @@ export class DatabaseService {
     return {
       connected: this.isConnected(),
       type: this.type,
-      adapter: dbAdapter.type,
+      adapter: dbType,
     };
   }
 
