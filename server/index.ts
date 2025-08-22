@@ -11,9 +11,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { setupVite, serveStatic, log } from './vite';
 
 import path from 'path';
-import fs from 'fs';
 import { promises as fsp } from 'fs';
-import { Server } from 'http';
 
 const app = express();
 // Trust reverse proxy to get correct client IPs from x-forwarded-for

@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
 import {

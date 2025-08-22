@@ -20,12 +20,11 @@ import { z } from 'zod';
 
 // import { trackClick } from "./middleware/analytics"; // commented out as file doesn't exist
 import { DEFAULT_LEVELS, recalculateUserStats } from '../shared/points-system';
-import { insertUserSchema, insertMessageSchema } from '../shared/schema';
+import { insertUserSchema } from '../shared/schema';
 import { advancedSecurity, advancedSecurityMiddleware } from './advanced-security';
 import securityApiRoutes from './api-security';
 
 import { db, dbType } from './database-adapter';
-import { setupDownloadRoute } from './download-route';
 import { protect } from './middleware/enhancedSecurity';
 import { moderationSystem } from './moderation';
 import { getIO } from './realtime';
