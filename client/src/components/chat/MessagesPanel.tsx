@@ -13,6 +13,7 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { formatMessagePreview, getPmLastOpened, setPmLastOpened } from '@/utils/messageUtils';
 import { formatTime } from '@/utils/timeUtils';
+import { getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
 
 interface MessagesPanelProps {
   isOpen: boolean;
