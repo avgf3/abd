@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 import { Button } from '@/components/ui/button';
 import { useChatAnalytics } from '@/lib/chatAnalytics';
 import type { ChatUser } from '@/types/chat';
 import { formatTime } from '@/utils/timeUtils';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 interface AnalyticsPanelProps {
   isOpen: boolean;
@@ -109,7 +111,12 @@ export default function AnalyticsPanel({ isOpen, onClose, currentUser }: Analyti
                     <span className="text-lg">
                       {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '👤'}
                     </span>
-                    <span className="text-sm text-gray-300 flex-1 truncate">{user.username}</span>
+                    <span 
+                      className="text-sm text-gray-300 flex-1 truncate"
+                      style={{ color: getFinalUsernameColor(user) }}
+                    >
+                      {user.username}
+                    </span>
                     <span className="text-xs bg-blue-600 px-2 py-1 rounded-full">
                       {user.messageCount}
                     </span>
@@ -143,7 +150,9 @@ export default function AnalyticsPanel({ isOpen, onClose, currentUser }: Analyti
                 <div className="text-gray-300">🎯 فترة التحليل: آخر 24 ساعة</div>
                 <div className="text-gray-300">🔄 تحديث تلقائي كل 5 دقائق</div>
                 <div className="text-gray-300">
-                  👨‍💼 المحلل: {currentUser?.username || 'غير محدد'}
+                  👨‍💼 المحلل: <span style={{ color: currentUser ? getFinalUsernameColor(currentUser) : '#9CA3AF' }}>
+                    {currentUser?.username || 'غير محدد'}
+                  </span>
                 </div>
               </div>
             </div>

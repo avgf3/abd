@@ -5,6 +5,7 @@ import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getLevelInfo, getLevelColor, formatPoints } from '@/utils/pointsUtils';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 interface LeaderboardProps {
   currentUser?: ChatUser;
@@ -149,7 +150,10 @@ export function Leaderboard({ currentUser, onClose }: LeaderboardProps) {
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">
+                      <span 
+                        className="font-semibold text-sm"
+                        style={{ color: getFinalUsernameColor(user) }}
+                      >
                         {user.username}
                         {isCurrentUser && <span className="text-blue-500 text-xs">(أنت)</span>}
                       </span>
