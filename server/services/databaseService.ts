@@ -217,14 +217,30 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
+        // التحقق من عدد المستخدمين الحاليين
+        const userCount = await (this.db as any)
+          .select({ count: sql`count(*)::int` })
+          .from(schema.users);
+        
+        const isFirstUser = userCount[0]?.count === 0;
+        
+        // إذا كان هذا أول مستخدم، اجعله المالك
+        const finalUserData = {
+          ...userData,
+          userType: isFirstUser ? 'owner' : (userData.userType || 'guest'),
+          role: isFirstUser ? 'owner' : (userData.role || userData.userType || 'guest'),
+          joinDate: userData.joinDate || new Date(),
+          createdAt: userData.createdAt || new Date(),
+          lastSeen: userData.lastSeen || new Date(),
+        };
+        
+        if (isFirstUser) {
+          console.log('🎉 تسجيل أول مستخدم كمالك للموقع');
+        }
+        
         const result = await (this.db as any)
           .insert(schema.users)
-          .values({
-            ...userData,
-            joinDate: userData.joinDate || new Date(),
-            createdAt: userData.createdAt || new Date(),
-            lastSeen: userData.lastSeen || new Date(),
-          })
+          .values(finalUserData)
           .returning();
         return result[0] || null;
       } else {

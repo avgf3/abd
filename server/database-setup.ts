@@ -24,39 +24,8 @@ export async function createDefaultOwner(): Promise<void> {
     }
 
     if (dbType === 'postgresql') {
-      // البحث عن مالك موجود في PostgreSQL
-      const existingOwner = await db
-        .select()
-        .from(users)
-        .where(sql`user_type = 'owner'`)
-        .limit(1);
-
-      if (existingOwner.length === 0) {
-        const hashedPassword = await bcrypt.hash('admin123', 12);
-
-        await (db as any)
-          .insert(users)
-          .values({
-            username: 'Owner',
-            password: hashedPassword,
-            userType: 'owner',
-            role: 'owner',
-            profileBackgroundColor: '#FFD700',
-            usernameColor: '#FFD700',
-            profileEffect: 'golden',
-            points: 50000,
-            level: 10,
-            totalPoints: 50000,
-            levelProgress: 100,
-            status: 'مالك الموقع',
-            bio: 'مالك الموقع - المشرف العام',
-            joinDate: new Date(),
-            createdAt: new Date(),
-            lastSeen: new Date(),
-          })
-          .onConflictDoNothing();
-      } else {
-      }
+      // لا نقوم بإنشاء مالك افتراضي - أول مستخدم مسجل سيكون المالك تلقائياً
+      console.log('✅ النظام جاهز - أول مستخدم مسجل سيكون مالك الموقع');
     }
   } catch (error) {
     console.error('❌ خطأ في إنشاء المالك الافتراضي:', error);
