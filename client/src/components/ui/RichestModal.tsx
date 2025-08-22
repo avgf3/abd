@@ -174,7 +174,12 @@ export default function RichestModal({ isOpen, onClose, currentUser }: RichestMo
                       alt={c.username}
                       className="w-6 h-6 rounded-full"
                     />
-                    <div className="flex-1 text-sm">{c.username}</div>
+                    <div 
+                      className="flex-1 text-sm"
+                      style={{ color: getFinalUsernameColor(c) }}
+                    >
+                      {c.username}
+                    </div>
                     <button
                       className="text-xs px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary"
                       onClick={() => handleAddVip(c.id)}

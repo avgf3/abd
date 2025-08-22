@@ -242,7 +242,9 @@ export default function PromoteUserPanel({
                   {eligibleUsers.map((user) => (
                     <SelectItem key={user.id} value={user.id.toString()}>
                       <div className="flex items-center gap-2">
-                        <span>{user.username}</span>
+                        <span style={{ color: getFinalUsernameColor(user) }}>
+                          {user.username}
+                        </span>
                         {getRoleBadge(user.userType)}
                       </div>
                     </SelectItem>
@@ -332,7 +334,9 @@ export default function PromoteUserPanel({
                       .map((user) => (
                         <SelectItem key={user.id} value={user.id.toString()}>
                           <div className="flex items-center gap-2">
-                            <span>{user.username}</span>
+                            <span style={{ color: getFinalUsernameColor(user) }}>
+                              {user.username}
+                            </span>
                             {getRoleBadge(user.userType)}
                           </div>
                         </SelectItem>
