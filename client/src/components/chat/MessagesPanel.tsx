@@ -127,8 +127,9 @@ export default function MessagesPanel({
     for (const uid of localUserIds) {
       if (!Number.isFinite(uid)) continue;
       
-      const user = onlineUsers.find((u) => u.id === uid) ||
-        ({ id: uid, username: `مستخدم #${uid}`, userType: 'member', role: 'member', isOnline: false } as unknown as ChatUser);
+      const user = onlineUsers.find((u) => u.id === uid);
+      if (!user) continue; // تخطي إذا لم يتم العثور على المستخدم
+      
       const conv = privateConversations[uid] || [];
       const latest = conv[conv.length - 1];
       if (!latest) continue;
@@ -265,7 +266,8 @@ export default function MessagesPanel({
                       key={user.id}
                       className={`w-full text-right cursor-pointer hover:bg-accent/20 transition-all duration-200 p-3 rounded-lg border bg-background/20 ${
                         unreadCount > 0 ? 'border-primary' : 'border-accent/30'
-                      }`}
+                      } ${getUserListItemClasses(user) || ''}`}
+                      style={getUserListItemStyles(user)}
                       onClick={() => {
                         try {
                           onClose();
@@ -291,7 +293,10 @@ export default function MessagesPanel({
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-3">
-                            <h3 className="font-medium text-gray-900 text-sm truncate">
+                            <h3 
+                              className="font-medium text-sm truncate"
+                              style={{ color: getFinalUsernameColor(user) }}
+                            >
                               {user.username}
                             </h3>
                             <span className="text-xs text-gray-500 whitespace-nowrap">
