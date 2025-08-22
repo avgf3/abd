@@ -8,6 +8,7 @@ dotenv.config();
 async function fixFilePaths() {
   const databaseUrl = process.env.DATABASE_URL;
 
+  if (!databaseUrl) {
     console.error('❌ DATABASE_URL غير محدد في ملف .env');
     process.exit(1);
   }
