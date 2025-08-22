@@ -123,6 +123,12 @@ export function sanitizeUserData(user: any): any {
 
 // دالة لتنظيف مصفوفة من المستخدمين
 export function sanitizeUsersArray(users: any[]): any[] {
+  // التحقق من أن users هو array فعلاً
+  if (!Array.isArray(users)) {
+    console.error('sanitizeUsersArray: Expected array but got:', typeof users);
+    return [];
+  }
+  
   return users.map((user) => sanitizeUserData(user));
 }
 

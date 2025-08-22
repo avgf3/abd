@@ -508,9 +508,17 @@ export const storage: LegacyStorage = {
   },
 
   async createUser(user: any) {
-    const newUser = await databaseService.createUser(user);
-    if (!newUser) throw new Error('Failed to create user');
-    return newUser;
+    try {
+      const newUser = await databaseService.createUser(user);
+      if (!newUser) {
+        console.error('Failed to create user in database:', user?.username);
+        return null;
+      }
+      return newUser;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      return null;
+    }
   },
 
   async updateUser(id: number, updates: Partial<User>) {
@@ -523,16 +531,25 @@ export const storage: LegacyStorage = {
   },
 
   async createMessage(message: any) {
-    // If public message to room, validate per-room moderation (PostgreSQL only)
-    if (!message.isPrivate && message.roomId && typeof message.senderId === 'number') {
-      const can = await databaseService.canSendInRoom(message.roomId, message.senderId);
-      if (!can.allowed) {
-        throw new Error('المرسل غير مسموح له بالإرسال في هذه الغرفة');
+    try {
+      // If public message to room, validate per-room moderation (PostgreSQL only)
+      if (!message.isPrivate && message.roomId && typeof message.senderId === 'number') {
+        const can = await databaseService.canSendInRoom(message.roomId, message.senderId);
+        if (!can.allowed) {
+          console.error('User not allowed to send in room:', message.senderId, message.roomId);
+          return null;
+        }
       }
+      const newMessage = await databaseService.createMessage(message);
+      if (!newMessage) {
+        console.error('Failed to create message in database');
+        return null;
+      }
+      return newMessage;
+    } catch (error) {
+      console.error('Error creating message:', error);
+      return null;
     }
-    const newMessage = await databaseService.createMessage(message);
-    if (!newMessage) throw new Error('Failed to create message');
-    return newMessage;
   },
 
   async getPublicMessages(limit = 50) {
@@ -637,9 +654,17 @@ export const storage: LegacyStorage = {
 
   // Notifications
   async createNotification(notification: any) {
-    const result = await notificationService.createNotification(notification);
-    if (!result) throw new Error('Failed to create notification');
-    return result;
+    try {
+      const result = await notificationService.createNotification(notification);
+      if (!result) {
+        console.error('Failed to create notification:', notification?.type);
+        return null;
+      }
+      return result;
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      return null;
+    }
   },
 
   async getUserNotifications(userId: number, limit = 50) {
