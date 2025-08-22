@@ -57,49 +57,23 @@ export class DatabaseCleanup {
   }
 
   /**
-   * تنظيف المستخدمين الضيوف القدامى (أكثر من 24 ساعة)
-   */
-  async cleanupOldGuestUsers(): Promise<number> {
-    try {
-      if (!db || !getDatabaseStatus().connected) return 0;
-      // حذف المستخدمين الضيوف القدامى (معرف أكبر من 1000 وغير متصلين لأكثر من 24 ساعة)
-      // استخدم تعبير زمني من Postgres لتجنب تمرير كائن Date مباشرة
-      const deletedUsers = await db
-        .delete(users)
-        .where(
-          sql`${users.id} >= 1000 
-              AND ${users.isOnline} = false 
-              AND (${users.lastSeen} IS NULL OR ${users.lastSeen} < now() - interval '24 hours')`
-        )
-        .returning({ id: users.id });
-
-      return deletedUsers.length;
-    } catch (error) {
-      console.error('❌ خطأ في تنظيف المستخدمين الضيوف القدامى:', error);
-      return 0;
-    }
-  }
-
-  /**
    * تنظيف شامل لقاعدة البيانات
    */
   async performFullCleanup(): Promise<{
     orphanedMessages: number;
     invalidMessages: number;
-    oldGuestUsers: number;
   }> {
     const connected = getDatabaseStatus().connected;
     if (!connected || !db) {
-      return { orphanedMessages: 0, invalidMessages: 0, oldGuestUsers: 0 };
+      return { orphanedMessages: 0, invalidMessages: 0 };
     }
 
     const results = {
       orphanedMessages: await this.cleanupOrphanedMessages(),
       invalidMessages: await this.cleanupInvalidMessages(),
-      oldGuestUsers: await this.cleanupOldGuestUsers(),
     };
 
-    const totalCleaned = results.orphanedMessages + results.invalidMessages + results.oldGuestUsers;
+    const totalCleaned = results.orphanedMessages + results.invalidMessages;
     return results;
   }
 
