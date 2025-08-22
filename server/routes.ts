@@ -1145,32 +1145,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'المستخدم غير موجود' });
       }
 
-      // التحقق من كلمة المرور - دعم التشفير والنص العادي
-      let passwordValid = false;
-      if (user.password) {
-        const isBcryptHash = /^(\$2[aby]\$|\$2\$)/.test(user.password);
-        if (isBcryptHash) {
-          // كلمة مرور مشفرة - استخدام bcrypt
-          console.log('Auth(member): bcrypt compare for user', user.id);
-          passwordValid = await bcrypt.compare(password.trim(), user.password);
-        } else {
-          // كلمة مرور غير مشفرة - مقارنة مباشرة
-          console.warn('Auth(member): plaintext password detected for user', user.id);
-          passwordValid = user.password === password.trim();
-          // ترقية تلقائية: إذا تطابقت كلمة المرور النصية، قم بتحويلها إلى bcrypt وتحديثها
-          if (passwordValid) {
-            try {
-              console.log('Auth(member): upgrading plaintext password to bcrypt for user', user.id);
-              const newHash = await bcrypt.hash(password.trim(), 12);
-              const updated = await storage.updateUser(user.id, { password: newHash } as any);
-              if (updated && updated.password) {
-                user.password = updated.password;
-              }
-            } catch (e) {
-              console.error('فشل ترقية كلمة المرور إلى bcrypt للمستخدم:', user.id, e);
-            }
-          }
-        }
+      // التحقق من كلمة المرور - BCRYPT فقط
+      if (!user.password || !/^\$2[aby]\$/.test(user.password)) {
+        return res.status(401).json({ error: 'كلمة المرور غير صالحة' });
+      }
+      const passwordValid = await bcrypt.compare(password.trim(), user.password);
+      if (!passwordValid) {
+        return res.status(401).json({ error: 'كلمة المرور غير صحيحة' });
       }
 
       if (!passwordValid) {
@@ -1180,21 +1161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user is actually a member or owner
       const userType = user.userType;
       if (userType === 'guest') {
-        // ترقية تلقائية: إذا كان لديه كلمة مرور وتم التحقق منها، قم بترقيته إلى عضو
-        try {
-          console.log('Auth(member): promoting guest to member for user', user.id);
-          const updated = await storage.updateUser(user.id, {
-            userType: 'member',
-            role: user.role === 'guest' ? 'member' : user.role,
-          } as any);
-          if (updated) {
-            user.userType = updated.userType as any;
-            user.role = (updated as any).role || user.role;
-          }
-        } catch (e) {
-          console.warn('تعذر ترقية مستخدم guest إلى member للمستخدم:', user.id, e);
-          return res.status(401).json({ error: 'هذا المستخدم ضيف وليس عضو' });
-        }
+        return res.status(401).json({ error: 'هذا المستخدم ضيف وليس عضو' });
       }
 
       // التأكد من أن الأعضاء العاديين غير مخفيين (فقط الإدمن والمالك يمكنهم الإخفاء)
