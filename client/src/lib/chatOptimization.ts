@@ -194,7 +194,7 @@ export function useOptimizedMessages(
         currentGroup = {
           sender: message.sender || {
             id: message.senderId || 0,
-            username: 'مستخدم محذوف',
+            username: 'مستخدم',
             userType: 'guest' as const,
             role: 'guest' as const,
             gender: 'male' as const,
