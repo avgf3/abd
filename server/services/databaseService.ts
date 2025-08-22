@@ -179,6 +179,32 @@ export class DatabaseService {
     }
   }
 
+  // Lookup user by email (optional field). Returns null if not connected or not found
+  async getUserByEmail(email: string): Promise<User | null> {
+    if (!this.isConnected()) return null;
+
+    try {
+      if (this.type === 'postgresql') {
+        const result = await (this.db as any)
+          .select()
+          .from(pgSchema.users)
+          .where(eq((pgSchema as any).users.email, email))
+          .limit(1);
+        return result[0] || null;
+      } else {
+        const result = await (this.db as any)
+          .select()
+          .from(sqliteSchema.users)
+          .where(eq((sqliteSchema as any).users.email, email))
+          .limit(1);
+        return result[0] || null;
+      }
+    } catch (error) {
+      console.error('Error getting user by email:', error);
+      return null;
+    }
+  }
+
   // Batch fetch users by IDs to avoid N+1 queries
   async getUsersByIds(userIds: number[]): Promise<User[]> {
     if (!this.isConnected()) return [];

@@ -71,7 +71,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
     if (!memberName.trim() || !memberPassword.trim()) {
       toast({
         title: 'خطأ',
-        description: 'يرجى إدخال اسم المستخدم وكلمة المرور',
+        description: 'يرجى إدخال اسم المستخدم/البريد وكلمة المرور',
         variant: 'destructive',
       });
       return;
@@ -82,7 +82,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
       const data = await apiRequest('/api/auth/member', {
         method: 'POST',
         body: {
-          username: memberName.trim(),
+          identifier: memberName.trim(),
           password: memberPassword.trim(),
         },
       });
