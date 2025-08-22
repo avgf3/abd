@@ -5,7 +5,7 @@ dotenv.config();
 
 async function checkImages() {
   const databaseUrl = process.env.DATABASE_URL;
-  
+
   if (!databaseUrl) {
     console.error('❌ DATABASE_URL غير محدد');
     process.exit(1);
@@ -27,8 +27,8 @@ async function checkImages() {
 
     console.log('📊 المستخدمين مع صور مسجلة في قاعدة البيانات:');
     console.log('=====================================');
-    
-    users.forEach(user => {
+
+    users.forEach((user) => {
       console.log(`ID: ${user.id}`);
       console.log(`الاسم: ${user.username}`);
       console.log(`مسار الصورة المسجل: ${user.profile_image}`);
@@ -37,7 +37,6 @@ async function checkImages() {
 
     console.log(`\n📈 المجموع: ${users.length} مستخدم لديه صورة مسجلة`);
     console.log('⚠️  لكن الملفات الفعلية غير موجودة على الخادم!');
-
   } catch (error) {
     console.error('❌ خطأ:', error);
   } finally {

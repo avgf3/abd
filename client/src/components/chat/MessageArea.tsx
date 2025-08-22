@@ -461,15 +461,21 @@ export default function MessageArea({
                             const toggle = async () => {
                               try {
                                 if (isMine) {
-                                  const res = await apiRequest(`/api/messages/${message.id}/reactions`, {
-                                    method: 'DELETE',
-                                  });
+                                  const res = await apiRequest(
+                                    `/api/messages/${message.id}/reactions`,
+                                    {
+                                      method: 'DELETE',
+                                    }
+                                  );
                                   // تفويض التحديث للبث عبر السوكت؛ لا نعدل محلياً لتجنب السباقات
                                 } else {
-                                  const res = await apiRequest(`/api/messages/${message.id}/reactions`, {
-                                    method: 'POST',
-                                    body: { type: r },
-                                  });
+                                  const res = await apiRequest(
+                                    `/api/messages/${message.id}/reactions`,
+                                    {
+                                      method: 'POST',
+                                      body: { type: r },
+                                    }
+                                  );
                                 }
                               } catch (e) {
                                 console.error('reaction error', e);

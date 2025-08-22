@@ -24,7 +24,8 @@
     "db:add-profile-effect": "node run-profile-effect-migration.js",
     "db:fix-issues": "node fix-database-issues.js",
     "db:fix-data": "cd server && npx tsx scripts/fix-inconsistent-data.ts",
-    "db:reset": "tsx server/scripts/reset-database.ts",
+    "db:reset": "node scripts/reset-database.js",
+    "auth:verify": "node scripts/verify-auth.js",
     "test:supabase": "tsx test-supabase-connection.ts",
     "clean-logs": "node tools/remove-console-logs.js",
     "build-production": "npm run clean-logs && npm run build"

@@ -35,7 +35,13 @@ export default function MessagesPanel({
 }: MessagesPanelProps) {
   const [search, setSearch] = useState('');
   // جلب قائمة المحادثات الدائمة من الخادم
-  const { data: conversationsData, isLoading, refetch, isRefetching, error } = useQuery<{
+  const {
+    data: conversationsData,
+    isLoading,
+    refetch,
+    isRefetching,
+    error,
+  } = useQuery<{
     success: boolean;
     conversations: Array<{
       otherUserId: number;
@@ -94,8 +100,15 @@ export default function MessagesPanel({
 
   // تحسين: فصل معالجة البيانات لتحسين الأداء
   const serverConversations = useMemo(() => {
-    const map = new Map<number, { user: ChatUser; lastMessage: { content: string; timestamp: string; isImage?: boolean }; unreadCount: number }>();
-    
+    const map = new Map<
+      number,
+      {
+        user: ChatUser;
+        lastMessage: { content: string; timestamp: string; isImage?: boolean };
+        unreadCount: number;
+      }
+    >();
+
     // معالجة بيانات الخادم فقط
     for (const c of conversationsData?.conversations || []) {
       const user = c.otherUser || onlineUsers.find((u) => u.id === c.otherUserId) || null;
@@ -103,7 +116,7 @@ export default function MessagesPanel({
       const lastMessageTs = String(c.lastMessage.timestamp);
       const lastOpened = currentUser?.id ? getPmLastOpened(currentUser.id, user.id) : 0;
       const unreadCount = new Date(lastMessageTs).getTime() > lastOpened ? 1 : 0;
-      
+
       map.set(user.id, {
         user,
         lastMessage: {
@@ -114,27 +127,43 @@ export default function MessagesPanel({
         unreadCount,
       });
     }
-    
+
     return map;
   }, [conversationsData, onlineUsers, currentUser?.id]);
 
   const localConversations = useMemo(() => {
-    const map = new Map<number, { user: ChatUser; lastMessage: { content: string; timestamp: string; isImage?: boolean }; unreadCount: number }>();
-    
+    const map = new Map<
+      number,
+      {
+        user: ChatUser;
+        lastMessage: { content: string; timestamp: string; isImage?: boolean };
+        unreadCount: number;
+      }
+    >();
+
     // معالجة البيانات المحلية فقط
     const localUserIds = Object.keys(privateConversations || {}).map((k) => parseInt(k, 10));
     for (const uid of localUserIds) {
       if (!Number.isFinite(uid)) continue;
-      
-      const user = onlineUsers.find((u) => u.id === uid) ||
-        ({ id: uid, username: `مستخدم #${uid}`, userType: 'member', role: 'member', isOnline: false } as unknown as ChatUser);
+
+      const user =
+        onlineUsers.find((u) => u.id === uid) ||
+        ({
+          id: uid,
+          username: `مستخدم #${uid}`,
+          userType: 'member',
+          role: 'member',
+          isOnline: false,
+        } as unknown as ChatUser);
       const conv = privateConversations[uid] || [];
       const latest = conv[conv.length - 1];
       if (!latest) continue;
-      
+
       const lastOpened = currentUser?.id ? getPmLastOpened(currentUser.id, uid) : 0;
-      const unreadCount = conv.filter((m) => new Date(m.timestamp).getTime() > lastOpened && m.senderId === uid).length;
-      
+      const unreadCount = conv.filter(
+        (m) => new Date(m.timestamp).getTime() > lastOpened && m.senderId === uid
+      ).length;
+
       map.set(uid, {
         user,
         lastMessage: {
@@ -145,19 +174,26 @@ export default function MessagesPanel({
         unreadCount,
       });
     }
-    
+
     return map;
   }, [privateConversations, onlineUsers, currentUser?.id]);
 
   const conversations = useMemo(() => {
     // دمج المحادثات من المصدرين
-    const merged = new Map<number, { user: ChatUser; lastMessage: { content: string; timestamp: string; isImage?: boolean }; unreadCount: number }>();
-    
+    const merged = new Map<
+      number,
+      {
+        user: ChatUser;
+        lastMessage: { content: string; timestamp: string; isImage?: boolean };
+        unreadCount: number;
+      }
+    >();
+
     // أضف من الخادم أولاً
     for (const [id, conv] of serverConversations) {
       merged.set(id, conv);
     }
-    
+
     // ثم أضف/حدث من المحلي
     for (const [id, localConv] of localConversations) {
       const existing = merged.get(id);
@@ -171,13 +207,16 @@ export default function MessagesPanel({
           merged.set(id, localConv);
         } else {
           // حدث عداد غير المقروء على الأقل
-          merged.set(id, { ...existing, unreadCount: Math.max(existing.unreadCount, localConv.unreadCount) });
+          merged.set(id, {
+            ...existing,
+            unreadCount: Math.max(existing.unreadCount, localConv.unreadCount),
+          });
         }
       }
     }
-    
+
     const items = Array.from(merged.values());
-    
+
     // تطبيق البحث
     const filtered = search
       ? items.filter(
@@ -188,14 +227,13 @@ export default function MessagesPanel({
               .includes(search.toLowerCase())
         )
       : items;
-    
+
     // ترتيب: غير المقروء أولاً، ثم حسب الوقت
     return filtered.sort((a, b) => {
       if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
       if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
       return (
-        new Date(b.lastMessage.timestamp).getTime() -
-        new Date(a.lastMessage.timestamp).getTime()
+        new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
       );
     });
   }, [serverConversations, localConversations, search]);
@@ -217,7 +255,11 @@ export default function MessagesPanel({
             </DialogTitle>
             <div
               className={`px-2 py-0.5 rounded-full text-xs ${
-                isRefetching ? 'bg-yellow-100 text-yellow-700' : isConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                isRefetching
+                  ? 'bg-yellow-100 text-yellow-700'
+                  : isConnected
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
               }`}
               title={isConnected ? 'متصل' : 'غير متصل'}
             >

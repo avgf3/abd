@@ -254,14 +254,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updateConnectedUserCache(updatedUser);
         } catch {}
         emitUserUpdatedToUser(userId, updatedUser);
-        
+
         // بث event مخصص لتحديث الصور
         await emitToUserRooms(userId, {
           type: 'user_avatar_updated',
           avatarHash: hash,
-          avatarVersion: nextVersion
+          avatarVersion: nextVersion,
         });
-        
+
         await emitToUserRooms(userId, {
           type: 'userUpdated',
           user: buildUserBroadcastPayload(updatedUser),
@@ -1270,7 +1270,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const adminId = (req as any).user?.id as number;
       if (!targetUserId) return res.status(400).json({ error: 'targetUserId مطلوب' });
       const success = await databaseService.addVipUser(parseInt(String(targetUserId)), adminId);
-      if (!success) return res.status(500).json({ error: 'تعذر الإضافة إلى VIP. تأكد من اتصال PostgreSQL ووجود الجدول.' });
+      if (!success)
+        return res
+          .status(500)
+          .json({ error: 'تعذر الإضافة إلى VIP. تأكد من اتصال PostgreSQL ووجود الجدول.' });
 
       // بث تحديث VIP للجميع
       try {
@@ -1291,7 +1294,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.userId);
       if (!userId) return res.status(400).json({ error: 'userId غير صالح' });
       const success = await databaseService.removeVipUser(userId);
-      if (!success) return res.status(500).json({ error: 'تعذر الحذف من VIP. تأكد من اتصال PostgreSQL ووجود الجدول.' });
+      if (!success)
+        return res
+          .status(500)
+          .json({ error: 'تعذر الحذف من VIP. تأكد من اتصال PostgreSQL ووجود الجدول.' });
 
       // بث تحديث VIP للجميع
       try {
@@ -2300,12 +2306,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(payload);
     } catch (error) {
       console.error('Error updating user:', error);
-      res
-        .status(500)
-        .json({
-          error: 'Failed to update user',
-          details: error instanceof Error ? error.message : 'Unknown error',
-        });
+      res.status(500).json({
+        error: 'Failed to update user',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   });
 

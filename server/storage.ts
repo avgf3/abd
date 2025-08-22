@@ -589,11 +589,7 @@ export const storage: LegacyStorage = {
   },
 
   // ========= Message Reactions =========
-  async reactToMessage(
-    messageId: number,
-    userId: number,
-    type: 'like' | 'dislike' | 'heart'
-  ) {
+  async reactToMessage(messageId: number, userId: number, type: 'like' | 'dislike' | 'heart') {
     return await databaseService.upsertMessageReaction(messageId, userId, type);
   },
   async removeMessageReaction(messageId: number, userId: number) {

@@ -99,16 +99,15 @@ async function applyDatabaseFix() {
     `;
 
     console.log('\n📋 الجداول الموجودة في قاعدة البيانات:');
-    tables.forEach(table => {
+    tables.forEach((table) => {
       console.log(`  - ${table.table_name}`);
     });
 
     console.log('\n✅ تم إصلاح قاعدة البيانات بنجاح!');
     console.log('🎉 يمكنك الآن تشغيل التطبيق بدون أخطاء');
-
   } catch (error) {
     console.error('❌ خطأ في تطبيق الإصلاحات:', error);
-    
+
     // محاولة عرض تفاصيل الخطأ
     if (error.message) {
       console.error('📝 رسالة الخطأ:', error.message);
@@ -119,7 +118,7 @@ async function applyDatabaseFix() {
     if (error.hint) {
       console.error('💡 تلميح:', error.hint);
     }
-    
+
     process.exit(1);
   } finally {
     await sql.end();
@@ -127,7 +126,7 @@ async function applyDatabaseFix() {
 }
 
 // تشغيل الإصلاح
-applyDatabaseFix().catch(error => {
+applyDatabaseFix().catch((error) => {
   console.error('❌ فشل تطبيق الإصلاحات:', error);
   process.exit(1);
 });

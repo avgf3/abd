@@ -2,7 +2,6 @@ import { sql, eq, desc, asc, and, or, like, count, isNull, gte, lt, inArray } fr
 
 import * as schema from '../../shared/schema';
 import { dbAdapter, dbType } from '../database-adapter';
-import { SecurityManager } from '../auth/security';
 
 // Type definitions for database operations
 export interface User {
@@ -218,22 +217,30 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
-        // Ensure password is hashed if provided and not already a bcrypt hash
-        if (userData && typeof userData.password === 'string' && userData.password.trim()) {
-          const pwd = userData.password.trim();
-          const isBcrypt = /^\$2[aby]?\$/.test(pwd);
-          if (!isBcrypt) {
-            userData.password = await SecurityManager.hashPassword(pwd);
-          }
+        // التحقق من عدد المستخدمين الحاليين
+        const userCount = await (this.db as any)
+          .select({ count: sql`count(*)::int` })
+          .from(schema.users);
+
+        const isFirstUser = userCount[0]?.count === 0;
+
+        // إذا كان هذا أول مستخدم، اجعله المالك
+        const finalUserData = {
+          ...userData,
+          userType: isFirstUser ? 'owner' : userData.userType || 'guest',
+          role: isFirstUser ? 'owner' : userData.role || userData.userType || 'guest',
+          joinDate: userData.joinDate || new Date(),
+          createdAt: userData.createdAt || new Date(),
+          lastSeen: userData.lastSeen || new Date(),
+        };
+
+        if (isFirstUser) {
+          console.log('🎉 تسجيل أول مستخدم كمالك للموقع');
         }
+
         const result = await (this.db as any)
           .insert(schema.users)
-          .values({
-            ...userData,
-            joinDate: userData.joinDate || new Date(),
-            createdAt: userData.createdAt || new Date(),
-            lastSeen: userData.lastSeen || new Date(),
-          })
+          .values(finalUserData)
           .returning();
         return result[0] || null;
       } else {
@@ -332,10 +339,7 @@ export class DatabaseService {
           .select()
           .from(schema.pointsHistory)
           .where(
-            and(
-              eq(schema.pointsHistory.userId, userId),
-              eq(schema.pointsHistory.reason, reason)
-            )
+            and(eq(schema.pointsHistory.userId, userId), eq(schema.pointsHistory.reason, reason))
           )
           .orderBy(desc(schema.pointsHistory.createdAt))
           .limit(1);
@@ -513,7 +517,7 @@ export class DatabaseService {
           .innerJoin(schema.vipUsers, eq(schema.vipUsers.userId, schema.users.id))
           .orderBy(desc(schema.users.totalPoints), asc(schema.users.username))
           .limit(Math.min(100, Math.max(1, limit)));
-        
+
         return result || [];
       }
       return [];
@@ -654,14 +658,8 @@ export class DatabaseService {
             and(
               eq(schema.messages.isPrivate, true),
               or(
-                and(
-                  eq(schema.messages.senderId, userId1),
-                  eq(schema.messages.receiverId, userId2)
-                ),
-                and(
-                  eq(schema.messages.senderId, userId2),
-                  eq(schema.messages.receiverId, userId1)
-                )
+                and(eq(schema.messages.senderId, userId1), eq(schema.messages.receiverId, userId2)),
+                and(eq(schema.messages.senderId, userId2), eq(schema.messages.receiverId, userId1))
               )
             )
           )
@@ -1166,10 +1164,7 @@ export class DatabaseService {
       };
 
       if (this.type === 'postgresql') {
-        const result = await (this.db as any)
-          .insert(schema.friends)
-          .values(friendData)
-          .returning();
+        const result = await (this.db as any).insert(schema.friends).values(friendData).returning();
         return result[0] || null;
       } else {
         // SQLite has no friends table, so this will return null
@@ -1584,7 +1579,7 @@ export class DatabaseService {
     return {
       connected: this.isConnected(),
       type: this.type,
-      adapter: dbAdapter.type,
+      adapter: dbType,
     };
   }
 

@@ -81,7 +81,10 @@ export function serveStatic(app: Express) {
       maxAge: '7d',
       setHeaders: (res, filePath) => {
         // Aggressive caching for hashed assets
-        if (/\.(?:js|css|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|webp)$/i.test(filePath) && /assets\//.test(filePath)) {
+        if (
+          /\.(?:js|css|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|webp)$/i.test(filePath) &&
+          /assets\//.test(filePath)
+        ) {
           res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         }
       },

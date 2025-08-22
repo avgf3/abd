@@ -78,7 +78,9 @@ export default function PrivateMessageBox({
   // تحديث آخر وقت فتح للمحادثة لاحتساب غير المقروء
   useEffect(() => {
     if (isOpen && currentUser?.id && user?.id) {
-      try { setPmLastOpened(currentUser.id, user.id); } catch {}
+      try {
+        setPmLastOpened(currentUser.id, user.id);
+      } catch {}
     }
   }, [isOpen, currentUser?.id, user?.id]);
 
@@ -98,21 +100,24 @@ export default function PrivateMessageBox({
   }, []);
 
   // محسن: دالة إرسال مع إعادة المحاولة ومعالجة أخطاء محسنة
-  const sendMessageWithRetry = useCallback(async (content: string, retries = 3): Promise<boolean> => {
-    for (let i = 0; i < retries; i++) {
-      try {
-        await onSendMessage(content);
-        return true;
-      } catch (error) {
-        if (i === retries - 1) {
-          throw error;
+  const sendMessageWithRetry = useCallback(
+    async (content: string, retries = 3): Promise<boolean> => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          await onSendMessage(content);
+          return true;
+        } catch (error) {
+          if (i === retries - 1) {
+            throw error;
+          }
+          // انتظر قبل إعادة المحاولة (زيادة تدريجية)
+          await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)));
         }
-        // انتظر قبل إعادة المحاولة (زيادة تدريجية)
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
       }
-    }
-    return false;
-  }, [onSendMessage]);
+      return false;
+    },
+    [onSendMessage]
+  );
 
   const handleSend = useCallback(async () => {
     if (isSending) return;
@@ -124,7 +129,7 @@ export default function PrivateMessageBox({
     setIsSending(true);
     setSendError(null);
     clearTimeout(retryTimeoutRef.current);
-    
+
     try {
       if (hasImage) {
         const reader = new FileReader();
@@ -134,7 +139,7 @@ export default function PrivateMessageBox({
           reader.onerror = () => reject(new Error('فشل قراءة الملف'));
           reader.readAsDataURL(file);
         });
-        
+
         const success = await sendMessageWithRetry(asDataUrl, 2);
         if (success) {
           setImageFile(null);
@@ -155,7 +160,7 @@ export default function PrivateMessageBox({
       const errorMessage = error instanceof Error ? error.message : 'فشل إرسال الرسالة';
       setSendError(errorMessage);
       toast.error(errorMessage);
-      
+
       // إعادة تعيين حالة الخطأ بعد 5 ثوان
       retryTimeoutRef.current = setTimeout(() => setSendError(null), 5000);
     } finally {
@@ -176,26 +181,23 @@ export default function PrivateMessageBox({
   );
 
   // دعم لصق الصور مباشرة في صندوق الإدخال
-  const handlePaste = useCallback(
-    (e: React.ClipboardEvent<HTMLInputElement>) => {
-      try {
-        const items = e.clipboardData?.items;
-        if (!items) return;
-        for (let i = 0; i < items.length; i++) {
-          const it = items[i];
-          if (it.type.startsWith('image/')) {
-            const file = it.getAsFile();
-            if (file) {
-              setImageFile(file);
-              e.preventDefault();
-              break;
-            }
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
+    try {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        if (it.type.startsWith('image/')) {
+          const file = it.getAsFile();
+          if (file) {
+            setImageFile(file);
+            e.preventDefault();
+            break;
           }
         }
-      } catch {}
-    },
-    []
-  );
+      }
+    } catch {}
+  }, []);
 
   // تحميل المزيد عند الوصول للأعلى
   const handleLoadMore = useCallback(async () => {
