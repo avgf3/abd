@@ -1131,15 +1131,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'اسم المستخدم غير موجود' });
       }
 
-      // التحقق من كلمة المرور - دعم التشفير والنص العادي
+      // التحقق من كلمة المرور - دعم جميع صيغ bcrypt القديمة + النص العادي مع إعادة تشفير تلقائي
       let passwordValid = false;
-      if (user.password) {
-        if (user.password.startsWith('$2b$')) {
-          // كلمة مرور مشفرة - استخدام bcrypt
-          passwordValid = await bcrypt.compare(password.trim(), user.password);
+      const inputPassword = password.trim();
+      const storedPassword = user.password || '';
+      if (storedPassword) {
+        const isBcrypt = storedPassword.startsWith('$2a$') || storedPassword.startsWith('$2b$') || storedPassword.startsWith('$2y$');
+        if (isBcrypt) {
+          // بعض الأنظمة تخزن $2y$؛ طبّق تحويل آمن للمقارنة
+          const normalizedHash = storedPassword.startsWith('$2y$')
+            ? storedPassword.replace(/^\$2y\$/,'$2b$')
+            : storedPassword;
+          try {
+            passwordValid = await bcrypt.compare(inputPassword, normalizedHash);
+          } catch {
+            passwordValid = false;
+          }
         } else {
-          // كلمة مرور غير مشفرة - مقارنة مباشرة
-          passwordValid = user.password === password.trim();
+          // كلمة مرور غير مشفرة مخزنة نصاً
+          passwordValid = storedPassword === inputPassword;
         }
       }
 
@@ -1147,8 +1157,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'كلمة المرور غير صحيحة' });
       }
 
-      // Check if user is actually a member or owner
-      const userType = user.userType;
+      // إعادة تشفير تلقائي إلى bcrypt $2b$ عند النجاح إذا لزم الأمر
+      try {
+        if (!storedPassword.startsWith('$2b$')) {
+          const newHash = await bcrypt.hash(inputPassword, 12);
+          await storage.updateUser(user.id, { password: newHash } as any);
+          user.password = newHash;
+        }
+      } catch {}
+
+      // ترقية نوع المستخدم تلقائياً إذا كان ضيفاً لكن الدور يدل على عضو/أعلى
+      let userType = user.userType;
+      if (userType === 'guest') {
+        const desired = ['member', 'admin', 'owner', 'moderator'].includes(String(user.role || ''))
+          ? String(user.role)
+          : null;
+        if (desired) {
+          try {
+            await storage.updateUser(user.id, { userType: desired as any, role: desired as any } as any);
+            userType = desired as any;
+          } catch {}
+        }
+      }
+
       if (userType === 'guest') {
         return res.status(401).json({ error: 'هذا المستخدم ضيف وليس عضو' });
       }
