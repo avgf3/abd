@@ -1120,15 +1120,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/auth/member', authLimiter, async (req, res) => {
     try {
-      const { username, password } = req.body;
+      const { username, password, email, identifier } = req.body || {};
 
-      if (!username?.trim() || !password?.trim()) {
-        return res.status(400).json({ error: 'اسم المستخدم وكلمة المرور مطلوبان' });
+      const providedIdentifier = (identifier || username || email || '').toString();
+
+      if (!providedIdentifier.trim() || !password?.trim()) {
+        return res.status(400).json({ error: 'اسم المستخدم/البريد وكلمة المرور مطلوبان' });
       }
 
-      const user = await storage.getUserByUsername(username.trim());
+      // حاول الإتيان بالمستخدم بالاسم أولاً ثم بالبريد إذا كان معرف يشبه البريد
+      let user = await storage.getUserByUsername(providedIdentifier.trim());
+      if (!user && /@/.test(providedIdentifier)) {
+        try {
+          user = await (storage as any).getUserByEmail?.(providedIdentifier.trim());
+        } catch {}
+      }
       if (!user) {
-        return res.status(401).json({ error: 'اسم المستخدم غير موجود' });
+        return res.status(401).json({ error: 'المستخدم غير موجود' });
       }
 
       // التحقق من كلمة المرور - دعم التشفير والنص العادي

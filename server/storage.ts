@@ -491,6 +491,11 @@ export const storage: LegacyStorage = {
     return user || undefined;
   },
 
+  async getUserByEmail(email: string) {
+    const user = await databaseService.getUserByEmail(email);
+    return user || undefined;
+  },
+
   // Batch users fetch to reduce N+1 patterns
   async getUsersByIds(userIds: number[]) {
     try {
