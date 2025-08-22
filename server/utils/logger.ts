@@ -3,10 +3,10 @@
  */
 
 interface LogLevel {
-  DEBUG: 0;
-  INFO: 1;
-  WARN: 2;
-  ERROR: 3;
+  DEBUG: number;
+  INFO: number;
+  WARN: number;
+  ERROR: number;
 }
 
 const LOG_LEVELS: LogLevel = {

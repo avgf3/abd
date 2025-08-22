@@ -5,19 +5,50 @@ import helmet from 'helmet';
 import { moderationSystem } from './moderation';
 import { getDeviceIdFromHeaders } from './utils/device';
 
-// Rate limiting maps
+// Rate limiting maps with automatic cleanup
 const authRequestCounts = new Map<string, { count: number; resetTime: number }>();
 const messageRequestCounts = new Map<string, { count: number; resetTime: number }>();
 const friendRequestCounts = new Map<string, { count: number; resetTime: number }>();
 const blockedIPs = new Set<string>();
 
-// Rate limiter for authentication endpoints
-export function authLimiter(req: Request, res: Response, next: NextFunction): void {
+// تنظيف المعلومات القديمة كل 5 دقائق
+setInterval(() => {
+  const now = Date.now();
+  
+  // تنظيف authRequestCounts
+  for (const [key, value] of authRequestCounts.entries()) {
+    if (now > value.resetTime) {
+      authRequestCounts.delete(key);
+    }
+  }
+  
+  // تنظيف messageRequestCounts
+  for (const [key, value] of messageRequestCounts.entries()) {
+    if (now > value.resetTime) {
+      messageRequestCounts.delete(key);
+    }
+  }
+  
+  // تنظيف friendRequestCounts
+  for (const [key, value] of friendRequestCounts.entries()) {
+    if (now > value.resetTime) {
+      friendRequestCounts.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);
+
+// استخراج عنوان IP من الطلب
+function getClientId(req: Request): string {
   const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
   const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
-  const clientId = forwarded || real || req.ip || 'unknown';
+  return forwarded || real || req.ip || 'unknown';
+}
+
+// Rate limiter for authentication endpoints
+export function authLimiter(req: Request, res: Response, next: NextFunction): void {
+  const clientId = getClientId(req);
   const now = Date.now();
-  const windowMs = 15 * 60 * 1000; // 15 minutes
+  const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW || '900000'); // 15 minutes default
   const maxRequests = 50; // زيادة الحد للمصادقة
 
   const current = authRequestCounts.get(clientId);
