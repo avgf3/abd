@@ -1,5 +1,4 @@
 import { Ban, AlertTriangle } from 'lucide-react';
-import React from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

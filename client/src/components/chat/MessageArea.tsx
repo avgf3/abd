@@ -9,8 +9,7 @@ import UserRoleBadge from './UserRoleBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { apiRequest } from '@/lib/queryClient';
-import { api } from '@/lib/queryClient';
+import { apiRequest, api } from '@/lib/queryClient';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import {
   findMentions,
