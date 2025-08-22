@@ -30,6 +30,7 @@ import type {
   ChatMessage,
 } from '@/types/chat';
 import { normalizeBroadcastInfo } from '@/utils/roomUtils';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 // ICE servers helper with optional TURN support via env
 const getIceServers = (): RTCIceServer[] => {
@@ -857,7 +858,9 @@ export default function BroadcastRoomInterface({
             <span className="font-medium">المضيف:</span>
             {broadcastInfo?.hostId != null && (
               <Badge variant="secondary" className="flex items-center gap-1">
-                {getUserById(broadcastInfo.hostId!)?.username || 'غير معروف'}
+                <span style={{ color: getFinalUsernameColor(getUserById(broadcastInfo.hostId!)) }}>
+                  {getUserById(broadcastInfo.hostId!)?.username || 'غير معروف'}
+                </span>
               </Badge>
             )}
           </div>
@@ -885,7 +888,9 @@ export default function BroadcastRoomInterface({
                     const user = getUserById(userId);
                     return user ? (
                       <Badge key={userId} variant="outline" className="flex items-center gap-1">
-                        {user.username}
+                        <span style={{ color: getFinalUsernameColor(user) }}>
+                          {user.username}
+                        </span>
                         {canManageMic && (
                           <Button
                             size="sm"
@@ -919,7 +924,9 @@ export default function BroadcastRoomInterface({
                     const user = getUserById(userId);
                     return user ? (
                       <Badge key={userId} variant="outline" className="flex items-center gap-1">
-                        {user.username}
+                        <span style={{ color: getFinalUsernameColor(user) }}>
+                          {user.username}
+                        </span>
                         {canManageMic && (
                           <div className="flex gap-1">
                             <Button

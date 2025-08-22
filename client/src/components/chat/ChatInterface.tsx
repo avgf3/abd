@@ -61,6 +61,7 @@ import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 interface ChatInterfaceProps {
   chat: UseChatReturn;
@@ -1142,7 +1143,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                           ?
                         </div>
                       )}
-                      <span className="font-medium">
+                      <span 
+                        className="font-medium"
+                        style={{ color: u ? getFinalUsernameColor(u) : '#666666' }}
+                      >
                         {u ? u.username : `مستخدم غير متصل #${id}`}
                       </span>
                     </div>
