@@ -221,7 +221,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .resize(256, 256, { fit: 'cover' })
             .webp({ quality: 80 })
             .toBuffer();
-        } catch {}
+        } catch (sharpError) {
+          console.error('تحذير: فشل تحويل الصورة إلى WebP، سيتم استخدام الصورة الأصلية:', sharpError);
+        }
         const hash = (await import('crypto'))
           .createHash('md5')
           .update(webpBuffer)
@@ -233,7 +235,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // حذف الملف المؤقت
         try {
           await fsp.unlink(req.file.path);
-        } catch {}
+        } catch (unlinkError) {
+          console.error('تحذير: فشل حذف الملف المؤقت:', unlinkError);
+        }
 
         // تحديث DB: avatarHash + زيادة avatarVersion
         const nextVersion = (user as any).avatarVersion
@@ -252,7 +256,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // بث خفيف للغرف + كامل لصاحب التعديل
         try {
           updateConnectedUserCache(updatedUser);
-        } catch {}
+        } catch (cacheError) {
+          console.error('تحذير: فشل تحديث ذاكرة التخزين المؤقت:', cacheError);
+        }
         emitUserUpdatedToUser(userId, updatedUser);
 
         // بث event مخصص لتحديث الصور
@@ -522,14 +528,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/moderation/reports', protect.admin, async (req, res) => {
     try {
-      const { userId } = req.query;
-      if (!userId) {
-        return res.status(401).json({ error: 'غير مسموح - للإدمن والمالك فقط' });
-      }
-
-      const user = await storage.getUser(parseInt(userId as string));
-      if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
-        return res.status(403).json({ error: 'غير مسموح - للإدمن والمالك فقط' });
+      // لا حاجة للتحقق اليدوي - protect.admin يتكفل بذلك
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: 'غير مصرح' });
       }
 
       const reports = spamProtection.getPendingReports();
@@ -1244,10 +1246,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 50));
       const users = await databaseService.getVipUsers(limit);
+      
+      // التحقق من النتيجة
+      if (!users) {
+        console.error('لم يتم إرجاع مستخدمي VIP من قاعدة البيانات');
+        return res.json({ users: [] });
+      }
+      
       const safe = users.map((u) => buildUserBroadcastPayload(u));
       res.json({ users: safe });
     } catch (error) {
-      res.status(500).json({ error: 'خطأ في الخادم' });
+      console.error('خطأ في جلب قائمة VIP:', error);
+      res.status(500).json({ 
+        error: 'خطأ في الخادم',
+        details: error instanceof Error ? error.message : 'خطأ غير معروف'
+      });
     }
   });
 
@@ -1266,7 +1279,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/vip', protect.admin, async (req, res) => {
     try {
       const { targetUserId } = req.body;
-      const adminId = (req as any).user?.id as number;
+      const adminId = req.user?.id;
+      if (!adminId) return res.status(401).json({ error: 'غير مصرح' });
       if (!targetUserId) return res.status(400).json({ error: 'targetUserId مطلوب' });
       const success = await databaseService.addVipUser(parseInt(String(targetUserId)), adminId);
       if (!success)
@@ -1347,10 +1361,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       const senders = await storage.getUsersByIds(senderIds as number[]);
       const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
-      const messagesWithUsers = (messages || []).map((msg: any) => ({
-        ...msg,
-        sender: msg.senderId ? senderMap.get(msg.senderId) || null : null,
-      }));
+      const messagesWithUsers = (messages || []).map((msg: any) => {
+        // إذا لم يكن هناك مرسل، نضع بيانات افتراضية بدلاً من null
+        const sender = msg.senderId ? senderMap.get(msg.senderId) : null;
+        return {
+          ...msg,
+          sender: sender || {
+            id: msg.senderId,
+            username: 'مستخدم محذوف',
+            userType: 'user',
+            profileImage: null,
+            isDeleted: true
+          },
+        };
+      });
 
       res.json({ messages: messagesWithUsers });
     } catch (error) {
@@ -1973,12 +1997,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/moderation/log', protect.admin, async (req, res) => {
     try {
-      const userId = parseInt(req.query.userId as string);
-      const user = await storage.getUser(userId);
-
-      // للإدمن والمالك فقط
-      if (!user || (user.userType !== 'owner' && user.userType !== 'admin')) {
-        return res.status(403).json({ error: 'غير مسموح لك بالوصول - للإدمن والمالك فقط' });
+      // المستخدم متاح من خلال req.user بعد protect.admin
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: 'غير مصرح' });
       }
 
       const log = moderationSystem.getModerationLog();
@@ -2022,12 +2044,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إضافة endpoint لوحة إجراءات المشرفين
   app.get('/api/moderation/actions', protect.admin, async (req, res) => {
     try {
-      const { userId } = req.query;
-      const user = await storage.getUser(Number(userId));
-
-      // التحقق من أن المستخدم مشرف أو مالك
-      if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
-        return res.status(403).json({ error: 'غير مسموح - للمشرفين فقط' });
+      // المستخدم متاح من خلال req.user بعد protect.admin
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: 'غير مصرح' });
       }
 
       const now = new Date();
@@ -2074,11 +2094,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إضافة endpoint لسجل البلاغات
   app.get('/api/reports', protect.admin, async (req, res) => {
     try {
-      const { userId } = req.query;
-      const user = await storage.getUser(Number(userId));
-
-      if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
-        return res.status(403).json({ error: 'غير مسموح - للمشرفين فقط' });
+      // المستخدم متاح من خلال req.user بعد protect.admin
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: 'غير مصرح' });
       }
 
       const reports = spamProtection
@@ -2109,11 +2128,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/reports/:id/review', protect.admin, async (req, res) => {
     try {
       const reportId = parseInt(req.params.id);
-      const { action, moderatorId } = req.body;
+      const { action } = req.body;
+      const moderatorId = req.user?.id;
 
-      const user = await storage.getUser(moderatorId);
-      if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
-        return res.status(403).json({ error: 'غير مسموح' });
+      if (!moderatorId) {
+        return res.status(401).json({ error: 'غير مصرح' });
       }
 
       const success = spamProtection.reviewReport(reportId, action);
@@ -2132,11 +2151,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إضافة endpoint للإجراءات النشطة
   app.get('/api/moderation/active-actions', protect.admin, async (req, res) => {
     try {
-      const { userId } = req.query;
-      const user = await storage.getUser(Number(userId));
-
-      if (!user || (user.userType !== 'admin' && user.userType !== 'owner')) {
-        return res.status(403).json({ error: 'غير مسموح - للمشرفين فقط' });
+      // المستخدم متاح من خلال req.user بعد protect.admin
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: 'غير مصرح' });
       }
 
       const now = new Date();

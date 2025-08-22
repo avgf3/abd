@@ -173,10 +173,16 @@ class RoomMessageService {
             timestamp: new Date(msg.timestamp),
             isPrivate: msg.isPrivate || false,
             receiverId: msg.receiverId || null,
-            senderUsername: sender?.username || 'مستخدم',
+            senderUsername: sender?.username || 'مستخدم محذوف',
             senderUserType: sender?.userType || 'user',
             senderAvatar: (sender as any)?.profileImage || null,
-            sender,
+            sender: sender || {
+              id: msg.senderId,
+              username: 'مستخدم محذوف',
+              userType: 'user',
+              profileImage: null,
+              isDeleted: true
+            },
           };
           messages.push(roomMessage);
         } catch (err) {
@@ -311,10 +317,16 @@ class RoomMessageService {
             timestamp: new Date(msg.timestamp),
             isPrivate: msg.isPrivate || false,
             receiverId: msg.receiverId || null,
-            senderUsername: sender?.username || 'مستخدم',
+            senderUsername: sender?.username || 'مستخدم محذوف',
             senderUserType: sender?.userType || 'user',
             senderAvatar: (sender as any)?.profileImage || null,
-            sender,
+            sender: sender || {
+              id: msg.senderId,
+              username: 'مستخدم محذوف',
+              userType: 'user',
+              profileImage: null,
+              isDeleted: true
+            },
           };
           messages.push(roomMessage);
         } catch (err) {
