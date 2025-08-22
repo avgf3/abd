@@ -232,7 +232,16 @@ router.get('/:userId/:otherUserId', protect.auth, async (req, res, next) => {
       );
       const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
       const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
-      const finalMessages = messages.map((m: any) => ({ ...m, sender: senderMap.get(m.senderId) }));
+      const finalMessages = messages.map((m: any) => ({ 
+        ...m, 
+        sender: senderMap.get(m.senderId) || {
+          id: m.senderId,
+          username: 'مستخدم محذوف',
+          userType: 'user',
+          profileImage: null,
+          isDeleted: true
+        }
+      }));
 
       // حفظ في cache كأحدث نسخة
       conversationCache.set(conversationKey, { messages: finalMessages, timestamp: Date.now() });
@@ -249,7 +258,13 @@ router.get('/:userId/:otherUserId', protect.auth, async (req, res, next) => {
       const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
       messages = messages.map((m: any) => ({
         ...m,
-        sender: m.sender || senderMap.get(m.senderId),
+        sender: m.sender || senderMap.get(m.senderId) || {
+          id: m.senderId,
+          username: 'مستخدم محذوف',
+          userType: 'user',
+          profileImage: null,
+          isDeleted: true
+        },
       }));
     }
 

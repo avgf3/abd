@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { useToast } from '@/hooks/use-toast';
 import type { ChatUser } from '@/types/chat';
@@ -9,8 +9,13 @@ interface WelcomeNotificationProps {
 
 export default function WelcomeNotification({ user }: WelcomeNotificationProps) {
   const { toast } = useToast();
+  const hasShownWelcome = useRef(false);
 
   useEffect(() => {
+    // التأكد من عرض الرسالة مرة واحدة فقط
+    if (hasShownWelcome.current) return;
+    hasShownWelcome.current = true;
+
     // إشعار ترحيب بالمستخدم الجديد
     if (user.userType === 'guest') {
       toast({
@@ -37,7 +42,8 @@ export default function WelcomeNotification({ user }: WelcomeNotificationProps) 
         }
       });
     }
-  }, [user, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return null;
 }
