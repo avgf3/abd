@@ -1084,7 +1084,7 @@ export default function ProfileModal({
 
         .profile-cover {
           position: relative;
-          aspect-ratio: 3 / 1;
+          height: 280px; /* Extended height to reach profile avatar */
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
@@ -1154,7 +1154,7 @@ export default function ProfileModal({
           overflow: hidden;
           border: 4px solid rgba(255,255,255,0.9);
           position: absolute;
-          top: calc(100% - 65px);
+          bottom: 20px; /* Positioned at the bottom of the extended banner */
           right: 20px;
           background-color: white;
           box-shadow: 0 6px 20px rgba(0,0,0,0.6);
@@ -1175,7 +1175,7 @@ export default function ProfileModal({
 
         .change-avatar-btn {
           position: absolute;
-          top: calc(100% - 32px);
+          bottom: 25px; /* Adjusted to align with the avatar bottom position */
           right: 28px;
           background: rgba(0,0,0,0.8);
           border-radius: 50%;
@@ -1201,13 +1201,13 @@ export default function ProfileModal({
         }
 
         .profile-body {
-          padding: 72px 20px 16px;
+          padding: 20px 20px 16px; /* Reduced top padding since avatar is now inside banner */
         }
 
         .profile-info {
           margin-bottom: 12px;
           text-align: center;
-          margin-top: -50px;
+          margin-top: 0; /* Removed negative margin since avatar is inside banner */
         }
 
         .profile-info h3 {
@@ -1783,15 +1783,19 @@ export default function ProfileModal({
             max-width: 100%;
           }
           
+          .profile-cover {
+            height: 220px; /* Slightly smaller for mobile */
+          }
+          
           .profile-avatar {
             width: 100px;
             height: 100px;
-            top: calc(100% - 50px);
+            bottom: 15px; /* Adjusted for mobile */
             right: 16px;
           }
           
           .change-avatar-btn {
-            top: calc(100% - 24px);
+            bottom: 18px; /* Adjusted for mobile */
             right: 22px;
             width: 25px;
             height: 25px;
@@ -1800,7 +1804,7 @@ export default function ProfileModal({
           }
           
           .profile-body {
-            padding: 50px 12px 12px;
+            padding: 15px 12px 12px; /* Adjusted for new layout */
           }
           
           .profile-info h3 {
