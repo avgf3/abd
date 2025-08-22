@@ -1029,10 +1029,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'اسم المستخدم موجود بالفعل' });
       }
 
+      const totalUsers = await databaseService.countUsers();
+      const isFirstUser = Number(totalUsers) === 0;
+      const assignedUserType = isFirstUser ? 'owner' : 'member';
+      const assignedRole = isFirstUser ? 'owner' : 'member';
+
       const user = await storage.createUser({
         username,
         password,
-        userType: 'member',
+        userType: assignedUserType,
+        role: assignedRole,
         gender: gender || 'male',
         age: age || undefined,
         country: country?.trim() || undefined,
@@ -1139,17 +1145,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'المستخدم غير موجود' });
       }
 
-      // التحقق من كلمة المرور - دعم التشفير والنص العادي
-      let passwordValid = false;
-      if (user.password) {
-        const isBcryptHash = /^(\$2[aby]\$|\$2\$)/.test(user.password);
-        if (isBcryptHash) {
-          // كلمة مرور مشفرة - استخدام bcrypt
-          passwordValid = await bcrypt.compare(password.trim(), user.password);
-        } else {
-          // كلمة مرور غير مشفرة - مقارنة مباشرة
-          passwordValid = user.password === password.trim();
-        }
+      // التحقق من كلمة المرور - BCRYPT فقط
+      if (!user.password || !/^\$2[aby]\$/.test(user.password)) {
+        return res.status(401).json({ error: 'كلمة المرور غير صالحة' });
+      }
+      const passwordValid = await bcrypt.compare(password.trim(), user.password);
+      if (!passwordValid) {
+        return res.status(401).json({ error: 'كلمة المرور غير صحيحة' });
       }
 
       if (!passwordValid) {
