@@ -1034,9 +1034,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const assignedUserType = isFirstUser ? 'owner' : 'member';
       const assignedRole = isFirstUser ? 'owner' : 'member';
 
+      // تشفير كلمة المرور قبل حفظها
+      const hashedPassword = await bcrypt.hash(password.trim(), 12);
+
       const user = await storage.createUser({
         username,
-        password,
+        password: hashedPassword,
         userType: assignedUserType,
         role: assignedRole,
         gender: gender || 'male',
@@ -1150,10 +1153,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'كلمة المرور غير صالحة' });
       }
       const passwordValid = await bcrypt.compare(password.trim(), user.password);
-      if (!passwordValid) {
-        return res.status(401).json({ error: 'كلمة المرور غير صحيحة' });
-      }
-
       if (!passwordValid) {
         return res.status(401).json({ error: 'كلمة المرور غير صحيحة' });
       }

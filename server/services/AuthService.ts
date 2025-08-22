@@ -97,8 +97,14 @@ export class AuthService {
         return { success: false, error: 'اسم المستخدم موجود مسبقاً' };
       }
 
+      // تشفير كلمة المرور للأعضاء قبل حفظها
+      const userDataToSave = { ...userData };
+      if (userData.userType !== 'guest' && userData.password) {
+        userDataToSave.password = await SecurityManager.hashPassword(userData.password);
+      }
+
       // إنشاء المستخدم
-      const newUser = await this.storage.createUser(userData);
+      const newUser = await this.storage.createUser(userDataToSave);
 
       // إنشاء إشعار ترحيب
       await this.storage.createNotification({
