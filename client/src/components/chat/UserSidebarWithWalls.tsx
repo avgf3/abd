@@ -780,7 +780,7 @@ export default function UnifiedSidebar({
                             <div className="flex items-center gap-2">
                               <span
                                 className="font-medium text-sm"
-                                style={{ color: post.usernameColor || 'inherit' }}
+                                style={{ color: getFinalUsernameColor(post) }}
                               >
                                 {post.username}
                               </span>

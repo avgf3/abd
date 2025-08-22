@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 interface ModerationPanelProps {
   isOpen: boolean;
@@ -352,9 +353,9 @@ export default function ModerationPanel({
                           alt={user.username}
                           className="w-10 h-10 rounded-full"
                         />
-                        <div>
-                          <div className="font-semibold flex items-center gap-2">
-                            <span style={{ color: user.usernameColor || '#000000' }}>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span style={{ color: getFinalUsernameColor(user) }}>
                               {user.username}
                             </span>
                             <UserRoleBadge user={user} />
@@ -413,9 +414,9 @@ export default function ModerationPanel({
                             alt={user.username}
                             className="w-10 h-10 rounded-full opacity-50"
                           />
-                          <div>
-                            <div className="font-semibold flex items-center gap-2">
-                              <span style={{ color: user.usernameColor || '#dc2626' }}>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span style={{ color: getFinalUsernameColor(user) }}>
                                 {user.username}
                               </span>
                               <Badge variant="destructive" className="text-xs">

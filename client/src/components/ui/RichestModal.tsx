@@ -4,6 +4,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getSocket } from '@/lib/socket';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 interface RichestModalProps {
   isOpen: boolean;
@@ -133,12 +134,12 @@ export default function RichestModal({ isOpen, onClose, currentUser }: RichestMo
                 
                 {/* اسم المستخدم */}
                 <div className="flex-1">
-                  <div 
-                    className="font-medium"
-                    style={{ color: u.usernameColor || '#000000' }}
+                  <span
+                    className="font-semibold text-lg"
+                    style={{ color: getFinalUsernameColor(u) }}
                   >
                     {u.username}
-                  </div>
+                  </span>
                 </div>
 
                 {/* أيقونة التاج للأول والثاني والثالث */}

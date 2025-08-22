@@ -29,6 +29,7 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { formatDateTime } from '@/utils/timeUtils';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 interface ModerationAction {
   id: string;
@@ -487,7 +488,10 @@ export default function OwnerAdminPanel({
 
                             <div>
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-bold text-gray-800 text-lg">
+                                <span 
+                                  className="font-bold text-lg"
+                                  style={{ color: getFinalUsernameColor(staff) }}
+                                >
                                   {staff.username}
                                 </span>
                                 {getRoleIcon(staff.userType)}

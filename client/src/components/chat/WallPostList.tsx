@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { WallPost, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
+import ProfileImage from './ProfileImage';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
 
 interface WallPostListProps {
   posts: WallPost[];
@@ -77,7 +79,7 @@ export default function WallPostList({
                 <div>
                   <div
                     className="font-bold text-base"
-                    style={{ color: post.usernameColor || 'inherit' }}
+                    style={{ color: getFinalUsernameColor(post) }}
                   >
                     {post.username}
                   </div>
