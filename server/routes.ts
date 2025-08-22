@@ -127,7 +127,8 @@ const authService = new (class AuthService {
     // التحقق من كلمة المرور - دعم التشفير والنص العادي
     let passwordValid = false;
     if (user.password) {
-      if (user.password.startsWith('$2b$')) {
+      const isBcryptHash = /^(\$2[aby]\$|\$2\$)/.test(user.password);
+      if (isBcryptHash) {
         // كلمة مرور مشفرة - استخدام bcrypt
         passwordValid = await bcrypt.compare(password.trim(), user.password);
       } else {
@@ -1142,7 +1143,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // التحقق من كلمة المرور - دعم التشفير والنص العادي
       let passwordValid = false;
       if (user.password) {
-        if (user.password.startsWith('$2b$')) {
+        const isBcryptHash = /^(\$2[aby]\$|\$2\$)/.test(user.password);
+        if (isBcryptHash) {
           // كلمة مرور مشفرة - استخدام bcrypt
           passwordValid = await bcrypt.compare(password.trim(), user.password);
         } else {
