@@ -2,6 +2,7 @@ import { sql, eq, desc, asc, and, or, like, count, isNull, gte, lt, inArray } fr
 
 import * as schema from '../../shared/schema';
 import { dbAdapter, dbType } from '../database-adapter';
+import { SecurityManager } from '../auth/security';
 
 // Type definitions for database operations
 export interface User {
@@ -217,6 +218,14 @@ export class DatabaseService {
 
     try {
       if (this.type === 'postgresql') {
+        // Ensure password is hashed if provided and not already a bcrypt hash
+        if (userData && typeof userData.password === 'string' && userData.password.trim()) {
+          const pwd = userData.password.trim();
+          const isBcrypt = /^\$2[aby]?\$/.test(pwd);
+          if (!isBcrypt) {
+            userData.password = await SecurityManager.hashPassword(pwd);
+          }
+        }
         const result = await (this.db as any)
           .insert(schema.users)
           .values({
