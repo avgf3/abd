@@ -273,12 +273,7 @@ export async function initializeSystem(): Promise<boolean> {
       console.warn('⚠️ تعذر تشغيل الهجرات تلقائياً:', (e as any)?.message || e);
     }
 
-    // إنشاء البيانات الافتراضية
-    await createDefaultOwner();
-    await createDefaultUsers();
-    await createDefaultLevelSettings();
-    await createDefaultRooms();
-
+    // بدون أي بيانات افتراضية؛ سيتم إنشاء أول مستخدم كـ owner عبر مسار التسجيل
     return true;
   } catch (error) {
     console.error('❌ فشل في تهيئة النظام:', error);

@@ -1029,10 +1029,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'اسم المستخدم موجود بالفعل' });
       }
 
+      const totalUsers = await databaseService.countUsers();
+      const isFirstUser = Number(totalUsers) === 0;
+      const assignedUserType = isFirstUser ? 'owner' : 'member';
+      const assignedRole = isFirstUser ? 'owner' : 'member';
+
       const user = await storage.createUser({
         username,
         password,
-        userType: 'member',
+        userType: assignedUserType,
+        role: assignedRole,
         gender: gender || 'male',
         age: age || undefined,
         country: country?.trim() || undefined,
