@@ -327,9 +327,22 @@ router.get('/conversations/:userId', protect.auth, async (req, res) => {
 
         const conversations = rows.map((r) => {
           const otherUserId = r.sender_id === userId ? r.receiver_id : r.sender_id;
+          const otherUser = userMap.get(otherUserId);
+          
+          // إذا لم يتم العثور على المستخدم، أنشئ بيانات احتياطية
+          const fallbackUser = otherUser || {
+            id: otherUserId,
+            username: `مستخدم محذوف #${otherUserId}`,
+            userType: 'member',
+            role: 'member',
+            isOnline: false,
+            profileImage: null,
+            isDeleted: true
+          };
+          
           return {
             otherUserId,
-            otherUser: userMap.get(otherUserId) || null,
+            otherUser: fallbackUser,
             lastMessage: {
               id: r.id,
               content: r.content,
