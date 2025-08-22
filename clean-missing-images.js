@@ -26,18 +26,18 @@ async function cleanMissingImages() {
 
     for (const user of users) {
       const imagePath = path.join(process.cwd(), 'client/public', user.profile_image);
-      
+
       // التحقق من وجود الملف
       if (!fs.existsSync(imagePath)) {
         console.log(`❌ الصورة مفقودة للمستخدم ${user.username} (ID: ${user.id})`);
-        
+
         // تحديث إلى الصورة الافتراضية
         await sql`
           UPDATE users
           SET profile_image = '/default_avatar.svg'
           WHERE id = ${user.id}
         `;
-        
+
         updatedCount++;
         console.log(`✅ تم التحديث إلى الصورة الافتراضية`);
       }
@@ -47,7 +47,6 @@ async function cleanMissingImages() {
     console.log(`- تم فحص: ${users.length} مستخدم`);
     console.log(`- تم تحديث: ${updatedCount} مستخدم`);
     console.log(`- الصور الموجودة: ${users.length - updatedCount} مستخدم`);
-
   } catch (error) {
     console.error('❌ خطأ:', error);
   } finally {

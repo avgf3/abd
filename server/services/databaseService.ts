@@ -221,23 +221,23 @@ export class DatabaseService {
         const userCount = await (this.db as any)
           .select({ count: sql`count(*)::int` })
           .from(schema.users);
-        
+
         const isFirstUser = userCount[0]?.count === 0;
-        
+
         // إذا كان هذا أول مستخدم، اجعله المالك
         const finalUserData = {
           ...userData,
-          userType: isFirstUser ? 'owner' : (userData.userType || 'guest'),
-          role: isFirstUser ? 'owner' : (userData.role || userData.userType || 'guest'),
+          userType: isFirstUser ? 'owner' : userData.userType || 'guest',
+          role: isFirstUser ? 'owner' : userData.role || userData.userType || 'guest',
           joinDate: userData.joinDate || new Date(),
           createdAt: userData.createdAt || new Date(),
           lastSeen: userData.lastSeen || new Date(),
         };
-        
+
         if (isFirstUser) {
           console.log('🎉 تسجيل أول مستخدم كمالك للموقع');
         }
-        
+
         const result = await (this.db as any)
           .insert(schema.users)
           .values(finalUserData)
@@ -339,10 +339,7 @@ export class DatabaseService {
           .select()
           .from(schema.pointsHistory)
           .where(
-            and(
-              eq(schema.pointsHistory.userId, userId),
-              eq(schema.pointsHistory.reason, reason)
-            )
+            and(eq(schema.pointsHistory.userId, userId), eq(schema.pointsHistory.reason, reason))
           )
           .orderBy(desc(schema.pointsHistory.createdAt))
           .limit(1);
@@ -520,7 +517,7 @@ export class DatabaseService {
           .innerJoin(schema.vipUsers, eq(schema.vipUsers.userId, schema.users.id))
           .orderBy(desc(schema.users.totalPoints), asc(schema.users.username))
           .limit(Math.min(100, Math.max(1, limit)));
-        
+
         return result || [];
       }
       return [];
@@ -661,14 +658,8 @@ export class DatabaseService {
             and(
               eq(schema.messages.isPrivate, true),
               or(
-                and(
-                  eq(schema.messages.senderId, userId1),
-                  eq(schema.messages.receiverId, userId2)
-                ),
-                and(
-                  eq(schema.messages.senderId, userId2),
-                  eq(schema.messages.receiverId, userId1)
-                )
+                and(eq(schema.messages.senderId, userId1), eq(schema.messages.receiverId, userId2)),
+                and(eq(schema.messages.senderId, userId2), eq(schema.messages.receiverId, userId1))
               )
             )
           )
@@ -1173,10 +1164,7 @@ export class DatabaseService {
       };
 
       if (this.type === 'postgresql') {
-        const result = await (this.db as any)
-          .insert(schema.friends)
-          .values(friendData)
-          .returning();
+        const result = await (this.db as any).insert(schema.friends).values(friendData).returning();
         return result[0] || null;
       } else {
         // SQLite has no friends table, so this will return null

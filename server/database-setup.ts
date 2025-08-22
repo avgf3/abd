@@ -11,7 +11,12 @@ import {
   rooms,
 } from '../shared/schema';
 
-import { db, dbType, initializeDatabase as initDB, runMigrationsIfAvailable } from './database-adapter';
+import {
+  db,
+  dbType,
+  initializeDatabase as initDB,
+  runMigrationsIfAvailable,
+} from './database-adapter';
 
 // إعادة تصدير دالة التهيئة من المحول
 export { initializeDatabase } from './database-adapter';

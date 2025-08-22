@@ -56,8 +56,10 @@ export async function initializeDatabase(): Promise<boolean> {
   const databaseUrl = process.env.DATABASE_URL || '';
 
   try {
-    if (!databaseUrl ||
-        !(databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'))) {
+    if (
+      !databaseUrl ||
+      !(databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'))
+    ) {
       dbType = 'disabled';
       dbAdapter.db = null;
       dbAdapter.client = null;
@@ -66,7 +68,8 @@ export async function initializeDatabase(): Promise<boolean> {
       return false;
     }
 
-    const sslRequired = /\bsslmode=require\b/.test(databaseUrl) || process.env.NODE_ENV === 'production';
+    const sslRequired =
+      /\bsslmode=require\b/.test(databaseUrl) || process.env.NODE_ENV === 'production';
     const client = postgres(databaseUrl, {
       ssl: sslRequired ? 'require' : undefined,
       max: 10,
@@ -114,4 +117,3 @@ export async function runMigrationsIfAvailable(): Promise<void> {
     }
   } catch {}
 }
-

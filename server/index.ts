@@ -38,10 +38,12 @@ app.use(
       // الملف غير موجود - سنستخدم الصورة الافتراضية بصمت
 
       // Return default avatar for any missing image
-      if (req.path.includes('/avatars/') || 
-          req.path.includes('/profiles/') || 
-          req.path.includes('/banners/') ||
-          req.path.includes('profile-')) {
+      if (
+        req.path.includes('/avatars/') ||
+        req.path.includes('/profiles/') ||
+        req.path.includes('/banners/') ||
+        req.path.includes('profile-')
+      ) {
         const defaultAvatarPath = path.join(process.cwd(), 'client/public/default_avatar.svg');
         try {
           await fsp.stat(defaultAvatarPath);

@@ -214,7 +214,9 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     const handler = () => {
       if (!chat.currentUser?.id) return;
       try {
-        queryClient.invalidateQueries({ queryKey: ['/api/private-messages/conversations', chat.currentUser.id] });
+        queryClient.invalidateQueries({
+          queryKey: ['/api/private-messages/conversations', chat.currentUser.id],
+        });
         queryClient.prefetchQuery({
           queryKey: ['/api/private-messages/conversations', chat.currentUser.id],
           queryFn: async () =>

@@ -43,25 +43,24 @@ async function fixFilePaths() {
     `;
 
     let fixedCount = 0;
-    
+
     for (const user of users) {
       if (user.profile_image && user.profile_image.includes('/opt/render/')) {
         const filename = path.basename(user.profile_image);
         const newPath = `/uploads/avatars/${filename}`;
-        
+
         await sql`
           UPDATE users 
           SET profile_image = ${newPath}
           WHERE id = ${user.id}
         `;
-        
+
         fixedCount++;
         console.log(`✅ تم إصلاح مسار صورة: ${user.username}`);
       }
     }
-    
-    console.log(`\n✅ تم إصلاح ${fixedCount} مسار`);
 
+    console.log(`\n✅ تم إصلاح ${fixedCount} مسار`);
   } catch (error) {
     console.error('❌ خطأ:', error);
     process.exit(1);

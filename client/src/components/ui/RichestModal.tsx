@@ -103,49 +103,46 @@ export default function RichestModal({ isOpen, onClose, currentUser }: RichestMo
             <span className="text-xl">👑</span>
             <h3 className="font-bold text-lg">الأثرياء</h3>
           </div>
-          <button onClick={onClose} className="text-primary-foreground/80 hover:text-primary-foreground text-xl">
+          <button
+            onClick={onClose}
+            className="text-primary-foreground/80 hover:text-primary-foreground text-xl"
+          >
             ✕
           </button>
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto bg-background">
-          {loading && (
-            <div className="text-center text-muted-foreground py-4">جاري التحميل...</div>
-          )}
-          {error && (
-            <div className="text-center text-destructive py-2 text-sm">{error}</div>
-          )}
-          
+          {loading && <div className="text-center text-muted-foreground py-4">جاري التحميل...</div>}
+          {error && <div className="text-center text-destructive py-2 text-sm">{error}</div>}
+
           <ul className="divide-y divide-border">
             {topTen.map((u, idx) => (
-              <li key={u.id} className="flex items-center gap-3 p-3 hover:bg-accent/10 transition-colors">
+              <li
+                key={u.id}
+                className="flex items-center gap-3 p-3 hover:bg-accent/10 transition-colors"
+              >
                 {/* رقم الترتيب */}
                 <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-sm">
                   {idx + 1}
                 </div>
-                
+
                 {/* صورة المستخدم */}
                 <img
                   src={getImageSrc(u.profileImage || '/default_avatar.svg')}
                   alt={u.username}
                   className="w-10 h-10 rounded-full object-cover"
                 />
-                
+
                 {/* اسم المستخدم */}
                 <div className="flex-1">
-                  <div 
-                    className="font-medium"
-                    style={{ color: u.usernameColor || '#000000' }}
-                  >
+                  <div className="font-medium" style={{ color: u.usernameColor || '#000000' }}>
                     {u.username}
                   </div>
                 </div>
 
                 {/* أيقونة التاج للأول والثاني والثالث */}
                 {idx < 3 && (
-                  <span className="text-lg">
-                    {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
-                  </span>
+                  <span className="text-lg">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}</span>
                 )}
 
                 {/* زر الإزالة للأدمن */}

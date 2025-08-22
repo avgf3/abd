@@ -128,7 +128,7 @@ export function sanitizeUsersArray(users: any[]): any[] {
     console.error('sanitizeUsersArray: Expected array but got:', typeof users);
     return [];
   }
-  
+
   return users.map((user) => sanitizeUserData(user));
 }
 

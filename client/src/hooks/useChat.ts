@@ -490,44 +490,44 @@ export const useChat = () => {
         // تحديث صورة المستخدم
         if (envelope.type === 'userAvatarUpdated') {
           const { userId, avatarHash, avatarVersion, users } = envelope as any;
-          
+
           if (userId) {
             // تحديث المستخدم في القائمة
             dispatch({
               type: 'UPSERT_ONLINE_USER',
               payload: { id: userId, avatarHash, avatarVersion } as any,
             });
-            
+
             // إذا كان المستخدم الحالي
             if (currentUserRef.current?.id === userId) {
               dispatch({
                 type: 'SET_CURRENT_USER',
-                payload: { 
-                  ...currentUserRef.current!, 
+                payload: {
+                  ...currentUserRef.current!,
                   avatarHash: avatarHash || (currentUserRef.current as any).avatarHash,
-                  avatarVersion: avatarVersion || (currentUserRef.current as any).avatarVersion
+                  avatarVersion: avatarVersion || (currentUserRef.current as any).avatarVersion,
                 } as any,
               });
             }
           }
-          
+
           // تحديث قائمة المستخدمين إذا تم إرسالها
           if (users && Array.isArray(users)) {
             dispatch({ type: 'SET_ONLINE_USERS', payload: users });
           }
         }
-        
+
         // تحديث صورة المستخدم الحالي عبر جميع الأجهزة
         if (envelope.type === 'selfAvatarUpdated') {
           const { avatarHash, avatarVersion } = envelope as any;
-          
+
           if (currentUserRef.current) {
             dispatch({
               type: 'SET_CURRENT_USER',
-              payload: { 
-                ...currentUserRef.current!, 
+              payload: {
+                ...currentUserRef.current!,
                 avatarHash: avatarHash || (currentUserRef.current as any).avatarHash,
-                avatarVersion: avatarVersion || (currentUserRef.current as any).avatarVersion
+                avatarVersion: avatarVersion || (currentUserRef.current as any).avatarVersion,
               } as any,
             });
           }
@@ -663,12 +663,15 @@ export const useChat = () => {
                     },
                     myReaction:
                       reactorId && reactorId === currentUserRef.current?.id
-                        ? myReaction ?? null
-                        : m.myReaction ?? null,
+                        ? (myReaction ?? null)
+                        : (m.myReaction ?? null),
                   }
                 : m
             );
-            dispatch({ type: 'SET_ROOM_MESSAGES', payload: { roomId: targetRoom, messages: next } });
+            dispatch({
+              type: 'SET_ROOM_MESSAGES',
+              payload: { roomId: targetRoom, messages: next },
+            });
             break;
           }
           case 'messageDeleted': {
