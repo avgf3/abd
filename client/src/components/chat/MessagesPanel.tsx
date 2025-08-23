@@ -62,6 +62,82 @@ export default function MessagesPanel({
     refetchOnWindowFocus: false,
   });
 
+  // Cache محلي لحل أسماء المستخدمين بشكل ثابت حتى وهم أوفلاين
+  const [resolvedUsers, setResolvedUsers] = useState<Map<number, ChatUser>>(new Map());
+
+  // هيدرنة الكاش من لقطات sender المخزنة داخل رسائل الخاص
+  useEffect(() => {
+    const next = new Map(resolvedUsers);
+    const ids = Object.keys(privateConversations || {})
+      .map((k) => parseInt(k, 10))
+      .filter((n) => Number.isFinite(n));
+    for (const uid of ids) {
+      if (next.has(uid)) continue;
+      const conv = privateConversations[uid] || [];
+      const fromSender = conv.find((m: any) => m && m.senderId === uid && m.sender)?.sender;
+      if (fromSender && typeof fromSender.username === 'string') {
+        next.set(uid, fromSender as ChatUser);
+      }
+    }
+    if (next.size !== resolvedUsers.size) {
+      setResolvedUsers(next);
+    }
+  }, [privateConversations]);
+
+  // جلب بيانات المستخدم من الخادم عند الحاجة وملء الكاش
+  useEffect(() => {
+    const onlineSet = new Set(onlineUsers.map((u) => u.id));
+    const targetIds = new Set<number>();
+
+    // من محادثات الخادم: التقط المعرفات التي لا يوجد لها otherUser ولا في الكاش ولا أونلاين
+    for (const c of (conversationsData?.conversations || [])) {
+      const id = c.otherUserId;
+      if (!id) continue;
+      if (c.otherUser) continue;
+      if (resolvedUsers.has(id)) continue;
+      if (onlineSet.has(id)) continue;
+      targetIds.add(id);
+    }
+
+    // من المحادثات المحلية: إذا لم نستطع استخراج sender ولم يكن في الكاش/أونلاين
+    const localIds = Object.keys(privateConversations || {})
+      .map((k) => parseInt(k, 10))
+      .filter((n) => Number.isFinite(n));
+    for (const uid of localIds) {
+      if (resolvedUsers.has(uid) || onlineSet.has(uid)) continue;
+      const conv = privateConversations[uid] || [];
+      const fromSender = conv.find((m: any) => m && m.senderId === uid && m.sender)?.sender;
+      if (!fromSender) targetIds.add(uid);
+    }
+
+    const ids = Array.from(targetIds).slice(0, 10);
+    if (ids.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const results = await Promise.all(
+          ids.map((id) =>
+            apiRequest(`/api/users/${id}`).catch(() => null)
+          )
+        );
+        const next = new Map(resolvedUsers);
+        results.forEach((data, idx) => {
+          if (!cancelled && data && data.id) {
+            next.set(ids[idx], data as ChatUser);
+          }
+        });
+        if (!cancelled && next.size !== resolvedUsers.size) {
+          setResolvedUsers(next);
+        }
+      } catch {}
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationsData, privateConversations, onlineUsers, resolvedUsers]);
+
   // تحسين: إزالة التحميل المزدوج - React Query يتعامل مع هذا تلقائياً
   // useEffect تم إزالته لمنع التحميل المزدوج
 
@@ -111,7 +187,11 @@ export default function MessagesPanel({
 
     // معالجة بيانات الخادم فقط
     for (const c of conversationsData?.conversations || []) {
-      const user = c.otherUser || onlineUsers.find((u) => u.id === c.otherUserId) || null;
+      const user =
+        c.otherUser ||
+        resolvedUsers.get(c.otherUserId) ||
+        onlineUsers.find((u) => u.id === c.otherUserId) ||
+        null;
       if (!user) continue;
       const lastMessageTs = String(c.lastMessage.timestamp);
       const lastOpened = currentUser?.id ? getPmLastOpened(currentUser.id, user.id) : 0;
@@ -129,7 +209,7 @@ export default function MessagesPanel({
     }
 
     return map;
-  }, [conversationsData, onlineUsers, currentUser?.id]);
+  }, [conversationsData, onlineUsers, currentUser?.id, resolvedUsers]);
 
   const localConversations = useMemo(() => {
     const map = new Map<
@@ -146,7 +226,14 @@ export default function MessagesPanel({
     for (const uid of localUserIds) {
       if (!Number.isFinite(uid)) continue;
 
+      const conv = privateConversations[uid] || [];
+      const latest = conv[conv.length - 1];
+      if (!latest) continue;
+
+      const fromSender = (conv.find((m: any) => m && m.senderId === uid && m.sender)?.sender || null) as ChatUser | null;
       const user =
+        fromSender ||
+        resolvedUsers.get(uid) ||
         onlineUsers.find((u) => u.id === uid) ||
         ({
           id: uid,
@@ -155,13 +242,10 @@ export default function MessagesPanel({
           role: 'member',
           isOnline: false,
         } as unknown as ChatUser);
-      const conv = privateConversations[uid] || [];
-      const latest = conv[conv.length - 1];
-      if (!latest) continue;
 
       const lastOpened = currentUser?.id ? getPmLastOpened(currentUser.id, uid) : 0;
       const unreadCount = conv.filter(
-        (m) => new Date(m.timestamp).getTime() > lastOpened && m.senderId === uid
+        (m) => new Date(m.timestamp as any).getTime() > lastOpened && m.senderId === uid
       ).length;
 
       map.set(uid, {
@@ -176,7 +260,7 @@ export default function MessagesPanel({
     }
 
     return map;
-  }, [privateConversations, onlineUsers, currentUser?.id]);
+  }, [privateConversations, onlineUsers, currentUser?.id, resolvedUsers]);
 
   const conversations = useMemo(() => {
     // دمج المحادثات من المصدرين

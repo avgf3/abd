@@ -235,8 +235,7 @@ export class DatabaseService {
         };
 
         if (isFirstUser) {
-          console.log('🎉 تسجيل أول مستخدم كمالك للموقع');
-        }
+          }
 
         const result = await (this.db as any)
           .insert(schema.users)
