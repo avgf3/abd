@@ -3306,9 +3306,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'senderId مطلوب' });
       }
 
-      let imageUrl: string;
       // استخدم مسار ثابت للملف لتقليل استهلاك الذاكرة وتفعيل التخزين المؤقت
-      imageUrl = `/uploads/messages/${req.file.filename}`;
+      const imageUrl: string = `/uploads/messages/${req.file.filename}`;
 
       // إذا كان receiverId موجوداً، فهذه رسالة خاصة
       if (receiverId) {
