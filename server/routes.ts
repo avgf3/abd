@@ -51,19 +51,34 @@ const createMulterConfig = (
   maxSize: number = 5 * 1024 * 1024
 ) => {
   const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', destination);
-
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+    destination: async (req, file, cb) => {
+      try {
+        const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', destination);
+        
+        // إنشاء المجلد بشكل آمن
+        await fsp.mkdir(uploadDir, { recursive: true }).catch(() => {});
+        
+        // التحقق من وجود المجلد
+        const exists = await fsp.stat(uploadDir).then(() => true).catch(() => false);
+        if (!exists) {
+          // إذا فشل إنشاء المجلد، استخدم مجلد temp
+          const tempDir = path.join(process.cwd(), 'temp', 'uploads', destination);
+          await fsp.mkdir(tempDir, { recursive: true });
+          cb(null, tempDir);
+        } else {
+          cb(null, uploadDir);
+        }
+      } catch (error) {
+        console.error('خطأ في إعداد مجلد الرفع:', error);
+        cb(error as Error, '');
       }
-
-      cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const ext = path.extname(file.originalname);
-      cb(null, `${prefix}-${uniqueSuffix}${ext}`);
+      // تنظيف اسم الملف من الأحرف الخاصة
+      const cleanPrefix = prefix.replace(/[^a-z0-9]/gi, '_');
+      cb(null, `${cleanPrefix}-${uniqueSuffix}${ext}`);
     },
   });
 
@@ -72,6 +87,8 @@ const createMulterConfig = (
     limits: {
       fileSize: maxSize,
       files: 1,
+      fieldSize: maxSize, // حد حجم الحقل
+      parts: 10, // حد عدد الأجزاء
     },
     fileFilter: (req, file, cb) => {
       const allowedMimes = [
