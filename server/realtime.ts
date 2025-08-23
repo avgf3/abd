@@ -264,8 +264,18 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           }
         })();
         const isDev = process.env.NODE_ENV !== 'production';
-        const isSameHost = originHost && hostHeader && originHost === hostHeader;
+        // اعتبر نفس المضيف حتى لو اختلف المنفذ
+        const isSameHost =
+          originHost &&
+          hostHeader &&
+          (originHost === hostHeader || originHost === (hostHeader || '').split(':')[0]);
         const isEnvAllowed = originHost && envHosts.includes(originHost);
+        // في بعض المتصفحات (أو عبر بعض البنى التحتية) قد لا تُرسل ترويسة Origin في ترقية WebSocket
+        // اسمح بالاتصال إذا لم توجد Origin ولكن هناك Host (أي طلب لنفس الخادم)
+        const isNoOriginButHasHost = !originHeader && !!hostHeader;
+        // اسمح أيضاً إذا كان Host نفسه ضمن المضيفين المسموحين من البيئة (مع تجاهل المنفذ)
+        const hostHeaderHostOnly = (hostHeader || '').split(':')[0];
+        const isHostEnvAllowed = hostHeaderHostOnly && envHosts.includes(hostHeaderHostOnly);
 
         // Early block by IP/device before accepting socket transport
         const ip = (
@@ -285,7 +295,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           return callback(null, false);
         }
 
-        callback(null, isDev || isSameHost || isEnvAllowed);
+        callback(null, isDev || isSameHost || isEnvAllowed || isNoOriginButHasHost || isHostEnvAllowed);
       } catch {
         callback(null, false);
       }

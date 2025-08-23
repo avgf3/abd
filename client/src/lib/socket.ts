@@ -131,7 +131,8 @@ export function getSocket(): Socket {
 
   socketInstance = io(getServerUrl(), {
     path: '/socket.io',
-    transports: ['websocket', 'polling'],
+    // ابدأ بـ polling لتجاوز مشاكل WSS على بعض البنى التحتية (Render/Proxy)
+    transports: ['polling', 'websocket'],
     upgrade: true,
     rememberUpgrade: false,
     autoConnect: false,
