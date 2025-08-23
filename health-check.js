@@ -160,7 +160,7 @@ async function runHealthCheck() {
     { name: 'Static Files', check: () => checkEndpoint('/') },
     
     // فحص رفع الملفات (OPTIONS)
-    { name: 'Upload CORS', check: () => checkEndpoint('/api/upload/profile-avatar', 'OPTIONS', 204) },
+    { name: 'Upload CORS', check: () => checkEndpoint('/api/upload/profile-image', 'OPTIONS', 204) },
   ];
 
   let successCount = 0;
