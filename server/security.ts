@@ -32,7 +32,7 @@ function applyLimiter(
 }
 
 // Rate limiter for authentication endpoints
-export function authLimiter(req: Request, res: Response, next: NextFunction): void {
+export function authLimiter(req: Request, res: Response, next: NextFunction): Response | void {
   try {
     const ip = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() || req.ip || 'unknown';
     const ok = applyLimiter(ip, authRequestCounts, 10, 60_000); // 10 req/min/IP
@@ -44,7 +44,7 @@ export function authLimiter(req: Request, res: Response, next: NextFunction): vo
 }
 
 // Rate limiter for message endpoints
-export function messageLimiter(req: Request, res: Response, next: NextFunction): void {
+export function messageLimiter(req: Request, res: Response, next: NextFunction): Response | void {
   try {
     const userId = (req as any).user?.id || 'anon';
     const ok = applyLimiter(String(userId), messageRequestCounts, 60, 60_000); // 60 msg/min/user
@@ -56,7 +56,7 @@ export function messageLimiter(req: Request, res: Response, next: NextFunction):
 }
 
 // Rate limiter for friend request endpoints
-export function friendRequestLimiter(req: Request, res: Response, next: NextFunction): void {
+export function friendRequestLimiter(req: Request, res: Response, next: NextFunction): Response | void {
   try {
     const userId = (req as any).user?.id || 'anon';
     const ok = applyLimiter(String(userId), friendRequestCounts, 30, 60_000); // 30 actions/min/user

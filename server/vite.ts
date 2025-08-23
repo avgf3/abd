@@ -62,6 +62,7 @@ export async function setupVite(app: Express, server: Server) {
         .set({
           'Content-Type': 'text/html',
           'Cache-Control': 'no-cache, must-revalidate',
+          Vary: 'Accept, Accept-Encoding'
         })
         .end(page);
     } catch (e) {
@@ -92,6 +93,7 @@ export function serveStatic(app: Express) {
           /assets\//.test(filePath)
         ) {
           res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          res.setHeader('Vary', 'Accept, Accept-Encoding');
         }
       },
     })

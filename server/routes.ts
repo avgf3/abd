@@ -187,6 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     upload.single('profileImage'),
     async (req, res) => {
       try {
+        res.set('Cache-Control', 'no-store');
         if (!req.file) {
           return res.status(400).json({
             error: 'لم يتم رفع أي ملف',
@@ -302,6 +303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     bannerUpload.single('banner'),
     async (req, res) => {
       try {
+        res.set('Cache-Control', 'no-store');
         if (!req.file) {
           return res.status(400).json({
             error: 'لم يتم رفع أي ملف',
@@ -2905,6 +2907,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إنشاء منشور جديد
   app.post('/api/wall/posts', wallUpload.single('image'), async (req, res) => {
     try {
+      res.set('Cache-Control', 'no-store');
       const { content, type, userId } = req.body;
 
       if (!userId) {
