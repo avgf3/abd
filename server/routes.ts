@@ -55,8 +55,22 @@ const createMulterConfig = (
       try {
         const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', destination);
         
-        // إنشاء المجلد بشكل آمن
-        await fsp.mkdir(uploadDir, { recursive: true }).catch(() => {});
+        // محاولة إنشاء المجلد عدة مرات
+        let attempts = 0;
+        let dirCreated = false;
+        
+        while (attempts < 3 && !dirCreated) {
+          try {
+            await fsp.mkdir(uploadDir, { recursive: true });
+            dirCreated = true;
+          } catch (mkdirError) {
+            attempts++;
+            if (attempts >= 3) {
+              console.error(`فشل إنشاء المجلد ${uploadDir} بعد 3 محاولات:`, mkdirError);
+            }
+            await new Promise(resolve => setTimeout(resolve, 100)); // انتظار قصير قبل المحاولة التالية
+          }
+        }
         
         // التحقق من وجود المجلد
         const exists = await fsp.stat(uploadDir).then(() => true).catch(() => false);
@@ -64,13 +78,21 @@ const createMulterConfig = (
           // إذا فشل إنشاء المجلد، استخدم مجلد temp
           const tempDir = path.join(process.cwd(), 'temp', 'uploads', destination);
           await fsp.mkdir(tempDir, { recursive: true });
+          console.log(`استخدام المجلد المؤقت: ${tempDir}`);
           cb(null, tempDir);
         } else {
           cb(null, uploadDir);
         }
       } catch (error) {
         console.error('خطأ في إعداد مجلد الرفع:', error);
-        cb(error as Error, '');
+        // في حالة الفشل الكامل، استخدم المجلد المؤقت
+        const fallbackDir = path.join(process.cwd(), 'temp', 'uploads', destination);
+        try {
+          await fsp.mkdir(fallbackDir, { recursive: true });
+          cb(null, fallbackDir);
+        } catch (fallbackError) {
+          cb(error as Error, '');
+        }
       }
     },
     filename: (req, file, cb) => {
