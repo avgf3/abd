@@ -1,4 +1,4 @@
-import { User, Home, Moon, Shield, LogOut, Settings, Palette, Brush } from 'lucide-react';
+import { User, Home, Shield, LogOut, Palette, Brush } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';

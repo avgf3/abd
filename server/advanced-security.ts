@@ -1,7 +1,6 @@
 // نظام أمان متقدم للشات
 import type { Request, Response, NextFunction } from 'express';
 
-import { storage } from './storage';
 
 // نظام تتبع الأنشطة المشبوهة
 interface SecurityEvent {

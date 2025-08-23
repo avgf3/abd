@@ -6,8 +6,6 @@ import path from 'path';
 import roomRoutes from './routes/rooms';
 import messageRoutes from './routes/messages';
 import { pointsService } from './services/pointsService';
-import { roomService } from './services/roomService';
-import { roomMessageService } from './services/roomMessageService';
 import { friendService } from './services/friendService';
 import { developmentOnly, logDevelopmentEndpoint } from './middleware/development';
 import { sanitizeUserData, sanitizeUsersArray } from './utils/data-sanitizer';
@@ -16,12 +14,10 @@ import bcrypt from 'bcrypt';
 import type { Express } from 'express';
 import multer from 'multer';
 import sharp from 'sharp';
-import { z } from 'zod';
 
 // import { trackClick } from "./middleware/analytics"; // commented out as file doesn't exist
 import { DEFAULT_LEVELS, recalculateUserStats } from '../shared/points-system';
-import { insertUserSchema } from '../shared/schema';
-import { advancedSecurity, advancedSecurityMiddleware } from './advanced-security';
+import { advancedSecurityMiddleware } from './advanced-security';
 import securityApiRoutes from './api-security';
 
 import { db, dbType } from './database-adapter';
@@ -35,7 +31,6 @@ import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { updateConnectedUserCache } from './realtime';
 import {
   sanitizeInput,
-  validateMessageContent,
   checkIPSecurity,
 } from './security';
 import { databaseService } from './services/databaseService';

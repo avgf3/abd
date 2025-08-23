@@ -3,11 +3,9 @@ import {
   Clock,
   Ban,
   Crown,
-  Shield,
   Trash2,
   MessageSquare,
   UserCheck,
-  Settings,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -21,12 +19,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
-  ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { Input } from '@/components/ui/input';

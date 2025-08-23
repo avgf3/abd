@@ -1,11 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Heart,
-  ThumbsUp,
-  ThumbsDown,
   Send,
   Image as ImageIcon,
-  Trash2,
   X,
   Users,
   Globe,
@@ -16,14 +12,14 @@ import type { Socket } from 'socket.io-client';
 import WallPostList from './WallPostList';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useGrabScroll } from '@/hooks/useGrabScroll';
 import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
-import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
+import type { WallPost, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 
 interface WallPanelProps {

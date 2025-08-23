@@ -16,13 +16,12 @@ import { useGrabScroll } from '@/hooks/useGrabScroll';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
-import { getImageSrc } from '@/utils/imageUtils';
 import {
   getFinalUsernameColor,
   getUserListItemStyles,
   getUserListItemClasses,
 } from '@/utils/themeUtils';
-import { formatTimeAgo, getStatusColor } from '@/utils/timeUtils';
+import { formatTimeAgo } from '@/utils/timeUtils';
 
 // Using shared types for Friend and FriendRequest
 

@@ -1,4 +1,4 @@
-import { Paperclip, Image, Video, FileText } from 'lucide-react';
+import { Paperclip } from 'lucide-react';
 import React, { useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
