@@ -5,7 +5,7 @@ import { roomMessageService } from '../services/roomMessageService';
 import { roomService } from '../services/roomService';
 import { storage } from '../storage';
 import { protect } from '../middleware/enhancedSecurity';
-import { messageLimiter } from '../security';
+import { messageLimiter, sanitizeInput } from '../security';
 
 const router = Router();
 
@@ -103,7 +103,8 @@ router.post('/room/:roomId', protect.auth, messageLimiter, async (req, res) => {
       return res.status(401).json({ error: 'يجب تسجيل الدخول' });
     }
 
-    if (!content?.trim()) {
+    const sanitizedContent = sanitizeInput(typeof content === 'string' ? content : '');
+    if (!sanitizedContent) {
       return res.status(400).json({ error: 'محتوى الرسالة مطلوب' });
     }
 
@@ -124,7 +125,7 @@ router.post('/room/:roomId', protect.auth, messageLimiter, async (req, res) => {
     const message = await roomMessageService.sendMessage({
       senderId: parseInt(String(senderId)),
       roomId,
-      content: content.trim(),
+      content: sanitizedContent,
       messageType,
       isPrivate: false,
       receiverId: undefined,

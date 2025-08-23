@@ -29,12 +29,10 @@ async function resetDatabase() {
   console.log('🔄 بدء عملية إعادة تعيين قاعدة البيانات...\n');
 
   // قراءة رابط قاعدة البيانات من متغيرات البيئة
-  const databaseUrl =
-    process.env.DATABASE_URL ||
-    'postgresql://postgres.qzehjgmawnrihmepboca:abood22333a@aws-0-eu-west-3.pooler.supabase.com:6543/postgres';
+  const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
-    console.error('❌ DATABASE_URL غير محدد');
+    console.error('❌ DATABASE_URL غير محدد. يرجى ضبطه قبل التشغيل.');
     process.exit(1);
   }
 

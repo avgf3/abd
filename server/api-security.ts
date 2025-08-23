@@ -2,8 +2,12 @@
 import { Router } from 'express';
 
 import { advancedSecurity } from './advanced-security';
+import { protect } from './middleware/enhancedSecurity';
 
 const router = Router();
+
+// تقييد كل مسارات الأمان للمالك فقط
+router.use(protect.owner);
 
 // Get security report - Owner only
 router.get('/report', async (req, res) => {

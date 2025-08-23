@@ -4,6 +4,7 @@ import { db, dbType } from '../database-adapter';
 import { notificationService } from '../services/notificationService';
 import { storage } from '../storage';
 import { protect } from '../middleware/enhancedSecurity';
+import { sanitizeInput } from '../security';
 
 // Helper type for conversation item (server-side internal)
 type ConversationItem = {
@@ -40,7 +41,7 @@ router.post('/send', protect.auth, async (req, res) => {
       return res.status(400).json({ error: 'لا يمكن إرسال رسالة لنفسك' });
     }
 
-    const text = typeof content === 'string' ? content.trim() : '';
+    const text = sanitizeInput(typeof content === 'string' ? content : '');
     if (!text) {
       return res.status(400).json({ error: 'محتوى الرسالة مطلوب' });
     }

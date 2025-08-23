@@ -11,10 +11,12 @@ import postgres from 'postgres';
 import fs from 'fs';
 
 async function verifyAuthSystem() {
-  const client = postgres(
-    process.env.DATABASE_URL ||
-      'postgresql://postgres.qzehjgmawnrihmepboca:abood22333a@aws-0-eu-west-3.pooler.supabase.com:6543/postgres'
-  );
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    console.error('❌ DATABASE_URL غير محدد. يرجى ضبطه قبل التشغيل.');
+    process.exit(1);
+  }
+  const client = postgres(dbUrl);
 
   try {
     console.log('\n🔍 === التحقق من نظام المصادقة ===\n');
