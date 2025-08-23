@@ -1,9 +1,9 @@
+nohup: ignoring input
 
 > rest-express@1.0.0 dev
 > NODE_ENV=development tsx server/index.ts
 
-[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
-✅ تم الاتصال بقاعدة بيانات PostgreSQL
+[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
 {
   severity_local: 'NOTICE',
   severity: 'NOTICE',
@@ -22,24 +22,24 @@
   line: '207',
   routine: 'transformCreateStmt'
 }
-✅ تم تشغيل الهجرات بنجاح
-node:events:496
-      throw er; // Unhandled 'error' event
-      ^
-
-Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
-    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
-    at listenInCluster (node:net:1996:12)
-    at node:net:2205:7
-    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
-Emitted 'error' event on Server instance at:
-    at emitErrorNT (node:net:1975:8)
-    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
-  code: 'EADDRINUSE',
-  errno: -98,
-  syscall: 'listen',
-  address: '0.0.0.0',
-  port: 3000
+[2025-08-23T12:40:35.326Z] INFO: [express] 🚀 الخادم يعمل على المنفذ 3000 في وضع development
+[2025-08-23T12:40:35.327Z] INFO: [express] 📱 رابط التطبيق: http://localhost:3000
+🚨 [SECURITY] محاولة وصول بصلاحيات غير كافية {
+  userId: 9,
+  username: 'admin1',
+  userRole: 'member',
+  requiredLevel: 'admin',
+  path: '/',
+  ip: '127.0.0.1'
 }
-
-Node.js v22.16.0
+🚨 خطأ في الخادم: {
+  message: 'هذا الإجراء يتطلب صلاحيات admin',
+  stack: 'Error: هذا الإجراء يتطلب صلاحيات admin\n' +
+    '    at Object.forbidden (/workspace/server/middleware/errorHandler.ts:163:5)\n' +
+    '    at <anonymous> (/workspace/server/middleware/enhancedSecurity.ts:131:29)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)',
+  url: '/api/rooms',
+  method: 'POST',
+  userAgent: 'curl/8.12.1',
+  timestamp: '2025-08-23T12:57:46.403Z'
+}
