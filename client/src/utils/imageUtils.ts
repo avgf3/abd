@@ -15,10 +15,10 @@ export function getImageSrc(
     return null;
   }
 
-  // تجاهل الصور الافتراضية القديمة
-  if (imageSrc === '/default_avatar.svg' || 
-      imageSrc.includes('default') || 
-      imageSrc.includes('facebook')) {
+  // تجاهل أي صور افتراضية قديمة
+  if (imageSrc.includes('default') || 
+      imageSrc.includes('avatar.svg') ||
+      imageSrc.includes('placeholder')) {
     return null;
   }
 
@@ -61,12 +61,9 @@ export function getProfileImageSrc(
   const src = getImageSrc(imageSrc);
   
   // إذا لم توجد صورة ولدينا userId، نحاول البحث عن صورة محفوظة
-  if (!src && userId) {
+  if (!src && userId && avatarHash) {
     const possiblePath = `/uploads/avatars/${userId}.webp`;
-    // نتحقق من وجود هاش للتأكد من وجود صورة فعلاً
-    if (avatarHash) {
-      return `${possiblePath}?v=${avatarHash}`;
-    }
+    return `${possiblePath}?v=${avatarHash}`;
   }
   
   // إضافة هاش للصورة إذا كان موجوداً
@@ -85,7 +82,6 @@ export function getProfileImageSrc(
 export function getBannerImageSrc(
   bannerSrc: string | null | undefined
 ): string | null {
-  // لا نريد صور بانر افتراضية
   return getImageSrc(bannerSrc);
 }
 
