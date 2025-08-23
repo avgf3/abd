@@ -1513,9 +1513,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 🚀 تحسين: تقليل استدعاءات المستخدمين - زيادة الفترة الزمنية
-  const lastUserListRequest = 0;
-  const USER_LIST_THROTTLE = 5000; // زيادة إلى 5 ثوان لتقليل التحميل (server-enforced)
 
   // socket.on('privateMessage', async (data) => {
   //   console.warn('[Deprecated] privateMessage handler is disabled. Use DM module events instead.');
