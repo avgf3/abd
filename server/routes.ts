@@ -82,6 +82,7 @@ const createMulterConfig = (
         'image/webp',
         'image/bmp',
         'image/tiff',
+        'image/svg+xml',
       ];
 
       if (allowedMimes.includes(file.mimetype)) {

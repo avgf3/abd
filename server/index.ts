@@ -77,59 +77,63 @@ const uploadsPath = path.join(process.cwd(), 'client/public/uploads');
 app.use(
   '/uploads',
   async (req, res, next) => {
-    // التحقق من وجود الملف
-    const fullPath = path.join(uploadsPath, req.path);
-    const normalizedFullPath = path.normalize(fullPath);
-    if (!normalizedFullPath.startsWith(uploadsPath)) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
     try {
-      await fsp.stat(normalizedFullPath);
-    } catch {
-      // الملف غير موجود - سنستخدم الصورة الافتراضية بصمت
+      // Decode and normalize path safely
+      const requestPath = decodeURIComponent(req.path || '/');
+      const fullPath = path.resolve(uploadsPath, '.' + requestPath);
 
-      // Return default avatar for any missing image
-      if (
-        req.path.includes('/avatars/') ||
-        req.path.includes('/profiles/') ||
-        req.path.includes('/banners/') ||
-        req.path.includes('profile-')
-      ) {
-        const defaultAvatarPath = path.join(process.cwd(), 'client/public/default_avatar.svg');
-        try {
-          await fsp.stat(defaultAvatarPath);
-          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-          return res.sendFile(defaultAvatarPath);
-        } catch {
-          // إذا لم توجد الصورة الافتراضية، أنشئها
-          const defaultSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      // Ensure path stays within uploads directory
+      const withinUploads = fullPath.startsWith(path.resolve(uploadsPath + path.sep));
+      const equalsUploadsIndex = fullPath === path.resolve(uploadsPath);
+      if (!withinUploads && !equalsUploadsIndex) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
+      // Check existence
+      try {
+        await fsp.stat(fullPath);
+      } catch {
+        // الملف غير موجود - سنستخدم الصورة الافتراضية بصمت
+        if (
+          requestPath.includes('/avatars/') ||
+          requestPath.includes('/profiles/') ||
+          requestPath.includes('/banners/') ||
+          requestPath.includes('profile-')
+        ) {
+          const defaultAvatarPath = path.join(process.cwd(), 'client/public/default_avatar.svg');
+          try {
+            await fsp.stat(defaultAvatarPath);
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            return res.sendFile(defaultAvatarPath);
+          } catch {
+            const defaultSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <rect width="100" height="100" fill="#3c0d0d"/>
   <circle cx="50" cy="35" r="20" fill="#666"/>
   <ellipse cx="50" cy="80" rx="35" ry="25" fill="#666"/>
 </svg>`;
-          await fsp.writeFile(defaultAvatarPath, defaultSVG);
-          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-          return res.sendFile(defaultAvatarPath);
+            await fsp.writeFile(defaultAvatarPath, defaultSVG);
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            return res.sendFile(defaultAvatarPath);
+          }
         }
+        return res.status(404).json({ error: 'File not found' });
       }
 
+      const isAvatar = requestPath.includes('/avatars/');
+      const isBanner = requestPath.includes('/banners/');
+      const hasVersionParam = typeof req.query.v === 'string' && (req.query.v as string).length > 0;
+      if ((isAvatar || isBanner) && hasVersionParam) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+      if ((isAvatar || isBanner) && !hasVersionParam) {
+        res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+      }
+      res.setHeader('Vary', 'Accept, Accept-Encoding');
+
+      next();
+    } catch {
       return res.status(404).json({ error: 'File not found' });
     }
-
-    // إذا كانت صورة أفاتار/بانر ومعها باراميتر نسخة v، فعّل كاش طويل وimmutable
-    const isAvatar = req.path.includes('/avatars/');
-    const isBanner = req.path.includes('/banners/');
-    const hasVersionParam = typeof req.query.v === 'string' && (req.query.v as string).length > 0;
-    if ((isAvatar || isBanner) && hasVersionParam) {
-      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    }
-    // في حالة عدم وجود باراميتر نسخة لصور الأفاتار/البانر، اجبر إعادة التحقق لمنع الصور العالقة
-    if ((isAvatar || isBanner) && !hasVersionParam) {
-      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
-    }
-    res.setHeader('Vary', 'Accept, Accept-Encoding');
-
-    next();
   },
   express.static(uploadsPath, {
     // إعدادات محسّنة للأداء
