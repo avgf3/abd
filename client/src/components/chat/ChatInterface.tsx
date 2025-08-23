@@ -12,33 +12,35 @@ import {
   EyeOff,
   Lock,
 } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 
-import ActiveModerationLog from '../moderation/ActiveModerationLog';
 import BlockNotification from '../moderation/BlockNotification';
-import PromoteUserPanel from '../moderation/PromoteUserPanel';
-import ReportsLog from '../moderation/ReportsLog';
+// Remove static heavy imports; use lazy-loaded variants instead
+const ActiveModerationLog = lazy(() => import('../moderation/ActiveModerationLog'));
+const PromoteUserPanel = lazy(() => import('../moderation/PromoteUserPanel'));
+const ReportsLog = lazy(() => import('../moderation/ReportsLog'));
 
-import AdminReportsPanel from './AdminReportsPanel';
-import BroadcastRoomInterface from './BroadcastRoomInterface';
-import MessageAlert from './MessageAlert';
-import MessageArea from './MessageArea';
-import MessagesPanel from './MessagesPanel';
-import ModerationPanel from './ModerationPanel';
-import NotificationPanel from './NotificationPanel';
-import OwnerAdminPanel from './OwnerAdminPanel';
-import PrivateMessageBox from './PrivateMessageBox';
-import ProfileImage from './ProfileImage';
-import ProfileModal from './ProfileModal';
-import ReportModal from './ReportModal';
-import SettingsMenu from './SettingsMenu';
-import ThemeSelector from './ThemeSelector';
-import UserPopup from './UserPopup';
-import UnifiedSidebar from './UserSidebarWithWalls';
-import WelcomeNotification from './WelcomeNotification';
+const AdminReportsPanel = lazy(() => import('./AdminReportsPanel'));
+const BroadcastRoomInterface = lazy(() => import('./BroadcastRoomInterface'));
+const MessageAlert = (await import('./MessageAlert')).default;
+const MessageArea = lazy(() => import('./MessageArea'));
+const MessagesPanel = lazy(() => import('./MessagesPanel'));
+const ModerationPanel = lazy(() => import('./ModerationPanel'));
+const NotificationPanel = lazy(() => import('./NotificationPanel'));
+const OwnerAdminPanel = lazy(() => import('./OwnerAdminPanel'));
+const PrivateMessageBox = lazy(() => import('./PrivateMessageBox'));
+const ProfileImage = (await import('./ProfileImage')).default;
+const ProfileModal = lazy(() => import('./ProfileModal'));
+const ReportModal = lazy(() => import('./ReportModal'));
+const SettingsMenu = (await import('./SettingsMenu')).default;
+const ThemeSelector = lazy(() => import('./ThemeSelector'));
+const UserPopup = (await import('./UserPopup')).default;
+const UnifiedSidebar = (await import('./UserSidebarWithWalls')).default;
+const WelcomeNotification = (await import('./WelcomeNotification')).default;
 
-import KickCountdown from '@/components/moderation/KickCountdown';
-import UsernameColorPicker from '@/components/profile/UsernameColorPicker';
+const KickCountdown = lazy(() => import('@/components/moderation/KickCountdown'));
+const UsernameColorPicker = lazy(() => import('@/components/profile/UsernameColorPicker'));
+const RichestModal = lazy(() => import('@/components/ui/RichestModal'));
 // import RoomComponent from './RoomComponent';
 
 import { Button } from '@/components/ui/button';
@@ -53,7 +55,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import RichestModal from '@/components/ui/RichestModal'; // تبويب الأثرياء
 import { Textarea } from '@/components/ui/textarea';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { UseChatReturn } from '@/hooks/useChat';
@@ -574,22 +575,24 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`${isMobile ? 'w-full flex-1 min-h-0' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}
             style={{ maxHeight: 'calc(100vh - 160px)' }}
           >
-            <UnifiedSidebar
-              users={chat.onlineUsers}
-              onUserClick={handleUserClick}
-              currentUser={chat.currentUser}
-              activeView={activeView}
-              rooms={rooms}
-              currentRoomId={chat.currentRoomId}
-              onRoomChange={handleRoomChange}
-              onAddRoom={handleAddRoom}
-              onDeleteRoom={handleDeleteRoom}
-              onRefreshRooms={handleRefreshRooms}
-              onStartPrivateChat={(user) => {
-                setSelectedPrivateUser(user);
-                setShowPmBox(true);
-              }}
-            />
+            <Suspense fallback={<div className="p-4 text-center">...جاري التحميل</div>}>
+              <UnifiedSidebar
+                users={chat.onlineUsers}
+                onUserClick={handleUserClick}
+                currentUser={chat.currentUser}
+                activeView={activeView}
+                rooms={rooms}
+                currentRoomId={chat.currentRoomId}
+                onRoomChange={handleRoomChange}
+                onAddRoom={handleAddRoom}
+                onDeleteRoom={handleDeleteRoom}
+                onRefreshRooms={handleRefreshRooms}
+                onStartPrivateChat={(user) => {
+                  setSelectedPrivateUser(user);
+                  setShowPmBox(true);
+                }}
+              />
+            </Suspense>
           </div>
         )}
         {!isMobile || activeView === 'hidden'
@@ -599,53 +602,55 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
               if (currentRoom?.isBroadcast) {
                 return (
-                  <BroadcastRoomInterface
-                    currentUser={chat.currentUser}
-                    room={currentRoom}
-                    onlineUsers={chat.onlineUsers}
-                    onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
-                    onTyping={(_isTyping) => chat.sendTyping()}
-                    typingUsers={Array.from(chat.typingUsers)}
-                    onReportMessage={handleReportUser}
-                    onUserClick={handleUserClick}
-                    messages={chat.publicMessages}
-                    chat={{
-                      sendPublicMessage: (content: string) =>
-                        chat.sendRoomMessage(content, chat.currentRoomId),
-                      handleTyping: () => chat.sendTyping(),
-                      addBroadcastMessageHandler: (handler: (data: any) => void) =>
-                        chat.addBroadcastMessageHandler?.(handler),
-                      removeBroadcastMessageHandler: (handler: (data: any) => void) =>
-                        chat.removeBroadcastMessageHandler?.(handler),
-                      sendWebRTCIceCandidate: (
-                        toUserId: number,
-                        roomId: string,
-                        candidate: RTCIceCandidateInit
-                      ) => chat.sendWebRTCIceCandidate?.(toUserId, roomId, candidate),
-                      sendWebRTCOffer: (
-                        toUserId: number,
-                        roomId: string,
-                        offer: RTCSessionDescriptionInit
-                      ) => chat.sendWebRTCOffer?.(toUserId, roomId, offer),
-                      sendWebRTCAnswer: (
-                        toUserId: number,
-                        roomId: string,
-                        answer: RTCSessionDescriptionInit
-                      ) => chat.sendWebRTCAnswer?.(toUserId, roomId, answer),
-                      onWebRTCOffer: (handler: (payload: any) => void) =>
-                        chat.onWebRTCOffer?.(handler),
-                      offWebRTCOffer: (handler: (payload: any) => void) =>
-                        chat.offWebRTCOffer?.(handler),
-                      onWebRTCIceCandidate: (handler: (payload: any) => void) =>
-                        chat.onWebRTCIceCandidate?.(handler),
-                      offWebRTCIceCandidate: (handler: (payload: any) => void) =>
-                        chat.offWebRTCIceCandidate?.(handler),
-                      onWebRTCAnswer: (handler: (payload: any) => void) =>
-                        chat.onWebRTCAnswer?.(handler),
-                      offWebRTCAnswer: (handler: (payload: any) => void) =>
-                        chat.offWebRTCAnswer?.(handler),
-                    }}
-                  />
+                  <Suspense fallback={<div className="p-4 text-center">...جاري التحميل</div>}>
+                    <BroadcastRoomInterface
+                      currentUser={chat.currentUser}
+                      room={currentRoom}
+                      onlineUsers={chat.onlineUsers}
+                      onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                      onTyping={(_isTyping) => chat.sendTyping()}
+                      typingUsers={Array.from(chat.typingUsers)}
+                      onReportMessage={handleReportUser}
+                      onUserClick={handleUserClick}
+                      messages={chat.publicMessages}
+                      chat={{
+                        sendPublicMessage: (content: string) =>
+                          chat.sendRoomMessage(content, chat.currentRoomId),
+                        handleTyping: () => chat.sendTyping(),
+                        addBroadcastMessageHandler: (handler: (data: any) => void) =>
+                          chat.addBroadcastMessageHandler?.(handler),
+                        removeBroadcastMessageHandler: (handler: (data: any) => void) =>
+                          chat.removeBroadcastMessageHandler?.(handler),
+                        sendWebRTCIceCandidate: (
+                          toUserId: number,
+                          roomId: string,
+                          candidate: RTCIceCandidateInit
+                        ) => chat.sendWebRTCIceCandidate?.(toUserId, roomId, candidate),
+                        sendWebRTCOffer: (
+                          toUserId: number,
+                          roomId: string,
+                          offer: RTCSessionDescriptionInit
+                        ) => chat.sendWebRTCOffer?.(toUserId, roomId, offer),
+                        sendWebRTCAnswer: (
+                          toUserId: number,
+                          roomId: string,
+                          answer: RTCSessionDescriptionInit
+                        ) => chat.sendWebRTCAnswer?.(toUserId, roomId, answer),
+                        onWebRTCOffer: (handler: (payload: any) => void) =>
+                          chat.onWebRTCOffer?.(handler),
+                        offWebRTCOffer: (handler: (payload: any) => void) =>
+                          chat.offWebRTCOffer?.(handler),
+                        onWebRTCIceCandidate: (handler: (payload: any) => void) =>
+                          chat.onWebRTCIceCandidate?.(handler),
+                        offWebRTCIceCandidate: (handler: (payload: any) => void) =>
+                          chat.offWebRTCIceCandidate?.(handler),
+                        onWebRTCAnswer: (handler: (payload: any) => void) =>
+                          chat.onWebRTCAnswer?.(handler),
+                        offWebRTCAnswer: (handler: (payload: any) => void) =>
+                          chat.offWebRTCAnswer?.(handler),
+                      }}
+                    />
+                  </Suspense>
                 );
               }
 
@@ -655,19 +660,21 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   className="flex-1 flex flex-col min-h-0 relative"
                   style={{ maxHeight: 'calc(100vh - 160px)' }}
                 >
-                  <MessageArea
-                    messages={chat.publicMessages}
-                    currentUser={chat.currentUser}
-                    onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
-                    onTyping={() => chat.sendTyping()}
-                    typingUsers={chat.typingUsers}
-                    onReportMessage={handleReportUser}
-                    onUserClick={handleUserClick}
-                    onlineUsers={chat.onlineUsers}
-                    currentRoomName={currentRoom?.name || 'الدردشة العامة'}
-                    currentRoomId={chat.currentRoomId}
-                    ignoredUserIds={chat.ignoredUsers}
-                  />
+                  <Suspense fallback={<div className="p-4 text-center">...جاري التحميل</div>}>
+                    <MessageArea
+                      messages={chat.publicMessages}
+                      currentUser={chat.currentUser}
+                      onSendMessage={(content) => chat.sendRoomMessage(content, chat.currentRoomId)}
+                      onTyping={() => chat.sendTyping()}
+                      typingUsers={chat.typingUsers}
+                      onReportMessage={handleReportUser}
+                      onUserClick={handleUserClick}
+                      onlineUsers={chat.onlineUsers}
+                      currentRoomName={currentRoom?.name || 'الدردشة العامة'}
+                      currentRoomId={chat.currentRoomId}
+                      ignoredUserIds={chat.ignoredUsers}
+                    />
+                  </Suspense>
                 </div>
               );
             })()
@@ -794,57 +801,59 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* Modals and Popups */}
       {showProfile && (
-        <>
-          {profileUser && profileUser.id !== chat.currentUser?.id ? (
-            <ProfileModal
-              user={profileUser}
-              currentUser={chat.currentUser}
-              onClose={() => {
-                setShowProfile(false);
-                setProfileUser(null);
-              }}
-              onIgnoreUser={(userId) => {
-                chat.ignoreUser(userId);
-              }}
-              onUpdate={(updatedUser) => {
-                // تحديث بيانات المستخدم في قائمة المتصلون
-                if (updatedUser && updatedUser.id) {
-                  chat.updateCurrentUser({
-                    profileEffect: updatedUser.profileEffect,
-                    usernameColor: updatedUser.usernameColor,
-                    profileBackgroundColor: updatedUser.profileBackgroundColor,
-                  });
-                }
-              }}
-              onPrivateMessage={handlePrivateMessage}
-              onAddFriend={handleAddFriend}
-              onReportUser={(u) => handleReportUser(u)}
-            />
-          ) : (
-            <ProfileModal
-              user={profileUser || chat.currentUser}
-              currentUser={chat.currentUser}
-              onClose={() => {
-                setShowProfile(false);
-                setProfileUser(null);
-              }}
-              onIgnoreUser={(userId) => {
-                chat.ignoreUser(userId);
-              }}
-              onUpdate={(updatedUser) => {
-                // تحديث بيانات المستخدم الحالي في قائمة المتصلون
-                if (updatedUser && updatedUser.id) {
-                  chat.updateCurrentUser({
-                    profileEffect: updatedUser.profileEffect,
-                    usernameColor: updatedUser.usernameColor,
-                    profileBackgroundColor: updatedUser.profileBackgroundColor,
-                  });
-                }
-              }}
-              onReportUser={(u) => handleReportUser(u)}
-            />
-          )}
-        </>
+        <Suspense fallback={<div className="p-4 text-center">...جاري التحميل</div>}>
+          <>
+            {profileUser && profileUser.id !== chat.currentUser?.id ? (
+              <ProfileModal
+                user={profileUser}
+                currentUser={chat.currentUser}
+                onClose={() => {
+                  setShowProfile(false);
+                  setProfileUser(null);
+                }}
+                onIgnoreUser={(userId) => {
+                  chat.ignoreUser(userId);
+                }}
+                onUpdate={(updatedUser) => {
+                  // تحديث بيانات المستخدم في قائمة المتصلون
+                  if (updatedUser && updatedUser.id) {
+                    chat.updateCurrentUser({
+                      profileEffect: updatedUser.profileEffect,
+                      usernameColor: updatedUser.usernameColor,
+                      profileBackgroundColor: updatedUser.profileBackgroundColor,
+                    });
+                  }
+                }}
+                onPrivateMessage={handlePrivateMessage}
+                onAddFriend={handleAddFriend}
+                onReportUser={(u) => handleReportUser(u)}
+              />
+            ) : (
+              <ProfileModal
+                user={profileUser || chat.currentUser}
+                currentUser={chat.currentUser}
+                onClose={() => {
+                  setShowProfile(false);
+                  setProfileUser(null);
+                }}
+                onIgnoreUser={(userId) => {
+                  chat.ignoreUser(userId);
+                }}
+                onUpdate={(updatedUser) => {
+                  // تحديث بيانات المستخدم الحالي في قائمة المتصلون
+                  if (updatedUser && updatedUser.id) {
+                    chat.updateCurrentUser({
+                      profileEffect: updatedUser.profileEffect,
+                      usernameColor: updatedUser.usernameColor,
+                      profileBackgroundColor: updatedUser.profileBackgroundColor,
+                    });
+                  }
+                }}
+                onReportUser={(u) => handleReportUser(u)}
+              />
+            )}
+          </>
+        </Suspense>
       )}
 
       {/* Dialog: إضافة غرفة جديدة */}
@@ -895,34 +904,36 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* لوحة الرسائل */}
       {showMessages && (
-        <MessagesPanel
-          isOpen={showMessages}
-          onClose={() => setShowMessages(false)}
-          currentUser={chat.currentUser}
-          privateConversations={chat.privateConversations}
-          onlineUsers={chat.onlineUsers}
-          isConnected={chat.isConnected}
-          onStartPrivateChat={(user) => {
-            setShowMessages(false);
-            setSelectedPrivateUser(user);
-            setShowPmBox(true);
-          }}
-        />
+        <Suspense fallback={null}>
+          <MessagesPanel
+            isOpen={showMessages}
+            onClose={() => setShowMessages(false)}
+            currentUser={chat.currentUser}
+            privateConversations={chat.privateConversations}
+            onlineUsers={chat.onlineUsers}
+            isConnected={chat.isConnected}
+            onStartPrivateChat={(user) => {
+              setShowMessages(false);
+              setSelectedPrivateUser(user);
+              setShowPmBox(true);
+            }}
+          />
+        </Suspense>
       )}
 
       {/* صندوق الرسائل الخاصة */}
       {showPmBox && selectedPrivateUser && (
-        <PrivateMessageBox
-          isOpen={showPmBox}
-          onClose={() => setShowPmBox(false)}
-          user={selectedPrivateUser}
-          currentUser={chat.currentUser}
-          messages={chat.privateConversations[selectedPrivateUser.id] || []}
-          onSendMessage={(content) => chat.sendMessage(content, 'text', selectedPrivateUser.id)}
-          onLoadMore={() =>
-            (chat as any).loadOlderPrivateConversation?.(selectedPrivateUser.id, 20)
-          }
-        />
+        <Suspense fallback={null}>
+          <PrivateMessageBox
+            isOpen={showPmBox}
+            onClose={() => setShowPmBox(false)}
+            user={selectedPrivateUser}
+            currentUser={chat.currentUser}
+            messages={chat.privateConversations[selectedPrivateUser.id] || []}
+            onSendMessage={(content) => chat.sendMessage(content, 'text', selectedPrivateUser.id)}
+            onLoadMore={() => (chat as any).loadOlderPrivateConversation?.(selectedPrivateUser.id, 20)}
+          />
+        </Suspense>
       )}
 
       {userPopup.show && userPopup.user && (
@@ -973,87 +984,105 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       )}
 
       {showReportModal && (
-        <ReportModal
-          isOpen={showReportModal}
-          onClose={closeReportModal}
-          reportedUser={reportedUser}
-          currentUser={chat.currentUser}
-          messageContent={reportedMessage?.content}
-          messageId={reportedMessage?.id}
-        />
+        <Suspense fallback={null}>
+          <ReportModal
+            isOpen={showReportModal}
+            onClose={closeReportModal}
+            reportedUser={reportedUser}
+            currentUser={chat.currentUser}
+            messageContent={reportedMessage?.content}
+            messageId={reportedMessage?.id}
+          />
+        </Suspense>
       )}
 
       {showNotifications && (
-        <NotificationPanel
-          isOpen={showNotifications}
-          onClose={() => setShowNotifications(false)}
-          currentUser={chat.currentUser}
-        />
+        <Suspense fallback={null}>
+          <NotificationPanel
+            isOpen={showNotifications}
+            onClose={() => setShowNotifications(false)}
+            currentUser={chat.currentUser}
+          />
+        </Suspense>
       )}
 
       {/* Admin Reports Panel */}
       {showAdminReports && chat.currentUser && chat.currentUser.userType === 'owner' && (
-        <AdminReportsPanel
-          isOpen={showAdminReports}
-          onClose={() => setShowAdminReports(false)}
-          currentUser={chat.currentUser}
-        />
+        <Suspense fallback={null}>
+          <AdminReportsPanel
+            isOpen={showAdminReports}
+            onClose={() => setShowAdminReports(false)}
+            currentUser={chat.currentUser}
+          />
+        </Suspense>
       )}
 
       {/* ⚠️ لوحة الإدارة - إزالة التكرار */}
       {showModerationPanel && (
-        <ModerationPanel
-          isOpen={showModerationPanel}
-          onClose={() => setShowModerationPanel(false)}
-          currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
-        />
+        <Suspense fallback={null}>
+          <ModerationPanel
+            isOpen={showModerationPanel}
+            onClose={() => setShowModerationPanel(false)}
+            currentUser={chat.currentUser}
+            onlineUsers={chat.onlineUsers}
+          />
+        </Suspense>
       )}
 
       {/* 👑 لوحة المالك */}
       {showOwnerPanel && (
-        <OwnerAdminPanel
-          isOpen={showOwnerPanel}
-          onClose={() => setShowOwnerPanel(false)}
-          currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
-        />
+        <Suspense fallback={null}>
+          <OwnerAdminPanel
+            isOpen={showOwnerPanel}
+            onClose={() => setShowOwnerPanel(false)}
+            currentUser={chat.currentUser}
+            onlineUsers={chat.onlineUsers}
+          />
+        </Suspense>
       )}
 
       {showReportsLog && (
-        <ReportsLog
-          isVisible={showReportsLog}
-          onClose={() => setShowReportsLog(false)}
-          currentUser={chat.currentUser}
-        />
+        <Suspense fallback={null}>
+          <ReportsLog
+            isVisible={showReportsLog}
+            onClose={() => setShowReportsLog(false)}
+            currentUser={chat.currentUser}
+          />
+        </Suspense>
       )}
 
       {showActiveActions && (
-        <ActiveModerationLog
-          isVisible={showActiveActions}
-          onClose={() => setShowActiveActions(false)}
-          currentUser={chat.currentUser}
-        />
+        <Suspense fallback={null}>
+          <ActiveModerationLog
+            isVisible={showActiveActions}
+            onClose={() => setShowActiveActions(false)}
+            currentUser={chat.currentUser}
+          />
+        </Suspense>
       )}
 
       {showPromotePanel && (
-        <PromoteUserPanel
-          isVisible={showPromotePanel}
-          onClose={() => setShowPromotePanel(false)}
-          currentUser={chat.currentUser}
-          onlineUsers={chat.onlineUsers}
-        />
+        <Suspense fallback={null}>
+          <PromoteUserPanel
+            isVisible={showPromotePanel}
+            onClose={() => setShowPromotePanel(false)}
+            currentUser={chat.currentUser}
+            onlineUsers={chat.onlineUsers}
+          />
+        </Suspense>
       )}
 
       {showThemeSelector && (
-        <ThemeSelector
-          isOpen={showThemeSelector}
-          onClose={() => setShowThemeSelector(false)}
-          currentUser={chat.currentUser}
-          onThemeUpdate={(theme) => {
-            // لم يعد هناك تحديث لكل مستخدم هنا؛ الثيم الآن عام للموقع
-          }}
-        />
+        <Suspense fallback={null}>
+          <ThemeSelector
+            isOpen={showThemeSelector}
+            onClose={() => setShowThemeSelector(false)}
+            currentUser={chat.currentUser}
+            onThemeUpdate={(theme) => {
+              // لم يعد هناك تحديث لكل مستخدم هنا؛ الثيم الآن عام للموقع
+            }}
+          />
+        </Suspense>
       )}
 
       {showUsernameColorPicker && chat.currentUser && (
@@ -1066,26 +1095,28 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             >
               ×
             </button>
-            <UsernameColorPicker
-              currentUser={chat.currentUser}
-              onColorUpdate={(color) => {
-                chat.updateCurrentUser({ usernameColor: color } as any);
-                // إذا كان لون الخلفية مضبوطاً ولم يكن لون الاسم مضبوطاً سابقاً (أبيض افتراضياً)، لا نغيّر الخلفية.
-                // أما إذا كان لون الاسم أبيض افتراضياً والملف الشخصي بلا خلفية، فلا شيء نفعله هنا. البث سيحدّث القائمة.
-                setShowUsernameColorPicker(false);
-              }}
-            />
+            <Suspense fallback={<div className="p-4 text-center">...جاري التحميل</div>}>
+              <UsernameColorPicker
+                currentUser={chat.currentUser}
+                onColorUpdate={(color) => {
+                  chat.updateCurrentUser({ usernameColor: color } as any);
+                  setShowUsernameColorPicker(false);
+                }}
+              />
+            </Suspense>
           </div>
         </div>
       )}
 
       {/* إشعارات الطرد والحجب */}
       {chat.showKickCountdown && (
-        <KickCountdown
-          isVisible={chat.showKickCountdown}
-          durationMinutes={15}
-          onClose={() => chat.setShowKickCountdown(false)}
-        />
+        <Suspense fallback={null}>
+          <KickCountdown
+            isVisible={chat.showKickCountdown}
+            durationMinutes={15}
+            onClose={() => chat.setShowKickCountdown(false)}
+          />
+        </Suspense>
       )}
       {/* إشعار الحجب (block) */}
       {chat.notifications &&
@@ -1112,11 +1143,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {chat.currentUser && <WelcomeNotification user={chat.currentUser} />}
 
       {/* نافذة الأثرياء */}
-      <RichestModal
-        isOpen={showRichest}
-        onClose={() => setShowRichest(false)}
-        currentUser={chat.currentUser}
-      />
+      <Suspense fallback={null}>
+        <RichestModal
+          isOpen={showRichest}
+          onClose={() => setShowRichest(false)}
+          currentUser={chat.currentUser}
+        />
+      </Suspense>
 
       {showIgnoredUsers && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
