@@ -35,13 +35,7 @@ const upload = multer({
     files: 1,
   },
   fileFilter: (req, file, cb) => {
-    const allowedMimes = [
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/gif',
-      'image/webp'
-    ];
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
@@ -58,12 +52,7 @@ const createRoomSchema = z.object({
     .trim()
     .min(1, 'اسم الغرفة مطلوب')
     .max(100, 'اسم الغرفة طويل جداً'),
-  description: z
-    .string()
-    .trim()
-    .max(300, 'الوصف طويل جداً')
-    .optional()
-    .default(''),
+  description: z.string().trim().max(300, 'الوصف طويل جداً').optional().default(''),
   isBroadcast: z
     .union([z.boolean(), z.string()])
     .optional()
@@ -150,7 +139,9 @@ router.post('/', protect.admin, upload.single('image'), async (req, res) => {
   try {
     const parsed = createRoomSchema.safeParse(req.body || {});
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+      return res
+        .status(400)
+        .json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
     }
     const { name, description, isBroadcast } = parsed.data as any;
 
@@ -201,15 +192,20 @@ router.put('/:roomId/icon', protect.auth, upload.single('image'), async (req, re
     if (!room) {
       // تنظيف ملف مرفوع إن وُجد
       if (req.file) {
-        try { fs.unlinkSync(req.file.path); } catch {}
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch {}
       }
       return res.status(404).json({ error: 'الغرفة غير موجودة' });
     }
 
-    const creatorOrAdmin = (room as any).createdBy === requester?.id || ['admin', 'owner'].includes(requester?.userType);
+    const creatorOrAdmin =
+      (room as any).createdBy === requester?.id || ['admin', 'owner'].includes(requester?.userType);
     if (!creatorOrAdmin) {
       if (req.file) {
-        try { fs.unlinkSync(req.file.path); } catch {}
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch {}
       }
       return res.status(403).json({ error: 'غير مسموح بتحديث أيقونة الغرفة' });
     }
@@ -224,7 +220,9 @@ router.put('/:roomId/icon', protect.auth, upload.single('image'), async (req, re
     // حذف أيقونة سابقة لو وجدت
     if ((room as any).icon) {
       try {
-        const rel = (room as any).icon.startsWith('/') ? (room as any).icon.slice(1) : (room as any).icon;
+        const rel = (room as any).icon.startsWith('/')
+          ? (room as any).icon.slice(1)
+          : (room as any).icon;
         const p = path.join(process.cwd(), 'client', 'public', rel);
         if (fs.existsSync(p)) fs.unlinkSync(p);
       } catch {}
@@ -237,14 +235,18 @@ router.put('/:roomId/icon', protect.auth, upload.single('image'), async (req, re
       return res.status(500).json({ error: 'فشل تحديث أيقونة الغرفة' });
     }
 
-    try { roomService.invalidateRoomsCache(); } catch {}
+    try {
+      roomService.invalidateRoomsCache();
+    } catch {}
 
     res.json({ success: true, room: updated });
   } catch (error: any) {
     console.error('خطأ في تحديث أيقونة الغرفة:', error);
     // تنظيف الملف عند الخطأ
     if (req.file) {
-      try { fs.unlinkSync(req.file.path); } catch {}
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch {}
     }
     res.status(400).json({ error: error.message || 'خطأ في تحديث أيقونة الغرفة' });
   }

@@ -109,7 +109,7 @@ export async function runMigrationsIfAvailable(): Promise<void> {
       try {
         const { migrate } = await import('drizzle-orm/postgres-js/migrator');
         await migrate(dbAdapter.db as any, { migrationsFolder });
-        } catch (e) {
+      } catch (e) {
         console.warn('⚠️ تعذر تشغيل الهجرات عبر Drizzle migrator:', (e as any)?.message || e);
       }
     }

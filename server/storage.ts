@@ -15,7 +15,7 @@ import {
 } from './services/databaseService';
 import { friendService } from './services/friendService';
 import { notificationService } from './services/notificationService';
-import { userService } from './services/userService';
+// userService removed; unified into databaseService
 
 // Helper function
 function safeParseJsonArray(value: string): any[] {
@@ -224,6 +224,7 @@ export async function leaveRoom(userId: number, roomId: number | string): Promis
         );
       return true;
     }
+    // No SQLite fallback in production
     return true;
   } catch (error) {
     console.error('Error leaveRoom:', error);
@@ -1089,19 +1090,19 @@ export const storage: LegacyStorage = {
 
   // ========= User helpers (stealth/ignore list) =========
   async setUserHiddenStatus(id: number, isHidden: boolean) {
-    return await userService.setUserHiddenStatus(id, isHidden);
+    return await databaseService.setUserHiddenStatus(id, isHidden);
   },
 
   async addIgnoredUser(userId: number, ignoredUserId: number) {
-    return await userService.addIgnoredUser(userId, ignoredUserId);
+    return await databaseService.addIgnoredUser(userId, ignoredUserId);
   },
 
   async removeIgnoredUser(userId: number, ignoredUserId: number) {
-    return await userService.removeIgnoredUser(userId, ignoredUserId);
+    return await databaseService.removeIgnoredUser(userId, ignoredUserId);
   },
 
   async getIgnoredUsers(userId: number) {
-    return await userService.getIgnoredUsers(userId);
+    return await databaseService.getIgnoredUsers(userId);
   },
 
   // ========= Notifications helpers =========

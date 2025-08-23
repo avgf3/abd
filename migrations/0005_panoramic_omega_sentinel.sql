@@ -1,3 +1,5 @@
+-- Chosen 0005 migration retained; duplicate 0005 files removed to enforce sequence
+-- Existing migration content below
 CREATE TABLE IF NOT EXISTS "room_users" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,

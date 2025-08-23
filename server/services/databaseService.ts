@@ -235,7 +235,7 @@ export class DatabaseService {
         };
 
         if (isFirstUser) {
-          }
+        }
 
         const result = await (this.db as any)
           .insert(schema.users)
@@ -270,6 +270,112 @@ export class DatabaseService {
     } catch (error) {
       console.error('Error updating user:', error);
       return null;
+    }
+  }
+
+  // ===== User helper methods unified from userService =====
+  async setUserOnlineStatus(id: number, isOnline: boolean): Promise<void> {
+    if (!this.isConnected()) return;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any)
+          .update(schema.users)
+          .set({
+            isOnline,
+            lastSeen: isOnline ? undefined : new Date(),
+          } as any)
+          .where(eq(schema.users.id, id));
+      }
+    } catch (error) {
+      console.error('Error setting user online status:', error);
+    }
+  }
+
+  async setUserHiddenStatus(id: number, isHidden: boolean): Promise<void> {
+    if (!this.isConnected()) return;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any)
+          .update(schema.users)
+          .set({ isHidden } as any)
+          .where(eq(schema.users.id, id));
+      }
+    } catch (error) {
+      console.error('Error setting user hidden status:', error);
+    }
+  }
+
+  async addIgnoredUser(userId: number, ignoredUserId: number): Promise<void> {
+    if (!this.isConnected()) return;
+    try {
+      const user = await this.getUserById(userId);
+      if (!user) return;
+
+      const current = (() => {
+        try {
+          const parsed = JSON.parse(user.ignoredUsers || '[]');
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      })();
+
+      const ignoredStr = String(ignoredUserId);
+      if (!current.includes(ignoredStr)) {
+        current.push(ignoredStr);
+        await (this.db as any)
+          .update(schema.users)
+          .set({ ignoredUsers: JSON.stringify(current) } as any)
+          .where(eq(schema.users.id, userId));
+      }
+    } catch (error) {
+      console.error('Error adding ignored user:', error);
+    }
+  }
+
+  async removeIgnoredUser(userId: number, ignoredUserId: number): Promise<void> {
+    if (!this.isConnected()) return;
+    try {
+      const user = await this.getUserById(userId);
+      if (!user) return;
+
+      const filtered = (() => {
+        try {
+          const parsed = JSON.parse(user.ignoredUsers || '[]');
+          if (!Array.isArray(parsed)) return [];
+          const target = String(ignoredUserId);
+          return parsed.filter((id: string) => id !== target);
+        } catch {
+          return [];
+        }
+      })();
+
+      await (this.db as any)
+        .update(schema.users)
+        .set({ ignoredUsers: JSON.stringify(filtered) } as any)
+        .where(eq(schema.users.id, userId));
+    } catch (error) {
+      console.error('Error removing ignored user:', error);
+    }
+  }
+
+  async getIgnoredUsers(userId: number): Promise<number[]> {
+    if (!this.isConnected()) return [];
+    try {
+      const user = await this.getUserById(userId);
+      if (!user || !user.ignoredUsers) return [];
+      const arr = (() => {
+        try {
+          const parsed = JSON.parse(user.ignoredUsers);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      })();
+      return arr.map((id: string) => parseInt(id)).filter((n: number) => !Number.isNaN(n));
+    } catch (error) {
+      console.error('Error getting ignored users:', error);
+      return [];
     }
   }
 

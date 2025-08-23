@@ -373,9 +373,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           success: true,
           message: 'تم رفع صورة البانر بنجاح',
           // استخدم هاش ثابت بدل timestamp لضمان كاش immutable عند وجود v
-          bannerUrl: `${bannerUrl}?v=${
-            (await import('crypto')).createHash('md5').update(webpBuffer).digest('hex').slice(0, 12)
-          }`,
+          bannerUrl: `${bannerUrl}?v=${(await import('crypto'))
+            .createHash('md5')
+            .update(webpBuffer)
+            .digest('hex')
+            .slice(0, 12)}`,
           filename: `${userId}.webp`,
           user: buildUserBroadcastPayload(updatedUser),
         });
@@ -1515,7 +1517,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'خطأ في تحديث لون الاسم' });
     }
   });
-
 
   // socket.on('privateMessage', async (data) => {
   //   console.warn('[Deprecated] privateMessage handler is disabled. Use DM module events instead.');

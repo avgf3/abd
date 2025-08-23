@@ -34,7 +34,10 @@ function applyLimiter(
 // Rate limiter for authentication endpoints
 export function authLimiter(req: Request, res: Response, next: NextFunction): void {
   try {
-    const ip = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() || req.ip || 'unknown';
+    const ip =
+      (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() ||
+      req.ip ||
+      'unknown';
     const ok = applyLimiter(ip, authRequestCounts, 10, 60_000); // 10 req/min/IP
     if (!ok) {
       return res.status(429).json({ error: 'تم تجاوز الحد المسموح من طلبات الدخول' });

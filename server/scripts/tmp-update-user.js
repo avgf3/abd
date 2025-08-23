@@ -18,7 +18,7 @@ async function main() {
       WHERE username = ${username}
       RETURNING id, username, user_type, password
     `;
-    } catch (e) {
+  } catch (e) {
     console.error('Update failed:', e.message || e);
     process.exit(1);
   } finally {

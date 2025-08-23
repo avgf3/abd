@@ -24,12 +24,14 @@ async function reset() {
     const names = tables.map((t: any) => t.table_name).filter((n: string) => !!n);
     if (names.length > 0) {
       const identList = names.map((n: string) => sql(n));
-      await sql.unsafe(`TRUNCATE TABLE ${names.map((n) => '"' + n + '"').join(', ')} RESTART IDENTITY CASCADE`);
-      }
+      await sql.unsafe(
+        `TRUNCATE TABLE ${names.map((n) => '"' + n + '"').join(', ')} RESTART IDENTITY CASCADE`
+      );
+    }
 
     // Re-enable triggers
     await sql`SET session_replication_role = DEFAULT`;
-    } catch (e: any) {
+  } catch (e: any) {
     console.error('❌ Reset failed:', e?.message || e);
     process.exit(1);
   } finally {
