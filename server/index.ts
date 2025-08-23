@@ -12,6 +12,7 @@ import { setupVite, serveStatic, log } from './vite';
 
 import path from 'path';
 import { promises as fsp } from 'fs';
+import { ensureUploadDirectories } from './utils/ensure-upload-dirs';
 
 const app = express();
 try {
@@ -98,22 +99,56 @@ app.use(
           requestPath.includes('/avatars/') ||
           requestPath.includes('/profiles/') ||
           requestPath.includes('/banners/') ||
-          requestPath.includes('profile-')
+          requestPath.includes('profile-') ||
+          requestPath.includes('/rooms/') ||
+          requestPath.includes('/messages/') ||
+          requestPath.includes('/wall/')
         ) {
-          const defaultAvatarPath = path.join(process.cwd(), 'client/public/default_avatar.svg');
+          // تحديد نوع الصورة الافتراضية بناءً على المسار
+          let defaultImagePath = path.join(process.cwd(), 'client/public/default_avatar.svg');
+          
+          if (requestPath.includes('/rooms/')) {
+            // صورة افتراضية للغرف
+            const defaultRoomSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#2c3e50"/>
+  <rect x="20" y="30" width="60" height="40" fill="#34495e" rx="5"/>
+  <circle cx="50" cy="50" r="8" fill="#ecf0f1"/>
+</svg>`;
+            const roomDefaultPath = path.join(process.cwd(), 'client/public/default_room.svg');
+            try {
+              await fsp.stat(roomDefaultPath);
+            } catch {
+              await fsp.writeFile(roomDefaultPath, defaultRoomSVG);
+            }
+            defaultImagePath = roomDefaultPath;
+          } else if (requestPath.includes('/messages/')) {
+            // صورة افتراضية للرسائل
+            const defaultMessageSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#95a5a6"/>
+  <path d="M20 30 L80 30 L80 60 L30 60 L20 70 Z" fill="#bdc3c7"/>
+</svg>`;
+            const messageDefaultPath = path.join(process.cwd(), 'client/public/default_message.svg');
+            try {
+              await fsp.stat(messageDefaultPath);
+            } catch {
+              await fsp.writeFile(messageDefaultPath, defaultMessageSVG);
+            }
+            defaultImagePath = messageDefaultPath;
+          }
+          
           try {
-            await fsp.stat(defaultAvatarPath);
+            await fsp.stat(defaultImagePath);
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-            return res.sendFile(defaultAvatarPath);
+            return res.sendFile(defaultImagePath);
           } catch {
             const defaultSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <rect width="100" height="100" fill="#3c0d0d"/>
   <circle cx="50" cy="35" r="20" fill="#666"/>
   <ellipse cx="50" cy="80" rx="35" ry="25" fill="#666"/>
 </svg>`;
-            await fsp.writeFile(defaultAvatarPath, defaultSVG);
+            await fsp.writeFile(defaultImagePath, defaultSVG);
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-            return res.sendFile(defaultAvatarPath);
+            return res.sendFile(defaultImagePath);
           }
         }
         return res.status(404).json({ error: 'File not found' });
@@ -254,8 +289,13 @@ app.get('/api/health', async (req, res) => {
 
 // Initialize database and start server
 async function startServer() {
+  const PORT = process.env.PORT || 3001;
+  
   try {
-    // تهيئة النظام (قاعدة البيانات + البيانات الافتراضية)
+    // التأكد من وجود مجلدات الرفع
+    await ensureUploadDirectories();
+    
+    // Initialize the database system first
     const systemInitialized = await initializeSystem();
 
     if (systemInitialized) {
@@ -276,7 +316,6 @@ async function startServer() {
     }
 
     // Start the server with retry mechanism
-    const PORT = Number(process.env.PORT) || 5000;
     const HOST = '0.0.0.0';
     
     const startListening = () => {
