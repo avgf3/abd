@@ -90,7 +90,7 @@ export default function MessagesPanel({
     const targetIds = new Set<number>();
 
     // من محادثات الخادم: التقط المعرفات التي لا يوجد لها otherUser ولا في الكاش ولا أونلاين
-    for (const c of (conversationsData?.conversations || [])) {
+    for (const c of conversationsData?.conversations || []) {
       const id = c.otherUserId;
       if (!id) continue;
       if (c.otherUser) continue;
@@ -117,9 +117,7 @@ export default function MessagesPanel({
     (async () => {
       try {
         const results = await Promise.all(
-          ids.map((id) =>
-            apiRequest(`/api/users/${id}`).catch(() => null)
-          )
+          ids.map((id) => apiRequest(`/api/users/${id}`).catch(() => null))
         );
         const next = new Map(resolvedUsers);
         results.forEach((data, idx) => {
@@ -230,7 +228,8 @@ export default function MessagesPanel({
       const latest = conv[conv.length - 1];
       if (!latest) continue;
 
-      const fromSender = (conv.find((m: any) => m && m.senderId === uid && m.sender)?.sender || null) as ChatUser | null;
+      const fromSender = (conv.find((m: any) => m && m.senderId === uid && m.sender)?.sender ||
+        null) as ChatUser | null;
       const user =
         fromSender ||
         resolvedUsers.get(uid) ||

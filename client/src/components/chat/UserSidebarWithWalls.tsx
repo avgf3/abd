@@ -17,7 +17,6 @@ import type { Socket } from 'socket.io-client';
 
 import FriendsTabPanel from './FriendsTabPanel';
 import ProfileImage from './ProfileImage';
-import RoomComponent from './RoomComponent';
 import SimpleUserMenu from './SimpleUserMenu';
 import UserRoleBadge from './UserRoleBadge';
 
