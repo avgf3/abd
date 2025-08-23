@@ -376,6 +376,7 @@ export default function ProfileModal({
   };
 
   // Profile banner fallback - محسّن للتعامل مع base64 و مشاكل الcache
+  // إرجاع مصدر صورة البانر إن وُجد مع دعم المسارات والـ base64
   const getProfileBannerSrcLocal = () => {
     return getBannerImageSrc(localUser?.profileBanner);
   };
@@ -413,18 +414,15 @@ export default function ProfileModal({
 
   // دعم المعاينة قبل رفع الصورة الشخصية أو الغلاف
   const [previewProfile, setPreviewProfile] = useState<string | null>(null);
-  const [previewBanner, setPreviewBanner] = useState<string | null>(null);
 
   const handlePreview = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    type: 'profile' | 'banner'
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
-      if (type === 'profile') setPreviewProfile(e.target?.result as string);
-      else setPreviewBanner(e.target?.result as string);
+      setPreviewProfile(e.target?.result as string);
     };
     reader.readAsDataURL(file);
   };
@@ -432,7 +430,7 @@ export default function ProfileModal({
   // عند رفع صورة جديدة، أضمن تحديث بيانات المستخدم من السيرفر بعد نجاح الرفع
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
-    uploadType: 'profile' | 'banner'
+    uploadType: 'profile' | 'banner' = 'profile'
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -513,7 +511,6 @@ export default function ProfileModal({
 
       // إزالة المعاينة
       if (uploadType === 'profile') setPreviewProfile(null);
-      else setPreviewBanner(null);
     } catch (error: any) {
       console.error(`❌ خطأ في رفع ${uploadType}:`, error);
       toast({

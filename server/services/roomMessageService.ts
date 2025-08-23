@@ -14,6 +14,7 @@ export interface RoomMessage {
   senderUserType?: string;
   senderAvatar?: string;
   sender?: any;
+  attachments?: any;
 }
 
 export interface MessagePagination {
@@ -77,6 +78,31 @@ class RoomMessageService {
         isPrivate: messageData.isPrivate || false,
         receiverId: messageData.receiverId || null,
         roomId: messageData.roomId,
+        attachments: (() => {
+          try {
+            const profileImage: string = (sender as any)?.profileImage || '';
+            const baseUrl = typeof profileImage === 'string' ? profileImage.split('?')[0] : '';
+            const hashFromField: string | undefined = (sender as any)?.avatarHash;
+            let hashFromUrl: string | undefined;
+            try {
+              const q = profileImage.includes('?') ? profileImage.split('?')[1] : '';
+              const params = new URLSearchParams(q);
+              const v = params.get('v') || undefined;
+              hashFromUrl = v || undefined;
+            } catch {}
+            const finalHash = hashFromField || hashFromUrl || undefined;
+            if (baseUrl && finalHash) {
+              return [
+                {
+                  type: 'senderAvatar',
+                  url: baseUrl,
+                  hash: finalHash,
+                },
+              ];
+            }
+          } catch {}
+          return [];
+        })(),
       });
 
       if (!message) {
@@ -97,6 +123,7 @@ class RoomMessageService {
         senderUserType: sender.userType,
         senderAvatar: (sender as any).profileImage || null,
         sender,
+        attachments: (message as any)?.attachments || [],
       };
 
       // إضافة الرسالة للذاكرة المؤقتة
@@ -177,6 +204,7 @@ class RoomMessageService {
             senderUserType: sender?.userType || 'user',
             senderAvatar: (sender as any)?.profileImage || null,
             sender,
+            attachments: (msg as any)?.attachments || [],
           };
           messages.push(roomMessage);
         } catch (err) {
@@ -315,6 +343,7 @@ class RoomMessageService {
             senderUserType: sender?.userType || 'user',
             senderAvatar: (sender as any)?.profileImage || null,
             sender,
+            attachments: (msg as any)?.attachments || [],
           };
           messages.push(roomMessage);
         } catch (err) {

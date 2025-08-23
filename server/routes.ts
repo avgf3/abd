@@ -279,7 +279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // إصلاح رفع صورة البانر - تحويل إلى WebP وتخزين كملف بدل Base64 لسلامة وأداء أفضل
+  // رفع صورة البانر - WebP + fingerprint
   app.post(
     '/api/upload/profile-banner',
     protect.auth,
@@ -302,18 +302,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(401).json({ error: 'يجب تسجيل الدخول' });
         }
 
-        // التحقق من وجود المستخدم
         const user = await storage.getUser(userId);
         if (!user) {
           try {
             await fsp.unlink(req.file.path);
-          } catch (unlinkError) {
-            console.error('خطأ في حذف الملف:', unlinkError);
-          }
+          } catch {}
           return res.status(404).json({ error: 'المستخدم غير موجود' });
         }
 
-        // تحويل الصورة إلى WebP ثابتة وتخزينها
         const bannersDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'banners');
         await fsp.mkdir(bannersDir, { recursive: true });
         const inputBuffer = await fsp.readFile(req.file.path);
@@ -326,13 +322,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch {}
         const bannerTargetPath = path.join(bannersDir, `${userId}.webp`);
         await fsp.writeFile(bannerTargetPath, webpBuffer);
-
-        // حذف الملف المؤقت
         try {
           await fsp.unlink(req.file.path);
         } catch {}
 
-        // احسب بصمة ثابتة للإصدار وخزّن الرابط مع ?v= لضمان التحديث الفوري
         const bannerVersion = (await import('crypto'))
           .createHash('md5')
           .update(webpBuffer)
@@ -340,12 +333,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .slice(0, 12);
         const bannerUrl = `/uploads/banners/${userId}.webp?v=${bannerVersion}`;
         const updatedUser = await storage.updateUser(userId, { profileBanner: bannerUrl });
-
         if (!updatedUser) {
           return res.status(500).json({ error: 'فشل في تحديث صورة البانر في قاعدة البيانات' });
         }
 
-        // بث خفيف للغرف: الخلفية فقط + كامل لصاحب التعديل
         try {
           updateConnectedUserCache(updatedUser);
         } catch {}

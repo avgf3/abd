@@ -363,11 +363,33 @@ export default function MessageArea({
                     {/* Profile Image */}
                     {message.sender && (
                       <div className="flex-shrink-0">
-                        <ProfileImage
-                          user={message.sender}
-                          size="small"
-                          className="cursor-pointer hover:scale-110 transition-transform duration-200"
-                        />
+                        {Array.isArray((message as any)?.attachments) && (message as any).attachments.find((a: any) => a && a.type === 'senderAvatar') ? (
+                          (() => {
+                            const snap = (message as any).attachments.find((a: any) => a && a.type === 'senderAvatar');
+                            const url = snap?.url;
+                            const hash = snap?.hash;
+                            const final = url && hash ? `${url}?v=${hash}` : (message.sender?.profileImage || '/default_avatar.svg');
+                            return (
+                              <img
+                                src={final}
+                                alt={`صورة ${message.sender?.username || ''}`}
+                                className={"w-10 h-10 rounded-full ring-2 shadow-sm object-cover cursor-pointer hover:scale-110 transition-transform duration-200"}
+                                loading="lazy"
+                                onError={(e: any) => {
+                                  if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+                                    e.currentTarget.src = '/default_avatar.svg';
+                                  }
+                                }}
+                              />
+                            );
+                          })()
+                        ) : (
+                          <ProfileImage
+                            user={message.sender}
+                            size="small"
+                            className="cursor-pointer hover:scale-110 transition-transform duration-200"
+                          />
+                        )}
                       </div>
                     )}
 
