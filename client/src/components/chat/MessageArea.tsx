@@ -557,7 +557,7 @@ export default function MessageArea({
             ref={inputRef}
             value={messageText}
             onChange={handleMessageChange}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyPress}
             placeholder="اكتب رسالتك هنا..."
             className={`flex-1 resize-none bg-white text-gray-900 placeholder:text-gray-500 ring-offset-white ${isMobile ? 'mobile-text' : ''}`}
             disabled={!currentUser}

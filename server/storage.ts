@@ -540,6 +540,29 @@ export const storage: LegacyStorage = {
           return null;
         }
       }
+
+      // Build sender/receiver snapshots to preserve identity at send time
+      try {
+        if (typeof message.senderId === 'number') {
+          const sender = await databaseService.getUserById(message.senderId);
+          if (sender) {
+            message.senderUsernameSnapshot = sender.username;
+            message.senderProfileImageSnapshot = sender.profileImage || null;
+            message.senderUserTypeSnapshot = sender.userType || null;
+            message.senderUsernameColorSnapshot = sender.usernameColor || null;
+          }
+        }
+        if (message.isPrivate && typeof message.receiverId === 'number') {
+          const receiver = await databaseService.getUserById(message.receiverId);
+          if (receiver) {
+            message.receiverUsernameSnapshot = receiver.username;
+            message.receiverProfileImageSnapshot = receiver.profileImage || null;
+            message.receiverUserTypeSnapshot = receiver.userType || null;
+            message.receiverUsernameColorSnapshot = receiver.usernameColor || null;
+          }
+        }
+      } catch {}
+
       const newMessage = await databaseService.createMessage(message);
       if (!newMessage) {
         console.error('Failed to create message in database');

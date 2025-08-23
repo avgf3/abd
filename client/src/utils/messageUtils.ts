@@ -8,12 +8,35 @@ export function mapDbMessageToChatMessage(msg: any, fallbackRoomId?: string): Ch
       : msg.timestamp
         ? new Date(msg.timestamp).toISOString()
         : new Date().toISOString();
+  // Prefer snapshot first, then full sender object, then neutral fallback
+  const snapshotSender =
+    msg.senderUsernameSnapshot && msg.senderId
+      ? {
+          id: msg.senderId,
+          username: msg.senderUsernameSnapshot,
+          userType: msg.senderUserTypeSnapshot || 'guest',
+          role: (msg.senderUserTypeSnapshot as any) || 'guest',
+          profileImage: msg.senderProfileImageSnapshot || undefined,
+          usernameColor: msg.senderUsernameColorSnapshot || undefined,
+          isOnline: false,
+        }
+      : undefined;
+  const finalSender = snapshotSender || msg.sender || (msg.senderId
+    ? {
+        id: msg.senderId,
+        username: `مستخدم #${msg.senderId}`,
+        userType: 'guest',
+        role: 'guest',
+        isOnline: false,
+      }
+    : undefined);
+
   return {
     id: msg.id,
     content: msg.content,
     timestamp: isoTs,
     senderId: msg.senderId,
-    sender: msg.sender,
+    sender: finalSender,
     messageType: msg.messageType || 'text',
     isPrivate: Boolean(msg.isPrivate),
     roomId: msg.roomId || fallbackRoomId,
