@@ -37,9 +37,6 @@ import {
   sanitizeInput,
   validateMessageContent,
   checkIPSecurity,
-  authLimiter,
-  messageLimiter,
-  friendRequestLimiter,
 } from './security';
 import { databaseService } from './services/databaseService';
 import { notificationService } from './services/notificationService';
@@ -183,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // رفع صور البروفايل - محسّن مع حل مشكلة Render
   app.post(
     '/api/upload/profile-image',
-    protect.ownership,
+    protect.auth,
     upload.single('profileImage'),
     async (req, res) => {
       try {
@@ -195,7 +192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        const userId = parseInt(req.body.userId);
+        const userId = (req as any).user?.id as number;
         if (!userId || isNaN(userId)) {
           // حذف الملف المرفوع إذا فشل في الحصول على userId
           try {
@@ -203,7 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch (unlinkError) {
             console.error('خطأ في حذف الملف:', unlinkError);
           }
-          return res.status(400).json({ error: 'معرف المستخدم مطلوب ويجب أن يكون رقم صحيح' });
+          return res.status(401).json({ error: 'يجب تسجيل الدخول' });
         }
 
         // التحقق من وجود المستخدم
@@ -241,57 +238,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await fsp.unlink(req.file.path);
         } catch {}
 
-        // تحديث DB: avatarHash + زيادة avatarVersion
-        const nextVersion = (user as any).avatarVersion
-          ? Number((user as any).avatarVersion) + 1
-          : 1;
+        // تحديث المستخدم بالصورة الجديدة
+        const imageUrl = `/uploads/avatars/${userId}.webp?v=${hash}`;
         const updatedUser = await storage.updateUser(userId, {
-          profileImage: `/uploads/avatars/${userId}.webp`,
+          profileImage: imageUrl,
           avatarHash: hash,
-          avatarVersion: nextVersion,
-        });
+        } as any);
 
         if (!updatedUser) {
-          return res.status(500).json({ error: 'فشل في تحديث صورة البروفايل في قاعدة البيانات' });
+          return res.status(500).json({ error: 'فشل في تحديث بيانات المستخدم' });
         }
 
-        // بث خفيف للغرف + كامل لصاحب التعديل
         try {
           updateConnectedUserCache(updatedUser);
         } catch {}
-        emitUserUpdatedToUser(userId, updatedUser);
 
-        // بث event مخصص لتحديث الصور (مقتصر على غرف المستخدم)
-        await emitToUserRooms(userId, {
-          type: 'userAvatarUpdated',
-          avatarHash: hash,
-          avatarVersion: nextVersion,
-        });
-
-        res.json({
-          success: true,
-          message: 'تم رفع الصورة بنجاح',
-          imageUrl: `${updatedUser.profileImage}?v=${hash}`,
-          filename: `${userId}.webp`,
-          avatarHash: hash,
-          user: buildUserBroadcastPayload(updatedUser),
-        });
-      } catch (error) {
-        console.error('❌ خطأ في رفع صورة البروفايل:', error);
-
-        // حذف الملف في حالة الخطأ
-        if (req.file) {
-          try {
-            await fsp.unlink(req.file.path);
-          } catch (unlinkError) {
-            console.error('خطأ في حذف الملف:', unlinkError);
-          }
-        }
-
-        res.status(500).json({
-          error: 'خطأ في رفع الصورة',
-          details: error instanceof Error ? error.message : 'خطأ غير معروف',
-        });
+        res.json({ success: true, imageUrl, avatarHash: hash });
+      } catch (error: any) {
+        console.error('خطأ في رفع صورة البروفايل:', error);
+        res.status(500).json({ error: 'خطأ في الخادم أثناء رفع الصورة' });
       }
     }
   );
@@ -299,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إصلاح رفع صورة البانر - تحويل إلى WebP وتخزين كملف بدل Base64 لسلامة وأداء أفضل
   app.post(
     '/api/upload/profile-banner',
-    protect.ownership,
+    protect.auth,
     bannerUpload.single('banner'),
     async (req, res) => {
       try {
@@ -311,14 +276,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        const userId = parseInt(req.body.userId);
+        const userId = (req as any).user?.id as number;
         if (!userId || isNaN(userId)) {
           try {
             await fsp.unlink(req.file.path);
-          } catch (unlinkError) {
-            console.error('خطأ في حذف الملف:', unlinkError);
-          }
-          return res.status(400).json({ error: 'معرف المستخدم مطلوب ويجب أن يكون رقم صحيح' });
+          } catch {}
+          return res.status(401).json({ error: 'يجب تسجيل الدخول' });
         }
 
         // التحقق من وجود المستخدم
@@ -368,38 +331,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           updateConnectedUserCache(updatedUser);
         } catch {}
-        emitUserUpdatedToUser(userId, updatedUser);
-        await emitToUserRooms(userId, {
-          type: 'user_background_updated',
-          data: {
-            userId,
-            profileBackgroundColor: buildUserBroadcastPayload(updatedUser).profileBackgroundColor,
-          },
-        });
 
-        res.json({
-          success: true,
-          message: 'تم رفع صورة البانر بنجاح',
-          bannerUrl,
-          filename: `${userId}.webp`,
-          user: buildUserBroadcastPayload(updatedUser),
-        });
-      } catch (error) {
-        console.error('❌ خطأ في رفع صورة البانر:', error);
-
-        // حذف الملف في حالة الخطأ
-        if (req.file) {
-          try {
-            await fsp.unlink(req.file.path);
-          } catch (unlinkError) {
-            console.error('خطأ في حذف الملف:', unlinkError);
-          }
-        }
-
-        res.status(500).json({
-          error: 'خطأ في رفع صورة البانر',
-          details: error instanceof Error ? error.message : 'خطأ غير معروف',
-        });
+        res.json({ success: true, bannerUrl });
+      } catch (error: any) {
+        console.error('خطأ في رفع صورة البانر:', error);
+        res.status(500).json({ error: 'خطأ في الخادم أثناء رفع صورة البانر' });
       }
     }
   );
@@ -1073,7 +1009,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Authentication routes
-  app.post('/api/auth/guest', authLimiter, async (req, res) => {
+  app.post('/api/auth/guest', async (req, res) => {
     try {
       const { username, gender } = req.body;
 
@@ -1135,7 +1071,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/member', authLimiter, async (req, res) => {
+  app.post('/api/auth/member', async (req, res) => {
     try {
       const { username, password, email, identifier } = req.body || {};
 
@@ -1707,7 +1643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // الحصول على جميع طلبات الصداقة للمستخدم (واردة + صادرة)
-  app.get('/api/friend-requests/:userId', friendRequestLimiter, async (req, res) => {
+  app.get('/api/friend-requests/:userId', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const [incoming, outgoing] = await Promise.all([
@@ -1722,7 +1658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // الحصول على طلبات الصداقة الواردة
-  app.get('/api/friend-requests/incoming/:userId', friendRequestLimiter, async (req, res) => {
+  app.get('/api/friend-requests/incoming/:userId', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const requests = await friendService.getIncomingFriendRequests(userId);
@@ -1733,7 +1669,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // الحصول على طلبات الصداقة الصادرة
-  app.get('/api/friend-requests/outgoing/:userId', friendRequestLimiter, async (req, res) => {
+  app.get('/api/friend-requests/outgoing/:userId', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const requests = await friendService.getOutgoingFriendRequests(userId);

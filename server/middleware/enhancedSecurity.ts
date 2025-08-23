@@ -149,7 +149,7 @@ export const requireOwnership = async (req: Request, res: Response, next: NextFu
     }
 
     // التحقق من أن المستخدم يحاول الوصول لبياناته الخاصة فقط
-    const resourceUserId = parseInt(req.params.userId || req.params.id || req.body.userId);
+    const resourceUserId = parseInt(req.params.userId || req.params.id || (req.body && (req.body as any).userId));
     const currentUserId = req.user.id;
 
     if (resourceUserId !== currentUserId) {

@@ -31,41 +31,7 @@ function applyLimiter(
   return true;
 }
 
-// Rate limiter for authentication endpoints
-export function authLimiter(req: Request, res: Response, next: NextFunction): Response | void {
-  try {
-    const ip = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() || req.ip || 'unknown';
-    const ok = applyLimiter(ip, authRequestCounts, 10, 60_000); // 10 req/min/IP
-    if (!ok) {
-      return res.status(429).json({ error: 'تم تجاوز الحد المسموح من طلبات الدخول' });
-    }
-  } catch {}
-  next();
-}
-
-// Rate limiter for message endpoints
-export function messageLimiter(req: Request, res: Response, next: NextFunction): Response | void {
-  try {
-    const userId = (req as any).user?.id || 'anon';
-    const ok = applyLimiter(String(userId), messageRequestCounts, 60, 60_000); // 60 msg/min/user
-    if (!ok) {
-      return res.status(429).json({ error: 'إرسال الرسائل بسرعة كبيرة، يرجى الانتظار قليلاً' });
-    }
-  } catch {}
-  next();
-}
-
-// Rate limiter for friend request endpoints
-export function friendRequestLimiter(req: Request, res: Response, next: NextFunction): Response | void {
-  try {
-    const userId = (req as any).user?.id || 'anon';
-    const ok = applyLimiter(String(userId), friendRequestCounts, 30, 60_000); // 30 actions/min/user
-    if (!ok) {
-      return res.status(429).json({ error: 'محاولات كثيرة في طلبات الصداقة' });
-    }
-  } catch {}
-  next();
-}
+/* Rate limiters removed per user request */
 
 // IP security check middleware
 export function checkIPSecurity(req: Request, res: Response, next: NextFunction): void {
