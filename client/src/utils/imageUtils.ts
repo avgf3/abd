@@ -62,7 +62,7 @@ export function getProfileImageSrc(
  */
 export function getBannerImageSrc(
   bannerSrc: string | null | undefined,
-  fallback: string = 'https://i.imgur.com/rJKrUfs.jpeg'
+  fallback: string = '/svgs/emerald.svg'
 ): string {
   const src = getImageSrc(bannerSrc, fallback);
 
@@ -90,7 +90,7 @@ export function getImageUrl(
   // تحديد الصورة الافتراضية حسب النوع
   let defaultFallback = '/default_avatar.svg';
   if (type === 'banner') {
-    defaultFallback = 'https://i.imgur.com/rJKrUfs.jpeg';
+    defaultFallback = '/svgs/emerald.svg';
   }
 
   const finalFallback = fallback || defaultFallback;
