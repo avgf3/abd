@@ -330,7 +330,7 @@ router.get('/conversations/:userId', protect.auth, async (req, res) => {
           const other = userMap.get(otherUserId) || null;
           const otherUser = other || {
             id: otherUserId,
-            username: 'مستخدم محذوف',
+            username: `مستخدم #${otherUserId}`,
             userType: 'guest',
             role: 'guest',
             isOnline: false,

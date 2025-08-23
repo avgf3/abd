@@ -8,19 +8,9 @@ export function mapDbMessageToChatMessage(msg: any, fallbackRoomId?: string): Ch
       : msg.timestamp
         ? new Date(msg.timestamp).toISOString()
         : new Date().toISOString();
-  const sender = msg.sender || (msg.senderId
-    ? {
-        id: msg.senderId,
-        username: 'مستخدم محذوف',
-        userType: 'guest',
-        role: 'guest',
-        isOnline: false,
-      }
-    : undefined);
-  // Prefer server snapshots if sender object is missing (to keep original identity)
-  const snapshotBasedSender =
-    sender ||
-    (msg.senderUsernameSnapshot
+  // Prefer snapshot first, then full sender object, then neutral fallback
+  const snapshotSender =
+    msg.senderUsernameSnapshot && msg.senderId
       ? {
           id: msg.senderId,
           username: msg.senderUsernameSnapshot,
@@ -30,14 +20,23 @@ export function mapDbMessageToChatMessage(msg: any, fallbackRoomId?: string): Ch
           usernameColor: msg.senderUsernameColorSnapshot || undefined,
           isOnline: false,
         }
-      : undefined);
+      : undefined;
+  const finalSender = snapshotSender || msg.sender || (msg.senderId
+    ? {
+        id: msg.senderId,
+        username: `مستخدم #${msg.senderId}`,
+        userType: 'guest',
+        role: 'guest',
+        isOnline: false,
+      }
+    : undefined);
 
   return {
     id: msg.id,
     content: msg.content,
     timestamp: isoTs,
     senderId: msg.senderId,
-    sender: snapshotBasedSender,
+    sender: finalSender,
     messageType: msg.messageType || 'text',
     isPrivate: Boolean(msg.isPrivate),
     roomId: msg.roomId || fallbackRoomId,
