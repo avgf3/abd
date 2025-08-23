@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import ProfileImage from './ProfileImage';
 
 interface MessageAlertProps {
   isOpen: boolean;
@@ -45,14 +46,10 @@ export default function MessageAlert({
     >
       <div className="bg-red-500 border-2 border-red-600 rounded-lg shadow-2xl p-4 max-w-sm">
         <div className="flex items-center gap-3">
-          <img
-            src={getImageSrc(sender.profileImage)}
-            alt="صورة المرسل"
-            className="w-12 h-12 rounded-full border-2 border-white object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = '/default_avatar.svg';
-            }}
+          <ProfileImage 
+            user={sender}
+            size="small"
+            hideRoleBadgeOverlay={true}
           />
           <div className="flex-1 text-white">
             <h3 className="font-bold text-lg truncate">{sender.username}</h3>
