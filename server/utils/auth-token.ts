@@ -5,7 +5,13 @@ import type { Request } from 'express';
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 function getSecret(): string {
-  const secret = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'insecure-temp-secret';
+  const secret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Missing JWT_SECRET/SESSION_SECRET');
+    }
+    return 'insecure-temp-secret';
+  }
   return String(secret);
 }
 
