@@ -1884,14 +1884,8 @@ export default function ProfileModal({
                 onLoad={(e) => {}}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  console.error('❌ فشل في تحميل صورة البروفايل:', target.src);
-                  // منع إعادة التحميل المستمر عند الخطأ
-                  if (
-                    target.src !== '/default_avatar.svg' &&
-                    !target.src.includes('default_avatar.svg')
-                  ) {
-                    target.src = '/default_avatar.svg';
-                  }
+                  // إخفاء الصورة المعطوبة بدلاً من عرض صورة افتراضية
+                  target.style.display = 'none';
                 }}
               />
             </div>

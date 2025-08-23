@@ -15,6 +15,7 @@ import {
 } from '@/utils/messageUtils';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
+import ProfileImage from './ProfileImage';
 
 interface PrivateMessageBoxProps {
   isOpen: boolean;
@@ -245,13 +246,9 @@ export default function PrivateMessageBox({
         >
           <DialogHeader className="border-b border-accent p-3 bg-gradient-to-r from-blue-50 to-green-50">
             <div className="flex items-center gap-3">
-              <img
-                src={user.profileImage || '/default_avatar.svg'}
-                alt="avatar"
-                className="w-10 h-10 rounded-full border-2 border-primary shadow-sm"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/default_avatar.svg';
-                }}
+              <ProfileImage 
+                user={user}
+                size="small"
               />
               <div className="flex-1 min-w-0">
                 <span
@@ -325,13 +322,9 @@ export default function PrivateMessageBox({
                         ),
                       }}
                     >
-                      <img
-                        src={(m.sender?.profileImage as string) || '/default_avatar.svg'}
-                        alt="avatar"
-                        className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/default_avatar.svg';
-                        }}
+                      <ProfileImage 
+                        user={m.sender as ChatUser}
+                        size="small"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">

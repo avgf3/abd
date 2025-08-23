@@ -127,11 +127,17 @@ export default function RichestModal({ isOpen, onClose, currentUser }: RichestMo
                 </div>
 
                 {/* صورة المستخدم */}
-                <img
-                  src={getImageSrc(u.profileImage || '/default_avatar.svg')}
-                  alt={u.username}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
+                {getImageSrc(u.profileImage) ? (
+                  <img
+                    src={getImageSrc(u.profileImage)!}
+                    alt={u.username}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold">
+                    {u.username?.substring(0, 2).toUpperCase()}
+                  </div>
+                )}
 
                 {/* اسم المستخدم */}
                 <div className="flex-1">
@@ -165,10 +171,11 @@ export default function RichestModal({ isOpen, onClose, currentUser }: RichestMo
               <div className="space-y-2 max-h-32 overflow-y-auto">
                 {candidates.map((c) => (
                   <div key={c.id} className="flex items-center gap-2">
-                    <img
-                      src={getImageSrc(c.profileImage || '/default_avatar.svg')}
-                      alt={c.username}
-                      className="w-6 h-6 rounded-full"
+                    {getImageSrc(c.profileImage) ? (
+                      <img
+                        src={getImageSrc(c.profileImage)!}
+                        alt={c.username}
+                        className="w-6 h-6 rounded-full"
                     />
                     <div className="flex-1 text-sm">{c.username}</div>
                     <button
