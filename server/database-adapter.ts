@@ -87,7 +87,6 @@ export async function initializeDatabase(): Promise<boolean> {
     dbAdapter.db = drizzleDb as any;
     db = drizzleDb as any;
 
-    console.log('✅ تم الاتصال بقاعدة بيانات PostgreSQL');
     return true;
   } catch (error: any) {
     console.error('❌ فشل الاتصال بقاعدة البيانات:', error?.message || error);
@@ -110,8 +109,7 @@ export async function runMigrationsIfAvailable(): Promise<void> {
       try {
         const { migrate } = await import('drizzle-orm/postgres-js/migrator');
         await migrate(dbAdapter.db as any, { migrationsFolder });
-        console.log('✅ تم تشغيل الهجرات بنجاح');
-      } catch (e) {
+        } catch (e) {
         console.warn('⚠️ تعذر تشغيل الهجرات عبر Drizzle migrator:', (e as any)?.message || e);
       }
     }

@@ -176,10 +176,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/private-messages', (await import('./routes/privateMessages')).default);
 
   // رفع صور البروفايل - محسّن مع حل مشكلة Render
+  // Note: multer must run BEFORE ownership check to parse multipart form fields reliably
   app.post(
     '/api/upload/profile-image',
-    protect.ownership,
     upload.single('profileImage'),
+    protect.ownership,
     async (req, res) => {
       try {
         if (!req.file) {
@@ -296,10 +297,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // إصلاح رفع صورة البانر - تحويل إلى WebP وتخزين كملف بدل Base64 لسلامة وأداء أفضل
+  // Note: multer must run BEFORE ownership check to parse multipart form fields reliably
   app.post(
     '/api/upload/profile-banner',
-    protect.ownership,
     bannerUpload.single('banner'),
+    protect.ownership,
     async (req, res) => {
       try {
         if (!req.file) {

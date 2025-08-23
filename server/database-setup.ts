@@ -30,8 +30,7 @@ export async function createDefaultOwner(): Promise<void> {
 
     if (dbType === 'postgresql') {
       // لا نقوم بإنشاء مالك افتراضي - أول مستخدم مسجل سيكون المالك تلقائياً
-      console.log('✅ النظام جاهز - أول مستخدم مسجل سيكون مالك الموقع');
-    }
+      }
   } catch (error) {
     console.error('❌ خطأ في إنشاء المالك الافتراضي:', error);
   }

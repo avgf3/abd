@@ -327,9 +327,17 @@ router.get('/conversations/:userId', protect.auth, async (req, res) => {
 
         const conversations = rows.map((r) => {
           const otherUserId = r.sender_id === userId ? r.receiver_id : r.sender_id;
+          const other = userMap.get(otherUserId) || null;
+          const otherUser = other || {
+            id: otherUserId,
+            username: 'مستخدم محذوف',
+            userType: 'guest',
+            role: 'guest',
+            isOnline: false,
+          };
           return {
             otherUserId,
-            otherUser: userMap.get(otherUserId) || null,
+            otherUser,
             lastMessage: {
               id: r.id,
               content: r.content,

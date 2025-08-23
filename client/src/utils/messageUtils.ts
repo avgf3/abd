@@ -8,12 +8,21 @@ export function mapDbMessageToChatMessage(msg: any, fallbackRoomId?: string): Ch
       : msg.timestamp
         ? new Date(msg.timestamp).toISOString()
         : new Date().toISOString();
+  const sender = msg.sender || (msg.senderId
+    ? {
+        id: msg.senderId,
+        username: 'مستخدم محذوف',
+        userType: 'guest',
+        role: 'guest',
+        isOnline: false,
+      }
+    : undefined);
   return {
     id: msg.id,
     content: msg.content,
     timestamp: isoTs,
     senderId: msg.senderId,
-    sender: msg.sender,
+    sender: sender,
     messageType: msg.messageType || 'text',
     isPrivate: Boolean(msg.isPrivate),
     roomId: msg.roomId || fallbackRoomId,
