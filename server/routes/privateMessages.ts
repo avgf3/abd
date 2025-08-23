@@ -67,6 +67,27 @@ router.post('/send', protect.auth, async (req, res) => {
       messageType,
       isPrivate: true,
       timestamp: new Date(),
+      attachments: (() => {
+        try {
+          const profileImage: string = (sender as any)?.profileImage || '';
+          const baseUrl = typeof profileImage === 'string' ? profileImage.split('?')[0] : '';
+          const hashFromField: string | undefined = (sender as any)?.avatarHash;
+          let hashFromUrl: string | undefined;
+          try {
+            const q = profileImage.includes('?') ? profileImage.split('?')[1] : '';
+            const params = new URLSearchParams(q);
+            const v = params.get('v') || undefined;
+            hashFromUrl = v || undefined;
+          } catch {}
+          const finalHash = hashFromField || hashFromUrl || undefined;
+          if (baseUrl && finalHash) {
+            return [
+              { type: 'senderAvatar', url: baseUrl, hash: finalHash },
+            ];
+          }
+        } catch {}
+        return [];
+      })(),
     };
 
     const newMessage = await storage.createMessage(messageData);
