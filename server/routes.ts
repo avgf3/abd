@@ -187,6 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     upload.single('profileImage'),
     async (req, res) => {
       try {
+        res.set('Cache-Control', 'no-store');
         if (!req.file) {
           return res.status(400).json({
             error: 'لم يتم رفع أي ملف',
@@ -302,6 +303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     bannerUpload.single('banner'),
     async (req, res) => {
       try {
+        res.set('Cache-Control', 'no-store');
         if (!req.file) {
           return res.status(400).json({
             error: 'لم يتم رفع أي ملف',
@@ -349,7 +351,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await fsp.unlink(req.file.path);
         } catch {}
 
-        const bannerUrl = `/uploads/banners/${userId}.webp`;
+        // احسب بصمة ثابتة للإصدار وخزّن الرابط مع ?v= لضمان التحديث الفوري
+        const bannerVersion = (await import('crypto'))
+          .createHash('md5')
+          .update(webpBuffer)
+          .digest('hex')
+          .slice(0, 12);
+        const bannerUrl = `/uploads/banners/${userId}.webp?v=${bannerVersion}`;
         const updatedUser = await storage.updateUser(userId, { profileBanner: bannerUrl });
 
         if (!updatedUser) {
@@ -372,10 +380,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({
           success: true,
           message: 'تم رفع صورة البانر بنجاح',
-          // استخدم هاش ثابت بدل timestamp لضمان كاش immutable عند وجود v
-          bannerUrl: `${bannerUrl}?v=${
-            (await import('crypto')).createHash('md5').update(webpBuffer).digest('hex').slice(0, 12)
-          }`,
+          bannerUrl,
           filename: `${userId}.webp`,
           user: buildUserBroadcastPayload(updatedUser),
         });
@@ -2905,6 +2910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إنشاء منشور جديد
   app.post('/api/wall/posts', wallUpload.single('image'), async (req, res) => {
     try {
+      res.set('Cache-Control', 'no-store');
       const { content, type, userId } = req.body;
 
       if (!userId) {

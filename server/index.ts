@@ -98,6 +98,7 @@ app.use(
         const defaultAvatarPath = path.join(process.cwd(), 'client/public/default_avatar.svg');
         try {
           await fsp.stat(defaultAvatarPath);
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
           return res.sendFile(defaultAvatarPath);
         } catch {
           // إذا لم توجد الصورة الافتراضية، أنشئها
@@ -107,6 +108,7 @@ app.use(
   <ellipse cx="50" cy="80" rx="35" ry="25" fill="#666"/>
 </svg>`;
           await fsp.writeFile(defaultAvatarPath, defaultSVG);
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
           return res.sendFile(defaultAvatarPath);
         }
       }
@@ -125,6 +127,7 @@ app.use(
     if ((isAvatar || isBanner) && !hasVersionParam) {
       res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     }
+    res.setHeader('Vary', 'Accept, Accept-Encoding');
 
     next();
   },
@@ -155,6 +158,7 @@ app.use(
         // ملفات الرسائل/الجدار/أيقونات الغرف تُرفع بأسماء فريدة => يمكن كاش دائم
         if (/\/uploads\/(wall|messages|rooms)\//.test(normalized)) {
           res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          res.setHeader('Vary', 'Accept, Accept-Encoding');
           return;
         }
 
@@ -164,6 +168,7 @@ app.use(
           if (!/immutable|no-cache/i.test(existing)) {
             res.setHeader('Cache-Control', 'no-cache, must-revalidate');
           }
+          res.setHeader('Vary', 'Accept, Accept-Encoding');
           return;
         }
       } catch {}
