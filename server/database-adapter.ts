@@ -101,7 +101,6 @@ export async function initializeDatabase(): Promise<boolean> {
         connected = true;
       } catch (error) {
         attempts++;
-        console.log(`⏳ محاولة الاتصال بقاعدة البيانات (${attempts}/${maxAttempts})...`);
         if (attempts < maxAttempts) {
           await new Promise(resolve => setTimeout(resolve, 2000 * attempts));
         } else {
@@ -115,7 +114,6 @@ export async function initializeDatabase(): Promise<boolean> {
     dbAdapter.db = drizzleDb as any;
     db = drizzleDb as any;
 
-    console.log('✅ تم الاتصال بقاعدة البيانات بنجاح');
     return true;
   } catch (error: any) {
     console.error('❌ فشل الاتصال بقاعدة البيانات:', error?.message || error);

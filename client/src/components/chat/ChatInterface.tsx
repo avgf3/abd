@@ -15,6 +15,9 @@ import {
 import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 
 import BlockNotification from '../moderation/BlockNotification';
+import MessageAlert from './MessageAlert';
+import ProfileImage from './ProfileImage';
+import WelcomeNotification from './WelcomeNotification';
 // Remove static heavy imports; use lazy-loaded variants instead
 const ActiveModerationLog = lazy(() => import('../moderation/ActiveModerationLog'));
 const PromoteUserPanel = lazy(() => import('../moderation/PromoteUserPanel'));
@@ -22,21 +25,18 @@ const ReportsLog = lazy(() => import('../moderation/ReportsLog'));
 
 const AdminReportsPanel = lazy(() => import('./AdminReportsPanel'));
 const BroadcastRoomInterface = lazy(() => import('./BroadcastRoomInterface'));
-const MessageAlert = (await import('./MessageAlert')).default;
 const MessageArea = lazy(() => import('./MessageArea'));
 const MessagesPanel = lazy(() => import('./MessagesPanel'));
 const ModerationPanel = lazy(() => import('./ModerationPanel'));
 const NotificationPanel = lazy(() => import('./NotificationPanel'));
 const OwnerAdminPanel = lazy(() => import('./OwnerAdminPanel'));
 const PrivateMessageBox = lazy(() => import('./PrivateMessageBox'));
-const ProfileImage = (await import('./ProfileImage')).default;
 const ProfileModal = lazy(() => import('./ProfileModal'));
 const ReportModal = lazy(() => import('./ReportModal'));
-const SettingsMenu = (await import('./SettingsMenu')).default;
+const SettingsMenu = lazy(() => import('./SettingsMenu'));
 const ThemeSelector = lazy(() => import('./ThemeSelector'));
-const UserPopup = (await import('./UserPopup')).default;
-const UnifiedSidebar = (await import('./UserSidebarWithWalls')).default;
-const WelcomeNotification = (await import('./WelcomeNotification')).default;
+const UserPopup = lazy(() => import('./UserPopup'));
+const UnifiedSidebar = lazy(() => import('./UserSidebarWithWalls'));
 
 const KickCountdown = lazy(() => import('@/components/moderation/KickCountdown'));
 const UsernameColorPicker = lazy(() => import('@/components/profile/UsernameColorPicker'));
@@ -937,50 +937,54 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       )}
 
       {userPopup.show && userPopup.user && (
-        <UserPopup
-          user={userPopup.user}
-          x={userPopup.x}
-          y={userPopup.y}
-          onPrivateMessage={() => {
-            closeUserPopup();
-            setTimeout(() => handlePrivateMessage(userPopup.user!), 0);
-          }}
-          onAddFriend={() => handleAddFriend(userPopup.user!)}
-          onIgnore={() => {
-            handleIgnoreUser(userPopup.user!);
-          }}
-          onViewProfile={() => handleViewProfile(userPopup.user!)}
-          currentUser={chat.currentUser}
-          onClose={closeUserPopup}
-        />
+        <Suspense fallback={null}>
+          <UserPopup
+            user={userPopup.user}
+            x={userPopup.x}
+            y={userPopup.y}
+            onPrivateMessage={() => {
+              closeUserPopup();
+              setTimeout(() => handlePrivateMessage(userPopup.user!), 0);
+            }}
+            onAddFriend={() => handleAddFriend(userPopup.user!)}
+            onIgnore={() => {
+              handleIgnoreUser(userPopup.user!);
+            }}
+            onViewProfile={() => handleViewProfile(userPopup.user!)}
+            currentUser={chat.currentUser}
+            onClose={closeUserPopup}
+          />
+        </Suspense>
       )}
 
       {showSettings && (
-        <SettingsMenu
-          onOpenProfile={() => {
-            setShowProfile(true);
-            setShowSettings(false);
-          }}
-          onLogout={onLogout}
-          onClose={() => setShowSettings(false)}
-          onOpenReports={() => {
-            setShowAdminReports(true);
-            setShowSettings(false);
-          }}
-          onOpenThemeSelector={() => {
-            setShowThemeSelector(true);
-            setShowSettings(false);
-          }}
-          onOpenUsernameColorPicker={() => {
-            setShowUsernameColorPicker(true);
-            setShowSettings(false);
-          }}
-          onOpenIgnoredUsers={() => {
-            setShowIgnoredUsers(true);
-            setShowSettings(false);
-          }}
-          currentUser={chat.currentUser}
-        />
+        <Suspense fallback={null}>
+          <SettingsMenu
+            onOpenProfile={() => {
+              setShowProfile(true);
+              setShowSettings(false);
+            }}
+            onLogout={onLogout}
+            onClose={() => setShowSettings(false)}
+            onOpenReports={() => {
+              setShowAdminReports(true);
+              setShowSettings(false);
+            }}
+            onOpenThemeSelector={() => {
+              setShowThemeSelector(true);
+              setShowSettings(false);
+            }}
+            onOpenUsernameColorPicker={() => {
+              setShowUsernameColorPicker(true);
+              setShowSettings(false);
+            }}
+            onOpenIgnoredUsers={() => {
+              setShowIgnoredUsers(true);
+              setShowSettings(false);
+            }}
+            currentUser={chat.currentUser}
+          />
+        </Suspense>
       )}
 
       {showReportModal && (
