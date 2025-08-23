@@ -51,6 +51,14 @@ export interface Message {
   isPrivate: boolean;
   roomId: string;
   timestamp?: Date | string;
+  senderUsernameSnapshot?: string;
+  senderProfileImageSnapshot?: string;
+  senderUserTypeSnapshot?: string;
+  senderUsernameColorSnapshot?: string;
+  receiverUsernameSnapshot?: string;
+  receiverProfileImageSnapshot?: string;
+  receiverUserTypeSnapshot?: string;
+  receiverUsernameColorSnapshot?: string;
 }
 
 export interface Friend {

@@ -65,6 +65,15 @@ export const messages = pgTable(
     editedAt: timestamp('edited_at'),
     deletedAt: timestamp('deleted_at'),
     timestamp: timestamp('timestamp').defaultNow(),
+    // Snapshots to preserve identity even if user is deleted/renamed
+    senderUsernameSnapshot: text('sender_username_snapshot'),
+    senderProfileImageSnapshot: text('sender_profile_image_snapshot'),
+    senderUserTypeSnapshot: text('sender_user_type_snapshot'),
+    senderUsernameColorSnapshot: text('sender_username_color_snapshot'),
+    receiverUsernameSnapshot: text('receiver_username_snapshot'),
+    receiverProfileImageSnapshot: text('receiver_profile_image_snapshot'),
+    receiverUserTypeSnapshot: text('receiver_user_type_snapshot'),
+    receiverUsernameColorSnapshot: text('receiver_username_color_snapshot'),
   },
   (table) => ({
     // Indexes for optimizing private message queries

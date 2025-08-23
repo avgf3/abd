@@ -17,12 +17,27 @@ export function mapDbMessageToChatMessage(msg: any, fallbackRoomId?: string): Ch
         isOnline: false,
       }
     : undefined);
+  // Prefer server snapshots if sender object is missing (to keep original identity)
+  const snapshotBasedSender =
+    sender ||
+    (msg.senderUsernameSnapshot
+      ? {
+          id: msg.senderId,
+          username: msg.senderUsernameSnapshot,
+          userType: msg.senderUserTypeSnapshot || 'guest',
+          role: (msg.senderUserTypeSnapshot as any) || 'guest',
+          profileImage: msg.senderProfileImageSnapshot || undefined,
+          usernameColor: msg.senderUsernameColorSnapshot || undefined,
+          isOnline: false,
+        }
+      : undefined);
+
   return {
     id: msg.id,
     content: msg.content,
     timestamp: isoTs,
     senderId: msg.senderId,
-    sender: sender,
+    sender: snapshotBasedSender,
     messageType: msg.messageType || 'text',
     isPrivate: Boolean(msg.isPrivate),
     roomId: msg.roomId || fallbackRoomId,
