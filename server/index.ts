@@ -238,8 +238,7 @@ async function startServer() {
     const systemInitialized = await initializeSystem();
 
     if (systemInitialized) {
-      console.log('✅ تم تهيئة النظام بنجاح');
-    } else {
+      } else {
       console.warn('⚠️ تم بدء الخادم مع تحذيرات في تهيئة النظام');
     }
 
@@ -278,13 +277,9 @@ async function startServer() {
         server.listen(PORT, HOST, () => {
           server.removeListener('error', errorHandler);
           const mode = process.env.NODE_ENV;
-          console.log(`🚀 الخادم يعمل على http://${HOST}:${PORT} في وضع ${mode}`);
-          
           if (mode === 'development') {
-            console.log(`📱 رابط التطبيق: http://localhost:${PORT}`);
-          } else if (process.env.RENDER_EXTERNAL_URL) {
-            console.log(`🌐 رابط التطبيق: ${process.env.RENDER_EXTERNAL_URL}`);
-          }
+            } else if (process.env.RENDER_EXTERNAL_URL) {
+            }
           
           resolve();
         });
@@ -296,7 +291,6 @@ async function startServer() {
       await startListening();
     } catch (error: any) {
       if (error.code === 'EADDRINUSE') {
-        console.log('⏳ المنفذ مستخدم، محاولة مرة أخرى بعد 5 ثواني...');
         await new Promise(resolve => setTimeout(resolve, 5000));
         await startListening();
       } else {
@@ -310,7 +304,6 @@ async function startServer() {
         try {
           const status = getDatabaseStatus();
           if (status.connected) {
-            console.log('✅ قاعدة البيانات متصلة');
             // فحص صحة قاعدة البيانات بشكل دوري
             setInterval(async () => {
               const isHealthy = await checkDatabaseHealth();
@@ -333,19 +326,14 @@ async function startServer() {
 
     // Handle graceful shutdown
     const gracefulShutdown = async (signal: string) => {
-      console.log(`\n📥 تم استلام إشارة ${signal}، بدء الإيقاف الآمن...`);
-      
       // إيقاف قبول اتصالات جديدة
       server.close(async () => {
-        console.log('✅ تم إغلاق جميع الاتصالات');
-        
         // إغلاق قاعدة البيانات
         try {
           const { dbAdapter } = await import('./database-adapter');
           if (dbAdapter.client) {
             await dbAdapter.client.end();
-            console.log('✅ تم إغلاق اتصال قاعدة البيانات');
-          }
+            }
         } catch {}
         
         process.exit(0);

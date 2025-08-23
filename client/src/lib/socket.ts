@@ -134,8 +134,6 @@ export function getSocket(): Socket {
   })();
 
   const serverUrl = getServerUrl();
-  console.log('🔌 الاتصال بـ Socket.IO على:', serverUrl);
-
   socketInstance = io(serverUrl, {
     path: '/socket.io',
     // استخدم polling فقط على Render لتجنب مشاكل WebSocket
@@ -174,15 +172,13 @@ export function getSocket(): Socket {
   
   // إضافة معالج لإعادة الاتصال عند تغيير حالة الشبكة
   window.addEventListener('online', () => {
-    console.log('📡 الإنترنت متصل، محاولة إعادة الاتصال...');
     if (socketInstance && !socketInstance.connected) {
       socketInstance.connect();
     }
   });
   
   window.addEventListener('offline', () => {
-    console.log('📵 الإنترنت منقطع');
-  });
+    });
   
   return socketInstance;
 }
