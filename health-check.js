@@ -5,9 +5,10 @@
  * يتحقق من جميع المكونات الحرجة
  */
 
-const https = require('https');
-const http = require('http');
-const { URL } = require('url');
+import https from 'node:https';
+import http from 'node:http';
+import { URL } from 'node:url';
+import fs from 'node:fs';
 
 // الألوان للطباعة
 const colors = {
@@ -82,9 +83,9 @@ async function checkEndpoint(endpoint, method = 'GET', expectedStatus = 200) {
 }
 
 async function checkWebSocket() {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     try {
-      const io = require('socket.io-client');
+      const { io } = await import('socket.io-client');
       const socket = io(APP_URL, {
         path: '/socket.io',
         transports: ['polling', 'websocket'],
@@ -216,7 +217,6 @@ async function runHealthCheck() {
     results
   };
 
-  const fs = require('fs');
   const reportPath = 'health-report.json';
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
   log(`📄 تم حفظ التقرير في: ${reportPath}`, 'blue');
