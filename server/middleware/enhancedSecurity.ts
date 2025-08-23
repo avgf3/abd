@@ -149,9 +149,7 @@ export const requireOwnership = async (req: Request, res: Response, next: NextFu
     }
 
     // التحقق من أن المستخدم يحاول الوصول لبياناته الخاصة فقط
-    const rawId = req.params.userId || req.params.id || (req.body && (req.body as any).userId);
-    const parsedId = typeof rawId === 'string' ? parseInt(rawId) : Number(rawId);
-    const resourceUserId = Number.isFinite(parsedId) ? parsedId : req.user.id; // fallback للهوية من الجلسة
+    const resourceUserId = parseInt(req.params.userId || req.params.id || (req.body && (req.body as any).userId));
     const currentUserId = req.user.id;
 
     if (resourceUserId !== currentUserId) {
