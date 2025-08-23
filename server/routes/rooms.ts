@@ -5,6 +5,7 @@ import { Router } from 'express';
 import multer from 'multer';
 
 import { roomService } from '../services/roomService';
+import { protect } from '../middleware/enhancedSecurity';
 
 const router = Router();
 
@@ -115,13 +116,13 @@ router.get('/:roomId', async (req, res) => {
  * POST /api/rooms
  * إنشاء غرفة جديدة
  */
-router.post('/', upload.single('image'), async (req, res) => {
+router.post('/', protect.admin, upload.single('image'), async (req, res) => {
   try {
-    const { name, description, userId, isBroadcast } = req.body;
+    const { name, description, isBroadcast } = req.body;
 
-    if (!name || !userId) {
+    if (!name) {
       return res.status(400).json({
-        error: 'اسم الغرفة ومعرف المستخدم مطلوبان',
+        error: 'اسم الغرفة مطلوب',
       });
     }
 
@@ -131,11 +132,12 @@ router.post('/', upload.single('image'), async (req, res) => {
       icon = `/uploads/rooms/${req.file.filename}`;
     }
 
+    const creatorId = (req as any).user?.id as number;
     const roomData = {
       name: name.trim(),
       description: description?.trim() || '',
       icon,
-      createdBy: parseInt(userId),
+      createdBy: creatorId,
       isBroadcast: isBroadcast === 'true' || isBroadcast === true,
     };
 
@@ -162,14 +164,10 @@ router.post('/', upload.single('image'), async (req, res) => {
  * PUT /api/rooms/:roomId/icon
  * تحديث أيقونة الغرفة بعد الإنشاء
  */
-router.put('/:roomId/icon', upload.single('image'), async (req, res) => {
+router.put('/:roomId/icon', protect.auth, upload.single('image'), async (req, res) => {
   try {
     const { roomId } = req.params;
-    const { userId } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
-    }
+    const requester = (req as any).user;
 
     // التحقق من الصلاحية عبر الخدمة (يعاد استخدام منطق deleteRoom للتحقق من الإنشاء/الأدمن)
     const room = await roomService.getRoom(roomId);
@@ -177,10 +175,9 @@ router.put('/:roomId/icon', upload.single('image'), async (req, res) => {
       return res.status(404).json({ error: 'الغرفة غير موجودة' });
     }
 
-    const creatorOrAdmin = (() => {
-      const uid = parseInt(String(userId));
-      return room.createdBy === uid; // تحققات إضافية للأدمن تتم داخل service عند الحاجة
-    })();
+    const creatorOrAdmin =
+      (room as any).createdBy === requester?.id ||
+      ['admin', 'owner', 'moderator'].includes(requester?.userType);
 
     if (!creatorOrAdmin) {
       // fallback: اسمح مؤقتاً وبعدها يمكن تشديدها عبر فحص userType
@@ -224,16 +221,12 @@ router.put('/:roomId/icon', upload.single('image'), async (req, res) => {
  * DELETE /api/rooms/:roomId
  * حذف غرفة
  */
-router.delete('/:roomId', async (req, res) => {
+router.delete('/:roomId', protect.auth, async (req, res) => {
   try {
     const { roomId } = req.params;
-    const { userId } = req.body;
+    const requesterId = (req as any).user?.id as number;
 
-    if (!userId) {
-      return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
-    }
-
-    await roomService.deleteRoom(roomId, parseInt(userId));
+    await roomService.deleteRoom(roomId, requesterId);
 
     // 🚀 إشعار واحد محسن لحذف الغرفة
     // لا بث عام عبر REST هنا لتفادي التعارض مع Socket.IO
@@ -250,18 +243,14 @@ router.delete('/:roomId', async (req, res) => {
  * POST /api/rooms/:roomId/join
  * الانضمام لغرفة مع منع التكرار
  */
-router.post('/:roomId/join', async (req, res) => {
+router.post('/:roomId/join', protect.auth, async (req, res) => {
   try {
     const { roomId } = req.params;
-    const { userId } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
-    }
+    const userId = (req as any).user?.id as number;
 
     // 🔍 التحقق من أن المستخدم ليس في الغرفة بالفعل
     const roomUsers = await roomService.getRoomUsers(roomId);
-    const isAlreadyInRoom = roomUsers.some((user) => user.id === parseInt(userId));
+    const isAlreadyInRoom = roomUsers.some((user: any) => user.id === userId);
 
     if (isAlreadyInRoom) {
       return res.json({
@@ -270,7 +259,7 @@ router.post('/:roomId/join', async (req, res) => {
       });
     }
 
-    await roomService.joinRoom(parseInt(userId), roomId);
+    await roomService.joinRoom(userId, roomId);
 
     // لا بث عبر REST لتفادي التعارض مع Socket.IO
     // إرجاع استجابة موحدة فقط
@@ -289,18 +278,14 @@ router.post('/:roomId/join', async (req, res) => {
  * POST /api/rooms/:roomId/leave
  * مغادرة غرفة مع التحسينات
  */
-router.post('/:roomId/leave', async (req, res) => {
+router.post('/:roomId/leave', protect.auth, async (req, res) => {
   try {
     const { roomId } = req.params;
-    const { userId } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
-    }
+    const userId = (req as any).user?.id as number;
 
     // 🔍 التحقق من أن المستخدم في الغرفة فعلاً
     const roomUsers = await roomService.getRoomUsers(roomId);
-    const isInRoom = roomUsers.some((user) => user.id === parseInt(userId));
+    const isInRoom = roomUsers.some((user: any) => user.id === userId);
 
     if (!isInRoom) {
       return res.json({
@@ -309,7 +294,7 @@ router.post('/:roomId/leave', async (req, res) => {
       });
     }
 
-    await roomService.leaveRoom(parseInt(userId), roomId);
+    await roomService.leaveRoom(userId, roomId);
 
     // لا بث عبر REST لتفادي التعارض مع Socket.IO
     res.json({
@@ -362,22 +347,18 @@ router.get('/:roomId/broadcast-info', async (req, res) => {
  * POST /api/rooms/:roomId/request-mic
  * طلب الميكروفون في غرفة البث
  */
-router.post('/:roomId/request-mic', async (req, res) => {
+router.post('/:roomId/request-mic', protect.auth, async (req, res) => {
   try {
     const { roomId } = req.params;
-    const { userId } = req.body;
+    const userId = (req as any).user?.id as number;
 
-    if (!userId) {
-      return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
-    }
-
-    await roomService.requestMic(roomId, parseInt(userId));
+    await roomService.requestMic(roomId, userId);
 
     // إرسال إشعار للمشرفين
     const io = req.app.get('io');
     io?.to(`room_${roomId}`).emit('micRequested', {
       roomId,
-      userId: parseInt(userId),
+      userId,
       timestamp: new Date().toISOString(),
     });
 
@@ -392,23 +373,19 @@ router.post('/:roomId/request-mic', async (req, res) => {
  * POST /api/rooms/:roomId/approve-mic/:userId
  * الموافقة على طلب الميكروفون
  */
-router.post('/:roomId/approve-mic/:userId', async (req, res) => {
+router.post('/:roomId/approve-mic/:userId', protect.moderator, async (req, res) => {
   try {
     const { roomId, userId } = req.params;
-    const { approvedBy } = req.body;
+    const approvedBy = (req as any).user?.id as number;
 
-    if (!approvedBy) {
-      return res.status(400).json({ error: 'معرف المعتمد مطلوب' });
-    }
-
-    await roomService.approveMic(roomId, parseInt(userId), parseInt(approvedBy));
+    await roomService.approveMic(roomId, parseInt(userId), approvedBy);
 
     // إرسال إشعار بالموافقة
     const io = req.app.get('io');
     io?.to(`room_${roomId}`).emit('micApproved', {
       roomId,
       userId: parseInt(userId),
-      approvedBy: parseInt(approvedBy),
+      approvedBy,
       timestamp: new Date().toISOString(),
     });
 
@@ -423,23 +400,19 @@ router.post('/:roomId/approve-mic/:userId', async (req, res) => {
  * POST /api/rooms/:roomId/reject-mic/:userId
  * رفض طلب الميكروفون
  */
-router.post('/:roomId/reject-mic/:userId', async (req, res) => {
+router.post('/:roomId/reject-mic/:userId', protect.moderator, async (req, res) => {
   try {
     const { roomId, userId } = req.params;
-    const { rejectedBy } = req.body;
+    const rejectedBy = (req as any).user?.id as number;
 
-    if (!rejectedBy) {
-      return res.status(400).json({ error: 'معرف الرافض مطلوب' });
-    }
-
-    await roomService.rejectMic(roomId, parseInt(userId), parseInt(rejectedBy));
+    await roomService.rejectMic(roomId, parseInt(userId), rejectedBy);
 
     // إرسال إشعار بالرفض
     const io = req.app.get('io');
     io?.to(`room_${roomId}`).emit('micRejected', {
       roomId,
       userId: parseInt(userId),
-      rejectedBy: parseInt(rejectedBy),
+      rejectedBy,
       timestamp: new Date().toISOString(),
     });
 
@@ -454,23 +427,19 @@ router.post('/:roomId/reject-mic/:userId', async (req, res) => {
  * POST /api/rooms/:roomId/remove-speaker/:userId
  * إزالة متحدث من غرفة البث
  */
-router.post('/:roomId/remove-speaker/:userId', async (req, res) => {
+router.post('/:roomId/remove-speaker/:userId', protect.moderator, async (req, res) => {
   try {
     const { roomId, userId } = req.params;
-    const { removedBy } = req.body;
+    const removedBy = (req as any).user?.id as number;
 
-    if (!removedBy) {
-      return res.status(400).json({ error: 'معرف المُزيل مطلوب' });
-    }
-
-    await roomService.removeSpeaker(roomId, parseInt(userId), parseInt(removedBy));
+    await roomService.removeSpeaker(roomId, parseInt(userId), removedBy);
 
     // إرسال إشعار بإزالة المتحدث
     const io = req.app.get('io');
     io?.to(`room_${roomId}`).emit('speakerRemoved', {
       roomId,
       userId: parseInt(userId),
-      removedBy: parseInt(removedBy),
+      removedBy,
       timestamp: new Date().toISOString(),
     });
 
@@ -485,7 +454,7 @@ router.post('/:roomId/remove-speaker/:userId', async (req, res) => {
  * GET /api/rooms/stats
  * جلب إحصائيات الغرف
  */
-router.get('/stats', async (req, res) => {
+router.get('/stats', protect.admin, async (req, res) => {
   try {
     const stats = await roomService.getRoomsStats();
     res.json({ stats });

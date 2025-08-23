@@ -247,6 +247,13 @@ export async function initializeSystem(): Promise<boolean> {
       console.warn('⚠️ تعذر تشغيل الهجرات تلقائياً:', (e as any)?.message || e);
     }
 
+    // إنشاء الغرف الافتراضية إذا كانت غير موجودة (بعد الهجرات)
+    try {
+      await createDefaultRooms();
+    } catch (e) {
+      console.warn('⚠️ تعذر إنشاء الغرف الافتراضية:', (e as any)?.message || e);
+    }
+
     // بدون أي بيانات افتراضية؛ سيتم إنشاء أول مستخدم كـ owner عبر مسار التسجيل
     return true;
   } catch (error) {
