@@ -9,7 +9,6 @@ async function reset() {
   }
   const sql = postgres(url, { ssl: url.includes('localhost') ? false : 'require' });
   try {
-    console.log('🔄 Resetting database...');
     // Disable triggers if needed
     await sql`SET session_replication_role = replica`;
 
@@ -26,13 +25,11 @@ async function reset() {
     if (names.length > 0) {
       const identList = names.map((n: string) => sql(n));
       await sql.unsafe(`TRUNCATE TABLE ${names.map((n) => '"' + n + '"').join(', ')} RESTART IDENTITY CASCADE`);
-      console.log('✅ Truncated tables:', names.join(', '));
-    }
+      }
 
     // Re-enable triggers
     await sql`SET session_replication_role = DEFAULT`;
-    console.log('🎉 Database reset complete');
-  } catch (e: any) {
+    } catch (e: any) {
     console.error('❌ Reset failed:', e?.message || e);
     process.exit(1);
   } finally {
