@@ -103,6 +103,7 @@ app.use(
           const defaultAvatarPath = path.join(process.cwd(), 'client/public/default_avatar.svg');
           try {
             await fsp.stat(defaultAvatarPath);
+            // default avatar is a static built-in asset, can be cached aggressively
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
             return res.sendFile(defaultAvatarPath);
           } catch {
@@ -119,15 +120,10 @@ app.use(
         return res.status(404).json({ error: 'File not found' });
       }
 
-      const isAvatar = requestPath.includes('/avatars/');
-      const isBanner = requestPath.includes('/banners/');
-      const hasVersionParam = typeof req.query.v === 'string' && (req.query.v as string).length > 0;
-      if ((isAvatar || isBanner) && hasVersionParam) {
-        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      }
-      if ((isAvatar || isBanner) && !hasVersionParam) {
-        res.setHeader('Cache-Control', 'no-cache, must-revalidate');
-      }
+      // Disable caching for every uploaded file explicitly
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.setHeader('Vary', 'Accept, Accept-Encoding');
 
       next();
@@ -136,12 +132,12 @@ app.use(
     }
   },
   express.static(uploadsPath, {
-    // إعدادات محسّنة للأداء
-    maxAge: '1d', // cache لمدة يوم واحد
-    etag: true,
-    lastModified: true,
+    // Disable static layer caching for uploads too
+    maxAge: 0,
+    etag: false,
+    lastModified: false,
     setHeaders: (res, filePath) => {
-      // إعداد headers مناسبة للصور
+      // Content-Type only
       if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
         res.setHeader('Content-Type', 'image/jpeg');
       } else if (filePath.endsWith('.png')) {
@@ -154,28 +150,11 @@ app.use(
         res.setHeader('Content-Type', 'image/svg+xml');
       }
 
-      // سياسة التخزين المؤقت حسب نوع المسار
-      try {
-        const existing = (res.getHeader('Cache-Control') as string | undefined) || '';
-        const normalized = String(filePath).replace(/\\/g, '/');
-
-        // ملفات الرسائل/الجدار/أيقونات الغرف تُرفع بأسماء فريدة => يمكن كاش دائم
-        if (/\/uploads\/(wall|messages|rooms)\//.test(normalized)) {
-          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-          res.setHeader('Vary', 'Accept, Accept-Encoding');
-          return;
-        }
-
-        // صور الأفاتار/البانر قد تتغير على نفس المسار;
-        // إن لم تُضبط immutable مسبقاً (وجود v في الـ pre-middleware)، اجبر إعادة التحقق
-        if (/\/uploads\/(avatars|banners)\//.test(normalized)) {
-          if (!/immutable|no-cache/i.test(existing)) {
-            res.setHeader('Cache-Control', 'no-cache, must-revalidate');
-          }
-          res.setHeader('Vary', 'Accept, Accept-Encoding');
-          return;
-        }
-      } catch {}
+      // Force no cache at the static layer as well
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('Vary', 'Accept, Accept-Encoding');
     },
   })
 );

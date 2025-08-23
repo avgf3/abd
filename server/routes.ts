@@ -119,7 +119,7 @@ const createMulterConfig = (
 const upload = createMulterConfig('profiles', 'profile', 5 * 1024 * 1024);
 const wallUpload = createMulterConfig('wall', 'wall', 10 * 1024 * 1024);
 
-const bannerUpload = createMulterConfig('banners', 'banner', 8 * 1024 * 1024);
+// const bannerUpload = createMulterConfig('banners', 'banner', 8 * 1024 * 1024); // removed
 
 // Storage initialization - using imported storage instance
 
@@ -279,84 +279,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // إصلاح رفع صورة البانر - تحويل إلى WebP وتخزين كملف بدل Base64 لسلامة وأداء أفضل
-  app.post(
-    '/api/upload/profile-banner',
-    protect.auth,
-    bannerUpload.single('banner'),
-    async (req, res) => {
-      try {
-        res.set('Cache-Control', 'no-store');
-        if (!req.file) {
-          return res.status(400).json({
-            error: 'لم يتم رفع أي ملف',
-            details: "تأكد من إرسال الملف في حقل 'banner'",
-          });
-        }
-
-        const userId = (req as any).user?.id as number;
-        if (!userId || isNaN(userId)) {
-          try {
-            await fsp.unlink(req.file.path);
-          } catch {}
-          return res.status(401).json({ error: 'يجب تسجيل الدخول' });
-        }
-
-        // التحقق من وجود المستخدم
-        const user = await storage.getUser(userId);
-        if (!user) {
-          try {
-            await fsp.unlink(req.file.path);
-          } catch (unlinkError) {
-            console.error('خطأ في حذف الملف:', unlinkError);
-          }
-          return res.status(404).json({ error: 'المستخدم غير موجود' });
-        }
-
-        // تحويل الصورة إلى WebP ثابتة وتخزينها
-        const bannersDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'banners');
-        await fsp.mkdir(bannersDir, { recursive: true });
-        const inputBuffer = await fsp.readFile(req.file.path);
-        let webpBuffer = inputBuffer;
-        try {
-          webpBuffer = await (sharp as any)(inputBuffer)
-            .resize(1200, 400, { fit: 'cover' })
-            .webp({ quality: 80 })
-            .toBuffer();
-        } catch {}
-        const bannerTargetPath = path.join(bannersDir, `${userId}.webp`);
-        await fsp.writeFile(bannerTargetPath, webpBuffer);
-
-        // حذف الملف المؤقت
-        try {
-          await fsp.unlink(req.file.path);
-        } catch {}
-
-        // احسب بصمة ثابتة للإصدار وخزّن الرابط مع ?v= لضمان التحديث الفوري
-        const bannerVersion = (await import('crypto'))
-          .createHash('md5')
-          .update(webpBuffer)
-          .digest('hex')
-          .slice(0, 12);
-        const bannerUrl = `/uploads/banners/${userId}.webp?v=${bannerVersion}`;
-        const updatedUser = await storage.updateUser(userId, { profileBanner: bannerUrl });
-
-        if (!updatedUser) {
-          return res.status(500).json({ error: 'فشل في تحديث صورة البانر في قاعدة البيانات' });
-        }
-
-        // بث خفيف للغرف: الخلفية فقط + كامل لصاحب التعديل
-        try {
-          updateConnectedUserCache(updatedUser);
-        } catch {}
-
-        res.json({ success: true, bannerUrl });
-      } catch (error: any) {
-        console.error('خطأ في رفع صورة البانر:', error);
-        res.status(500).json({ error: 'خطأ في الخادم أثناء رفع صورة البانر' });
-      }
-    }
-  );
+  // تم إلغاء رفع صورة البانر: نحافظ على صورة واحدة فقط للمستخدم (profileImage)
+  app.post('/api/upload/profile-banner', (_req, res) => {
+    res.status(410).json({ error: 'تم إلغاء هذا المسار. استخدم صورة المستخدم الموحدة فقط.' });
+  });
 
   // Debug endpoint للتحقق من الصور - متاح في التطوير فقط
   app.get('/api/debug/images', developmentOnly, async (req, res) => {

@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
-import { useImageLoader } from '@/hooks/useImageLoader';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 
@@ -30,27 +29,21 @@ export default function ProfileImage({
   const borderColor =
     user.gender === 'female' ? 'border-pink-400 ring-pink-200' : 'border-blue-400 ring-blue-200';
 
-  // تحديد مصدر الصورة بشكل مستقر مع مراقبة تغيّر الهاش/الإصدار
+  // مصدر الصورة مع دعم ?v=hash إذا وُجد
   const imageSrc = useMemo(() => {
-    const base = getImageSrc(user.profileImage, '');
-    const v = (user as any).avatarHash || (user as any).avatarVersion;
-    if (base && v && typeof v === 'string' && !base.includes('?v=')) {
-      return `${base}?v=${v}`;
-    }
-    if (base && v && typeof v === 'number' && !base.includes('?v=')) {
+    const base = getImageSrc(user.profileImage, '/default_avatar.svg');
+    const v = (user as any)?.avatarHash || (user as any)?.avatarVersion;
+    if (base && v && !String(base).includes('?v=')) {
       return `${base}?v=${v}`;
     }
     return base;
   }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
 
-  const fallbackSrc = '/default_avatar.svg';
-  const { src: finalSrc, isLoading } = useImageLoader({ src: imageSrc, fallback: fallbackSrc });
-
   return (
     <div className="relative inline-block" onClick={onClick}>
       {/* الصورة الأساسية */}
       <img
-        src={finalSrc}
+        src={imageSrc}
         alt={`صورة ${user.username}`}
         className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className}`}
         style={{
@@ -60,20 +53,14 @@ export default function ProfileImage({
           display: 'block',
         }}
         loading="lazy"
+        onError={(e: any) => {
+          if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+            e.currentTarget.src = '/default_avatar.svg';
+          }
+        }}
       />
 
-      {/* مؤشر التحميل */}
-      {isLoading && (
-        <div
-          className={`${sizeClasses[size]} rounded-full bg-gray-200 flex items-center justify-center absolute inset-0 z-10`}
-        >
-          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      )}
-
-      {/* بدون نقطة الحالة الخضراء */}
-
-      {/* مؤشر الدور統一 */}
+      {/* مؤشر الدور للمشرفين */}
       {!hideRoleBadgeOverlay &&
         (user.userType === 'owner' ||
           user.userType === 'admin' ||

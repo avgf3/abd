@@ -376,8 +376,9 @@ export default function ProfileModal({
   };
 
   // Profile banner fallback - محسّن للتعامل مع base64 و مشاكل الcache
+  // تم إلغاء صورة البانر، نستخدم لون/افتراضي للخلفية فقط
   const getProfileBannerSrcLocal = () => {
-    return getBannerImageSrc(localUser?.profileBanner);
+    return undefined as any;
   };
 
   // Edit modal handlers
@@ -413,26 +414,22 @@ export default function ProfileModal({
 
   // دعم المعاينة قبل رفع الصورة الشخصية أو الغلاف
   const [previewProfile, setPreviewProfile] = useState<string | null>(null);
-  const [previewBanner, setPreviewBanner] = useState<string | null>(null);
 
   const handlePreview = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    type: 'profile' | 'banner'
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
-      if (type === 'profile') setPreviewProfile(e.target?.result as string);
-      else setPreviewBanner(e.target?.result as string);
+      setPreviewProfile(e.target?.result as string);
     };
     reader.readAsDataURL(file);
   };
 
   // عند رفع صورة جديدة، أضمن تحديث بيانات المستخدم من السيرفر بعد نجاح الرفع
   const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-    uploadType: 'profile' | 'banner'
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -456,7 +453,7 @@ export default function ProfileModal({
     }
 
     // التحقق من حجم الملف
-    const maxSize = uploadType === 'profile' ? 5 * 1024 * 1024 : 10 * 1024 * 1024; // 5MB للبروفايل، 10MB للبانر
+    const maxSize = 5 * 1024 * 1024; // 5MB للصورة الموحدة
     if (file.size > maxSize) {
       toast({
         title: 'خطأ',
@@ -473,29 +470,21 @@ export default function ProfileModal({
       setIsLoading(true);
 
       const formData = new FormData();
-      if (uploadType === 'profile') {
-        formData.append('profileImage', file);
-      } else {
-        formData.append('banner', file);
-      }
+      formData.append('profileImage', file);
 
       if (currentUser?.id) {
         formData.append('userId', currentUser.id.toString());
       }
 
-      const endpoint =
-        uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
-      const result = await apiRequest(endpoint, { method: 'POST', body: formData });
+      const result = await apiRequest('/api/upload/profile-image', { method: 'POST', body: formData });
 
       if (!result.success) {
         throw new Error(result.error || 'فشل في رفع الصورة');
       }
 
       // تحديث البيانات المحلية فوراً
-      if (uploadType === 'profile' && result.imageUrl) {
+      if (result.imageUrl) {
         updateUserData({ profileImage: result.imageUrl });
-      } else if (uploadType === 'banner' && result.bannerUrl) {
-        updateUserData({ profileBanner: result.bannerUrl });
       }
 
       // انتظار قصير للتأكد من التحديث المحلي
@@ -508,14 +497,13 @@ export default function ProfileModal({
 
       toast({
         title: 'نجح ✅',
-        description: uploadType === 'profile' ? 'تم تحديث الصورة الشخصية' : 'تم تحديث صورة الغلاف',
+        description: 'تم تحديث الصورة',
       });
 
       // إزالة المعاينة
-      if (uploadType === 'profile') setPreviewProfile(null);
-      else setPreviewBanner(null);
+      setPreviewProfile(null);
     } catch (error: any) {
-      console.error(`❌ خطأ في رفع ${uploadType}:`, error);
+              console.error(`❌ خطأ في رفع الصورة:`, error);
       toast({
         title: 'خطأ',
         description: error.message || 'فشل في تحميل الصورة',
@@ -2012,7 +2000,7 @@ export default function ProfileModal({
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleFileUpload(e, 'banner')}
+                onChange={(e) => handleFileUpload(e)}
                 disabled={isLoading}
               />
               <input
