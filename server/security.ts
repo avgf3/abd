@@ -11,18 +11,59 @@ const messageRequestCounts = new Map<string, { count: number; resetTime: number 
 const friendRequestCounts = new Map<string, { count: number; resetTime: number }>();
 const blockedIPs = new Set<string>();
 
+// Helper to apply a simple sliding window limiter
+function applyLimiter(
+  key: string,
+  store: Map<string, { count: number; resetTime: number }>,
+  limit: number,
+  windowMs: number
+): boolean {
+  const now = Date.now();
+  const entry = store.get(key);
+  if (!entry || now > entry.resetTime) {
+    store.set(key, { count: 1, resetTime: now + windowMs });
+    return true;
+  }
+  if (entry.count >= limit) {
+    return false;
+  }
+  entry.count++;
+  return true;
+}
+
 // Rate limiter for authentication endpoints
 export function authLimiter(req: Request, res: Response, next: NextFunction): void {
+  try {
+    const ip = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() || req.ip || 'unknown';
+    const ok = applyLimiter(ip, authRequestCounts, 10, 60_000); // 10 req/min/IP
+    if (!ok) {
+      return res.status(429).json({ error: 'تم تجاوز الحد المسموح من طلبات الدخول' });
+    }
+  } catch {}
   next();
 }
 
 // Rate limiter for message endpoints
 export function messageLimiter(req: Request, res: Response, next: NextFunction): void {
+  try {
+    const userId = (req as any).user?.id || 'anon';
+    const ok = applyLimiter(String(userId), messageRequestCounts, 60, 60_000); // 60 msg/min/user
+    if (!ok) {
+      return res.status(429).json({ error: 'إرسال الرسائل بسرعة كبيرة، يرجى الانتظار قليلاً' });
+    }
+  } catch {}
   next();
 }
 
 // Rate limiter for friend request endpoints
 export function friendRequestLimiter(req: Request, res: Response, next: NextFunction): void {
+  try {
+    const userId = (req as any).user?.id || 'anon';
+    const ok = applyLimiter(String(userId), friendRequestCounts, 30, 60_000); // 30 actions/min/user
+    if (!ok) {
+      return res.status(429).json({ error: 'محاولات كثيرة في طلبات الصداقة' });
+    }
+  } catch {}
   next();
 }
 
@@ -91,7 +132,7 @@ export function unblockIP(ip: string): void {
 
 // Security middleware to prevent common attacks
 export function setupSecurity(app: Express): void {
-  // Rate limiting disabled for API endpoints per requirements
+  const isProd = process.env.NODE_ENV === 'production';
 
   // استخدام Helmet للأمان المحسّن
   app.use(
@@ -99,7 +140,7 @@ export function setupSecurity(app: Express): void {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: isProd ? ["'self'"] : ["'self'", "'unsafe-inline'"],
           styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
           imgSrc: ["'self'", 'data:', 'https:'],
           connectSrc: ["'self'", 'ws:', 'wss:', 'https:'],
@@ -137,7 +178,7 @@ export function setupSecurity(app: Express): void {
       'Content-Security-Policy',
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline'",
+        isProd ? "script-src 'self'" : "script-src 'self' 'unsafe-inline'",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "img-src 'self' data: https:",
         // allow connect to same-origin + websockets on same-origin
@@ -150,7 +191,7 @@ export function setupSecurity(app: Express): void {
     );
 
     // Enforce HTTPS strictly in production
-    if (process.env.NODE_ENV === 'production') {
+    if (isProd) {
       res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     }
 
