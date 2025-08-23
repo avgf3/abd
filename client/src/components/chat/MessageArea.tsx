@@ -12,10 +12,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { apiRequest, api } from '@/lib/queryClient';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import {
-  findMentions,
   playMentionSound,
   renderMessageWithMentions,
-  insertMention,
 } from '@/utils/mentionUtils';
 import { getDynamicBorderColor } from '@/utils/messageUtils';
 import { getFinalUsernameColor } from '@/utils/themeUtils';

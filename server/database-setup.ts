@@ -3,10 +3,6 @@ import { sql } from 'drizzle-orm';
 
 import {
   users,
-  messages,
-  friends,
-  notifications,
-  blockedDevices,
   levelSettings,
   rooms,
 } from '../shared/schema';

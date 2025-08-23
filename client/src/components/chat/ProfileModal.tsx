@@ -1,16 +1,13 @@
 import { X } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import PointsSentNotification from '@/components/ui/PointsSentNotification';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
-import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
+import { formatPoints } from '@/utils/pointsUtils';
 import {
-  getEffectColor,
   getFinalUsernameColor,
   buildProfileBackgroundGradient,
 } from '@/utils/themeUtils';

@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import express, { type Request, Response, NextFunction } from 'express';
+import express from 'express';
 import compression from 'compression';
 
 import { initializeSystem } from './database-setup';

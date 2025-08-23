@@ -4,7 +4,7 @@ import { storage } from '../storage';
 import { getAuthTokenFromRequest, verifyAuthToken } from '../utils/auth-token';
 import { log } from '../utils/productionLogger';
 
-import { createError, ERROR_MESSAGES } from './errorHandler';
+import { createError } from './errorHandler';
 
 // تمديد نوع Request - moved to server/types/api.ts
 

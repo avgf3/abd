@@ -1,7 +1,6 @@
 import { Router } from 'express';
 
 import { db, dbType } from '../database-adapter';
-import { notificationService } from '../services/notificationService';
 import { storage } from '../storage';
 import { protect } from '../middleware/enhancedSecurity';
 import { sanitizeInput } from '../security';

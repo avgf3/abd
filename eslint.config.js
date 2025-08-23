@@ -4,6 +4,7 @@ import ts from 'typescript-eslint';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import importPlugin from 'eslint-plugin-import';
+import unusedImports from 'eslint-plugin-unused-imports';
 
 export default [
   {
@@ -26,12 +27,12 @@ export default [
   js.configs.recommended,
   ...ts.configs.recommended,
   {
-    files: ['client/src/**/*.{ts,tsx}', 'server/**/*.{ts,tsx}', 'shared/**/*.{ts,tsx}'],
+    files: ['**/*.{ts,tsx}'],
     languageOptions: {
       parser: ts.parser,
       parserOptions: { ecmaVersion: 'latest', sourceType: 'module', ecmaFeatures: { jsx: true } },
     },
-    plugins: { react, 'react-hooks': reactHooks, import: importPlugin },
+    plugins: { react, 'react-hooks': reactHooks, import: importPlugin, 'unused-imports': unusedImports },
     rules: {
       'react/react-in-jsx-scope': 'off',
       // تعطيل ترتيب الاستيرادات لعدم تعطيل الـ CI بتحذيرات شكلية
@@ -39,10 +40,23 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
       // تعطيل هذا التحذير لأننا نستخدم module augmentation وأساليب import() لأنواع Express
       '@typescript-eslint/consistent-type-imports': 'off',
+      // نعطل قاعدة TS الافتراضية ونستخدم إضافة تزيل الاستيرادات غير المستخدمة تلقائياً
       '@typescript-eslint/no-unused-vars': 'off',
+      'unused-imports/no-unused-imports': 'error',
+      'unused-imports/no-unused-vars': [
+        'warn',
+        {
+          vars: 'all',
+          varsIgnorePattern: '^_',
+          args: 'after-used',
+          argsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
       '@typescript-eslint/no-require-imports': 'off',
       'no-empty': 'off',
       'no-undef': 'off',
+      'no-redeclare': 'error',
     },
     settings: { react: { version: 'detect' } },
   },

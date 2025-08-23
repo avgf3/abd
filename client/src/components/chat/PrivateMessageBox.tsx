@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { toast } from 'sonner';

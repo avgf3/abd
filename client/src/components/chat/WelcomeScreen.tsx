@@ -1,7 +1,5 @@
-import { UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
-import UserRegistration from './UserRegistration';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';

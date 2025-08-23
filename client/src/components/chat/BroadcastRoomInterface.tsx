@@ -19,14 +19,12 @@ import MessageArea from './MessageArea';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type {
   ChatUser,
   ChatRoom,
-  RoomWebSocketMessage as WebSocketMessage,
   ChatMessage,
 } from '@/types/chat';
 import { normalizeBroadcastInfo } from '@/utils/roomUtils';

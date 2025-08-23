@@ -60,7 +60,7 @@ import type { UseChatReturn } from '@/hooks/useChat';
 import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
-import type { ChatUser, ChatRoom } from '@/types/chat';
+import type { ChatUser } from '@/types/chat';
 
 interface ChatInterfaceProps {
   chat: UseChatReturn;

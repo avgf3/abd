@@ -31,11 +31,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useGrabScroll } from '@/hooks/useGrabScroll';
 import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
-import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
+import type { ChatUser, WallPost, ChatRoom } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import {
-  getUserEffectStyles,
-  getUserEffectClasses,
   getFinalUsernameColor,
   getUserListItemStyles,
   getUserListItemClasses,

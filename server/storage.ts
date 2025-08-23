@@ -1,10 +1,7 @@
 import bcrypt from 'bcrypt';
-import { eq } from 'drizzle-orm';
 
-import { friends as friendsTable } from '../shared/schema';
 
 import { SecurityManager } from './auth/security';
-import { db } from './database-adapter';
 import {
   databaseService,
   type User,

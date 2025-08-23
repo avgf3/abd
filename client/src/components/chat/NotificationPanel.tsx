@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, X, Check, Trash2, Users } from 'lucide-react';
+import { Bell, X, Check, Users } from 'lucide-react';
 import { useState, useCallback } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

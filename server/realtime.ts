@@ -9,7 +9,6 @@ import { pointsService } from './services/pointsService';
 import { roomMessageService } from './services/roomMessageService';
 import { roomService } from './services/roomService';
 import { storage } from './storage';
-import { sanitizeUsersArray } from './utils/data-sanitizer';
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
 import { verifyAuthToken } from './utils/auth-token';
 

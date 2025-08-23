@@ -6,7 +6,7 @@ const WelcomeScreen = lazy(() => import('@/components/chat/WelcomeScreen'));
 import KickCountdown from '@/components/moderation/KickCountdown';
 import { useChat } from '@/hooks/useChat';
 import { clearSession } from '@/lib/socket';
-import type { ChatUser, ChatRoom } from '@/types/chat';
+import type { ChatUser } from '@/types/chat';
 
 export default function ChatPage() {
   const [showWelcome, setShowWelcome] = useState(true);
