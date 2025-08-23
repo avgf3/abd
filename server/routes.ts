@@ -356,16 +356,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const uploadsDir = path.join(process.cwd(), 'client', 'public', 'uploads');
       const profilesDir = path.join(uploadsDir, 'profiles');
       const bannersDir = path.join(uploadsDir, 'banners');
+      const avatarsDir = path.join(uploadsDir, 'avatars');
 
       const debugInfo = {
         uploadsDir: uploadsDir,
         profilesDir: profilesDir,
         bannersDir: bannersDir,
+        avatarsDir: avatarsDir,
         uploadsExists: fs.existsSync(uploadsDir),
         profilesExists: fs.existsSync(profilesDir),
         bannersExists: fs.existsSync(bannersDir),
+        avatarsExists: fs.existsSync(avatarsDir),
         profileFiles: [],
         bannerFiles: [],
+        avatarFiles: [],
         dbImages: [],
       };
 
@@ -393,6 +397,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return {
               name: file,
               path: `/uploads/banners/${file}`,
+              size: stat.size,
+            };
+          })
+        );
+      }
+
+      // قائمة ملفات الأفترار
+      if (debugInfo.avatarsExists) {
+        const files = await fsp.readdir(avatarsDir);
+        debugInfo.avatarFiles = await Promise.all(
+          files.map(async (file) => {
+            const stat = await fsp.stat(path.join(avatarsDir, file));
+            return {
+              name: file,
+              path: `/uploads/avatars/${file}`,
               size: stat.size,
             };
           })
