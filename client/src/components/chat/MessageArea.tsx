@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { apiRequest, api } from '@/lib/queryClient';
+import { smartUpload } from '@/lib/uploadWithRetry';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import {
   findMentions,
@@ -61,6 +62,7 @@ export default function MessageArea({
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const lastTypingTime = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const prevMessagesLenRef = useRef<number>(0);
 
@@ -243,11 +245,31 @@ export default function MessageArea({
         form.append('image', file);
         form.append('senderId', String(currentUser.id));
         form.append('roomId', currentRoomId || 'general');
-        await api.upload('/api/upload/message-image', form, { timeout: 60000 });
+        
+        // استخدام smartUpload مع إعادة المحاولة
+        const result = await smartUpload('/api/upload/message-image', form, {
+          timeout: 60000,
+          maxRetries: 3,
+          onRetry: (attempt, error) => {
+            toast({
+              title: `إعادة المحاولة ${attempt}`,
+              description: 'جاري إعادة محاولة رفع الصورة...',
+            });
+          }
+        });
+        
+        if (!result.success) {
+          throw new Error(result.error || 'فشل رفع الصورة');
+        }
+        
         // سيتم بث الرسالة عبر الـ socket من الخادم فلا داعي لاستدعاء onSendMessage محلياً
-      } catch (err) {
+      } catch (err: any) {
         console.error('رفع الصورة فشل:', err);
-        alert('تعذر رفع الصورة، حاول مرة أخرى');
+        toast({
+          title: 'فشل رفع الصورة',
+          description: err.message || 'تعذر رفع الصورة، حاول مرة أخرى',
+          variant: 'destructive',
+        });
       } finally {
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
