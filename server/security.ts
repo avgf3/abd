@@ -5,86 +5,8 @@ import helmet from 'helmet';
 import { moderationSystem } from './moderation';
 import { getDeviceIdFromHeaders } from './utils/device';
 
-// Rate limiting maps
-const authRequestCounts = new Map<string, { count: number; resetTime: number }>();
-const messageRequestCounts = new Map<string, { count: number; resetTime: number }>();
-const friendRequestCounts = new Map<string, { count: number; resetTime: number }>();
+// Removed rate limiting maps and limiters to avoid throttling
 const blockedIPs = new Set<string>();
-
-// Rate limiter for authentication endpoints
-export function authLimiter(req: Request, res: Response, next: NextFunction): void {
-  const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
-  const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
-  const clientId = forwarded || real || req.ip || 'unknown';
-  const now = Date.now();
-  const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxRequests = 50; // زيادة الحد للمصادقة
-
-  const current = authRequestCounts.get(clientId);
-
-  if (!current || now > current.resetTime) {
-    authRequestCounts.set(clientId, { count: 1, resetTime: now + windowMs });
-    next();
-  } else if (current.count < maxRequests) {
-    current.count++;
-    next();
-  } else {
-    res.status(429).json({
-      error: 'تم تجاوز حد طلبات المصادقة، حاول مرة أخرى لاحقاً',
-      retryAfter: Math.ceil((current.resetTime - now) / 1000),
-    });
-  }
-}
-
-// Rate limiter for message endpoints
-export function messageLimiter(req: Request, res: Response, next: NextFunction): void {
-  const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
-  const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
-  const clientId = forwarded || real || req.ip || 'unknown';
-  const now = Date.now();
-  const windowMs = 1 * 60 * 1000; // 1 minute
-  const maxRequests = 30; // 30 messages per minute
-
-  const current = messageRequestCounts.get(clientId);
-
-  if (!current || now > current.resetTime) {
-    messageRequestCounts.set(clientId, { count: 1, resetTime: now + windowMs });
-    next();
-  } else if (current.count < maxRequests) {
-    current.count++;
-    next();
-  } else {
-    res.status(429).json({
-      error: 'تم تجاوز حد إرسال الرسائل، حاول مرة أخرى لاحقاً',
-      retryAfter: Math.ceil((current.resetTime - now) / 1000),
-    });
-  }
-}
-
-// Rate limiter for friend request endpoints
-export function friendRequestLimiter(req: Request, res: Response, next: NextFunction): void {
-  const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
-  const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
-  const clientId = forwarded || real || req.ip || 'unknown';
-  const now = Date.now();
-  const windowMs = 5 * 60 * 1000; // 5 minutes
-  const maxRequests = 100; // 100 friend requests per 5 minutes
-
-  const current = friendRequestCounts.get(clientId);
-
-  if (!current || now > current.resetTime) {
-    friendRequestCounts.set(clientId, { count: 1, resetTime: now + windowMs });
-    next();
-  } else if (current.count < maxRequests) {
-    current.count++;
-    next();
-  } else {
-    res.status(429).json({
-      error: 'تم تجاوز حد طلبات الصداقة، حاول مرة أخرى لاحقاً',
-      retryAfter: Math.ceil((current.resetTime - now) / 1000),
-    });
-  }
-}
 
 // IP security check middleware
 export function checkIPSecurity(req: Request, res: Response, next: NextFunction): void {
@@ -151,32 +73,7 @@ export function unblockIP(ip: string): void {
 
 // Security middleware to prevent common attacks
 export function setupSecurity(app: Express): void {
-  // Rate limiting for API endpoints
-  const requestCounts = new Map<string, { count: number; resetTime: number }>();
-
-  app.use('/api', (req: Request, res: Response, next: NextFunction) => {
-    const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
-    const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
-    const clientId = forwarded || real || req.ip || 'unknown';
-    const now = Date.now();
-    const windowMs = 1 * 60 * 1000; // 1 minute
-    const maxRequests = 100; // 100 طلب/دقيقة لكل IP
-
-    const current = requestCounts.get(clientId);
-
-    if (!current || now > current.resetTime) {
-      requestCounts.set(clientId, { count: 1, resetTime: now + windowMs });
-      next();
-    } else if (current.count < maxRequests) {
-      current.count++;
-      next();
-    } else {
-      res.status(429).json({
-        error: 'تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً',
-        retryAfter: Math.ceil((current.resetTime - now) / 1000),
-      });
-    }
-  });
+  // Removed global API rate limiter
 
   // استخدام Helmet للأمان المحسّن
   app.use(
