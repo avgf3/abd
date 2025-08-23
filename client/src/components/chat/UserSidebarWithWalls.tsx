@@ -884,18 +884,30 @@ export default function UnifiedSidebar({
           className="flex-1 min-h-0 flex flex-col overflow-hidden"
           style={{ maxHeight: 'calc(100vh - 150px)' }}
         >
-          <RoomComponent
-            currentUser={currentUser}
-            rooms={rooms}
-            currentRoomId={currentRoomId}
-            onRoomChange={onRoomChange}
-            onAddRoom={onAddRoom}
-            onDeleteRoom={onDeleteRoom}
-            onRefreshRooms={onRefreshRooms}
-            viewMode="list"
-            showSearch={true}
-            compact={true}
-          />
+          <div className="p-3 space-y-2 overflow-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm">الغرف</h3>
+              {onRefreshRooms && (
+                <Button size="sm" variant="outline" onClick={onRefreshRooms}>تحديث</Button>
+              )}
+            </div>
+            {rooms.length === 0 ? (
+              <p className="text-xs text-muted-foreground">لا توجد غرف</p>
+            ) : (
+              <ul className="space-y-1">
+                {rooms.map((r) => (
+                  <li key={r.id} className={`flex items-center justify-between rounded border px-2 py-1 text-sm ${currentRoomId === String(r.id) ? 'bg-primary/10 border-primary' : 'bg-white'}`}>
+                    <button className="text-left flex-1 truncate" onClick={() => onRoomChange && onRoomChange(String(r.id))}>
+                      {r.name}
+                    </button>
+                    {onDeleteRoom && (
+                      <Button size="sm" variant="ghost" onClick={() => onDeleteRoom(String(r.id))}>حذف</Button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
 

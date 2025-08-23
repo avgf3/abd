@@ -40,7 +40,8 @@ export function authLimiter(req: Request, res: Response, next: NextFunction): vo
       'unknown';
     const ok = applyLimiter(ip, authRequestCounts, 10, 60_000); // 10 req/min/IP
     if (!ok) {
-      return res.status(429).json({ error: 'تم تجاوز الحد المسموح من طلبات الدخول' });
+      res.status(429).json({ error: 'تم تجاوز الحد المسموح من طلبات الدخول' });
+      return;
     }
   } catch {}
   next();
@@ -52,7 +53,8 @@ export function messageLimiter(req: Request, res: Response, next: NextFunction):
     const userId = (req as any).user?.id || 'anon';
     const ok = applyLimiter(String(userId), messageRequestCounts, 60, 60_000); // 60 msg/min/user
     if (!ok) {
-      return res.status(429).json({ error: 'إرسال الرسائل بسرعة كبيرة، يرجى الانتظار قليلاً' });
+      res.status(429).json({ error: 'إرسال الرسائل بسرعة كبيرة، يرجى الانتظار قليلاً' });
+      return;
     }
   } catch {}
   next();
@@ -64,7 +66,8 @@ export function friendRequestLimiter(req: Request, res: Response, next: NextFunc
     const userId = (req as any).user?.id || 'anon';
     const ok = applyLimiter(String(userId), friendRequestCounts, 30, 60_000); // 30 actions/min/user
     if (!ok) {
-      return res.status(429).json({ error: 'محاولات كثيرة في طلبات الصداقة' });
+      res.status(429).json({ error: 'محاولات كثيرة في طلبات الصداقة' });
+      return;
     }
   } catch {}
   next();

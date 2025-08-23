@@ -16,6 +16,7 @@ interface MessageComposerProps {
 	inputRef: React.RefObject<HTMLInputElement>;
 	fileInputRef: React.RefObject<HTMLInputElement>;
 	isMobile: boolean;
+	onFileSelected: (file: File) => void;
 }
 
 export default function MessageComposer({
@@ -28,6 +29,7 @@ export default function MessageComposer({
 	inputRef,
 	fileInputRef,
 	isMobile,
+	onFileSelected,
 }: MessageComposerProps) {
 	const handleKeyPress = useCallback(
 		(e: React.KeyboardEvent) => {
@@ -54,6 +56,17 @@ export default function MessageComposer({
 		fileInputRef.current?.click();
 	}, [fileInputRef]);
 
+	const onFileChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			const file = e.target.files?.[0];
+			if (file) {
+				onFileSelected(file);
+				e.target.value = '';
+			}
+		},
+		[onFileSelected]
+	);
+
 	return (
 		<div className={`${isMobile ? 'p-2.5' : 'p-3'} bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg chat-input`} style={{ bottom: '80px' }}>
 			<div className={`flex ${isMobile ? 'gap-2' : 'gap-3'} items-end max-w-full mx-auto`} style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0' }}>
@@ -78,7 +91,7 @@ export default function MessageComposer({
 					<Send className="w-4 h-4" />
 				</Button>
 
-				<input ref={fileInputRef} type="file" accept="image/*" className="hidden" />
+				<input ref={fileInputRef} type="file" accept="image/*" onChange={onFileChange} className="hidden" />
 			</div>
 		</div>
 	);

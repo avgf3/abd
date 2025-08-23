@@ -187,6 +187,27 @@ export default function MessageArea({
         inputRef={inputRef}
         fileInputRef={fileInputRef}
         isMobile={isMobile}
+        onFileSelected={async (file) => {
+          if (!currentUser) return;
+          if (!file.type.startsWith('image/')) {
+            alert('يرجى اختيار ملف صورة صحيح');
+            return;
+          }
+          if (file.size > 5 * 1024 * 1024) {
+            alert('حجم الصورة كبير جداً. الحد الأقصى 5MB');
+            return;
+          }
+          try {
+            const form = new FormData();
+            form.append('image', file);
+            form.append('senderId', String(currentUser.id));
+            form.append('roomId', currentRoomId || 'general');
+            await api.upload('/api/upload/message-image', form, { timeout: 60000 });
+          } catch (err) {
+            console.error('رفع الصورة فشل:', err);
+            alert('تعذر رفع الصورة، حاول مرة أخرى');
+          }
+        }}
       />
     </div>
   );
