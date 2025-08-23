@@ -5,7 +5,7 @@ import { roomMessageService } from '../services/roomMessageService';
 import { roomService } from '../services/roomService';
 import { storage } from '../storage';
 import { protect } from '../middleware/enhancedSecurity';
-import { messageLimiter } from '../security';
+// import { messageLimiter } from '../security';
 
 const router = Router();
 
@@ -89,7 +89,7 @@ router.get('/room/:roomId/latest', async (req, res) => {
  * POST /api/messages/room/:roomId
  * إرسال رسالة لغرفة
  */
-router.post('/room/:roomId', protect.auth, messageLimiter, async (req, res) => {
+router.post('/room/:roomId', protect.auth, async (req, res) => {
   try {
     const { roomId } = req.params;
     const { content, messageType = 'text', isPrivate = false, receiverId } = req.body;
