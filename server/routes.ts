@@ -372,7 +372,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({
           success: true,
           message: 'تم رفع صورة البانر بنجاح',
-          bannerUrl: `${bannerUrl}?v=${Date.now()}`,
+          // استخدم هاش ثابت بدل timestamp لضمان كاش immutable عند وجود v
+          bannerUrl: `${bannerUrl}?v=${
+            (await import('crypto')).createHash('md5').update(webpBuffer).digest('hex').slice(0, 12)
+          }`,
           filename: `${userId}.webp`,
           user: buildUserBroadcastPayload(updatedUser),
         });
