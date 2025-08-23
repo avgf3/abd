@@ -140,7 +140,7 @@ export default function MessageArea({
       // وليست من المستخدم الحالي نفسه
       if (
         lastMessage.sender?.id !== currentUser.id &&
-        lastMessage.content.includes(`@${currentUser.username}`)
+        lastMessage.content.includes(currentUser.username)
       ) {
         playMentionSound();
       }
@@ -266,19 +266,16 @@ export default function MessageArea({
     (event: React.MouseEvent, user: ChatUser) => {
       event.stopPropagation();
 
-      // إدراج اسم المستخدم في مربع النص
-      const mention = `@${user.username} `;
-      setMessageText((prev) => prev + mention);
+      // إدراج اسم المستخدم في مربع النص بدون رمز @
+      setMessageText((prev) => {
+        const separator = prev.trim() ? ' ' : '';
+        return prev + separator + user.username + ' ';
+      });
 
       // التركيز على مربع النص
       inputRef.current?.focus();
-
-      // استدعاء callback إضافي إذا كان موجود
-      if (onUserClick) {
-        onUserClick(event, user);
-      }
     },
-    [onUserClick]
+    []
   );
 
   // Format typing users display
@@ -380,6 +377,7 @@ export default function MessageArea({
                                     e.currentTarget.src = '/default_avatar.svg';
                                   }
                                 }}
+                                onClick={(e) => onUserClick && message.sender && onUserClick(e, message.sender)}
                               />
                             );
                           })()
@@ -388,6 +386,7 @@ export default function MessageArea({
                             user={message.sender}
                             size="small"
                             className="cursor-pointer hover:scale-110 transition-transform duration-200"
+                            onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                           />
                         )}
                       </div>
