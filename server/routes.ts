@@ -37,9 +37,6 @@ import {
   sanitizeInput,
   validateMessageContent,
   checkIPSecurity,
-  authLimiter,
-  messageLimiter,
-  friendRequestLimiter,
 } from './security';
 import { databaseService } from './services/databaseService';
 import { notificationService } from './services/notificationService';
@@ -1067,7 +1064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Authentication routes
-  app.post('/api/auth/guest', authLimiter, async (req, res) => {
+  app.post('/api/auth/guest', async (req, res) => {
     try {
       const { username, gender } = req.body;
 
@@ -1129,7 +1126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/member', authLimiter, async (req, res) => {
+  app.post('/api/auth/member', async (req, res) => {
     try {
       const { username, password, email, identifier } = req.body || {};
 
@@ -1704,7 +1701,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // الحصول على جميع طلبات الصداقة للمستخدم (واردة + صادرة)
-  app.get('/api/friend-requests/:userId', friendRequestLimiter, async (req, res) => {
+  app.get('/api/friend-requests/:userId', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const [incoming, outgoing] = await Promise.all([
@@ -1719,7 +1716,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // الحصول على طلبات الصداقة الواردة
-  app.get('/api/friend-requests/incoming/:userId', friendRequestLimiter, async (req, res) => {
+  app.get('/api/friend-requests/incoming/:userId', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const requests = await friendService.getIncomingFriendRequests(userId);
@@ -1730,7 +1727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // الحصول على طلبات الصداقة الصادرة
-  app.get('/api/friend-requests/outgoing/:userId', friendRequestLimiter, async (req, res) => {
+  app.get('/api/friend-requests/outgoing/:userId', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const requests = await friendService.getOutgoingFriendRequests(userId);
