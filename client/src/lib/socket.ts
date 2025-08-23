@@ -136,7 +136,7 @@ export function getSocket(): Socket {
     rememberUpgrade: false,
     autoConnect: false,
     reconnection: true,
-    reconnectionAttempts: 5,
+    reconnectionAttempts: Infinity, // محاولات غير محدودة
     reconnectionDelay: 3000,
     reconnectionDelayMax: 15000,
     randomizationFactor: 0.5,

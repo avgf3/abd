@@ -3298,16 +3298,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       let imageUrl: string;
-      try {
-        const fileBuffer = await fsp.readFile(req.file.path);
-        const base64Image = fileBuffer.toString('base64');
-        const mimeType = req.file.mimetype;
-        imageUrl = `data:${mimeType};base64,${base64Image}`;
-        await fsp.unlink(req.file.path);
-      } catch (e) {
-        // fallback لمسار ملف ثابت
-        imageUrl = `/uploads/messages/${req.file.filename}`;
-      }
+      // استخدم مسار ثابت للملف لتقليل استهلاك الذاكرة وتفعيل التخزين المؤقت
+      imageUrl = `/uploads/messages/${req.file.filename}`;
 
       // إذا كان receiverId موجوداً، فهذه رسالة خاصة
       if (receiverId) {
