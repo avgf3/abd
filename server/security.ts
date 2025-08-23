@@ -169,10 +169,19 @@ export function setupSecurity(app: Express): void {
     const originHeader = req.headers.origin as string | undefined;
     const hostHeader = req.headers.host || '';
 
+    // في حالة Render، قبول جميع الأصول من نفس النطاق
+    const renderUrl = process.env.RENDER_EXTERNAL_URL;
+    const isRenderDomain = renderUrl && (
+      originHeader?.includes('.onrender.com') || 
+      hostHeader?.includes('.onrender.com')
+    );
+
     const envOrigins = [
       process.env.RENDER_EXTERNAL_URL,
       process.env.FRONTEND_URL,
       process.env.CORS_ORIGIN,
+      // إضافة دعم صريح لـ Render
+      renderUrl ? new URL(renderUrl).origin : null,
     ].filter(Boolean) as string[];
 
     const envHosts = envOrigins
@@ -197,19 +206,24 @@ export function setupSecurity(app: Express): void {
     const isSameHost = originHost && hostHeader && originHost === hostHeader;
     const isEnvAllowed = originHost && envHosts.includes(originHost);
 
-    if (originHeader && (isDev || isSameHost || isEnvAllowed)) {
+    // السماح بـ CORS في حالات أكثر مرونة
+    if (originHeader && (isDev || isSameHost || isEnvAllowed || isRenderDomain)) {
       res.setHeader('Access-Control-Allow-Origin', originHeader);
+    } else if (!originHeader && process.env.NODE_ENV === 'production') {
+      // في حالة عدم وجود origin (مثل طلبات من نفس الموقع)
+      res.setHeader('Access-Control-Allow-Origin', '*');
     }
 
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.setHeader(
       'Access-Control-Allow-Headers',
-      'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-device-id'
     );
+    res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
 
     if (req.method === 'OPTIONS') {
-      res.sendStatus(200);
+      res.sendStatus(204); // Use 204 No Content for OPTIONS
     } else {
       next();
     }

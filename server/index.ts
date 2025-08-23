@@ -259,6 +259,7 @@ async function startServer() {
     const systemInitialized = await initializeSystem();
 
     if (systemInitialized) {
+      console.log('✅ تم تهيئة النظام بنجاح');
     } else {
       console.warn('⚠️ تم بدء الخادم مع تحذيرات في تهيئة النظام');
     }
@@ -274,42 +275,124 @@ async function startServer() {
       serveStatic(app);
     }
 
-    // Start the server
+    // Start the server with retry mechanism
     const PORT = Number(process.env.PORT) || 5000;
-    server.listen(PORT, '0.0.0.0', () => {
-      const mode = process.env.NODE_ENV;
-      log(`🚀 الخادم يعمل على المنفذ ${PORT} في وضع ${mode}`);
+    const HOST = '0.0.0.0';
+    
+    const startListening = () => {
+      return new Promise<void>((resolve, reject) => {
+        const errorHandler = (error: any) => {
+          if (error.code === 'EADDRINUSE') {
+            console.error(`❌ المنفذ ${PORT} مستخدم بالفعل`);
+            reject(error);
+          } else if (error.code === 'EACCES') {
+            console.error(`❌ لا توجد صلاحيات للاستماع على المنفذ ${PORT}`);
+            reject(error);
+          } else {
+            console.error('❌ خطأ في بدء الخادم:', error);
+            reject(error);
+          }
+        };
 
-      if (mode === 'development') {
-        log(`📱 رابط التطبيق: http://localhost:${PORT}`);
+        server.once('error', errorHandler);
+        
+        server.listen(PORT, HOST, () => {
+          server.removeListener('error', errorHandler);
+          const mode = process.env.NODE_ENV;
+          console.log(`🚀 الخادم يعمل على http://${HOST}:${PORT} في وضع ${mode}`);
+          
+          if (mode === 'development') {
+            console.log(`📱 رابط التطبيق: http://localhost:${PORT}`);
+          } else if (process.env.RENDER_EXTERNAL_URL) {
+            console.log(`🌐 رابط التطبيق: ${process.env.RENDER_EXTERNAL_URL}`);
+          }
+          
+          resolve();
+        });
+      });
+    };
+
+    // محاولة بدء الخادم
+    try {
+      await startListening();
+    } catch (error: any) {
+      if (error.code === 'EADDRINUSE') {
+        console.log('⏳ المنفذ مستخدم، محاولة مرة أخرى بعد 5 ثواني...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        await startListening();
+      } else {
+        throw error;
       }
+    }
 
-      // إظهار معلومات قاعدة البيانات (اختياري)
-      import('./database-adapter')
-        .then(({ getDatabaseStatus }) => {
-          try {
-            getDatabaseStatus();
-          } catch {}
-        })
-        .catch(() => {});
-    });
+    // إظهار معلومات قاعدة البيانات
+    import('./database-adapter')
+      .then(({ getDatabaseStatus, checkDatabaseHealth }) => {
+        try {
+          const status = getDatabaseStatus();
+          if (status.connected) {
+            console.log('✅ قاعدة البيانات متصلة');
+            // فحص صحة قاعدة البيانات بشكل دوري
+            setInterval(async () => {
+              const isHealthy = await checkDatabaseHealth();
+              if (!isHealthy) {
+                console.warn('⚠️ قاعدة البيانات غير متاحة، محاولة إعادة الاتصال...');
+                const { initializeDatabase } = await import('./database-adapter');
+                await initializeDatabase();
+              }
+            }, 30000); // كل 30 ثانية
+          } else {
+            console.warn('⚠️ قاعدة البيانات غير متصلة');
+          }
+        } catch {}
+      })
+      .catch(() => {});
 
     // API not-found and error handlers (mounted after routes)
     app.use('/api', notFoundHandler);
     app.use(errorHandler);
 
     // Handle graceful shutdown
-    process.on('SIGTERM', () => {
-      server.close(() => {
+    const gracefulShutdown = async (signal: string) => {
+      console.log(`\n📥 تم استلام إشارة ${signal}، بدء الإيقاف الآمن...`);
+      
+      // إيقاف قبول اتصالات جديدة
+      server.close(async () => {
+        console.log('✅ تم إغلاق جميع الاتصالات');
+        
+        // إغلاق قاعدة البيانات
+        try {
+          const { dbAdapter } = await import('./database-adapter');
+          if (dbAdapter.client) {
+            await dbAdapter.client.end();
+            console.log('✅ تم إغلاق اتصال قاعدة البيانات');
+          }
+        } catch {}
+        
         process.exit(0);
       });
+      
+      // فرض الإيقاف بعد 10 ثواني
+      setTimeout(() => {
+        console.error('⚠️ فرض الإيقاف بعد انتهاء المهلة');
+        process.exit(1);
+      }, 10000);
+    };
+
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    
+    // معالجة الأخطاء غير المعالجة
+    process.on('uncaughtException', (error) => {
+      console.error('💥 خطأ غير معالج:', error);
+      // لا نوقف الخادم مباشرة، نسجل الخطأ فقط
+    });
+    
+    process.on('unhandledRejection', (reason, promise) => {
+      console.error('⚠️ Promise مرفوض غير معالج:', reason);
+      // لا نوقف الخادم مباشرة، نسجل الخطأ فقط
     });
 
-    process.on('SIGINT', () => {
-      server.close(() => {
-        process.exit(0);
-      });
-    });
   } catch (error) {
     console.error('💥 فشل في بدء الخادم:', error);
     process.exit(1);

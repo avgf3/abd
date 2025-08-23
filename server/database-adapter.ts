@@ -68,25 +68,54 @@ export async function initializeDatabase(): Promise<boolean> {
       return false;
     }
 
+    // إعدادات محسنة للاتصال بقاعدة البيانات على Render
     const sslRequired =
       /\bsslmode=require\b/.test(databaseUrl) || process.env.NODE_ENV === 'production';
-    const client = postgres(databaseUrl, {
+    
+    // إضافة معاملات SSL إذا لم تكن موجودة في production
+    let connectionString = databaseUrl;
+    if (process.env.NODE_ENV === 'production' && !connectionString.includes('sslmode=')) {
+      connectionString += connectionString.includes('?') ? '&sslmode=require' : '?sslmode=require';
+    }
+    
+    const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
-      max: 10,
-      idle_timeout: 30,
-      connect_timeout: 30,
+      max: 20, // زيادة عدد الاتصالات
+      idle_timeout: 60, // زيادة timeout
+      connect_timeout: 60, // زيادة timeout الاتصال
+      max_lifetime: 60 * 30, // إعادة تدوير الاتصالات كل 30 دقيقة
+      prepare: false, // تعطيل prepared statements لتحسين التوافق
+      onnotice: () => {}, // تجاهل الإشعارات
     });
 
     const drizzleDb = drizzle(client, { schema, logger: false });
 
-    // Simple connectivity check
-    await client`select 1 as ok`;
+    // محاولة الاتصال مع إعادة المحاولة
+    let connected = false;
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (!connected && attempts < maxAttempts) {
+      try {
+        await client`select 1 as ok`;
+        connected = true;
+      } catch (error) {
+        attempts++;
+        console.log(`⏳ محاولة الاتصال بقاعدة البيانات (${attempts}/${maxAttempts})...`);
+        if (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 2000 * attempts));
+        } else {
+          throw error;
+        }
+      }
+    }
 
     dbType = 'postgresql';
     dbAdapter.client = client as any;
     dbAdapter.db = drizzleDb as any;
     db = drizzleDb as any;
 
+    console.log('✅ تم الاتصال بقاعدة البيانات بنجاح');
     return true;
   } catch (error: any) {
     console.error('❌ فشل الاتصال بقاعدة البيانات:', error?.message || error);

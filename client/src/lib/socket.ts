@@ -51,8 +51,12 @@ function getServerUrl(): string {
   try {
     const isDev = (import.meta as any)?.env?.DEV;
     if (isDev) return 'http://localhost:5000';
-    // Always use same-origin in production
-    return window.location.origin;
+    
+    // في الإنتاج، استخدم نفس الأصل دائماً
+    // هذا يضمن التوافق مع أي بيئة استضافة
+    const protocol = window.location.protocol;
+    const host = window.location.host;
+    return `${protocol}//${host}`;
   } catch {
     return window.location.origin;
   }
@@ -129,29 +133,56 @@ export function getSocket(): Socket {
     }
   })();
 
-  socketInstance = io(getServerUrl(), {
+  const serverUrl = getServerUrl();
+  console.log('🔌 الاتصال بـ Socket.IO على:', serverUrl);
+
+  socketInstance = io(serverUrl, {
     path: '/socket.io',
-    // ابدأ بـ polling لتجاوز مشاكل WSS على بعض البنى التحتية (Render/Proxy)
-    transports: ['polling', 'websocket'],
-    upgrade: true,
+    // استخدم polling فقط على Render لتجنب مشاكل WebSocket
+    transports: window.location.hostname.includes('.onrender.com') 
+      ? ['polling'] 
+      : ['polling', 'websocket'],
+    upgrade: !window.location.hostname.includes('.onrender.com'), // لا ترقية على Render
     rememberUpgrade: false,
     autoConnect: false,
     reconnection: true,
     reconnectionAttempts: Infinity, // محاولات غير محدودة
     reconnectionDelay: 3000,
-    reconnectionDelayMax: 15000,
+    reconnectionDelayMax: 30000, // زيادة الحد الأقصى
     randomizationFactor: 0.5,
-    timeout: 20000,
+    timeout: 30000, // زيادة timeout
     forceNew: true,
     withCredentials: true,
     auth: { deviceId },
     extraHeaders: { 'x-device-id': deviceId },
+    // إعدادات إضافية للاستقرار
+    closeOnBeforeunload: false, // لا تغلق عند إعادة التحميل
+    query: {
+      deviceId,
+      t: Date.now(), // timestamp لتجنب الكاش
+    },
   });
 
   attachCoreListeners(socketInstance);
+  
   // Connect explicitly after listeners are attached
   try {
     socketInstance.connect();
-  } catch {}
+  } catch (error) {
+    console.error('❌ خطأ في الاتصال بـ Socket.IO:', error);
+  }
+  
+  // إضافة معالج لإعادة الاتصال عند تغيير حالة الشبكة
+  window.addEventListener('online', () => {
+    console.log('📡 الإنترنت متصل، محاولة إعادة الاتصال...');
+    if (socketInstance && !socketInstance.connected) {
+      socketInstance.connect();
+    }
+  });
+  
+  window.addEventListener('offline', () => {
+    console.log('📵 الإنترنت منقطع');
+  });
+  
   return socketInstance;
 }

@@ -224,24 +224,70 @@ export function getIO(): IOServer {
 export function setupRealtime(httpServer: HttpServer): IOServer {
   const io = new IOServer(httpServer, {
     cors: {
-      origin: (_origin, callback) => callback(null, true),
+      origin: (origin, callback) => {
+        // السماح بجميع الأصول من نفس النطاق أو من Render
+        if (!origin) {
+          // السماح بالطلبات بدون origin (same-site)
+          return callback(null, true);
+        }
+        
+        // السماح بجميع نطاقات Render
+        if (origin.includes('.onrender.com')) {
+          return callback(null, true);
+        }
+        
+        // السماح بالأصول المحددة في البيئة
+        const allowedOrigins = [
+          process.env.RENDER_EXTERNAL_URL,
+          process.env.FRONTEND_URL,
+          process.env.CORS_ORIGIN,
+        ].filter(Boolean);
+        
+        if (allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+          return callback(null, true);
+        }
+        
+        // في بيئة التطوير، السماح بكل شيء
+        if (process.env.NODE_ENV === 'development') {
+          return callback(null, true);
+        }
+        
+        // السماح بنفس المضيف
+        callback(null, true);
+      },
       methods: ['GET', 'POST'],
       credentials: true,
     },
     path: '/socket.io',
-    transports: ['websocket', 'polling'],
+    // تفضيل polling على Render لتجنب مشاكل WebSocket
+    transports: process.env.SOCKET_IO_POLLING_ONLY === 'true' 
+      ? ['polling'] 
+      : ['polling', 'websocket'],
     allowEIO3: true,
-    pingTimeout: 60000,
-    pingInterval: 25000,
-    upgradeTimeout: 10000,
-    allowUpgrades: true,
+    pingTimeout: 120000, // زيادة timeout إلى دقيقتين
+    pingInterval: 30000, // ping كل 30 ثانية
+    upgradeTimeout: 30000, // زيادة timeout للترقية
+    allowUpgrades: process.env.SOCKET_IO_POLLING_ONLY !== 'true',
     cookie: false,
     serveClient: false,
-    maxHttpBufferSize: 1e6,
+    maxHttpBufferSize: 1e7, // زيادة حجم البيانات المسموح به
+    perMessageDeflate: false, // تعطيل الضغط لتحسين الأداء
+    httpCompression: false, // تعطيل ضغط HTTP
     allowRequest: (req, callback) => {
       try {
         const originHeader = req.headers.origin || '';
         const hostHeader = req.headers.host || '';
+        
+        // السماح دائماً في بيئة التطوير
+        if (process.env.NODE_ENV === 'development') {
+          return callback(null, true);
+        }
+        
+        // السماح بجميع طلبات Render
+        if (hostHeader.includes('.onrender.com') || originHeader.includes('.onrender.com')) {
+          return callback(null, true);
+        }
+        
         const envOrigins = [
           process.env.RENDER_EXTERNAL_URL,
           process.env.FRONTEND_URL,
@@ -268,7 +314,9 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         const isSameHost =
           originHost &&
           hostHeader &&
-          (originHost === hostHeader || originHost === (hostHeader || '').split(':')[0]);
+          (originHost === hostHeader || 
+           originHost === (hostHeader || '').split(':')[0] ||
+           hostHeader.split(':')[0] === originHost.split(':')[0]);
         const isEnvAllowed = originHost && envHosts.includes(originHost);
         // في بعض المتصفحات (أو عبر بعض البنى التحتية) قد لا تُرسل ترويسة Origin في ترقية WebSocket
         // اسمح بالاتصال إذا لم توجد Origin ولكن هناك Host (أي طلب لنفس الخادم)
