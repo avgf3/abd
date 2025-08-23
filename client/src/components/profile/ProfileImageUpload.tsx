@@ -1,4 +1,4 @@
-import { Camera, Upload, X } from 'lucide-react';
+import { Camera, Upload, X, Trash2 } from 'lucide-react';
 import { useState, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import type { ChatUser } from '@/types/chat';
 
 interface ProfileImageUploadProps {
   currentUser: ChatUser | null;
-  onImageUpdate?: (imageUrl: string) => void;
+  onImageUpdate?: (imageUrl: string | null) => void;
 }
 
 export default function ProfileImageUpload({
@@ -18,12 +18,13 @@ export default function ProfileImageUpload({
 }: ProfileImageUploadProps) {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // التحقق من صحة الملف باستخدام الإعدادات المركزية
+  // التحقق من صحة الملف
   const validateProfileImage = (file: File): boolean => {
     const validation = validateFile(file, 'profile_image');
 
@@ -52,6 +53,7 @@ export default function ProfileImageUpload({
     if (!validateProfileImage(file)) return;
 
     setUploading(true);
+    setUploadProgress(0);
 
     try {
       // إنشاء معاينة للصورة
@@ -61,13 +63,11 @@ export default function ProfileImageUpload({
       };
       reader.readAsDataURL(file);
 
-      // رفع الصورة للخادم باستخدام API الموحد
       // إنشاء FormData لرفع الصورة
       const formData = new FormData();
       formData.append('profileImage', file);
-      formData.append('userId', currentUser.id.toString());
 
-      // استخدام api.upload مع شريط التقدم والإعدادات المركزية
+      // رفع الصورة للخادم
       const result = await api.upload('/api/upload/profile-image', formData, {
         timeout: getUploadTimeout('image'),
         onProgress: (progress) => {
@@ -83,12 +83,6 @@ export default function ProfileImageUpload({
       if (onImageUpdate && result.imageUrl) {
         onImageUpdate(result.imageUrl);
       }
-      // تحديث نسخة/هاش الصورة محلياً إن عاد من السيرفر
-      if ((result as any).avatarHash && currentUser?.id) {
-        try {
-          await api.put(`/api/users/${currentUser.id}`, { avatarHash: (result as any).avatarHash });
-        } catch {}
-      }
 
       toast({
         title: 'تم رفع الصورة بنجاح',
@@ -96,8 +90,11 @@ export default function ProfileImageUpload({
       });
 
       // إخفاء المعاينة وإعادة تعيين التقدم
-      setPreview(null);
-      setUploadProgress(0);
+      setTimeout(() => {
+        setPreview(null);
+        setUploadProgress(0);
+      }, 1000);
+      
     } catch (error: any) {
       console.error('❌ خطأ في رفع الصورة:', error);
 
@@ -108,6 +105,7 @@ export default function ProfileImageUpload({
       });
 
       setPreview(null);
+      setUploadProgress(0);
     } finally {
       setUploading(false);
 
@@ -118,6 +116,40 @@ export default function ProfileImageUpload({
       if (cameraInputRef.current) {
         cameraInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleDeleteImage = async () => {
+    if (!currentUser || !currentUser.profileImage) return;
+
+    setDeleting(true);
+
+    try {
+      const response = await api.delete('/api/upload/profile-image');
+
+      if (!response.success) {
+        throw new Error(response.error || 'فشل في حذف الصورة');
+      }
+
+      // تحديث الواجهة
+      if (onImageUpdate) {
+        onImageUpdate(null);
+      }
+
+      toast({
+        title: 'تم حذف الصورة',
+        description: 'تم حذف صورة البروفايل بنجاح',
+      });
+
+    } catch (error: any) {
+      console.error('❌ خطأ في حذف الصورة:', error);
+      toast({
+        title: 'خطأ في حذف الصورة',
+        description: error.message || 'حدث خطأ أثناء حذف الصورة',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -137,6 +169,7 @@ export default function ProfileImageUpload({
 
   const removePreview = () => {
     setPreview(null);
+    setUploadProgress(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -144,6 +177,10 @@ export default function ProfileImageUpload({
       cameraInputRef.current.value = '';
     }
   };
+
+  const hasProfileImage = currentUser?.profileImage && 
+                          !currentUser.profileImage.includes('default') &&
+                          !currentUser.profileImage.includes('facebook');
 
   return (
     <div className="space-y-4">
@@ -181,12 +218,12 @@ export default function ProfileImageUpload({
         </div>
       )}
 
-      {/* أزرار الرفع */}
+      {/* أزرار الرفع والحذف */}
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         {/* رفع من الجهاز */}
         <Button
           onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
+          disabled={uploading || deleting}
           className="flex items-center gap-2"
           variant="outline"
         >
@@ -201,13 +238,30 @@ export default function ProfileImageUpload({
         {/* التقاط بالكاميرا */}
         <Button
           onClick={() => cameraInputRef.current?.click()}
-          disabled={uploading}
+          disabled={uploading || deleting}
           className="flex items-center gap-2"
           variant="outline"
         >
           <Camera className="w-4 h-4" />
           التقاط صورة
         </Button>
+
+        {/* حذف الصورة الحالية */}
+        {hasProfileImage && (
+          <Button
+            onClick={handleDeleteImage}
+            disabled={uploading || deleting}
+            className="flex items-center gap-2"
+            variant="destructive"
+          >
+            {deleting ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
+            حذف الصورة
+          </Button>
+        )}
       </div>
 
       {/* Input مخفي للملفات */}

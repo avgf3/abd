@@ -43,6 +43,12 @@ import { notificationService } from './services/notificationService';
 import { issueAuthToken, getAuthTokenFromRequest, verifyAuthToken } from './utils/auth-token';
 import { setupDownloadRoute } from './download-route';
 import { setupCompleteDownload } from './download-complete';
+import { 
+  uploadMiddleware, 
+  handleProfileImageUpload,
+  handleProfileImageDelete,
+  saveProfileImage 
+} from './upload-handler';
 
 // إعداد multer موحد لرفع الصور
 const createMulterConfig = (
@@ -195,86 +201,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupDownloadRoute(app);
   setupCompleteDownload(app);
 
-  // رفع صور البروفايل - محسّن مع حل مشكلة Render
+  // رفع صور البروفايل - نظام محسن ونظيف
   app.post(
     '/api/upload/profile-image',
     protect.auth,
-    upload.single('profileImage'),
+    uploadMiddleware.single('profileImage'),
     async (req, res) => {
       try {
         res.set('Cache-Control', 'no-store');
-        if (!req.file) {
-          return res.status(400).json({
-            error: 'لم يتم رفع أي ملف',
-            details: "تأكد من إرسال الملف في حقل 'profileImage'",
+        
+        const userId = (req as any).user?.id;
+        if (!userId || isNaN(userId)) {
+          return res.status(401).json({ 
+            success: false,
+            error: 'يجب تسجيل الدخول' 
           });
         }
-
-        const userId = (req as any).user?.id as number;
-        if (!userId || isNaN(userId)) {
-          // حذف الملف المرفوع إذا فشل في الحصول على userId
-          try {
-            await fsp.unlink(req.file.path);
-          } catch (unlinkError) {
-            console.error('خطأ في حذف الملف:', unlinkError);
-          }
-          return res.status(401).json({ error: 'يجب تسجيل الدخول' });
+        
+        if (!req.file) {
+          return res.status(400).json({
+            success: false,
+            error: 'لم يتم رفع أي ملف',
+          });
         }
 
         // التحقق من وجود المستخدم
         const user = await storage.getUser(userId);
         if (!user) {
-          try {
-            await fsp.unlink(req.file.path);
-          } catch (unlinkError) {
-            console.error('خطأ في حذف الملف:', unlinkError);
-          }
-          return res.status(404).json({ error: 'المستخدم غير موجود' });
+          return res.status(404).json({ 
+            success: false,
+            error: 'المستخدم غير موجود' 
+          });
         }
 
-        // حفظ الصورة بصيغة webp ثابتة + حساب hash/version
-        const avatarsDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'avatars');
-        await fsp.mkdir(avatarsDir, { recursive: true });
-        const inputBuffer = await fsp.readFile(req.file.path);
-        let webpBuffer = inputBuffer;
-        try {
-          webpBuffer = await (sharp as any)(inputBuffer)
-            .resize(256, 256, { fit: 'cover' })
-            .webp({ quality: 80 })
-            .toBuffer();
-        } catch {}
-        const hash = (await import('crypto'))
-          .createHash('md5')
-          .update(webpBuffer)
-          .digest('hex')
-          .slice(0, 12);
-        const targetPath = path.join(avatarsDir, `${userId}.webp`);
-        await fsp.writeFile(targetPath, webpBuffer);
-
-        // حذف الملف المؤقت
-        try {
-          await fsp.unlink(req.file.path);
-        } catch {}
-
-        // تحديث المستخدم بالصورة الجديدة
-        const imageUrl = `/uploads/avatars/${userId}.webp?v=${hash}`;
+        // حفظ الصورة باستخدام المعالج الجديد
+        const result = await saveProfileImage(userId, req.file.buffer);
+        
+        // تحديث قاعدة البيانات
         const updatedUser = await storage.updateUser(userId, {
-          profileImage: imageUrl,
-          avatarHash: hash,
+          profileImage: result.url,
+          avatarHash: result.hash,
         } as any);
 
         if (!updatedUser) {
-          return res.status(500).json({ error: 'فشل في تحديث بيانات المستخدم' });
+          return res.status(500).json({ 
+            success: false,
+            error: 'فشل في تحديث بيانات المستخدم' 
+          });
         }
 
+        // تحديث الكاش
         try {
           updateConnectedUserCache(updatedUser);
         } catch {}
+        
+        // بث التحديث للمستخدمين
+        const io = getIO();
+        if (io) {
+          io.to(`user-${userId}`).emit('profileUpdated', {
+            userId,
+            profileImage: result.url,
+            avatarHash: result.hash,
+          });
 
-        res.json({ success: true, imageUrl, avatarHash: hash });
+          io.emit('userUpdated', {
+            userId,
+            updates: { profileImage: result.url },
+          });
+        }
+
+        res.json({ 
+          success: true, 
+          imageUrl: result.url, 
+          avatarHash: result.hash,
+          message: 'تم رفع الصورة بنجاح'
+        });
       } catch (error: any) {
         console.error('خطأ في رفع صورة البروفايل:', error);
         res.status(500).json({ error: 'خطأ في الخادم أثناء رفع الصورة' });
+      }
+    }
+  );
+  
+  // حذف صورة البروفايل
+  app.delete(
+    '/api/upload/profile-image',
+    protect.auth,
+    async (req, res) => {
+      try {
+        const userId = (req as any).user?.id;
+        if (!userId) {
+          return res.status(401).json({
+            success: false,
+            error: 'يجب تسجيل الدخول'
+          });
+        }
+        
+        // حذف الصورة من النظام
+        await handleProfileImageDelete(req as any, res);
+        
+        // تحديث قاعدة البيانات
+        await storage.updateUser(userId, {
+          profileImage: null,
+          avatarHash: null,
+        } as any);
+        
+        // بث التحديث
+        const io = getIO();
+        if (io) {
+          io.to(`user-${userId}`).emit('profileUpdated', {
+            userId,
+            profileImage: null,
+            avatarHash: null,
+          });
+
+          io.emit('userUpdated', {
+            userId,
+            updates: { profileImage: null },
+          });
+        }
+      } catch (error) {
+        console.error('خطأ في حذف الصورة:', error);
+        if (!res.headersSent) {
+          res.status(500).json({
+            success: false,
+            error: 'فشل في حذف الصورة'
+          });
+        }
       }
     }
   );
@@ -1009,7 +1062,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         country: country?.trim() || undefined,
         status: status?.trim() || undefined,
         relation: relation?.trim() || undefined,
-        profileImage: '/default_avatar.svg',
+        profileImage: null,
       });
 
       try {
@@ -1045,7 +1098,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username,
         userType: 'guest',
         gender: gender || 'male',
-        profileImage: '/default_avatar.svg',
+        profileImage: null,
       });
 
       try {
