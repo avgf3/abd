@@ -114,13 +114,16 @@ app.use(
       return res.status(404).json({ error: 'File not found' });
     }
 
-    // إذا كانت صورة أفاتار ومعها باراميتر نسخة v، فعّل كاش طويل وimmutable
-    if (
-      req.path.includes('/avatars/') &&
-      typeof req.query.v === 'string' &&
-      req.query.v.length > 0
-    ) {
+    // إذا كانت صورة أفاتار/بانر ومعها باراميتر نسخة v، فعّل كاش طويل وimmutable
+    const isAvatar = req.path.includes('/avatars/');
+    const isBanner = req.path.includes('/banners/');
+    const hasVersionParam = typeof req.query.v === 'string' && (req.query.v as string).length > 0;
+    if ((isAvatar || isBanner) && hasVersionParam) {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    // في حالة عدم وجود باراميتر نسخة لصور الأفاتار/البانر، اجبر إعادة التحقق لمنع الصور العالقة
+    if ((isAvatar || isBanner) && !hasVersionParam) {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     }
 
     next();
@@ -130,19 +133,40 @@ app.use(
     maxAge: '1d', // cache لمدة يوم واحد
     etag: true,
     lastModified: true,
-    setHeaders: (res, path) => {
+    setHeaders: (res, filePath) => {
       // إعداد headers مناسبة للصور
-      if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
         res.setHeader('Content-Type', 'image/jpeg');
-      } else if (path.endsWith('.png')) {
+      } else if (filePath.endsWith('.png')) {
         res.setHeader('Content-Type', 'image/png');
-      } else if (path.endsWith('.gif')) {
+      } else if (filePath.endsWith('.gif')) {
         res.setHeader('Content-Type', 'image/gif');
-      } else if (path.endsWith('.webp')) {
+      } else if (filePath.endsWith('.webp')) {
         res.setHeader('Content-Type', 'image/webp');
-      } else if (path.endsWith('.svg')) {
+      } else if (filePath.endsWith('.svg')) {
         res.setHeader('Content-Type', 'image/svg+xml');
       }
+
+      // سياسة التخزين المؤقت حسب نوع المسار
+      try {
+        const existing = (res.getHeader('Cache-Control') as string | undefined) || '';
+        const normalized = String(filePath).replace(/\\/g, '/');
+
+        // ملفات الرسائل/الجدار/أيقونات الغرف تُرفع بأسماء فريدة => يمكن كاش دائم
+        if (/\/uploads\/(wall|messages|rooms)\//.test(normalized)) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          return;
+        }
+
+        // صور الأفاتار/البانر قد تتغير على نفس المسار;
+        // إن لم تُضبط immutable مسبقاً (وجود v في الـ pre-middleware)، اجبر إعادة التحقق
+        if (/\/uploads\/(avatars|banners)\//.test(normalized)) {
+          if (!/immutable|no-cache/i.test(existing)) {
+            res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+          }
+          return;
+        }
+      } catch {}
     },
   })
 );
@@ -175,6 +199,9 @@ app.use(
 
 // Health check endpoint - simple and fast
 app.get('/health', (req, res) => {
+  try {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  } catch {}
   res.status(200).json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -185,6 +212,9 @@ app.get('/health', (req, res) => {
 // More detailed health endpoint
 app.get('/api/health', async (req, res) => {
   try {
+    try {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    } catch {}
     const { checkDatabaseHealth, getDatabaseStatus } = await import('./database-adapter');
     const dbHealth = await checkDatabaseHealth();
     const dbStatus = getDatabaseStatus();
