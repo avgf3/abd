@@ -14,10 +14,57 @@ import path from 'path';
 import { promises as fsp } from 'fs';
 
 const app = express();
-// Trust reverse proxy to get correct client IPs from x-forwarded-for
 try {
   (app as any).set('trust proxy', true);
 } catch {}
+
+// Hide Express signature
+app.disable('x-powered-by');
+
+// Normalize paths to avoid duplicate slashes and unintended trailing slashes
+app.use((req, res, next) => {
+  try {
+    const originalUrl = req.originalUrl || '/';
+    const [pathPart, queryPart] = originalUrl.split('?', 2);
+
+    // Skip Socket.IO path from normalization to avoid breaking handshakes
+    if (pathPart.startsWith('/socket.io')) {
+      return next();
+    }
+
+    let normalizedPath = pathPart.replace(/\/{2,}/g, '/');
+    if (normalizedPath.length > 1 && /\/+$/g.test(normalizedPath)) {
+      normalizedPath = normalizedPath.replace(/\/+$/g, '');
+    }
+
+    if (normalizedPath !== pathPart) {
+      const normalizedUrl = normalizedPath + (queryPart ? `?${queryPart}` : '');
+      if (req.method === 'GET' || req.method === 'HEAD') {
+        res.redirect(308, normalizedUrl);
+        return;
+      } else {
+        req.url = normalizedUrl;
+      }
+    }
+  } catch {}
+  next();
+});
+
+// Deduplicate query params under /api to mitigate HTTP Parameter Pollution
+app.use((req, _res, next) => {
+  try {
+    if (req.path && req.path.startsWith('/api')) {
+      const query = req.query as any;
+      for (const key in query) {
+        const value = query[key];
+        if (Array.isArray(value)) {
+          query[key] = value[value.length - 1];
+        }
+      }
+    }
+  } catch {}
+  next();
+});
 
 // Setup security first
 setupSecurity(app);
@@ -32,8 +79,12 @@ app.use(
   async (req, res, next) => {
     // التحقق من وجود الملف
     const fullPath = path.join(uploadsPath, req.path);
+    const normalizedFullPath = path.normalize(fullPath);
+    if (!normalizedFullPath.startsWith(uploadsPath)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
     try {
-      await fsp.stat(fullPath);
+      await fsp.stat(normalizedFullPath);
     } catch {
       // الملف غير موجود - سنستخدم الصورة الافتراضية بصمت
 

@@ -44,6 +44,8 @@ import {
 import { databaseService } from './services/databaseService';
 import { notificationService } from './services/notificationService';
 import { issueAuthToken, getAuthTokenFromRequest, verifyAuthToken } from './utils/auth-token';
+import { setupDownloadRoute } from './download-route';
+import { setupCompleteDownload } from './download-complete';
 
 // إعداد multer موحد لرفع الصور
 const createMulterConfig = (
@@ -174,6 +176,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/messages', messageRoutes);
   // مسارات الرسائل الخاصة مفصولة بالكامل
   app.use('/api/private-messages', (await import('./routes/privateMessages')).default);
+
+  // Unified download routes under /api + legacy redirect
+  setupDownloadRoute(app);
+  setupCompleteDownload(app);
 
   // رفع صور البروفايل - محسّن مع حل مشكلة Render
   app.post(
