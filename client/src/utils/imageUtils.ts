@@ -37,8 +37,8 @@ export function getImageSrc(
     return imageSrc;
   }
 
-  // إذا كانت اسم ملف فقط، أضف المسار
-  return `/uploads/profiles/${imageSrc}`;
+  // إذا كانت اسم ملف فقط، لا نخمّن المسار. نعيد كما هو ليتحمّل من DB فقط.
+  return imageSrc;
 }
 
 /**
