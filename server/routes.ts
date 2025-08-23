@@ -255,16 +255,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch {}
         emitUserUpdatedToUser(userId, updatedUser);
 
-        // بث event مخصص لتحديث الصور
+        // بث event مخصص لتحديث الصور (مقتصر على غرف المستخدم)
         await emitToUserRooms(userId, {
-          type: 'user_avatar_updated',
+          type: 'userAvatarUpdated',
           avatarHash: hash,
           avatarVersion: nextVersion,
-        });
-
-        await emitToUserRooms(userId, {
-          type: 'userUpdated',
-          user: buildUserBroadcastPayload(updatedUser),
         });
 
         res.json({

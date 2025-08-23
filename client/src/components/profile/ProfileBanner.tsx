@@ -66,9 +66,9 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
         throw new Error(result.error || 'فشل في رفع صورة البانر');
       }
 
-      // تحديث الصورة مباشرة في الواجهة مع timestamp لتجنب الكاش
+      // تحديث الصورة مباشرة في الواجهة وفق الرابط القادم من الخادم
       if (onBannerUpdate && result.bannerUrl) {
-        onBannerUpdate(result.bannerUrl + '?t=' + Date.now());
+        onBannerUpdate(result.bannerUrl);
       }
       setPreview(null);
       toast({
@@ -118,7 +118,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
           <img src={preview} alt="معاينة صورة البانر" className="w-full h-full object-cover" />
         ) : currentUser?.profileBanner && currentUser.profileBanner !== '' ? (
           <img
-            src={getBannerImageSrc(currentUser.profileBanner) + '?t=' + Date.now()}
+            src={getBannerImageSrc(currentUser.profileBanner)}
             alt="صورة البانر"
             className="w-full h-full object-cover"
           />
