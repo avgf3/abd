@@ -77,6 +77,7 @@ export default function OwnerAdminPanel({
   const [moderationLoading, setModerationLoading] = useState(false);
   const [selectedTab, setSelectedTab] = useState('staff');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [demotingId, setDemotingId] = useState<number | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -151,8 +152,13 @@ export default function OwnerAdminPanel({
   const handleDemoteUser = async (targetUser: StaffMember) => {
     if (!currentUser) return;
 
+    // منع التفاعل المتكرر وتحديث تفاؤلي للقائمة
+    setDemotingId(targetUser.id);
+    const previous = staffMembers;
+    setStaffMembers((prev) => prev.filter((s) => s.id !== targetUser.id));
+
     try {
-      const response = await apiRequest('/api/moderation/demote', {
+      const response = await apiRequest<{ message: string; user?: any }>('/api/moderation/demote', {
         method: 'POST',
         body: {
           moderatorId: currentUser.id,
@@ -160,19 +166,33 @@ export default function OwnerAdminPanel({
         },
       });
 
+      // إذا عاد الخادم بالمستخدم ولم يتم تنزيله لأي سبب، أصلح العرض وفقاً له
+      if (response && (response as any).user) {
+        const updated = (response as any).user as { id: number; userType: string };
+        if (updated.userType === 'admin' || updated.userType === 'moderator') {
+          // لا يزال إدارياً، أعده للقائمة
+          setStaffMembers((prev) => {
+            const exists = prev.some((s) => s.id === updated.id);
+            return exists ? prev : [...prev, { ...targetUser, userType: updated.userType as any }];
+          });
+        }
+      }
+
       toast({
         title: 'تم إلغاء الإشراف',
         description: `تم إلغاء إشراف ${targetUser.username}`,
         variant: 'default',
       });
-
-      fetchStaffMembers();
-    } catch (error) {
+    } catch (error: any) {
+      // تراجع عن التحديث التفاؤلي عند الفشل
+      setStaffMembers(previous);
       toast({
-        title: 'خطأ',
-        description: 'فشل في إلغاء الإشراف',
+        title: 'فشل العملية',
+        description: error?.message || 'فشل في إلغاء الإشراف',
         variant: 'destructive',
       });
+    } finally {
+      setDemotingId(null);
     }
   };
 
@@ -532,16 +552,19 @@ export default function OwnerAdminPanel({
                             </div>
                           </div>
 
-                          {staff.id !== currentUser.id && (
+                          {staff.id !== currentUser.id && staff.userType !== 'owner' && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 transition-colors"
+                                  disabled={demotingId === staff.id}
+                                  className={`text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 transition-colors ${
+                                    demotingId === staff.id ? 'opacity-60 cursor-not-allowed' : ''
+                                  }`}
                                 >
                                   <UserX className="w-4 h-4 mr-2" />
-                                  إزالة الإشراف
+                                  {demotingId === staff.id ? 'جارٍ الإزالة...' : 'إزالة الإشراف'}
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent dir="rtl" className="rounded-2xl">
@@ -562,9 +585,10 @@ export default function OwnerAdminPanel({
                                   </AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => handleDemoteUser(staff)}
+                                    disabled={demotingId === staff.id}
                                     className="bg-red-600 hover:bg-red-700 rounded-lg"
                                   >
-                                    تأكيد الإزالة
+                                    {demotingId === staff.id ? 'جارٍ التنفيذ...' : 'تأكيد الإزالة'}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
