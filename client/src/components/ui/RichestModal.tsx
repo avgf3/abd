@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiRequest } from '@/lib/queryClient';
 import { getSocket } from '@/lib/socket';
 import type { ChatUser } from '@/types/chat';
+import { getImageSrc } from '@/utils/imageUtils';
 import { getFinalUsernameColor, getUserListItemClasses, getUserListItemStyles } from '@/utils/themeUtils';
 import ProfileImage from '@/components/chat/ProfileImage';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
@@ -17,12 +18,18 @@ interface RichestModalProps {
 
 export default function RichestModal({ isOpen, onClose, currentUser, onUserClick }: RichestModalProps) {
   const [vipUsers, setVipUsers] = useState<ChatUser[]>([]);
+  const [candidates, setCandidates] = useState<ChatUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
 
   const isModerator = useMemo(
     () => !!currentUser && ['moderator', 'admin', 'owner'].includes(currentUser.userType),
+    [currentUser]
+  );
+
+  const canManage = useMemo(
+    () => !!currentUser && ['owner', 'admin'].includes(currentUser.userType),
     [currentUser]
   );
 
@@ -99,6 +106,12 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
       try {
         const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip`);
         if (!ignore) setVipUsers(normalizeUsers(res.users || []));
+        if (canManage) {
+          try {
+            const cand = await apiRequest<{ users: ChatUser[] }>(`/api/vip/candidates`);
+            if (!ignore) setCandidates(normalizeUsers(cand.users || []));
+          } catch {}
+        }
       } catch (e: any) {
         if (!ignore) setError(e?.message || 'فشل في جلب قائمة VIP');
       } finally {
@@ -127,7 +140,28 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
         socketRef.current = null;
       }
     };
-  }, [isOpen, normalizeUsers]);
+  }, [isOpen, normalizeUsers, canManage]);
+
+  const handleAddVip = async (userId: number) => {
+    try {
+      setError(null);
+      await apiRequest(`/api/vip`, { method: 'POST', body: { targetUserId: userId } });
+      const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip`);
+      setVipUsers(normalizeUsers(res.users || []));
+    } catch (e: any) {
+      setError(e?.message || 'فشل إضافة VIP. تأكد من اتصال قاعدة البيانات.');
+    }
+  };
+
+  const handleRemoveVip = async (userId: number) => {
+    try {
+      setError(null);
+      await apiRequest(`/api/vip/${userId}`, { method: 'DELETE' });
+      setVipUsers((prev) => prev.filter((u) => u.id !== userId));
+    } catch (e: any) {
+      setError(e?.message || 'فشل حذف VIP. تأكد من اتصال قاعدة البيانات.');
+    }
+  };
 
   // تمت إزالة إدارة المرشحين والإضافة/الحذف ليتطابق مع حاوية قائمة المتصلين
 
@@ -165,7 +199,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
           {error && <div className="text-center text-destructive py-2 text-sm">{error}</div>}
 
           <ul className="space-y-1 mt-3">
-            {topTen.map((u) => (
+            {topTen.map((u, idx) => (
               <li key={u.id} className="relative -mx-4">
                 <SimpleUserMenu targetUser={u} currentUser={currentUser || null} showModerationActions={isModerator}>
                   <div
@@ -178,6 +212,17 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <span
+                            className="inline-flex items-center justify-center text-[11px] min-w-[22px] h-5 px-2 rounded bg-primary/15 text-primary border border-border"
+                            title={`الترتيب ${idx + 1}`}
+                          >
+                            {idx + 1}
+                          </span>
+                          {idx < 3 && (
+                            <span className="text-base" aria-label="rank-medal">
+                              {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                            </span>
+                          )}
+                          <span
                             className="text-base font-medium transition-colors duration-300"
                             style={{ color: getFinalUsernameColor(u) }}
                             title={u.username}
@@ -189,6 +234,17 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                         <div className="flex items-center gap-1">
                           <UserRoleBadge user={u} size={20} />
                           {renderCountryFlag(u)}
+                          {canManage && (
+                            <button
+                              className="text-[10px] px-2 py-0.5 rounded bg-destructive/10 hover:bg-destructive/20 text-destructive ml-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveVip(u.id);
+                              }}
+                            >
+                              إزالة
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -197,6 +253,31 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
               </li>
             ))}
           </ul>
+
+          {/* قسم المرشحين للأدمن */}
+          {canManage && candidates.length > 0 && (
+            <div className="border-t border-border p-3 mt-2">
+              <div className="text-sm text-muted-foreground mb-2">مرشحون للإضافة:</div>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {candidates.map((c) => (
+                  <div key={c.id} className="flex items-center gap-2">
+                    <img
+                      src={getImageSrc(c.profileImage || '/default_avatar.svg')}
+                      alt={c.username}
+                      className="w-6 h-6 rounded-full"
+                    />
+                    <div className="flex-1 text-sm">{c.username}</div>
+                    <button
+                      className="text-xs px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary"
+                      onClick={() => handleAddVip(c.id)}
+                    >
+                      إضافة
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
