@@ -147,8 +147,8 @@ async function runHealthCheck() {
     // فحص المستخدمين
     { name: 'Users API', check: () => checkEndpoint('/api/users') },
     
-    // فحص الرسائل
-    { name: 'Messages API', check: () => checkEndpoint('/api/messages') },
+    // فحص الرسائل (المسار الصحيح للرسائل العامة)
+    { name: 'Messages API', check: () => checkEndpoint('/api/messages/public') },
     
     // فحص الإعدادات
     { name: 'Settings API', check: () => checkEndpoint('/api/settings/site-theme') },
@@ -159,8 +159,8 @@ async function runHealthCheck() {
     // فحص الملفات الثابتة
     { name: 'Static Files', check: () => checkEndpoint('/') },
     
-    // فحص رفع الملفات (OPTIONS)
-    { name: 'Upload CORS', check: () => checkEndpoint('/api/upload/profile-image', 'OPTIONS', 204) },
+    // فحص رفع الملفات (OPTIONS) مع ترويسات CORS قياسية
+    { name: 'Upload CORS', check: () => checkEndpoint('/api/upload/profile-image?cors=1', 'OPTIONS', 204) },
   ];
 
   let successCount = 0;

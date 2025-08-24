@@ -1,5 +1,1 @@
-[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 version env with Radar: https://dotenvx.com/radar
-✅ تم الاتصال بقاعدة البيانات بنجاح
-✅ تم تهيئة النظام بنجاح
-🚀 الخادم يعمل على http://0.0.0.0:5000 في وضع production
-✅ قاعدة البيانات متصلة
+[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
