@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { WallPost, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
+import UsernameDisplay from '@/components/common/UsernameDisplay';
 
 interface WallPostListProps {
   posts: WallPost[];
@@ -74,12 +75,16 @@ export default function WallPostList({
                   </div>
                 </div>
                 <div>
-                  <div
+                  <UsernameDisplay
+                    user={{
+                      id: post.userId as any,
+                      username: post.username,
+                      userType: (post.userRole as any) || 'member',
+                      usernameColor: (post.usernameColor as any) || '#000000',
+                      profileImage: (post.userProfileImage as any) || '',
+                    }}
                     className="font-bold text-base"
-                    style={{ color: post.usernameColor || 'inherit' }}
-                  >
-                    {post.username}
-                  </div>
+                  />
                   <div className="text-xs text-muted-foreground flex items-center gap-1">
                     <span>{formatTimeAgo(post.timestamp)}</span>
                     {post.userRole && post.userRole !== 'member' && (

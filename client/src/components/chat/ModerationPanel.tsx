@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import UserRoleBadge from './UserRoleBadge';
+import UsernameDisplay from '@/components/common/UsernameDisplay';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -354,9 +355,7 @@ export default function ModerationPanel({
                         />
                         <div>
                           <div className="font-semibold flex items-center gap-2">
-                            <span style={{ color: user.usernameColor || '#000000' }}>
-                              {user.username}
-                            </span>
+                            <UsernameDisplay user={user} className="" />
                             <UserRoleBadge user={user} />
                           </div>
                           <div className="text-sm text-gray-600">{user.status || 'بدون حالة'}</div>
@@ -415,9 +414,7 @@ export default function ModerationPanel({
                           />
                           <div>
                             <div className="font-semibold flex items-center gap-2">
-                              <span style={{ color: user.usernameColor || '#dc2626' }}>
-                                {user.username}
-                              </span>
+                              <UsernameDisplay user={user} className="" />
                               <Badge variant="destructive" className="text-xs">
                                 محظور
                               </Badge>

@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import UsernameDisplay from '@/components/common/UsernameDisplay';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
@@ -487,9 +488,7 @@ export default function OwnerAdminPanel({
 
                             <div>
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-bold text-gray-800 text-lg">
-                                  {staff.username}
-                                </span>
+                                <UsernameDisplay user={staff} className="font-bold text-gray-800 text-lg" />
                                 {getRoleIcon(staff.userType)}
                               </div>
 

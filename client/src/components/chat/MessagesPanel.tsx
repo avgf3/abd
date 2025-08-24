@@ -8,6 +8,7 @@ import ProfileImage from '@/components/chat/ProfileImage';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import UsernameDisplay from '@/components/common/UsernameDisplay';
 import { Input } from '@/components/ui/input';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
@@ -417,7 +418,7 @@ export default function MessagesPanel({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-3">
                             <h3 className="font-medium text-gray-900 text-sm truncate">
-                              {user.username}
+                              <UsernameDisplay user={user} className="font-medium text-gray-900 text-sm truncate" />
                             </h3>
                             <span className="text-xs text-gray-500 whitespace-nowrap">
                               {formatTime(lastMessage.timestamp)}

@@ -16,6 +16,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import UsernameDisplay from '@/components/common/UsernameDisplay';
 
 interface PromoteUserPanelProps {
   isVisible: boolean;
@@ -240,7 +241,7 @@ export default function PromoteUserPanel({
                   {eligibleUsers.map((user) => (
                     <SelectItem key={user.id} value={user.id.toString()}>
                       <div className="flex items-center gap-2">
-                        <span>{user.username}</span>
+                        <UsernameDisplay user={user} className="" />
                         {getRoleBadge(user.userType)}
                       </div>
                     </SelectItem>
@@ -296,10 +297,8 @@ export default function PromoteUserPanel({
                       key={user.id}
                       className="flex items-center justify-between p-2 bg-gray-800/50 rounded"
                     >
-                      <div className="flex items-center gap-2">
-                        <span style={{ color: user.usernameColor || '#E5E7EB' }}>
-                          {user.username}
-                        </span>
+                                            <div className="flex items-center gap-2">
+                        <UsernameDisplay user={user} className="" />
                         {getRoleBadge(user.userType)}
                       </div>
                       <div className="text-sm text-gray-400">
@@ -330,7 +329,7 @@ export default function PromoteUserPanel({
                       .map((user) => (
                         <SelectItem key={user.id} value={user.id.toString()}>
                           <div className="flex items-center gap-2">
-                            <span>{user.username}</span>
+                            <UsernameDisplay user={user} className="" />
                             {getRoleBadge(user.userType)}
                           </div>
                         </SelectItem>
