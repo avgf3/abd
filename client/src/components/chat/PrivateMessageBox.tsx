@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
+import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Input } from '@/components/ui/input';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import {
@@ -243,37 +244,51 @@ export default function PrivateMessageBox({
           transition={{ duration: 0.4, ease: "easeOut" }}
           className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-white text-gray-900 border border-gray-200 shadow-2xl rounded-xl overflow-hidden cursor-grab active:cursor-grabbing soft-entrance container-sway"
         >
-          <DialogHeader className="border-b border-accent p-3 bg-gradient-to-r from-blue-50 to-green-50">
+          <DialogHeader className="border-b border-gray-200 p-3 bg-white">
             <div className="flex items-center gap-3">
               <img
                 src={user.profileImage || '/default_avatar.svg'}
                 alt="avatar"
-                className="w-10 h-10 rounded-full border-2 border-primary shadow-sm"
+                className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-200 border border-blue-400"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/default_avatar.svg';
                 }}
               />
               <div className="flex-1 min-w-0">
-                <span
-                  className="text-base font-medium transition-colors duration-300 truncate block"
-                  style={{ color: getFinalUsernameColor(user) }}
-                >
-                  {user.username}
-                </span>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="text-base font-medium transition-all duration-300 truncate"
+                      style={{
+                        color: getFinalUsernameColor(user),
+                        textShadow: getFinalUsernameColor(user)
+                          ? `0 0 10px ${getFinalUsernameColor(user)}40`
+                          : 'none',
+                        filter: getFinalUsernameColor(user)
+                          ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
+                          : 'none',
+                      }}
+                      title={user.username}
+                    >
+                      {user.username}
+                    </span>
+                    <UserRoleBadge user={user} size={20} />
+                  </div>
+                  <Button
+                    onClick={onClose}
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto px-2 py-1 hover:bg-red-100 text-red-600"
+                  >
+                    ✖️
+                  </Button>
+                </div>
                 <span className="text-xs text-gray-500">رسائل خاصة</span>
               </div>
-              <Button
-                onClick={onClose}
-                variant="ghost"
-                size="sm"
-                className="ml-auto px-2 py-1 hover:bg-red-100 text-red-600"
-              >
-                ✖️
-              </Button>
             </div>
           </DialogHeader>
 
-          <div className="relative h-[55vh] w-full p-4 pb-4 bg-gradient-to-b from-gray-50 to-white">
+          <div className="relative h-[55vh] w-full p-4 pb-4 bg-white">
             {sortedMessages.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-6xl mb-4">

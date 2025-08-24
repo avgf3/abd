@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import type { PrivateConversation } from '../../../../shared/types';
 
 import ProfileImage from '@/components/chat/ProfileImage';
+import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -385,11 +386,11 @@ export default function MessagesPanel({
                   <p className="text-sm mt-2 opacity-70">ابدأ محادثة عبر قائمة المستخدمين</p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-0">
                   {conversations.map(({ user, lastMessage, unreadCount }) => (
                     <div key={user.id} className="relative -mx-4">
                       <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
+                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-white hover:bg-gray-50'}`}
                         style={getUserListItemStyles(user)}
                         onClick={() => {
                           try {
@@ -404,26 +405,31 @@ export default function MessagesPanel({
                           }
                         }}
                       >
-                        <div className="relative">
-                          <ProfileImage user={user} size="small" />
-                          <span
-                            className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-white ${
-                              user.isOnline ? 'bg-green-500' : 'bg-gray-400'
-                            }`}
-                            aria-hidden
-                          />
-                        </div>
+                        <ProfileImage user={user} size="small" hideRoleBadgeOverlay={true} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
-                            <span
-                              className="text-base font-medium transition-colors duration-300 truncate"
-                              style={{ color: getFinalUsernameColor(user) }}
-                            >
-                              {user.username}
-                            </span>
-                            <span className="text-xs text-foreground/60 whitespace-nowrap">
-                              {formatTime(lastMessage.timestamp)}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="text-base font-medium transition-all duration-300 truncate"
+                                style={{
+                                  color: getFinalUsernameColor(user),
+                                  textShadow: getFinalUsernameColor(user)
+                                    ? `0 0 10px ${getFinalUsernameColor(user)}40`
+                                    : 'none',
+                                  filter: getFinalUsernameColor(user)
+                                    ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
+                                    : 'none',
+                                }}
+                              >
+                                {user.username}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <UserRoleBadge user={user} size={20} />
+                              <span className="text-xs text-foreground/60 whitespace-nowrap">
+                                {formatTime(lastMessage.timestamp)}
+                              </span>
+                            </div>
                           </div>
                           <div className="flex items-center gap-1 mt-0.5 text-xs text-foreground/70 truncate">
                             {lastMessage.isImage && <span className="text-xs">🖼️</span>}
