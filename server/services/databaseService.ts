@@ -506,11 +506,17 @@ export class DatabaseService {
             userType: schema.users.userType,
             role: schema.users.role,
             profileImage: schema.users.profileImage,
+            profileBackgroundColor: schema.users.profileBackgroundColor,
+            profileEffect: schema.users.profileEffect,
+            usernameColor: schema.users.usernameColor,
             isOnline: schema.users.isOnline,
             lastSeen: schema.users.lastSeen,
             points: schema.users.points,
             level: schema.users.level,
             totalPoints: schema.users.totalPoints,
+            gender: schema.users.gender,
+            country: schema.users.country,
+            isMuted: schema.users.isMuted,
           })
           .from(schema.users)
           .innerJoin(schema.vipUsers, eq(schema.vipUsers.userId, schema.users.id))
@@ -572,7 +578,24 @@ export class DatabaseService {
     try {
       if (this.type === 'postgresql') {
         return await (this.db as any)
-          .select()
+          .select({
+            id: schema.users.id,
+            username: schema.users.username,
+            userType: schema.users.userType,
+            role: schema.users.role,
+            profileImage: schema.users.profileImage,
+            profileBackgroundColor: schema.users.profileBackgroundColor,
+            profileEffect: schema.users.profileEffect,
+            usernameColor: schema.users.usernameColor,
+            isOnline: schema.users.isOnline,
+            lastSeen: schema.users.lastSeen,
+            points: schema.users.points,
+            level: schema.users.level,
+            totalPoints: schema.users.totalPoints,
+            gender: schema.users.gender,
+            country: schema.users.country,
+            isMuted: schema.users.isMuted,
+          })
           .from(schema.users)
           .where(
             or(eq(schema.users.userType, 'owner' as any), eq(schema.users.userType, 'admin' as any))

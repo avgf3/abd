@@ -3434,6 +3434,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       level: sanitized.level,
       totalPoints: sanitized.totalPoints,
       levelProgress: sanitized.levelProgress,
+      gender: sanitized.gender,
+      country: sanitized.country,
+      isMuted: sanitized.isMuted,
     };
     if (
       sanitized.profileImage &&
