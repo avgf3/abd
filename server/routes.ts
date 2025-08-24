@@ -807,8 +807,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             message: `ℹ️ تم تنزيل ${target.username} إلى عضو بواسطة ${moderator.username}`,
             timestamp: new Date().toISOString(),
           });
+
+          // بث تحديث ملف المستخدم للجميع لضمان تزامن الواجهة فوراً
+          try {
+            emitUserUpdatedToAll(target);
+            emitUserUpdatedToUser(target.id, target);
+          } catch {}
         }
-        res.json({ message: 'تم إلغاء الإشراف بنجاح' });
+        res.json({ message: 'تم إلغاء الإشراف بنجاح', user: target });
       } else {
         res.status(400).json({ error: 'فشل في إلغاء الإشراف' });
       }
