@@ -64,6 +64,7 @@ interface OwnerAdminPanelProps {
   onClose: () => void;
   currentUser: ChatUser | null;
   onlineUsers: ChatUser[];
+  onUserClick?: (e: React.MouseEvent, user: ChatUser) => void;
 }
 
 export default function OwnerAdminPanel({
@@ -71,6 +72,7 @@ export default function OwnerAdminPanel({
   onClose,
   currentUser,
   onlineUsers,
+  onUserClick,
 }: OwnerAdminPanelProps) {
   const [moderationLog, setModerationLog] = useState<ModerationAction[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
@@ -488,7 +490,7 @@ export default function OwnerAdminPanel({
 
                             <div>
                               <div className="flex items-center gap-2 mb-1">
-                                <UsernameDisplay user={staff} className="font-bold text-gray-800 text-lg" />
+                                <UsernameDisplay user={staff} className="font-bold text-gray-800 text-lg" onUserClick={onUserClick} />
                                 {getRoleIcon(staff.userType)}
                               </div>
 

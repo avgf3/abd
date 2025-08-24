@@ -23,6 +23,7 @@ interface PromoteUserPanelProps {
   onClose: () => void;
   currentUser: ChatUser;
   onlineUsers: ChatUser[];
+  onUserClick?: (e: React.MouseEvent, user: ChatUser) => void;
 }
 
 export default function PromoteUserPanel({
@@ -30,6 +31,7 @@ export default function PromoteUserPanel({
   onClose,
   currentUser,
   onlineUsers,
+  onUserClick,
 }: PromoteUserPanelProps) {
   const [selectedUser, setSelectedUser] = useState<string>('');
   const [selectedRole, setSelectedRole] = useState<string>('');
@@ -241,7 +243,7 @@ export default function PromoteUserPanel({
                   {eligibleUsers.map((user) => (
                     <SelectItem key={user.id} value={user.id.toString()}>
                       <div className="flex items-center gap-2">
-                        <UsernameDisplay user={user} className="" />
+                        <UsernameDisplay user={user} className="" onUserClick={onUserClick} />
                         {getRoleBadge(user.userType)}
                       </div>
                     </SelectItem>
@@ -298,7 +300,7 @@ export default function PromoteUserPanel({
                       className="flex items-center justify-between p-2 bg-gray-800/50 rounded"
                     >
                                             <div className="flex items-center gap-2">
-                        <UsernameDisplay user={user} className="" />
+                        <UsernameDisplay user={user} className="" onUserClick={onUserClick} />
                         {getRoleBadge(user.userType)}
                       </div>
                       <div className="text-sm text-gray-400">
@@ -329,7 +331,7 @@ export default function PromoteUserPanel({
                       .map((user) => (
                         <SelectItem key={user.id} value={user.id.toString()}>
                           <div className="flex items-center gap-2">
-                            <UsernameDisplay user={user} className="" />
+                            <UsernameDisplay user={user} className="" onUserClick={onUserClick} />
                             {getRoleBadge(user.userType)}
                           </div>
                         </SelectItem>

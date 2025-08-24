@@ -918,6 +918,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               setSelectedPrivateUser(user);
               setShowPmBox(true);
             }}
+            onUserClick={handleUserClick}
           />
         </Suspense>
       )}
@@ -1030,6 +1031,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClose={() => setShowModerationPanel(false)}
             currentUser={chat.currentUser}
             onlineUsers={chat.onlineUsers}
+            onUserClick={handleUserClick}
           />
         </Suspense>
       )}
@@ -1042,6 +1044,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClose={() => setShowOwnerPanel(false)}
             currentUser={chat.currentUser}
             onlineUsers={chat.onlineUsers}
+            onUserClick={handleUserClick}
           />
         </Suspense>
       )}
@@ -1073,6 +1076,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onClose={() => setShowPromotePanel(false)}
             currentUser={chat.currentUser}
             onlineUsers={chat.onlineUsers}
+            onUserClick={handleUserClick}
           />
         </Suspense>
       )}
@@ -1153,6 +1157,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           isOpen={showRichest}
           onClose={() => setShowRichest(false)}
           currentUser={chat.currentUser}
+          onUserClick={handleUserClick}
         />
       </Suspense>
 

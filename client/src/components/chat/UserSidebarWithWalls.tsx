@@ -779,7 +779,7 @@ export default function UnifiedSidebar({
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <UsernameDisplay user={{ id: post.userId as any, username: post.username, userType: (post.userRole as any) || 'member', usernameColor: (post.usernameColor as any) || '#000000', profileImage: (post.userProfileImage as any) || '' }} className="font-medium text-sm" />
+                              <UsernameDisplay user={{ id: post.userId as any, username: post.username, userType: (post.userRole as any) || 'member', usernameColor: (post.usernameColor as any) || '#000000', profileImage: (post.userProfileImage as any) || '' }} className="font-medium text-sm" onClick={onUserClick} />
                               {/* 🏅 شارة الرتبة الموحدة */}
                               <UserRoleBadge
                                 user={{ userType: post.userRole } as ChatUser}

@@ -23,6 +23,7 @@ interface MessagesPanelProps {
   onlineUsers: ChatUser[]; // kept for avatar fallback if needed
   onStartPrivateChat: (user: ChatUser) => void;
   isConnected?: boolean;
+  onUserClick?: (e: React.MouseEvent, user: ChatUser) => void;
 }
 
 export default function MessagesPanel({
@@ -33,6 +34,7 @@ export default function MessagesPanel({
   onlineUsers,
   onStartPrivateChat,
   isConnected = false,
+  onUserClick,
 }: MessagesPanelProps) {
   const [search, setSearch] = useState('');
   // جلب قائمة المحادثات الدائمة من الخادم
@@ -418,7 +420,7 @@ export default function MessagesPanel({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-3">
                             <h3 className="font-medium text-gray-900 text-sm truncate">
-                              <UsernameDisplay user={user} className="font-medium text-gray-900 text-sm truncate" />
+                              <UsernameDisplay user={user} className="font-medium text-gray-900 text-sm truncate" onClick={onUserClick} />
                             </h3>
                             <span className="text-xs text-gray-500 whitespace-nowrap">
                               {formatTime(lastMessage.timestamp)}

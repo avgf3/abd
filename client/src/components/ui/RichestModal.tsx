@@ -10,9 +10,10 @@ interface RichestModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser?: ChatUser | null;
+  onUserClick?: (e: React.MouseEvent, user: ChatUser) => void;
 }
 
-export default function RichestModal({ isOpen, onClose, currentUser }: RichestModalProps) {
+export default function RichestModal({ isOpen, onClose, currentUser, onUserClick }: RichestModalProps) {
   const [vipUsers, setVipUsers] = useState<ChatUser[]>([]);
   const [candidates, setCandidates] = useState<ChatUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -136,7 +137,7 @@ export default function RichestModal({ isOpen, onClose, currentUser }: RichestMo
 
                 {/* اسم المستخدم */}
                 <div className="flex-1">
-                  <UsernameDisplay user={u} className="font-medium" />
+                  <UsernameDisplay user={u} className="font-medium" onClick={onUserClick} />
                 </div>
 
                 {/* أيقونة التاج للأول والثاني والثالث */}
@@ -169,7 +170,7 @@ export default function RichestModal({ isOpen, onClose, currentUser }: RichestMo
                       alt={c.username}
                       className="w-6 h-6 rounded-full"
                     />
-                    <UsernameDisplay user={c} className="flex-1 text-sm" />
+                    <UsernameDisplay user={c} className="flex-1 text-sm" onClick={onUserClick} />
                     <button
                       className="text-xs px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary"
                       onClick={() => handleAddVip(c.id)}

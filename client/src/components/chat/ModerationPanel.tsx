@@ -30,6 +30,7 @@ interface ModerationPanelProps {
   onClose: () => void;
   currentUser: ChatUser | null;
   onlineUsers: ChatUser[];
+  onUserClick?: (e: React.MouseEvent, user: ChatUser) => void;
 }
 
 export default function ModerationPanel({
@@ -37,6 +38,7 @@ export default function ModerationPanel({
   onClose,
   currentUser,
   onlineUsers,
+  onUserClick,
 }: ModerationPanelProps) {
   const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null);
   const [action, setAction] = useState<string>('');
@@ -355,7 +357,7 @@ export default function ModerationPanel({
                         />
                         <div>
                           <div className="font-semibold flex items-center gap-2">
-                            <UsernameDisplay user={user} className="" />
+                            <UsernameDisplay user={user} className="" onUserClick={onUserClick} />
                             <UserRoleBadge user={user} />
                           </div>
                           <div className="text-sm text-gray-600">{user.status || 'بدون حالة'}</div>
@@ -414,7 +416,7 @@ export default function ModerationPanel({
                           />
                           <div>
                             <div className="font-semibold flex items-center gap-2">
-                              <UsernameDisplay user={user} className="" />
+                              <UsernameDisplay user={user} className="" onUserClick={onUserClick} />
                               <Badge variant="destructive" className="text-xs">
                                 محظور
                               </Badge>
