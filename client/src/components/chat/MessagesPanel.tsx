@@ -13,6 +13,7 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { formatMessagePreview, getPmLastOpened, setPmLastOpened } from '@/utils/messageUtils';
 import { formatTime } from '@/utils/timeUtils';
+import { getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
 
 interface MessagesPanelProps {
   isOpen: boolean;
@@ -386,25 +387,23 @@ export default function MessagesPanel({
               ) : (
                 <div className="space-y-2">
                   {conversations.map(({ user, lastMessage, unreadCount }) => (
-                    <button
-                      key={user.id}
-                      className={`w-full text-right cursor-pointer hover:bg-accent/20 transition-all duration-200 p-3 rounded-lg border bg-background/20 ${
-                        unreadCount > 0 ? 'border-primary' : 'border-accent/30'
-                      }`}
-                      onClick={() => {
-                        try {
-                          onClose();
-                          if (currentUser?.id) {
-                            setPmLastOpened(currentUser.id, user.id);
+                    <div key={user.id} className="relative -mx-4">
+                      <div
+                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
+                        style={getUserListItemStyles(user)}
+                        onClick={() => {
+                          try {
+                            onClose();
+                            if (currentUser?.id) {
+                              setPmLastOpened(currentUser.id, user.id);
+                            }
+                            setTimeout(() => onStartPrivateChat(user), 0);
+                          } catch (error) {
+                            console.error('خطأ في فتح المحادثة:', error);
+                            toast.error('فشل فتح المحادثة');
                           }
-                          setTimeout(() => onStartPrivateChat(user), 0);
-                        } catch (error) {
-                          console.error('خطأ في فتح المحادثة:', error);
-                          toast.error('فشل فتح المحادثة');
-                        }
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
+                        }}
+                      >
                         <div className="relative">
                           <ProfileImage user={user} size="small" />
                           <span
@@ -415,19 +414,20 @@ export default function MessagesPanel({
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-3">
-                            <h3 className="font-medium text-gray-900 text-sm truncate">
+                          <div className="flex items-center justify-between gap-2">
+                            <span
+                              className="text-base font-medium transition-colors duration-300 truncate"
+                              style={{ color: getFinalUsernameColor(user) }}
+                            >
                               {user.username}
-                            </h3>
-                            <span className="text-xs text-gray-500 whitespace-nowrap">
+                            </span>
+                            <span className="text-xs text-foreground/60 whitespace-nowrap">
                               {formatTime(lastMessage.timestamp)}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-1 mt-0.5 text-xs text-foreground/70 truncate">
                             {lastMessage.isImage && <span className="text-xs">🖼️</span>}
-                            <p className="text-xs text-muted-foreground truncate">
-                              {formatLastMessage(lastMessage.content)}
-                            </p>
+                            <span>{formatLastMessage(lastMessage.content)}</span>
                           </div>
                         </div>
                         {unreadCount > 0 && (
@@ -436,7 +436,7 @@ export default function MessagesPanel({
                           </span>
                         )}
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               )}

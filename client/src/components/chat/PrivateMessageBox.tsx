@@ -255,7 +255,7 @@ export default function PrivateMessageBox({
               />
               <div className="flex-1 min-w-0">
                 <span
-                  className="text-lg font-semibold truncate block"
+                  className="text-base font-medium transition-colors duration-300 truncate block"
                   style={{ color: getFinalUsernameColor(user) }}
                 >
                   {user.username}
