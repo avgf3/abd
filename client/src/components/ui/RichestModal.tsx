@@ -168,7 +168,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
           {error && <div className="text-center text-destructive py-2 text-sm">{error}</div>}
 
           <ul className="space-y-1">
-            {topTen.map((u) => (
+            {topTen.map((u, idx) => (
               <li key={u.id} className="relative">
                 <SimpleUserMenu targetUser={u} currentUser={currentUser || null} showModerationActions={isModerator}>
                   <div
@@ -192,6 +192,11 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                         <div className="flex items-center gap-1">
                           {renderUserBadge(u)}
                           {renderCountryFlag(u)}
+                          {idx < 3 && (
+                            <span className="text-base" aria-label="rank-medal">
+                              {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                            </span>
+                          )}
                           {canManage && (
                             <button
                               className="text-[10px] px-2 py-0.5 rounded bg-destructive/10 hover:bg-destructive/20 text-destructive ml-2"
