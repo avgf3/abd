@@ -63,6 +63,7 @@ import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
+import { UserClickProvider } from '@/components/common/UserClickContext';
 
 interface ChatInterfaceProps {
   chat: UseChatReturn;
@@ -403,10 +404,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showRichest, setShowRichest] = useState(false);
 
   return (
-    <div
-      className={`min-h-[100dvh] flex flex-col chat-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
-      onClick={closeUserPopup}
-    >
+    <UserClickProvider onUserClick={handleUserClick}>
       {/* Header - بدون التبويبات الأربعة */}
       <header
         className={`sticky top-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex ${isMobile ? 'flex-col gap-1' : 'flex-wrap gap-2'} justify-between items-center shadow-2xl border-b border-accent`}
@@ -1203,6 +1201,6 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </div>
         </div>
       )}
-    </div>
+    </UserClickProvider>
   );
 }

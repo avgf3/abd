@@ -1,6 +1,7 @@
 import React from 'react';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import type { ChatUser } from '@/types/chat';
+import { useUserClick } from '@/components/common/UserClickContext';
 
 interface UsernameDisplayProps {
   user: Pick<ChatUser, 'id' | 'username' | 'userType' | 'usernameColor' | 'profileImage'>;
@@ -11,8 +12,10 @@ interface UsernameDisplayProps {
 export default function UsernameDisplay({ user, className, onClick }: UsernameDisplayProps) {
   if (!user || !user.username) return null;
   const color = getFinalUsernameColor(user as any);
+  const ctxOnClick = useUserClick();
   const handleClick = (e: React.MouseEvent) => {
-    if (onClick) onClick(e, user as any);
+    const handler = onClick || ctxOnClick;
+    if (handler) handler(e, user as any);
   };
 
   return (
@@ -24,9 +27,10 @@ export default function UsernameDisplay({ user, className, onClick }: UsernameDi
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if ((e.key === 'Enter' || e.key === ' ') && onClick) {
+        const handler = onClick || ctxOnClick;
+        if ((e.key === 'Enter' || e.key === ' ') && handler) {
           e.preventDefault();
-          onClick(e as any, user as any);
+          handler(e as any, user as any);
         }
       }}
     >
