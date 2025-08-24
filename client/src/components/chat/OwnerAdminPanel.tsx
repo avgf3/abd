@@ -638,16 +638,23 @@ export default function OwnerAdminPanel({
                                   {demotingId === staff.id ? 'جارٍ الإزالة...' : 'إزالة الإشراف'}
                                 </Button>
                               </AlertDialogTrigger>
-                              <AlertDialogContent dir="rtl" className="rounded-2xl">
+                              <AlertDialogContent 
+                                dir="rtl" 
+                                className="rounded-2xl relative z-[60] bg-white shadow-2xl border-2 border-red-200"
+                                style={{
+                                  background: 'white',
+                                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(239, 68, 68, 0.1)'
+                                }}
+                              >
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle className="flex items-center gap-2 text-xl">
+                                  <AlertDialogTitle className="flex items-center gap-2 text-xl text-red-700 font-bold">
                                     <UserX className="w-6 h-6 text-red-500" />
                                     تأكيد إزالة الإشراف
                                   </AlertDialogTitle>
-                                  <AlertDialogDescription className="text-gray-600 leading-relaxed">
-                                    هل أنت متأكد من إزالة إشراف <strong>{staff.username}</strong>؟
+                                  <AlertDialogDescription className="text-gray-700 leading-relaxed text-base">
+                                    هل أنت متأكد من إزالة إشراف <strong className="text-red-600">{staff.username}</strong>؟
                                     <br />
-                                    سيتم تحويله إلى عضو عادي وسيفقد جميع صلاحياته الإدارية.
+                                    <span className="text-red-600 font-medium">سيتم تحويله إلى عضو عادي وسيفقد جميع صلاحياته الإدارية.</span>
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
