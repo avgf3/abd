@@ -1,18 +1,22 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { apiRequest } from '@/lib/queryClient';
 import { getSocket } from '@/lib/socket';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
-import { getFinalUsernameColor } from '@/utils/themeUtils';
+import { getFinalUsernameColor, getUserListItemClasses, getUserListItemStyles } from '@/utils/themeUtils';
+import ProfileImage from '@/components/chat/ProfileImage';
+import UserRoleBadge from '@/components/chat/UserRoleBadge';
+import SimpleUserMenu from '@/components/chat/SimpleUserMenu';
 
 interface RichestModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser?: ChatUser | null;
+  onUserClick?: (e: React.MouseEvent, user: ChatUser) => void;
 }
 
-export default function RichestModal({ isOpen, onClose, currentUser }: RichestModalProps) {
+export default function RichestModal({ isOpen, onClose, currentUser, onUserClick }: RichestModalProps) {
   const [vipUsers, setVipUsers] = useState<ChatUser[]>([]);
   const [candidates, setCandidates] = useState<ChatUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -22,6 +26,53 @@ export default function RichestModal({ isOpen, onClose, currentUser }: RichestMo
   const canManage = useMemo(
     () => !!currentUser && ['owner', 'admin'].includes(currentUser.userType),
     [currentUser]
+  );
+
+  const isModerator = useMemo(
+    () => !!currentUser && ['moderator', 'admin', 'owner'].includes(currentUser.userType),
+    [currentUser]
+  );
+
+  const renderUserBadge = useCallback((user: ChatUser) => {
+    if (!user) return null;
+    return <UserRoleBadge user={user} size={20} />;
+  }, []);
+
+  const getCountryEmoji = useCallback((country?: string): string | null => {
+    if (!country) return null;
+    const token = country.trim().split(' ')[0];
+    return token || null;
+  }, []);
+
+  const renderCountryFlag = useCallback(
+    (user: ChatUser) => {
+      const emoji = getCountryEmoji(user.country);
+      const boxStyle: React.CSSProperties = {
+        width: 20,
+        height: 20,
+        borderRadius: 0,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'transparent',
+        border: 'none',
+      };
+
+      if (emoji) {
+        return (
+          <span style={boxStyle} title={user.country}>
+            <span style={{ fontSize: 14, lineHeight: 1 }}>{emoji}</span>
+          </span>
+        );
+      }
+
+      return (
+        <span style={boxStyle} title="لم يتم تحديد الدولة">
+          <span style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1 }}>?</span>
+        </span>
+      );
+    },
+    [getCountryEmoji]
   );
 
   useEffect(() => {
@@ -116,52 +167,52 @@ export default function RichestModal({ isOpen, onClose, currentUser }: RichestMo
           {loading && <div className="text-center text-muted-foreground py-4">جاري التحميل...</div>}
           {error && <div className="text-center text-destructive py-2 text-sm">{error}</div>}
 
-          <ul className="divide-y divide-border">
+          <ul className="space-y-1">
             {topTen.map((u, idx) => (
-              <li
-                key={u.id}
-                className="flex items-center gap-3 p-3 hover:bg-accent/10 transition-colors"
-              >
-                {/* رقم الترتيب */}
-                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-sm">
-                  {idx + 1}
-                </div>
-
-                {/* صورة المستخدم */}
-                <img
-                  src={getImageSrc(u.profileImage || '/default_avatar.svg')}
-                  alt={u.username}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-
-                {/* اسم المستخدم */}
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="text-base font-medium transition-colors duration-300"
-                      style={{ color: getFinalUsernameColor(u) }}
-                      title={u.username}
-                    >
-                      {u.username}
-                    </span>
-                    {u.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
-                  </div>
-                </div>
-
-                {/* أيقونة التاج للأول والثاني والثالث */}
-                {idx < 3 && (
-                  <span className="text-lg">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}</span>
-                )}
-
-                {/* زر الإزالة للأدمن */}
-                {canManage && (
-                  <button
-                    className="text-xs px-2 py-1 rounded bg-destructive/10 hover:bg-destructive/20 text-destructive"
-                    onClick={() => handleRemoveVip(u.id)}
+              <li key={u.id} className="relative">
+                <SimpleUserMenu targetUser={u} currentUser={currentUser || null} showModerationActions={isModerator}>
+                  <div
+                    className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(u) || 'bg-card hover:bg-accent/10'}`}
+                    style={getUserListItemStyles(u)}
+                    onClick={(e) => onUserClick && onUserClick(e as any, u)}
                   >
-                    إزالة
-                  </button>
-                )}
+                    <ProfileImage user={u} size="small" className="" hideRoleBadgeOverlay={true} />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="text-base font-medium transition-colors duration-300"
+                            style={{ color: getFinalUsernameColor(u) }}
+                            title={u.username}
+                          >
+                            {u.username}
+                          </span>
+                          {u.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {renderUserBadge(u)}
+                          {renderCountryFlag(u)}
+                          {idx < 3 && (
+                            <span className="text-base" aria-label="rank-medal">
+                              {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                            </span>
+                          )}
+                          {canManage && (
+                            <button
+                              className="text-[10px] px-2 py-0.5 rounded bg-destructive/10 hover:bg-destructive/20 text-destructive ml-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveVip(u.id);
+                              }}
+                            >
+                              إزالة
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </SimpleUserMenu>
               </li>
             ))}
           </ul>
