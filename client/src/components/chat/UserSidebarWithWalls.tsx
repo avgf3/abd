@@ -20,6 +20,7 @@ import ProfileImage from './ProfileImage';
 import RoomComponent from './RoomComponent';
 import SimpleUserMenu from './SimpleUserMenu';
 import UserRoleBadge from './UserRoleBadge';
+import UsernameDisplay from '@/components/common/UsernameDisplay';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -778,12 +779,7 @@ export default function UnifiedSidebar({
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span
-                                className="font-medium text-sm"
-                                style={{ color: post.usernameColor || 'inherit' }}
-                              >
-                                {post.username}
-                              </span>
+                              <UsernameDisplay user={{ id: post.userId as any, username: post.username, userType: (post.userRole as any) || 'member', usernameColor: (post.usernameColor as any) || '#000000', profileImage: (post.userProfileImage as any) || '' }} className="font-medium text-sm" />
                               {/* 🏅 شارة الرتبة الموحدة */}
                               <UserRoleBadge
                                 user={{ userType: post.userRole } as ChatUser}

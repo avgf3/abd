@@ -44,6 +44,7 @@ const RichestModal = lazy(() => import('@/components/ui/RichestModal'));
 // import RoomComponent from './RoomComponent';
 
 import { Button } from '@/components/ui/button';
+import UsernameDisplay from '@/components/common/UsernameDisplay';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -1181,9 +1182,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                           ?
                         </div>
                       )}
-                      <span className="font-medium">
-                        {u ? u.username : `مستخدم غير متصل #${id}`}
-                      </span>
+                      {u ? (
+                        <UsernameDisplay user={u} className="font-medium" />
+                      ) : (
+                        <span className="font-medium">{`مستخدم غير متصل #${id}`}</span>
+                      )}
                     </div>
                     <Button size="sm" variant="outline" onClick={() => chat.unignoreUser?.(id)}>
                       إلغاء التجاهل

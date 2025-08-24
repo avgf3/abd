@@ -4,6 +4,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getSocket } from '@/lib/socket';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import UsernameDisplay from '@/components/common/UsernameDisplay';
 
 interface RichestModalProps {
   isOpen: boolean;
@@ -135,9 +136,7 @@ export default function RichestModal({ isOpen, onClose, currentUser }: RichestMo
 
                 {/* اسم المستخدم */}
                 <div className="flex-1">
-                  <div className="font-medium" style={{ color: u.usernameColor || '#000000' }}>
-                    {u.username}
-                  </div>
+                  <UsernameDisplay user={u} className="font-medium" />
                 </div>
 
                 {/* أيقونة التاج للأول والثاني والثالث */}
@@ -170,7 +169,7 @@ export default function RichestModal({ isOpen, onClose, currentUser }: RichestMo
                       alt={c.username}
                       className="w-6 h-6 rounded-full"
                     />
-                    <div className="flex-1 text-sm">{c.username}</div>
+                    <UsernameDisplay user={c} className="flex-1 text-sm" />
                     <button
                       className="text-xs px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary"
                       onClick={() => handleAddVip(c.id)}
