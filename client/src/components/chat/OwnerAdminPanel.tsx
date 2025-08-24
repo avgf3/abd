@@ -1,5 +1,5 @@
 import { Shield, Users, Ban, UserX, Clock, Crown, Settings } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 
 import {
   AlertDialog,
@@ -79,6 +79,39 @@ export default function OwnerAdminPanel({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [demotingId, setDemotingId] = useState<number | null>(null);
   const { toast } = useToast();
+  // مرجع للحفاظ على موضع التمرير لقائمة المشرفين
+  const staffScrollRef = useRef<HTMLDivElement | null>(null);
+  const staffScrollTopRef = useRef<number>(0);
+
+  // مزامنة التبويب المختار مع الهاش في الرابط: #ownerTab=<value>
+  useEffect(() => {
+    // عند الفتح، اقرأ الهاش وحدد التبويب إذا كان صالحاً
+    if (isOpen && currentUser?.userType === 'owner') {
+      try {
+        const hash = window.location.hash || '';
+        const match = hash.match(/ownerTab=([^&]+)/);
+        if (match && match[1]) {
+          const tab = decodeURIComponent(match[1]);
+          if (tab === 'staff' || tab === 'log' || tab === 'ban_tab') {
+            setSelectedTab(tab);
+          }
+        }
+      } catch {}
+    }
+  }, [isOpen, currentUser?.userType]);
+
+  useEffect(() => {
+    // حدّث الهاش كلما تغيّر التبويب
+    try {
+      const url = new URL(window.location.href);
+      const baseHash = url.hash.replace(/(^#)|(&?ownerTab=[^&]*)/g, '').replace(/^&/, '');
+      const nextHash = `#${baseHash ? baseHash + '&' : ''}ownerTab=${encodeURIComponent(selectedTab)}`;
+      if (url.hash !== nextHash) {
+        // لا نضيف إدخال جديد في السجل
+        window.history.replaceState(null, '', `${url.pathname}${url.search}${nextHash}`);
+      }
+    } catch {}
+  }, [selectedTab]);
 
   useEffect(() => {
     if (isOpen && currentUser?.userType === 'owner') {
@@ -152,6 +185,13 @@ export default function OwnerAdminPanel({
   const handleDemoteUser = async (targetUser: StaffMember) => {
     if (!currentUser) return;
 
+    // حفظ موضع التمرير قبل التحديث التفاؤلي
+    try {
+      if (staffScrollRef.current) {
+        staffScrollTopRef.current = staffScrollRef.current.scrollTop;
+      }
+    } catch {}
+
     // منع التفاعل المتكرر وتحديث تفاؤلي للقائمة
     setDemotingId(targetUser.id);
     const previous = staffMembers;
@@ -193,6 +233,12 @@ export default function OwnerAdminPanel({
       });
     } finally {
       setDemotingId(null);
+      // استعادة موضع التمرير بعد التحديث
+      try {
+        if (staffScrollRef.current && staffScrollTopRef.current > 0) {
+          staffScrollRef.current.scrollTop = staffScrollTopRef.current;
+        }
+      } catch {}
     }
   };
 
@@ -285,7 +331,18 @@ export default function OwnerAdminPanel({
         open={isModalOpen}
         onOpenChange={(open) => {
           setIsModalOpen(open);
-          if (!open) onClose();
+          if (!open) {
+            // تنظيف الهاش من ownerTab عند الإغلاق
+            try {
+              const url = new URL(window.location.href);
+              const cleaned = url.hash.replace(/(^#)|(&?ownerTab=[^&]*)/g, '').replace(/^&/, '');
+              const nextHash = cleaned ? `#${cleaned}` : '';
+              if (url.hash !== nextHash) {
+                window.history.replaceState(null, '', `${url.pathname}${url.search}${nextHash}`);
+              }
+            } catch {}
+            onClose();
+          }
         }}
       >
         <DialogContent className="sm:max-w-[900px] max-h-[800px]" dir="rtl">
@@ -304,6 +361,15 @@ export default function OwnerAdminPanel({
               <Button
                 onClick={() => {
                   setIsModalOpen(false);
+                  // تنظيف الهاش من ownerTab عند الإغلاق
+                  try {
+                    const url = new URL(window.location.href);
+                    const cleaned = url.hash.replace(/(^#)|(&?ownerTab=[^&]*)/g, '').replace(/^&/, '');
+                    const nextHash = cleaned ? `#${cleaned}` : '';
+                    if (url.hash !== nextHash) {
+                      window.history.replaceState(null, '', `${url.pathname}${url.search}${nextHash}`);
+                    }
+                  } catch {}
                   onClose();
                 }}
                 variant="ghost"
@@ -489,7 +555,7 @@ export default function OwnerAdminPanel({
                     <p className="text-gray-500 text-lg">لا توجد أعضاء إدارة</p>
                   </div>
                 ) : (
-                  <div className="grid gap-4 max-h-[400px] overflow-y-auto">
+                  <div ref={staffScrollRef} className="grid gap-4 max-h-[400px] overflow-y-auto">
                     {staffMembers.map((staff) => (
                       <div
                         key={staff.id}
