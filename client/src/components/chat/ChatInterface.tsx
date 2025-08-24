@@ -422,7 +422,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
 
           <Button
-            className="px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 bg-blue-500 text-white hover:bg-blue-600"
+            className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowRichest(true)}
             title="الأثرياء"
           >

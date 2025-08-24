@@ -614,16 +614,18 @@ export default function UnifiedSidebar({
             style={{ maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 200px)' }}
           >
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 font-bold text-green-600 text-base">
-                  المتصلون الآن
-                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
-                    {validUsers.length}
-                  </span>
-                </div>
-                <div className="text-xs text-gray-500 flex items-center gap-1">
-                  <span>🏆</span>
-                  <span>مرتب حسب الرتب</span>
+              <div className="bg-primary text-primary-foreground rounded-md">
+                <div className="flex items-center justify-between p-2">
+                  <div className="flex items-center gap-2 font-bold text-base">
+                    المتصلون الآن
+                    <span className="bg-white/20 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
+                      {validUsers.length}
+                    </span>
+                  </div>
+                  <div className="text-xs flex items-center gap-1">
+                    <span>🏆</span>
+                    <span>مرتب حسب الرتب</span>
+                  </div>
                 </div>
               </div>
 
