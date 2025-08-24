@@ -185,32 +185,39 @@ export default function OwnerAdminPanel({
   const handleDemoteUser = async (targetUser: StaffMember) => {
     if (!currentUser) return;
 
-    // حفظ موضع التمرير قبل التحديث التفاؤلي
+    // حفظ موضع التمرير قبل التحديث
     try {
       if (staffScrollRef.current) {
         staffScrollTopRef.current = staffScrollRef.current.scrollTop;
       }
     } catch {}
 
-    // منع التفاعل المتكرر وتحديث تفاؤلي للقائمة
+    // منع التفاعل المتكرر
     setDemotingId(targetUser.id);
     const previous = staffMembers;
-    setStaffMembers((prev) => prev.filter((s) => s.id !== targetUser.id));
 
     try {
-      const response = await apiRequest<{ message: string; user?: any }>('/api/moderation/demote', {
-        method: 'POST',
-        body: {
-          moderatorId: currentUser.id,
-          targetUserId: targetUser.id,
-        },
-      });
+      const response = await apiRequest<{ message: string; user?: any }>(
+        '/api/moderation/demote',
+        {
+          method: 'POST',
+          body: {
+            moderatorId: currentUser.id,
+            targetUserId: targetUser.id,
+          },
+        }
+      );
+
+      // تحديث قائمة الطاقم من المصدر بعد نجاح العملية
+      try {
+        await fetchStaffMembers();
+      } catch {}
 
       // إذا عاد الخادم بالمستخدم ولم يتم تنزيله لأي سبب، أصلح العرض وفقاً له
       if (response && (response as any).user) {
         const updated = (response as any).user as { id: number; userType: string };
         if (updated.userType === 'admin' || updated.userType === 'moderator') {
-          // لا يزال إدارياً، أعده للقائمة
+          // لا يزال إدارياً، أعده للقائمة (حالة نادرة)
           setStaffMembers((prev) => {
             const exists = prev.some((s) => s.id === updated.id);
             return exists ? prev : [...prev, { ...targetUser, userType: updated.userType as any }];
@@ -224,8 +231,6 @@ export default function OwnerAdminPanel({
         variant: 'default',
       });
     } catch (error: any) {
-      // تراجع عن التحديث التفاؤلي عند الفشل
-      setStaffMembers(previous);
       toast({
         title: 'فشل العملية',
         description: error?.message || 'فشل في إلغاء الإشراف',
