@@ -1,4 +1,4 @@
-import { Send, Image as ImageIcon, Smile } from 'lucide-react';
+import { Send, Image as ImageIcon, Smile, ChevronDown } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
@@ -81,6 +81,8 @@ export default function MessageArea({
     return base;
   }, [messages, ignoredUserIds]);
 
+  const showScrollToBottom = !isAtBottom && validMessages.length > 0;
+
   // Scroll to bottom function - optimized via Virtuoso
   type ScrollBehaviorStrict = 'auto' | 'smooth';
   const scrollToBottom = useCallback(
@@ -100,6 +102,11 @@ export default function MessageArea({
     setIsAtBottom(atBottom);
     if (atBottom) setUnreadCount(0);
   }, []);
+
+  const handleScrollDownClick = useCallback(() => {
+    scrollToBottom('smooth');
+    setUnreadCount(0);
+  }, [scrollToBottom]);
 
   // Auto scroll to bottom only when appropriate
   useEffect(() => {
@@ -336,6 +343,7 @@ export default function MessageArea({
             className="!h-full"
             style={{ paddingBottom: '128px' }}
             followOutput={'smooth'}
+            atBottomThreshold={64}
             atBottomStateChange={handleAtBottomChange}
             increaseViewportBy={{ top: 400, bottom: 400 }}
             itemContent={(index, message) => (
@@ -412,6 +420,11 @@ export default function MessageArea({
                             alt="صورة"
                             className="max-h-10 rounded cursor-pointer"
                             loading="lazy"
+                            onLoad={() => {
+                              if (isAtBottom) {
+                                scrollToBottom('auto');
+                              }
+                            }}
                             onClick={() => window.open(message.content, '_blank')}
                           />
                         ) : (
@@ -523,8 +536,20 @@ export default function MessageArea({
             )}
           />
         )}
-
-        {/* تم إخفاء مؤشر "الانتقال لأسفل" لتقليل التشويش والاهتزازات */}
+        {showScrollToBottom && (
+          <button
+            onClick={handleScrollDownClick}
+            className="absolute left-1/2 -translate-x-1/2 bottom-28 bg-primary text-white shadow-lg rounded-full px-3 py-1.5 flex items-center gap-2 hover:bg-primary/90 transition-colors"
+            title="الانتقال لآخر الرسائل"
+          >
+            <ChevronDown className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <span className="text-xs bg-white/20 rounded px-1.5 py-0.5">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
