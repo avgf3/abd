@@ -8,6 +8,7 @@ import { getFinalUsernameColor, getUserListItemClasses, getUserListItemStyles } 
 import ProfileImage from '@/components/chat/ProfileImage';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import SimpleUserMenu from '@/components/chat/SimpleUserMenu';
+import { Badge } from '@/components/ui/badge';
 
 interface RichestModalProps {
   isOpen: boolean;
@@ -169,7 +170,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
 
           <ul className="space-y-1">
             {topTen.map((u, idx) => (
-              <li key={u.id} className="relative">
+              <li key={u.id} className="relative -mx-4">
                 <SimpleUserMenu targetUser={u} currentUser={currentUser || null} showModerationActions={isModerator}>
                   <div
                     className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(u) || 'bg-card hover:bg-accent/10'}`}
@@ -180,6 +181,20 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
+                          {/* رتبة رقمية مثبتة على يمين الحاوية */}
+                          <Badge
+                            variant="secondary"
+                            className="text-[11px] min-w-[22px] h-5 px-2 flex items-center justify-center"
+                            title={`الترتيب ${idx + 1}`}
+                          >
+                            {idx + 1}
+                          </Badge>
+                          {/* ميدالية لأعلى 3 فقط (اختياري) */}
+                          {idx < 3 && (
+                            <span className="text-base" aria-label="rank-medal">
+                              {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                            </span>
+                          )}
                           <span
                             className="text-base font-medium transition-colors duration-300"
                             style={{ color: getFinalUsernameColor(u) }}
@@ -192,11 +207,6 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                         <div className="flex items-center gap-1">
                           {renderUserBadge(u)}
                           {renderCountryFlag(u)}
-                          {idx < 3 && (
-                            <span className="text-base" aria-label="rank-medal">
-                              {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
-                            </span>
-                          )}
                           {canManage && (
                             <button
                               className="text-[10px] px-2 py-0.5 rounded bg-destructive/10 hover:bg-destructive/20 text-destructive ml-2"
