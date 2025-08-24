@@ -14,9 +14,10 @@ interface RichestModalProps {
   onClose: () => void;
   currentUser?: ChatUser | null;
   onUserClick?: (e: React.MouseEvent, user: ChatUser) => void;
+  onlineUsers?: ChatUser[];
 }
 
-export default function RichestModal({ isOpen, onClose, currentUser, onUserClick }: RichestModalProps) {
+export default function RichestModal({ isOpen, onClose, currentUser, onUserClick, onlineUsers }: RichestModalProps) {
   const [vipUsers, setVipUsers] = useState<ChatUser[]>([]);
   const [candidates, setCandidates] = useState<ChatUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -145,6 +146,20 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
 
   const topTen = vipUsers.slice(0, 10);
 
+  // دمج بيانات المستخدمين المتصلين لتحسين دقة ألوان الاسماء والخلفيات
+  const onlineById = useMemo(() => {
+    const map = new Map<number, ChatUser>();
+    (onlineUsers || []).forEach((u) => map.set(u.id, u));
+    return map;
+  }, [onlineUsers]);
+
+  const displayUsers = useMemo(() => {
+    return topTen.map((u) => {
+      const online = onlineById.get(u.id);
+      return online ? { ...u, ...online } : u;
+    });
+  }, [topTen, onlineById]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 modal-overlay" onClick={onClose} />
@@ -168,8 +183,8 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
           {error && <div className="text-center text-destructive py-2 text-sm">{error}</div>}
 
           <ul className="space-y-1">
-            {topTen.map((u, idx) => (
-              <li key={u.id} className="relative">
+            {displayUsers.map((u, idx) => (
+              <li key={u.id} className="relative -mx-4">
                 <SimpleUserMenu targetUser={u} currentUser={currentUser || null} showModerationActions={isModerator}>
                   <div
                     className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(u) || 'bg-card hover:bg-accent/10'}`}
