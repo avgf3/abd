@@ -1152,6 +1152,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           isOpen={showRichest}
           onClose={() => setShowRichest(false)}
           currentUser={chat.currentUser}
+          onUserClick={handleUserClick}
         />
       </Suspense>
 
