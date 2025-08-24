@@ -975,3 +975,96 @@ li > * > div.effect-crystal {
     filter: brightness(1.1);
   }
 }
+
+/* ===== تحسينات الاهتزاز الخفيف للرسائل ===== */
+
+/* اهتزاز خفيف للرسائل الخاصة */
+@keyframes subtle-message-float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: translateY(-1px) scale(1.005);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* حركة ناعمة للرسائل في الغرف */
+@keyframes gentle-room-pulse {
+  0%, 100% {
+    transform: translateY(0px);
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+  50% {
+    transform: translateY(-0.5px);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+}
+
+/* تأثير خفيف عند الدخول */
+@keyframes soft-entrance {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0px) scale(1);
+  }
+}
+
+/* تحريك نصوص الرسائل برفق */
+@keyframes text-breathe {
+  0%, 100% {
+    transform: translateY(0px);
+    line-height: 1.5;
+  }
+  50% {
+    transform: translateY(-0.2px);
+    line-height: 1.52;
+  }
+}
+
+/* حركة ناعمة للحاويات */
+@keyframes container-gentle-sway {
+  0%, 100% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(0.5px);
+  }
+}
+
+/* كلاسات التطبيق */
+.private-message-float {
+  animation: subtle-message-float 4s ease-in-out infinite;
+}
+
+.room-message-pulse {
+  animation: gentle-room-pulse 3.5s ease-in-out infinite;
+}
+
+.soft-entrance {
+  animation: soft-entrance 0.6s ease-out;
+}
+
+.text-breathe {
+  animation: text-breathe 6s ease-in-out infinite;
+}
+
+.container-sway {
+  animation: container-gentle-sway 8s ease-in-out infinite;
+}
+
+/* إصلاح موضع آخر كلمة في الرسائل */
+.message-content-fix {
+  line-height: 1.6;
+  padding-bottom: 2px;
+}
+
+.message-content-fix .truncate {
+  line-height: inherit;
+  vertical-align: baseline;
+  margin-bottom: 1px;
+}

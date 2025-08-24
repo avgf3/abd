@@ -240,8 +240,8 @@ export default function PrivateMessageBox({
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-white text-gray-900 border border-gray-200 shadow-2xl rounded-xl overflow-hidden cursor-grab active:cursor-grabbing"
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-white text-gray-900 border border-gray-200 shadow-2xl rounded-xl overflow-hidden cursor-grab active:cursor-grabbing soft-entrance container-sway"
         >
           <DialogHeader className="border-b border-accent p-3 bg-gradient-to-r from-blue-50 to-green-50">
             <div className="flex items-center gap-3">
@@ -315,9 +315,9 @@ export default function PrivateMessageBox({
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.2 }}
-                      className={`flex items-start gap-3 p-3 rounded-lg transition-all duration-200 ${
-                        isMe ? 'bg-blue-50 border-r-4 ml-4' : 'bg-green-50 border-r-4 mr-4'
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      className={`flex items-start gap-3 p-3 rounded-lg transition-all duration-300 private-message-float ${
+                        isMe ? 'bg-blue-50/80 border-r-4 ml-4' : 'bg-green-50/80 border-r-4 mr-4'
                       }`}
                       style={{
                         borderRightColor: getDynamicBorderColor(
