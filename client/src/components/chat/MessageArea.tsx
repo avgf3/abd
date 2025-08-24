@@ -112,14 +112,26 @@ export default function MessageArea({
   useEffect(() => {
     const prevLen = prevMessagesLenRef.current;
     const currLen = validMessages.length;
+    
+    // Handle room change or first load - always scroll to bottom
+    if (prevLen === 0 && currLen > 0) {
+      setTimeout(() => {
+        scrollToBottom('auto');
+        setIsAtBottom(true);
+        setUnreadCount(0);
+      }, 150);
+      prevMessagesLenRef.current = currLen;
+      return;
+    }
+
     if (currLen <= prevLen) return;
 
     const lastMessage = validMessages[currLen - 1];
     const sentByMe = !!(currentUser && lastMessage?.sender?.id === currentUser.id);
 
-    // If first load, or user is at bottom, or the last message was sent by me, autoscroll
-    if (prevLen === 0 || isAtBottom || sentByMe) {
-      scrollToBottom(prevLen === 0 ? 'auto' : 'smooth');
+    // If user is at bottom, or the last message was sent by me, autoscroll
+    if (isAtBottom || sentByMe) {
+      scrollToBottom('smooth');
       setUnreadCount(0);
     } else {
       setUnreadCount((count) => count + (currLen - prevLen));
@@ -128,15 +140,17 @@ export default function MessageArea({
     prevMessagesLenRef.current = currLen;
   }, [validMessages.length, isAtBottom, currentUser, scrollToBottom]);
 
-  // Ensure initial prev length is set on mount
+  // Ensure initial prev length is set on mount and auto-scroll
   useEffect(() => {
     prevMessagesLenRef.current = validMessages.length;
-    // If there are messages on first mount, jump to bottom without animation
-    if (validMessages.length > 0) {
-      const t = setTimeout(() => scrollToBottom('auto'), 0);
-      return () => clearTimeout(t);
-    }
-  }, []);
+    // Always scroll to bottom on first mount, even if no messages yet
+    // This ensures proper positioning when entering a room
+    const t = setTimeout(() => {
+      scrollToBottom('auto');
+      setIsAtBottom(true);
+    }, 100);
+    return () => clearTimeout(t);
+  }, [scrollToBottom]);
 
   // تشغيل صوت التنبيه عند استقبال منشن - محسن
   useEffect(() => {
@@ -349,7 +363,7 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`flex items-center gap-3 p-3 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-shadow duration-200`}
+                className={`flex items-center gap-3 p-3 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
                 style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
               >
                 {/* System message: one-line red without avatar/badge */}
@@ -413,7 +427,7 @@ export default function MessageArea({
                         {message.sender?.username}
                       </button>
 
-                      <div className="text-gray-800 break-words truncate flex-1">
+                      <div className="text-gray-800 break-words truncate flex-1 message-content-fix">
                         {message.messageType === 'image' ? (
                           <img
                             src={message.content}
@@ -428,7 +442,7 @@ export default function MessageArea({
                             onClick={() => window.open(message.content, '_blank')}
                           />
                         ) : (
-                          <span className="truncate">
+                          <span className="truncate text-breathe">
                             {renderMessageWithMentions(message.content, currentUser, onlineUsers)}
                           </span>
                         )}
@@ -554,7 +568,7 @@ export default function MessageArea({
 
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div
-        className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg chat-input`}
+        className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg chat-input soft-entrance`}
         style={{ bottom: '80px' }}
       >
         {/* Typing Indicator */}

@@ -345,7 +345,7 @@ export default function PrivateMessageBox({
                             {formatTime(m.timestamp)}
                           </span>
                         </div>
-                        <div className="text-gray-800 break-words">
+                        <div className="text-gray-800 break-words message-content-fix">
                           {isImage ? (
                             <img
                               src={m.content}
@@ -355,7 +355,7 @@ export default function PrivateMessageBox({
                               onClick={() => window.open(m.content, '_blank')}
                             />
                           ) : (
-                            <span className="text-sm leading-relaxed">
+                            <span className="text-sm leading-relaxed text-breathe">
                               {formatMessagePreview(m.content, 100)}
                             </span>
                           )}
@@ -370,7 +370,7 @@ export default function PrivateMessageBox({
             {/* تم إخفاء زر "الانتقال لأسفل" بناءً على رغبتك لتقليل الإزعاج */}
           </div>
 
-          <div className="p-4 border-t border-gray-200 bg-white">
+          <div className="p-4 border-t border-gray-200 bg-white soft-entrance">
             {/* عرض رسالة الخطأ إن وجدت */}
             {sendError && (
               <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center justify-between">
