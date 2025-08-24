@@ -793,14 +793,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/moderation/demote', protect.owner, async (req, res) => {
     try {
       const { moderatorId, targetUserId } = req.body;
+      console.log('🔴 [DEMOTE] طلب إزالة مشرف:', { moderatorId, targetUserId });
+      
       if (!moderatorId || !targetUserId) {
+        console.log('❌ [DEMOTE] معاملات ناقصة');
         return res.status(400).json({ error: 'معاملات ناقصة' });
       }
 
       const success = await moderationSystem.demoteUser(moderatorId, targetUserId);
+      console.log('🎯 [DEMOTE] نتيجة demoteUser:', success);
+      
       if (success) {
         const target = await storage.getUser(targetUserId);
         const moderator = await storage.getUser(moderatorId);
+        console.log('👤 [DEMOTE] بيانات المستهدف بعد التحديث:', target?.username, target?.userType);
         if (target && moderator) {
           getIO().emit('message', {
             type: 'systemNotification',
@@ -814,8 +820,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             emitUserUpdatedToUser(target.id, target);
           } catch {}
         }
+        console.log('✅ [DEMOTE] إرسال الاستجابة بنجاح');
         res.json({ message: 'تم إلغاء الإشراف بنجاح', user: target });
       } else {
+        console.log('❌ [DEMOTE] فشلت العملية');
         res.status(400).json({ error: 'فشل في إلغاء الإشراف' });
       }
     } catch (error) {

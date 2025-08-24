@@ -144,15 +144,19 @@ export default function OwnerAdminPanel({
   };
 
   const fetchStaffMembers = async () => {
+    console.log('🔍 جلب قائمة المشرفين...');
     setLoading(true);
     try {
       // جلب جميع المستخدمين من الخادم ثم تصفية أعضاء الإدارة فقط
       const response = await apiRequest('/api/users', { method: 'GET' });
       const allUsers = (response?.users || []) as Array<any>;
+      console.log('👥 إجمالي المستخدمين:', allUsers.length);
 
       const staff = allUsers
         .filter((user) => ['moderator', 'admin', 'owner'].includes(user.userType))
         .map((user) => ({
+          // سجل كل مستخدم إداري
+          ...(console.log('👤 مستخدم إداري:', user.username, user.userType, user.id) || {}),
           id: user.id,
           username: user.username,
           userType: user.userType as 'moderator' | 'admin' | 'owner',
@@ -173,6 +177,7 @@ export default function OwnerAdminPanel({
           return a.username.localeCompare(b.username, 'ar');
         });
 
+      console.log('📊 تم العثور على', staff.length, 'عضو إداري');
       setStaffMembers(staff);
     } catch (error) {
       console.error('Error fetching staff:', error);
@@ -185,6 +190,8 @@ export default function OwnerAdminPanel({
   const handleDemoteUser = async (targetUser: StaffMember) => {
     if (!currentUser) return;
 
+    console.log('🔴 بدء عملية إزالة المشرف:', targetUser.username, targetUser.id);
+
     // حفظ موضع التمرير قبل التحديث
     try {
       if (staffScrollRef.current) {
@@ -195,8 +202,10 @@ export default function OwnerAdminPanel({
     // منع التفاعل المتكرر
     setDemotingId(targetUser.id);
     const previous = staffMembers;
+    console.log('📋 قائمة المشرفين الحالية:', staffMembers.length, 'مشرف');
 
     try {
+      console.log('📤 إرسال طلب إزالة المشرف إلى الخادم...');
       const response = await apiRequest<{ message: string; user?: any }>(
         '/api/moderation/demote',
         {
@@ -207,11 +216,16 @@ export default function OwnerAdminPanel({
           },
         }
       );
+      console.log('✅ استجابة الخادم:', response);
 
       // تحديث قائمة الطاقم من المصدر بعد نجاح العملية
+      console.log('🔄 إعادة جلب قائمة المشرفين...');
       try {
         await fetchStaffMembers();
-      } catch {}
+        console.log('✅ تم تحديث قائمة المشرفين');
+      } catch (e) {
+        console.error('❌ خطأ في تحديث قائمة المشرفين:', e);
+      }
 
       // إذا عاد الخادم بالمستخدم ولم يتم تنزيله لأي سبب، أصلح العرض وفقاً له
       if (response && (response as any).user) {
