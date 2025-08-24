@@ -173,14 +173,14 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
       <div className="absolute inset-0 modal-overlay" onClick={onClose} />
 
       <div className="relative w-[90vw] max-w-[20rem] sm:max-w-[22rem] bg-card rounded-xl overflow-hidden shadow-2xl animate-fade-in">
-        <div className="bg-primary p-3 text-primary-foreground flex items-center justify-between">
+        <div className="p-3 flex items-center justify-between bg-blue-500 text-white">
           <div className="flex items-center gap-2">
             <span className="text-xl">👑</span>
             <h3 className="font-bold text-lg">الأثرياء</h3>
           </div>
           <button
             onClick={onClose}
-            className="text-primary-foreground/80 hover:text-primary-foreground text-xl"
+            className="text-white/90 hover:text-white text-xl"
           >
             ✕
           </button>
