@@ -35,17 +35,21 @@ const isValidHexColor = (color: string): boolean => {
 };
 
 // دالة لتنظيف وتصحيح لون HEX
-const sanitizeHexColor = (color: string, defaultColor: string = '#3c0d0d'): string => {
-  if (!color || color === 'null' || color === 'undefined' || color === '') {
-    return defaultColor;
-  }
+const sanitizeHexColor = (color: string, defaultColor: string = ''): string => {
+  // تجاهل القيم النصية غير الصالحة نهائياً حتى لا نطبق لون افتراضي قديم
+  if (!color) return '';
+  const raw = String(color);
+  if (raw === 'null' || raw === 'undefined') return '';
 
-  const trimmed = color.trim();
+  const trimmed = raw.trim();
+  if (trimmed === '') return '';
+
   if (isValidHexColor(trimmed)) {
     return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
   }
 
-  return defaultColor;
+  // إن لم يكن صالحاً، لا نُرجع لوناً افتراضياً لتفادي تطبيق تدرجات غير مرغوبة
+  return '';
 };
 
 // بناء خلفية ملف شخصي: تمرير التدرج كما هو، أو توليد تدرج من لون HEX
@@ -55,6 +59,7 @@ export const buildProfileBackgroundGradient = (colorOrGradient: string): string 
     return input;
   }
   const cleanHex = sanitizeHexColor(input);
+  if (!cleanHex) return '';
   const start = lightenHexColor(cleanHex, 14);
   const end = lightenHexColor(cleanHex, -12);
   return `linear-gradient(135deg, ${start}, ${end})`;
@@ -101,8 +106,9 @@ const gradientToTransparent = (gradient: string, opacity: number): string => {
 
 // دالة لحصول على لون الاسم النهائي (يعتمد فقط على usernameColor)
 export const getFinalUsernameColor = (user: any): string => {
-  const color = user && user.usernameColor ? String(user.usernameColor) : '#000000';
-  return sanitizeHexColor(color, '#000000');
+  const color = user && user.usernameColor ? String(user.usernameColor) : '';
+  const cleaned = sanitizeHexColor(color, '');
+  return cleaned || '#000000';
 };
 
 // ===== نظام موحد جديد لتأثيرات صندوق المستخدم مع الملف الشخصي =====
@@ -120,14 +126,11 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
   const style: Record<string, string> = {};
 
   // أولاً: تطبيق خلفية الملف الشخصي (تدرج أو لون)
-  if (user?.profileBackgroundColor) {
+  if (user?.profileBackgroundColor && user.profileBackgroundColor !== 'null' && user.profileBackgroundColor !== 'undefined') {
     const bg = buildProfileBackgroundGradient(String(user.profileBackgroundColor));
-    if (bg) {
+    if (bg && bg.startsWith('linear-gradient(')) {
       // استخدام backgroundImage لضمان أولوية التدرج وعدم تجاوزه بسهولة
-      style.backgroundImage = bg.startsWith('linear-gradient(') ? bg : (undefined as any);
-      if (!style.backgroundImage) {
-        style.background = bg;
-      }
+      style.backgroundImage = bg;
       // تحسين المزج لمنع الطبقات الأخرى من محو التدرج
       style.backgroundBlendMode = 'normal';
     }
@@ -175,7 +178,7 @@ export const getUserListItemClasses = (user: any): string => {
   }
 
   // إضافة كلاس خاص إذا كان هناك لون خلفية
-  if (user?.profileBackgroundColor) {
+  if (user?.profileBackgroundColor && user.profileBackgroundColor !== 'null' && user.profileBackgroundColor !== 'undefined') {
     classes.push('has-custom-bg');
   }
 

@@ -76,6 +76,28 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
     [getCountryEmoji]
   );
 
+  // تطبيع بيانات المستخدم: إزالة قيم نصية غير صالحة لحقول الألوان/التأثير
+  const normalizeUser = useCallback((u: any): ChatUser => {
+    const cleaned: any = { ...u };
+    if (cleaned && typeof cleaned.profileBackgroundColor === 'string') {
+      const v = cleaned.profileBackgroundColor;
+      if (v === 'null' || v === 'undefined' || v.trim() === '') {
+        cleaned.profileBackgroundColor = null;
+      }
+    }
+    if (cleaned && typeof cleaned.profileEffect === 'string') {
+      const v = cleaned.profileEffect;
+      if (v === 'null' || v === 'undefined') {
+        cleaned.profileEffect = 'none';
+      }
+    }
+    return cleaned as ChatUser;
+  }, []);
+
+  const normalizeUsers = useCallback((arr: any[]): ChatUser[] => {
+    return Array.isArray(arr) ? arr.map((u) => normalizeUser(u)) : [];
+  }, [normalizeUser]);
+
   useEffect(() => {
     if (!isOpen) return;
     let ignore = false;
@@ -84,11 +106,11 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
       setError(null);
       try {
         const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip`);
-        if (!ignore) setVipUsers(res.users || []);
+        if (!ignore) setVipUsers(normalizeUsers(res.users || []));
         if (canManage) {
           try {
             const cand = await apiRequest<{ users: ChatUser[] }>(`/api/vip/candidates`);
-            if (!ignore) setCandidates(cand.users || []);
+            if (!ignore) setCandidates(normalizeUsers(cand.users || []));
           } catch {}
         }
       } catch (e: any) {
@@ -105,7 +127,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
       socketRef.current = s;
       s.on('message', (payload: any) => {
         if (payload?.type === 'vipUpdated') {
-          setVipUsers(payload.users || []);
+          setVipUsers(normalizeUsers(payload.users || []));
         }
       });
     } catch {}
@@ -126,7 +148,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
       setError(null);
       await apiRequest(`/api/vip`, { method: 'POST', body: { targetUserId: userId } });
       const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip`);
-      setVipUsers(res.users || []);
+      setVipUsers(normalizeUsers(res.users || []));
     } catch (e: any) {
       setError(e?.message || 'فشل إضافة VIP. تأكد من اتصال قاعدة البيانات.');
     }
