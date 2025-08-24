@@ -315,9 +315,10 @@ export class ModerationSystem {
         timestamp: Date.now(),
       });
 
+      console.log('✅ [MODERATION] تم تنزيل المستخدم بنجاح');
       return true;
     } catch (error) {
-      console.error(`[DEMOTE] خطأ في تنزيل المستخدم:`, error);
+      console.error('❌ [MODERATION] خطأ في تنزيل المستخدم:', error);
       return false;
     }
   }
