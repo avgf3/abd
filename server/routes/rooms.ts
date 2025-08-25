@@ -87,18 +87,13 @@ router.get('/stats', protect.admin, async (req, res) => {
  */
 router.get('/', async (req, res) => {
   try {
-    // 🚀 إضافة رؤوس التخزين المؤقت مع ETag مستقر بناءً على نسخة الغرف
+    // 🚀 رؤوس التخزين المؤقت قصيرة الأجل + ETag ثابت
     const version = roomService.getRoomsVersion?.() || 1;
     const etag = `rooms-v${version}`;
 
-    res.set({
-      'Cache-Control': 'public, max-age=5',
-      ETag: etag,
-    });
-
-    // If-None-Match دعم
-    const incomingEtag = req.headers['if-none-match'];
-    if (incomingEtag && incomingEtag === etag) {
+    res.setHeader('Cache-Control', 'public, max-age=10');
+    res.setHeader('ETag', etag);
+    if (req.headers['if-none-match'] === etag) {
       return res.status(304).end();
     }
 

@@ -13,6 +13,9 @@ const router = Router();
  * GET /api/messages/room/:roomId
  * جلب رسائل الغرفة مع الصفحات
  */
+// Simple in-memory micro-cache for hot GETs
+const roomMessagesMicroCache = new Map<string, { data: any; expiresAt: number }>();
+
 router.get('/room/:roomId', async (req, res) => {
   try {
     const { roomId } = req.params;
@@ -31,18 +34,33 @@ router.get('/room/:roomId', async (req, res) => {
     const limitValue = Math.min(20, Math.max(1, parseInt(limit as string)));
     const offsetValue = Math.max(0, parseInt(offset as string));
 
+    // Micro-cache key (only cache first page)
+    const isFirstPage = offsetValue === 0;
+    const cacheKey = `room:${roomId}:limit:${limitValue}`;
+    const now = Date.now();
+
+    if (useCache === 'true' && isFirstPage) {
+      const cached = roomMessagesMicroCache.get(cacheKey);
+      if (cached && cached.expiresAt > now) {
+        res.setHeader('Cache-Control', 'public, max-age=5');
+        return res.json({ success: true, roomId, ...cached.data });
+      }
+    }
+
     const result = await roomMessageService.getRoomMessages(
       roomId,
       limitValue,
       offsetValue,
-      useCache === 'true'
+      true
     );
 
-    res.json({
-      success: true,
-      roomId,
-      ...result,
-    });
+    // Store micro-cache for 5s
+    if (useCache === 'true' && isFirstPage) {
+      roomMessagesMicroCache.set(cacheKey, { data: result, expiresAt: now + 5000 });
+    }
+
+    res.setHeader('Cache-Control', 'public, max-age=5');
+    res.json({ success: true, roomId, ...result });
   } catch (error: any) {
     console.error('خطأ في جلب رسائل الغرفة:', error);
     res.status(500).json({
