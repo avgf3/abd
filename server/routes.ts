@@ -121,10 +121,15 @@ const wallUpload = createMulterConfig('wall', 'wall', 10 * 1024 * 1024);
 
 const bannerUpload = createMulterConfig('banners', 'banner', 8 * 1024 * 1024);
 
-// Lightweight rate limiter for auth endpoints only
+// Lightweight rate limiter for auth endpoints only (enabled in production unless disabled by env)
 const authRequestCounts = new Map<string, { count: number; resetTime: number }>();
+const isProdEnvForAuthLimit = process.env.NODE_ENV === 'production';
+const authRateLimitEnabled = (process.env.AUTH_RATE_LIMIT_ENABLED || 'true').toLowerCase() !== 'false';
 function authRateLimit(req: any, res: any, next: any) {
   try {
+    if (!isProdEnvForAuthLimit || !authRateLimitEnabled) {
+      return next();
+    }
     const now = Date.now();
     const ip =
       getClientIpFromHeaders(req.headers as any, (req.ip || (req.connection as any)?.remoteAddress) as any) ||
