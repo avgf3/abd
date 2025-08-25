@@ -3,6 +3,7 @@ import { Router } from 'express';
 
 import { advancedSecurity } from './advanced-security';
 import { protect } from './middleware/enhancedSecurity';
+import { z } from 'zod';
 
 const router = Router();
 
@@ -10,7 +11,7 @@ const router = Router();
 router.use(protect.owner);
 
 // Get security report - Owner only
-router.get('/report', async (req, res) => {
+router.get('/report', protect.log('security:report'), async (req, res) => {
   try {
     // في التطبيق الحقيقي، تحقق من صلاحيات المستخدم
     const report = advancedSecurity.getSecurityReport();
@@ -21,7 +22,7 @@ router.get('/report', async (req, res) => {
 });
 
 // Get blocked IPs - Owner only
-router.get('/blocked-ips', async (req, res) => {
+router.get('/blocked-ips', protect.log('security:blocked-ips'), async (req, res) => {
   try {
     // محاكاة قائمة العناوين المحظورة
     const blockedIPs = [
@@ -39,9 +40,14 @@ router.get('/blocked-ips', async (req, res) => {
 });
 
 // Block IP - Owner only
-router.post('/block-ip', async (req, res) => {
+const blockSchema = z.object({ ip: z.string().trim().min(3), reason: z.string().trim().min(3) });
+router.post('/block-ip', protect.log('security:block-ip'), async (req, res) => {
   try {
-    const { ip, reason } = req.body;
+    const parsed = blockSchema.safeParse(req.body || {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+    }
+    const { ip, reason } = parsed.data as any;
 
     if (!ip || !reason) {
       return res.status(400).json({ error: 'عنوان IP والسبب مطلوبان' });
@@ -55,9 +61,14 @@ router.post('/block-ip', async (req, res) => {
 });
 
 // Unblock IP - Owner only
-router.post('/unblock-ip', async (req, res) => {
+const unblockSchema = z.object({ ip: z.string().trim().min(3) });
+router.post('/unblock-ip', protect.log('security:unblock-ip'), async (req, res) => {
   try {
-    const { ip } = req.body;
+    const parsed = unblockSchema.safeParse(req.body || {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+    }
+    const { ip } = parsed.data as any;
 
     if (!ip) {
       return res.status(400).json({ error: 'عنوان IP مطلوب' });

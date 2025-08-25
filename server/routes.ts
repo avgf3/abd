@@ -551,7 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     reason: z.string().trim().min(3).max(200),
     duration: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).optional().transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
   });
-  app.post('/api/moderation/mute', protect.moderator, async (req, res) => {
+  app.post('/api/moderation/mute', protect.moderator, protect.log('moderation:mute'), async (req, res) => {
     try {
       const parsed = muteSchema.safeParse(req.body || {});
       if (!parsed.success) {
@@ -628,7 +628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     reason: z.string().trim().min(3).max(200),
     duration: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).optional().transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
   });
-  app.post('/api/moderation/ban', protect.admin, async (req, res) => {
+  app.post('/api/moderation/ban', protect.admin, protect.log('moderation:ban'), async (req, res) => {
     try {
       const parsed = banSchema.safeParse(req.body || {});
       if (!parsed.success) {
@@ -716,7 +716,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     targetUserId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
     reason: z.string().trim().min(3).max(200),
   });
-  app.post('/api/moderation/block', protect.owner, async (req, res) => {
+  app.post('/api/moderation/block', protect.owner, protect.log('moderation:block'), async (req, res) => {
     try {
       const parsed = blockSchema.safeParse(req.body || {});
       if (!parsed.success) {
@@ -797,7 +797,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     targetUserId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
     newRole: z.enum(['admin', 'moderator']),
   });
-  app.post('/api/moderation/promote', protect.owner, async (req, res) => {
+  app.post('/api/moderation/promote', protect.owner, protect.log('moderation:promote'), async (req, res) => {
     try {
       const parsed = promoteSchema.safeParse(req.body || {});
       if (!parsed.success) {
@@ -849,7 +849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const demoteSchema = z.object({
     targetUserId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
   });
-  app.post('/api/moderation/demote', protect.owner, async (req, res) => {
+  app.post('/api/moderation/demote', protect.owner, protect.log('moderation:demote'), async (req, res) => {
     try {
       const parsed = demoteSchema.safeParse(req.body || {});
       if (!parsed.success) {
@@ -891,7 +891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const unmuteSchema = z.object({
     targetUserId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
   });
-  app.post('/api/moderation/unmute', protect.moderator, async (req, res) => {
+  app.post('/api/moderation/unmute', protect.moderator, protect.log('moderation:unmute'), async (req, res) => {
     try {
       const parsed = unmuteSchema.safeParse(req.body || {});
       if (!parsed.success) {
@@ -914,7 +914,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const unblockSchema = z.object({
     targetUserId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
   });
-  app.post('/api/moderation/unblock', protect.owner, async (req, res) => {
+  app.post('/api/moderation/unblock', protect.owner, protect.log('moderation:unblock'), async (req, res) => {
     try {
       const parsed = unblockSchema.safeParse(req.body || {});
       if (!parsed.success) {
