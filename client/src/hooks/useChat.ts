@@ -8,6 +8,7 @@ import { getSocket, saveSession, clearSession } from '@/lib/socket';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import type { Notification } from '@/types/chat';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
+import { userCache, setCachedUser } from '@/utils/userCacheManager';
 
 // Audio notification function
 const playNotificationSound = () => {
@@ -105,8 +106,17 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'SET_CURRENT_USER':
       return { ...state, currentUser: action.payload };
 
-    case 'SET_ONLINE_USERS':
+    case 'SET_ONLINE_USERS': {
+      // تحديث الكاش مع قائمة المستخدمين الجديدة
+      action.payload.forEach(user => {
+        if (user && user.id && user.username) {
+          setCachedUser(user);
+        }
+      });
+      // تحديث حالة الاتصال في الكاش
+      userCache.updateOnlineStatus(action.payload.map(u => u.id));
       return { ...state, onlineUsers: action.payload };
+    }
 
     case 'SET_ROOM_MESSAGES': {
       const { roomId, messages } = action.payload;
@@ -215,6 +225,11 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
       const incoming = action.payload;
       if (!incoming || !incoming.id) {
         return state;
+      }
+      
+      // تحديث الكاش مع بيانات المستخدم الجديدة
+      if (incoming.username) {
+        setCachedUser(incoming);
       }
       const existingIndex = state.onlineUsers.findIndex((u) => u.id === incoming.id);
       if (existingIndex === -1) {
@@ -557,11 +572,15 @@ export const useChat = () => {
               try {
                 apiRequest(`/api/users/${updatedUser.id}?t=${Date.now()}`)
                   .then((full: any) => {
-                    if (full && full.id && currentUserRef.current?.id === updatedUser.id) {
-                      dispatch({
-                        type: 'SET_CURRENT_USER',
-                        payload: { ...currentUserRef.current!, ...full } as any,
-                      });
+                    if (full && full.id) {
+                      // تحديث الكاش مع البيانات الكاملة
+                      setCachedUser(full as ChatUser);
+                      if (currentUserRef.current?.id === updatedUser.id) {
+                        dispatch({
+                          type: 'SET_CURRENT_USER',
+                          payload: { ...currentUserRef.current!, ...full } as any,
+                        });
+                      }
                     }
                   })
                   .catch(() => {});
@@ -755,6 +774,8 @@ export const useChat = () => {
                 apiRequest(`/api/users/${joinedId}?t=${Date.now()}`)
                   .then((data: any) => {
                     if (data && data.id) {
+                      // تحديث الكاش مع البيانات الكاملة
+                      setCachedUser(data as ChatUser);
                       dispatch({
                         type: 'UPSERT_ONLINE_USER',
                         payload: { ...(data as any), isOnline: true } as ChatUser,

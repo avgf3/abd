@@ -62,6 +62,7 @@ import { useNotificationManager } from '@/hooks/useNotificationManager';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
+import { setCachedUser } from '@/utils/userCacheManager';
 
 interface ChatInterfaceProps {
   chat: UseChatReturn;
@@ -358,6 +359,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               const data = await apiRequest(`/api/users/${userId}?t=${Date.now()}`);
               if (data && data.id) {
                 user = data as any;
+                // تحديث الكاش مع بيانات المستخدم
+                setCachedUser(user);
               }
             } catch {}
           }
