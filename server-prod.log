@@ -1,15 +1,2 @@
 nohup: ignoring input
-[dotenv@17.2.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
-❌ المنفذ 5000 مستخدم بالفعل
-❌ المنفذ 5000 مستخدم بالفعل
-💥 فشل في بدء الخادم: Error: listen EADDRINUSE: address already in use 0.0.0.0:5000
-    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
-    at listenInCluster (node:net:1996:12)
-    at node:net:2205:7
-    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
-  code: 'EADDRINUSE',
-  errno: -98,
-  syscall: 'listen',
-  address: '0.0.0.0',
-  port: 5000
-}
+[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar

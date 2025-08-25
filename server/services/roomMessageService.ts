@@ -28,6 +28,8 @@ class RoomMessageService {
   private messageCache = new Map<string, RoomMessage[]>(); // roomId -> messages
   private readonly MAX_CACHE_SIZE = 100; // رسائل لكل غرفة
   private readonly MAX_CACHE_ROOMS = 50; // عدد الغرف المحفوظة في الذاكرة
+  // Limit concurrent DB fetches per room to avoid overload under heavy load
+  private roomFetchLocks = new Map<string, Promise<MessagePagination>>();
 
   /**
    * إرسال رسالة لغرفة
@@ -175,54 +177,70 @@ class RoomMessageService {
         };
       }
 
-      // جلب الرسائل من قاعدة البيانات
-      const dbMessages = await storage.getRoomMessages(roomId, safeLimit, safeOffset);
-      const totalCount = await storage.getRoomMessageCount(roomId);
+      // Serialize DB fetches per room when offset=0 to avoid stampede
+      const doFetch = async (): Promise<MessagePagination> => {
+        const dbMessages = await storage.getRoomMessages(roomId, safeLimit, safeOffset);
+        const totalCount = await storage.getRoomMessageCount(roomId);
 
-      // Batch fetch senders to avoid N+1
-      const uniqueSenderIds = Array.from(
-        new Set((dbMessages || []).map((m: any) => m.senderId).filter(Boolean))
-      );
-      const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
-      const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
+        // Batch fetch senders to avoid N+1
+        const uniqueSenderIds = Array.from(
+          new Set((dbMessages || []).map((m: any) => m.senderId).filter(Boolean))
+        );
+        const senders = await storage.getUsersByIds(uniqueSenderIds as number[]);
+        const senderMap = new Map<number, any>((senders || []).map((u: any) => [u.id, u]));
 
-      // تحويل الرسائل للتنسيق المطلوب
-      const messages: RoomMessage[] = [];
-      for (const msg of dbMessages) {
-        try {
-          const sender = senderMap.get(msg.senderId);
-          const roomMessage: RoomMessage = {
-            id: msg.id,
-            senderId: msg.senderId,
-            roomId: roomId,
-            content: msg.content,
-            messageType: msg.messageType || 'text',
-            timestamp: new Date(msg.timestamp),
-            isPrivate: msg.isPrivate || false,
-            receiverId: msg.receiverId || null,
-            senderUsername: sender?.username || 'مستخدم',
-            senderUserType: sender?.userType || 'user',
-            senderAvatar: (sender as any)?.profileImage || null,
-            sender,
-            attachments: (msg as any)?.attachments || [],
-          };
-          messages.push(roomMessage);
-        } catch (err) {
-          console.warn(`تعذر معالجة الرسالة ${msg.id}:`, err);
+        // تحويل الرسائل للتنسيق المطلوب
+        const messages: RoomMessage[] = [];
+        for (const msg of dbMessages) {
+          try {
+            const sender = senderMap.get(msg.senderId);
+            const roomMessage: RoomMessage = {
+              id: msg.id,
+              senderId: msg.senderId,
+              roomId: roomId,
+              content: msg.content,
+              messageType: msg.messageType || 'text',
+              timestamp: new Date(msg.timestamp),
+              isPrivate: msg.isPrivate || false,
+              receiverId: msg.receiverId || null,
+              senderUsername: sender?.username || 'مستخدم',
+              senderUserType: sender?.userType || 'user',
+              senderAvatar: (sender as any)?.profileImage || null,
+              sender,
+              attachments: (msg as any)?.attachments || [],
+            };
+            messages.push(roomMessage);
+          } catch (err) {
+            console.warn(`تعذر معالجة الرسالة ${msg.id}:`, err);
+          }
         }
-      }
 
-      // إضافة الرسائل للذاكرة المؤقتة (إذا كان offset = 0)
-      if (safeOffset === 0 && messages.length > 0) {
-        this.updateCache(roomId, messages);
-      }
+        // إضافة الرسائل للذاكرة المؤقتة (إذا كان offset = 0)
+        if (safeOffset === 0 && messages.length > 0) {
+          this.updateCache(roomId, messages);
+        }
 
-      return {
-        messages,
-        totalCount,
-        hasMore: safeOffset + messages.length < totalCount,
-        nextOffset: safeOffset + messages.length,
+        return {
+          messages,
+          totalCount,
+          hasMore: safeOffset + messages.length < totalCount,
+          nextOffset: safeOffset + messages.length,
+        };
       };
+
+      if (safeOffset === 0) {
+        const existing = this.roomFetchLocks.get(roomId);
+        if (existing) {
+          return existing;
+        }
+        const promise = doFetch().finally(() => {
+          this.roomFetchLocks.delete(roomId);
+        });
+        this.roomFetchLocks.set(roomId, promise);
+        return promise;
+      }
+
+      return await doFetch();
     } catch (error) {
       console.error(`خطأ في جلب رسائل الغرفة ${roomId}:`, error);
       return {
