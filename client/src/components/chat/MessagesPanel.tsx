@@ -15,6 +15,7 @@ import type { ChatUser } from '@/types/chat';
 import { formatMessagePreview, getPmLastOpened, setPmLastOpened } from '@/utils/messageUtils';
 import { formatTime } from '@/utils/timeUtils';
 import { getFinalUsernameColor, getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
+import { userCache, getCachedUserWithMerge, setCachedUser } from '@/utils/userCacheManager';
 
 interface MessagesPanelProps {
   isOpen: boolean;
@@ -64,25 +65,22 @@ export default function MessagesPanel({
     refetchOnWindowFocus: false,
   });
 
-  // Cache محلي لحل أسماء المستخدمين بشكل ثابت حتى وهم أوفلاين
-  const [resolvedUsers, setResolvedUsers] = useState<Map<number, ChatUser>>(new Map());
+  // استخدام نظام الكاش المحسّن بدلاً من الكاش المحلي
+  // تم إزالة resolvedUsers لصالح userCache المركزي
 
-  // هيدرنة الكاش من لقطات sender المخزنة داخل رسائل الخاص
+  // تحديث الكاش من بيانات المحادثات الخاصة
   useEffect(() => {
-    const next = new Map(resolvedUsers);
     const ids = Object.keys(privateConversations || {})
       .map((k) => parseInt(k, 10))
       .filter((n) => Number.isFinite(n));
+    
     for (const uid of ids) {
-      if (next.has(uid)) continue;
       const conv = privateConversations[uid] || [];
       const fromSender = conv.find((m: any) => m && m.senderId === uid && m.sender)?.sender;
       if (fromSender && typeof fromSender.username === 'string') {
-        next.set(uid, fromSender as ChatUser);
+        // حفظ في الكاش المركزي
+        setCachedUser(fromSender as ChatUser);
       }
-    }
-    if (next.size !== resolvedUsers.size) {
-      setResolvedUsers(next);
     }
   }, [privateConversations]);
 
@@ -96,7 +94,7 @@ export default function MessagesPanel({
       const id = c.otherUserId;
       if (!id) continue;
       if (c.otherUser) continue;
-      if (resolvedUsers.has(id)) continue;
+      if (userCache.getUser(id)) continue;
       if (onlineSet.has(id)) continue;
       targetIds.add(id);
     }
@@ -106,7 +104,7 @@ export default function MessagesPanel({
       .map((k) => parseInt(k, 10))
       .filter((n) => Number.isFinite(n));
     for (const uid of localIds) {
-      if (resolvedUsers.has(uid) || onlineSet.has(uid)) continue;
+      if (userCache.getUser(uid) || onlineSet.has(uid)) continue;
       const conv = privateConversations[uid] || [];
       const fromSender = conv.find((m: any) => m && m.senderId === uid && m.sender)?.sender;
       if (!fromSender) targetIds.add(uid);
@@ -123,22 +121,19 @@ export default function MessagesPanel({
             apiRequest(`/api/users/${id}`).catch(() => null)
           )
         );
-        const next = new Map(resolvedUsers);
         results.forEach((data, idx) => {
           if (!cancelled && data && data.id) {
-            next.set(ids[idx], data as ChatUser);
+            // حفظ في الكاش المركزي
+            setCachedUser(data as ChatUser);
           }
         });
-        if (!cancelled && next.size !== resolvedUsers.size) {
-          setResolvedUsers(next);
-        }
       } catch {}
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [conversationsData, privateConversations, onlineUsers, resolvedUsers]);
+  }, [conversationsData, privateConversations, onlineUsers]);
 
   // تحسين: إزالة التحميل المزدوج - React Query يتعامل مع هذا تلقائياً
   // useEffect تم إزالته لمنع التحميل المزدوج
@@ -189,9 +184,10 @@ export default function MessagesPanel({
 
     // معالجة بيانات الخادم فقط
     for (const c of conversationsData?.conversations || []) {
+      const cachedUser = userCache.getUser(c.otherUserId);
       const user =
         c.otherUser ||
-        resolvedUsers.get(c.otherUserId) ||
+        (cachedUser ? getCachedUserWithMerge(c.otherUserId, cachedUser) : null) ||
         onlineUsers.find((u) => u.id === c.otherUserId) ||
         null;
       if (!user) continue;
@@ -211,7 +207,7 @@ export default function MessagesPanel({
     }
 
     return map;
-  }, [conversationsData, onlineUsers, currentUser?.id, resolvedUsers]);
+  }, [conversationsData, onlineUsers, currentUser?.id]);
 
   const localConversations = useMemo(() => {
     const map = new Map<
@@ -233,17 +229,11 @@ export default function MessagesPanel({
       if (!latest) continue;
 
       const fromSender = (conv.find((m: any) => m && m.senderId === uid && m.sender)?.sender || null) as ChatUser | null;
-      const user =
-        fromSender ||
-        resolvedUsers.get(uid) ||
+      
+      // استخدام الكاش المحسّن مع fallback ذكي
+      const user = fromSender ||
         onlineUsers.find((u) => u.id === uid) ||
-        ({
-          id: uid,
-          username: `مستخدم #${uid}`,
-          userType: 'member',
-          role: 'member',
-          isOnline: false,
-        } as unknown as ChatUser);
+        getCachedUserWithMerge(uid, fromSender);
 
       const lastOpened = currentUser?.id ? getPmLastOpened(currentUser.id, uid) : 0;
       const unreadCount = conv.filter(
@@ -262,7 +252,7 @@ export default function MessagesPanel({
     }
 
     return map;
-  }, [privateConversations, onlineUsers, currentUser?.id, resolvedUsers]);
+  }, [privateConversations, onlineUsers, currentUser?.id]);
 
   const conversations = useMemo(() => {
     // دمج المحادثات من المصدرين

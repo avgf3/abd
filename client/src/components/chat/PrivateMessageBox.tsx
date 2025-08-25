@@ -16,6 +16,7 @@ import {
 } from '@/utils/messageUtils';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
+import { getCachedUsername } from '@/utils/userCacheManager';
 
 interface PrivateMessageBoxProps {
   isOpen: boolean;
@@ -354,7 +355,10 @@ export default function PrivateMessageBox({
                             className="font-semibold text-sm truncate"
                             style={{ color: getFinalUsernameColor(m.sender || user) }}
                           >
-                            {m.sender?.username || (isMe ? currentUser?.username : user.username)}
+                            {m.sender?.username || 
+                              (isMe 
+                                ? getCachedUsername(currentUser?.id || 0, currentUser?.username)
+                                : getCachedUsername(user.id, user.username))}
                           </span>
                           <span className="text-xs text-gray-500 whitespace-nowrap">
                             {formatTime(m.timestamp)}
