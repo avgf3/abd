@@ -1,6 +1,6 @@
 {
-  "timestamp": "2025-08-24T14:27:49.827Z",
-  "url": "http://localhost:5000",
+  "timestamp": "2025-08-25T00:34:59.216Z",
+  "url": "http://localhost:5050",
   "healthPercentage": 100,
   "successCount": 8,
   "failureCount": 0,
@@ -10,7 +10,7 @@
       "endpoint": "/api/health",
       "status": 200,
       "success": true,
-      "data": "{\"status\":\"healthy\",\"timestamp\":\"2025-08-24T14:27:48.246Z\",\"uptime\":10,\"database\":{\"connected\":true,",
+      "data": "{\"status\":\"healthy\",\"timestamp\":\"2025-08-25T00:34:56.533Z\",\"uptime\":15,\"database\":{\"connected\":true,",
       "headers": {
         "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' ws: wss: https:; font-src 'self' https://fonts.gstatic.com; object-src 'none'; media-src 'self'; frame-src 'none'",
         "cross-origin-opener-policy": "same-origin",
@@ -32,9 +32,9 @@
         "cache-control": "no-store, no-cache, must-revalidate",
         "content-type": "application/json; charset=utf-8",
         "content-length": "180",
-        "etag": "W/\"b4-tTiKbuSxfotNsxtCdJ3r9j26zow\"",
+        "etag": "W/\"b4-g1tUzwAJved+BUbJ/g3kbHHd22o\"",
         "vary": "Accept-Encoding",
-        "date": "Sun, 24 Aug 2025 14:27:48 GMT",
+        "date": "Mon, 25 Aug 2025 00:34:56 GMT",
         "connection": "keep-alive",
         "keep-alive": "timeout=5"
       }
@@ -68,7 +68,7 @@
         "content-type": "application/json; charset=utf-8",
         "content-length": "1691",
         "vary": "Accept-Encoding",
-        "date": "Sun, 24 Aug 2025 14:27:48 GMT",
+        "date": "Mon, 25 Aug 2025 00:34:56 GMT",
         "connection": "keep-alive",
         "keep-alive": "timeout=5"
       }
@@ -78,7 +78,7 @@
       "endpoint": "/api/users",
       "status": 200,
       "success": true,
-      "data": "{\"users\":[{\"id\":14,\"username\":\"سين\",\"userType\":\"member\",\"role\":\"member\",\"isOnline\":true,\"profileImag",
+      "data": "{\"users\":[{\"id\":14,\"username\":\"سين\",\"userType\":\"member\",\"role\":\"member\",\"isOnline\":false,\"profileIma",
       "headers": {
         "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' ws: wss: https:; font-src 'self' https://fonts.gstatic.com; object-src 'none'; media-src 'self'; frame-src 'none'",
         "cross-origin-opener-policy": "same-origin",
@@ -98,10 +98,10 @@
         "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-device-id",
         "access-control-max-age": "86400",
         "content-type": "application/json; charset=utf-8",
-        "content-length": "3888",
-        "etag": "W/\"f30-6sGL7BE2sfMqZAjcQdT8B+0GE08\"",
+        "content-length": "3881",
+        "etag": "W/\"f29-OV0lGecwVZRJa9xKf83JLMjkTo8\"",
         "vary": "Accept-Encoding",
-        "date": "Sun, 24 Aug 2025 14:27:49 GMT",
+        "date": "Mon, 25 Aug 2025 00:34:58 GMT",
         "connection": "keep-alive",
         "keep-alive": "timeout=5"
       }
@@ -111,7 +111,7 @@
       "endpoint": "/api/messages/public",
       "status": 200,
       "success": true,
-      "data": "{\"messages\":[{\"id\":259,\"senderId\":14,\"receiverId\":null,\"content\":\"بببب\",\"messageType\":\"text\",\"isPriv",
+      "data": "{\"messages\":[{\"id\":317,\"senderId\":1,\"receiverId\":null,\"content\":\"هاي هاي\",\"messageType\":\"text\",\"isPr",
       "headers": {
         "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' ws: wss: https:; font-src 'self' https://fonts.gstatic.com; object-src 'none'; media-src 'self'; frame-src 'none'",
         "cross-origin-opener-policy": "same-origin",
@@ -131,10 +131,10 @@
         "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-device-id",
         "access-control-max-age": "86400",
         "content-type": "application/json; charset=utf-8",
-        "content-length": "60663",
-        "etag": "W/\"ecf7-4ZOLmgUAx3EbkWOCBL/29nvgIoQ\"",
+        "content-length": "60798",
+        "etag": "W/\"ed7e-UnKi+eNZJwb+0qsDuzLifu4Th+Q\"",
         "vary": "Accept-Encoding",
-        "date": "Sun, 24 Aug 2025 14:27:49 GMT",
+        "date": "Mon, 25 Aug 2025 00:34:58 GMT",
         "connection": "keep-alive",
         "keep-alive": "timeout=5"
       }
@@ -144,7 +144,7 @@
       "endpoint": "/api/settings/site-theme",
       "status": 200,
       "success": true,
-      "data": "{\"siteTheme\":\"default\"}",
+      "data": "{\"siteTheme\":\"sunset\"}",
       "headers": {
         "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' ws: wss: https:; font-src 'self' https://fonts.gstatic.com; object-src 'none'; media-src 'self'; frame-src 'none'",
         "cross-origin-opener-policy": "same-origin",
@@ -164,10 +164,10 @@
         "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-device-id",
         "access-control-max-age": "86400",
         "content-type": "application/json; charset=utf-8",
-        "content-length": "23",
-        "etag": "W/\"17-JDPQKbkIxavB8da/YNaYeJj+1w4\"",
+        "content-length": "22",
+        "etag": "W/\"16-HLLGNdErDO7WF0VNhhZfIhSf8lI\"",
         "vary": "Accept-Encoding",
-        "date": "Sun, 24 Aug 2025 14:27:49 GMT",
+        "date": "Mon, 25 Aug 2025 00:34:59 GMT",
         "connection": "keep-alive",
         "keep-alive": "timeout=5"
       }
@@ -204,12 +204,12 @@
         "access-control-max-age": "86400",
         "accept-ranges": "bytes",
         "cache-control": "public, max-age=604800",
-        "last-modified": "Sun, 24 Aug 2025 14:06:41 GMT",
-        "etag": "W/\"40c-198dc671ca9\"",
+        "last-modified": "Mon, 25 Aug 2025 00:32:17 GMT",
+        "etag": "W/\"40c-198dea3db12\"",
         "content-type": "text/html; charset=UTF-8",
         "content-length": "1036",
         "vary": "Accept-Encoding",
-        "date": "Sun, 24 Aug 2025 14:27:49 GMT",
+        "date": "Mon, 25 Aug 2025 00:34:59 GMT",
         "connection": "keep-alive",
         "keep-alive": "timeout=5"
       }
@@ -239,7 +239,7 @@
         "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-device-id",
         "access-control-max-age": "86400",
         "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\"",
-        "date": "Sun, 24 Aug 2025 14:27:49 GMT",
+        "date": "Mon, 25 Aug 2025 00:34:59 GMT",
         "connection": "keep-alive",
         "keep-alive": "timeout=5"
       }
