@@ -1,1 +1,86 @@
-[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[dotenv@17.2.1] injecting env (0) from .env -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar
+7:06:46 AM [vite] (client) Re-optimizing dependencies because vite config has changed
+🚨 خطأ في الخادم: {
+  message: 'Invalid JSON',
+  stack: 'Error: Invalid JSON\n' +
+    '    at verify (file:///workspace/dist/index.js:5468:17)\n' +
+    '    at /workspace/node_modules/body-parser/lib/read.js:111:9\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (/workspace/node_modules/raw-body/index.js:238:16)\n' +
+    '    at done (/workspace/node_modules/raw-body/index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (/workspace/node_modules/raw-body/index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:518:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)',
+  url: '/api/auth/guest',
+  method: 'POST',
+  userAgent: 'curl/8.12.1',
+  timestamp: '2025-08-25T08:06:34.849Z'
+}
+Error [ERR_HTTP_HEADERS_SENT]: Cannot set headers after they are sent to the client
+    at ServerResponse.setHeader (node:_http_outgoing:699:11)
+    at ServerResponse.header (/workspace/node_modules/express/lib/response.js:794:10)
+    at ServerResponse.send (/workspace/node_modules/express/lib/response.js:174:12)
+    at ServerResponse.json (/workspace/node_modules/express/lib/response.js:278:15)
+    at errorHandler (file:///workspace/dist/index.js:4223:30)
+    at Layer.handle_error (/workspace/node_modules/express/lib/router/layer.js:71:5)
+    at trim_prefix (/workspace/node_modules/express/lib/router/index.js:326:13)
+    at /workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/workspace/node_modules/express/lib/router/index.js:280:10)
+🚨 خطأ في الخادم: {
+  message: 'Invalid JSON',
+  stack: 'Error: Invalid JSON\n' +
+    '    at verify (file:///workspace/dist/index.js:5468:17)\n' +
+    '    at /workspace/node_modules/body-parser/lib/read.js:111:9\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (/workspace/node_modules/raw-body/index.js:238:16)\n' +
+    '    at done (/workspace/node_modules/raw-body/index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (/workspace/node_modules/raw-body/index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:518:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)',
+  url: '/api/auth/guest',
+  method: 'POST',
+  userAgent: 'curl/8.12.1',
+  timestamp: '2025-08-25T08:07:32.274Z'
+}
+Error [ERR_HTTP_HEADERS_SENT]: Cannot set headers after they are sent to the client
+    at ServerResponse.setHeader (node:_http_outgoing:699:11)
+    at ServerResponse.header (/workspace/node_modules/express/lib/response.js:794:10)
+    at ServerResponse.send (/workspace/node_modules/express/lib/response.js:174:12)
+    at ServerResponse.json (/workspace/node_modules/express/lib/response.js:278:15)
+    at errorHandler (file:///workspace/dist/index.js:4223:30)
+    at Layer.handle_error (/workspace/node_modules/express/lib/router/layer.js:71:5)
+    at trim_prefix (/workspace/node_modules/express/lib/router/index.js:326:13)
+    at /workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/workspace/node_modules/express/lib/router/index.js:280:10)
+🚨 خطأ في الخادم: {
+  message: 'Invalid JSON',
+  stack: 'Error: Invalid JSON\n' +
+    '    at verify (file:///workspace/dist/index.js:5468:17)\n' +
+    '    at /workspace/node_modules/body-parser/lib/read.js:111:9\n' +
+    '    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n' +
+    '    at invokeCallback (/workspace/node_modules/raw-body/index.js:238:16)\n' +
+    '    at done (/workspace/node_modules/raw-body/index.js:227:7)\n' +
+    '    at IncomingMessage.onEnd (/workspace/node_modules/raw-body/index.js:287:7)\n' +
+    '    at IncomingMessage.emit (node:events:518:28)\n' +
+    '    at endReadableNT (node:internal/streams/readable:1698:12)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)',
+  url: '/api/auth/guest',
+  method: 'POST',
+  userAgent: 'curl/8.12.1',
+  timestamp: '2025-08-25T08:08:04.536Z'
+}
+Error [ERR_HTTP_HEADERS_SENT]: Cannot set headers after they are sent to the client
+    at ServerResponse.setHeader (node:_http_outgoing:699:11)
+    at ServerResponse.header (/workspace/node_modules/express/lib/response.js:794:10)
+    at ServerResponse.send (/workspace/node_modules/express/lib/response.js:174:12)
+    at ServerResponse.json (/workspace/node_modules/express/lib/response.js:278:15)
+    at errorHandler (file:///workspace/dist/index.js:4223:30)
+    at Layer.handle_error (/workspace/node_modules/express/lib/router/layer.js:71:5)
+    at trim_prefix (/workspace/node_modules/express/lib/router/index.js:326:13)
+    at /workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/workspace/node_modules/express/lib/router/index.js:280:10)

@@ -8,7 +8,9 @@
 const autocannon = require('autocannon');
 const fs = require('fs');
 const path = require('path');
-const chalk = require('chalk');
+let chalk = require('chalk');
+// Support chalk v5 ESM default export shape when required via CJS
+chalk = chalk && chalk.default ? chalk.default : chalk;
 
 // Configuration
 const config = {
