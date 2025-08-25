@@ -1,0 +1,130 @@
+{
+  "environments": {
+    "local": {
+      "baseURL": "http://localhost:5000",
+      "wsURL": "ws://localhost:5000",
+      "staticURL": "http://localhost:5173"
+    },
+    "staging": {
+      "baseURL": "https://staging.example.com",
+      "wsURL": "wss://staging.example.com",
+      "staticURL": "https://staging.example.com"
+    },
+    "production": {
+      "baseURL": "https://chat-app.onrender.com",
+      "wsURL": "wss://chat-app.onrender.com",
+      "staticURL": "https://chat-app.onrender.com"
+    }
+  },
+  "testData": {
+    "users": {
+      "count": 1000,
+      "prefix": "testuser",
+      "password": "Test@123456"
+    },
+    "messages": {
+      "templates": [
+        "مرحبا، كيف حالك؟",
+        "Hello, how are you?",
+        "هذه رسالة اختبارية رقم {id}",
+        "This is test message number {id}",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+        "السلام عليكم ورحمة الله وبركاته",
+        "Quick test message",
+        "🚀 Performance test in progress...",
+        "Testing Arabic: مرحبا بالعالم",
+        "Testing emojis: 😀 🎉 🔥 💯"
+      ],
+      "attachmentTypes": ["image/jpeg", "image/png", "application/pdf", "text/plain"],
+      "maxSize": 5242880
+    },
+    "rooms": {
+      "publicCount": 50,
+      "privateCount": 200,
+      "maxUsersPerRoom": 100
+    }
+  },
+  "thresholds": {
+    "http": {
+      "p50": 100,
+      "p95": 500,
+      "p99": 1000,
+      "errorRate": 0.001,
+      "successRate": 0.999
+    },
+    "websocket": {
+      "connectionTime": 1000,
+      "messageLatency": 50,
+      "reconnectTime": 3000,
+      "dropRate": 0.001
+    },
+    "resources": {
+      "cpuMax": 80,
+      "memoryMax": 85,
+      "networkMax": 100,
+      "diskIOMax": 50
+    }
+  },
+  "scenarios": {
+    "rampUp": {
+      "duration": "30m",
+      "startVUs": 0,
+      "endVUs": 1000,
+      "rampDuration": "25m",
+      "steadyDuration": "5m"
+    },
+    "steadyLoad": {
+      "duration": "60m",
+      "vus": 500,
+      "iterations": "unlimited"
+    },
+    "spike": {
+      "duration": "15m",
+      "baseVUs": 100,
+      "spikeVUs": 2000,
+      "spikeDuration": "30s"
+    },
+    "endurance": {
+      "duration": "4h",
+      "vus": 200,
+      "iterations": "unlimited"
+    },
+    "stress": {
+      "duration": "unlimited",
+      "startVUs": 500,
+      "incrementVUs": 100,
+      "incrementInterval": "1m"
+    }
+  },
+  "monitoring": {
+    "interval": 5,
+    "metrics": [
+      "cpu",
+      "memory",
+      "network",
+      "disk",
+      "database",
+      "redis",
+      "nginx"
+    ],
+    "alerts": {
+      "cpu": 90,
+      "memory": 90,
+      "errorRate": 5,
+      "responseTime": 5000
+    }
+  },
+  "reporting": {
+    "formats": ["json", "html", "csv", "pdf"],
+    "realtime": true,
+    "dashboard": true,
+    "slack": {
+      "enabled": false,
+      "webhook": ""
+    },
+    "email": {
+      "enabled": false,
+      "recipients": []
+    }
+  }
+}
