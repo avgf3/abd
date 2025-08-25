@@ -514,9 +514,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const modReportSchema = z.object({
+    reporterId: z
+      .union([z.number().int().positive(), z.string().regex(/^\d+$/)])
+      .optional()
+      .transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+    reportedUserId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+    reason: z.string().trim().min(3, 'السبب قصير جداً').max(200),
+    content: z.string().trim().max(1000).optional(),
+    messageId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).optional().transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+  });
   app.post('/api/moderation/report', protect.auth, limiters.modReport, async (req, res) => {
     try {
-      const { reporterId, reportedUserId, reason, content, messageId } = req.body;
+      const parsed = modReportSchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+      }
+      const { reportedUserId, reason, content, messageId } = parsed.data as any;
+      const reporterId = (req as any).user?.id as number;
 
       const report = spamProtection.addReport(
         reporterId,
@@ -531,9 +546,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const muteSchema = z.object({
+    targetUserId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+    reason: z.string().trim().min(3).max(200),
+    duration: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).optional().transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+  });
   app.post('/api/moderation/mute', protect.moderator, async (req, res) => {
     try {
-      const { moderatorId, targetUserId, reason, duration } = req.body;
+      const parsed = muteSchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+      }
+      const moderatorId = (req as any).user?.id as number;
+      const { targetUserId, reason, duration } = parsed.data as any;
 
       // التحقق من المعاملات المطلوبة
       if (!moderatorId || !targetUserId || !reason) {
@@ -598,9 +623,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const banSchema = z.object({
+    targetUserId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+    reason: z.string().trim().min(3).max(200),
+    duration: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).optional().transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+  });
   app.post('/api/moderation/ban', protect.admin, async (req, res) => {
     try {
-      const { moderatorId, targetUserId, reason, duration } = req.body;
+      const parsed = banSchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+      }
+      const moderatorId = (req as any).user?.id as number;
+      const { targetUserId, reason, duration } = parsed.data as any;
 
       // التحقق من المعاملات المطلوبة
       if (!moderatorId || !targetUserId || !reason) {
@@ -677,9 +712,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const blockSchema = z.object({
+    targetUserId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+    reason: z.string().trim().min(3).max(200),
+  });
   app.post('/api/moderation/block', protect.owner, async (req, res) => {
     try {
-      const { moderatorId, targetUserId, reason } = req.body;
+      const parsed = blockSchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+      }
+      const moderatorId = (req as any).user?.id as number;
+      const { targetUserId, reason } = parsed.data as any;
 
       // التحقق من المعاملات المطلوبة
       if (!moderatorId || !targetUserId || !reason) {
@@ -749,9 +793,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const promoteSchema = z.object({
+    targetUserId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+    newRole: z.enum(['admin', 'moderator']),
+  });
   app.post('/api/moderation/promote', protect.owner, async (req, res) => {
     try {
-      const { moderatorId, targetUserId, newRole } = req.body;
+      const parsed = promoteSchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+      }
+      const moderatorId = (req as any).user?.id as number;
+      const { targetUserId, newRole } = parsed.data as any;
 
       // التحقق من وجود المعاملات المطلوبة
       if (!moderatorId || !targetUserId || !newRole) {
@@ -793,9 +846,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // مسار جديد لإلغاء الإشراف (تنزيل الرتبة) - للمالك فقط
+  const demoteSchema = z.object({
+    targetUserId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+  });
   app.post('/api/moderation/demote', protect.owner, async (req, res) => {
     try {
-      const { moderatorId, targetUserId } = req.body;
+      const parsed = demoteSchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+      }
+      const moderatorId = (req as any).user?.id as number;
+      const { targetUserId } = parsed.data as any;
       if (!moderatorId || !targetUserId) {
         return res.status(400).json({ error: 'معاملات ناقصة' });
       }
@@ -827,9 +888,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const unmuteSchema = z.object({
+    targetUserId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+  });
   app.post('/api/moderation/unmute', protect.moderator, async (req, res) => {
     try {
-      const { moderatorId, targetUserId } = req.body;
+      const parsed = unmuteSchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+      }
+      const moderatorId = (req as any).user?.id as number;
+      const { targetUserId } = parsed.data as any;
 
       const success = await moderationSystem.unmuteUser(moderatorId, targetUserId);
       if (success) {
@@ -842,9 +911,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const unblockSchema = z.object({
+    targetUserId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+  });
   app.post('/api/moderation/unblock', protect.owner, async (req, res) => {
     try {
-      const { moderatorId, targetUserId } = req.body;
+      const parsed = unblockSchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+      }
+      const moderatorId = (req as any).user?.id as number;
+      const { targetUserId } = parsed.data as any;
 
       const success = await moderationSystem.unblockUser(moderatorId, targetUserId);
       if (success) {
