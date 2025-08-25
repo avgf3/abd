@@ -1266,9 +1266,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // إضافة مستخدم إلى VIP (للأونر/الإدمن)
+  const addVipSchema = z.object({
+    targetUserId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+  });
   app.post('/api/vip', protect.admin, async (req, res) => {
     try {
-      const { targetUserId } = req.body;
+      const parsed = addVipSchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+      }
+      const { targetUserId } = parsed.data as any;
       const adminId = (req as any).user?.id as number;
       if (!targetUserId) return res.status(400).json({ error: 'targetUserId مطلوب' });
       const success = await databaseService.addVipUser(parseInt(String(targetUserId)), adminId);
