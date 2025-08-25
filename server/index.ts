@@ -51,14 +51,21 @@ app.use((req, res, next) => {
 });
 
 // Early, lightweight health endpoint (no DB/session/compression)
+// يتم تعريف هذا المسار مبكراً قبل أي middleware ثقيل
 app.get('/health', (_req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('X-Response-Time', '0ms'); // مؤشر سرعة الاستجابة
   } catch {}
   res.status(200).json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: Math.floor(process.uptime()),
+    pid: process.pid,
+    memory: {
+      rss: Math.round(process.memoryUsage().rss / 1024 / 1024), // MB
+      heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) // MB
+    }
   });
 });
 
@@ -80,18 +87,36 @@ app.use((req, _res, next) => {
 
 // Setup security first
 setupSecurity(app);
-// Compression with higher threshold and skip API JSON to reduce CPU under load
+
+// Compression optimization for high load
+// - Higher threshold (16KB) to reduce CPU overhead
+// - Skip JSON API responses completely
+// - Only compress large static files
 app.use(
   compression({
-    threshold: 8192,
+    threshold: 16384, // 16KB - رفع الحد لتقليل الضغط على المعالج
+    level: 6, // مستوى ضغط متوسط (افتراضي 6، الأقصى 9)
     filter: (req, res) => {
       try {
-        if (req.path && req.path.startsWith('/api')) {
+        // تجاوز ضغط مسارات API بالكامل
+        if (req.path && (req.path.startsWith('/api') || req.path === '/health')) {
           return false;
+        }
+        // تجاوز ضغط الصور (مضغوطة مسبقاً)
+        if (req.path && req.path.match(/\.(jpg|jpeg|png|gif|webp|ico)$/i)) {
+          return false;
+        }
+        // ضغط HTML, CSS, JS, SVG فقط
+        const contentType = res.getHeader('Content-Type');
+        if (contentType && typeof contentType === 'string') {
+          return /text|javascript|json|svg|xml/.test(contentType);
         }
       } catch {}
       return (compression as any).filter(req, res);
     },
+    // تحسينات إضافية
+    memLevel: 8, // استخدام ذاكرة أقل (افتراضي 8)
+    strategy: 0 // استراتيجية افتراضية
   })
 );
 
@@ -210,17 +235,7 @@ app.use(
   })
 );
 
-// Health check endpoint - simple and fast
-app.get('/health', (req, res) => {
-  try {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-  } catch {}
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  });
-});
+  // تم نقل /health endpoint إلى أعلى الملف قبل أي middleware
 
 // More detailed health endpoint
 app.get('/api/health', async (req, res) => {

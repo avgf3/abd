@@ -87,12 +87,16 @@ router.get('/stats', protect.admin, async (req, res) => {
  */
 router.get('/', async (req, res) => {
   try {
-    // 🚀 رؤوس التخزين المؤقت قصيرة الأجل + ETag ثابت
+    // 🚀 تحسينات الكاش والأداء
     const version = roomService.getRoomsVersion?.() || 1;
-    const etag = `rooms-v${version}`;
+    const etag = `"rooms-v${version}-${Date.now() / 10000 | 0}"`; // ETag يتغير كل 10 ثواني
 
-    res.setHeader('Cache-Control', 'public, max-age=10');
+    // Cache-Control محسّن: كاش قصير مع إعادة التحقق
+    res.setHeader('Cache-Control', 'public, max-age=5, s-maxage=10, stale-while-revalidate=30');
     res.setHeader('ETag', etag);
+    res.setHeader('Vary', 'Accept-Encoding'); // للتعامل مع الضغط
+    
+    // التحقق من ETag للحفظ في النطاق الترددي
     if (req.headers['if-none-match'] === etag) {
       return res.status(304).end();
     }
