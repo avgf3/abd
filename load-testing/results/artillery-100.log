@@ -1,0 +1,14 @@
+Test run id: t5fgp_wxzwaka4t49j5d9z4a4pbjpewb3ha_fctg
+Phase started: unnamed (index: 0, duration: 30s) 16:45:17(+0000)
+
+worker error, id: 1 Error: Callback was already called.
+    at /home/ubuntu/.nvm/versions/node/v22.16.0/lib/node_modules/artillery/node_modules/async/dist/async.js:969:32
+    at done (/home/ubuntu/.nvm/versions/node/v22.16.0/lib/node_modules/artillery/node_modules/@artilleryio/int-core/lib/engine_socketio.js:421:16)
+    at Socket.<anonymous> (/home/ubuntu/.nvm/versions/node/v22.16.0/lib/node_modules/artillery/node_modules/@artilleryio/int-core/lib/engine_socketio.js:393:7)
+    at Socket.on (/home/ubuntu/.nvm/versions/node/v22.16.0/lib/node_modules/artillery/node_modules/@socket.io/component-emitter/lib/cjs/index.js:63:8)
+    at Emitter.emit (/home/ubuntu/.nvm/versions/node/v22.16.0/lib/node_modules/artillery/node_modules/@socket.io/component-emitter/lib/cjs/index.js:143:20)
+    at Socket.onevent (/home/ubuntu/.nvm/versions/node/v22.16.0/lib/node_modules/artillery/node_modules/socketio-wildcard/index.js:14:17)
+    at Socket.onpacket (/home/ubuntu/.nvm/versions/node/v22.16.0/lib/node_modules/artillery/node_modules/socket.io-client/build/cjs/socket.js:514:22)
+    at Emitter.emit (/home/ubuntu/.nvm/versions/node/v22.16.0/lib/node_modules/artillery/node_modules/@socket.io/component-emitter/lib/cjs/index.js:143:20)
+    at /home/ubuntu/.nvm/versions/node/v22.16.0/lib/node_modules/artillery/node_modules/socket.io-client/build/cjs/manager.js:246:18
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
