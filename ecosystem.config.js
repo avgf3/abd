@@ -2,8 +2,8 @@ module.exports = {
   apps: [{
     name: 'chat-app',
     script: './dist/index.js',
-    instances: 1,
-    exec_mode: 'fork',
+    instances: 'max', // استخدام جميع أنوية المعالج
+    exec_mode: 'cluster', // تفعيل وضع Cluster
     node_args: '--expose-gc --max-old-space-size=400',
     env: {
       NODE_ENV: 'production',

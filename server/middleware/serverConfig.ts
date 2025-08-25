@@ -1,0 +1,181 @@
+import type { Express, Request, Response, NextFunction } from 'express';
+import type { Server } from 'http';
+import express from 'express';
+
+/**
+ * ضبط مهلات وحدود الخادم لتحسين الأمان والأداء
+ */
+export function configureServerLimits(app: Express, server: Server): void {
+  // ضبط مهلات الخادم
+  server.keepAliveTimeout = 10000; // 10 ثواني بدل دقيقتين
+  server.headersTimeout = 15000; // 15 ثانية لإرسال الـ headers
+  server.timeout = 30000; // 30 ثانية للطلب الكامل
+  server.requestTimeout = 30000; // 30 ثانية لاستقبال الطلب
+  
+  // حد أقصى للاتصالات المتزامنة
+  server.maxHeadersCount = 100;
+  
+  console.log('✅ تم ضبط مهلات الخادم:', {
+    keepAliveTimeout: '10s',
+    headersTimeout: '15s',
+    timeout: '30s'
+  });
+}
+
+/**
+ * ضبط حدود حجم الطلبات
+ */
+export function configureRequestLimits(app: Express): void {
+  // حد حجم JSON
+  app.use(express.json({ 
+    limit: '1mb',
+    strict: true,
+    type: ['application/json', 'text/plain']
+  }));
+  
+  // حد حجم URL encoded
+  app.use(express.urlencoded({ 
+    extended: true, 
+    limit: '1mb',
+    parameterLimit: 1000
+  }));
+  
+  // حد حجم النص الخام
+  app.use(express.text({ 
+    limit: '100kb',
+    type: 'text/*'
+  }));
+  
+  // حد حجم البيانات الخام
+  app.use(express.raw({ 
+    limit: '5mb',
+    type: 'application/octet-stream'
+  }));
+  
+  console.log('✅ تم ضبط حدود حجم الطلبات');
+}
+
+/**
+ * Middleware لفرض حد أقصى لطول URL
+ */
+export function urlLengthLimit(maxLength: number = 2048) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (req.originalUrl.length > maxLength) {
+      res.status(414).json({ 
+        error: 'URI Too Long',
+        message: `طول URL يتجاوز الحد المسموح (${maxLength} حرف)`
+      });
+      return;
+    }
+    next();
+  };
+}
+
+/**
+ * Middleware لفرض حد أقصى لعدد headers
+ */
+export function headerCountLimit(maxHeaders: number = 50) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const headerCount = Object.keys(req.headers).length;
+    if (headerCount > maxHeaders) {
+      res.status(431).json({ 
+        error: 'Request Header Fields Too Large',
+        message: `عدد الـ headers يتجاوز الحد المسموح (${maxHeaders})`
+      });
+      return;
+    }
+    next();
+  };
+}
+
+/**
+ * Middleware لمهلة الطلبات
+ */
+export function requestTimeout(ms: number = 30000) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const timeout = setTimeout(() => {
+      if (!res.headersSent) {
+        res.status(408).json({ 
+          error: 'Request Timeout',
+          message: 'انتهت مهلة معالجة الطلب'
+        });
+      }
+    }, ms);
+    
+    // تنظيف المؤقت عند الانتهاء
+    res.on('finish', () => clearTimeout(timeout));
+    res.on('close', () => clearTimeout(timeout));
+    
+    next();
+  };
+}
+
+/**
+ * Middleware للحماية من Slowloris attacks
+ */
+export function slowlorisProtection(options: {
+  windowMs?: number;
+  delayAfter?: number;
+  delayMs?: number;
+  maxDelayMs?: number;
+} = {}) {
+  const {
+    windowMs = 60000, // نافذة زمنية: دقيقة واحدة
+    delayAfter = 5, // بدء التأخير بعد 5 طلبات
+    delayMs = 500, // تأخير أولي 500ms
+    maxDelayMs = 20000 // حد أقصى للتأخير 20 ثانية
+  } = options;
+  
+  const requests = new Map<string, { count: number; resetTime: number }>();
+  
+  // تنظيف الذاكرة كل دقيقة
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, data] of requests.entries()) {
+      if (now > data.resetTime) {
+        requests.delete(key);
+      }
+    }
+  }, 60000);
+  
+  return (req: Request, res: Response, next: NextFunction) => {
+    const key = req.ip || 'unknown';
+    const now = Date.now();
+    
+    let requestData = requests.get(key);
+    if (!requestData || now > requestData.resetTime) {
+      requestData = { count: 0, resetTime: now + windowMs };
+      requests.set(key, requestData);
+    }
+    
+    requestData.count++;
+    
+    if (requestData.count > delayAfter) {
+      const delay = Math.min(
+        delayMs * (requestData.count - delayAfter),
+        maxDelayMs
+      );
+      
+      setTimeout(() => next(), delay);
+    } else {
+      next();
+    }
+  };
+}
+
+/**
+ * تطبيق جميع إعدادات الأمان والحدود
+ */
+export function applyServerSecurity(app: Express, server: Server): void {
+  // ضبط الخادم
+  configureServerLimits(app, server);
+  configureRequestLimits(app);
+  
+  // تطبيق middlewares الأمان
+  app.use(urlLengthLimit());
+  app.use(headerCountLimit());
+  app.use(requestTimeout());
+  app.use(slowlorisProtection());
+  
+  console.log('✅ تم تطبيق جميع إعدادات أمان الخادم');
+}
