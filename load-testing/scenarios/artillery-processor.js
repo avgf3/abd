@@ -3,6 +3,8 @@
  * Provides custom functions and hooks for Artillery scenarios
  */
 
+const axios = require('axios');
+
 module.exports = {
     // Before scenario starts
     beforeScenario: beforeScenario,
@@ -28,21 +30,50 @@ let metrics = {
 /**
  * Called before each scenario starts
  */
-function beforeScenario(requestParams, context, ee, next) {
-    // Set custom headers
-    requestParams.headers = requestParams.headers || {};
-    requestParams.headers['X-Test-ID'] = generateTestId();
-    requestParams.headers['X-Test-Timestamp'] = Date.now();
-    
-    // Initialize user context
-    context.vars.userId = generateUserId();
-    context.vars.sessionId = generateSessionId();
-    context.vars.startTime = Date.now();
-    
-    // Log scenario start
-    console.log(`🚀 Starting scenario for user: ${context.vars.userId}`);
-    
-    return next();
+async function beforeScenario(requestParams, context, ee, next) {
+    try {
+        // Set custom headers
+        requestParams.headers = requestParams.headers || {};
+        requestParams.headers['X-Test-ID'] = generateTestId();
+        requestParams.headers['X-Test-Timestamp'] = Date.now();
+
+        // Initialize user context
+        context.vars.userId = generateUserId();
+        context.vars.sessionId = generateSessionId();
+        context.vars.startTime = Date.now();
+
+        // Acquire auth token via guest registration
+        const baseURL = process.env.BASE_URL || process.env.ARTILLERY_TARGET || 'http://localhost:3000';
+        const username = `lt_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+        const res = await axios.post(`${baseURL}/api/auth/guest`, {
+            username,
+            gender: 'male',
+        }, { validateStatus: () => true });
+
+        let token = null;
+        try {
+            const setCookie = res.headers['set-cookie'] || [];
+            const cookies = Array.isArray(setCookie) ? setCookie : [setCookie];
+            for (const c of cookies) {
+                const m = /auth_token=([^;]+)/.exec(c || '');
+                if (m) { token = decodeURIComponent(m[1]); break; }
+            }
+        } catch {}
+
+        if (token) {
+            context.vars.token = token;
+            requestParams.headers['Authorization'] = `Bearer ${token}`;
+        } else {
+            console.warn('⚠️ Unable to extract auth_token cookie for Artillery user. Socket auth may fail.');
+        }
+
+        // Log scenario start
+        console.log(`🚀 Starting scenario for user: ${context.vars.userId}`);
+        return next();
+    } catch (e) {
+        console.error('❌ beforeScenario error:', e.message || e);
+        return next();
+    }
 }
 
 /**

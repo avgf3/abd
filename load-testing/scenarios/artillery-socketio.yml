@@ -1,5 +1,5 @@
 config:
-  target: "http://localhost:5000"
+  target: "http://localhost:3000"
   phases:
     # Warm-up phase
     - duration: 60
@@ -29,7 +29,7 @@ config:
   
   # Socket.IO specific configuration
   socketio:
-    transports: ["websocket"]
+    transports: ["polling","websocket"]
     path: "/socket.io"
   
   # Variables for test data
@@ -79,46 +79,38 @@ scenarios:
     engine: socketio
     weight: 70
     flow:
-      # Establish connection
-      - emit:
-          channel: "connection"
-          data:
-            type: "connect"
-            timestamp: "{{ $timestamp }}"
-      
-      # Authenticate
+      # Establish connection (Socket.IO connect implicit)
+      - think: 1
+
+      # Authenticate using issued token from processor (Authorization header)
       - emit:
           channel: "auth"
           data:
-            username: "{{ usernames }}"
-            token: "test_token_{{ $randomNumber }}"
+            token: "{{ token }}"
       
       # Wait for auth response
       - think: 1
       
       # Join room
       - emit:
-          channel: "room:join"
+          channel: "joinRoom"
           data:
             roomId: "{{ rooms }}"
-            userId: "user_{{ $randomNumber }}"
       
       # Send messages
       - loop:
         - emit:
-            channel: "message:send"
+            channel: "publicMessage"
             data:
               content: "{{ messages }}"
               roomId: "{{ rooms }}"
-              timestamp: "{{ $timestamp }}"
-              messageId: "msg_{{ $randomNumber }}"
         
         - think: 2
         count: 10
       
       # Typing indicators
       - emit:
-          channel: "message:typing"
+          channel: "typing"
           data:
             roomId: "{{ rooms }}"
             isTyping: true
@@ -126,27 +118,24 @@ scenarios:
       - think: 2
       
       - emit:
-          channel: "message:typing"
+          channel: "typing"
           data:
             roomId: "{{ rooms }}"
             isTyping: false
       
       # Update status
       - emit:
-          channel: "user:status"
-          data:
-            status: "{{ statuses }}"
-            timestamp: "{{ $timestamp }}"
+          channel: "requestOnlineUsers"
+          data: {}
       
       # Listen for messages
       - think: 5
       
       # Leave room
       - emit:
-          channel: "room:leave"
+          channel: "leaveRoom"
           data:
             roomId: "{{ rooms }}"
-            userId: "user_{{ $randomNumber }}"
       
       # Disconnect
       - emit:
@@ -158,23 +147,19 @@ scenarios:
     engine: socketio
     weight: 20
     flow:
-      # Quick connection and auth
-      - emit:
-          channel: "connection"
-      
+      - think: 1
       - emit:
           channel: "auth"
           data:
-            username: "burst_user_{{ $randomNumber }}"
+            token: "{{ token }}"
       
       # Rapid message sending
       - loop:
         - emit:
-            channel: "message:send"
+            channel: "publicMessage"
             data:
               content: "Burst message {{ $loopCount }}"
               roomId: "general"
-              priority: "high"
         
         - think: 0.1
         count: 50
@@ -186,26 +171,23 @@ scenarios:
     engine: socketio
     weight: 10
     flow:
-      # Connect and auth
-      - emit:
-          channel: "connection"
-      
+      - think: 1
       - emit:
           channel: "auth"
           data:
-            username: "hopper_{{ $randomNumber }}"
+            token: "{{ token }}"
       
       # Join and leave multiple rooms
       - loop:
         - emit:
-            channel: "room:join"
+            channel: "joinRoom"
             data:
               roomId: "{{ rooms }}"
         
         - think: 3
         
         - emit:
-            channel: "message:send"
+            channel: "publicMessage"
             data:
               content: "Hello from room hopper"
               roomId: "{{ rooms }}"
@@ -213,7 +195,7 @@ scenarios:
         - think: 2
         
         - emit:
-            channel: "room:leave"
+            channel: "leaveRoom"
             data:
               roomId: "{{ rooms }}"
         
