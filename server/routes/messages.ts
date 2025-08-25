@@ -5,7 +5,8 @@ import { roomMessageService } from '../services/roomMessageService';
 import { roomService } from '../services/roomService';
 import { storage } from '../storage';
 import { protect } from '../middleware/enhancedSecurity';
-import { sanitizeInput } from '../security';
+import { sanitizeInput, limiters, SecurityConfig } from '../security';
+import { z } from 'zod';
 
 const router = Router();
 
@@ -19,7 +20,7 @@ const roomMessagesMicroCache = new Map<string, { data: any; expiresAt: number; e
 // 🔒 نظام منع التزاحم للاستعلامات المتكررة
 const queryDeduplication = new Map<string, Promise<any>>();
 
-router.get('/room/:roomId', async (req, res) => {
+router.get('/room/:roomId', limiters.roomMessagesRead, async (req, res) => {
   try {
     const { roomId } = req.params;
     const { limit = 20, offset = 0, useCache = 'true' } = req.query;
@@ -119,7 +120,7 @@ router.get('/room/:roomId', async (req, res) => {
  * GET /api/messages/room/:roomId/latest
  * جلب أحدث رسائل الغرفة
  */
-router.get('/room/:roomId/latest', async (req, res) => {
+router.get('/room/:roomId/latest', limiters.roomMessagesRead, async (req, res) => {
   try {
     const { roomId } = req.params;
     const { limit = 20 } = req.query;
@@ -152,10 +153,27 @@ router.get('/room/:roomId/latest', async (req, res) => {
  * POST /api/messages/room/:roomId
  * إرسال رسالة لغرفة
  */
-router.post('/room/:roomId', protect.auth, async (req, res) => {
+const roomMessageSchema = z.object({
+  content: z.string().trim().min(1, 'محتوى الرسالة مطلوب').max(SecurityConfig.MAX_MESSAGE_LENGTH),
+  messageType: z.enum(['text', 'image', 'sticker']).default('text'),
+  isPrivate: z
+    .union([z.boolean(), z.string()])
+    .optional()
+    .transform((v) => v === true || v === 'true'),
+  receiverId: z
+    .union([z.number().int().positive(), z.string().regex(/^\d+$/)])
+    .optional()
+    .transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+});
+
+router.post('/room/:roomId', protect.auth, limiters.sendMessage, async (req, res) => {
   try {
     const { roomId } = req.params;
-    const { content, messageType = 'text', isPrivate = false, receiverId } = req.body;
+    const parsed = roomMessageSchema.safeParse(req.body || {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+    }
+    const { content, messageType, isPrivate = false, receiverId } = parsed.data as any;
     const senderId = (req as any).user?.id as number;
 
     if (!roomId?.trim()) {
@@ -229,7 +247,7 @@ router.post('/room/:roomId', protect.auth, async (req, res) => {
  * POST /api/messages/:messageId/reactions
  * إضافة/تحديث تفاعل على رسالة (like/dislike/heart)
  */
-router.post('/:messageId/reactions', protect.auth, async (req, res) => {
+router.post('/:messageId/reactions', protect.auth, limiters.reaction, async (req, res) => {
   try {
     const messageId = parseInt(req.params.messageId);
     const { type } = req.body as { type?: string };
@@ -278,7 +296,7 @@ router.post('/:messageId/reactions', protect.auth, async (req, res) => {
  * DELETE /api/messages/:messageId/reactions
  * إزالة تفاعل المستخدم على رسالة
  */
-router.delete('/:messageId/reactions', protect.auth, async (req, res) => {
+router.delete('/:messageId/reactions', protect.auth, limiters.reaction, async (req, res) => {
   try {
     const messageId = parseInt(req.params.messageId);
     const { type } = req.body as { type?: string };
@@ -369,7 +387,7 @@ router.delete('/:messageId', protect.auth, async (req, res) => {
  * GET /api/messages/room/:roomId/search
  * البحث في رسائل الغرفة
  */
-router.get('/room/:roomId/search', async (req, res) => {
+router.get('/room/:roomId/search', limiters.search, async (req, res) => {
   try {
     const { roomId } = req.params;
     const { q: searchQuery, limit = 20, offset = 0 } = req.query;

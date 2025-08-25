@@ -4,6 +4,8 @@ import path from 'path';
 import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
+import { SecurityConfig } from '../security';
+import { z } from 'zod';
 
 import { roomService } from '../services/roomService';
 import { protect } from '../middleware/enhancedSecurity';
@@ -31,7 +33,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
+    fileSize: Math.min(5 * 1024 * 1024, SecurityConfig.MAX_FILE_SIZE), // 5MB
     files: 1,
   },
   fileFilter: (req, file, cb) => {

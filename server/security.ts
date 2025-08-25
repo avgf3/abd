@@ -292,3 +292,64 @@ export const SecurityConfig = {
   ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
   SESSION_TIMEOUT: 24 * 60 * 60 * 1000, // 24 hours
 };
+
+// Simple, dependency-free rate limiter factory (per key sliding window)
+type RateStoreEntry = { count: number; resetTime: number };
+const rateLimiterStores = new Map<string, Map<string, RateStoreEntry>>();
+
+function getRateStore(name: string): Map<string, RateStoreEntry> {
+  let store = rateLimiterStores.get(name);
+  if (!store) {
+    store = new Map<string, RateStoreEntry>();
+    rateLimiterStores.set(name, store);
+  }
+  return store;
+}
+
+export function createRateLimiter(
+  name: string,
+  limit: number,
+  windowMs: number
+) {
+  const store = getRateStore(name);
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const forwarded = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim();
+      const real = (req.headers['x-real-ip'] as string | undefined)?.trim();
+      const ip = forwarded || real || (req.ip as string) || 'unknown';
+      const deviceId = getDeviceIdFromHeaders(req.headers as any) || 'unknown-device';
+      const userId = (req as any).user?.id ? String((req as any).user.id) : 'anon';
+      const key = `${userId}:${deviceId}:${ip}`;
+
+      const allowed = applyLimiter(key, store, limit, windowMs);
+      if (!allowed) {
+        const now = Date.now();
+        const entry = store.get(key)!;
+        const retryAfterSec = Math.max(1, Math.ceil((entry.resetTime - now) / 1000));
+        res.setHeader('Retry-After', String(retryAfterSec));
+        return res.status(429).json({ error: 'Too many requests, please slow down' });
+      }
+
+      next();
+    } catch {
+      // Fail open on limiter errors
+      next();
+    }
+  };
+}
+
+// Common limiters for sensitive endpoints
+export const limiters = {
+  // Messaging: protect against spam bursts
+  sendMessage: createRateLimiter('sendMessage', 20, 60_000),
+  pmSend: createRateLimiter('pmSend', 16, 60_000),
+  reaction: createRateLimiter('reaction', 60, 60_000),
+  // Reads that can be abused
+  roomMessagesRead: createRateLimiter('roomMessagesRead', 90, 60_000),
+  search: createRateLimiter('search', 30, 60_000),
+  // Upload endpoints
+  upload: createRateLimiter('upload', 8, 60_000),
+  // Auth and moderation
+  auth: createRateLimiter('auth', 10, 60_000),
+  modReport: createRateLimiter('modReport', 10, 60_000),
+};

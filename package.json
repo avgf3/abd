@@ -28,7 +28,8 @@
     "auth:verify": "node scripts/verify-auth.js",
     "test:supabase": "tsx test-supabase-connection.ts",
     "clean-logs": "node tools/remove-console-logs.js",
-    "build-production": "npm run clean-logs && npm run build"
+    "build-production": "npm run clean-logs && npm run build",
+    "smoke": "node scripts/smoke-api.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
