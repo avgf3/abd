@@ -32,6 +32,7 @@ import { spamProtection } from './spam-protection';
 import { storage } from './storage';
 import { databaseCleanup } from './utils/database-cleanup';
 import { getClientIpFromHeaders, getDeviceIdFromHeaders } from './utils/device';
+import { limiters, SecurityConfig } from './security';
 import { updateConnectedUserCache } from './realtime';
 import {
   sanitizeInput,
@@ -199,6 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     '/api/upload/profile-image',
     protect.auth,
+    limiters.upload,
     upload.single('profileImage'),
     async (req, res) => {
       try {
@@ -283,6 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     '/api/upload/profile-banner',
     protect.auth,
+    limiters.upload,
     bannerUpload.single('banner'),
     async (req, res) => {
       try {
@@ -511,7 +514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/moderation/report', async (req, res) => {
+  app.post('/api/moderation/report', protect.auth, limiters.modReport, async (req, res) => {
     try {
       const { reporterId, reportedUserId, reason, content, messageId } = req.body;
 
@@ -855,7 +858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API لتحديث لون اسم المستخدم
-  app.post('/api/users/:userId/username-color', async (req, res) => {
+  app.post('/api/users/:userId/username-color', protect.ownership, async (req, res) => {
     try {
       const { userId } = req.params;
       const { color } = req.body;
@@ -891,7 +894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // إضافة endpoint لفحص حالة المستخدم
-  app.get('/api/user-status/:userId', async (req, res) => {
+  app.get('/api/user-status/:userId', protect.ownership, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const user = await storage.getUser(userId);
@@ -921,7 +924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // إضافة endpoint لإصلاح حالة المراقبة
-  app.post('/api/fix-moderation/:userId', async (req, res) => {
+  app.post('/api/fix-moderation/:userId', protect.admin, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const user = await storage.getUser(userId);
@@ -988,7 +991,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(advancedSecurityMiddleware);
 
   // Member registration route - مع أمان محسن
-  app.post('/api/auth/register', async (req, res) => {
+  app.post('/api/auth/register', limiters.auth, async (req, res) => {
     try {
       const { username, password, confirmPassword, gender, age, country, status, relation } =
         req.body;
@@ -1065,7 +1068,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Authentication routes
-  app.post('/api/auth/guest', async (req, res) => {
+  app.post('/api/auth/guest', limiters.auth, async (req, res) => {
     try {
       const { username, gender } = req.body;
 
@@ -1102,7 +1105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Logout route - يمسح التوكن ويحدث حالة الاتصال
-  app.post('/api/auth/logout', async (req, res) => {
+  app.post('/api/auth/logout', protect.auth, async (req, res) => {
     try {
       const token = getAuthTokenFromRequest(req as any);
       if (token) {
@@ -1127,7 +1130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/member', async (req, res) => {
+  app.post('/api/auth/member', limiters.auth, async (req, res) => {
     try {
       const { username, password, email, identifier } = req.body || {};
 
@@ -1336,6 +1339,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Message routes
+  // Validation schema for sending messages
+  const sendMessageSchema = z.object({
+    receiverId: z
+      .union([z.number().int().positive(), z.string().regex(/^\d+$/)])
+      .optional()
+      .transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+    content: z.string().trim().min(1, 'المحتوى مطلوب').max(SecurityConfig.MAX_MESSAGE_LENGTH),
+    messageType: z.enum(['text', 'image', 'sticker']).default('text'),
+    isPrivate: z
+      .union([z.boolean(), z.string()])
+      .optional()
+      .transform((v) => v === true || v === 'true'),
+    roomId: z.string().trim().max(100).default('general'),
+  });
   app.get('/api/messages/public', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
@@ -1361,15 +1378,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ملاحظة: تم تبسيط نظام الخاص واعتماد /api/messages (isPrivate=true) بدلاً من /api/private-messages
 
   // POST endpoint for sending messages
-  app.post('/api/messages', protect.auth, async (req, res) => {
+  app.post('/api/messages', protect.auth, limiters.sendMessage, async (req, res) => {
     try {
-      const {
-        receiverId,
-        content,
-        messageType = 'text',
-        isPrivate = false,
-        roomId = 'general',
-      } = req.body;
+      const parsed = sendMessageSchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+      }
+      const { receiverId, content, messageType, isPrivate, roomId } = parsed.data as any;
 
       const senderId = (req as any).user?.id;
       if (!senderId || !content?.trim()) {

@@ -4,7 +4,8 @@ import { db, dbType } from '../database-adapter';
 import { notificationService } from '../services/notificationService';
 import { storage } from '../storage';
 import { protect } from '../middleware/enhancedSecurity';
-import { sanitizeInput } from '../security';
+import { sanitizeInput, limiters, SecurityConfig } from '../security';
+import { z } from 'zod';
 
 // Helper type for conversation item (server-side internal)
 type ConversationItem = {
@@ -27,9 +28,19 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
  * POST /api/private-messages/send
  * إرسال رسالة خاصة بين مستخدمين مع تحسينات الأداء
  */
-router.post('/send', protect.auth, async (req, res) => {
+const pmSchema = z.object({
+  receiverId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v)),
+  content: z.string().trim().min(1, 'محتوى الرسالة مطلوب').max(SecurityConfig.MAX_MESSAGE_LENGTH),
+  messageType: z.enum(['text', 'image', 'sticker']).default('text'),
+});
+
+router.post('/send', protect.auth, limiters.pmSend, async (req, res) => {
   try {
-    const { receiverId, content, messageType = 'text' } = req.body || {};
+    const parsed = pmSchema.safeParse(req.body || {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues?.[0]?.message || 'بيانات غير صحيحة' });
+    }
+    const { receiverId, content, messageType } = parsed.data as any;
     const senderId = (req as any).user?.id as number;
 
     // التحقق من صحة البيانات
