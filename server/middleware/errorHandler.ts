@@ -69,6 +69,10 @@ function formatZodError(error: ZodError): string {
 // دالة لتحديد رمز الحالة بناءً على نوع الخطأ
 function getStatusCode(error: any): number {
   if (error.statusCode) return error.statusCode;
+  // Treat malformed JSON as a client error
+  if (error instanceof SyntaxError && typeof error.message === 'string' && /json/i.test(error.message)) {
+    return 400;
+  }
   if (error instanceof ZodError) return 400;
   if (error.code === 'ENOTFOUND') return 404;
   if (error.code === '23505') return 409; // Unique constraint violation

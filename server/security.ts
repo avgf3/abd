@@ -233,19 +233,19 @@ export function setupSecurity(app: Express): void {
   app.use(
     express.json({
       limit: '10mb',
-      verify: (req: any, res: Response, buf: Buffer) => {
-        // Prevent JSON pollution attacks, but only when body is non-empty and method expects a body
+      verify: (req: any, _res: Response, buf: Buffer) => {
+        // Validate only JSON payloads and avoid sending a response here to prevent double-send
+        const method = (req.method || 'GET').toUpperCase();
+        const hasBody = buf && buf.length > 0;
+        const contentType = (req.headers['content-type'] as string | undefined) || '';
+        const isJson = /application\/json/i.test(contentType);
+        const shouldParse = hasBody && isJson && method !== 'GET' && method !== 'HEAD';
+        if (!shouldParse) return;
         try {
-          const method = (req.method || 'GET').toUpperCase();
-          const hasBody = buf && buf.length > 0;
-          const shouldParse = hasBody && method !== 'GET' && method !== 'HEAD';
-          if (!shouldParse) {
-            return;
-          }
           JSON.parse(buf.toString());
-        } catch (e) {
-          res.status(400).json({ error: 'Invalid JSON format' });
-          throw new Error('Invalid JSON');
+        } catch {
+          // Throw a SyntaxError so our global error handler can map it to 400
+          throw new SyntaxError('Invalid JSON format');
         }
       },
     })

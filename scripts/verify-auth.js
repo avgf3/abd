@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 
 /**
  * سكريبت التحقق من نظام المصادقة
