@@ -50,6 +50,18 @@ app.use((req, res, next) => {
   next();
 });
 
+// Early, lightweight health endpoint (no DB/session/compression)
+app.get('/health', (_req, res) => {
+  try {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  } catch {}
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()),
+  });
+});
+
 // Deduplicate query params under /api to mitigate HTTP Parameter Pollution
 app.use((req, _res, next) => {
   try {
@@ -68,7 +80,20 @@ app.use((req, _res, next) => {
 
 // Setup security first
 setupSecurity(app);
-app.use(compression({ threshold: 1024 }));
+// Compression with higher threshold and skip API JSON to reduce CPU under load
+app.use(
+  compression({
+    threshold: 8192,
+    filter: (req, res) => {
+      try {
+        if (req.path && req.path.startsWith('/api')) {
+          return false;
+        }
+      } catch {}
+      return (compression as any).filter(req, res);
+    },
+  })
+);
 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 

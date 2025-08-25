@@ -956,6 +956,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  try {
+    // Tune HTTP server timeouts for high-concurrency keep-alive traffic
+    (httpServer as any).keepAliveTimeout = 75_000;
+    (httpServer as any).headersTimeout = 80_000;
+    try {
+      // Node 18+ supports requestTimeout; set to 0 (disable) to avoid premature timeouts
+      (httpServer as any).requestTimeout = 0;
+    } catch {}
+  } catch {}
 
   // إعداد Socket.IO من خلال وحدة realtime الموحدة
   const { setupRealtime } = await import('./realtime');
