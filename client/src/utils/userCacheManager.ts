@@ -9,7 +9,7 @@ interface CachedUser {
   id: number;
   username: string;
   userType?: string;
-  role?: string;
+  role?: 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'system';
   profileImage?: string;
   avatarHash?: string;
   usernameColor?: string;
@@ -171,7 +171,7 @@ class UserCacheManager {
       id: userId,
       username: partialData?.username || base.username || `مستخدم #${userId}`,
       userType: partialData?.userType || base.userType || 'member',
-      role: partialData?.role || base.role || 'member',
+      role: (partialData?.role || base.role || 'member') as 'guest' | 'member' | 'owner' | 'admin' | 'moderator' | 'system',
       profileImage: partialData?.profileImage || base.profileImage,
       avatarHash: 'avatarHash' in (partialData || {}) ? (partialData as any).avatarHash : (base as any)?.avatarHash,
       usernameColor: partialData?.usernameColor || base.usernameColor,

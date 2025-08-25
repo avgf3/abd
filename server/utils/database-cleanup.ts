@@ -26,7 +26,7 @@ export class DatabaseCleanup {
 
       return deletedMessages.length;
     } catch (error) {
-      console.error('❌ خطأ في تنظيف الرسائل اليتيمة:', error);
+      console.error('❌ خطأ في تنظيف الرسائل اليتيمة:', error instanceof Error ? error.message : error);
       return 0;
     }
   }
@@ -51,7 +51,7 @@ export class DatabaseCleanup {
 
       return deletedMessages.length;
     } catch (error) {
-      console.error('❌ خطأ في تنظيف الرسائل غير الصالحة:', error);
+      console.error('❌ خطأ في تنظيف الرسائل غير الصالحة:', error instanceof Error ? error.message : error);
       return 0;
     }
   }
@@ -86,7 +86,7 @@ export class DatabaseCleanup {
         try {
           await this.performFullCleanup();
         } catch (error) {
-          console.error('❌ خطأ في التنظيف الدوري:', error);
+          console.error('❌ خطأ في التنظيف الدوري:', error instanceof Error ? error.message : error);
         }
       },
       intervalHours * 60 * 60 * 1000
