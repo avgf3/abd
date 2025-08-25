@@ -956,15 +956,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // تحسين مهلات HTTP للأداء العالي تحت الضغط
   try {
-    // Tune HTTP server timeouts for high-concurrency keep-alive traffic
-    (httpServer as any).keepAliveTimeout = 75_000;
-    (httpServer as any).headersTimeout = 80_000;
+    // Keep-Alive timeout: مدة الانتظار قبل إغلاق الاتصال الخامل
+    // قيمة متوازنة: ليست قصيرة جداً (تسبب إعادة اتصال) ولا طويلة جداً (تستهلك موارد)
+    (httpServer as any).keepAliveTimeout = 65_000; // 65 ثانية (أقل من القيمة السابقة 75)
+    
+    // Headers timeout: يجب أن يكون أكبر من keepAliveTimeout
+    (httpServer as any).headersTimeout = 70_000; // 70 ثانية (أقل من القيمة السابقة 80)
+    
+    // Request timeout: الوقت المسموح للطلب بالكامل
     try {
-      // Node 18+ supports requestTimeout; set to 0 (disable) to avoid premature timeouts
-      (httpServer as any).requestTimeout = 0;
+      // Node 18+: تعيين مهلة معقولة للطلبات بدلاً من تعطيلها
+      (httpServer as any).requestTimeout = 300_000; // 5 دقائق للطلبات الطويلة (رفع الملفات مثلاً)
     } catch {}
-  } catch {}
+    
+    // إعدادات إضافية للأداء
+    (httpServer as any).maxHeadersCount = 100; // حد أقصى لعدد الرؤوس
+    (httpServer as any).timeout = 120_000; // مهلة عامة للسوكت (120 ثانية)
+  } catch (error) {
+    console.warn('تحذير: لم يتم تطبيق بعض إعدادات HTTP timeout:', error);
+  }
 
   // إعداد Socket.IO من خلال وحدة realtime الموحدة
   const { setupRealtime } = await import('./realtime');

@@ -13,8 +13,11 @@ const router = Router();
  * GET /api/messages/room/:roomId
  * جلب رسائل الغرفة مع الصفحات
  */
-// Simple in-memory micro-cache for hot GETs
-const roomMessagesMicroCache = new Map<string, { data: any; expiresAt: number }>();
+// 📦 نظام كاش محسّن للرسائل مع منع التزاحم
+const roomMessagesMicroCache = new Map<string, { data: any; expiresAt: number; etag: string }>();
+
+// 🔒 نظام منع التزاحم للاستعلامات المتكررة
+const queryDeduplication = new Map<string, Promise<any>>();
 
 router.get('/room/:roomId', async (req, res) => {
   try {
@@ -34,33 +37,75 @@ router.get('/room/:roomId', async (req, res) => {
     const limitValue = Math.min(20, Math.max(1, parseInt(limit as string)));
     const offsetValue = Math.max(0, parseInt(offset as string));
 
-    // Micro-cache key (only cache first page)
+    // مفتاح الكاش ومنع التزاحم
     const isFirstPage = offsetValue === 0;
-    const cacheKey = `room:${roomId}:limit:${limitValue}`;
+    const cacheKey = `room:${roomId}:limit:${limitValue}:offset:${offsetValue}`;
+    const dedupeKey = `${cacheKey}:${Date.now() / 1000 | 0}`; // مفتاح للثانية الواحدة
     const now = Date.now();
 
+    // التحقق من الكاش أولاً
     if (useCache === 'true' && isFirstPage) {
       const cached = roomMessagesMicroCache.get(cacheKey);
       if (cached && cached.expiresAt > now) {
-        res.setHeader('Cache-Control', 'public, max-age=5');
+        // إرسال ETag للتحقق من التغييرات
+        res.setHeader('ETag', cached.etag);
+        res.setHeader('Cache-Control', 'public, max-age=3, s-maxage=5, stale-while-revalidate=10');
+        res.setHeader('X-Cache', 'HIT');
+        
+        if (req.headers['if-none-match'] === cached.etag) {
+          return res.status(304).end();
+        }
+        
         return res.json({ success: true, roomId, ...cached.data });
       }
     }
 
-    const result = await roomMessageService.getRoomMessages(
+    // منع التزاحم: إذا كان هناك استعلام جارٍ لنفس البيانات
+    const existingQuery = queryDeduplication.get(dedupeKey);
+    if (existingQuery) {
+      const result = await existingQuery;
+      res.setHeader('X-Cache', 'DEDUPE');
+      res.setHeader('Cache-Control', 'public, max-age=3');
+      return res.json({ success: true, roomId, ...result });
+    }
+
+    // بدء استعلام جديد مع حفظه لمنع التزاحم
+    const queryPromise = roomMessageService.getRoomMessages(
       roomId,
       limitValue,
       offsetValue,
       true
     );
-
-    // Store micro-cache for 5s
-    if (useCache === 'true' && isFirstPage) {
-      roomMessagesMicroCache.set(cacheKey, { data: result, expiresAt: now + 5000 });
+    
+    queryDeduplication.set(dedupeKey, queryPromise);
+    
+    try {
+      const result = await queryPromise;
+      
+      // حفظ في الكاش مع ETag
+      if (useCache === 'true' && isFirstPage) {
+        const etag = `"msg-${roomId}-${Date.now()}"`;
+        roomMessagesMicroCache.set(cacheKey, { 
+          data: result, 
+          expiresAt: now + 3000, // 3 ثواني فقط
+          etag 
+        });
+        
+        // تنظيف الكاش القديم
+        if (roomMessagesMicroCache.size > 100) {
+          const entries = Array.from(roomMessagesMicroCache.entries());
+          entries.sort((a, b) => a[1].expiresAt - b[1].expiresAt);
+          entries.slice(0, 50).forEach(([key]) => roomMessagesMicroCache.delete(key));
+        }
+      }
+      
+      res.setHeader('Cache-Control', 'public, max-age=3, s-maxage=5');
+      res.setHeader('X-Cache', 'MISS');
+      res.json({ success: true, roomId, ...result });
+    } finally {
+      // حذف من قائمة الاستعلامات الجارية
+      setTimeout(() => queryDeduplication.delete(dedupeKey), 100);
     }
-
-    res.setHeader('Cache-Control', 'public, max-age=5');
-    res.json({ success: true, roomId, ...result });
   } catch (error: any) {
     console.error('خطأ في جلب رسائل الغرفة:', error);
     res.status(500).json({
