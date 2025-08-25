@@ -1,0 +1,5 @@
+
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+
+[dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
