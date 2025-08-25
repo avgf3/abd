@@ -260,14 +260,14 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
     },
     path: '/socket.io',
     // تفضيل polling على Render لتجنب مشاكل WebSocket
-    transports: process.env.SOCKET_IO_POLLING_ONLY === 'true' 
+    transports: process.env.NODE_ENV === 'production' || process.env.SOCKET_IO_POLLING_ONLY === 'true' 
       ? ['polling'] 
       : ['polling', 'websocket'],
     allowEIO3: true,
-    pingTimeout: 120000, // زيادة timeout إلى دقيقتين
-    pingInterval: 30000, // ping كل 30 ثانية
-    upgradeTimeout: 30000, // زيادة timeout للترقية
-    allowUpgrades: process.env.SOCKET_IO_POLLING_ONLY !== 'true',
+    pingTimeout: 180000, // زيادة timeout إلى 3 دقائق للإنتاج
+    pingInterval: 45000, // ping كل 45 ثانية
+    upgradeTimeout: 45000, // زيادة timeout للترقية
+    allowUpgrades: process.env.NODE_ENV !== 'production' && process.env.SOCKET_IO_POLLING_ONLY !== 'true',
     cookie: false,
     serveClient: false,
     maxHttpBufferSize: 1e7, // زيادة حجم البيانات المسموح به

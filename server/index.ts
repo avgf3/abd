@@ -13,6 +13,22 @@ import { setupVite, serveStatic, log } from './vite';
 import path from 'path';
 import { promises as fsp } from 'fs';
 
+// تحسين إدارة الذاكرة - تشغيل Garbage Collection دورياً
+if (process.env.NODE_ENV === 'production') {
+  setInterval(() => {
+    try {
+      if (global.gc) {
+        global.gc();
+        console.log('✅ تم تنظيف الذاكرة:', {
+          memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
+        });
+      }
+    } catch (error) {
+      console.warn('⚠️ تعذر تنظيف الذاكرة:', error);
+    }
+  }, 60000); // كل دقيقة
+}
+
 const app = express();
 try {
   (app as any).set('trust proxy', true);
