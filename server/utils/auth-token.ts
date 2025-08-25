@@ -4,9 +4,23 @@ import type { Request } from 'express';
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
+let cachedDevSecret: string | null = null;
+
 function getSecret(): string {
-  const secret = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'insecure-temp-secret';
-  return String(secret);
+  const envSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET || '';
+  const isProd = process.env.NODE_ENV === 'production';
+  if (isProd) {
+    if (!envSecret || envSecret.length < 32) {
+      throw new Error('JWT_SECRET must be set to a strong value in production');
+    }
+    return String(envSecret);
+  }
+  // In development, accept a shorter env secret or generate an ephemeral one
+  if (envSecret && envSecret.length >= 16) return String(envSecret);
+  if (!cachedDevSecret) {
+    cachedDevSecret = crypto.randomBytes(32).toString('hex');
+  }
+  return cachedDevSecret;
 }
 
 export function issueAuthToken(userId: number, ttlMs: number = DEFAULT_TTL_MS): string {
@@ -27,11 +41,16 @@ export function verifyAuthToken(token: string): { userId: number } | null {
     const exp = parseInt(expStr);
     if (!userId || isNaN(userId) || !exp || isNaN(exp)) return null;
     if (Date.now() > exp) return null;
+    // Ensure signature is valid hex (sha256 => 64 hex chars)
+    if (!/^[0-9a-fA-F]{64}$/.test(sig)) return null;
     const expected = crypto
       .createHmac('sha256', getSecret())
       .update(`${userId}.${exp}`)
       .digest('hex');
-    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+    const providedBuf = Buffer.from(sig, 'hex');
+    const expectedBuf = Buffer.from(expected, 'hex');
+    if (providedBuf.length !== expectedBuf.length) return null;
+    if (!crypto.timingSafeEqual(providedBuf, expectedBuf)) return null;
     return { userId };
   } catch {
     return null;

@@ -9,7 +9,7 @@ interface CachedUser {
   id: number;
   username: string;
   userType?: string;
-  role?: string;
+  role?: ChatUser['role'];
   profileImage?: string;
   avatarHash?: string;
   usernameColor?: string;
@@ -162,16 +162,22 @@ class UserCacheManager {
   /**
    * الحصول على بيانات مستخدم كاملة مع دمج البيانات الجديدة
    */
-  getUserWithMerge(userId: number, partialData?: Partial<ChatUser>): ChatUser {
+  getUserWithMerge(userId: number, partialData?: Partial<ChatUser> | Partial<CachedUser>): ChatUser {
     const cached = this.getUser(userId);
     const base: Partial<CachedUser> = cached || { id: userId, username: `مستخدم #${userId}` };
     
     // دمج البيانات مع إعطاء الأولوية للبيانات الجديدة
+    const allowedRoles: Array<ChatUser['role']> = ['guest','member','owner','admin','moderator','system'];
+    const candidateRole = (partialData as any)?.role ?? (base as any)?.role ?? 'member';
+    const safeRole: ChatUser['role'] = allowedRoles.includes(candidateRole as any)
+      ? (candidateRole as ChatUser['role'])
+      : 'member';
+
     const merged: ChatUser = {
       id: userId,
       username: partialData?.username || base.username || `مستخدم #${userId}`,
       userType: partialData?.userType || base.userType || 'member',
-      role: partialData?.role || base.role || 'member',
+      role: safeRole,
       profileImage: partialData?.profileImage || base.profileImage,
       avatarHash: 'avatarHash' in (partialData || {}) ? (partialData as any).avatarHash : (base as any)?.avatarHash,
       usernameColor: partialData?.usernameColor || base.usernameColor,

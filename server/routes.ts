@@ -121,6 +121,34 @@ const wallUpload = createMulterConfig('wall', 'wall', 10 * 1024 * 1024);
 
 const bannerUpload = createMulterConfig('banners', 'banner', 8 * 1024 * 1024);
 
+// Lightweight rate limiter for auth endpoints only
+const authRequestCounts = new Map<string, { count: number; resetTime: number }>();
+function authRateLimit(req: any, res: any, next: any) {
+  try {
+    const now = Date.now();
+    const ip =
+      getClientIpFromHeaders(req.headers as any, (req.ip || (req.connection as any)?.remoteAddress) as any) ||
+      req.ip ||
+      'unknown';
+    const device = (req.headers && (req.headers['x-device-id'] as string)) || '';
+    const key = `${ip}:${device}`;
+    const windowMs = 60 * 1000; // 1 minute window
+    const limit = 20; // 20 requests per minute per IP/device
+    const entry = authRequestCounts.get(key);
+    if (!entry || now > entry.resetTime) {
+      authRequestCounts.set(key, { count: 1, resetTime: now + windowMs });
+      return next();
+    }
+    if (entry.count >= limit) {
+      return res.status(429).json({ error: 'محاولات كثيرة على خدمة المصادقة، حاول لاحقاً' });
+    }
+    entry.count++;
+    return next();
+  } catch {
+    return next();
+  }
+}
+
 // Storage initialization - using imported storage instance
 
 // I/O interface
@@ -855,7 +883,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API لتحديث لون اسم المستخدم
-  app.post('/api/users/:userId/username-color', async (req, res) => {
+  app.post('/api/users/:userId/username-color', protect.ownership, async (req, res) => {
     try {
       const { userId } = req.params;
       const { color } = req.body;
@@ -891,7 +919,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // إضافة endpoint لفحص حالة المستخدم
-  app.get('/api/user-status/:userId', async (req, res) => {
+  app.get('/api/user-status/:userId', protect.auth, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const user = await storage.getUser(userId);
@@ -921,7 +949,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // إضافة endpoint لإصلاح حالة المراقبة
-  app.post('/api/fix-moderation/:userId', async (req, res) => {
+  app.post('/api/fix-moderation/:userId', protect.admin, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const user = await storage.getUser(userId);
@@ -966,7 +994,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(advancedSecurityMiddleware);
 
   // Member registration route - مع أمان محسن
-  app.post('/api/auth/register', async (req, res) => {
+  app.post('/api/auth/register', authRateLimit, async (req, res) => {
     try {
       const { username, password, confirmPassword, gender, age, country, status, relation } =
         req.body;
@@ -1043,7 +1071,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Authentication routes
-  app.post('/api/auth/guest', async (req, res) => {
+  app.post('/api/auth/guest', authRateLimit, async (req, res) => {
     try {
       const { username, gender } = req.body;
 
@@ -1080,7 +1108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Logout route - يمسح التوكن ويحدث حالة الاتصال
-  app.post('/api/auth/logout', async (req, res) => {
+  app.post('/api/auth/logout', authRateLimit, async (req, res) => {
     try {
       const token = getAuthTokenFromRequest(req as any);
       if (token) {
@@ -1105,7 +1133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/member', async (req, res) => {
+  app.post('/api/auth/member', authRateLimit, async (req, res) => {
     try {
       const { username, password, email, identifier } = req.body || {};
 
