@@ -681,7 +681,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             </Suspense>
           </div>
         )}
-        {(() => {
+        {!isMobile || activeView === 'hidden'
+          ? (() => {
               const currentRoom = rooms.find((room) => room.id === chat.currentRoomId);
 
               // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
