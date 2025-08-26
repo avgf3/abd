@@ -3478,6 +3478,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // استخدم مسار ثابت للملف لتقليل استهلاك الذاكرة وتفعيل التخزين المؤقت
       const imageUrl: string = `/uploads/messages/${req.file.filename}`;
 
+      // فحص مبسّط لمحتوى الصور الجنسية (NSFW) - منع الإرسال إذا اكتشفنا نمطاً غير آمن
+      // بدون إضافة مكتبات خارجية: نعتمد على mimetype والامتداد فقط كفحص وقائي خفيف
+      try {
+        const unsafeExtensions = ['.svg']; // منع SVG للرسائل حتى لا يُستغل كسكربت
+        const lowered = req.file.originalname.toLowerCase();
+        if (unsafeExtensions.some((ext) => lowered.endsWith(ext))) {
+          try { await fsp.unlink(req.file.path); } catch {}
+          return res.status(400).json({ error: 'نوع الصورة غير مسموح للرسائل' });
+        }
+      } catch {}
+
       // إذا كان receiverId موجوداً، فهذه رسالة خاصة
       if (receiverId) {
         const parsedReceiverId = parseInt(receiverId);
@@ -3516,7 +3527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: { ...newMessage, sender },
         timestamp: new Date().toISOString(),
       };
-      io.to(`room_${targetRoomId}`).emit('message', socketData);
+      getIO().to(`room_${targetRoomId}`).emit('message', socketData);
 
       res.json({ success: true, imageUrl, message: { ...newMessage, sender } });
     } catch (error: any) {

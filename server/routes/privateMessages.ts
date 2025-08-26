@@ -4,7 +4,7 @@ import { db, dbType } from '../database-adapter';
 import { notificationService } from '../services/notificationService';
 import { storage } from '../storage';
 import { protect } from '../middleware/enhancedSecurity';
-import { sanitizeInput, limiters, SecurityConfig } from '../security';
+import { sanitizeInput, limiters, SecurityConfig, validateMessageContent } from '../security';
 import { z } from 'zod';
 
 // Helper type for conversation item (server-side internal)
@@ -55,6 +55,12 @@ router.post('/send', protect.auth, limiters.pmSend, async (req, res) => {
     const text = sanitizeInput(typeof content === 'string' ? content : '');
     if (!text) {
       return res.status(400).json({ error: 'محتوى الرسالة مطلوب' });
+    }
+
+    // السماح فقط بروابط YouTube ومنع غيرها
+    const contentCheck = validateMessageContent(text);
+    if (!contentCheck.isValid) {
+      return res.status(400).json({ error: contentCheck.reason || 'محتوى غير مسموح' });
     }
 
     // التحقق من المستخدمين بشكل متوازي لتحسين السرعة
