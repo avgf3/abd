@@ -14,6 +14,7 @@ import {
   getFinalUsernameColor,
   buildProfileBackgroundGradient,
 } from '@/utils/themeUtils';
+import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 
 interface ProfileModalProps {
   user: ChatUser | null;
