@@ -102,6 +102,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     cacheTimeout: 10 * 60 * 1000, // 10 دقائق cache
   });
 
+  // جلب الغرف عند الدخول لأول مرة لضمان ظهور التبويب مباشرة
+  useEffect(() => {
+    fetchRooms(false).catch(() => {});
+  }, [fetchRooms]);
+
   // 🚀 دوال إدارة الغرف المحسنة
   const handleRoomChange = useCallback(
     async (roomId: string) => {
@@ -170,6 +175,24 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setNewRoomDescription('');
     setNewRoomImage(null);
   }, [handleAddRoom, newRoomName, newRoomDescription, newRoomImage]);
+
+  // الاستماع لتحديثات الغرف عبر Socket.IO من خلال حدث roomUpdate
+  useEffect(() => {
+    try {
+      const { getSocket } = require('@/lib/socket');
+      const s = getSocket();
+      const onRoomUpdate = (_payload: any) => {
+        // جلب مُجبر لتحديث القائمة فوراً
+        fetchRooms(true).catch(() => {});
+      };
+      s.on('roomUpdate', onRoomUpdate);
+      return () => {
+        try { s.off('roomUpdate', onRoomUpdate); } catch {}
+      };
+    } catch {
+      // ignore if socket not available
+    }
+  }, [fetchRooms]);
 
   const [showNotifications, setShowNotifications] = useState(false);
 
