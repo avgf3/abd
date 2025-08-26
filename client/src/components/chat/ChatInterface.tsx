@@ -681,8 +681,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             </Suspense>
           </div>
         )}
-        {!isMobile || activeView === 'hidden'
-          ? (() => {
+        {(() => {
               const currentRoom = rooms.find((room) => room.id === chat.currentRoomId);
 
               // إذا كانت الغرفة من نوع broadcast، استخدم BroadcastRoomInterface
@@ -763,8 +762,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   </Suspense>
                 </div>
               );
-            })()
-          : null}
+            })()}
       </main>
 
       {/* Footer - تبويبات سفلية محسنة لتجنب التداخل مع منطقة الإرسال */}
