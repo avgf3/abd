@@ -142,9 +142,12 @@ export default function UserRegistration({ isOpen, onClose, onRegister }: UserRe
               type="text"
               required
               value={formData.username}
-              onChange={(e) => setFormData((prev) => ({ ...prev, username: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, username: e.target.value.slice(0, 14) }))
+              }
               className="bg-slate-800/50 border-slate-600 text-white"
               placeholder="اختر اسم مستخدم فريد"
+              maxLength={14}
             />
           </div>
 

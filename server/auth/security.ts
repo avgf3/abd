@@ -25,16 +25,12 @@ export class SecurityManager {
    * التحقق من صحة اسم المستخدم
    */
   static validateUsername(username: string): { valid: boolean; error?: string } {
-    if (!username || username.trim().length < 3) {
-      return { valid: false, error: 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل' };
+    if (!username || username.trim().length < 1) {
+      return { valid: false, error: 'اسم المستخدم مطلوب' };
     }
 
-    if (username.trim().length > 20) {
-      return { valid: false, error: 'اسم المستخدم يجب ألا يزيد عن 20 حرف' };
-    }
-
-    if (!/^[\u0600-\u06FFa-zA-Z0-9_]{3,20}$/.test(username.trim())) {
-      return { valid: false, error: 'اسم المستخدم يحتوي على أحرف غير مسموحة' };
+    if (username.trim().length > 14) {
+      return { valid: false, error: 'اسم المستخدم يجب ألا يزيد عن 14 حرف' };
     }
 
     return { valid: true };
