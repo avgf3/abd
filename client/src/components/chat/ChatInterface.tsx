@@ -763,7 +763,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   </Suspense>
                 </div>
               );
-            })()}
+            })()
+          : null}
       </main>
 
       {/* Footer - تبويبات سفلية محسنة لتجنب التداخل مع منطقة الإرسال */}
