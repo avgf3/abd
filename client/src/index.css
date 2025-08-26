@@ -1,13 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
-/* When self-hosted fonts are added under /public/fonts, uncomment below and remove the remote import
-@font-face {
-  font-family: 'Cairo';
-  src: url('/fonts/Cairo-VariableFont_slnt,wght.woff2') format('woff2');
-  font-weight: 400 700;
-  font-style: normal;
-  font-display: swap;
-}
-*/
+@import url('/fonts/cairo.css');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
