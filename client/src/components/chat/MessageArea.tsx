@@ -5,7 +5,7 @@ import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 const EmojiPicker = React.lazy(() => import('./EmojiPicker'));
 const AnimatedEmojiPicker = React.lazy(() => import('./AnimatedEmojiPicker'));
 const EmojiMartPicker = React.lazy(() => import('./EmojiMartPicker'));
-const LottieEmojiPicker = React.lazy(() => import('./LottieEmojiPicker'));
+// const LottieEmojiPicker = React.lazy(() => import('./LottieEmojiPicker'));
 const AnimatedEmojiEnhanced = React.lazy(() => import('./AnimatedEmojiEnhanced'));
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
@@ -849,8 +849,8 @@ export default function MessageArea({
               </div>
             )}
             
-            {/* Lottie Emoji Picker */}
-            {showLottieEmoji && (
+            {/* Lottie Emoji Picker - مؤقتاً معطل */}
+            {/* {showLottieEmoji && (
               <div className="absolute bottom-full mb-2 z-30">
                 <React.Suspense fallback={null}>
                   <LottieEmojiPicker
@@ -859,7 +859,7 @@ export default function MessageArea({
                   />
                 </React.Suspense>
               </div>
-            )}
+            )} */}
           </div>
 
           {/* Plus Menu (Gallery, Color, Slight Bold) */}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Player } from '@lottiefiles/react-lottie-player';
+import Lottie from 'lottie-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X } from 'lucide-react';
@@ -163,11 +163,14 @@ export default function LottieEmojiPicker({ onEmojiSelect, onClose }: LottieEmoj
                 onMouseEnter={() => setHoveredEmoji(emoji.id)}
                 onMouseLeave={() => setHoveredEmoji(null)}
               >
-                <Player
+                <Lottie
+                  animationData={null}
+                  loop={hoveredEmoji === emoji.id}
                   autoplay={hoveredEmoji === emoji.id}
-                  loop
-                  src={emoji.url}
                   style={{ height: '60px', width: '60px' }}
+                  rendererSettings={{
+                    preserveAspectRatio: 'xMidYMid slice'
+                  }}
                 />
                 <span className="absolute bottom-0 left-0 right-0 text-[10px] text-gray-600 bg-white/90 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   {emoji.name}

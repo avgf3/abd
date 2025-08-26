@@ -1,5 +1,5 @@
 import React from 'react';
-import { Player } from '@lottiefiles/react-lottie-player';
+// import { Player } from '@lottiefiles/react-lottie-player';
 
 // معالجة السمايلات المتحركة بأنواعها المختلفة
 export function parseEnhancedEmojis(content: string): (string | React.ReactElement)[] {
@@ -34,15 +34,15 @@ export function parseEnhancedEmojis(content: string): (string | React.ReactEleme
         break;
         
       case 'lottie':
+        // مؤقتاً نعرض صورة بدلاً من Lottie
         parts.push(
-          <span key={`lottie-${id}-${match.index}`} className="lottie-emoji-container inline-block mx-1">
-            <Player
-              autoplay
-              loop
-              src={url}
-              style={{ height: '32px', width: '32px' }}
-            />
-          </span>
+          <img
+            key={`lottie-${id}-${match.index}`}
+            src="/assets/emojis/classic/smile.gif"
+            alt={id}
+            className="animated-emoji-gif inline-block mx-1"
+            loading="lazy"
+          />
         );
         break;
     }
