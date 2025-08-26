@@ -25,6 +25,11 @@ export function parseAnimatedEmojis(text: string): React.ReactNode[] {
         alt={emojiId}
         className="inline-block w-8 h-8 mx-1 align-middle animated-emoji"
         loading="lazy"
+        onError={(e: any) => {
+          if (e?.currentTarget && e.currentTarget.src !== '/svgs/star.svg') {
+            e.currentTarget.src = '/svgs/star.svg';
+          }
+        }}
       />
     );
     
