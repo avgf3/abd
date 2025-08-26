@@ -1,4 +1,4 @@
-import { Send, Image as ImageIcon, Smile, ChevronDown } from 'lucide-react';
+import { Send, Smile, ChevronDown } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
@@ -20,6 +20,8 @@ import {
 import { getDynamicBorderColor } from '@/utils/messageUtils';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
+import ComposerPlusMenu from './ComposerPlusMenu';
+import { useComposerStyle } from '@/contexts/ComposerStyleContext';
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -54,6 +56,7 @@ export default function MessageArea({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const isMobile = useIsMobile();
+  const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -442,7 +445,14 @@ export default function MessageArea({
                             onClick={() => window.open(message.content, '_blank')}
                           />
                         ) : (
-                          <span className="truncate text-breathe">
+                          <span
+                            className="truncate text-breathe"
+                            style={
+                              currentUser && message.senderId === currentUser.id
+                                ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                : undefined
+                            }
+                          >
                             {renderMessageWithMentions(message.content, currentUser, onlineUsers)}
                           </span>
                         )}
@@ -603,16 +613,11 @@ export default function MessageArea({
             )}
           </div>
 
-          {/* File Upload */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''}`}
-          >
-            <ImageIcon className="w-4 h-4" />
-          </Button>
+          {/* Plus Menu (Gallery, Color, Slight Bold) */}
+          <ComposerPlusMenu
+            openImagePicker={() => fileInputRef.current?.click()}
+            disabled={!currentUser}
+          />
 
           {/* Message Input */}
           <Input
@@ -621,11 +626,15 @@ export default function MessageArea({
             onChange={handleMessageChange}
             onKeyPress={handleKeyPress}
             placeholder="اكتب رسالتك هنا..."
-            className={`flex-1 resize-none bg-white text-gray-900 placeholder:text-gray-500 ring-offset-white ${isMobile ? 'mobile-text' : ''}`}
+            className={`flex-1 resize-none bg-white placeholder:text-gray-500 ring-offset-white ${isMobile ? 'mobile-text' : ''}`}
             disabled={!currentUser}
             maxLength={1000}
             autoComplete="off"
-            style={isMobile ? { fontSize: '16px' } : {}}
+            style={{
+              ...(isMobile ? { fontSize: '16px' } : {}),
+              color: composerTextColor,
+              fontWeight: composerBold ? 600 : undefined,
+            }}
           />
 
           {/* Send Button */}
