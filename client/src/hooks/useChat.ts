@@ -1254,6 +1254,20 @@ export const useChat = () => {
           dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
           dispatch({ type: 'SET_LOADING', payload: false });
 
+          // إعادة إرسال المصادقة والانضمام للغرفة لضمان الاتصال الصحيح
+          try {
+            s.emit('auth', {
+              userId: user.id,
+              username: user.username,
+              userType: user.userType,
+            });
+            s.emit('joinRoom', {
+              roomId: state.currentRoomId || 'general',
+              userId: user.id,
+              username: user.username,
+            });
+          } catch {}
+
           // Prefetch expected data shortly after connection success
           try {
             // غُصن خفيف لتفادي إزعاج الشبكة فوراً
