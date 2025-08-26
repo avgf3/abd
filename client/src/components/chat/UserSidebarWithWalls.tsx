@@ -885,7 +885,7 @@ export default function UnifiedSidebar({
       {activeView === 'rooms' && (
         <div
           className="flex-1 min-h-0 flex flex-col overflow-hidden"
-          style={{ maxHeight: 'calc(100vh - 150px)' }}
+          style={{ height: 'calc(100vh - 150px)' }}
         >
           <RoomComponent
             currentUser={currentUser}
