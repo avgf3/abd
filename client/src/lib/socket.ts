@@ -40,12 +40,11 @@ export function clearSession() {
     socketInstance.removeAllListeners();
     socketInstance.disconnect();
     socketInstance = null;
-    listenersAttached = false;
+    // listeners are scoped to instance via a private flag now
   }
 }
 
 let socketInstance: Socket | null = null;
-let listenersAttached = false;
 
 function getServerUrl(): string {
   try {
@@ -63,8 +62,9 @@ function getServerUrl(): string {
 }
 
 function attachCoreListeners(socket: Socket) {
-  if (listenersAttached) return;
-  listenersAttached = true;
+  const anySocket = socket as any;
+  if (anySocket.__coreListenersAttached) return;
+  anySocket.__coreListenersAttached = true;
 
   const reauth = (isReconnect: boolean) => {
     const session = getSession();
@@ -115,7 +115,7 @@ export function getSocket(): Socket {
     socketInstance.removeAllListeners();
     socketInstance.disconnect();
     socketInstance = null;
-    listenersAttached = false;
+    // listeners are scoped to instance via a private flag now
   }
 
   if (socketInstance) return socketInstance;

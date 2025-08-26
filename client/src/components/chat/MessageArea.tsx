@@ -8,6 +8,7 @@ import UserRoleBadge from './UserRoleBadge';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { apiRequest, api } from '@/lib/queryClient';
 import type { ChatMessage, ChatUser } from '@/types/chat';
@@ -70,6 +71,70 @@ export default function MessageArea({
   // State for improved scroll behavior
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // YouTube modal state
+  const [youtubeModal, setYoutubeModal] = useState<{ open: boolean; videoId: string | null }>({
+    open: false,
+    videoId: null,
+  });
+
+  const isAllowedYouTubeHost = useCallback((host: string) => {
+    const h = host.toLowerCase();
+    return (
+      h === 'youtube.com' ||
+      h === 'www.youtube.com' ||
+      h === 'm.youtube.com' ||
+      h === 'youtu.be' ||
+      h === 'www.youtu.be' ||
+      h === 'youtube-nocookie.com' ||
+      h === 'www.youtube-nocookie.com'
+    );
+  }, []);
+
+  const extractYouTubeId = useCallback((rawUrl: string): string | null => {
+    try {
+      let u = rawUrl.trim();
+      if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+      const url = new URL(u);
+      if (!isAllowedYouTubeHost(url.hostname)) return null;
+      const v = url.searchParams.get('v');
+      if (v && /^[a-zA-Z0-9_-]{6,15}$/.test(v)) return v;
+      if (/^\/(shorts|embed)\//.test(url.pathname)) {
+        const id = url.pathname.split('/')[2] || '';
+        return /^[a-zA-Z0-9_-]{6,15}$/.test(id) ? id : null;
+      }
+      if (url.hostname.toLowerCase().includes('youtu.be')) {
+        const id = url.pathname.replace(/^\//, '');
+        return /^[a-zA-Z0-9_-]{6,15}$/.test(id) ? id : null;
+      }
+      const parts = url.pathname.split('/').filter(Boolean);
+      if (parts.length > 0) {
+        const last = parts[parts.length - 1];
+        if (/^[a-zA-Z0-9_-]{6,15}$/.test(last)) return last;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }, [isAllowedYouTubeHost]);
+
+  const parseYouTubeFromText = useCallback((text: string): { cleaned: string; ids: string[] } => {
+    if (!text) return { cleaned: '', ids: [] };
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+    const matches = text.match(urlRegex) || [];
+    const ids: string[] = [];
+    for (const m of matches) {
+      const id = extractYouTubeId(m);
+      if (id) ids.push(id);
+    }
+    let cleaned = text;
+    for (const m of matches) {
+      if (extractYouTubeId(m)) {
+        cleaned = cleaned.split(m).join('').replace(/\s{2,}/g, ' ').trim();
+      }
+    }
+    return { cleaned, ids };
+  }, [extractYouTubeId]);
 
   // 🔥 SIMPLIFIED message filtering - حذف الفلترة المعقدة التي تخفي رسائل صحيحة
   const validMessages = useMemo(() => {
@@ -445,16 +510,49 @@ export default function MessageArea({
                             onClick={() => window.open(message.content, '_blank')}
                           />
                         ) : (
-                          <span
-                            className="truncate text-breathe"
-                            style={
-                              currentUser && message.senderId === currentUser.id
-                                ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
-                                : undefined
+                          (() => {
+                            const { cleaned, ids } = parseYouTubeFromText(message.content);
+                            if (ids.length > 0) {
+                              const firstId = ids[0];
+                              return (
+                                <span className="truncate text-breathe flex items-center gap-2">
+                                  {cleaned ? (
+                                    <span
+                                      className="truncate"
+                                      style={
+                                        currentUser && message.senderId === currentUser.id
+                                          ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                          : undefined
+                                      }
+                                    >
+                                      {renderMessageWithMentions(cleaned, currentUser, onlineUsers)}
+                                    </span>
+                                  ) : null}
+                                  <button
+                                    onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
+                                    className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors"
+                                    title="فتح فيديو YouTube"
+                                  >
+                                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                      <path fill="#fff" d="M10 15l5.19-3L10 9v6z"></path>
+                                    </svg>
+                                  </button>
+                                </span>
+                              );
                             }
-                          >
-                            {renderMessageWithMentions(message.content, currentUser, onlineUsers)}
-                          </span>
+                            return (
+                              <span
+                                className="truncate text-breathe"
+                                style={
+                                  currentUser && message.senderId === currentUser.id
+                                    ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                    : undefined
+                                }
+                              >
+                                {renderMessageWithMentions(message.content, currentUser, onlineUsers)}
+                              </span>
+                            );
+                          })()
                         )}
                       </div>
 
@@ -575,6 +673,37 @@ export default function MessageArea({
           </button>
         )}
       </div>
+
+      {/* YouTube Modal */}
+      <Dialog
+        open={youtubeModal.open}
+        onOpenChange={(open) => {
+          if (!open) setYoutubeModal({ open: false, videoId: null });
+        }}
+      >
+        <DialogContent className="max-w-3xl w-[92vw] p-2 bg-black/80">
+          <div className="flex justify-end">
+            <button
+              onClick={() => setYoutubeModal({ open: false, videoId: null })}
+              className="text-white/90 hover:text-white text-xl leading-none"
+              aria-label="إغلاق"
+            >
+              ✖️
+            </button>
+          </div>
+          <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+            {youtubeModal.videoId && (
+              <iframe
+                src={`https://www.youtube.com/embed/${youtubeModal.videoId}`}
+                className="absolute inset-0 w-full h-full rounded"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                title="YouTube video"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div
