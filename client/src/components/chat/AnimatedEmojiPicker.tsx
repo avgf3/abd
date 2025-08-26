@@ -51,6 +51,11 @@ export default function AnimatedEmojiPicker({ onEmojiSelect, onClose }: Animated
                     alt={emoji.name}
                     className="w-8 h-8 object-contain"
                     loading="lazy"
+                    onError={(e: any) => {
+                      if (e?.currentTarget && e.currentTarget.src !== '/svgs/star.svg') {
+                        e.currentTarget.src = '/svgs/star.svg';
+                      }
+                    }}
                   />
                 </Button>
               ))}
