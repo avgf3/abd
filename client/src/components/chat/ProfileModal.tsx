@@ -66,7 +66,12 @@ export default function ProfileModal({
     }
   }, [user]);
 
-  if (!localUser) return null;
+  // معالجة محسنة للحالات الفارغة
+  if (!localUser || !user) {
+    // إغلاق المودال إذا لم يكن هناك مستخدم
+    onClose();
+    return null;
+  }
 
   // دالة موحدة لجلب بيانات المستخدم من السيرفر وتحديث الحالة المحلية - محسّنة
   const fetchAndUpdateUser = async (userId: number) => {
@@ -754,6 +759,7 @@ export default function ProfileModal({
           --accent-color: #ffc107;
           --error-color: #f44336;
           --success-color: #4caf50;
+          --default-bg: rgba(18, 18, 18, 0.95);
         }
 
         /* أنماط الألوان العصرية مع التدريج المائي */
@@ -1153,7 +1159,7 @@ export default function ProfileModal({
           position: absolute;
           top: calc(100% - 65px);
           right: 20px;
-          background-color: white;
+          background-color: rgba(0,0,0,0.5);
           box-shadow: 0 6px 20px rgba(0,0,0,0.6);
           z-index: 2;
           transition: transform 0.3s ease;
@@ -1807,7 +1813,7 @@ export default function ProfileModal({
       `}</style>
 
       {/* Modal Background - completely transparent */}
-      <div className="fixed inset-0 z-50 bg-black/80" onClick={onClose} />
+      <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Main Modal */}
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-4 px-4 overflow-y-auto">
@@ -1816,7 +1822,7 @@ export default function ProfileModal({
           style={{
             background: localUser?.profileBackgroundColor
               ? buildProfileBackgroundGradient(localUser.profileBackgroundColor)
-              : undefined,
+              : 'linear-gradient(135deg, #1a1a1a, #2d2d2d)',
             backgroundBlendMode: 'normal',
           }}
         >
