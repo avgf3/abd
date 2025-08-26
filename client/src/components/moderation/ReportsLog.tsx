@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { formatTimestamp } from '@/utils/timeUtils';
+import ProfileModal from '@/components/chat/ProfileModal';
 
 interface ReportData {
   id: number;
@@ -31,6 +32,9 @@ interface ReportsLogProps {
 export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsLogProps) {
   const [reports, setReports] = useState<ReportData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isFetchingProfile, setIsFetchingProfile] = useState(false);
 
   useEffect(() => {
     if (isVisible && (currentUser.userType === 'admin' || currentUser.userType === 'owner')) {
@@ -41,8 +45,8 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
   const loadReports = async () => {
     try {
       setLoading(true);
-      const data = await apiRequest(`/api/moderation/reports?userId=${currentUser.id}`);
-      setReports((data as any).reports || []);
+      const data = await apiRequest(`/api/reports?userId=${currentUser.id}`);
+      setReports(Array.isArray(data) ? (data as ReportData[]) : ((data as any).reports || []));
     } catch (error) {
       console.error('خطأ في تحميل البلاغات:', error);
     } finally {
@@ -54,7 +58,7 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
     try {
       await apiRequest(`/api/reports/${reportId}/review`, {
         method: 'POST',
-        body: { action, moderatorId: currentUser.id },
+        body: { action: action === 'reviewed' ? 'approved' : 'dismissed', moderatorId: currentUser.id },
       });
       await loadReports();
     } catch (error) {
@@ -63,6 +67,19 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
   };
 
   // تم نقل دالة formatTimestamp إلى utils/timeUtils.ts
+
+  const openUserProfile = async (userId: number) => {
+    try {
+      setIsFetchingProfile(true);
+      const user = await apiRequest<ChatUser>(`/api/users/${userId}`);
+      setSelectedUser(user);
+      setIsProfileOpen(true);
+    } catch (error) {
+      console.error('خطأ في فتح الملف الشخصي:', error);
+    } finally {
+      setIsFetchingProfile(false);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -153,13 +170,21 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <User className="w-4 h-4 text-blue-400" />
-                            <span className="font-medium text-gray-200">
+                            <button
+                              className="font-medium text-gray-200 hover:underline hover:text-blue-300 disabled:opacity-60"
+                              onClick={() => openUserProfile(report.reporterId)}
+                              disabled={!report.reporterId}
+                            >
                               {report.reporterName || 'مجهول'}
-                            </span>
+                            </button>
                             <span className="text-gray-400">بلّغ عن</span>
-                            <span className="font-medium text-red-400">
+                            <button
+                              className="font-medium text-red-400 hover:underline hover:text-red-300 disabled:opacity-60"
+                              onClick={() => openUserProfile(report.reportedUserId)}
+                              disabled={!report.reportedUserId}
+                            >
                               {report.reportedUserName || 'مجهول'}
-                            </span>
+                            </button>
                           </div>
 
                           <div className="flex items-center gap-2 mb-2">
@@ -235,6 +260,14 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
           </div>
         </CardContent>
       </Card>
+
+      {isProfileOpen && selectedUser && (
+        <ProfileModal
+          user={selectedUser}
+          currentUser={currentUser}
+          onClose={() => setIsProfileOpen(false)}
+        />
+      )}
     </div>
   );
 }
