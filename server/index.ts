@@ -183,6 +183,33 @@ app.use(
             return res.sendFile(defaultAvatarPath);
           }
         }
+        // fallback لصور الغرف
+        if (requestPath.includes('/rooms/')) {
+          const defaultRoomPath = path.join(process.cwd(), 'client/public/default_room.svg');
+          try {
+            await fsp.stat(defaultRoomPath);
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            return res.sendFile(defaultRoomPath);
+          } catch {
+            const defaultRoomSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#f472b6"/>
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" fill="url(#g)"/>
+  <rect x="20" y="30" width="60" height="40" rx="6" fill="white" opacity="0.9"/>
+  <rect x="28" y="38" width="12" height="12" rx="2" fill="#7c3aed"/>
+  <rect x="44" y="38" width="12" height="12" rx="2" fill="#7c3aed"/>
+  <rect x="60" y="38" width="12" height="12" rx="2" fill="#7c3aed"/>
+  <rect x="28" y="54" width="44" height="8" rx="2" fill="#7c3aed"/>
+</svg>`;
+            await fsp.writeFile(defaultRoomPath, defaultRoomSVG);
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            return res.sendFile(defaultRoomPath);
+          }
+        }
         return res.status(404).json({ error: 'File not found' });
       }
 
