@@ -149,16 +149,18 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
     fetchVip();
 
     // Listen to realtime vipUpdated
+    const handleVipMessage = (payload: any) => {
+      if (payload?.type === 'vipUpdated') {
+        const normalized = normalizeUsers(payload.users || []);
+        setVipUsers(normalized);
+        try { queryClient.setQueryData(['/api/vip'], { users: normalized }); } catch {}
+      }
+    };
+
     try {
       const s = getSocket();
       socketRef.current = s;
-      s.on('message', (payload: any) => {
-        if (payload?.type === 'vipUpdated') {
-          const normalized = normalizeUsers(payload.users || []);
-          setVipUsers(normalized);
-          try { queryClient.setQueryData(['/api/vip'], { users: normalized }); } catch {}
-        }
-      });
+      s.on('message', handleVipMessage);
     } catch {}
 
     return () => {
@@ -166,7 +168,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
       try { controller.abort(); } catch {}
       if (socketRef.current) {
         try {
-          socketRef.current.off('message');
+          socketRef.current.off('message', handleVipMessage);
         } catch {}
         socketRef.current = null;
       }

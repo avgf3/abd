@@ -95,7 +95,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
       saveSession({ wallTab: activeTab });
 
       // معالج المنشورات الجديدة
-      s.on('message', (message: any) => {
+      const handleWallMessage = (message: any) => {
         if (message.type === 'newWallPost') {
           const postType = message.wallType || message.post?.type || 'public';
           if (postType === activeTab) {
@@ -128,13 +128,15 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
             return { ...(old || {}), posts: oldPosts.filter((p) => p.id !== message.postId) };
           });
         }
-      });
+      };
+      
+      s.on('message', handleWallMessage);
     }
 
     return () => {
       if (socket.current) {
         // لا نفصل الاتصال العام، فقط نزيل المستمع المحلي
-        socket.current.off('message');
+        socket.current.off('message', handleWallMessage);
         socket.current = null;
       }
     };
