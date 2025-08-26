@@ -70,16 +70,40 @@ export function validateMessageContent(content: string): { isValid: boolean; rea
     };
   }
 
-  // Check for spam patterns
-  const spamPatterns = [
-    /(.)\1{10,}/gi, // Repeated characters
-    /https?:\/\/[^\s]+/gi, // URLs (adjust based on your needs)
-    /[^\w\s\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/gi, // Non-Arabic/alphanumeric chars (allowing Arabic)
-  ];
+  // روابط مسموح بها فقط: YouTube (youtube.com و youtu.be)
+  // - امنع أي روابط أخرى
+  const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/gi;
+  const matches = trimmedContent.match(urlRegex) || [];
 
-  for (const pattern of spamPatterns) {
-    if (pattern.test(trimmedContent)) {
-      return { isValid: false, reason: 'المحتوى يحتوي على نص مشبوه' };
+  if (matches.length > 0) {
+    const isAllowedYouTube = (u: string): boolean => {
+      try {
+        let url = u;
+        if (!/^https?:\/\//i.test(url)) {
+          url = 'https://' + url;
+        }
+        const parsed = new URL(url);
+        const host = parsed.hostname.toLowerCase();
+        return (
+          host === 'youtube.com' ||
+          host === 'www.youtube.com' ||
+          host === 'm.youtube.com' ||
+          host === 'youtu.be' ||
+          host === 'www.youtu.be' ||
+          host === 'youtube-nocookie.com' ||
+          host === 'www.youtube-nocookie.com'
+        );
+      } catch {
+        return false;
+      }
+    };
+
+    const allAllowed = matches.every((m) => isAllowedYouTube(m));
+    if (!allAllowed) {
+      return {
+        isValid: false,
+        reason: 'الرسالة تحتوي على روابط غير مسموحة. يُسمح فقط بروابط YouTube',
+      };
     }
   }
 
@@ -113,7 +137,13 @@ export function setupSecurity(app: Express): void {
           fontSrc: ["'self'", 'https://fonts.gstatic.com'],
           objectSrc: ["'none'"],
           mediaSrc: ["'self'"],
-          frameSrc: ["'none'"],
+          // السماح بتضمين YouTube داخل iframes
+          frameSrc: [
+            "'self'",
+            'https://www.youtube.com',
+            'https://youtube.com',
+            'https://www.youtube-nocookie.com',
+          ],
         },
       },
       crossOriginEmbedderPolicy: false, // للسماح بتحميل الصور من مصادر خارجية
@@ -152,7 +182,7 @@ export function setupSecurity(app: Express): void {
         "font-src 'self' https://fonts.gstatic.com",
         "object-src 'none'",
         "media-src 'self'",
-        "frame-src 'none'",
+        "frame-src 'self' https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com",
       ].join('; ')
     );
 

@@ -5,7 +5,7 @@ import { roomMessageService } from '../services/roomMessageService';
 import { roomService } from '../services/roomService';
 import { storage } from '../storage';
 import { protect } from '../middleware/enhancedSecurity';
-import { sanitizeInput, limiters, SecurityConfig } from '../security';
+import { sanitizeInput, limiters, SecurityConfig, validateMessageContent } from '../security';
 import { z } from 'zod';
 
 const router = Router();
@@ -187,6 +187,12 @@ router.post('/room/:roomId', protect.auth, limiters.sendMessage, async (req, res
     const sanitizedContent = sanitizeInput(typeof content === 'string' ? content : '');
     if (!sanitizedContent) {
       return res.status(400).json({ error: 'محتوى الرسالة مطلوب' });
+    }
+
+    // السماح فقط بروابط YouTube ومنع غيرها
+    const contentCheck = validateMessageContent(sanitizedContent);
+    if (!contentCheck.isValid) {
+      return res.status(400).json({ error: contentCheck.reason || 'محتوى غير مسموح' });
     }
 
     // منع استخدام هذا المسار لإرسال رسائل خاصة
