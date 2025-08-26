@@ -3,8 +3,8 @@ import type { Socket } from 'socket.io-client';
 
 import type { PrivateConversation } from '../../../shared/types';
 
-import { apiRequest } from '@/lib/queryClient';
-import { getSocket, saveSession, clearSession } from '@/lib/socket';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { connectSocket, saveSession, clearSession } from '@/lib/socket';
 import type { ChatUser, ChatMessage } from '@/types/chat';
 import type { Notification } from '@/types/chat';
 import { mapDbMessagesToChatMessages } from '@/utils/messageUtils';
@@ -1223,11 +1223,11 @@ export const useChat = () => {
             pingIntervalRef.current = null;
           }
         }
-
+        
         // استخدام عميل Socket الموحد
-        const s = getSocket();
+        const s = connectSocket();
         socket.current = s;
-
+        
         // حفظ الجلسة
         saveSession({ userId: user.id, username: user.username, userType: user.userType });
 
@@ -1246,9 +1246,6 @@ export const useChat = () => {
             userId: user.id,
             username: user.username,
           });
-
-          // طلب قائمة المتصلين فور الاتصال - تمت الإزالة لتجنب سباق التوقيت مع الانضمام للغرفة
-          // سيتم استقبال القائمة الصحيحة عبر حدث roomJoined أو onlineUsers الخاص بالغرفة
         }
 
         // إرسال المصادقة عند الاتصال/إعادة الاتصال يتم من خلال الوحدة المشتركة
@@ -1256,7 +1253,33 @@ export const useChat = () => {
           dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
           dispatch({ type: 'SET_CONNECTION_ERROR', payload: null });
           dispatch({ type: 'SET_LOADING', payload: false });
-          // طلب محدث لقائمة المتصلين بعد الاتصال - تمت الإزالة لتجنب سباق التوقيت
+
+          // Prefetch expected data shortly after connection success
+          try {
+            // غُصن خفيف لتفادي إزعاج الشبكة فوراً
+            setTimeout(() => {
+              try {
+                // Prefetch rooms list
+                queryClient.prefetchQuery({
+                  queryKey: ['/api/rooms', user.id],
+                  queryFn: async () => apiRequest('/api/rooms'),
+                  staleTime: 60_000,
+                });
+                // Prefetch notifications count
+                queryClient.prefetchQuery({
+                  queryKey: ['/api/notifications/unread-count', user.id],
+                  queryFn: async () => apiRequest(`/api/notifications/unread-count?userId=${user.id}`),
+                  staleTime: 60_000,
+                });
+                // Prefetch friends list (if endpoint supported)
+                queryClient.prefetchQuery({
+                  queryKey: ['/api/friends', user.id],
+                  queryFn: async () => apiRequest(`/api/friends/${user.id}`),
+                  staleTime: 60_000,
+                });
+              } catch {}
+            }, 300);
+          } catch {}
         });
 
         // معالج فشل إعادة الاتصال النهائي

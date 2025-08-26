@@ -172,6 +172,12 @@ router.post('/', protect.admin, upload.single('image'), async (req, res) => {
 
     const room = await roomService.createRoom(roomData);
 
+    // بث تحديث قائمة الغرف
+    try {
+      const io = req.app.get('io');
+      io?.emit('roomUpdate', { type: 'created', room });
+    } catch {}
+
     res.json({ room });
   } catch (error: any) {
     console.error('خطأ في إنشاء الغرفة:', error);
@@ -240,6 +246,12 @@ router.put('/:roomId/icon', protect.auth, upload.single('image'), async (req, re
 
     try { roomService.invalidateRoomsCache(); } catch {}
 
+    // بث تحديث أيقونة الغرفة
+    try {
+      const io = req.app.get('io');
+      io?.emit('roomUpdate', { type: 'updated', room: updated });
+    } catch {}
+
     res.json({ success: true, room: updated });
   } catch (error: any) {
     console.error('خطأ في تحديث أيقونة الغرفة:', error);
@@ -265,6 +277,12 @@ router.delete('/:roomId', protect.auth, async (req, res) => {
     // 🚀 إشعار واحد محسن لحذف الغرفة
     // لا بث عام عبر REST هنا لتفادي التعارض مع Socket.IO
     // يمكن الاعتماد على Socket لإرسال إشعار حذف الغرفة عند الحاجة
+
+    // بث حذف الغرفة
+    try {
+      const io = req.app.get('io');
+      io?.emit('roomUpdate', { type: 'deleted', roomId });
+    } catch {}
 
     res.json({ message: 'تم حذف الغرفة بنجاح' });
   } catch (error: any) {

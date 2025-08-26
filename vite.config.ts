@@ -40,6 +40,7 @@ export default defineConfig({
 					motion: ['framer-motion'],
 					virtuoso: ['react-virtuoso'],
 					carousel: ['embla-carousel-react'],
+					emoji: ['emoji-regex']
 				},
 			},
 		},

@@ -53,6 +53,9 @@ export default function ProfileImage({
           display: 'block',
         }}
         loading="lazy"
+        decoding="async"
+        sizes={size === 'small' ? '40px' : size === 'large' ? '80px' : '64px'}
+        fetchpriority={size === 'large' ? 'high' : 'low'}
         onError={(e: any) => {
           if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
             e.currentTarget.src = '/default_avatar.svg';

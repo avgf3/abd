@@ -79,15 +79,14 @@ function attachCoreListeners(socket: Socket) {
         reconnect: isReconnect,
       });
 
-      let joinRoomId = session.roomId || 'general';
-      if (joinRoomId === 'public' || joinRoomId === 'friends') {
-        joinRoomId = 'general';
+      const joinRoomId = session.roomId;
+      if (joinRoomId && joinRoomId !== 'public' && joinRoomId !== 'friends') {
+        socket.emit('joinRoom', {
+          roomId: joinRoomId,
+          userId: session.userId,
+          username: session.username,
+        });
       }
-      socket.emit('joinRoom', {
-        roomId: joinRoomId,
-        userId: session.userId,
-        username: session.username,
-      });
     } catch {}
   };
 
@@ -163,22 +162,14 @@ export function getSocket(): Socket {
 
   attachCoreListeners(socketInstance);
   
-  // Connect explicitly after listeners are attached
-  try {
-    socketInstance.connect();
-  } catch (error) {
-    console.error('❌ خطأ في الاتصال بـ Socket.IO:', error);
-  }
-  
-  // إضافة معالج لإعادة الاتصال عند تغيير حالة الشبكة
-  window.addEventListener('online', () => {
-    if (socketInstance && !socketInstance.connected) {
-      socketInstance.connect();
-    }
-  });
-  
-  window.addEventListener('offline', () => {
-    });
-  
+  // لا نتصل تلقائياً هنا بعد الآن؛ الاتصال يتم صراحةً عبر connectSocket()
   return socketInstance;
+}
+
+export function connectSocket(): Socket {
+  const s = getSocket();
+  try {
+    if (!s.connected) s.connect();
+  } catch {}
+  return s;
 }

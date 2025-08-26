@@ -1,5 +1,6 @@
 import { X, Plus, Users, Mic, RefreshCw, MessageCircle, Search, Settings } from 'lucide-react';
 import React, { useState, useCallback, useMemo, useRef } from 'react';
+import { Virtuoso } from 'react-virtuoso';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -520,25 +521,47 @@ export default function RoomComponent({
 
         {/* قائمة الغرف */}
         <div
-          className={
-            viewMode === 'grid'
+          className=
+            {viewMode === 'grid'
               ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'
-              : 'space-y-1'
-          }
+              : 'space-y-1'}
         >
-          {filteredRooms.map((room) => (
-            <RoomCard
-              key={room.id}
-              room={room}
-              isActive={currentRoomId === room.id}
-              currentUser={currentUser}
-              viewMode={viewMode}
-              compact={compact}
-              onSelect={onRoomChange}
-              onDelete={canDeleteRooms ? (id, e) => handleDeleteRoom(id, e) : undefined}
-              onChangeIcon={isAdmin ? (rid) => handleChangeIconClick(rid) : undefined}
+          {viewMode === 'grid' ? (
+            filteredRooms.map((room) => (
+              <RoomCard
+                key={room.id}
+                room={room}
+                isActive={currentRoomId === room.id}
+                currentUser={currentUser}
+                viewMode={viewMode}
+                compact={compact}
+                onSelect={onRoomChange}
+                onDelete={canDeleteRooms ? (id, e) => handleDeleteRoom(id, e) : undefined}
+                onChangeIcon={isAdmin ? (rid) => handleChangeIconClick(rid) : undefined}
+              />
+            ))
+          ) : (
+            <Virtuoso
+              style={{ height: '100%' }}
+              totalCount={filteredRooms.length}
+              itemContent={(index) => {
+                const room = filteredRooms[index];
+                return (
+                  <RoomCard
+                    key={room.id}
+                    room={room}
+                    isActive={currentRoomId === room.id}
+                    currentUser={currentUser}
+                    viewMode={viewMode}
+                    compact={compact}
+                    onSelect={onRoomChange}
+                    onDelete={canDeleteRooms ? (id, e) => handleDeleteRoom(id, e) : undefined}
+                    onChangeIcon={isAdmin ? (rid) => handleChangeIconClick(rid) : undefined}
+                  />
+                );
+              }}
             />
-          ))}
+          )}
         </div>
         {/* Hidden file input for changing room icon */}
         <input
