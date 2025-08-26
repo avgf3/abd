@@ -470,6 +470,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     } catch {}
   }, [queryClient]);
 
+  const SkeletonBlock = ({ className = '' }: { className?: string }) => (
+    <div className={`animate-pulse bg-muted rounded ${className}`} />
+  );
+
   return (
     <div
       className={`min-h-[100dvh] flex flex-col chat-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
@@ -661,7 +665,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             className={`${isMobile ? 'w-full flex-1 min-h-0' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}
             style={{ maxHeight: 'calc(100vh - 160px)' }}
           >
-            <Suspense fallback={<div className="p-4 text-center">...جاري التحميل</div>}>
+            <Suspense
+              fallback={
+                <div className="p-4 space-y-2">
+                  <SkeletonBlock className="h-6 w-1/2" />
+                  <SkeletonBlock className="h-10 w-full" />
+                  <SkeletonBlock className="h-10 w-full" />
+                  <SkeletonBlock className="h-10 w-3/4" />
+                </div>
+              }
+            >
               <UnifiedSidebar
                 users={chat.onlineUsers}
                 onUserClick={handleUserClick}
@@ -743,10 +756,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               // وإلا استخدم MessageArea العادية مع حماية من التداخل
               return (
                 <div
-                  className="flex-1 flex flex-col min-h-0 relative"
+                  className="flex-1 flex min-h-0"
                   style={{ maxHeight: 'calc(100vh - 160px)' }}
                 >
-                  <Suspense fallback={<div className="p-4 text-center">...جاري التحميل</div>}>
+                  <Suspense fallback={<div className="p-4 space-y-3"><SkeletonBlock className="h-6 w-1/3" /><SkeletonBlock className="h-40 w-full" /></div>}>
                     <MessageArea
                       messages={chat.publicMessages}
                       currentUser={chat.currentUser}

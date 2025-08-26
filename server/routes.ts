@@ -3528,6 +3528,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== Site Theme (Global) =====
   app.get('/api/settings/site-theme', async (req, res) => {
     try {
+      try {
+        res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=30');
+      } catch {}
       const theme = await databaseService.getSiteTheme();
       res.json({ siteTheme: theme });
     } catch (e) {

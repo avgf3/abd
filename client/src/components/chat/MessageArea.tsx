@@ -2,7 +2,7 @@ import { Send, Image as ImageIcon, Smile, ChevronDown } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
-import EmojiPicker from './EmojiPicker';
+const EmojiPicker = React.lazy(() => import('./EmojiPicker'));
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
 
@@ -593,10 +593,12 @@ export default function MessageArea({
             </Button>
             {showEmojiPicker && (
               <div className="absolute bottom-full mb-2 z-30">
-                <EmojiPicker
-                  onEmojiSelect={handleEmojiSelect}
-                  onClose={() => setShowEmojiPicker(false)}
-                />
+                <React.Suspense fallback={null}>
+                  <EmojiPicker
+                    onEmojiSelect={handleEmojiSelect}
+                    onClose={() => setShowEmojiPicker(false)}
+                  />
+                </React.Suspense>
               </div>
             )}
           </div>

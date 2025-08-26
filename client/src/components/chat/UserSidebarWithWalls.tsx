@@ -13,6 +13,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Virtuoso } from 'react-virtuoso';
 import type { Socket } from 'socket.io-client';
 
 import FriendsTabPanel from './FriendsTabPanel';
@@ -607,51 +608,50 @@ export default function UnifiedSidebar({
             </div>
           </div>
 
-          {/* Users List - قابل للتمرير */}
-          <div
-            ref={usersScrollRef}
-            className={`flex-1 overflow-y-auto ${isMobile ? 'p-2' : 'p-4'} space-y-3 cursor-grab bg-background mobile-scroll`}
-            style={{ maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 200px)' }}
-          >
-            <div className="space-y-3">
-              <div className="bg-primary text-primary-foreground rounded-md">
-                <div className="flex items-center justify-between p-2">
-                  <div className="flex items-center gap-2 font-bold text-base">
-                    المتصلون الآن
-                    <span className="bg-white/20 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
-                      {validUsers.length}
-                    </span>
-                  </div>
-                  <div className="text-xs flex items-center gap-1">
-                    <span>🏆</span>
-                    <span>مرتب حسب الرتب</span>
-                  </div>
+          {/* Users List - Virtualized */}
+          <div className={`${isMobile ? 'p-2' : 'p-4'} bg-background`} style={{ maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 200px)' }}>
+            <div className="bg-primary text-primary-foreground rounded-md mb-3">
+              <div className="flex items-center justify-between p-2">
+                <div className="flex items-center gap-2 font-bold text-base">
+                  المتصلون الآن
+                  <span className="bg-white/20 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
+                    {validUsers.length}
+                  </span>
+                </div>
+                <div className="text-xs flex items-center gap-1">
+                  <span>🏆</span>
+                  <span>مرتب حسب الرتب</span>
                 </div>
               </div>
-
-              <ul className="space-y-1">
-                {filteredUsers.map((user) => (
-                  <UserListItem key={user.id} user={user} />
-                ))}
-              </ul>
-
-              {filteredUsers.length === 0 && (
-                <div className="text-center text-gray-500 py-8">
-                  <div className="mb-3">{searchTerm ? '🔍' : '👥'}</div>
-                  <p className="text-sm">
-                    {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمون متصلون حالياً'}
-                  </p>
-                  {searchTerm && (
-                    <button
-                      onClick={() => setSearchTerm('')}
-                      className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
-                    >
-                      مسح البحث
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
+
+            {filteredUsers.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                <div className="mb-3">{searchTerm ? '🔍' : '👥'}</div>
+                <p className="text-sm">
+                  {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمون متصلون حالياً'}
+                </p>
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
+                  >
+                    مسح البحث
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <Virtuoso
+                  style={{ height: isMobile ? 'calc(100vh - 180px)' : 'calc(100vh - 260px)' }}
+                  totalCount={filteredUsers.length}
+                  itemContent={(index) => {
+                    const user = filteredUsers[index];
+                    return <UserListItem key={user.id} user={user} />;
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

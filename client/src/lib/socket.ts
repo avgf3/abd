@@ -163,22 +163,14 @@ export function getSocket(): Socket {
 
   attachCoreListeners(socketInstance);
   
-  // Connect explicitly after listeners are attached
-  try {
-    socketInstance.connect();
-  } catch (error) {
-    console.error('❌ خطأ في الاتصال بـ Socket.IO:', error);
-  }
-  
-  // إضافة معالج لإعادة الاتصال عند تغيير حالة الشبكة
-  window.addEventListener('online', () => {
-    if (socketInstance && !socketInstance.connected) {
-      socketInstance.connect();
-    }
-  });
-  
-  window.addEventListener('offline', () => {
-    });
-  
+  // لا نتصل تلقائياً هنا بعد الآن؛ الاتصال يتم صراحةً عبر connectSocket()
   return socketInstance;
+}
+
+export function connectSocket(): Socket {
+  const s = getSocket();
+  try {
+    if (!s.connected) s.connect();
+  } catch {}
+  return s;
 }
