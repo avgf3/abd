@@ -1081,7 +1081,7 @@ export default function ProfileModal({
 
         .profile-cover {
           position: relative;
-          aspect-ratio: 3 / 1;
+          height: 250px;
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
@@ -1107,16 +1107,16 @@ export default function ProfileModal({
           background: rgba(0,0,0,0.9);
         }
 
-        /* شريط الأزرار بالقرب من أسفل الغلاف وبجوار يسار الصورة الشخصية */
+        /* شريط الأزرار بجانب الصورة الشخصية */
         .profile-actions {
           position: absolute;
-          bottom: 12px;
-          left: 12px;
-          right: 170px; /* اترك مساحة للصورة الشخصية على اليمين */
+          bottom: 45px;
+          left: 160px;
+          right: auto;
           display: flex;
           gap: 8px;
           align-items: center;
-          flex-wrap: wrap;
+          flex-wrap: nowrap;
           z-index: 3;
         }
 
@@ -1151,7 +1151,7 @@ export default function ProfileModal({
           overflow: hidden;
           border: 4px solid rgba(255,255,255,0.9);
           position: absolute;
-          top: calc(100% - 65px);
+          top: calc(100% - 90px);
           right: 20px;
           background-color: white;
           box-shadow: 0 6px 20px rgba(0,0,0,0.6);
@@ -1172,7 +1172,7 @@ export default function ProfileModal({
 
         .change-avatar-btn {
           position: absolute;
-          top: calc(100% - 32px);
+          top: calc(100% - 57px);
           right: 28px;
           background: rgba(0,0,0,0.8);
           border-radius: 50%;
@@ -1198,13 +1198,13 @@ export default function ProfileModal({
         }
 
         .profile-body {
-          padding: 72px 20px 16px;
+          padding: 20px 20px 16px;
         }
 
         .profile-info {
           margin-bottom: 12px;
           text-align: center;
-          margin-top: -50px;
+          margin-top: 0;
         }
 
         .profile-info h3 {
@@ -1839,30 +1839,90 @@ export default function ProfileModal({
             }}
           >
             {localUser?.id === currentUser?.id && (
-              <button
-                className="change-cover-btn"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
-              >
-                🖼️ تغيير الغلاف
-              </button>
+              <>
+                <button
+                  className="change-cover-btn"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                >
+                  🖼️ تغيير الغلاف
+                </button>
+                
+                {/* اسم المستخدم مع الرتبة */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '60px',
+                  left: '160px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  zIndex: 3
+                }}>
+                  <h3 style={{
+                    margin: 0,
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    color: getFinalUsernameColor(localUser || {}),
+                    textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => openEditModal('name')}
+                  >
+                    {localUser?.username || 'اسم المستخدم'}
+                  </h3>
+                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
+                    <span style={{ fontSize: '16px' }}>
+                      {getUserLevelIcon(localUser, 16)} {localUser?.userType === 'admin' && '⭐⭐'}
+                    </span>
+                  )}
+                </div>
+              </>
             )}
 
             {localUser?.id !== currentUser?.id && (
-              <div className="profile-actions">
-                <button className="btn-chat" onClick={() => onPrivateMessage?.(localUser)}>
-                  💬 محادثة خاصة
-                </button>
-                <button className="btn-add" onClick={() => onAddFriend?.(localUser)}>
-                  👥 إضافة صديق
-                </button>
-                <button className="btn-ignore" onClick={() => onIgnoreUser?.(localUser?.id || 0)}>
-                  🚫 تجاهل
-                </button>
-                <button className="btn-report" onClick={() => onReportUser?.(localUser)}>
-                  🚩 إبلاغ
-                </button>
-              </div>
+              <>
+                {/* اسم المستخدم مع الرتبة */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '85px',
+                  left: '160px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  zIndex: 3
+                }}>
+                  <h3 style={{
+                    margin: 0,
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    color: getFinalUsernameColor(localUser || {}),
+                    textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                  }}>
+                    {localUser?.username || 'اسم المستخدم'}
+                  </h3>
+                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
+                    <span style={{ fontSize: '16px' }}>
+                      {getUserLevelIcon(localUser, 16)} {localUser?.userType === 'admin' && '⭐⭐'}
+                    </span>
+                  )}
+                </div>
+                
+                {/* الأزرار */}
+                <div className="profile-actions">
+                  <button className="btn-chat" onClick={() => onPrivateMessage?.(localUser)}>
+                    💬 محادثة خاصة
+                  </button>
+                  <button className="btn-add" onClick={() => onAddFriend?.(localUser)}>
+                    👥 إضافة صديق
+                  </button>
+                  <button className="btn-ignore" onClick={() => onIgnoreUser?.(localUser?.id || 0)}>
+                    🚫 تجاهل
+                  </button>
+                  <button className="btn-report" onClick={() => onReportUser?.(localUser)}>
+                    🚩 إبلاغ
+                  </button>
+                </div>
+              </>
             )}
 
             <div className="profile-avatar">
@@ -1908,15 +1968,6 @@ export default function ProfileModal({
           {/* Profile Body - exact match to original */}
           <div className="profile-body">
             <div className="profile-info">
-              <h3
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('name')}
-                style={{
-                  cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default',
-                  color: getFinalUsernameColor(localUser || {}),
-                }}
-              >
-                {localUser?.username || 'اسم المستخدم'}
-              </h3>
               <small
                 onClick={() => localUser?.id === currentUser?.id && openEditModal('status')}
                 style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
