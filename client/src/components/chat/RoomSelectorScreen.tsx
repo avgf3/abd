@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import RoomComponent from '@/components/chat/RoomComponent';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import type { ChatUser } from '@/types/chat';
+import { getSocket } from '@/lib/socket';
 
 interface RoomSelectorScreenProps {
 	currentUser: ChatUser | null;
@@ -16,6 +17,33 @@ export default function RoomSelectorScreen({ currentUser, onSelectRoom }: RoomSe
 			onSelectRoom(roomId);
 		} catch {}
 	};
+
+	// Socket listener for live updates
+	React.useEffect(() => {
+		let mounted = true;
+		try {
+			const s = getSocket();
+			const onUpdate = (_payload: any) => {
+				if (!mounted) return;
+				fetchRooms(true);
+			};
+			s.on('roomUpdate', onUpdate);
+			return () => {
+				mounted = false;
+				try { s.off('roomUpdate', onUpdate); } catch {}
+			};
+		} catch {
+			return () => {};
+		}
+	}, [fetchRooms]);
+
+	// Backup polling every ~45s
+	React.useEffect(() => {
+		const id = window.setInterval(() => {
+			fetchRooms(true);
+		}, 45000);
+		return () => window.clearInterval(id);
+	}, [fetchRooms]);
 
 	const content = useMemo(() => {
 		if (loading && rooms.length === 0) {
