@@ -1078,11 +1078,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'جميع الحقول المطلوبة' });
       }
 
-      // فحص اسم المستخدم - منع الأحرف الخاصة
-      if (!/^[\u0600-\u06FFa-zA-Z0-9_]{3,20}$/.test(username.trim())) {
+      // فحص اسم المستخدم - شرط الطول فقط (1-14)
+      if (username.trim().length < 1 || username.trim().length > 14) {
         return res
           .status(400)
-          .json({ error: 'اسم المستخدم يجب أن يكون بين 3-20 حرف ولا يحتوي على رموز خاصة' });
+          .json({ error: 'اسم المستخدم يجب أن يكون بين 1 و 14 حرف' });
       }
 
       if (password !== confirmPassword) {
@@ -1149,8 +1149,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { username, gender } = req.body;
 
-      if (!username?.trim()) {
-        return res.status(400).json({ error: 'اسم المستخدم مطلوب' });
+      if (!username?.trim() || username.trim().length > 14) {
+        return res.status(400).json({ error: 'اسم المستخدم يجب أن يكون بين 1 و 14 حرف' });
       }
 
       // Check if username already exists
@@ -2600,7 +2600,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (typeof updates.username !== 'string' || updates.username.trim().length === 0) {
           return res.status(400).json({ error: 'اسم المستخدم يجب أن يكون نص غير فارغ' });
         }
-        validatedUpdates.username = updates.username.trim();
+        const uname = updates.username.trim();
+        if (uname.length > 14) {
+          return res.status(400).json({ error: 'اسم المستخدم يجب ألا يتجاوز 14 حرف' });
+        }
+        validatedUpdates.username = uname;
       }
 
       if (updates.status !== undefined) {

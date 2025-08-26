@@ -237,9 +237,10 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           <div className="space-y-4">
             <Input
               value={guestName}
-              onChange={(e) => setGuestName(e.target.value)}
+              onChange={(e) => setGuestName(e.target.value.slice(0, 14))}
               placeholder="مثال: زائر_2025"
               className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+              maxLength={14}
               onKeyPress={(e) => e.key === 'Enter' && handleGuestLogin()}
             />
             <div className="space-y-2">
@@ -329,9 +330,10 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           <div className="space-y-4">
             <Input
               value={registerName}
-              onChange={(e) => setRegisterName(e.target.value)}
+              onChange={(e) => setRegisterName(e.target.value.slice(0, 14))}
               placeholder="اسم المستخدم الجديد"
               className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+              maxLength={14}
             />
             <Input
               type="password"
