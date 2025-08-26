@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import {
   Menu,
   Settings,
@@ -12,7 +12,7 @@ import {
   EyeOff,
   Lock,
 } from 'lucide-react';
-import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback, useMemo } from 'react';
 
 import BlockNotification from '../moderation/BlockNotification';
 import MessageAlert from './MessageAlert';
@@ -44,6 +44,7 @@ const RichestModal = lazy(() => import('@/components/ui/RichestModal'));
 // import RoomComponent from './RoomComponent';
 
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -63,6 +64,7 @@ import { useRoomManager } from '@/hooks/useRoomManager';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 import { setCachedUser } from '@/utils/userCacheManager';
+import { getPmLastOpened } from '@/utils/messageUtils';
 
 interface ChatInterfaceProps {
   chat: UseChatReturn;
@@ -188,6 +190,54 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     show: false,
     sender: null,
   });
+
+  // === Unread badges logic ===
+  const currentUserId = chat.currentUser?.id;
+
+  // Notifications unread count (server)
+  const { data: unreadNotifData } = useQuery<{ count: number }>({
+    queryKey: ['/api/notifications/unread-count', currentUserId],
+    queryFn: async () => {
+      if (!currentUserId) return { count: 0 } as any;
+      return await apiRequest(`/api/notifications/unread-count?userId=${currentUserId}`);
+    },
+    enabled: !!currentUserId,
+    refetchInterval: 60000,
+    staleTime: 30000,
+  });
+  const unreadNotificationsCount = unreadNotifData?.count || 0;
+
+  // Private messages unread total (local + minimal server data)
+  const totalUnreadPrivateMessages = useMemo(() => {
+    if (!currentUserId) return 0;
+    let total = 0;
+    const conversations = chat.privateConversations || {};
+    for (const key of Object.keys(conversations)) {
+      const otherId = parseInt(key, 10);
+      if (!Number.isFinite(otherId)) continue;
+      const lastOpened = getPmLastOpened(currentUserId, otherId);
+      const conv = conversations[otherId] || [];
+      const unread = conv.filter(
+        (m: any) => m && m.senderId === otherId && new Date(m.timestamp).getTime() > lastOpened
+      ).length;
+      total += unread;
+    }
+    return total;
+  }, [chat.privateConversations, currentUserId]);
+
+  // Pending moderation reports count (owner/admin only)
+  const isOwnerOrAdmin = chat.currentUser && (chat.currentUser.userType === 'owner' || chat.currentUser.userType === 'admin');
+  const { data: spamStats } = useQuery<{ stats: { pendingReports: number } } | null>({
+    queryKey: ['/api/spam-stats', currentUserId],
+    queryFn: async () => {
+      if (!currentUserId) return null as any;
+      return await apiRequest(`/api/spam-stats?userId=${currentUserId}`);
+    },
+    enabled: !!currentUserId && !!isOwnerOrAdmin,
+    refetchInterval: 60000,
+    staleTime: 30000,
+  });
+  const pendingReportsCount = spamStats?.stats?.pendingReports || 0;
 
   // تفعيل التنبيه عند وصول رسالة جديدة
   useEffect(() => {
@@ -492,6 +542,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 >
                   <AlertTriangle className="w-4 h-4" />
                   سجل البلاغات
+                  {pendingReportsCount > 0 && (
+                    <span className="absolute -top-2 -right-2 inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white">
+                      {pendingReportsCount}
+                    </span>
+                  )}
                 </Button>
 
                 <Button
@@ -542,6 +597,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           >
             <MessageSquare className="w-4 h-4" />
             الرسائل
+            {totalUnreadPrivateMessages > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white">
+                {totalUnreadPrivateMessages}
+              </span>
+            )}
           </Button>
 
           <Button
@@ -550,6 +610,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           >
             <Bell className="w-4 h-4" />
             إشعارات
+            {unreadNotificationsCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white">
+                {unreadNotificationsCount}
+              </span>
+            )}
           </Button>
 
           {/* الشعار بجانب الإشعارات */}
