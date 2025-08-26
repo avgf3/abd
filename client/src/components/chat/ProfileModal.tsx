@@ -1854,10 +1854,26 @@ export default function ProfileModal({
                   bottom: '60px',
                   left: '160px',
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '2px',
                   zIndex: 3
                 }}>
+                  {/* الرتبة فوق الاسم */}
+                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '14px' }}>
+                        {localUser?.userType === 'owner' && 'Owner'}
+                        {localUser?.userType === 'admin' && 'Super Admin'}
+                        {localUser?.userType === 'moderator' && 'Moderator'}
+                      </span>
+                      <span style={{ fontSize: '16px' }}>
+                        {getUserLevelIcon(localUser, 16)}
+                        {localUser?.userType === 'admin' && '⭐'}
+                      </span>
+                    </div>
+                  )}
+                  {/* الاسم */}
                   <h3 style={{
                     margin: 0,
                     fontSize: '18px',
@@ -1870,11 +1886,6 @@ export default function ProfileModal({
                   >
                     {localUser?.username || 'اسم المستخدم'}
                   </h3>
-                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <span style={{ fontSize: '16px' }}>
-                      {getUserLevelIcon(localUser, 16)} {localUser?.userType === 'admin' && '⭐⭐'}
-                    </span>
-                  )}
                 </div>
               </>
             )}
@@ -1884,13 +1895,29 @@ export default function ProfileModal({
                 {/* اسم المستخدم مع الرتبة */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '85px',
+                  bottom: '70px',
                   left: '160px',
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '2px',
                   zIndex: 3
                 }}>
+                  {/* الرتبة فوق الاسم */}
+                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '14px' }}>
+                        {localUser?.userType === 'owner' && 'Owner'}
+                        {localUser?.userType === 'admin' && 'Super Admin'}
+                        {localUser?.userType === 'moderator' && 'Moderator'}
+                      </span>
+                      <span style={{ fontSize: '16px' }}>
+                        {getUserLevelIcon(localUser, 16)}
+                        {localUser?.userType === 'admin' && '⭐'}
+                      </span>
+                    </div>
+                  )}
+                  {/* الاسم */}
                   <h3 style={{
                     margin: 0,
                     fontSize: '18px',
@@ -1900,11 +1927,6 @@ export default function ProfileModal({
                   }}>
                     {localUser?.username || 'اسم المستخدم'}
                   </h3>
-                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <span style={{ fontSize: '16px' }}>
-                      {getUserLevelIcon(localUser, 16)} {localUser?.userType === 'admin' && '⭐⭐'}
-                    </span>
-                  )}
                 </div>
                 
                 {/* الأزرار */}
