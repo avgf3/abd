@@ -79,7 +79,9 @@ type ChatAction =
   | { type: 'UNIGNORE_USER'; payload: number }
   | { type: 'CLEAR_ALL'; payload: void }
   | { type: 'UPSERT_ONLINE_USER'; payload: ChatUser }
-  | { type: 'REMOVE_ONLINE_USER'; payload: number };
+  | { type: 'REMOVE_ONLINE_USER'; payload: number }
+  | { type: 'CLEAR_ROOM_MESSAGES'; payload: void }
+  | { type: 'ADD_PUBLIC_MESSAGE'; payload: ChatMessage };
 
 type ReactionCounts = { like: number; dislike: number; heart: number };
 
@@ -292,6 +294,41 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
 
     case 'CLEAR_ALL':
       return { ...initialState };
+
+    case 'CLEAR_ROOM_MESSAGES':
+      return {
+        ...state,
+        roomMessages: {
+          ...state.roomMessages,
+          [state.currentRoomId]: [],
+        },
+      };
+
+    case 'ADD_PUBLIC_MESSAGE': {
+      const { roomId, message } = action.payload;
+      const existingMessages = state.roomMessages[roomId] || [];
+
+      // ✅ فحص بسيط للتكرار بناءً على ID أو timestamp+content
+      const isDuplicate = existingMessages.some(
+        (msg) =>
+          msg.id === message.id ||
+          (msg.timestamp === message.timestamp &&
+            msg.senderId === message.senderId &&
+            msg.content === message.content)
+      );
+
+      if (isDuplicate) {
+        return state; // لا نضيف الرسالة المكررة
+      }
+
+      return {
+        ...state,
+        roomMessages: {
+          ...state.roomMessages,
+          [roomId]: [...existingMessages, message],
+        },
+      };
+    }
 
     default:
       return state;
@@ -649,10 +686,15 @@ export const useChat = () => {
 
               // إضافة الرسالة للغرفة المناسبة (عام فقط)
               if (!chatMessage.isPrivate) {
-                dispatch({
-                  type: 'ADD_ROOM_MESSAGE',
-                  payload: { roomId, message: chatMessage },
-                });
+                dispatch({ type: 'ADD_PUBLIC_MESSAGE', payload: chatMessage });
+                
+                // Force update UI if message is from current user
+                if (chatMessage.senderId === state.currentUser?.id) {
+                  // تأكيد إرسال الرسالة للمستخدم
+                  setTimeout(() => {
+                    dispatch({ type: 'ADD_PUBLIC_MESSAGE', payload: chatMessage });
+                  }, 100);
+                }
               }
 
               // تشغيل صوت خفيف فقط عند الرسائل العامة في الغرفة الحالية
@@ -1297,6 +1339,17 @@ export const useChat = () => {
         return;
       }
 
+      // مغادرة الغرفة السابقة أولاً
+      if (state.currentRoomId && socket.current?.connected) {
+        socket.current.emit('leaveRoom', {
+          roomId: state.currentRoomId,
+          userId: state.currentUser?.id,
+        });
+      }
+
+      // مسح الرسائل السابقة لتجنب الخلط
+      dispatch({ type: 'CLEAR_ROOM_MESSAGES' });
+      
       dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
       saveSession({ roomId });
 

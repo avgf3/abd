@@ -75,7 +75,17 @@ const RoomCard: React.FC<RoomCardProps> = ({
       className={`${compact ? 'w-6 h-6' : 'w-8 h-8'} rounded-lg overflow-hidden flex-shrink-0 bg-muted`}
     >
       {room.icon ? (
-        <img src={room.icon} alt={room.name} className="w-full h-full object-cover" />
+        <img 
+          src={room.icon} 
+          alt={room.name} 
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            // إزالة src لمنع محاولات التحميل المتكررة
+            (e.target as HTMLImageElement).src = '';
+            // إخفاء الصورة المعطوبة
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
       ) : (
         <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
           <span className={`${compact ? 'text-xs' : 'text-sm'} font-bold text-primary`}>

@@ -104,14 +104,26 @@ router.get('/', async (req, res) => {
     }
 
     const rooms = await roomService.getAllRooms();
+    
+    // التحقق من وجود الصور وتعيين صورة افتراضية للمفقودة
+    const roomsWithValidatedIcons = rooms.map(room => {
+      if (room.icon) {
+        const iconPath = path.join(process.cwd(), 'client', 'public', room.icon);
+        if (!fs.existsSync(iconPath)) {
+          // الصورة غير موجودة، استخدم صورة افتراضية أو أزل المسار
+          return { ...room, icon: '' };
+        }
+      }
+      return room;
+    });
 
     // 📊 إضافة إحصائيات مفيدة
     const response = {
-      rooms,
+      rooms: roomsWithValidatedIcons,
       meta: {
-        total: rooms.length,
-        broadcast: rooms.filter((r) => r.isBroadcast).length,
-        active: rooms.filter((r) => r.isActive).length,
+        total: roomsWithValidatedIcons.length,
+        broadcast: roomsWithValidatedIcons.filter((r) => r.isBroadcast).length,
+        active: roomsWithValidatedIcons.filter((r) => r.isActive).length,
         timestamp: new Date().toISOString(),
       },
     };
