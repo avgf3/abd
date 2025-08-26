@@ -63,6 +63,8 @@ export function validateMessageContent(content: string): { isValid: boolean; rea
     return { isValid: false, reason: 'لا يمكن إرسال رسالة فارغة' };
   }
 
+  // Allow data:image payloads up to the max length without spam checks
+  const isDataImage = /^data:image\/(png|jpe?g|gif|webp);base64,/i.test(trimmedContent);
   if (trimmedContent.length > SecurityConfig.MAX_MESSAGE_LENGTH) {
     return {
       isValid: false,
@@ -70,7 +72,11 @@ export function validateMessageContent(content: string): { isValid: boolean; rea
     };
   }
 
-  // Check for spam patterns
+  if (isDataImage) {
+    return { isValid: true };
+  }
+
+  // Check for spam patterns for text messages only
   const spamPatterns = [
     /(.)\1{10,}/gi, // Repeated characters
     /https?:\/\/[^\s]+/gi, // URLs (adjust based on your needs)
@@ -256,12 +262,16 @@ export function setupSecurity(app: Express): void {
 export function sanitizeInput(input: string): string {
   if (typeof input !== 'string') return '';
 
-  return input
-    .trim()
+  const trimmed = input.trim();
+  const isDataImage = /^data:image\/(png|jpe?g|gif|webp);base64,/i.test(trimmed);
+
+  const cleaned = trimmed
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
     .replace(/javascript:/gi, '') // Remove javascript: protocols
-    .replace(/on\w+\s*=/gi, '') // Remove event handlers
-    .slice(0, 5000); // Allow larger payloads for data:image URLs and emojis
+    .replace(/on\w+\s*=/gi, ''); // Remove event handlers
+
+  // Preserve data:image payloads up to MAX_MESSAGE_LENGTH; otherwise slice
+  return isDataImage ? cleaned.slice(0, SecurityConfig.MAX_MESSAGE_LENGTH) : cleaned.slice(0, 2000);
 }
 
 // Check if IP is blocked
