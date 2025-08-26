@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Input } from '@/components/ui/input';
+import ComposerPlusMenu from '@/components/chat/ComposerPlusMenu';
+import { useComposerStyle } from '@/contexts/ComposerStyleContext';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import {
   sortMessagesAscending,
@@ -48,6 +50,7 @@ export default function PrivateMessageBox({
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
 
   // YouTube modal state
   const [youtubeModal, setYoutubeModal] = useState<{ open: boolean; videoId: string | null }>(
@@ -442,7 +445,18 @@ export default function PrivateMessageBox({
                               const firstId = ids[0];
                               return (
                                 <span className="text-sm leading-relaxed text-breathe inline-flex items-center gap-2">
-                                  {cleaned && <span className="truncate">{formatMessagePreview(cleaned, 100)}</span>}
+                                  {cleaned && (
+                                    <span
+                                      className="truncate"
+                                      style={
+                                        currentUser && m.senderId === currentUser.id
+                                          ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                          : undefined
+                                      }
+                                    >
+                                      {formatMessagePreview(cleaned, 100)}
+                                    </span>
+                                  )}
                                   <button
                                     onClick={() => setYoutubeModal({ open: true, videoId: firstId })}
                                     className="flex items-center justify-center w-8 h-6 rounded bg-red-600 hover:bg-red-700 transition-colors"
@@ -456,7 +470,14 @@ export default function PrivateMessageBox({
                               );
                             }
                             return (
-                              <span className="text-sm leading-relaxed text-breathe">
+                              <span
+                                className="text-sm leading-relaxed text-breathe"
+                                style={
+                                  currentUser && m.senderId === currentUser.id
+                                    ? { color: composerTextColor, fontWeight: composerBold ? 600 : undefined }
+                                    : undefined
+                                }
+                              >
                                 {formatMessagePreview(m.content, 100)}
                               </span>
                             );
@@ -497,6 +518,7 @@ export default function PrivateMessageBox({
                   sendError ? 'border-red-300' : 'border-gray-300'
                 }`}
                 disabled={isSending}
+                style={{ color: composerTextColor, fontWeight: composerBold ? 600 : undefined }}
               />
               <input
                 ref={fileInputRef}
@@ -505,15 +527,10 @@ export default function PrivateMessageBox({
                 onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                 className="hidden"
               />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                className="px-3"
-                title="إرسال صورة"
-              >
-                🖼️
-              </Button>
+              <ComposerPlusMenu
+                openImagePicker={() => fileInputRef.current?.click()}
+                disabled={isSending}
+              />
               <Button
                 onClick={handleSend}
                 disabled={(!messageText.trim() && !imageFile) || isSending}

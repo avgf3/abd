@@ -6,6 +6,7 @@ import { queryClient } from './lib/queryClient';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { UserProvider } from '@/contexts/UserContext';
+import { ComposerStyleProvider } from '@/contexts/ComposerStyleContext';
 import ChatPage from '@/pages/chat';
 
 function Router() {
@@ -21,10 +22,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <UserProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <ComposerStyleProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </ComposerStyleProvider>
       </UserProvider>
     </QueryClientProvider>
   );
