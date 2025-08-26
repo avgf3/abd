@@ -29,7 +29,8 @@
     "test:supabase": "tsx test-supabase-connection.ts",
     "clean-logs": "node tools/remove-console-logs.js",
     "build-production": "npm run clean-logs && npm run build",
-    "smoke": "node scripts/smoke-api.js"
+    "smoke": "node scripts/smoke-api.js",
+    "emoji:import": "node scripts/import-animated-emojis.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -151,6 +152,7 @@
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "extract-zip": "^2.0.1",
     "jscpd": "^4.0.5",
     "postcss": "^8.4.47",
     "prettier": "^3.6.2",
