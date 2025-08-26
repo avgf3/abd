@@ -1,8 +1,9 @@
-import { Send, Smile, ChevronDown } from 'lucide-react';
+import { Send, Smile, ChevronDown, Sparkles } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
 const EmojiPicker = React.lazy(() => import('./EmojiPicker'));
+const AnimatedEmojiPicker = React.lazy(() => import('./AnimatedEmojiPicker'));
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
 
@@ -23,6 +24,7 @@ import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
 import ComposerPlusMenu from './ComposerPlusMenu';
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
+import { renderMessageWithAnimatedEmojis, convertTextToAnimatedEmojis } from '@/utils/animatedEmojiUtils';
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -55,6 +57,7 @@ export default function MessageArea({
 }: MessageAreaProps) {
   const [messageText, setMessageText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showAnimatedEmojiPicker, setShowAnimatedEmojiPicker] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const isMobile = useIsMobile();
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
@@ -305,6 +308,14 @@ export default function MessageArea({
     inputRef.current?.focus();
   }, []);
 
+  // Animated Emoji select handler
+  const handleAnimatedEmojiSelect = useCallback((emoji: { id: string; url: string; name: string; code: string }) => {
+    // إدراج كود السمايل في الرسالة
+    setMessageText((prev) => prev + ` [[emoji:${emoji.id}:${emoji.url}]] `);
+    setShowAnimatedEmojiPicker(false);
+    inputRef.current?.focus();
+  }, []);
+
   // File upload handler - محسن
   const handleFileUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -525,7 +536,10 @@ export default function MessageArea({
                                           : undefined
                                       }
                                     >
-                                      {renderMessageWithMentions(cleaned, currentUser, onlineUsers)}
+                                      {renderMessageWithAnimatedEmojis(
+                                        cleaned,
+                                        (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                      )}
                                     </span>
                                   ) : null}
                                   <button
@@ -549,7 +563,10 @@ export default function MessageArea({
                                     : undefined
                                 }
                               >
-                                {renderMessageWithMentions(message.content, currentUser, onlineUsers)}
+                                {renderMessageWithAnimatedEmojis(
+                                  message.content, 
+                                  (text) => renderMessageWithMentions(text, currentUser, onlineUsers)
+                                )}
                               </span>
                             );
                           })()
@@ -736,6 +753,30 @@ export default function MessageArea({
                   <EmojiPicker
                     onEmojiSelect={handleEmojiSelect}
                     onClose={() => setShowEmojiPicker(false)}
+                  />
+                </React.Suspense>
+              </div>
+            )}
+          </div>
+
+          {/* Animated Emoji Picker */}
+          <div className="relative">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAnimatedEmojiPicker(!showAnimatedEmojiPicker)}
+              className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''}`}
+              title="سمايلات متحركة"
+            >
+              <Sparkles className="w-4 h-4" />
+            </Button>
+            {showAnimatedEmojiPicker && (
+              <div className="absolute bottom-full mb-2 z-30">
+                <React.Suspense fallback={null}>
+                  <AnimatedEmojiPicker
+                    onEmojiSelect={handleAnimatedEmojiSelect}
+                    onClose={() => setShowAnimatedEmojiPicker(false)}
                   />
                 </React.Suspense>
               </div>

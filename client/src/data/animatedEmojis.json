@@ -1,0 +1,160 @@
+{
+  "categories": {
+    "classic": {
+      "name": "كلاسيكية",
+      "icon": "😊",
+      "emojis": [
+        {
+          "id": "smile",
+          "name": "ابتسامة",
+          "url": "/assets/emojis/classic/smile.gif",
+          "code": ":)"
+        },
+        {
+          "id": "laugh",
+          "name": "ضحك",
+          "url": "/assets/emojis/classic/laugh.gif",
+          "code": ":D"
+        },
+        {
+          "id": "wink",
+          "name": "غمزة",
+          "url": "/assets/emojis/classic/wink.gif",
+          "code": ";)"
+        },
+        {
+          "id": "tongue",
+          "name": "لسان",
+          "url": "/assets/emojis/classic/tongue.gif",
+          "code": ":P"
+        },
+        {
+          "id": "cool",
+          "name": "رائع",
+          "url": "/assets/emojis/classic/cool.gif",
+          "code": "8)"
+        },
+        {
+          "id": "cry",
+          "name": "بكاء",
+          "url": "/assets/emojis/classic/cry.gif",
+          "code": ":("
+        },
+        {
+          "id": "angry",
+          "name": "غضب",
+          "url": "/assets/emojis/classic/angry.gif",
+          "code": ">:("
+        },
+        {
+          "id": "heart",
+          "name": "قلب",
+          "url": "/assets/emojis/classic/heart.gif",
+          "code": "<3"
+        },
+        {
+          "id": "kiss",
+          "name": "قبلة",
+          "url": "/assets/emojis/classic/kiss.gif",
+          "code": ":*"
+        },
+        {
+          "id": "confused",
+          "name": "حائر",
+          "url": "/assets/emojis/classic/confused.gif",
+          "code": ":/"
+        },
+        {
+          "id": "shocked",
+          "name": "صدمة",
+          "url": "/assets/emojis/classic/shocked.gif",
+          "code": ":O"
+        },
+        {
+          "id": "devil",
+          "name": "شيطان",
+          "url": "/assets/emojis/classic/devil.gif",
+          "code": "}:)"
+        }
+      ]
+    },
+    "modern": {
+      "name": "حديثة",
+      "icon": "🎉",
+      "emojis": [
+        {
+          "id": "party",
+          "name": "احتفال",
+          "url": "/assets/emojis/modern/party.gif",
+          "code": ":party:"
+        },
+        {
+          "id": "fire",
+          "name": "نار",
+          "url": "/assets/emojis/modern/fire.gif",
+          "code": ":fire:"
+        },
+        {
+          "id": "thumbsup",
+          "name": "إعجاب",
+          "url": "/assets/emojis/modern/thumbsup.gif",
+          "code": ":+1:"
+        },
+        {
+          "id": "clap",
+          "name": "تصفيق",
+          "url": "/assets/emojis/modern/clap.gif",
+          "code": ":clap:"
+        },
+        {
+          "id": "love",
+          "name": "حب",
+          "url": "/assets/emojis/modern/love.gif",
+          "code": ":love:"
+        },
+        {
+          "id": "rofl",
+          "name": "ضحك شديد",
+          "url": "/assets/emojis/modern/rofl.gif",
+          "code": ":rofl:"
+        },
+        {
+          "id": "think",
+          "name": "تفكير",
+          "url": "/assets/emojis/modern/think.gif",
+          "code": ":think:"
+        },
+        {
+          "id": "wave",
+          "name": "تحية",
+          "url": "/assets/emojis/modern/wave.gif",
+          "code": ":wave:"
+        },
+        {
+          "id": "dance",
+          "name": "رقص",
+          "url": "/assets/emojis/modern/dance.gif",
+          "code": ":dance:"
+        },
+        {
+          "id": "rainbow",
+          "name": "قوس قزح",
+          "url": "/assets/emojis/modern/rainbow.gif",
+          "code": ":rainbow:"
+        },
+        {
+          "id": "star",
+          "name": "نجمة",
+          "url": "/assets/emojis/modern/star.gif",
+          "code": ":star:"
+        },
+        {
+          "id": "rocket",
+          "name": "صاروخ",
+          "url": "/assets/emojis/modern/rocket.gif",
+          "code": ":rocket:"
+        }
+      ]
+    }
+  }
+}
