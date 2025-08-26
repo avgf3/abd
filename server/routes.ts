@@ -2051,15 +2051,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.query;
 
-      // التحقق من أن المستخدم مشرف
-      const user = await storage.getUser(parseInt(userId as string));
-      if (!user || user.userType !== 'owner') {
-        return res.status(403).json({ error: 'غير مسموح' });
+      // التحقق من userId
+      const parsedUserId = userId ? parseInt(userId as string) : null;
+      if (!parsedUserId || isNaN(parsedUserId)) {
+        console.error('Invalid userId in spam-stats:', userId);
+        return res.status(400).json({ error: 'معرف المستخدم غير صحيح' });
+      }
+
+      // التحقق من أن المستخدم مشرف أو owner
+      const user = await storage.getUser(parsedUserId);
+      if (!user) {
+        console.error('User not found for spam-stats:', parsedUserId);
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      if (user.userType !== 'owner' && user.userType !== 'admin') {
+        console.error('Unauthorized access to spam-stats by user:', parsedUserId, 'type:', user.userType);
+        return res.status(403).json({ error: 'غير مسموح - يجب أن تكون مشرف أو مالك' });
       }
 
       const stats = spamProtection.getStats();
       res.json({ stats });
     } catch (error) {
+      console.error('Error in spam-stats:', error);
       res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
@@ -2530,14 +2544,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ count: 0 });
       }
 
-      const userId = parseInt(req.query.userId as string);
-      if (!userId) {
-        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : null;
+      if (!userId || isNaN(userId)) {
+        console.error('Invalid userId in notifications/unread-count:', req.query.userId);
+        return res.status(400).json({ error: 'معرف المستخدم غير صحيح أو مفقود' });
+      }
+
+      // التحقق من وجود المستخدم
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.error('User not found for notifications:', userId);
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
       const count = await storage.getUnreadNotificationCount(userId);
-      res.json({ count });
+      res.json({ count: count || 0 });
     } catch (error) {
+      console.error('Error in notifications/unread-count:', error);
       res.status(500).json({ error: 'خطأ في جلب عدد الإشعارات' });
     }
   });
