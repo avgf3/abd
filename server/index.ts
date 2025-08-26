@@ -183,6 +183,18 @@ app.use(
             return res.sendFile(defaultAvatarPath);
           }
         }
+        
+        // fallback لأيقونات الغرف المفقودة
+        if (requestPath.includes('/rooms/')) {
+          const defaultRoomPath = path.join(process.cwd(), 'client/public/default_room.svg');
+          try {
+            await fsp.stat(defaultRoomPath);
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            return res.sendFile(defaultRoomPath);
+          } catch {
+            // إذا لم يتوفر الملف الافتراضي، أعد 404
+          }
+        }
         return res.status(404).json({ error: 'File not found' });
       }
 
