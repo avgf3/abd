@@ -12,7 +12,7 @@ interface UserRoleBadgeProps {
  * نظام الشعارات الموحد للموقع
  *
  * المالك (owner): تاج من client/public/svgs/crown.svg
- * المشرف العام (admin): ⭐
+ * المشرف العام (admin): نجمة من client/public/svgs/star.svg
  * المراقب (moderator): 🛡️
  * العضو (ذكر) مستوى 1–10: سهم أزرق client/public/svgs/blue_arrow.svg
  * العضو (أنثى) مستوى 1–10: ميدالية وردية client/public/svgs/pink_medal.svg
@@ -59,7 +59,18 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
   }
   // admin: نجمة
   if (user.userType === 'admin') {
-    return <span style={{ fontSize: size, display: 'inline' }}>⭐</span>;
+    return (
+      <img
+        src="/svgs/star.svg"
+        alt="admin"
+        style={{ width: size, height: size, display: 'inline' }}
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.style.display = 'none';
+          target.outerHTML = '<span style="font-size: ' + size + 'px; display: inline;">⭐</span>';
+        }}
+      />
+    );
   }
   // moderator: درع
   if (user.userType === 'moderator') {
