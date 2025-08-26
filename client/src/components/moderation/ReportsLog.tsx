@@ -8,6 +8,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { formatTimestamp } from '@/utils/timeUtils';
+import UserPopup from '@/components/chat/UserPopup';
+import ProfileImage from '@/components/chat/ProfileImage';
+import { getFinalUsernameColor } from '@/utils/themeUtils';
+import { getCachedUserWithMerge, setCachedUser } from '@/utils/userCacheManager';
 
 interface ReportData {
   id: number;
@@ -31,6 +35,7 @@ interface ReportsLogProps {
 export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsLogProps) {
   const [reports, setReports] = useState<ReportData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [userPopup, setUserPopup] = useState<{ show: boolean; user: ChatUser | null; x: number; y: number }>({ show: false, user: null, x: 0, y: 0 });
 
   useEffect(() => {
     if (isVisible && (currentUser.userType === 'admin' || currentUser.userType === 'owner')) {
@@ -41,8 +46,26 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
   const loadReports = async () => {
     try {
       setLoading(true);
-      const data = await apiRequest(`/api/moderation/reports?userId=${currentUser.id}`);
-      setReports((data as any).reports || []);
+      const data = await apiRequest(`/api/reports?userId=${currentUser.id}`);
+      setReports(Array.isArray(data) ? (data as ReportData[]) : ((data as any).reports || []));
+      // Prefetch basic user details for better avatars/colors (best-effort)
+      try {
+        const uniqueIds = Array.from(
+          new Set(
+            (Array.isArray(data) ? (data as ReportData[]) : ((data as any).reports || []))
+              .flatMap((r: ReportData) => [r.reporterId, r.reportedUserId])
+              .filter((id: any) => typeof id === 'number' && id > 0)
+          )
+        ).slice(0, 40);
+        await Promise.all(
+          uniqueIds.map(async (id) => {
+            try {
+              const u = await apiRequest<ChatUser>(`/api/users/${id}`);
+              if (u && u.id) setCachedUser(u);
+            } catch {}
+          })
+        );
+      } catch {}
     } catch (error) {
       console.error('خطأ في تحميل البلاغات:', error);
     } finally {
@@ -54,7 +77,7 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
     try {
       await apiRequest(`/api/reports/${reportId}/review`, {
         method: 'POST',
-        body: { action, moderatorId: currentUser.id },
+        body: { action: action === 'reviewed' ? 'approved' : 'dismissed', moderatorId: currentUser.id },
       });
       await loadReports();
     } catch (error) {
@@ -63,6 +86,65 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
   };
 
   // تم نقل دالة formatTimestamp إلى utils/timeUtils.ts
+
+  const openUserPopup = async (e: React.MouseEvent, userId: number, fallbackName?: string) => {
+    e.stopPropagation();
+    try {
+      // حاول جلب بيانات المستخدم لتحديث الصورة والألوان (best-effort)
+      let user = getCachedUserWithMerge(userId, fallbackName ? { username: fallbackName } : undefined);
+      try {
+        const fresh = await apiRequest<ChatUser>(`/api/users/${userId}`);
+        if (fresh && fresh.id) {
+          setCachedUser(fresh);
+          user = fresh;
+        }
+      } catch {}
+      setUserPopup({ show: true, user, x: e.clientX, y: e.clientY });
+    } catch (error) {
+      console.error('خطأ في فتح قائمة المستخدم:', error);
+    }
+  };
+
+  const closeUserPopup = () => setUserPopup((p) => ({ ...p, show: false }));
+
+  const onPm = (user: ChatUser) => {
+    closeUserPopup();
+    try {
+      window.location.hash = `#pm${user.id}`;
+    } catch {}
+  };
+
+  const onAddFriend = async (user: ChatUser) => {
+    if (!currentUser?.id) return;
+    try {
+      await apiRequest('/api/friend-requests', {
+        method: 'POST',
+        body: { senderId: currentUser.id, receiverId: user.id },
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      closeUserPopup();
+    }
+  };
+
+  const onIgnore = async (user: ChatUser) => {
+    if (!currentUser?.id) return;
+    try {
+      await apiRequest(`/api/users/${currentUser.id}/ignore/${user.id}`, { method: 'POST' });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      closeUserPopup();
+    }
+  };
+
+  const onViewProfile = (user: ChatUser) => {
+    closeUserPopup();
+    try {
+      window.location.hash = `#id${user.id}`;
+    } catch {}
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -99,6 +181,8 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
   }
 
   const pendingReports = reports.filter((r) => r.status === 'pending');
+
+  const buildUser = (id: number, name?: string) => getCachedUserWithMerge(id, name ? { username: name } : undefined);
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -141,72 +225,99 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
               </div>
             ) : (
               <div className="space-y-3">
-                {reports.map((report) => (
-                  <Card
-                    key={report.id}
-                    className={`bg-gray-800/50 border-gray-600 ${
-                      report.status === 'pending' ? 'border-red-500/50' : ''
-                    }`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <User className="w-4 h-4 text-blue-400" />
-                            <span className="font-medium text-gray-200">
-                              {report.reporterName || 'مجهول'}
-                            </span>
-                            <span className="text-gray-400">بلّغ عن</span>
-                            <span className="font-medium text-red-400">
-                              {report.reportedUserName || 'مجهول'}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-2 mb-2">
-                            <FileText className="w-4 h-4 text-yellow-400" />
-                            <span className="text-sm text-gray-300">السبب: {report.reason}</span>
-                          </div>
-
-                          {report.content && (
-                            <div className="bg-gray-700/50 p-2 rounded text-sm text-gray-300 mb-2">
-                              "{report.content}"
+                {reports.map((report) => {
+                  const reporter = buildUser(report.reporterId, report.reporterName);
+                  const reported = buildUser(report.reportedUserId, report.reportedUserName);
+                  return (
+                    <Card
+                      key={report.id}
+                      className={`bg-gray-800/50 border-gray-600 ${
+                        report.status === 'pending' ? 'border-red-500/50' : ''
+                      }`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <ProfileImage
+                                user={reporter}
+                                size="small"
+                                onClick={(e) => openUserPopup(e as any, report.reporterId, report.reporterName)}
+                                className="cursor-pointer"
+                                hideRoleBadgeOverlay
+                              />
+                              <button
+                                className="font-medium hover:underline disabled:opacity-60"
+                                style={{ color: getFinalUsernameColor(reporter) }}
+                                onClick={(e) => openUserPopup(e, report.reporterId, report.reporterName)}
+                                disabled={!report.reporterId}
+                              >
+                                {reporter.username}
+                              </button>
+                              <span className="text-gray-400">بلّغ عن</span>
+                              <ProfileImage
+                                user={reported}
+                                size="small"
+                                onClick={(e) => openUserPopup(e as any, report.reportedUserId, report.reportedUserName)}
+                                className="cursor-pointer"
+                                hideRoleBadgeOverlay
+                              />
+                              <button
+                                className="font-medium hover:underline disabled:opacity-60"
+                                style={{ color: getFinalUsernameColor(reported) }}
+                                onClick={(e) => openUserPopup(e, report.reportedUserId, report.reportedUserName)}
+                                disabled={!report.reportedUserId}
+                              >
+                                {reported.username}
+                              </button>
                             </div>
-                          )}
 
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <Clock className="w-3 h-3" />
-                            {formatTimestamp(report.timestamp)}
+                            <div className="flex items-center gap-2 mb-2">
+                              <FileText className="w-4 h-4 text-yellow-400" />
+                              <span className="text-sm text-gray-300">السبب: {report.reason}</span>
+                            </div>
+
+                            {report.content && (
+                              <div className="bg-gray-700/50 p-2 rounded text-sm text-gray-300 mb-2">
+                                "{report.content}"
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <Clock className="w-3 h-3" />
+                              {formatTimestamp(report.timestamp)}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-2">
+                            {getStatusBadge(report.status)}
+
+                            {report.status === 'pending' && (
+                              <div className="flex gap-1">
+                                <Button
+                                  onClick={() => handleReportAction(report.id, 'reviewed')}
+                                  size="sm"
+                                  variant="default"
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  راجع
+                                </Button>
+                                <Button
+                                  onClick={() => handleReportAction(report.id, 'dismissed')}
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-red-600 text-red-400"
+                                >
+                                  ارفض
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
-
-                        <div className="flex flex-col items-end gap-2">
-                          {getStatusBadge(report.status)}
-
-                          {report.status === 'pending' && (
-                            <div className="flex gap-1">
-                              <Button
-                                onClick={() => handleReportAction(report.id, 'reviewed')}
-                                size="sm"
-                                variant="default"
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                راجع
-                              </Button>
-                              <Button
-                                onClick={() => handleReportAction(report.id, 'dismissed')}
-                                size="sm"
-                                variant="outline"
-                                className="border-red-600 text-red-400"
-                              >
-                                ارفض
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </ScrollArea>
@@ -235,6 +346,20 @@ export default function ReportsLog({ currentUser, isVisible, onClose }: ReportsL
           </div>
         </CardContent>
       </Card>
+
+      {userPopup.show && userPopup.user && (
+        <UserPopup
+          user={userPopup.user}
+          x={userPopup.x}
+          y={userPopup.y}
+          onPrivateMessage={() => onPm(userPopup.user!)}
+          onAddFriend={() => onAddFriend(userPopup.user!)}
+          onIgnore={() => onIgnore(userPopup.user!)}
+          onViewProfile={() => onViewProfile(userPopup.user!)}
+          currentUser={currentUser}
+          onClose={closeUserPopup}
+        />
+      )}
     </div>
   );
 }
