@@ -4,6 +4,9 @@ import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
 const EmojiPicker = React.lazy(() => import('./EmojiPicker'));
 const AnimatedEmojiPicker = React.lazy(() => import('./AnimatedEmojiPicker'));
+const EmojiMartPicker = React.lazy(() => import('./EmojiMartPicker'));
+const LottieEmojiPicker = React.lazy(() => import('./LottieEmojiPicker'));
+const AnimatedEmojiEnhanced = React.lazy(() => import('./AnimatedEmojiEnhanced'));
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
 
@@ -58,6 +61,9 @@ export default function MessageArea({
   const [messageText, setMessageText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAnimatedEmojiPicker, setShowAnimatedEmojiPicker] = useState(false);
+  const [showEmojiMart, setShowEmojiMart] = useState(false);
+  const [showLottieEmoji, setShowLottieEmoji] = useState(false);
+  const [showEnhancedEmoji, setShowEnhancedEmoji] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const isMobile = useIsMobile();
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
@@ -313,6 +319,33 @@ export default function MessageArea({
     // إدراج كود السمايل في الرسالة
     setMessageText((prev) => prev + ` [[emoji:${emoji.id}:${emoji.url}]] `);
     setShowAnimatedEmojiPicker(false);
+    inputRef.current?.focus();
+  }, []);
+
+  // Emoji Mart handler
+  const handleEmojiMartSelect = useCallback((emoji: any) => {
+    if (emoji.src) {
+      // إيموجي مخصص (GIF)
+      setMessageText((prev) => prev + ` [[emoji:${emoji.id}:${emoji.src}]] `);
+    } else {
+      // إيموجي عادي
+      setMessageText((prev) => prev + emoji.native);
+    }
+    setShowEmojiMart(false);
+    inputRef.current?.focus();
+  }, []);
+
+  // Lottie Emoji handler
+  const handleLottieEmojiSelect = useCallback((emoji: { id: string; name: string; url: string }) => {
+    setMessageText((prev) => prev + ` [[lottie:${emoji.id}:${emoji.url}]] `);
+    setShowLottieEmoji(false);
+    inputRef.current?.focus();
+  }, []);
+
+  // Enhanced Emoji handler
+  const handleEnhancedEmojiSelect = useCallback((emoji: { id: string; emoji: string; name: string; code: string }) => {
+    setMessageText((prev) => prev + emoji.emoji);
+    setShowEnhancedEmoji(false);
     inputRef.current?.focus();
   }, []);
 
@@ -759,24 +792,70 @@ export default function MessageArea({
             )}
           </div>
 
-          {/* Animated Emoji Picker */}
+          {/* Animated Emoji Options */}
           <div className="relative">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setShowAnimatedEmojiPicker(!showAnimatedEmojiPicker)}
+              onClick={() => {
+                // إغلاق جميع المنتقات الأخرى
+                setShowEmojiPicker(false);
+                setShowAnimatedEmojiPicker(false);
+                setShowEmojiMart(false);
+                setShowLottieEmoji(false);
+                // فتح المنتقي المحسن
+                setShowEnhancedEmoji(!showEnhancedEmoji);
+              }}
               className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''}`}
-              title="سمايلات متحركة"
+              title="سمايلات متحركة متقدمة"
             >
               <Sparkles className="w-4 h-4" />
             </Button>
+            
+            {/* Enhanced Emoji Picker (Default) */}
+            {showEnhancedEmoji && (
+              <div className="absolute bottom-full mb-2 z-30">
+                <React.Suspense fallback={null}>
+                  <AnimatedEmojiEnhanced
+                    onEmojiSelect={handleEnhancedEmojiSelect}
+                    onClose={() => setShowEnhancedEmoji(false)}
+                  />
+                </React.Suspense>
+              </div>
+            )}
+            
+            {/* Original Animated Emoji Picker */}
             {showAnimatedEmojiPicker && (
               <div className="absolute bottom-full mb-2 z-30">
                 <React.Suspense fallback={null}>
                   <AnimatedEmojiPicker
                     onEmojiSelect={handleAnimatedEmojiSelect}
                     onClose={() => setShowAnimatedEmojiPicker(false)}
+                  />
+                </React.Suspense>
+              </div>
+            )}
+            
+            {/* Emoji Mart Picker */}
+            {showEmojiMart && (
+              <div className="absolute bottom-full mb-2 z-30">
+                <React.Suspense fallback={null}>
+                  <EmojiMartPicker
+                    onEmojiSelect={handleEmojiMartSelect}
+                    onClose={() => setShowEmojiMart(false)}
+                  />
+                </React.Suspense>
+              </div>
+            )}
+            
+            {/* Lottie Emoji Picker */}
+            {showLottieEmoji && (
+              <div className="absolute bottom-full mb-2 z-30">
+                <React.Suspense fallback={null}>
+                  <LottieEmojiPicker
+                    onEmojiSelect={handleLottieEmojiSelect}
+                    onClose={() => setShowLottieEmoji(false)}
                   />
                 </React.Suspense>
               </div>

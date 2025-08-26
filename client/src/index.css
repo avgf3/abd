@@ -699,6 +699,80 @@ body.ltr {
   animation: countdown 4s linear forwards;
 }
 
+/* أنيميشن للسمايلات المتحركة */
+@keyframes emojiPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes emojiShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+@keyframes emojiBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes emojiSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes emojiHeartbeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(0.8); }
+  75% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* كلاسات للسمايلات المتحركة */
+.animated-emoji {
+  display: inline-block;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.animated-emoji:hover {
+  transform: scale(1.2);
+}
+
+.animated-emoji-gif {
+  max-width: 32px;
+  max-height: 32px;
+  vertical-align: middle;
+}
+
+.emoji-picker-enhanced {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* تأثيرات Lottie */
+.lottie-emoji-container {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.lottie-emoji-container:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
 /* تمت إزالة تخصيصات أشرطة التمرير عبر المتصفحات */
 
 /* تأثيرات الثيمات المتحركة في قائمة المتصلين */
