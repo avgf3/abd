@@ -1068,3 +1068,38 @@ li > * > div.effect-crystal {
   vertical-align: baseline;
   margin-bottom: 1px;
 }
+
+/* أنماط السمايلات المتحركة */
+.animated-emoji {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 0.25rem;
+  transition: transform 0.2s ease;
+}
+
+.animated-emoji:hover {
+  transform: scale(1.2);
+}
+
+/* تحسين عرض السمايلات في الرسائل */
+.message-content-fix .animated-emoji {
+  width: 32px;
+  height: 32px;
+  margin: 0 4px;
+}
+
+/* أنماط قائمة السمايلات المتحركة */
+.animated-emoji-picker {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
