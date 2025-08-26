@@ -681,7 +681,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             </Suspense>
           </div>
         )}
-        {!isMobile || activeView === 'hidden' || showNotifications || showRichest || showMessages || showPmBox || showProfile || showSettings || showReportModal || showAdminReports || showModerationPanel || showOwnerPanel || showReportsLog || showActiveActions || showPromotePanel || showThemeSelector || showUsernameColorPicker || showIgnoredUsers
+        {!isMobile || activeView === 'hidden'
           ? (() => {
               const currentRoom = rooms.find((room) => room.id === chat.currentRoomId);
 
