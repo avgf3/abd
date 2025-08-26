@@ -3491,5 +3491,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
+  // Get user by ID - للحصول على بيانات المستخدم
+  app.get('/api/users/:id', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+
+      if (!userId || isNaN(userId)) {
+        return res.status(400).json({ error: 'المعرف يجب أن يكون رقماً صحيحاً' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      const payload = buildUserBroadcastPayload(user);
+      res.json(payload);
+    } catch (error) {
+      console.error('❌ خطأ في جلب بيانات المستخدم:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // Update user profile - General endpoint - محسّن مع معالجة أفضل للأخطاء
+  app.post('/api/users/update-profile', protect.ownership, async (req, res) => {
+    try {
+      const { userId, ...updates } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'معرف المستخدم مطلوب' });
+      }
+
+      const userIdNum = parseInt(userId);
+      if (isNaN(userIdNum)) {
+        return res.status(400).json({ error: 'معرف المستخدم يجب أن يكون رقم صحيح' });
+      }
+
+      const user = await storage.getUser(userIdNum);
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      // التحقق الأساسي من الحقول النصية (قص بسيط وتنقية)
+      const validatedUpdates: any = {};
+      for (const [key, value] of Object.entries(updates || {})) {
+        if (typeof value === 'string') {
+          validatedUpdates[key] = String(value).trim().slice(0, 500);
+        } else if (value !== undefined) {
+          validatedUpdates[key] = value;
+        }
+      }
+
+      const updatedUser = await storage.updateUser(userIdNum, validatedUpdates);
+      if (!updatedUser) {
+        return res.status(500).json({ error: 'فشل في تحديث البيانات' });
+      }
+
+      emitUserUpdatedToUser(userIdNum, updatedUser);
+      emitUserUpdatedToAll(updatedUser);
+
+      res.json({ success: true, user: buildUserBroadcastPayload(updatedUser) });
+    } catch (error) {
+      console.error('❌ خطأ في تحديث البروفايل:', error);
+      res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
   return httpServer;
 }
