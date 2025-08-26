@@ -2423,6 +2423,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notifications API
+  // 1) Unread-count with query param should come FIRST to avoid being captured by :userId
+  app.get('/api/notifications/unread-count', async (req, res) => {
+    try {
+      // Check database availability
+      if (!db || dbType === 'disabled') {
+        return res.json({ count: 0 });
+      }
+
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : null;
+      if (!userId || isNaN(userId)) {
+        console.error('Invalid userId in notifications/unread-count:', req.query.userId);
+        return res.status(400).json({ error: 'معرف المستخدم غير صحيح أو مفقود' });
+      }
+
+      // التحقق من وجود المستخدم
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.error('User not found for notifications:', userId);
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      const count = await storage.getUnreadNotificationCount(userId);
+      res.json({ count: count || 0 });
+    } catch (error) {
+      console.error('Error in notifications/unread-count:', error);
+      res.status(500).json({ error: 'خطأ في جلب عدد الإشعارات' });
+    }
+  });
+
+  // 2) List notifications by userId param
   app.get('/api/notifications/:userId', async (req, res) => {
     try {
       // Check database availability
@@ -2445,7 +2475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // إضافة endpoint للإشعارات بدون userId (للحالات التي تستدعى بدون معامل)
+  // 3) Compatibility endpoint without userId param (expects ?userId=)
   app.get('/api/notifications', async (req, res) => {
     try {
       // Check database availability
@@ -2465,6 +2495,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('خطأ في جلب الإشعارات:', error);
       res.status(500).json({ error: 'خطأ في جلب الإشعارات' });
+    }
+  });
+
+  // Keep parameterized unread-count for REST completeness
+  app.get('/api/notifications/:userId/unread-count', async (req, res) => {
+    try {
+      // Check database availability
+      if (!db || dbType === 'disabled') {
+        return res.json({ count: 0 });
+      }
+
+      const userId = parseInt(req.params.userId);
+      const count = await storage.getUnreadNotificationCount(userId);
+      res.json({ count });
+    } catch (error) {
+      res.status(500).json({ error: 'خطأ في جلب عدد الإشعارات' });
     }
   });
 
@@ -2518,206 +2564,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success });
     } catch (error) {
       res.status(500).json({ error: 'خطأ في حذف الإشعار' });
-    }
-  });
-
-  app.get('/api/notifications/:userId/unread-count', async (req, res) => {
-    try {
-      // Check database availability
-      if (!db || dbType === 'disabled') {
-        return res.json({ count: 0 });
-      }
-
-      const userId = parseInt(req.params.userId);
-      const count = await storage.getUnreadNotificationCount(userId);
-      res.json({ count });
-    } catch (error) {
-      res.status(500).json({ error: 'خطأ في جلب عدد الإشعارات' });
-    }
-  });
-
-  // Alternative endpoint with userId in query parameter (for client compatibility)
-  app.get('/api/notifications/unread-count', async (req, res) => {
-    try {
-      // Check database availability
-      if (!db || dbType === 'disabled') {
-        return res.json({ count: 0 });
-      }
-
-      const userId = req.query.userId ? parseInt(req.query.userId as string) : null;
-      if (!userId || isNaN(userId)) {
-        console.error('Invalid userId in notifications/unread-count:', req.query.userId);
-        return res.status(400).json({ error: 'معرف المستخدم غير صحيح أو مفقود' });
-      }
-
-      // التحقق من وجود المستخدم
-      const user = await storage.getUser(userId);
-      if (!user) {
-        console.error('User not found for notifications:', userId);
-        return res.status(404).json({ error: 'المستخدم غير موجود' });
-      }
-
-      const count = await storage.getUnreadNotificationCount(userId);
-      res.json({ count: count || 0 });
-    } catch (error) {
-      console.error('Error in notifications/unread-count:', error);
-      res.status(500).json({ error: 'خطأ في جلب عدد الإشعارات' });
-    }
-  });
-
-  // Update user profile - General endpoint - محسّن مع معالجة أفضل للأخطاء
-  app.post('/api/users/update-profile', protect.ownership, async (req, res) => {
-    try {
-      const { userId, ...updates } = req.body;
-
-      if (!userId) {
-        console.error('❌ معرف المستخدم مفقود');
-        return res.status(400).json({
-          error: 'معرف المستخدم مطلوب',
-          received: { userId, type: typeof userId },
-        });
-      }
-
-      const userIdNum = parseInt(userId);
-      if (isNaN(userIdNum)) {
-        console.error('❌ معرف المستخدم ليس رقم:', userId);
-        return res.status(400).json({
-          error: 'معرف المستخدم يجب أن يكون رقم صحيح',
-          received: { userId, type: typeof userId },
-        });
-      }
-
-      const user = await storage.getUser(userIdNum);
-      if (!user) {
-        console.error('❌ المستخدم غير موجود:', userIdNum);
-        return res.status(404).json({ error: 'المستخدم غير موجود' });
-      }
-
-      // التحقق من صحة البيانات المُدخلة
-      const validatedUpdates: any = {};
-
-      if (updates.username !== undefined) {
-        if (typeof updates.username !== 'string' || updates.username.trim().length === 0) {
-          return res.status(400).json({ error: 'اسم المستخدم يجب أن يكون نص غير فارغ' });
-        }
-        validatedUpdates.username = updates.username.trim();
-      }
-
-      if (updates.status !== undefined) {
-        if (typeof updates.status !== 'string') {
-          return res.status(400).json({ error: 'الحالة يجب أن تكون نص' });
-        }
-        validatedUpdates.status = updates.status.trim();
-      }
-
-      if (updates.gender !== undefined) {
-        const validGenders = ['ذكر', 'أنثى', ''];
-        if (!validGenders.includes(updates.gender)) {
-          return res.status(400).json({
-            error: 'الجنس يجب أن يكون "ذكر" أو "أنثى"',
-            received: updates.gender,
-            valid: validGenders,
-          });
-        }
-        validatedUpdates.gender = updates.gender;
-      }
-
-      if (updates.country !== undefined) {
-        if (typeof updates.country !== 'string') {
-          return res.status(400).json({ error: 'البلد يجب أن يكون نص' });
-        }
-        validatedUpdates.country = updates.country.trim();
-      }
-
-      if (updates.age !== undefined) {
-        let age;
-        if (typeof updates.age === 'string') {
-          age = parseInt(updates.age);
-        } else if (typeof updates.age === 'number') {
-          age = updates.age;
-        } else {
-          return res.status(400).json({
-            error: 'العمر يجب أن يكون رقم',
-            received: { age: updates.age, type: typeof updates.age },
-          });
-        }
-
-        if (isNaN(age) || age < 13 || age > 120) {
-          return res.status(400).json({
-            error: 'العمر يجب أن يكون رقم بين 13 و 120',
-            received: age,
-          });
-        }
-        validatedUpdates.age = age;
-      }
-
-      if (updates.relation !== undefined) {
-        if (typeof updates.relation !== 'string') {
-          return res.status(400).json({ error: 'الحالة الاجتماعية يجب أن تكون نص' });
-        }
-        validatedUpdates.relation = updates.relation.trim();
-      }
-
-      if (updates.bio !== undefined) {
-        if (typeof updates.bio !== 'string') {
-          return res.status(400).json({ error: 'السيرة الذاتية يجب أن تكون نص' });
-        }
-        if (updates.bio.length > 500) {
-          return res.status(400).json({ error: 'السيرة الذاتية يجب أن تكون أقل من 500 حرف' });
-        }
-        validatedUpdates.bio = updates.bio.trim();
-      }
-
-      // تحديث البيانات
-      const updatedUser = await storage.updateUser(userIdNum, validatedUpdates);
-
-      if (!updatedUser) {
-        console.error('❌ فشل في تحديث قاعدة البيانات');
-        return res.status(500).json({ error: 'فشل في تحديث البيانات في قاعدة البيانات' });
-      }
-
-      // بث موجه للمستخدم + بث خفيف للجميع
-      emitUserUpdatedToUser(userIdNum, updatedUser);
-      emitUserUpdatedToAll(updatedUser);
-
-      res.json({
-        success: true,
-        message: 'تم تحديث البروفايل بنجاح',
-        user: updatedUser,
-      });
-    } catch (error) {
-      console.error('❌ خطأ في تحديث البروفايل:', error);
-      res.status(500).json({
-        error: 'خطأ في الخادم',
-        details: error instanceof Error ? error.message : 'خطأ غير معروف',
-      });
-    }
-  });
-
-  // Get user by ID - للحصول على بيانات المستخدم
-  app.get('/api/users/:id', async (req, res) => {
-    try {
-      const userId = parseInt(req.params.id);
-
-      if (!userId || isNaN(userId)) {
-        return res.status(400).json({ error: 'معرف المستخدم يجب أن يكون رقم صحيح' });
-      }
-
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ error: 'المستخدم غير موجود' });
-      }
-
-      // إرجاع بيانات المستخدم بدون كلمة المرور مع تنظيف البيانات
-      const { password, ...userWithoutPassword } = user;
-      const payload = buildUserBroadcastPayload(userWithoutPassword);
-      res.json(payload);
-    } catch (error) {
-      console.error('❌ خطأ في جلب بيانات المستخدم:', error);
-      res.status(500).json({
-        error: 'خطأ في الخادم',
-        details: error instanceof Error ? error.message : 'خطأ غير معروف',
-      });
     }
   });
 
