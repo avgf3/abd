@@ -9,6 +9,8 @@ import ProfileImage from '@/components/chat/ProfileImage';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import SimpleUserMenu from '@/components/chat/SimpleUserMenu';
 import { Badge } from '@/components/ui/badge';
+import { useQueryClient } from '@tanstack/react-query';
+import { ListLoader } from '@/components/ui/loading';
 
 interface RichestModalProps {
   isOpen: boolean;
@@ -23,6 +25,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
+  const queryClient = useQueryClient();
 
   const canManage = useMemo(
     () => !!currentUser && ['owner', 'admin'].includes(currentUser.userType),
@@ -101,16 +104,40 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
   useEffect(() => {
     if (!isOpen) return;
     let ignore = false;
+    const controller = new AbortController();
+
+    // Prefill from cache to avoid loading flash
+    try {
+      const cachedVip = queryClient.getQueryData<{ users: ChatUser[] }>(['/api/vip']);
+      if (cachedVip?.users && !ignore) {
+        setVipUsers(normalizeUsers(cachedVip.users));
+      }
+      if (canManage) {
+        const cachedCand = queryClient.getQueryData<{ users: ChatUser[] }>(['/api/vip/candidates']);
+        if (cachedCand?.users && !ignore) {
+          setCandidates(normalizeUsers(cachedCand.users));
+        }
+      }
+    } catch {}
+
     const fetchVip = async () => {
-      setLoading(true);
       setError(null);
+      if (!vipUsers.length) setLoading(true);
       try {
-        const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip`);
-        if (!ignore) setVipUsers(normalizeUsers(res.users || []));
+        const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip`, { signal: controller.signal });
+        if (!ignore) {
+          const normalized = normalizeUsers(res.users || []);
+          setVipUsers(normalized);
+          queryClient.setQueryData(['/api/vip'], { users: normalized });
+        }
         if (canManage) {
           try {
-            const cand = await apiRequest<{ users: ChatUser[] }>(`/api/vip/candidates`);
-            if (!ignore) setCandidates(normalizeUsers(cand.users || []));
+            const cand = await apiRequest<{ users: ChatUser[] }>(`/api/vip/candidates`, { signal: controller.signal });
+            if (!ignore) {
+              const normalizedCand = normalizeUsers(cand.users || []);
+              setCandidates(normalizedCand);
+              queryClient.setQueryData(['/api/vip/candidates'], { users: normalizedCand });
+            }
           } catch {}
         }
       } catch (e: any) {
@@ -127,13 +154,16 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
       socketRef.current = s;
       s.on('message', (payload: any) => {
         if (payload?.type === 'vipUpdated') {
-          setVipUsers(normalizeUsers(payload.users || []));
+          const normalized = normalizeUsers(payload.users || []);
+          setVipUsers(normalized);
+          try { queryClient.setQueryData(['/api/vip'], { users: normalized }); } catch {}
         }
       });
     } catch {}
 
     return () => {
       ignore = true;
+      try { controller.abort(); } catch {}
       if (socketRef.current) {
         try {
           socketRef.current.off('message');
@@ -141,7 +171,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
         socketRef.current = null;
       }
     };
-  }, [isOpen, canManage]);
+  }, [isOpen, canManage, normalizeUsers, queryClient, vipUsers.length]);
 
   const handleAddVip = async (userId: number) => {
     try {
@@ -187,8 +217,31 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto bg-background">
-          {loading && <div className="text-center text-muted-foreground py-4">جاري التحميل...</div>}
-          {error && <div className="text-center text-destructive py-2 text-sm">{error}</div>}
+          {loading && <ListLoader items={8} itemHeight="h-12" className="p-3" />}
+          {error && (
+            <div className="text-center text-destructive py-2 text-sm">
+              {error}
+              <button
+                className="ml-2 underline text-xs"
+                onClick={async () => {
+                  try {
+                    setError(null);
+                    setLoading(true);
+                    const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip`);
+                    const normalized = normalizeUsers(res.users || []);
+                    setVipUsers(normalized);
+                    try { queryClient.setQueryData(['/api/vip'], { users: normalized }); } catch {}
+                  } catch (e: any) {
+                    setError(e?.message || 'فشل في الجلب');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                إعادة المحاولة
+              </button>
+            </div>
+          )}
 
           <ul className="space-y-1">
             {topTen.map((u, idx) => (

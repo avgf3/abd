@@ -454,6 +454,22 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   const [showRichest, setShowRichest] = useState(false);
 
+  // Prefetch VIP data shortly after mount
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      try {
+        await queryClient.prefetchQuery({ queryKey: ['/api/vip'], queryFn: () => apiRequest('/api/vip') });
+      } catch {}
+    }, 800);
+    return () => clearTimeout(t);
+  }, [queryClient]);
+
+  const prefetchVip = useCallback(async () => {
+    try {
+      await queryClient.prefetchQuery({ queryKey: ['/api/vip'], queryFn: () => apiRequest('/api/vip') });
+    } catch {}
+  }, [queryClient]);
+
   return (
     <div
       className={`min-h-[100dvh] flex flex-col chat-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
@@ -476,6 +492,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
           <Button
             className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+            onMouseEnter={prefetchVip}
+            onFocus={prefetchVip}
             onClick={() => setShowRichest(true)}
             title="الأثرياء"
           >
