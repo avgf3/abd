@@ -805,7 +805,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* Modern Footer Navigation */}
       <footer
-        className={`fixed bottom-2 md:bottom-3 left-0 right-0 z-10 modern-nav py-1.5 px-4 sm:py-1.5 sm:px-8 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
+        className={`fixed bottom-0 left-0 right-0 z-10 modern-nav h-14 px-4 sm:px-8 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
         style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0' }}
       >
         <div className="flex gap-2 sm:gap-3 overflow-x-auto max-w-full">
