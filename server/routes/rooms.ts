@@ -5,10 +5,11 @@ import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 import { SecurityConfig } from '../security';
-import { z } from 'zod';
 
 import { roomService } from '../services/roomService';
 import { protect } from '../middleware/enhancedSecurity';
+import sharp from 'sharp';
+import { removeWatermark } from '../utils/imageUtils';
 
 const router = Router();
 
@@ -158,7 +159,21 @@ router.post('/', protect.admin, upload.single('image'), async (req, res) => {
     // معالجة الصورة
     let icon = '';
     if (req.file) {
-      icon = `/uploads/rooms/${req.file.filename}`;
+      try {
+        const inputPath = req.file.path;
+        const buffer = fs.readFileSync(inputPath);
+        const cleaned = await removeWatermark(buffer);
+        const webpBuffer = await sharp(cleaned).webp({ quality: 90 }).toBuffer();
+        const newFilename = req.file.filename.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp');
+        const newPath = path.join(path.dirname(inputPath), newFilename);
+        fs.writeFileSync(newPath, webpBuffer);
+        if (newPath !== inputPath) {
+          try { fs.unlinkSync(inputPath); } catch {}
+        }
+        icon = `/uploads/rooms/${newFilename}`;
+      } catch {
+        icon = `/uploads/rooms/${req.file.filename}`;
+      }
     }
 
     const creatorId = (req as any).user?.id as number;
@@ -225,8 +240,21 @@ router.put('/:roomId/icon', protect.auth, upload.single('image'), async (req, re
       return res.status(400).json({ error: 'لم يتم رفع أي صورة' });
     }
 
-    // حفظ المسار
-    const iconPath = `/uploads/rooms/${req.file.filename}`;
+    // حفظ المسار بعد إزالة الشعار والتحويل إلى webp
+    let iconPath = `/uploads/rooms/${req.file.filename}`;
+    try {
+      const inputPath = req.file.path;
+      const buffer = fs.readFileSync(inputPath);
+      const cleaned = await removeWatermark(buffer);
+      const webpBuffer = await sharp(cleaned).webp({ quality: 90 }).toBuffer();
+      const newFilename = req.file.filename.replace(/\.(png|jpg|jpeg|gif)$/i, '.webp');
+      const newPath = path.join(path.dirname(inputPath), newFilename);
+      fs.writeFileSync(newPath, webpBuffer);
+      if (newPath !== inputPath) {
+        try { fs.unlinkSync(inputPath); } catch {}
+      }
+      iconPath = `/uploads/rooms/${newFilename}`;
+    } catch {}
 
     // حذف أيقونة سابقة لو وجدت
     if ((room as any).icon) {
