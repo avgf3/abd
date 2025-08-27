@@ -43,6 +43,15 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
     return <span style={{ color: '#10b981', fontSize: size * 0.8 }}>●</span>;
   }
 
+  // توحيد قيمة الجنس لدعم العربي والإنجليزي
+  const normalizeGender = (g?: string): 'male' | 'female' | undefined => {
+    if (!g) return undefined;
+    const trimmed = String(g).trim().toLowerCase();
+    if (trimmed === 'male' || trimmed === 'ذكر') return 'male';
+    if (trimmed === 'female' || trimmed === 'أنثى' || trimmed === 'انثى') return 'female';
+    return undefined;
+  };
+
   // owner: تاج SVG مع fallback
   if (user.userType === 'owner') {
     return (
@@ -81,7 +90,7 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
   // للأعضاء - نفحص المستوى والجنس
   if (user.userType === 'member') {
     const level = user.level || 1; // افتراضي 1 إذا لم يكن محدد
-    const gender = user.gender || 'male'; // افتراضي ذكر إذا لم يكن محدد
+    const gender = normalizeGender(user.gender) || 'male'; // افتراضي ذكر إذا لم يكن محدد
 
     // عضو ذكر لفل 1-10: سهم أزرق
     if (level >= 1 && level <= 10 && gender === 'male') {
@@ -175,6 +184,14 @@ export default function UserRoleBadge({
   size = 20,
   hideGuestAndGender = false,
 }: UserRoleBadgeProps) {
+  // توحيد قيمة الجنس لدعم العربي والإنجليزي
+  const normalizeGender = (g?: string): 'male' | 'female' | undefined => {
+    if (!g) return undefined;
+    const trimmed = String(g).trim().toLowerCase();
+    if (trimmed === 'male' || trimmed === 'ذكر') return 'male';
+    if (trimmed === 'female' || trimmed === 'أنثى' || trimmed === 'انثى') return 'female';
+    return undefined;
+  };
   // إخفاء شعار الضيف وشعار الأعضاء المعتمد على الجنس للمستويات 1–10 في سياقات محددة (مثل الدردشة)
   if (hideGuestAndGender) {
     if (user?.userType === 'guest') {
@@ -182,7 +199,7 @@ export default function UserRoleBadge({
     }
     if (user?.userType === 'member') {
       const level = user.level || 1;
-      const gender = user.gender || 'male';
+      const gender = normalizeGender(user.gender) || 'male';
       if (level >= 1 && level <= 10 && (gender === 'male' || gender === 'female')) {
         return null;
       }
