@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
+import ImageLightbox from '@/components/ui/ImageLightbox';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Input } from '@/components/ui/input';
 import ComposerPlusMenu from '@/components/chat/ComposerPlusMenu';
@@ -56,6 +57,12 @@ export default function PrivateMessageBox({
   const [youtubeModal, setYoutubeModal] = useState<{ open: boolean; videoId: string | null }>(
     { open: false, videoId: null }
   );
+
+  // Image lightbox state
+  const [imageLightbox, setImageLightbox] = useState<{ open: boolean; src: string | null }>({
+    open: false,
+    src: null,
+  });
 
   const isAllowedYouTubeHost = useCallback((host: string) => {
     const h = host.toLowerCase();
@@ -437,7 +444,7 @@ export default function PrivateMessageBox({
                               alt="صورة"
                               className="max-h-40 rounded-lg cursor-pointer shadow-sm hover:shadow-md transition-shadow"
                               loading="lazy"
-                              onClick={() => window.open(m.content, '_blank')}
+                              onClick={() => setImageLightbox({ open: true, src: m.content })}
                             />
                           ) : (() => {
                             const { cleaned, ids } = parseYouTubeFromText(m.content);
@@ -591,6 +598,15 @@ export default function PrivateMessageBox({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        open={imageLightbox.open}
+        src={imageLightbox.src}
+        onOpenChange={(open) => {
+          if (!open) setImageLightbox({ open: false, src: null });
+        }}
+      />
     </Dialog>
   );
 }
