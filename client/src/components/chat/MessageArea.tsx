@@ -7,6 +7,7 @@ const AnimatedEmojiPicker = React.lazy(() => import('./AnimatedEmojiPicker'));
 const EmojiMartPicker = React.lazy(() => import('./EmojiMartPicker'));
 const LottieEmojiPicker = React.lazy(() => import('./LottieEmojiPicker'));
 const AnimatedEmojiEnhanced = React.lazy(() => import('./AnimatedEmojiEnhanced'));
+const ComposerPlusMenu = React.lazy(() => import('./ComposerPlusMenu'));
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
 
@@ -856,7 +857,14 @@ export default function MessageArea({
             )}
           </div>
 
-          {/* Removed ComposerPlusMenu (gallery/color/bold) */}
+          {/* Composer Plus Menu */}
+          <React.Suspense fallback={null}>
+            <ComposerPlusMenu
+              onOpenImagePicker={() => fileInputRef.current?.click()}
+              disabled={!currentUser}
+              isMobile={isMobile}
+            />
+          </React.Suspense>
 
           {/* Message Input */}
           <Input
