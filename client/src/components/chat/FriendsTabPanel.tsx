@@ -388,7 +388,7 @@ export default function FriendsTabPanel({
             ) : (
               <ul className="space-y-0">
                 {filteredFriends.map((friend) => (
-                  <li key={friend.id} className="relative -mx-4">
+                  <li key={friend.id} className="relative -mx-4 list-none">
                     <SimpleUserMenu
                       targetUser={friend}
                       currentUser={currentUser}
