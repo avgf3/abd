@@ -1045,7 +1045,6 @@ export default function BroadcastRoomInterface({
           onlineUsers={onlineUsers}
           currentRoomName={room?.name || 'غرفة البث'}
           currentRoomId={room?.id}
-          compactHeader
         />
       </div>
     </div>
