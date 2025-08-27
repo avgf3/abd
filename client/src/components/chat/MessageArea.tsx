@@ -92,6 +92,8 @@ export default function MessageArea({
     open: false,
     src: null,
   });
+  
+  // (plus icon only now; removed ComposerPlusMenu lazy import)
 
   const isAllowedYouTubeHost = useCallback((host: string) => {
     const h = host.toLowerCase();
@@ -856,7 +858,20 @@ export default function MessageArea({
             )}
           </div>
 
-          {/* Removed ComposerPlusMenu (gallery/color/bold) */}
+          {/* Plus Icon only */}
+          <div className="relative">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!currentUser}
+              className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''}`}
+              onClick={() => {}}
+              title="إضافة"
+            >
+              <Sparkles className="w-4 h-4" />
+            </Button>
+          </div>
 
           {/* Message Input */}
           <Input

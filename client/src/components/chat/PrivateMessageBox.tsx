@@ -534,7 +534,7 @@ export default function PrivateMessageBox({
                 onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                 className="hidden"
               />
-              {/* Removed ComposerPlusMenu (gallery/color/bold) */}
+              {/* Plus Icon removed per user request: keep PM box unchanged */}
               <Button
                 onClick={handleSend}
                 disabled={(!messageText.trim() && !imageFile) || isSending}
