@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Input } from '@/components/ui/input';
-import ComposerPlusMenu from '@/components/chat/ComposerPlusMenu';
+// Removed ComposerPlusMenu (ready/quick options)
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 import {
@@ -534,10 +534,7 @@ export default function PrivateMessageBox({
                 onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                 className="hidden"
               />
-              <ComposerPlusMenu
-                openImagePicker={() => fileInputRef.current?.click()}
-                disabled={isSending}
-              />
+              {/* Removed ComposerPlusMenu (gallery/color/bold) */}
               <Button
                 onClick={handleSend}
                 disabled={(!messageText.trim() && !imageFile) || isSending}

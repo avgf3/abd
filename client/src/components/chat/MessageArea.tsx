@@ -26,7 +26,7 @@ import {
 import { getDynamicBorderColor } from '@/utils/messageUtils';
 import { getFinalUsernameColor } from '@/utils/themeUtils';
 import { formatTime } from '@/utils/timeUtils';
-import ComposerPlusMenu from './ComposerPlusMenu';
+// Removed ComposerPlusMenu (ready/quick options)
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
 import { renderMessageWithAnimatedEmojis, convertTextToAnimatedEmojis } from '@/utils/animatedEmojiUtils';
 
@@ -42,7 +42,7 @@ interface MessageAreaProps {
   currentRoomName?: string; // اسم الغرفة الحالية
   currentRoomId?: string; // معرف الغرفة الحالية
   ignoredUserIds?: Set<number>; // قائمة المتجاهلين لحجب الرسائل ظاهرياً
-  compactHeader?: boolean; // تفعيل نمط مدمج للرأس والمسافات
+  // compactHeader removed: we no longer render a room header bar
 }
 
 export default function MessageArea({
@@ -57,7 +57,6 @@ export default function MessageArea({
   currentRoomName = 'الدردشة العامة',
   currentRoomId = 'general',
   ignoredUserIds,
-  compactHeader = false,
 }: MessageAreaProps) {
   const [messageText, setMessageText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -438,30 +437,10 @@ export default function MessageArea({
 
   return (
     <section className="flex-1 flex flex-col bg-white min-h-0">
-      {/* Room Header */}
-      <div
-        className={`bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 ${compactHeader ? 'p-1.5' : 'p-2'}`}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-6 h-6 bg-primary/20 rounded-lg flex items-center justify-center">
-            <span className="text-primary font-bold">💬</span>
-          </div>
-          <div>
-            <h2 className={`font-bold ${compactHeader ? 'text-sm' : 'text-base'} text-black`}>
-              {currentRoomName}
-            </h2>
-            {!compactHeader && (
-              <p className="text-xs text-muted-foreground">
-                {validMessages.length} رسالة • {typingDisplay || 'جاهز للدردشة'}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
 
       {/* Messages Container - Virtualized */}
       <div
-        className={`relative flex-1 ${compactHeader ? 'p-3' : 'p-4'} bg-gradient-to-b from-gray-50 to-white`}
+        className={`relative flex-1 p-4 bg-gradient-to-b from-gray-50 to-white`}
       >
         {validMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -773,7 +752,7 @@ export default function MessageArea({
 
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div
-        className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg chat-input soft-entrance`}
+        className={`p-3 bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg chat-input soft-entrance`}
         style={{ bottom: 'calc(56px + env(safe-area-inset-bottom))' }}
       >
         {/* Typing Indicator */}
@@ -878,11 +857,7 @@ export default function MessageArea({
             )}
           </div>
 
-          {/* Plus Menu (Gallery, Color, Slight Bold) */}
-          <ComposerPlusMenu
-            openImagePicker={() => fileInputRef.current?.click()}
-            disabled={!currentUser}
-          />
+          {/* Removed ComposerPlusMenu (gallery/color/bold) */}
 
           {/* Message Input */}
           <Input
