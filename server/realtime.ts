@@ -33,20 +33,7 @@ const connectedUsers = new Map<
   }
 >();
 
-// Cache لقوائم المتصلين حسب الغرفة
-const roomUsersCache = new Map<
-  string,
-  {
-    users: any[];
-    lastUpdated: number;
-    version: number;
-  }
->();
-
-// مدة صلاحية الcache بالميللي ثانية (5 ثواني)
-const CACHE_TTL = 5000;
-// الحد الأقصى لعدد الغرف في الcache
-const MAX_CACHED_ROOMS = 50;
+// إزالة كاش قائمة المتصلين للغرف للاعتماد الكامل على أحداث Socket.IO
 
 export function updateConnectedUserCache(user: any) {
   try {
@@ -60,15 +47,8 @@ export function updateConnectedUserCache(user: any) {
   } catch {}
 }
 
-// بناء قائمة المتصلين بكفاءة اعتماداً على sockets المسجلة مع cache
-async function buildOnlineUsersForRoom(roomId: string, forceRefresh: boolean = false) {
-  // التحقق من الcache أولاً
-  if (!forceRefresh) {
-    const cached = roomUsersCache.get(roomId);
-    if (cached && Date.now() - cached.lastUpdated < CACHE_TTL) {
-      return cached.users;
-    }
-  }
+// بناء قائمة المتصلين بكفاءة اعتماداً على sockets المسجلة
+async function buildOnlineUsersForRoom(roomId: string) {
 
   const userMap = new Map<number, any>();
   for (const [_, entry] of connectedUsers.entries()) {
@@ -104,33 +84,10 @@ async function buildOnlineUsersForRoom(roomId: string, forceRefresh: boolean = f
     return u;
   });
 
-  // تحديث الcache
-  const currentCache = roomUsersCache.get(roomId);
-  roomUsersCache.set(roomId, {
-    users,
-    lastUpdated: Date.now(),
-    version: currentCache ? currentCache.version + 1 : 1,
-  });
-
-  // تنظيف الcache إذا تجاوز الحد الأقصى
-  if (roomUsersCache.size > MAX_CACHED_ROOMS) {
-    const sortedEntries = Array.from(roomUsersCache.entries()).sort(
-      (a, b) => a[1].lastUpdated - b[1].lastUpdated
-    );
-    // حذف أقدم 10% من الإدخالات
-    const toDelete = Math.ceil(MAX_CACHED_ROOMS * 0.1);
-    for (let i = 0; i < toDelete; i++) {
-      roomUsersCache.delete(sortedEntries[i][0]);
-    }
-  }
-
   return users;
 }
 
-// دالة لإبطال cache غرفة معينة
-function invalidateRoomCache(roomId: string) {
-  roomUsersCache.delete(roomId);
-}
+// أزيلت دالة إبطال الكاش
 
 async function joinRoom(
   io: IOServer,
@@ -169,14 +126,15 @@ async function joinRoom(
   }
 
   // إبطال cache الغرفة عند انضمام مستخدم جديد
-  invalidateRoomCache(roomId);
+  // لم نعد نستخدم الكاش
 
-  // Notify others in room (مقتصد، ثم بث قائمة محدثة)
+  // إخطار الآخرين في الغرفة ثم بث القائمة المحدثة مباشرةً
   socket.to(`room_${roomId}`).emit('message', { type: 'userJoinedRoom', username, userId, roomId });
 
-  // Send confirmation with current users list
+  // إرسال التأكيد للمستخدم المنضم وبث القائمة المحدثة للجميع
   const users = await buildOnlineUsersForRoom(roomId);
   socket.emit('message', { type: 'roomJoined', roomId, users });
+  io.to(`room_${roomId}`).emit('message', { type: 'onlineUsers', users, roomId, source: 'join' });
 
   // رسائل حديثة (تجنب التكرار عند الانضمام السريع): لا داعي إذا لم تتغير الغرفة فعلياً
   try {
@@ -259,15 +217,15 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
       credentials: true,
     },
     path: '/socket.io',
-    // تفضيل polling على Render لتجنب مشاكل WebSocket
-    transports: process.env.NODE_ENV === 'production' || process.env.SOCKET_IO_POLLING_ONLY === 'true' 
-      ? ['polling'] 
-      : ['polling', 'websocket'],
+    // تفعيل WebSocket حيثما أمكن مع الاحتفاظ بـ polling كاحتياطي
+    transports: process.env.SOCKET_IO_POLLING_ONLY === 'true'
+      ? ['polling']
+      : ['websocket', 'polling'],
     allowEIO3: true,
     pingTimeout: 180000, // زيادة timeout إلى 3 دقائق للإنتاج
     pingInterval: 45000, // ping كل 45 ثانية
     upgradeTimeout: 45000, // زيادة timeout للترقية
-    allowUpgrades: process.env.NODE_ENV !== 'production' && process.env.SOCKET_IO_POLLING_ONLY !== 'true',
+    allowUpgrades: process.env.SOCKET_IO_POLLING_ONLY !== 'true',
     cookie: false,
     serveClient: false,
     maxHttpBufferSize: 1e7, // زيادة حجم البيانات المسموح به
@@ -558,12 +516,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
       }
     );
 
-    socket.on('requestOnlineUsers', async () => {
-      if (!socket.isAuthenticated) return;
-      const roomId = socket.currentRoom || GENERAL_ROOM;
-      const users = await buildOnlineUsersForRoom(roomId);
-      socket.emit('message', { type: 'onlineUsers', users, roomId, source: 'request' });
-    });
+    // أزيلت آلية الطلب اليدوي لقائمة المتصلين للاعتماد على البث التلقائي
 
     // انضمام للغرفة مع منع السبام والتكرار السريع
     let lastJoinAt = 0;

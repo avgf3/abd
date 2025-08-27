@@ -55,7 +55,8 @@ export default function NotificationPanel({
       return await apiRequest(`/api/notifications?userId=${currentUser.id}&after=${lastChecked}`);
     },
     enabled: !!currentUser?.id && isOpen,
-    refetchInterval: isOpen ? 30000 : false, // كل 30 ثانية بدلاً من 3 ثوانٍ عند فتح النافذة
+    // لا حاجة لـ polling، التحديث يتم عبر أحداث الوقت الحقيقي
+    refetchInterval: false,
     staleTime: 10000, // البيانات صالحة لمدة 10 ثوانٍ
     gcTime: 5 * 60 * 1000, // حفظ في الكاش لمدة 5 دقائق
   });
@@ -68,7 +69,8 @@ export default function NotificationPanel({
       return await apiRequest(`/api/notifications/unread-count?userId=${currentUser.id}`);
     },
     enabled: !!currentUser?.id,
-    refetchInterval: 60000, // كل دقيقة بدلاً من ثانيتين
+    // لا حاجة لـ polling، سيتم تحديث العداد عبر invalidate من useNotificationManager
+    refetchInterval: false,
     staleTime: 30000, // البيانات صالحة لمدة 30 ثانية
   });
 

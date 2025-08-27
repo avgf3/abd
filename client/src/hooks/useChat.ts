@@ -394,8 +394,6 @@ export const useChat = () => {
 
   // Track ping interval to avoid leaks
   const pingIntervalRef = useRef<number | null>(null);
-  const onlineUsersIntervalRef = useRef<number | null>(null);
-  const lastUserListRequestAtRef = useRef<number>(0);
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {
@@ -411,32 +409,7 @@ export const useChat = () => {
     pingIntervalRef.current = pingId;
     socketInstance.on('client_pong', () => {});
 
-    // إعداد مؤقّت تحديث دوري لقائمة المتصلين مع Throttle لمنع التحميل الزائد
-    if (onlineUsersIntervalRef.current) {
-      clearInterval(onlineUsersIntervalRef.current);
-    }
-    const ouIntervalId = window.setInterval(() => {
-      if (!socketInstance.connected) return;
-      const now = Date.now();
-      if (now - lastUserListRequestAtRef.current >= 10000) {
-        try {
-          socketInstance.emit('requestOnlineUsers');
-          lastUserListRequestAtRef.current = now;
-        } catch {}
-      }
-    }, 30000);
-    onlineUsersIntervalRef.current = ouIntervalId;
-
-    // دالة مساعدة لطلب القائمة مع Throttle فوري
-    const requestUsersThrottled = () => {
-      const now = Date.now();
-      if (now - lastUserListRequestAtRef.current >= 1500) {
-        try {
-          socketInstance.emit('requestOnlineUsers');
-          lastUserListRequestAtRef.current = now;
-        } catch {}
-      }
-    };
+    // لم نعد نستخدم polling لقائمة المتصلين؛ السيرفر يبث التحديثات مباشرة
 
     // ✅ معالج واحد للرسائل - حذف التضارب
     socketInstance.on('message', (data: any) => {
@@ -780,16 +753,12 @@ export const useChat = () => {
                         type: 'UPSERT_ONLINE_USER',
                         payload: { ...(data as any), isOnline: true } as ChatUser,
                       });
-                    } else {
-                      requestUsersThrottled();
                     }
                   })
-                  .catch(() => requestUsersThrottled());
+                  .catch(() => {});
               } catch {
-                requestUsersThrottled();
+                // ignore
               }
-            } else {
-              requestUsersThrottled();
             }
             break;
           }

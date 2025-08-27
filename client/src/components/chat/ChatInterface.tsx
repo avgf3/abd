@@ -225,7 +225,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       return await apiRequest(`/api/notifications/unread-count?userId=${currentUserId}`);
     },
     enabled: !!currentUserId,
-    refetchInterval: 60000,
+    // التحديث يتم عبر أحداث الوقت الحقيقي (invalidate في useNotificationManager)
+    refetchInterval: false,
     staleTime: 30000,
   });
   const unreadNotificationsCount = unreadNotifData?.count || 0;
@@ -257,7 +258,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       return await apiRequest(`/api/spam-stats?userId=${currentUserId}`);
     },
     enabled: !!currentUserId && !!isOwnerOrAdmin,
-    refetchInterval: 60000,
+    // لا حاجة لـ polling هنا أيضاً
+    refetchInterval: false,
     staleTime: 30000,
   });
   const pendingReportsCount = spamStats?.stats?.pendingReports || 0;

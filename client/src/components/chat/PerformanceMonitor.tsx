@@ -65,8 +65,9 @@ export default function PerformanceMonitor({ isVisible }: PerformanceMonitorProp
     };
   }, [isVisible]);
 
-  // مراقبة استخدام الذاكرة
+  // مراقبة استخدام الذاكرة (تعمل فقط عند الظهور)
   useEffect(() => {
+    if (!isVisible) return;
     const updateMemoryUsage = () => {
       if ('memory' in performance) {
         const memory = (performance as any).memory;
@@ -81,10 +82,11 @@ export default function PerformanceMonitor({ isVisible }: PerformanceMonitorProp
 
     const interval = setInterval(updateMemoryUsage, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isVisible]);
 
-  // مراقبة زمن الاستجابة
+  // مراقبة زمن الاستجابة (تعمل فقط عند الظهور)
   useEffect(() => {
+    if (!isVisible) return;
     const measureLatency = async () => {
       const start = performance.now();
       try {
@@ -105,7 +107,7 @@ export default function PerformanceMonitor({ isVisible }: PerformanceMonitorProp
 
     const interval = setInterval(measureLatency, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isVisible]);
 
   if (!isVisible) return null;
 
