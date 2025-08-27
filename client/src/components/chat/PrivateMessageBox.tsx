@@ -534,7 +534,18 @@ export default function PrivateMessageBox({
                 onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                 className="hidden"
               />
-              {/* Removed ComposerPlusMenu (gallery/color/bold) */}
+              {/* Composer Plus Menu (gallery/color/bold) */}
+              <React.Suspense fallback={null}>
+                {(() => {
+                  const PlusMenu = React.lazy(() => import('./ComposerPlusMenu'));
+                  return (
+                    <PlusMenu
+                      disabled={isSending}
+                      onOpenImagePicker={() => fileInputRef.current?.click()}
+                    />
+                  );
+                })()}
+              </React.Suspense>
               <Button
                 onClick={handleSend}
                 disabled={(!messageText.trim() && !imageFile) || isSending}

@@ -92,6 +92,9 @@ export default function MessageArea({
     open: false,
     src: null,
   });
+  
+  // Lazy import for plus menu to avoid heavy initial load
+  const ComposerPlusMenu = React.useMemo(() => React.lazy(() => import('./ComposerPlusMenu')), []);
 
   const isAllowedYouTubeHost = useCallback((host: string) => {
     const h = host.toLowerCase();
@@ -857,7 +860,15 @@ export default function MessageArea({
             )}
           </div>
 
-          {/* Removed ComposerPlusMenu (gallery/color/bold) */}
+          {/* Composer Plus Menu (gallery/color/bold) */}
+          <div className="relative">
+            <React.Suspense fallback={null}>
+              <ComposerPlusMenu
+                disabled={!currentUser}
+                onOpenImagePicker={() => fileInputRef.current?.click()}
+              />
+            </React.Suspense>
+          </div>
 
           {/* Message Input */}
           <Input
