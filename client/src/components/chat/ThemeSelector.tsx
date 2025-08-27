@@ -111,6 +111,127 @@ const themes = [
       '--text': '#134e4a',
     },
   },
+  // Modern, muted trendy palettes
+  {
+    id: 'orangeCool',
+    name: 'برتقالي بارد',
+    preview: 'linear-gradient(135deg, #ff8a4c 0%, #ffb477 100%)',
+    description: 'دفء عصري بدون مبالغة',
+    cssVars: {
+      '--primary': '#ff8a4c',
+      '--primary-foreground': '#1a1a1a',
+      '--background': '#0f1115',
+      '--text': '#f6f7fb',
+    },
+  },
+  {
+    id: 'pinkCool',
+    name: 'زهري بارد',
+    preview: 'linear-gradient(135deg, #ff85b5 0%, #ffc2d6 100%)',
+    description: 'زهري ناعم ومودرن',
+    cssVars: {
+      '--primary': '#ff85b5',
+      '--primary-foreground': '#1a1a1a',
+      '--background': '#0f1115',
+      '--text': '#f6f7fb',
+    },
+  },
+  {
+    id: 'berryCool',
+    name: 'توتي بارد',
+    preview: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)',
+    description: 'توتي فاخر بلمسة هادئة',
+    cssVars: {
+      '--primary': '#7c3aed',
+      '--primary-foreground': '#ffffff',
+      '--background': '#0f0f14',
+      '--text': '#f1f5f9',
+    },
+  },
+  {
+    id: 'tealCool',
+    name: 'زمردي بارد',
+    preview: 'linear-gradient(135deg, #2dd4bf 0%, #99f6e4 100%)',
+    description: 'زمردي رايق وعصري',
+    cssVars: {
+      '--primary': '#2dd4bf',
+      '--primary-foreground': '#0b1220',
+      '--background': '#0b1220',
+      '--text': '#e6f4ff',
+    },
+  },
+  {
+    id: 'grapeMist',
+    name: 'ضباب العنب',
+    preview: 'linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%)',
+    description: 'أرجواني ضبابي مهدئ',
+    cssVars: {
+      '--primary': '#a78bfa',
+      '--primary-foreground': '#0b0f1a',
+      '--background': '#0b0f1a',
+      '--text': '#eef2ff',
+    },
+  },
+  {
+    id: 'roseAsh',
+    name: 'رماد الورد',
+    preview: 'linear-gradient(135deg, #fda4af 0%, #fecdd3 100%)',
+    description: 'وردي مطفأ أنيق',
+    cssVars: {
+      '--primary': '#fda4af',
+      '--primary-foreground': '#111827',
+      '--background': '#0d1117',
+      '--text': '#f8fafc',
+    },
+  },
+  {
+    id: 'midnightBlue',
+    name: 'أزرق منتصف الليل',
+    preview: 'linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%)',
+    description: 'أزرق بارد عميق',
+    cssVars: {
+      '--primary': '#60a5fa',
+      '--primary-foreground': '#0a0f1a',
+      '--background': '#0a0f1a',
+      '--text': '#e2e8f0',
+    },
+  },
+  {
+    id: 'cocoaMint',
+    name: 'كاكاو بالنعناع',
+    preview: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
+    description: 'أخضر نعنّاعي راقٍ',
+    cssVars: {
+      '--primary': '#10b981',
+      '--primary-foreground': '#0c0f14',
+      '--background': '#0c0f14',
+      '--text': '#e5e7eb',
+    },
+  },
+  {
+    id: 'amberFog',
+    name: 'ضباب الكهرمان',
+    preview: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+    description: 'ذهبي مطفأ دافئ',
+    cssVars: {
+      '--primary': '#f59e0b',
+      '--primary-foreground': '#111827',
+      '--background': '#0b0f14',
+      '--text': '#f3f4f6',
+    },
+  },
+  {
+    id: 'arcticBlue',
+    name: 'أزرق قطبي',
+    preview: 'linear-gradient(135deg, #38bdf8 0%, #7dd3fc 100%)',
+    description: 'أزرق بارد نقي',
+    cssVars: {
+      '--primary': '#38bdf8',
+      '--primary-foreground': '#0b1020',
+      '--background': '#0b1020',
+      '--text': '#e6edf3',
+    },
+  },
 ];
 
 export default function ThemeSelector({
