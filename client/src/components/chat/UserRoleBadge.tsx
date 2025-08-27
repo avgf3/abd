@@ -6,6 +6,7 @@ interface UserRoleBadgeProps {
   user: ChatUser;
   showOnlyIcon?: boolean;
   size?: number;
+  hideGuestAndGender?: boolean;
 }
 
 /**
@@ -172,7 +173,21 @@ export default function UserRoleBadge({
   user,
   showOnlyIcon = false,
   size = 20,
+  hideGuestAndGender = false,
 }: UserRoleBadgeProps) {
+  // إخفاء شعار الضيف وشعار الأعضاء المعتمد على الجنس للمستويات 1–10 في سياقات محددة (مثل الدردشة)
+  if (hideGuestAndGender) {
+    if (user?.userType === 'guest') {
+      return null;
+    }
+    if (user?.userType === 'member') {
+      const level = user.level || 1;
+      const gender = user.gender || 'male';
+      if (level >= 1 && level <= 10 && (gender === 'male' || gender === 'female')) {
+        return null;
+      }
+    }
+  }
   const roleIcon = getUserLevelIcon(user, size);
 
   return <span className="inline-flex items-center justify-center">{roleIcon}</span>;
