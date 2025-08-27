@@ -93,8 +93,7 @@ export default function MessageArea({
     src: null,
   });
   
-  // Lazy import for plus menu to avoid heavy initial load
-  const ComposerPlusMenu = React.useMemo(() => React.lazy(() => import('./ComposerPlusMenu')), []);
+  // (plus icon only now; removed ComposerPlusMenu lazy import)
 
   const isAllowedYouTubeHost = useCallback((host: string) => {
     const h = host.toLowerCase();
@@ -860,14 +859,19 @@ export default function MessageArea({
             )}
           </div>
 
-          {/* Composer Plus Menu (gallery/color/bold) */}
+          {/* Plus Icon only */}
           <div className="relative">
-            <React.Suspense fallback={null}>
-              <ComposerPlusMenu
-                disabled={!currentUser}
-                onOpenImagePicker={() => fileInputRef.current?.click()}
-              />
-            </React.Suspense>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!currentUser}
+              className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''}`}
+              onClick={() => {}}
+              title="إضافة"
+            >
+              <Sparkles className="w-4 h-4" />
+            </Button>
           </div>
 
           {/* Message Input */}
