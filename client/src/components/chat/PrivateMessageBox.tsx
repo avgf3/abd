@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Input } from '@/components/ui/input';
+import { Plus } from 'lucide-react';
 // Removed ComposerPlusMenu (ready/quick options)
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
 import type { ChatMessage, ChatUser } from '@/types/chat';
@@ -534,7 +535,16 @@ export default function PrivateMessageBox({
                 onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                 className="hidden"
               />
-              {/* Removed ComposerPlusMenu (gallery/color/bold) */}
+              {/* Plus (attachment) Button */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="aspect-square"
+                title="إرفاق صورة"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
               <Button
                 onClick={handleSend}
                 disabled={(!messageText.trim() && !imageFile) || isSending}
