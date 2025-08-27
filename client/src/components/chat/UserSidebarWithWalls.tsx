@@ -472,7 +472,7 @@ export default function UnifiedSidebar({
               showModerationActions={isModerator}
             >
               <div
-                className={`flex items-center gap-2 py-1.5 px-3 border-b-2 border-white transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
+                className={`flex items-center gap-2 py-1.5 px-3 border-b border-white transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
@@ -607,7 +607,7 @@ export default function UnifiedSidebar({
                 )}
               </div>
             ) : (
-              <div className="bg-card">
+              <div>
                 <Virtuoso
                   style={{ height: isMobile ? 'calc(100vh - 180px)' : 'calc(100vh - 260px)' }}
                   totalCount={filteredUsers.length}
