@@ -94,15 +94,7 @@ export default function ProfileImage({
         }}
       />
 
-      {/* مؤشر الدور للمشرفين */}
-      {!hideRoleBadgeOverlay &&
-        (user.userType === 'owner' ||
-          user.userType === 'admin' ||
-          user.userType === 'moderator') && (
-          <div className="absolute -top-1 -right-1 w-5 h-5 bg-white border-2 border-white rounded-full flex items-center justify-center overflow-hidden">
-            <span className="scale-90">{getUserLevelIcon(user, 14)}</span>
-          </div>
-        )}
+      {/* تم إزالة الشعار داخل الصورة بناءً على طلب المستخدم */}
     </div>
   );
 }
