@@ -774,7 +774,7 @@ export default function MessageArea({
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div
         className={`${compactHeader ? 'p-2.5' : 'p-3'} bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg chat-input soft-entrance`}
-        style={{ bottom: '56px' }}
+        style={{ bottom: 'calc(56px + env(safe-area-inset-bottom))' }}
       >
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
