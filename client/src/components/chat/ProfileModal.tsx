@@ -1983,7 +1983,7 @@ export default function ProfileModal({
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
-                  gap: '4px',
+                  gap: '2px',
                   zIndex: 3
                 }}>
                   {/* الرتبة فوق الاسم */}
@@ -2027,7 +2027,7 @@ export default function ProfileModal({
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
-                  gap: '4px',
+                  gap: '2px',
                   zIndex: 3
                 }}>
                   {/* الرتبة فوق الاسم */}
