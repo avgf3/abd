@@ -24,7 +24,6 @@ interface MessagesPanelProps {
   privateConversations: PrivateConversation; // kept for compatibility but no longer the source
   onlineUsers: ChatUser[]; // kept for avatar fallback if needed
   onStartPrivateChat: (user: ChatUser) => void;
-  isConnected?: boolean;
 }
 
 export default function MessagesPanel({
@@ -34,7 +33,6 @@ export default function MessagesPanel({
   privateConversations,
   onlineUsers,
   onStartPrivateChat,
-  isConnected = false,
 }: MessagesPanelProps) {
   const [search, setSearch] = useState('');
   // جلب قائمة المحادثات الدائمة من الخادم
@@ -42,7 +40,6 @@ export default function MessagesPanel({
     data: conversationsData,
     isLoading,
     refetch,
-    isRefetching,
     error,
   } = useQuery<{
     success: boolean;
@@ -150,17 +147,6 @@ export default function MessagesPanel({
     };
     window.addEventListener('privateMessageReceived', handler);
     return () => window.removeEventListener('privateMessageReceived', handler);
-  }, [refetch]);
-
-  // معالج تحديث المحادثات مع إشعار
-  const handleRefresh = useCallback(async () => {
-    try {
-      await refetch();
-      toast.success('تم تحديث المحادثات');
-    } catch (error) {
-      console.error('خطأ في التحديث:', error);
-      toast.error('فشل تحديث المحادثات. حاول مرة أخرى.');
-    }
   }, [refetch]);
 
   // عرض رسالة خطأ إذا فشل الجلب
@@ -325,32 +311,10 @@ export default function MessagesPanel({
     >
       <DialogContent className="max-w-md max-h-[560px] bg-gradient-to-br from-secondary to-accent border-2 border-accent shadow-2xl overflow-hidden">
         <DialogHeader className="border-b border-accent pb-3">
-          <div className="flex items-center gap-2">
-            <DialogTitle className="text-xl font-bold text-primary-foreground flex-1">
+          <div className="flex items-center justify-center">
+            <DialogTitle className="text-xl font-bold text-primary-foreground text-center w-full">
               ✉️ الرسائل
             </DialogTitle>
-            <div
-              className={`px-2 py-0.5 rounded-full text-xs ${
-                isRefetching
-                  ? 'bg-yellow-100 text-yellow-700'
-                  : isConnected
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-700'
-              }`}
-              title={isConnected ? 'متصل' : 'غير متصل'}
-            >
-              {isRefetching ? 'تحديث…' : isConnected ? 'متصل' : 'غير متصل'}
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleRefresh}
-              className="ml-1"
-              title="تحديث"
-              disabled={isRefetching}
-            >
-              {isRefetching ? '⌛' : '⟳'}
-            </Button>
           </div>
           <div className="mt-2">
             <Input
