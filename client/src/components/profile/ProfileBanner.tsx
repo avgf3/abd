@@ -113,7 +113,7 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
   return (
     <div className="relative">
       {/* صورة البروفايل البانر */}
-      <div className="relative h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 shadow-2xl border border-white/20">
+      <div className="relative h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 shadow-2xl border border-white/20 backdrop-blur-sm">
         {preview ? (
           <img src={preview} alt="معاينة صورة البانر" className="w-full h-full object-cover" />
         ) : currentUser?.profileBanner && currentUser.profileBanner !== '' ? (
@@ -124,13 +124,14 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/80 via-purple-600/80 to-pink-500/80"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/80 via-purple-600/80 to-pink-500/80 animate-gradient-x"></div>
+            <div className="absolute inset-0 bg-gradient-to-tr from-purple-400/20 via-pink-400/20 to-blue-400/20"></div>
             <div className="text-center relative z-10">
-              <div className="text-5xl mb-3 filter drop-shadow-lg">📸</div>
+              <div className="text-5xl mb-3 filter drop-shadow-lg animate-pulse">📸</div>
               <p className="text-lg font-medium opacity-90 drop-shadow-md">إضافة صورة بانر</p>
               <p className="text-sm opacity-70 mt-1">اضغط على الكاميرا أو الرفع</p>
             </div>
-            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="absolute inset-0 bg-black/5"></div>
           </div>
         )}
 

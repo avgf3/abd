@@ -13,6 +13,10 @@ export const getEffectColor = (effect: string): string => {
     'effect-shadow': '#696969', // رمادي للظل
     'effect-electric': '#00BFFF', // أزرق كهربائي
     'effect-crystal': '#E6E6FA', // بنفسجي فاتح
+    'effect-holographic': '#C0C0C0', // فضي هولوغرافي
+    'effect-galaxy': '#4B0082', // نيلي مجري
+    'effect-shimmer': '#F0E68C', // ذهبي متلألئ
+    'effect-prism': '#FF00FF', // أرجواني منشوري
   };
   return effectColors[effect as keyof typeof effectColors] || '#FFFFFF';
 };
@@ -63,6 +67,29 @@ export const buildProfileBackgroundGradient = (colorOrGradient: string): string 
   const start = lightenHexColor(cleanHex, 14);
   const end = lightenHexColor(cleanHex, -12);
   return `linear-gradient(135deg, ${start}, ${end})`;
+};
+
+// توليد تدرجات ديناميكية متعددة الألوان
+export const generateMultiColorGradient = (colors: string[], angle: number = 135): string => {
+  if (!colors || colors.length === 0) return '';
+  if (colors.length === 1) return buildProfileBackgroundGradient(colors[0]);
+  
+  const validColors = colors.map(c => sanitizeHexColor(c)).filter(c => c);
+  if (validColors.length === 0) return '';
+  
+  return `linear-gradient(${angle}deg, ${validColors.join(', ')})`;
+};
+
+// توليد تدرج نابض بالحياة
+export const generateVibrantGradient = (baseColor: string): string => {
+  const cleanHex = sanitizeHexColor(baseColor);
+  if (!cleanHex) return '';
+  
+  const vibrant1 = lightenHexColor(cleanHex, 20);
+  const vibrant2 = lightenHexColor(cleanHex, -10);
+  const vibrant3 = lightenHexColor(cleanHex, -30);
+  
+  return `linear-gradient(135deg, ${vibrant1} 0%, ${cleanHex} 50%, ${vibrant2} 75%, ${vibrant3} 100%)`;
 };
 
 // تفتيح/تعتيم لون HEX بنسبة مئوية
@@ -141,13 +168,17 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
   if (effect !== 'none' && effect !== 'null' && effect !== 'undefined') {
     // إضافة ظلال ملونة حسب التأثير
     const effectShadows: Record<string, string> = {
-      'effect-glow': '0 0 20px rgba(255, 215, 0, 0.5)',
-      'effect-pulse': '0 0 20px rgba(255, 105, 180, 0.5)',
-      'effect-water': '0 0 20px rgba(0, 206, 209, 0.5)',
-      'effect-aurora': '0 0 20px rgba(155, 89, 182, 0.5)',
-      'effect-neon': '0 0 20px rgba(0, 255, 127, 0.6)',
-      'effect-fire': '0 0 20px rgba(255, 69, 0, 0.5)',
-      'effect-ice': '0 0 20px rgba(135, 206, 235, 0.5)',
+      'effect-glow': '0 0 20px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.3)',
+      'effect-pulse': '0 0 20px rgba(255, 105, 180, 0.5), 0 0 40px rgba(255, 105, 180, 0.3)',
+      'effect-water': '0 0 20px rgba(0, 206, 209, 0.5), 0 0 40px rgba(0, 206, 209, 0.3)',
+      'effect-aurora': '0 0 20px rgba(155, 89, 182, 0.5), 0 0 40px rgba(155, 89, 182, 0.3)',
+      'effect-neon': '0 0 20px rgba(0, 255, 127, 0.6), 0 0 40px rgba(0, 255, 127, 0.4)',
+      'effect-fire': '0 0 20px rgba(255, 69, 0, 0.5), 0 0 40px rgba(255, 69, 0, 0.3)',
+      'effect-ice': '0 0 20px rgba(135, 206, 235, 0.5), 0 0 40px rgba(135, 206, 235, 0.3)',
+      'effect-holographic': '0 0 20px rgba(192, 192, 192, 0.6), 0 0 40px rgba(192, 192, 192, 0.4)',
+      'effect-galaxy': '0 0 20px rgba(75, 0, 130, 0.5), 0 0 40px rgba(75, 0, 130, 0.3)',
+      'effect-shimmer': '0 0 20px rgba(240, 230, 140, 0.6), 0 0 40px rgba(240, 230, 140, 0.4)',
+      'effect-prism': '0 0 20px rgba(255, 0, 255, 0.5), 0 0 40px rgba(255, 0, 255, 0.3)',
       'effect-rainbow': '0 0 20px rgba(236, 72, 153, 0.5)',
       'effect-shadow': '0 2px 10px rgba(0, 0, 0, 0.3)',
       'effect-electric': '0 0 20px rgba(0, 191, 255, 0.5)',

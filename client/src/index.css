@@ -1790,6 +1790,21 @@ li > * > div.effect-crystal {
   }
 }
 
+/* Gradient X Animation for Profile Banner */
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  animation: gradient-x 15s ease infinite;
+  background-size: 200% 200%;
+}
+
 .modern-gradient-animate {
   background-size: 200% 200%;
   animation: modern-gradient 4s ease infinite;
