@@ -499,14 +499,14 @@ export default function UnifiedSidebar({
       React.memo(({ user }: { user: ChatUser }) => {
         if (!user?.username || !user?.userType) return null;
         return (
-          <li key={user.id} className="relative -mx-4">
+          <li key={user.id} className="relative">
             <SimpleUserMenu
               targetUser={user}
               currentUser={currentUser}
               showModerationActions={isModerator}
             >
               <div
-                className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
+                className={`flex items-center gap-2 py-1.5 px-4 rounded-none border-b-2 border-white/50 transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
@@ -609,8 +609,8 @@ export default function UnifiedSidebar({
           </div>
 
           {/* Users List - Virtualized */}
-          <div className={`${isMobile ? 'p-2' : 'p-4'} bg-background`} style={{ maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 200px)' }}>
-            <div className="bg-primary text-primary-foreground rounded-md mb-3">
+          <div className={`bg-background`} style={{ maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 200px)' }}>
+            <div className="bg-primary text-primary-foreground mb-2 mx-4 mt-4 rounded-md">
               <div className="flex items-center justify-between p-2">
                 <div className="flex items-center gap-2 font-bold text-base">
                   المتصلون الآن
@@ -641,7 +641,7 @@ export default function UnifiedSidebar({
                 )}
               </div>
             ) : (
-              <div className="space-y-1">
+              <div>
                 <Virtuoso
                   style={{ height: isMobile ? 'calc(100vh - 180px)' : 'calc(100vh - 260px)' }}
                   totalCount={filteredUsers.length}
