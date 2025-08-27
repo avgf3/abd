@@ -1,6 +1,7 @@
 import { Trash2, Globe } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import ImageLightbox from '@/components/ui/ImageLightbox';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { WallPost, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
@@ -47,6 +48,8 @@ export default function WallPostList({
       </div>
     );
   }
+
+  const [imageLightbox, setImageLightbox] = React.useState<{ open: boolean; src: string | null }>({ open: false, src: null });
 
   return (
     <>
@@ -123,7 +126,7 @@ export default function WallPostList({
                   src={post.imageUrl}
                   alt="منشور"
                   className="w-full h-auto object-cover max-h-80 hover:scale-105 transition-transform duration-300 cursor-pointer"
-                  onClick={() => window.open(post.imageUrl!, '_blank')}
+                  onClick={() => setImageLightbox({ open: true, src: post.imageUrl! })}
                 />
               </div>
             )}
@@ -165,6 +168,13 @@ export default function WallPostList({
           </CardContent>
         </Card>
       ))}
+      <ImageLightbox
+        open={imageLightbox.open}
+        src={imageLightbox.src}
+        onOpenChange={(open) => {
+          if (!open) setImageLightbox({ open: false, src: null });
+        }}
+      />
     </>
   );
 }

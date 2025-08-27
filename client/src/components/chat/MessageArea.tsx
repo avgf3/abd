@@ -13,6 +13,7 @@ import UserRoleBadge from './UserRoleBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import ImageLightbox from '@/components/ui/ImageLightbox';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { apiRequest, api } from '@/lib/queryClient';
 import type { ChatMessage, ChatUser } from '@/types/chat';
@@ -85,6 +86,12 @@ export default function MessageArea({
   const [youtubeModal, setYoutubeModal] = useState<{ open: boolean; videoId: string | null }>({
     open: false,
     videoId: null,
+  });
+
+  // Image lightbox state
+  const [imageLightbox, setImageLightbox] = useState<{ open: boolean; src: string | null }>({
+    open: false,
+    src: null,
   });
 
   const isAllowedYouTubeHost = useCallback((host: string) => {
@@ -551,7 +558,7 @@ export default function MessageArea({
                                 scrollToBottom('auto');
                               }
                             }}
-                            onClick={() => window.open(message.content, '_blank')}
+                            onClick={() => setImageLightbox({ open: true, src: message.content })}
                           />
                         ) : (
                           (() => {
@@ -754,6 +761,15 @@ export default function MessageArea({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        open={imageLightbox.open}
+        src={imageLightbox.src}
+        onOpenChange={(open) => {
+          if (!open) setImageLightbox({ open: false, src: null });
+        }}
+      />
 
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div
