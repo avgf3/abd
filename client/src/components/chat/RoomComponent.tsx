@@ -505,7 +505,7 @@ export default function RoomComponent({
           const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
           setIsAtBottomRooms(atBottom);
         }}
-        className="relative flex-1 overflow-y-auto p-4 pb-24 cursor-grab"
+        className="relative flex-1 min-h-0 overflow-y-auto p-4 pb-24 cursor-grab"
       >
         {/* زر إضافة غرفة */}
         {canCreateRooms && (
@@ -524,7 +524,7 @@ export default function RoomComponent({
           className=
             {viewMode === 'grid'
               ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'
-              : 'space-y-1'}
+              : 'space-y-1 h-full'}
         >
           {viewMode === 'grid' ? (
             filteredRooms.map((room) => (
