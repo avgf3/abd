@@ -686,6 +686,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {/* Main Content - تحسين التخطيط لمنع التداخل */}
       <main
         className={`flex flex-1 overflow-hidden min-h-0 ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'}`}
+        style={{ paddingBottom: isMobile ? 'calc(3.5rem + env(safe-area-inset-bottom))' : '3.5rem' }}
       >
         {/* الشريط الجانبي - على الجوال يعرض بملء الشاشة عند اختيار التبويب */}
         {activeView !== 'hidden' && (
