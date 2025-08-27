@@ -1,6 +1,10 @@
+import React from 'react';
 import { Trash2, Globe } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import UserPopup from './UserPopup';
+import ProfileModal from './ProfileModal';
+import UserRoleBadge from './UserRoleBadge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { WallPost, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
@@ -25,6 +29,31 @@ export default function WallPostList({
   onReact,
   canDelete,
 }: WallPostListProps) {
+  const [namePopup, setNamePopup] = React.useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    user: any | null;
+  }>({ visible: false, x: 0, y: 0, user: null });
+  const [profileModalUser, setProfileModalUser] = React.useState<any | null>(null);
+
+  const postToChatUser = (post: WallPost) => {
+    return {
+      id: post.userId,
+      username: post.username,
+      profileImage: post.userProfileImage,
+      usernameColor: post.usernameColor,
+      userType: post.userRole || 'member',
+      role: (post.userRole as any) || 'member',
+      isOnline: true,
+    } as any;
+  };
+
+  const openUserPopup = (e: React.MouseEvent, post: WallPost) => {
+    e.stopPropagation();
+    const userObj = postToChatUser(post);
+    setNamePopup({ visible: true, x: e.clientX, y: e.clientY, user: userObj });
+  };
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -74,25 +103,22 @@ export default function WallPostList({
                   </div>
                 </div>
                 <div>
-                  <div
-                    className="font-bold text-base"
-                    style={{ color: post.usernameColor || 'inherit' }}
-                  >
-                    {post.username}
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="font-bold text-base cursor-pointer hover:underline"
+                      style={{ color: post.usernameColor || 'inherit' }}
+                      onClick={(e) => openUserPopup(e, post)}
+                    >
+                      {post.username}
+                    </div>
+                    <UserRoleBadge
+                      user={{ userType: post.userRole } as any}
+                      size={16}
+                      hideGuestAndGender={true}
+                    />
                   </div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1">
                     <span>{formatTimeAgo(post.timestamp)}</span>
-                    {post.userRole && post.userRole !== 'member' && (
-                      <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
-                        {post.userRole === 'admin'
-                          ? 'مدير'
-                          : post.userRole === 'owner'
-                            ? 'مالك'
-                            : post.userRole === 'moderator'
-                              ? 'مراقب'
-                              : post.userRole}
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>
@@ -165,6 +191,37 @@ export default function WallPostList({
           </CardContent>
         </Card>
       ))}
+      {namePopup.visible && namePopup.user && (
+        <UserPopup
+          user={namePopup.user}
+          x={namePopup.x}
+          y={namePopup.y}
+          currentUser={currentUser || null}
+          onPrivateMessage={() => {
+            setNamePopup({ visible: false, x: 0, y: 0, user: null });
+          }}
+          onAddFriend={() => {
+            setNamePopup({ visible: false, x: 0, y: 0, user: null });
+          }}
+          onIgnore={() => {
+            setNamePopup({ visible: false, x: 0, y: 0, user: null });
+          }}
+          onViewProfile={() => {
+            setProfileModalUser(namePopup.user);
+            setNamePopup({ visible: false, x: 0, y: 0, user: null });
+          }}
+          onClose={() => setNamePopup({ visible: false, x: 0, y: 0, user: null })}
+        />
+      )}
+      {profileModalUser && (
+        <ProfileModal
+          user={profileModalUser}
+          currentUser={currentUser || null}
+          onClose={() => setProfileModalUser(null)}
+          onPrivateMessage={() => {}
+          }
+        />
+      )}
     </>
   );
 }
