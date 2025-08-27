@@ -509,6 +509,117 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         <div
           className={`flex gap-2 ${isMobile ? 'flex-wrap justify-center w-full' : 'overflow-x-auto max-w-full pr-2'}`}
         >
+          {/* تبويبات التنقل تُعرض في الهيدر أيضاً لحساب المالك */}
+          {chat.currentUser && chat.currentUser.userType === 'owner' && (
+            <>
+              <Button
+                className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
+                  activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                }`}
+                onClick={() => setActiveView((prev) => (prev === 'walls' ? 'hidden' : 'walls'))}
+                title="الحوائط"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-label="Walls"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+                الحوائط
+              </Button>
+
+              <Button
+                className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
+                  activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                }`}
+                onClick={() => setActiveView((prev) => (prev === 'users' ? 'hidden' : 'users'))}
+                title="المستخدمون المتصلون"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-label="Users"
+                >
+                  <circle cx="9" cy="7" r="3"></circle>
+                  <path d="M2 21c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"></path>
+                  <circle cx="17" cy="7" r="3"></circle>
+                  <path d="M14 21c0-1.657 1.343-3 3-3h1c1.657 0 3 1.343 3 3"></path>
+                </svg>
+                المستخدمون ({chat.onlineUsers?.length ?? 0})
+              </Button>
+
+              <Button
+                className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
+                  activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                }`}
+                onClick={() => setActiveView((prev) => (prev === 'rooms' ? 'hidden' : 'rooms'))}
+                title="الغرف"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-label="Rooms"
+                >
+                  <path d="M3 11l9-8 9 8"></path>
+                  <path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"></path>
+                  <path d="M9 21v-6h6v6"></path>
+                </svg>
+                الغرف
+              </Button>
+
+              <Button
+                className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
+                  activeView === 'friends' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                }`}
+                onClick={() => setActiveView((prev) => (prev === 'friends' ? 'hidden' : 'friends'))}
+                title="الأصدقاء"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-label="Friends"
+                >
+                  <circle cx="9" cy="7" r="3"></circle>
+                  <path d="M2 21c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"></path>
+                  <path d="M19 8v6"></path>
+                  <path d="M16 11h6"></path>
+                </svg>
+                الأصدقاء
+              </Button>
+            </>
+          )}
+
           <Button
             className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
             onClick={() => setShowSettings(!showSettings)}
@@ -528,24 +639,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             <span className="font-medium">الأثرياء</span>
           </Button>
 
-          {/* قائمة ثلاث شرائط للمالك */}
-          {chat.currentUser && chat.currentUser.userType === 'owner' && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2">
-                  <Menu className="w-5 h-5" />
-                  المزيد
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" sideOffset={8}>
-                <DropdownMenuLabel>إجراءات</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setShowAddRoomDialog(true)}>
-                  إضافة غرفة جديدة
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          {/* (تم حذف تبويب "المزيد" للمالك */}
 
           {/* زر خاص بالمالك فقط */}
           {chat.currentUser && chat.currentUser.userType === 'owner' && (
@@ -803,7 +897,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           : null}
       </main>
 
-      {/* Modern Footer Navigation */}
+      {/* Modern Footer Navigation - إخفاء للمالك وتحويل الأيقونات للأعلى */}
+      {!(chat.currentUser && chat.currentUser.userType === 'owner') && (
       <footer
         className={`fixed bottom-0 left-0 right-0 z-10 modern-nav h-14 px-4 sm:px-8 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
         style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0' }}
@@ -924,6 +1019,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
         </div>
       </footer>
+      )}
 
       {/* Modals and Popups */}
       {showProfile && (
