@@ -84,7 +84,18 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
   }
   // moderator: درع
   if (user.userType === 'moderator') {
-    return <span style={{ fontSize: size, display: 'inline' }}>🛡️</span>;
+    return (
+      <img
+        src="/svgs/moderator_shield.svg"
+        alt="moderator"
+        style={{ width: size, height: size, display: 'inline' }}
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.style.display = 'none';
+          target.outerHTML = '<span style="font-size: ' + size + 'px; display: inline;">🛡️</span>';
+        }}
+      />
+    );
   }
 
   // للأعضاء - نفحص المستوى والجنس
