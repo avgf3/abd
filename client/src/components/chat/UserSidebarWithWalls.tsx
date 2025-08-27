@@ -103,66 +103,45 @@ export default function UnifiedSidebar({
     }
   };
 
-  // 🚀 تحسين: استخدام useMemo لفلترة وترتيب المستخدمين لتحسين الأداء
   const validUsers = useMemo(() => {
     const filtered = users.filter((user) => {
-      // فلترة صارمة للمستخدمين الصالحين
       if (!user?.id || !user?.username || !user?.userType) {
-        console.warn('🚫 مستخدم بيانات غير صالحة في القائمة:', user);
         return false;
       }
-
-      // رفض الأسماء العامة
       if (user.username === 'مستخدم' || user.username === 'User' || user.username.trim() === '') {
         return false;
       }
-
-      // رفض المعرفات غير الصالحة
       if (user.id <= 0) {
         return false;
       }
-
       return true;
     });
 
-    // إزالة التكرارات حسب id
     const dedup = new Map<number, ChatUser>();
     for (const u of filtered) {
       if (!dedup.has(u.id)) dedup.set(u.id, u);
     }
 
-    // ترتيب المستخدمين حسب الرتب: المالك أولاً، ثم الإدمن، ثم المشرف، ثم الأعضاء، ثم الضيوف
-    // وداخل كل رتبة ترتيب أبجدي بالاسم
     const sorted = Array.from(dedup.values()).sort((a, b) => {
       const rankA = getRankOrder(a.userType);
       const rankB = getRankOrder(b.userType);
 
-      // إذا كانت الرتب مختلفة، رتب حسب الرتبة
       if (rankA !== rankB) {
         return rankA - rankB;
       }
-
-      // إذا كانت الرتب متساوية، رتب أبجدياً بالاسم
       return a.username.localeCompare(b.username, 'ar');
     });
-
-    // طباعة الترتيب للتحقق من صحته (فقط في وضع التطوير)
-    if (process.env.NODE_ENV === 'development' && sorted.length > 0) {
-    }
 
     return sorted;
   }, [users]);
 
   const filteredUsers = useMemo(() => {
-    // تطبيق البحث على المستخدمين الصالحين فقط
     if (!searchTerm.trim()) return validUsers;
-
     return validUsers.filter((user) => {
       return user.username.toLowerCase().includes(searchTerm.toLowerCase());
     });
   }, [validUsers, searchTerm]);
 
-  // 🚀 تحسين: استخدام مكون UserRoleBadge المركزي
   const renderUserBadge = useCallback((user: ChatUser) => {
     if (!user) return null;
     return <UserRoleBadge user={user} size={20} />;
@@ -205,20 +184,15 @@ export default function UnifiedSidebar({
     [getCountryEmoji]
   );
 
-  // 🚀 تحسين: دالة formatLastSeen محسنة
   const formatLastSeen = useCallback((lastSeen?: string | Date) => {
     if (!lastSeen) return 'غير معروف';
-
     const lastSeenDate = lastSeen instanceof Date ? lastSeen : new Date(lastSeen);
-
     if (isNaN(lastSeenDate.getTime())) {
       return 'غير معروف';
     }
-
     const now = new Date();
     const diff = now.getTime() - lastSeenDate.getTime();
     const minutes = Math.floor(diff / 60000);
-
     if (minutes < 1) return 'متصل الآن';
     if (minutes < 60) return `قبل ${minutes} دقيقة`;
     const hours = Math.floor(minutes / 60);
@@ -227,7 +201,6 @@ export default function UnifiedSidebar({
     return `قبل ${days} يوم`;
   }, []);
 
-  // معالج النقر مع إيقاف انتشار الحدث
   const handleUserClick = useCallback(
     (e: React.MouseEvent, user: ChatUser) => {
       e.stopPropagation();
@@ -236,15 +209,10 @@ export default function UnifiedSidebar({
     [onUserClick]
   );
 
-  // التحقق من صلاحيات الإشراف
   const isModerator = useMemo(
     () => currentUser && ['moderator', 'admin', 'owner'].includes(currentUser.userType),
     [currentUser]
   );
-
-  // 🗑️ حذف useEffect فارغ
-
-  // جلب المنشورات عبر React Query مع كاش قوي
   const socketRef = useRef<Socket | null>(null);
   const usersScrollRef = useRef<HTMLDivElement>(null);
   const wallsScrollRef = useRef<HTMLDivElement>(null);
@@ -491,22 +459,20 @@ export default function UnifiedSidebar({
     }
   };
 
-  // تم نقل دالة formatTimeAgo إلى utils/timeUtils.ts (تستخدم من الاستيراد أعلاه)
 
-  // عنصر مستخدم فرعي معزول لتحسين الأداء
   const UserListItem = useMemo(
     () =>
       React.memo(({ user }: { user: ChatUser }) => {
         if (!user?.username || !user?.userType) return null;
         return (
-          <li key={user.id} className="relative -mx-4">
+          <li key={user.id} className="relative">
             <SimpleUserMenu
               targetUser={user}
               currentUser={currentUser}
               showModerationActions={isModerator}
             >
               <div
-                className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
+                className={`flex items-center gap-2 py-1.5 px-3 border-b-2 border-white transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
@@ -515,7 +481,7 @@ export default function UnifiedSidebar({
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span
-                        className="text-base font-medium transition-colors duration-300"
+                        className="text-sm font-medium transition-colors duration-300"
                         style={{
                           color: getFinalUsernameColor(user),
                         }}
@@ -609,9 +575,9 @@ export default function UnifiedSidebar({
           </div>
 
           {/* Users List - Virtualized */}
-          <div className={`${isMobile ? 'p-2' : 'p-4'} bg-background`} style={{ maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 200px)' }}>
-            <div className="bg-primary text-primary-foreground rounded-md mb-3">
-              <div className="flex items-center justify-between p-2">
+          <div className="bg-background" style={{ maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 200px)' }}>
+            <div className="bg-primary text-primary-foreground mb-0 px-3 py-2">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 font-bold text-base">
                   المتصلون الآن
                   <span className="bg-white/20 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
@@ -626,7 +592,7 @@ export default function UnifiedSidebar({
             </div>
 
             {filteredUsers.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
+              <div className="text-center text-gray-500 py-8 px-4">
                 <div className="mb-3">{searchTerm ? '🔍' : '👥'}</div>
                 <p className="text-sm">
                   {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمون متصلون حالياً'}
@@ -641,7 +607,7 @@ export default function UnifiedSidebar({
                 )}
               </div>
             ) : (
-              <div className="space-y-1">
+              <div className="bg-card">
                 <Virtuoso
                   style={{ height: isMobile ? 'calc(100vh - 180px)' : 'calc(100vh - 260px)' }}
                   totalCount={filteredUsers.length}
