@@ -1978,17 +1978,17 @@ export default function ProfileModal({
                 {/* اسم المستخدم مع الرتبة */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '60px',
+                  bottom: '20px',
                   left: '160px',
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '2px',
+                  alignItems: 'flex-start',
+                  gap: '4px',
                   zIndex: 3
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '14px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Super Admin'}
@@ -2022,17 +2022,17 @@ export default function ProfileModal({
                 {/* اسم المستخدم مع الرتبة */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '70px',
+                  bottom: '28px',
                   left: '160px',
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '2px',
+                  alignItems: 'flex-start',
+                  gap: '4px',
                   zIndex: 3
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '14px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Super Admin'}
@@ -2057,7 +2057,7 @@ export default function ProfileModal({
                 </div>
                 
                 {/* الأزرار */}
-                <div className="profile-actions">
+                <div className="profile-actions" style={{ bottom: '0px', left: '160px' }}>
                   <button className="btn-chat" onClick={() => onPrivateMessage?.(localUser)}>
                     💬 محادثة خاصة
                   </button>
