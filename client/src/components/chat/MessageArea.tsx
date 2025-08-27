@@ -753,7 +753,8 @@ export default function MessageArea({
 
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div
-        className={`p-3 bg-white border-t border-gray-200 w-full z-20 shadow-lg chat-input soft-entrance`}
+        className={`p-3 bg-white border-t border-gray-200 w-full z-20 shadow-lg chat-input soft-entrance sticky`}
+        style={{ bottom: currentUser?.userType === 'owner' ? 0 : 56 }}
       >
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
