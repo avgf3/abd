@@ -1,4 +1,4 @@
-import { Send, Smile, ChevronDown, Sparkles } from 'lucide-react';
+import { Send, Smile, ChevronDown, Sparkles, Plus } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
@@ -856,7 +856,17 @@ export default function MessageArea({
             )}
           </div>
 
-          {/* Removed ComposerPlusMenu (gallery/color/bold) */}
+          {/* Plus (attachment) Button */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            className={`aspect-square mobile-touch-button ${isMobile ? 'min-w-[44px] min-h-[44px]' : ''}`}
+            title="إرفاق صورة"
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
 
           {/* Message Input */}
           <Input
