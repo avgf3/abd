@@ -661,18 +661,18 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               </span>
             )}
           </Button>
+        </div>
 
-          {/* الشعار بجانب الإشعارات */}
-          <div
-            className="flex items-center gap-2 cursor-pointer select-none"
-            onClick={() => {
-              if (isMobile) setActiveView('hidden');
-            }}
-          >
-            <MessageCircle className="w-5 h-5 text-primary" />
-            <div className="text-lg sm:text-xl font-bold text-white truncate">
-              Arabic<span className="text-primary">Chat</span>
-            </div>
+        {/* الشعار ثابت على اليسار وبألوان ثابتة لا تتأثر بالثيم */}
+        <div
+          className={`flex items-center gap-2 cursor-pointer select-none ${isMobile ? 'self-start' : ''}`}
+          onClick={() => {
+            if (isMobile) setActiveView('hidden');
+          }}
+        >
+          <MessageCircle className="w-5 h-5" style={{ color: '#667eea' }} />
+          <div className="text-lg sm:text-xl font-bold truncate" style={{ color: '#ffffff' }}>
+            Arabic<span style={{ color: '#667eea' }}>Chat</span>
           </div>
         </div>
       </header>
