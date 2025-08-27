@@ -34,14 +34,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
-import {
-  getUserEffectStyles,
-  getUserEffectClasses,
-  getFinalUsernameColor,
-  getUserListItemStyles,
-  getUserListItemClasses,
-} from '@/utils/themeUtils';
-import { formatTimeAgo } from '@/utils/timeUtils';
+import { getUserListItemStyles, getUserListItemClasses } from '@/utils/themeUtils';
 
 interface UnifiedSidebarProps {
   users: ChatUser[];
@@ -499,26 +492,25 @@ export default function UnifiedSidebar({
       React.memo(({ user }: { user: ChatUser }) => {
         if (!user?.username || !user?.userType) return null;
         return (
-          <li key={user.id} className="relative -mx-4">
+          <li key={user.id} className="relative -mx-4 list-none">
             <SimpleUserMenu
               targetUser={user}
               currentUser={currentUser}
               showModerationActions={isModerator}
             >
               <div
-                className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
+                className={`flex items-center gap-1 py-1.5 px-3 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full overflow-hidden ${
+                  getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'
+                }`}
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
                 <ProfileImage user={user} size="small" className="" hideRoleBadgeOverlay={true} />
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <span
-                        className="text-base font-medium transition-colors duration-300"
-                        style={{
-                          color: getFinalUsernameColor(user),
-                        }}
+                        className="text-base font-medium text-black"
                         title={user.username}
                       >
                         {user.username}
