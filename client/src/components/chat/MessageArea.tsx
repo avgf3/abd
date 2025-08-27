@@ -529,7 +529,7 @@ export default function MessageArea({
                     {/* Inline row: badge, name, content */}
                     <div className="flex-1 min-w-0 flex items-center gap-2">
                       {message.sender && (
-                        <UserRoleBadge user={message.sender} showOnlyIcon={true} />
+                        <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} />
                       )}
                       <button
                         onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}

@@ -502,30 +502,30 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       className={`min-h-[100dvh] flex flex-col chat-container ${isMobile ? 'mobile-layout' : 'desktop-layout'}`}
       onClick={closeUserPopup}
     >
-      {/* Header - بدون التبويبات الأربعة */}
+      {/* Modern Header */}
       <header
-        className={`sticky top-0 z-40 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex ${isMobile ? 'flex-col gap-1' : 'flex-wrap gap-2'} justify-between items-center shadow-2xl border-b border-accent`}
+        className={`sticky top-0 z-40 modern-nav py-3 px-4 sm:py-4 sm:px-8 flex ${isMobile ? 'flex-col gap-2' : 'flex-wrap gap-3'} justify-between items-center`}
       >
         <div
           className={`flex gap-2 ${isMobile ? 'flex-wrap justify-center w-full' : 'overflow-x-auto max-w-full pr-2'}`}
         >
           <Button
-            className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+            className="modern-button bg-white/5 hover:bg-white/10 px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all"
             onClick={() => setShowSettings(!showSettings)}
           >
-            <Settings className="w-4 h-4" />
-            إعدادات
+            <Settings className="w-5 h-5" />
+            <span className="font-medium">إعدادات</span>
           </Button>
 
           <Button
-            className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+            className="modern-button bg-gradient-to-r from-yellow-500/20 to-orange-500/20 hover:from-yellow-500/30 hover:to-orange-500/30 px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all"
             onMouseEnter={prefetchVip}
             onFocus={prefetchVip}
             onClick={() => setShowRichest(true)}
             title="الأثرياء"
           >
-            <Crown className="w-4 h-4" />
-            الأثرياء
+            <Crown className="w-5 h-5 text-yellow-400" />
+            <span className="font-medium gradient-text">الأثرياء</span>
           </Button>
 
           {/* قائمة ثلاث شرائط للمالك */}
@@ -803,16 +803,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           : null}
       </main>
 
-      {/* Footer - تبويبات سفلية محسنة لتجنب التداخل مع منطقة الإرسال */}
+      {/* Modern Footer Navigation */}
       <footer
-        className={`fixed bottom-0 left-0 right-0 z-10 bg-secondary py-1.5 px-3 sm:py-2 sm:px-6 flex justify-start items-center shadow-2xl border-t border-accent ${isMobile ? 'mobile-footer' : ''}`}
+        className={`fixed bottom-0 left-0 right-0 z-10 modern-nav py-3 px-4 sm:py-4 sm:px-8 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
         style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0' }}
       >
         <div className="flex gap-2 sm:gap-3 overflow-x-auto max-w-full">
           {/* الحوائط */}
           <Button
-            className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
-              activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            className={`modern-tab px-4 py-2.5 rounded-xl flex items-center gap-2 ${
+              activeView === 'walls' ? 'active bg-gradient-to-r from-blue-500/20 to-purple-500/20' : 'bg-white/5 hover:bg-white/10'
             }`}
             onClick={() => setActiveView((prev) => (prev === 'walls' ? 'hidden' : 'walls'))}
             title="الحوائط"

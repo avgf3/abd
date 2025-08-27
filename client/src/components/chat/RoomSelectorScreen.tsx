@@ -79,10 +79,27 @@ export default function RoomSelectorScreen({ currentUser, onSelectRoom }: RoomSe
 	}, [rooms, loading, currentUser, fetchRooms]);
 
 	return (
-		<div className="min-h-[100dvh] flex items-center justify-center p-4">
-			<div className="w-full max-w-5xl">
-				{content}
-				{error && <div className="text-center text-destructive mt-4">فشل في جلب الغرف</div>}
+		<div className="min-h-[100dvh] flex items-center justify-center p-4 relative overflow-hidden">
+			{/* Modern Background Effects */}
+			<div className="absolute inset-0 overflow-hidden pointer-events-none">
+				<div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-gradient-radial from-cyan-500/10 to-transparent rounded-full blur-3xl animate-pulse"></div>
+				<div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-gradient-radial from-purple-500/10 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '3s' }}></div>
+			</div>
+			
+			<div className="w-full max-w-5xl relative z-10">
+				<div className="text-center mb-8 animate-fade-in">
+					<h1 className="text-4xl font-bold gradient-text mb-3">اختر غرفة للدردشة</h1>
+					<p className="text-xl text-muted-foreground">انضم إلى إحدى الغرف المتاحة وابدأ المحادثة</p>
+				</div>
+				
+				<div className="modern-card glass-effect p-6 animate-slide-up">
+					{content}
+					{error && (
+						<div className="modern-notification bg-red-500/10 border-red-500/20 text-red-400 mt-4 text-center">
+							فشل في جلب الغرف
+						</div>
+					)}
+				</div>
 			</div>
 		</div>
 	);

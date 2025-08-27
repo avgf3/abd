@@ -177,38 +177,45 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
 
   return (
     <div
-      className={`min-h-[100dvh] flex flex-col justify-center items-center welcome-gradient ${isMobile ? 'px-4' : ''}`}
+      className={`min-h-[100dvh] flex flex-col justify-center items-center welcome-gradient relative overflow-hidden ${isMobile ? 'px-4' : ''}`}
     >
-      <div className="text-center animate-slide-up">
-        <div className="mb-8">
-          <div className="text-5xl sm:text-6xl mb-4 animate-pulse-slow">💬</div>
-          <h1 className="text-3xl sm:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
+      {/* Modern Background Effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/2 -left-1/2 w-[150%] h-[150%] bg-gradient-radial from-blue-500/20 to-transparent rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-1/2 -right-1/2 w-[150%] h-[150%] bg-gradient-radial from-purple-500/20 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-radial from-cyan-500/10 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }}></div>
+      </div>
+      
+      <div className="text-center animate-slide-up relative z-10">
+        <div className="mb-10">
+          <div className="text-6xl sm:text-7xl mb-6 animate-pulse-slow modern-float">💬</div>
+          <h1 className="text-4xl sm:text-6xl font-bold mb-6 gradient-text">
             مرحبًا بك في دردشة العرب
           </h1>
-          <p className="text-xl text-muted-foreground mb-8">منصة التواصل العربية الأولى</p>
+          <p className="text-2xl text-muted-foreground mb-10 font-light">منصة التواصل العربية الأولى</p>
         </div>
 
         <div
           className={`flex ${isMobile ? 'flex-col w-full max-w-xs' : 'flex-col sm:flex-row'} gap-3 sm:gap-4 justify-center items-center px-3`}
         >
           <Button
-            className={`btn-success text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3 mobile-touch-button ${isMobile ? 'w-full justify-center' : ''}`}
+            className={`modern-button btn-success text-white font-semibold py-4 px-10 rounded-2xl shadow-xl flex items-center gap-3 mobile-touch-button hover-glow ${isMobile ? 'w-full justify-center' : ''}`}
             onClick={() => setShowGuestModal(true)}
           >
-            <span>👤</span>
-            دخول كزائر
+            <span className="text-2xl">👤</span>
+            <span className="text-lg">دخول كزائر</span>
           </Button>
 
           <Button
-            className={`btn-primary text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3 mobile-touch-button ${isMobile ? 'w-full justify-center' : ''}`}
+            className={`modern-button btn-primary text-white font-semibold py-4 px-10 rounded-2xl shadow-xl flex items-center gap-3 mobile-touch-button hover-glow ${isMobile ? 'w-full justify-center' : ''}`}
             onClick={() => setShowMemberModal(true)}
           >
-            <span>✅</span>
-            دخول كعضو
+            <span className="text-2xl">✅</span>
+            <span className="text-lg">دخول كعضو</span>
           </Button>
 
           <Button
-            className={`bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-3 px-8 rounded-xl shadow-lg flex items-center gap-3 transition-all duration-300 mobile-touch-button ${isMobile ? 'w-full justify-center' : ''}`}
+            className={`modern-button bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4 px-10 rounded-2xl shadow-xl flex items-center gap-3 transition-all duration-300 mobile-touch-button hover-glow ${isMobile ? 'w-full justify-center' : ''}`}
             onClick={() => setShowRegisterModal(true)}
           >
             <span>📝</span>
@@ -227,10 +234,10 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
 
       {/* Guest Name Modal */}
       <Dialog open={showGuestModal} onOpenChange={setShowGuestModal}>
-        <DialogContent className="glass-effect border border-border animate-fade-in">
+        <DialogContent className="modern-card glass-effect border-0 animate-fade-in shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-bold text-white flex items-center justify-center gap-2">
-              <span>📝</span>
+            <DialogTitle className="text-center text-3xl font-bold gradient-text flex items-center justify-center gap-3 mb-2">
+              <span className="text-4xl">📝</span>
               أدخل اسم الزائر
             </DialogTitle>
           </DialogHeader>
@@ -239,7 +246,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
               value={guestName}
               onChange={(e) => setGuestName(e.target.value.slice(0, 14))}
               placeholder="مثال: زائر_2025"
-              className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
+              className="modern-input text-white"
               maxLength={14}
               onKeyPress={(e) => e.key === 'Enter' && handleGuestLogin()}
             />
