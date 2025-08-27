@@ -20,6 +20,10 @@ export default function ProfessionalDashboard({
   isVisible,
   onClose,
 }: ProfessionalDashboardProps) {
+  // إخفاء اللوحة للمستخدمين غير المالك/المدير لتجنب تشتيت المستخدمين العاديين
+  if (!currentUser || (currentUser.userType !== 'owner' && currentUser.userType !== 'admin')) {
+    return null;
+  }
   const [activePanel, setActivePanel] = useState<'analytics' | 'security' | 'performance' | null>(
     null
   );

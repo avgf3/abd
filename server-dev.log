@@ -1,6 +1,0 @@
-
-> rest-express@1.0.0 dev
-> NODE_ENV=development tsx server/index.ts
-
-[dotenv@17.2.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
-⚠️ قاعدة البيانات غير متاحة، محاولة إعادة الاتصال...

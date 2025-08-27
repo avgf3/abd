@@ -37,13 +37,7 @@ export default function RoomSelectorScreen({ currentUser, onSelectRoom }: RoomSe
 		}
 	}, [fetchRooms]);
 
-	// Backup polling every ~45s
-	React.useEffect(() => {
-		const id = window.setInterval(() => {
-			fetchRooms(true);
-		}, 45000);
-		return () => window.clearInterval(id);
-	}, [fetchRooms]);
+	// تمت إزالة polling الاحتياطي؛ نعتمد على أحداث socket 'roomUpdate'
 
 	const content = useMemo(() => {
 		if (loading && rooms.length === 0) {

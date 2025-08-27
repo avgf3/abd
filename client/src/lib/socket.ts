@@ -135,11 +135,9 @@ export function getSocket(): Socket {
   const serverUrl = getServerUrl();
   socketInstance = io(serverUrl, {
     path: '/socket.io',
-    // استخدم polling فقط على Render لتجنب مشاكل WebSocket
-    transports: window.location.hostname.includes('.onrender.com') 
-      ? ['polling'] 
-      : ['polling', 'websocket'],
-    upgrade: !window.location.hostname.includes('.onrender.com'), // لا ترقية على Render
+    // استخدم WebSocket كخيار أساسي حيثما أمكن
+    transports: ['websocket', 'polling'],
+    upgrade: true,
     rememberUpgrade: false,
     autoConnect: false,
     reconnection: true,

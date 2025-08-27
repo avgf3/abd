@@ -10,3 +10,8 @@ vite.config.ts.*
 cookies.txt
 admin_cookies.txt
 owner_cookies.txt
+server-*.log
+server.log
+build.log
+*.pid
+*.log
