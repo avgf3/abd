@@ -506,7 +506,7 @@ export default function UnifiedSidebar({
               showModerationActions={isModerator}
             >
               <div
-                className={`flex items-center gap-2 py-1.5 px-4 rounded-none border-b-2 border-white/50 transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
+                className={`flex items-center gap-2 py-1.5 px-0 rounded-none border-b border-black transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
                 style={getUserListItemStyles(user)}
                 onClick={(e) => handleUserClick(e as any, user)}
               >
@@ -590,43 +590,36 @@ export default function UnifiedSidebar({
       {/* Users View - تحسين التمرير */}
       {activeView === 'users' && (
         <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-          {/* Search Bar - ثابت في الأعلى */}
-          <div
-            className={`${isMobile ? 'p-2' : 'p-4'} bg-card border-b border-border flex-shrink-0`}
-          >
+          {/* Search Bar - ثابت في الأعلى (تصغير الطول بحجم التبويبات) */}
+          <div className={`${isMobile ? 'p-2' : 'p-2'} bg-card border-b border-border flex-shrink-0`}>
             <div className="relative">
-              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                🔍
-              </span>
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="البحث عن المستخدمين..."
-                className={`w-full pl-4 pr-10 ${isMobile ? 'py-2 text-sm' : 'py-2'} rounded-lg bg-background border-input placeholder:text-muted-foreground text-foreground`}
+                className={`w-full pl-4 pr-10 ${isMobile ? 'py-1.5 text-sm' : 'py-1.5'} rounded-lg bg-background border-input placeholder:text-muted-foreground text-foreground`}
                 style={isMobile ? { fontSize: '16px' } : {}}
               />
             </div>
           </div>
 
           {/* Users List - Virtualized */}
-          <div className={`bg-background`} style={{ maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 200px)' }}>
-            <div className="bg-primary text-primary-foreground mb-2 mx-4 mt-4 rounded-md">
-              <div className="flex items-center justify-between p-2">
-                <div className="flex items-center gap-2 font-bold text-base">
+          <div className={`bg-background users-list-reset`} style={{ maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 200px)' }}>
+            <div className="bg-primary text-primary-foreground mb-1 mx-0 mt-0 rounded-none">
+              <div className="flex items-center justify-between px-3 py-1.5">
+                <div className="flex items-center gap-2 font-bold text-sm">
                   المتصلون الآن
-                  <span className="bg-white/20 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
+                  <span className="bg-white/20 text-white px-1.5 py-0.5 rounded-full text-[10px] font-semibold">
                     {validUsers.length}
                   </span>
                 </div>
-                <div className="text-xs flex items-center gap-1">
-                  <span>🏆</span>
-                  <span>مرتب حسب الرتب</span>
-                </div>
+                {/* تمت إزالة: مرتب حسب الرتب */}
               </div>
             </div>
 
             {filteredUsers.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
+              <div className="text-center text-gray-500 py-6">
                 <div className="mb-3">{searchTerm ? '🔍' : '👥'}</div>
                 <p className="text-sm">
                   {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمون متصلون حالياً'}
@@ -641,7 +634,7 @@ export default function UnifiedSidebar({
                 )}
               </div>
             ) : (
-              <div>
+              <div className="px-0">
                 <Virtuoso
                   style={{ height: isMobile ? 'calc(100vh - 180px)' : 'calc(100vh - 260px)' }}
                   totalCount={filteredUsers.length}

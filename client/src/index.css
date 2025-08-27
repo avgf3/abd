@@ -2008,3 +2008,13 @@ li::before {
   color: var(--primary-solid);
   font-weight: bold;
 }
+
+/* Reset default list markers and spacing inside the users list only */
+.users-list-reset li {
+  padding-right: 0;
+  margin-bottom: 0;
+}
+
+.users-list-reset li::before {
+  content: '';
+}
