@@ -453,7 +453,7 @@ export default function MessageArea({
             ref={virtuosoRef}
             data={validMessages}
             className="!h-full"
-            style={{ paddingBottom: '128px' }}
+            style={{ paddingBottom: '24px' }}
             followOutput={'smooth'}
             atBottomThreshold={64}
             atBottomStateChange={handleAtBottomChange}
@@ -752,8 +752,7 @@ export default function MessageArea({
 
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div
-        className={`p-3 bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-20 shadow-lg chat-input soft-entrance`}
-        style={{ bottom: 'calc(56px + env(safe-area-inset-bottom))' }}
+        className={`p-3 bg-white border-t border-gray-200 w-full z-20 shadow-lg chat-input soft-entrance`}
       >
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
