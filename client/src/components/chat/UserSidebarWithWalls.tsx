@@ -499,7 +499,7 @@ export default function UnifiedSidebar({
       React.memo(({ user }: { user: ChatUser }) => {
         if (!user?.username || !user?.userType) return null;
         return (
-          <li key={user.id} className="relative">
+          <li key={user.id} className="relative list-none">
             <SimpleUserMenu
               targetUser={user}
               currentUser={currentUser}

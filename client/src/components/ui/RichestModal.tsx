@@ -247,7 +247,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
 
           <ul className="space-y-1">
             {topTen.map((u, idx) => (
-              <li key={u.id} className="relative -mx-4">
+              <li key={u.id} className="relative -mx-4 list-none">
                 <SimpleUserMenu targetUser={u} currentUser={currentUser || null} showModerationActions={isModerator}>
                   <div
                     className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(u) || 'bg-card hover:bg-accent/10'}`}

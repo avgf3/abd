@@ -2018,3 +2018,10 @@ li::before {
 .users-list-reset li::before {
   content: '';
 }
+
+/* Fix for user list items in sidebar - remove pseudo element */
+.users-list-reset li::before,
+#root li[class*="relative"]::before {
+  content: none !important;
+  display: none !important;
+}
