@@ -462,7 +462,7 @@ export default function MessageArea({
             itemContent={(index, message) => (
               <div
                 key={message.id}
-                className={`flex items-center gap-3 p-3 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
+                className={`flex items-center gap-2 p-2 rounded-lg border-r-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 room-message-pulse soft-entrance`}
                 style={{ borderRightColor: getDynamicBorderColor(message.sender) }}
               >
                 {/* System message: one-line red without avatar/badge */}
@@ -491,7 +491,7 @@ export default function MessageArea({
                               <img
                                 src={final}
                                 alt={`صورة ${message.sender?.username || ''}`}
-                                className={"w-10 h-10 rounded-full ring-2 shadow-sm object-cover cursor-pointer hover:scale-110 transition-transform duration-200"}
+                                className={"w-7 h-7 rounded-full ring-2 shadow-sm object-cover cursor-pointer hover:scale-110 transition-transform duration-200"}
                                 loading="lazy"
                                 onError={(e: any) => {
                                   if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
@@ -506,7 +506,7 @@ export default function MessageArea({
                           <ProfileImage
                             user={message.sender}
                             size="small"
-                            className="cursor-pointer hover:scale-110 transition-transform duration-200"
+                            className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
                             onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
                           />
                         )}
@@ -516,7 +516,7 @@ export default function MessageArea({
                     {/* Inline row: badge, name, content */}
                     <div className="flex-1 min-w-0 flex items-center gap-2">
                       {message.sender && (
-                        <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} />
+                        <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                       )}
                       <button
                         onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
@@ -531,7 +531,7 @@ export default function MessageArea({
                           <img
                             src={message.content}
                             alt="صورة"
-                            className="max-h-10 rounded cursor-pointer"
+                            className="max-h-7 rounded cursor-pointer"
                             loading="lazy"
                             onLoad={() => {
                               if (isAtBottom) {
