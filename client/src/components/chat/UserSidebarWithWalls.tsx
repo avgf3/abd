@@ -21,6 +21,8 @@ import ProfileImage from './ProfileImage';
 import RoomComponent from './RoomComponent';
 import SimpleUserMenu from './SimpleUserMenu';
 import UserRoleBadge from './UserRoleBadge';
+import UserPopup from './UserPopup';
+import ProfileModal from './ProfileModal';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -81,6 +83,13 @@ export default function UnifiedSidebar({
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
+  const [namePopup, setNamePopup] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    user: ChatUser | null;
+  }>({ visible: false, x: 0, y: 0, user: null });
+  const [profileModalUser, setProfileModalUser] = useState<ChatUser | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
@@ -234,6 +243,27 @@ export default function UnifiedSidebar({
       onUserClick(e, user);
     },
     [onUserClick]
+  );
+
+  const postToChatUser = useCallback((post: WallPost): ChatUser => {
+    return {
+      id: post.userId,
+      username: post.username,
+      profileImage: post.userProfileImage,
+      usernameColor: post.usernameColor,
+      userType: post.userRole || 'member',
+      role: (post.userRole as any) || 'member',
+      isOnline: true,
+    } as ChatUser;
+  }, []);
+
+  const openUserPopup = useCallback(
+    (e: React.MouseEvent, post: WallPost) => {
+      e.stopPropagation();
+      const userObj = postToChatUser(post);
+      setNamePopup({ visible: true, x: e.clientX, y: e.clientY, user: userObj });
+    },
+    [postToChatUser]
   );
 
   // التحقق من صلاحيات الإشراف
@@ -781,15 +811,17 @@ export default function UnifiedSidebar({
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <span
-                                className="font-medium text-sm"
+                                className="font-medium text-sm cursor-pointer hover:underline"
                                 style={{ color: post.usernameColor || 'inherit' }}
+                                onClick={(e) => openUserPopup(e, post)}
                               >
                                 {post.username}
                               </span>
-                              {/* 🏅 شارة الرتبة الموحدة */}
+                              {/* 🏅 إظهار الشارة بعد الاسم مع إخفاء شعارات الزوار والأعضاء (ذكر/أنثى) للمستويات 1-10 */}
                               <UserRoleBadge
                                 user={{ userType: post.userRole } as ChatUser}
                                 size={16}
+                                hideGuestAndGender={true}
                               />
                             </div>
                             <p className="text-xs text-gray-500">
@@ -914,6 +946,41 @@ export default function UnifiedSidebar({
             onStartPrivateChat={onStartPrivateChat || (() => {})}
           />
         </div>
+      )}
+
+      {namePopup.visible && namePopup.user && (
+        <UserPopup
+          user={namePopup.user}
+          x={namePopup.x}
+          y={namePopup.y}
+          currentUser={currentUser || null}
+          onPrivateMessage={() => {
+            if (onStartPrivateChat) onStartPrivateChat(namePopup.user as ChatUser);
+            setNamePopup({ visible: false, x: 0, y: 0, user: null });
+          }}
+          onAddFriend={() => {
+            setNamePopup({ visible: false, x: 0, y: 0, user: null });
+          }}
+          onIgnore={() => {
+            setNamePopup({ visible: false, x: 0, y: 0, user: null });
+          }}
+          onViewProfile={() => {
+            setProfileModalUser(namePopup.user as ChatUser);
+            setNamePopup({ visible: false, x: 0, y: 0, user: null });
+          }}
+          onClose={() => setNamePopup({ visible: false, x: 0, y: 0, user: null })}
+        />
+      )}
+
+      {profileModalUser && (
+        <ProfileModal
+          user={profileModalUser}
+          currentUser={currentUser || null}
+          onClose={() => setProfileModalUser(null)}
+          onPrivateMessage={(u) => {
+            if (onStartPrivateChat) onStartPrivateChat(u);
+          }}
+        />
       )}
     </aside>
   );
