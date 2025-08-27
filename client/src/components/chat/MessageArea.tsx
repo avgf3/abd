@@ -1,4 +1,4 @@
-import { Send, Smile, ChevronDown, Sparkles, Plus } from 'lucide-react';
+import { Send, Smile, ChevronDown, Sparkles } from 'lucide-react';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 
