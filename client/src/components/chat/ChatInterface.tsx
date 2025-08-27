@@ -504,10 +504,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     >
       {/* Modern Header */}
       <header
-        className={`sticky top-0 z-40 modern-nav min-h-[2.5rem] py-1.5 px-4 sm:py-1.5 sm:px-8 flex ${isMobile ? 'flex-col gap-2' : 'flex-wrap gap-3'} justify-between items-center`}
+        className={`sticky top-0 z-40 modern-nav min-h-[2.5rem] py-1.5 px-4 sm:py-1.5 sm:px-8 flex ${isMobile ? 'flex-col gap-2' : 'flex-row flex-nowrap'} justify-between items-center`}
       >
         <div
-          className={`flex gap-2 ${isMobile ? 'flex-wrap justify-center w-full' : 'overflow-x-auto max-w-full pr-2'}`}
+          className={`flex gap-2 ${isMobile ? 'flex-wrap justify-center w-full' : 'flex-1 overflow-x-auto pr-2'} ${chat.currentUser?.userType === 'owner' ? '' : 'max-w-[calc(100%-180px)]'}`}
         >
           <Button
             className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
@@ -528,23 +528,29 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             <span className="font-medium">الأثرياء</span>
           </Button>
 
-          {/* قائمة ثلاث شرائط للمالك */}
+          {/* زر إضافة غرفة جديدة للمالك */}
           {chat.currentUser && chat.currentUser.userType === 'owner' && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2">
-                  <Menu className="w-5 h-5" />
-                  المزيد
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" sideOffset={8}>
-                <DropdownMenuLabel>إجراءات</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setShowAddRoomDialog(true)}>
-                  إضافة غرفة جديدة
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              className="glass-effect px-3 py-2 rounded-lg hover:bg-accent transition-all duration-200 flex items-center gap-2"
+              onClick={() => setShowAddRoomDialog(true)}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+              <span className="font-medium">إضافة غرفة</span>
+            </Button>
           )}
 
           {/* زر خاص بالمالك فقط */}
@@ -665,13 +671,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
         {/* الشعار ثابت على اليسار وبألوان ثابتة لا تتأثر بالثيم */}
         <div
-          className={`flex items-center gap-2 cursor-pointer select-none ${isMobile ? 'self-start' : ''}`}
+          className={`flex items-center gap-2 cursor-pointer select-none flex-shrink-0 ${isMobile ? 'self-start' : ''}`}
           onClick={() => {
             if (isMobile) setActiveView('hidden');
           }}
         >
           <MessageCircle className="w-5 h-5" style={{ color: '#667eea' }} />
-          <div className="text-lg sm:text-xl font-bold truncate" style={{ color: '#ffffff' }}>
+          <div className="text-lg sm:text-xl font-bold whitespace-nowrap" style={{ color: '#ffffff' }}>
             Arabic<span style={{ color: '#667eea' }}>Chat</span>
           </div>
         </div>
@@ -680,13 +686,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {/* Main Content - تحسين التخطيط لمنع التداخل */}
       <main
         className={`flex flex-1 overflow-hidden min-h-0 ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'}`}
-        style={{ paddingBottom: isMobile ? '56px' : '56px' }}
       >
         {/* الشريط الجانبي - على الجوال يعرض بملء الشاشة عند اختيار التبويب */}
         {activeView !== 'hidden' && (
           <div
             className={`${isMobile ? 'w-full flex-1 min-h-0' : activeView === 'walls' ? 'w-full sm:w-96' : activeView === 'friends' ? 'w-full sm:w-80' : 'w-full sm:w-64'} max-w-full sm:shrink-0 transition-all duration-300 min-h-0 flex flex-col`}
-            style={{ maxHeight: 'calc(100vh - 160px)' }}
+            style={{ maxHeight: 'calc(100vh - 96px)' }}
           >
             <Suspense
               fallback={
@@ -780,7 +785,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               return (
                 <div
                   className="flex-1 flex min-h-0"
-                  style={{ maxHeight: 'calc(100vh - 160px)' }}
+                  style={{ maxHeight: 'calc(100vh - 96px)' }}
                 >
                   <Suspense fallback={<div className="p-4 space-y-3"><SkeletonBlock className="h-6 w-1/3" /><SkeletonBlock className="h-40 w-full" /></div>}>
                     <MessageArea
@@ -805,23 +810,23 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* Modern Footer Navigation */}
       <footer
-        className={`fixed bottom-0 left-0 right-0 z-10 modern-nav h-14 px-4 sm:px-8 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
+        className={`fixed bottom-0 left-0 right-0 z-10 modern-nav h-14 px-2 sm:px-4 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
         style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0' }}
       >
-        <div className="flex gap-2 sm:gap-3 overflow-x-auto max-w-full">
+        <div className="flex gap-1 sm:gap-2 overflow-x-auto max-w-full">
           {/* الحوائط */}
           <Button
             size="sm"
-            className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
-              activeView === 'walls' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
+              activeView === 'walls' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
             }`}
             onClick={() => setActiveView((prev) => (prev === 'walls' ? 'hidden' : 'walls'))}
             title="الحوائط"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -840,16 +845,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* المستخدمون */}
           <Button
             size="sm"
-            className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
-              activeView === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
+              activeView === 'users' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
             }`}
             onClick={() => setActiveView((prev) => (prev === 'users' ? 'hidden' : 'users'))}
             title="المستخدمون المتصلون"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -869,16 +874,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* الغرف */}
           <Button
             size="sm"
-            className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
-              activeView === 'rooms' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
+              activeView === 'rooms' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
             }`}
             onClick={() => setActiveView((prev) => (prev === 'rooms' ? 'hidden' : 'rooms'))}
             title="الغرف"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -897,16 +902,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           {/* الأصدقاء */}
           <Button
             size="sm"
-            className={`${'glass-effect px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 '}${
-              activeView === 'friends' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+            className={`${'glass-effect px-2 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-sm'}${
+              activeView === 'friends' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
             }`}
             onClick={() => setActiveView((prev) => (prev === 'friends' ? 'hidden' : 'friends'))}
             title="الأصدقاء"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
