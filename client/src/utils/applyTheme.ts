@@ -64,6 +64,87 @@ export function applyThemeById(themeId: string, persist: boolean = false) {
         '--foreground': '#134e4a',
       },
     },
+    // Modern cool palettes (muted, trendy, not over-saturated)
+    orangeCool: {
+      cssVars: {
+        '--primary': '#ff8a4c', // soft orange
+        '--primary-foreground': '#1a1a1a',
+        '--background': '#0f1115',
+        '--foreground': '#f6f7fb',
+      },
+    },
+    pinkCool: {
+      cssVars: {
+        '--primary': '#ff85b5', // soft pink
+        '--primary-foreground': '#1a1a1a',
+        '--background': '#0f1115',
+        '--foreground': '#f6f7fb',
+      },
+    },
+    berryCool: {
+      cssVars: {
+        '--primary': '#7c3aed', // berry violet
+        '--primary-foreground': '#ffffff',
+        '--background': '#0f0f14',
+        '--foreground': '#f1f5f9',
+      },
+    },
+    tealCool: {
+      cssVars: {
+        '--primary': '#2dd4bf', // cool teal
+        '--primary-foreground': '#0b1220',
+        '--background': '#0b1220',
+        '--foreground': '#e6f4ff',
+      },
+    },
+    grapeMist: {
+      cssVars: {
+        '--primary': '#a78bfa',
+        '--primary-foreground': '#0b0f1a',
+        '--background': '#0b0f1a',
+        '--foreground': '#eef2ff',
+      },
+    },
+    roseAsh: {
+      cssVars: {
+        '--primary': '#fda4af',
+        '--primary-foreground': '#111827',
+        '--background': '#0d1117',
+        '--foreground': '#f8fafc',
+      },
+    },
+    midnightBlue: {
+      cssVars: {
+        '--primary': '#60a5fa',
+        '--primary-foreground': '#0a0f1a',
+        '--background': '#0a0f1a',
+        '--foreground': '#e2e8f0',
+      },
+    },
+    cocoaMint: {
+      cssVars: {
+        '--primary': '#10b981',
+        '--primary-foreground': '#0c0f14',
+        '--background': '#0c0f14',
+        '--foreground': '#e5e7eb',
+      },
+    },
+    amberFog: {
+      cssVars: {
+        '--primary': '#f59e0b',
+        '--primary-foreground': '#111827',
+        '--background': '#0b0f14',
+        '--foreground': '#f3f4f6',
+      },
+    },
+    arcticBlue: {
+      cssVars: {
+        '--primary': '#38bdf8',
+        '--primary-foreground': '#0b1020',
+        '--background': '#0b1020',
+        '--foreground': '#e6edf3',
+      },
+    },
   };
 
   const theme = themes[themeId] || themes.default;
