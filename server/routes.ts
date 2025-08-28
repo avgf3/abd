@@ -277,8 +277,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updateConnectedUserCache(updatedUser);
         } catch {}
 
-        // إرسال الاستجابة مع معلومات متقدمة
-        res.set(processedImage.cacheHeaders);
+        // إرسال الاستجابة (بدون ترويسات كاش طويلة على JSON)
+        res.set('Cache-Control', 'no-store');
         res.json({ 
           success: true, 
           imageUrl: processedImage.url,
@@ -387,8 +387,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updateConnectedUserCache(updatedUser);
         } catch {}
 
-        // إرسال الاستجابة مع معلومات متقدمة
-        res.set(processedImage.cacheHeaders);
+        // إرسال الاستجابة (بدون ترويسات كاش طويلة على JSON)
+        res.set('Cache-Control', 'no-store');
         res.json({ 
           success: true, 
           bannerUrl: processedImage.url,

@@ -49,7 +49,10 @@ class Logger {
       json: process.env.NODE_ENV === 'production',
       maxFileSize: 10, // 10MB
       maxFiles: 5,
-      logDir: path.join(__dirname, '../../../logs'),
+      // استخدم LOG_DIR من البيئة إن وُجد، وإلا أنشئ داخل مجلد التشغيل الحالي
+      logDir: process.env.LOG_DIR && process.env.LOG_DIR.trim().length > 0
+        ? process.env.LOG_DIR
+        : path.join(process.cwd(), 'logs'),
       ...config
     };
 

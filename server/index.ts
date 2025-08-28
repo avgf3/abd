@@ -138,7 +138,7 @@ app.use(
 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// خدمة الملفات الثابتة للصور المرفوعة - محسّنة لـ Render
+// خدمة الملفات الثابتة للصور المرفوعة - محسّنة مع كاش يعتمد على ?v=hash
 const uploadsPath = path.join(process.cwd(), 'client/public/uploads');
 app.use(
   '/uploads',
@@ -198,11 +198,19 @@ app.use(
         return res.status(404).json({ error: 'File not found' });
       }
 
-      // Disable caching for every uploaded file explicitly
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-      res.setHeader('Vary', 'Accept, Accept-Encoding');
+      // تحديد سياسة الكاش حسب وجود باراميتر نسخة (?v=hash)
+      try {
+        const originalUrl = (req as any).originalUrl || req.url || '';
+        const query = originalUrl.includes('?') ? originalUrl.split('?')[1] : '';
+        const params = new URLSearchParams(query);
+        const hasVersion = params.has('v') || params.has('version');
+        (res as any).locals = (res as any).locals || {};
+        (res as any).locals.uploadHasVersion = hasVersion;
+      } catch {}
+      // سيتم ضبط ترويسات Cache-Control النهائية داخل setHeaders للـ static أدناه
+      try {
+        res.setHeader('Vary', 'Accept, Accept-Encoding');
+      } catch {}
 
       next();
     } catch {
@@ -210,10 +218,10 @@ app.use(
     }
   },
   express.static(uploadsPath, {
-    // Disable static layer caching for uploads too
+    // نتحكم بالكاش بشكل يدوي عبر middleware أعلاه و setHeaders هنا
     maxAge: 0,
-    etag: false,
-    lastModified: false,
+    etag: true,
+    lastModified: true,
     setHeaders: (res, filePath) => {
       // Content-Type only
       if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
@@ -228,11 +236,18 @@ app.use(
         res.setHeader('Content-Type', 'image/svg+xml');
       }
 
-      // Force no cache at the static layer as well
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-      res.setHeader('Vary', 'Accept, Accept-Encoding');
+      // ضبط سياسة الكاش النهائية بناءً على hasVersion الذي تم حسابه في middleware السابق
+      try {
+        const hasVersion = (res as any).locals?.uploadHasVersion === true;
+        if (hasVersion) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        } else {
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
+        }
+        res.setHeader('Vary', 'Accept, Accept-Encoding');
+      } catch {}
     },
   })
 );

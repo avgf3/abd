@@ -308,7 +308,9 @@ class SmartImageService {
    */
   private async saveToFilesystem(buffer: Buffer, metadata: ImageMetadata): Promise<ProcessedImage> {
     try {
-      const dir = path.join(this.uploadsDir, `${metadata.type}s`);
+      // توحيد أسماء المجلدات: avatar -> avatars, banner -> banners, wall -> wall
+      const subDir = metadata.type === 'wall' ? 'wall' : `${metadata.type}s`;
+      const dir = path.join(this.uploadsDir, subDir);
       await fs.mkdir(dir, { recursive: true });
       
       const filename = `${metadata.userId}.webp`;
@@ -316,7 +318,7 @@ class SmartImageService {
       
       await fs.writeFile(filepath, buffer);
       
-      const url = `/uploads/${metadata.type}s/${filename}?v=${metadata.hash}`;
+      const url = `/uploads/${subDir}/${filename}?v=${metadata.hash}`;
       const base64Fallback = `data:${metadata.mimeType};base64,${buffer.toString('base64')}`;
       
       return {
