@@ -25,6 +25,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
 import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import UserPopup from '@/components/chat/UserPopup';
 
 interface WallPanelProps {
   isOpen: boolean;
@@ -46,6 +47,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   const panelScrollRef = useRef<HTMLDivElement>(null);
   const [isAtBottomWall, setIsAtBottomWall] = useState(true);
   const wallImageInputRef = useRef<HTMLInputElement>(null);
+  const [userPopup, setUserPopup] = useState<{ show: boolean; user: ChatUser | null; x: number; y: number }>({ show: false, user: null, x: 0, y: 0 });
 
   useGrabScroll(panelScrollRef);
 
@@ -61,6 +63,15 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
     const el = panelScrollRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior });
+  }, []);
+
+  const handleUserClick = useCallback((event: React.MouseEvent, user: ChatUser) => {
+    event.stopPropagation();
+    setUserPopup({ show: true, user, x: event.clientX, y: event.clientY });
+  }, []);
+
+  const closeUserPopup = useCallback(() => {
+    setUserPopup((prev) => ({ ...prev, show: false }));
   }, []);
 
   // جلب المنشورات عبر React Query مع كاش قوي
@@ -514,6 +525,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                     onDelete={handleDeletePost}
                     onReact={handleReaction}
                     canDelete={canDeletePost}
+                    onUserClick={handleUserClick}
                   />
                   {!isAtBottomWall && (
                     <div className="absolute bottom-4 right-4 z-10">
@@ -546,6 +558,46 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
           </div>
         </div>
       </div>
+      {userPopup.show && userPopup.user && (
+        <UserPopup
+          user={userPopup.user}
+          x={userPopup.x}
+          y={userPopup.y}
+          onPrivateMessage={() => {
+            // فتح رسالة خاصة عبر الهاش ليستلمها ChatInterface إن لزم
+            try {
+              window.location.hash = `#pm${userPopup.user!.id}`;
+            } catch {}
+            closeUserPopup();
+          }}
+          onAddFriend={async () => {
+            try {
+              const { apiRequest } = await import('@/lib/queryClient');
+              await apiRequest('/api/friend-requests', {
+                method: 'POST',
+                body: { senderId: currentUser.id, receiverId: userPopup.user!.id },
+              });
+            } catch {}
+            closeUserPopup();
+          }}
+          onIgnore={() => {
+            // بث حدث عام ليتولى ChatInterface التجاهل إن أراد
+            try {
+              const ev = new CustomEvent('ignoreUser', { detail: { userId: userPopup.user!.id } });
+              window.dispatchEvent(ev);
+            } catch {}
+            closeUserPopup();
+          }}
+          onViewProfile={() => {
+            try {
+              window.location.hash = `#id${userPopup.user!.id}`;
+            } catch {}
+            closeUserPopup();
+          }}
+          currentUser={currentUser}
+          onClose={closeUserPopup}
+        />
+      )}
     </div>
   );
 }
