@@ -196,7 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupDownloadRoute(app);
   setupCompleteDownload(app);
 
-  // رفع صور البروفايل - محسّن مع حل مشكلة Render
+  // رفع صور البروفايل - نظام ذكي متقدم مع حل شامل لجميع المشاكل
   app.post(
     '/api/upload/profile-image',
     protect.auth,
@@ -205,6 +205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req, res) => {
       try {
         res.set('Cache-Control', 'no-store');
+        
         if (!req.file) {
           return res.status(400).json({
             error: 'لم يتم رفع أي ملف',
@@ -214,7 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const userId = (req as any).user?.id as number;
         if (!userId || isNaN(userId)) {
-          // حذف الملف المرفوع إذا فشل في الحصول على userId
+          // تنظيف الملف المؤقت
           try {
             await fsp.unlink(req.file.path);
           } catch (unlinkError) {
@@ -234,54 +235,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: 'المستخدم غير موجود' });
         }
 
-        // حفظ الصورة بصيغة webp ثابتة + حساب hash/version
-        const avatarsDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'avatars');
-        await fsp.mkdir(avatarsDir, { recursive: true });
+        // 🧠 استخدام النظام الذكي الجديد لمعالجة الصور
+        const { smartImageService } = await import('./services/smartImageService');
+        const { advancedCacheService } = await import('./services/advancedCacheService');
+        
+        // قراءة الملف
         const inputBuffer = await fsp.readFile(req.file.path);
-        let webpBuffer = inputBuffer;
-        try {
-          webpBuffer = await (sharp as any)(inputBuffer)
-            .resize(256, 256, { fit: 'cover' })
-            .webp({ quality: 80 })
-            .toBuffer();
-        } catch {}
-        const hash = (await import('crypto'))
-          .createHash('md5')
-          .update(webpBuffer)
-          .digest('hex')
-          .slice(0, 12);
-        const targetPath = path.join(avatarsDir, `${userId}.webp`);
-        await fsp.writeFile(targetPath, webpBuffer);
+        
+        // معالجة ذكية للصورة
+        const processedImage = await smartImageService.processImage(inputBuffer, {
+          userId,
+          type: 'avatar',
+          originalName: req.file.originalname,
+          mimeType: req.file.mimetype,
+          priority: 'balanced'
+        });
 
-        // حذف الملف المؤقت
+        // تنظيف الملف المؤقت
         try {
           await fsp.unlink(req.file.path);
         } catch {}
 
-        // تحديث المستخدم بالصورة الجديدة
-        const imageUrl = `/uploads/avatars/${userId}.webp?v=${hash}`;
+        // تحديث المستخدم في قاعدة البيانات
         const updatedUser = await storage.updateUser(userId, {
-          profileImage: imageUrl,
-          avatarHash: hash,
+          profileImage: processedImage.url,
+          avatarHash: processedImage.metadata.hash,
         } as any);
 
         if (!updatedUser) {
           return res.status(500).json({ error: 'فشل في تحديث بيانات المستخدم' });
         }
 
+        // تحديث Cache المتقدم
+        await advancedCacheService.setImage(userId, 'avatar', processedImage.url, {
+          priority: 'high',
+          metadata: processedImage.metadata
+        });
+
+        // تحديث cache المستخدمين المتصلين
         try {
           updateConnectedUserCache(updatedUser);
         } catch {}
 
-        res.json({ success: true, imageUrl, avatarHash: hash });
+        // إرسال الاستجابة مع معلومات متقدمة
+        res.set(processedImage.cacheHeaders);
+        res.json({ 
+          success: true, 
+          imageUrl: processedImage.url,
+          avatarHash: processedImage.metadata.hash,
+          storageType: processedImage.storageType,
+          fallbackUrl: processedImage.fallbackUrl,
+          metadata: {
+            size: processedImage.metadata.size,
+            compressionRatio: processedImage.metadata.compressionRatio,
+            qualityScore: processedImage.metadata.qualityScore
+          }
+        });
+
+        console.log(`✅ رفع صورة بروفايل بنجاح - المستخدم: ${userId}, النوع: ${processedImage.storageType}, الحجم: ${processedImage.metadata.size} bytes`);
+        
       } catch (error: any) {
-        console.error('خطأ في رفع صورة البروفايل:', error);
-        res.status(500).json({ error: 'خطأ في الخادم أثناء رفع الصورة' });
+        console.error('❌ خطأ في رفع صورة البروفايل:', error);
+        
+        // تنظيف الملف المؤقت في حالة الخطأ
+        if (req.file?.path) {
+          try {
+            await fsp.unlink(req.file.path);
+          } catch {}
+        }
+        
+        res.status(500).json({ 
+          error: 'خطأ في الخادم أثناء رفع الصورة',
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
       }
     }
   );
 
-  // رفع صورة البانر - WebP + fingerprint
+  // رفع صورة البانر - نظام ذكي متقدم
   app.post(
     '/api/upload/profile-banner',
     protect.auth,
@@ -290,6 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req, res) => {
       try {
         res.set('Cache-Control', 'no-store');
+        
         if (!req.file) {
           return res.status(400).json({
             error: 'لم يتم رفع أي ملف',
@@ -313,46 +345,256 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: 'المستخدم غير موجود' });
         }
 
-        const bannersDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'banners');
-        await fsp.mkdir(bannersDir, { recursive: true });
+        // 🧠 استخدام النظام الذكي الجديد لمعالجة البانر
+        const { smartImageService } = await import('./services/smartImageService');
+        const { advancedCacheService } = await import('./services/advancedCacheService');
+        
+        // قراءة الملف
         const inputBuffer = await fsp.readFile(req.file.path);
-        let webpBuffer = inputBuffer;
-        try {
-          webpBuffer = await (sharp as any)(inputBuffer)
-            .resize(1200, 400, { fit: 'cover' })
-            .webp({ quality: 80 })
-            .toBuffer();
-        } catch {}
-        const bannerTargetPath = path.join(bannersDir, `${userId}.webp`);
-        await fsp.writeFile(bannerTargetPath, webpBuffer);
+        
+        // معالجة ذكية للبانر
+        const processedImage = await smartImageService.processImage(inputBuffer, {
+          userId,
+          type: 'banner',
+          originalName: req.file.originalname,
+          mimeType: req.file.mimetype,
+          priority: 'balanced'
+        });
+
+        // تنظيف الملف المؤقت
         try {
           await fsp.unlink(req.file.path);
         } catch {}
 
-        const bannerVersion = (await import('crypto'))
-          .createHash('md5')
-          .update(webpBuffer)
-          .digest('hex')
-          .slice(0, 12);
-        const bannerUrl = `/uploads/banners/${userId}.webp?v=${bannerVersion}`;
-        const updatedUser = await storage.updateUser(userId, { profileBanner: bannerUrl });
+        // تحديث المستخدم في قاعدة البيانات
+        const updatedUser = await storage.updateUser(userId, { 
+          profileBanner: processedImage.url,
+          bannerHash: processedImage.metadata.hash
+        } as any);
+        
         if (!updatedUser) {
           return res.status(500).json({ error: 'فشل في تحديث صورة البانر في قاعدة البيانات' });
         }
 
+        // تحديث Cache المتقدم
+        await advancedCacheService.setImage(userId, 'banner', processedImage.url, {
+          priority: 'normal',
+          metadata: processedImage.metadata
+        });
+
+        // تحديث cache المستخدمين المتصلين
         try {
           updateConnectedUserCache(updatedUser);
         } catch {}
 
-        res.json({ success: true, bannerUrl });
+        // إرسال الاستجابة مع معلومات متقدمة
+        res.set(processedImage.cacheHeaders);
+        res.json({ 
+          success: true, 
+          bannerUrl: processedImage.url,
+          bannerHash: processedImage.metadata.hash,
+          storageType: processedImage.storageType,
+          fallbackUrl: processedImage.fallbackUrl,
+          metadata: {
+            size: processedImage.metadata.size,
+            compressionRatio: processedImage.metadata.compressionRatio,
+            qualityScore: processedImage.metadata.qualityScore
+          }
+        });
+
+        console.log(`✅ رفع صورة بانر بنجاح - المستخدم: ${userId}, النوع: ${processedImage.storageType}, الحجم: ${processedImage.metadata.size} bytes`);
+        
       } catch (error: any) {
-        console.error('خطأ في رفع صورة البانر:', error);
-        res.status(500).json({ error: 'خطأ في الخادم أثناء رفع صورة البانر' });
+        console.error('❌ خطأ في رفع صورة البانر:', error);
+        
+        // تنظيف الملف المؤقت في حالة الخطأ
+        if (req.file?.path) {
+          try {
+            await fsp.unlink(req.file.path);
+          } catch {}
+        }
+        
+        res.status(500).json({ 
+          error: 'خطأ في الخادم أثناء رفع صورة البانر',
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
       }
     }
   );
 
-  // Debug endpoint للتحقق من الصور - متاح في التطوير فقط
+  // 🎛️ لوحة تحكم الصور المتقدمة - للمطورين والإدارة
+  app.get('/api/admin/images/dashboard', developmentOnly, async (req, res) => {
+    logDevelopmentEndpoint('/api/admin/images/dashboard');
+    try {
+      const { imageMonitoringService } = await import('./services/imageMonitoringService');
+      const { advancedCacheService } = await import('./services/advancedCacheService');
+      const { smartImageService } = await import('./services/smartImageService');
+      
+      const [health, usageStats, cacheStats, smartStats] = await Promise.all([
+        imageMonitoringService.checkSystemHealth(),
+        imageMonitoringService.getUsageStats('24h'),
+        advancedCacheService.getStats(),
+        smartImageService.getPerformanceMetrics()
+      ]);
+
+      res.json({
+        success: true,
+        dashboard: {
+          health,
+          usage: usageStats,
+          cache: cacheStats,
+          smart: smartStats,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      console.error('❌ خطأ في لوحة تحكم الصور:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'خطأ في الحصول على بيانات لوحة التحكم' 
+      });
+    }
+  });
+
+  // 🔧 تشغيل Migration للصور
+  app.post('/api/admin/images/migrate', developmentOnly, async (req, res) => {
+    logDevelopmentEndpoint('/api/admin/images/migrate');
+    try {
+      const { imageMigrationService } = await import('./services/imageMigrationService');
+      const { dryRun = true, forceBase64 = false } = req.body;
+      
+      const stats = await imageMigrationService.runFullMigration({
+        dryRun,
+        forceBase64,
+        batchSize: 25,
+        backupFirst: true
+      });
+
+      res.json({
+        success: true,
+        migration: stats,
+        message: dryRun ? 'محاكاة Migration مكتملة' : 'Migration حقيقي مكتمل'
+      });
+    } catch (error) {
+      console.error('❌ خطأ في Migration:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'خطأ في تنفيذ Migration' 
+      });
+    }
+  });
+
+  // 🔍 تحليل حالة الصور
+  app.get('/api/admin/images/analyze', developmentOnly, async (req, res) => {
+    logDevelopmentEndpoint('/api/admin/images/analyze');
+    try {
+      const { imageMigrationService } = await import('./services/imageMigrationService');
+      const analysis = await imageMigrationService.analyzeImageState();
+
+      res.json({
+        success: true,
+        analysis,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ خطأ في تحليل الصور:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'خطأ في تحليل حالة الصور' 
+      });
+    }
+  });
+
+  // 🧹 تنظيف الملفات التالفة
+  app.post('/api/admin/images/cleanup', developmentOnly, async (req, res) => {
+    logDevelopmentEndpoint('/api/admin/images/cleanup');
+    try {
+      const { imageMigrationService } = await import('./services/imageMigrationService');
+      const { smartImageService } = await import('./services/smartImageService');
+      
+      const [cleanupResult, diagnosticResult] = await Promise.all([
+        imageMigrationService.cleanupBrokenFiles(),
+        smartImageService.diagnoseAndFixImages()
+      ]);
+
+      res.json({
+        success: true,
+        cleanup: cleanupResult,
+        diagnostic: diagnosticResult,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ خطأ في تنظيف الصور:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'خطأ في تنظيف الملفات' 
+      });
+    }
+  });
+
+  // 📊 إحصائيات المراقبة
+  app.get('/api/admin/images/monitoring', developmentOnly, async (req, res) => {
+    logDevelopmentEndpoint('/api/admin/images/monitoring');
+    try {
+      const { imageMonitoringService } = await import('./services/imageMonitoringService');
+      const { timeframe = '24h', metric, type, severity } = req.query;
+      
+      const [metrics, errors] = await Promise.all([
+        imageMonitoringService.getMetrics({ 
+          metric: metric as string,
+          timeframe: timeframe as any,
+          limit: 100 
+        }),
+        imageMonitoringService.getErrors({ 
+          type: type as any,
+          severity: severity as any,
+          timeframe: timeframe as any,
+          limit: 50 
+        })
+      ]);
+
+      res.json({
+        success: true,
+        monitoring: {
+          metrics,
+          errors,
+          timeframe
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ خطأ في بيانات المراقبة:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'خطأ في الحصول على بيانات المراقبة' 
+      });
+    }
+  });
+
+  // 🗑️ مسح Cache
+  app.post('/api/admin/images/cache/clear', developmentOnly, async (req, res) => {
+    logDevelopmentEndpoint('/api/admin/images/cache/clear');
+    try {
+      const { advancedCacheService } = await import('./services/advancedCacheService');
+      const { userId, type } = req.body;
+      
+      if (userId) {
+        advancedCacheService.clearUserImages(userId);
+        res.json({ success: true, message: `تم مسح cache المستخدم ${userId}` });
+      } else {
+        advancedCacheService.clearAll();
+        res.json({ success: true, message: 'تم مسح جميع Cache' });
+      }
+    } catch (error) {
+      console.error('❌ خطأ في مسح Cache:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'خطأ في مسح Cache' 
+      });
+    }
+  });
+
+  // Debug endpoint للتحقق من الصور - متاح في التطوير فقط (Legacy)
   app.get('/api/debug/images', developmentOnly, async (req, res) => {
     logDevelopmentEndpoint('/api/debug/images');
     try {
