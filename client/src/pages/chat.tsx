@@ -1,11 +1,12 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 
 const ChatInterface = lazy(() => import('@/components/chat/ChatInterface'));
 const WelcomeScreen = lazy(() => import('@/components/chat/WelcomeScreen'));
 // حذف المحدد المحلي للغرف لتجنب التكرار
 import KickCountdown from '@/components/moderation/KickCountdown';
 import { useChat } from '@/hooks/useChat';
-import { clearSession } from '@/lib/socket';
+import { clearSession, getSession } from '@/lib/socket';
+import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 import RoomSelectorScreen from '@/components/chat/RoomSelectorScreen';
 
@@ -34,6 +35,30 @@ export default function ChatPage() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const chat = useChat();
+
+  // استرجاع الجلسة والغرفة بعد إعادة التحميل
+  useEffect(() => {
+    try {
+      const session = getSession();
+      const savedUserId = session?.userId;
+      if (!savedUserId) return;
+
+      // جلب بيانات المستخدم من الخادم لضمان توافق الشكل
+      apiRequest(`/api/users/${savedUserId}`)
+        .then((user) => {
+          if (!user || !user.id || !user.username) return;
+          chat.connect(user);
+          setShowWelcome(false);
+
+          const roomId = session?.roomId && session.roomId !== 'public' && session.roomId !== 'friends'
+            ? session.roomId
+            : 'general';
+          setSelectedRoomId(roomId);
+          chat.joinRoom(roomId);
+        })
+        .catch(() => {});
+    } catch {}
+  }, []);
 
   const handleUserLogin = (user: ChatUser) => {
     clearSession(); // مسح أي جلسة سابقة قبل تسجيل دخول جديد
