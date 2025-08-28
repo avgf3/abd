@@ -524,7 +524,7 @@ export default function FriendsTabPanel({
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
                                   <span
-                                    className="font-semibold"
+                                    className="text-base font-medium transition-all duration-300"
                                     style={{
                                       color: getFinalUsernameColor(request.user),
                                       textShadow: getFinalUsernameColor(request.user)
@@ -534,6 +534,7 @@ export default function FriendsTabPanel({
                                         ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
                                         : 'none',
                                     }}
+                                    title={request.user.username}
                                   >
                                     {request.user.username}
                                   </span>
@@ -545,22 +546,25 @@ export default function FriendsTabPanel({
                                 </div>
                               </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-1">
                               <Button
-                                size="sm"
+                                size="icon"
                                 onClick={() => handleAcceptRequest(request.id)}
-                                className="bg-green-600 hover:bg-green-700"
+                                className="bg-green-600 hover:bg-green-700 h-8 w-8 rounded-full"
+                                title="قبول"
+                                aria-label="قبول"
                               >
-                                <Check className="w-4 h-4 ml-1" />
-                                قبول
+                                <Check className="w-4 h-4" />
                               </Button>
                               <Button
-                                size="sm"
+                                size="icon"
                                 variant="outline"
                                 onClick={() => handleRejectRequest(request.id)}
+                                className="h-8 w-8 rounded-full"
+                                title="رفض"
+                                aria-label="رفض"
                               >
-                                <X className="w-4 h-4 ml-1" />
-                                رفض
+                                <X className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
@@ -600,7 +604,7 @@ export default function FriendsTabPanel({
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
                                   <span
-                                    className="font-semibold"
+                                    className="text-base font-medium transition-all duration-300"
                                     style={{
                                       color: getFinalUsernameColor(request.user),
                                       textShadow: getFinalUsernameColor(request.user)
@@ -610,6 +614,7 @@ export default function FriendsTabPanel({
                                         ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
                                         : 'none',
                                     }}
+                                    title={request.user.username}
                                   >
                                     {request.user.username}
                                   </span>
