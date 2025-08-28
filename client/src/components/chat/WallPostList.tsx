@@ -6,6 +6,7 @@ import ImageLightbox from '@/components/ui/ImageLightbox';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { WallPost, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import SafeImage from '@/components/ui/SafeImage';
 import { formatTimeAgo } from '@/utils/timeUtils';
 
 interface WallPostListProps {
@@ -67,8 +68,8 @@ export default function WallPostList({
                 <div className="relative">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-primary/10">
                     {post.userProfileImage ? (
-                      <img
-                        src={getImageSrc(post.userProfileImage)}
+                      <SafeImage
+                        srcInput={getImageSrc(post.userProfileImage)}
                         alt={post.username}
                         className="w-12 h-12 rounded-full object-cover"
                       />

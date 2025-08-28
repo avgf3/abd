@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import SafeImage from '@/components/ui/SafeImage';
 
 interface ProfileImageProps {
   user: ChatUser;
@@ -76,25 +77,11 @@ export default function ProfileImage({
       )}
       
       {/* الصورة الأساسية */}
-      <img
-        src={imageSrc}
+      <SafeImage
+        srcInput={imageSrc}
         alt={`صورة ${user.username}`}
         className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className} ${gradientBorder ? 'relative' : ''}`}
-        style={{
-          transition: 'none',
-          backfaceVisibility: 'hidden',
-          transform: 'translateZ(0)',
-          display: 'block',
-        }}
         loading="lazy"
-        decoding="async"
-        sizes={size === 'small' ? '40px' : size === 'large' ? '80px' : '64px'}
-        fetchpriority={size === 'large' ? 'high' : 'low'}
-        onError={(e: any) => {
-          if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
-            e.currentTarget.src = '/default_avatar.svg';
-          }
-        }}
       />
 
       {/* تم إزالة الشعار داخل الصورة بناءً على طلب المستخدم */}

@@ -13,6 +13,7 @@ import { useGrabScroll } from '@/hooks/useGrabScroll';
 import { useRoomManager } from '@/hooks/useRoomManager';
 import type { ChatRoom, ChatUser } from '@/types/chat';
 import { dedupeRooms } from '@/utils/roomUtils';
+import SafeImage from '@/components/ui/SafeImage';
 
 interface RoomComponentProps {
   // بيانات أساسية
@@ -76,7 +77,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
       className={`${compact ? 'w-6 h-6' : 'w-8 h-8'} rounded-lg overflow-hidden flex-shrink-0 bg-muted`}
     >
       {room.icon ? (
-        <img src={room.icon} alt={room.name} className="w-full h-full object-cover" />
+        <SafeImage srcInput={room.icon} fallbackSrc="/default_room.svg" alt={room.name} className="w-full h-full object-cover" />
       ) : (
         <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
           <span className={`${compact ? 'text-xs' : 'text-sm'} font-bold text-primary`}>
@@ -165,7 +166,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
         <CardHeader className="text-center pb-2">
           <div className="w-16 h-16 mx-auto mb-2 rounded-xl overflow-hidden border">
             {room.icon ? (
-              <img src={room.icon} alt={room.name} className="w-full h-full object-cover" />
+              <SafeImage srcInput={room.icon} fallbackSrc="/default_room.svg" alt={room.name} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
                 <span className="text-xl font-bold text-primary">{room.name.charAt(0)}</span>
@@ -220,7 +221,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
       <CardHeader className="text-center">
         <div className="w-20 h-20 mx-auto mb-4 rounded-xl overflow-hidden border">
           {room.icon ? (
-            <img src={room.icon} alt={room.name} className="w-full h-full object-cover" />
+            <SafeImage srcInput={room.icon} fallbackSrc="/default_room.svg" alt={room.name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
               <span className="text-2xl font-bold text-primary">{room.name.charAt(0)}</span>

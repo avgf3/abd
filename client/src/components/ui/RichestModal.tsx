@@ -4,6 +4,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getSocket } from '@/lib/socket';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import SafeImage from '@/components/ui/SafeImage';
 import { getFinalUsernameColor, getUserListItemClasses, getUserListItemStyles } from '@/utils/themeUtils';
 import ProfileImage from '@/components/chat/ProfileImage';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
@@ -311,8 +312,9 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
               <div className="space-y-2 max-h-32 overflow-y-auto">
                 {candidates.map((c) => (
                   <div key={c.id} className="flex items-center gap-2">
-                    <img
-                      src={getImageSrc(c.profileImage || '/default_avatar.svg')}
+                    <SafeImage
+                      srcInput={c.profileImage}
+                      fallbackSrc="/default_avatar.svg"
                       alt={c.username}
                       className="w-6 h-6 rounded-full"
                     />
