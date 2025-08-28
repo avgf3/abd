@@ -541,6 +541,26 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     } catch {}
   }, [preloadRichestModule, queryClient, isOwnerOrAdmin]);
 
+  // Global socket listener to keep VIP cache fresh even when modal is closed
+  useEffect(() => {
+    try {
+      const { getSocket } = require('@/lib/socket');
+      const s = getSocket();
+      const onMessage = (payload: any) => {
+        if (payload?.type === 'vipUpdated') {
+          try {
+            const users = Array.isArray(payload.users) ? payload.users.slice(0, 10) : [];
+            queryClient.setQueryData(['/api/vip'], { users });
+          } catch {}
+        }
+      };
+      s.on('message', onMessage);
+      return () => {
+        try { s.off('message', onMessage); } catch {}
+      };
+    } catch {}
+  }, [queryClient]);
+
   const SkeletonBlock = ({ className = '' }: { className?: string }) => (
     <div className={`animate-pulse bg-muted rounded ${className}`} />
   );
