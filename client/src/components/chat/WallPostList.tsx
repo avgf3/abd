@@ -1,3 +1,4 @@
+import React from 'react';
 import { Trash2, Globe } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ interface WallPostListProps {
   onDelete?: (postId: number) => void;
   onReact?: (postId: number, type: 'like' | 'dislike' | 'heart') => void;
   canDelete?: (post: WallPost) => boolean;
+  onUserClick?: (event: React.MouseEvent, user: ChatUser) => void;
 }
 
 export default function WallPostList({
@@ -25,6 +27,7 @@ export default function WallPostList({
   onDelete,
   onReact,
   canDelete,
+  onUserClick,
 }: WallPostListProps) {
   if (loading) {
     return (
@@ -78,8 +81,22 @@ export default function WallPostList({
                 </div>
                 <div>
                   <div
-                    className="font-bold text-base"
+                    className={`font-bold text-base ${onUserClick ? 'cursor-pointer hover:underline' : ''}`}
                     style={{ color: post.usernameColor || 'inherit' }}
+                    onClick={(e) => {
+                      if (!onUserClick) return;
+                      const targetUser: ChatUser = {
+                        id: post.userId,
+                        username: post.username,
+                        role: (post.userRole as any) || 'member',
+                        userType: post.userRole || 'member',
+                        isOnline: true,
+                        profileImage: post.userProfileImage,
+                        usernameColor: post.usernameColor,
+                      } as ChatUser;
+                      onUserClick(e, targetUser);
+                    }}
+                    title="عرض خيارات المستخدم"
                   >
                     {post.username}
                   </div>

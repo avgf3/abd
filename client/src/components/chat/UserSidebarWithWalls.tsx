@@ -774,8 +774,21 @@ export default function UnifiedSidebar({
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <span
-                                className="font-medium text-sm"
+                                className="font-medium text-sm cursor-pointer hover:underline"
                                 style={{ color: post.usernameColor || 'inherit' }}
+                                onClick={(e) => {
+                                  const targetUser: ChatUser = {
+                                    id: post.userId,
+                                    username: post.username,
+                                    role: (post.userRole as any) || 'member',
+                                    userType: post.userRole || 'member',
+                                    isOnline: true,
+                                    profileImage: post.userProfileImage,
+                                    usernameColor: post.usernameColor,
+                                  } as ChatUser;
+                                  handleUserClick(e as any, targetUser);
+                                }}
+                                title="عرض خيارات المستخدم"
                               >
                                 {post.username}
                               </span>
