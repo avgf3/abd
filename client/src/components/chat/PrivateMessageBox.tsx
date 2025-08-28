@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 // Removed ComposerPlusMenu (ready/quick options)
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
 import type { ChatMessage, ChatUser } from '@/types/chat';
+import ProfileImage from '@/components/chat/ProfileImage';
 import {
   sortMessagesAscending,
   getDynamicBorderColor,
@@ -328,14 +329,11 @@ export default function PrivateMessageBox({
         >
           <DialogHeader className="border-b border-gray-200 p-3 bg-white">
             <div className="flex items-center gap-3">
-              <img
-                src={user.profileImage || '/default_avatar.svg'}
-                alt="avatar"
-                className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-200 border border-blue-400 cursor-pointer hover:opacity-90 transition"
-                onClick={handleViewProfileClick}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/default_avatar.svg';
-                }}
+              <ProfileImage
+                user={user}
+                size="small"
+                className="w-10 h-10 cursor-pointer hover:opacity-90 transition"
+                onClick={() => handleViewProfileClick()}
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
@@ -432,13 +430,10 @@ export default function PrivateMessageBox({
                         ),
                       }}
                     >
-                      <img
-                        src={(m.sender?.profileImage as string) || '/default_avatar.svg'}
-                        alt="avatar"
-                        className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/default_avatar.svg';
-                        }}
+                      <ProfileImage
+                        user={(m.sender as ChatUser) || (isMe && currentUser ? (currentUser as ChatUser) : user)}
+                        size="small"
+                        className="w-8 h-8"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
