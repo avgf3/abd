@@ -277,6 +277,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updateConnectedUserCache(updatedUser);
         } catch {}
 
+        // بث فوري عبر Socket لتحديث الأفاتار في جميع الواجهات
+        try {
+          const { getIO } = await import('./socket');
+          const io = getIO();
+          // إرسال حدث خاص بالأفاتار لتسريع التزامن مع تقليل الحمولة
+          io.to(userId.toString()).emit('message', {
+            type: 'selfAvatarUpdated',
+            avatarHash: processedImage.metadata.hash,
+            avatarVersion: processedImage.metadata.version || undefined,
+          });
+          // بث إلى الغرف التي يتواجد فيها المستخدم قائمة المتصلين المحدّثة
+          try {
+            const { roomService } = await import('./services/roomService');
+            const { default: realtime } = await import('./realtime');
+          } catch {}
+        } catch {}
+
         // إرسال الاستجابة (بدون ترويسات كاش طويلة على JSON)
         res.set('Cache-Control', 'no-store');
         res.json({ 

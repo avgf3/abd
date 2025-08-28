@@ -15,6 +15,7 @@ import {
   buildProfileBackgroundGradient,
 } from '@/utils/themeUtils';
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
+import ProfileImage from './ProfileImage';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -2075,31 +2076,24 @@ export default function ProfileModal({
             )}
 
             <div className="profile-avatar">
-              <img
-                src={getProfileImageSrcLocal()}
-                alt="الصورة الشخصية"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  display: 'block',
-                  transition: 'none',
-                  backfaceVisibility: 'hidden',
-                  transform: 'translateZ(0)',
-                }}
-                onLoad={(e) => {}}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  console.error('❌ فشل في تحميل صورة البروفايل:', target.src);
-                  // منع إعادة التحميل المستمر عند الخطأ
-                  if (
-                    target.src !== '/default_avatar.svg' &&
-                    !target.src.includes('default_avatar.svg')
-                  ) {
-                    target.src = '/default_avatar.svg';
-                  }
-                }}
-              />
+              {/* استخدام المكوّن الموحد لعرض الأفاتار لضمان الاتساق */}
+              {localUser ? (
+                <ProfileImage user={localUser as any} size="large" className="w-full h-full" />
+              ) : (
+                <img
+                  src={getProfileImageSrcLocal()}
+                  alt="الصورة الشخصية"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                    transition: 'none',
+                    backfaceVisibility: 'hidden',
+                    transform: 'translateZ(0)',
+                  }}
+                />
+              )}
             </div>
 
             {localUser?.id === currentUser?.id && (

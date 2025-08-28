@@ -50,9 +50,12 @@ export default function ProfileImage({
   // مصدر الصورة مع دعم ?v=hash إذا وُجد
   const imageSrc = useMemo(() => {
     const base = getImageSrc(user.profileImage, '/default_avatar.svg');
-    const v = (user as any)?.avatarHash || (user as any)?.avatarVersion;
-    if (base && v && !String(base).includes('?v=')) {
-      return `${base}?v=${v}`;
+    // لا تضف ?v عندما يكون base عبارة عن data:base64 أو يحتوي بالفعل على v
+    const isBase64 = typeof base === 'string' && base.startsWith('data:');
+    const hasVersionAlready = typeof base === 'string' && base.includes('?v=');
+    const versionTag = (user as any)?.avatarHash || (user as any)?.avatarVersion;
+    if (!isBase64 && versionTag && !hasVersionAlready && typeof base === 'string' && base.startsWith('/')) {
+      return `${base}?v=${versionTag}`;
     }
     return base;
   }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
