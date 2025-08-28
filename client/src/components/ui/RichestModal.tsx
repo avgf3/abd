@@ -124,7 +124,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
       setError(null);
       if (!vipUsers.length) setLoading(true);
       try {
-        const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip`, { signal: controller.signal });
+        const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip?limit=10`, { signal: controller.signal });
         if (!ignore) {
           const normalized = normalizeUsers(res.users || []);
           setVipUsers(normalized);
@@ -179,7 +179,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
     try {
       setError(null);
       await apiRequest(`/api/vip`, { method: 'POST', body: { targetUserId: userId } });
-      const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip`);
+      const res = await apiRequest<{ users: ChatUser[] }>(`/api/vip?limit=10`);
       setVipUsers(normalizeUsers(res.users || []));
     } catch (e: any) {
       setError(e?.message || 'فشل إضافة VIP. تأكد من اتصال قاعدة البيانات.');

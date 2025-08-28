@@ -479,21 +479,67 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
   const [showRichest, setShowRichest] = useState(false);
 
-  // Prefetch VIP data shortly after mount
+  // Preload RichestModal chunk and prefetch VIP data on idle
+  const preloadRichestModule = useCallback(() => {
+    try {
+      // Vite will cache this dynamic import and load the chunk ahead of time
+      // Ignore returned promise; we just want to warm the chunk
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      import('@/components/ui/RichestModal');
+    } catch {}
+  }, []);
+
   useEffect(() => {
-    const t = setTimeout(async () => {
+    const runOnIdle = (cb: () => void, timeout = 1200) => {
       try {
-        await queryClient.prefetchQuery({ queryKey: ['/api/vip'], queryFn: () => apiRequest('/api/vip') });
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+          (window as any).requestIdleCallback(cb, { timeout });
+          return;
+        }
       } catch {}
-    }, 800);
-    return () => clearTimeout(t);
-  }, [queryClient]);
+      setTimeout(cb, timeout);
+    };
+
+    runOnIdle(async () => {
+      try {
+        preloadRichestModule();
+        await queryClient.prefetchQuery({
+          queryKey: ['/api/vip'],
+          queryFn: () => apiRequest('/api/vip?limit=10'),
+          staleTime: 5 * 60 * 1000,
+          gcTime: 10 * 60 * 1000,
+        });
+        if (isOwnerOrAdmin) {
+          await queryClient.prefetchQuery({
+            queryKey: ['/api/vip/candidates'],
+            queryFn: () => apiRequest('/api/vip/candidates'),
+            staleTime: 5 * 60 * 1000,
+            gcTime: 10 * 60 * 1000,
+          });
+        }
+      } catch {}
+    }, 400);
+  }, [preloadRichestModule, queryClient, isOwnerOrAdmin]);
 
   const prefetchVip = useCallback(async () => {
     try {
-      await queryClient.prefetchQuery({ queryKey: ['/api/vip'], queryFn: () => apiRequest('/api/vip') });
+      preloadRichestModule();
+      await queryClient.prefetchQuery({
+        queryKey: ['/api/vip'],
+        queryFn: () => apiRequest('/api/vip?limit=10'),
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
+      });
+      if (isOwnerOrAdmin) {
+        await queryClient.prefetchQuery({
+          queryKey: ['/api/vip/candidates'],
+          queryFn: () => apiRequest('/api/vip/candidates'),
+          staleTime: 5 * 60 * 1000,
+          gcTime: 10 * 60 * 1000,
+        });
+      }
     } catch {}
-  }, [queryClient]);
+  }, [preloadRichestModule, queryClient, isOwnerOrAdmin]);
 
   const SkeletonBlock = ({ className = '' }: { className?: string }) => (
     <div className={`animate-pulse bg-muted rounded ${className}`} />
@@ -1280,7 +1326,28 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {chat.currentUser && <WelcomeNotification user={chat.currentUser} />}
 
       {/* نافذة الأثرياء */}
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 modal-overlay" />
+            <div className="relative w-[90vw] max-w-[20rem] sm:max-w-[22rem] bg-card rounded-xl overflow-hidden shadow-2xl">
+              <div className="bg-primary p-3">
+                <div className="animate-pulse h-6 w-32 bg-white/30 rounded" />
+              </div>
+              <div className="p-3 space-y-2">
+                <div className="animate-pulse h-10 bg-muted rounded" />
+                <div className="animate-pulse h-10 bg-muted rounded" />
+                <div className="animate-pulse h-10 bg-muted rounded" />
+                <div className="animate-pulse h-10 bg-muted rounded" />
+                <div className="animate-pulse h-10 bg-muted rounded" />
+                <div className="animate-pulse h-10 bg-muted rounded" />
+                <div className="animate-pulse h-10 bg-muted rounded" />
+                <div className="animate-pulse h-10 bg-muted rounded" />
+              </div>
+            </div>
+          </div>
+        }
+      >
         <RichestModal
           isOpen={showRichest}
           onClose={() => setShowRichest(false)}
