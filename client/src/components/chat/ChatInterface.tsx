@@ -1131,6 +1131,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             messages={chat.privateConversations[selectedPrivateUser.id] || []}
             onSendMessage={(content) => chat.sendMessage(content, 'text', selectedPrivateUser.id)}
             onLoadMore={() => (chat as any).loadOlderPrivateConversation?.(selectedPrivateUser.id, 20)}
+            onViewProfile={(u) => handleViewProfile(u)}
           />
         </Suspense>
       )}

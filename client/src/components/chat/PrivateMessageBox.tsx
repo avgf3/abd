@@ -29,6 +29,7 @@ interface PrivateMessageBoxProps {
   onSendMessage: (content: string) => void;
   onClose: () => void;
   onLoadMore?: () => Promise<{ addedCount: number; hasMore: boolean }>; // تحميل رسائل أقدم
+  onViewProfile?: (user: ChatUser) => void;
 }
 
 export default function PrivateMessageBox({
@@ -39,6 +40,7 @@ export default function PrivateMessageBox({
   onSendMessage,
   onClose,
   onLoadMore,
+  onViewProfile,
 }: PrivateMessageBoxProps) {
   const [messageText, setMessageText] = useState('');
   const [isAtBottomPrivate, setIsAtBottomPrivate] = useState(true);
@@ -52,6 +54,12 @@ export default function PrivateMessageBox({
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { textColor: composerTextColor, bold: composerBold } = useComposerStyle();
+
+  const handleViewProfileClick = useCallback(() => {
+    try {
+      onViewProfile && onViewProfile(user);
+    } catch {}
+  }, [onViewProfile, user]);
 
   // YouTube modal state
   const [youtubeModal, setYoutubeModal] = useState<{ open: boolean; videoId: string | null }>(
@@ -323,7 +331,8 @@ export default function PrivateMessageBox({
               <img
                 src={user.profileImage || '/default_avatar.svg'}
                 alt="avatar"
-                className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-200 border border-blue-400"
+                className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-200 border border-blue-400 cursor-pointer hover:opacity-90 transition"
+                onClick={handleViewProfileClick}
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/default_avatar.svg';
                 }}
@@ -332,7 +341,16 @@ export default function PrivateMessageBox({
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <span
-                      className="text-base font-medium transition-all duration-300 truncate"
+                      className="text-base font-medium transition-all duration-300 truncate cursor-pointer hover:underline"
+                      onClick={handleViewProfileClick}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleViewProfileClick();
+                        }
+                      }}
                       style={{
                         color: getFinalUsernameColor(user),
                         textShadow: getFinalUsernameColor(user)
