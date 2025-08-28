@@ -32,8 +32,23 @@ try {
 } catch {}
 
 export default function ChatPage() {
-  const [showWelcome, setShowWelcome] = useState(true);
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  // تهيئة الحالة من الجلسة بشكل متزامن لمنع وميض شاشة الترحيب عند إعادة التحميل
+  const initialSession = (() => {
+    try {
+      return getSession();
+    } catch {
+      return {} as any;
+    }
+  })();
+  const hasSavedUser = !!(initialSession as any)?.userId;
+
+  const [showWelcome, setShowWelcome] = useState(!hasSavedUser);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(() => {
+    if (!hasSavedUser) return null;
+    const roomId = (initialSession as any)?.roomId;
+    return roomId && roomId !== 'public' && roomId !== 'friends' ? roomId : 'general';
+  });
+  const [isRestoring, setIsRestoring] = useState<boolean>(hasSavedUser);
   const chat = useChat();
 
   // استرجاع الجلسة والغرفة بعد إعادة التحميل
@@ -41,7 +56,10 @@ export default function ChatPage() {
     try {
       const session = getSession();
       const savedUserId = session?.userId;
-      if (!savedUserId) return;
+      if (!savedUserId) {
+        setIsRestoring(false);
+        return;
+      }
 
       // جلب بيانات المستخدم من الخادم لضمان توافق الشكل
       apiRequest(`/api/users/${savedUserId}`)
@@ -56,8 +74,11 @@ export default function ChatPage() {
           setSelectedRoomId(roomId);
           chat.joinRoom(roomId);
         })
-        .catch(() => {});
-    } catch {}
+        .catch(() => {})
+        .finally(() => setIsRestoring(false));
+    } catch {
+      setIsRestoring(false);
+    }
   }, []);
 
   const handleUserLogin = (user: ChatUser) => {
@@ -83,7 +104,9 @@ export default function ChatPage() {
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo']" dir="rtl">
       <Suspense fallback={<div className="p-6 text-center">...جاري التحميل</div>}>
-        {showWelcome ? (
+        {isRestoring ? (
+          <div className="p-6 text-center">...جاري استعادة الجلسة</div>
+        ) : showWelcome ? (
           <WelcomeScreen onUserLogin={handleUserLogin} />
         ) : selectedRoomId ? (
           <ChatInterface chat={chat} onLogout={handleLogout} />
