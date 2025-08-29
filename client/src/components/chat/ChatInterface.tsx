@@ -484,8 +484,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     try {
       // Vite will cache this dynamic import and load the chunk ahead of time
       // Ignore returned promise; we just want to warm the chunk
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      import('@/components/ui/RichestModal');
+      void import('@/components/ui/RichestModal');
     } catch {}
   }, []);
 

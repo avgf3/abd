@@ -88,7 +88,6 @@ export async function initializeDatabase(): Promise<boolean> {
       onnotice: () => {}, // تجاهل الإشعارات
       // إضافة إعدادات إضافية للاستقرار
       fetch_types: false, // تحسين الأداء
-      types: false, // تحسين الأداء
     });
 
     const drizzleDb = drizzle(client, { schema, logger: false });

@@ -248,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'avatar',
           originalName: req.file.originalname,
           mimeType: req.file.mimetype,
-          priority: 'balanced'
+          priority: (await import('./services/smartImageService')).StoragePriority.BALANCED
         });
 
         // تنظيف الملف المؤقت
@@ -279,18 +279,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // بث فوري عبر Socket لتحديث الأفاتار في جميع الواجهات
         try {
-          const { getIO } = await import('./socket');
+          const { getIO } = await import('./realtime');
           const io = getIO();
-          // إرسال حدث خاص بالأفاتار لتسريع التزامن مع تقليل الحمولة
           io.to(userId.toString()).emit('message', {
             type: 'selfAvatarUpdated',
             avatarHash: processedImage.metadata.hash,
             avatarVersion: processedImage.metadata.version || undefined,
           });
-          // بث إلى الغرف التي يتواجد فيها المستخدم قائمة المتصلين المحدّثة
           try {
             const { roomService } = await import('./services/roomService');
-            const { default: realtime } = await import('./realtime');
+            void roomService; // silence unused if tree-shaken
           } catch {}
         } catch {}
 
@@ -309,9 +307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
 
-        console.log(`✅ رفع صورة بروفايل بنجاح - المستخدم: ${userId}, النوع: ${processedImage.storageType}, الحجم: ${processedImage.metadata.size} bytes`);
-        
-      } catch (error: any) {
+        } catch (error: any) {
         console.error('❌ خطأ في رفع صورة البروفايل:', error);
         
         // تنظيف الملف المؤقت في حالة الخطأ
@@ -375,7 +371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'banner',
           originalName: req.file.originalname,
           mimeType: req.file.mimetype,
-          priority: 'balanced'
+          priority: (await import('./services/smartImageService')).StoragePriority.BALANCED
         });
 
         // تنظيف الملف المؤقت
@@ -419,9 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
 
-        console.log(`✅ رفع صورة بانر بنجاح - المستخدم: ${userId}, النوع: ${processedImage.storageType}, الحجم: ${processedImage.metadata.size} bytes`);
-        
-      } catch (error: any) {
+        } catch (error: any) {
         console.error('❌ خطأ في رفع صورة البانر:', error);
         
         // تنظيف الملف المؤقت في حالة الخطأ

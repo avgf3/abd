@@ -19,10 +19,7 @@ if (process.env.NODE_ENV === 'production') {
     try {
       if (global.gc) {
         global.gc();
-        console.log('✅ تم تنظيف الذاكرة:', {
-          memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
-        });
-      }
+        }
     } catch (error) {
       console.warn('⚠️ تعذر تنظيف الذاكرة:', error);
     }

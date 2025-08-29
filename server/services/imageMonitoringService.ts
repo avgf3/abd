@@ -483,7 +483,7 @@ class ImageMonitoringService {
         }
         break;
         
-      case 'cache_miss':
+      case 'cache_miss': {
         const recentCacheMetrics = this.getMetrics({ metric: 'cache_hit', timeframe: '1h' });
         const recentMisses = this.getMetrics({ metric: 'cache_miss', timeframe: '1h' });
         const totalCache = recentCacheMetrics.length + recentMisses.length;
@@ -494,6 +494,7 @@ class ImageMonitoringService {
           }
         }
         break;
+      }
     }
   }
 
@@ -580,8 +581,7 @@ class ImageMonitoringService {
     this.metrics = this.metrics.filter(m => m.timestamp > cutoff);
     this.errors = this.errors.filter(e => e.timestamp > cutoff);
     
-    console.log(`🧹 تنظيف بيانات المراقبة: ${this.metrics.length} metrics, ${this.errors.length} errors`);
-  }
+    }
 
   /**
    * 📊 حساب حجم المجلد

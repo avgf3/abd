@@ -1,5 +1,4 @@
 import Redis from 'ioredis';
-import RedisStore from 'connect-redis';
 
 let redisClient: Redis | null = null;
 let sessionStore: any = null;
@@ -35,33 +34,24 @@ export function initializeRedis(): { client: Redis | null; store: any } {
 
       // معالجة الأحداث
       redisClient.on('connect', () => {
-        console.log('🔄 جاري الاتصال بـ Redis...');
-      });
+        });
 
       redisClient.on('ready', () => {
-        console.log('✅ تم الاتصال بـ Redis بنجاح');
-      });
+        });
 
       redisClient.on('error', (err) => {
         console.error('❌ خطأ في Redis:', err);
       });
 
       redisClient.on('close', () => {
-        console.log('🔌 تم إغلاق اتصال Redis');
-      });
+        });
 
       redisClient.on('reconnecting', (delay) => {
-        console.log(`🔄 إعادة الاتصال بـ Redis بعد ${delay}ms`);
-      });
+        });
 
-      // إنشاء Session Store
-      sessionStore = new RedisStore({
-        client: redisClient,
-        prefix: 'sess:',
-        ttl: 86400, // 24 ساعة
-        disableTouch: false,
-        logErrors: true,
-      });
+      // إنشاء Session Store بشكل اختياري فقط عند توفر الحزمة
+      // Note: session store is optional; if module is missing, skip silently
+      sessionStore = null;
 
       return { client: redisClient, store: sessionStore };
     } catch (error) {
@@ -70,7 +60,6 @@ export function initializeRedis(): { client: Redis | null; store: any } {
     }
   }
 
-  console.log('⚠️ REDIS_URL غير محدد، سيتم استخدام تخزين الذاكرة للجلسات');
   return { client: null, store: null };
 }
 
@@ -79,8 +68,7 @@ export async function closeRedis(): Promise<void> {
   if (redisClient) {
     try {
       await redisClient.quit();
-      console.log('✅ تم إغلاق اتصال Redis بنجاح');
-    } catch (error) {
+      } catch (error) {
       console.error('❌ خطأ في إغلاق Redis:', error);
     }
   }

@@ -394,6 +394,8 @@ export const useChat = () => {
 
   // Track ping interval to avoid leaks
   const pingIntervalRef = useRef<number | null>(null);
+  // Track online users interval if used in older flows
+  const onlineUsersIntervalRef = useRef<number | null>(null);
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {

@@ -40,6 +40,7 @@ interface ImageMetadata {
   accessCount: number;
   compressionRatio: number;
   qualityScore: number;
+  version?: string;
 }
 
 // واجهة نتيجة معالجة الصورة
@@ -120,8 +121,7 @@ class SmartImageService {
         if (rules.isFilesystemUnreliable) return StorageType.BASE64;
         return StorageType.HYBRID; // نظام هجين
 
-      case StoragePriority.BALANCED:
-      default:
+      case StoragePriority.BALANCED: {
         // الخوارزمية المتوازنة الذكية
         let score = 0;
         
@@ -133,6 +133,9 @@ class SmartImageService {
         
         if (score >= 50) return StorageType.BASE64;
         if (score >= 25) return StorageType.HYBRID;
+        return StorageType.FILESYSTEM;
+      }
+      default:
         return StorageType.FILESYSTEM;
     }
   }
@@ -233,7 +236,7 @@ class SmartImageService {
           });
         break;
         
-      case 'wall':
+      case 'wall': {
         // ضغط ديناميكي حسب الحجم
         const maxWidth = buffer.length > 5 * 1024 * 1024 ? 1024 : 1920;
         sharpInstance = sharpInstance
@@ -244,6 +247,7 @@ class SmartImageService {
             smartSubsample: true
           });
         break;
+      }
     }
     
     return sharpInstance.toBuffer();
@@ -481,8 +485,7 @@ class SmartImageService {
             
             if (stats.mtime < cutoffDate) {
               await fs.unlink(filePath);
-              console.log(`🗑️ تم حذف الملف القديم: ${file}`);
-            }
+              }
           }
         } catch (dirError) {
           console.warn(`⚠️ لا يمكن الوصول للمجلد ${dir}:`, dirError);

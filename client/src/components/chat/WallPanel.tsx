@@ -97,6 +97,40 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
   }, [wallData, isFetching]);
 
   // إعداد Socket.IO للتحديثات الفورية
+  const stableHandleWallMessage = useCallback((message: any) => {
+    if (message.type === 'newWallPost') {
+      const postType = message.wallType || message.post?.type || 'public';
+      if (postType === activeTab) {
+        setPosts((prevPosts) => [message.post, ...prevPosts]);
+        queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+          const oldPosts = old?.posts || [];
+          return { ...(old || {}), posts: [message.post, ...oldPosts] };
+        });
+        toast({
+          title: 'منشور جديد ✨',
+          description: `منشور جديد من ${message.post.username}`,
+        });
+      }
+    } else if (message.type === 'wallPostReaction') {
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => (post.id === message.post.id ? message.post : post))
+      );
+      queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+        const oldPosts: WallPost[] = old?.posts || [];
+        return {
+          ...(old || {}),
+          posts: oldPosts.map((p) => (p.id === message.post.id ? message.post : p)),
+        };
+      });
+    } else if (message.type === 'wallPostDeleted') {
+      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== message.postId));
+      queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
+        const oldPosts: WallPost[] = old?.posts || [];
+        return { ...(old || {}), posts: oldPosts.filter((p) => p.id !== message.postId) };
+      });
+    }
+  }, [activeTab, currentUser.id, queryClient, toast]);
+
   useEffect(() => {
     if (isOpen && !socket.current) {
       // استخدام Socket الموحد
@@ -107,52 +141,19 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
       saveSession({ wallTab: activeTab });
 
       // معالج المنشورات الجديدة
-      const handleWallMessage = (message: any) => {
-        if (message.type === 'newWallPost') {
-          const postType = message.wallType || message.post?.type || 'public';
-          if (postType === activeTab) {
-            setPosts((prevPosts) => [message.post, ...prevPosts]);
-            // تحديث الكاش
-            queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
-              const oldPosts = old?.posts || [];
-              return { ...(old || {}), posts: [message.post, ...oldPosts] };
-            });
-            toast({
-              title: 'منشور جديد ✨',
-              description: `منشور جديد من ${message.post.username}`,
-            });
-          }
-        } else if (message.type === 'wallPostReaction') {
-          setPosts((prevPosts) =>
-            prevPosts.map((post) => (post.id === message.post.id ? message.post : post))
-          );
-          queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
-            const oldPosts: WallPost[] = old?.posts || [];
-            return {
-              ...(old || {}),
-              posts: oldPosts.map((p) => (p.id === message.post.id ? message.post : p)),
-            };
-          });
-        } else if (message.type === 'wallPostDeleted') {
-          setPosts((prevPosts) => prevPosts.filter((post) => post.id !== message.postId));
-          queryClient.setQueryData(['/api/wall/posts', activeTab, currentUser.id], (old: any) => {
-            const oldPosts: WallPost[] = old?.posts || [];
-            return { ...(old || {}), posts: oldPosts.filter((p) => p.id !== message.postId) };
-          });
-        }
-      };
-      
-      s.on('message', handleWallMessage);
+      s.on('message', stableHandleWallMessage);
     }
 
     return () => {
       if (socket.current) {
         // لا نفصل الاتصال العام، فقط نزيل المستمع المحلي
-        socket.current.off('message', handleWallMessage);
+        try {
+          socket.current.off('message', stableHandleWallMessage);
+        } catch {}
         socket.current = null;
       }
     };
-  }, [isOpen, activeTab, toast]);
+  }, [isOpen, activeTab, toast, stableHandleWallMessage]);
 
   // معالجة اختيار الصورة مع تحسينات احترافية
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
