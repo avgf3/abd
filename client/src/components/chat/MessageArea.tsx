@@ -10,6 +10,7 @@ const AnimatedEmojiEnhanced = React.lazy(() => import('./AnimatedEmojiEnhanced')
 const ComposerPlusMenu = React.lazy(() => import('./ComposerPlusMenu'));
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
+import SafeImage from '@/components/ui/SafeImage';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -488,16 +489,11 @@ export default function MessageArea({
                             const hash = snap?.hash;
                             const final = url && hash ? `${url}?v=${hash}` : (message.sender?.profileImage || '/default_avatar.svg');
                             return (
-                              <img
-                                src={final}
+                              <SafeImage
+                                srcInput={final}
                                 alt={`صورة ${message.sender?.username || ''}`}
                                 className={"w-7 h-7 rounded-full ring-2 shadow-sm object-cover cursor-pointer hover:scale-110 transition-transform duration-200"}
                                 loading="lazy"
-                                onError={(e: any) => {
-                                  if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
-                                    e.currentTarget.src = '/default_avatar.svg';
-                                  }
-                                }}
                                 onClick={(e) => onUserClick && message.sender && onUserClick(e, message.sender)}
                               />
                             );

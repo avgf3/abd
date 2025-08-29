@@ -25,6 +25,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
 import type { WallPost, CreateWallPostData, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import SafeImage from '@/components/ui/SafeImage';
 import UserPopup from '@/components/chat/UserPopup';
 
 interface WallPanelProps {
@@ -414,8 +415,8 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
                         {currentUser.profileImage ? (
-                          <img
-                            src={getImageSrc(currentUser.profileImage)}
+                          <SafeImage
+                            srcInput={getImageSrc(currentUser.profileImage)}
                             alt={currentUser.username}
                             className="w-10 h-10 rounded-full object-cover"
                           />

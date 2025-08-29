@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import SafeImage from '@/components/ui/SafeImage';
 
 interface ModerationPanelProps {
   isOpen: boolean;
@@ -347,8 +348,8 @@ export default function ModerationPanel({
                   <div key={user.id} className="border rounded-lg p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={getImageSrc(user.profileImage)}
+                        <SafeImage
+                          srcInput={getImageSrc(user.profileImage)}
                           alt={user.username}
                           className="w-10 h-10 rounded-full"
                         />
@@ -408,8 +409,8 @@ export default function ModerationPanel({
                     <div key={user.id} className="border border-red-200 rounded-lg p-3 bg-red-50">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <img
-                            src={getImageSrc(user.profileImage)}
+                          <SafeImage
+                            srcInput={getImageSrc(user.profileImage)}
                             alt={user.username}
                             className="w-10 h-10 rounded-full opacity-50"
                           />

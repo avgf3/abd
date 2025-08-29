@@ -34,6 +34,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getSocket, saveSession } from '@/lib/socket';
 import type { ChatUser, WallPost, CreateWallPostData, ChatRoom } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import SafeImage from '@/components/ui/SafeImage';
 import {
   getUserEffectStyles,
   getUserEffectClasses,
@@ -762,8 +763,8 @@ export default function UnifiedSidebar({
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                             {post.userProfileImage ? (
-                              <img
-                                src={getImageSrc(post.userProfileImage)}
+                              <SafeImage
+                                srcInput={getImageSrc(post.userProfileImage)}
                                 alt={post.username}
                                 className="w-full h-full object-cover"
                               />

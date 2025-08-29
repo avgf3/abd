@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
+import SafeImage from '@/components/ui/SafeImage';
 import { formatDateTime } from '@/utils/timeUtils';
 
 interface ModerationAction {
@@ -569,8 +570,8 @@ export default function OwnerAdminPanel({
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
                             <div className="relative">
-                              <img
-                                src={getImageSrc(staff.profileImage)}
+                              <SafeImage
+                                srcInput={getImageSrc(staff.profileImage)}
                                 alt={staff.username}
                                 className="w-14 h-14 rounded-full ring-2 ring-purple-200 object-cover"
                               />

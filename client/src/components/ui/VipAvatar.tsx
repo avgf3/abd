@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import SafeImage from '@/components/ui/SafeImage';
 
 interface VipAvatarProps {
   src: string;
@@ -36,7 +37,7 @@ export default function VipAvatar({
   return (
     <div className={`vip-frame base ${`vip-frame-${frame}`} ${className}`} style={containerStyle}>
       <div className="vip-frame-inner">
-        <img src={src} alt={alt} className="vip-frame-img" style={imgStyle} />
+        <SafeImage srcInput={src} alt={alt} className="vip-frame-img" style={imgStyle} />
       </div>
     </div>
   );
