@@ -1,7 +1,9 @@
 import { User, Home, Moon, Shield, LogOut, Settings, Palette, Brush } from 'lucide-react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import ProfileCard from '@/components/profile/ProfileCard';
 import { getFinalUsernameColor, getUserListItemStyles } from '@/utils/themeUtils';
 
 interface SettingsMenuProps {
@@ -25,13 +27,20 @@ export default function SettingsMenu({
   onOpenIgnoredUsers,
   currentUser,
 }: SettingsMenuProps) {
+  const [showProfileCard, setShowProfileCard] = useState(false);
+  
   const handleLogout = () => {
     if (confirm('🤔 هل أنت متأكد من تسجيل الخروج؟')) {
       onLogout();
     }
   };
 
+  const handleOpenProfile = () => {
+    setShowProfileCard(true);
+  };
+
   return (
+    <>
     <Card className="fixed top-20 right-4 z-50 shadow-2xl animate-fade-in w-56 bg-card/95 backdrop-blur-md border-accent">
       <CardContent className="p-0">
         {currentUser && (
@@ -47,7 +56,7 @@ export default function SettingsMenu({
         {/* القسم الأول - الملف الشخصي */}
         <div className="p-3 border-b border-border">
           <Button
-            onClick={onOpenProfile}
+            onClick={handleOpenProfile}
             variant="ghost"
             size="sm"
             className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
@@ -130,5 +139,20 @@ export default function SettingsMenu({
         </div>
       </CardContent>
     </Card>
+
+    {/* عرض بطاقة الملف الشخصي الكاملة */}
+    {showProfileCard && currentUser && (
+      <ProfileCard
+        user={currentUser}
+        currentUser={currentUser}
+        onClose={() => setShowProfileCard(false)}
+        isEmbedded={false}
+        showActions={false}
+        onUpdate={(updatedUser) => {
+          // يمكن تحديث المستخدم الحالي هنا إذا لزم الأمر
+        }}
+      />
+    )}
+    </>
   );
 }
