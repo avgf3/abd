@@ -399,6 +399,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   };
 
   const handleViewProfile = (user: ChatUser) => {
+    console.log('🔍 بيانات user من قائمة المستخدمين:', {
+      id: user.id,
+      username: user.username,
+      profileImage: user.profileImage ? 'موجودة' : 'غير موجودة',
+      profileBanner: user.profileBanner ? 'موجودة' : 'غير موجودة',
+      hasBase64Image: user.profileImage?.startsWith('data:'),
+      hasBase64Banner: user.profileBanner?.startsWith('data:')
+    });
     setProfileUser(user);
     setShowProfile(true);
     closeUserPopup();
@@ -1163,6 +1171,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onOpenProfile={() => {
               // افتح فوراً ببيانات المستخدم الحالية لسرعة الاستجابة
               if (chat.currentUser) {
+                console.log('🔍 بيانات currentUser من الإعدادات:', {
+                  id: chat.currentUser.id,
+                  username: chat.currentUser.username,
+                  profileImage: chat.currentUser.profileImage ? 'موجودة' : 'غير موجودة',
+                  profileBanner: chat.currentUser.profileBanner ? 'موجودة' : 'غير موجودة',
+                  hasBase64Image: chat.currentUser.profileImage?.startsWith('data:'),
+                  hasBase64Banner: chat.currentUser.profileBanner?.startsWith('data:')
+                });
                 setProfileUser(chat.currentUser);
               }
               setShowProfile(true);
@@ -1176,6 +1192,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                     try {
                       const data = await apiRequest(`/api/users/${userId}?t=${Date.now()}`);
                       if (data && (data as any).id) {
+                        console.log('🔍 بيانات API response:', {
+                          id: (data as any).id,
+                          username: (data as any).username,
+                          profileImage: (data as any).profileImage ? 'موجودة' : 'غير موجودة',
+                          profileBanner: (data as any).profileBanner ? 'موجودة' : 'غير موجودة',
+                          hasBase64Image: (data as any).profileImage?.startsWith('data:'),
+                          hasBase64Banner: (data as any).profileBanner?.startsWith('data:')
+                        });
                         setProfileUser(data as any);
                       }
                     } catch {}
