@@ -1954,10 +1954,10 @@ export default function ProfileModal({
       `}</style>
 
       {/* Modal Background - completely transparent */}
-      <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Main Modal */}
-      <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 pb-4 px-4 overflow-y-auto">
+      <div className="fixed inset-0 z-[200] flex items-start justify-center pt-8 pb-4 px-4 overflow-y-auto">
         <div
           className={`profile-card ${selectedEffect}`}
           style={{

@@ -350,7 +350,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const handleDirectProfileOpen = (user: ChatUser) => {
     setProfileUser(user);
     setShowProfile(true);
+    // إغلاق أي نوافذ أخرى قد تتداخل مع عرض الملف الشخصي
     closeUserPopup();
+    try { setShowRichest(false); } catch {}
+    try { setShowSettings(false); } catch {}
   };
 
   const closeUserPopup = () => {
