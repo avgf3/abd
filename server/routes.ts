@@ -2971,10 +2971,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
-      // إرجاع بيانات المستخدم بدون كلمة المرور مع تنظيف البيانات
+      // التحقق من هوية الطالب - إذا كان يطلب بياناته الخاصة
+      const authToken = getAuthTokenFromRequest(req);
+      const verified = authToken ? verifyAuthToken(authToken) : null;
+      const isOwnProfile = verified && verified.userId === userId;
+
       const { password, ...userWithoutPassword } = user;
-      const payload = buildUserBroadcastPayload(userWithoutPassword);
-      res.json(payload);
+      
+      if (isOwnProfile) {
+        // إذا كان المستخدم يطلب بياناته الخاصة، أرجع كل شيء بما فيها base64
+        const sanitized = sanitizeUserData(userWithoutPassword);
+        res.json(sanitized);
+      } else {
+        // للمستخدمين الآخرين، استخدم buildUserBroadcastPayload لتجنب base64
+        const payload = buildUserBroadcastPayload(userWithoutPassword);
+        res.json(payload);
+      }
     } catch (error) {
       console.error('❌ خطأ في جلب بيانات المستخدم:', error);
       res.status(500).json({
