@@ -61,16 +61,18 @@ export default function ProfileImage({
   }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
 
   return (
-    <div className="relative inline-block" onClick={onClick}>
+    <div className={`relative inline-block ${sizeClasses[size]} rounded-full overflow-hidden`} onClick={onClick}>
       {/* إطار متدرج إذا كان متوفرًا */}
       {gradientBorder && (
         <div 
-          className={`absolute inset-0 ${sizeClasses[size]} rounded-full`}
+          className={`absolute inset-0 rounded-full pointer-events-none`}
           style={{
             background: gradientBorder,
             padding: '3px',
-            WebkitMaskImage: 'radial-gradient(circle, transparent 65%, black 65%)',
-            maskImage: 'radial-gradient(circle, transparent 65%, black 65%)',
+            boxSizing: 'border-box',
+            WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
+            WebkitMaskComposite: 'xor',
+            maskComposite: 'exclude',
           }}
         />
       )}
@@ -79,7 +81,7 @@ export default function ProfileImage({
       <img
         src={imageSrc}
         alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className} ${gradientBorder ? 'relative' : ''}`}
+        className={`w-full h-full rounded-full ring-inset ring-2 ${borderColor} shadow-sm object-cover ${className}`}
         style={{
           transition: 'none',
           backfaceVisibility: 'hidden',
