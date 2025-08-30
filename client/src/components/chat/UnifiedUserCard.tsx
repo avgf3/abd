@@ -155,14 +155,13 @@ export default function UnifiedUserCard({
               </span>
             )}
 
-            {/* اسم المستخدم مع أيقونة الكتم بجانبه */}
+            {/* اسم المستخدم */}
             <span
               className="font-medium text-base truncate transition-colors duration-300"
               style={{ color: getFinalUsernameColor(normalizedUser) }}
               title={normalizedUser.username}
             >
               {normalizedUser.username}
-              {normalizedUser.isMuted && <span className="text-yellow-400 text-xs ml-1">🔇</span>}
             </span>
 
             {/* الوقت (للمنشورات) */}
