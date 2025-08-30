@@ -32,15 +32,17 @@ export default defineConfig({
 		},
 		rollupOptions: {
 			output: {
-				manualChunks: {
-					vendor: ['react', 'react-dom'],
-					utils: ['@tanstack/react-query'],
-					charts: ['recharts'],
-					socket: ['socket.io-client'],
-					motion: ['framer-motion'],
-					virtuoso: ['react-virtuoso'],
-					carousel: ['embla-carousel-react'],
-					emoji: ['emoji-regex']
+				manualChunks(id) {
+					if (id.includes('node_modules')) {
+						if (id.includes('react-virtuoso')) return 'virtuoso';
+						if (id.includes('socket.io-client')) return 'socket';
+						if (id.includes('framer-motion')) return 'motion';
+						if (id.includes('recharts')) return 'charts';
+						if (id.includes('embla-carousel-react')) return 'carousel';
+						if (id.includes('@tanstack/react-query')) return 'utils';
+						if (id.includes('emoji-mart') || id.includes('lottie')) return 'emoji';
+						return 'vendor';
+					}
 				},
 			},
 		},

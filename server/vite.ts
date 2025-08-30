@@ -6,7 +6,7 @@ import express, { type Express } from 'express';
 import { nanoid } from 'nanoid';
 
 // استخدام نظام التسجيل الموحد من logger.ts
-import { log as logger } from './utils/logger';
+import { logger } from './utils/logger';
 
 export function log(message: string, source = 'express') {
   logger.info(`[${source}] ${message}`);

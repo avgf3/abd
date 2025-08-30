@@ -200,14 +200,20 @@ async function initializeApp() {
     // Initialize Redis for sessions and caching
     const { store: sessionStore } = initializeRedis();
     
-    // Initialize database and session
-    const { sessionMiddleware, io } = await initializeSystem(app, server, sessionStore);
+    // Initialize database
+    const ok = await initializeSystem();
+    if (!ok) {
+      logger.warn('System initialized with warnings');
+    }
+    // Setup realtime and routes
+    const { setupRealtime } = await import('./realtime');
+    const io = setupRealtime(server);
     
     // Setup Socket.IO Redis Adapter for clustering
     await setupSocketRedisAdapter(io);
     
     // Register all routes
-    registerRoutes(app, io);
+    registerRoutes(app);
     
     logger.info('Application initialization completed');
   } catch (error) {

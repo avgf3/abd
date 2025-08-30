@@ -484,8 +484,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     try {
       // Vite will cache this dynamic import and load the chunk ahead of time
       // Ignore returned promise; we just want to warm the chunk
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      import('@/components/ui/RichestModal');
+      void import('@/components/ui/RichestModal');
     } catch {}
   }, []);
 
@@ -1104,7 +1103,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* لوحة الرسائل */}
       {showMessages && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="p-4 space-y-3"><SkeletonBlock className="h-6 w-1/3" /><SkeletonBlock className="h-40 w-full" /></div>}>
           <MessagesPanel
             isOpen={showMessages}
             onClose={() => setShowMessages(false)}
@@ -1122,7 +1121,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* صندوق الرسائل الخاصة */}
       {showPmBox && selectedPrivateUser && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="p-4 space-y-3"><SkeletonBlock className="h-6 w-1/2" /><SkeletonBlock className="h-64 w-full" /></div>}>
           <PrivateMessageBox
             isOpen={showPmBox}
             onClose={() => setShowPmBox(false)}
@@ -1137,7 +1136,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       )}
 
       {userPopup.show && userPopup.user && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="p-2"><SkeletonBlock className="h-24 w-64" /></div>}>
           <UserPopup
             user={userPopup.user}
             x={userPopup.x}

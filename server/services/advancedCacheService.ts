@@ -150,8 +150,7 @@ class AdvancedCacheService {
     this.cache.set(key, entry);
     this.stats.totalSize += size;
     
-    console.log(`💾 تم حفظ الصورة في Cache: ${key} (${this.formatSize(size)})`);
-  }
+    }
 
   /**
    * 🔄 تحديث hash الصورة لحل مشكلة Cache المتصفح
@@ -200,8 +199,7 @@ class AdvancedCacheService {
     this.stats.evictions += removedCount;
     
     if (removedCount > 0) {
-      console.log(`🧹 تنظيف Cache: تم إزالة ${removedCount} عنصر، تحرير ${this.formatSize(freedSpace)}`);
-    }
+      }
   }
 
   /**
@@ -225,8 +223,7 @@ class AdvancedCacheService {
       this.stats.evictions++;
     }
     
-    console.log(`⚡ تحسين Cache: ${this.cache.size} عنصر، ${this.formatSize(this.stats.totalSize)} إجمالي`);
-  }
+    }
 
   /**
    * 🔧 ضمان توفر مساحة كافية
@@ -322,8 +319,7 @@ class AdvancedCacheService {
   clearAll(): void {
     this.cache.clear();
     this.stats.totalSize = 0;
-    console.log('🗑️ تم مسح Cache بالكامل');
-  }
+    }
 
   /**
    * 🗑️ مسح cache مستخدم معين
@@ -341,8 +337,7 @@ class AdvancedCacheService {
     });
     
     this.stats.totalSize -= freedSpace;
-    console.log(`🗑️ تم مسح صور المستخدم ${userId}: ${this.formatSize(freedSpace)}`);
-  }
+    }
 
   /**
    * 📊 الحصول على إحصائيات Cache

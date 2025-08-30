@@ -5,7 +5,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 import { SecurityConfig } from '../security';
-import { z } from 'zod';
+// duplicate import removed
 
 import { roomService } from '../services/roomService';
 import { protect } from '../middleware/enhancedSecurity';

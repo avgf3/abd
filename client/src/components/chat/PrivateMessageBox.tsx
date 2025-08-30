@@ -58,7 +58,9 @@ export default function PrivateMessageBox({
 
   const handleViewProfileClick = useCallback(() => {
     try {
-      onViewProfile && onViewProfile(user);
+      if (onViewProfile) {
+        onViewProfile(user);
+      }
     } catch {}
   }, [onViewProfile, user]);
 

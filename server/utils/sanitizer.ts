@@ -1,7 +1,16 @@
-import createDOMPurify from 'isomorphic-dompurify';
+import DOMPurify from 'isomorphic-dompurify';
 
-// إنشاء instance من DOMPurify
-const DOMPurify = createDOMPurify();
+// Helper to strip ASCII control characters without regex control ranges
+function stripAsciiControls(input: string): string {
+  let out = '';
+  for (let i = 0; i < input.length; i++) {
+    const code = input.charCodeAt(i);
+    if (code >= 32 && code !== 127) {
+      out += input[i];
+    }
+  }
+  return out;
+}
 
 // إعدادات التنقية الافتراضية
 const defaultConfig = {
@@ -27,6 +36,13 @@ const messageConfig = {
 const nameConfig = {
   ALLOWED_TAGS: [],
   ALLOWED_ATTR: [],
+  ALLOW_DATA_ATTR: false,
+  FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'],
+  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
+  RETURN_TRUSTED_TYPE: false,
+  FORCE_BODY: true,
+  SANITIZE_DOM: true,
+  IN_PLACE: false,
   KEEP_CONTENT: true
 };
 
@@ -49,7 +65,7 @@ export function sanitizeHTML(dirty: string, config = defaultConfig): string {
       }
     });
 
-    const clean = DOMPurify.sanitize(dirty, config);
+    const clean = DOMPurify.sanitize(dirty, config as any) as unknown as string;
     
     // إزالة الـ hook بعد الاستخدام
     DOMPurify.removeAllHooks();
@@ -80,10 +96,8 @@ export function sanitizeName(name: string): string {
   const cleaned = sanitizeHTML(name, nameConfig);
   
   // إزالة أي أحرف خاصة قد تسبب مشاكل
-  return cleaned
-    .replace(/[<>\"'&]/g, '') // إزالة أحرف HTML الخاصة
-    .replace(/[\x00-\x1F\x7F]/g, '') // إزالة أحرف التحكم
-    .trim();
+  const withoutHtmlSpecials = cleaned.replace(/[<>"'&]/g, '');
+  return stripAsciiControls(withoutHtmlSpecials).trim();
 }
 
 /**
@@ -122,7 +136,7 @@ export function hasXSSContent(content: string): boolean {
     /<embed[^>]*>/gi,
     /eval\s*\(/gi,
     /expression\s*\(/gi,
-    /<img[^>]+src[\\s]*=[\\s]*[\"']javascript:/gi
+    /<img[^>]+src\s*=\s*["']javascript:/gi
   ];
 
   return xssPatterns.some(pattern => pattern.test(content));

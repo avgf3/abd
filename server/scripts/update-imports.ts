@@ -8,8 +8,6 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 async function updateImports() {
-  console.log('🔄 جاري تحديث الملفات لاستخدام التحسينات الجديدة...');
-  
   try {
     // قراءة ملف routes.ts
     const routesPath = path.join(__dirname, '../routes.ts');
@@ -78,20 +76,8 @@ import {
     
     // حفظ الملف المحدث
     await fs.writeFile(routesPath, routesContent);
-    console.log('✅ تم تحديث routes.ts');
-    
     // تحديث ملف الخادم الرئيسي
-    console.log('💡 لتطبيق جميع التحسينات، قم بما يلي:');
-    console.log('1. انسخ محتوى server/index-enhanced.ts إلى server/index.ts');
-    console.log('2. انسخ محتوى server/security-enhanced.ts إلى server/security.ts');
-    console.log('3. تأكد من إضافة متغيرات البيئة التالية:');
-    console.log('   - REDIS_URL: رابط خادم Redis');
-    console.log('   - SESSION_SECRET: مفتاح سري قوي للجلسات');
-    console.log('   - JWT_SECRET: مفتاح سري قوي لـ JWT');
-    console.log('4. أعد بناء المشروع: npm run build');
-    console.log('5. أعد تشغيل الخادم');
-    
-  } catch (error) {
+    } catch (error) {
     console.error('❌ خطأ في تحديث الملفات:', error);
     process.exit(1);
   }

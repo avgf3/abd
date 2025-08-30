@@ -21,8 +21,7 @@ if (process.env.REDIS_URL) {
     });
 
     redisClient.on('connect', () => {
-      console.log('✅ Connected to Redis for rate limiting');
-    });
+      });
   } catch (error) {
     console.error('Failed to initialize Redis client:', error);
     redisClient = null;
