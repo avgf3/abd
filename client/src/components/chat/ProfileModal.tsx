@@ -1238,14 +1238,15 @@ export default function ProfileModal({
         /* شريط الأزرار على حافة صورة الغلاف السفلية */
         .profile-actions {
           position: absolute;
-          bottom: 10px;
+          bottom: 0;
           left: 170px;
-          right: 20px;
+          right: auto;
           display: flex;
-          gap: 8px;
+          gap: 10px;
           align-items: center;
-          flex-wrap: wrap;
+          flex-wrap: nowrap;
           z-index: 10;
+          padding-bottom: 12px;
         }
 
         .profile-actions button {
@@ -1936,10 +1937,13 @@ export default function ProfileModal({
           
           /* أنماط الأزرار للأجهزة المحمولة */
           .profile-actions {
-            bottom: 8px;
+            bottom: 0;
             left: 120px;
-            right: 10px;
+            right: auto;
             gap: 6px;
+            padding-bottom: 8px;
+            flex-wrap: wrap;
+            max-width: calc(100% - 140px);
           }
           
           .profile-actions button {
