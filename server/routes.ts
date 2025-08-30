@@ -13,6 +13,7 @@ import { developmentOnly, logDevelopmentEndpoint } from './middleware/developmen
 import { sanitizeUserData, sanitizeUsersArray } from './utils/data-sanitizer';
 
 import bcrypt from 'bcrypt';
+import express from 'express';
 import type { Express } from 'express';
 import multer from 'multer';
 import sharp from 'sharp';
