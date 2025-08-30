@@ -74,7 +74,7 @@ export default function UnifiedUserCard({
         level: user.level || 1,
         profileBackgroundColor: user.profileBackgroundColor,
         profileEffect: user.profileEffect || 'none',
-        isMuted: user.isMuted || false,
+
       } as ChatUser;
     }
     return user as ChatUser;
