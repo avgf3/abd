@@ -1239,7 +1239,7 @@ export default function ProfileModal({
         .profile-actions {
           position: absolute;
           bottom: 0;
-          left: 170px;
+          left: 20px;
           right: auto;
           display: flex;
           gap: 10px;
@@ -1938,7 +1938,7 @@ export default function ProfileModal({
           /* أنماط الأزرار للأجهزة المحمولة */
           .profile-actions {
             bottom: 0;
-            left: 120px;
+            left: 15px;
             right: auto;
             gap: 6px;
             padding-bottom: 8px;
@@ -2112,14 +2112,14 @@ export default function ProfileModal({
                 <button className="btn-chat" onClick={() => onPrivateMessage?.(localUser)}>
                   💬 محادثة خاصة
                 </button>
-                <button className="btn-add" onClick={() => onAddFriend?.(localUser)}>
-                  👥 إضافة صديق
-                </button>
                 <button className="btn-ignore" onClick={() => onIgnoreUser?.(localUser?.id || 0)}>
                   🚫 تجاهل
                 </button>
+                <button className="btn-add" onClick={() => onAddFriend?.(localUser)}>
+                  👥 إضافة صديق
+                </button>
                 <button className="btn-report" onClick={() => onReportUser?.(localUser)}>
-                  🚩 إبلاغ
+                  🚩 بلاغ
                 </button>
               </div>
             )}
