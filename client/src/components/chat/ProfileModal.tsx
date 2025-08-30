@@ -1999,10 +1999,10 @@ export default function ProfileModal({
                 <div style={{
                   position: 'absolute',
                   bottom: '45px',
-                  left: '20px',
+                  left: '160px',
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'flex-start',
+                  alignItems: 'center',
                   gap: '2px',
                   zIndex: 3
                 }}>
@@ -2043,10 +2043,10 @@ export default function ProfileModal({
                 <div style={{
                   position: 'absolute',
                   bottom: '45px',
-                  left: '20px',
+                  left: '160px',
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'flex-start',
+                  alignItems: 'center',
                   gap: '2px',
                   zIndex: 3
                 }}>
