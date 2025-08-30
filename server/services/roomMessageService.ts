@@ -179,6 +179,41 @@ class RoomMessageService {
 
       // Serialize DB fetches per room when offset=0 to avoid stampede
       const doFetch = async (): Promise<MessagePagination> => {
+        // استخدام الاستعلام المحسن إذا كان متاحاً
+        try {
+          const { getOptimizedRoomMessages } = await import('../utils/query-optimizer');
+          const result = await getOptimizedRoomMessages(roomId, safeLimit, safeOffset);
+          
+          if (result.messages.length > 0) {
+            // تحويل النتائج إلى التنسيق المطلوب
+            const messages: RoomMessage[] = result.messages.map(msg => ({
+              id: msg.id,
+              senderId: msg.senderId,
+              roomId: msg.roomId,
+              content: msg.content,
+              messageType: msg.messageType || 'text',
+              timestamp: new Date(msg.timestamp),
+              isPrivate: msg.isPrivate || false,
+              receiverId: msg.receiverId || null,
+              senderUsername: msg.sender?.username || 'مستخدم',
+              senderUserType: msg.sender?.userType || 'user',
+              senderAvatar: msg.sender?.profileImage || null,
+              sender: msg.sender,
+              attachments: msg.attachments || [],
+            }));
+
+            return {
+              messages,
+              totalCount: result.total,
+              hasMore: result.hasMore,
+              nextOffset: safeOffset + messages.length,
+            };
+          }
+        } catch (error) {
+          console.warn('فشل استخدام الاستعلام المحسن، استخدام الطريقة التقليدية:', error);
+        }
+
+        // الرجوع للطريقة التقليدية في حالة الفشل
         const dbMessages = await storage.getRoomMessages(roomId, safeLimit, safeOffset);
         const totalCount = await storage.getRoomMessageCount(roomId);
 
