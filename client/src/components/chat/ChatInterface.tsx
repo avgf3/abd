@@ -1161,8 +1161,27 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         <Suspense fallback={null}>
           <SettingsMenu
             onOpenProfile={() => {
+              // افتح فوراً ببيانات المستخدم الحالية لسرعة الاستجابة
+              if (chat.currentUser) {
+                setProfileUser(chat.currentUser);
+              }
               setShowProfile(true);
               setShowSettings(false);
+
+              // ثم اجلب نسخة محدثة وكاملة لتوحيد العرض مع قائمة المستخدمين
+              try {
+                const userId = chat.currentUser?.id;
+                if (userId) {
+                  (async () => {
+                    try {
+                      const data = await apiRequest(`/api/users/${userId}?t=${Date.now()}`);
+                      if (data && (data as any).id) {
+                        setProfileUser(data as any);
+                      }
+                    } catch {}
+                  })();
+                }
+              } catch {}
             }}
             onLogout={onLogout}
             onClose={() => setShowSettings(false)}
