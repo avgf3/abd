@@ -16,6 +16,7 @@ import {
 } from '@/utils/themeUtils';
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import ProfileImage from './ProfileImage';
+import UserCard from './UserCard';
 
 interface ProfileModalProps {
   user: ChatUser | null;

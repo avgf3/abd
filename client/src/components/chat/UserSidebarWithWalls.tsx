@@ -21,6 +21,7 @@ import ProfileImage from './ProfileImage';
 import RoomComponent from './RoomComponent';
 import SimpleUserMenu from './SimpleUserMenu';
 import UserRoleBadge from './UserRoleBadge';
+import UserCard from './UserCard';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -500,43 +501,18 @@ export default function UnifiedSidebar({
         if (!user?.username || !user?.userType) return null;
         return (
           <li key={user.id} className="relative list-none">
-            <SimpleUserMenu
-              targetUser={user}
+            <UserCard
+              user={user}
               currentUser={currentUser}
+              onClick={handleUserClick}
               showModerationActions={isModerator}
-            >
-              <div
-                className={`flex items-center gap-2 py-1.5 px-0 rounded-none border-b border-black transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
-                style={getUserListItemStyles(user)}
-                onClick={(e) => handleUserClick(e as any, user)}
-              >
-                <ProfileImage user={user} size="small" className="" hideRoleBadgeOverlay={true} />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-base font-medium transition-colors duration-300"
-                        style={{
-                          color: getFinalUsernameColor(user),
-                        }}
-                        title={user.username}
-                      >
-                        {user.username}
-                      </span>
-                      {user.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {renderUserBadge(user)}
-                      {renderCountryFlag(user)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </SimpleUserMenu>
+              showCountryFlag={true}
+              variant="list"
+            />
           </li>
         );
       }),
-    [currentUser, isModerator, renderCountryFlag, renderUserBadge]
+    [currentUser, isModerator, handleUserClick]
   );
 
   return (
@@ -760,44 +736,23 @@ export default function UnifiedSidebar({
                     <Card key={post.id} className="border border-border bg-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                            {post.userProfileImage ? (
-                              <img
-                                src={getImageSrc(post.userProfileImage)}
-                                alt={post.username}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-xs">{post.username.charAt(0)}</span>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="font-medium text-sm cursor-pointer hover:underline"
-                                style={{ color: post.usernameColor || 'inherit' }}
-                                onClick={(e) => {
-                                  const targetUser: ChatUser = {
-                                    id: post.userId,
-                                    username: post.username,
-                                    role: (post.userRole as any) || 'member',
-                                    userType: post.userRole || 'member',
-                                    isOnline: true,
-                                    profileImage: post.userProfileImage,
-                                    usernameColor: post.usernameColor,
-                                  } as ChatUser;
-                                  handleUserClick(e as any, targetUser);
-                                }}
-                                title="عرض خيارات المستخدم"
-                              >
-                                {post.username}
-                              </span>
-                              {/* 🏅 شارة الرتبة الموحدة */}
-                              <UserRoleBadge
-                                user={{ userType: post.userRole } as ChatUser}
-                                size={16}
-                              />
-                            </div>
+                          <UserCard
+                            user={{
+                              id: post.userId,
+                              username: post.username,
+                              role: (post.userRole as any) || 'member',
+                              userType: post.userRole || 'member',
+                              isOnline: true,
+                              profileImage: post.userProfileImage,
+                              usernameColor: post.usernameColor,
+                            } as ChatUser}
+                            currentUser={currentUser}
+                            onClick={handleUserClick}
+                            variant="wall"
+                            showCountryFlag={false}
+                            className="flex-1"
+                          />
+                          <div>
                             <p className="text-xs text-gray-500">
                               {formatTimeAgo(post.timestamp.toString())}
                             </p>

@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import UserCard from './UserCard';
 
 interface UserPopupProps {
   user: ChatUser;
@@ -141,10 +142,21 @@ export default function UserPopup({
       className="user-popup"
       style={{
         display: 'flex',
+        flexDirection: 'column',
         top: `${y}px`,
         left: `${x - 160}px`,
       }}
     >
+      {/* بطاقة المستخدم في أعلى القائمة */}
+      <div className="p-2 border-b border-gray-200">
+        <UserCard
+          user={user}
+          currentUser={currentUser}
+          variant="popup"
+          showCountryFlag={true}
+        />
+      </div>
+      
       <Button onClick={onViewProfile} variant="ghost" className="user-popup-button">
         👤 عرض الملف الشخصي
       </Button>

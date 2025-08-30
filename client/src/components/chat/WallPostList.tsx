@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { WallPost, ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { formatTimeAgo } from '@/utils/timeUtils';
+import UserCard from '@/components/chat/UserCard';
 
 interface WallPostListProps {
   posts: WallPost[];
@@ -64,56 +65,24 @@ export default function WallPostList({
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-primary/10">
-                    {post.userProfileImage ? (
-                      <img
-                        src={getImageSrc(post.userProfileImage)}
-                        alt={post.username}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-lg font-bold text-primary">
-                        {post.username.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <div
-                    className={`font-bold text-base ${onUserClick ? 'cursor-pointer hover:underline' : ''}`}
-                    style={{ color: post.usernameColor || 'inherit' }}
-                    onClick={(e) => {
-                      if (!onUserClick) return;
-                      const targetUser: ChatUser = {
-                        id: post.userId,
-                        username: post.username,
-                        role: (post.userRole as any) || 'member',
-                        userType: post.userRole || 'member',
-                        isOnline: true,
-                        profileImage: post.userProfileImage,
-                        usernameColor: post.usernameColor,
-                      } as ChatUser;
-                      onUserClick(e, targetUser);
-                    }}
-                    title="عرض خيارات المستخدم"
-                  >
-                    {post.username}
-                  </div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-1">
-                    <span>{formatTimeAgo(post.timestamp)}</span>
-                    {post.userRole && post.userRole !== 'member' && (
-                      <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
-                        {post.userRole === 'admin'
-                          ? 'مدير'
-                          : post.userRole === 'owner'
-                            ? 'مالك'
-                            : post.userRole === 'moderator'
-                              ? 'مراقب'
-                              : post.userRole}
-                      </span>
-                    )}
-                  </div>
+                <UserCard
+                  user={{
+                    id: post.userId,
+                    username: post.username,
+                    role: (post.userRole as any) || 'member',
+                    userType: post.userRole || 'member',
+                    isOnline: true,
+                    profileImage: post.userProfileImage,
+                    usernameColor: post.usernameColor,
+                  } as ChatUser}
+                  currentUser={currentUser}
+                  onClick={onUserClick}
+                  variant="wall"
+                  showCountryFlag={false}
+                  className="flex-1"
+                />
+                <div className="text-xs text-muted-foreground">
+                  <span>{formatTimeAgo(post.timestamp)}</span>
                 </div>
               </div>
               {canDelete && canDelete(post) && (

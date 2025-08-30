@@ -10,6 +10,7 @@ const AnimatedEmojiEnhanced = React.lazy(() => import('./AnimatedEmojiEnhanced')
 const ComposerPlusMenu = React.lazy(() => import('./ComposerPlusMenu'));
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
+import UserCard from './UserCard';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -478,53 +479,20 @@ export default function MessageArea({
                   </div>
                 ) : (
                   <>
-                    {/* Profile Image */}
+                    {/* User Card */}
                     {message.sender && (
-                      <div className="flex-shrink-0">
-                        {Array.isArray((message as any)?.attachments) && (message as any).attachments.find((a: any) => a && a.type === 'senderAvatar') ? (
-                          (() => {
-                            const snap = (message as any).attachments.find((a: any) => a && a.type === 'senderAvatar');
-                            const url = snap?.url;
-                            const hash = snap?.hash;
-                            const final = url && hash ? `${url}?v=${hash}` : (message.sender?.profileImage || '/default_avatar.svg');
-                            return (
-                              <img
-                                src={final}
-                                alt={`صورة ${message.sender?.username || ''}`}
-                                className={"w-7 h-7 rounded-full ring-2 shadow-sm object-cover cursor-pointer hover:scale-110 transition-transform duration-200"}
-                                loading="lazy"
-                                onError={(e: any) => {
-                                  if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
-                                    e.currentTarget.src = '/default_avatar.svg';
-                                  }
-                                }}
-                                onClick={(e) => onUserClick && message.sender && onUserClick(e, message.sender)}
-                              />
-                            );
-                          })()
-                        ) : (
-                          <ProfileImage
-                            user={message.sender}
-                            size="small"
-                            className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
-                            onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
-                          />
-                        )}
-                      </div>
+                      <UserCard
+                        user={message.sender}
+                        currentUser={currentUser}
+                        onClick={onUserClick}
+                        variant="message"
+                        showCountryFlag={true}
+                        className="flex-shrink-0"
+                      />
                     )}
 
-                    {/* Inline row: badge, name, content */}
+                    {/* Message content */}
                     <div className="flex-1 min-w-0 flex items-center gap-2">
-                      {message.sender && (
-                        <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
-                      )}
-                      <button
-                        onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                        className="font-semibold hover:underline transition-colors duration-200 truncate"
-                        style={{ color: getFinalUsernameColor(message.sender) }}
-                      >
-                        {message.sender?.username}
-                      </button>
 
                       <div className="text-gray-800 break-words truncate flex-1 message-content-fix">
                         {message.messageType === 'image' ? (

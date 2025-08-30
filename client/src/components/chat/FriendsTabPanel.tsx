@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import ProfileImage from './ProfileImage';
 import SimpleUserMenu from './SimpleUserMenu';
 import UserRoleBadge from './UserRoleBadge';
+import UserCard from './UserCard';
 
 import type { Friend, FriendRequest } from '@/../../shared/types';
 import { Badge } from '@/components/ui/badge';
@@ -389,64 +390,25 @@ export default function FriendsTabPanel({
               <ul className="space-y-0">
                 {filteredFriends.map((friend) => (
                   <li key={friend.id} className="relative -mx-4 list-none">
-                    <SimpleUserMenu
-                      targetUser={friend}
+                    <UserCard
+                      user={friend}
                       currentUser={currentUser}
+                      onClick={(e, user) => onStartPrivateChat(user)}
                       showModerationActions={isModerator}
-                    >
-                      <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(friend) || 'bg-white hover:bg-gray-50'}`}
-                        style={getUserListItemStyles(friend)}
-                        onClick={(e) => onStartPrivateChat(friend)}
-                      >
-                        <ProfileImage
-                          user={friend}
-                          size="small"
-                          className=""
-                          hideRoleBadgeOverlay={true}
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="text-base font-medium transition-all duration-300"
-                                style={{
-                                  color: getFinalUsernameColor(friend),
-                                  textShadow: getFinalUsernameColor(friend)
-                                    ? `0 0 10px ${getFinalUsernameColor(friend)}40`
-                                    : 'none',
-                                  filter: getFinalUsernameColor(friend)
-                                    ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
-                                    : 'none',
-                                }}
-                                title={friend.username}
-                              >
-                                {friend.username}
-                              </span>
-                              {/* إشارة المكتوم */}
-                              {friend.isMuted && (
-                                <span className="text-yellow-400 text-xs">🔇</span>
-                              )}
-                              {friend.unreadCount && friend.unreadCount > 0 && (
-                                <Badge variant="destructive" className="text-xs">
-                                  {friend.unreadCount}
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              {renderUserBadge(friend)}
-                              {renderCountryFlag(friend)}
-                            </div>
-                          </div>
-                          {/* حالة الاتصال */}
-                          <div className="text-xs text-gray-500 mt-1">
-                            {friend.isOnline ? (
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                {friend.status === 'away' ? 'بعيد' : 'متصل الآن'}
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1">
+                      showCountryFlag={true}
+                      variant="list"
+                      className="px-4"
+                      showUnreadCount={true}
+                    />
+                    {/* حالة الاتصال */}
+                    <div className="text-xs text-gray-500 px-4 -mt-1 mb-1">
+                      {friend.isOnline ? (
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                          {friend.status === 'away' ? 'بعيد' : 'متصل الآن'}
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1">
                                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                                 غير متصل
                               </span>
