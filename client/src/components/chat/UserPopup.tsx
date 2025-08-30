@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
+import UserProfileCard from '@/components/profile/UserProfileCard';
 
 interface UserPopupProps {
   user: ChatUser;
@@ -145,73 +146,88 @@ export default function UserPopup({
         left: `${x - 160}px`,
       }}
     >
-      <Button onClick={onViewProfile} variant="ghost" className="user-popup-button">
-        👤 عرض الملف الشخصي
-      </Button>
+      <div className="flex flex-col w-full">
+        <UserProfileCard
+          user={user}
+          currentUser={currentUser}
+          onPrivateMessage={() => onPrivateMessage()}
+          onAddFriend={() => onAddFriend()}
+          onIgnore={() => onIgnore()}
+          onReport={() => onViewProfile()}
+        />
 
-      {/* إخفاء خيارات الرسائل والصداقة إذا كان المستخدم نفسه */}
-      {currentUser && currentUser.id !== user.id && (
-        <>
-          <Button onClick={onPrivateMessage} variant="ghost" className="user-popup-button">
-            ✉️ ارسال رسالة
+        <div className="border-t border-gray-300 my-1"></div>
+
+        <div className="flex flex-col">
+          <Button onClick={onViewProfile} variant="ghost" className="user-popup-button">
+            👤 عرض الملف الشخصي
           </Button>
 
-          <Button onClick={onAddFriend} variant="ghost" className="user-popup-button">
-            👥 إضافة صديق
-          </Button>
-
-          <Button onClick={onIgnore} variant="ghost" className="user-popup-button text-red-400">
-            🚫 تجاهل
-          </Button>
-        </>
-      )}
-
-      {/* خيارات الإدارة */}
-      {canModerate && (
-        <>
-          <div className="border-t border-gray-300 my-1"></div>
-
-          {currentUser.userType === 'moderator' && (
-            <Button
-              onClick={handleMute}
-              variant="ghost"
-              className="user-popup-button text-yellow-600"
-            >
-              🔇 كتم
-            </Button>
-          )}
-
-          {(currentUser.userType === 'admin' || currentUser.userType === 'owner') && (
+          {/* إخفاء خيارات الرسائل والصداقة إذا كان المستخدم نفسه */}
+          {currentUser && currentUser.id !== user.id && (
             <>
-              <Button
-                onClick={handleMute}
-                variant="ghost"
-                className="user-popup-button text-yellow-600"
-              >
-                🔇 كتم
+              <Button onClick={onPrivateMessage} variant="ghost" className="user-popup-button">
+                ✉️ ارسال رسالة
               </Button>
 
-              <Button
-                onClick={handleKick}
-                variant="ghost"
-                className="user-popup-button text-orange-600"
-              >
-                ⏰ طرد (15 دقيقة)
+              <Button onClick={onAddFriend} variant="ghost" className="user-popup-button">
+                👥 إضافة صديق
+              </Button>
+
+              <Button onClick={onIgnore} variant="ghost" className="user-popup-button text-red-400">
+                🚫 تجاهل
               </Button>
             </>
           )}
 
-          {currentUser.userType === 'owner' && (
-            <Button
-              onClick={handleBlock}
-              variant="ghost"
-              className="user-popup-button text-red-600"
-            >
-              🚫 حجب نهائي
-            </Button>
+          {/* خيارات الإدارة */}
+          {canModerate && (
+            <>
+              <div className="border-t border-gray-300 my-1"></div>
+
+              {currentUser.userType === 'moderator' && (
+                <Button
+                  onClick={handleMute}
+                  variant="ghost"
+                  className="user-popup-button text-yellow-600"
+                >
+                  🔇 كتم
+                </Button>
+              )}
+
+              {(currentUser.userType === 'admin' || currentUser.userType === 'owner') && (
+                <>
+                  <Button
+                    onClick={handleMute}
+                    variant="ghost"
+                    className="user-popup-button text-yellow-600"
+                  >
+                    🔇 كتم
+                  </Button>
+
+                  <Button
+                    onClick={handleKick}
+                    variant="ghost"
+                    className="user-popup-button text-orange-600"
+                  >
+                    ⏰ طرد (15 دقيقة)
+                  </Button>
+                </>
+              )}
+
+              {currentUser.userType === 'owner' && (
+                <Button
+                  onClick={handleBlock}
+                  variant="ghost"
+                  className="user-popup-button text-red-600"
+                >
+                  🚫 حجب نهائي
+                </Button>
+              )}
+            </>
           )}
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }

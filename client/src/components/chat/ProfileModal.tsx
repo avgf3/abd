@@ -15,6 +15,7 @@ import {
   buildProfileBackgroundGradient,
 } from '@/utils/themeUtils';
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
+import UserProfileCard from '@/components/profile/UserProfileCard';
 import ProfileImage from './ProfileImage';
 
 interface ProfileModalProps {
@@ -1967,112 +1968,26 @@ export default function ProfileModal({
             }}
           >
             {localUser?.id === currentUser?.id && (
-              <>
-                <button
-                  className="change-cover-btn"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isLoading}
-                >
-                  🖼️ تغيير الغلاف
-                </button>
-                
-                {/* اسم المستخدم مع الرتبة */}
-                <div style={{
-                  position: 'absolute',
-                  bottom: '60px',
-                  left: '160px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '2px',
-                  zIndex: 3
-                }}>
-                  {/* الرتبة فوق الاسم */}
-                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '14px' }}>
-                        {localUser?.userType === 'owner' && 'Owner'}
-                        {localUser?.userType === 'admin' && 'Super Admin'}
-                        {localUser?.userType === 'moderator' && 'Moderator'}
-                      </span>
-                      <span style={{ fontSize: '16px' }}>
-                        {getUserLevelIcon(localUser, 16)}
-                        {localUser?.userType === 'admin' && '⭐'}
-                      </span>
-                    </div>
-                  )}
-                  {/* الاسم */}
-                  <h3 style={{
-                    margin: 0,
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    color: getFinalUsernameColor(localUser || {}),
-                    textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => openEditModal('name')}
-                  >
-                    {localUser?.username || 'اسم المستخدم'}
-                  </h3>
-                </div>
-              </>
+              <button
+                className="change-cover-btn"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+              >
+                🖼️ تغيير الغلاف
+              </button>
             )}
 
-            {localUser?.id !== currentUser?.id && (
-              <>
-                {/* اسم المستخدم مع الرتبة */}
-                <div style={{
-                  position: 'absolute',
-                  bottom: '70px',
-                  left: '160px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '2px',
-                  zIndex: 3
-                }}>
-                  {/* الرتبة فوق الاسم */}
-                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '14px' }}>
-                        {localUser?.userType === 'owner' && 'Owner'}
-                        {localUser?.userType === 'admin' && 'Super Admin'}
-                        {localUser?.userType === 'moderator' && 'Moderator'}
-                      </span>
-                      <span style={{ fontSize: '16px' }}>
-                        {getUserLevelIcon(localUser, 16)}
-                        {localUser?.userType === 'admin' && '⭐'}
-                      </span>
-                    </div>
-                  )}
-                  {/* الاسم */}
-                  <h3 style={{
-                    margin: 0,
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    color: getFinalUsernameColor(localUser || {}),
-                    textShadow: '0 2px 4px rgba(0,0,0,0.5)'
-                  }}>
-                    {localUser?.username || 'اسم المستخدم'}
-                  </h3>
-                </div>
-                
-                {/* الأزرار */}
-                <div className="profile-actions">
-                  <button className="btn-chat" onClick={() => onPrivateMessage?.(localUser)}>
-                    💬 محادثة خاصة
-                  </button>
-                  <button className="btn-add" onClick={() => onAddFriend?.(localUser)}>
-                    👥 إضافة صديق
-                  </button>
-                  <button className="btn-ignore" onClick={() => onIgnoreUser?.(localUser?.id || 0)}>
-                    🚫 تجاهل
-                  </button>
-                  <button className="btn-report" onClick={() => onReportUser?.(localUser)}>
-                    🚩 إبلاغ
-                  </button>
-                </div>
-              </>
+            {localUser && (
+              <div style={{ position: 'absolute', bottom: '52px', left: '16px', right: '16px', zIndex: 3 }}>
+                <UserProfileCard
+                  user={localUser}
+                  currentUser={currentUser}
+                  onPrivateMessage={onPrivateMessage}
+                  onAddFriend={onAddFriend}
+                  onIgnore={(id) => onIgnoreUser?.(id)}
+                  onReport={onReportUser}
+                />
+              </div>
             )}
 
             <div className="profile-avatar">
