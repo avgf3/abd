@@ -514,13 +514,13 @@ export default function MessageArea({
                     )}
 
                     {/* Inline row: badge, name, content */}
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                    <div className="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
                       {message.sender && (
                         <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                       )}
                       <button
                         onClick={(e) => message.sender && handleUsernameClick(e, message.sender)}
-                        className="font-semibold hover:underline transition-colors duration-200 truncate"
+                        className="font-semibold hover:underline transition-colors duration-200 truncate flex-shrink-0"
                         style={{ color: getFinalUsernameColor(message.sender) }}
                       >
                         {message.sender?.username}
