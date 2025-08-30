@@ -1239,11 +1239,12 @@ export default function ProfileModal({
         .profile-actions {
           position: absolute;
           bottom: 10px;
-          left: 170px;
-          right: 20px;
+          left: 20px;
+          right: 160px;
           display: flex;
           gap: 8px;
           align-items: center;
+          justify-content: space-evenly;
           flex-wrap: wrap;
           z-index: 10;
         }
