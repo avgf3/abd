@@ -80,15 +80,19 @@ export async function initializeDatabase(): Promise<boolean> {
     
     const client = postgres(connectionString, {
       ssl: sslRequired ? 'require' : undefined,
-      max: 50, // زيادة عدد الاتصالات إلى 50
-      idle_timeout: 120, // زيادة timeout إلى دقيقتين
-      connect_timeout: 120, // زيادة timeout الاتصال إلى دقيقتين
-      max_lifetime: 60 * 15, // إعادة تدوير الاتصالات كل 15 دقيقة بدلاً من 30
-      prepare: false, // تعطيل prepared statements لتحسين التوافق
+      max: 100, // زيادة عدد الاتصالات إلى 100 لتحسين الأداء
+      idle_timeout: 30, // تقليل timeout إلى 30 ثانية لتحرير الاتصالات بشكل أسرع
+      connect_timeout: 30, // تقليل timeout الاتصال إلى 30 ثانية
+      max_lifetime: 60 * 10, // إعادة تدوير الاتصالات كل 10 دقائق لمنع التراكم
+      prepare: true, // تفعيل prepared statements لتحسين الأداء
       onnotice: () => {}, // تجاهل الإشعارات
-      // إضافة إعدادات إضافية للاستقرار
+      // إضافة إعدادات إضافية للأداء
       fetch_types: false, // تحسين الأداء
       types: false, // تحسين الأداء
+      connection: {
+        application_name: 'chat-app',
+        statement_timeout: 30000, // 30 ثانية كحد أقصى لكل استعلام
+      },
     });
 
     const drizzleDb = drizzle(client, { schema, logger: false });
