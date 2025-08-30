@@ -1235,29 +1235,29 @@ export default function ProfileModal({
           background: rgba(0,0,0,0.9);
         }
 
-        /* شريط الأزرار على حافة صورة الغلاف السفلية */
+        /* شريط الأزرار بجانب صورة الملف الشخصي */
         .profile-actions {
           position: absolute;
-          bottom: 0;
-          left: 20px;
+          bottom: 15px;
+          left: 160px;
           right: auto;
           display: flex;
-          gap: 10px;
+          gap: 5px;
           align-items: center;
           flex-wrap: nowrap;
           z-index: 10;
-          padding-bottom: 12px;
+          padding: 0;
         }
 
         .profile-actions button {
           border: none;
-          padding: 6px 10px;
-          border-radius: 8px;
+          padding: 4px 8px;
+          border-radius: 6px;
           font-weight: bold;
-          font-size: 12px;
+          font-size: 10px;
           cursor: pointer;
           color: #fff;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          box-shadow: 0 3px 8px rgba(0,0,0,0.3);
           transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
           white-space: nowrap;
         }
@@ -1937,18 +1937,18 @@ export default function ProfileModal({
           
           /* أنماط الأزرار للأجهزة المحمولة */
           .profile-actions {
-            bottom: 0;
-            left: 15px;
+            bottom: 10px;
+            left: 120px;
             right: auto;
-            gap: 6px;
-            padding-bottom: 8px;
+            gap: 3px;
+            padding: 0;
             flex-wrap: wrap;
-            max-width: calc(100% - 140px);
+            max-width: calc(100% - 130px);
           }
           
           .profile-actions button {
-            padding: 5px 8px;
-            font-size: 11px;
+            padding: 3px 6px;
+            font-size: 9px;
           }
         }
       `}</style>
