@@ -1046,6 +1046,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               <ProfileModal
                 user={profileUser || chat.currentUser}
                 currentUser={chat.currentUser}
+                forceFullView
                 onClose={() => {
                   setShowProfile(false);
                   setProfileUser(null);

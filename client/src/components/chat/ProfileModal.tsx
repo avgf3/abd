@@ -26,6 +26,8 @@ interface ProfileModalProps {
   onPrivateMessage?: (user: ChatUser) => void;
   onAddFriend?: (user: ChatUser) => void;
   onReportUser?: (user: ChatUser) => void;
+  // عند التفعيل، يعرض كل أقسام الملف الشخصي بشكل كامل أينما فُتح
+  forceFullView?: boolean;
 }
 
 export default function ProfileModal({
@@ -37,6 +39,7 @@ export default function ProfileModal({
   onPrivateMessage,
   onAddFriend,
   onReportUser,
+  forceFullView,
 }: ProfileModalProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1966,7 +1969,7 @@ export default function ProfileModal({
               backgroundRepeat: 'no-repeat',
             }}
           >
-            {localUser?.id === currentUser?.id && (
+            {(forceFullView || localUser?.id === currentUser?.id) && (
               <>
                 <button
                   className="change-cover-btn"
@@ -2018,7 +2021,7 @@ export default function ProfileModal({
               </>
             )}
 
-            {localUser?.id !== currentUser?.id && (
+            {!forceFullView && localUser?.id !== currentUser?.id && (
               <>
                 {/* اسم المستخدم مع الرتبة */}
                 <div style={{
@@ -2097,7 +2100,7 @@ export default function ProfileModal({
               </div>
             )}
 
-            {localUser?.id === currentUser?.id && (
+            {(forceFullView || localUser?.id === currentUser?.id) && (
               <button
                 className="change-avatar-btn"
                 onClick={() => avatarInputRef.current?.click()}
@@ -2113,37 +2116,37 @@ export default function ProfileModal({
           <div className="profile-body">
             <div className="profile-info">
               <small
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('status')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => (forceFullView || localUser?.id === currentUser?.id) && openEditModal('status')}
+                style={{ cursor: (forceFullView || localUser?.id === currentUser?.id) ? 'pointer' : 'default' }}
               >
                 {localUser?.status || 'اضغط لإضافة حالة'}
               </small>
             </div>
 
-            {localUser?.id !== currentUser?.id && <></>}
+            {!forceFullView && localUser?.id !== currentUser?.id && <></>}
 
             <div className="profile-details">
               <p
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('gender')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => (forceFullView || localUser?.id === currentUser?.id) && openEditModal('gender')}
+                style={{ cursor: (forceFullView || localUser?.id === currentUser?.id) ? 'pointer' : 'default' }}
               >
                 🧍‍♀️ الجنس: <span>{localUser?.gender || 'غير محدد'}</span>
               </p>
               <p
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('country')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => (forceFullView || localUser?.id === currentUser?.id) && openEditModal('country')}
+                style={{ cursor: (forceFullView || localUser?.id === currentUser?.id) ? 'pointer' : 'default' }}
               >
                 🌍 البلد: <span>{localUser?.country || 'غير محدد'}</span>
               </p>
               <p
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('age')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => (forceFullView || localUser?.id === currentUser?.id) && openEditModal('age')}
+                style={{ cursor: (forceFullView || localUser?.id === currentUser?.id) ? 'pointer' : 'default' }}
               >
                 🎂 العمر: <span>{localUser?.age ? `${localUser.age} سنة` : 'غير محدد'}</span>
               </p>
               <p
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('socialStatus')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => (forceFullView || localUser?.id === currentUser?.id) && openEditModal('socialStatus')}
+                style={{ cursor: (forceFullView || localUser?.id === currentUser?.id) ? 'pointer' : 'default' }}
               >
                 💍 الحالة الاجتماعية: <span>{localUser?.relation || 'غير محدد'}</span>
               </p>
@@ -2159,7 +2162,7 @@ export default function ProfileModal({
                 🎁 نقاط الهدايا: <span>{localUser?.points || 0}</span>
               </p>
               {/* إرسال النقاط - يظهر فقط للمستخدمين الآخرين */}
-              {currentUser && currentUser.id !== localUser?.id && (
+              {(!forceFullView && currentUser && currentUser.id !== localUser?.id) && (
                 <p onClick={() => setCurrentEditType('sendPoints')} style={{ cursor: 'pointer' }}>
                   💰 إرسال النقاط: <span>اضغط للإرسال</span>
                 </p>
@@ -2169,7 +2172,7 @@ export default function ProfileModal({
               </p>
             </div>
 
-            {localUser?.id === currentUser?.id && (
+            {(forceFullView || localUser?.id === currentUser?.id) && (
               <div className="additional-details">
                 <p>
                   💬 عدد الرسائل: <span>0</span>
@@ -2198,7 +2201,7 @@ export default function ProfileModal({
           )}
 
           {/* Hidden File Inputs */}
-          {localUser?.id === currentUser?.id && (
+          {(forceFullView || localUser?.id === currentUser?.id) && (
             <>
               <input
                 ref={fileInputRef}
@@ -2220,7 +2223,7 @@ export default function ProfileModal({
       </div>
 
       {/* Edit Modal - exact match to original */}
-      {currentEditType && (user.id === currentUser?.id || currentEditType === 'sendPoints') && (
+      {currentEditType && (forceFullView || user.id === currentUser?.id || currentEditType === 'sendPoints') && (
         <div className="edit-modal">
           <div className="edit-content">
             <h3>
