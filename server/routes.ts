@@ -2973,20 +2973,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // إرجاع بيانات المستخدم بدون كلمة المرور مع تنظيف البيانات
       const { password, ...userWithoutPassword } = user;
-      const sanitized = sanitizeUserData(userWithoutPassword);
-      
-      // إضافة جميع البيانات المهمة بما فيها profileBanner
-      const payload = {
-        ...sanitized,
-        profileBanner: sanitized.profileBanner, // تضمين البانر دائماً
-        status: sanitized.status,
-        gender: sanitized.gender,
-        country: sanitized.country,
-        age: sanitized.age,
-        relation: sanitized.relation,
-        createdAt: sanitized.createdAt
-      };
-      
+      const payload = buildUserBroadcastPayload(userWithoutPassword);
       res.json(payload);
     } catch (error) {
       console.error('❌ خطأ في جلب بيانات المستخدم:', error);
