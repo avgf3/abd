@@ -1041,6 +1041,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                 onPrivateMessage={handlePrivateMessage}
                 onAddFriend={handleAddFriend}
                 onReportUser={(u) => handleReportUser(u)}
+                forceUsersListView={false}
               />
             ) : (
               <ProfileModal
@@ -1064,6 +1065,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                   }
                 }}
                 onReportUser={(u) => handleReportUser(u)}
+                forceUsersListView={true}
               />
             )}
           </>

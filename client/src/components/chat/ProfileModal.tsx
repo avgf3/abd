@@ -26,6 +26,11 @@ interface ProfileModalProps {
   onPrivateMessage?: (user: ChatUser) => void;
   onAddFriend?: (user: ChatUser) => void;
   onReportUser?: (user: ChatUser) => void;
+  /**
+   * عندما تكون true سيتم عرض الواجهة تماماً مثل فتحها من قائمة المتصلين
+   * بدون أدوات التعديل الخاصة بصاحب الحساب
+   */
+  forceUsersListView?: boolean;
 }
 
 export default function ProfileModal({
@@ -37,6 +42,7 @@ export default function ProfileModal({
   onPrivateMessage,
   onAddFriend,
   onReportUser,
+  forceUsersListView = false,
 }: ProfileModalProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -67,6 +73,9 @@ export default function ProfileModal({
       setSelectedEffect(user.profileEffect || 'none');
     }
   }, [user]);
+
+  // وضع العرض: هل يشاهد المستخدم ملفه الشخصي؟ مع إمكانية فرض نمط "قائمة المتصلين"
+  const isSelfView = (localUser?.id === currentUser?.id) && !forceUsersListView;
 
   // معالجة محسنة للحالات الفارغة
   if (!localUser || !user) {
@@ -1966,7 +1975,7 @@ export default function ProfileModal({
               backgroundRepeat: 'no-repeat',
             }}
           >
-            {localUser?.id === currentUser?.id && (
+            {isSelfView && (
               <>
                 <button
                   className="change-cover-btn"
@@ -2018,7 +2027,7 @@ export default function ProfileModal({
               </>
             )}
 
-            {localUser?.id !== currentUser?.id && (
+            {(!isSelfView) && (
               <>
                 {/* اسم المستخدم مع الرتبة */}
                 <div style={{
@@ -2077,7 +2086,7 @@ export default function ProfileModal({
 
             {/* تمت إزالة أفاتار الغلاف حسب الطلب */}
 
-            {localUser?.id === currentUser?.id && (
+            {isSelfView && (
               <button
                 className="change-avatar-btn"
                 onClick={() => avatarInputRef.current?.click()}
@@ -2093,8 +2102,8 @@ export default function ProfileModal({
           <div className="profile-body">
             <div className="profile-info">
               <small
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('status')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => isSelfView && openEditModal('status')}
+                style={{ cursor: isSelfView ? 'pointer' : 'default' }}
               >
                 {localUser?.status || 'اضغط لإضافة حالة'}
               </small>
@@ -2104,26 +2113,26 @@ export default function ProfileModal({
 
             <div className="profile-details">
               <p
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('gender')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => isSelfView && openEditModal('gender')}
+                style={{ cursor: isSelfView ? 'pointer' : 'default' }}
               >
                 🧍‍♀️ الجنس: <span>{localUser?.gender || 'غير محدد'}</span>
               </p>
               <p
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('country')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => isSelfView && openEditModal('country')}
+                style={{ cursor: isSelfView ? 'pointer' : 'default' }}
               >
                 🌍 البلد: <span>{localUser?.country || 'غير محدد'}</span>
               </p>
               <p
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('age')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => isSelfView && openEditModal('age')}
+                style={{ cursor: isSelfView ? 'pointer' : 'default' }}
               >
                 🎂 العمر: <span>{localUser?.age ? `${localUser.age} سنة` : 'غير محدد'}</span>
               </p>
               <p
-                onClick={() => localUser?.id === currentUser?.id && openEditModal('socialStatus')}
-                style={{ cursor: localUser?.id === currentUser?.id ? 'pointer' : 'default' }}
+                onClick={() => isSelfView && openEditModal('socialStatus')}
+                style={{ cursor: isSelfView ? 'pointer' : 'default' }}
               >
                 💍 الحالة الاجتماعية: <span>{localUser?.relation || 'غير محدد'}</span>
               </p>
@@ -2149,7 +2158,7 @@ export default function ProfileModal({
               </p>
             </div>
 
-            {localUser?.id === currentUser?.id && (
+            {isSelfView && (
               <div className="additional-details">
                 <p>
                   💬 عدد الرسائل: <span>0</span>
@@ -2178,7 +2187,7 @@ export default function ProfileModal({
           )}
 
           {/* Hidden File Inputs */}
-          {localUser?.id === currentUser?.id && (
+          {isSelfView && (
             <>
               <input
                 ref={fileInputRef}
