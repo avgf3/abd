@@ -411,12 +411,7 @@ export default function ProfileModal({
       emoji: '💓',
       description: 'نبض خفيف ومريح',
     },
-    {
-      value: 'effect-glow',
-      name: 'التوهج الذهبي',
-      emoji: '✨',
-      description: 'توهج ذهبي جميل',
-    },
+
     {
       value: 'effect-water',
       name: 'التموج المائي',
@@ -1608,19 +1603,7 @@ export default function ProfileModal({
           50% { transform: scale(1.02); }
         }
         
-        .effect-glow {
-          animation: goldenGlow 4s ease-in-out infinite;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 20px rgba(255,215,0,0.3);
-        }
-        
-        @keyframes goldenGlow {
-          0%, 100% { 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 20px rgba(255,215,0,0.3);
-          }
-          50% { 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 30px rgba(255,215,0,0.6);
-          }
-        }
+        /* effect-glow removed - was causing yellow border issues */
         
         .effect-water {
           animation: waterWave 6s ease-in-out infinite;

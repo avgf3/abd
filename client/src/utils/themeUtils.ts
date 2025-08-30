@@ -2,7 +2,7 @@
 export const getEffectColor = (effect: string): string => {
   const effectColors = {
     none: '#FFFFFF',
-    'effect-glow': '#FFD700', // ذهبي للتوهج
+
     'effect-pulse': '#FF69B4', // وردي للنبض
     'effect-water': '#00CED1', // فيروزي للماء
     'effect-aurora': '#9B59B6', // بنفسجي للشفق
@@ -168,7 +168,7 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
   if (effect !== 'none' && effect !== 'null' && effect !== 'undefined') {
     // إضافة ظلال ملونة حسب التأثير
     const effectShadows: Record<string, string> = {
-      'effect-glow': '0 0 20px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.3)',
+
       'effect-pulse': '0 0 20px rgba(255, 105, 180, 0.5), 0 0 40px rgba(255, 105, 180, 0.3)',
       'effect-water': '0 0 20px rgba(0, 206, 209, 0.5), 0 0 40px rgba(0, 206, 209, 0.3)',
       'effect-aurora': '0 0 20px rgba(155, 89, 182, 0.5), 0 0 40px rgba(155, 89, 182, 0.3)',

@@ -39,7 +39,6 @@ const availableColors = [
 // قائمة التأثيرات المتاحة
 const availableEffects = [
   'none',
-  'effect-glow',
   'effect-pulse',
   'effect-water',
   'effect-aurora',
