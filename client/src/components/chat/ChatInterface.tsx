@@ -411,7 +411,21 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       setProfileUser(user);
       setShowProfile(true);
     } else {
-      showErrorToast('لم نتمكن من العثور على هذا المستخدم', 'مستخدم غير موجود');
+      // محاولة جلب بيانات المستخدم من السيرفر إذا لم يكن ضمن المتصلين
+      (async () => {
+        try {
+          const data = await apiRequest(`/api/users/${userId}?t=${Date.now()}`);
+          if (data && data.id) {
+            setCachedUser(data as any);
+            setProfileUser(data as any);
+            setShowProfile(true);
+          } else {
+            showErrorToast('لم نتمكن من العثور على هذا المستخدم', 'مستخدم غير موجود');
+          }
+        } catch (e) {
+          showErrorToast('تعذر تحميل الملف الشخصي', 'حاول مرة أخرى لاحقاً');
+        }
+      })();
     }
   };
 

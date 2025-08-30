@@ -110,7 +110,7 @@ export function getProfileImageSrc(
  */
 export function getBannerImageSrc(
   bannerSrc: string | null | undefined,
-  fallback: string = 'https://i.imgur.com/rJKrUfs.jpeg'
+  fallback: string = ''
 ): string {
   return getImageSrc(bannerSrc, fallback);
 }
