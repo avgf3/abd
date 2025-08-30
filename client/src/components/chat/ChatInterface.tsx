@@ -346,6 +346,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     });
   };
 
+  // دالة موحدة لفتح ProfileModal مباشرة
+  const handleDirectProfileOpen = (user: ChatUser) => {
+    setProfileUser(user);
+    setShowProfile(true);
+    closeUserPopup();
+  };
+
   const closeUserPopup = () => {
     setUserPopup((prev) => ({ ...prev, show: false }));
   };
@@ -1161,6 +1168,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         <Suspense fallback={null}>
           <SettingsMenu
             onOpenProfile={() => {
+              setProfileUser(chat.currentUser);
               setShowProfile(true);
               setShowSettings(false);
             }}
@@ -1373,7 +1381,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           isOpen={showRichest}
           onClose={() => setShowRichest(false)}
           currentUser={chat.currentUser}
-          onUserClick={handleUserClick}
+          onUserClick={(e, user) => {
+            e.stopPropagation();
+            handleDirectProfileOpen(user);
+          }}
         />
       </Suspense>
 
