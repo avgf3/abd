@@ -1960,7 +1960,7 @@ export default function ProfileModal({
           <div
             className="profile-cover"
             style={{
-              backgroundImage: `url(${getProfileBannerSrcLocal()})`,
+              backgroundImage: getProfileBannerSrcLocal() ? `url(${getProfileBannerSrcLocal()})` : 'none',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
@@ -2075,26 +2075,27 @@ export default function ProfileModal({
               </>
             )}
 
-            <div className="profile-avatar">
-              {/* استخدام المكوّن الموحد لعرض الأفاتار لضمان الاتساق */}
-              {localUser ? (
-                <ProfileImage user={localUser as any} size="large" className="w-full h-full" />
-              ) : (
-                <img
-                  src={getProfileImageSrcLocal()}
-                  alt="الصورة الشخصية"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    display: 'block',
-                    transition: 'none',
-                    backfaceVisibility: 'hidden',
-                    transform: 'translateZ(0)',
-                  }}
-                />
-              )}
-            </div>
+            {getProfileBannerSrcLocal() && (
+              <div className="profile-avatar">
+                {localUser ? (
+                  <ProfileImage user={localUser as any} size="large" className="w-full h-full" />
+                ) : (
+                  <img
+                    src={getProfileImageSrcLocal()}
+                    alt="الصورة الشخصية"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                      transition: 'none',
+                      backfaceVisibility: 'hidden',
+                      transform: 'translateZ(0)',
+                    }}
+                  />
+                )}
+              </div>
+            )}
 
             {localUser?.id === currentUser?.id && (
               <button
