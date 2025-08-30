@@ -58,11 +58,17 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
       <img
         src="/svgs/crown.svg"
         alt="owner"
-        style={{ width: size, height: size, display: 'inline' }}
+        style={{ 
+          width: size, 
+          height: size, 
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          flexShrink: 0
+        }}
         onError={(e) => {
           const target = e.target as HTMLImageElement;
           target.style.display = 'none';
-          target.outerHTML = '<span style="font-size: ' + size + 'px; display: inline;">👑</span>';
+          target.outerHTML = '<span style="font-size: ' + size + 'px; display: inline-block; vertical-align: middle;">👑</span>';
         }}
       />
     );
@@ -73,11 +79,17 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
       <img
         src="/svgs/star.svg"
         alt="admin"
-        style={{ width: size, height: size, display: 'inline' }}
+        style={{ 
+          width: size, 
+          height: size, 
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          flexShrink: 0
+        }}
         onError={(e) => {
           const target = e.target as HTMLImageElement;
           target.style.display = 'none';
-          target.outerHTML = '<span style="font-size: ' + size + 'px; display: inline;">⭐</span>';
+          target.outerHTML = '<span style="font-size: ' + size + 'px; display: inline-block; vertical-align: middle;">⭐</span>';
         }}
       />
     );
@@ -88,11 +100,17 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
       <img
         src="/svgs/moderator_shield.svg"
         alt="moderator"
-        style={{ width: size, height: size, display: 'inline' }}
+        style={{ 
+          width: size, 
+          height: size, 
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          flexShrink: 0
+        }}
         onError={(e) => {
           const target = e.target as HTMLImageElement;
           target.style.display = 'none';
-          target.outerHTML = '<span style="font-size: ' + size + 'px; display: inline;">🛡️</span>';
+          target.outerHTML = '<span style="font-size: ' + size + 'px; display: inline-block; vertical-align: middle;">🛡️</span>';
         }}
       />
     );
@@ -109,11 +127,17 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
         <img
           src="/svgs/blue_arrow.svg"
           alt="male-lvl1-10"
-          style={{ width: size, height: size, display: 'inline' }}
+          style={{ 
+            width: size, 
+            height: size, 
+            display: 'inline-block',
+            verticalAlign: 'middle',
+            flexShrink: 0
+          }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.outerHTML =
-              '<span style="color: #3b82f6; font-size: ' + size + 'px; display: inline;">↗️</span>';
+              '<span style="color: #3b82f6; font-size: ' + size + 'px; display: inline-block; vertical-align: middle;">↗️</span>';
           }}
         />
       );
@@ -124,11 +148,17 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
         <img
           src="/svgs/pink_medal.svg"
           alt="female-lvl1-10"
-          style={{ width: size, height: size, display: 'inline' }}
+          style={{ 
+            width: size, 
+            height: size, 
+            display: 'inline-block',
+            verticalAlign: 'middle',
+            flexShrink: 0
+          }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.outerHTML =
-              '<span style="color: #ec4899; font-size: ' + size + 'px; display: inline;">🏅</span>';
+              '<span style="color: #ec4899; font-size: ' + size + 'px; display: inline-block; vertical-align: middle;">🏅</span>';
           }}
         />
       );
@@ -139,11 +169,17 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
         <img
           src="/svgs/white.svg"
           alt="lvl11-20"
-          style={{ width: size, height: size, display: 'inline' }}
+          style={{ 
+            width: size, 
+            height: size, 
+            display: 'inline-block',
+            verticalAlign: 'middle',
+            flexShrink: 0
+          }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.outerHTML =
-              '<span style="color: #f8fafc; font-size: ' + size + 'px; display: inline;">💎</span>';
+              '<span style="color: #f8fafc; font-size: ' + size + 'px; display: inline-block; vertical-align: middle;">💎</span>';
           }}
         />
       );
@@ -154,11 +190,17 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
         <img
           src="/svgs/emerald.svg"
           alt="lvl21-30"
-          style={{ width: size, height: size, display: 'inline' }}
+          style={{ 
+            width: size, 
+            height: size, 
+            display: 'inline-block',
+            verticalAlign: 'middle',
+            flexShrink: 0
+          }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.outerHTML =
-              '<span style="color: #10b981; font-size: ' + size + 'px; display: inline;">💚</span>';
+              '<span style="color: #10b981; font-size: ' + size + 'px; display: inline-block; vertical-align: middle;">💚</span>';
           }}
         />
       );
@@ -169,11 +211,17 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
         <img
           src="/svgs/orange_shine.svg"
           alt="lvl31-40"
-          style={{ width: size, height: size, display: 'inline' }}
+          style={{ 
+            width: size, 
+            height: size, 
+            display: 'inline-block',
+            verticalAlign: 'middle',
+            flexShrink: 0
+          }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.outerHTML =
-              '<span style="color: #f97316; font-size: ' + size + 'px; display: inline;">🔥</span>';
+              '<span style="color: #f97316; font-size: ' + size + 'px; display: inline-block; vertical-align: middle;">🔥</span>';
           }}
         />
       );
@@ -218,5 +266,16 @@ export default function UserRoleBadge({
   }
   const roleIcon = getUserLevelIcon(user, size);
 
-  return <span className="inline-flex items-center justify-center">{roleIcon}</span>;
+  return (
+    <span 
+      className="inline-flex items-center justify-center flex-shrink-0"
+      style={{ 
+        width: size, 
+        height: size,
+        overflow: 'hidden'
+      }}
+    >
+      {roleIcon}
+    </span>
+  );
 }
