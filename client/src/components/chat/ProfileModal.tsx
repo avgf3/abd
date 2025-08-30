@@ -1999,10 +1999,10 @@ export default function ProfileModal({
                 <div style={{
                   position: 'absolute',
                   bottom: '45px',
-                  left: '160px',
+                  left: '20px',
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
+                  alignItems: 'flex-start',
                   gap: '2px',
                   zIndex: 3
                 }}>
@@ -2043,10 +2043,10 @@ export default function ProfileModal({
                 <div style={{
                   position: 'absolute',
                   bottom: '45px',
-                  left: '160px',
+                  left: '20px',
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
+                  alignItems: 'flex-start',
                   gap: '2px',
                   zIndex: 3
                 }}>
@@ -2112,14 +2112,14 @@ export default function ProfileModal({
                 <button className="btn-chat" onClick={() => onPrivateMessage?.(localUser)}>
                   💬 محادثة خاصة
                 </button>
-                <button className="btn-add" onClick={() => onAddFriend?.(localUser)}>
-                  👥 إضافة صديق
-                </button>
                 <button className="btn-ignore" onClick={() => onIgnoreUser?.(localUser?.id || 0)}>
                   🚫 تجاهل
                 </button>
+                <button className="btn-add" onClick={() => onAddFriend?.(localUser)}>
+                  👥 إضافة صديق
+                </button>
                 <button className="btn-report" onClick={() => onReportUser?.(localUser)}>
-                  🚩 إبلاغ
+                  🚩 بلاغ
                 </button>
               </div>
             )}
