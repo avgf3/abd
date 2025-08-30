@@ -1175,6 +1175,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         <Suspense fallback={null}>
           <SettingsMenu
             onOpenProfile={() => {
+              setProfileUser(chat.currentUser);
               setShowProfile(true);
               setShowSettings(false);
             }}
