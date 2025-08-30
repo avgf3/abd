@@ -7,7 +7,7 @@ import PointsSentNotification from '@/components/ui/PointsSentNotification';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
-import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
+import { getProfileImageSrc } from '@/utils/imageUtils';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
 import {
   getEffectColor,
@@ -39,7 +39,7 @@ export default function ProfileModal({
   onReportUser,
 }: ProfileModalProps) {
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentEditType, setCurrentEditType] = useState<string | null>(null);
@@ -502,11 +502,7 @@ export default function ProfileModal({
     return getProfileImageSrc(localUser?.profileImage);
   };
 
-  // Profile banner fallback - محسّن للتعامل مع base64 و مشاكل الcache
-  // إرجاع مصدر صورة البانر إن وُجد مع دعم المسارات والـ base64
-  const getProfileBannerSrcLocal = () => {
-    return getBannerImageSrc(localUser?.profileBanner);
-  };
+
 
   // Edit modal handlers
   const openEditModal = (type: string) => {
@@ -557,7 +553,7 @@ export default function ProfileModal({
   // عند رفع صورة جديدة، أضمن تحديث بيانات المستخدم من السيرفر بعد نجاح الرفع
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
-    uploadType: 'profile' | 'banner' = 'profile'
+    uploadType: 'profile' = 'profile'
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -581,14 +577,11 @@ export default function ProfileModal({
     }
 
     // التحقق من حجم الملف
-    const maxSize = uploadType === 'profile' ? 5 * 1024 * 1024 : 10 * 1024 * 1024; // 5MB للبروفايل، 10MB للبانر
+    const maxSize = 5 * 1024 * 1024; // 5MB للبروفايل
     if (file.size > maxSize) {
       toast({
         title: 'خطأ',
-        description:
-          uploadType === 'profile'
-            ? 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت'
-            : 'حجم الغلاف يجب أن يكون أقل من 10 ميجابايت',
+        description: 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت',
         variant: 'destructive',
       });
       return;
@@ -598,18 +591,13 @@ export default function ProfileModal({
       setIsLoading(true);
 
       const formData = new FormData();
-      if (uploadType === 'profile') {
-        formData.append('profileImage', file);
-      } else {
-        formData.append('banner', file);
-      }
+      formData.append('profileImage', file);
 
       if (currentUser?.id) {
         formData.append('userId', currentUser.id.toString());
       }
 
-      const endpoint =
-        uploadType === 'profile' ? '/api/upload/profile-image' : '/api/upload/profile-banner';
+      const endpoint = '/api/upload/profile-image';
       const result = await apiRequest(endpoint, { method: 'POST', body: formData });
 
       if (!result.success) {
@@ -617,10 +605,8 @@ export default function ProfileModal({
       }
 
       // تحديث البيانات المحلية فوراً
-      if (uploadType === 'profile' && result.imageUrl) {
+      if (result.imageUrl) {
         updateUserData({ profileImage: result.imageUrl });
-      } else if (uploadType === 'banner' && result.bannerUrl) {
-        updateUserData({ profileBanner: result.bannerUrl });
       }
 
       // انتظار قصير للتأكد من التحديث المحلي
@@ -633,11 +619,11 @@ export default function ProfileModal({
 
       toast({
         title: 'نجح ✅',
-        description: uploadType === 'profile' ? 'تم تحديث الصورة الشخصية' : 'تم تحديث صورة الغلاف',
+        description: 'تم تحديث الصورة الشخصية',
       });
 
       // إزالة المعاينة
-      if (uploadType === 'profile') setPreviewProfile(null);
+      setPreviewProfile(null);
     } catch (error: any) {
       console.error(`❌ خطأ في رفع ${uploadType}:`, error);
       toast({
@@ -648,7 +634,6 @@ export default function ProfileModal({
     } finally {
       setIsLoading(false);
       // تنظيف input files
-      if (fileInputRef.current) fileInputRef.current.value = '';
       if (avatarInputRef.current) avatarInputRef.current.value = '';
     }
   };
@@ -1209,37 +1194,19 @@ export default function ProfileModal({
 
         .profile-cover {
           position: relative;
-          height: 250px;
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
+          height: 200px;
+          background: transparent !important;
+          background-image: none !important;
         }
 
-        .change-cover-btn {
-          position: absolute;
-          top: 12px;
-          left: 12px;
-          background: rgba(0,0,0,0.7);
-          border-radius: 8px;
-          padding: 8px 12px;
-          color: #fff;
-          font-size: 12px;
-          cursor: pointer;
-          z-index: 3;
-          transition: background 0.3s ease;
-          border: none;
-          font-weight: 500;
-        }
 
-        .change-cover-btn:hover {
-          background: rgba(0,0,0,0.9);
-        }
 
         /* شريط الأزرار بجانب الصورة الشخصية */
         .profile-actions {
           position: absolute;
-          bottom: 45px;
-          left: 160px;
+          bottom: 10px;
+          left: 50%;
+          transform: translateX(-50%);
           right: auto;
           display: flex;
           gap: 8px;
@@ -1279,8 +1246,9 @@ export default function ProfileModal({
           overflow: hidden;
           border: 4px solid rgba(255,255,255,0.9);
           position: absolute;
-          top: calc(100% - 90px);
-          right: 20px;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
           background-color: rgba(0,0,0,0.5);
           box-shadow: 0 6px 20px rgba(0,0,0,0.6);
           z-index: 2;
@@ -1288,7 +1256,7 @@ export default function ProfileModal({
         }
 
         .profile-avatar:hover {
-          transform: scale(1.05);
+          transform: translate(-50%, -50%) scale(1.05);
         }
 
         .profile-avatar img {
@@ -1300,8 +1268,9 @@ export default function ProfileModal({
 
         .change-avatar-btn {
           position: absolute;
-          top: calc(100% - 57px);
-          right: 28px;
+          top: 50%;
+          left: calc(50% + 50px);
+          transform: translateY(-50%);
           background: rgba(0,0,0,0.8);
           border-radius: 50%;
           width: 30px;
@@ -1318,7 +1287,7 @@ export default function ProfileModal({
 
         .change-avatar-btn:hover {
           background: rgba(0,0,0,1);
-          transform: scale(1.1);
+          transform: translateY(-50%) scale(1.1);
         }
 
         input[type="file"] {
@@ -1960,27 +1929,23 @@ export default function ProfileModal({
           <div
             className="profile-cover"
             style={{
-              backgroundImage: getProfileBannerSrcLocal() ? `url(${getProfileBannerSrcLocal()})` : 'none',
+              backgroundImage: 'none',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
+              background: 'transparent',
             }}
           >
             {localUser?.id === currentUser?.id && (
               <>
-                <button
-                  className="change-cover-btn"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isLoading}
-                >
-                  🖼️ تغيير الغلاف
-                </button>
+
                 
                 {/* اسم المستخدم مع الرتبة */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '60px',
-                  left: '160px',
+                  bottom: '10px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -2023,8 +1988,9 @@ export default function ProfileModal({
                 {/* اسم المستخدم مع الرتبة */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '70px',
-                  left: '160px',
+                  bottom: '50px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -2075,27 +2041,25 @@ export default function ProfileModal({
               </>
             )}
 
-            {getProfileBannerSrcLocal() && (
-              <div className="profile-avatar">
-                {localUser ? (
-                  <ProfileImage user={localUser as any} size="large" className="w-full h-full" />
-                ) : (
-                  <img
-                    src={getProfileImageSrcLocal()}
-                    alt="الصورة الشخصية"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      display: 'block',
-                      transition: 'none',
-                      backfaceVisibility: 'hidden',
-                      transform: 'translateZ(0)',
-                    }}
-                  />
-                )}
-              </div>
-            )}
+            <div className="profile-avatar">
+              {localUser ? (
+                <ProfileImage user={localUser as any} size="large" className="w-full h-full" />
+              ) : (
+                <img
+                  src={getProfileImageSrcLocal()}
+                  alt="الصورة الشخصية"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                    transition: 'none',
+                    backfaceVisibility: 'hidden',
+                    transform: 'translateZ(0)',
+                  }}
+                />
+              )}
+            </div>
 
             {localUser?.id === currentUser?.id && (
               <button
@@ -2200,13 +2164,7 @@ export default function ProfileModal({
           {/* Hidden File Inputs */}
           {localUser?.id === currentUser?.id && (
             <>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleFileUpload(e, 'banner')}
-                disabled={isLoading}
-              />
+
               <input
                 ref={avatarInputRef}
                 type="file"
