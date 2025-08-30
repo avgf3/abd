@@ -1238,14 +1238,16 @@ export default function ProfileModal({
         /* شريط الأزرار على حافة صورة الغلاف السفلية */
         .profile-actions {
           position: absolute;
-          bottom: 10px;
-          left: 170px;
-          right: 20px;
+          bottom: 0; /* مطابق تماماً لحافة صورة الغلاف من الأسفل */
+          left: 20px; /* محاذاة مع حافة صورة الملف الشخصي */
+          right: calc(20px + 130px + 10px); /* يبدأ من حافة صورة الملف الشخصي */
           display: flex;
           gap: 8px;
           align-items: center;
-          flex-wrap: wrap;
+          justify-content: space-between; /* توزيع متساوي للأزرار */
+          flex-wrap: nowrap; /* منع التفاف الأزرار */
           z-index: 10;
+          padding: 10px 0; /* إضافة padding للأزرار */
         }
 
         .profile-actions button {
