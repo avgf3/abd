@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
+import UserProfileCard from '@/components/profile/UserProfileCard';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Input } from '@/components/ui/input';
@@ -327,54 +328,23 @@ export default function PrivateMessageBox({
           transition={{ duration: 0.4, ease: "easeOut" }}
           className="relative z-[12000] w-[95vw] max-w-lg max-h-[85vh] bg-white text-gray-900 border border-gray-200 shadow-2xl rounded-xl overflow-hidden cursor-grab active:cursor-grabbing soft-entrance container-sway"
         >
-          <DialogHeader className="border-b border-gray-200 p-3 bg-white">
-            <div className="flex items-center gap-3">
-              <ProfileImage
+          <DialogHeader className="border-b border-gray-200 p-0 bg-white">
+            <div className="flex items-center">
+              <UserProfileCard
                 user={user}
-                size="small"
-                className="w-10 h-10 cursor-pointer hover:opacity-90 transition"
-                onClick={() => handleViewProfileClick()}
+                currentUser={currentUser}
+                className="flex-1 px-3 py-2"
+                onPrivateMessage={() => {}}
+                onAddFriend={() => {}}
               />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="text-base font-medium transition-all duration-300 truncate cursor-pointer hover:underline"
-                      onClick={handleViewProfileClick}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleViewProfileClick();
-                        }
-                      }}
-                      style={{
-                        color: getFinalUsernameColor(user),
-                        textShadow: getFinalUsernameColor(user)
-                          ? `0 0 10px ${getFinalUsernameColor(user)}40`
-                          : 'none',
-                        filter: getFinalUsernameColor(user)
-                          ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
-                          : 'none',
-                      }}
-                      title={user.username}
-                    >
-                      {user.username}
-                    </span>
-                    <UserRoleBadge user={user} size={20} />
-                  </div>
-                  <Button
-                    onClick={onClose}
-                    variant="ghost"
-                    size="sm"
-                    className="ml-auto px-2 py-1 hover:bg-red-100 text-red-600"
-                  >
-                    ✖️
-                  </Button>
-                </div>
-                <span className="text-xs text-gray-500">رسائل خاصة</span>
-              </div>
+              <Button
+                onClick={onClose}
+                variant="ghost"
+                size="sm"
+                className="ml-auto mr-2 px-2 py-1 hover:bg-red-100 text-red-600"
+              >
+                ✖️
+              </Button>
             </div>
           </DialogHeader>
 
