@@ -2075,27 +2075,7 @@ export default function ProfileModal({
               </>
             )}
 
-            {getProfileBannerSrcLocal() && (
-              <div className="profile-avatar">
-                {localUser ? (
-                  <ProfileImage user={localUser as any} size="large" className="w-full h-full" />
-                ) : (
-                  <img
-                    src={getProfileImageSrcLocal()}
-                    alt="الصورة الشخصية"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      display: 'block',
-                      transition: 'none',
-                      backfaceVisibility: 'hidden',
-                      transform: 'translateZ(0)',
-                    }}
-                  />
-                )}
-              </div>
-            )}
+            {/* تمت إزالة أفاتار الغلاف حسب الطلب */}
 
             {localUser?.id === currentUser?.id && (
               <button
