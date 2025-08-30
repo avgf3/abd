@@ -1235,32 +1235,33 @@ export default function ProfileModal({
           background: rgba(0,0,0,0.9);
         }
 
-        /* شريط الأزرار على حافة صورة الغلاف السفلية */
+        /* شريط الأزرار داخل صورة الغلاف على يسار صورة الملف الشخصي */
         .profile-actions {
           position: absolute;
-          bottom: 0; /* مطابق تماماً لحافة صورة الغلاف من الأسفل */
-          left: 20px; /* محاذاة مع حافة صورة الملف الشخصي */
-          right: calc(20px + 130px + 10px); /* يبدأ من حافة صورة الملف الشخصي */
+          bottom: 10px; /* داخل صورة الغلاف قرب الحافة السفلية */
+          left: 20px; /* البداية من اليسار */
+          right: calc(20px + 130px + 10px); /* تنتهي عند يسار صورة الملف الشخصي */
           display: flex;
           gap: 8px;
           align-items: center;
-          justify-content: space-between; /* توزيع متساوي للأزرار */
+          justify-content: space-evenly; /* توزيع متساوي للأزرار */
           flex-wrap: nowrap; /* منع التفاف الأزرار */
           z-index: 10;
-          padding: 10px 0; /* إضافة padding للأزرار */
         }
 
         .profile-actions button {
           border: none;
-          padding: 6px 10px;
+          padding: 8px 12px;
           border-radius: 8px;
           font-weight: bold;
-          font-size: 12px;
+          font-size: 13px;
           cursor: pointer;
           color: #fff;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
           transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
           white-space: nowrap;
+          backdrop-filter: blur(5px);
+          background-color: rgba(0,0,0,0.2);
         }
 
         .profile-actions button:hover {
@@ -1939,8 +1940,8 @@ export default function ProfileModal({
           /* أنماط الأزرار للأجهزة المحمولة */
           .profile-actions {
             bottom: 8px;
-            left: 120px;
-            right: 10px;
+            left: 10px;
+            right: calc(16px + 100px + 8px); /* محاذاة مع صورة الملف الشخصي الصغيرة */
             gap: 6px;
           }
           
