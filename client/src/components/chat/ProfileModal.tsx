@@ -1239,7 +1239,7 @@ export default function ProfileModal({
         .profile-actions {
           position: absolute;
           bottom: 15px;
-          left: 160px;
+          left: 20px;
           right: auto;
           display: flex;
           gap: 5px;
@@ -1938,7 +1938,7 @@ export default function ProfileModal({
           /* أنماط الأزرار للأجهزة المحمولة */
           .profile-actions {
             bottom: 10px;
-            left: 120px;
+            left: 10px;
             right: auto;
             gap: 3px;
             padding: 0;
