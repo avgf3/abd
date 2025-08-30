@@ -21,7 +21,6 @@ import ProfileImage from './ProfileImage';
 import RoomComponent from './RoomComponent';
 import SimpleUserMenu from './SimpleUserMenu';
 import UserRoleBadge from './UserRoleBadge';
-import UnifiedUserCard from './UnifiedUserCard';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -494,30 +493,50 @@ export default function UnifiedSidebar({
 
   // تم نقل دالة formatTimeAgo إلى utils/timeUtils.ts (تستخدم من الاستيراد أعلاه)
 
-  // عنصر مستخدم فرعي معزول لتحسين الأداء - استخدام UnifiedUserCard
+  // عنصر مستخدم فرعي معزول لتحسين الأداء
   const UserListItem = useMemo(
     () =>
       React.memo(({ user }: { user: ChatUser }) => {
         if (!user?.username || !user?.userType) return null;
         return (
-          <li key={user.id} className="relative list-none border-b border-black">
-            <UnifiedUserCard
-              user={user}
-              variant="normal"
-              showProfileImage={true}
-              showRoleBadge={true}
-              showCountryFlag={true}
-              onUserClick={handleUserClick}
+          <li key={user.id} className="relative list-none">
+            <SimpleUserMenu
+              targetUser={user}
               currentUser={currentUser}
-              enableMenu={true}
-              enableEffects={true}
-              imageSize="small"
-              className="hover:bg-accent/10 cursor-pointer"
-            />
+              showModerationActions={isModerator}
+            >
+              <div
+                className={`flex items-center gap-2 py-1.5 px-0 rounded-none border-b border-black transition-colors duration-200 cursor-pointer w-full ${getUserListItemClasses(user) || 'bg-card hover:bg-accent/10'}`}
+                style={getUserListItemStyles(user)}
+                onClick={(e) => handleUserClick(e as any, user)}
+              >
+                <ProfileImage user={user} size="small" className="" hideRoleBadgeOverlay={true} />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="text-base font-medium transition-colors duration-300"
+                        style={{
+                          color: getFinalUsernameColor(user),
+                        }}
+                        title={user.username}
+                      >
+                        {user.username}
+                      </span>
+                      {user.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {renderUserBadge(user)}
+                      {renderCountryFlag(user)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </SimpleUserMenu>
           </li>
         );
       }),
-    [currentUser, handleUserClick]
+    [currentUser, isModerator, renderCountryFlag, renderUserBadge]
   );
 
   return (
