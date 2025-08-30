@@ -70,9 +70,6 @@ async function buildOnlineUsersForRoom(roomId: string) {
   const sanitized = sanitizeUsersArray(Array.from(userMap.values()));
   const users = sanitized.map((u: any) => {
     try {
-      let updatedUser = { ...u };
-      
-      // معالجة profileImage
       const versionTag = (u as any).avatarHash || (u as any).avatarVersion;
       if (
         u?.profileImage &&
@@ -81,19 +78,8 @@ async function buildOnlineUsersForRoom(roomId: string) {
         versionTag &&
         !String(u.profileImage).includes('?v=')
       ) {
-        updatedUser.profileImage = `${u.profileImage}?v=${versionTag}`;
+        return { ...u, profileImage: `${u.profileImage}?v=${versionTag}` };
       }
-      
-      // إضافة profileBanner إذا كان موجودًا
-      if (
-        u?.profileBanner &&
-        typeof u.profileBanner === 'string' &&
-        !u.profileBanner.startsWith('data:')
-      ) {
-        updatedUser.profileBanner = u.profileBanner;
-      }
-      
-      return updatedUser;
     } catch {}
     return u;
   });
