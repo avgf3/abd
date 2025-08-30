@@ -491,7 +491,7 @@ export default function MessageArea({
                               <img
                                 src={final}
                                 alt={`صورة ${message.sender?.username || ''}`}
-                                className={"w-7 h-7 rounded-full ring-2 shadow-sm object-cover cursor-pointer hover:scale-110 transition-transform duration-200"}
+                                className={"w-7 h-7 rounded-lg ring-2 shadow-sm object-cover cursor-pointer hover:scale-110 transition-transform duration-200"}
                                 loading="lazy"
                                 onError={(e: any) => {
                                   if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {

@@ -65,12 +65,12 @@ export default function ProfileImage({
       {/* إطار متدرج إذا كان متوفرًا */}
       {gradientBorder && (
         <div 
-          className={`absolute inset-0 ${sizeClasses[size]} rounded-full`}
+          className={`absolute inset-0 ${sizeClasses[size]} rounded-lg`}
           style={{
             background: gradientBorder,
             padding: '3px',
-            WebkitMaskImage: 'radial-gradient(circle, transparent 65%, black 65%)',
-            maskImage: 'radial-gradient(circle, transparent 65%, black 65%)',
+            WebkitMaskImage: 'linear-gradient(to right, transparent 2px, black 2px, black calc(100% - 2px), transparent calc(100% - 2px))',
+            maskImage: 'linear-gradient(to right, transparent 2px, black 2px, black calc(100% - 2px), transparent calc(100% - 2px))',
           }}
         />
       )}
@@ -79,7 +79,7 @@ export default function ProfileImage({
       <img
         src={imageSrc}
         alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className} ${gradientBorder ? 'relative' : ''}`}
+        className={`${sizeClasses[size]} rounded-lg ring-2 ${borderColor} shadow-sm object-cover ${className} ${gradientBorder ? 'relative' : ''}`}
         style={{
           transition: 'none',
           backfaceVisibility: 'hidden',

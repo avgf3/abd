@@ -31,7 +31,7 @@ export default function PointsSentNotification({
       <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 rounded-lg shadow-lg border border-green-400 min-w-[300px] max-w-sm">
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
               <Gift className="w-6 h-6 text-white" />
             </div>
           </div>

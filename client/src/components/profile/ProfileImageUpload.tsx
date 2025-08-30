@@ -153,7 +153,7 @@ export default function ProfileImageUpload({
           <img
             src={preview}
             alt="معاينة الصورة"
-            className="w-full h-full rounded-full object-cover border-4 border-primary"
+            className="w-full h-full rounded-lg object-cover border-4 border-primary"
           />
           <button
             onClick={removePreview}

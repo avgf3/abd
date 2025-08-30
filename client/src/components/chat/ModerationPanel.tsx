@@ -350,7 +350,7 @@ export default function ModerationPanel({
                         <img
                           src={getImageSrc(user.profileImage)}
                           alt={user.username}
-                          className="w-10 h-10 rounded-full"
+                          className="w-10 h-10 rounded-lg"
                         />
                         <div>
                           <div className="font-semibold flex items-center gap-2">
@@ -411,7 +411,7 @@ export default function ModerationPanel({
                           <img
                             src={getImageSrc(user.profileImage)}
                             alt={user.username}
-                            className="w-10 h-10 rounded-full opacity-50"
+                            className="w-10 h-10 rounded-lg opacity-50"
                           />
                           <div>
                             <div className="font-semibold flex items-center gap-2">

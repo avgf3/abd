@@ -572,7 +572,7 @@ export default function OwnerAdminPanel({
                               <img
                                 src={getImageSrc(staff.profileImage)}
                                 alt={staff.username}
-                                className="w-14 h-14 rounded-full ring-2 ring-purple-200 object-cover"
+                                className="w-14 h-14 rounded-lg ring-2 ring-purple-200 object-cover"
                               />
                             </div>
 
