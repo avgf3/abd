@@ -44,6 +44,7 @@ import { notificationService } from './services/notificationService';
 import { issueAuthToken, getAuthTokenFromRequest, verifyAuthToken } from './utils/auth-token';
 import { setupDownloadRoute } from './download-route';
 import { setupCompleteDownload } from './download-complete';
+import type { Request, Response } from 'express';
 
 // إعداد multer موحد لرفع الصور
 const createMulterConfig = (
@@ -1315,6 +1316,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // إعداد Socket.IO من خلال وحدة realtime الموحدة
   const { setupRealtime } = await import('./realtime');
   const io = setupRealtime(httpServer);
+  // Lightweight endpoint to receive performance metrics
+  app.post('/api/perf', express.json({ limit: '32kb' }), (req: Request, res: Response) => {
+    try {
+      const { name, value, ts } = req.body || {};
+      if (typeof name === 'string' && typeof value === 'number') {
+        // Best-effort logging to stdout (removed in production build logs cleaner)
+      }
+    } catch {}
+    res.status(204).end();
+  });
 
   // تطبيق فحص الأمان على جميع الطلبات
   app.use(checkIPSecurity);

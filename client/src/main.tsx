@@ -5,6 +5,7 @@ import App from './App';
 import './index.css';
 // import { getSocket } from '@/lib/socket'; // defer dynamic import instead
 import { applyThemeById } from '@/utils/applyTheme';
+import { initPerfMonitoring } from '@/lib/perf';
 
 // تطبيق الثيم المحفوظ عند بدء التطبيق
 try {
@@ -33,6 +34,7 @@ try {
 				.then((mod) => {
 					const socket = mod?.getSocket?.();
 					if (!socket) return;
+					performance.mark?.('socket:ready');
 					socket.on('message', (payload: any) => {
 						if (payload?.type === 'site_theme_update' && payload?.siteTheme) {
 							applyThemeById(payload.siteTheme, false);
@@ -54,7 +56,17 @@ try {
 	} catch {}
 })();
 
+try {
+	performance.mark?.('app:start');
+	initPerfMonitoring();
+} catch {}
+
 createRoot(document.getElementById('root')!).render(<App />);
+
+try {
+	performance.mark?.('app:afterRender');
+	performance.measure?.('app:render', 'app:start', 'app:afterRender');
+} catch {}
 
 // Register Service Worker (production only)
 try {
