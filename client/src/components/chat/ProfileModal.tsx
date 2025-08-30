@@ -1296,6 +1296,7 @@ export default function ProfileModal({
           height: 100%;
           object-fit: cover;
           display: block;
+          border-radius: 0; /* إزالة أي استدارة للصورة */
         }
 
         .change-avatar-btn {
@@ -1913,6 +1914,7 @@ export default function ProfileModal({
             height: 100px;
             top: calc(100% - 50px);
             right: 16px;
+            border-radius: 12px; /* زوايا مدورة قليلاً للأجهزة المحمولة */
           }
           
           .change-avatar-btn {
@@ -2076,24 +2078,20 @@ export default function ProfileModal({
             )}
 
             <div className="profile-avatar">
-              {/* استخدام المكوّن الموحد لعرض الأفاتار لضمان الاتساق */}
-              {localUser ? (
-                <ProfileImage user={localUser as any} size="large" className="w-full h-full" />
-              ) : (
-                <img
-                  src={getProfileImageSrcLocal()}
-                  alt="الصورة الشخصية"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    display: 'block',
-                    transition: 'none',
-                    backfaceVisibility: 'hidden',
-                    transform: 'translateZ(0)',
-                  }}
-                />
-              )}
+              {/* عرض الصورة مباشرة بدون استخدام ProfileImage للحصول على شكل مربع */}
+              <img
+                src={getProfileImageSrcLocal()}
+                alt="الصورة الشخصية"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block',
+                  transition: 'none',
+                  backfaceVisibility: 'hidden',
+                  transform: 'translateZ(0)',
+                }}
+              />
             </div>
 
             {localUser?.id === currentUser?.id && (
