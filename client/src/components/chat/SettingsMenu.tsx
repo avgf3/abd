@@ -2,6 +2,7 @@ import { User, Home, Moon, Shield, LogOut, Settings, Palette, Brush } from 'luci
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import UnifiedUserCard from '@/components/chat/UnifiedUserCard';
 import { getFinalUsernameColor, getUserListItemStyles } from '@/utils/themeUtils';
 
 interface SettingsMenuProps {
@@ -35,13 +36,19 @@ export default function SettingsMenu({
     <Card className="fixed top-20 right-4 z-50 shadow-2xl animate-fade-in w-56 bg-card/95 backdrop-blur-md border-accent">
       <CardContent className="p-0">
         {currentUser && (
-          <div className="p-3 border-b border-border" style={getUserListItemStyles(currentUser)}>
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4" style={{ color: getFinalUsernameColor(currentUser) }} />
-              <span className="font-semibold" style={{ color: getFinalUsernameColor(currentUser) }}>
-                {currentUser.username}
-              </span>
-            </div>
+          <div className="border-b border-border">
+            <UnifiedUserCard
+              user={currentUser}
+              variant="normal"
+              showProfileImage={true}
+              showRoleBadge={true}
+              showCountryFlag={false}
+              currentUser={currentUser}
+              enableMenu={false}
+              enableEffects={true}
+              imageSize="small"
+              className="p-3"
+            />
           </div>
         )}
         {/* القسم الأول - الملف الشخصي */}
