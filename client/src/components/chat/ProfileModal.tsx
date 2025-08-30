@@ -1235,17 +1235,17 @@ export default function ProfileModal({
           background: rgba(0,0,0,0.9);
         }
 
-        /* شريط الأزرار بجانب الصورة الشخصية */
+        /* شريط الأزرار على حافة صورة الغلاف السفلية */
         .profile-actions {
           position: absolute;
-          bottom: 45px;
-          left: 160px;
-          right: auto;
+          bottom: 10px;
+          left: 170px;
+          right: 20px;
           display: flex;
           gap: 8px;
           align-items: center;
-          flex-wrap: nowrap;
-          z-index: 3;
+          flex-wrap: wrap;
+          z-index: 10;
         }
 
         .profile-actions button {
@@ -1933,6 +1933,19 @@ export default function ProfileModal({
           .profile-info h3 {
             font-size: 18px;
           }
+          
+          /* أنماط الأزرار للأجهزة المحمولة */
+          .profile-actions {
+            bottom: 8px;
+            left: 120px;
+            right: 10px;
+            gap: 6px;
+          }
+          
+          .profile-actions button {
+            padding: 5px 8px;
+            font-size: 11px;
+          }
         }
       `}</style>
 
@@ -2058,22 +2071,6 @@ export default function ProfileModal({
                     {localUser?.username || 'اسم المستخدم'}
                   </h3>
                 </div>
-                
-                {/* الأزرار */}
-                <div className="profile-actions">
-                  <button className="btn-chat" onClick={() => onPrivateMessage?.(localUser)}>
-                    💬 محادثة خاصة
-                  </button>
-                  <button className="btn-add" onClick={() => onAddFriend?.(localUser)}>
-                    👥 إضافة صديق
-                  </button>
-                  <button className="btn-ignore" onClick={() => onIgnoreUser?.(localUser?.id || 0)}>
-                    🚫 تجاهل
-                  </button>
-                  <button className="btn-report" onClick={() => onReportUser?.(localUser)}>
-                    🚩 إبلاغ
-                  </button>
-                </div>
               </>
             )}
 
@@ -2103,6 +2100,24 @@ export default function ProfileModal({
               >
                 📷
               </button>
+            )}
+
+            {/* الأزرار - على حافة صورة الغلاف السفلية */}
+            {localUser?.id !== currentUser?.id && (
+              <div className="profile-actions">
+                <button className="btn-chat" onClick={() => onPrivateMessage?.(localUser)}>
+                  💬 محادثة خاصة
+                </button>
+                <button className="btn-add" onClick={() => onAddFriend?.(localUser)}>
+                  👥 إضافة صديق
+                </button>
+                <button className="btn-ignore" onClick={() => onIgnoreUser?.(localUser?.id || 0)}>
+                  🚫 تجاهل
+                </button>
+                <button className="btn-report" onClick={() => onReportUser?.(localUser)}>
+                  🚩 إبلاغ
+                </button>
+              </div>
             )}
           </div>
 
