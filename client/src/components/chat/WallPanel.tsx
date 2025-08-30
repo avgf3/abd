@@ -412,12 +412,12 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
                 <Card className="mb-6 border-0 shadow-lg bg-background/80 backdrop-blur-sm">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
                         {currentUser.profileImage ? (
                           <img
                             src={getImageSrc(currentUser.profileImage)}
                             alt={currentUser.username}
-                            className="w-10 h-10 rounded-full object-cover"
+                            className="w-10 h-10 rounded-lg object-cover"
                           />
                         ) : (
                           <span className="text-sm font-bold text-primary">
@@ -547,7 +547,7 @@ export default function WallPanel({ isOpen, onClose, currentUser }: WallPanelPro
           <div className="w-full sm:w-3/5 p-4 sm:p-6 mt-4 sm:mt-0">
             <div className="h-full bg-gradient-to-br from-muted/10 to-muted/20 rounded-2xl flex items-center justify-center text-muted-foreground border border-dashed border-border/50">
               <div className="text-center">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                <div className="w-20 h-20 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-6">
                   <div className="text-4xl">💬</div>
                 </div>
                 <h3 className="text-xl font-semibold mb-2">منطقة الدردشة المدمجة</h3>

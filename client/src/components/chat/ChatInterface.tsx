@@ -1399,7 +1399,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                       {u ? (
                         <ProfileImage user={u} size="small" />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                        <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center text-gray-500">
                           ?
                         </div>
                       )}

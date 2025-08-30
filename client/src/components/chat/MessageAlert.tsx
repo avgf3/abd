@@ -48,7 +48,7 @@ export default function MessageAlert({
           <img
             src={getImageSrc(sender.profileImage)}
             alt="صورة المرسل"
-            className="w-12 h-12 rounded-full border-2 border-white object-cover"
+            className="w-12 h-12 rounded-lg border-2 border-white object-cover"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.src = '/default_avatar.svg';

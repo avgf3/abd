@@ -760,7 +760,7 @@ export default function UnifiedSidebar({
                     <Card key={post.id} className="border border-border bg-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center">
                             {post.userProfileImage ? (
                               <img
                                 src={getImageSrc(post.userProfileImage)}

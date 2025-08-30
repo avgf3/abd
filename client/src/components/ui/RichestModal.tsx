@@ -314,7 +314,7 @@ export default function RichestModal({ isOpen, onClose, currentUser, onUserClick
                     <img
                       src={getImageSrc(c.profileImage || '/default_avatar.svg')}
                       alt={c.username}
-                      className="w-6 h-6 rounded-full"
+                      className="w-6 h-6 rounded-lg"
                     />
                     <div className="flex-1 text-sm">{c.username}</div>
                     <button

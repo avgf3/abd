@@ -41,7 +41,7 @@ export default function WallPostList({
   if (!posts || posts.length === 0) {
     return (
       <div className="text-center py-16">
-        <div className="w-16 h-16 rounded-full bg-muted/20 flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-lg bg-muted/20 flex items-center justify-center mx-auto mb-4">
           <Globe className="h-8 w-8 text-muted-foreground" />
         </div>
         <h3 className="text-lg font-semibold mb-2">لا توجد منشورات بعد</h3>
@@ -65,12 +65,12 @@ export default function WallPostList({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-primary/10">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-2 ring-primary/10">
                     {post.userProfileImage ? (
                       <img
                         src={getImageSrc(post.userProfileImage)}
                         alt={post.username}
-                        className="w-12 h-12 rounded-full object-cover"
+                        className="w-12 h-12 rounded-lg object-cover"
                       />
                     ) : (
                       <span className="text-lg font-bold text-primary">
