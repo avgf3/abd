@@ -1981,7 +1981,7 @@ export default function ProfileModal({
                 {/* اسم المستخدم مع الرتبة */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '60px',
+                  bottom: '45px',
                   left: '160px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -2025,7 +2025,7 @@ export default function ProfileModal({
                 {/* اسم المستخدم مع الرتبة */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '70px',
+                  bottom: '45px',
                   left: '160px',
                   display: 'flex',
                   flexDirection: 'column',
