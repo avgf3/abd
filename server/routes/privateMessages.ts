@@ -80,6 +80,14 @@ router.post('/send', protect.auth, limiters.pmSend, async (req, res) => {
     // فحص السبام/التكرار
     const check = spamProtection.checkMessage(parseInt(String(senderId)), text);
     if (!check.isAllowed) {
+      try {
+        if (check.action === 'tempBan') {
+          await storage.updateUser(parseInt(String(senderId)), {
+            isMuted: true as any,
+            muteExpiry: new Date(Date.now() + 60 * 1000) as any,
+          });
+        }
+      } catch {}
       return res.status(400).json({ error: check.reason || 'تم منع الرسالة بسبب التكرار/السبام' });
     }
 

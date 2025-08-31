@@ -43,8 +43,8 @@ export class SpamProtection {
         // كلمات محظورة أساسية فقط
         'سبام',
       ],
-      maxDuplicateMessages: 10, // زيادة الحد المسموح
-      duplicateTimeWindow: 30000, // 30 ثانية فقط
+      maxDuplicateMessages: 3, // عند الثالثة نوقف
+      duplicateTimeWindow: 60000, // 60 ثانية
     };
 
     this.userSpamData = new Map();
@@ -119,11 +119,12 @@ export class SpamProtection {
       (msg) => msg.content.toLowerCase() === content.toLowerCase()
     ).length;
 
-    if (duplicateCount >= this.config.maxDuplicateMessages) {
+    // إذا كانت هذه هي المحاولة الثالثة لنفس النص خلال النافذة الزمنية
+    if (duplicateCount >= this.config.maxDuplicateMessages - 1) {
       return {
         isAllowed: false,
-        reason: 'لا يمكن إرسال نفس الرسالة عدة مرات',
-        action: duplicateCount >= 5 ? 'tempBan' : 'warn',
+        reason: 'تم إيقاف الكتابة لمدة دقيقة بسبب تكرار نفس الرسالة',
+        action: 'tempBan',
       };
     }
 

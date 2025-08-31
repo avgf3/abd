@@ -76,6 +76,14 @@ class RoomMessageService {
       // فحص السبام/التكرار قبل الإنشاء
       const check = spamProtection.checkMessage(messageData.senderId, messageData.content);
       if (!check.isAllowed) {
+        try {
+          if (check.action === 'tempBan') {
+            await storage.updateUser(messageData.senderId, {
+              isMuted: true as any,
+              muteExpiry: new Date(Date.now() + 60 * 1000) as any,
+            });
+          }
+        } catch {}
         throw new Error(check.reason || 'تم منع الرسالة بسبب التكرار/السبام');
       }
 
