@@ -618,6 +618,7 @@ export const useChat = () => {
                 isPrivate: Boolean(message.isPrivate),
                 reactions: message.reactions || { like: 0, dislike: 0, heart: 0 },
                 myReaction: message.myReaction ?? null,
+                attachments: message.attachments || [],
               };
 
               // إضافة الرسالة للغرفة المناسبة (عام فقط)

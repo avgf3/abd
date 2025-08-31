@@ -52,6 +52,8 @@ export interface ChatMessage {
   };
   // تفاعل المستخدم الحالي إن وُجد
   myReaction?: 'like' | 'dislike' | 'heart' | null;
+  // اختياري: مرفقات الرسالة
+  attachments?: any[];
 }
 
 export interface PrivateConversation {
