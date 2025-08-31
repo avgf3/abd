@@ -9,7 +9,7 @@ import ffprobeStatic from 'ffprobe-static';
 
 import { dbType } from '../database-adapter';
 import { protect } from '../middleware/enhancedSecurity';
-import { limiters } from '../security';
+import { limiters, sanitizeInput, validateMessageContent } from '../security';
 import { databaseService } from '../services/databaseService';
 import { storage } from '../storage';
 
@@ -173,7 +173,7 @@ router.get('/:storyId/views', protect.auth, async (req, res) => {
 });
 
 // POST /api/stories/:storyId/react - set like/heart/dislike
-router.post('/:storyId/react', protect.auth, async (req, res) => {
+router.post('/:storyId/react', protect.auth, limiters.reaction, async (req, res) => {
   try {
     const userId = (req as any)?.user?.id as number;
     if (!userId) return res.status(401).json({ error: 'غير مصرح' });
@@ -194,10 +194,27 @@ router.post('/:storyId/react', protect.auth, async (req, res) => {
       if (story && story.userId && story.userId !== userId) {
         const actor = await storage.getUser(userId);
         const actorName = (actor && (actor as any).username) ? (actor as any).username : `User#${userId}`;
+        const owner = await storage.getUser(story.userId);
+        const ownerName = (owner && (owner as any).username) ? (owner as any).username : `User#${story.userId}`;
         const reactionText = type === 'heart' ? '❤️ أعجب بحالتك'
           : type === 'like' ? '👍 وضع لايك على حالتك'
           : '👎 لم تعجبه حالتك';
-        const content = `${actorName} ${reactionText}`;
+
+        // تضمين منشن للمستلم ليتم إبراز اسمه في الواجهة
+        const content = `@${ownerName} ${actorName} ${reactionText}`;
+
+        const attachments = [
+          {
+            type: 'storyContext',
+            channel: 'story',
+            subtype: 'reaction',
+            storyId: story.id,
+            storyUserId: story.userId,
+            storyMediaUrl: story.mediaUrl,
+            storyMediaType: story.mediaType,
+            reactionType: type,
+          },
+        ];
 
         const messageData = {
           senderId: userId,
@@ -205,6 +222,7 @@ router.post('/:storyId/react', protect.auth, async (req, res) => {
           content,
           messageType: 'text',
           isPrivate: true,
+          attachments,
           timestamp: new Date(),
         } as any;
 
@@ -238,6 +256,70 @@ router.delete('/:storyId/react', protect.auth, async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'خطأ في الخادم' });
+  }
+});
+
+// POST /api/stories/:storyId/reply - reply to a story (DM with mention + story context)
+router.post('/:storyId/reply', protect.auth, limiters.pmSend, async (req, res) => {
+  try {
+    const senderId = (req as any)?.user?.id as number;
+    if (!senderId) return res.status(401).json({ error: 'غير مصرح' });
+    const storyId = parseInt(req.params.storyId, 10);
+    if (!Number.isFinite(storyId)) return res.status(400).json({ error: 'storyId غير صالح' });
+
+    const raw = (req.body?.content as string) || '';
+    const contentClean = sanitizeInput(raw);
+    const check = validateMessageContent(contentClean);
+    if (!check.isValid) return res.status(400).json({ error: check.reason || 'محتوى غير مسموح' });
+
+    const story = await databaseService.getStoryById(storyId);
+    if (!story) return res.status(404).json({ error: 'الحالة غير موجودة' });
+    if (story.userId === senderId) return res.status(400).json({ error: 'لا يمكنك الرد على حالتك' });
+
+    const actor = await storage.getUser(senderId);
+    const actorName = (actor && (actor as any).username) ? (actor as any).username : `User#${senderId}`;
+    const owner = await storage.getUser(story.userId);
+    const ownerName = (owner && (owner as any).username) ? (owner as any).username : `User#${story.userId}`;
+
+    // تضمين منشن للمستلم + نص التعليق
+    const content = `@${ownerName} ${actorName} علّق على حالتك: ${contentClean}`;
+
+    const attachments = [
+      {
+        type: 'storyContext',
+        channel: 'story',
+        subtype: 'reply',
+        storyId: story.id,
+        storyUserId: story.userId,
+        storyMediaUrl: story.mediaUrl,
+        storyMediaType: story.mediaType,
+      },
+    ];
+
+    const messageData = {
+      senderId,
+      receiverId: story.userId,
+      content,
+      messageType: 'text',
+      isPrivate: true,
+      attachments,
+      timestamp: new Date(),
+    } as any;
+
+    const newMessage = await storage.createMessage(messageData);
+    if (!newMessage) return res.status(500).json({ error: 'فشل في إنشاء الرسالة' });
+
+    const io = req.app.get('io');
+    if (io) {
+      const payload = { message: { ...newMessage, sender: actor || { id: senderId, username: actorName } } };
+      try { io.to(String(senderId)).emit('privateMessage', payload); } catch {}
+      try { io.to(String(story.userId)).emit('privateMessage', payload); } catch {}
+    }
+
+    return res.json({ success: true, message: newMessage });
+  } catch (error: any) {
+    console.error('Error replying to story:', error);
+    return res.status(500).json({ error: error?.message || 'خطأ في الخادم' });
   }
 });
 

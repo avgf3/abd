@@ -967,7 +967,11 @@ export const useChat = () => {
             sender: message.sender,
             receiverId: message.receiverId,
             isPrivate: true,
+            attachments: message.attachments || [],
           };
+
+          // تجاهل رسائل الحالات في محادثات الطرفين إذا أردنا فصلها لاحقاً (سنبقيها الآن ولكن نضع علامة)
+          const isStoryChannel = Array.isArray(chatMessage.attachments) && chatMessage.attachments.some((a: any) => a?.channel === 'story');
 
           // تحديد معرف المحادثة بشكل محسن
           let conversationId: number;
@@ -1003,6 +1007,7 @@ export const useChat = () => {
                 otherUserId: conversationId,
                 senderId: message.senderId,
                 receiverId: message.receiverId,
+                storyChannel: isStoryChannel,
               } as any;
               window.dispatchEvent(new CustomEvent('privateMessageReceived', { detail }));
             } catch {}
