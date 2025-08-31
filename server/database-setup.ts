@@ -17,6 +17,7 @@ import {
   initializeDatabase as initDB,
   runMigrationsIfAvailable,
 } from './database-adapter';
+import { ensureStoriesTables } from './database-adapter';
 
 // إعادة تصدير دالة التهيئة من المحول
 export { initializeDatabase } from './database-adapter';
@@ -244,6 +245,13 @@ export async function initializeSystem(): Promise<boolean> {
       await runMigrationsIfAvailable();
     } catch (e) {
       console.warn('⚠️ تعذر تشغيل الهجرات تلقائياً:', (e as any)?.message || e);
+    }
+
+    // ضمان إنشاء جداول القصص في حال غابت الهجرات
+    try {
+      await ensureStoriesTables();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان جداول القصص:', (e as any)?.message || e);
     }
 
     // إنشاء الغرف الافتراضية إذا كانت غير موجودة (بعد الهجرات)

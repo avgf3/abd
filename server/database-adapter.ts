@@ -149,3 +149,70 @@ export async function runMigrationsIfAvailable(): Promise<void> {
     }
   } catch {}
 }
+
+// Ensure required tables exist even if migrations didn't run
+export async function ensureStoriesTables(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+
+    // Check and create stories table
+    const storiesExists = await dbAdapter.client`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'stories'
+      ) as exists
+    ` as any;
+
+    if (!storiesExists?.[0]?.exists) {
+      await dbAdapter.client.unsafe(`
+        CREATE TABLE IF NOT EXISTS stories (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          media_url TEXT NOT NULL,
+          media_type TEXT NOT NULL,
+          caption TEXT,
+          duration_sec INTEGER NOT NULL DEFAULT 0,
+          expires_at TIMESTAMP NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW()
+        );
+      `);
+
+      await dbAdapter.client.unsafe(`
+        CREATE INDEX IF NOT EXISTS idx_stories_user_created ON stories(user_id, created_at DESC);
+      `);
+      await dbAdapter.client.unsafe(`
+        CREATE INDEX IF NOT EXISTS idx_stories_expires ON stories(expires_at);
+      `);
+    }
+
+    // Check and create story_views table
+    const storyViewsExists = await dbAdapter.client`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'story_views'
+      ) as exists
+    ` as any;
+
+    if (!storyViewsExists?.[0]?.exists) {
+      await dbAdapter.client.unsafe(`
+        CREATE TABLE IF NOT EXISTS story_views (
+          id SERIAL PRIMARY KEY,
+          story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+          viewer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          viewed_at TIMESTAMP DEFAULT NOW(),
+          CONSTRAINT story_views_unique UNIQUE (story_id, viewer_id)
+        );
+      `);
+    }
+
+    // Ensure indexes/uniques exist
+    await dbAdapter.client.unsafe(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_story_views_unique ON story_views (story_id, viewer_id);
+    `);
+    await dbAdapter.client.unsafe(`
+      CREATE INDEX IF NOT EXISTS idx_story_views_viewer ON story_views (viewer_id);
+    `);
+  } catch (e) {
+    console.warn('⚠️ تعذر ضمان جداول القصص:', (e as any)?.message || e);
+  }
+}
