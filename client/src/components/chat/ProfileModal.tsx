@@ -69,6 +69,7 @@ export default function ProfileModal({
   const [musicVolume, setMusicVolume] = useState<number>(
     typeof localUser?.profileMusicVolume === 'number' ? localUser.profileMusicVolume : 70
   );
+  
 
   // تحديث الحالة المحلية عند تغيير المستخدم
   useEffect(() => {
@@ -79,6 +80,7 @@ export default function ProfileModal({
       setMusicTitle(user.profileMusicTitle || '');
       setMusicEnabled(user.profileMusicEnabled ?? true);
       setMusicVolume(typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70);
+      
     }
   }, [user]);
   // Stories
@@ -183,6 +185,7 @@ export default function ProfileModal({
       const v = Number((updates as any).profileMusicVolume);
       setMusicVolume(Number.isFinite(v) ? v : 70);
     }
+    
   };
 
   // Complete themes collection from original code
