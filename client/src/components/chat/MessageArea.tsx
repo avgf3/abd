@@ -481,35 +481,12 @@ export default function MessageArea({
                     {/* Profile Image */}
                     {message.sender && (
                       <div className="flex-shrink-0">
-                        {Array.isArray((message as any)?.attachments) && (message as any).attachments.find((a: any) => a && a.type === 'senderAvatar') ? (
-                          (() => {
-                            const snap = (message as any).attachments.find((a: any) => a && a.type === 'senderAvatar');
-                            const url = snap?.url;
-                            const hash = snap?.hash;
-                            const final = url && hash ? `${url}?v=${hash}` : (message.sender?.profileImage || '/default_avatar.svg');
-                            return (
-                              <img
-                                src={final}
-                                alt={`صورة ${message.sender?.username || ''}`}
-                                className={"w-7 h-7 rounded-full ring-2 shadow-sm object-cover cursor-pointer hover:scale-110 transition-transform duration-200"}
-                                loading="lazy"
-                                onError={(e: any) => {
-                                  if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
-                                    e.currentTarget.src = '/default_avatar.svg';
-                                  }
-                                }}
-                                onClick={(e) => onUserClick && message.sender && onUserClick(e, message.sender)}
-                              />
-                            );
-                          })()
-                        ) : (
-                          <ProfileImage
-                            user={message.sender}
-                            size="small"
-                            className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
-                            onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
-                          />
-                        )}
+                        <ProfileImage
+                          user={message.sender}
+                          size="small"
+                          className="w-7 h-7 cursor-pointer hover:scale-110 transition-transform duration-200"
+                          onClick={(e) => onUserClick && onUserClick(e, message.sender!)}
+                        />
                       </div>
                     )}
 
