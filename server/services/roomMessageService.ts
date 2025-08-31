@@ -1,5 +1,7 @@
 import { db, dbType } from '../database-adapter';
 import { storage } from '../storage';
+import { moderationSystem } from '../moderation';
+import { spamProtection } from '../spam-protection';
 
 export interface RoomMessage {
   id: number;
@@ -62,14 +64,28 @@ class RoomMessageService {
         throw new Error('المرسل غير موجود');
       }
 
-      // التحقق من حالة المنع قبل الإرسال
+      // التحقق من حالة المنع قبل الإرسال (يشمل كتم/طرد/حجب)
       if (!messageData.isPrivate) {
-        if (sender.isBanned) {
-          throw new Error('أنت مطرود ولا يمكنك إرسال رسائل عامة');
-        }
-        if (sender.isMuted) {
-          throw new Error('أنت مكتوم ولا يمكنك إرسال رسائل عامة');
-        }
+        try {
+          const status = await moderationSystem.checkUserStatus(messageData.senderId);
+          if (!status.canChat) {
+            throw new Error(status.reason || 'غير مسموح بإرسال الرسائل حالياً');
+          }
+        } catch {}
+      }
+
+      // فحص السبام/التكرار قبل الإنشاء
+      const check = spamProtection.checkMessage(messageData.senderId, messageData.content);
+      if (!check.isAllowed) {
+        try {
+          if (check.action === 'tempBan') {
+            await storage.updateUser(messageData.senderId, {
+              isMuted: true as any,
+              muteExpiry: new Date(Date.now() + 60 * 1000) as any,
+            });
+          }
+        } catch {}
+        throw new Error(check.reason || 'تم منع الرسالة بسبب التكرار/السبام');
       }
 
       // إنشاء الرسالة في قاعدة البيانات

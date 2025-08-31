@@ -3,8 +3,10 @@ import { Router } from 'express';
 import { db, dbType } from '../database-adapter';
 import { notificationService } from '../services/notificationService';
 import { storage } from '../storage';
+import { spamProtection } from '../spam-protection';
 import { protect } from '../middleware/enhancedSecurity';
 import { sanitizeInput, limiters, SecurityConfig, validateMessageContent } from '../security';
+import { moderationSystem } from '../moderation';
 import { z } from 'zod';
 
 // Helper type for conversation item (server-side internal)
@@ -57,6 +59,14 @@ router.post('/send', protect.auth, limiters.pmSend, async (req, res) => {
       return res.status(400).json({ error: 'محتوى الرسالة مطلوب' });
     }
 
+    // احترام حالات الكتم/الطرد: إيقاف الكتابة خلال مدة الكتم
+    try {
+      const status = await moderationSystem.checkUserStatus(parseInt(String(senderId)));
+      if (!status.canChat) {
+        return res.status(403).json({ error: status.reason || 'غير مسموح بإرسال الرسائل حالياً', timeLeft: status.timeLeft });
+      }
+    } catch {}
+
     // السماح فقط بروابط YouTube ومنع غيرها
     const contentCheck = validateMessageContent(text);
     if (!contentCheck.isValid) {
@@ -74,6 +84,20 @@ router.post('/send', protect.auth, limiters.pmSend, async (req, res) => {
     }
     if (!receiver) {
       return res.status(404).json({ error: 'المستلم غير موجود' });
+    }
+
+    // فحص السبام/التكرار
+    const check = spamProtection.checkMessage(parseInt(String(senderId)), text);
+    if (!check.isAllowed) {
+      try {
+        if (check.action === 'tempBan') {
+          await storage.updateUser(parseInt(String(senderId)), {
+            isMuted: true as any,
+            muteExpiry: new Date(Date.now() + 60 * 1000) as any,
+          });
+        }
+      } catch {}
+      return res.status(400).json({ error: check.reason || 'تم منع الرسالة بسبب التكرار/السبام' });
     }
 
     // إنشاء الرسالة في قاعدة البيانات مع تحسين البيانات
