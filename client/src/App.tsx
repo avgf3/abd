@@ -8,11 +8,13 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { UserProvider } from '@/contexts/UserContext';
 import { ComposerStyleProvider } from '@/contexts/ComposerStyleContext';
 import ChatPage from '@/pages/chat';
+import ArabicChat from '@/pages/ArabicChat';
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={ChatPage} />
+      <Route path="/arabic" component={ArabicChat} />
       <Route component={ChatPage} />
     </Switch>
   );
