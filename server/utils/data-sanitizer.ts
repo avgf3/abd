@@ -113,13 +113,18 @@ export function sanitizeTheme(theme: string | null | undefined): string {
 export function sanitizeUserData(user: any): any {
   if (!user) return user;
 
+  const safeMusicUrl =
+    typeof user.profileMusicUrl === 'string' && user.profileMusicUrl.startsWith('/uploads/music/')
+      ? user.profileMusicUrl
+      : undefined;
+
   return {
     ...user,
     profileBackgroundColor: sanitizeProfileBackgroundColor(user.profileBackgroundColor),
     usernameColor: sanitizeHexColor(user.usernameColor, '#000000'),
     profileEffect: sanitizeEffect(user.profileEffect),
     // موسيقى البروفايل
-    profileMusicUrl: typeof user.profileMusicUrl === 'string' ? user.profileMusicUrl : undefined,
+    profileMusicUrl: safeMusicUrl,
     profileMusicTitle: typeof user.profileMusicTitle === 'string' ? user.profileMusicTitle : undefined,
     profileMusicEnabled:
       typeof user.profileMusicEnabled === 'boolean' ? user.profileMusicEnabled : true,
