@@ -69,6 +69,7 @@ export default function ProfileModal({
   const [musicVolume, setMusicVolume] = useState<number>(
     typeof localUser?.profileMusicVolume === 'number' ? localUser.profileMusicVolume : 70
   );
+  const [musicUrlInput, setMusicUrlInput] = useState<string>(localUser?.profileMusicUrl || '');
 
   // تحديث الحالة المحلية عند تغيير المستخدم
   useEffect(() => {
@@ -79,6 +80,7 @@ export default function ProfileModal({
       setMusicTitle(user.profileMusicTitle || '');
       setMusicEnabled(user.profileMusicEnabled ?? true);
       setMusicVolume(typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70);
+      setMusicUrlInput(user.profileMusicUrl || '');
     }
   }, [user]);
   // Stories
@@ -182,6 +184,9 @@ export default function ProfileModal({
     if (Object.prototype.hasOwnProperty.call(updates, 'profileMusicVolume')) {
       const v = Number((updates as any).profileMusicVolume);
       setMusicVolume(Number.isFinite(v) ? v : 70);
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'profileMusicUrl')) {
+      setMusicUrlInput((updates as any).profileMusicUrl || '');
     }
   };
 
@@ -2364,6 +2369,40 @@ export default function ProfileModal({
                       }}
                       className="w-full"
                     />
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                    <input
+                      type="text"
+                      placeholder="أدخل رابط ملف الصوت (mp3/ogg/wav/webm)"
+                      value={musicUrlInput}
+                      onChange={(e) => setMusicUrlInput(e.target.value)}
+                      className="w-full"
+                    />
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const url = (musicUrlInput || '').trim();
+                          if (!url) return;
+                          await apiRequest(`/api/users/${localUser?.id}`, {
+                            method: 'PUT',
+                            body: { profileMusicUrl: url, profileMusicEnabled: true },
+                          });
+                          updateUserData({ profileMusicUrl: url, profileMusicEnabled: true });
+                          setMusicEnabled(true);
+                          if (audioRef.current) {
+                            audioRef.current.src = url;
+                            audioRef.current.volume = Math.max(0, Math.min(1, (musicVolume || 70) / 100));
+                            try { await audioRef.current.play(); } catch {}
+                          }
+                          toast({ title: 'تم', description: 'تم تعيين رابط موسيقى البروفايل' });
+                        } catch (err: any) {
+                          toast({ title: 'خطأ', description: err?.message || 'تعذر حفظ الرابط', variant: 'destructive' });
+                        }
+                      }}
+                    >
+                      حفظ الرابط
+                    </Button>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
