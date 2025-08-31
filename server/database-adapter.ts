@@ -212,6 +212,37 @@ export async function ensureStoriesTables(): Promise<void> {
     await dbAdapter.client.unsafe(`
       CREATE INDEX IF NOT EXISTS idx_story_views_viewer ON story_views (viewer_id);
     `);
+
+    // Check and create story_reactions table
+    const storyReactionsExists = await dbAdapter.client`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'story_reactions'
+      ) as exists
+    ` as any;
+
+    if (!storyReactionsExists?.[0]?.exists) {
+      await dbAdapter.client.unsafe(`
+        CREATE TABLE IF NOT EXISTS story_reactions (
+          id SERIAL PRIMARY KEY,
+          story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          type TEXT NOT NULL,
+          reacted_at TIMESTAMP DEFAULT NOW()
+        );
+      `);
+    }
+
+    // Ensure indexes/uniques exist for reactions
+    await dbAdapter.client.unsafe(`
+      CREATE INDEX IF NOT EXISTS idx_story_reactions_story ON story_reactions (story_id);
+    `);
+    await dbAdapter.client.unsafe(`
+      CREATE INDEX IF NOT EXISTS idx_story_reactions_user ON story_reactions (user_id);
+    `);
+    await dbAdapter.client.unsafe(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_story_reactions_unique ON story_reactions (story_id, user_id);
+    `);
   } catch (e) {
     console.warn('⚠️ تعذر ضمان جداول القصص:', (e as any)?.message || e);
   }
