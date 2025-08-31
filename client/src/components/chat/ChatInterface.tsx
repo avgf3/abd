@@ -42,6 +42,7 @@ const StoryViewer = lazy(() => import('@/components/ui/StoryViewer'));
 const KickCountdown = lazy(() => import('@/components/moderation/KickCountdown'));
 const UsernameColorPicker = lazy(() => import('@/components/profile/UsernameColorPicker'));
 const RichestModal = lazy(() => import('@/components/ui/RichestModal'));
+const StoriesSettings = lazy(() => import('@/components/ui/StoriesSettings'));
 // import RoomComponent from './RoomComponent';
 
 import { Button } from '@/components/ui/button';
@@ -81,6 +82,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showStoryViewer, setShowStoryViewer] = useState<{ show: boolean; userId?: number | null }>({ show: false, userId: null });
   const [showAdminReports, setShowAdminReports] = useState(false);
+  const [showStoriesSettings, setShowStoriesSettings] = useState(false);
   const [activeView, setActiveView] = useState<'hidden' | 'users' | 'walls' | 'rooms' | 'friends'>(
     () => (typeof window !== 'undefined' && window.innerWidth < 768 ? 'hidden' : 'users')
   );
@@ -1203,6 +1205,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               setShowUsernameColorPicker(true);
               setShowSettings(false);
             }}
+            onOpenStories={() => {
+              setShowStoriesSettings(true);
+              setShowSettings(false);
+            }}
             onOpenIgnoredUsers={() => {
               setShowIgnoredUsers(true);
               setShowSettings(false);
@@ -1335,6 +1341,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             </Suspense>
           </div>
         </div>
+      )}
+
+      {showStoriesSettings && (
+        <Suspense fallback={null}>
+          <StoriesSettings
+            isOpen={showStoriesSettings}
+            onClose={() => setShowStoriesSettings(false)}
+            currentUser={chat.currentUser}
+          />
+        </Suspense>
       )}
 
       {/* إشعارات الطرد والحجب */}

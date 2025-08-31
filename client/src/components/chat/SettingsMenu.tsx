@@ -1,4 +1,4 @@
-import { User, Home, Moon, Shield, LogOut, Settings, Palette, Brush } from 'lucide-react';
+import { User, Home, Moon, Shield, LogOut, Settings, Palette, Brush, Camera } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,6 +12,7 @@ interface SettingsMenuProps {
   onOpenThemeSelector?: () => void;
   onOpenUsernameColorPicker?: () => void;
   onOpenIgnoredUsers?: () => void;
+  onOpenStories?: () => void;
   currentUser?: any;
 }
 
@@ -23,6 +24,7 @@ export default function SettingsMenu({
   onOpenThemeSelector,
   onOpenUsernameColorPicker,
   onOpenIgnoredUsers,
+  onOpenStories,
   currentUser,
 }: SettingsMenuProps) {
   const handleLogout = () => {
@@ -88,6 +90,16 @@ export default function SettingsMenu({
           >
             <Brush className="w-4 h-4 text-primary" />
             لون الاسم
+          </Button>
+
+          <Button
+            onClick={onOpenStories}
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+          >
+            <Camera className="w-4 h-4 text-primary" />
+            الحالات
           </Button>
 
           <Button
