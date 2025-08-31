@@ -804,7 +804,7 @@ export default function ProfileModal({
       // نرسل قيمة HEX فقط. إذا تم تمرير تدرّج، سيُطبّق الخادم أول HEX صالح
       const colorValue = theme;
       const result = await apiRequest(`/api/users/${localUser?.id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         body: { profileBackgroundColor: colorValue },
       });
 
@@ -835,7 +835,7 @@ export default function ProfileModal({
       setSelectedEffect(effect);
 
       const result = await apiRequest(`/api/users/${localUser?.id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         body: {
           profileEffect: effect,
         },
@@ -2316,7 +2316,7 @@ export default function ProfileModal({
                           setMusicEnabled(enabled);
                           try {
                             await apiRequest(`/api/users/${localUser?.id}`, {
-                              method: 'PUT',
+                              method: 'PATCH',
                               body: { profileMusicEnabled: enabled },
                             });
                             updateUserData({ profileMusicEnabled: enabled });
@@ -2339,7 +2339,7 @@ export default function ProfileModal({
                         try {
                           if (audioRef.current) audioRef.current.volume = Math.max(0, Math.min(1, vol / 100));
                           await apiRequest(`/api/users/${localUser?.id}`, {
-                            method: 'PUT',
+                            method: 'PATCH',
                             body: { profileMusicVolume: vol },
                           });
                           updateUserData({ profileMusicVolume: vol });
@@ -2359,7 +2359,7 @@ export default function ProfileModal({
                       onBlur={async () => {
                         try {
                           await apiRequest(`/api/users/${localUser?.id}`, {
-                            method: 'PUT',
+                            method: 'PATCH',
                             body: { profileMusicTitle: musicTitle },
                           });
                           updateUserData({ profileMusicTitle: musicTitle });
