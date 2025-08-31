@@ -17,6 +17,7 @@ import {
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import ProfileImage from './ProfileImage';
 import { useStories } from '@/hooks/useStories';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -42,6 +43,7 @@ export default function ProfileModal({
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const musicFileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentEditType, setCurrentEditType] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -2369,57 +2371,73 @@ export default function ProfileModal({
                     />
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      onChange={async (e) => {
-                        try {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const fd = new FormData();
-                          fd.append('music', file);
-                          if (musicTitle) fd.append('title', musicTitle);
-                          const res = await apiRequest(`/api/upload/profile-music`, { method: 'POST', body: fd });
-                          const url = (res as any)?.url;
-                          const title = (res as any)?.title;
-                          if (url) {
-                            updateUserData({ profileMusicUrl: url, profileMusicTitle: title, profileMusicEnabled: true });
-                            setMusicEnabled(true);
-                            if (audioRef.current) {
-                              audioRef.current.src = url;
-                              audioRef.current.volume = Math.max(0, Math.min(1, (musicVolume || 70) / 100));
-                              try { await audioRef.current.play(); } catch {}
+                  <div style={{ marginTop: '8px' }}>
+                    <Tabs defaultValue="device">
+                      <TabsList>
+                        <TabsTrigger value="device">إضافة من جهازك</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="device">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                          <button
+                            onClick={() => musicFileInputRef.current?.click()}
+                            style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.08)', color: '#fff' }}
+                          >
+                            اختر ملف صوتي
+                          </button>
+                          {localUser?.profileMusicUrl && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await apiRequest(`/api/users/${localUser?.id}/profile-music`, { method: 'DELETE' });
+                                  updateUserData({ profileMusicUrl: undefined, profileMusicTitle: '', profileMusicEnabled: false });
+                                  setMusicTitle('');
+                                  setMusicEnabled(false);
+                                  if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
+                                  toast({ title: 'تم', description: 'تم حذف موسيقى البروفايل' });
+                                } catch (err: any) {
+                                  toast({ title: 'خطأ', description: err?.message || 'فشل حذف الموسيقى', variant: 'destructive' });
+                                }
+                              }}
+                              className="btn-report"
+                              style={{ padding: '6px 10px' }}
+                            >
+                              حذف الموسيقى
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          ref={musicFileInputRef}
+                          type="file"
+                          accept="audio/*"
+                          onChange={async (e) => {
+                            try {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const fd = new FormData();
+                              fd.append('music', file);
+                              if (musicTitle) fd.append('title', musicTitle);
+                              const res = await apiRequest(`/api/upload/profile-music`, { method: 'POST', body: fd });
+                              const url = (res as any)?.url;
+                              const title = (res as any)?.title;
+                              if (url) {
+                                updateUserData({ profileMusicUrl: url, profileMusicTitle: title, profileMusicEnabled: true });
+                                setMusicEnabled(true);
+                                if (audioRef.current) {
+                                  audioRef.current.src = url;
+                                  audioRef.current.volume = Math.max(0, Math.min(1, (musicVolume || 70) / 100));
+                                  try { await audioRef.current.play(); } catch {}
+                                }
+                                toast({ title: 'تم', description: 'تم تحديث موسيقى البروفايل' });
+                              }
+                            } catch (err: any) {
+                              toast({ title: 'خطأ', description: err?.message || 'فشل رفع الصوت', variant: 'destructive' });
+                            } finally {
+                              try { if (e.target) (e.target as HTMLInputElement).value = ''; } catch {}
                             }
-                            toast({ title: 'تم', description: 'تم تحديث موسيقى البروفايل' });
-                          }
-                        } catch (err: any) {
-                          toast({ title: 'خطأ', description: err?.message || 'فشل رفع الصوت', variant: 'destructive' });
-                        } finally {
-                          try { if (e.target) (e.target as HTMLInputElement).value = ''; } catch {}
-                        }
-                      }}
-                    />
-                    {localUser?.profileMusicUrl && (
-                      <button
-                        onClick={async () => {
-                          try {
-                            await apiRequest(`/api/users/${localUser?.id}/profile-music`, { method: 'DELETE' });
-                            updateUserData({ profileMusicUrl: undefined, profileMusicTitle: '', profileMusicEnabled: false });
-                            setMusicTitle('');
-                            setMusicEnabled(false);
-                            if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
-                            toast({ title: 'تم', description: 'تم حذف موسيقى البروفايل' });
-                          } catch (err: any) {
-                            toast({ title: 'خطأ', description: err?.message || 'فشل حذف الموسيقى', variant: 'destructive' });
-                          }
-                        }}
-                        className="btn-report"
-                        style={{ padding: '6px 10px' }}
-                      >
-                        حذف الموسيقى
-                      </button>
-                    )}
+                          }}
+                        />
+                      </TabsContent>
+                    </Tabs>
                   </div>
                 </div>
               </div>
