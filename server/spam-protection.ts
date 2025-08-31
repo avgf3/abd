@@ -52,7 +52,7 @@ export class SpamProtection {
     this.currentReportId = 1;
   }
 
-  // فحص الرسالة قبل إرسالها (معطل مؤقتاً)
+  // فحص الرسالة قبل إرسالها: يمنع التكرار والسبام البسيط
   checkMessage(
     userId: number,
     content: string
@@ -61,7 +61,39 @@ export class SpamProtection {
     reason?: string;
     action?: 'warn' | 'tempBan' | 'ban';
   } {
-    // السماح بجميع الرسائل بدون فحص مؤقتاً
+    const text = (content || '').trim();
+    if (text.length === 0) {
+      return { isAllowed: false, reason: 'لا يمكن إرسال رسالة فارغة' };
+    }
+
+    if (text.length > this.config.maxMessageLength) {
+      return { isAllowed: false, reason: 'الرسالة طويلة جداً' };
+    }
+
+    // منع فيض الرموز/التكرار الحرفي الطويل
+    const suspiciousPatterns: RegExp[] = [
+      /(.)\1{10,}/gi, // تكرار نفس الحرف أكثر من 10 مرات متتالية
+      /(https?:\/\/[^\s]+)|(www\.[^\s]+)/gi, // روابط
+    ];
+    for (const pattern of suspiciousPatterns) {
+      if (pattern.test(text)) {
+        // ارفع نقاط السبام لكن لا تمنع فوراً إلا إذا تكرر
+        this.addSpamScore(userId, 2);
+        break;
+      }
+    }
+
+    // فحص الرسائل المكررة خلال نافذة زمنية قصيرة
+    const duplicate = this.checkDuplicateMessage(userId, text);
+    if (!duplicate.isAllowed) {
+      // إضافة نقاط عند محاولة تكرار رسالة
+      this.addSpamScore(userId, 5);
+      return duplicate;
+    }
+
+    // عند السماح، أضف الرسالة إلى سجل المستخدم
+    this.addMessage(userId, text);
+
     return { isAllowed: true };
   }
 

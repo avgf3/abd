@@ -3752,14 +3752,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // استخدم مسار ثابت للملف لتقليل استهلاك الذاكرة وتفعيل التخزين المؤقت
       const imageUrl: string = `/uploads/messages/${req.file.filename}`;
 
-      // فحص مبسّط لمحتوى الصور الجنسية (NSFW) - منع الإرسال إذا اكتشفنا نمطاً غير آمن
-      // بدون إضافة مكتبات خارجية: نعتمد على mimetype والامتداد فقط كفحص وقائي خفيف
+      // فحص NSFW تقريبي بالاعتماد على خدمة محلية بدون مزودات خارجية
       try {
-        const unsafeExtensions = ['.svg']; // منع SVG للرسائل حتى لا يُستغل كسكربت
-        const lowered = req.file.originalname.toLowerCase();
-        if (unsafeExtensions.some((ext) => lowered.endsWith(ext))) {
+        const { nsfwService } = await import('./services/nsfwService');
+        const result = await nsfwService.checkFileUnsafe(req.file.path, req.file.originalname, req.file.mimetype);
+        if (!result.isSafe) {
           try { await fsp.unlink(req.file.path); } catch {}
-          return res.status(400).json({ error: 'نوع الصورة غير مسموح للرسائل' });
+          return res.status(400).json({ error: result.reason || 'صورة غير مسموحة للرسائل' });
         }
       } catch {}
 

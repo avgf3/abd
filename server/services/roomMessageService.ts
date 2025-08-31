@@ -1,5 +1,6 @@
 import { db, dbType } from '../database-adapter';
 import { storage } from '../storage';
+import { spamProtection } from '../spam-protection';
 
 export interface RoomMessage {
   id: number;
@@ -70,6 +71,12 @@ class RoomMessageService {
         if (sender.isMuted) {
           throw new Error('أنت مكتوم ولا يمكنك إرسال رسائل عامة');
         }
+      }
+
+      // فحص السبام/التكرار قبل الإنشاء
+      const check = spamProtection.checkMessage(messageData.senderId, messageData.content);
+      if (!check.isAllowed) {
+        throw new Error(check.reason || 'تم منع الرسالة بسبب التكرار/السبام');
       }
 
       // إنشاء الرسالة في قاعدة البيانات

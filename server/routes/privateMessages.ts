@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { db, dbType } from '../database-adapter';
 import { notificationService } from '../services/notificationService';
 import { storage } from '../storage';
+import { spamProtection } from '../spam-protection';
 import { protect } from '../middleware/enhancedSecurity';
 import { sanitizeInput, limiters, SecurityConfig, validateMessageContent } from '../security';
 import { z } from 'zod';
@@ -74,6 +75,12 @@ router.post('/send', protect.auth, limiters.pmSend, async (req, res) => {
     }
     if (!receiver) {
       return res.status(404).json({ error: 'المستلم غير موجود' });
+    }
+
+    // فحص السبام/التكرار
+    const check = spamProtection.checkMessage(parseInt(String(senderId)), text);
+    if (!check.isAllowed) {
+      return res.status(400).json({ error: check.reason || 'تم منع الرسالة بسبب التكرار/السبام' });
     }
 
     // إنشاء الرسالة في قاعدة البيانات مع تحسين البيانات
