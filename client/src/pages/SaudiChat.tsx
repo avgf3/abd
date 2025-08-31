@@ -1,6 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
+import WelcomeScreen from "@/components/chat/WelcomeScreen";
+import type { ChatUser } from "@/types/chat";
 
 export default function SaudiChat() {
+  const [, setLocation] = useLocation();
+  const [user, setUser] = useState<ChatUser | null>(null);
+
   useEffect(() => {
     document.title = "شات السعودية – دردشة سعودية مجانية | arbya.chat";
     const metaDescription = document.querySelector("meta[name='description']");
@@ -12,10 +18,11 @@ export default function SaudiChat() {
     }
   }, []);
 
-  return (
-    <div>
-      <h1>شات السعودية</h1>
-      <p>دردشة سعودية مجانية للتعارف والتواصل.</p>
-    </div>
-  );
+  const handleUserLogin = (user: ChatUser) => {
+    setUser(user);
+    // توجيه المستخدم إلى صفحة الدردشة بعد تسجيل الدخول
+    setLocation('/chat');
+  };
+
+  return <WelcomeScreen onUserLogin={handleUserLogin} />;
 }
