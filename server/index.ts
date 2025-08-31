@@ -231,6 +231,14 @@ app.use(
         res.setHeader('Content-Type', 'image/webp');
       } else if (filePath.endsWith('.svg')) {
         res.setHeader('Content-Type', 'image/svg+xml');
+      } else if (filePath.endsWith('.mp3')) {
+        res.setHeader('Content-Type', 'audio/mpeg');
+      } else if (filePath.endsWith('.ogg')) {
+        res.setHeader('Content-Type', 'audio/ogg');
+      } else if (filePath.endsWith('.wav')) {
+        res.setHeader('Content-Type', 'audio/wav');
+      } else if (filePath.endsWith('.webm')) {
+        res.setHeader('Content-Type', 'audio/webm');
       }
 
       // ضبط سياسة الكاش النهائية بناءً على hasVersion الذي تم حسابه في middleware السابق

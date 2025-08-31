@@ -49,6 +49,11 @@ export const users = pgTable('users', {
   level: integer('level').default(1), // مستوى المستخدم
   totalPoints: integer('total_points').default(0), // إجمالي النقاط التي كسبها المستخدم
   levelProgress: integer('level_progress').default(0), // تقدم المستخدم في المستوى الحالي
+  // موسيقى البروفايل
+  profileMusicUrl: text('profile_music_url'),
+  profileMusicTitle: text('profile_music_title'),
+  profileMusicEnabled: boolean('profile_music_enabled').default(true),
+  profileMusicVolume: integer('profile_music_volume').default(70),
 });
 
 export const messages = pgTable(

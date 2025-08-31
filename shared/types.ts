@@ -32,6 +32,11 @@ export interface ChatUser {
   level?: number;
   totalPoints?: number;
   levelProgress?: number;
+  // موسيقى البروفايل
+  profileMusicUrl?: string;
+  profileMusicTitle?: string;
+  profileMusicEnabled?: boolean;
+  profileMusicVolume?: number; // 0-100
 }
 
 export interface ChatMessage {

@@ -55,6 +55,12 @@ export interface ChatUser {
   // تم إضافة خصائص جديدة
   ignoredUsers?: number[];
   blockedUsers?: number[];
+
+  // موسيقى البروفايل
+  profileMusicUrl?: string;
+  profileMusicTitle?: string;
+  profileMusicEnabled?: boolean;
+  profileMusicVolume?: number; // 0-100
 }
 
 // 🔥 UNIFIED ChatMessage interface - مصدر واحد للحقيقة
