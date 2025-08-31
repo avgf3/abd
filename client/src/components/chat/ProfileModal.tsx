@@ -2056,7 +2056,7 @@ export default function ProfileModal({
             }}
           >
             {/* مشغل الموسيقى - يظهر أعلى يمين الغلاف */}
-            {localUser?.profileMusicUrl && musicEnabled && (
+            {localUser?.profileMusicUrl && musicEnabled && localUser?.id === currentUser?.id && (
               <div
                 style={{
                   position: 'absolute',
