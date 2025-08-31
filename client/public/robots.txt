@@ -1,9 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
 
-# Disallow sensitive areas
-Disallow: /admin
-Disallow: /api
-Disallow: /uploads/private
-
-Sitemap: /sitemap.xml
+Sitemap: https://www.arabya.chat/sitemap.xml

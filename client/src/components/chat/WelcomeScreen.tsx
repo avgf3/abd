@@ -474,32 +474,32 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           <h3 className="text-2xl font-semibold mb-4">غرف الدردشة</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mt-6">
             <div className="space-y-2">
-              <p className="text-yellow-300">شات الجزائر</p>
-              <p className="text-yellow-300">شات البحرين</p>
-              <p className="text-yellow-300">شات الإمارات</p>
-              <p className="text-yellow-300">شات الأردن</p>
-              <p className="text-yellow-300">شات الكويت</p>
+              <a href="/algeria" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الجزائر</a>
+              <a href="/bahrain" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات البحرين</a>
+              <a href="/uae" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الإمارات</a>
+              <a href="/jordan" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الأردن</a>
+              <a href="/kuwait" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات الكويت</a>
             </div>
             <div className="space-y-2">
-              <p className="text-yellow-300">شات ليبيا</p>
-              <p className="text-yellow-300">شات تونس</p>
-              <p className="text-yellow-300">شات المغرب</p>
-              <p className="text-yellow-300">شات عمان</p>
-              <p className="text-yellow-300">شات السودان</p>
+              <a href="/libya" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات ليبيا</a>
+              <a href="/tunisia" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات تونس</a>
+              <a href="/morocco" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات المغرب</a>
+              <a href="/oman" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات عمان</a>
+              <a href="/sudan" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات السودان</a>
             </div>
             <div className="space-y-2">
-              <p className="text-yellow-300">شات فلسطين</p>
-              <p className="text-yellow-300">شات قطر</p>
-              <p className="text-yellow-300">شات جزر القمر</p>
-              <p className="text-yellow-300">شات اليمن</p>
-              <p className="text-yellow-300">شات جيبوتي</p>
+              <a href="/palestine" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات فلسطين</a>
+              <a href="/qatar" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات قطر</a>
+              <a href="/comoros" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات جزر القمر</a>
+              <a href="/yemen" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات اليمن</a>
+              <a href="/djibouti" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات جيبوتي</a>
             </div>
             <div className="space-y-2">
-              <p className="text-yellow-300">شات مصر</p>
-              <p className="text-yellow-300">شات السعودية</p>
-              <p className="text-yellow-300">شات لبنان</p>
-              <p className="text-yellow-300">شات سوريا</p>
-              <p className="text-yellow-300">شات العراق</p>
+              <a href="/egypt" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات مصر</a>
+              <a href="/saudi" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات السعودية</a>
+              <a href="/lebanon" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات لبنان</a>
+              <a href="/syria" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات سوريا</a>
+              <a href="/iraq" className="block text-yellow-300 hover:text-yellow-200 transition-colors">شات العراق</a>
             </div>
           </div>
           <div className="mt-8 space-y-2">
