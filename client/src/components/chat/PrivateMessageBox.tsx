@@ -31,6 +31,7 @@ interface PrivateMessageBoxProps {
   onClose: () => void;
   onLoadMore?: () => Promise<{ addedCount: number; hasMore: boolean }>; // تحميل رسائل أقدم
   onViewProfile?: (user: ChatUser) => void;
+  onViewStoryByUser?: (userId: number) => void;
 }
 
 export default function PrivateMessageBox({
@@ -42,6 +43,7 @@ export default function PrivateMessageBox({
   onClose,
   onLoadMore,
   onViewProfile,
+  onViewStoryByUser,
 }: PrivateMessageBoxProps) {
   const [messageText, setMessageText] = useState('');
   const [isAtBottomPrivate, setIsAtBottomPrivate] = useState(true);
@@ -414,7 +416,10 @@ export default function PrivateMessageBox({
                   const isImage =
                     m.messageType === 'image' ||
                     (typeof m.content === 'string' && m.content.startsWith('data:image'));
-                  const hasStoryContext = Array.isArray((m as any).attachments) && (m as any).attachments.some((a: any) => a?.channel === 'story');
+                  const storyAttachment = Array.isArray((m as any).attachments)
+                    ? (m as any).attachments.find((a: any) => a?.channel === 'story')
+                    : null;
+                  const hasStoryContext = !!storyAttachment;
                   return (
                     <motion.div
                       key={key}
@@ -453,8 +458,40 @@ export default function PrivateMessageBox({
                         </div>
                         <div className="text-gray-800 break-words message-content-fix">
                           {hasStoryContext && (
-                            <div className="mb-2 text-[11px] text-purple-700 bg-purple-50 rounded px-2 py-1 inline-flex items-center gap-1 border border-purple-200">
-                              <span>رد على حالة</span>
+                            <div className="mb-2">
+                              <div className="flex items-center gap-3 p-2 rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+                                <div className="w-14 h-20 rounded-md overflow-hidden bg-black/5 border border-purple-200 flex items-center justify-center">
+                                  {storyAttachment?.storyMediaType === 'video' ? (
+                                    <div className="text-[10px] text-purple-700">فيديو</div>
+                                  ) : (
+                                    <img
+                                      src={storyAttachment?.storyMediaUrl}
+                                      alt="Story preview"
+                                      className="w-full h-full object-cover"
+                                      loading="lazy"
+                                    />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs text-purple-800 font-medium">
+                                    {storyAttachment?.subtype === 'reaction' ? 'تفاعل على حالتك' : 'رد على حالتك'}
+                                  </div>
+                                  <div className="text-[11px] text-purple-700/80">
+                                    اضغط لعرض الحالة
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    try {
+                                      const uid = storyAttachment?.storyUserId || user.id;
+                                      onViewStoryByUser && onViewStoryByUser(uid);
+                                    } catch {}
+                                  }}
+                                  className="text-xs px-2 py-1 rounded-md bg-purple-600 text-white hover:bg-purple-700 transition"
+                                >
+                                  عرض الحالة
+                                </button>
+                              </div>
                             </div>
                           )}
                           {isImage ? (

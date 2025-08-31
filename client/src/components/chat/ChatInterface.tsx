@@ -1139,6 +1139,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
             onSendMessage={(content) => chat.sendMessage(content, 'text', selectedPrivateUser.id)}
             onLoadMore={() => (chat as any).loadOlderPrivateConversation?.(selectedPrivateUser.id, 20)}
             onViewProfile={(u) => handleViewProfile(u)}
+            onViewStoryByUser={(uid) => setShowStoryViewer({ show: true, userId: uid })}
           />
         </Suspense>
       )}

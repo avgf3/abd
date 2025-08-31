@@ -75,7 +75,7 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
   }
 
   return (
-    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[13000]" onClick={onClose}>
       <div className="absolute top-4 right-4">
         <button
           onClick={(e) => { e.stopPropagation(); onClose(); }}
@@ -125,79 +125,87 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
           <img src={active.mediaUrl} alt="story" className="w-full h-full object-cover" />
         )}
 
-        {/* Reactions + Reply */}
-        <div className="absolute inset-x-0 bottom-0 p-3">
-          <div className="flex items-end gap-3">
-            {/* Vertical reactions on the left */}
-            <div className="flex flex-col gap-2">
-              <button
-                className={`rounded-full px-3 py-2 text-sm transition ${active.myReaction === 'like' ? 'bg-white text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                onClick={(e) => {
+        {/* Reactions + Reply (separated bar with persistent background) */}
+        <div className="absolute inset-x-0 bottom-2 px-3">
+          <div className="mx-0 bg-black/45 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl p-2">
+            <div className="flex items-center gap-2">
+              {/* Reply input */}
+              <form
+                className="flex-1 flex items-center gap-2 bg-white/5 rounded-full px-3 py-2"
+                onSubmit={async (e) => {
+                  e.preventDefault();
                   e.stopPropagation();
-                  reactToStory(active.id, active.myReaction === 'like' ? null : 'like');
+                  const text = replyText.trim();
+                  if (!text) return;
+                  if (isSending) return;
+                  try {
+                    setIsSending(true);
+                    await apiRequest(`/api/stories/${active.id}/reply`, {
+                      method: 'POST',
+                      body: { content: text },
+                    });
+                    setReplyText('');
+                  } catch (err) {
+                    // silent
+                  } finally {
+                    setIsSending(false);
+                  }
                 }}
               >
-                <span className="inline-flex items-center gap-1"><ThumbsUp size={16} /> لايك</span>
-              </button>
-              <button
-                className={`rounded-full px-3 py-2 text-sm transition ${active.myReaction === 'heart' ? 'bg-white text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  reactToStory(active.id, active.myReaction === 'heart' ? null : 'heart');
-                }}
-              >
-                <span className="inline-flex items-center gap-1"><Heart size={16} /> قلب</span>
-              </button>
-              <button
-                className={`rounded-full px-3 py-2 text-sm transition ${active.myReaction === 'dislike' ? 'bg-white text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  reactToStory(active.id, active.myReaction === 'dislike' ? null : 'dislike');
-                }}
-              >
-                <span className="inline-flex items-center gap-1"><ThumbsDown size={16} /> ديسلايك</span>
-              </button>
-            </div>
+                <input
+                  type="text"
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="اكتب ردك على الحالة..."
+                  className="flex-1 bg-transparent outline-none text-white placeholder-white/70 text-sm"
+                />
+                <button
+                  type="submit"
+                  disabled={isSending || !replyText.trim()}
+                  className="disabled:opacity-50 text-white hover:text-white/90"
+                  title="إرسال الرد"
+                >
+                  <Send size={18} />
+                </button>
+              </form>
 
-            {/* Reply input like WhatsApp */}
-            <form
-              className="flex-1 flex items-center gap-2 bg-white/10 rounded-full px-3 py-2"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const text = replyText.trim();
-                if (!text) return;
-                if (isSending) return;
-                try {
-                  setIsSending(true);
-                  // الرد على الحالة بمسار خاص يضيف منشن ومرفقات سياق الحالة
-                  await apiRequest(`/api/stories/${active.id}/reply`, {
-                    method: 'POST',
-                    body: { content: text },
-                  });
-                  setReplyText('');
-                } catch (err) {
-                  // silent
-                } finally {
-                  setIsSending(false);
-                }
-              }}
-            >
-              <input
-                type="text"
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                placeholder="اكتب ردك على الحالة..."
-                className="flex-1 bg-transparent outline-none text-white placeholder-white/60 text-sm"
-              />
-              <button
-                type="submit"
-                disabled={isSending || !replyText.trim()}
-                className="disabled:opacity-50 text-white hover:text-white/90"
-              >
-                <Send size={18} />
-              </button>
-            </form>
+              {/* Reactions beside the input */}
+              <div className="flex items-center gap-1">
+                <button
+                  className={`w-9 h-9 rounded-full grid place-items-center transition border ${active.myReaction === 'like' ? 'bg-white text-black border-white/60' : 'bg-white/10 text-white hover:bg-white/20 border-white/20'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    reactToStory(active.id, active.myReaction === 'like' ? null : 'like');
+                  }}
+                  title="لايك"
+                  aria-label="لايك"
+                >
+                  <ThumbsUp size={16} />
+                </button>
+                <button
+                  className={`w-9 h-9 rounded-full grid place-items-center transition border ${active.myReaction === 'heart' ? 'bg-white text-black border-white/60' : 'bg-white/10 text-white hover:bg-white/20 border-white/20'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    reactToStory(active.id, active.myReaction === 'heart' ? null : 'heart');
+                  }}
+                  title="قلب"
+                  aria-label="قلب"
+                >
+                  <Heart size={16} />
+                </button>
+                <button
+                  className={`w-9 h-9 rounded-full grid place-items-center transition border ${active.myReaction === 'dislike' ? 'bg-white text-black border-white/60' : 'bg-white/10 text-white hover:bg-white/20 border-white/20'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    reactToStory(active.id, active.myReaction === 'dislike' ? null : 'dislike');
+                  }}
+                  title="ديسلايك"
+                  aria-label="ديسلايك"
+                >
+                  <ThumbsDown size={16} />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

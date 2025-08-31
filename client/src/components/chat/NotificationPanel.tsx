@@ -268,6 +268,18 @@ export default function NotificationPanel({
                         <p className="text-xs text-muted-foreground mt-1">
                           {formatTimeAgo(notification.createdAt)}
                         </p>
+                        {notification?.data?.storyMediaUrl && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <div className="w-10 h-16 rounded overflow-hidden border">
+                              <img
+                                src={notification.data.storyMediaUrl}
+                                alt="story"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <span className="text-[11px] text-muted-foreground">مذكور من حالة</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-1">
