@@ -112,6 +112,14 @@ export interface StoryView {
   viewedAt?: Date | string;
 }
 
+export interface StoryReaction {
+  id: number;
+  storyId: number;
+  userId: number;
+  type: 'like' | 'heart' | 'dislike';
+  reactedAt?: Date | string;
+}
+
 // Blocked device type for moderation persistence
 export interface BlockedDevice {
   id: number;
@@ -755,6 +763,64 @@ export class DatabaseService {
     } catch (error) {
       console.error('Error deleteStory:', error);
       return false;
+    }
+  }
+
+  // ===================== Story Reactions =====================
+  async upsertStoryReaction(
+    storyId: number,
+    userId: number,
+    type: 'like' | 'heart' | 'dislike'
+  ): Promise<boolean> {
+    if (!this.isConnected()) return false;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any)
+          .delete((schema as any).storyReactions)
+          .where(and(eq((schema as any).storyReactions.storyId, storyId), eq((schema as any).storyReactions.userId, userId)));
+
+        await (this.db as any)
+          .insert((schema as any).storyReactions)
+          .values({ storyId, userId, type, reactedAt: new Date() });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error upsertStoryReaction:', error);
+      return false;
+    }
+  }
+
+  async removeStoryReaction(storyId: number, userId: number): Promise<boolean> {
+    if (!this.isConnected()) return false;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any)
+          .delete((schema as any).storyReactions)
+          .where(and(eq((schema as any).storyReactions.storyId, storyId), eq((schema as any).storyReactions.userId, userId)));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error removeStoryReaction:', error);
+      return false;
+    }
+  }
+
+  async getStoryReactions(storyId: number): Promise<StoryReaction[]> {
+    if (!this.isConnected()) return [];
+    try {
+      if (this.type === 'postgresql') {
+        return await (this.db as any)
+          .select()
+          .from((schema as any).storyReactions)
+          .where(eq((schema as any).storyReactions.storyId, storyId))
+          .orderBy(desc((schema as any).storyReactions.reactedAt));
+      }
+      return [];
+    } catch (error) {
+      console.error('Error getStoryReactions:', error);
+      return [];
     }
   }
   async createMessage(messageData: Partial<Message>): Promise<Message | null> {

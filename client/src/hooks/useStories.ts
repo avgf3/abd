@@ -10,6 +10,7 @@ export interface StoryItem {
   durationSec: number;
   expiresAt: string;
   createdAt?: string;
+  myReaction?: 'like' | 'heart' | 'dislike' | null;
 }
 
 interface UseStoriesOptions {
@@ -79,6 +80,20 @@ export function useStories(options: UseStoriesOptions = {}) {
     fetchFeed,
     fetchMine,
     markViewed,
+    async react(storyId: number, type: 'like' | 'heart' | 'dislike' | null) {
+      // optimistic update
+      setFeed((prev) => prev.map((s) => (s.id === storyId ? { ...s, myReaction: type } : s)));
+      try {
+        if (type) {
+          await apiRequest(`/api/stories/${storyId}/react`, { method: 'POST', body: { type } });
+        } else {
+          await apiRequest(`/api/stories/${storyId}/react`, { method: 'DELETE' });
+        }
+      } catch {
+        // rollback on error
+        setFeed((prev) => prev.map((s) => (s.id === storyId ? { ...s, myReaction: null } : s)));
+      }
+    },
   } as const;
 }
 

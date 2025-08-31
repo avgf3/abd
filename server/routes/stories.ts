@@ -171,6 +171,42 @@ router.get('/:storyId/views', protect.auth, async (req, res) => {
   }
 });
 
+// POST /api/stories/:storyId/react - set like/heart/dislike
+router.post('/:storyId/react', protect.auth, async (req, res) => {
+  try {
+    const userId = (req as any)?.user?.id as number;
+    if (!userId) return res.status(401).json({ error: 'غير مصرح' });
+    const storyId = parseInt(req.params.storyId, 10);
+    if (!Number.isFinite(storyId)) return res.status(400).json({ error: 'storyId غير صالح' });
+
+    const type = (req.body?.type as string) || '';
+    if (!['like', 'heart', 'dislike'].includes(type)) {
+      return res.status(400).json({ error: 'نوع التفاعل غير صالح' });
+    }
+
+    const ok = await databaseService.upsertStoryReaction(storyId, userId, type as any);
+    if (!ok) return res.status(500).json({ error: 'فشل حفظ التفاعل' });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'خطأ في الخادم' });
+  }
+});
+
+// DELETE /api/stories/:storyId/react - remove my reaction
+router.delete('/:storyId/react', protect.auth, async (req, res) => {
+  try {
+    const userId = (req as any)?.user?.id as number;
+    if (!userId) return res.status(401).json({ error: 'غير مصرح' });
+    const storyId = parseInt(req.params.storyId, 10);
+    if (!Number.isFinite(storyId)) return res.status(400).json({ error: 'storyId غير صالح' });
+    const ok = await databaseService.removeStoryReaction(storyId, userId);
+    if (!ok) return res.status(500).json({ error: 'فشل حذف التفاعل' });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'خطأ في الخادم' });
+  }
+});
+
 // DELETE /api/stories/:storyId - delete story (owner)
 router.delete('/:storyId', protect.auth, async (req, res) => {
   try {
