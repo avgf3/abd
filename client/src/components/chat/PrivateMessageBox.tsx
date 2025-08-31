@@ -460,18 +460,26 @@ export default function PrivateMessageBox({
                           {hasStoryContext && (
                             <div className="mb-2">
                               <div className="flex items-center gap-3 p-2 rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-                                <div className="w-14 h-20 rounded-md overflow-hidden bg-black/5 border border-purple-200 flex items-center justify-center">
-                                  {storyAttachment?.storyMediaType === 'video' ? (
-                                    <div className="text-[10px] text-purple-700">فيديو</div>
-                                  ) : (
-                                    <img
-                                      src={storyAttachment?.storyMediaUrl}
-                                      alt="Story preview"
-                                      className="w-full h-full object-cover"
-                                      loading="lazy"
-                                    />
+                                <motion.div
+                                  layoutId={`story-${storyAttachment?.storyId}`}
+                                  className="w-14 h-20 rounded-md overflow-hidden bg-black/5 border border-purple-200 relative"
+                                >
+                                  <img
+                                    src={
+                                      storyAttachment?.storyMediaType === 'video'
+                                        ? (storyAttachment?.storyThumbnailUrl || storyAttachment?.storyMediaUrl)
+                                        : storyAttachment?.storyMediaUrl
+                                    }
+                                    alt="Story preview"
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                  />
+                                  {storyAttachment?.storyMediaType === 'video' && (
+                                    <div className="absolute inset-0 grid place-items-center">
+                                      <span className="text-white text-xs bg-black/40 rounded-full w-5 h-5 grid place-items-center">▶</span>
+                                    </div>
                                   )}
-                                </div>
+                                </motion.div>
                                 <div className="flex-1 min-w-0">
                                   <div className="text-xs text-purple-800 font-medium">
                                     {storyAttachment?.subtype === 'reaction' ? 'تفاعل على حالتك' : 'رد على حالتك'}

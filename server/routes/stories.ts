@@ -69,6 +69,7 @@ router.post('/upload', protect.member, limiters.upload, upload.single('story'), 
 
     const isVideo = req.file.mimetype.startsWith('video/');
     let durationSec = 7; // default for images
+    let thumbnailUrl: string | undefined;
     if (isVideo) {
       // Validate duration using ffprobe
       try {
@@ -89,6 +90,27 @@ router.post('/upload', protect.member, limiters.upload, upload.single('story'), 
         console.warn('ffprobe failed, proceeding with default limit', probeErr);
         durationSec = 30;
       }
+
+      // Generate a thumbnail (first frame) for video
+      try {
+        const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'stories');
+        const thumbFilename = req.file.filename.replace(path.extname(req.file.filename), '.jpg');
+        await new Promise<void>((resolve, reject) => {
+          (ffmpeg as any)(req.file.path)
+            .on('end', () => resolve())
+            .on('error', (err: any) => reject(err))
+            .screenshots({
+              count: 1,
+              timemarks: ['1'],
+              filename: thumbFilename,
+              folder: uploadDir,
+              size: '360x?'
+            });
+        });
+        thumbnailUrl = `/uploads/stories/${thumbFilename}`;
+      } catch (thumbErr) {
+        console.warn('Failed generating story video thumbnail:', thumbErr);
+      }
     }
 
     const mediaUrl = `/uploads/stories/${req.file.filename}`;
@@ -106,8 +128,8 @@ router.post('/upload', protect.member, limiters.upload, upload.single('story'), 
       try { await fsp.unlink(req.file.path); } catch {}
       return res.status(500).json({ error: 'فشل إنشاء الحالة' });
     }
-
-    return res.json({ success: true, story });
+    // Include a transient thumbnailUrl in response (not stored in DB)
+    return res.json({ success: true, story: { ...story, thumbnailUrl: thumbnailUrl || (isVideo ? undefined : mediaUrl) } });
   } catch (error: any) {
     console.error('Error uploading story:', error);
     res.status(500).json({ error: 'خطأ في الخادم', details: process.env.NODE_ENV === 'development' ? error?.message : undefined });
@@ -212,6 +234,7 @@ router.post('/:storyId/react', protect.auth, limiters.reaction, async (req, res)
             storyUserId: story.userId,
             storyMediaUrl: story.mediaUrl,
             storyMediaType: story.mediaType,
+            storyThumbnailUrl: story.mediaType === 'video' ? (story as any).thumbnailUrl : story.mediaUrl,
             reactionType: type,
           },
         ];
@@ -293,6 +316,7 @@ router.post('/:storyId/reply', protect.auth, limiters.pmSend, async (req, res) =
         storyUserId: story.userId,
         storyMediaUrl: story.mediaUrl,
         storyMediaType: story.mediaType,
+        storyThumbnailUrl: story.mediaType === 'video' ? (story as any).thumbnailUrl : story.mediaUrl,
       },
     ];
 

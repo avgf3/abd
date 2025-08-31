@@ -271,11 +271,11 @@ export default function NotificationPanel({
                         {notification?.data?.storyMediaUrl && (
                           <div className="mt-2 flex items-center gap-2">
                             <div className="w-10 h-16 rounded overflow-hidden border">
-                              <img
-                                src={notification.data.storyMediaUrl}
-                                alt="story"
-                                className="w-full h-full object-cover"
-                              />
+                              {notification.data.storyThumbnailUrl ? (
+                                <img src={notification.data.storyThumbnailUrl} alt="story" className="w-full h-full object-cover" />
+                              ) : (
+                                <img src={notification.data.storyMediaUrl} alt="story" className="w-full h-full object-cover" />
+                              )}
                             </div>
                             <span className="text-[11px] text-muted-foreground">مذكور من حالة</span>
                           </div>

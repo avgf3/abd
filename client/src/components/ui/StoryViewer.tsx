@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { X, Heart, ThumbsUp, ThumbsDown, Send } from 'lucide-react';
 import { useStories, StoryItem } from '@/hooks/useStories';
 import { apiRequest } from '@/lib/queryClient';
@@ -106,24 +107,20 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
           ))}
         </div>
 
-        {active.mediaType === 'video' ? (
-          <video
-            src={active.mediaUrl}
-            className="w-full h-full object-contain bg-black"
-            autoPlay
-            muted
-            playsInline
-            controls={false}
-            onLoadedMetadata={(e) => {
-              const vid = e.currentTarget;
-              if (vid && vid.duration && isFinite(vid.duration)) {
-                // If actual duration shorter, speed progress accordingly
-              }
-            }}
-          />
-        ) : (
-          <img src={active.mediaUrl} alt="story" className="w-full h-full object-cover" />
-        )}
+        <motion.div layoutId={`story-${active.id}`} className="absolute inset-0">
+          {active.mediaType === 'video' ? (
+            <video
+              src={active.mediaUrl}
+              className="w-full h-full object-contain bg-black"
+              autoPlay
+              muted
+              playsInline
+              controls={false}
+            />
+          ) : (
+            <img src={active.mediaUrl} alt="story" className="w-full h-full object-cover" />
+          )}
+        </motion.div>
 
         {/* Reactions + Reply (separated bar with persistent background) */}
         <div className="absolute inset-x-0 bottom-2 px-3">

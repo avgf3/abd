@@ -11,6 +11,7 @@ export interface StoryItem {
   expiresAt: string;
   createdAt?: string;
   myReaction?: 'like' | 'heart' | 'dislike' | null;
+  thumbnailUrl?: string;
 }
 
 interface UseStoriesOptions {
