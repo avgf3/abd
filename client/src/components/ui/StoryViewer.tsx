@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Heart, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useStories, StoryItem } from '@/hooks/useStories';
 
 interface StoryViewerProps {
@@ -8,7 +8,7 @@ interface StoryViewerProps {
 }
 
 export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps) {
-  const { feed, markViewed, fetchFeed } = useStories({ autoRefresh: false });
+  const { feed, markViewed, fetchFeed, react: reactToStory } = useStories({ autoRefresh: false });
   const [activeIndex, setActiveIndex] = useState(0);
   const progressRef = useRef<number>(0);
   const timerRef = useRef<number | null>(null);
@@ -68,7 +68,7 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
         </button>
       </div>
 
-      <div className="w-full max-w-[520px] aspect-[9/16] bg-black relative overflow-hidden rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[520px] aspect-[9/16] max-h-[75vh] bg-black relative overflow-hidden rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="absolute top-0 left-0 h-1 bg-white/20 w-full">
           <div
             className="h-full bg-white"
@@ -95,8 +95,39 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
           <img src={active.mediaUrl} alt="story" className="w-full h-full object-cover" />
         )}
 
+        {/* Reactions */}
+        <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-3">
+          <button
+            className={`rounded-full px-3 py-2 text-sm transition ${active.myReaction === 'like' ? 'bg-white text-black' : 'bg-black/50 text-white hover:bg-black/60'}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              reactToStory(active.id, active.myReaction === 'like' ? null : 'like');
+            }}
+          >
+            <span className="inline-flex items-center gap-1"><ThumbsUp size={16} /> لايك</span>
+          </button>
+          <button
+            className={`rounded-full px-3 py-2 text-sm transition ${active.myReaction === 'heart' ? 'bg-white text-black' : 'bg-black/50 text-white hover:bg-black/60'}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              reactToStory(active.id, active.myReaction === 'heart' ? null : 'heart');
+            }}
+          >
+            <span className="inline-flex items-center gap-1"><Heart size={16} /> قلب</span>
+          </button>
+          <button
+            className={`rounded-full px-3 py-2 text-sm transition ${active.myReaction === 'dislike' ? 'bg-white text-black' : 'bg-black/50 text-white hover:bg-black/60'}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              reactToStory(active.id, active.myReaction === 'dislike' ? null : 'dislike');
+            }}
+          >
+            <span className="inline-flex items-center gap-1"><ThumbsDown size={16} /> ديسلايك</span>
+          </button>
+        </div>
+
         {active.caption && (
-          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent text-white text-sm">
+          <div className="absolute bottom-14 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent text-white text-sm">
             {active.caption}
           </div>
         )}

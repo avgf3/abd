@@ -345,6 +345,26 @@ export const storyViews = pgTable(
   })
 );
 
+// Reactions on stories: like / heart / dislike
+export const storyReactions = pgTable(
+  'story_reactions',
+  {
+    id: serial('id').primaryKey(),
+    storyId: integer('story_id')
+      .notNull()
+      .references(() => stories.id, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(), // 'like' | 'heart' | 'dislike'
+    reactedAt: timestamp('reacted_at').defaultNow(),
+  },
+  (t) => ({
+    byStory: index('idx_story_reactions_story').on(t.storyId),
+    byUser: index('idx_story_reactions_user').on(t.userId),
+  })
+);
+
 export const insertUserSchema = z.object({
   username: z.string(),
   password: z.string().optional(),
@@ -527,3 +547,14 @@ export type InsertStory = z.infer<typeof insertStorySchema>;
 export type Story = typeof stories.$inferSelect;
 export type InsertStoryView = z.infer<typeof insertStoryViewSchema>;
 export type StoryView = typeof storyViews.$inferSelect;
+
+// Schemas and types for Story Reactions
+export const insertStoryReactionSchema = z.object({
+  storyId: z.number(),
+  userId: z.number(),
+  type: z.enum(['like', 'heart', 'dislike']),
+  reactedAt: z.date().optional(),
+});
+
+export type InsertStoryReaction = z.infer<typeof insertStoryReactionSchema>;
+export type StoryReaction = typeof storyReactions.$inferSelect;
