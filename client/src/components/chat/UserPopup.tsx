@@ -11,6 +11,7 @@ interface UserPopupProps {
   onAddFriend: () => void;
   onIgnore: () => void;
   onViewProfile: () => void;
+  onViewStories?: () => void;
   currentUser: ChatUser | null;
   onClose?: () => void;
 }
@@ -23,6 +24,7 @@ export default function UserPopup({
   onAddFriend,
   onIgnore,
   onViewProfile,
+  onViewStories,
   currentUser,
   onClose,
 }: UserPopupProps) {
@@ -147,6 +149,9 @@ export default function UserPopup({
     >
       <Button onClick={onViewProfile} variant="ghost" className="user-popup-button">
         👤 عرض الملف الشخصي
+      </Button>
+      <Button onClick={onViewStories} variant="ghost" className="user-popup-button">
+        📺 مشاهدة الحالة
       </Button>
 
       {/* إخفاء خيارات الرسائل والصداقة إذا كان المستخدم نفسه */}

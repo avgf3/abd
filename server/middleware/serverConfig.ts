@@ -15,12 +15,7 @@ export function configureServerLimits(app: Express, server: Server): void {
   // حد أقصى للاتصالات المتزامنة
   server.maxHeadersCount = 100;
   
-  console.log('✅ تم ضبط مهلات الخادم:', {
-    keepAliveTimeout: '10s',
-    headersTimeout: '15s',
-    timeout: '30s'
-  });
-}
+  }
 
 /**
  * ضبط حدود حجم الطلبات
@@ -52,8 +47,7 @@ export function configureRequestLimits(app: Express): void {
     type: 'application/octet-stream'
   }));
   
-  console.log('✅ تم ضبط حدود حجم الطلبات');
-}
+  }
 
 /**
  * Middleware لفرض حد أقصى لطول URL
@@ -177,5 +171,4 @@ export function applyServerSecurity(app: Express, server: Server): void {
   app.use(requestTimeout());
   app.use(slowlorisProtection());
   
-  console.log('✅ تم تطبيق جميع إعدادات أمان الخادم');
-}
+  }

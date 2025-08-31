@@ -306,6 +306,45 @@ export const wallReactionsRelations = relations(wallReactions, ({ one }) => ({
   }),
 }));
 
+// حالات (Stories) — صور/فيديو قصير <= 30 ثانية
+export const stories = pgTable(
+  'stories',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    mediaUrl: text('media_url').notNull(),
+    mediaType: text('media_type').notNull(), // 'image' | 'video'
+    caption: text('caption'),
+    durationSec: integer('duration_sec').notNull().default(0), // ثواني (للصور 5-7 مثلاً، للفيديو <= 30)
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (t) => ({
+    byUserCreated: index('idx_stories_user_created').on(t.userId, t.createdAt),
+    expiresIdx: index('idx_stories_expires').on(t.expiresAt),
+  })
+);
+
+export const storyViews = pgTable(
+  'story_views',
+  {
+    id: serial('id').primaryKey(),
+    storyId: integer('story_id')
+      .notNull()
+      .references(() => stories.id, { onDelete: 'cascade' }),
+    viewerId: integer('viewer_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    viewedAt: timestamp('viewed_at').defaultNow(),
+  },
+  (t) => ({
+    uniqueView: index('idx_story_views_unique').on(t.storyId, t.viewerId),
+    byViewer: index('idx_story_views_viewer').on(t.viewerId),
+  })
+);
+
 export const insertUserSchema = z.object({
   username: z.string(),
   password: z.string().optional(),
@@ -467,3 +506,24 @@ export type InsertWallPost = z.infer<typeof insertWallPostSchema>;
 export type WallPost = typeof wallPosts.$inferSelect;
 export type InsertWallReaction = z.infer<typeof insertWallReactionSchema>;
 export type WallReaction = typeof wallReactions.$inferSelect;
+
+// Schemas and types for Stories
+export const insertStorySchema = z.object({
+  userId: z.number(),
+  mediaUrl: z.string(),
+  mediaType: z.enum(['image', 'video']),
+  caption: z.string().optional(),
+  durationSec: z.number().min(0).max(30).optional(),
+  expiresAt: z.date().optional(),
+});
+
+export const insertStoryViewSchema = z.object({
+  storyId: z.number(),
+  viewerId: z.number(),
+  viewedAt: z.date().optional(),
+});
+
+export type InsertStory = z.infer<typeof insertStorySchema>;
+export type Story = typeof stories.$inferSelect;
+export type InsertStoryView = z.infer<typeof insertStoryViewSchema>;
+export type StoryView = typeof storyViews.$inferSelect;

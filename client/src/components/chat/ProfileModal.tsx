@@ -16,6 +16,7 @@ import {
 } from '@/utils/themeUtils';
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import ProfileImage from './ProfileImage';
+import { useStories } from '@/hooks/useStories';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -67,6 +68,50 @@ export default function ProfileModal({
       setSelectedEffect(user.profileEffect || 'none');
     }
   }, [user]);
+  // Stories
+  const { fetchMine } = useStories({ autoRefresh: false });
+
+  const handleStoryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const isVideo = file.type.startsWith('video/');
+      if (isVideo) {
+        const url = URL.createObjectURL(file);
+        const ok = await new Promise<boolean>((resolve) => {
+          const video = document.createElement('video');
+          video.preload = 'metadata';
+          video.onloadedmetadata = () => {
+            const d = video.duration;
+            URL.revokeObjectURL(url);
+            resolve(!isFinite(d) || d <= 30);
+          };
+          video.onerror = () => resolve(true);
+          video.src = url;
+        });
+        if (!ok) throw new Error('مدة الفيديو تتجاوز 30 ثانية');
+      }
+      const formData = new FormData();
+      formData.append('story', file);
+      const res = await fetch('/api/stories/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || 'فشل رفع الحالة');
+      }
+      await fetchMine();
+      toast({ title: 'تم', description: 'تم نشر الحالة بنجاح' });
+    } catch (err: any) {
+      toast({ title: 'خطأ', description: err?.message || 'فشل رفع الحالة', variant: 'destructive' });
+    } finally {
+      try {
+        if (e.target) (e.target as HTMLInputElement).value = '';
+      } catch {}
+    }
+  };
 
   // معالجة محسنة للحالات الفارغة
   if (!localUser || !user) {
@@ -2226,6 +2271,13 @@ export default function ProfileModal({
                 accept="image/*"
                 onChange={(e) => handleFileUpload(e, 'profile')}
                 disabled={isLoading}
+              />
+              <input
+                type="file"
+                accept="image/*,video/*"
+                onChange={handleStoryUpload}
+                disabled={isLoading}
+                title="رفع حالة (صورة/فيديو حتى 30 ثانية)"
               />
             </>
           )}

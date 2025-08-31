@@ -481,8 +481,7 @@ class SmartImageService {
             
             if (stats.mtime < cutoffDate) {
               await fs.unlink(filePath);
-              console.log(`🗑️ تم حذف الملف القديم: ${file}`);
-            }
+              }
           }
         } catch (dirError) {
           console.warn(`⚠️ لا يمكن الوصول للمجلد ${dir}:`, dirError);

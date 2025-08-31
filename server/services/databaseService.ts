@@ -94,6 +94,24 @@ export interface Room {
   icon?: string | null;
 }
 
+export interface Story {
+  id: number;
+  userId: number;
+  mediaUrl: string;
+  mediaType: 'image' | 'video';
+  caption?: string;
+  durationSec: number;
+  expiresAt: Date | string;
+  createdAt?: Date | string;
+}
+
+export interface StoryView {
+  id: number;
+  storyId: number;
+  viewerId: number;
+  viewedAt?: Date | string;
+}
+
 // Blocked device type for moderation persistence
 export interface BlockedDevice {
   id: number;
@@ -613,6 +631,132 @@ export class DatabaseService {
   }
 
   // Message operations
+  // ===================== Stories operations =====================
+  async createStory(data: Omit<Story, 'id' | 'createdAt'>): Promise<Story | null> {
+    if (!this.isConnected()) return null;
+    try {
+      if (this.type === 'postgresql') {
+        const values: any = {
+          userId: data.userId,
+          mediaUrl: data.mediaUrl,
+          mediaType: data.mediaType,
+          caption: data.caption || null,
+          durationSec: Math.min(30, Math.max(0, Number(data.durationSec) || 0)),
+          expiresAt: data.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000),
+          createdAt: new Date(),
+        };
+        const [row] = await (this.db as any).insert((schema as any).stories).values(values).returning();
+        return row || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error createStory:', error);
+      return null;
+    }
+  }
+
+  async getUserStories(userId: number, includeExpired = false): Promise<Story[]> {
+    if (!this.isConnected()) return [];
+    try {
+      if (this.type === 'postgresql') {
+        const now = new Date();
+        if (includeExpired) {
+          return await (this.db as any)
+            .select()
+            .from((schema as any).stories)
+            .where(eq((schema as any).stories.userId, userId))
+            .orderBy(desc((schema as any).stories.createdAt));
+        }
+        return await (this.db as any)
+          .select()
+          .from((schema as any).stories)
+          .where(and(eq((schema as any).stories.userId, userId), gte((schema as any).stories.expiresAt, now as any)))
+          .orderBy(desc((schema as any).stories.createdAt));
+      }
+      return [];
+    } catch (error) {
+      console.error('Error getUserStories:', error);
+      return [];
+    }
+  }
+
+  async getStoriesFeedForUser(viewerId: number): Promise<Story[]> {
+    if (!this.isConnected()) return [];
+    try {
+      if (this.type === 'postgresql') {
+        const now = new Date();
+        return await (this.db as any)
+          .select()
+          .from((schema as any).stories)
+          .where(gte((schema as any).stories.expiresAt, now as any))
+          .orderBy(desc((schema as any).stories.createdAt))
+          .limit(200);
+      }
+      return [];
+    } catch (error) {
+      console.error('Error getStoriesFeedForUser:', error);
+      return [];
+    }
+  }
+
+  async addStoryView(storyId: number, viewerId: number): Promise<boolean> {
+    if (!this.isConnected()) return false;
+    try {
+      if (this.type === 'postgresql') {
+        await (this.db as any)
+          .insert((schema as any).storyViews)
+          .values({ storyId, viewerId, viewedAt: new Date() })
+          .onConflictDoNothing();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error addStoryView:', error);
+      return false;
+    }
+  }
+
+  async getStoryViews(storyId: number): Promise<StoryView[]> {
+    if (!this.isConnected()) return [];
+    try {
+      if (this.type === 'postgresql') {
+        return await (this.db as any)
+          .select()
+          .from((schema as any).storyViews)
+          .where(eq((schema as any).storyViews.storyId, storyId))
+          .orderBy(desc((schema as any).storyViews.viewedAt));
+      }
+      return [];
+    } catch (error) {
+      console.error('Error getStoryViews:', error);
+      return [];
+    }
+  }
+
+  async deleteStory(storyId: number, requesterId: number): Promise<boolean> {
+    if (!this.isConnected()) return true; // no-op
+    try {
+      if (this.type === 'postgresql') {
+        // Ensure ownership
+        const rows = await (this.db as any)
+          .select({ userId: (schema as any).stories.userId })
+          .from((schema as any).stories)
+          .where(eq((schema as any).stories.id, storyId))
+          .limit(1);
+        const ownerId = rows?.[0]?.userId;
+        if (ownerId !== requesterId) return false;
+
+        await (this.db as any)
+          .delete((schema as any).stories)
+          .where(eq((schema as any).stories.id, storyId));
+        return true;
+      }
+      return true;
+    } catch (error) {
+      console.error('Error deleteStory:', error);
+      return false;
+    }
+  }
   async createMessage(messageData: Partial<Message>): Promise<Message | null> {
     if (!this.isConnected()) return null;
 
