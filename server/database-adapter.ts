@@ -138,12 +138,17 @@ export async function runMigrationsIfAvailable(): Promise<void> {
     // Prefer Drizzle migrator if migrations folder exists in runtime
     const fs = await import('fs');
     const path = await import('path');
-    const migrationsFolder = path.join(process.cwd(), 'migrations');
-    if (fs.existsSync(migrationsFolder)) {
+    const candidateFolders = [
+      path.join(process.cwd(), 'migrations'),
+      path.join(process.cwd(), 'dist', 'migrations'),
+    ];
+    for (const migrationsFolder of candidateFolders) {
+      if (!fs.existsSync(migrationsFolder)) continue;
       try {
         const { migrate } = await import('drizzle-orm/postgres-js/migrator');
         await migrate(dbAdapter.db as any, { migrationsFolder });
-        } catch (e) {
+        break;
+      } catch (e) {
         console.warn('⚠️ تعذر تشغيل الهجرات عبر Drizzle migrator:', (e as any)?.message || e);
       }
     }
@@ -245,5 +250,38 @@ export async function ensureStoriesTables(): Promise<void> {
     `);
   } catch (e) {
     console.warn('⚠️ تعذر ضمان جداول القصص:', (e as any)?.message || e);
+  }
+}
+
+// Ensure profile music columns exist on users table (safety net if migrations didn't run)
+export async function ensureUserProfileMusicColumns(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ADD COLUMN IF NOT EXISTS profile_music_url TEXT;
+    `);
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ADD COLUMN IF NOT EXISTS profile_music_title TEXT;
+    `);
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ADD COLUMN IF NOT EXISTS profile_music_enabled BOOLEAN DEFAULT TRUE;
+    `);
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ADD COLUMN IF NOT EXISTS profile_music_volume INTEGER DEFAULT 70;
+    `);
+
+    await dbAdapter.client.unsafe(`
+      UPDATE users
+      SET
+        profile_music_enabled = COALESCE(profile_music_enabled, TRUE),
+        profile_music_volume = COALESCE(profile_music_volume, 70)
+    `);
+  } catch (e) {
+    console.warn('⚠️ تعذر ضمان أعمدة موسيقى البروفايل:', (e as any)?.message || e);
   }
 }
