@@ -72,6 +72,13 @@ export default function ProfileModal({
     typeof localUser?.profileMusicVolume === 'number' ? localUser.profileMusicVolume : 70
   );
   
+  // ضبط مستوى الصوت عند تحميل الصوت
+  useEffect(() => {
+    if (audioRef.current && localUser?.profileMusicUrl) {
+      audioRef.current.volume = Math.max(0, Math.min(1, musicVolume / 100));
+    }
+  }, [musicVolume, localUser?.profileMusicUrl]);
+  
 
   // تحديث الحالة المحلية عند تغيير المستخدم
   useEffect(() => {
@@ -2057,32 +2064,48 @@ export default function ProfileModal({
           >
             {/* مشغل الموسيقى - يظهر أعلى يمين الغلاف */}
             {localUser?.profileMusicUrl && musicEnabled && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '10px',
-                  right: '10px',
-                  zIndex: 5,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'rgba(0,0,0,0.45)',
-                  padding: '6px 8px',
-                  borderRadius: '10px',
-                  border: '1px solid rgba(255,255,255,0.15)'
-                }}
-              >
-                <audio
-                  ref={audioRef}
-                  src={localUser.profileMusicUrl}
-                  controls
-                  autoPlay
-                  style={{ height: '28px' }}
-                />
-                <span style={{ color: '#fff', fontSize: '12px', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {musicTitle || 'موسيقى البروفايل'}
-                </span>
-              </div>
+              <>
+                {/* الشريط المرئي - يظهر فقط لصاحب البروفايل */}
+                {localUser?.id === currentUser?.id && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      zIndex: 5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: 'rgba(0,0,0,0.45)',
+                      padding: '6px 8px',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255,255,255,0.15)'
+                    }}
+                  >
+                    <audio
+                      ref={audioRef}
+                      src={localUser.profileMusicUrl}
+                      controls
+                      autoPlay
+                      style={{ height: '28px' }}
+                    />
+                    <span style={{ color: '#fff', fontSize: '12px', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {musicTitle || 'موسيقى البروفايل'}
+                    </span>
+                  </div>
+                )}
+                
+                {/* مشغل مخفي - للمستخدمين الآخرين */}
+                {localUser?.id !== currentUser?.id && (
+                  <audio
+                    ref={audioRef}
+                    src={localUser.profileMusicUrl}
+                    autoPlay
+                    loop
+                    style={{ display: 'none' }}
+                  />
+                )}
+              </>
             )}
             {localUser?.id === currentUser?.id && (
               <>
