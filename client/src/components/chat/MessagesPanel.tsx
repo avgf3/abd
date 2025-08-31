@@ -137,8 +137,10 @@ export default function MessagesPanel({
 
   // تحديث فوري للقائمة عند وصول/إرسال رسالة خاصة
   useEffect(() => {
-    const handler = async () => {
+    const handler = async (evt?: any) => {
       try {
+        const isStoryChannel = evt?.detail?.storyChannel === true;
+        // يمكن مستقبلاً فصل عرض محادثات حالات عن الخاص هنا
         await refetch();
       } catch (error) {
         console.error('خطأ في تحديث المحادثات:', error);
@@ -146,7 +148,7 @@ export default function MessagesPanel({
       }
     };
     window.addEventListener('privateMessageReceived', handler);
-    return () => window.removeEventListener('privateMessageReceived', handler);
+    return () => window.removeEventListener('privateMessageReceived', handler as any);
   }, [refetch]);
 
   // عرض رسالة خطأ إذا فشل الجلب

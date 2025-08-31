@@ -414,6 +414,7 @@ export default function PrivateMessageBox({
                   const isImage =
                     m.messageType === 'image' ||
                     (typeof m.content === 'string' && m.content.startsWith('data:image'));
+                  const hasStoryContext = Array.isArray((m as any).attachments) && (m as any).attachments.some((a: any) => a?.channel === 'story');
                   return (
                     <motion.div
                       key={key}
@@ -451,6 +452,11 @@ export default function PrivateMessageBox({
                           </span>
                         </div>
                         <div className="text-gray-800 break-words message-content-fix">
+                          {hasStoryContext && (
+                            <div className="mb-2 text-[11px] text-purple-700 bg-purple-50 rounded px-2 py-1 inline-flex items-center gap-1 border border-purple-200">
+                              <span>رد على حالة</span>
+                            </div>
+                          )}
                           {isImage ? (
                             <img
                               src={m.content}

@@ -15,6 +15,7 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
   const timerRef = useRef<number | null>(null);
   const [replyText, setReplyText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const stories = useMemo(() => {
     if (initialUserId) {
@@ -51,6 +52,20 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
     };
   }, [active?.id]);
 
+  // التنقل يمين/يسار مثل واتساب
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!stories.length) return;
+      if (e.key === 'ArrowRight') {
+        setActiveIndex((i) => (i + 1 < stories.length ? i + 1 : 0));
+      } else if (e.key === 'ArrowLeft') {
+        setActiveIndex((i) => (i - 1 >= 0 ? i - 1 : stories.length - 1));
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [stories.length]);
+
   if (!active) {
     return (
       <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50" onClick={onClose}>
@@ -71,12 +86,24 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
         </button>
       </div>
 
-      <div className="w-full max-w-[520px] aspect-[9/16] max-h-[75vh] bg-black relative overflow-hidden rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="absolute top-0 left-0 h-1 bg-white/20 w-full">
-          <div
-            className="h-full bg-white"
-            style={{ width: `${Math.round((progressRef.current || 0) * 100)}%`, transition: 'width 50ms linear' }}
-          />
+      <div ref={containerRef} className="w-full max-w-[520px] aspect-[9/16] max-h-[75vh] bg-black relative overflow-hidden rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        {/* شريط تقدم مجزأ */}
+        <div className="absolute top-0 left-0 right-0 p-2 flex gap-1">
+          {stories.map((_, idx) => (
+            <div key={idx} className="flex-1 h-1 bg-white/20 overflow-hidden rounded">
+              <div
+                className="h-full bg-white"
+                style={{
+                  width:
+                    idx < activeIndex
+                      ? '100%'
+                      : idx === activeIndex
+                      ? `${Math.round((progressRef.current || 0) * 100)}%`
+                      : '0%'
+                }}
+              />
+            </div>
+          ))}
         </div>
 
         {active.mediaType === 'video' ? (
@@ -143,9 +170,10 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
                 if (isSending) return;
                 try {
                   setIsSending(true);
-                  await apiRequest('/api/private-messages/send', {
+                  // الرد على الحالة بمسار خاص يضيف منشن ومرفقات سياق الحالة
+                  await apiRequest(`/api/stories/${active.id}/reply`, {
                     method: 'POST',
-                    body: { receiverId: active.userId, content: text, messageType: 'text' },
+                    body: { content: text },
                   });
                   setReplyText('');
                 } catch (err) {
