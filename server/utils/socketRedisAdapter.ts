@@ -12,7 +12,6 @@ let emitter: Emitter | null = null;
  */
 export async function setupSocketRedisAdapter(io: SocketIOServer): Promise<void> {
   if (!process.env.REDIS_URL) {
-    console.log('⚠️ REDIS_URL غير محدد، Socket.IO سيعمل في وضع الذاكرة المحلية');
     return;
   }
 
@@ -42,12 +41,10 @@ export async function setupSocketRedisAdapter(io: SocketIOServer): Promise<void>
 
     // معالجة الأحداث للـ pub client
     pubClient.on('connect', () => {
-      console.log('🔄 Socket.IO Publisher connecting to Redis...');
-    });
+      });
 
     pubClient.on('ready', () => {
-      console.log('✅ Socket.IO Publisher connected to Redis');
-    });
+      });
 
     pubClient.on('error', (err) => {
       console.error('❌ Socket.IO Publisher Redis error:', err);
@@ -55,12 +52,10 @@ export async function setupSocketRedisAdapter(io: SocketIOServer): Promise<void>
 
     // معالجة الأحداث للـ sub client
     subClient.on('connect', () => {
-      console.log('🔄 Socket.IO Subscriber connecting to Redis...');
-    });
+      });
 
     subClient.on('ready', () => {
-      console.log('✅ Socket.IO Subscriber connected to Redis');
-    });
+      });
 
     subClient.on('error', (err) => {
       console.error('❌ Socket.IO Subscriber Redis error:', err);
@@ -78,8 +73,6 @@ export async function setupSocketRedisAdapter(io: SocketIOServer): Promise<void>
 
     // إنشاء emitter للإرسال من خارج Socket.IO context
     emitter = new Emitter(pubClient);
-
-    console.log('✅ تم إعداد Socket.IO Redis Adapter بنجاح');
 
     // إضافة معلومات تشخيصية
     io.on('connection', (socket) => {
@@ -120,8 +113,7 @@ export async function closeSocketRedisAdapter(): Promise<void> {
 
   try {
     await Promise.all(promises);
-    console.log('✅ تم إغلاق Socket.IO Redis Adapter بنجاح');
-  } catch (error) {
+    } catch (error) {
     console.error('❌ خطأ في إغلاق Socket.IO Redis Adapter:', error);
   } finally {
     pubClient = null;

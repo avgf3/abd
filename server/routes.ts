@@ -5,6 +5,7 @@ import path from 'path';
 
 import roomRoutes from './routes/rooms';
 import messageRoutes from './routes/messages';
+import storiesRoutes from './routes/stories';
 import { pointsService } from './services/pointsService';
 import { roomService } from './services/roomService';
 import { roomMessageService } from './services/roomMessageService';
@@ -189,6 +190,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // استخدام مسارات الرسائل المنفصلة والمحسنة
   app.use('/api/messages', messageRoutes);
+  // حالات (Stories)
+  app.use('/api/stories', storiesRoutes);
   // مسارات الرسائل الخاصة مفصولة بالكامل
   app.use('/api/private-messages', (await import('./routes/privateMessages')).default);
 
@@ -309,9 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
 
-        console.log(`✅ رفع صورة بروفايل بنجاح - المستخدم: ${userId}, النوع: ${processedImage.storageType}, الحجم: ${processedImage.metadata.size} bytes`);
-        
-      } catch (error: any) {
+        } catch (error: any) {
         console.error('❌ خطأ في رفع صورة البروفايل:', error);
         
         // تنظيف الملف المؤقت في حالة الخطأ
@@ -419,9 +420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
 
-        console.log(`✅ رفع صورة بانر بنجاح - المستخدم: ${userId}, النوع: ${processedImage.storageType}, الحجم: ${processedImage.metadata.size} bytes`);
-        
-      } catch (error: any) {
+        } catch (error: any) {
         console.error('❌ خطأ في رفع صورة البانر:', error);
         
         // تنظيف الملف المؤقت في حالة الخطأ

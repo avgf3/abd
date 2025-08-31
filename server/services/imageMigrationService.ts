@@ -85,8 +85,6 @@ class ImageMigrationService {
       needsMigration: number;
     };
   }> {
-    console.log('🔍 بدء تحليل حالة الصور...');
-    
     try {
       const users = await storage.getAllUsers();
       const analysis: ImageAnalysis[] = [];
@@ -126,7 +124,6 @@ class ImageMigrationService {
         needsMigration
       };
 
-      console.log('📊 تحليل الصور مكتمل:', summary);
       return { analysis, summary };
       
     } catch (error) {
@@ -225,8 +222,6 @@ class ImageMigrationService {
       backupFirst = true
     } = options || {};
 
-    console.log(`🚀 بدء Migration ${dryRun ? '(محاكاة)' : '(حقيقي)'} للصور...`);
-    
     this.stats = {
       totalUsers: 0,
       processedUsers: 0,
@@ -255,15 +250,13 @@ class ImageMigrationService {
         const batch = analysis.slice(i, i + batchSize);
         await this.processBatch(batch, { dryRun, forceBase64 });
         
-        console.log(`📈 تقدم Migration: ${Math.min(i + batchSize, analysis.length)}/${analysis.length}`);
-      }
+        }
 
       // 4. تنظيف وإحصائيات نهائية
       this.stats.performance.endTime = Date.now();
       this.stats.performance.duration = this.stats.performance.endTime - this.stats.performance.startTime;
       this.stats.performance.averageTimePerUser = this.stats.performance.duration / this.stats.totalUsers;
 
-      console.log('✅ Migration مكتمل:', this.formatStats());
       return this.stats;
 
     } catch (error) {
@@ -453,8 +446,6 @@ class ImageMigrationService {
    * 📋 إنشاء backup للبيانات الحالية
    */
   private async createBackup(): Promise<void> {
-    console.log('📋 إنشاء backup للبيانات...');
-    
     try {
       const backupDir = path.join(this.uploadsDir, 'backup');
       await fs.mkdir(backupDir, { recursive: true });
@@ -473,9 +464,7 @@ class ImageMigrationService {
       const backupFile = path.join(backupDir, `images_backup_${Date.now()}.json`);
       await fs.writeFile(backupFile, JSON.stringify(backupData, null, 2));
       
-      console.log(`✅ تم إنشاء backup: ${backupFile}`);
-      
-    } catch (error) {
+      } catch (error) {
       console.error('❌ فشل إنشاء backup:', error);
       throw error;
     }
@@ -489,8 +478,6 @@ class ImageMigrationService {
     freedSpace: number;
     errors: string[];
   }> {
-    console.log('🧹 بدء تنظيف الملفات التالفة...');
-    
     const result = {
       deletedFiles: 0,
       freedSpace: 0,
@@ -519,8 +506,7 @@ class ImageMigrationService {
                 await fs.unlink(filePath);
                 result.deletedFiles++;
                 result.freedSpace += stats.size;
-                console.log(`🗑️ حذف ملف تالف: ${file} (${stats.size} bytes)`);
-              }
+                }
               
             } catch (fileError) {
               result.errors.push(`خطأ في فحص الملف ${file}: ${(fileError as Error).message}`);
@@ -532,7 +518,6 @@ class ImageMigrationService {
         }
       }
       
-      console.log(`✅ تنظيف مكتمل: حذف ${result.deletedFiles} ملف، تحرير ${this.formatSize(result.freedSpace)}`);
       return result;
       
     } catch (error) {

@@ -580,8 +580,7 @@ class ImageMonitoringService {
     this.metrics = this.metrics.filter(m => m.timestamp > cutoff);
     this.errors = this.errors.filter(e => e.timestamp > cutoff);
     
-    console.log(`🧹 تنظيف بيانات المراقبة: ${this.metrics.length} metrics, ${this.errors.length} errors`);
-  }
+    }
 
   /**
    * 📊 حساب حجم المجلد
