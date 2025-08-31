@@ -21,7 +21,7 @@ BEGIN
   -- إضافة عمود profile_background_color إذا لم يكن موجوداً
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                  WHERE table_name = 'users' AND column_name = 'profile_background_color') THEN
-    ALTER TABLE users ADD COLUMN profile_background_color TEXT DEFAULT '#3c0d0d';
+    ALTER TABLE users ADD COLUMN profile_background_color TEXT DEFAULT '#ffffff';
   END IF;
 
   -- إضافة عمود username_color إذا لم يكن موجوداً

@@ -17,8 +17,8 @@ export class UserService {
       const userToInsert: InsertUser = {
         ...userData,
         role: userData.role || userData.userType || 'guest',
-        profileBackgroundColor: userData.profileBackgroundColor || '#3c0d0d',
-        usernameColor: userData.usernameColor || '#000000',
+        profileBackgroundColor: userData.profileBackgroundColor || '#ffffff',
+        usernameColor: userData.usernameColor || '#333333',
       };
 
       const [newUser] = await db

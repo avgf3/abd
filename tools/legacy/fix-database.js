@@ -44,7 +44,7 @@ async function fixDatabase() {
 
     // إضافة أعمدة أخرى مفقودة
     const columnsToAdd = [
-      { name: 'profile_background_color', sql: "profile_background_color TEXT DEFAULT '#3c0d0d'" },
+      { name: 'profile_background_color', sql: "profile_background_color TEXT DEFAULT '#ffffff'" },
       { name: 'username_color', sql: "username_color TEXT DEFAULT '#FFFFFF'" },
       { name: 'profile_effect', sql: "profile_effect TEXT DEFAULT 'none'" },
       { name: 'points', sql: 'points INTEGER DEFAULT 0' },

@@ -623,7 +623,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
-          "default": "'#3c0d0d'"
+          "default": "'#ffffff'"
         },
         "status": {
           "name": "status",

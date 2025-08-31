@@ -10,7 +10,7 @@ export function isValidHexColor(color: string): boolean {
 // دالة لتنظيف وتصحيح لون HEX
 export function sanitizeHexColor(
   color: string | null | undefined,
-  defaultColor: string = '#3c0d0d'
+  defaultColor: string = '#ffffff'
 ): string {
   if (!color || color === 'null' || color === 'undefined' || color === '') {
     return defaultColor;
@@ -121,7 +121,7 @@ export function sanitizeUserData(user: any): any {
   return {
     ...user,
     profileBackgroundColor: sanitizeProfileBackgroundColor(user.profileBackgroundColor),
-    usernameColor: sanitizeHexColor(user.usernameColor, '#000000'),
+    usernameColor: sanitizeHexColor(user.usernameColor, '#333333'),
     profileEffect: sanitizeEffect(user.profileEffect),
     // موسيقى البروفايل
     profileMusicUrl: safeMusicUrl,
@@ -148,7 +148,7 @@ export function sanitizeUsersArray(users: any[]): any[] {
 
 export function sanitizeProfileBackgroundColor(
   color: string | null | undefined,
-  defaultColor: string = '#3c0d0d'
+  defaultColor: string = '#ffffff'
 ): string {
   if (!color || color === 'null' || color === 'undefined' || color === '') {
     return defaultColor;

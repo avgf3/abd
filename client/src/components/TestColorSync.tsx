@@ -53,7 +53,7 @@ const availableEffects = [
 ];
 
 export default function TestColorSync() {
-  const [selectedColor, setSelectedColor] = React.useState('#3c0d0d');
+  const [selectedColor, setSelectedColor] = React.useState('#ffffff');
   const [selectedEffect, setSelectedEffect] = React.useState('none');
 
   // محاكاة كائن المستخدم
@@ -62,7 +62,7 @@ export default function TestColorSync() {
     username: 'مستخدم تجريبي',
     profileBackgroundColor: selectedColor,
     profileEffect: selectedEffect,
-    usernameColor: '#000000',
+    usernameColor: '#333333',
     userType: 'member',
   };
 
