@@ -1285,21 +1285,21 @@ export default function ProfileModal({
           position: absolute;
           bottom: 10px;
           left: 20px;
-          right: 160px;
+          right: 150px; /* إتاحة مساحة أكبر قليلاً قبل الصورة الشخصية */
           display: flex;
-          gap: 8px;
+          gap: 6px;
           align-items: center;
-          justify-content: space-evenly;
-          flex-wrap: wrap;
+          justify-content: flex-start; /* تلاصق الأزرار بجانب بعضها */
+          flex-wrap: nowrap; /* كل الأزرار في سطر واحد */
           z-index: 10;
         }
 
         .profile-actions button {
           border: none;
-          padding: 6px 10px;
-          border-radius: 8px;
-          font-weight: bold;
-          font-size: 12px;
+          padding: 4px 8px; /* تصغير المساحة الداخلية للأزرار */
+          border-radius: 6px;
+          font-weight: 600;
+          font-size: 11px; /* تصغير النص ليتسع الجميع في سطر واحد */
           cursor: pointer;
           color: #fff;
           box-shadow: 0 4px 12px rgba(0,0,0,0.3);
