@@ -6,6 +6,7 @@ import { storage } from '../storage';
 import { spamProtection } from '../spam-protection';
 import { protect } from '../middleware/enhancedSecurity';
 import { sanitizeInput, limiters, SecurityConfig, validateMessageContent } from '../security';
+import { moderationSystem } from '../moderation';
 import { z } from 'zod';
 
 // Helper type for conversation item (server-side internal)
@@ -57,6 +58,14 @@ router.post('/send', protect.auth, limiters.pmSend, async (req, res) => {
     if (!text) {
       return res.status(400).json({ error: 'محتوى الرسالة مطلوب' });
     }
+
+    // احترام حالات الكتم/الطرد: إيقاف الكتابة خلال مدة الكتم
+    try {
+      const status = await moderationSystem.checkUserStatus(parseInt(String(senderId)));
+      if (!status.canChat) {
+        return res.status(403).json({ error: status.reason || 'غير مسموح بإرسال الرسائل حالياً', timeLeft: status.timeLeft });
+      }
+    } catch {}
 
     // السماح فقط بروابط YouTube ومنع غيرها
     const contentCheck = validateMessageContent(text);
