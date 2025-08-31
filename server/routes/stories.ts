@@ -11,6 +11,7 @@ import { dbType } from '../database-adapter';
 import { protect } from '../middleware/enhancedSecurity';
 import { limiters } from '../security';
 import { databaseService } from '../services/databaseService';
+import { storage } from '../storage';
 
 // Multer config for stories (images + videos up to 30MB)
 const storiesStorage = multer.diskStorage({
@@ -186,6 +187,39 @@ router.post('/:storyId/react', protect.auth, async (req, res) => {
 
     const ok = await databaseService.upsertStoryReaction(storyId, userId, type as any);
     if (!ok) return res.status(500).json({ error: 'فشل حفظ التفاعل' });
+
+    // إرسال رسالة خاصة لصاحب الحالة لإشعاره بالتفاعل
+    try {
+      const story = await databaseService.getStoryById(storyId);
+      if (story && story.userId && story.userId !== userId) {
+        const actor = await storage.getUser(userId);
+        const actorName = (actor && (actor as any).username) ? (actor as any).username : `User#${userId}`;
+        const reactionText = type === 'heart' ? '❤️ أعجب بحالتك'
+          : type === 'like' ? '👍 وضع لايك على حالتك'
+          : '👎 لم تعجبه حالتك';
+        const content = `${actorName} ${reactionText}`;
+
+        const messageData = {
+          senderId: userId,
+          receiverId: story.userId,
+          content,
+          messageType: 'text',
+          isPrivate: true,
+          timestamp: new Date(),
+        } as any;
+
+        const newMessage = await storage.createMessage(messageData);
+        const io = req.app.get('io');
+        if (newMessage && io) {
+          const payload = { message: { ...newMessage, sender: actor || { id: userId, username: actorName } } };
+          try { io.to(String(userId)).emit('privateMessage', payload); } catch {}
+          try { io.to(String(story.userId)).emit('privateMessage', payload); } catch {}
+        }
+      }
+    } catch (notifyErr) {
+      console.warn('story reaction notify failed:', notifyErr);
+    }
+
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'خطأ في الخادم' });
