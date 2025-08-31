@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Heart, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { X, Heart, ThumbsUp, ThumbsDown, Send } from 'lucide-react';
 import { useStories, StoryItem } from '@/hooks/useStories';
+import { apiRequest } from '@/lib/queryClient';
 
 interface StoryViewerProps {
   initialUserId?: number;
@@ -12,6 +13,8 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
   const [activeIndex, setActiveIndex] = useState(0);
   const progressRef = useRef<number>(0);
   const timerRef = useRef<number | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   const stories = useMemo(() => {
     if (initialUserId) {
@@ -95,39 +98,83 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
           <img src={active.mediaUrl} alt="story" className="w-full h-full object-cover" />
         )}
 
-        {/* Reactions */}
-        <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-3">
-          <button
-            className={`rounded-full px-3 py-2 text-sm transition ${active.myReaction === 'like' ? 'bg-white text-black' : 'bg-black/50 text-white hover:bg-black/60'}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              reactToStory(active.id, active.myReaction === 'like' ? null : 'like');
-            }}
-          >
-            <span className="inline-flex items-center gap-1"><ThumbsUp size={16} /> لايك</span>
-          </button>
-          <button
-            className={`rounded-full px-3 py-2 text-sm transition ${active.myReaction === 'heart' ? 'bg-white text-black' : 'bg-black/50 text-white hover:bg-black/60'}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              reactToStory(active.id, active.myReaction === 'heart' ? null : 'heart');
-            }}
-          >
-            <span className="inline-flex items-center gap-1"><Heart size={16} /> قلب</span>
-          </button>
-          <button
-            className={`rounded-full px-3 py-2 text-sm transition ${active.myReaction === 'dislike' ? 'bg-white text-black' : 'bg-black/50 text-white hover:bg-black/60'}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              reactToStory(active.id, active.myReaction === 'dislike' ? null : 'dislike');
-            }}
-          >
-            <span className="inline-flex items-center gap-1"><ThumbsDown size={16} /> ديسلايك</span>
-          </button>
+        {/* Reactions + Reply */}
+        <div className="absolute inset-x-0 bottom-0 p-3">
+          <div className="flex items-end gap-3">
+            {/* Vertical reactions on the left */}
+            <div className="flex flex-col gap-2">
+              <button
+                className={`rounded-full px-3 py-2 text-sm transition ${active.myReaction === 'like' ? 'bg-white text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  reactToStory(active.id, active.myReaction === 'like' ? null : 'like');
+                }}
+              >
+                <span className="inline-flex items-center gap-1"><ThumbsUp size={16} /> لايك</span>
+              </button>
+              <button
+                className={`rounded-full px-3 py-2 text-sm transition ${active.myReaction === 'heart' ? 'bg-white text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  reactToStory(active.id, active.myReaction === 'heart' ? null : 'heart');
+                }}
+              >
+                <span className="inline-flex items-center gap-1"><Heart size={16} /> قلب</span>
+              </button>
+              <button
+                className={`rounded-full px-3 py-2 text-sm transition ${active.myReaction === 'dislike' ? 'bg-white text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  reactToStory(active.id, active.myReaction === 'dislike' ? null : 'dislike');
+                }}
+              >
+                <span className="inline-flex items-center gap-1"><ThumbsDown size={16} /> ديسلايك</span>
+              </button>
+            </div>
+
+            {/* Reply input like WhatsApp */}
+            <form
+              className="flex-1 flex items-center gap-2 bg-white/10 rounded-full px-3 py-2"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const text = replyText.trim();
+                if (!text) return;
+                if (isSending) return;
+                try {
+                  setIsSending(true);
+                  await apiRequest('/api/private-messages/send', {
+                    method: 'POST',
+                    body: { receiverId: active.userId, content: text, messageType: 'text' },
+                  });
+                  setReplyText('');
+                } catch (err) {
+                  // silent
+                } finally {
+                  setIsSending(false);
+                }
+              }}
+            >
+              <input
+                type="text"
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                placeholder="اكتب ردك على الحالة..."
+                className="flex-1 bg-transparent outline-none text-white placeholder-white/60 text-sm"
+              />
+              <button
+                type="submit"
+                disabled={isSending || !replyText.trim()}
+                className="disabled:opacity-50 text-white hover:text-white/90"
+              >
+                <Send size={18} />
+              </button>
+            </form>
+          </div>
         </div>
 
         {active.caption && (
-          <div className="absolute bottom-14 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent text-white text-sm">
+          <div className="absolute bottom-24 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent text-white text-sm">
             {active.caption}
           </div>
         )}

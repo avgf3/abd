@@ -103,6 +103,8 @@ export interface Story {
   durationSec: number;
   expiresAt: Date | string;
   createdAt?: Date | string;
+  // Optional field: current viewer reaction type (for feeds)
+  myReaction?: 'like' | 'heart' | 'dislike' | null;
 }
 
 export interface StoryView {
@@ -663,6 +665,24 @@ export class DatabaseService {
     }
   }
 
+  async getStoryById(storyId: number): Promise<Story | null> {
+    if (!this.isConnected()) return null;
+    try {
+      if (this.type === 'postgresql') {
+        const rows = await (this.db as any)
+          .select()
+          .from((schema as any).stories)
+          .where(eq((schema as any).stories.id, storyId))
+          .limit(1);
+        return rows?.[0] || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getStoryById:', error);
+      return null;
+    }
+  }
+
   async getUserStories(userId: number, includeExpired = false): Promise<Story[]> {
     if (!this.isConnected()) return [];
     try {
@@ -693,12 +713,40 @@ export class DatabaseService {
     try {
       if (this.type === 'postgresql') {
         const now = new Date();
-        return await (this.db as any)
-          .select()
+        const rows = await (this.db as any)
+          .select({
+            id: (schema as any).stories.id,
+            userId: (schema as any).stories.userId,
+            mediaUrl: (schema as any).stories.mediaUrl,
+            mediaType: (schema as any).stories.mediaType,
+            caption: (schema as any).stories.caption,
+            durationSec: (schema as any).stories.durationSec,
+            expiresAt: (schema as any).stories.expiresAt,
+            createdAt: (schema as any).stories.createdAt,
+            myReaction: (schema as any).storyReactions.type,
+          })
           .from((schema as any).stories)
+          .leftJoin(
+            (schema as any).storyReactions,
+            and(
+              eq((schema as any).storyReactions.storyId, (schema as any).stories.id),
+              eq((schema as any).storyReactions.userId, viewerId)
+            )
+          )
           .where(gte((schema as any).stories.expiresAt, now as any))
           .orderBy(desc((schema as any).stories.createdAt))
           .limit(200);
+        return (rows || []).map((r: any) => ({
+          id: r.id,
+          userId: r.userId,
+          mediaUrl: r.mediaUrl,
+          mediaType: r.mediaType,
+          caption: r.caption ?? undefined,
+          durationSec: r.durationSec,
+          expiresAt: r.expiresAt,
+          createdAt: r.createdAt,
+          myReaction: (r.myReaction as any) ?? null,
+        }));
       }
       return [];
     } catch (error) {
