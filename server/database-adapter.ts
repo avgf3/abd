@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
