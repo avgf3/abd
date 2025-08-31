@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { applyThemeById } from '@/utils/applyTheme';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -103,6 +104,9 @@ export default function UserRegistration({ isOpen, onClose, onRegister }: UserRe
         title: 'تم التسجيل بنجاح',
         description: 'مرحباً بك كعضو جديد في الموقع',
       });
+
+      // تبديل الثيم إلى الداكن فور التسجيل فقط
+      applyThemeById('dark', false);
 
       onRegister(user);
       onClose();
