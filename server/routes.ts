@@ -123,6 +123,35 @@ const wallUpload = createMulterConfig('wall', 'wall', 10 * 1024 * 1024);
 
 const bannerUpload = createMulterConfig('banners', 'banner', 8 * 1024 * 1024);
 
+// إعداد رفع موسيقى البروفايل (mp3/ogg/webm/wav حتى 10MB)
+const musicStorage = multer.diskStorage({
+  destination: async (_req, _file, cb) => {
+    try {
+      const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'music');
+      await fsp.mkdir(uploadDir, { recursive: true }).catch(() => {});
+      cb(null, uploadDir);
+    } catch (err) {
+      cb(err as any, '');
+    }
+  },
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, `music-${uniqueSuffix}${ext}`);
+  },
+});
+const musicUpload = multer({
+  storage: musicStorage,
+  limits: { fileSize: 10 * 1024 * 1024, files: 1, fieldSize: 64 * 1024, parts: 10 },
+  fileFilter: (_req, file, cb) => {
+    const ok = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/wav'].includes(
+      file.mimetype
+    );
+    if (!ok) return cb(new Error(`نوع ملف الصوت غير مدعوم: ${file.mimetype}`));
+    cb(null, true);
+  },
+});
+
 // Storage initialization - using imported storage instance
 
 // I/O interface
@@ -438,6 +467,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // رفع موسيقى البروفايل
+  app.post(
+    '/api/upload/profile-music',
+    protect.auth,
+    limiters.upload,
+    musicUpload.single('music'),
+    async (req, res) => {
+      try {
+        res.set('Cache-Control', 'no-store');
+
+        if (!req.file) {
+          return res.status(400).json({ error: 'لم يتم رفع أي ملف صوت' });
+        }
+
+        const userId = (req as any).user?.id as number;
+        if (!userId || isNaN(userId)) {
+          try { await fsp.unlink(req.file.path); } catch {}
+          return res.status(401).json({ error: 'يجب تسجيل الدخول' });
+        }
+
+        const user = await storage.getUser(userId);
+        if (!user) {
+          try { await fsp.unlink(req.file.path); } catch {}
+          return res.status(404).json({ error: 'المستخدم غير موجود' });
+        }
+
+        // تكون الملفات ضمن /uploads/music
+        const fileUrl = `/uploads/music/${req.file.filename}`;
+        const titleCandidate = (req.body?.title as string) || req.file.originalname;
+        const profileMusicTitle = String(titleCandidate || '').slice(0, 200);
+
+        const updated = await storage.updateUser(userId, {
+          profileMusicUrl: fileUrl,
+          profileMusicTitle,
+          profileMusicEnabled: true,
+        } as any);
+
+        if (!updated) {
+          return res.status(500).json({ error: 'فشل تحديث بيانات المستخدم' });
+        }
+
+        // بث تحديث مبسط
+        try { emitUserUpdatedToUser(userId, updated); emitUserUpdatedToAll(updated); } catch {}
+
+        return res.json({ success: true, url: fileUrl, title: profileMusicTitle });
+      } catch (error: any) {
+        console.error('❌ خطأ في رفع موسيقى البروفايل:', error);
+        res.status(500).json({ error: 'خطأ في الخادم أثناء رفع الصوت' });
+      }
+    }
+  );
+
   // 🎛️ لوحة تحكم الصور المتقدمة - للمطورين والإدارة
   app.get('/api/admin/images/dashboard', developmentOnly, async (req, res) => {
     logDevelopmentEndpoint('/api/admin/images/dashboard');
@@ -719,7 +800,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // فلترة البيانات المسموح بتحديثها
-      const allowedUpdates = ['profileImage', 'profileBanner'];
+      const allowedUpdates = [
+        'profileImage',
+        'profileBanner',
+        // موسيقى البروفايل
+        'profileMusicUrl',
+        'profileMusicTitle',
+        'profileMusicEnabled',
+        'profileMusicVolume',
+      ];
       const updateData: Record<string, any> = {};
 
       for (const key of allowedUpdates) {
@@ -730,6 +819,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ error: 'لا توجد بيانات للتحديث' });
+      }
+
+      // ضبط القيم
+      if (Object.prototype.hasOwnProperty.call(updateData, 'profileMusicVolume')) {
+        const vol = parseInt(String(updateData.profileMusicVolume));
+        updateData.profileMusicVolume = Number.isFinite(vol)
+          ? Math.max(0, Math.min(100, vol))
+          : 70;
+      }
+      if (Object.prototype.hasOwnProperty.call(updateData, 'profileMusicEnabled')) {
+        updateData.profileMusicEnabled = Boolean(updateData.profileMusicEnabled);
       }
 
       // تحديث المستخدم
@@ -2823,6 +2923,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // حذف موسيقى البروفايل
+  app.delete('/api/users/:userId/profile-music', protect.ownership, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (!userId || isNaN(userId)) {
+        return res.status(400).json({ error: 'معرّف غير صالح' });
+      }
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: 'المستخدم غير موجود' });
+
+      const updated = await storage.updateUser(userId, {
+        profileMusicUrl: null as any,
+        profileMusicTitle: null as any,
+      } as any);
+      if (!updated) return res.status(500).json({ error: 'فشل تحديث المستخدم' });
+
+      try { emitUserUpdatedToUser(userId, updated); emitUserUpdatedToAll(updated); } catch {}
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: 'خطأ في حذف موسيقى البروفايل' });
+    }
+  });
+
   // Update user profile - General endpoint - محسّن مع معالجة أفضل للأخطاء
   app.post('/api/users/update-profile', protect.ownership, async (req, res) => {
     try {
@@ -2928,6 +3051,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ error: 'السيرة الذاتية يجب أن تكون أقل من 500 حرف' });
         }
         validatedUpdates.bio = updates.bio.trim();
+      }
+
+      // دعم حقول موسيقى البروفايل
+      if (updates.profileMusicUrl !== undefined) {
+        if (typeof updates.profileMusicUrl !== 'string' || updates.profileMusicUrl.length > 1000) {
+          return res.status(400).json({ error: 'رابط الموسيقى غير صالح' });
+        }
+        validatedUpdates.profileMusicUrl = updates.profileMusicUrl.trim();
+      }
+      if (updates.profileMusicTitle !== undefined) {
+        if (typeof updates.profileMusicTitle !== 'string' || updates.profileMusicTitle.length > 200) {
+          return res.status(400).json({ error: 'عنوان الموسيقى غير صالح' });
+        }
+        validatedUpdates.profileMusicTitle = updates.profileMusicTitle.trim();
+      }
+      if (updates.profileMusicEnabled !== undefined) {
+        validatedUpdates.profileMusicEnabled = Boolean(updates.profileMusicEnabled);
+      }
+      if (updates.profileMusicVolume !== undefined) {
+        let vol = parseInt(String(updates.profileMusicVolume));
+        if (!Number.isFinite(vol)) vol = 70;
+        validatedUpdates.profileMusicVolume = Math.max(0, Math.min(100, vol));
       }
 
       // تحديث البيانات
@@ -3868,6 +4013,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       gender: sanitized.gender,
       country: sanitized.country,
       isMuted: sanitized.isMuted,
+      // موسيقى البروفايل
+      profileMusicUrl: sanitized.profileMusicUrl,
+      profileMusicTitle: sanitized.profileMusicTitle,
+      profileMusicEnabled: sanitized.profileMusicEnabled,
+      profileMusicVolume: sanitized.profileMusicVolume,
     };
     if (
       sanitized.profileImage &&

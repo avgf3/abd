@@ -40,6 +40,11 @@ export interface User {
   level: number;
   totalPoints: number;
   levelProgress: number;
+  // موسيقى البروفايل
+  profileMusicUrl?: string | null;
+  profileMusicTitle?: string | null;
+  profileMusicEnabled?: boolean;
+  profileMusicVolume?: number;
 }
 
 export interface Message {

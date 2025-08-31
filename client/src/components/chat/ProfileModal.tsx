@@ -60,12 +60,25 @@ export default function ProfileModal({
     recipientName: string;
   }>({ show: false, points: 0, recipientName: '' });
 
+  // موسيقى البروفايل
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [musicTitle, setMusicTitle] = useState(localUser?.profileMusicTitle || '');
+  const [musicEnabled, setMusicEnabled] = useState(
+    localUser?.profileMusicEnabled ?? true
+  );
+  const [musicVolume, setMusicVolume] = useState<number>(
+    typeof localUser?.profileMusicVolume === 'number' ? localUser.profileMusicVolume : 70
+  );
+
   // تحديث الحالة المحلية عند تغيير المستخدم
   useEffect(() => {
     if (user) {
       setLocalUser(user);
       setSelectedTheme(user.profileBackgroundColor || '');
       setSelectedEffect(user.profileEffect || 'none');
+      setMusicTitle(user.profileMusicTitle || '');
+      setMusicEnabled(user.profileMusicEnabled ?? true);
+      setMusicVolume(typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70);
     }
   }, [user]);
   // Stories
@@ -159,6 +172,16 @@ export default function ProfileModal({
     }
     if (updates.profileEffect) {
       setSelectedEffect(updates.profileEffect);
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'profileMusicTitle')) {
+      setMusicTitle(updates.profileMusicTitle as any);
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'profileMusicEnabled')) {
+      setMusicEnabled(Boolean((updates as any).profileMusicEnabled));
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'profileMusicVolume')) {
+      const v = Number((updates as any).profileMusicVolume);
+      setMusicVolume(Number.isFinite(v) ? v : 70);
     }
   };
 
@@ -2027,6 +2050,35 @@ export default function ProfileModal({
               backgroundRepeat: 'no-repeat',
             }}
           >
+            {/* مشغل الموسيقى - يظهر أعلى يمين الغلاف */}
+            {localUser?.profileMusicUrl && musicEnabled && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  zIndex: 5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'rgba(0,0,0,0.45)',
+                  padding: '6px 8px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255,255,255,0.15)'
+                }}
+              >
+                <audio
+                  ref={audioRef}
+                  src={localUser.profileMusicUrl}
+                  controls
+                  autoPlay
+                  style={{ height: '28px' }}
+                />
+                <span style={{ color: '#fff', fontSize: '12px', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {musicTitle || 'موسيقى البروفايل'}
+                </span>
+              </div>
+            )}
             {localUser?.id === currentUser?.id && (
               <>
                 <button
@@ -2241,6 +2293,132 @@ export default function ProfileModal({
                 <p onClick={() => setCurrentEditType('effects')} style={{ cursor: 'pointer' }}>
                   ✨ تأثيرات حركية: <span>اضغط للتغيير</span>
                 </p>
+                <div
+                  style={{
+                    marginTop: '8px',
+                    padding: '8px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(255,255,255,0.04)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <strong>🎵 موسيقى البروفايل</strong>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                      <input
+                        type="checkbox"
+                        checked={musicEnabled}
+                        onChange={async (e) => {
+                          const enabled = e.target.checked;
+                          setMusicEnabled(enabled);
+                          try {
+                            await apiRequest(`/api/users/${localUser?.id}`, {
+                              method: 'PUT',
+                              body: { profileMusicEnabled: enabled },
+                            });
+                            updateUserData({ profileMusicEnabled: enabled });
+                          } catch {}
+                        }}
+                      />
+                      تفعيل
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={musicVolume}
+                      onChange={async (e) => {
+                        const vol = parseInt(e.target.value);
+                        setMusicVolume(vol);
+                        try {
+                          if (audioRef.current) audioRef.current.volume = Math.max(0, Math.min(1, vol / 100));
+                          await apiRequest(`/api/users/${localUser?.id}`, {
+                            method: 'PUT',
+                            body: { profileMusicVolume: vol },
+                          });
+                          updateUserData({ profileMusicVolume: vol });
+                        } catch {}
+                      }}
+                      style={{ flex: 1 }}
+                    />
+                    <span style={{ width: 36, textAlign: 'right', fontSize: 12 }}>{musicVolume}%</span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                    <input
+                      type="text"
+                      value={musicTitle}
+                      placeholder="عنوان المقطع (اختياري)"
+                      onChange={(e) => setMusicTitle(e.target.value)}
+                      onBlur={async () => {
+                        try {
+                          await apiRequest(`/api/users/${localUser?.id}`, {
+                            method: 'PUT',
+                            body: { profileMusicTitle: musicTitle },
+                          });
+                          updateUserData({ profileMusicTitle: musicTitle });
+                        } catch {}
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      onChange={async (e) => {
+                        try {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const fd = new FormData();
+                          fd.append('music', file);
+                          if (musicTitle) fd.append('title', musicTitle);
+                          const res = await apiRequest(`/api/upload/profile-music`, { method: 'POST', body: fd });
+                          const url = (res as any)?.url;
+                          const title = (res as any)?.title;
+                          if (url) {
+                            updateUserData({ profileMusicUrl: url, profileMusicTitle: title, profileMusicEnabled: true });
+                            setMusicEnabled(true);
+                            if (audioRef.current) {
+                              audioRef.current.src = url;
+                              audioRef.current.volume = Math.max(0, Math.min(1, (musicVolume || 70) / 100));
+                              try { await audioRef.current.play(); } catch {}
+                            }
+                            toast({ title: 'تم', description: 'تم تحديث موسيقى البروفايل' });
+                          }
+                        } catch (err: any) {
+                          toast({ title: 'خطأ', description: err?.message || 'فشل رفع الصوت', variant: 'destructive' });
+                        } finally {
+                          try { if (e.target) (e.target as HTMLInputElement).value = ''; } catch {}
+                        }
+                      }}
+                    />
+                    {localUser?.profileMusicUrl && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            await apiRequest(`/api/users/${localUser?.id}/profile-music`, { method: 'DELETE' });
+                            updateUserData({ profileMusicUrl: undefined, profileMusicTitle: '', profileMusicEnabled: false });
+                            setMusicTitle('');
+                            setMusicEnabled(false);
+                            if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
+                            toast({ title: 'تم', description: 'تم حذف موسيقى البروفايل' });
+                          } catch (err: any) {
+                            toast({ title: 'خطأ', description: err?.message || 'فشل حذف الموسيقى', variant: 'destructive' });
+                          }
+                        }}
+                        className="btn-report"
+                        style={{ padding: '6px 10px' }}
+                      >
+                        حذف الموسيقى
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>

@@ -118,6 +118,15 @@ export function sanitizeUserData(user: any): any {
     profileBackgroundColor: sanitizeProfileBackgroundColor(user.profileBackgroundColor),
     usernameColor: sanitizeHexColor(user.usernameColor, '#000000'),
     profileEffect: sanitizeEffect(user.profileEffect),
+    // موسيقى البروفايل
+    profileMusicUrl: typeof user.profileMusicUrl === 'string' ? user.profileMusicUrl : undefined,
+    profileMusicTitle: typeof user.profileMusicTitle === 'string' ? user.profileMusicTitle : undefined,
+    profileMusicEnabled:
+      typeof user.profileMusicEnabled === 'boolean' ? user.profileMusicEnabled : true,
+    profileMusicVolume:
+      typeof user.profileMusicVolume === 'number'
+        ? Math.max(0, Math.min(100, user.profileMusicVolume))
+        : 70,
   };
 }
 
