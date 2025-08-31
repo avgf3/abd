@@ -44,6 +44,7 @@ interface MessageAreaProps {
   currentRoomId?: string; // معرف الغرفة الحالية
   ignoredUserIds?: Set<number>; // قائمة المتجاهلين لحجب الرسائل ظاهرياً
   // compactHeader removed: we no longer render a room header bar
+  fixedComposer?: boolean; // عند التفعيل، يثبت صندوق الكتابة أسفل الشاشة فوق شريط التبويب
 }
 
 export default function MessageArea({
@@ -58,6 +59,7 @@ export default function MessageArea({
   currentRoomName = 'الدردشة العامة',
   currentRoomId = 'general',
   ignoredUserIds,
+  fixedComposer = false,
 }: MessageAreaProps) {
   const [messageText, setMessageText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -454,7 +456,7 @@ export default function MessageArea({
             ref={virtuosoRef}
             data={validMessages}
             className="!h-full"
-            style={{ paddingBottom: '24px' }}
+            style={{ paddingBottom: fixedComposer ? (isMobile ? '200px' : '160px') : '24px' }}
             followOutput={'smooth'}
             atBottomThreshold={64}
             atBottomStateChange={handleAtBottomChange}
@@ -675,7 +677,8 @@ export default function MessageArea({
         {showScrollToBottom && (
           <button
             onClick={handleScrollDownClick}
-            className="absolute left-1/2 -translate-x-1/2 bottom-28 bg-primary text-white shadow-lg rounded-full px-3 py-1.5 flex items-center gap-2 hover:bg-primary/90 transition-colors"
+            className="absolute left-1/2 -translate-x-1/2 bg-primary text-white shadow-lg rounded-full px-3 py-1.5 flex items-center gap-2 hover:bg-primary/90 transition-colors"
+            style={{ bottom: fixedComposer ? (isMobile ? '10rem' : '8rem') : '7rem' }}
             title="الانتقال لآخر الرسائل"
           >
             <ChevronDown className="w-4 h-4" />
@@ -730,7 +733,8 @@ export default function MessageArea({
 
       {/* Message Input - تحسين التثبيت لمنع التداخل */}
       <div
-        className={`p-3 bg-white border-t border-gray-200 w-full z-20 shadow-lg chat-input soft-entrance`}
+        className={`${fixedComposer ? 'chat-input-fixed' : ''} p-3 bg-white border-t border-gray-200 w-full z-20 shadow-lg chat-input soft-entrance`}
+        style={fixedComposer ? { bottom: isMobile ? 'calc(3.5rem + env(safe-area-inset-bottom))' : '3.5rem' } : undefined}
       >
         {/* Typing Indicator */}
         {typingUsers.size > 0 && (
