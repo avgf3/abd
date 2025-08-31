@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, X, Check, Trash2, Users } from 'lucide-react';
+import { Bell, Users } from 'lucide-react';
 import { useState, useCallback } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -245,62 +245,45 @@ export default function NotificationPanel({
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-3 border rounded-lg transition-colors ${
+                  className={`p-2 border rounded-lg transition-colors cursor-pointer hover:opacity-80 ${
                     notification.isRead
                       ? 'bg-muted/50 border-muted'
                       : 'bg-primary/5 border-primary/20'
                   }`}
+                  onClick={() => {
+                    if (!notification.isRead) {
+                      markAsReadMutation.mutate(notification.id);
+                    }
+                  }}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-2 flex-1">
-                      <div
-                        className={`p-1 rounded ${
-                          notification.isRead ? 'text-muted-foreground' : 'text-primary'
-                        }`}
-                      >
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">{notification.title}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {notification.message}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatTimeAgo(notification.createdAt)}
-                        </p>
-                        {notification?.data?.storyMediaUrl && (
-                          <div className="mt-2 flex items-center gap-2">
-                            <div className="w-10 h-16 rounded overflow-hidden border">
-                              {notification.data.storyThumbnailUrl ? (
-                                <img src={notification.data.storyThumbnailUrl} alt="story" className="w-full h-full object-cover" />
-                              ) : (
-                                <img src={notification.data.storyMediaUrl} alt="story" className="w-full h-full object-cover" />
-                              )}
-                            </div>
-                            <span className="text-[11px] text-muted-foreground">مذكور من حالة</span>
-                          </div>
-                        )}
-                      </div>
+                  <div className="flex items-start gap-2">
+                    <div
+                      className={`p-1 rounded ${
+                        notification.isRead ? 'text-muted-foreground' : 'text-primary'
+                      }`}
+                    >
+                      {getNotificationIcon(notification.type)}
                     </div>
-                    <div className="flex gap-1">
-                      {!notification.isRead && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => markAsReadMutation.mutate(notification.id)}
-                          disabled={markAsReadMutation.isPending}
-                        >
-                          <Check className="w-3 h-3" />
-                        </Button>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm">{notification.title}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-1">
+                        {notification.message}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {formatTimeAgo(notification.createdAt)}
+                      </p>
+                      {notification?.data?.storyMediaUrl && (
+                        <div className="mt-1 flex items-center gap-2">
+                          <div className="w-8 h-12 rounded overflow-hidden border">
+                            {notification.data.storyThumbnailUrl ? (
+                              <img src={notification.data.storyThumbnailUrl} alt="story" className="w-full h-full object-cover" />
+                            ) : (
+                              <img src={notification.data.storyMediaUrl} alt="story" className="w-full h-full object-cover" />
+                            )}
+                          </div>
+                          <span className="text-[10px] text-muted-foreground">مذكور من حالة</span>
+                        </div>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteNotificationMutation.mutate(notification.id)}
-                        disabled={deleteNotificationMutation.isPending}
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
                     </div>
                   </div>
                 </div>
