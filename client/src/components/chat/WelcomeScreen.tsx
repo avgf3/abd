@@ -176,24 +176,41 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
   };
 
   return (
-    <div
-      className={`min-h-[100dvh] flex flex-col justify-center items-center welcome-gradient relative overflow-hidden ${isMobile ? 'px-4' : ''}`}
-    >
-      {/* Modern Background Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/2 -left-1/2 w-[150%] h-[150%] bg-gradient-radial from-blue-500/20 to-transparent rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-1/2 -right-1/2 w-[150%] h-[150%] bg-gradient-radial from-purple-500/20 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-radial from-cyan-500/10 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }}></div>
-      </div>
-      
-      <div className="text-center animate-slide-up relative z-10">
-        <div className="mb-10">
-          <div className="text-6xl sm:text-7xl mb-6 animate-pulse-slow modern-float">💬</div>
-          <h1 className="text-4xl sm:text-6xl font-bold mb-6 gradient-text">
-            مرحبًا بك في دردشة العرب
-          </h1>
-          <p className="text-2xl text-muted-foreground mb-10 font-light">منصة التواصل العربية الأولى</p>
+    <div className="min-h-screen">
+      {/* شريط العنوان */}
+      <div className="bg-gray-900 text-white py-3 px-4">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <span className="text-red-500 text-2xl">💬</span>
+            <span className="text-xl font-bold">Arabic<span className="text-red-500">chat</span></span>
+          </div>
+          <div className="flex items-center gap-4 text-sm">
+            <a href="#" className="hover:text-gray-300">شروط الاستخدام</a>
+            <span className="text-gray-500">|</span>
+            <a href="#" className="hover:text-gray-300">سياسة الخصوصية</a>
+            <span className="bg-yellow-500 text-black px-3 py-1 rounded font-bold">☰</span>
+          </div>
         </div>
+      </div>
+
+      <div
+        className={`min-h-[calc(100dvh-60px)] flex flex-col justify-center items-center welcome-gradient relative overflow-hidden ${isMobile ? 'px-4' : ''}`}
+      >
+        {/* Modern Background Effects */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-1/2 -left-1/2 w-[150%] h-[150%] bg-gradient-radial from-blue-500/20 to-transparent rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-1/2 -right-1/2 w-[150%] h-[150%] bg-gradient-radial from-purple-500/20 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-radial from-cyan-500/10 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }}></div>
+        </div>
+        
+        <div className="text-center animate-slide-up relative z-10">
+          <div className="mb-10">
+            <div className="text-6xl sm:text-7xl mb-6 animate-pulse-slow modern-float">💬</div>
+            <h1 className="text-4xl sm:text-6xl font-bold mb-6 text-blue-600">
+              دردشة عربية | شات عربي | تعارف بدون تسجيل أو اشتراك مجانًا
+            </h1>
+            <p className="text-2xl text-muted-foreground mb-10 font-light">منصة التواصل العربية الأولى</p>
+          </div>
 
         <div
           className={`flex ${isMobile ? 'flex-col w-full max-w-xs' : 'flex-col sm:flex-row'} gap-3 sm:gap-4 justify-center items-center px-3`}
@@ -230,6 +247,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
             دخول بـ Google
           </Button>
         </div>
+      </div>
       </div>
 
       {/* Guest Name Modal */}
@@ -288,6 +306,208 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* الأقسام الإضافية تحت صفحة تسجيل الدخول */}
+      <div className="w-full space-y-0">
+        {/* القسم الأول - الأسئلة الشائعة */}
+        <div className="bg-pink-500 text-white p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">🔥 الأسئلة الشائعة: لماذا شات عربي</h2>
+          <p className="text-lg leading-relaxed max-w-4xl mx-auto">
+            إن الفائدة مترجم عليها أيضًا أتحدث مع فتاة ومن الصعبة أن يحصل تعارف بدون تواصل لذلك بعد شات عربي هو مصدر تعارف وتواصل وبناء علاقات واضحة.
+          </p>
+          <p className="text-lg mt-4 leading-relaxed max-w-4xl mx-auto">
+            الشات العربي في مجتمعنا هو أحد أبرز طرق التعبير عن الرأي بالكتابة بدون صوت حيث يلجئ شباب وصبايا الوطن العربي إلى الشات العربي الكتابي لممارسة حريات أوسع في التعبير عما في داخلهم بدون تحديد هوية الشخص ومكان تواجده وإجراء دردشة بدون أي مشاكل كإزاحة وحة المثلثة أو الشباب فما يسمح بدردشة مفتوحة وسلبية مع الشباب أو المثلية.
+          </p>
+        </div>
+
+        {/* القسم الثاني - ما الذي ستحصل عليه */}
+        <div className="bg-blue-600 text-white p-8">
+          <h2 className="text-3xl font-bold mb-6 text-center">🎁 ما الذي ستحصل عليه فعلاً؟</h2>
+          <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto text-right">
+            <ul className="space-y-3">
+              <li className="flex items-start gap-2">
+                <span>•</span>
+                <span>تغيير نوع الخط واللون و الحجم</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span>•</span>
+                <span>إرسال رسائل كتابية خاصة و عامة غير محدودة</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span>•</span>
+                <span>إرسال صور من المعرض أو من كاميرا التصوير في المحادثات العامة الخاصة</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span>•</span>
+                <span>إرسال رموز سمايلي في الغرف العامة والمحادثات الخاصة</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span>•</span>
+                <span>تغيير أيقونة أو صورة المتحدث الشخصية في الدردشة</span>
+              </li>
+            </ul>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-2">
+                <span>•</span>
+                <span>يمكن تجاهل الرسائل الخاصة و العامة من شخص معين</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span>•</span>
+                <span>منع استقبال رسائل خاصة من الأشخاص</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span>•</span>
+                <span>البحث عن اسم حيف أو مستخدم في قائمة المتواجدين في الغرفة</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span>•</span>
+                <span>تغيير لون الاسم في قائمة المستخدمين إلى ما يناسبك</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span>•</span>
+                <span>تغيير لون خلفية الرسائل النصية المرسلة في الغرف والمحادثة الخاصة</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span>•</span>
+                <span>عضوية أشراف تتضمن مرتبة الزوار من طرد و كتم عام و يحصل صاحب العضوية على لون مميز</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* القسم الثالث - كيفية تجاهل الأشخاص المزعجين */}
+        <div className="bg-red-600 text-white p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">🚫 كيفية تجاهل الأشخاص المزعجين؟</h2>
+          <p className="text-lg leading-relaxed max-w-4xl mx-auto">
+            يمكن تجاهل الرسائل الخاصة والعامة من شخص معين عن طريق فتح الملف الشخصي الخاص بالعضو المزعج والضغط علامة ❌ "تجاهل" وهكذا الأمر يحول الدردشة متنفقة
+          </p>
+        </div>
+
+        {/* القسم الرابع - ماذا على أن أفعل لتجنب الظري من الشات */}
+        <div className="bg-green-500 text-white p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">✅ ماذا على أن أفعل لتجنب الطرد من الشات؟</h2>
+          <div className="max-w-4xl mx-auto space-y-2 text-lg">
+            <p>يجب عليك تجنب الدخول بأسماء غير لائقة</p>
+            <p>احترام قوانين "شات عربي" والأشخاص داخل الدردشة</p>
+            <p>عدم الإساءة لأحد الأشخاص أو لأي مذهب ديني</p>
+          </div>
+        </div>
+
+        {/* القسم الخامس - الملف الشخصي */}
+        <div className="bg-cyan-600 text-white p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">👤 الملف الشخصي</h2>
+          <p className="text-lg leading-relaxed max-w-4xl mx-auto">
+            يمكنك تعديل الملف الشخصي الخاص بك من أيقونة 👤 تعديل الجنس العمر الحالة والبلد وكلمة المرور وتفاصيل الحساب وغير ذلك الكثير
+          </p>
+        </div>
+
+        {/* القسم السادس - قبول / إضافة أصدقاء */}
+        <div className="bg-purple-600 text-white p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">🎉 قبول / إضافة أصدقاء</h2>
+          <p className="text-lg leading-relaxed max-w-4xl mx-auto">
+            يمكنك إضافة أصدقائك المفضلة الحالية يمكنك إضافة أصدقاء من الملف الشخصي للأعضاء عن طريق النقر على زر "إضافة صديق" في أعلى الملف الشخصي. يمكنك عرض قائمة لأصدقائك الحاليين عن طريق النقر 👥 على الرمز في أسفل الصفحة.
+          </p>
+        </div>
+
+        {/* القسم السابع - الرسائل الخاصة */}
+        <div className="bg-teal-500 text-white p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">💬 الرسائل الخاصة</h2>
+          <p className="text-lg leading-relaxed max-w-4xl mx-auto">
+            يمكنك بدء محادثة خاصة أو محادثة جماعية مع الأشخاص.
+          </p>
+          <p className="text-lg mt-4 leading-relaxed max-w-4xl mx-auto">
+            في القائمة العلوية من أيقونة 💬 يمكنك عرض القائمة الخاصة للنشطة الحالية وإنشاء خاص جديد وغيرها،يمكنك فتح محادثة خاصة مع مستخدم عن طريق النقر على الصورة الرمزية للعضو المرغوب في الدردشة أو باقر على اسم المستخدم الخاص به في قائمة المستخدمين
+          </p>
+        </div>
+
+        {/* القسم الثامن - إشعارات الدردشة */}
+        <div className="bg-gray-600 text-white p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">🔔 إشعارات الدردشة</h2>
+          <p className="text-lg leading-relaxed max-w-4xl mx-auto">
+            يمكنك عرض الإشعار الحالي خوار ما يحدث على حسابك يوجد إخطار غير مقروء في الأعلى ولونه مختلف
+          </p>
+        </div>
+
+        {/* القسم التاسع - مشاركة الفيديوهات */}
+        <div className="bg-red-700 text-white p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">📺 مشاركة الفيديوهات</h2>
+          <p className="text-lg leading-relaxed max-w-4xl mx-auto">
+            يمكنك مشاركة ونشر فيديوهات من اليوتيوب مع أصدقائك والجميع
+          </p>
+        </div>
+
+        {/* القسم العاشر - الصوتيات */}
+        <div className="bg-indigo-700 text-white p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">🎵 الصوتيات</h2>
+          <p className="text-lg leading-relaxed max-w-4xl mx-auto">
+            يمكنك الاستماع لجميع محطات الراديو والصوتيات
+          </p>
+        </div>
+
+        {/* القسم الحادي عشر - مشاركة الصور */}
+        <div className="bg-pink-600 text-white p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">📸 مشاركة الصور</h2>
+          <p className="text-lg leading-relaxed max-w-4xl mx-auto">
+            يمكنك مشاركة صور من الإنترنت أو من جهازك الشخصي مع جميع الأشخاص
+          </p>
+        </div>
+
+        {/* القسم الثاني عشر - حائط البومات */}
+        <div className="bg-blue-700 text-white p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">📷 حائط البومات</h2>
+          <p className="text-lg leading-relaxed max-w-4xl mx-auto">
+            تستطيع نشر بومبات على حائطك الخاص بك ومشاركتها مع أصدقائك
+          </p>
+        </div>
+
+        {/* القسم الثالث عشر - الأمان والخصوصية */}
+        <div className="bg-red-800 text-white p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">🔒 الأمان والخصوصية</h2>
+          <p className="text-lg leading-relaxed max-w-4xl mx-auto">
+            دردشتك ودردشاتك في أمان تطبيق شات عربي يقوم بتشفير بيانات ومعلومات الضيوف والمشتركين ولا يتم مشاركتها مع أي طرف ثالث، ماعدا المعلومات التي تكتبها بنفسك على ملفك الشخصي (البروفايل) هي البيانات التي يمكن رؤيتها من قبل المشتركين الآخرين، كما أن أي نصوص أو عبارات أو وسائط تقوم بمشاركتها من خلال شات عربي مع المستخدمين الآخرين على مسؤوليتك الشخصية ولا وليس للتطبيق أي دخل بها
+          </p>
+        </div>
+
+        {/* القسم الأخير - غرف الدردشة */}
+        <div className="bg-blue-600 text-white p-8 text-center">
+          <h2 className="text-3xl font-bold mb-6">دردشة عربية للتقي بأصدقاء عرب جدد من مختلف أنحاء العالم واستمتع بالدردشة الجماعية أو بدء محادثة خاصة في موقع شات عربي تعارف بدون تسجيل أو اشتراك مجانًا</h2>
+          <h3 className="text-2xl font-semibold mb-4">غرف الدردشة</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mt-6">
+            <div className="space-y-2">
+              <p className="text-yellow-300">شات الجزائر</p>
+              <p className="text-yellow-300">شات البحرين</p>
+              <p className="text-yellow-300">شات الإمارات</p>
+              <p className="text-yellow-300">شات الأردن</p>
+              <p className="text-yellow-300">شات الكويت</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-yellow-300">شات ليبيا</p>
+              <p className="text-yellow-300">شات تونس</p>
+              <p className="text-yellow-300">شات المغرب</p>
+              <p className="text-yellow-300">شات عمان</p>
+              <p className="text-yellow-300">شات السودان</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-yellow-300">شات فلسطين</p>
+              <p className="text-yellow-300">شات قطر</p>
+              <p className="text-yellow-300">شات جزر القمر</p>
+              <p className="text-yellow-300">شات اليمن</p>
+              <p className="text-yellow-300">شات جيبوتي</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-yellow-300">شات مصر</p>
+              <p className="text-yellow-300">شات السعودية</p>
+              <p className="text-yellow-300">شات لبنان</p>
+              <p className="text-yellow-300">شات سوريا</p>
+              <p className="text-yellow-300">شات العراق</p>
+            </div>
+          </div>
+          <div className="mt-8 space-y-2">
+            <p className="text-sm">لغة الدردشة ⚙️ | سياسة الخصوصية | شروط الاستخدام | Homepage | مجانًا</p>
+            <p className="text-sm text-blue-300">جميع و تعارف من جميع أنحاء العالم بدون تسجيل</p>
+          </div>
+        </div>
+      </div>
 
       {/* Member Login Modal */}
       <Dialog open={showMemberModal} onOpenChange={setShowMemberModal}>
