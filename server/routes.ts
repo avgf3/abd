@@ -804,7 +804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'profileImage',
         'profileBanner',
         // موسيقى البروفايل
-        'profileMusicUrl',
+        // ملاحظة: يمنع تحديث profileMusicUrl يدوياً — يجب الرفع عبر /api/upload/profile-music
         'profileMusicTitle',
         'profileMusicEnabled',
         'profileMusicVolume',
@@ -815,6 +815,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (Object.prototype.hasOwnProperty.call(req.body, key)) {
           updateData[key] = (req.body as any)[key];
         }
+      }
+
+      // منع تحديث رابط الموسيقى يدوياً عبر هذا المسار
+      if (Object.prototype.hasOwnProperty.call(req.body, 'profileMusicUrl')) {
+        return res.status(400).json({ error: 'غير مسموح بتحديث رابط الموسيقى يدوياً. استخدم رفع الملف.' });
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -3054,11 +3059,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // دعم حقول موسيقى البروفايل
+      // يمنع تعديل رابط الموسيقى يدوياً — يجب الرفع عبر /api/upload/profile-music
       if (updates.profileMusicUrl !== undefined) {
-        if (typeof updates.profileMusicUrl !== 'string' || updates.profileMusicUrl.length > 1000) {
-          return res.status(400).json({ error: 'رابط الموسيقى غير صالح' });
-        }
-        validatedUpdates.profileMusicUrl = updates.profileMusicUrl.trim();
+        return res.status(400).json({ error: 'غير مسموح بتحديث رابط الموسيقى يدوياً. استخدم رفع الملف.' });
       }
       if (updates.profileMusicTitle !== undefined) {
         if (typeof updates.profileMusicTitle !== 'string' || updates.profileMusicTitle.length > 200) {
