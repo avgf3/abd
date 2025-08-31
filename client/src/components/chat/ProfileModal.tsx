@@ -2040,7 +2040,7 @@ export default function ProfileModal({
           style={{
             background: localUser?.profileBackgroundColor
               ? buildProfileBackgroundGradient(localUser.profileBackgroundColor)
-              : 'linear-gradient(135deg, #1a1a1a, #2d2d2d)',
+              : 'linear-gradient(135deg, #ffffff, #f5f5f5)',
             backgroundBlendMode: 'normal',
           }}
         >

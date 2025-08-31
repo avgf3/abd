@@ -354,7 +354,7 @@ export default function ModerationPanel({
                         />
                         <div>
                           <div className="font-semibold flex items-center gap-2">
-                            <span style={{ color: user.usernameColor || '#000000' }}>
+                            <span style={{ color: user.usernameColor || '#333333' }}>
                               {user.username}
                             </span>
                             <UserRoleBadge user={user} />

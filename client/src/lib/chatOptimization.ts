@@ -198,7 +198,7 @@ export function useOptimizedMessages(
             userType: 'guest' as const,
             role: 'guest' as const,
             gender: 'male' as const,
-            profileBackgroundColor: '#3c0d0d',
+            profileBackgroundColor: '#ffffff',
             isOnline: false,
             isHidden: false,
             lastSeen: null,

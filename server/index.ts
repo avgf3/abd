@@ -171,9 +171,9 @@ app.use(
             return res.sendFile(defaultAvatarPath);
           } catch {
             const defaultSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" fill="#3c0d0d"/>
-  <circle cx="50" cy="35" r="20" fill="#666"/>
-  <ellipse cx="50" cy="80" rx="35" ry="25" fill="#666"/>
+  <rect width="100" height="100" fill="#ffffff"/>
+  <circle cx="50" cy="35" r="20" fill="#999"/>
+  <ellipse cx="50" cy="80" rx="35" ry="25" fill="#999"/>
 </svg>`;
             await fsp.writeFile(defaultAvatarPath, defaultSVG);
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');

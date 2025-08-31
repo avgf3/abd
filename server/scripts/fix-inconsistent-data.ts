@@ -23,7 +23,7 @@ async function fixInconsistentData() {
     if (usersWithInvalidColors.length > 0) {
       await db
         .update(users)
-        .set({ profileBackgroundColor: '#3c0d0d' })
+        .set({ profileBackgroundColor: '#ffffff' })
         .where(
           or(
             isNull(users.profileBackgroundColor),
@@ -50,7 +50,7 @@ async function fixInconsistentData() {
     if (usersWithInvalidUsernameColors.length > 0) {
       await db
         .update(users)
-        .set({ usernameColor: '#000000' })
+        .set({ usernameColor: '#333333' })
         .where(
           or(
             isNull(users.usernameColor),
@@ -101,7 +101,7 @@ async function fixInconsistentData() {
         const color = String(user.profileBackgroundColor).trim();
         const isGradient = color.toLowerCase().startsWith('linear-gradient(');
         if (!isGradient && !isValidHexColor(color)) {
-          updates.profileBackgroundColor = '#3c0d0d';
+          updates.profileBackgroundColor = '#ffffff';
           needsUpdate = true;
           invalidHexCount++;
         }
@@ -109,7 +109,7 @@ async function fixInconsistentData() {
 
       // التحقق من usernameColor
       if (user.usernameColor && !isValidHexColor(user.usernameColor)) {
-        updates.usernameColor = '#000000';
+        updates.usernameColor = '#333333';
         needsUpdate = true;
       }
 
@@ -126,7 +126,7 @@ async function fixInconsistentData() {
     const summary = await db
       .select({
         totalUsers: sql<number>`count(*)`,
-        usersWithColor: sql<number>`count(case when ${users.profileBackgroundColor} != '#3c0d0d' then 1 end)`,
+        usersWithColor: sql<number>`count(case when ${users.profileBackgroundColor} != '#ffffff' then 1 end)`,
         usersWithEffect: sql<number>`count(case when ${users.profileEffect} != 'none' then 1 end)`,
         usersWithCustomUsername: sql<number>`count(case when ${users.usernameColor} != '#000000' and ${users.usernameColor} != '#FFFFFF' then 1 end)`,
       })

@@ -62,7 +62,7 @@ CREATE TABLE users (
   role TEXT NOT NULL DEFAULT 'guest',
   profile_image TEXT,
   profile_banner TEXT,
-  profile_background_color TEXT DEFAULT '#3c0d0d',
+  profile_background_color TEXT DEFAULT '#ffffff',
   status TEXT,
   gender TEXT,
   age INTEGER,
