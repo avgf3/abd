@@ -159,7 +159,7 @@ export const translations: Record<string, Translation> = {
 
   en: {
     // Header and Navigation
-    appTitle: 'Arabic Chat',
+    appTitle: 'Arabya Chat',
     settings: 'Settings',
     notifications: 'Notifications',
     friends: 'Friends',

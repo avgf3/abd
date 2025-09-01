@@ -55,7 +55,7 @@ export default function StructuredData({ type, data }: StructuredDataProps) {
       structuredData = {
         "@context": "https://schema.org",
         "@type": "Organization",
-        "name": "Arabic Chat",
+        "name": "Arabya Chat",
         "url": "https://www.arabya.chat",
         "logo": "https://www.arabya.chat/logo.png",
         "sameAs": [

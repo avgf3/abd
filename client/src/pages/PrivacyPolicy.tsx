@@ -30,7 +30,7 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-xl font-bold mb-4 text-blue-400">مقدمة</h2>
             <p className="leading-relaxed text-gray-300">
-              نحن في موقع Arabic Chat نقدر خصوصيتك ونلتزم بحماية معلوماتك الشخصية. توضح سياسة الخصوصية هذه كيفية جمع واستخدام وحماية المعلومات التي نحصل عليها من المستخدمين.
+              نحن في موقع Arabya Chat نقدر خصوصيتك ونلتزم بحماية معلوماتك الشخصية. توضح سياسة الخصوصية هذه كيفية جمع واستخدام وحماية المعلومات التي نحصل عليها من المستخدمين.
             </p>
             <p className="mt-3 text-gray-300">
               آخر تحديث: يناير 2025
@@ -188,7 +188,7 @@ export default function PrivacyPolicy() {
           {/* القبول */}
           <section className="border-t border-gray-700 pt-6">
             <p className="text-center text-gray-400">
-              باستخدامك لموقع Arabic Chat، فإنك توافق على سياسة الخصوصية هذه وشروط الاستخدام.
+              باستخدامك لموقع Arabya Chat، فإنك توافق على سياسة الخصوصية هذه وشروط الاستخدام.
             </p>
           </section>
 
