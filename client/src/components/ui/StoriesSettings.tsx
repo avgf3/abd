@@ -122,27 +122,29 @@ export default function StoriesSettings({ isOpen, onClose, currentUser }: Storie
                   هذه الميزة متاحة للمشرفين فقط
                 </div>
               ) : (
-              <div className="space-y-2">
-                <label className="text-sm text-slate-300">نص قصير (اختياري)</label>
-                <Input
-                  value={caption}
-                  onChange={(e) => setCaption(e.target.value)}
-                  placeholder="مثال: مساء الخير للجميع"
-                  disabled={uploading}
-                />
-              </div>
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm text-slate-300">نص قصير (اختياري)</label>
+                    <Input
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                      placeholder="مثال: مساء الخير للجميع"
+                      disabled={uploading}
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm text-slate-300">صورة أو فيديو (حتى 30 ثانية)</label>
-                <div className="flex gap-2">
-                  <Button onClick={handlePick} disabled={uploading} className="min-w-28">اختر ملف</Button>
-                  {uploading && (
-                    <div className="text-slate-300 text-sm flex items-center">جارٍ الرفع... {Math.round(progress)}%</div>
-                  )}
-                </div>
-                <input ref={fileRef} type="file" accept="image/*,video/*" onChange={handleUpload} hidden />
-                <div className="text-xs text-slate-400">الملفات المدعومة: الصور والفيديو. مدة الفيديو القصوى 30 ثانية.</div>
-              </div>
+                  <div className="space-y-2">
+                    <label className="text-sm text-slate-300">صورة أو فيديو (حتى 30 ثانية)</label>
+                    <div className="flex gap-2">
+                      <Button onClick={handlePick} disabled={uploading} className="min-w-28">اختر ملف</Button>
+                      {uploading && (
+                        <div className="text-slate-300 text-sm flex items-center">جارٍ الرفع... {Math.round(progress)}%</div>
+                      )}
+                    </div>
+                    <input ref={fileRef} type="file" accept="image/*,video/*" onChange={handleUpload} hidden />
+                    <div className="text-xs text-slate-400">الملفات المدعومة: الصور والفيديو. مدة الفيديو القصوى 30 ثانية.</div>
+                  </div>
+                </>
               )}
             </TabsContent>
 
