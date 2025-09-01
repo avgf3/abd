@@ -4,6 +4,7 @@ import helmet from 'helmet';
 
 import { moderationSystem } from './moderation';
 import { getDeviceIdFromHeaders } from './utils/device';
+import { OperationalError } from './middleware/errorHandler';
 
 // Rate limiting maps
 const authRequestCounts = new Map<string, { count: number; resetTime: number }>();
@@ -274,8 +275,8 @@ export function setupSecurity(app: Express): void {
           }
           JSON.parse(buf.toString());
         } catch (e) {
-          res.status(400).json({ error: 'Invalid JSON format' });
-          throw new Error('Invalid JSON');
+          // Throw an operational 400 error and let the global error handler respond
+          throw new OperationalError('Invalid JSON format', 400, 'BAD_JSON');
         }
       },
     })
