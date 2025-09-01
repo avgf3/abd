@@ -67,6 +67,8 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 import { setCachedUser } from '@/utils/userCacheManager';
 import { getPmLastOpened } from '@/utils/messageUtils';
+import { preloadImages } from '@/hooks/useImagePreloader';
+import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
 
 interface ChatInterfaceProps {
   chat: UseChatReturn;
@@ -397,7 +399,14 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     closeUserPopup();
   };
 
-  const handleViewProfile = (user: ChatUser) => {
+  const handleViewProfile = async (user: ChatUser) => {
+    // تحميل الصور مسبقاً قبل فتح المودال
+    const imagesToPreload = [
+      getProfileImageSrc(user.profileImage),
+      getBannerImageSrc(user.profileBanner)
+    ];
+    await preloadImages(imagesToPreload);
+    
     setProfileUser(user);
     setShowProfile(true);
     closeUserPopup();
@@ -412,9 +421,16 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   { /* keep near bottom overlays */ }
 
   // معالج للروابط الشخصية
-  const handleProfileLink = (userId: number) => {
+  const handleProfileLink = async (userId: number) => {
     const user = chat.onlineUsers.find((u) => u.id === userId);
     if (user) {
+      // تحميل الصور مسبقاً قبل فتح المودال
+      const imagesToPreload = [
+        getProfileImageSrc(user.profileImage),
+        getBannerImageSrc(user.profileBanner)
+      ];
+      await preloadImages(imagesToPreload);
+      
       setProfileUser(user);
       setShowProfile(true);
     } else {
@@ -1169,9 +1185,20 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       {showSettings && (
         <Suspense fallback={null}>
           <SettingsMenu
-            onOpenProfile={() => {
+            onOpenProfile={async () => {
               // افتح فوراً ببيانات المستخدم الحالية لسرعة الاستجابة
               if (chat.currentUser) {
+                // تحميل الصور مسبقاً قبل فتح المودال
+                const imagesToPreload = [
+                  getProfileImageSrc(chat.currentUser.profileImage),
+                  getBannerImageSrc(chat.currentUser.profileBanner)
+                ];
+                
+                // بدء تحميل الصور بشكل غير متزامن
+                preloadImages(imagesToPreload).then(() => {
+                  // الصور محملة الآن
+                });
+                
                 setProfileUser(chat.currentUser);
               }
               setShowProfile(true);
@@ -1185,6 +1212,12 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
                     try {
                       const data = await apiRequest(`/api/users/${userId}?t=${Date.now()}`);
                       if (data && (data as any).id) {
+                        // تحميل الصور الجديدة إن وجدت
+                        const newImages = [
+                          getProfileImageSrc((data as any).profileImage),
+                          getBannerImageSrc((data as any).profileBanner)
+                        ];
+                        await preloadImages(newImages);
                         setProfileUser(data as any);
                       }
                     } catch {}

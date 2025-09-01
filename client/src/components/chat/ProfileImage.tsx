@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
+import ImageSkeleton from '@/components/ui/ImageSkeleton';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 
@@ -19,6 +20,9 @@ export default function ProfileImage({
   onClick,
   hideRoleBadgeOverlay = false,
 }: ProfileImageProps) {
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+  
   const sizeClasses = {
     small: 'w-10 h-10',
     medium: 'w-16 h-16',
@@ -75,13 +79,20 @@ export default function ProfileImage({
         />
       )}
       
+      {/* Skeleton loader while loading */}
+      {imageLoading && !imageError && (
+        <ImageSkeleton 
+          type="avatar" 
+          className={`absolute inset-0 ${sizeClasses[size]}`}
+        />
+      )}
+      
       {/* الصورة الأساسية */}
       <img
-        src={imageSrc}
+        src={imageError ? '/default_avatar.svg' : imageSrc}
         alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className} ${gradientBorder ? 'relative' : ''}`}
+        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className} ${gradientBorder ? 'relative' : ''} ${imageLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
         style={{
-          transition: 'none',
           backfaceVisibility: 'hidden',
           transform: 'translateZ(0)',
           display: 'block',
@@ -90,7 +101,10 @@ export default function ProfileImage({
         decoding="async"
         sizes={size === 'small' ? '40px' : size === 'large' ? '80px' : '64px'}
         fetchpriority={size === 'large' ? 'high' : 'low'}
+        onLoad={() => setImageLoading(false)}
         onError={(e: any) => {
+          setImageLoading(false);
+          setImageError(true);
           if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
             e.currentTarget.src = '/default_avatar.svg';
           }
