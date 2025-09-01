@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import type { ChatUser } from '@/types/chat';
@@ -19,6 +19,10 @@ export default function ProfileImage({
   onClick,
   hideRoleBadgeOverlay = false,
 }: ProfileImageProps) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [loadedSrc, setLoadedSrc] = useState<string>('/default_avatar.svg');
+  
   const sizeClasses = {
     small: 'w-10 h-10',
     medium: 'w-16 h-16',
@@ -59,6 +63,48 @@ export default function ProfileImage({
     }
     return base;
   }, [user.profileImage, (user as any)?.avatarHash, (user as any)?.avatarVersion]);
+  
+  // تحميل الصورة بشكل استباقي
+  useEffect(() => {
+    setIsLoading(true);
+    setHasError(false);
+    
+    // إذا كانت الصورة base64، لا نحتاج للتحميل المسبق
+    if (imageSrc.startsWith('data:')) {
+      setLoadedSrc(imageSrc);
+      setIsLoading(false);
+      return;
+    }
+    
+    // تحميل الصورة مسبقاً
+    const img = new Image();
+    const timeoutId = setTimeout(() => {
+      // timeout بعد 5 ثواني
+      setLoadedSrc('/default_avatar.svg');
+      setIsLoading(false);
+      setHasError(true);
+    }, 5000);
+    
+    img.onload = () => {
+      clearTimeout(timeoutId);
+      setLoadedSrc(imageSrc);
+      setIsLoading(false);
+      setHasError(false);
+    };
+    
+    img.onerror = () => {
+      clearTimeout(timeoutId);
+      setLoadedSrc('/default_avatar.svg');
+      setIsLoading(false);
+      setHasError(true);
+    };
+    
+    img.src = imageSrc;
+    
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [imageSrc]);
 
   return (
     <div className="relative inline-block" onClick={onClick}>
@@ -76,26 +122,46 @@ export default function ProfileImage({
       )}
       
       {/* الصورة الأساسية */}
-      <img
-        src={imageSrc}
-        alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className} ${gradientBorder ? 'relative' : ''}`}
-        style={{
-          transition: 'none',
-          backfaceVisibility: 'hidden',
-          transform: 'translateZ(0)',
-          display: 'block',
-        }}
-        loading="lazy"
-        decoding="async"
-        sizes={size === 'small' ? '40px' : size === 'large' ? '80px' : '64px'}
-        fetchpriority={size === 'large' ? 'high' : 'low'}
-        onError={(e: any) => {
-          if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
-            e.currentTarget.src = '/default_avatar.svg';
-          }
-        }}
-      />
+      {isLoading ? (
+        <div 
+          className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm flex items-center justify-center bg-gray-100`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <div 
+            className="animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"
+            style={{
+              width: size === 'small' ? '20px' : size === 'large' ? '40px' : '32px',
+              height: size === 'small' ? '20px' : size === 'large' ? '40px' : '32px'
+            }}
+          />
+        </div>
+      ) : (
+        <img
+          src={loadedSrc}
+          alt={`صورة ${user.username}`}
+          className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className} ${gradientBorder ? 'relative' : ''}`}
+          style={{
+            transition: 'none',
+            backfaceVisibility: 'hidden',
+            transform: 'translateZ(0)',
+            display: 'block',
+          }}
+          loading="eager"
+          decoding="async"
+          sizes={size === 'small' ? '40px' : size === 'large' ? '80px' : '64px'}
+          fetchpriority={size === 'large' ? 'high' : 'low'}
+          onError={(e: any) => {
+            if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+              e.currentTarget.src = '/default_avatar.svg';
+              setHasError(true);
+            }
+          }}
+        />
+      )}
 
       {/* تم إزالة الشعار داخل الصورة بناءً على طلب المستخدم */}
     </div>
