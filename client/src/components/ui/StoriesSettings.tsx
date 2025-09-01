@@ -20,6 +20,13 @@ export default function StoriesSettings({ isOpen, onClose, currentUser }: Storie
   const { toast } = useToast();
   const { myStories, fetchMine } = useStories({ autoRefresh: false });
 
+  // التحقق من الصلاحيات
+  const isAuthorized = currentUser && (
+    currentUser.userType === 'owner' || 
+    currentUser.userType === 'admin' || 
+    currentUser.userType === 'moderator'
+  );
+
   const [activeTab, setActiveTab] = useState<'add' | 'mine'>('add');
   const [caption, setCaption] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -32,6 +39,16 @@ export default function StoriesSettings({ isOpen, onClose, currentUser }: Storie
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
+      // التحقق من الصلاحيات
+      if (!isAuthorized) {
+        toast({
+          title: 'غير مسموح',
+          description: 'هذه الميزة متاحة للمشرفين فقط',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const file = e.target.files?.[0];
       if (!file) return;
       // validate client-side video duration <= 30s
@@ -100,6 +117,11 @@ export default function StoriesSettings({ isOpen, onClose, currentUser }: Storie
             </TabsList>
 
             <TabsContent value="add" className="space-y-3">
+              {!isAuthorized ? (
+                <div className="text-slate-400 text-sm text-center p-4">
+                  هذه الميزة متاحة للمشرفين فقط
+                </div>
+              ) : (
               <div className="space-y-2">
                 <label className="text-sm text-slate-300">نص قصير (اختياري)</label>
                 <Input
@@ -121,6 +143,7 @@ export default function StoriesSettings({ isOpen, onClose, currentUser }: Storie
                 <input ref={fileRef} type="file" accept="image/*,video/*" onChange={handleUpload} hidden />
                 <div className="text-xs text-slate-400">الملفات المدعومة: الصور والفيديو. مدة الفيديو القصوى 30 ثانية.</div>
               </div>
+              )}
             </TabsContent>
 
             <TabsContent value="mine" className="space-y-3">

@@ -362,6 +362,21 @@ export default function MessageArea({
       const file = e.target.files?.[0];
       if (!file || !currentUser) return;
 
+      // التحقق من الصلاحيات
+      const isAuthorized = currentUser && (
+        currentUser.userType === 'owner' || 
+        currentUser.userType === 'admin' || 
+        currentUser.userType === 'moderator'
+      );
+      
+      if (!isAuthorized) {
+        alert('هذه الميزة متاحة للمشرفين فقط');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        return;
+      }
+
       if (!file.type.startsWith('image/')) {
         alert('يرجى اختيار ملف صورة صحيح');
         if (fileInputRef.current) {
@@ -840,6 +855,7 @@ export default function MessageArea({
               onOpenImagePicker={() => fileInputRef.current?.click()}
               disabled={!currentUser}
               isMobile={isMobile}
+              currentUser={currentUser}
             />
           </React.Suspense>
 

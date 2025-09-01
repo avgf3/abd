@@ -82,25 +82,37 @@ export default function SettingsMenu({
             </Button>
           )}
 
-          <Button
-            onClick={onOpenUsernameColorPicker}
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
-          >
-            <Brush className="w-4 h-4 text-primary" />
-            لون الاسم
-          </Button>
+          {currentUser && (
+            currentUser.userType === 'owner' || 
+            currentUser.userType === 'admin' || 
+            currentUser.userType === 'moderator'
+          ) && (
+            <Button
+              onClick={onOpenUsernameColorPicker}
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+            >
+              <Brush className="w-4 h-4 text-primary" />
+              لون الاسم
+            </Button>
+          )}
 
-          <Button
-            onClick={onOpenStories}
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
-          >
-            <Camera className="w-4 h-4 text-primary" />
-            الحالات
-          </Button>
+          {currentUser && (
+            currentUser.userType === 'owner' || 
+            currentUser.userType === 'admin' || 
+            currentUser.userType === 'moderator'
+          ) && (
+            <Button
+              onClick={onOpenStories}
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-3 h-9 hover:bg-accent/50 text-foreground"
+            >
+              <Camera className="w-4 h-4 text-primary" />
+              الحالات
+            </Button>
+          )}
 
           <Button
             onClick={onOpenIgnoredUsers}

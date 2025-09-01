@@ -267,6 +267,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: 'المستخدم غير موجود' });
         }
 
+        // التحقق من الصلاحيات - فقط المشرفين يمكنهم رفع الصور
+        if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+          try {
+            await fsp.unlink(req.file.path);
+          } catch (unlinkError) {
+            console.error('خطأ في حذف الملف:', unlinkError);
+          }
+          return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
+        }
+
         // 🧠 استخدام النظام الذكي الجديد لمعالجة الصور
         const { smartImageService } = await import('./services/smartImageService');
         const { advancedCacheService } = await import('./services/advancedCacheService');
@@ -392,6 +402,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: 'المستخدم غير موجود' });
         }
 
+        // التحقق من الصلاحيات - فقط المشرفين يمكنهم رفع البانر
+        if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+          try {
+            await fsp.unlink(req.file.path);
+          } catch {}
+          return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
+        }
+
         // 🧠 استخدام النظام الذكي الجديد لمعالجة البانر
         const { smartImageService } = await import('./services/smartImageService');
         const { advancedCacheService } = await import('./services/advancedCacheService');
@@ -491,6 +509,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!user) {
           try { await fsp.unlink(req.file.path); } catch {}
           return res.status(404).json({ error: 'المستخدم غير موجود' });
+        }
+
+        // التحقق من الصلاحيات - فقط المشرفين يمكنهم رفع الموسيقى
+        if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+          try { await fsp.unlink(req.file.path); } catch {}
+          return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
         }
 
         // تكون الملفات ضمن /uploads/music
@@ -1313,6 +1337,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(userIdNum);
       if (!user) {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+
+      // التحقق من الصلاحيات - فقط المشرفين يمكنهم تغيير لون الاسم
+      if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+        return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
       }
 
       // تحديث لون الاسم
@@ -2739,6 +2768,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updates = req.body || {};
+
+      // التحقق من الصلاحيات للتأثيرات والألوان
+      if (updates.profileBackgroundColor || updates.profileEffect) {
+        const user = await storage.getUser(idNum);
+        if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+        
+        if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+          return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
+        }
+      }
 
       // Normalize profileBackgroundColor: allow full linear-gradient strings, otherwise sanitize HEX or fallback
       const normalizedUpdates: any = { ...updates };

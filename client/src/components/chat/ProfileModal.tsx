@@ -639,6 +639,22 @@ export default function ProfileModal({
     event: React.ChangeEvent<HTMLInputElement>,
     uploadType: 'profile' | 'banner' = 'profile'
   ) => {
+    // التحقق من الصلاحيات
+    const isAuthorized = currentUser && (
+      currentUser.userType === 'owner' || 
+      currentUser.userType === 'admin' || 
+      currentUser.userType === 'moderator'
+    );
+    
+    if (!isAuthorized) {
+      toast({
+        title: 'غير مسموح',
+        description: 'هذه الميزة متاحة للمشرفين فقط',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -2107,7 +2123,12 @@ export default function ProfileModal({
                 )}
               </>
             )}
-            {localUser?.id === currentUser?.id && (
+            {localUser?.id === currentUser?.id && 
+             currentUser && (
+               currentUser.userType === 'owner' || 
+               currentUser.userType === 'admin' || 
+               currentUser.userType === 'moderator'
+             ) && (
               <>
                 <button
                   className="change-cover-btn"
@@ -2217,7 +2238,12 @@ export default function ProfileModal({
               />
             </div>
 
-            {localUser?.id === currentUser?.id && (
+            {localUser?.id === currentUser?.id && 
+             currentUser && (
+               currentUser.userType === 'owner' || 
+               currentUser.userType === 'admin' || 
+               currentUser.userType === 'moderator'
+             ) && (
               <button
                 className="change-avatar-btn"
                 onClick={() => avatarInputRef.current?.click()}
@@ -2315,23 +2341,36 @@ export default function ProfileModal({
                 <p>
                   ⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span>
                 </p>
-                <p onClick={() => setCurrentEditType('theme')} style={{ cursor: 'pointer' }}>
-                  🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
-                </p>
-                <p onClick={() => setCurrentEditType('effects')} style={{ cursor: 'pointer' }}>
-                  ✨ تأثيرات حركية: <span>اضغط للتغيير</span>
-                </p>
-                <div
-                  style={{
-                    marginTop: '8px',
-                    padding: '8px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    background: 'rgba(255,255,255,0.04)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <strong>🎵 موسيقى البروفايل</strong>
+                {currentUser && (
+                  currentUser.userType === 'owner' || 
+                  currentUser.userType === 'admin' || 
+                  currentUser.userType === 'moderator'
+                ) && (
+                  <>
+                    <p onClick={() => setCurrentEditType('theme')} style={{ cursor: 'pointer' }}>
+                      🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
+                    </p>
+                    <p onClick={() => setCurrentEditType('effects')} style={{ cursor: 'pointer' }}>
+                      ✨ تأثيرات حركية: <span>اضغط للتغيير</span>
+                    </p>
+                  </>
+                )}
+                {currentUser && (
+                  currentUser.userType === 'owner' || 
+                  currentUser.userType === 'admin' || 
+                  currentUser.userType === 'moderator'
+                ) && (
+                  <div
+                    style={{
+                      marginTop: '8px',
+                      padding: '8px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(255,255,255,0.04)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <strong>🎵 موسيقى البروفايل</strong>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                       <input
                         type="checkbox"
@@ -2434,6 +2473,22 @@ export default function ProfileModal({
                           accept="audio/*"
                           onChange={async (e) => {
                             try {
+                              // التحقق من الصلاحيات
+                              const isAuthorized = currentUser && (
+                                currentUser.userType === 'owner' || 
+                                currentUser.userType === 'admin' || 
+                                currentUser.userType === 'moderator'
+                              );
+                              
+                              if (!isAuthorized) {
+                                toast({
+                                  title: 'غير مسموح',
+                                  description: 'هذه الميزة متاحة للمشرفين فقط',
+                                  variant: 'destructive',
+                                });
+                                return;
+                              }
+
                               const file = e.target.files?.[0];
                               if (!file) return;
                               const fd = new FormData();
@@ -2463,6 +2518,7 @@ export default function ProfileModal({
                     </Tabs>
                   </div>
                 </div>
+                )}
               </div>
             )}
           </div>

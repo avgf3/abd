@@ -19,10 +19,18 @@ interface ComposerPlusMenuProps {
   onOpenImagePicker?: () => void;
   disabled?: boolean;
   isMobile?: boolean;
+  currentUser?: any; // إضافة المستخدم الحالي للتحقق من الصلاحيات
 }
 
-export default function ComposerPlusMenu({ onOpenImagePicker, disabled, isMobile }: ComposerPlusMenuProps) {
+export default function ComposerPlusMenu({ onOpenImagePicker, disabled, isMobile, currentUser }: ComposerPlusMenuProps) {
   const { toggleBold, setTextColor, palette, bold } = useComposerStyle();
+
+  // التحقق من الصلاحيات
+  const isAuthorized = currentUser && (
+    currentUser.userType === 'owner' || 
+    currentUser.userType === 'admin' || 
+    currentUser.userType === 'moderator'
+  );
 
   return (
     <DropdownMenu>
@@ -39,10 +47,18 @@ export default function ComposerPlusMenu({ onOpenImagePicker, disabled, isMobile
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[12rem]">
         <DropdownMenuLabel>خيارات إضافية</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => onOpenImagePicker && onOpenImagePicker()}>
-          <Image className="w-4 h-4 ml-2" />
-          إرسال صورة
-        </DropdownMenuItem>
+        {isAuthorized && (
+          <DropdownMenuItem onClick={() => onOpenImagePicker && onOpenImagePicker()}>
+            <Image className="w-4 h-4 ml-2" />
+            إرسال صورة
+          </DropdownMenuItem>
+        )}
+        {!isAuthorized && (
+          <DropdownMenuItem disabled className="opacity-50">
+            <Image className="w-4 h-4 ml-2" />
+            إرسال صورة (للمشرفين فقط)
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={toggleBold}>
           <Bold className="w-4 h-4 ml-2" />
