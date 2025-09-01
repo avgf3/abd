@@ -245,11 +245,11 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
         {/* روابط سياسة الخصوصية وشروط الاستخدام */}
         <div className="mt-8 text-center">
           <div className="flex justify-center items-center gap-4 text-sm">
-            <a href="#" className="text-blue-400 hover:text-blue-300 transition-colors underline">
+            <a href="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors underline">
               سياسة الخصوصية
             </a>
             <span className="text-gray-400">|</span>
-            <a href="#" className="text-blue-400 hover:text-blue-300 transition-colors underline">
+            <a href="/terms" className="text-blue-400 hover:text-blue-300 transition-colors underline">
               شروط الاستخدام
             </a>
           </div>

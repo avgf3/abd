@@ -10,11 +10,15 @@ import { ComposerStyleProvider } from '@/contexts/ComposerStyleContext';
 import ChatPage from '@/pages/chat';
 import ArabicChat from '@/pages/ArabicChat';
 import CountryChat from '@/pages/CountryChat';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import TermsOfService from '@/pages/TermsOfService';
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={ChatPage} />
+      <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/terms" component={TermsOfService} />
       <Route path="/arabic" component={ArabicChat} />
       {/* Country-specific routes */}
       <Route path="/oman" component={CountryChat} />
