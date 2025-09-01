@@ -49,6 +49,16 @@ export default function ProfileImageUpload({
       return;
     }
 
+    // التحقق من الصلاحيات - فقط المشرفين يمكنهم رفع الصور
+    if (currentUser.userType !== 'owner' && currentUser.userType !== 'admin' && currentUser.userType !== 'moderator') {
+      toast({
+        title: 'غير مسموح',
+        description: 'هذه الميزة متاحة للمشرفين فقط',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!validateProfileImage(file)) return;
 
     setUploading(true);
@@ -144,6 +154,21 @@ export default function ProfileImageUpload({
       cameraInputRef.current.value = '';
     }
   };
+
+  // التحقق من الصلاحيات قبل عرض المكون
+  const isAuthorized = currentUser && (
+    currentUser.userType === 'owner' || 
+    currentUser.userType === 'admin' || 
+    currentUser.userType === 'moderator'
+  );
+
+  if (!isAuthorized) {
+    return (
+      <div className="text-center p-4 text-muted-foreground">
+        <p>هذه الميزة متاحة للمشرفين فقط</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

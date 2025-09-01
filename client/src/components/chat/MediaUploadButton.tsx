@@ -13,14 +13,37 @@ import { useToast } from '@/hooks/use-toast';
 interface MediaUploadButtonProps {
   onMediaSelect: (file: File, type: 'image' | 'video') => void;
   disabled?: boolean;
+  currentUser?: any; // إضافة المستخدم الحالي للتحقق من الصلاحيات
 }
 
-export default function MediaUploadButton({ onMediaSelect, disabled }: MediaUploadButtonProps) {
+export default function MediaUploadButton({ onMediaSelect, disabled, currentUser }: MediaUploadButtonProps) {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // التحقق من الصلاحيات
+  const isAuthorized = currentUser && (
+    currentUser.userType === 'owner' || 
+    currentUser.userType === 'admin' || 
+    currentUser.userType === 'moderator'
+  );
+
+  // إذا لم يكن مشرفاً، لا نعرض الزر
+  if (!isAuthorized) {
+    return null;
+  }
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // التحقق مرة أخرى من الصلاحيات
+    if (!isAuthorized) {
+      toast({
+        title: 'غير مسموح',
+        description: 'هذه الميزة متاحة للمشرفين فقط',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
@@ -37,6 +60,16 @@ export default function MediaUploadButton({ onMediaSelect, disabled }: MediaUplo
   };
 
   const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // التحقق مرة أخرى من الصلاحيات
+    if (!isAuthorized) {
+      toast({
+        title: 'غير مسموح',
+        description: 'هذه الميزة متاحة للمشرفين فقط',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 20 * 1024 * 1024) {
