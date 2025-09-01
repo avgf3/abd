@@ -9,8 +9,6 @@ import {
   X,
   Users,
   Globe,
-  Home,
-  UserPlus,
 } from 'lucide-react';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
@@ -543,49 +541,7 @@ export default function UnifiedSidebar({
     <aside
       className={`w-full bg-card text-sm overflow-hidden border-l border-border shadow-lg flex flex-col h-full max-h-screen ${isMobile ? 'sidebar mobile-scroll' : ''}`}
     >
-      {/* Toggle Buttons - always visible now */}
-      <div className={`flex border-b border-gray-200 flex-shrink-0 ${isMobile ? 'flex-wrap' : ''}`}>
-        <Button
-          variant={activeView === 'users' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-none ${isMobile ? 'py-2 px-2 text-xs' : 'py-3'} ${
-            activeView === 'users' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-          } ${isMobile ? 'mobile-touch-button' : ''}`}
-          onClick={() => setActiveView('users')}
-        >
-          <Users className="w-4 h-4 ml-2" />
-          المستخدمون
-        </Button>
-        <Button
-          variant={activeView === 'walls' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-none ${isMobile ? 'py-2 px-2 text-xs' : 'py-3'} ${
-            activeView === 'walls' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-          } ${isMobile ? 'mobile-touch-button' : ''}`}
-          onClick={() => setActiveView('walls')}
-        >
-          <Home className="w-4 h-4 ml-2" />
-          الحوائط
-        </Button>
-        <Button
-          variant={activeView === 'rooms' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-none ${isMobile ? 'py-2 px-2 text-xs' : 'py-3'} ${
-            activeView === 'rooms' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-          } ${isMobile ? 'mobile-touch-button' : ''}`}
-          onClick={() => setActiveView('rooms')}
-        >
-          <Users className="w-4 h-4 ml-2" />
-          الغرف
-        </Button>
-        <Button
-          variant={activeView === 'friends' ? 'default' : 'ghost'}
-          className={`flex-1 rounded-none ${isMobile ? 'py-2 px-2 text-xs' : 'py-3'} ${
-            activeView === 'friends' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-          } ${isMobile ? 'mobile-touch-button' : ''}`}
-          onClick={() => setActiveView('friends')}
-        >
-          <UserPlus className="w-4 h-4 ml-2" />
-          الأصدقاء
-        </Button>
-      </div>
+      {/* Top toggle buttons removed; bottom bar is the sole navigation */}
 
       {/* Users View - تحسين التمرير */}
       {activeView === 'users' && (
