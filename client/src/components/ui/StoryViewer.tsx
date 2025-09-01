@@ -21,7 +21,7 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
   const stories = useMemo(() => {
     if (initialUserId) {
       const userStories = feed.filter((s) => s.userId === initialUserId);
-      if (userStories.length > 0) return userStories;
+      return userStories; // نرجع القائمة حتى لو كانت فارغة
     }
     return feed;
   }, [feed, initialUserId]);
@@ -70,7 +70,17 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
   if (!active) {
     return (
       <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50" onClick={onClose}>
-        <div className="text-white">لا توجد حالات</div>
+        <div className="text-center">
+          <div className="text-white text-lg mb-2">
+            {initialUserId ? 'لا توجد حالات لهذا المستخدم' : 'لا توجد حالات متاحة'}
+          </div>
+          <button 
+            onClick={onClose}
+            className="text-white/70 hover:text-white text-sm underline"
+          >
+            اضغط للإغلاق
+          </button>
+        </div>
       </div>
     );
   }
