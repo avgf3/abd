@@ -1,9 +1,9 @@
 import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 
 export default function TermsOfService() {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -11,7 +11,7 @@ export default function TermsOfService() {
       <div className="bg-gray-900 text-white py-4 px-4 border-b border-gray-700">
         <div className="max-w-4xl mx-auto flex items-center gap-4">
           <Button
-            onClick={() => navigate('/')}
+            onClick={() => setLocation('/')}
             variant="ghost"
             className="text-white hover:bg-gray-800"
           >
