@@ -1,10 +1,12 @@
 import { X } from 'lucide-react';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PointsSentNotification from '@/components/ui/PointsSentNotification';
+import ImageSkeleton from '@/components/ui/ImageSkeleton';
 import { useToast } from '@/hooks/use-toast';
+import { useImagePreloader, preloadImages } from '@/hooks/useImagePreloader';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
@@ -30,7 +32,7 @@ interface ProfileModalProps {
   onReportUser?: (user: ChatUser) => void;
 }
 
-export default function ProfileModal({
+const ProfileModal = React.memo(({
   user,
   currentUser,
   onClose,
@@ -39,7 +41,7 @@ export default function ProfileModal({
   onPrivateMessage,
   onAddFriend,
   onReportUser,
-}: ProfileModalProps) {
+}: ProfileModalProps) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -578,15 +580,29 @@ export default function ProfileModal({
   ];
 
   // Profile image fallback - محسّن للتعامل مع base64 و مشاكل الcache
-  const getProfileImageSrcLocal = () => {
+  const profileImageSrc = useMemo(() => {
     return getProfileImageSrc(localUser?.profileImage);
-  };
+  }, [localUser?.profileImage]);
 
   // Profile banner fallback - محسّن للتعامل مع base64 و مشاكل الcache
-  // إرجاع مصدر صورة البانر إن وُجد مع دعم المسارات والـ base64
-  const getProfileBannerSrcLocal = () => {
+  const bannerImageSrc = useMemo(() => {
     return getBannerImageSrc(localUser?.profileBanner);
-  };
+  }, [localUser?.profileBanner]);
+
+  // استخدام hooks تحميل الصور
+  const profileImageState = useImagePreloader(profileImageSrc);
+  const bannerImageState = useImagePreloader(bannerImageSrc);
+
+  // تحميل الصور مسبقاً عند فتح المودال
+  useEffect(() => {
+    if (localUser) {
+      const imagesToPreload = [
+        getProfileImageSrc(localUser.profileImage),
+        getBannerImageSrc(localUser.profileBanner)
+      ];
+      preloadImages(imagesToPreload);
+    }
+  }, [localUser?.id]);
 
   // Edit modal handlers
   const openEditModal = (type: string) => {
@@ -2068,16 +2084,24 @@ export default function ProfileModal({
             <X size={20} />
           </button>
 
-          {/* Cover Section - completely stable */}
-          <div
-            className="profile-cover"
-            style={{
-              backgroundImage: `url(${getProfileBannerSrcLocal()})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-            }}
-          >
+          {/* Cover Section - with loading state */}
+          <div className="profile-cover relative">
+            {/* Skeleton loader for banner */}
+            {bannerImageState.isLoading && (
+              <ImageSkeleton type="banner" className="absolute inset-0 w-full h-full" />
+            )}
+            
+            {/* Actual banner image */}
+            <div
+              className={`absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat transition-opacity duration-300 ${
+                bannerImageState.isLoading ? 'opacity-0' : 'opacity-100'
+              }`}
+              style={{
+                backgroundImage: bannerImageState.hasError ? 
+                  'url(https://i.imgur.com/rJKrUfs.jpeg)' : 
+                  `url(${bannerImageSrc})`,
+              }}
+            />
             {/* مشغل الموسيقى - يظهر أعلى يمين الغلاف */}
             {localUser?.profileMusicUrl && musicEnabled && (
               <>
@@ -2222,18 +2246,33 @@ export default function ProfileModal({
             )}
 
             <div className="profile-avatar">
+              {/* Skeleton loader for profile image */}
+              {profileImageState.isLoading && (
+                <ImageSkeleton 
+                  type="avatar" 
+                  className="absolute inset-0 w-full h-full rounded-[12px]" 
+                />
+              )}
+              
               {/* عرض الصورة مباشرة بدون استخدام ProfileImage للحصول على شكل مربع */}
               <img
-                src={getProfileImageSrcLocal()}
+                src={profileImageState.hasError ? '/default_avatar.svg' : profileImageSrc}
                 alt="الصورة الشخصية"
+                className={`transition-opacity duration-300 ${
+                  profileImageState.isLoading ? 'opacity-0' : 'opacity-100'
+                }`}
                 style={{
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
                   display: 'block',
-                  transition: 'none',
                   backfaceVisibility: 'hidden',
                   transform: 'translateZ(0)',
+                }}
+                onError={(e: any) => {
+                  if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+                    e.currentTarget.src = '/default_avatar.svg';
+                  }
                 }}
               />
             </div>
@@ -2785,4 +2824,8 @@ export default function ProfileModal({
       />
     </>
   );
-}
+});
+
+ProfileModal.displayName = 'ProfileModal';
+
+export default ProfileModal;
