@@ -424,6 +424,70 @@ export class DatabaseService {
     }
   }
 
+  // Delete a guest user and all related data, freeing the username for reuse
+  async deleteGuestUserAndData(userId: number): Promise<boolean> {
+    if (!this.isConnected()) return false;
+    try {
+      const user = await this.getUserById(userId);
+      if (!user || user.userType !== 'guest') {
+        return false;
+      }
+
+      if (this.type === 'postgresql') {
+        await (this.db as any).transaction(async (tx: any) => {
+          // Remove reactions and relations first
+          await tx.delete((schema as any).messageReactions).where(eq((schema as any).messageReactions.userId, userId));
+          await tx.delete((schema as any).storyReactions).where(eq((schema as any).storyReactions.userId, userId));
+          await tx.delete((schema as any).storyViews).where(eq((schema as any).storyViews.viewerId, userId));
+          await tx.delete((schema as any).wallReactions).where(eq((schema as any).wallReactions.userId, userId));
+
+          // Remove content authored by the user
+          await tx.delete((schema as any).stories).where(eq((schema as any).stories.userId, userId));
+          await tx.delete((schema as any).wallPosts).where(eq((schema as any).wallPosts.userId, userId));
+
+          // Remove messages involving the user (public/private)
+          await tx
+            .delete((schema as any).messages)
+            .where(
+              or(
+                eq((schema as any).messages.senderId, userId),
+                eq((schema as any).messages.receiverId, userId)
+              )
+            );
+
+          // Remove social relations and notifications
+          await tx
+            .delete((schema as any).friends)
+            .where(
+              or(
+                eq((schema as any).friends.userId, userId),
+                eq((schema as any).friends.friendId, userId)
+              )
+            );
+          await tx.delete((schema as any).notifications).where(eq((schema as any).notifications.userId, userId));
+
+          // Remove room memberships and points history
+          await tx.delete((schema as any).roomMembers).where(eq((schema as any).roomMembers.userId, userId));
+          await tx.delete((schema as any).pointsHistory).where(eq((schema as any).pointsHistory.userId, userId));
+
+          // Remove VIP and device blocks if any
+          await tx.delete((schema as any).vipUsers).where(eq((schema as any).vipUsers.userId, userId));
+          try {
+            await tx.delete((schema as any).blockedDevices).where(eq((schema as any).blockedDevices.userId, userId));
+          } catch {}
+
+          // Finally remove the user
+          await tx.delete((schema as any).users).where(eq((schema as any).users.id, userId));
+        });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error deleteGuestUserAndData:', error);
+      return false;
+    }
+  }
+
   async updateUserLastDailyLogin(_userId: number, _today: string): Promise<void> {
     // نستخدم points_history كمرجع لآخر دخول يومي، لا حاجة لتحديث users
     return;

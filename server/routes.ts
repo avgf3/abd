@@ -267,6 +267,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: 'المستخدم غير موجود' });
         }
 
+        // منع الضيوف من رفع الصور
+        if (user.userType === 'guest') {
+          try { if (req.file?.path) await fsp.unlink(req.file.path); } catch {}
+          return res.status(403).json({ error: 'رفع الصور متاح للأعضاء فقط' });
+        }
+
         // 🧠 استخدام النظام الذكي الجديد لمعالجة الصور
         const { smartImageService } = await import('./services/smartImageService');
         const { advancedCacheService } = await import('./services/advancedCacheService');
@@ -392,6 +398,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: 'المستخدم غير موجود' });
         }
 
+        // منع الضيوف من رفع البانر
+        if (user.userType === 'guest') {
+          try { if (req.file?.path) await fsp.unlink(req.file.path); } catch {}
+          return res.status(403).json({ error: 'رفع البانر متاح للأعضاء فقط' });
+        }
+
         // 🧠 استخدام النظام الذكي الجديد لمعالجة البانر
         const { smartImageService } = await import('./services/smartImageService');
         const { advancedCacheService } = await import('./services/advancedCacheService');
@@ -491,6 +503,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!user) {
           try { await fsp.unlink(req.file.path); } catch {}
           return res.status(404).json({ error: 'المستخدم غير موجود' });
+        }
+
+        // منع الضيوف من رفع موسيقى البروفايل
+        if (user.userType === 'guest') {
+          try { await fsp.unlink(req.file.path); } catch {}
+          return res.status(403).json({ error: 'رفع موسيقى البروفايل متاح للأعضاء فقط' });
         }
 
         // تكون الملفات ضمن /uploads/music
@@ -824,6 +842,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ error: 'لا توجد بيانات للتحديث' });
+      }
+
+      // منع الضيوف من تعديل إعدادات الموسيقى أو الصور عبر هذا المسار
+      if (user.userType === 'guest') {
+        return res.status(403).json({ error: 'تعديل إعدادات البروفايل متاح للأعضاء فقط' });
       }
 
       // ضبط القيم
@@ -1315,6 +1338,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
+      // منع الضيوف من تغيير اللون
+      if (user.userType === 'guest') {
+        return res.status(403).json({ error: 'تغيير لون الاسم متاح للأعضاء فقط' });
+      }
+
       // تحديث لون الاسم
       await storage.updateUser(userIdNum, { usernameColor: color });
 
@@ -1544,7 +1572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Logout route - يمسح التوكن ويحدث حالة الاتصال
+  // Logout route - يمسح التوكن ويحدث حالة الاتصال + حذف بيانات الضيف بالكامل
   app.post('/api/auth/logout', protect.auth, async (req, res) => {
     try {
       const token = getAuthTokenFromRequest(req as any);
@@ -1552,7 +1580,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const verified = verifyAuthToken(token);
         if (verified?.userId) {
           try {
+            const user = await storage.getUser(verified.userId);
             await storage.setUserOnlineStatus(verified.userId, false);
+            // إذا كان المستخدم ضيفاً: حذف بياناته بالكامل للسماح باستخدام نفس الاسم لاحقاً
+            if (user && user.userType === 'guest') {
+              try {
+                await databaseService.deleteGuestUserAndData(verified.userId);
+              } catch (delErr) {
+                console.warn('Failed to delete guest on logout:', delErr);
+              }
+            }
           } catch {}
         }
       }
@@ -1956,6 +1993,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'المستخدم غير موجود' });
       }
 
+      // منع الضيوف من تغيير اللون
+      if (user.userType === 'guest') {
+        return res.status(403).json({ error: 'تغيير لون الاسم متاح للأعضاء فقط' });
+      }
+
       // Update username color
       await storage.updateUser(userId, { usernameColor: color });
 
@@ -2030,8 +2072,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // إرسال طلب صداقة
-  app.post('/api/friend-requests', async (req, res) => {
+  // إرسال طلب صداقة (مسموح للأعضاء فقط)
+  app.post('/api/friend-requests', protect.member, async (req, res) => {
     try {
       const { senderId, receiverId } = req.body;
 
@@ -2092,8 +2134,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // إرسال طلب صداقة باستخدام اسم المستخدم
-  app.post('/api/friend-requests/by-username', async (req, res) => {
+  // إرسال طلب صداقة باستخدام اسم المستخدم (مسموح للأعضاء فقط)
+  app.post('/api/friend-requests/by-username', protect.member, async (req, res) => {
     try {
       const { senderId, targetUsername } = req.body;
 
@@ -2160,8 +2202,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // الحصول على جميع طلبات الصداقة للمستخدم (واردة + صادرة)
-  app.get('/api/friend-requests/:userId', async (req, res) => {
+  // الحصول على جميع طلبات الصداقة للمستخدم (واردة + صادرة) - يتطلب تسجيل دخول
+  app.get('/api/friend-requests/:userId', protect.auth, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const [incoming, outgoing] = await Promise.all([
@@ -2175,8 +2217,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // الحصول على طلبات الصداقة الواردة
-  app.get('/api/friend-requests/incoming/:userId', async (req, res) => {
+  // الحصول على طلبات الصداقة الواردة - يتطلب تسجيل دخول
+  app.get('/api/friend-requests/incoming/:userId', protect.auth, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const requests = await friendService.getIncomingFriendRequests(userId);
@@ -2186,8 +2228,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // الحصول على طلبات الصداقة الصادرة
-  app.get('/api/friend-requests/outgoing/:userId', async (req, res) => {
+  // الحصول على طلبات الصداقة الصادرة - يتطلب تسجيل دخول
+  app.get('/api/friend-requests/outgoing/:userId', protect.auth, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const requests = await friendService.getOutgoingFriendRequests(userId);
@@ -2197,8 +2239,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // قبول طلب صداقة
-  app.post('/api/friend-requests/:requestId/accept', async (req, res) => {
+  // قبول طلب صداقة - يتطلب تسجيل دخول
+  app.post('/api/friend-requests/:requestId/accept', protect.auth, async (req, res) => {
     try {
       const requestId = parseInt(req.params.requestId);
       const { userId } = req.body;
@@ -2250,8 +2292,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // رفض طلب صداقة
-  app.post('/api/friend-requests/:requestId/decline', async (req, res) => {
+  // رفض طلب صداقة - يتطلب تسجيل دخول
+  app.post('/api/friend-requests/:requestId/decline', protect.auth, async (req, res) => {
     try {
       const requestId = parseInt(req.params.requestId);
       const { userId } = req.body;
@@ -2268,8 +2310,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // إلغاء طلب صداقة
-  app.post('/api/friend-requests/:requestId/cancel', async (req, res) => {
+  // إلغاء طلب صداقة - يتطلب تسجيل دخول
+  app.post('/api/friend-requests/:requestId/cancel', protect.auth, async (req, res) => {
     try {
       const requestId = parseInt(req.params.requestId);
       const { userId } = req.body;
@@ -2286,8 +2328,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // تجاهل طلب صداقة
-  app.post('/api/friend-requests/:requestId/ignore', async (req, res) => {
+  // تجاهل طلب صداقة - يتطلب تسجيل دخول
+  app.post('/api/friend-requests/:requestId/ignore', protect.auth, async (req, res) => {
     try {
       const requestId = parseInt(req.params.requestId);
       const { userId } = req.body;
