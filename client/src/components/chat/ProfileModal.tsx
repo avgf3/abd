@@ -829,7 +829,7 @@ export default function ProfileModal({
       // نرسل قيمة HEX فقط. إذا تم تمرير تدرّج، سيُطبّق الخادم أول HEX صالح
       const colorValue = theme;
       const result = await apiRequest(`/api/users/${localUser?.id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         body: { profileBackgroundColor: colorValue },
       });
 
@@ -860,7 +860,7 @@ export default function ProfileModal({
       setSelectedEffect(effect);
 
       const result = await apiRequest(`/api/users/${localUser?.id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         body: {
           profileEffect: effect,
         },
