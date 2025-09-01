@@ -195,7 +195,14 @@ export const getUserEffectStyles = (user: any): Record<string, string> => {
 
 // دالة موحدة للحصول على أنماط عنصر المستخدم في القائمة
 export const getUserListItemStyles = (user: any): Record<string, string> => {
-  // استخدام نفس المنطق المستخدم في الملف الشخصي
+  // فقط المشرفين والإدمن والمالك يحصلون على تأثيرات خاصة
+  // الزوار والأعضاء العاديين بدون لون خلفية
+  if (user?.userType === 'guest' || user?.userType === 'member') {
+    // إرجاع كائن فارغ للزوار والأعضاء (بدون ألوان خلفية)
+    return {};
+  }
+  
+  // استخدام نفس المنطق المستخدم في الملف الشخصي للمشرفين فقط
   return getUserEffectStyles(user);
 };
 
@@ -203,12 +210,18 @@ export const getUserListItemStyles = (user: any): Record<string, string> => {
 export const getUserListItemClasses = (user: any): string => {
   const classes = [] as string[];
 
-  // إضافة كلاس التأثير إذا وجد
+  // فقط المشرفين والإدمن والمالك يحصلون على كلاسات التأثيرات
+  if (user?.userType === 'guest' || user?.userType === 'member') {
+    // إرجاع كلاس فارغ للزوار والأعضاء
+    return '';
+  }
+
+  // إضافة كلاس التأثير إذا وجد (للمشرفين فقط)
   if (user?.profileEffect && user.profileEffect !== 'none') {
     classes.push(user.profileEffect);
   }
 
-  // إضافة كلاس خاص إذا كان هناك لون خلفية
+  // إضافة كلاس خاص إذا كان هناك لون خلفية (للمشرفين فقط)
   if (user?.profileBackgroundColor && user.profileBackgroundColor !== 'null' && user.profileBackgroundColor !== 'undefined') {
     classes.push('has-custom-bg');
   }
