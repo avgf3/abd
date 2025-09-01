@@ -53,7 +53,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-bold mb-4 text-blue-400">2. شروط التسجيل والعضوية</h2>
             <ul className="list-disc list-inside space-y-2 text-gray-300 mr-4">
-              <li>يجب أن يكون عمرك 13 عامًا أو أكثر لاستخدام الموقع</li>
+              <li>يجب أن يكون عمرك 18 عامًا أو أكثر لاستخدام الموقع</li>
               <li>يجب تقديم معلومات صحيحة ودقيقة عند التسجيل</li>
               <li>أنت مسؤول عن الحفاظ على سرية كلمة المرور الخاصة بك</li>
               <li>يحق لك إنشاء حساب واحد فقط</li>

@@ -127,10 +127,10 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
       return;
     }
 
-    if (registerAge && (parseInt(registerAge) < 13 || parseInt(registerAge) > 100)) {
+    if (registerAge && (parseInt(registerAge) < 18 || parseInt(registerAge) > 100)) {
       toast({
         title: 'خطأ',
-        description: 'العمر يجب أن يكون بين 13 و 100 سنة',
+        description: 'العمر يجب أن يكون بين 18 و 100 سنة',
         variant: 'destructive',
       });
       return;
@@ -459,11 +459,11 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
           </p>
         </div>
 
-        {/* القسم الثاني عشر - حائط البومات */}
+        {/* القسم الثاني عشر - حائط اليوميات */}
         <div className="bg-blue-700 text-white p-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">📷 حائط البومات</h2>
+          <h2 className="text-3xl font-bold mb-4">📷 حائط اليوميات</h2>
           <p className="text-lg leading-relaxed max-w-4xl mx-auto">
-            تستطيع نشر بومبات على حائطك الخاص بك ومشاركتها مع أصدقائك
+            تستطيع نشر يومياتك على حائطك الخاص بك ومشاركتها مع أصدقائك
           </p>
         </div>
 
@@ -510,7 +510,15 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
             </div>
           </div>
           <div className="mt-8 space-y-2">
-            <p className="text-sm">سياسة الخصوصية | شروط الاستخدام | Homepage | مجانًا</p>
+            <div className="flex justify-center items-center gap-4 text-sm">
+              <a href="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors underline">
+                سياسة الخصوصية
+              </a>
+              <span className="text-gray-400">|</span>
+              <a href="/terms" className="text-blue-400 hover:text-blue-300 transition-colors underline">
+                شروط الاستخدام
+              </a>
+            </div>
             <p className="text-sm text-blue-300">جميع و تعارف من جميع أنحاء العالم بدون تسجيل</p>
           </div>
         </div>
@@ -617,7 +625,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
               value={registerAge}
               onChange={(e) => setRegisterAge(e.target.value)}
               placeholder="العمر (اختياري)"
-              min="13"
+              min="18"
               max="100"
               className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
             />

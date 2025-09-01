@@ -1462,8 +1462,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // فحص العمر إذا تم إدخاله
-      if (age && (age < 13 || age > 100)) {
-        return res.status(400).json({ error: 'العمر يجب أن يكون بين 13 و 100 سنة' });
+      if (age && (age < 18 || age > 100)) {
+        return res.status(400).json({ error: 'العمر يجب أن يكون بين 18 و 100 سنة' });
       }
 
       // Check if username already exists
@@ -3032,9 +3032,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        if (isNaN(age) || age < 13 || age > 120) {
+        if (isNaN(age) || age < 18 || age > 120) {
           return res.status(400).json({
-            error: 'العمر يجب أن يكون رقم بين 13 و 120',
+            error: 'العمر يجب أن يكون رقم بين 18 و 120',
             received: age,
           });
         }

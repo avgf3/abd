@@ -220,7 +220,7 @@ export default function UserRegistration({ isOpen, onClose, onRegister }: UserRe
               <Input
                 id="age"
                 type="number"
-                min="13"
+                min="18"
                 max="100"
                 value={formData.age}
                 onChange={(e) => setFormData((prev) => ({ ...prev, age: e.target.value }))}

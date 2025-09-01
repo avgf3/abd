@@ -518,7 +518,7 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
               value={registerAge}
               onChange={(e) => setRegisterAge(e.target.value)}
               placeholder="العمر (اختياري)"
-              min="13"
+              min="18"
               max="100"
               className="bg-secondary border-accent text-white placeholder:text-muted-foreground"
             />
