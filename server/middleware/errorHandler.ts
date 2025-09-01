@@ -124,6 +124,10 @@ export const errorHandler = (error: any, req: Request, res: Response, next: Next
     errorResponse.stack = error.stack;
   }
 
+  // Avoid sending headers twice which may cause secondary errors
+  if (res.headersSent) {
+    return next(error);
+  }
   res.status(statusCode).json(errorResponse);
 };
 
