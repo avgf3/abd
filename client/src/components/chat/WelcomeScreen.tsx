@@ -184,12 +184,6 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
             <span className="text-red-500 text-2xl">💬</span>
             <span className="text-xl font-bold">Arabic<span className="text-red-500">chat</span></span>
           </div>
-          <div className="flex items-center gap-4 text-sm">
-            <a href="#" className="hover:text-gray-300">شروط الاستخدام</a>
-            <span className="text-gray-500">|</span>
-            <a href="#" className="hover:text-gray-300">سياسة الخصوصية</a>
-            <span className="bg-yellow-500 text-black px-3 py-1 rounded font-bold">☰</span>
-          </div>
         </div>
       </div>
 
@@ -246,6 +240,19 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
             <span>🔐</span>
             دخول بـ Google
           </Button>
+        </div>
+
+        {/* روابط سياسة الخصوصية وشروط الاستخدام */}
+        <div className="mt-8 text-center">
+          <div className="flex justify-center items-center gap-4 text-sm">
+            <a href="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors underline">
+              سياسة الخصوصية
+            </a>
+            <span className="text-gray-400">|</span>
+            <a href="/terms" className="text-blue-400 hover:text-blue-300 transition-colors underline">
+              شروط الاستخدام
+            </a>
+          </div>
         </div>
       </div>
       </div>
@@ -503,7 +510,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
             </div>
           </div>
           <div className="mt-8 space-y-2">
-            <p className="text-sm">لغة الدردشة ⚙️ | سياسة الخصوصية | شروط الاستخدام | Homepage | مجانًا</p>
+            <p className="text-sm">سياسة الخصوصية | شروط الاستخدام | Homepage | مجانًا</p>
             <p className="text-sm text-blue-300">جميع و تعارف من جميع أنحاء العالم بدون تسجيل</p>
           </div>
         </div>
