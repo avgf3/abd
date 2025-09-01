@@ -2025,3 +2025,356 @@ li::before {
   content: none !important;
   display: none !important;
 }
+
+/* ==================== Mobile Responsive Styles ==================== */
+
+/* Base mobile styles */
+@media screen and (max-width: 768px) {
+  /* Typography adjustments */
+  body {
+    font-size: 14px;
+  }
+  
+  h1 {
+    font-size: 1.75rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  h3 {
+    font-size: 1.25rem;
+  }
+  
+  h4 {
+    font-size: 1.1rem;
+  }
+  
+  /* Layout adjustments */
+  .mobile-layout {
+    width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  /* Header mobile styles */
+  .modern-nav {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  /* Chat interface mobile */
+  .chat-container {
+    height: 100vh;
+    height: 100dvh;
+    position: relative;
+  }
+  
+  /* Message area mobile */
+  .message-area {
+    padding: 0.5rem;
+    max-height: calc(100vh - 120px);
+    max-height: calc(100dvh - 120px);
+  }
+  
+  /* Sidebar mobile */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    background: var(--background-solid);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .sidebar.active {
+    transform: translateX(0);
+  }
+  
+  /* Input fields mobile */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+    padding: 0.75rem;
+  }
+  
+  /* Buttons mobile */
+  .mobile-touch-button {
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Footer mobile */
+  .mobile-footer {
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--background-solid);
+    border-top: 1px solid var(--border);
+  }
+  
+  /* Modals and dialogs mobile */
+  .dialog-content {
+    max-width: 95vw;
+    margin: 1rem;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  /* Welcome screen mobile */
+  .welcome-gradient {
+    padding: 1rem;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  
+  /* User list mobile */
+  .users-list {
+    max-height: calc(100vh - 150px);
+    max-height: calc(100dvh - 150px);
+  }
+  
+  /* Message composer mobile */
+  .composer-container {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  /* Emoji picker mobile */
+  .emoji-picker-react {
+    width: 100% !important;
+    max-width: 350px;
+    height: 400px !important;
+  }
+  
+  /* Profile modal mobile */
+  .profile-modal {
+    width: 100%;
+    max-width: none;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+  }
+  
+  /* Scroll optimization */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* SVG icons mobile */
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Room buttons mobile */
+  .room-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  /* User item mobile */
+  .user-item {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Message item mobile */
+  .message-item {
+    padding: 0.5rem;
+    max-width: 85%;
+  }
+  
+  /* Image lightbox mobile */
+  .lightbox-image {
+    max-width: 100vw;
+    max-height: 100vh;
+    max-height: 100dvh;
+  }
+}
+
+/* Small mobile devices */
+@media screen and (max-width: 480px) {
+  body {
+    font-size: 13px;
+  }
+  
+  .modern-nav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .room-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .message-area {
+    padding: 0.25rem;
+  }
+  
+  .composer-container {
+    padding: 0.25rem;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  button:hover,
+  a:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  
+  /* Larger touch targets */
+  button,
+  a,
+  .clickable {
+    min-height: 44px;
+    padding: 0.75rem;
+  }
+  
+  /* Disable text selection on interactive elements */
+  button,
+  a,
+  .clickable {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Optimize scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Landscape orientation mobile */
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .modern-nav {
+    padding: 0.25rem;
+    min-height: 2rem;
+  }
+  
+  .message-area {
+    max-height: calc(100vh - 100px);
+    max-height: calc(100dvh - 100px);
+  }
+  
+  .mobile-footer {
+    height: 48px;
+  }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* iOS viewport fix */
+  .chat-container {
+    min-height: -webkit-fill-available;
+  }
+  
+  /* iOS input zoom prevention */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+  
+  /* iOS bounce scroll fix */
+  body {
+    position: fixed;
+    width: 100%;
+    overflow: hidden;
+  }
+  
+  .scrollable {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: scroll;
+  }
+}
+
+/* Android specific fixes */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  /* Android keyboard fix */
+  .composer-container {
+    position: relative;
+    z-index: 999;
+  }
+  
+  /* Android scroll performance */
+  .scrollable {
+    will-change: scroll-position;
+  }
+}
+
+/* High DPI displays */
+@media screen and (-webkit-min-device-pixel-ratio: 2),
+       screen and (min-resolution: 192dpi) {
+  /* Sharper borders and shadows */
+  * {
+    border-width: 0.5px;
+  }
+  
+  .shadow-sm {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Accessibility improvements for mobile */
+@media screen and (max-width: 768px) {
+  /* Focus visible styles */
+  *:focus-visible {
+    outline: 2px solid var(--primary-solid);
+    outline-offset: 2px;
+  }
+  
+  /* Skip to content link */
+  .skip-to-content {
+    position: absolute;
+    top: -100%;
+    left: 0;
+    background: var(--primary-solid);
+    color: white;
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    z-index: 9999;
+  }
+  
+  .skip-to-content:focus {
+    top: 0;
+  }
+}
+
+/* Performance optimizations */
+@media screen and (max-width: 768px) {
+  /* Reduce animations on mobile */
+  * {
+    animation-duration: 0.2s !important;
+    transition-duration: 0.2s !important;
+  }
+  
+  /* Disable complex animations */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+  
+  /* Optimize images */
+  img {
+    content-visibility: auto;
+    contain-intrinsic-size: 300px;
+  }
+  
+  /* Lazy loading for off-screen content */
+  .lazy-load {
+    content-visibility: auto;
+  }
+}

@@ -1,22 +1,70 @@
 {
-  "name": "Arabya Chat Application",
-  "short_name": "ArabyaChat",
-  "description": "تطبيق دردشة عربي متقدم",
+  "name": "شات عربي - Arabya Chat",
+  "short_name": "شات عربي",
+  "description": "شات عربي للدردشة والتعارف مع أصدقاء من جميع الدول العربية",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#3c0d0d",
-  "orientation": "portrait-primary",
+  "background_color": "#1a1f2e",
+  "theme_color": "#1a1f2e",
+  "orientation": "any",
   "icons": [
     {
       "src": "/default_avatar.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/default_avatar.svg",
       "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/default_avatar.svg",
+      "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
   "lang": "ar",
   "dir": "rtl",
-  "categories": ["social", "communication"],
-  "screenshots": []
+  "categories": ["social", "communication", "lifestyle"],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "shortcuts": [
+    {
+      "name": "الدردشة العامة",
+      "short_name": "دردشة",
+      "description": "افتح الدردشة العامة",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/svgs/star.svg",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "الرسائل الخاصة",
+      "short_name": "رسائل",
+      "description": "افتح الرسائل الخاصة",
+      "url": "/?view=messages",
+      "icons": [
+        {
+          "src": "/svgs/crown.svg",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ],
+  "screenshots": [],
+  "features": [
+    "chat",
+    "messaging",
+    "notifications"
+  ]
 }
