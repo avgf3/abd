@@ -52,6 +52,11 @@ export default function ProfileModal({
   const [localUser, setLocalUser] = useState<ChatUser | null>(user);
   const [selectedTheme, setSelectedTheme] = useState(user?.profileBackgroundColor || '');
   const [selectedEffect, setSelectedEffect] = useState(user?.profileEffect || 'none');
+  
+  // حالة تحميل الصورة
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState<string>('/default_avatar.svg');
 
   // متغيرات نظام إرسال النقاط
   const [sendingPoints, setSendingPoints] = useState(false);
@@ -90,6 +95,25 @@ export default function ProfileModal({
       setMusicEnabled(user.profileMusicEnabled ?? true);
       setMusicVolume(typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70);
       
+      // تحميل الصورة بشكل استباقي
+      const imgSrc = getProfileImageSrc(user.profileImage);
+      setImageLoading(true);
+      setImageError(false);
+      
+      // تحميل الصورة مسبقاً للتأكد من وجودها
+      const img = new Image();
+      img.onload = () => {
+        setImageSrc(imgSrc);
+        setImageLoading(false);
+        setImageError(false);
+      };
+      img.onerror = () => {
+        console.warn('Failed to load profile image, using fallback');
+        setImageSrc('/default_avatar.svg');
+        setImageLoading(false);
+        setImageError(true);
+      };
+      img.src = imgSrc;
     }
   }, [user]);
   // Stories
@@ -579,7 +603,8 @@ export default function ProfileModal({
 
   // Profile image fallback - محسّن للتعامل مع base64 و مشاكل الcache
   const getProfileImageSrcLocal = () => {
-    return getProfileImageSrc(localUser?.profileImage);
+    // استخدام الصورة المحملة مسبقاً
+    return imageSrc;
   };
 
   // Profile banner fallback - محسّن للتعامل مع base64 و مشاكل الcache
@@ -715,6 +740,23 @@ export default function ProfileModal({
       // تحديث البيانات المحلية فوراً
       if (uploadType === 'profile' && result.imageUrl) {
         updateUserData({ profileImage: result.imageUrl });
+        
+        // تحديث الصورة المحملة مباشرة
+        const newImgSrc = getProfileImageSrc(result.imageUrl);
+        setImageLoading(true);
+        
+        const img = new Image();
+        img.onload = () => {
+          setImageSrc(newImgSrc);
+          setImageLoading(false);
+          setImageError(false);
+        };
+        img.onerror = () => {
+          setImageSrc('/default_avatar.svg');
+          setImageLoading(false);
+          setImageError(true);
+        };
+        img.src = newImgSrc;
       } else if (uploadType === 'banner' && result.bannerUrl) {
         updateUserData({ profileBanner: result.bannerUrl });
       }
@@ -970,6 +1012,11 @@ export default function ProfileModal({
     <>
       {/* Complete CSS Styles from original HTML */}
       <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        
         :root {
           --main-bg: #121212;
           --card-bg: linear-gradient(135deg, #f57f17, #b71c1c, #6a1b9a);
@@ -2223,19 +2270,46 @@ export default function ProfileModal({
 
             <div className="profile-avatar">
               {/* عرض الصورة مباشرة بدون استخدام ProfileImage للحصول على شكل مربع */}
-              <img
-                src={getProfileImageSrcLocal()}
-                alt="الصورة الشخصية"
-                style={{
+              {imageLoading ? (
+                <div style={{
                   width: '100%',
                   height: '100%',
-                  objectFit: 'cover',
-                  display: 'block',
-                  transition: 'none',
-                  backfaceVisibility: 'hidden',
-                  transform: 'translateZ(0)',
-                }}
-              />
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#f0f0f0',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    border: '3px solid #ddd',
+                    borderTopColor: '#333',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                </div>
+              ) : (
+                <img
+                  src={getProfileImageSrcLocal()}
+                  alt="الصورة الشخصية"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                    transition: 'none',
+                    backfaceVisibility: 'hidden',
+                    transform: 'translateZ(0)',
+                  }}
+                  onError={(e: any) => {
+                    if (e?.currentTarget && e.currentTarget.src !== '/default_avatar.svg') {
+                      e.currentTarget.src = '/default_avatar.svg';
+                      setImageError(true);
+                    }
+                  }}
+                />
+              )}
             </div>
 
             {localUser?.id === currentUser?.id && 
