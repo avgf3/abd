@@ -1,6 +1,6 @@
 {
-  "name": "Arabic Chat Application",
-  "short_name": "ArabicChat",
+  "name": "Arabya Chat Application",
+  "short_name": "ArabyaChat",
   "description": "تطبيق دردشة عربي متقدم",
   "start_url": "/",
   "display": "standalone",

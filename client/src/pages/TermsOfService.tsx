@@ -30,7 +30,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-bold mb-4 text-blue-400">مقدمة</h2>
             <p className="leading-relaxed text-gray-300">
-              مرحباً بك في موقع Arabic Chat. باستخدامك لهذا الموقع، فإنك توافق على الالتزام بشروط الاستخدام التالية. 
+              مرحباً بك في موقع Arabya Chat. باستخدامك لهذا الموقع، فإنك توافق على الالتزام بشروط الاستخدام التالية. 
               يرجى قراءة هذه الشروط بعناية قبل استخدام الموقع. إذا كنت لا توافق على هذه الشروط، يرجى عدم استخدام الموقع.
             </p>
             <p className="mt-3 text-gray-300">
@@ -42,7 +42,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-bold mb-4 text-blue-400">1. التعريفات</h2>
             <ul className="list-disc list-inside space-y-2 text-gray-300 mr-4">
-              <li><strong>"الموقع"</strong>: يشير إلى موقع Arabic Chat وجميع خدماته</li>
+              <li><strong>"الموقع"</strong>: يشير إلى موقع Arabya Chat وجميع خدماته</li>
               <li><strong>"المستخدم"</strong>: أي شخص يستخدم الموقع سواء كزائر أو عضو مسجل</li>
               <li><strong>"المحتوى"</strong>: جميع النصوص والصور والفيديوهات والملفات المشاركة</li>
               <li><strong>"الإدارة"</strong>: فريق إدارة وتشغيل الموقع</li>
