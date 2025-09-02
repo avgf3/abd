@@ -29,23 +29,7 @@ export default function ProfileImage({
   const borderColor =
     user.gender === 'female' ? 'border-pink-400 ring-pink-200' : 'border-blue-400 ring-blue-200';
   
-  // إضافة تأثير متدرج للإطار حسب مستوى المستخدم
-  const gradientBorder = useMemo(() => {
-    if (user.role === 'owner') {
-      return 'linear-gradient(135deg, #FFD700, #FFA500, #FF6347)';
-    } else if (user.role === 'admin') {
-      return 'linear-gradient(135deg, #4B0082, #8A2BE2, #9400D3)';
-    } else if (user.role === 'moderator') {
-      return 'linear-gradient(135deg, #008000, #32CD32, #00FF00)';
-    } else if (user.level && user.level >= 50) {
-      return 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C1)';
-    } else if (user.level && user.level >= 30) {
-      return 'linear-gradient(135deg, #00CED1, #48D1CC, #40E0D0)';
-    } else if (user.level && user.level >= 10) {
-      return 'linear-gradient(135deg, #9370DB, #BA55D3, #DA70D6)';
-    }
-    return null;
-  }, [user.role, user.level]);
+
 
   // مصدر الصورة مع دعم ?v=hash إذا وُجد
   const imageSrc = useMemo(() => {
@@ -62,24 +46,11 @@ export default function ProfileImage({
 
   return (
     <div className="relative inline-block" onClick={onClick}>
-      {/* إطار متدرج إذا كان متوفرًا */}
-      {gradientBorder && (
-        <div 
-          className={`absolute inset-0 ${sizeClasses[size]} rounded-full`}
-          style={{
-            background: gradientBorder,
-            padding: '3px',
-            WebkitMaskImage: 'radial-gradient(circle, transparent 65%, black 65%)',
-            maskImage: 'radial-gradient(circle, transparent 65%, black 65%)',
-          }}
-        />
-      )}
-      
       {/* الصورة الأساسية */}
       <img
         src={imageSrc}
         alt={`صورة ${user.username}`}
-        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className} ${gradientBorder ? 'relative' : ''}`}
+        className={`${sizeClasses[size]} rounded-full ring-2 ${borderColor} shadow-sm object-cover ${className}`}
         style={{
           transition: 'none',
           backfaceVisibility: 'hidden',
