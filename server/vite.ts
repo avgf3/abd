@@ -95,6 +95,12 @@ export function serveStatic(app: Express) {
           res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
           res.setHeader('Vary', 'Accept, Accept-Encoding');
         }
+
+        // Long-term cache for fonts directory (served from /fonts with stable names)
+        if (/\/fonts\//.test(filePath) && /\.(?:woff2?|ttf|eot)$/i.test(filePath)) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          res.setHeader('Vary', 'Accept, Accept-Encoding');
+        }
       },
     })
   );

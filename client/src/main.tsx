@@ -12,18 +12,8 @@ try {
 	if (saved) applyThemeById(saved, false);
 } catch {}
 
-// جلب ثيم الموقع العام وتطبيقه ثم الاستماع لتحديثاته
+// الاستماع لتحديثات الثيم فقط (بدون طلب مبكر يحجب الرسم)
 (async () => {
-	try {
-		const res = await fetch('/api/settings/site-theme', { credentials: 'include' });
-		if (res.ok) {
-			const data = await res.json();
-			if (data?.siteTheme) {
-				applyThemeById(data.siteTheme, false);
-			}
-		}
-	} catch {}
-
 	// تأجيل استيراد socket وربط المستمعين فقط عند الخمول لتقليل التكلفة المبكرة
 	const scheduleSocketInit = () => {
 		try {
