@@ -17,6 +17,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={ChatPage} />
+      <Route path="/r/:roomId" component={ChatPage} />
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/terms" component={TermsOfService} />
       <Route path="/arabic" component={ArabicChat} />

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { useRoute, useLocation } from 'wouter';
+import { saveSession } from '@/lib/socket';
 import { getCountryByPath } from '@/data/countryChats';
 
 const ChatInterface = lazy(() => import('@/components/chat/ChatInterface'));
@@ -14,6 +15,8 @@ import type { ChatUser } from '@/types/chat';
 export default function CountryChat() {
   const [match, params] = useRoute('/:country');
   const [, setLocation] = useLocation();
+  const [matchRoom, roomParams] = useRoute('/r/:roomId');
+  const routeRoomId = matchRoom ? (roomParams as any)?.roomId : undefined;
   
   // Get country data based on URL
   const countryPath = `/${params?.country}`;
@@ -60,13 +63,16 @@ export default function CountryChat() {
       apiRequest(`/api/users/${savedUserId}`)
         .then((user) => {
           if (!user || !user.id || !user.username) return;
+          if (routeRoomId) {
+            try { saveSession({ roomId: routeRoomId }); } catch {}
+          }
           chat.connect(user);
           setShowWelcome(false);
 
-          // إذا كان هناك roomId محفوظ في الجلسة، نستخدمه
-          if (session?.roomId) {
-            setSelectedRoomId(session.roomId);
-            chat.joinRoom(session.roomId);
+          const targetRoom = (routeRoomId as string) || session?.roomId;
+          if (targetRoom) {
+            setSelectedRoomId(targetRoom);
+            chat.joinRoom(targetRoom);
           } else {
             // إذا لم يكن هناك roomId محفوظ، نعرض شاشة اختيار الغرف
             setSelectedRoomId(null);
@@ -77,7 +83,7 @@ export default function CountryChat() {
     } catch {
       setIsRestoring(false);
     }
-  }, []);
+  }, [routeRoomId]);
 
   const handleUserLogin = (user: ChatUser) => {
     clearSession();
@@ -88,8 +94,16 @@ export default function CountryChat() {
 
   const handleSelectRoom = (roomId: string) => {
     setSelectedRoomId(roomId);
+    setLocation(`/r/${roomId}`);
     chat.joinRoom(roomId);
   };
+
+  // Sync URL with confirmed current room
+  useEffect(() => {
+    if (chat.currentRoomId) {
+      setLocation(`/r/${chat.currentRoomId}`);
+    }
+  }, [chat.currentRoomId]);
 
   const handleLogout = () => {
     clearSession();

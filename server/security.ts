@@ -383,4 +383,6 @@ export const limiters = {
   // Auth and moderation
   auth: createRateLimiter('auth', 10, 60_000),
   modReport: createRateLimiter('modReport', 10, 60_000),
+  // Room membership
+  joinRoom: createRateLimiter('joinRoom', 20, 60_000),
 };

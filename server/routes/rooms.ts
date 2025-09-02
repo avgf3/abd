@@ -4,11 +4,13 @@ import path from 'path';
 import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
-import { SecurityConfig } from '../security';
+import { SecurityConfig, limiters } from '../security';
+import { validateParams } from '../middleware/validation';
+import { joinRoomSchema, leaveRoomSchema } from '../validation/schemas';
 
 import { roomService } from '../services/roomService';
 import { protect } from '../middleware/enhancedSecurity';
-import { storage } from '../storage';
+import { storage, isUserInRoom } from '../storage';
 
 const router = Router();
 
@@ -295,14 +297,13 @@ router.delete('/:roomId', protect.auth, async (req, res) => {
  * POST /api/rooms/:roomId/join
  * الانضمام لغرفة مع منع التكرار
  */
-router.post('/:roomId/join', protect.auth, async (req, res) => {
+router.post('/:roomId/join', protect.auth, validateParams(joinRoomSchema), limiters.joinRoom, async (req, res) => {
   try {
     const { roomId } = req.params;
     const userId = (req as any).user?.id as number;
 
-    // 🔍 التحقق من أن المستخدم ليس في الغرفة بالفعل
-    const roomUsers = await roomService.getRoomUsers(roomId);
-    const isAlreadyInRoom = roomUsers.some((user: any) => user.id === userId);
+    // 🔍 التحقق من أن المستخدم ليس في الغرفة بالفعل (استعلام خفيف)
+    const isAlreadyInRoom = await isUserInRoom(userId, roomId);
 
     if (isAlreadyInRoom) {
       return res.json({
@@ -330,14 +331,13 @@ router.post('/:roomId/join', protect.auth, async (req, res) => {
  * POST /api/rooms/:roomId/leave
  * مغادرة غرفة مع التحسينات
  */
-router.post('/:roomId/leave', protect.auth, async (req, res) => {
+router.post('/:roomId/leave', protect.auth, validateParams(leaveRoomSchema), limiters.joinRoom, async (req, res) => {
   try {
     const { roomId } = req.params;
     const userId = (req as any).user?.id as number;
 
-    // 🔍 التحقق من أن المستخدم في الغرفة فعلاً
-    const roomUsers = await roomService.getRoomUsers(roomId);
-    const isInRoom = roomUsers.some((user: any) => user.id === userId);
+    // 🔍 التحقق من أن المستخدم في الغرفة فعلاً (استعلام خفيف)
+    const isInRoom = await isUserInRoom(userId, roomId);
 
     if (!isInRoom) {
       return res.json({

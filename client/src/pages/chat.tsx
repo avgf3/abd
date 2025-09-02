@@ -1,11 +1,12 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
+import { useRoute, useLocation } from 'wouter';
 
 const ChatInterface = lazy(() => import('@/components/chat/ChatInterface'));
 const WelcomeScreen = lazy(() => import('@/components/chat/WelcomeScreen'));
 // حذف المحدد المحلي للغرف لتجنب التكرار
 import KickCountdown from '@/components/moderation/KickCountdown';
 import { useChat } from '@/hooks/useChat';
-import { clearSession, getSession } from '@/lib/socket';
+import { clearSession, getSession, saveSession } from '@/lib/socket';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser, ChatRoom } from '@/types/chat';
 import RoomSelectorScreen from '@/components/chat/RoomSelectorScreen';
@@ -32,6 +33,9 @@ try {
 } catch {}
 
 export default function ChatPage() {
+  const [matchRoom, params] = useRoute('/r/:roomId');
+  const [, setLocation] = useLocation();
+  const routeRoomId = matchRoom ? (params as any)?.roomId : undefined;
   // تهيئة الحالة من الجلسة بشكل متزامن لمنع وميض شاشة الترحيب عند إعادة التحميل
   const initialSession = (() => {
     try {
@@ -45,7 +49,7 @@ export default function ChatPage() {
   const [showWelcome, setShowWelcome] = useState(!hasSavedUser);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(() => {
     if (!hasSavedUser) return null;
-    const roomId = (initialSession as any)?.roomId;
+    const roomId = (routeRoomId as string) || (initialSession as any)?.roomId;
     // إذا كان هناك roomId محفوظ، نستخدمه بدون تحويل للغرفة العامة
     return roomId || null;
   });
@@ -66,13 +70,18 @@ export default function ChatPage() {
       apiRequest(`/api/users/${savedUserId}`)
         .then((user) => {
           if (!user || !user.id || !user.username) return;
+          // إن وُجد roomId في المسار، خزّنه لضمان مزامنة socket الأولى
+          if (routeRoomId) {
+            try { saveSession({ roomId: routeRoomId }); } catch {}
+          }
           chat.connect(user);
           setShowWelcome(false);
 
-          // إذا كان هناك roomId محفوظ في الجلسة، نستخدمه
-          if (session?.roomId) {
-            setSelectedRoomId(session.roomId);
-            chat.joinRoom(session.roomId);
+          // أولوية المسار ثم الجلسة
+          const targetRoom = (routeRoomId as string) || session?.roomId;
+          if (targetRoom) {
+            setSelectedRoomId(targetRoom);
+            chat.joinRoom(targetRoom);
           } else {
             // إذا لم يكن هناك roomId محفوظ، نعرض شاشة اختيار الغرف
             setSelectedRoomId(null);
@@ -83,20 +92,36 @@ export default function ChatPage() {
     } catch {
       setIsRestoring(false);
     }
-  }, []);
+  }, [routeRoomId]);
 
   const handleUserLogin = (user: ChatUser) => {
     clearSession(); // مسح أي جلسة سابقة قبل تسجيل دخول جديد
+    if (routeRoomId) {
+      try { saveSession({ roomId: routeRoomId as string }); } catch {}
+    }
     chat.connect(user);
     setShowWelcome(false);
-    // لا ننضم لأي غرفة حتى يختار المستخدم
-    setSelectedRoomId(null);
+    // الانضمام للغرفة من رابط مباشر إن وجدت، وإلا الانتظار حتى يختار المستخدم
+    if (routeRoomId) {
+      setSelectedRoomId(routeRoomId as string);
+      chat.joinRoom(routeRoomId as string);
+    } else {
+      setSelectedRoomId(null);
+    }
   };
 
   const handleSelectRoom = (roomId: string) => {
     setSelectedRoomId(roomId);
+    setLocation(`/r/${roomId}`);
     chat.joinRoom(roomId);
   };
+
+  // مزامنة عنوان URL مع الغرفة الحالية المؤكدة من الخادم
+  useEffect(() => {
+    if (chat.currentRoomId) {
+      setLocation(`/r/${chat.currentRoomId}`);
+    }
+  }, [chat.currentRoomId]);
 
   const handleLogout = () => {
     clearSession(); // مسح بيانات الجلسة المحفوظة

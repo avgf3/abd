@@ -128,6 +128,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   // 🚀 دوال إدارة الغرف المحسنة
   const handleRoomChange = useCallback(
     async (roomId: string) => {
+      setLocation(`/r/${roomId}`);
       chat.joinRoom(roomId);
     },
     [chat]
@@ -170,6 +171,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         if (ok) {
           // الانتقال للغرفة العامة إذا تم حذف الغرفة الحالية
           if (chat.currentRoomId === roomId) {
+            setLocation(`/r/general`);
             chat.joinRoom('general');
           }
           showSuccessToast('تم حذف الغرفة بنجاح', 'تم حذف الغرفة');
