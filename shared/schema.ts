@@ -65,7 +65,7 @@ export const messages = pgTable(
     content: text('content').notNull(),
     messageType: text('message_type').notNull().default('text'), // 'text', 'image'
     isPrivate: boolean('is_private').default(false),
-    roomId: text('room_id').default('general'), // معرف الغرفة
+    roomId: text('room_id').notNull(), // معرف الغرفة - بدون قيمة افتراضية
     attachments: jsonb('attachments').default([]),
     editedAt: timestamp('edited_at'),
     deletedAt: timestamp('deleted_at'),

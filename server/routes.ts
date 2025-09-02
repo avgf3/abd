@@ -1826,7 +1826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .union([z.boolean(), z.string()])
       .optional()
       .transform((v) => v === true || v === 'true'),
-    roomId: z.string().trim().max(100).default('general'),
+    roomId: z.string().trim().max(100).optional(),
   });
   app.get('/api/messages/public', async (req, res) => {
     try {
