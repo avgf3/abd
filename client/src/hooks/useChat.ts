@@ -714,7 +714,9 @@ export const useChat = () => {
           case 'roomJoined': {
             const roomId = (envelope as any).roomId;
             if (roomId && roomId !== currentRoomIdRef.current) {
-              break;
+              // Switch local state to the confirmed room and persist session
+              dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
+              try { saveSession({ roomId }); } catch {}
             }
             // استبدال القائمة بالكامل بقائمة الغرفة المرسلة (مع فلترة وإزالة التكرارات)
             const users = (envelope as any).users;
@@ -1319,9 +1321,7 @@ export const useChat = () => {
         return;
       }
 
-      dispatch({ type: 'SET_CURRENT_ROOM', payload: roomId });
-      saveSession({ roomId });
-
+      // Do NOT change local room yet; wait for server ack (roomJoined)
       if (socket.current?.connected && state.currentUser?.id) {
         socket.current.emit('joinRoom', {
           roomId,
