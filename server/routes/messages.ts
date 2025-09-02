@@ -7,6 +7,8 @@ import { storage } from '../storage';
 import { protect } from '../middleware/enhancedSecurity';
 import { sanitizeInput, limiters, SecurityConfig, validateMessageContent } from '../security';
 import { z } from 'zod';
+import { getAuthTokenFromRequest, verifyAuthToken } from '../utils/auth-token';
+import { isUserInRoom } from '../storage';
 
 const router = Router();
 
@@ -33,6 +35,25 @@ router.get('/room/:roomId', limiters.roomMessagesRead, async (req, res) => {
     const room = await roomService.getRoom(roomId);
     if (!room) {
       return res.status(404).json({ error: 'الغرفة غير موجودة' });
+    }
+
+    // إن كانت الغرفة مقفلة: السماح فقط للمشرف/الإداري/المالك أو الأعضاء الحاليين
+    const isLocked = (room as any).isLocked ?? (room as any).is_locked ?? false;
+    if (isLocked) {
+      const token = getAuthTokenFromRequest(req as any);
+      const verified = token ? verifyAuthToken(token) : null;
+      const requesterId = verified?.userId;
+      if (!requesterId) {
+        return res.status(403).json({ error: 'الغرفة مقفلة ولا يمكن عرض رسائلها' });
+      }
+      const requester = await storage.getUser(requesterId);
+      const isPrivileged = requester && ['admin', 'owner', 'moderator'].includes((requester as any).userType);
+      if (!isPrivileged) {
+        const member = await isUserInRoom(requesterId, roomId);
+        if (!member) {
+          return res.status(403).json({ error: 'الغرفة مقفلة ولا يمكن عرض رسائلها' });
+        }
+      }
     }
 
     const limitValue = Math.min(20, Math.max(1, parseInt(limit as string)));
@@ -127,6 +148,31 @@ router.get('/room/:roomId/latest', limiters.roomMessagesRead, async (req, res) =
 
     if (!roomId?.trim()) {
       return res.status(400).json({ error: 'معرف الغرفة مطلوب' });
+    }
+
+    // التحقق من وجود الغرفة
+    const room = await roomService.getRoom(roomId);
+    if (!room) {
+      return res.status(404).json({ error: 'الغرفة غير موجودة' });
+    }
+
+    // إن كانت الغرفة مقفلة: السماح فقط للمشرف/الإداري/المالك أو الأعضاء الحاليين
+    const isLocked = (room as any).isLocked ?? (room as any).is_locked ?? false;
+    if (isLocked) {
+      const token = getAuthTokenFromRequest(req as any);
+      const verified = token ? verifyAuthToken(token) : null;
+      const requesterId = verified?.userId;
+      if (!requesterId) {
+        return res.status(403).json({ error: 'الغرفة مقفلة ولا يمكن عرض رسائلها' });
+      }
+      const requester = await storage.getUser(requesterId);
+      const isPrivileged = requester && ['admin', 'owner', 'moderator'].includes((requester as any).userType);
+      if (!isPrivileged) {
+        const member = await isUserInRoom(requesterId, roomId);
+        if (!member) {
+          return res.status(403).json({ error: 'الغرفة مقفلة ولا يمكن عرض رسائلها' });
+        }
+      }
     }
 
     const messages = await roomMessageService.getLatestRoomMessages(
