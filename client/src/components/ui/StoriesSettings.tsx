@@ -115,7 +115,7 @@ export default function StoriesSettings({ isOpen, onClose, currentUser }: Storie
             <TabsContent value="add" className="space-y-3">
               {!isAuthorized ? (
                 <div className="text-slate-400 text-sm text-center p-4">
-                  هذه الميزة متاحة للمشرفين فقط
+                  هذه الميزة غير متاحة للزوار
                 </div>
               ) : (
                 <>

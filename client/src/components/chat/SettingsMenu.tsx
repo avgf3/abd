@@ -82,11 +82,7 @@ export default function SettingsMenu({
             </Button>
           )}
 
-          {currentUser && (
-            currentUser.userType === 'owner' || 
-            currentUser.userType === 'admin' || 
-            currentUser.userType === 'moderator'
-          ) && (
+          {currentUser && currentUser.userType !== 'guest' && (
             <Button
               onClick={onOpenUsernameColorPicker}
               variant="ghost"
@@ -98,11 +94,7 @@ export default function SettingsMenu({
             </Button>
           )}
 
-          {currentUser && (
-            currentUser.userType === 'owner' || 
-            currentUser.userType === 'admin' || 
-            currentUser.userType === 'moderator'
-          ) && (
+          {currentUser && currentUser.userType !== 'guest' && (
             <Button
               onClick={onOpenStories}
               variant="ghost"

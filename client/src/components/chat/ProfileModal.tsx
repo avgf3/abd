@@ -639,20 +639,20 @@ export default function ProfileModal({
     event: React.ChangeEvent<HTMLInputElement>,
     uploadType: 'profile' | 'banner' = 'profile'
   ) => {
-    // التحقق من الصلاحيات
-    const isAuthorized = currentUser && (
-      currentUser.userType === 'owner' || 
-      currentUser.userType === 'admin' || 
-      currentUser.userType === 'moderator'
-    );
-    
-    if (!isAuthorized) {
-      toast({
-        title: 'غير مسموح',
-        description: 'هذه الميزة متاحة للمشرفين فقط',
-        variant: 'destructive',
-      });
-      return;
+    // التحقق من الصلاحيات: الصورة الشخصية متاحة لكل الأعضاء، الغلاف للمشرفين أو لفل 20+
+    const isModerator = !!currentUser && (currentUser.userType === 'owner' || currentUser.userType === 'admin' || currentUser.userType === 'moderator');
+    const lvl = Number(currentUser?.level || 1);
+    if (uploadType === 'banner') {
+      const canUploadBanner = isModerator || lvl >= 20;
+      if (!canUploadBanner) {
+        toast({ title: 'غير مسموح', description: 'الغلاف للمشرفين أو للمستوى 20 فما فوق', variant: 'destructive' });
+        return;
+      }
+    } else {
+      if (!currentUser || currentUser.userType === 'guest') {
+        toast({ title: 'غير مسموح', description: 'هذه الميزة غير متاحة للزوار', variant: 'destructive' });
+        return;
+      }
     }
 
     const file = event.target.files?.[0];
@@ -2123,12 +2123,11 @@ export default function ProfileModal({
                 )}
               </>
             )}
-            {localUser?.id === currentUser?.id && 
-             currentUser && (
+            {localUser?.id === currentUser?.id && currentUser && ((
                currentUser.userType === 'owner' || 
                currentUser.userType === 'admin' || 
                currentUser.userType === 'moderator'
-             ) && (
+             ) || (typeof currentUser.level === 'number' && currentUser.level >= 20)) && (
               <>
                 <button
                   className="change-cover-btn"
