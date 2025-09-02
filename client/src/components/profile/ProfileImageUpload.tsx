@@ -49,11 +49,11 @@ export default function ProfileImageUpload({
       return;
     }
 
-    // التحقق من الصلاحيات - فقط المشرفين يمكنهم رفع الصور
-    if (currentUser.userType !== 'owner' && currentUser.userType !== 'admin' && currentUser.userType !== 'moderator') {
+    // التحقق من الصلاحيات - الأعضاء والمشرفين يمكنهم رفع الصور، الزوار لا يمكنهم
+    if (currentUser.userType === 'guest') {
       toast({
         title: 'غير مسموح',
-        description: 'هذه الميزة متاحة للمشرفين فقط',
+        description: 'هذه الميزة غير متاحة للزوار',
         variant: 'destructive',
       });
       return;
@@ -156,16 +156,12 @@ export default function ProfileImageUpload({
   };
 
   // التحقق من الصلاحيات قبل عرض المكون
-  const isAuthorized = currentUser && (
-    currentUser.userType === 'owner' || 
-    currentUser.userType === 'admin' || 
-    currentUser.userType === 'moderator'
-  );
+  const isAuthorized = currentUser && currentUser.userType !== 'guest';
 
   if (!isAuthorized) {
     return (
       <div className="text-center p-4 text-muted-foreground">
-        <p>هذه الميزة متاحة للمشرفين فقط</p>
+        <p>هذه الميزة غير متاحة للزوار</p>
       </div>
     );
   }

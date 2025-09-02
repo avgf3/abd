@@ -2239,11 +2239,7 @@ export default function ProfileModal({
             </div>
 
             {localUser?.id === currentUser?.id && 
-             currentUser && (
-               currentUser.userType === 'owner' || 
-               currentUser.userType === 'admin' || 
-               currentUser.userType === 'moderator'
-             ) && (
+             currentUser && currentUser.userType !== 'guest' && (
               <button
                 className="change-avatar-btn"
                 onClick={() => avatarInputRef.current?.click()}
@@ -2341,11 +2337,7 @@ export default function ProfileModal({
                 <p>
                   ⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span>
                 </p>
-                {currentUser && (
-                  currentUser.userType === 'owner' || 
-                  currentUser.userType === 'admin' || 
-                  currentUser.userType === 'moderator'
-                ) && (
+                {currentUser && currentUser.userType !== 'guest' && (
                   <>
                     <p onClick={() => setCurrentEditType('theme')} style={{ cursor: 'pointer' }}>
                       🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
@@ -2355,11 +2347,7 @@ export default function ProfileModal({
                     </p>
                   </>
                 )}
-                {currentUser && (
-                  currentUser.userType === 'owner' || 
-                  currentUser.userType === 'admin' || 
-                  currentUser.userType === 'moderator'
-                ) && (
+                {currentUser && currentUser.userType !== 'guest' && (
                   <div
                     style={{
                       marginTop: '8px',

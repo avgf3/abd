@@ -267,14 +267,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: 'المستخدم غير موجود' });
         }
 
-        // التحقق من الصلاحيات - فقط المشرفين يمكنهم رفع الصور
-        if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+        // التحقق من الصلاحيات - الأعضاء والمشرفين يمكنهم رفع الصور، الزوار لا يمكنهم
+        if (user.userType === 'guest') {
           try {
             await fsp.unlink(req.file.path);
           } catch (unlinkError) {
             console.error('خطأ في حذف الملف:', unlinkError);
           }
-          return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
+          return res.status(403).json({ error: 'هذه الميزة غير متاحة للزوار' });
         }
 
         // 🧠 استخدام النظام الذكي الجديد لمعالجة الصور
