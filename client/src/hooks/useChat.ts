@@ -828,6 +828,12 @@ export const useChat = () => {
           case 'error':
           case 'warning': {
             console.warn('⚠️ خطأ من السيرفر:', envelope.message);
+            
+            // عرض رسالة الخطأ للمستخدم إذا كانت تتعلق بغرفة مقفلة
+            if (envelope.message && (envelope.message.includes('مقفلة') || envelope.message.includes('locked'))) {
+              // استخدام toast أو alert لعرض الرسالة
+              alert(envelope.message);
+            }
             break;
           }
 
