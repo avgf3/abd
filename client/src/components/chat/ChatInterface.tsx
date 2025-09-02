@@ -909,7 +909,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               activeView === 'walls' ? ' bg-primary text-primary-foreground' : ' hover:bg-accent'
             }`}
             onClick={() => setActiveView((prev) => (prev === 'walls' ? 'hidden' : 'walls'))}
-            title="الحوائط"
+            title="الحائط"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -927,7 +927,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               <line x1="3" y1="12" x2="21" y2="12"></line>
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
-            الحوائط
+            الحائط
           </Button>
 
           {/* المستخدمون */}
