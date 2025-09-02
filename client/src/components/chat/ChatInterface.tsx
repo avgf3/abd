@@ -758,17 +758,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
         </div>
 
-        {/* روابط سياسة الخصوصية وشروط الاستخدام (يمين الشريط)، والشعار مثبت يساراً */}
+        {/* الشعار مثبت يساراً */}
         <div className="flex items-center gap-4 flex-shrink-0">
-          <div className="hidden sm:flex items-center gap-3 text-sm">
-            <a href="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors underline">
-              سياسة الخصوصية
-            </a>
-            <span className="text-gray-400">|</span>
-            <a href="/terms" className="text-blue-400 hover:text-blue-300 transition-colors underline">
-              شروط الاستخدام
-            </a>
-          </div>
           <div
             className={`flex items-center gap-2 cursor-pointer select-none ${isMobile ? 'self-start' : ''}`}
             onClick={() => {
