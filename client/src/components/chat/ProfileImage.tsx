@@ -31,9 +31,8 @@ export default function ProfileImage({
   
   // إضافة تأثير متدرج للإطار حسب مستوى المستخدم
   const gradientBorder = useMemo(() => {
-    if (user.role === 'owner') {
-      return 'linear-gradient(135deg, #FFD700, #FFA500, #FF6347)';
-    } else if (user.role === 'admin') {
+    // تم إزالة الإطار الخاص بالمالك
+    if (user.role === 'admin') {
       return 'linear-gradient(135deg, #4B0082, #8A2BE2, #9400D3)';
     } else if (user.role === 'moderator') {
       return 'linear-gradient(135deg, #008000, #32CD32, #00FF00)';
