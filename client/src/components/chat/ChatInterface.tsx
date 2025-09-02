@@ -898,10 +898,10 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
 
       {/* Modern Footer Navigation */}
       <footer
-        className={`fixed bottom-0 left-0 right-0 z-10 modern-nav h-14 px-2 sm:px-4 flex justify-start items-center ${isMobile ? 'mobile-footer' : ''}`}
+        className={`fixed bottom-0 left-0 right-0 z-10 modern-nav h-14 ${isMobile ? 'px-2' : ''} flex justify-center items-center ${isMobile ? 'mobile-footer' : ''}`}
         style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0' }}
       >
-        <div className="flex gap-1 sm:gap-2 overflow-x-auto max-w-full">
+        <div className="app-shell px-2 sm:px-4 flex gap-1 sm:gap-2 overflow-x-auto max-w-full">
           {/* الحوائط */}
           <Button
             size="sm"

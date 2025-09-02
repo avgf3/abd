@@ -103,24 +103,26 @@ export default function ChatPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground font-['Cairo']" dir="rtl">
-      <Suspense fallback={<div className="p-6 text-center">...جاري التحميل</div>}>
-        {isRestoring ? (
-          <div className="p-6 text-center">...جاري استعادة الجلسة</div>
-        ) : showWelcome ? (
-          <WelcomeScreen onUserLogin={handleUserLogin} />
-        ) : selectedRoomId ? (
-          <ChatInterface chat={chat} onLogout={handleLogout} />
-        ) : (
-          <RoomSelectorScreen currentUser={chat.currentUser} onSelectRoom={handleSelectRoom} />
-        )}
-      </Suspense>
+      <div className="app-shell">
+        <Suspense fallback={<div className="p-6 text-center">...جاري التحميل</div>}>
+          {isRestoring ? (
+            <div className="p-6 text-center">...جاري استعادة الجلسة</div>
+          ) : showWelcome ? (
+            <WelcomeScreen onUserLogin={handleUserLogin} />
+          ) : selectedRoomId ? (
+            <ChatInterface chat={chat} onLogout={handleLogout} />
+          ) : (
+            <RoomSelectorScreen currentUser={chat.currentUser} onSelectRoom={handleSelectRoom} />
+          )}
+        </Suspense>
 
-      {/* عداد الطرد */}
-      <KickCountdown
-        isVisible={chat.showKickCountdown || false}
-        onClose={() => chat.setShowKickCountdown?.(false)}
-        durationMinutes={15}
-      />
+        {/* عداد الطرد */}
+        <KickCountdown
+          isVisible={chat.showKickCountdown || false}
+          onClose={() => chat.setShowKickCountdown?.(false)}
+          durationMinutes={15}
+        />
+      </div>
     </div>
   );
 }

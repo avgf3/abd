@@ -3,6 +3,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Layout container clamp for desktop - center and cap width */
+.app-shell {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 1365px;
+}
+
 /* Golden Glow Animation (used by effect-glow) */
 @keyframes golden-glow {
   0%,
