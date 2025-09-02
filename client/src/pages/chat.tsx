@@ -46,7 +46,8 @@ export default function ChatPage() {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(() => {
     if (!hasSavedUser) return null;
     const roomId = (initialSession as any)?.roomId;
-    return roomId && roomId !== 'public' && roomId !== 'friends' ? roomId : 'general';
+    // إذا كان هناك roomId محفوظ، نستخدمه بدون تحويل للغرفة العامة
+    return roomId || null;
   });
   const [isRestoring, setIsRestoring] = useState<boolean>(hasSavedUser);
   const chat = useChat();
@@ -68,11 +69,14 @@ export default function ChatPage() {
           chat.connect(user);
           setShowWelcome(false);
 
-          const roomId = session?.roomId && session.roomId !== 'public' && session.roomId !== 'friends'
-            ? session.roomId
-            : 'general';
-          setSelectedRoomId(roomId);
-          chat.joinRoom(roomId);
+          // إذا كان هناك roomId محفوظ في الجلسة، نستخدمه
+          if (session?.roomId) {
+            setSelectedRoomId(session.roomId);
+            chat.joinRoom(session.roomId);
+          } else {
+            // إذا لم يكن هناك roomId محفوظ، نعرض شاشة اختيار الغرف
+            setSelectedRoomId(null);
+          }
         })
         .catch(() => {})
         .finally(() => setIsRestoring(false));
