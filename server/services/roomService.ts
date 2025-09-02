@@ -239,7 +239,9 @@ class RoomService {
       }
 
       // منع الانضمام إن كانت الغرفة مقفلة (ما عدا المشرفين والإداريين والمالكين)
-      if ((room as any).isLocked === true) {
+      // Check if room is locked (default to false if undefined)
+      const isRoomLocked = room.isLocked ?? false;
+      if (isRoomLocked === true) {
         const isPrivileged = ['admin', 'owner', 'moderator'].includes(user.userType);
         if (!isPrivileged) {
           throw new Error('الغرفة مقفلة ولا يمكن الدخول إليها');

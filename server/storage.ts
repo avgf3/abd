@@ -895,6 +895,7 @@ export const storage: LegacyStorage = {
           description: 'الغرفة العامة للدردشة',
           isDefault: true,
           isActive: true,
+          isLocked: false,
           isBroadcast: false,
           hostId: null,
           speakers: '[]',

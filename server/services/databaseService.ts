@@ -93,6 +93,7 @@ export interface Room {
   isDefault?: boolean;
   isActive?: boolean;
   isBroadcast?: boolean;
+  isLocked?: boolean;
   hostId?: number | null;
   speakers?: string | any[];
   micQueue?: string | any[];
