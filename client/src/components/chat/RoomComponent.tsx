@@ -97,12 +97,12 @@ const RoomCard: React.FC<RoomCardProps> = ({
     
     return (
       <div className="flex-1 min-w-0">
-        <div
-          className={`font-medium ${compact ? 'text-sm' : 'text-base'} truncate flex items-center gap-2`}
-        >
-          {room.name}
-          {room.isBroadcast && <Mic className="w-3 h-3 text-orange-500" />}
-          {room.isLocked && <Lock className="w-3 h-3 text-yellow-600" />}
+        <div className={`font-medium ${compact ? 'text-sm' : 'text-base'} flex items-center gap-2 min-w-0`}>
+          <span className="truncate">{room.name}</span>
+          <span className="flex items-center gap-1 flex-shrink-0">
+            {room.isBroadcast && <Mic className="w-3 h-3 text-orange-500" />}
+            {room.isLocked && <Lock className="w-3 h-3 text-yellow-600" />}
+          </span>
           {/* إزالة شارة "افتراضي" بناءً على طلب العميل */}
         </div>
         <div className={`${compact ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
@@ -130,7 +130,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
         <RoomInfo />
 
         {(canModerate || canDelete) && (
-          <div className="flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
             {canModerate && onToggleLock && (
               <Button
                 onClick={(e) => {
