@@ -200,10 +200,8 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
         <div className="text-center animate-slide-up relative z-10">
           <div className="mb-10">
             <div className="text-6xl sm:text-7xl mb-6 animate-pulse-slow modern-float">💬</div>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-blue-600">
-              دردشة عربية | شات عربي | تعارف بدون تسجيل أو اشتراك مجانًا
-            </h1>
-            <p className="text-2xl text-muted-foreground mb-10 font-light">منصة التواصل العربية الأولى</p>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-blue-600">🔥 أهلاً بك في شات عربي</h1>
+            <p className="text-2xl text-muted-foreground mb-10 font-light">انضم الآن إلى أكبر مجتمع دردشة عربية مجانية. تواصل مع شباب وصبايا من مختلف الدول، وابدأ تكوين صداقات حقيقية في أجواء ممتعة وآمنة.</p>
           </div>
 
         <div
