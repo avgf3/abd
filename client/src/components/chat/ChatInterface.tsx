@@ -13,6 +13,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { lazy, Suspense, useState, useEffect, useCallback, useMemo } from 'react';
+import { useLocation } from 'wouter';
 
 import BlockNotification from '../moderation/BlockNotification';
 import MessageAlert from './MessageAlert';
@@ -74,6 +75,7 @@ interface ChatInterfaceProps {
 }
 
 export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
+  const [, setLocation] = useLocation();
   const { showSuccessToast, showErrorToast } = useNotificationManager(chat.currentUser);
   const [showProfile, setShowProfile] = useState(false);
   const [profileUser, setProfileUser] = useState<ChatUser | null>(null);
@@ -756,16 +758,33 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
           </Button>
         </div>
 
-        {/* الشعار ثابت على اليسار وبألوان ثابتة لا تتأثر بالثيم */}
-        <div
-          className={`flex items-center gap-2 cursor-pointer select-none flex-shrink-0 ${isMobile ? 'self-start' : ''}`}
-          onClick={() => {
-            if (isMobile) setActiveView('hidden');
-          }}
-        >
-          <MessageCircle className="w-5 h-5" style={{ color: '#667eea' }} />
-          <div className="text-lg sm:text-xl font-bold whitespace-nowrap" style={{ color: '#ffffff' }}>
-            Arabic<span style={{ color: '#667eea' }}>Chat</span>
+        {/* روابط سياسة الخصوصية وشروط الاستخدام (يمين الشريط)، والشعار مثبت يساراً */}
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <div className="hidden sm:flex items-center gap-3 text-sm">
+            <button
+              onClick={() => setLocation('/privacy')}
+              className="text-gray-300 hover:text-white hover:underline"
+            >
+              سياسة الخصوصية
+            </button>
+            <span className="text-gray-500">|</span>
+            <button
+              onClick={() => setLocation('/terms')}
+              className="text-gray-300 hover:text-white hover:underline"
+            >
+              شروط الاستخدام
+            </button>
+          </div>
+          <div
+            className={`flex items-center gap-2 cursor-pointer select-none ${isMobile ? 'self-start' : ''}`}
+            onClick={() => {
+              if (isMobile) setActiveView('hidden');
+            }}
+          >
+            <MessageCircle className="w-5 h-5" style={{ color: '#667eea' }} />
+            <div className="text-lg sm:text-xl font-bold whitespace-nowrap" style={{ color: '#ffffff' }}>
+              Arabic<span style={{ color: '#667eea' }}>Chat</span>
+            </div>
           </div>
         </div>
       </header>

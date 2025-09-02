@@ -1,4 +1,4 @@
-import { UserPlus } from 'lucide-react';
+import { UserPlus, MessageCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 
@@ -213,16 +213,22 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
       {/* شريط العنوان */}
       <div className="bg-gray-900 text-white py-3 px-4">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span className="text-red-500 text-2xl">💬</span>
-            <span className="text-xl font-bold">Arabic<span className="text-red-500">chat</span></span>
+          {/* روابط الشريط العلوي */}
+          <div className="flex items-center gap-3 text-sm">
+            <button onClick={() => setLocation('/privacy')} className="text-gray-300 hover:text-white hover:underline">
+              سياسة الخصوصية
+            </button>
+            <span className="text-gray-500">|</span>
+            <button onClick={() => setLocation('/terms')} className="text-gray-300 hover:text-white hover:underline">
+              شروط الاستخدام
+            </button>
           </div>
-          <div className="flex items-center gap-4 text-sm">
-            <a href="/" className="hover:text-gray-300">الرئيسية</a>
-            <span className="text-gray-500">|</span>
-            <a href="#" className="hover:text-gray-300">شروط الاستخدام</a>
-            <span className="text-gray-500">|</span>
-            <a href="#" className="hover:text-gray-300">سياسة الخصوصية</a>
+          {/* الشعار المثبت يساراً: أبيض وأزرق */}
+          <div className="flex items-center gap-2 cursor-default select-none">
+            <MessageCircle className="w-5 h-5" style={{ color: '#667eea' }} />
+            <div className="text-xl font-bold whitespace-nowrap" style={{ color: '#ffffff' }}>
+              Arabic<span style={{ color: '#667eea' }}>Chat</span>
+            </div>
           </div>
         </div>
       </div>
