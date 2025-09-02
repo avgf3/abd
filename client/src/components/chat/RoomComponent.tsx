@@ -95,26 +95,23 @@ const RoomCard: React.FC<RoomCardProps> = ({
     // اعتبار المشرف كإداري أيضاً
     const isAdminOrOwner = ['admin', 'owner', 'moderator'].includes(currentUser?.userType || 'guest');
     
-    // إخفاء اسم الغرفة المقفلة للمستخدمين غير المشرفين
-    const displayName = room.isLocked && !isAdminOrOwner ? '🔒 غرفة مقفلة' : room.name;
-    const displayDescription = room.isLocked && !isAdminOrOwner ? 'هذه الغرفة مقفلة ولا يمكن الدخول إليها' : room.description;
-    
     return (
       <div className="flex-1 min-w-0">
         <div
           className={`font-medium ${compact ? 'text-sm' : 'text-base'} truncate flex items-center gap-2`}
         >
-          {displayName}
+          {room.name}
           {room.isBroadcast && <Mic className="w-3 h-3 text-orange-500" />}
-          {room.isLocked && isAdminOrOwner && <Lock className="w-3 h-3 text-yellow-600" />}
+          {room.isLocked && <Lock className="w-3 h-3 text-yellow-600" />}
           {/* إزالة شارة "افتراضي" بناءً على طلب العميل */}
         </div>
         <div className={`${compact ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
           {room.userCount || 0} متصل
           {room.isBroadcast && <span className="text-orange-500 ml-1">• بث مباشر</span>}
+          {room.isLocked && !isAdminOrOwner && <span className="text-yellow-600 ml-1">• مقفلة</span>}
         </div>
-        {!compact && displayDescription && (
-          <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{displayDescription}</div>
+        {!compact && room.description && (
+          <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{room.description}</div>
         )}
       </div>
     );
@@ -185,38 +182,33 @@ const RoomCard: React.FC<RoomCardProps> = ({
     // تحديد إذا كان المستخدم مشرف أو مالك
     const isAdminOrOwner = ['admin', 'owner', 'moderator'].includes(currentUser?.userType || 'guest');
     
-    // إخفاء اسم الغرفة المقفلة للمستخدمين غير المشرفين
-    const displayName = room.isLocked && !isAdminOrOwner ? '🔒 غرفة مقفلة' : room.name;
-    const displayDescription = room.isLocked && !isAdminOrOwner ? 'هذه الغرفة مقفلة ولا يمكن الدخول إليها' : room.description;
-    const displayIcon = room.isLocked && !isAdminOrOwner ? '🔒' : (displayName.charAt(0));
-    
     return (
       <Card
         className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 ${
           isActive ? 'border-primary/50 bg-primary/5' : 'hover:border-primary/30'
-        }`}
+        } ${room.isLocked && !isAdminOrOwner ? 'opacity-75' : ''}`}
         onClick={() => onSelect(room.id)}
       >
         <CardHeader className="text-center pb-2">
           <div className="w-16 h-16 mx-auto mb-2 rounded-xl overflow-hidden border">
-            {room.icon && !(room.isLocked && !isAdminOrOwner) ? (
-              <img src={room.icon} alt={displayName} className="w-full h-full object-cover" />
+            {room.icon ? (
+              <img src={room.icon} alt={room.name} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-                <span className="text-xl font-bold text-primary">{displayIcon}</span>
+                <span className="text-xl font-bold text-primary">{room.name.charAt(0)}</span>
               </div>
             )}
           </div>
 
           <CardTitle className="text-lg flex items-center justify-center gap-2">
-            {displayName}
+            {room.name}
             {room.isBroadcast && <Mic className="w-4 h-4 text-orange-500" />}
-            {room.isLocked && isAdminOrOwner && <Lock className="w-4 h-4 text-yellow-600" />}
+            {room.isLocked && <Lock className="w-4 h-4 text-yellow-600" />}
           </CardTitle>
 
-          {displayDescription && (
+          {room.description && (
             <CardDescription className="text-center line-clamp-2">
-              {displayDescription}
+              {room.description}
             </CardDescription>
           )}
         </CardHeader>
@@ -227,9 +219,13 @@ const RoomCard: React.FC<RoomCardProps> = ({
             <span>{room.userCount || 0} متصل الآن</span>
           </div>
 
-          <Button className="w-full" variant={isActive ? 'default' : 'outline'}>
-            {isActive ? 'الغرفة الحالية' : 'دخول الغرفة'}
-          </Button>
+                  <Button 
+          className="w-full" 
+          variant={isActive ? 'default' : (room.isLocked && !isAdminOrOwner ? 'destructive' : 'outline')}
+          disabled={room.isLocked && !isAdminOrOwner}
+        >
+          {isActive ? 'الغرفة الحالية' : (room.isLocked && !isAdminOrOwner ? 'غرفة مقفلة' : 'دخول الغرفة')}
+        </Button>
 
           {canDelete && (
             <Button
@@ -251,35 +247,32 @@ const RoomCard: React.FC<RoomCardProps> = ({
   // تحديد إذا كان المستخدم مشرف أو مالك
   const isAdminOrOwner = ['admin', 'owner', 'moderator'].includes(currentUser?.userType || 'guest');
   
-  // إخفاء اسم الغرفة المقفلة للمستخدمين غير المشرفين
-  const displayName = room.isLocked && !isAdminOrOwner ? '🔒 غرفة مقفلة' : room.name;
-  const displayDescription = room.isLocked && !isAdminOrOwner ? 'هذه الغرفة مقفلة ولا يمكن الدخول إليها' : room.description;
-  const displayIcon = room.isLocked && !isAdminOrOwner ? '🔒' : (displayName.charAt(0));
-  
   return (
     <Card
-      className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-primary/50`}
+      className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-primary/50 ${
+        room.isLocked && !isAdminOrOwner ? 'opacity-75' : ''
+      }`}
       onClick={() => onSelect(room.id)}
     >
       <CardHeader className="text-center">
         <div className="w-20 h-20 mx-auto mb-4 rounded-xl overflow-hidden border">
-          {room.icon && !(room.isLocked && !isAdminOrOwner) ? (
-            <img src={room.icon} alt={displayName} className="w-full h-full object-cover" />
+          {room.icon ? (
+            <img src={room.icon} alt={room.name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-              <span className="text-2xl font-bold text-primary">{displayIcon}</span>
+              <span className="text-2xl font-bold text-primary">{room.name.charAt(0)}</span>
             </div>
           )}
         </div>
 
         <CardTitle className="text-xl flex items-center justify-center gap-2">
-          {displayName}
+          {room.name}
           {room.isBroadcast && <Mic className="w-4 h-4 text-orange-500" />}
-          {room.isLocked && isAdminOrOwner && <Lock className="w-4 h-4 text-yellow-600" />}
+          {room.isLocked && <Lock className="w-4 h-4 text-yellow-600" />}
         </CardTitle>
 
-        {displayDescription && (
-          <CardDescription className="text-center">{displayDescription}</CardDescription>
+        {room.description && (
+          <CardDescription className="text-center">{room.description}</CardDescription>
         )}
       </CardHeader>
 
@@ -289,8 +282,12 @@ const RoomCard: React.FC<RoomCardProps> = ({
           <span>{room.userCount || 0} متصل الآن</span>
         </div>
 
-        <Button className="w-full" variant={'outline'}>
-          دخول الغرفة
+        <Button 
+          className="w-full" 
+          variant={room.isLocked && !isAdminOrOwner ? 'destructive' : 'outline'}
+          disabled={room.isLocked && !isAdminOrOwner}
+        >
+          {room.isLocked && !isAdminOrOwner ? 'غرفة مقفلة' : 'دخول الغرفة'}
         </Button>
       </CardContent>
     </Card>
