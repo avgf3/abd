@@ -2153,8 +2153,8 @@ export default function ProfileModal({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <span style={{ fontSize: '14px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
-                        {localUser?.userType === 'admin' && 'Admin'}
                         {localUser?.userType === 'moderator' && 'Moderator'}
+                        {localUser?.userType === 'admin' && ''}
                       </span>
                       <span style={{ fontSize: '16px' }}>
                         {getUserLevelIcon(localUser, 16)}
@@ -2196,8 +2196,8 @@ export default function ProfileModal({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <span style={{ fontSize: '14px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
-                        {localUser?.userType === 'admin' && 'Admin'}
                         {localUser?.userType === 'moderator' && 'Moderator'}
+                        {localUser?.userType === 'admin' && ''}
                       </span>
                       <span style={{ fontSize: '16px' }}>
                         {getUserLevelIcon(localUser, 16)}
