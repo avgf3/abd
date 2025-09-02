@@ -357,6 +357,27 @@ export default function RoomComponent({
     [toggleRoomLock]
   );
 
+  // منع الدخول إلى الغرف المقفلة لغير المشرفين/المدراء/المالكين مع إظهار رسالة عربية
+  const handleRoomSelect = useCallback(
+    (room: ChatRoom) => {
+      const isPrivileged = ['admin', 'owner', 'moderator'].includes(
+        currentUser?.userType || 'guest'
+      );
+      if (room.isLocked && !isPrivileged) {
+        try {
+          toast({
+            title: 'غرفة مقفلة',
+            description: 'هذه الغرفة مقفلة ولا يمكن الدخول إليها',
+            variant: 'destructive',
+          });
+        } catch {}
+        return; // لا تُنفّذ تغيير الغرفة
+      }
+      onRoomChange(room.id);
+    },
+    [currentUser?.userType, onRoomChange, toast]
+  );
+
   // التحقق من الصلاحيات
   const isAdmin = currentUser && ['owner', 'admin'].includes(currentUser.userType);
   const canCreateRooms = isAdmin && allowCreate && onAddRoom;
@@ -482,7 +503,7 @@ export default function RoomComponent({
                 currentUser={currentUser}
                 viewMode="selector"
                 compact={false}
-                onSelect={onRoomChange}
+                onSelect={(_rid) => handleRoomSelect(room)}
               />
             ))}
           </div>
@@ -586,7 +607,7 @@ export default function RoomComponent({
                 currentUser={currentUser}
                 viewMode={viewMode}
                 compact={compact}
-                onSelect={onRoomChange}
+                onSelect={(_rid) => handleRoomSelect(room)}
                 onDelete={canDeleteRooms ? (id, e) => handleDeleteRoom(id, e) : undefined}
                 onChangeIcon={isAdmin ? (rid) => handleChangeIconClick(rid) : undefined}
                 onToggleLock={isAdmin ? (rid, locked) => handleToggleLock(rid, locked) : undefined}
@@ -606,7 +627,7 @@ export default function RoomComponent({
                     currentUser={currentUser}
                     viewMode={viewMode}
                     compact={compact}
-                    onSelect={onRoomChange}
+                    onSelect={(_rid) => handleRoomSelect(room)}
                     onDelete={canDeleteRooms ? (id, e) => handleDeleteRoom(id, e) : undefined}
                     onChangeIcon={isAdmin ? (rid) => handleChangeIconClick(rid) : undefined}
                     onToggleLock={isAdmin ? (rid, locked) => handleToggleLock(rid, locked) : undefined}
