@@ -1,4 +1,4 @@
-import { X, Plus, Users, Mic, RefreshCw, MessageCircle, Search, Settings } from 'lucide-react';
+import { X, Plus, Users, Mic, RefreshCw, MessageCircle, Search, Settings, Lock, Unlock } from 'lucide-react';
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 
@@ -47,6 +47,7 @@ interface RoomCardProps {
   onSelect: (roomId: string) => void;
   onDelete?: (roomId: string, e: React.MouseEvent) => void;
   onChangeIcon?: (roomId: string) => void;
+  onToggleLock?: (roomId: string, isLocked: boolean) => void;
 }
 
 // مكون البطاقة المعاد استخدامه
@@ -59,6 +60,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
   onSelect,
   onDelete,
   onChangeIcon,
+  onToggleLock,
 }) => {
   const isAdmin = currentUser && ['owner', 'admin'].includes(currentUser.userType);
   const canDelete = isAdmin && !room.isDefault && onDelete;
@@ -95,11 +97,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
       >
         {room.name}
         {room.isBroadcast && <Mic className="w-3 h-3 text-orange-500" />}
-        {room.isDefault && (
-          <Badge variant="secondary" className="text-xs">
-            افتراضي
-          </Badge>
-        )}
+        {/* إزالة شارة "افتراضي" بناءً على طلب العميل */}
       </div>
       <div className={`${compact ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
         {room.userCount || 0} متصل
@@ -123,8 +121,26 @@ const RoomCard: React.FC<RoomCardProps> = ({
         <RoomIcon />
         <RoomInfo />
 
-        {canDelete && (
+        {(isAdmin || canDelete) && (
           <div className="flex items-center gap-1">
+            {isAdmin && onToggleLock && (
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleLock(room.id, !room.isLocked);
+                }}
+                variant="ghost"
+                size="sm"
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                title={room.isLocked ? 'فتح الغرفة' : 'قفل الغرفة'}
+              >
+                {room.isLocked ? (
+                  <Lock className="w-4 h-4 text-yellow-600" />
+                ) : (
+                  <Unlock className="w-4 h-4" />
+                )}
+              </Button>
+            )}
             <Button
               onClick={handleDelete}
               variant="ghost"
@@ -244,7 +260,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
           <span>{room.userCount || 0} متصل الآن</span>
         </div>
 
-        <Button className="w-full" variant={room.isDefault ? 'default' : 'outline'}>
+        <Button className="w-full" variant={'outline'}>
           دخول الغرفة
         </Button>
       </CardContent>
@@ -280,7 +296,7 @@ export default function RoomComponent({
   const [searchQuery, setSearchQuery] = useState('');
   const [isAtBottomRooms, setIsAtBottomRooms] = useState(true);
   const [roomIdToChangeIcon, setRoomIdToChangeIcon] = useState<string | null>(null);
-  const { updateRoomIcon } = useRoomManager();
+  const { updateRoomIcon, toggleRoomLock } = useRoomManager();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { toast } = useToast();
 
@@ -304,6 +320,15 @@ export default function RoomComponent({
       }
     },
     [updateRoomIcon, currentUser, roomIdToChangeIcon, currentRoomId, toast]
+  );
+
+  const handleToggleLock = useCallback(
+    async (roomId: string, nextLocked: boolean) => {
+      try {
+        await toggleRoomLock(roomId, nextLocked);
+      } catch {}
+    },
+    [toggleRoomLock]
   );
 
   // التحقق من الصلاحيات
@@ -538,6 +563,7 @@ export default function RoomComponent({
                 onSelect={onRoomChange}
                 onDelete={canDeleteRooms ? (id, e) => handleDeleteRoom(id, e) : undefined}
                 onChangeIcon={isAdmin ? (rid) => handleChangeIconClick(rid) : undefined}
+                onToggleLock={isAdmin ? (rid, locked) => handleToggleLock(rid, locked) : undefined}
               />
             ))
           ) : (
@@ -557,6 +583,7 @@ export default function RoomComponent({
                     onSelect={onRoomChange}
                     onDelete={canDeleteRooms ? (id, e) => handleDeleteRoom(id, e) : undefined}
                     onChangeIcon={isAdmin ? (rid) => handleChangeIconClick(rid) : undefined}
+                    onToggleLock={isAdmin ? (rid, locked) => handleToggleLock(rid, locked) : undefined}
                   />
                 );
               }}

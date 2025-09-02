@@ -321,6 +321,50 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     []
   );
 
+  // 🔒 تبديل قفل الغرفة
+  const toggleRoomLock = useCallback(
+    async (roomId: string, isLocked: boolean): Promise<ChatRoom | null> => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data = await apiRequest(`/api/rooms/${roomId}/lock`, {
+          method: 'PUT',
+          body: { isLocked },
+        });
+
+        if (!data?.room) {
+          throw new Error('استجابة غير صالحة من الخادم');
+        }
+
+        const updated: ChatRoom = mapApiRoom(data.room);
+
+        // تحديث الحالة المحلية
+        setRooms((prev) => {
+          const updatedRooms = prev.map((r) =>
+            r.id === roomId ? { ...r, isLocked: updated.isLocked } : r
+          );
+          if (cacheRef.current) {
+            cacheRef.current.data = updatedRooms;
+            cacheRef.current.timestamp = Date.now();
+            cacheRef.current.version += 1;
+          }
+          return updatedRooms;
+        });
+
+        setLastUpdate(new Date());
+        return updated;
+      } catch (err: any) {
+        console.error('❌ خطأ في تبديل قفل الغرفة:', err);
+        setError(err.message || 'فشل في تحديث قفل الغرفة');
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   // 🔢 تحديث عدد المستخدمين في غرفة
   const updateRoomUserCount = useCallback((roomId: string, userCount: number) => {
     setRooms((prev) => {
@@ -452,6 +496,7 @@ export function useRoomManager(options: UseRoomManagerOptions = {}) {
     searchRooms,
     filterRooms,
     updateRoomIcon,
+    toggleRoomLock,
     clearCache,
     getCacheStats,
 

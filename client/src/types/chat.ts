@@ -130,6 +130,7 @@ export interface ChatRoom {
   createdBy: number;
   createdAt: Date;
   isActive: boolean;
+  isLocked?: boolean;
   userCount: number;
   maxUsers?: number;
   icon?: string;
