@@ -593,6 +593,16 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         if (!socket.userId) return;
         const roomId = data?.roomId || socket.currentRoom || GENERAL_ROOM;
 
+        // Ensure the socket is actually in the target room to prevent bypassing join checks
+        try {
+          const rooms = (socket as any).rooms as Set<string> | undefined;
+          const target = `room_${roomId}`;
+          if (!rooms || !rooms.has(target)) {
+            socket.emit('message', { type: 'error', message: 'غير مسموح بإرسال الرسائل لهذه الغرفة' });
+            return;
+          }
+        } catch {}
+
         const status = await moderationSystem.checkUserStatus(socket.userId);
         if (!status.canChat) {
           socket.emit('message', {
