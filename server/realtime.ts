@@ -115,7 +115,15 @@ async function joinRoom(
 
   try {
     await roomService.joinRoom(userId, roomId);
-  } catch {}
+  } catch (error: any) {
+    // إرسال رسالة خطأ للمستخدم إذا فشل الانضمام (مثلاً الغرفة مقفلة)
+    socket.emit('message', { 
+      type: 'error', 
+      message: error.message || 'فشل الانضمام للغرفة',
+      roomId: roomId
+    });
+    throw error; // إعادة رمي الخطأ ليتم معالجته في المستوى الأعلى
+  }
 
   // Update connectedUsers room for this socket
   const entry = connectedUsers.get(userId);
@@ -554,8 +562,11 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
             source: 'switch_room',
           });
         }
-      } catch (e) {
-        socket.emit('message', { type: 'error', message: 'فشل الانضمام للغرفة' });
+      } catch (e: any) {
+        // الرسالة تم إرسالها بالفعل من joinRoom، لكن نتأكد من إرسالها مرة أخرى إذا لم تُرسل
+        if (!e.message?.includes('مقفلة')) {
+          socket.emit('message', { type: 'error', message: e.message || 'فشل الانضمام للغرفة' });
+        }
       }
     });
 
