@@ -87,7 +87,7 @@ type ReactionCounts = { like: number; dislike: number; heart: number };
 const initialState: ChatState = {
   currentUser: null,
   onlineUsers: [],
-  currentRoomId: 'general',
+  currentRoomId: '',
   roomMessages: {},
   privateConversations: {},
   ignoredUsers: new Set(),
