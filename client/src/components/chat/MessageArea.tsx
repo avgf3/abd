@@ -13,7 +13,7 @@ import UserRoleBadge from './UserRoleBadge';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { apiRequest, api } from '@/lib/queryClient';
@@ -711,6 +711,9 @@ export default function MessageArea({
         }}
       >
         <DialogContent className="max-w-3xl w-[92vw] p-2 bg-black/80">
+          <DialogHeader>
+            <DialogTitle>مشغل فيديو يوتيوب</DialogTitle>
+          </DialogHeader>
           <div className="flex justify-end">
             <button
               onClick={() => setYoutubeModal({ open: false, videoId: null })}
@@ -727,7 +730,7 @@ export default function MessageArea({
                 className="absolute inset-0 w-full h-full rounded"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
-                title="YouTube video"
+                title="تشغيل فيديو من يوتيوب"
               />
             )}
           </div>

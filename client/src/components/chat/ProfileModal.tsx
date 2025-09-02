@@ -2705,13 +2705,13 @@ export default function ProfileModal({
                     {currentEditType === 'socialStatus' && 'الحالة الاجتماعية:'}
                   </label>
                   {currentEditType === 'gender' ? (
-                    <select value={editValue} onChange={(e) => setEditValue(e.target.value)}>
+                    <select value={editValue} onChange={(e) => setEditValue(e.target.value)} aria-label="اختيار الجنس">
                       <option value="">اختر...</option>
                       <option value="ذكر">👨 ذكر</option>
                       <option value="أنثى">👩 أنثى</option>
                     </select>
                   ) : currentEditType === 'country' ? (
-                    <select value={editValue} onChange={(e) => setEditValue(e.target.value)}>
+                    <select value={editValue} onChange={(e) => setEditValue(e.target.value)} aria-label="اختيار البلد">
                       <option value="">اختر...</option>
                       <option value="🇸🇦 السعودية">🇸🇦 السعودية</option>
                       <option value="🇦🇪 الإمارات">🇦🇪 الإمارات</option>
@@ -2731,7 +2731,7 @@ export default function ProfileModal({
                       <option value="🇲🇦 المغرب">🇲🇦 المغرب</option>
                     </select>
                   ) : currentEditType === 'socialStatus' ? (
-                    <select value={editValue} onChange={(e) => setEditValue(e.target.value)}>
+                    <select value={editValue} onChange={(e) => setEditValue(e.target.value)} aria-label="اختيار الحالة الاجتماعية">
                       <option value="">اختر...</option>
                       <option value="أعزب">💚 أعزب</option>
                       <option value="متزوج">💍 متزوج</option>

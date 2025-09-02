@@ -264,6 +264,7 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
                   value={newBlockIP}
                   onChange={(e) => setNewBlockIP(e.target.value)}
                   className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500"
+                  aria-label="عنوان IP للحظر"
                 />
                 <input
                   type="text"
@@ -271,6 +272,7 @@ export default function SecurityPanel({ isOpen, onClose, currentUser }: Security
                   value={blockReason}
                   onChange={(e) => setBlockReason(e.target.value)}
                   className="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500"
+                  aria-label="سبب الحظر"
                 />
                 <Button
                   onClick={blockIP}

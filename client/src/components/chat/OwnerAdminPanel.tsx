@@ -752,8 +752,9 @@ function FinalBlockPanel({
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-1">
-          <label className="block text-sm text-gray-700 mb-2">اختر المستخدم</label>
+          <label htmlFor="owner-target-select" className="block text-sm text-gray-700 mb-2">اختر المستخدم</label>
           <select
+            id="owner-target-select"
             className="w-full p-2 bg-white rounded border border-gray-300 focus:border-red-400"
             value={targetId ?? ''}
             onChange={(e) => setTargetId(e.target.value ? Number(e.target.value) : null)}

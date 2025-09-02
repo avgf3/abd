@@ -126,7 +126,10 @@ export default function StoryViewer({ initialUserId, onClose }: StoryViewerProps
               muted
               playsInline
               controls={false}
-            />
+              title="فيديو القصة"
+            >
+              <track kind="captions" src="data:text/vtt,WEBVTT" srcLang="ar" label="ترجمة" default />
+            </video>
           ) : (
             <img src={active.mediaUrl} alt="story" className="w-full h-full object-cover" />
           )}

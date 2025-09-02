@@ -123,6 +123,7 @@ const Carousel = React.forwardRef<
         className={cn('relative', className)}
         role="region"
         aria-roledescription="carousel"
+        aria-label="عارض الشرائح"
         {...props}
       >
         {children}
