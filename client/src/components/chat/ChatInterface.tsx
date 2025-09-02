@@ -761,19 +761,13 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
         {/* روابط سياسة الخصوصية وشروط الاستخدام (يمين الشريط)، والشعار مثبت يساراً */}
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="hidden sm:flex items-center gap-3 text-sm">
-            <button
-              onClick={() => setLocation('/privacy')}
-              className="text-gray-300 hover:text-white hover:underline"
-            >
+            <a href="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors underline">
               سياسة الخصوصية
-            </button>
-            <span className="text-gray-500">|</span>
-            <button
-              onClick={() => setLocation('/terms')}
-              className="text-gray-300 hover:text-white hover:underline"
-            >
+            </a>
+            <span className="text-gray-400">|</span>
+            <a href="/terms" className="text-blue-400 hover:text-blue-300 transition-colors underline">
               شروط الاستخدام
-            </button>
+            </a>
           </div>
           <div
             className={`flex items-center gap-2 cursor-pointer select-none ${isMobile ? 'self-start' : ''}`}
