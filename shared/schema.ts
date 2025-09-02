@@ -16,6 +16,7 @@ import { z } from 'zod';
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   username: text('username').notNull().unique(),
+  displayName: text('display_name'),
   password: text('password'),
   userType: text('user_type').notNull().default('guest'), // 'guest', 'member', 'owner'
   role: text('role').notNull().default('guest'), // إضافة role للتوافق مع ChatUser
