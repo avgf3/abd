@@ -5,15 +5,15 @@ import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 import { SecurityConfig } from '../security';
-import { z } from 'zod';
 
 import { roomService } from '../services/roomService';
 import { protect } from '../middleware/enhancedSecurity';
+import { storage } from '../storage';
 
 const router = Router();
 
 // إعداد multer لرفع صور الغرف
-const storage = multer.diskStorage({
+const storageEngine = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'rooms');
 
@@ -31,7 +31,7 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({
-  storage,
+  storage: storageEngine,
   limits: {
     fileSize: Math.min(5 * 1024 * 1024, SecurityConfig.MAX_FILE_SIZE), // 5MB
     files: 1,
@@ -357,6 +357,44 @@ router.post('/:roomId/leave', protect.auth, async (req, res) => {
   } catch (error: any) {
     console.error('خطأ في مغادرة الغرفة:', error);
     res.status(400).json({ error: error.message || 'خطأ في مغادرة الغرفة' });
+  }
+});
+
+/**
+ * PUT /api/rooms/:roomId/lock
+ * قفل/فتح الغرفة
+ */
+router.put('/:roomId/lock', protect.moderator, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    // accept body: { isLocked: boolean }
+    const schema = z.object({ isLocked: z.boolean() });
+    const parsed = schema.safeParse(req.body || {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'بيانات غير صالحة' });
+    }
+
+    const room = await roomService.getRoom(roomId);
+    if (!room) return res.status(404).json({ error: 'الغرفة غير موجودة' });
+
+    const updated = await (await import('../services/databaseService'));
+    const dbService = (updated as any).default || null;
+    // Use storage helper to update room
+    const saved = await (await import('../storage')).storage.updateRoom(String(roomId), {
+      isLocked: parsed.data.isLocked,
+    } as any);
+    try { roomService.invalidateRoomsCache(); } catch {}
+
+    // بث تحديث حالة القفل
+    try {
+      const io = req.app.get('io');
+      io?.emit('roomUpdate', { type: 'updated', room: saved });
+    } catch {}
+
+    res.json({ success: true, room: saved });
+  } catch (error: any) {
+    console.error('خطأ في تحديث قفل الغرفة:', error);
+    res.status(400).json({ error: error.message || 'خطأ في تحديث قفل الغرفة' });
   }
 });
 

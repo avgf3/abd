@@ -285,3 +285,17 @@ export async function ensureUserProfileMusicColumns(): Promise<void> {
     console.warn('⚠️ تعذر ضمان أعمدة موسيقى البروفايل:', (e as any)?.message || e);
   }
 }
+
+// Ensure rooms table has required columns like is_locked
+export async function ensureRoomsColumns(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS rooms
+        ADD COLUMN IF NOT EXISTS is_locked BOOLEAN DEFAULT FALSE;
+    `);
+  } catch (e) {
+    console.warn('⚠️ تعذر ضمان أعمدة جدول الغرف:', (e as any)?.message || e);
+  }
+}

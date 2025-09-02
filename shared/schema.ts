@@ -184,6 +184,7 @@ export const rooms = pgTable('rooms', {
     .references(() => users.id),
   isDefault: boolean('is_default').default(false),
   isActive: boolean('is_active').default(true),
+  isLocked: boolean('is_locked').default(false),
   isBroadcast: boolean('is_broadcast').default(false),
   hostId: integer('host_id').references(() => users.id),
   speakers: text('speakers').default('[]'), // JSON string

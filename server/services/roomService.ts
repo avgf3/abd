@@ -12,6 +12,7 @@ export interface Room {
   createdBy: number;
   isDefault: boolean;
   isActive: boolean;
+  isLocked?: boolean;
   isBroadcast?: boolean;
   hostId?: number | null;
   speakers?: number[];
@@ -230,6 +231,11 @@ class RoomService {
 
       if (!room.isActive) {
         throw new Error('الغرفة غير نشطة');
+      }
+
+      // منع الانضمام إن كانت الغرفة مقفلة
+      if ((room as any).isLocked === true) {
+        throw new Error('الغرفة مقفلة');
       }
 
       const user = await storage.getUser(userId);

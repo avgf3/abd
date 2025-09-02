@@ -1652,6 +1652,8 @@ export class DatabaseService {
           allowed.isActive = (updates as any).isActive;
         if (typeof (updates as any).isBroadcast === 'boolean')
           allowed.isBroadcast = (updates as any).isBroadcast;
+        if (typeof (updates as any).isLocked === 'boolean')
+          (allowed as any).isLocked = (updates as any).isLocked;
         if (typeof (updates as any).hostId !== 'undefined')
           allowed.hostId = (updates as any).hostId;
         if (Object.keys(allowed).length === 0) {
