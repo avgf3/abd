@@ -65,7 +65,7 @@ router.post('/upload', protect.member, limiters.upload, upload.single('story'), 
     const userId = (req as any)?.user?.id as number;
     if (!userId) return res.status(401).json({ error: 'يجب تسجيل الدخول' });
 
-    // التحقق من الصلاحيات - فقط المشرفين يمكنهم رفع الستوري
+    // التحقق من الصلاحيات - الأعضاء والمشرفين يمكنهم رفع الستوري، الزوار لا يمكنهم
     const user = await storage.getUser(userId);
     if (!user) {
       if (req.file) {
@@ -74,11 +74,11 @@ router.post('/upload', protect.member, limiters.upload, upload.single('story'), 
       return res.status(404).json({ error: 'المستخدم غير موجود' });
     }
     
-    if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+    if (user.userType === 'guest') {
       if (req.file) {
         try { await fsp.unlink(req.file.path); } catch {}
       }
-      return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
+      return res.status(403).json({ error: 'هذه الميزة غير متاحة للزوار' });
     }
 
     if (!req.file) return res.status(400).json({ error: 'لم يتم رفع أي ملف' });

@@ -2239,11 +2239,7 @@ export default function ProfileModal({
             </div>
 
             {localUser?.id === currentUser?.id && 
-             currentUser && (
-               currentUser.userType === 'owner' || 
-               currentUser.userType === 'admin' || 
-               currentUser.userType === 'moderator'
-             ) && (
+             currentUser && currentUser.userType !== 'guest' && (
               <button
                 className="change-avatar-btn"
                 onClick={() => avatarInputRef.current?.click()}

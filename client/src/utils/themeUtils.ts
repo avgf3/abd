@@ -131,11 +131,32 @@ const gradientToTransparent = (gradient: string, opacity: number): string => {
   return newGradient;
 };
 
-// دالة لحصول على لون الاسم النهائي (يعتمد فقط على usernameColor)
+// دالة لحصول على لون الاسم النهائي (يعتمد على usernameColor ونوع المستخدم)
 export const getFinalUsernameColor = (user: any): string => {
+  // إذا كان للمستخدم لون مخصص، استخدمه
   const color = user && user.usernameColor ? String(user.usernameColor) : '';
   const cleaned = sanitizeHexColor(color, '');
-  return cleaned || '#000000';
+  if (cleaned) return cleaned;
+  
+  // إذا لم يكن له لون مخصص، استخدم لون حسب نوع المستخدم
+  if (user && user.userType) {
+    switch (user.userType) {
+      case 'owner':
+        return '#FFD700'; // ذهبي للمالك
+      case 'admin':
+        return '#FF4444'; // أحمر للمشرف العام
+      case 'moderator':
+        return '#4A90E2'; // أزرق للمشرف
+      case 'member':
+        return '#2ECC71'; // أخضر للعضو
+      case 'guest':
+        return '#95A5A6'; // رمادي للزائر
+      default:
+        return '#000000';
+    }
+  }
+  
+  return '#000000';
 };
 
 // ===== نظام موحد جديد لتأثيرات صندوق المستخدم مع الملف الشخصي =====

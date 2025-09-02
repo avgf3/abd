@@ -20,12 +20,8 @@ export default function StoriesSettings({ isOpen, onClose, currentUser }: Storie
   const { toast } = useToast();
   const { myStories, fetchMine } = useStories({ autoRefresh: false });
 
-  // التحقق من الصلاحيات
-  const isAuthorized = currentUser && (
-    currentUser.userType === 'owner' || 
-    currentUser.userType === 'admin' || 
-    currentUser.userType === 'moderator'
-  );
+  // التحقق من الصلاحيات - الأعضاء والمشرفين يمكنهم رفع الحالات
+  const isAuthorized = currentUser && currentUser.userType !== 'guest';
 
   const [activeTab, setActiveTab] = useState<'add' | 'mine'>('add');
   const [caption, setCaption] = useState('');
@@ -43,7 +39,7 @@ export default function StoriesSettings({ isOpen, onClose, currentUser }: Storie
       if (!isAuthorized) {
         toast({
           title: 'غير مسموح',
-          description: 'هذه الميزة متاحة للمشرفين فقط',
+          description: 'هذه الميزة غير متاحة للزوار',
           variant: 'destructive',
         });
         return;
