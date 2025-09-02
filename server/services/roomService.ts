@@ -238,10 +238,10 @@ class RoomService {
         throw new Error('المستخدم غير موجود');
       }
 
-      // منع الانضمام إن كانت الغرفة مقفلة (ما عدا المشرفين والمالكين)
+      // منع الانضمام إن كانت الغرفة مقفلة (ما عدا المشرفين والإداريين والمالكين)
       if ((room as any).isLocked === true) {
-        // السماح للمشرفين والمالكين بالدخول للغرف المقفلة
-        if (user.userType !== 'admin' && user.userType !== 'owner') {
+        const isPrivileged = ['admin', 'owner', 'moderator'].includes(user.userType);
+        if (!isPrivileged) {
           throw new Error('الغرفة مقفلة ولا يمكن الدخول إليها');
         }
       }

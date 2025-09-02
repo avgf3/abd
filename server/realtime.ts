@@ -96,33 +96,40 @@ async function joinRoom(
   username: string,
   roomId: string
 ) {
-  // Leave previous room on this socket if any
-  if (socket.currentRoom && socket.currentRoom !== roomId) {
+  // تحقق من الانضمام على مستوى الخدمة أولاً قبل أي انضمام فعلي لغرفة Socket
+  const previousRoom = socket.currentRoom || null;
+  try {
+    await roomService.joinRoom(userId, roomId);
+  } catch (error: any) {
+    socket.emit('message', {
+      type: 'error',
+      message: error.message || 'فشل الانضمام للغرفة',
+      roomId: roomId,
+    });
+    return; // لا نقوم بأي تغيير على غرف Socket في حالة الفشل
+  }
+
+  // إذا نجح الانضمام على مستوى الخدمة، نقوم بتحديث غرف Socket بأمان
+  if (previousRoom && previousRoom !== roomId) {
     try {
-      socket.leave(`room_${socket.currentRoom}`);
-      io.to(`room_${socket.currentRoom}`).emit('message', {
+      socket.leave(`room_${previousRoom}`);
+      io.to(`room_${previousRoom}`).emit('message', {
         type: 'userLeftRoom',
         username,
         userId,
-        roomId: socket.currentRoom,
+        roomId: previousRoom,
       });
     } catch {}
   }
 
-  // Join the new room
-  socket.join(`room_${roomId}`);
-  socket.currentRoom = roomId;
-
   try {
-    await roomService.joinRoom(userId, roomId);
-  } catch (error: any) {
-    // إرسال رسالة خطأ للمستخدم إذا فشل الانضمام (مثلاً الغرفة مقفلة)
-    socket.emit('message', { 
-      type: 'error', 
-      message: error.message || 'فشل الانضمام للغرفة',
-      roomId: roomId
-    });
-    throw error; // إعادة رمي الخطأ ليتم معالجته في المستوى الأعلى
+    socket.join(`room_${roomId}`);
+    socket.currentRoom = roomId;
+  } catch {
+    // في حالة فشل الانضمام عبر Socket، تراجع عن انضمام الخدمة
+    try { await roomService.leaveRoom(userId, roomId); } catch {}
+    socket.emit('message', { type: 'error', message: 'تعذر الانضمام عبر الاتصال' });
+    return;
   }
 
   // Update connectedUsers room for this socket
