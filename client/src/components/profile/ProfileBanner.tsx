@@ -33,6 +33,13 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       });
       return;
     }
+    // السماح برفع البانر فقط للمشرفين أو للمستوى 20+
+    const isModerator = ['owner', 'admin', 'moderator'].includes(currentUser.userType);
+    const lvl = Number(currentUser.level || 1);
+    if (!isModerator && lvl < 20) {
+      toast({ title: 'غير مسموح', description: 'الغلاف للمشرفين أو للمستوى 20 فما فوق', variant: 'destructive' });
+      return;
+    }
 
     const validation = validateFile(file, 'profile_banner');
     if (!validation.isValid) {
@@ -148,24 +155,38 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
         {/* أزرار التحكم */}
         <div className="absolute bottom-3 right-3 flex gap-3">
           {/* زر الكاميرا */}
-          <Button
-            onClick={() => cameraInputRef.current?.click()}
-            disabled={uploading}
-            size="sm"
-            className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-10 h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
-          >
-            <Camera size={16} />
-          </Button>
+          {(() => {
+            const isModerator = !!currentUser && ['owner', 'admin', 'moderator'].includes(currentUser.userType);
+            const lvl = Number(currentUser?.level || 1);
+            const canUploadBanner = isModerator || lvl >= 20;
+            return canUploadBanner ? (
+              <Button
+                onClick={() => cameraInputRef.current?.click()}
+                disabled={uploading}
+                size="sm"
+                className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-10 h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
+              >
+                <Camera size={16} />
+              </Button>
+            ) : null;
+          })()}
 
           {/* زر رفع الملف */}
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            size="sm"
-            className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-10 h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
-          >
-            <Upload size={16} />
-          </Button>
+          {(() => {
+            const isModerator = !!currentUser && ['owner', 'admin', 'moderator'].includes(currentUser.userType);
+            const lvl = Number(currentUser?.level || 1);
+            const canUploadBanner = isModerator || lvl >= 20;
+            return canUploadBanner ? (
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                size="sm"
+                className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 rounded-full w-10 h-10 p-0 shadow-lg transition-all duration-200 hover:scale-110"
+              >
+                <Upload size={16} />
+              </Button>
+            ) : null;
+          })()}
         </div>
       </div>
 

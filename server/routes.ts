@@ -402,12 +402,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: 'المستخدم غير موجود' });
         }
 
-        // التحقق من الصلاحيات - فقط المشرفين يمكنهم رفع البانر
-        if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+        // التحقق من الصلاحيات - المشرفون أو المستخدمون بمستوى 20+
+        const isModerator = user.userType === 'owner' || user.userType === 'admin' || user.userType === 'moderator';
+        const userLevel = Number((user as any).level || 1);
+        if (!isModerator && userLevel < 20) {
           try {
             await fsp.unlink(req.file.path);
           } catch {}
-          return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
+          return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين أو للمستوى 20 فما فوق' });
         }
 
         // 🧠 استخدام النظام الذكي الجديد لمعالجة البانر
@@ -1339,10 +1341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
-      // التحقق من الصلاحيات - فقط المشرفين يمكنهم تغيير لون الاسم
-      if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
-        return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
-      }
+      // فتح تغيير لون الاسم للجميع (مع حماية الملكية)
 
       // تحديث لون الاسم
       await storage.updateUser(userIdNum, { usernameColor: color });
@@ -1985,7 +1984,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'المستخدم غير موجود' });
       }
 
-      // Update username color
+      // Update username color (open to all members)
       await storage.updateUser(userId, { usernameColor: color });
 
       // بث خفيف مخصص للغرف + كامل لصاحب التعديل
@@ -2759,7 +2758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User Update Route with Theme Support
-  app.put('/api/users/:id', async (req, res) => {
+  app.put('/api/users/:id', protect.ownership, async (req, res) => {
     try {
       const { id } = req.params;
       const idNum = parseInt(id);
