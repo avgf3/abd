@@ -215,13 +215,13 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           {/* روابط الشريط العلوي */}
           <div className="flex items-center gap-3 text-sm">
-            <button onClick={() => setLocation('/privacy')} className="text-gray-300 hover:text-white hover:underline">
+            <a href="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors underline">
               سياسة الخصوصية
-            </button>
-            <span className="text-gray-500">|</span>
-            <button onClick={() => setLocation('/terms')} className="text-gray-300 hover:text-white hover:underline">
+            </a>
+            <span className="text-gray-400">|</span>
+            <a href="/terms" className="text-blue-400 hover:text-blue-300 transition-colors underline">
               شروط الاستخدام
-            </button>
+            </a>
           </div>
           {/* الشعار المثبت يساراً: أبيض وأزرق */}
           <div className="flex items-center gap-2 cursor-default select-none">
