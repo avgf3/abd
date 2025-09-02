@@ -200,7 +200,7 @@ export default function TermsOfService() {
             <h2 className="text-xl font-bold mb-4 text-blue-400">12. الاتصال والدعم</h2>
             <p className="text-gray-300 mb-3">للأسئلة أو الاستفسارات حول شروط الاستخدام:</p>
             <ul className="list-disc list-inside space-y-2 text-gray-300 mr-4">
-              <li>البريد الإلكتروني: support@arabicchat.com</li>
+              <li>البريد الإلكتروني: abdalkaremmo999@gmail.com</li>
               <li>قسم المساعدة في الموقع</li>
               <li>الإبلاغ عن المشاكل عبر نموذج الاتصال</li>
             </ul>
