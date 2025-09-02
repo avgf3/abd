@@ -179,7 +179,7 @@ export default function PrivacyPolicy() {
               إذا كان لديك أي أسئلة أو استفسارات حول سياسة الخصوصية، يمكنك التواصل معنا عبر:
             </p>
             <ul className="list-disc list-inside space-y-2 text-gray-300 mr-4 mt-3">
-              <li>البريد الإلكتروني: privacy@arabicchat.com</li>
+              <li>البريد الإلكتروني: abdalkaremmo999@gmail.com</li>
               <li>نموذج الاتصال في الموقع</li>
               <li>قسم المساعدة والدعم</li>
             </ul>
