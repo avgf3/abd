@@ -63,6 +63,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
   onToggleLock,
 }) => {
   const isAdmin = currentUser && ['owner', 'admin'].includes(currentUser.userType);
+  const canModerate = currentUser && ['owner', 'admin', 'moderator'].includes(currentUser.userType);
   const canDelete = isAdmin && !room.isDefault && onDelete;
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -91,8 +92,8 @@ const RoomCard: React.FC<RoomCardProps> = ({
 
   // معلومات الغرفة
   const RoomInfo = () => {
-    // تحديد إذا كان المستخدم مشرف أو مالك
-    const isAdminOrOwner = currentUser?.userType === 'admin' || currentUser?.userType === 'owner';
+    // اعتبار المشرف كإداري أيضاً
+    const isAdminOrOwner = ['admin', 'owner', 'moderator'].includes(currentUser?.userType || 'guest');
     
     // إخفاء اسم الغرفة المقفلة للمستخدمين غير المشرفين
     const displayName = room.isLocked && !isAdminOrOwner ? '🔒 غرفة مقفلة' : room.name;
@@ -131,9 +132,9 @@ const RoomCard: React.FC<RoomCardProps> = ({
         <RoomIcon />
         <RoomInfo />
 
-        {(isAdmin || canDelete) && (
+        {(canModerate || canDelete) && (
           <div className="flex items-center gap-1">
-            {isAdmin && onToggleLock && (
+            {canModerate && onToggleLock && (
               <Button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -182,7 +183,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
   // عرض الشبكة
   if (viewMode === 'grid') {
     // تحديد إذا كان المستخدم مشرف أو مالك
-    const isAdminOrOwner = currentUser?.userType === 'admin' || currentUser?.userType === 'owner';
+    const isAdminOrOwner = ['admin', 'owner', 'moderator'].includes(currentUser?.userType || 'guest');
     
     // إخفاء اسم الغرفة المقفلة للمستخدمين غير المشرفين
     const displayName = room.isLocked && !isAdminOrOwner ? '🔒 غرفة مقفلة' : room.name;
@@ -248,7 +249,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
 
   // عرض المحدد (شاشة اختيار الغرفة)
   // تحديد إذا كان المستخدم مشرف أو مالك
-  const isAdminOrOwner = currentUser?.userType === 'admin' || currentUser?.userType === 'owner';
+  const isAdminOrOwner = ['admin', 'owner', 'moderator'].includes(currentUser?.userType || 'guest');
   
   // إخفاء اسم الغرفة المقفلة للمستخدمين غير المشرفين
   const displayName = room.isLocked && !isAdminOrOwner ? '🔒 غرفة مقفلة' : room.name;
