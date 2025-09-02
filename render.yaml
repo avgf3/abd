@@ -30,6 +30,10 @@ services:
     healthCheckPath: /api/health
     numInstances: 1
     plan: free
+    disks:
+      - name: uploads
+        mountPath: /opt/render/project/src/client/public/uploads
+        sizeGB: 1
     # إعدادات محسنة لـ Socket.IO
     buildFilter:
       paths:

@@ -136,7 +136,19 @@ const musicStorage = multer.diskStorage({
   },
   filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
+    const mimeToExt: Record<string, string> = {
+      'audio/mpeg': '.mp3',
+      'audio/mp3': '.mp3',
+      'audio/ogg': '.ogg',
+      'audio/webm': '.webm',
+      'audio/wav': '.wav',
+      'audio/mp4': '.m4a',
+      'audio/x-m4a': '.m4a',
+      'audio/aac': '.aac',
+    };
+    const extFromMime = mimeToExt[file.mimetype] || '';
+    const extFromName = path.extname(file.originalname || '') || '';
+    const ext = extFromMime || extFromName || '.mp3';
     cb(null, `music-${uniqueSuffix}${ext}`);
   },
 });
@@ -144,7 +156,16 @@ const musicUpload = multer({
   storage: musicStorage,
   limits: { fileSize: 10 * 1024 * 1024, files: 1, fieldSize: 64 * 1024, parts: 10 },
   fileFilter: (_req, file, cb) => {
-    const ok = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/wav'].includes(
+    const ok = [
+      'audio/mpeg',
+      'audio/mp3',
+      'audio/ogg',
+      'audio/webm',
+      'audio/wav',
+      'audio/mp4',
+      'audio/x-m4a',
+      'audio/aac',
+    ].includes(
       file.mimetype
     );
     if (!ok) return cb(new Error(`نوع ملف الصوت غير مدعوم: ${file.mimetype}`));

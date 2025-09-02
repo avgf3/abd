@@ -379,7 +379,7 @@ export const limiters = {
   roomMessagesRead: createRateLimiter('roomMessagesRead', 90, 60_000),
   search: createRateLimiter('search', 30, 60_000),
   // Upload endpoints
-  upload: createRateLimiter('upload', 8, 60_000),
+  upload: createRateLimiter('upload', 16, 60_000),
   // Auth and moderation
   auth: createRateLimiter('auth', 10, 60_000),
   modReport: createRateLimiter('modReport', 10, 60_000),

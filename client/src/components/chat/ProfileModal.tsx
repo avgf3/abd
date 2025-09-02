@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PointsSentNotification from '@/components/ui/PointsSentNotification';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, api } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getProfileImageSrc, getBannerImageSrc } from '@/utils/imageUtils';
 import { formatPoints, getLevelInfo } from '@/utils/pointsUtils';
@@ -71,6 +71,7 @@ export default function ProfileModal({
   const [musicVolume, setMusicVolume] = useState<number>(
     typeof localUser?.profileMusicVolume === 'number' ? localUser.profileMusicVolume : 70
   );
+  const [musicAutoplayBlocked, setMusicAutoplayBlocked] = useState<boolean>(false);
   
   // ضبط مستوى الصوت عند تحميل الصوت
   useEffect(() => {
@@ -78,6 +79,24 @@ export default function ProfileModal({
       audioRef.current.volume = Math.max(0, Math.min(1, musicVolume / 100));
     }
   }, [musicVolume, localUser?.profileMusicUrl]);
+  // محاولة تشغيل تلقائيًا مع التقاط رفض المتصفح
+  useEffect(() => {
+    if (!musicEnabled || !localUser?.profileMusicUrl) return;
+    const el = audioRef.current;
+    if (!el) return;
+    const tryPlay = async () => {
+      try {
+        el.volume = Math.max(0, Math.min(1, (musicVolume || 70) / 100));
+        await el.play();
+        setMusicAutoplayBlocked(false);
+      } catch {
+        setMusicAutoplayBlocked(true);
+      }
+    };
+    // تأخير بسيط بعد تركيب العنصر
+    const id = setTimeout(tryPlay, 50);
+    return () => clearTimeout(id);
+  }, [musicEnabled, localUser?.profileMusicUrl]);
   
 
   // تحديث الحالة المحلية عند تغيير المستخدم
@@ -2108,6 +2127,29 @@ export default function ProfileModal({
                     <span style={{ color: '#fff', fontSize: '12px', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {musicTitle || 'موسيقى البروفايل'}
                     </span>
+                    {musicAutoplayBlocked && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            if (audioRef.current) {
+                              audioRef.current.muted = false;
+                              audioRef.current.volume = Math.max(0, Math.min(1, (musicVolume || 70) / 100));
+                              await audioRef.current.play();
+                              setMusicAutoplayBlocked(false);
+                            }
+                          } catch {}
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: 6,
+                          border: '1px solid rgba(255,255,255,0.25)',
+                          background: 'rgba(255,255,255,0.12)',
+                          color: '#fff',
+                          fontSize: 12,
+                        }}
+                        title="تشغيل"
+                      >▶️ تشغيل</button>
+                    )}
                   </div>
                 )}
                 
@@ -2487,7 +2529,8 @@ export default function ProfileModal({
                               const fd = new FormData();
                               fd.append('music', file);
                               if (musicTitle) fd.append('title', musicTitle);
-                              const res = await apiRequest(`/api/upload/profile-music`, { method: 'POST', body: fd });
+                              // استخدم api.upload لدعم progress و timeout أطول
+                              const res = await api.upload(`/api/upload/profile-music`, fd, { timeout: 120000 });
                               const url = (res as any)?.url;
                               const title = (res as any)?.title;
                               if (url) {
