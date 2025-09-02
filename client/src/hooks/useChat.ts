@@ -831,8 +831,12 @@ export const useChat = () => {
             
             // عرض رسالة الخطأ للمستخدم إذا كانت تتعلق بغرفة مقفلة
             if (envelope.message && (envelope.message.includes('مقفلة') || envelope.message.includes('locked'))) {
-              // استخدام toast أو alert لعرض الرسالة
-              alert(envelope.message);
+              // إرسال حدث مخصص لعرض رسالة خطأ
+              try {
+                window.dispatchEvent(new CustomEvent('roomLockError', { 
+                  detail: { message: envelope.message }
+                }));
+              } catch {}
             }
             break;
           }

@@ -111,6 +111,18 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     fetchRooms(false).catch(() => {});
   }, [fetchRooms]);
 
+  // الاستماع لأخطاء الغرف المقفلة
+  useEffect(() => {
+    const handleRoomLockError = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const message = customEvent.detail?.message || 'الغرفة مقفلة ولا يمكن الدخول إليها';
+      showErrorToast(message, 'غرفة مقفلة');
+    };
+
+    window.addEventListener('roomLockError', handleRoomLockError);
+    return () => window.removeEventListener('roomLockError', handleRoomLockError);
+  }, [showErrorToast]);
+
   // 🚀 دوال إدارة الغرف المحسنة
   const handleRoomChange = useCallback(
     async (roomId: string) => {
