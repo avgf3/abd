@@ -299,3 +299,78 @@ export async function ensureRoomsColumns(): Promise<void> {
     console.warn('⚠️ تعذر ضمان أعمدة جدول الغرف:', (e as any)?.message || e);
   }
 }
+
+// Ensure users table has all required columns used by the application
+export async function ensureUsersColumns(): Promise<void> {
+  try {
+    if (!dbAdapter.client) return;
+
+    // Add missing columns with safe defaults. This is idempotent.
+    await dbAdapter.client.unsafe(`
+      ALTER TABLE IF EXISTS users
+        ADD COLUMN IF NOT EXISTS display_name TEXT,
+        ADD COLUMN IF NOT EXISTS user_type TEXT DEFAULT 'guest',
+        ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'guest',
+        ADD COLUMN IF NOT EXISTS profile_image TEXT,
+        ADD COLUMN IF NOT EXISTS profile_banner TEXT,
+        ADD COLUMN IF NOT EXISTS profile_background_color TEXT DEFAULT '#3c0d0d',
+        ADD COLUMN IF NOT EXISTS avatar_hash TEXT,
+        ADD COLUMN IF NOT EXISTS avatar_version INTEGER DEFAULT 1,
+        ADD COLUMN IF NOT EXISTS status TEXT,
+        ADD COLUMN IF NOT EXISTS gender TEXT,
+        ADD COLUMN IF NOT EXISTS age INTEGER,
+        ADD COLUMN IF NOT EXISTS country TEXT,
+        ADD COLUMN IF NOT EXISTS relation TEXT,
+        ADD COLUMN IF NOT EXISTS bio TEXT,
+        ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS last_seen TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS join_date TIMESTAMP DEFAULT NOW(),
+        ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+        ADD COLUMN IF NOT EXISTS is_muted BOOLEAN DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS mute_expiry TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS ban_expiry TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS ip_address VARCHAR(45),
+        ADD COLUMN IF NOT EXISTS device_id VARCHAR(100),
+        ADD COLUMN IF NOT EXISTS ignored_users TEXT DEFAULT '[]',
+        ADD COLUMN IF NOT EXISTS username_color TEXT DEFAULT '#FFFFFF',
+        ADD COLUMN IF NOT EXISTS profile_effect TEXT DEFAULT 'none',
+        ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS level INTEGER DEFAULT 1,
+        ADD COLUMN IF NOT EXISTS total_points INTEGER DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS level_progress INTEGER DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS profile_music_url TEXT,
+        ADD COLUMN IF NOT EXISTS profile_music_title TEXT,
+        ADD COLUMN IF NOT EXISTS profile_music_enabled BOOLEAN DEFAULT TRUE,
+        ADD COLUMN IF NOT EXISTS profile_music_volume INTEGER DEFAULT 70
+    `);
+
+    // Normalize NULLs to defaults where appropriate
+    await dbAdapter.client.unsafe(`
+      UPDATE users
+      SET
+        profile_background_color = COALESCE(profile_background_color, '#3c0d0d'),
+        username_color = COALESCE(username_color, '#FFFFFF'),
+        profile_effect = COALESCE(profile_effect, 'none'),
+        is_online = COALESCE(is_online, FALSE),
+        is_hidden = COALESCE(is_hidden, FALSE),
+        is_muted = COALESCE(is_muted, FALSE),
+        is_banned = COALESCE(is_banned, FALSE),
+        is_blocked = COALESCE(is_blocked, FALSE),
+        avatar_version = COALESCE(avatar_version, 1),
+        points = COALESCE(points, 0),
+        level = COALESCE(level, 1),
+        total_points = COALESCE(total_points, 0),
+        level_progress = COALESCE(level_progress, 0),
+        profile_music_enabled = COALESCE(profile_music_enabled, TRUE),
+        profile_music_volume = COALESCE(profile_music_volume, 70),
+        ignored_users = COALESCE(ignored_users, '[]'),
+        user_type = COALESCE(user_type, 'guest'),
+        role = COALESCE(role, COALESCE(user_type, 'guest'))
+    `);
+  } catch (e) {
+    console.warn('⚠️ تعذر ضمان أعمدة جدول المستخدمين:', (e as any)?.message || e);
+  }
+}

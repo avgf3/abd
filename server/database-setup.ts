@@ -20,6 +20,7 @@ import {
 import { ensureStoriesTables } from './database-adapter';
 import { ensureUserProfileMusicColumns } from './database-adapter';
 import { ensureRoomsColumns } from './database-adapter';
+import { ensureUsersColumns } from './database-adapter';
 
 // إعادة تصدير دالة التهيئة من المحول
 export { initializeDatabase } from './database-adapter';
@@ -268,6 +269,13 @@ export async function initializeSystem(): Promise<boolean> {
       await ensureRoomsColumns();
     } catch (e) {
       console.warn('⚠️ تعذر ضمان أعمدة الغرف:', (e as any)?.message || e);
+    }
+
+    // ضمان أعمدة جدول المستخدمين (display_name وغيرها) في حال لم تُطبق الهجرات
+    try {
+      await ensureUsersColumns();
+    } catch (e) {
+      console.warn('⚠️ تعذر ضمان أعمدة المستخدمين:', (e as any)?.message || e);
     }
 
     // إنشاء الغرف الافتراضية إذا كانت غير موجودة (بعد الهجرات)
