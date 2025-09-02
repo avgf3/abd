@@ -442,9 +442,12 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
 
         {/* القسم العاشر - الصوتيات */}
         <div className="bg-indigo-700 text-white p-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">🎵 الصوتيات</h2>
+          <h2 className="text-3xl font-bold mb-4">🎧 اسمع صوتيات أصدقائك مباشرة من بروفايلهم!</h2>
           <p className="text-lg leading-relaxed max-w-4xl mx-auto">
-            يمكنك الاستماع لجميع محطات الراديو والصوتيات
+            🔊 شغّل المقاطع الصوتية من الملف الشخصي بضغطة وحدة.
+          </p>
+          <p className="text-lg mt-2 leading-relaxed max-w-4xl mx-auto">
+            🎵 ملفك الشخصي صار أمتع… أضف وشارك صوتياتك مع الجميع.
           </p>
         </div>
 
