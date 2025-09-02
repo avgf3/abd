@@ -2337,7 +2337,11 @@ export default function ProfileModal({
                 <p>
                   ⭐ مستوى العضو: <span>مستوى {localUser?.level || 1}</span>
                 </p>
-                {currentUser && currentUser.userType !== 'guest' && (
+                {currentUser && (
+                  currentUser.userType === 'owner' || 
+                  currentUser.userType === 'admin' || 
+                  currentUser.userType === 'moderator'
+                ) && (
                   <>
                     <p onClick={() => setCurrentEditType('theme')} style={{ cursor: 'pointer' }}>
                       🎨 لون الملف الشخصي: <span>اضغط للتغيير</span>
@@ -2347,7 +2351,11 @@ export default function ProfileModal({
                     </p>
                   </>
                 )}
-                {currentUser && currentUser.userType !== 'guest' && (
+                {currentUser && (
+                  currentUser.userType === 'owner' || 
+                  currentUser.userType === 'admin' || 
+                  currentUser.userType === 'moderator'
+                ) && (
                   <div
                     style={{
                       marginTop: '8px',
