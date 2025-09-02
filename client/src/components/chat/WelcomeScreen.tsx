@@ -522,7 +522,7 @@ export default function WelcomeScreen({ onUserLogin }: WelcomeScreenProps) {
                 شروط الاستخدام
               </a>
             </div>
-            <p className="text-sm text-blue-300">جميع و تعارف من جميع أنحاء العالم بدون تسجيل</p>
+            <p className="text-sm text-blue-300">💬 انضم إلى شات عربي وتعرف على الجميع بسهولة ومن أي مكان بالعالم… بدون أي تسجيل.</p>
           </div>
         </div>
       </div>
