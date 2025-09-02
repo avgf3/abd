@@ -505,8 +505,8 @@ export default function MessageArea({
                       </div>
                     )}
 
-                    {/* Inline row: badge, name, content */}
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                    {/* Inline row (desktop) / Stacked (mobile): badge, name, content */}
+                    <div className={`flex-1 min-w-0 flex ${isMobile ? 'flex-col items-start gap-1' : 'items-center gap-2'}`}>
                       {message.sender && (
                         <UserRoleBadge user={message.sender} showOnlyIcon={true} hideGuestAndGender={true} size={16} />
                       )}
@@ -518,7 +518,7 @@ export default function MessageArea({
                         {message.sender?.username}
                       </button>
 
-                      <div className="text-gray-800 break-words truncate flex-1 message-content-fix">
+                      <div className={`text-gray-800 break-words ${isMobile ? '' : 'truncate'} flex-1 message-content-fix`}>
                         {message.messageType === 'image' ? (
                           <img
                             src={message.content}
