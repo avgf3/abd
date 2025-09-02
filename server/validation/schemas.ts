@@ -27,6 +27,11 @@ export const registerSchema = z.object({
 });
 
 export const updateProfileSchema = z.object({
+  username: z.string()
+    .min(1, 'اسم المستخدم مطلوب')
+    .max(14, 'اسم المستخدم يجب ألا يتجاوز 14 حرف')
+    .transform(val => val.trim())
+    .optional(),
   displayName: z.string()
     .min(1, 'الاسم المعروض مطلوب')
     .max(50, 'الاسم المعروض طويل جداً')

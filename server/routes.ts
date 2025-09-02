@@ -267,14 +267,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: 'المستخدم غير موجود' });
         }
 
-        // التحقق من الصلاحيات - فقط المشرفين يمكنهم رفع الصور
-        if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+        // التحقق من الصلاحيات - متاح للأعضاء والإدارة (غير الضيوف)
+        if (user.userType === 'guest') {
           try {
             await fsp.unlink(req.file.path);
           } catch (unlinkError) {
             console.error('خطأ في حذف الملف:', unlinkError);
           }
-          return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
+          return res.status(403).json({ error: 'رفع الصورة متاح للأعضاء فقط' });
         }
 
         // 🧠 استخدام النظام الذكي الجديد لمعالجة الصور
@@ -402,12 +402,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: 'المستخدم غير موجود' });
         }
 
-        // التحقق من الصلاحيات - فقط المشرفين يمكنهم رفع البانر
-        if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+        // التحقق من الصلاحيات - متاح للأعضاء والإدارة (غير الضيوف)
+        if (user.userType === 'guest') {
           try {
             await fsp.unlink(req.file.path);
           } catch {}
-          return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
+          return res.status(403).json({ error: 'رفع البانر متاح للأعضاء فقط' });
         }
 
         // 🧠 استخدام النظام الذكي الجديد لمعالجة البانر
@@ -511,10 +511,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: 'المستخدم غير موجود' });
         }
 
-        // التحقق من الصلاحيات - فقط المشرفين يمكنهم رفع الموسيقى
-        if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
+        // التحقق من الصلاحيات - متاح للأعضاء والإدارة (غير الضيوف)
+        if (user.userType === 'guest') {
           try { await fsp.unlink(req.file.path); } catch {}
-          return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
+          return res.status(403).json({ error: 'رفع الصوت متاح للأعضاء فقط' });
         }
 
         // تكون الملفات ضمن /uploads/music
@@ -1339,10 +1339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'المستخدم غير موجود' });
       }
 
-      // التحقق من الصلاحيات - فقط المشرفين يمكنهم تغيير لون الاسم
-      if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
-        return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
-      }
+      // السماح للجميع بتغيير لون الاسم (مع تحقق الملكية عبر middleware)
 
       // تحديث لون الاسم
       await storage.updateUser(userIdNum, { usernameColor: color });
@@ -2769,20 +2766,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updates = req.body || {};
 
-      // التحقق من الصلاحيات للتأثيرات والألوان
-      if (updates.profileBackgroundColor || updates.profileEffect) {
-        const user = await storage.getUser(idNum);
-        if (!user) {
-          return res.status(404).json({ error: 'User not found' });
-        }
-        
-        if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
-          return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
+      // السماح للجميع بتعديل الاسم والاسم المعروض ولون الاسم
+      const allowedSimpleFields = new Set(['username', 'displayName', 'usernameColor']);
+      const normalizedUpdates: any = {};
+      for (const [key, value] of Object.entries(updates)) {
+        if (allowedSimpleFields.has(key)) {
+          normalizedUpdates[key] = value;
         }
       }
 
+      // إزالة قيد الإدارة: السماح للجميع بتحديث الثيم/التأثير مع تحقق من الملكية عبر الواجهة الأخرى عند الحاجة
+
       // Normalize profileBackgroundColor: allow full linear-gradient strings, otherwise sanitize HEX or fallback
-      const normalizedUpdates: any = { ...updates };
+      Object.assign(normalizedUpdates, updates);
       if (typeof normalizedUpdates.profileBackgroundColor === 'string') {
         const str = String(normalizedUpdates.profileBackgroundColor).trim();
         if (str.startsWith('linear-gradient(')) {
@@ -4043,6 +4039,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const payload: any = {
       id: sanitized.id,
       username: sanitized.username,
+      displayName: sanitized.displayName || undefined,
       userType: sanitized.userType,
       role: sanitized.role,
       usernameColor: sanitized.usernameColor,
