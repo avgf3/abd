@@ -141,7 +141,7 @@ export default function WallPostList({
               <div className="mb-4 rounded-xl overflow-hidden bg-muted/10">
                 <img
                   src={post.imageUrl}
-                  alt="منشور"
+                  alt={`صورة منشور من ${post.username}`}
                   className="w-full h-auto object-cover max-h-80 hover:scale-105 transition-transform duration-300 cursor-pointer"
                   onClick={() => setImageLightbox({ open: true, src: post.imageUrl! })}
                 />

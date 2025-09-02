@@ -4,7 +4,7 @@ import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ImageLightbox from '@/components/ui/ImageLightbox';
 import UserRoleBadge from '@/components/chat/UserRoleBadge';
 import { Input } from '@/components/ui/input';
@@ -637,6 +637,9 @@ export default function PrivateMessageBox({
         }}
       >
         <DialogContent className="max-w-3xl w-[92vw] p-2 bg-black/80">
+          <DialogHeader>
+            <DialogTitle>مشغل فيديو يوتيوب</DialogTitle>
+          </DialogHeader>
           <div className="flex justify-end">
             <button
               onClick={() => setYoutubeModal({ open: false, videoId: null })}
@@ -653,7 +656,7 @@ export default function PrivateMessageBox({
                 className="absolute inset-0 w-full h-full rounded"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
-                title="YouTube video"
+                title="تشغيل فيديو من يوتيوب"
               />
             )}
           </div>

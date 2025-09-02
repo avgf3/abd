@@ -153,9 +153,11 @@ export default function StoriesSettings({ isOpen, onClose, currentUser }: Storie
                     <div key={s.id} className="flex items-center gap-3 p-2 rounded-lg border border-slate-700">
                       <div className="w-16 h-16 bg-black rounded overflow-hidden flex items-center justify-center">
                         {s.mediaType === 'video' ? (
-                          <video src={s.mediaUrl} className="w-full h-full object-cover" muted />
+                          <video src={s.mediaUrl} className="w-full h-full object-cover" muted title="معاينة فيديو القصة">
+                            <track kind="captions" src="data:text/vtt,WEBVTT" srcLang="ar" label="ترجمة" />
+                          </video>
                         ) : (
-                          <img src={s.mediaUrl} className="w-full h-full object-cover" />
+                          <img src={s.mediaUrl} className="w-full h-full object-cover" alt="معاينة صورة القصة" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">

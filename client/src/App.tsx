@@ -53,7 +53,15 @@ function App() {
         <ComposerStyleProvider>
           <TooltipProvider>
             <Toaster />
-            <Router />
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:right-2 focus:bg-black focus:text-white focus:px-3 focus:py-2 focus:rounded"
+            >
+              تخطِ إلى المحتوى الرئيسي
+            </a>
+            <main id="main-content" role="main">
+              <Router />
+            </main>
           </TooltipProvider>
         </ComposerStyleProvider>
       </UserProvider>
