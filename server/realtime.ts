@@ -511,18 +511,18 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
           if (!existing) {
             connectedUsers.set(user.id, {
               user,
-              sockets: new Map([[socket.id, { room: GENERAL_ROOM, lastSeen: new Date() }]]),
+              sockets: new Map([[socket.id, { room: null, lastSeen: new Date() }]]),
               lastSeen: new Date(),
             });
           } else {
             existing.user = user;
-            existing.sockets.set(socket.id, { room: GENERAL_ROOM, lastSeen: new Date() });
+            existing.sockets.set(socket.id, { room: null, lastSeen: new Date() });
             existing.lastSeen = new Date();
             connectedUsers.set(user.id, existing);
           }
 
-          // Auto join general room
-          await joinRoom(io, socket, user.id, user.username, GENERAL_ROOM);
+          // لا نضم المستخدم تلقائياً لأي غرفة - ندعه يختار
+          // await joinRoom(io, socket, user.id, user.username, GENERAL_ROOM);
 
           socket.emit('authenticated', { message: 'تم الاتصال بنجاح', user });
         } catch (err) {
@@ -540,7 +540,11 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
         socket.emit('message', { type: 'error', message: 'يجب تسجيل الدخول أولاً' });
         return;
       }
-      const roomId = data && data.roomId ? String(data.roomId) : GENERAL_ROOM;
+      const roomId = data && data.roomId ? String(data.roomId) : null;
+      if (!roomId) {
+        socket.emit('message', { type: 'error', message: 'يجب تحديد الغرفة' });
+        return;
+      }
       const username = socket.username || `User#${socket.userId}`;
       try {
         // منع الانضمام المتكرر لنفس الغرفة أو الطلبات المتقاربة جداً
