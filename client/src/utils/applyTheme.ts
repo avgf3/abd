@@ -149,7 +149,15 @@ export function applyThemeById(themeId: string, persist: boolean = false) {
 
   const theme = themes[themeId] || themes.default;
   const root = document.documentElement;
-  Object.entries(theme.cssVars).forEach(([property, value]) => {
+  const finalCssVars: Record<string, string> = { ...theme.cssVars };
+  // Ensure solid variables exist for Tailwind mappings
+  if (finalCssVars['--background'] && !finalCssVars['--background-solid']) {
+    finalCssVars['--background-solid'] = finalCssVars['--background'];
+  }
+  if (finalCssVars['--primary'] && !finalCssVars['--primary-solid']) {
+    finalCssVars['--primary-solid'] = finalCssVars['--primary'];
+  }
+  Object.entries(finalCssVars).forEach(([property, value]) => {
     root.style.setProperty(property, value);
   });
 
