@@ -13,7 +13,7 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       colors: {
-        background: 'var(--background)',
+        background: 'var(--background-solid)',
         foreground: 'var(--foreground)',
         card: {
           DEFAULT: 'var(--card)',
@@ -24,11 +24,11 @@ export default {
           foreground: 'var(--popover-foreground)',
         },
         primary: {
-          DEFAULT: 'var(--primary)',
+          DEFAULT: 'var(--primary-solid)',
           foreground: 'var(--primary-foreground)',
         },
         secondary: {
-          DEFAULT: 'var(--secondary)',
+          DEFAULT: 'var(--secondary-solid)',
           foreground: 'var(--secondary-foreground)',
         },
         muted: {
@@ -36,11 +36,11 @@ export default {
           foreground: 'var(--muted-foreground)',
         },
         accent: {
-          DEFAULT: 'var(--accent)',
+          DEFAULT: 'var(--accent-solid)',
           foreground: 'var(--accent-foreground)',
         },
         destructive: {
-          DEFAULT: 'var(--destructive)',
+          DEFAULT: 'var(--destructive-solid)',
           foreground: 'var(--destructive-foreground)',
         },
         border: 'var(--border)',
