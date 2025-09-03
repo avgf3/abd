@@ -43,12 +43,32 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData, topicSl
   const [, setLocation] = useLocation();
 
   // Helpers
-  const toSlug = (value: string) =>
-    value
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/[^\u0600-\u06FF0-9\-]+/g, '')
-      .toLowerCase();
+  const toSlug = (value: string) => {
+    if (!value) return '';
+    const map: Record<string, string> = {
+      'أ': 'a', 'إ': 'i', 'آ': 'aa', 'ا': 'a', 'ب': 'b', 'ت': 't', 'ث': 'th', 'ج': 'j', 'ح': 'h', 'خ': 'kh',
+      'د': 'd', 'ذ': 'dh', 'ر': 'r', 'ز': 'z', 'س': 's', 'ش': 'sh', 'ص': 's', 'ض': 'd', 'ط': 't', 'ظ': 'z',
+      'ع': 'a', 'غ': 'gh', 'ف': 'f', 'ق': 'q', 'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h', 'و': 'u',
+      'ؤ': 'u', 'ي': 'y', 'ى': 'a', 'ئ': 'i', 'ء': '', 'ة': 'h',
+      '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9',
+      'ٔ': '', 'ً': '', 'ٌ': '', 'ٍ': '', 'َ': '', 'ُ': '', 'ِ': '', 'ّ': '', 'ْ': ''
+    };
+    const normalized = value.trim().replace(/\u0644\u0627/g, 'la').replace(/\s+/g, '-');
+    let ascii = '';
+    for (const ch of normalized) {
+      const code = ch.charCodeAt(0);
+      if (map[ch] !== undefined) {
+        ascii += map[ch];
+      } else if ((code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || ch === '-') {
+        ascii += ch;
+      } else if (ch === '_' || ch === ' ') {
+        ascii += '-';
+      }
+    }
+    ascii = ascii.replace(/\bshat\b/g, 'chat');
+    ascii = ascii.replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase();
+    return ascii;
+  };
 
   const activeTopic = (() => {
     if (!topicSlug) return undefined;
@@ -398,7 +418,7 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData, topicSl
                     className={`block p-3 rounded-xl text-white transition-all duration-300 border ${
                       isActive
                         ? 'bg-gradient-to-r from-yellow-500/30 to-pink-500/30 border-white/40 ring-2 ring-yellow-300'
-                        : 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 border-white/10 hover:border-white/30 hover:transform hover:scale-105'
+                        : 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 border-white/10 hover:border-white/30'
                     }`}
                   >
                     <p className="font-semibold">{link.name}</p>
@@ -428,7 +448,7 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData, topicSl
                       className={`block p-3 rounded-xl text-white transition-all duration-300 border ${
                         isActive
                           ? 'bg-gradient-to-r from-yellow-500/30 to-pink-500/30 border-white/40 ring-2 ring-yellow-300'
-                          : 'bg-gradient-to-r from-green-600/20 to-cyan-600/20 hover:from-green-600/30 hover:to-cyan-600/30 border-white/10 hover:border-white/30 hover:transform hover:scale-105'
+                          : 'bg-gradient-to-r from-green-600/20 to-cyan-600/20 hover:from-green-600/30 hover:to-cyan-600/30 border-white/10 hover:border-white/30'
                       }`}
                     >
                       <p className="font-semibold">{name}</p>
@@ -437,19 +457,7 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData, topicSl
                 })}
               </div>
 
-              {/* General cross links inside topic */}
-              <div className="mt-8">
-                <h4 className="text-xl font-bold text-center mb-4 text-white">روابط عامة</h4>
-                <div className="flex flex-wrap justify-center gap-3">
-                  <a href="/jordan" className="text-blue-300 hover:text-blue-200 transition-colors">شات أردني</a>
-                  <span className="text-gray-500">|</span>
-                  <a href="/palestine" className="text-blue-300 hover:text-blue-200 transition-colors">شات فلسطيني</a>
-                  <span className="text-gray-500">|</span>
-                  <a href="/palestine/%D8%B4%D8%A7%D8%AA-%D8%A7%D9%84%D9%82%D8%AF%D8%B3" className="text-blue-300 hover:text-blue-200 transition-colors">شات القدس</a>
-                  <span className="text-gray-500">|</span>
-                  <a href="/arabic" className="text-blue-300 hover:text-blue-200 transition-colors">شات أحلا عالم</a>
-                </div>
-              </div>
+              {/* روابط عامة تم نقلها إلى أسفل الصفحة لتجنب تشتيت المستخدم داخل الموضوع */}
             </div>
           )}
 
@@ -485,6 +493,22 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData, topicSl
             </div>
           </div>
           </>
+        </div>
+      </div>
+
+      {/* روابط عامة منقولة - أسفل الصفحة */}
+      <div className="px-4 pb-8">
+        <div className="max-w-6xl mx-auto mt-10 glass-effect p-6 rounded-2xl border border-white/20">
+          <h3 className="text-2xl font-bold text-center mb-4 text-white">استكشف دردشات أخرى</h3>
+          <div className="flex flex-wrap justify-center gap-3 text-center">
+            <a href="/" className="text-blue-300 hover:text-blue-200 transition-colors">الرئيسية</a>
+            <span className="text-gray-500">|</span>
+            <a href="/jordan" className="text-blue-300 hover:text-blue-200 transition-colors">شات أردني</a>
+            <span className="text-gray-500">|</span>
+            <a href="/palestine" className="text-blue-300 hover:text-blue-200 transition-colors">شات فلسطيني</a>
+            <span className="text-gray-500">|</span>
+            <a href="/arabic" className="text-blue-300 hover:text-blue-200 transition-colors">دردشة عربية عامة</a>
+          </div>
         </div>
       </div>
 
