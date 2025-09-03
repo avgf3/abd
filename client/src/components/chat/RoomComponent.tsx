@@ -98,7 +98,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
     return (
       <div className="flex-1 min-w-0">
         <div className={`font-medium ${compact ? 'text-sm' : 'text-base'} flex items-center gap-2 min-w-0`}>
-          <span className="truncate">{room.name}</span>
+          <span className="truncate transition-colors duration-300 group-hover:text-primary" title={room.name}>{room.name}</span>
           <span className="flex items-center gap-1 flex-shrink-0">
             {room.isBroadcast && <Mic className="w-3 h-3 text-orange-500" />}
             {room.isLocked && <Lock className="w-3 h-3 text-yellow-600" />}
