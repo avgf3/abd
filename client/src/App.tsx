@@ -7,11 +7,13 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { UserProvider } from '@/contexts/UserContext';
 import { ComposerStyleProvider } from '@/contexts/ComposerStyleContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 import ChatPage from '@/pages/chat';
 import ArabicChat from '@/pages/ArabicChat';
 import CountryChat from '@/pages/CountryChat';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import TermsOfService from '@/pages/TermsOfService';
+import { BotControl } from '@/pages/admin/BotControl';
 
 function Router() {
   return (
@@ -49,22 +51,25 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <UserProvider>
-        <ComposerStyleProvider>
-          <TooltipProvider>
-            <Toaster />
-            <a
-              href="#main-content"
-              className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:right-2 focus:bg-black focus:text-white focus:px-3 focus:py-2 focus:rounded"
-            >
-              تخطِ إلى المحتوى الرئيسي
-            </a>
-            <main id="main-content" role="main">
-              <Router />
-            </main>
-          </TooltipProvider>
-        </ComposerStyleProvider>
-      </UserProvider>
+      <AuthProvider>
+        <UserProvider>
+          <ComposerStyleProvider>
+            <TooltipProvider>
+              <Toaster />
+              <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:right-2 focus:bg-black focus:text-white focus:px-3 focus:py-2 focus:rounded"
+              >
+                تخطِ إلى المحتوى الرئيسي
+              </a>
+              <main id="main-content" role="main">
+                <Router />
+              </main>
+              <BotControl />
+            </TooltipProvider>
+          </ComposerStyleProvider>
+        </UserProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -1,0 +1,9 @@
+{
+  "name": "bot-system",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "socket.io-client": "^4.7.2"
+  }
+}
