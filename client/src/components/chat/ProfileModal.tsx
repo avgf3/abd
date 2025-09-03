@@ -1493,10 +1493,10 @@ export default function ProfileModal({
 
         .profile-actions button {
           border: none;
-          padding: 4px 8px; /* تصغير المساحة الداخلية للأزرار */
+          padding: 3px 6px; /* تصغير المساحة الداخلية للأزرار أكثر ليظهر زر البلاغ */
           border-radius: 6px;
           font-weight: 600;
-          font-size: 11px; /* تصغير النص ليتسع الجميع في سطر واحد */
+          font-size: 10px; /* تصغير النص ليبقى كل الأزرار ضمن نفس المنطقة */
           cursor: pointer;
           color: #fff;
           box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -2186,8 +2186,8 @@ export default function ProfileModal({
           }
           
           .profile-actions button {
-            padding: 5px 8px;
-            font-size: 11px;
+            padding: 4px 6px;
+            font-size: 10px;
           }
         }
       `}</style>
@@ -2273,18 +2273,18 @@ export default function ProfileModal({
                 {/* اسم المستخدم مع الرتبة */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '45px',
+                  bottom: '38px', /* إنزال المجموعة (اللقب والاسم) أقرب للأسفل */
                   left: '160px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '2px',
+                  gap: '1px', /* تقليل الفراغ بين اللقب والاسم */
                   zIndex: 3
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '14px' }}>
+                      <span style={{ fontSize: '13px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Admin'}
                         {localUser?.userType === 'moderator' && 'Moderator'}
@@ -2316,18 +2316,18 @@ export default function ProfileModal({
                 {/* اسم المستخدم مع الرتبة */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '45px',
+                  bottom: '38px', /* إنزال المجموعة (اللقب والاسم) أقرب للأسفل */
                   left: '160px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '2px',
+                  gap: '1px', /* تقليل الفراغ بين اللقب والاسم */
                   zIndex: 3
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '14px' }}>
+                      <span style={{ fontSize: '13px' }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Admin'}
                         {localUser?.userType === 'moderator' && 'Moderator'}
