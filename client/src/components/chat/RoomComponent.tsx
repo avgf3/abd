@@ -73,16 +73,14 @@ const RoomCard: React.FC<RoomCardProps> = ({
     }
   };
 
-  // أيقونة الغرفة
+  // أيقونة الغرفة - مثل صورة المستخدم في قائمة المتصلين
   const RoomIcon = () => (
-    <div
-      className={`${compact ? 'w-6 h-6' : 'w-8 h-8'} rounded-lg overflow-hidden flex-shrink-0 bg-muted`}
-    >
+    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-muted">
       {room.icon ? (
         <img src={room.icon} alt={room.name} className="w-full h-full object-cover" />
       ) : (
-        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-          <span className={`${compact ? 'text-xs' : 'text-sm'} font-bold text-primary`}>
+        <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+          <span className="text-white font-bold text-sm">
             {room.name.charAt(0)}
           </span>
         </div>
@@ -90,207 +88,76 @@ const RoomCard: React.FC<RoomCardProps> = ({
     </div>
   );
 
-  // معلومات الغرفة
+  // معلومات الغرفة - مثل معلومات المستخدم في قائمة المتصلين
   const RoomInfo = () => {
-    // اعتبار المشرف كإداري أيضاً
     const isAdminOrOwner = ['admin', 'owner', 'moderator'].includes(currentUser?.userType || 'guest');
     
     return (
-      <div className="flex-1 min-w-0">
-        <div className={`font-medium ${compact ? 'text-sm' : 'text-base'} flex items-center gap-2 min-w-0`}>
-          <span className="truncate">{room.name}</span>
-          <span className="flex items-center gap-1 flex-shrink-0">
-            {room.isBroadcast && <Mic className="w-3 h-3 text-orange-500" />}
-            {room.isLocked && <Lock className="w-3 h-3 text-yellow-600" />}
-          </span>
-          {/* إزالة شارة "افتراضي" بناءً على طلب العميل */}
+      <div className="flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-base font-medium text-foreground" title={room.name}>
+              {room.name}
+            </span>
+            {room.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
+          </div>
+          <div className="flex items-center gap-1">
+            {room.isBroadcast && (
+              <Badge variant="secondary" className="text-xs px-1 py-0">
+                <Mic className="w-3 h-3 mr-1" />
+                بث
+              </Badge>
+            )}
+            {room.isLocked && (
+              <Badge variant="secondary" className="text-xs px-1 py-0">
+                <Lock className="w-3 h-3 mr-1" />
+                مقفلة
+              </Badge>
+            )}
+            <Badge variant="outline" className="text-xs px-1 py-0">
+              {room.userCount || 0} متصل
+            </Badge>
+          </div>
         </div>
-        <div className={`${compact ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
-          {room.userCount || 0} متصل
-          {room.isBroadcast && <span className="text-orange-500 ml-1">• بث مباشر</span>}
-          {room.isLocked && !isAdminOrOwner && <span className="text-yellow-600 ml-1">• مقفلة</span>}
-        </div>
-        {!compact && room.description && (
-          <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{room.description}</div>
-        )}
       </div>
     );
   };
 
-  // عرض القائمة
+  // عرض القائمة - مثل قائمة المتصلين
   if (viewMode === 'list') {
     return (
       <div
-        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors group ${
-          isActive ? 'bg-primary/20 border border-primary/30' : 'hover:bg-muted/80'
-        }`}
+        className="flex items-center gap-2 py-1.5 px-3 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full hover:bg-accent/10"
         onClick={() => onSelect(room.id)}
       >
         <RoomIcon />
         <RoomInfo />
-
-        {(canModerate || canDelete) && (
-          <div className="ml-auto flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
-            {canModerate && onToggleLock && (
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleLock(room.id, !room.isLocked);
-                }}
-                variant="ghost"
-                size="sm"
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                title={room.isLocked ? 'فتح الغرفة' : 'قفل الغرفة'}
-              >
-                {room.isLocked ? (
-                  <Lock className="w-4 h-4 text-yellow-600" />
-                ) : (
-                  <Unlock className="w-4 h-4" />
-                )}
-              </Button>
-            )}
-            <Button
-              onClick={handleDelete}
-              variant="ghost"
-              size="sm"
-              className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onChangeIcon) {
-                  onChangeIcon(room.id);
-                }
-              }}
-              variant="ghost"
-              size="sm"
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
-              title="تغيير صورة الغرفة"
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
-          </div>
-        )}
       </div>
     );
   }
 
-  // عرض الشبكة
+  // عرض الشبكة - نستخدم نفس شكل القائمة
   if (viewMode === 'grid') {
-    // تحديد إذا كان المستخدم مشرف أو مالك
-    const isAdminOrOwner = ['admin', 'owner', 'moderator'].includes(currentUser?.userType || 'guest');
-    
     return (
-      <Card
-        className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 ${
-          isActive ? 'border-primary/50 bg-primary/5' : 'hover:border-primary/30'
-        } ${room.isLocked && !isAdminOrOwner ? 'opacity-75' : ''}`}
+      <div
+        className="flex items-center gap-2 py-1.5 px-3 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full hover:bg-accent/10"
         onClick={() => onSelect(room.id)}
       >
-        <CardHeader className="text-center pb-2">
-          <div className="w-16 h-16 mx-auto mb-2 rounded-xl overflow-hidden border">
-            {room.icon ? (
-              <img src={room.icon} alt={room.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-                <span className="text-xl font-bold text-primary">{room.name.charAt(0)}</span>
-              </div>
-            )}
-          </div>
-
-          <CardTitle className="text-lg flex items-center justify-center gap-2">
-            {room.name}
-            {room.isBroadcast && <Mic className="w-4 h-4 text-orange-500" />}
-            {room.isLocked && <Lock className="w-4 h-4 text-yellow-600" />}
-          </CardTitle>
-
-          {room.description && (
-            <CardDescription className="text-center line-clamp-2">
-              {room.description}
-            </CardDescription>
-          )}
-        </CardHeader>
-
-        <CardContent className="pt-0">
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-3">
-            <Users className="w-4 h-4" />
-            <span>{room.userCount || 0} متصل الآن</span>
-          </div>
-
-                  <Button 
-          className="w-full" 
-          variant={isActive ? 'default' : (room.isLocked && !isAdminOrOwner ? 'destructive' : 'outline')}
-          disabled={room.isLocked && !isAdminOrOwner}
-        >
-          {isActive ? 'الغرفة الحالية' : (room.isLocked && !isAdminOrOwner ? 'غرفة مقفلة' : 'دخول الغرفة')}
-        </Button>
-
-          {canDelete && (
-            <Button
-              onClick={handleDelete}
-              variant="ghost"
-              size="sm"
-              className="w-full mt-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <X className="w-4 h-4 mr-2" />
-              حذف الغرفة
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+        <RoomIcon />
+        <RoomInfo />
+      </div>
     );
   }
 
-  // عرض المحدد (شاشة اختيار الغرفة)
-  // تحديد إذا كان المستخدم مشرف أو مالك
-  const isAdminOrOwner = ['admin', 'owner', 'moderator'].includes(currentUser?.userType || 'guest');
-  
+  // عرض المحدد - نستخدم نفس شكل القائمة
   return (
-    <Card
-      className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-primary/50 ${
-        room.isLocked && !isAdminOrOwner ? 'opacity-75' : ''
-      }`}
+    <div
+      className="flex items-center gap-2 py-1.5 px-3 rounded-none border-b border-border transition-colors duration-200 cursor-pointer w-full hover:bg-accent/10"
       onClick={() => onSelect(room.id)}
     >
-      <CardHeader className="text-center">
-        <div className="w-20 h-20 mx-auto mb-4 rounded-xl overflow-hidden border">
-          {room.icon ? (
-            <img src={room.icon} alt={room.name} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-              <span className="text-2xl font-bold text-primary">{room.name.charAt(0)}</span>
-            </div>
-          )}
-        </div>
-
-        <CardTitle className="text-xl flex items-center justify-center gap-2">
-          {room.name}
-          {room.isBroadcast && <Mic className="w-4 h-4 text-orange-500" />}
-          {room.isLocked && <Lock className="w-4 h-4 text-yellow-600" />}
-        </CardTitle>
-
-        {room.description && (
-          <CardDescription className="text-center">{room.description}</CardDescription>
-        )}
-      </CardHeader>
-
-      <CardContent>
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-4">
-          <Users className="w-4 h-4" />
-          <span>{room.userCount || 0} متصل الآن</span>
-        </div>
-
-        <Button 
-          className="w-full" 
-          variant={room.isLocked && !isAdminOrOwner ? 'destructive' : 'outline'}
-          disabled={room.isLocked && !isAdminOrOwner}
-        >
-          {room.isLocked && !isAdminOrOwner ? 'غرفة مقفلة' : 'دخول الغرفة'}
-        </Button>
-      </CardContent>
-    </Card>
+      <RoomIcon />
+      <RoomInfo />
+    </div>
   );
 };
 

@@ -395,8 +395,7 @@ export default function FriendsTabPanel({
                       showModerationActions={isModerator}
                     >
                       <div
-                        className={`flex items-center gap-2 p-2 px-4 rounded-none border-b border-gray-200 transition-all duration-200 cursor-pointer w-full ${getUserListItemClasses(friend) || 'hover:bg-gray-50'}`}
-                        style={getUserListItemStyles(friend)}
+                        className="flex items-center gap-2 py-1.5 px-0 rounded-none border-b border-black transition-colors duration-200 cursor-pointer w-full hover:bg-accent/10"
                         onClick={(e) => onStartPrivateChat(friend)}
                       >
                         <ProfileImage
@@ -409,80 +408,21 @@ export default function FriendsTabPanel({
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
                               <span
-                                className="text-base font-medium transition-all duration-300"
+                                className="text-base font-medium transition-colors duration-300"
                                 style={{
                                   color: getFinalUsernameColor(friend),
-                                  textShadow: getFinalUsernameColor(friend)
-                                    ? `0 0 10px ${getFinalUsernameColor(friend)}40`
-                                    : 'none',
-                                  filter: getFinalUsernameColor(friend)
-                                    ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
-                                    : 'none',
                                 }}
                                 title={friend.username}
                               >
                                 {friend.username}
                               </span>
-                              {/* إشارة المكتوم */}
-                              {friend.isMuted && (
-                                <span className="text-yellow-400 text-xs">🔇</span>
-                              )}
-                              {friend.unreadCount && friend.unreadCount > 0 && (
-                                <Badge variant="destructive" className="text-xs">
-                                  {friend.unreadCount}
-                                </Badge>
-                              )}
+                              {friend.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
                             </div>
                             <div className="flex items-center gap-1">
                               {renderUserBadge(friend)}
                               {renderCountryFlag(friend)}
                             </div>
                           </div>
-                          {/* حالة الاتصال */}
-                          <div className="text-xs text-gray-500 mt-1">
-                            {friend.isOnline ? (
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                {friend.status === 'away' ? 'بعيد' : 'متصل الآن'}
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                                غير متصل
-                              </span>
-                            )}
-                          </div>
-                          {friend.lastMessage && (
-                            <div className="text-xs text-gray-500 truncate">
-                              {friend.lastMessage}
-                            </div>
-                          )}
-                        </div>
-                        {/* Actions */}
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onStartPrivateChat(friend);
-                            }}
-                            className="bg-blue-500 hover:bg-blue-600"
-                            title="محادثة خاصة"
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveFriend(friend.id);
-                            }}
-                            className="text-red-500 hover:bg-red-50"
-                            title="حذف الصديق"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
                         </div>
                       </div>
                     </SimpleUserMenu>
@@ -512,60 +452,49 @@ export default function FriendsTabPanel({
                   ) : (
                     <div className="space-y-3">
                       {incomingRequests.map((request) => (
-                        <div key={request.id} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <ProfileImage
-                                user={request.user}
-                                size="small"
-                                className=""
-                                hideRoleBadgeOverlay={true}
-                              />
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className="text-base font-medium transition-all duration-300"
-                                    style={{
-                                      color: getFinalUsernameColor(request.user),
-                                      textShadow: getFinalUsernameColor(request.user)
-                                        ? `0 0 10px ${getFinalUsernameColor(request.user)}40`
-                                        : 'none',
-                                      filter: getFinalUsernameColor(request.user)
-                                        ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
-                                        : 'none',
-                                    }}
-                                    title={request.user.username}
-                                  >
-                                    {request.user.username}
-                                  </span>
-                                  {renderUserBadge(request.user)}
-                                  {renderCountryFlag(request.user)}
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                  {formatTimeAgo(request.createdAt.toString())}
-                                </div>
+                        <div key={request.id} className="flex items-center gap-2 py-1.5 px-0 rounded-none border-b border-black transition-colors duration-200 w-full hover:bg-accent/10">
+                          <ProfileImage
+                            user={request.user}
+                            size="small"
+                            className=""
+                            hideRoleBadgeOverlay={true}
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="text-base font-medium transition-colors duration-300"
+                                  style={{
+                                    color: getFinalUsernameColor(request.user),
+                                  }}
+                                  title={request.user.username}
+                                >
+                                  {request.user.username}
+                                </span>
+                                {request.user.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
                               </div>
-                            </div>
-                            <div className="flex gap-1">
-                              <Button
-                                size="icon"
-                                onClick={() => handleAcceptRequest(request.id)}
-                                className="bg-green-600 hover:bg-green-700 h-8 w-8 rounded-full"
-                                title="قبول"
-                                aria-label="قبول"
-                              >
-                                <Check className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="outline"
-                                onClick={() => handleRejectRequest(request.id)}
-                                className="h-8 w-8 rounded-full"
-                                title="رفض"
-                                aria-label="رفض"
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                {renderUserBadge(request.user)}
+                                {renderCountryFlag(request.user)}
+                                <Button
+                                  size="icon"
+                                  onClick={() => handleAcceptRequest(request.id)}
+                                  className="h-6 w-6 p-1"
+                                  variant="ghost"
+                                  title="قبول"
+                                >
+                                  <Check className="w-4 h-4 text-green-600" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => handleRejectRequest(request.id)}
+                                  className="h-6 w-6 p-1"
+                                  title="رفض"
+                                >
+                                  <X className="w-4 h-4 text-red-600" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -592,50 +521,40 @@ export default function FriendsTabPanel({
                   ) : (
                     <div className="space-y-3">
                       {outgoingRequests.map((request) => (
-                        <div key={request.id} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <ProfileImage
-                                user={request.user}
-                                size="small"
-                                className=""
-                                hideRoleBadgeOverlay={true}
-                              />
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className="text-base font-medium transition-all duration-300"
-                                    style={{
-                                      color: getFinalUsernameColor(request.user),
-                                      textShadow: getFinalUsernameColor(request.user)
-                                        ? `0 0 10px ${getFinalUsernameColor(request.user)}40`
-                                        : 'none',
-                                      filter: getFinalUsernameColor(request.user)
-                                        ? 'drop-shadow(0 0 3px rgba(255,255,255,0.3))'
-                                        : 'none',
-                                    }}
-                                    title={request.user.username}
-                                  >
-                                    {request.user.username}
-                                  </span>
-                                  {renderUserBadge(request.user)}
-                                  {renderCountryFlag(request.user)}
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                  {formatTimeAgo(request.createdAt.toString())}
-                                </div>
+                        <div key={request.id} className="flex items-center gap-2 py-1.5 px-0 rounded-none border-b border-black transition-colors duration-200 w-full hover:bg-accent/10">
+                          <ProfileImage
+                            user={request.user}
+                            size="small"
+                            className=""
+                            hideRoleBadgeOverlay={true}
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="text-base font-medium transition-colors duration-300"
+                                  style={{
+                                    color: getFinalUsernameColor(request.user),
+                                  }}
+                                  title={request.user.username}
+                                >
+                                  {request.user.username}
+                                </span>
+                                {request.user.isMuted && <span className="text-yellow-400 text-xs">🔇</span>}
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline">
-                                {request.status === 'pending'
-                                  ? 'في الانتظار'
-                                  : request.status === 'accepted'
-                                    ? 'مقبول'
-                                    : request.status === 'declined'
-                                      ? 'مرفوض'
-                                      : 'مجاهل'}
-                              </Badge>
+                              <div className="flex items-center gap-1">
+                                {renderUserBadge(request.user)}
+                                {renderCountryFlag(request.user)}
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => handleCancelRequest(request.id)}
+                                  className="h-6 w-6 p-1"
+                                  title="إلغاء الطلب"
+                                >
+                                  <X className="w-4 h-4 text-red-600" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
