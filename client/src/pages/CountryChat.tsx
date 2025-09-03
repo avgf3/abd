@@ -12,19 +12,24 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 
 export default function CountryChat() {
-  const [match, params] = useRoute('/:country');
+  // Support base and nested routes
+  const [matchBase, paramsBase] = useRoute('/:country');
+  const [matchTopic, paramsTopic] = useRoute('/:country/:topic');
+  const [matchInner, paramsInner] = useRoute('/:country/:topic/:inner');
   const [, setLocation] = useLocation();
   
   // Get country data based on URL
-  const countryPath = `/${params?.country}`;
+  const currentCountry = (paramsInner?.country || paramsTopic?.country || paramsBase?.country) as string | undefined;
+  const countryPath = currentCountry ? `/${currentCountry}` : '';
   const countryData = getCountryByPath(countryPath);
   
   // If country not found, redirect to home
   useEffect(() => {
-    if (!match || !countryData) {
+    const matched = matchInner || matchTopic || matchBase;
+    if (!matched || !countryData) {
       setLocation('/');
     }
-  }, [match, countryData, setLocation]);
+  }, [matchInner, matchTopic, matchBase, countryData, setLocation]);
   
   // Initialize session state
   const initialSession = (() => {
@@ -104,7 +109,15 @@ export default function CountryChat() {
         {isRestoring ? (
           <div className="p-6 text-center">...جاري استعادة الجلسة</div>
         ) : showWelcome ? (
-          <CountryWelcomeScreen onUserLogin={handleUserLogin} countryData={countryData} />
+          <CountryWelcomeScreen 
+            onUserLogin={handleUserLogin} 
+            countryData={countryData}
+            // pass optional topic and inner to allow deep-link UI updates
+            {...{
+              topicSlug: (paramsInner?.topic || paramsTopic?.topic) as string | undefined,
+              innerSlug: paramsInner?.inner as string | undefined,
+            }}
+          />
         ) : selectedRoomId ? (
           <ChatInterface chat={chat} onLogout={handleLogout} />
         ) : (
