@@ -41,6 +41,9 @@ function Router() {
       <Route path="/iraq" component={CountryChat} />
       <Route path="/comoros" component={CountryChat} />
       <Route path="/djibouti" component={CountryChat} />
+      {/* Nested country routes (topics and inner links) */}
+      <Route path="/:country/:topic" component={CountryChat} />
+      <Route path="/:country/:topic/:inner" component={CountryChat} />
       <Route component={ChatPage} />
     </Switch>
   );

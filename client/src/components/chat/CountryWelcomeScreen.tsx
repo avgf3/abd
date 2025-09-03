@@ -17,9 +17,11 @@ import type { CountryChat } from '@/data/countryChats';
 interface CountryWelcomeScreenProps {
   onUserLogin: (user: ChatUser) => void;
   countryData: CountryChat;
+  topicSlug?: string;
+  innerSlug?: string;
 }
 
-export default function CountryWelcomeScreen({ onUserLogin, countryData }: CountryWelcomeScreenProps) {
+export default function CountryWelcomeScreen({ onUserLogin, countryData, topicSlug, innerSlug }: CountryWelcomeScreenProps) {
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -40,14 +42,57 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
   const isMobile = useIsMobile();
   const [, setLocation] = useLocation();
 
-  // تحديث العنوان والوصف للصفحة
+  // Helpers
+  const toSlug = (value: string) =>
+    value
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\u0600-\u06FF0-9\-]+/g, '')
+      .toLowerCase();
+
+  const activeTopic = (() => {
+    if (!topicSlug) return undefined;
+    return countryData.chatLinks.find((l) => toSlug(l.name) === topicSlug);
+  })();
+
+  const innerLinksDefault = [
+    'شات حلا',
+    'شات الأكابر',
+    'شات وناسه',
+    'شات الأهل والأحبه',
+    'شات الأصدقاء والأحبه',
+    'شات صبايا',
+    'شات تعارف صبايا',
+    'شات اونلاين',
+    'شات أحلا لمة',
+    'شات الملوك',
+    'شات نجوم',
+  ];
+
+  const activeInnerName = (() => {
+    if (!innerSlug) return undefined;
+    const match = innerLinksDefault.find((n) => toSlug(n) === innerSlug);
+    return match || decodeURIComponent(innerSlug);
+  })();
+
+  // تحديث العنوان والوصف للصفحة مع دعم الروابط الفرعية
   useEffect(() => {
-    document.title = countryData.title;
+    const baseTitle = countryData.title;
+    const topicTitle = activeTopic?.name ? `${activeTopic.name} - ${countryData.nameAr}` : null;
+    const innerTitle = activeInnerName ? `${activeInnerName} - ${countryData.nameAr}` : null;
+    document.title = innerTitle || topicTitle || baseTitle;
+
     const metaDescription = document.querySelector("meta[name='description']");
+    const baseDescription = countryData.metaDescription;
+    const combinedDescription = innerTitle
+      ? `${baseDescription} | ${activeInnerName} ضمن ${countryData.nameAr}`
+      : topicTitle
+      ? `${baseDescription} | ${activeTopic?.name} ضمن ${countryData.nameAr}`
+      : baseDescription;
     if (metaDescription) {
-      metaDescription.setAttribute('content', countryData.metaDescription);
+      metaDescription.setAttribute('content', combinedDescription);
     }
-    
+
     // إضافة الكلمات المفتاحية
     let metaKeywords = document.querySelector("meta[name='keywords']");
     if (!metaKeywords) {
@@ -55,8 +100,11 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
       metaKeywords.setAttribute('name', 'keywords');
       document.head.appendChild(metaKeywords);
     }
-    metaKeywords.setAttribute('content', countryData.keywords.join(', '));
-  }, [countryData]);
+    const extraKeywords: string[] = [];
+    if (activeTopic?.name) extraKeywords.push(activeTopic.name);
+    if (activeInnerName) extraKeywords.push(activeInnerName);
+    metaKeywords.setAttribute('content', [...countryData.keywords, ...extraKeywords].join(', '));
+  }, [countryData, activeTopic, activeInnerName]);
 
   const handleGuestLogin = async () => {
     if (!guestName.trim()) {
@@ -189,9 +237,13 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
       <StructuredData
         type="WebPage"
         data={{
-          name: countryData.title,
-          url: `https://www.arabya.chat${countryData.path}`,
-          description: countryData.metaDescription,
+          name: activeInnerName || activeTopic?.name || countryData.title,
+          url: `https://www.arabya.chat${countryData.path}${topicSlug ? `/${topicSlug}` : ''}${innerSlug ? `/${innerSlug}` : ''}`,
+          description: activeInnerName
+            ? `${countryData.metaDescription} - ${activeInnerName}`
+            : activeTopic?.name
+            ? `${countryData.metaDescription} - ${activeTopic.name}`
+            : countryData.metaDescription,
           breadcrumbs: [
             {
               "@type": "ListItem",
@@ -204,9 +256,29 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
               "position": 2,
               "name": countryData.nameAr,
               "item": `https://www.arabya.chat${countryData.path}`
-            }
+            },
+            ...(topicSlug && activeTopic?.name
+              ? [
+                  {
+                    "@type": "ListItem",
+                    "position": 3,
+                    "name": activeTopic.name,
+                    "item": `https://www.arabya.chat${countryData.path}/${topicSlug}`,
+                  } as any,
+                ]
+              : []),
+            ...(innerSlug && activeInnerName
+              ? [
+                  {
+                    "@type": "ListItem",
+                    "position": 4,
+                    "name": activeInnerName,
+                    "item": `https://www.arabya.chat${countryData.path}/${topicSlug}/${innerSlug}`,
+                  } as any,
+                ]
+              : []),
           ],
-          appName: countryData.nameAr
+          appName: countryData.nameAr,
         }}
       />
       
@@ -309,29 +381,77 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
             </div>
           </div>
 
-          {/* Country Specific Chat Links */}
+          {/* Country Specific Chat Links */
+          {/* First-level topics inside the selected country */}
           <div className="glass-effect p-8 rounded-2xl border border-white/20 mb-8">
             <h2 className="text-3xl font-bold text-center mb-6 text-white">
               غرف دردشة {countryData.nameAr.replace('شات ', '')} المتخصصة
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {countryData.chatLinks.map((link, index) => (
-                <button
-                  key={index}
-                  onClick={() => toast({
-                    title: link.name,
-                    description: link.description || 'جاري تحميل الغرفة...',
-                  })}
-                  className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 p-3 rounded-xl text-white transition-all duration-300 hover:transform hover:scale-105 border border-white/10 hover:border-white/30"
-                >
-                  <p className="font-semibold">{link.name}</p>
-                  {link.description && (
-                    <p className="text-xs text-gray-300 mt-1">{link.description}</p>
-                  )}
-                </button>
-              ))}
+              {countryData.chatLinks.map((link, index) => {
+                const slug = toSlug(link.name);
+                const isActive = topicSlug === slug;
+                return (
+                  <a
+                    key={index}
+                    href={`${countryData.path}/${slug}`}
+                    className={`block p-3 rounded-xl text-white transition-all duration-300 border ${
+                      isActive
+                        ? 'bg-gradient-to-r from-yellow-500/30 to-pink-500/30 border-white/40 ring-2 ring-yellow-300'
+                        : 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 border-white/10 hover:border-white/30 hover:transform hover:scale-105'
+                    }`}
+                  >
+                    <p className="font-semibold">{link.name}</p>
+                    {link.description && (
+                      <p className="text-xs text-gray-300 mt-1">{link.description}</p>
+                    )}
+                  </a>
+                );
+              })}
             </div>
           </div>
+
+          {/* Second-level inner links shown only when a topic is active */}
+          {activeTopic && (
+            <div className="glass-effect p-8 rounded-2xl border border-white/20 mb-8">
+              <h3 className="text-2xl font-bold text-center mb-6 text-white">
+                روابط إضافية داخل {activeTopic.name}
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {innerLinksDefault.map((name) => {
+                  const slug = toSlug(name);
+                  const isActive = innerSlug === slug;
+                  return (
+                    <a
+                      key={slug}
+                      href={`${countryData.path}/${toSlug(activeTopic.name)}/${slug}`}
+                      className={`block p-3 rounded-xl text-white transition-all duration-300 border ${
+                        isActive
+                          ? 'bg-gradient-to-r from-yellow-500/30 to-pink-500/30 border-white/40 ring-2 ring-yellow-300'
+                          : 'bg-gradient-to-r from-green-600/20 to-cyan-600/20 hover:from-green-600/30 hover:to-cyan-600/30 border-white/10 hover:border-white/30 hover:transform hover:scale-105'
+                      }`}
+                    >
+                      <p className="font-semibold">{name}</p>
+                    </a>
+                  );
+                })}
+              </div>
+
+              {/* General cross links inside topic */}
+              <div className="mt-8">
+                <h4 className="text-xl font-bold text-center mb-4 text-white">روابط عامة</h4>
+                <div className="flex flex-wrap justify-center gap-3">
+                  <a href="/jordan" className="text-blue-300 hover:text-blue-200 transition-colors">شات أردني</a>
+                  <span className="text-gray-500">|</span>
+                  <a href="/palestine" className="text-blue-300 hover:text-blue-200 transition-colors">شات فلسطيني</a>
+                  <span className="text-gray-500">|</span>
+                  <a href="/palestine/%D8%B4%D8%A7%D8%AA-%D8%A7%D9%84%D9%82%D8%AF%D8%B3" className="text-blue-300 hover:text-blue-200 transition-colors">شات القدس</a>
+                  <span className="text-gray-500">|</span>
+                  <a href="/arabic" className="text-blue-300 hover:text-blue-200 transition-colors">شات أحلا عالم</a>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Other Countries Links */}
           <div className="glass-effect p-6 rounded-2xl border border-white/20">
