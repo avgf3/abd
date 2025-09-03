@@ -27,6 +27,8 @@ interface ProfileModalProps {
   onPrivateMessage?: (user: ChatUser) => void;
   onAddFriend?: (user: ChatUser) => void;
   onReportUser?: (user: ChatUser) => void;
+  // عند التفعيل: يتم إدارة الصوت خارجياً من ChatInterface
+  externalAudioManaged?: boolean;
 }
 
 export default function ProfileModal({
@@ -38,6 +40,7 @@ export default function ProfileModal({
   onPrivateMessage,
   onAddFriend,
   onReportUser,
+  externalAudioManaged,
 }: ProfileModalProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,8 +84,9 @@ export default function ProfileModal({
     }
   }, [musicVolume, localUser?.profileMusicUrl]);
   
-  // تشغيل الموسيقى تلقائياً عند فتح البروفايل
+  // تشغيل الموسيقى تلقائياً عند فتح البروفايل (معطّل إذا كانت مُدارة خارجياً)
   useEffect(() => {
+    if (externalAudioManaged) return;
     if (localUser?.profileMusicUrl && musicEnabled && audioRef.current) {
       let attempts = 0;
       const maxAttempts = 3;
@@ -162,7 +166,7 @@ export default function ProfileModal({
         document.removeEventListener('touchstart', playAudio);
       };
     }
-  }, [localUser?.profileMusicUrl, musicEnabled, musicVolume]);
+  }, [localUser?.profileMusicUrl, musicEnabled, musicVolume, externalAudioManaged]);
   
   // معالج أخطاء الصوت
   const handleAudioError = () => {
@@ -2228,7 +2232,7 @@ export default function ProfileModal({
                   <audio
                     ref={audioRef}
                     src={localUser.profileMusicUrl}
-                    autoPlay
+                    {...(externalAudioManaged ? {} : { autoPlay: true })}
                     loop
                     style={{ display: 'none' }}
                     onError={handleAudioError}
@@ -2242,7 +2246,7 @@ export default function ProfileModal({
                   <audio
                     ref={audioRef}
                     src={localUser.profileMusicUrl}
-                    autoPlay
+                    {...(externalAudioManaged ? {} : { autoPlay: true })}
                     loop
                     style={{ display: 'none' }}
                     onError={handleAudioError}

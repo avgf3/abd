@@ -12,7 +12,7 @@ import {
   EyeOff,
   Lock,
 } from 'lucide-react';
-import { lazy, Suspense, useState, useEffect, useCallback, useMemo } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLocation } from 'wouter';
 
 import BlockNotification from '../moderation/BlockNotification';
@@ -79,6 +79,8 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
   const { showSuccessToast, showErrorToast } = useNotificationManager(chat.currentUser);
   const [showProfile, setShowProfile] = useState(false);
   const [profileUser, setProfileUser] = useState<ChatUser | null>(null);
+  // 🔊 مشغل موسيقى البروفايل العالمي
+  const profileAudioRef = useRef<HTMLAudioElement | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedPrivateUser, setSelectedPrivateUser] = useState<ChatUser | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -415,6 +417,51 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     setProfileUser(user);
     setShowProfile(true);
     closeUserPopup();
+    try {
+      // تشغيل الموسيقى عند كل فتح للبروفايل إن كانت مفعلة ولها رابط صالح
+      if (user?.profileMusicUrl && (user as any).profileMusicEnabled !== false) {
+        if (!profileAudioRef.current) {
+          profileAudioRef.current = new Audio();
+        }
+        const audio = profileAudioRef.current;
+        audio.src = user.profileMusicUrl;
+        const vol = typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70;
+        audio.volume = Math.max(0, Math.min(1, (vol || 70) / 100));
+        audio.loop = true;
+        // استئناف التشغيل في كل مرة بشكل موثوق
+        audio.pause();
+        audio.currentTime = 0;
+        const tryPlay = async (mutedFirst = true) => {
+          try {
+            audio.muted = false;
+            await audio.play();
+          } catch (e) {
+            if (mutedFirst) {
+              try {
+                audio.muted = true;
+                await audio.play();
+                setTimeout(() => {
+                  try { audio.muted = false; } catch {}
+                }, 120);
+              } catch {
+                // ينتظر أول تفاعل للمستخدم
+                const onFirstGesture = async () => {
+                  try { await audio.play(); } catch {}
+                  window.removeEventListener('click', onFirstGesture);
+                  window.removeEventListener('touchstart', onFirstGesture);
+                };
+                window.addEventListener('click', onFirstGesture, { once: true });
+                window.addEventListener('touchstart', onFirstGesture, { once: true });
+              }
+            }
+          }
+        };
+        tryPlay(true);
+      } else {
+        // لا يوجد موسيقى: تأكد من إيقاف أي تشغيل سابق
+        try { profileAudioRef.current?.pause(); } catch {}
+      }
+    } catch {}
   };
 
   const handleViewStories = (user?: ChatUser) => {
@@ -431,6 +478,27 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     if (user) {
       setProfileUser(user);
       setShowProfile(true);
+      try {
+        if (user?.profileMusicUrl && (user as any).profileMusicEnabled !== false) {
+          if (!profileAudioRef.current) profileAudioRef.current = new Audio();
+          const audio = profileAudioRef.current;
+          audio.src = user.profileMusicUrl;
+          const vol = typeof user.profileMusicVolume === 'number' ? user.profileMusicVolume : 70;
+          audio.volume = Math.max(0, Math.min(1, (vol || 70) / 100));
+          audio.loop = true;
+          audio.pause();
+          audio.currentTime = 0;
+          audio.play().catch(async () => {
+            try {
+              audio.muted = true;
+              await audio.play();
+              setTimeout(() => { try { audio.muted = false; } catch {} }, 120);
+            } catch {}
+          });
+        } else {
+          try { profileAudioRef.current?.pause(); } catch {}
+        }
+      } catch {}
     } else {
       showErrorToast('لم نتمكن من العثور على هذا المستخدم', 'مستخدم غير موجود');
     }
@@ -1030,9 +1098,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               <ProfileModal
                 user={profileUser}
                 currentUser={chat.currentUser}
+                externalAudioManaged
                 onClose={() => {
                   setShowProfile(false);
                   setProfileUser(null);
+                  try { profileAudioRef.current?.pause(); } catch {}
                 }}
                 onIgnoreUser={(userId) => {
                   chat.ignoreUser(userId);
@@ -1055,9 +1125,11 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               <ProfileModal
                 user={profileUser || chat.currentUser}
                 currentUser={chat.currentUser}
+                externalAudioManaged
                 onClose={() => {
                   setShowProfile(false);
                   setProfileUser(null);
+                  try { profileAudioRef.current?.pause(); } catch {}
                 }}
                 onIgnoreUser={(userId) => {
                   chat.ignoreUser(userId);
@@ -1192,6 +1264,30 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
               }
               setShowProfile(true);
               setShowSettings(false);
+
+              // تشغيل الموسيقى الخاصة بالمستخدم الحالي لو متاحة
+              try {
+                const u = chat.currentUser;
+                if (u?.profileMusicUrl && (u as any).profileMusicEnabled !== false) {
+                  if (!profileAudioRef.current) profileAudioRef.current = new Audio();
+                  const audio = profileAudioRef.current;
+                  audio.src = u.profileMusicUrl;
+                  const vol = typeof u.profileMusicVolume === 'number' ? u.profileMusicVolume : 70;
+                  audio.volume = Math.max(0, Math.min(1, (vol || 70) / 100));
+                  audio.loop = true;
+                  audio.pause();
+                  audio.currentTime = 0;
+                  audio.play().catch(async () => {
+                    try {
+                      audio.muted = true;
+                      await audio.play();
+                      setTimeout(() => { try { audio.muted = false; } catch {} }, 120);
+                    } catch {}
+                  });
+                } else {
+                  try { profileAudioRef.current?.pause(); } catch {}
+                }
+              } catch {}
 
               // ثم اجلب نسخة محدثة وكاملة لتوحيد العرض مع قائمة المستخدمين
               try {
