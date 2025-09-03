@@ -46,6 +46,11 @@ export class BotBehavior {
   }
 
   shouldReactToMessage(bot: BotState, messageData: any): boolean {
+    // التحقق من وجود البيانات المطلوبة
+    if (!messageData || !messageData.content) {
+      return false;
+    }
+    
     // لا يرد البوت على رسائله
     if (messageData.username === bot.profile.username) {
       return false;
