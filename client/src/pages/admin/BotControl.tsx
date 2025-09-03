@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Loader2, Bot, Users, MessageSquare, Activity, Settings, Eye, EyeOff } from 'lucide-react';
-import { api } from '../../services/api';
+import { api } from '../../lib/queryClient';
 
 interface BotInfo {
   id: string;
