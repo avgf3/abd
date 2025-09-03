@@ -1,4 +1,13 @@
 // بيانات الدول وروابط الشات الخاصة بكل دولة
+export interface SubChatLink {
+  name: string;
+  description?: string;
+}
+
+export interface ChatLink extends SubChatLink {
+  subLinks?: SubChatLink[];
+}
+
 export interface CountryChat {
   id: string;
   nameAr: string;
@@ -7,10 +16,7 @@ export interface CountryChat {
   title: string;
   metaDescription: string;
   keywords: string[];
-  chatLinks: {
-    name: string;
-    description?: string;
-  }[];
+  chatLinks: ChatLink[];
 }
 
 export const countryChats: CountryChat[] = [
@@ -42,8 +48,40 @@ export const countryChats: CountryChat[] = [
     metaDescription: 'شات مصر للتعارف والدردشة مع شباب وبنات من جمهورية مصر العربية. دردشة مصرية مجانية بدون تسجيل، تعرف على أصدقاء جدد من القاهرة والإسكندرية وجميع محافظات مصر.',
     keywords: ['شات مصر', 'دردشة مصرية', 'شات القاهرة', 'شات الإسكندرية', 'تعارف مصر', 'بنات مصر', 'شباب مصر'],
     chatLinks: [
-      { name: 'شات القاهرة', description: 'دردشة العاصمة القاهرة' },
-      { name: 'شات الإسكندرية', description: 'دردشة مدينة الإسكندرية' },
+      { 
+        name: 'شات القاهرة', 
+        description: 'دردشة العاصمة القاهرة',
+        subLinks: [
+          { name: 'شات حلا', description: 'دردشة حلا القاهرة' },
+          { name: 'شات الأكابر', description: 'دردشة كبار القاهرة' },
+          { name: 'شات وناسة', description: 'دردشة المرح والوناسة' },
+          { name: 'شات الأهل والأحبة', description: 'دردشة العائلة المصرية' },
+          { name: 'شات الأصدقاء والأحبة', description: 'دردشة الصداقة القاهرية' },
+          { name: 'شات صبايا', description: 'دردشة بنات القاهرة' },
+          { name: 'شات تعارف صبايا', description: 'تعارف بنات القاهرة' },
+          { name: 'شات أونلاين', description: 'دردشة أونلاين القاهرة' },
+          { name: 'شات أحلا لمة', description: 'دردشة التجمع القاهري' },
+          { name: 'شات الملوك', description: 'دردشة ملوك القاهرة' },
+          { name: 'شات نجوم', description: 'دردشة نجوم القاهرة' }
+        ]
+      },
+      { 
+        name: 'شات الإسكندرية', 
+        description: 'دردشة مدينة الإسكندرية',
+        subLinks: [
+          { name: 'شات حلا', description: 'دردشة حلا الإسكندرية' },
+          { name: 'شات الأكابر', description: 'دردشة كبار الإسكندرية' },
+          { name: 'شات وناسة', description: 'دردشة البحر والوناسة' },
+          { name: 'شات الأهل والأحبة', description: 'دردشة العائلة السكندرية' },
+          { name: 'شات الأصدقاء والأحبة', description: 'دردشة الصداقة الساحلية' },
+          { name: 'شات صبايا', description: 'دردشة بنات الإسكندرية' },
+          { name: 'شات تعارف صبايا', description: 'تعارف بنات الساحل' },
+          { name: 'شات أونلاين', description: 'دردشة أونلاين الإسكندرية' },
+          { name: 'شات أحلا لمة', description: 'دردشة التجمع السكندري' },
+          { name: 'شات الملوك', description: 'دردشة ملوك البحر' },
+          { name: 'شات نجوم', description: 'دردشة نجوم الإسكندرية' }
+        ]
+      },
       { name: 'شات الجيزة', description: 'دردشة محافظة الجيزة' },
       { name: 'شات مصري جوال', description: 'دردشة الجوال المصري' },
       { name: 'شات الأكابر', description: 'دردشة كبار الشخصيات' },
@@ -61,8 +99,40 @@ export const countryChats: CountryChat[] = [
     metaDescription: 'شات السعودية للتعارف والدردشة مع شباب وبنات من المملكة العربية السعودية. دردشة سعودية مجانية بدون تسجيل، تعرف على أصدقاء جدد من الرياض وجدة ومكة وجميع مدن المملكة.',
     keywords: ['شات السعودية', 'دردشة سعودية', 'شات الرياض', 'شات جدة', 'تعارف السعودية', 'بنات السعودية', 'شباب السعودية'],
     chatLinks: [
-      { name: 'شات الرياض', description: 'دردشة العاصمة الرياض' },
-      { name: 'شات جدة', description: 'دردشة مدينة جدة' },
+      { 
+        name: 'شات الرياض', 
+        description: 'دردشة العاصمة الرياض',
+        subLinks: [
+          { name: 'شات حلا', description: 'دردشة حلا الرياض' },
+          { name: 'شات الأكابر', description: 'دردشة كبار الرياض' },
+          { name: 'شات وناسة', description: 'دردشة المرح والوناسة' },
+          { name: 'شات الأهل والأحبة', description: 'دردشة العائلة السعودية' },
+          { name: 'شات الأصدقاء والأحبة', description: 'دردشة الصداقة الرياضية' },
+          { name: 'شات صبايا', description: 'دردشة بنات الرياض' },
+          { name: 'شات تعارف صبايا', description: 'تعارف بنات الرياض' },
+          { name: 'شات أونلاين', description: 'دردشة أونلاين الرياض' },
+          { name: 'شات أحلا لمة', description: 'دردشة التجمع الرياضي' },
+          { name: 'شات الملوك', description: 'دردشة ملوك الرياض' },
+          { name: 'شات نجوم', description: 'دردشة نجوم الرياض' }
+        ]
+      },
+      { 
+        name: 'شات جدة', 
+        description: 'دردشة مدينة جدة',
+        subLinks: [
+          { name: 'شات حلا', description: 'دردشة حلا جدة' },
+          { name: 'شات الأكابر', description: 'دردشة كبار جدة' },
+          { name: 'شات وناسة', description: 'دردشة البحر الأحمر' },
+          { name: 'شات الأهل والأحبة', description: 'دردشة العائلة الجداوية' },
+          { name: 'شات الأصدقاء والأحبة', description: 'دردشة الصداقة الجداوية' },
+          { name: 'شات صبايا', description: 'دردشة بنات جدة' },
+          { name: 'شات تعارف صبايا', description: 'تعارف بنات جدة' },
+          { name: 'شات أونلاين', description: 'دردشة أونلاين جدة' },
+          { name: 'شات أحلا لمة', description: 'دردشة التجمع الجداوي' },
+          { name: 'شات الملوك', description: 'دردشة ملوك جدة' },
+          { name: 'شات نجوم', description: 'دردشة نجوم جدة' }
+        ]
+      },
       { name: 'شات مكة', description: 'دردشة مكة المكرمة' },
       { name: 'شات المدينة', description: 'دردشة المدينة المنورة' },
       { name: 'شات الدمام', description: 'دردشة مدينة الدمام' },
@@ -251,7 +321,23 @@ export const countryChats: CountryChat[] = [
     metaDescription: 'شات فلسطين للتعارف والدردشة مع شباب وبنات من دولة فلسطين. دردشة فلسطينية مجانية بدون تسجيل، تعرف على أصدقاء جدد من القدس وغزة ورام الله.',
     keywords: ['شات فلسطين', 'دردشة فلسطينية', 'شات القدس', 'شات غزة', 'تعارف فلسطين', 'بنات فلسطين'],
     chatLinks: [
-      { name: 'شات القدس', description: 'دردشة مدينة القدس' },
+      { 
+        name: 'شات القدس', 
+        description: 'دردشة مدينة القدس',
+        subLinks: [
+          { name: 'شات حلا', description: 'دردشة حلا القدس' },
+          { name: 'شات الأكابر', description: 'دردشة كبار القدس' },
+          { name: 'شات وناسة', description: 'دردشة المرح والوناسة' },
+          { name: 'شات الأهل والأحبة', description: 'دردشة العائلة والأصدقاء' },
+          { name: 'شات الأصدقاء والأحبة', description: 'دردشة الصداقة والمحبة' },
+          { name: 'شات صبايا', description: 'دردشة بنات القدس' },
+          { name: 'شات تعارف صبايا', description: 'تعارف بنات القدس' },
+          { name: 'شات أونلاين', description: 'دردشة أونلاين القدس' },
+          { name: 'شات أحلا لمة', description: 'دردشة التجمع المقدسي' },
+          { name: 'شات الملوك', description: 'دردشة ملوك القدس' },
+          { name: 'شات نجوم', description: 'دردشة نجوم القدس' }
+        ]
+      },
       { name: 'شات غزة', description: 'دردشة قطاع غزة' },
       { name: 'شات رام الله', description: 'دردشة مدينة رام الله' },
       { name: 'شات نابلس', description: 'دردشة مدينة نابلس' },

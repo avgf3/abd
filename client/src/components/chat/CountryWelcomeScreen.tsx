@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import type { CountryChat } from '@/data/countryChats';
+import SubChatLinks from './SubChatLinks';
 
 interface CountryWelcomeScreenProps {
   onUserLogin: (user: ChatUser) => void;
@@ -310,28 +311,7 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
           </div>
 
           {/* Country Specific Chat Links */}
-          <div className="glass-effect p-8 rounded-2xl border border-white/20 mb-8">
-            <h2 className="text-3xl font-bold text-center mb-6 text-white">
-              غرف دردشة {countryData.nameAr.replace('شات ', '')} المتخصصة
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {countryData.chatLinks.map((link, index) => (
-                <button
-                  key={index}
-                  onClick={() => toast({
-                    title: link.name,
-                    description: link.description || 'جاري تحميل الغرفة...',
-                  })}
-                  className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 p-3 rounded-xl text-white transition-all duration-300 hover:transform hover:scale-105 border border-white/10 hover:border-white/30"
-                >
-                  <p className="font-semibold">{link.name}</p>
-                  {link.description && (
-                    <p className="text-xs text-gray-300 mt-1">{link.description}</p>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
+          <SubChatLinks chatLinks={countryData.chatLinks} countryName={countryData.nameAr} />
 
           {/* Other Countries Links */}
           <div className="glass-effect p-6 rounded-2xl border border-white/20">

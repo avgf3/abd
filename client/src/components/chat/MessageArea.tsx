@@ -10,6 +10,7 @@ const AnimatedEmojiEnhanced = React.lazy(() => import('./AnimatedEmojiEnhanced')
 const ComposerPlusMenu = React.lazy(() => import('./ComposerPlusMenu'));
 import ProfileImage from './ProfileImage';
 import UserRoleBadge from './UserRoleBadge';
+import InRoomSubLinks from './InRoomSubLinks';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ import { formatTime } from '@/utils/timeUtils';
 // Removed ComposerPlusMenu (ready/quick options)
 import { useComposerStyle } from '@/contexts/ComposerStyleContext';
 import { renderMessageWithAnimatedEmojis, convertTextToAnimatedEmojis } from '@/utils/animatedEmojiUtils';
+import type { ChatLink } from '@/data/countryChats';
 
 interface MessageAreaProps {
   messages: ChatMessage[];
@@ -93,6 +95,23 @@ export default function MessageArea({
     open: false,
     src: null,
   });
+
+  // قراءة معلومات الروابط الفرعية من localStorage
+  const [roomSubLinks, setRoomSubLinks] = useState<ChatLink | null>(null);
+  
+  useEffect(() => {
+    const storedData = localStorage.getItem(`room_${currentRoomName}_sublinks`);
+    if (storedData) {
+      try {
+        const parsedData = JSON.parse(storedData);
+        setRoomSubLinks(parsedData);
+      } catch (error) {
+        console.error('Error parsing sublinks data:', error);
+      }
+    } else {
+      setRoomSubLinks(null);
+    }
+  }, [currentRoomName]);
 
   const isAllowedYouTubeHost = useCallback((host: string) => {
     const h = host.toLowerCase();
@@ -453,6 +472,8 @@ export default function MessageArea({
 
   return (
     <section className="flex-1 flex flex-col bg-white min-h-0">
+      {/* الروابط الفرعية للغرفة */}
+      <InRoomSubLinks currentRoomName={currentRoomName} chatLink={roomSubLinks} />
 
       {/* Messages Container - Virtualized */}
       <div
