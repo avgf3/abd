@@ -14,7 +14,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
+        value: 3000
       - key: ENABLE_WEBSOCKET
         value: true
       - key: SOCKET_IO_POLLING_ONLY
