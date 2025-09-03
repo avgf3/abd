@@ -1477,6 +1477,72 @@ export default function ProfileModal({
           background: rgba(0,0,0,0.9);
         }
 
+        /* شارة الدور أعلى صورة الغلاف (مثل Admin مع نجمة وتوثيق) */
+        .role-badge {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 10px;
+          border-radius: 999px;
+          background: rgba(0,0,0,0.6);
+          color: #fff;
+          font-weight: 700;
+          font-size: 12px;
+          box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+          z-index: 15;
+          border: 1px solid rgba(255,255,255,0.15);
+          backdrop-filter: blur(6px);
+        }
+
+        .role-badge .star-icon {
+          color: #ffe27a;
+          text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+          font-size: 14px;
+        }
+
+        .role-badge .verify-badge {
+          width: 18px;
+          height: 18px;
+          border-radius: 999px;
+          background: #22c55e;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          font-size: 12px;
+          box-shadow: 0 0 0 2px rgba(0,0,0,0.25);
+        }
+
+        /* عرض الاسم بتدرج لوني مشابه للصورة */
+        .username-display {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+        }
+
+        .name-gradient {
+          background: linear-gradient(90deg, #ff2d2d, #ff8b00, #ffd600, #80ff00, #00ffd5, #00a2ff, #ad00ff);
+          background-size: 200% 100%;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          color: transparent;
+          -webkit-text-stroke: 1px rgba(0,0,0,0.6);
+          text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+          animation: gradient-shift 10s linear infinite;
+        }
+
+        .profile-status {
+          font-size: 12px;
+          color: #f0f0f0;
+          opacity: 0.95;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+        }
+
         /* شريط الأزرار على حافة صورة الغلاف السفلية */
         .profile-actions {
           position: absolute;
@@ -2224,6 +2290,18 @@ export default function ProfileModal({
               backgroundRepeat: 'no-repeat',
             }}
           >
+            {/* شارة الدور أعلى يمين الغلاف مثل الصورة */}
+            {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
+              <div className="role-badge">
+                <span className="star-icon">★</span>
+                <span style={{ fontWeight: 800 }}>
+                  {localUser?.userType === 'owner' && 'Owner'}
+                  {localUser?.userType === 'admin' && 'Admin'}
+                  {localUser?.userType === 'moderator' && 'Moderator'}
+                </span>
+                <span className="verify-badge">✓</span>
+              </div>
+            )}
             {/* مشغل الموسيقى - يظهر أعلى يمين الغلاف */}
             {localUser?.profileMusicUrl && musicEnabled && (
               <>
@@ -2270,21 +2348,20 @@ export default function ProfileModal({
                   🖼️ تغيير الغلاف
                 </button>
                 
-                {/* اسم المستخدم مع الرتبة */}
+                {/* اسم المستخدم مع الرتبة والحالة بأسلوب مطابق للصورة */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '38px', /* إنزال المجموعة (اللقب والاسم) أقرب للأسفل */
+                  bottom: '32px',
                   left: '160px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '1px', /* تقليل الفراغ بين اللقب والاسم */
+                  gap: '2px',
                   zIndex: 3
                 }}>
-                  {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '13px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 800 }}>
                         {localUser?.userType === 'owner' && 'Owner'}
                         {localUser?.userType === 'admin' && 'Admin'}
                         {localUser?.userType === 'moderator' && 'Moderator'}
@@ -2294,19 +2371,19 @@ export default function ProfileModal({
                       </span>
                     </div>
                   )}
-                  {/* الاسم */}
-                  <h3 style={{
+                  <h3 className="name-gradient" style={{
                     margin: 0,
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    color: getFinalUsernameColor(localUser || {}),
-                    textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                    fontSize: '22px',
+                    fontWeight: 900,
                     cursor: 'pointer'
                   }}
                   onClick={() => openEditModal('name')}
                   >
                     {localUser?.username || 'اسم المستخدم'}
                   </h3>
+                  <div className="profile-status">
+                    {localUser?.status || 'لا تحاول تكسرني صعب عليك تقابل'}
+                  </div>
                 </div>
               </>
             )}
@@ -2320,12 +2397,12 @@ export default function ProfileModal({
               <>
                 <div style={{
                   position: 'absolute',
-                  bottom: '38px',
+                  bottom: '32px',
                   left: '160px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '1px',
+                  gap: '2px',
                   zIndex: 12
                 }}>
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
@@ -2340,18 +2417,19 @@ export default function ProfileModal({
                       </span>
                     </div>
                   )}
-                  <h3 style={{
+                  <h3 className="name-gradient" style={{
                     margin: 0,
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    color: getFinalUsernameColor(localUser || {}),
-                    textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                    fontSize: '22px',
+                    fontWeight: 900,
                     cursor: 'pointer'
                   }}
                   onClick={() => openEditModal('name')}
                   >
                     {localUser?.username || 'اسم المستخدم'}
                   </h3>
+                  <div className="profile-status">
+                    {localUser?.status || 'لا تحاول تكسرني صعب عليك تقابل'}
+                  </div>
                 </div>
               </>
             )}
@@ -2366,7 +2444,7 @@ export default function ProfileModal({
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '1px', /* تقليل الفراغ بين اللقب والاسم */
+                  gap: '2px', /* تقليل الفراغ بين اللقب والاسم */
                   zIndex: 12,
                   pointerEvents: 'none'
                 }}>
@@ -2384,15 +2462,16 @@ export default function ProfileModal({
                     </div>
                   )}
                   {/* الاسم */}
-                  <h3 style={{
+                  <h3 className="name-gradient" style={{
                     margin: 0,
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    color: getFinalUsernameColor(localUser || {}),
-                    textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                    fontSize: '22px',
+                    fontWeight: 900
                   }}>
                     {localUser?.username || 'اسم المستخدم'}
                   </h3>
+                  <div className="profile-status">
+                    {localUser?.status || ''}
+                  </div>
                 </div>
               </>
             )}
