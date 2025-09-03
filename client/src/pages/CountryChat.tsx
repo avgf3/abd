@@ -12,19 +12,24 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 
 export default function CountryChat() {
-  const [match, params] = useRoute('/:country');
+  // Match both /:country and /:country/:sub
+  const [matchCountryOnly, paramsCountryOnly] = useRoute('/:country');
+  const [matchWithSub, paramsWithSub] = useRoute('/:country/:sub');
   const [, setLocation] = useLocation();
   
   // Get country data based on URL
-  const countryPath = `/${params?.country}`;
+  const countryParam = (paramsWithSub?.country || paramsCountryOnly?.country) as string | undefined;
+  const subParam = (paramsWithSub?.sub as string | undefined) || undefined;
+  const countryPath = `/${countryParam ?? ''}`;
   const countryData = getCountryByPath(countryPath);
   
   // If country not found, redirect to home
   useEffect(() => {
-    if (!match || !countryData) {
+    const hasMatch = matchCountryOnly || matchWithSub;
+    if (!hasMatch || !countryData) {
       setLocation('/');
     }
-  }, [match, countryData, setLocation]);
+  }, [matchCountryOnly, matchWithSub, countryData, setLocation]);
   
   // Initialize session state
   const initialSession = (() => {

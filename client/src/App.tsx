@@ -20,6 +20,8 @@ function Router() {
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/terms" component={TermsOfService} />
       <Route path="/arabic" component={ArabicChat} />
+      {/* Dynamic sub-route for country specialized pages */}
+      <Route path="/:country/:sub" component={CountryChat} />
       {/* Country-specific routes */}
       <Route path="/oman" component={CountryChat} />
       <Route path="/egypt" component={CountryChat} />
