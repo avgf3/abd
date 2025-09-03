@@ -12,15 +12,14 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
-import type { CountryChat } from '@/data/countryChats';
-import { getCitiesByCountry } from '@/data/cityChats';
+import type { CityChat } from '@/data/cityChats';
 
-interface CountryWelcomeScreenProps {
+interface CityWelcomeScreenProps {
   onUserLogin: (user: ChatUser) => void;
-  countryData: CountryChat;
+  cityData: CityChat;
 }
 
-export default function CountryWelcomeScreen({ onUserLogin, countryData }: CountryWelcomeScreenProps) {
+export default function CityWelcomeScreen({ onUserLogin, cityData }: CityWelcomeScreenProps) {
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -33,7 +32,7 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
   const [confirmPassword, setConfirmPassword] = useState('');
   const [registerGender, setRegisterGender] = useState('male');
   const [registerAge, setRegisterAge] = useState('');
-  const [registerCountry, setRegisterCountry] = useState(countryData.nameAr.replace('شات ', ''));
+  const [registerCountry, setRegisterCountry] = useState(cityData.countryNameAr);
   const [registerStatus, setRegisterStatus] = useState('');
   const [registerRelation, setRegisterRelation] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,10 +42,10 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
 
   // تحديث العنوان والوصف للصفحة
   useEffect(() => {
-    document.title = countryData.title;
+    document.title = cityData.title;
     const metaDescription = document.querySelector("meta[name='description']");
     if (metaDescription) {
-      metaDescription.setAttribute('content', countryData.metaDescription);
+      metaDescription.setAttribute('content', cityData.metaDescription);
     }
     
     // إضافة الكلمات المفتاحية
@@ -56,8 +55,8 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
       metaKeywords.setAttribute('name', 'keywords');
       document.head.appendChild(metaKeywords);
     }
-    metaKeywords.setAttribute('content', countryData.keywords.join(', '));
-  }, [countryData]);
+    metaKeywords.setAttribute('content', cityData.keywords.join(', '));
+  }, [cityData]);
 
   const handleGuestLogin = async () => {
     if (!guestName.trim()) {
@@ -76,7 +75,8 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
         body: {
           username: guestName.trim(),
           gender: guestGender,
-          country: countryData.nameAr.replace('شات ', ''),
+          country: cityData.countryNameAr,
+          city: cityData.nameAr.replace('شات ', ''),
         },
       });
       onUserLogin(data.user);
@@ -190,9 +190,9 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
       <StructuredData
         type="WebPage"
         data={{
-          name: countryData.title,
-          url: `https://www.arabya.chat${countryData.path}`,
-          description: countryData.metaDescription,
+          name: cityData.title,
+          url: `https://www.arabya.chat${cityData.path}`,
+          description: cityData.metaDescription,
           breadcrumbs: [
             {
               "@type": "ListItem",
@@ -203,11 +203,17 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
             {
               "@type": "ListItem",
               "position": 2,
-              "name": countryData.nameAr,
-              "item": `https://www.arabya.chat${countryData.path}`
+              "name": `شات ${cityData.countryNameAr}`,
+              "item": `https://www.arabya.chat/${cityData.countryId}`
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": cityData.nameAr,
+              "item": `https://www.arabya.chat${cityData.path}`
             }
           ],
-          appName: countryData.nameAr
+          appName: cityData.nameAr
         }}
       />
       
@@ -222,6 +228,14 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
             <span className="text-gray-400">|</span>
             <a href="/terms" className="text-blue-400 hover:text-blue-300 transition-colors underline">
               شروط الاستخدام
+            </a>
+            <span className="text-gray-400">|</span>
+            <a href={`/${cityData.countryId}`} className="text-blue-400 hover:text-blue-300 transition-colors underline">
+              شات {cityData.countryNameAr}
+            </a>
+            <span className="text-gray-400">|</span>
+            <a href="/" className="text-blue-400 hover:text-blue-300 transition-colors underline">
+              الرئيسية
             </a>
           </div>
           {/* الشعار المثبت يساراً: أبيض وأزرق */}
@@ -249,13 +263,16 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
           {/* Header Section */}
           <div className="text-center mb-8">
             <h1 className="text-5xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
-              {countryData.nameAr}
+              {cityData.nameAr}
             </h1>
             <p className="text-xl md:text-2xl text-gray-200 mb-2">
-              دردشة {countryData.nameAr.replace('شات ', '')} الرسمية 🌟
+              دردشة {cityData.nameAr.replace('شات ', '')} الرسمية 🌟
             </p>
             <p className="text-lg text-gray-300">
-              تعارف وتواصل مع أهل {countryData.nameAr.replace('شات ', '')} في غرف دردشة متنوعة
+              تعارف وتواصل مع أهل {cityData.nameAr.replace('شات ', '')} في غرف دردشة متخصصة
+            </p>
+            <p className="text-sm text-gray-400 mt-2">
+              📍 {cityData.countryNameAr} - {cityData.nameAr.replace('شات ', '')}
             </p>
           </div>
 
@@ -310,57 +327,39 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
             </div>
           </div>
 
-          {/* Country Specific Chat Links */}
+          {/* City Specific Chat Links - نفس فكرة التبويبات للمدن الفرعية */}
           <div className="glass-effect p-8 rounded-2xl border border-white/20 mb-8">
             <h2 className="text-3xl font-bold text-center mb-6 text-white">
-              غرف دردشة {countryData.nameAr.replace('شات ', '')} المتخصصة
+              غرف دردشة {cityData.nameAr.replace('شات ', '')} المتخصصة
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {(() => {
-                // أولاً نحاول الحصول على المدن من ملف cityChats
-                const cities = getCitiesByCountry(countryData.id);
-                
-                if (cities && cities.length > 0) {
-                  // إذا كانت المدن متوفرة، نعرض روابط فعلية للمدن
-                  return cities.map((city, index) => (
-                    <a
-                      key={index}
-                      href={city.path}
-                      className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 p-3 rounded-xl text-white transition-all duration-300 hover:transform hover:scale-105 border border-white/10 hover:border-white/30 block text-center"
-                    >
-                      <p className="font-semibold">{city.nameAr}</p>
-                      <p className="text-xs text-gray-300 mt-1">دردشة {city.nameAr.replace('شات ', '')}</p>
-                    </a>
-                  ));
-                } else {
-                  // إذا لم تكن المدن متوفرة، نعرض التبويبات الأصلية كأزرار
-                  return countryData.chatLinks.map((link, index) => (
-                    <button
-                      key={index}
-                      onClick={() => toast({
-                        title: link.name,
-                        description: link.description || 'جاري تحميل الغرفة...',
-                      })}
-                      className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 p-3 rounded-xl text-white transition-all duration-300 hover:transform hover:scale-105 border border-white/10 hover:border-white/30"
-                    >
-                      <p className="font-semibold">{link.name}</p>
-                      {link.description && (
-                        <p className="text-xs text-gray-300 mt-1">{link.description}</p>
-                      )}
-                    </button>
-                  ));
-                }
-              })()}
+              {cityData.chatLinks.map((link, index) => (
+                <button
+                  key={index}
+                  onClick={() => toast({
+                    title: link.name,
+                    description: link.description || 'جاري تحميل الغرفة...',
+                  })}
+                  className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 p-3 rounded-xl text-white transition-all duration-300 hover:transform hover:scale-105 border border-white/10 hover:border-white/30"
+                >
+                  <p className="font-semibold">{link.name}</p>
+                  {link.description && (
+                    <p className="text-xs text-gray-300 mt-1">{link.description}</p>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Other Countries Links */}
-          <div className="glass-effect p-6 rounded-2xl border border-white/20">
+          {/* Navigation Links */}
+          <div className="glass-effect p-6 rounded-2xl border border-white/20 mb-8">
             <h3 className="text-2xl font-bold text-center mb-4 text-white">
-              دردشات عربية أخرى
+              دردشات أخرى في {cityData.countryNameAr}
             </h3>
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="flex flex-wrap justify-center gap-3 text-sm">
               <a href="/" className="text-blue-300 hover:text-blue-200 transition-colors">الرئيسية</a>
+              <span className="text-gray-500">|</span>
+              <a href={`/${cityData.countryId}`} className="text-blue-300 hover:text-blue-200 transition-colors">شات {cityData.countryNameAr}</a>
               <span className="text-gray-500">|</span>
               <a href="/oman" className="text-blue-300 hover:text-blue-200 transition-colors">شات عمان</a>
               <span className="text-gray-500">|</span>
@@ -368,22 +367,21 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
               <span className="text-gray-500">|</span>
               <a href="/saudi" className="text-blue-300 hover:text-blue-200 transition-colors">شات السعودية</a>
               <span className="text-gray-500">|</span>
-              <a href="/algeria" className="text-blue-300 hover:text-blue-200 transition-colors">شات الجزائر</a>
-              <span className="text-gray-500">|</span>
-              <a href="/bahrain" className="text-blue-300 hover:text-blue-200 transition-colors">شات البحرين</a>
-              <span className="text-gray-500">|</span>
-              <a href="/uae" className="text-blue-300 hover:text-blue-200 transition-colors">شات الإمارات</a>
-              <span className="text-gray-500">|</span>
               <a href="/jordan" className="text-blue-300 hover:text-blue-200 transition-colors">شات الأردن</a>
               <span className="text-gray-500">|</span>
-              <a href="/kuwait" className="text-blue-300 hover:text-blue-200 transition-colors">شات الكويت</a>
-              <span className="text-gray-500">|</span>
-              <a href="/libya" className="text-blue-300 hover:text-blue-200 transition-colors">شات ليبيا</a>
-              <span className="text-gray-500">|</span>
-              <a href="/tunisia" className="text-blue-300 hover:text-blue-200 transition-colors">شات تونس</a>
-              <span className="text-gray-500">|</span>
-              <a href="/morocco" className="text-blue-300 hover:text-blue-200 transition-colors">شات المغرب</a>
+              <a href="/uae" className="text-blue-300 hover:text-blue-200 transition-colors">شات الإمارات</a>
             </div>
+          </div>
+
+          {/* Back to Country Link */}
+          <div className="text-center">
+            <a 
+              href={`/${cityData.countryId}`}
+              className="inline-flex items-center gap-2 text-blue-300 hover:text-blue-200 transition-colors text-lg"
+            >
+              <span>🔙</span>
+              العودة إلى شات {cityData.countryNameAr}
+            </a>
           </div>
         </div>
       </div>
@@ -394,7 +392,7 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
           <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold text-white flex items-center justify-center gap-2">
               <span>👤</span>
-              دخول كزائر - {countryData.nameAr}
+              دخول كزائر - {cityData.nameAr}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -450,7 +448,7 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
           <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold text-white flex items-center justify-center gap-2">
               <span>⭐</span>
-              دخول الأعضاء - {countryData.nameAr}
+              دخول الأعضاء - {cityData.nameAr}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -486,7 +484,7 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
           <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold text-white flex items-center justify-center gap-2">
               <span>📝</span>
-              تسجيل عضوية جديدة - {countryData.nameAr}
+              تسجيل عضوية جديدة - {cityData.nameAr}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">

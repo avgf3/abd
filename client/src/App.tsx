@@ -10,6 +10,7 @@ import { ComposerStyleProvider } from '@/contexts/ComposerStyleContext';
 import ChatPage from '@/pages/chat';
 import ArabicChat from '@/pages/ArabicChat';
 import CountryChat from '@/pages/CountryChat';
+import CityChat from '@/pages/CityChat';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import TermsOfService from '@/pages/TermsOfService';
 
@@ -20,6 +21,27 @@ function Router() {
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/terms" component={TermsOfService} />
       <Route path="/arabic" component={ArabicChat} />
+      {/* City-specific routes - يجب أن تكون قبل routes البلدان */}
+      <Route path="/jordan/:city" component={CityChat} />
+      <Route path="/egypt/:city" component={CityChat} />
+      <Route path="/saudi/:city" component={CityChat} />
+      <Route path="/uae/:city" component={CityChat} />
+      <Route path="/kuwait/:city" component={CityChat} />
+      <Route path="/morocco/:city" component={CityChat} />
+      <Route path="/algeria/:city" component={CityChat} />
+      <Route path="/bahrain/:city" component={CityChat} />
+      <Route path="/libya/:city" component={CityChat} />
+      <Route path="/tunisia/:city" component={CityChat} />
+      <Route path="/sudan/:city" component={CityChat} />
+      <Route path="/palestine/:city" component={CityChat} />
+      <Route path="/qatar/:city" component={CityChat} />
+      <Route path="/yemen/:city" component={CityChat} />
+      <Route path="/lebanon/:city" component={CityChat} />
+      <Route path="/syria/:city" component={CityChat} />
+      <Route path="/iraq/:city" component={CityChat} />
+      <Route path="/comoros/:city" component={CityChat} />
+      <Route path="/djibouti/:city" component={CityChat} />
+      
       {/* Country-specific routes */}
       <Route path="/oman" component={CountryChat} />
       <Route path="/egypt" component={CountryChat} />
