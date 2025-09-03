@@ -144,7 +144,7 @@ router.post('/send', protect.auth, limiters.pmSend, async (req, res) => {
     conversationCache.delete(conversationKey);
 
     // إرسال إشعار وبث الرسالة بشكل متوازي
-    const promises = [];
+    const promises: Array<Promise<any>> = [];
 
     // تم إيقاف إنشاء إشعار الرسائل: تبويب الإشعارات لا يعرض إشعارات الرسائل
 
@@ -173,14 +173,7 @@ router.post('/send', protect.auth, limiters.pmSend, async (req, res) => {
       );
     }
 
-    const [createdNotification] = await Promise.all(promises);
-
-    // بث الإشعار إذا تم إنشاؤه بنجاح
-    if (io && createdNotification) {
-      try {
-        io.to(String(receiverId)).emit('newNotification', { notification: createdNotification });
-      } catch {}
-    }
+    await Promise.all(promises);
 
     return res.json({ success: true, message: messageWithSender });
   } catch (error: any) {

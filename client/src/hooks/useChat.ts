@@ -411,6 +411,15 @@ export const useChat = () => {
 
     // لم نعد نستخدم polling لقائمة المتصلين؛ السيرفر يبث التحديثات مباشرة
 
+    // ✅ استقبال إشعار جديد مباشر من الخادم وتحديث الواجهة فوراً
+    socketInstance.on('newNotification', (payload: any) => {
+      try {
+        // أبلغ نظام الإشعارات لتحديث الكاش والعداد مباشرة
+        const detail = { notification: payload?.notification } as any;
+        window.dispatchEvent(new CustomEvent('notificationReceived', { detail }));
+      } catch {}
+    });
+
     // ✅ معالج واحد للرسائل - حذف التضارب
     socketInstance.on('message', (data: any) => {
       try {
@@ -436,6 +445,14 @@ export const useChat = () => {
               payload: { id: targetId, profileEffect: profileEffect ?? user?.profileEffect } as any,
             });
           }
+        }
+
+        // إشعار نظامي عام يصل عبر قناة الرسائل الموحدة
+        if (envelope.type === 'systemNotification') {
+          try {
+            const detail = { notification: (envelope as any).notification } as any;
+            window.dispatchEvent(new CustomEvent('notificationReceived', { detail }));
+          } catch {}
         }
 
         // بث خاص لتحديث لون الاسم فقط
