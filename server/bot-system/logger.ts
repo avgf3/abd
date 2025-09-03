@@ -2,8 +2,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+let __dirname: string;
+try {
+  const __filename = fileURLToPath(import.meta.url);
+  __dirname = path.dirname(__filename);
+} catch (e) {
+  // Fallback for production build
+  __dirname = process.cwd();
+}
 
 enum LogLevel {
   DEBUG = 0,
@@ -18,7 +24,8 @@ class BotLogger {
   private writeStream: fs.WriteStream | null = null;
 
   constructor() {
-    const logsDir = path.join(__dirname, '../../../logs/bot-system');
+    // Use a path relative to the project root instead
+    const logsDir = path.join(process.cwd(), 'logs', 'bot-system');
     if (!fs.existsSync(logsDir)) {
       fs.mkdirSync(logsDir, { recursive: true });
     }
