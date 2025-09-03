@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import type { CountryChat } from '@/data/countryChats';
+import { countryChats } from '@/data/countryChats';
 
 interface CountryWelcomeScreenProps {
   onUserLogin: (user: ChatUser) => void;
@@ -39,6 +40,12 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [, setLocation] = useLocation();
+
+  // روابط الدول الأخرى لعرضها في أسفل الصفحة (مطابقة للنظام الموجود)
+  const otherCountryLinks = [
+    { href: '/', label: 'الرئيسية' },
+    ...countryChats.map((country) => ({ href: country.path, label: country.nameAr })),
+  ];
 
   // تحديث العنوان والوصف للصفحة
   useEffect(() => {
@@ -339,29 +346,14 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData }: Count
               دردشات عربية أخرى
             </h3>
             <div className="flex flex-wrap justify-center gap-3">
-              <a href="/" className="text-blue-300 hover:text-blue-200 transition-colors">الرئيسية</a>
-              <span className="text-gray-500">|</span>
-              <a href="/oman" className="text-blue-300 hover:text-blue-200 transition-colors">شات عمان</a>
-              <span className="text-gray-500">|</span>
-              <a href="/egypt" className="text-blue-300 hover:text-blue-200 transition-colors">شات مصر</a>
-              <span className="text-gray-500">|</span>
-              <a href="/saudi" className="text-blue-300 hover:text-blue-200 transition-colors">شات السعودية</a>
-              <span className="text-gray-500">|</span>
-              <a href="/algeria" className="text-blue-300 hover:text-blue-200 transition-colors">شات الجزائر</a>
-              <span className="text-gray-500">|</span>
-              <a href="/bahrain" className="text-blue-300 hover:text-blue-200 transition-colors">شات البحرين</a>
-              <span className="text-gray-500">|</span>
-              <a href="/uae" className="text-blue-300 hover:text-blue-200 transition-colors">شات الإمارات</a>
-              <span className="text-gray-500">|</span>
-              <a href="/jordan" className="text-blue-300 hover:text-blue-200 transition-colors">شات الأردن</a>
-              <span className="text-gray-500">|</span>
-              <a href="/kuwait" className="text-blue-300 hover:text-blue-200 transition-colors">شات الكويت</a>
-              <span className="text-gray-500">|</span>
-              <a href="/libya" className="text-blue-300 hover:text-blue-200 transition-colors">شات ليبيا</a>
-              <span className="text-gray-500">|</span>
-              <a href="/tunisia" className="text-blue-300 hover:text-blue-200 transition-colors">شات تونس</a>
-              <span className="text-gray-500">|</span>
-              <a href="/morocco" className="text-blue-300 hover:text-blue-200 transition-colors">شات المغرب</a>
+              {otherCountryLinks.map((link, index) => (
+                <span key={link.href} className="inline-flex items-center gap-3">
+                  <a href={link.href} className="text-blue-300 hover:text-blue-200 transition-colors">{link.label}</a>
+                  {index < otherCountryLinks.length - 1 && (
+                    <span className="text-gray-500">|</span>
+                  )}
+                </span>
+              ))}
             </div>
           </div>
         </div>
