@@ -17,7 +17,6 @@ import {
 import { getUserLevelIcon } from '@/components/chat/UserRoleBadge';
 import ProfileImage from './ProfileImage';
 import { useStories } from '@/hooks/useStories';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface ProfileModalProps {
   user: ChatUser | null;
@@ -85,24 +84,83 @@ export default function ProfileModal({
   // تشغيل الموسيقى تلقائياً عند فتح البروفايل
   useEffect(() => {
     if (localUser?.profileMusicUrl && musicEnabled && audioRef.current) {
-      // محاولة التشغيل التلقائي
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      // محاولة التشغيل التلقائي مع إعادة المحاولة
       const playAudio = async () => {
+        if (!audioRef.current || attempts >= maxAttempts) return;
+        
         try {
+          attempts++;
           setAudioLoading(true);
           setAudioError(false);
-          audioRef.current!.volume = Math.max(0, Math.min(1, musicVolume / 100));
-          await audioRef.current!.play();
-        } catch (err) {
-          console.log('التشغيل التلقائي محظور من المتصفح، يحتاج تفاعل من المستخدم');
-          // في حالة فشل التشغيل التلقائي، سيتم التشغيل عند أول تفاعل
+          
+          // ضبط مستوى الصوت
+          audioRef.current.volume = Math.max(0, Math.min(1, musicVolume / 100));
+          
+          // محاولة التشغيل العادي أولاً
+          await audioRef.current.play();
+          setIsPlaying(true);
+          console.log('✅ تم تشغيل الموسيقى تلقائياً');
+        } catch (err: any) {
+          console.log(`محاولة ${attempts}/${maxAttempts} فشلت:`, err.message);
+          
+          // إذا فشلت المحاولة الأولى، نحاول مع الصوت المكتوم
+          if (attempts === 1 && audioRef.current) {
+            try {
+              audioRef.current.muted = true;
+              await audioRef.current.play();
+              // بعد التشغيل، نرفع الكتم تدريجياً
+              setTimeout(() => {
+                if (audioRef.current) {
+                  audioRef.current.muted = false;
+                }
+              }, 100);
+              setIsPlaying(true);
+              console.log('✅ تم التشغيل بالوضع المكتوم ثم رفع الكتم');
+            } catch (mutedErr) {
+              // إعادة المحاولة بعد تأخير
+              setTimeout(playAudio, 1000);
+            }
+          } else if (attempts < maxAttempts) {
+            // إعادة المحاولة بعد تأخير أطول
+            setTimeout(playAudio, 1500);
+          } else {
+            // بعد فشل كل المحاولات، ننتظر تفاعل المستخدم
+            console.log('⚠️ التشغيل التلقائي محظور، في انتظار تفاعل المستخدم');
+            
+            // إضافة مستمع للنقر لمحاولة التشغيل عند أول تفاعل
+            const handleUserInteraction = async () => {
+              if (audioRef.current && audioRef.current.paused) {
+                try {
+                  await audioRef.current.play();
+                  setIsPlaying(true);
+                  console.log('✅ تم التشغيل بعد تفاعل المستخدم');
+                } catch {}
+              }
+              // إزالة المستمع بعد أول تفاعل
+              document.removeEventListener('click', handleUserInteraction);
+              document.removeEventListener('touchstart', handleUserInteraction);
+            };
+            
+            document.addEventListener('click', handleUserInteraction, { once: true });
+            document.addEventListener('touchstart', handleUserInteraction, { once: true });
+          }
         } finally {
           setAudioLoading(false);
         }
       };
       
       // تأخير بسيط للسماح بتحميل الصوت
-      const timer = setTimeout(playAudio, 500);
-      return () => clearTimeout(timer);
+      const timer = setTimeout(playAudio, 300);
+      
+      return () => {
+        clearTimeout(timer);
+        // تنظيف المستمعات عند إلغاء المكون
+        document.removeEventListener('click', playAudio);
+        document.removeEventListener('touchstart', playAudio);
+      };
     }
   }, [localUser?.profileMusicUrl, musicEnabled, musicVolume]);
   
@@ -2165,128 +2223,32 @@ export default function ProfileModal({
             {/* مشغل الموسيقى - يظهر أعلى يمين الغلاف */}
             {localUser?.profileMusicUrl && musicEnabled && (
               <>
-                {/* الشريط المرئي - يظهر فقط لصاحب البروفايل */}
+                {/* مشغل مخفي لصاحب البروفايل - التشغيل التلقائي فقط */}
                 {localUser?.id === currentUser?.id && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '10px',
-                      right: '10px',
-                      zIndex: 5,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      background: 'rgba(0,0,0,0.45)',
-                      padding: '6px 8px',
-                      borderRadius: '10px',
-                      border: '1px solid rgba(255,255,255,0.15)'
-                    }}
-                  >
-                    {audioError ? (
-                      <span style={{ color: '#ff6b6b', fontSize: '12px' }}>⚠️ خطأ في تحميل الموسيقى</span>
-                    ) : audioLoading ? (
-                      <span style={{ color: '#fff', fontSize: '12px' }}>⏳ جاري التحميل...</span>
-                    ) : (
-                      <>
-                        <audio
-                          ref={audioRef}
-                          src={localUser.profileMusicUrl}
-                          controls
-                          autoPlay
-                          loop
-                          style={{ height: '28px' }}
-                          onError={handleAudioError}
-                          onLoadStart={handleAudioLoadStart}
-                          onCanPlay={handleAudioCanPlay}
-                        />
-                        <span style={{ color: '#fff', fontSize: '12px', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {musicTitle || 'موسيقى البروفايل'}
-                        </span>
-                      </>
-                    )}
-                  </div>
+                  <audio
+                    ref={audioRef}
+                    src={localUser.profileMusicUrl}
+                    autoPlay
+                    loop
+                    style={{ display: 'none' }}
+                    onError={handleAudioError}
+                    onLoadStart={handleAudioLoadStart}
+                    onCanPlay={handleAudioCanPlay}
+                  />
                 )}
                 
-                {/* مشغل للمستخدمين الآخرين */}
+                {/* مشغل مخفي للمستخدمين الآخرين - بدون أزرار تحكم */}
                 {localUser?.id !== currentUser?.id && (
-                  <>
-                    <audio
-                      ref={audioRef}
-                      src={localUser.profileMusicUrl}
-                      autoPlay
-                      loop
-                      style={{ display: 'none' }}
-                      onError={handleAudioError}
-                      onLoadStart={handleAudioLoadStart}
-                      onCanPlay={handleAudioCanPlay}
-                    />
-                    
-                    {/* شريط التحكم في الموسيقى للمستخدمين الآخرين */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '10px',
-                        right: '10px',
-                        zIndex: 5,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        background: 'rgba(0,0,0,0.7)',
-                        padding: '6px 10px',
-                        borderRadius: '10px',
-                        border: '1px solid rgba(255,255,255,0.15)'
-                      }}
-                    >
-                      {audioError ? (
-                        <span style={{ color: '#ff6b6b', fontSize: '12px' }}>
-                          ⚠️ خطأ في تحميل الموسيقى
-                        </span>
-                      ) : audioLoading ? (
-                        <span style={{ color: '#fff', fontSize: '12px' }}>
-                          ⏳ جاري تحميل الموسيقى...
-                        </span>
-                      ) : (
-                        <>
-                          <button
-                            onClick={handleAudioPlayPause}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: '#fff',
-                              fontSize: '16px',
-                              cursor: 'pointer',
-                              padding: '2px'
-                            }}
-                            title="تشغيل/إيقاف الموسيقى"
-                          >
-                            {isPlaying ? '⏸️' : '▶️'}
-                          </button>
-                          <span style={{ color: '#fff', fontSize: '12px', maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            🎵 {musicTitle || 'موسيقى البروفايل'}
-                          </span>
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={musicVolume}
-                            onChange={(e) => {
-                              const vol = parseInt(e.target.value);
-                              setMusicVolume(vol);
-                              if (audioRef.current) {
-                                audioRef.current.volume = Math.max(0, Math.min(1, vol / 100));
-                              }
-                            }}
-                            style={{
-                              width: '60px',
-                              height: '4px',
-                              cursor: 'pointer'
-                            }}
-                            title="مستوى الصوت"
-                          />
-                        </>
-                      )}
-                    </div>
-                  </>
+                  <audio
+                    ref={audioRef}
+                    src={localUser.profileMusicUrl}
+                    autoPlay
+                    loop
+                    style={{ display: 'none' }}
+                    onError={handleAudioError}
+                    onLoadStart={handleAudioLoadStart}
+                    onCanPlay={handleAudioCanPlay}
+                  />
                 )}
               </>
             )}
@@ -2531,133 +2493,92 @@ export default function ProfileModal({
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                       <strong>🎵 موسيقى البروفايل</strong>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-                      <input
-                        type="checkbox"
-                        checked={musicEnabled}
-                        onChange={async (e) => {
-                          const enabled = e.target.checked;
-                          setMusicEnabled(enabled);
-                          try {
-                            await apiRequest(`/api/users/${localUser?.id}`, {
-                              method: 'PATCH',
-                              body: { profileMusicEnabled: enabled },
-                            });
-                            updateUserData({ profileMusicEnabled: enabled });
-                          } catch {}
-                        }}
-                      />
-                      تفعيل
-                    </label>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={musicVolume}
-                      onChange={async (e) => {
-                        const vol = parseInt(e.target.value);
-                        setMusicVolume(vol);
-                        try {
-                          if (audioRef.current) audioRef.current.volume = Math.max(0, Math.min(1, vol / 100));
-                          await apiRequest(`/api/users/${localUser?.id}`, {
-                            method: 'PATCH',
-                            body: { profileMusicVolume: vol },
-                          });
-                          updateUserData({ profileMusicVolume: vol });
-                        } catch {}
-                      }}
-                      style={{ flex: 1 }}
-                    />
-                    <span style={{ width: 36, textAlign: 'right', fontSize: 12 }}>{musicVolume}%</span>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                    <input
-                      type="text"
-                      value={musicTitle}
-                      placeholder="عنوان المقطع (اختياري)"
-                      onChange={(e) => setMusicTitle(e.target.value)}
-                      onBlur={async () => {
-                        try {
-                          await apiRequest(`/api/users/${localUser?.id}`, {
-                            method: 'PATCH',
-                            body: { profileMusicTitle: musicTitle },
-                          });
-                          updateUserData({ profileMusicTitle: musicTitle });
-                        } catch {}
-                      }}
-                      className="w-full"
-                    />
+                      {localUser?.profileMusicUrl && (
+                        <span style={{ fontSize: '11px', color: '#4caf50' }}>✅ نشط</span>
+                      )}
                   </div>
 
                   <div style={{ marginTop: '8px' }}>
-                    <Tabs defaultValue="device">
-                      <TabsList>
-                        <TabsTrigger value="device">إضافة من جهازك</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="device">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                          <button
-                            onClick={() => musicFileInputRef.current?.click()}
-                            style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.08)', color: '#fff' }}
-                          >
-                            اختر ملف صوتي
-                          </button>
-                          {localUser?.profileMusicUrl && (
-                            <button
-                              onClick={async () => {
-                                if (!confirm('هل أنت متأكد من حذف موسيقى البروفايل؟')) return;
-                                
-                                try {
-                                  setIsLoading(true);
-                                  await apiRequest(`/api/users/${localUser?.id}/profile-music`, { method: 'DELETE' });
-                                  
-                                  // إيقاف الموسيقى وتنظيف المشغل
-                                  if (audioRef.current) { 
-                                    audioRef.current.pause(); 
-                                    audioRef.current.src = ''; 
-                                  }
-                                  
-                                  // تحديث البيانات المحلية
-                                  updateUserData({ 
-                                    profileMusicUrl: undefined, 
-                                    profileMusicTitle: '', 
-                                    profileMusicEnabled: false 
-                                  });
-                                  
-                                  setMusicTitle('');
-                                  setMusicEnabled(false);
-                                  setIsPlaying(false);
-                                  setAudioError(false);
-                                  
-                                  toast({ title: 'تم ✅', description: 'تم حذف موسيقى البروفايل بنجاح' });
-                                } catch (err: any) {
-                                  console.error('خطأ في حذف الموسيقى:', err);
-                                  toast({ 
-                                    title: 'خطأ', 
-                                    description: err?.message || 'فشل حذف الموسيقى', 
-                                    variant: 'destructive' 
-                                  });
-                                } finally {
-                                  setIsLoading(false);
-                                }
-                              }}
-                              className="btn-report"
-                              style={{ padding: '6px 10px' }}
-                              disabled={isLoading}
-                            >
-                              {isLoading ? '⏳' : '🗑️'} حذف الموسيقى
-                            </button>
-                          )}
-                        </div>
-                        <input
-                          ref={musicFileInputRef}
-                          type="file"
-                          accept="audio/*"
-                          onChange={async (e) => {
+                    {localUser?.profileMusicUrl ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: '12px', color: '#fff', flex: 1 }}>
+                          🎵 {musicTitle || 'موسيقى البروفايل'}
+                        </span>
+                        <button
+                          onClick={async () => {
+                            if (!confirm('هل أنت متأكد من حذف موسيقى البروفايل؟')) return;
+                            
+                            try {
+                              setIsLoading(true);
+                              await apiRequest(`/api/users/${localUser?.id}/profile-music`, { method: 'DELETE' });
+                              
+                              // إيقاف الموسيقى وتنظيف المشغل
+                              if (audioRef.current) { 
+                                audioRef.current.pause(); 
+                                audioRef.current.src = ''; 
+                              }
+                              
+                              // تحديث البيانات المحلية
+                              updateUserData({ 
+                                profileMusicUrl: undefined, 
+                                profileMusicTitle: '', 
+                                profileMusicEnabled: false 
+                              });
+                              
+                              setMusicTitle('');
+                              setMusicEnabled(false);
+                              setIsPlaying(false);
+                              setAudioError(false);
+                              
+                              toast({ title: 'تم ✅', description: 'تم حذف موسيقى البروفايل' });
+                            } catch (err: any) {
+                              console.error('خطأ في حذف الموسيقى:', err);
+                              toast({ 
+                                title: 'خطأ', 
+                                description: err?.message || 'فشل حذف الموسيقى', 
+                                variant: 'destructive' 
+                              });
+                            } finally {
+                              setIsLoading(false);
+                            }
+                          }}
+                          style={{ 
+                            padding: '4px 8px', 
+                            borderRadius: '6px', 
+                            background: '#dc2626', 
+                            color: '#fff',
+                            border: 'none',
+                            fontSize: '11px',
+                            cursor: 'pointer'
+                          }}
+                          disabled={isLoading}
+                        >
+                          {isLoading ? '⏳' : '🗑️'} حذف
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => musicFileInputRef.current?.click()}
+                        style={{ 
+                          padding: '8px 12px', 
+                          borderRadius: '8px', 
+                          border: '1px solid rgba(255,255,255,0.2)', 
+                          background: 'rgba(255,255,255,0.08)', 
+                          color: '#fff',
+                          width: '100%',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        📁 اختر ملف صوتي (MP3, WAV, OGG)
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    ref={musicFileInputRef}
+                    type="file"
+                    accept="audio/*"
+                    style={{ display: 'none' }}
+                    onChange={async (e) => {
                             try {
                               // التحقق من الصلاحيات
                               const isAuthorized = currentUser && (
@@ -2751,9 +2672,6 @@ export default function ProfileModal({
                             }
                           }}
                         />
-                      </TabsContent>
-                    </Tabs>
-                  </div>
                 </div>
                 )}
               </div>
