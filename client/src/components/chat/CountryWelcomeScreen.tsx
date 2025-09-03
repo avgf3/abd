@@ -381,9 +381,9 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData, topicSl
             </div>
           </div>
 
-          {/* Country Specific Chat Links */
-          {/* First-level topics inside the selected country */}
-          <div className="glass-effect p-8 rounded-2xl border border-white/20 mb-8">
+          <>
+            {/* Country Specific Chat Links - First-level topics inside the selected country */}
+            <div className="glass-effect p-8 rounded-2xl border border-white/20 mb-8">
             <h2 className="text-3xl font-bold text-center mb-6 text-white">
               غرف دردشة {countryData.nameAr.replace('شات ', '')} المتخصصة
             </h2>
@@ -484,6 +484,7 @@ export default function CountryWelcomeScreen({ onUserLogin, countryData, topicSl
               <a href="/morocco" className="text-blue-300 hover:text-blue-200 transition-colors">شات المغرب</a>
             </div>
           </div>
+          </>
         </div>
       </div>
 
