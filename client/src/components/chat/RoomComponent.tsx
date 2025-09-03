@@ -2,6 +2,8 @@ import { X, Plus, Users, Mic, RefreshCw, MessageCircle, Search, Settings, Lock, 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 
+import RoomListItem from './RoomListItem';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -117,63 +119,18 @@ const RoomCard: React.FC<RoomCardProps> = ({
     );
   };
 
-  // عرض القائمة
+  // عرض القائمة - مشابه لقائمة المتصلين
   if (viewMode === 'list') {
     return (
-      <div
-        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors group ${
-          isActive ? 'bg-primary/20 border border-primary/30' : 'hover:bg-muted/80'
-        }`}
-        onClick={() => onSelect(room.id)}
-      >
-        <RoomIcon />
-        <RoomInfo />
-
-        {(canModerate || canDelete) && (
-          <div className="ml-auto flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
-            {canModerate && onToggleLock && (
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleLock(room.id, !room.isLocked);
-                }}
-                variant="ghost"
-                size="sm"
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                title={room.isLocked ? 'فتح الغرفة' : 'قفل الغرفة'}
-              >
-                {room.isLocked ? (
-                  <Lock className="w-4 h-4 text-yellow-600" />
-                ) : (
-                  <Unlock className="w-4 h-4" />
-                )}
-              </Button>
-            )}
-            <Button
-              onClick={handleDelete}
-              variant="ghost"
-              size="sm"
-              className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onChangeIcon) {
-                  onChangeIcon(room.id);
-                }
-              }}
-              variant="ghost"
-              size="sm"
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
-              title="تغيير صورة الغرفة"
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
-          </div>
-        )}
-      </div>
+      <RoomListItem
+        room={room}
+        isActive={isActive}
+        currentUser={currentUser}
+        onSelect={onSelect}
+        onDelete={canDelete ? onDelete : undefined}
+        onChangeIcon={isAdmin ? onChangeIcon : undefined}
+        onToggleLock={canModerate ? onToggleLock : undefined}
+      />
     );
   }
 
@@ -520,51 +477,17 @@ export default function RoomComponent({
   // العرض العادي (قائمة أو شبكة)
   return (
     <div className="h-full flex flex-col bg-background/95 backdrop-blur-sm">
-      {/* العنوان */}
-      <div className="p-4 border-b">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-lg">الغرف</h3>
-            {showStats && (
-              <Badge variant="secondary" className="ml-2">
-                {roomStats.totalRooms} غرفة
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {allowRefresh && onRefreshRooms && (
-              <Button
-                onClick={onRefreshRooms}
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-primary"
-                title="تحديث الغرف"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </Button>
-            )}
-
-            {showSearch && (
-              <Button variant="ghost" size="sm" title="البحث في الغرف">
-                <Search className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
+      {/* شريط البحث - مشابه لقائمة المتصلين */}
+      <div className="p-2 bg-card border-b border-border flex-shrink-0">
+        <div className="relative">
+          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="البحث عن الغرف..."
+            className="w-full pl-4 pr-10 py-1.5 rounded-lg bg-background border-input placeholder:text-muted-foreground text-foreground"
+          />
         </div>
-
-        {/* شريط البحث */}
-        {showSearch && (
-          <div className="mt-3">
-            <Input
-              placeholder="البحث في الغرف..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="text-right"
-            />
-          </div>
-        )}
       </div>
 
       {/* المحتوى */}
@@ -577,26 +500,40 @@ export default function RoomComponent({
           const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
           setIsAtBottomRooms(atBottom);
         }}
-        className="relative flex-1 min-h-0 overflow-y-auto p-4 pb-24 cursor-grab"
+        className="relative flex-1 min-h-0 overflow-y-auto cursor-grab bg-background"
       >
+        {/* العنوان - مشابه لقائمة المتصلين */}
+        <div className="bg-primary text-primary-foreground mb-1 mx-0 mt-0 rounded-none">
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <div className="flex items-center gap-2 font-bold text-sm">
+              الغرف المتاحة
+              <span className="bg-white/20 text-white px-1.5 py-0.5 rounded-full text-[10px] font-semibold">
+                {filteredRooms.length}
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* زر إضافة غرفة */}
         {canCreateRooms && (
-          <Button
-            onClick={() => setShowAddRoom(true)}
-            variant="outline"
-            className="w-full justify-start gap-2 text-primary hover:bg-primary/10 mb-4"
-          >
-            <Plus className="w-4 h-4" />
-            إضافة غرفة جديدة
-          </Button>
+          <div className="px-3 py-2">
+            <Button
+              onClick={() => setShowAddRoom(true)}
+              variant="outline"
+              className="w-full justify-start gap-2 text-primary hover:bg-primary/10"
+            >
+              <Plus className="w-4 h-4" />
+              إضافة غرفة جديدة
+            </Button>
+          </div>
         )}
 
         {/* قائمة الغرف */}
         <div
           className=
             {viewMode === 'grid'
-              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'
-              : 'space-y-1 h-full'}
+              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4'
+              : 'space-y-0 h-full'}
         >
           {viewMode === 'grid' ? (
             filteredRooms.map((room) => (
@@ -614,27 +551,44 @@ export default function RoomComponent({
               />
             ))
           ) : (
-            <Virtuoso
-              style={{ height: '100%' }}
-              totalCount={filteredRooms.length}
-              itemContent={(index) => {
-                const room = filteredRooms[index];
-                return (
-                  <RoomCard
-                    key={room.id}
-                    room={room}
-                    isActive={currentRoomId === room.id}
-                    currentUser={currentUser}
-                    viewMode={viewMode}
-                    compact={compact}
-                    onSelect={(_rid) => handleRoomSelect(room)}
-                    onDelete={canDeleteRooms ? (id, e) => handleDeleteRoom(id, e) : undefined}
-                    onChangeIcon={isAdmin ? (rid) => handleChangeIconClick(rid) : undefined}
-                    onToggleLock={isAdmin ? (rid, locked) => handleToggleLock(rid, locked) : undefined}
-                  />
-                );
-              }}
-            />
+            <div className="px-0">
+              {filteredRooms.length === 0 ? (
+                <div className="text-center text-gray-500 py-6">
+                  <div className="mb-3">{searchQuery ? '🔍' : '🏠'}</div>
+                  <p className="text-sm">
+                    {searchQuery ? 'لا توجد نتائج للبحث' : 'لا توجد غرف متاحة حالياً'}
+                  </p>
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="text-blue-500 hover:text-blue-700 text-xs mt-2 underline"
+                    >
+                      مسح البحث
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <Virtuoso
+                  style={{ height: 'calc(100vh - 260px)' }}
+                  totalCount={filteredRooms.length}
+                  itemContent={(index) => {
+                    const room = filteredRooms[index];
+                    return (
+                      <RoomListItem
+                        key={room.id}
+                        room={room}
+                        isActive={currentRoomId === room.id}
+                        currentUser={currentUser}
+                        onSelect={(_rid) => handleRoomSelect(room)}
+                        onDelete={canDeleteRooms ? (id, e) => handleDeleteRoom(id, e) : undefined}
+                        onChangeIcon={isAdmin ? (rid) => handleChangeIconClick(rid) : undefined}
+                        onToggleLock={isAdmin ? (rid, locked) => handleToggleLock(rid, locked) : undefined}
+                      />
+                    );
+                  }}
+                />
+              )}
+            </div>
           )}
         </div>
         {/* Hidden file input for changing room icon */}
