@@ -54,45 +54,51 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
 
   // owner: تاج SVG مع fallback
   if (user.userType === 'owner') {
+    const w = size * 1.15;
+    const h = size * 1.15;
     return (
       <img
         src="/svgs/crown.svg"
         alt="owner"
-        style={{ width: size, height: size, display: 'inline' }}
+        style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
         onError={(e) => {
           const target = e.target as HTMLImageElement;
           target.style.display = 'none';
-          target.outerHTML = '<span style="font-size: ' + size + 'px; display: inline;">👑</span>';
+          target.outerHTML = '<span style="font-size: ' + Math.max(w, h) + 'px; display: inline;">👑</span>';
         }}
       />
     );
   }
   // admin: نجمة
   if (user.userType === 'admin') {
+    const w = size;
+    const h = size;
     return (
       <img
         src="/svgs/star.svg"
         alt="admin"
-        style={{ width: size, height: size, display: 'inline' }}
+        style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
         onError={(e) => {
           const target = e.target as HTMLImageElement;
           target.style.display = 'none';
-          target.outerHTML = '<span style="font-size: ' + size + 'px; display: inline;">⭐</span>';
+          target.outerHTML = '<span style="font-size: ' + Math.max(w, h) + 'px; display: inline;">⭐</span>';
         }}
       />
     );
   }
   // moderator: درع
   if (user.userType === 'moderator') {
+    const w = size;
+    const h = size;
     return (
       <img
         src="/svgs/moderator_shield.svg"
         alt="moderator"
-        style={{ width: size, height: size, display: 'inline' }}
+        style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
         onError={(e) => {
           const target = e.target as HTMLImageElement;
           target.style.display = 'none';
-          target.outerHTML = '<span style="font-size: ' + size + 'px; display: inline;">🛡️</span>';
+          target.outerHTML = '<span style="font-size: ' + Math.max(w, h) + 'px; display: inline;">🛡️</span>';
         }}
       />
     );
@@ -105,75 +111,85 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
 
     // عضو ذكر لفل 1-10: سهم أزرق
     if (level >= 1 && level <= 10 && gender === 'male') {
+      const w = size * 1.15; // تعريض بسيط
+      const h = size;
       return (
         <img
           src="/svgs/blue_arrow.svg"
           alt="male-lvl1-10"
-          style={{ width: size, height: size, display: 'inline' }}
+          style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.outerHTML =
-              '<span style="color: #3b82f6; font-size: ' + size + 'px; display: inline;">↗️</span>';
+              '<span style="color: #3b82f6; font-size: ' + Math.max(w, h) + 'px; display: inline;">↗️</span>';
           }}
         />
       );
     }
     // عضو أنثى لفل 1-10: ميدالية وردية
     if (level >= 1 && level <= 10 && gender === 'female') {
+      const w = size * 1.15; // تعريض بسيط
+      const h = size;
       return (
         <img
           src="/svgs/pink_medal.svg"
           alt="female-lvl1-10"
-          style={{ width: size, height: size, display: 'inline' }}
+          style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.outerHTML =
-              '<span style="color: #ec4899; font-size: ' + size + 'px; display: inline;">🏅</span>';
+              '<span style="color: #ec4899; font-size: ' + Math.max(w, h) + 'px; display: inline;">🏅</span>';
           }}
         />
       );
     }
     // عضو لفل 11-20: ألماسة بيضاء
     if (level >= 11 && level <= 20) {
+      const w = size;
+      const h = size * 0.85; // تقصير بالطول فقط
       return (
         <img
           src="/svgs/white.svg"
           alt="lvl11-20"
-          style={{ width: size, height: size, display: 'inline' }}
+          style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.outerHTML =
-              '<span style="color: #f8fafc; font-size: ' + size + 'px; display: inline;">💎</span>';
+              '<span style="color: #f8fafc; font-size: ' + Math.max(w, h) + 'px; display: inline;">💎</span>';
           }}
         />
       );
     }
     // عضو لفل 21-30: ألماسة خضراء
     if (level >= 21 && level <= 30) {
+      const w = size;
+      const h = size * 0.85; // تقصير بالطول فقط
       return (
         <img
           src="/svgs/emerald.svg"
           alt="lvl21-30"
-          style={{ width: size, height: size, display: 'inline' }}
+          style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.outerHTML =
-              '<span style="color: #10b981; font-size: ' + size + 'px; display: inline;">💚</span>';
+              '<span style="color: #10b981; font-size: ' + Math.max(w, h) + 'px; display: inline;">💚</span>';
           }}
         />
       );
     }
     // عضو لفل 31-40: ألماسة برتقالية مضيئة
     if (level >= 31 && level <= 40) {
+      const w = size;
+      const h = size * 0.85; // تقصير بالطول فقط
       return (
         <img
           src="/svgs/orange_shine.svg"
           alt="lvl31-40"
-          style={{ width: size, height: size, display: 'inline' }}
+          style={{ width: w, height: h, display: 'inline', verticalAlign: 'middle' }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.outerHTML =
-              '<span style="color: #f97316; font-size: ' + size + 'px; display: inline;">🔥</span>';
+              '<span style="color: #f97316; font-size: ' + Math.max(w, h) + 'px; display: inline;">🔥</span>';
           }}
         />
       );
