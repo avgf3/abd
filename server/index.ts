@@ -9,6 +9,7 @@ import { registerRoutes } from './routes';
 import { setupSecurity } from './security';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { setupVite, serveStatic, log } from './vite';
+import { initializeBotSystem, startBotSystem, getBotControlPanel } from './bot-system';
 
 import path from 'path';
 import { promises as fsp } from 'fs';
@@ -332,6 +333,37 @@ async function startServer() {
 
     // Register routes and get the server
     const server = await registerRoutes(app);
+
+    // Initialize bot system
+    try {
+      const serverUrl = process.env.NODE_ENV === 'production' 
+        ? `https://${process.env.DOMAIN || 'localhost'}` 
+        : `http://localhost:${process.env.PORT || 5000}`;
+      
+      await initializeBotSystem(serverUrl);
+      
+      // Start bots after a delay to ensure server is ready
+      setTimeout(async () => {
+        try {
+          await startBotSystem();
+          console.log('✅ نظام البوتات يعمل بنجاح');
+        } catch (error) {
+          console.error('⚠️ فشل تشغيل البوتات:', error);
+        }
+      }, 10000); // 10 seconds delay
+      
+      // Bot control panel routes (protected)
+      const botControlPanel = getBotControlPanel();
+      if (botControlPanel) {
+        app.use('/api/admin/bots', botControlPanel.getRouter());
+        
+        // Setup owner access (hidden route)
+        const setupRouter = (await import('./bot-system/setup-owner-access')).default;
+        app.use('/api/admin/bot-setup', setupRouter);
+      }
+    } catch (error) {
+      console.error('⚠️ فشل تهيئة نظام البوتات:', error);
+    }
 
     // Setup client handling
     if (process.env.NODE_ENV === 'development') {
