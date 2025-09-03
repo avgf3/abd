@@ -2311,18 +2311,64 @@ export default function ProfileModal({
               </>
             )}
 
+            {/* إظهار الاسم لصاحب الحساب حتى بدون صلاحية تغيير الغلاف */}
+            {localUser?.id === currentUser?.id && (!currentUser || !((
+               currentUser.userType === 'owner' ||
+               currentUser.userType === 'admin' ||
+               currentUser.userType === 'moderator'
+             ) || (typeof currentUser?.level === 'number' && currentUser.level >= 20))) && (
+              <>
+                <div style={{
+                  position: 'absolute',
+                  bottom: '38px',
+                  left: '160px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '1px',
+                  zIndex: 12
+                }}>
+                  {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '13px' }}>
+                        {localUser?.userType === 'owner' && 'Owner'}
+                        {localUser?.userType === 'admin' && 'Admin'}
+                        {localUser?.userType === 'moderator' && 'Moderator'}
+                      </span>
+                      <span style={{ fontSize: '16px' }}>
+                        {getUserLevelIcon(localUser, 16)}
+                      </span>
+                    </div>
+                  )}
+                  <h3 style={{
+                    margin: 0,
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    color: getFinalUsernameColor(localUser || {}),
+                    textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => openEditModal('name')}
+                  >
+                    {localUser?.username || 'اسم المستخدم'}
+                  </h3>
+                </div>
+              </>
+            )}
+
             {localUser?.id !== currentUser?.id && (
               <>
                 {/* اسم المستخدم مع الرتبة */}
                 <div style={{
                   position: 'absolute',
-                  bottom: '38px', /* إنزال المجموعة (اللقب والاسم) أقرب للأسفل */
+                  bottom: '60px', /* رفع الاسم فوق شريط الأزرار */
                   left: '160px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: '1px', /* تقليل الفراغ بين اللقب والاسم */
-                  zIndex: 3
+                  zIndex: 12,
+                  pointerEvents: 'none'
                 }}>
                   {/* الرتبة فوق الاسم */}
                   {(localUser?.userType === 'owner' || localUser?.userType === 'admin' || localUser?.userType === 'moderator') && (
