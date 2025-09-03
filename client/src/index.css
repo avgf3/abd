@@ -1721,8 +1721,16 @@ li > * > div.effect-crystal {
 .modern-nav {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
   backdrop-filter: blur(30px) saturate(200%);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Solid mobile footer to avoid transparency issues on some devices */
+.mobile-footer {
+  background: var(--background-solid);
+  background-color: var(--background-solid);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Modern Tab */
