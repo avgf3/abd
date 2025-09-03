@@ -129,25 +129,61 @@ const musicStorage = multer.diskStorage({
     try {
       const uploadDir = path.join(process.cwd(), 'client', 'public', 'uploads', 'music');
       await fsp.mkdir(uploadDir, { recursive: true }).catch(() => {});
-      cb(null, uploadDir);
+      
+      // التحقق من وجود المجلد وإمكانية الكتابة فيه
+      const exists = await fsp.stat(uploadDir).then(() => true).catch(() => false);
+      if (!exists) {
+        // إذا فشل إنشاء المجلد، استخدم مجلد temp
+        const tempDir = path.join(process.cwd(), 'temp', 'uploads', 'music');
+        await fsp.mkdir(tempDir, { recursive: true });
+        cb(null, tempDir);
+      } else {
+        cb(null, uploadDir);
+      }
     } catch (err) {
+      console.error('خطأ في إعداد مجلد رفع الموسيقى:', err);
       cb(err as any, '');
     }
   },
   filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
+    // تنظيف اسم الملف من الأحرف الخاصة
+    const ext = path.extname(file.originalname).toLowerCase();
     cb(null, `music-${uniqueSuffix}${ext}`);
   },
 });
+
 const musicUpload = multer({
   storage: musicStorage,
-  limits: { fileSize: 10 * 1024 * 1024, files: 1, fieldSize: 64 * 1024, parts: 10 },
+  limits: { 
+    fileSize: 10 * 1024 * 1024, // 10MB
+    files: 1, 
+    fieldSize: 64 * 1024, 
+    parts: 10 
+  },
   fileFilter: (_req, file, cb) => {
-    const ok = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/wav'].includes(
-      file.mimetype
+    // قائمة أنواع الملفات المدعومة
+    const allowedMimeTypes = [
+      'audio/mpeg',
+      'audio/mp3',
+      'audio/ogg',
+      'audio/webm',
+      'audio/wav',
+      'audio/m4a',
+      'audio/aac',
+      'audio/x-m4a',
+      'audio/mp4'
+    ];
+    
+    // التحقق من نوع الملف
+    const isAllowed = allowedMimeTypes.some(type => 
+      file.mimetype.toLowerCase().includes(type.split('/')[1])
     );
-    if (!ok) return cb(new Error(`نوع ملف الصوت غير مدعوم: ${file.mimetype}`));
+    
+    if (!isAllowed) {
+      return cb(new Error(`نوع ملف الصوت غير مدعوم: ${file.mimetype}. الأنواع المدعومة: MP3, WAV, OGG, M4A, AAC`));
+    }
+    
     cb(null, true);
   },
 });
@@ -487,60 +523,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // رفع موسيقى البروفايل
+  // رفع موسيقى البروفايل - محسّن مع معالجة أفضل للأخطاء
   app.post(
     '/api/upload/profile-music',
     protect.auth,
     limiters.upload,
-    musicUpload.single('music'),
+    (req, res, next) => {
+      // معالج multer مع معالجة أفضل للأخطاء
+      musicUpload.single('music')(req, res, (err) => {
+        if (err) {
+          console.error('خطأ في رفع الملف:', err);
+          if (err instanceof multer.MulterError) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+              return res.status(400).json({ 
+                success: false,
+                error: 'حجم الملف كبير جداً. الحد الأقصى 10 ميجابايت' 
+              });
+            }
+            return res.status(400).json({ 
+              success: false,
+              error: `خطأ في رفع الملف: ${err.message}` 
+            });
+          }
+          return res.status(400).json({ 
+            success: false,
+            error: err.message || 'خطأ في رفع الملف' 
+          });
+        }
+        next();
+      });
+    },
     async (req, res) => {
       try {
         res.set('Cache-Control', 'no-store');
 
         if (!req.file) {
-          return res.status(400).json({ error: 'لم يتم رفع أي ملف صوت' });
+          return res.status(400).json({ 
+            success: false,
+            error: 'لم يتم رفع أي ملف صوت' 
+          });
         }
 
         const userId = (req as any).user?.id as number;
         if (!userId || isNaN(userId)) {
-          try { await fsp.unlink(req.file.path); } catch {}
-          return res.status(401).json({ error: 'يجب تسجيل الدخول' });
+          // حذف الملف المرفوع في حالة الخطأ
+          try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+          return res.status(401).json({ 
+            success: false,
+            error: 'يجب تسجيل الدخول' 
+          });
         }
 
         const user = await storage.getUser(userId);
         if (!user) {
-          try { await fsp.unlink(req.file.path); } catch {}
-          return res.status(404).json({ error: 'المستخدم غير موجود' });
+          try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+          return res.status(404).json({ 
+            success: false,
+            error: 'المستخدم غير موجود' 
+          });
         }
 
         // التحقق من الصلاحيات - فقط المشرفين يمكنهم رفع الموسيقى
         if (user.userType !== 'owner' && user.userType !== 'admin' && user.userType !== 'moderator') {
-          try { await fsp.unlink(req.file.path); } catch {}
-          return res.status(403).json({ error: 'هذه الميزة متاحة للمشرفين فقط' });
+          try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+          return res.status(403).json({ 
+            success: false,
+            error: 'هذه الميزة متاحة للمشرفين فقط' 
+          });
+        }
+
+        // حذف الملف القديم إن وجد
+        if (user.profileMusicUrl) {
+          const oldPath = path.join(process.cwd(), 'client', 'public', user.profileMusicUrl);
+          try {
+            await fsp.unlink(oldPath).catch(() => {});
+          } catch {}
         }
 
         // تكون الملفات ضمن /uploads/music
         const fileUrl = `/uploads/music/${req.file.filename}`;
         const titleCandidate = (req.body?.title as string) || req.file.originalname;
-        const profileMusicTitle = String(titleCandidate || '').slice(0, 200);
+        const profileMusicTitle = String(titleCandidate || 'موسيقى البروفايل')
+          .replace(/\.[^/.]+$/, '') // إزالة الامتداد
+          .slice(0, 200);
 
         const updated = await storage.updateUser(userId, {
           profileMusicUrl: fileUrl,
           profileMusicTitle,
           profileMusicEnabled: true,
+          profileMusicVolume: 70, // قيمة افتراضية
         } as any);
 
         if (!updated) {
-          return res.status(500).json({ error: 'فشل تحديث بيانات المستخدم' });
+          // حذف الملف في حالة فشل التحديث
+          try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+          return res.status(500).json({ 
+            success: false,
+            error: 'فشل تحديث بيانات المستخدم' 
+          });
         }
 
         // بث تحديث مبسط
-        try { emitUserUpdatedToUser(userId, updated); emitUserUpdatedToAll(updated); } catch {}
+        try { 
+          emitUserUpdatedToUser(userId, updated); 
+          emitUserUpdatedToAll(updated); 
+        } catch (broadcastErr) {
+          console.error('خطأ في بث التحديث:', broadcastErr);
+        }
 
-        return res.json({ success: true, url: fileUrl, title: profileMusicTitle });
+        return res.json({ 
+          success: true, 
+          url: fileUrl, 
+          title: profileMusicTitle,
+          message: 'تم رفع الموسيقى بنجاح'
+        });
       } catch (error: any) {
         console.error('❌ خطأ في رفع موسيقى البروفايل:', error);
-        res.status(500).json({ error: 'خطأ في الخادم أثناء رفع الصوت' });
+        
+        // حذف الملف في حالة حدوث خطأ
+        if (req.file) {
+          try { await fsp.unlink(req.file.path).catch(() => {}); } catch {}
+        }
+        
+        res.status(500).json({ 
+          success: false,
+          error: error.message || 'خطأ في الخادم أثناء رفع الملف الصوتي' 
+        });
       }
     }
   );

@@ -71,6 +71,9 @@ export default function ProfileModal({
   const [musicVolume, setMusicVolume] = useState<number>(
     typeof localUser?.profileMusicVolume === 'number' ? localUser.profileMusicVolume : 70
   );
+  const [audioError, setAudioError] = useState(false);
+  const [audioLoading, setAudioLoading] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   
   // ضبط مستوى الصوت عند تحميل الصوت
   useEffect(() => {
@@ -78,6 +81,87 @@ export default function ProfileModal({
       audioRef.current.volume = Math.max(0, Math.min(1, musicVolume / 100));
     }
   }, [musicVolume, localUser?.profileMusicUrl]);
+  
+  // تشغيل الموسيقى تلقائياً عند فتح البروفايل
+  useEffect(() => {
+    if (localUser?.profileMusicUrl && musicEnabled && audioRef.current) {
+      // محاولة التشغيل التلقائي
+      const playAudio = async () => {
+        try {
+          setAudioLoading(true);
+          setAudioError(false);
+          audioRef.current!.volume = Math.max(0, Math.min(1, musicVolume / 100));
+          await audioRef.current!.play();
+        } catch (err) {
+          console.log('التشغيل التلقائي محظور من المتصفح، يحتاج تفاعل من المستخدم');
+          // في حالة فشل التشغيل التلقائي، سيتم التشغيل عند أول تفاعل
+        } finally {
+          setAudioLoading(false);
+        }
+      };
+      
+      // تأخير بسيط للسماح بتحميل الصوت
+      const timer = setTimeout(playAudio, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [localUser?.profileMusicUrl, musicEnabled, musicVolume]);
+  
+  // معالج أخطاء الصوت
+  const handleAudioError = () => {
+    setAudioError(true);
+    setAudioLoading(false);
+    setIsPlaying(false);
+    console.error('خطأ في تحميل ملف الصوت');
+  };
+  
+  // معالج تحميل الصوت
+  const handleAudioLoadStart = () => {
+    setAudioLoading(true);
+    setAudioError(false);
+  };
+  
+  const handleAudioCanPlay = () => {
+    setAudioLoading(false);
+    setAudioError(false);
+  };
+  
+  // معالج تشغيل/إيقاف الصوت
+  const handleAudioPlayPause = async () => {
+    if (!audioRef.current) return;
+    
+    try {
+      if (audioRef.current.paused) {
+        await audioRef.current.play();
+        setIsPlaying(true);
+      } else {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    } catch (err) {
+      console.error('خطأ في التشغيل:', err);
+      setIsPlaying(false);
+    }
+  };
+  
+  // تحديث حالة التشغيل
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handleEnded = () => setIsPlaying(false);
+    
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handleEnded);
+    
+    return () => {
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [localUser?.profileMusicUrl]);
   
 
   // تحديث الحالة المحلية عند تغيير المستخدم
@@ -2098,28 +2182,111 @@ export default function ProfileModal({
                       border: '1px solid rgba(255,255,255,0.15)'
                     }}
                   >
-                    <audio
-                      ref={audioRef}
-                      src={localUser.profileMusicUrl}
-                      controls
-                      autoPlay
-                      style={{ height: '28px' }}
-                    />
-                    <span style={{ color: '#fff', fontSize: '12px', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {musicTitle || 'موسيقى البروفايل'}
-                    </span>
+                    {audioError ? (
+                      <span style={{ color: '#ff6b6b', fontSize: '12px' }}>⚠️ خطأ في تحميل الموسيقى</span>
+                    ) : audioLoading ? (
+                      <span style={{ color: '#fff', fontSize: '12px' }}>⏳ جاري التحميل...</span>
+                    ) : (
+                      <>
+                        <audio
+                          ref={audioRef}
+                          src={localUser.profileMusicUrl}
+                          controls
+                          autoPlay
+                          loop
+                          style={{ height: '28px' }}
+                          onError={handleAudioError}
+                          onLoadStart={handleAudioLoadStart}
+                          onCanPlay={handleAudioCanPlay}
+                        />
+                        <span style={{ color: '#fff', fontSize: '12px', maxWidth: '160px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {musicTitle || 'موسيقى البروفايل'}
+                        </span>
+                      </>
+                    )}
                   </div>
                 )}
                 
-                {/* مشغل مخفي - للمستخدمين الآخرين */}
+                {/* مشغل للمستخدمين الآخرين */}
                 {localUser?.id !== currentUser?.id && (
-                  <audio
-                    ref={audioRef}
-                    src={localUser.profileMusicUrl}
-                    autoPlay
-                    loop
-                    style={{ display: 'none' }}
-                  />
+                  <>
+                    <audio
+                      ref={audioRef}
+                      src={localUser.profileMusicUrl}
+                      autoPlay
+                      loop
+                      style={{ display: 'none' }}
+                      onError={handleAudioError}
+                      onLoadStart={handleAudioLoadStart}
+                      onCanPlay={handleAudioCanPlay}
+                    />
+                    
+                    {/* شريط التحكم في الموسيقى للمستخدمين الآخرين */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '10px',
+                        right: '10px',
+                        zIndex: 5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        background: 'rgba(0,0,0,0.7)',
+                        padding: '6px 10px',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(255,255,255,0.15)'
+                      }}
+                    >
+                      {audioError ? (
+                        <span style={{ color: '#ff6b6b', fontSize: '12px' }}>
+                          ⚠️ خطأ في تحميل الموسيقى
+                        </span>
+                      ) : audioLoading ? (
+                        <span style={{ color: '#fff', fontSize: '12px' }}>
+                          ⏳ جاري تحميل الموسيقى...
+                        </span>
+                      ) : (
+                        <>
+                          <button
+                            onClick={handleAudioPlayPause}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#fff',
+                              fontSize: '16px',
+                              cursor: 'pointer',
+                              padding: '2px'
+                            }}
+                            title="تشغيل/إيقاف الموسيقى"
+                          >
+                            {isPlaying ? '⏸️' : '▶️'}
+                          </button>
+                          <span style={{ color: '#fff', fontSize: '12px', maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            🎵 {musicTitle || 'موسيقى البروفايل'}
+                          </span>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={musicVolume}
+                            onChange={(e) => {
+                              const vol = parseInt(e.target.value);
+                              setMusicVolume(vol);
+                              if (audioRef.current) {
+                                audioRef.current.volume = Math.max(0, Math.min(1, vol / 100));
+                              }
+                            }}
+                            style={{
+                              width: '60px',
+                              height: '4px',
+                              cursor: 'pointer'
+                            }}
+                            title="مستوى الصوت"
+                          />
+                        </>
+                      )}
+                    </div>
+                  </>
                 )}
               </>
             )}
@@ -2442,21 +2609,47 @@ export default function ProfileModal({
                           {localUser?.profileMusicUrl && (
                             <button
                               onClick={async () => {
+                                if (!confirm('هل أنت متأكد من حذف موسيقى البروفايل؟')) return;
+                                
                                 try {
+                                  setIsLoading(true);
                                   await apiRequest(`/api/users/${localUser?.id}/profile-music`, { method: 'DELETE' });
-                                  updateUserData({ profileMusicUrl: undefined, profileMusicTitle: '', profileMusicEnabled: false });
+                                  
+                                  // إيقاف الموسيقى وتنظيف المشغل
+                                  if (audioRef.current) { 
+                                    audioRef.current.pause(); 
+                                    audioRef.current.src = ''; 
+                                  }
+                                  
+                                  // تحديث البيانات المحلية
+                                  updateUserData({ 
+                                    profileMusicUrl: undefined, 
+                                    profileMusicTitle: '', 
+                                    profileMusicEnabled: false 
+                                  });
+                                  
                                   setMusicTitle('');
                                   setMusicEnabled(false);
-                                  if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
-                                  toast({ title: 'تم', description: 'تم حذف موسيقى البروفايل' });
+                                  setIsPlaying(false);
+                                  setAudioError(false);
+                                  
+                                  toast({ title: 'تم ✅', description: 'تم حذف موسيقى البروفايل بنجاح' });
                                 } catch (err: any) {
-                                  toast({ title: 'خطأ', description: err?.message || 'فشل حذف الموسيقى', variant: 'destructive' });
+                                  console.error('خطأ في حذف الموسيقى:', err);
+                                  toast({ 
+                                    title: 'خطأ', 
+                                    description: err?.message || 'فشل حذف الموسيقى', 
+                                    variant: 'destructive' 
+                                  });
+                                } finally {
+                                  setIsLoading(false);
                                 }
                               }}
                               className="btn-report"
                               style={{ padding: '6px 10px' }}
+                              disabled={isLoading}
                             >
-                              حذف الموسيقى
+                              {isLoading ? '⏳' : '🗑️'} حذف الموسيقى
                             </button>
                           )}
                         </div>
@@ -2484,26 +2677,77 @@ export default function ProfileModal({
 
                               const file = e.target.files?.[0];
                               if (!file) return;
+                              
+                              // التحقق من نوع الملف
+                              const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/wav', 'audio/m4a', 'audio/aac'];
+                              if (!allowedTypes.some(type => file.type.includes(type.split('/')[1]))) {
+                                toast({
+                                  title: 'نوع ملف غير مدعوم',
+                                  description: 'يرجى اختيار ملف صوتي (MP3, WAV, OGG, M4A)',
+                                  variant: 'destructive',
+                                });
+                                return;
+                              }
+                              
+                              // التحقق من حجم الملف (10 ميجا كحد أقصى)
+                              if (file.size > 10 * 1024 * 1024) {
+                                toast({
+                                  title: 'حجم الملف كبير جداً',
+                                  description: 'الحد الأقصى لحجم الملف هو 10 ميجابايت',
+                                  variant: 'destructive',
+                                });
+                                return;
+                              }
+                              
+                              setIsLoading(true);
                               const fd = new FormData();
                               fd.append('music', file);
                               if (musicTitle) fd.append('title', musicTitle);
+                              
                               const res = await apiRequest(`/api/upload/profile-music`, { method: 'POST', body: fd });
+                              
+                              if (!(res as any)?.success) {
+                                throw new Error((res as any)?.error || 'فشل رفع الملف');
+                              }
+                              
                               const url = (res as any)?.url;
                               const title = (res as any)?.title;
+                              
                               if (url) {
                                 updateUserData({ profileMusicUrl: url, profileMusicTitle: title, profileMusicEnabled: true });
                                 setMusicEnabled(true);
+                                setAudioError(false);
+                                
+                                // تحديث مشغل الصوت
                                 if (audioRef.current) {
                                   audioRef.current.src = url;
                                   audioRef.current.volume = Math.max(0, Math.min(1, (musicVolume || 70) / 100));
-                                  try { await audioRef.current.play(); } catch {}
+                                  audioRef.current.load(); // إعادة تحميل الصوت
+                                  
+                                  // محاولة التشغيل بعد التحميل
+                                  setTimeout(async () => {
+                                    try {
+                                      await audioRef.current?.play();
+                                    } catch (playErr) {
+                                      console.log('يحتاج تفاعل من المستخدم للتشغيل');
+                                    }
+                                  }, 500);
                                 }
-                                toast({ title: 'تم', description: 'تم تحديث موسيقى البروفايل' });
+                                
+                                toast({ title: 'تم ✅', description: 'تم تحديث موسيقى البروفايل بنجاح' });
                               }
                             } catch (err: any) {
-                              toast({ title: 'خطأ', description: err?.message || 'فشل رفع الصوت', variant: 'destructive' });
+                              console.error('خطأ في رفع الموسيقى:', err);
+                              toast({ 
+                                title: 'خطأ في رفع الملف', 
+                                description: err?.message || 'فشل رفع الملف الصوتي. تأكد من نوع وحجم الملف.', 
+                                variant: 'destructive' 
+                              });
                             } finally {
-                              try { if (e.target) (e.target as HTMLInputElement).value = ''; } catch {}
+                              setIsLoading(false);
+                              try { 
+                                if (e.target) (e.target as HTMLInputElement).value = ''; 
+                              } catch {}
                             }
                           }}
                         />
