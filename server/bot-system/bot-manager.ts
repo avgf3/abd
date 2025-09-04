@@ -320,7 +320,7 @@ export class BotManager extends EventEmitter {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  async stop(): void {
+  async stop(): Promise<void> {
     logger.info('إيقاف نظام البوتات...');
     
     this.isRunning = false;
