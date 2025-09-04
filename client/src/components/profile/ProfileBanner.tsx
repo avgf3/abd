@@ -7,6 +7,7 @@ import { api } from '@/lib/queryClient';
 import { validateFile, formatFileSize } from '@/lib/uploadConfig';
 import type { ChatUser } from '@/types/chat';
 import { getBannerImageSrc } from '@/utils/imageUtils';
+import SmartImage from '@/components/ui/SmartImage';
 
 interface ProfileBannerProps {
   currentUser: ChatUser | null;
@@ -122,12 +123,22 @@ export default function ProfileBanner({ currentUser, onBannerUpdate }: ProfileBa
       {/* صورة البروفايل البانر */}
       <div className="relative h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 shadow-2xl border border-white/20 backdrop-blur-sm">
         {preview ? (
-          <img src={preview} alt="معاينة صورة البانر" className="w-full h-full object-cover" />
+          <SmartImage
+            src={preview}
+            alt="معاينة صورة البانر"
+            className="w-full h-full object-cover"
+            widthPx={1200}
+            heightPx={400}
+            highPriority={true}
+          />
         ) : currentUser?.profileBanner && currentUser.profileBanner !== '' ? (
-          <img
+          <SmartImage
             src={getBannerImageSrc(currentUser.profileBanner)}
             alt="صورة البانر"
             className="w-full h-full object-cover"
+            widthPx={1200}
+            heightPx={400}
+            highPriority={true}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white relative">

@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { api, apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { useStories, type StoryItem } from '@/hooks/useStories';
+import SmartImage from '@/components/ui/SmartImage';
 
 interface StoriesSettingsProps {
   isOpen: boolean;
@@ -157,7 +158,13 @@ export default function StoriesSettings({ isOpen, onClose, currentUser }: Storie
                             <track kind="captions" src="data:text/vtt,WEBVTT" srcLang="ar" label="ترجمة" />
                           </video>
                         ) : (
-                          <img src={s.mediaUrl} className="w-full h-full object-cover" alt="معاينة صورة القصة" />
+                          <SmartImage
+                            src={s.mediaUrl}
+                            alt="معاينة صورة القصة"
+                            className="w-full h-full object-cover"
+                            widthPx={64}
+                            heightPx={64}
+                          />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
