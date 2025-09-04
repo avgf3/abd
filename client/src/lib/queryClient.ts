@@ -141,18 +141,66 @@ export async function apiRequest<T = any>(
 
 // Helper methods for better type safety
 export const api = {
-  get: <T = any>(endpoint: string): Promise<T> => apiRequest<T>(endpoint, { method: 'GET' }),
+  get: <T = any>(
+    endpoint: string,
+    options?: { headers?: Record<string, string>; timeout?: number; signal?: AbortSignal }
+  ): Promise<T> =>
+    apiRequest<T>(endpoint, {
+      method: 'GET',
+      headers: options?.headers,
+      timeout: options?.timeout,
+      signal: options?.signal,
+    }),
 
-  post: <T = any>(endpoint: string, data?: any): Promise<T> =>
-    apiRequest<T>(endpoint, { method: 'POST', body: data }),
+  post: <T = any>(
+    endpoint: string,
+    data?: any,
+    options?: { headers?: Record<string, string>; timeout?: number; signal?: AbortSignal }
+  ): Promise<T> =>
+    apiRequest<T>(endpoint, {
+      method: 'POST',
+      body: data,
+      headers: options?.headers,
+      timeout: options?.timeout,
+      signal: options?.signal,
+    }),
 
-  put: <T = any>(endpoint: string, data?: any): Promise<T> =>
-    apiRequest<T>(endpoint, { method: 'PUT', body: data }),
+  put: <T = any>(
+    endpoint: string,
+    data?: any,
+    options?: { headers?: Record<string, string>; timeout?: number; signal?: AbortSignal }
+  ): Promise<T> =>
+    apiRequest<T>(endpoint, {
+      method: 'PUT',
+      body: data,
+      headers: options?.headers,
+      timeout: options?.timeout,
+      signal: options?.signal,
+    }),
 
-  delete: <T = any>(endpoint: string): Promise<T> => apiRequest<T>(endpoint, { method: 'DELETE' }),
+  delete: <T = any>(
+    endpoint: string,
+    options?: { headers?: Record<string, string>; timeout?: number; signal?: AbortSignal }
+  ): Promise<T> =>
+    apiRequest<T>(endpoint, {
+      method: 'DELETE',
+      headers: options?.headers,
+      timeout: options?.timeout,
+      signal: options?.signal,
+    }),
 
-  patch: <T = any>(endpoint: string, data?: any): Promise<T> =>
-    apiRequest<T>(endpoint, { method: 'PATCH', body: data }),
+  patch: <T = any>(
+    endpoint: string,
+    data?: any,
+    options?: { headers?: Record<string, string>; timeout?: number; signal?: AbortSignal }
+  ): Promise<T> =>
+    apiRequest<T>(endpoint, {
+      method: 'PATCH',
+      body: data,
+      headers: options?.headers,
+      timeout: options?.timeout,
+      signal: options?.signal,
+    }),
 
   // دالة مخصصة لرفع الملفات
   upload: <T = any>(

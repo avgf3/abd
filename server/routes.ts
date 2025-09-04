@@ -1635,6 +1635,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'Set-Cookie',
           `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
         );
+        res.json({ user: buildUserBroadcastPayload(user), token, message: 'تم التسجيل بنجاح' });
+        return;
       } catch {}
       res.json({ user: buildUserBroadcastPayload(user), message: 'تم التسجيل بنجاح' });
     } catch (error) {
@@ -1658,9 +1660,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'الاسم مستخدم بالفعل' });
       }
 
+      // السماح بترقية البوتات إلى عضو عند تمرير ترويسة خاصة
+      const isBotMember =
+        String(req.headers['x-bot-member'] || '').toLowerCase() === 'true' ||
+        (req.body && (req.body.botMember === true || String(req.body.botMember).toLowerCase() === 'true'));
+
       const user = await storage.createUser({
         username,
-        userType: 'guest',
+        userType: isBotMember ? 'member' : 'guest',
         gender: gender || 'male',
         profileImage: '/default_avatar.svg',
       });
@@ -1671,12 +1678,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'Set-Cookie',
           `auth_token=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
         );
+        res.json({ user: buildUserBroadcastPayload(user), token });
+        return;
       } catch {}
       res.json({ user: buildUserBroadcastPayload(user) });
     } catch (error) {
       console.error('Guest login error:', error);
       console.error('Error details:', error.message, error.stack);
       res.status(500).json({ error: 'خطأ في الخادم' });
+    }
+  });
+
+  // Current user endpoint for client auth checks
+  app.get('/api/auth/me', async (req, res) => {
+    try {
+      const token = getAuthTokenFromRequest(req as any);
+      const verified = token ? verifyAuthToken(token) : null;
+      if (!verified?.userId) {
+        return res.status(401).json({ error: 'غير مصادق' });
+      }
+      const user = await storage.getUser(verified.userId);
+      if (!user) {
+        return res.status(404).json({ error: 'المستخدم غير موجود' });
+      }
+      return res.json({ user: buildUserBroadcastPayload(user) });
+    } catch (e) {
+      return res.status(500).json({ error: 'خطأ في الخادم' });
     }
   });
 
