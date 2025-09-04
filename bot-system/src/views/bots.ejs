@@ -1,0 +1,471 @@
+<%- include('partials/header', { title: 'إدارة البوتات' }) %>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">إدارة البوتات</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-success" onclick="createNewBots()">
+                <i class="fas fa-plus"></i> إنشاء بوتات جديدة
+            </button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="startSelectedBots()">
+                <i class="fas fa-play"></i> تشغيل المحدد
+            </button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="stopSelectedBots()">
+                <i class="fas fa-stop"></i> إيقاف المحدد
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- شريط البحث والفلترة -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <input type="text" class="form-control" id="searchBots" placeholder="البحث عن بوت...">
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" id="filterStatus">
+            <option value="">جميع الحالات</option>
+            <option value="online">نشط</option>
+            <option value="offline">متوقف</option>
+            <option value="busy">مشغول</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" id="filterRoom">
+            <option value="">جميع الغرف</option>
+            <option value="lobby">اللوبي</option>
+            <option value="general">العامة</option>
+            <option value="gaming">الألعاب</option>
+            <option value="music">الموسيقى</option>
+            <option value="sports">الرياضة</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-primary w-100" onclick="applyFilters()">
+            <i class="fas fa-filter"></i> تطبيق
+        </button>
+    </div>
+</div>
+
+<!-- جدول البوتات -->
+<div class="card shadow">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                        </th>
+                        <th>الصورة</th>
+                        <th>معرف البوت</th>
+                        <th>الاسم</th>
+                        <th>الحالة</th>
+                        <th>الغرفة الحالية</th>
+                        <th>نوع السلوك</th>
+                        <th>مستوى النشاط</th>
+                        <th>آخر نشاط</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% bots.forEach(bot => { %>
+                    <tr data-bot-id="<%= bot.bot_id %>">
+                        <td>
+                            <input type="checkbox" class="bot-checkbox" value="<%= bot.bot_id %>">
+                        </td>
+                        <td>
+                            <img src="<%= bot.avatar %>" alt="<%= bot.name %>" class="rounded-circle" width="40" height="40">
+                        </td>
+                        <td><%= bot.bot_id %></td>
+                        <td><%= bot.name %></td>
+                        <td>
+                            <% if (bot.status === 'online') { %>
+                                <span class="badge bg-success">نشط</span>
+                            <% } else if (bot.status === 'offline') { %>
+                                <span class="badge bg-secondary">متوقف</span>
+                            <% } else { %>
+                                <span class="badge bg-warning">مشغول</span>
+                            <% } %>
+                        </td>
+                        <td><%= bot.current_room %></td>
+                        <td>
+                            <% if (bot.behavior_type === 'active') { %>
+                                <span class="badge bg-primary">نشط</span>
+                            <% } else if (bot.behavior_type === 'normal') { %>
+                                <span class="badge bg-info">عادي</span>
+                            <% } else { %>
+                                <span class="badge bg-secondary">هادئ</span>
+                            <% } %>
+                        </td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar" style="width: <%= bot.activity_level * 10 %>%">
+                                    <%= bot.activity_level %>/10
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <%= bot.last_activity ? new Date(bot.last_activity).toLocaleString('ar-SA') : 'لا يوجد' %>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-primary" onclick="editBot('<%= bot.bot_id %>')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-success" onclick="controlBot('<%= bot.bot_id %>')">
+                                    <i class="fas fa-gamepad"></i>
+                                </button>
+                                <button class="btn btn-danger" onclick="deleteBot('<%= bot.bot_id %>')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- التصفح -->
+        <nav>
+            <ul class="pagination justify-content-center">
+                <% if (currentPage > 1) { %>
+                <li class="page-item">
+                    <a class="page-link" href="?page=<%= currentPage - 1 %>">السابق</a>
+                </li>
+                <% } %>
+                
+                <% for (let i = 1; i <= totalPages && i <= 10; i++) { %>
+                <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                    <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                </li>
+                <% } %>
+                
+                <% if (currentPage < totalPages) { %>
+                <li class="page-item">
+                    <a class="page-link" href="?page=<%= currentPage + 1 %>">التالي</a>
+                </li>
+                <% } %>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- نافذة تحرير البوت -->
+<div class="modal fade" id="editBotModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تحرير البوت</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editBotForm">
+                    <input type="hidden" id="edit_bot_id">
+                    <div class="mb-3">
+                        <label class="form-label">الاسم</label>
+                        <input type="text" class="form-control" id="edit_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">نوع السلوك</label>
+                        <select class="form-select" id="edit_behavior_type">
+                            <option value="active">نشط</option>
+                            <option value="normal">عادي</option>
+                            <option value="quiet">هادئ</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">مستوى النشاط</label>
+                        <input type="range" class="form-range" id="edit_activity_level" min="1" max="10" value="5">
+                        <span id="activity_level_display">5</span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="saveBot()">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة التحكم في البوت -->
+<div class="modal fade" id="controlBotModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">التحكم في البوت</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>معلومات البوت</h6>
+                        <div id="botInfo"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>إجراءات سريعة</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success" id="startBotBtn">
+                                <i class="fas fa-play"></i> تشغيل
+                            </button>
+                            <button class="btn btn-danger" id="stopBotBtn">
+                                <i class="fas fa-stop"></i> إيقاف
+                            </button>
+                            <div class="input-group">
+                                <select class="form-select" id="moveToRoom">
+                                    <option value="lobby">اللوبي</option>
+                                    <option value="general">العامة</option>
+                                    <option value="gaming">الألعاب</option>
+                                    <option value="music">الموسيقى</option>
+                                    <option value="sports">الرياضة</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="moveBotToRoom()">
+                                    <i class="fas fa-door-open"></i> نقل
+                                </button>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="customMessage" placeholder="رسالة مخصصة...">
+                                <button class="btn btn-primary" onclick="sendCustomMessage()">
+                                    <i class="fas fa-paper-plane"></i> إرسال
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentControlBot = null;
+    
+    // تبديل تحديد الكل
+    function toggleSelectAll() {
+        const selectAll = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.bot-checkbox');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    }
+    
+    // إنشاء بوتات جديدة
+    function createNewBots() {
+        const count = prompt('كم عدد البوتات التي تريد إنشاءها؟ (الحد الأقصى 50)');
+        if (count && !isNaN(count)) {
+            fetch('/dashboard/bots/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ count: parseInt(count) })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => location.reload(), 2000);
+                }
+            });
+        }
+    }
+    
+    // تشغيل البوتات المحددة
+    function startSelectedBots() {
+        const selected = getSelectedBots();
+        if (selected.length === 0) {
+            showNotification('الرجاء تحديد بوت واحد على الأقل', 'warning');
+            return;
+        }
+        
+        socket.emit('control:command', {
+            command: 'batch_action',
+            params: {
+                botIds: selected,
+                action: { type: 'start' }
+            }
+        });
+        
+        showNotification(`تم إرسال أمر تشغيل ${selected.length} بوت`, 'success');
+    }
+    
+    // إيقاف البوتات المحددة
+    function stopSelectedBots() {
+        const selected = getSelectedBots();
+        if (selected.length === 0) {
+            showNotification('الرجاء تحديد بوت واحد على الأقل', 'warning');
+            return;
+        }
+        
+        socket.emit('control:command', {
+            command: 'batch_action',
+            params: {
+                botIds: selected,
+                action: { type: 'stop' }
+            }
+        });
+        
+        showNotification(`تم إرسال أمر إيقاف ${selected.length} بوت`, 'warning');
+    }
+    
+    // الحصول على البوتات المحددة
+    function getSelectedBots() {
+        const checkboxes = document.querySelectorAll('.bot-checkbox:checked');
+        return Array.from(checkboxes).map(cb => cb.value);
+    }
+    
+    // تحرير بوت
+    function editBot(botId) {
+        fetch(`/api/bots/${botId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const bot = data.bot;
+                    document.getElementById('edit_bot_id').value = bot.bot_id;
+                    document.getElementById('edit_name').value = bot.name;
+                    document.getElementById('edit_behavior_type').value = bot.behavior_type;
+                    document.getElementById('edit_activity_level').value = bot.activity_level;
+                    document.getElementById('activity_level_display').textContent = bot.activity_level;
+                    
+                    new bootstrap.Modal(document.getElementById('editBotModal')).show();
+                }
+            });
+    }
+    
+    // حفظ تعديلات البوت
+    function saveBot() {
+        const botId = document.getElementById('edit_bot_id').value;
+        const data = {
+            name: document.getElementById('edit_name').value,
+            behavior_type: document.getElementById('edit_behavior_type').value,
+            activity_level: parseInt(document.getElementById('edit_activity_level').value)
+        };
+        
+        fetch(`/api/bots/${botId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('تم حفظ التعديلات بنجاح', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('editBotModal')).hide();
+                setTimeout(() => location.reload(), 1000);
+            }
+        });
+    }
+    
+    // التحكم في بوت
+    function controlBot(botId) {
+        currentControlBot = botId;
+        
+        fetch(`/api/bots/${botId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const bot = data.bot;
+                    document.getElementById('botInfo').innerHTML = `
+                        <p><strong>المعرف:</strong> ${bot.bot_id}</p>
+                        <p><strong>الاسم:</strong> ${bot.name}</p>
+                        <p><strong>الحالة:</strong> ${bot.status}</p>
+                        <p><strong>الغرفة:</strong> ${bot.current_room}</p>
+                    `;
+                    
+                    document.getElementById('startBotBtn').onclick = () => {
+                        socket.emit('control:command', {
+                            command: 'start_bot',
+                            botId: currentControlBot
+                        });
+                        showNotification('تم إرسال أمر التشغيل', 'success');
+                    };
+                    
+                    document.getElementById('stopBotBtn').onclick = () => {
+                        socket.emit('control:command', {
+                            command: 'stop_bot',
+                            botId: currentControlBot
+                        });
+                        showNotification('تم إرسال أمر الإيقاف', 'warning');
+                    };
+                    
+                    new bootstrap.Modal(document.getElementById('controlBotModal')).show();
+                }
+            });
+    }
+    
+    // نقل البوت إلى غرفة
+    function moveBotToRoom() {
+        const room = document.getElementById('moveToRoom').value;
+        socket.emit('control:command', {
+            command: 'move_bot',
+            botId: currentControlBot,
+            params: { room }
+        });
+        showNotification(`تم نقل البوت إلى ${room}`, 'info');
+    }
+    
+    // إرسال رسالة مخصصة
+    function sendCustomMessage() {
+        const message = document.getElementById('customMessage').value;
+        if (message) {
+            socket.emit('control:command', {
+                command: 'send_message',
+                botId: currentControlBot,
+                params: { message }
+            });
+            showNotification('تم إرسال الرسالة', 'success');
+            document.getElementById('customMessage').value = '';
+        }
+    }
+    
+    // حذف بوت
+    function deleteBot(botId) {
+        if (confirm('هل أنت متأكد من حذف هذا البوت؟')) {
+            fetch(`/api/bots/${botId}`, {
+                method: 'DELETE'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('تم حذف البوت بنجاح', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                }
+            });
+        }
+    }
+    
+    // تطبيق الفلاتر
+    function applyFilters() {
+        const search = document.getElementById('searchBots').value;
+        const status = document.getElementById('filterStatus').value;
+        const room = document.getElementById('filterRoom').value;
+        
+        let url = '/dashboard/bots?';
+        if (search) url += `search=${encodeURIComponent(search)}&`;
+        if (status) url += `status=${status}&`;
+        if (room) url += `room=${room}&`;
+        
+        window.location.href = url;
+    }
+    
+    // تحديث مستوى النشاط
+    document.getElementById('edit_activity_level').addEventListener('input', function() {
+        document.getElementById('activity_level_display').textContent = this.value;
+    });
+    
+    // تحديثات في الوقت الفعلي
+    socket.on('bot:update', (data) => {
+        const row = document.querySelector(`tr[data-bot-id="${data.botId}"]`);
+        if (row && data.updates.status) {
+            // تحديث حالة البوت في الجدول
+            const statusCell = row.cells[4];
+            if (data.updates.status === 'online') {
+                statusCell.innerHTML = '<span class="badge bg-success">نشط</span>';
+            } else if (data.updates.status === 'offline') {
+                statusCell.innerHTML = '<span class="badge bg-secondary">متوقف</span>';
+            } else {
+                statusCell.innerHTML = '<span class="badge bg-warning">مشغول</span>';
+            }
+        }
+    });
+</script>
+
+<%- include('partials/footer') %>
