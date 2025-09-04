@@ -89,6 +89,17 @@ export function BotControlEnhanced() {
     return () => clearInterval(interval);
   }, [isAuthenticated, autoRefresh]);
 
+  useEffect(() => {
+    if (!showInterface) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowInterface(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showInterface]);
+
   const authenticate = async () => {
     if (accessCode !== SECRET_CODE) {
       setAlert({ 
@@ -120,10 +131,13 @@ export function BotControlEnhanced() {
         message: 'تم الوصول لواجهة التحكم بنجاح'
       });
     } catch (error: any) {
+      const isUnauthorized = (error?.status === 403) || String(error?.message || '').toLowerCase().includes('unauthorized');
       setAlert({ 
         type: 'error', 
         title: 'فشل التوثيق',
-        message: error.message || 'فشل توليد رمز الوصول' 
+        message: isUnauthorized 
+          ? 'فشل التوثيق: تأكد من تطابق المفتاح السري في الخادم BOT_MASTER_SECRET مع قيمة الواجهة.' 
+          : (error.message || 'فشل توليد رمز الوصول')
       });
     } finally {
       setLoading(false);
@@ -246,27 +260,32 @@ export function BotControlEnhanced() {
     }
   };
 
-  const executeCommand = async (command: string) => {
+  const executeCommand = async (uiCommand: string) => {
     setLoading(true);
     try {
+      const map: Record<string, { server: string; successText: string }> = {
+        'START_ALL': { server: 'start_all', successText: 'تشغيل جميع البوتات' },
+        'STOP_ALL': { server: 'stop_all', successText: 'إيقاف جميع البوتات' },
+        'RANDOM_MOVEMENT': { server: 'move_random', successText: 'حركة عشوائية' },
+        'RESTART': { server: 'restart', successText: 'إعادة التشغيل' },
+      };
+
+      const mapped = map[uiCommand];
+      if (!mapped) {
+        setAlert({ type: 'warning', title: 'أمر غير مدعوم', message: 'هذا الأمر غير مدعوم حالياً' });
+        return;
+      }
+
       await api.post(
         '/api/admin/bots/command',
-        { command },
+        { command: mapped.server, params: {} },
         { headers: { Authorization: `Bearer ${adminToken}` } } as any
       );
-
-      const commandNames: Record<string, string> = {
-        'START_ALL': 'تشغيل جميع البوتات',
-        'STOP_ALL': 'إيقاف جميع البوتات',
-        'RANDOM_MOVEMENT': 'حركة عشوائية',
-        'INCREASE_ACTIVITY': 'زيادة النشاط',
-        'DECREASE_ACTIVITY': 'تقليل النشاط'
-      };
 
       setAlert({
         type: 'success',
         title: 'تم التنفيذ',
-        message: `تم تنفيذ: ${commandNames[command] || command}`
+        message: `تم تنفيذ: ${mapped.successText}`
       });
       
       setTimeout(() => loadBotData(), 1000);
@@ -301,7 +320,7 @@ export function BotControlEnhanced() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
       <div className="container mx-auto h-full overflow-y-auto p-4">
         <Card className="mx-auto max-w-7xl bg-background/95">
           <CardHeader className="flex flex-row items-center justify-between">
@@ -353,6 +372,9 @@ export function BotControlEnhanced() {
                   />
                   <Button onClick={authenticate} disabled={loading}>
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'دخول'}
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowInterface(false)}>
+                    إغلاق
                   </Button>
                 </div>
               </div>
