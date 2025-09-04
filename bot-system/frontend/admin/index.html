@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة إدارة البوتات</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 لوحة إدارة البوتات</h1>
+            <div class="stats">
+                <div class="stat-card">
+                    <span class="stat-label">إجمالي الأعضاء</span>
+                    <span class="stat-value" id="totalMembers">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">متصل</span>
+                    <span class="stat-value online" id="onlineMembers">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">مشغول</span>
+                    <span class="stat-value busy" id="busyMembers">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">غير متصل</span>
+                    <span class="stat-value offline" id="offlineMembers">0</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div class="rooms-section">
+                <h2>الغرف المتاحة</h2>
+                <div class="rooms-grid" id="roomsGrid">
+                    <!-- سيتم ملؤها بواسطة JavaScript -->
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <h2>التحكم في الحركة</h2>
+                <div class="control-panel">
+                    <div class="control-group">
+                        <label>نقل جميع الأعضاء من:</label>
+                        <select id="fromRoom" class="select-input">
+                            <option value="">اختر غرفة</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>إلى:</label>
+                        <select id="toRoom" class="select-input">
+                            <option value="">اختر غرفة</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="moveAllMembers()">نقل الجميع</button>
+                </div>
+
+                <div class="control-panel">
+                    <h3>نقل أعضاء محددين</h3>
+                    <div class="control-group">
+                        <label>اختر الغرفة المصدر:</label>
+                        <select id="sourceRoom" class="select-input" onchange="loadRoomMembers()">
+                            <option value="">اختر غرفة</option>
+                        </select>
+                    </div>
+                    <div class="members-list" id="membersList">
+                        <!-- سيتم ملؤها بواسطة JavaScript -->
+                    </div>
+                    <div class="control-group">
+                        <label>نقل المحددين إلى:</label>
+                        <select id="targetRoom" class="select-input">
+                            <option value="">اختر غرفة</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" onclick="moveSelectedMembers()">نقل المحددين</button>
+                </div>
+            </div>
+
+            <div class="logs-section">
+                <h2>سجل الحركات الأخيرة</h2>
+                <div class="logs-container" id="logsContainer">
+                    <!-- سيتم ملؤها بواسطة JavaScript -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
