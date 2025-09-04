@@ -104,8 +104,8 @@ export function getUserLevelIcon(user: ChatUser, size: number = 20): JSX.Element
     );
   }
 
-  // للأعضاء - نفحص المستوى والجنس
-  if (user.userType === 'member') {
+  // للأعضاء والبوتات - نفحص المستوى والجنس (نفس منطق الأعضاء للبوت)
+  if (user.userType === 'member' || user.userType === 'bot') {
     const level = user.level || 1; // افتراضي 1 إذا لم يكن محدد
     const gender = normalizeGender(user.gender) || 'male'; // افتراضي ذكر إذا لم يكن محدد
 
