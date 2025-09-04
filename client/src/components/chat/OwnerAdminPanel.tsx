@@ -30,6 +30,7 @@ import { apiRequest } from '@/lib/queryClient';
 import type { ChatUser } from '@/types/chat';
 import { getImageSrc } from '@/utils/imageUtils';
 import { formatDateTime } from '@/utils/timeUtils';
+import Username from '@/components/ui/Username';
 
 interface ModerationAction {
   id: string;
@@ -586,9 +587,9 @@ export default function OwnerAdminPanel({
 
                             <div>
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-bold text-gray-800 text-lg">
+                                <Username className="font-bold text-gray-800 text-lg" title={staff.username}>
                                   {staff.username}
-                                </span>
+                                </Username>
                                 {getRoleIcon(staff.userType)}
                               </div>
 
