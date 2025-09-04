@@ -91,9 +91,7 @@ export class BotManager extends EventEmitter {
   private async connectBot(profile: BotProfile): Promise<Socket> {
     const socket = io(this.config.serverUrl, {
       transports: ['websocket', 'polling'],
-      auth: {
-        token: await this.generateBotToken(profile)
-      },
+      // لا نرسل توكن زائف هنا؛ سنقوم بالمصادقة بعد الاتصال وفق بروتوكول الخادم
       query: {
         username: profile.username,
         deviceId: profile.deviceId,
@@ -106,9 +104,18 @@ export class BotManager extends EventEmitter {
     });
 
     return new Promise((resolve, reject) => {
-      socket.on('connect', () => {
+      socket.on('connect', async () => {
         logger.debug(`البوت ${profile.username} اتصل بنجاح`);
-        resolve(socket);
+        try {
+          // 1) الحصول على توكن جلسة صالح من الخادم عبر تسجيل ضيف باسم البوت
+          const token = await this.obtainServerToken(profile);
+          // 2) إرسال حدث المصادقة وفق ما يتوقعه الخادم
+          socket.emit('auth', { token });
+          resolve(socket);
+        } catch (err) {
+          logger.error(`فشل مصادقة البوت ${profile.username}: ${err}`);
+          reject(err);
+        }
       });
 
       socket.on('connect_error', (error) => {
@@ -126,8 +133,10 @@ export class BotManager extends EventEmitter {
 
     socket.on('message', (data) => {
       const bot = this.bots.get(botId);
-      if (bot && this.behavior.shouldReactToMessage(bot, data)) {
-        this.scheduleBotReaction(bot, data);
+      // يتوقع الخادم رسائل بصيغة { type: 'newMessage', message: {...} }
+      const content = (data?.type === 'newMessage') ? data?.message?.content : data?.content;
+      if (bot && content && this.behavior.shouldReactToMessage(bot, { content })) {
+        this.scheduleBotReaction(bot, { content });
       }
     });
 
@@ -162,22 +171,21 @@ export class BotManager extends EventEmitter {
   }
 
   private async simulateTyping(bot: BotState): Promise<void> {
-    bot.socket.emit('typing', { room: bot.currentRoom, isTyping: true });
+    bot.socket.emit('typing', { roomId: bot.currentRoom, isTyping: true });
     bot.typingState = true;
 
     // مدة الكتابة العشوائية
     const typingDuration = 2000 + Math.random() * 3000;
     await this.delay(typingDuration);
 
-    bot.socket.emit('typing', { room: bot.currentRoom, isTyping: false });
+    bot.socket.emit('typing', { roomId: bot.currentRoom, isTyping: false });
     bot.typingState = false;
   }
 
   private sendMessage(bot: BotState, content: string): void {
-    bot.socket.emit('message', {
-      room: bot.currentRoom,
-      content,
-      timestamp: new Date()
+    bot.socket.emit('publicMessage', {
+      roomId: bot.currentRoom,
+      content
     });
 
     bot.messageCount++;
@@ -252,10 +260,10 @@ export class BotManager extends EventEmitter {
     const newRoom = otherRooms[Math.floor(Math.random() * otherRooms.length)];
     
     // مغادرة الغرفة الحالية
-    bot.socket.emit('leaveRoom', { room: bot.currentRoom });
+    bot.socket.emit('leaveRoom', { roomId: bot.currentRoom });
     
     // الانضمام للغرفة الجديدة
-    bot.socket.emit('joinRoom', { room: newRoom });
+    bot.socket.emit('joinRoom', { roomId: newRoom });
     
     bot.currentRoom = newRoom;
     bot.roomHistory.push(newRoom);
@@ -269,17 +277,35 @@ export class BotManager extends EventEmitter {
   }
 
   private async generateBotToken(profile: BotProfile): Promise<string> {
-    // توليد رمز مصادقة للبوت
-    const payload = {
-      id: profile.id,
-      username: profile.username,
-      type: profile.isOwner ? 'owner' : 'member',
-      isBot: true, // سيتم إخفاء هذا في الإنتاج
-      timestamp: Date.now()
-    };
+    // لم نعد نستخدم هذا النهج؛ المصادقة تتم عبر obtainServerToken
+    return '';
+  }
 
-    // في الإنتاج، استخدم JWT حقيقي
-    return Buffer.from(JSON.stringify(payload)).toString('base64');
+  private async obtainServerToken(profile: BotProfile): Promise<string> {
+    // يسجل حساب ضيف باسم البوت ويحصل على token من /api/auth/guest
+    // نستخدم fetch المدمجة في Node 18+
+    const endpoint = `${this.config.serverUrl.replace(/\/$/, '')}/api/auth/guest`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: profile.username, gender: profile.gender })
+    } as any);
+    if (!res.ok) {
+      throw new Error(`Guest auth failed: ${res.status}`);
+    }
+    let token = '';
+    try {
+      // التوكن يعود داخل JSON أيضاً بعد تعديل المسارات
+      const data = await res.json();
+      token = (data && (data.token || data?.data?.token)) || '';
+    } catch {}
+    // احتياطياً، إذا لم يوجد في الجسم، حاول قراءته من Set-Cookie (غير متاح مباشرة عبر fetch)
+    if (!token) {
+      // في حال عدم توفر التوكن ضمن الرد، سنفترض المصادقة عبر الكوكي وتمريرها غير ممكن عبر Socket
+      // لذا نحتاج توكن نصي؛ فإن لم يتوفر، نفشل لنمنع اتصال غير مصادق
+      throw new Error('Missing token from /api/auth/guest response');
+    }
+    return token;
   }
 
   private handleBotDisconnection(botId: string): void {
