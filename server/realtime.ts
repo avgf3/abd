@@ -77,14 +77,95 @@ export function getOnlineUserCountForRoom(roomId: string): number {
 
 // إزالة كاش قائمة المتصلين للغرف للاعتماد الكامل على أحداث Socket.IO
 
-export function updateConnectedUserCache(user: any) {
+export function updateConnectedUserCache(userOrId: any, maybeUser?: any) {
   try {
-    if (!user || !user.id) return;
-    const entry = connectedUsers.get(user.id);
-    if (entry) {
-      entry.user = { ...entry.user, ...user };
-      entry.lastSeen = new Date();
-      connectedUsers.set(user.id, entry);
+    // Overload 1: update by full user object
+    if (typeof userOrId === 'object' && userOrId) {
+      const userObj = userOrId as any;
+      if (!userObj.id) return;
+      const existing = connectedUsers.get(userObj.id);
+      if (existing) {
+        existing.user = { ...existing.user, ...userObj };
+        existing.lastSeen = new Date();
+        // إذا كان بوتاً ولديه socket اصطناعي، حدّث الغرفة
+        if (userObj.userType === 'bot') {
+          for (const [socketId, socketMeta] of existing.sockets.entries()) {
+            if (socketId.startsWith('bot:')) {
+              socketMeta.room = userObj.currentRoom || socketMeta.room || GENERAL_ROOM;
+              socketMeta.lastSeen = new Date();
+              existing.sockets.set(socketId, socketMeta);
+            }
+          }
+        }
+        connectedUsers.set(userObj.id, existing);
+      } else {
+        const sockets = new Map<string, { room: string; lastSeen: Date }>();
+        if (userObj.userType === 'bot') {
+          sockets.set(`bot:${userObj.id}`, {
+            room: userObj.currentRoom || GENERAL_ROOM,
+            lastSeen: new Date(),
+          });
+        }
+        connectedUsers.set(userObj.id, {
+          user: userObj,
+          sockets,
+          lastSeen: new Date(),
+        });
+      }
+      return;
+    }
+
+    // Overload 2: update by id and user/null
+    const userId = Number(userOrId);
+    if (!userId || Number.isNaN(userId)) return;
+
+    // إزالة من الكاش إذا كان null
+    if (maybeUser == null) {
+      if (connectedUsers.has(userId)) {
+        connectedUsers.delete(userId);
+      }
+      return;
+    }
+
+    const userData = maybeUser as any;
+    const existing = connectedUsers.get(userId);
+    if (existing) {
+      existing.user = { ...existing.user, ...userData };
+      existing.lastSeen = new Date();
+      if (userData.userType === 'bot') {
+        // تأكد من وجود socket اصطناعي للبوت وتحديث غرفته
+        let hasBotSocket = false;
+        for (const socketId of existing.sockets.keys()) {
+          if (socketId.startsWith('bot:')) {
+            hasBotSocket = true;
+            break;
+          }
+        }
+        const room = userData.currentRoom || GENERAL_ROOM;
+        if (!hasBotSocket) {
+          existing.sockets.set(`bot:${userId}`, { room, lastSeen: new Date() });
+        } else {
+          for (const [socketId, meta] of existing.sockets.entries()) {
+            if (socketId.startsWith('bot:')) {
+              meta.room = room;
+              meta.lastSeen = new Date();
+              existing.sockets.set(socketId, meta);
+            }
+          }
+        }
+      }
+      connectedUsers.set(userId, existing);
+    } else {
+      const sockets = new Map<string, { room: string; lastSeen: Date }>();
+      const room = userData.currentRoom || GENERAL_ROOM;
+      if (userData.userType === 'bot') {
+        sockets.set(`bot:${userId}`, { room, lastSeen: new Date() });
+      }
+      connectedUsers.set(userId, {
+        user: { id: userId, ...userData },
+        sockets,
+        lastSeen: new Date(),
+      });
     }
   } catch {}
 }
