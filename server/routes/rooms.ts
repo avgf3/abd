@@ -105,13 +105,25 @@ router.get('/', async (req, res) => {
 
     const rooms = await roomService.getAllRooms();
 
+    // Attach live userCount from realtime connected sockets
+    try {
+      const { getOnlineUserCountsForRooms } = await import('../realtime');
+      const counts = getOnlineUserCountsForRooms(rooms.map((r: any) => String(r.id)));
+      for (const r of rooms as any[]) {
+        const id = String(r.id);
+        const live = Number(counts[id] || 0);
+        // Prefer the live count when available; ensure non-negative
+        (r as any).userCount = Math.max(0, live);
+      }
+    } catch {}
+
     // 📊 إضافة إحصائيات مفيدة
     const response = {
       rooms,
       meta: {
         total: rooms.length,
-        broadcast: rooms.filter((r) => r.isBroadcast).length,
-        active: rooms.filter((r) => r.isActive).length,
+        broadcast: rooms.filter((r: any) => r.isBroadcast).length,
+        active: rooms.filter((r: any) => (r.userCount || 0) > 0).length,
         timestamp: new Date().toISOString(),
       },
     };

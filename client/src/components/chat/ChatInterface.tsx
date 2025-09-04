@@ -104,6 +104,7 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
     fetchRooms,
     addRoom: addRoomViaManager,
     deleteRoom: deleteRoomViaManager,
+    updateRoomUserCount,
     isFetching,
   } = useRoomManager({
     autoRefresh: false, // تحديث يدوي فقط
@@ -213,6 +214,62 @@ export default function ChatInterface({ chat, onLogout }: ChatInterfaceProps) {
       // ignore if socket not available
     }
   }, [fetchRooms]);
+
+  // تحديث عدادات الغرف في الوقت الحقيقي بناءً على أحداث سوكت
+  useEffect(() => {
+    try {
+      const { getSocket } = require('@/lib/socket');
+      const s = getSocket();
+
+      const onMessage = (envelope: any) => {
+        try {
+          if (!envelope || typeof envelope !== 'object') return;
+          switch (envelope.type) {
+            case 'onlineUsers': {
+              const roomId = envelope.roomId;
+              if (typeof roomId === 'string' && Array.isArray(envelope.users)) {
+                updateRoomUserCount(roomId, envelope.users.length);
+              }
+              break;
+            }
+            case 'roomJoined': {
+              const roomId = envelope.roomId;
+              if (typeof roomId === 'string' && Array.isArray(envelope.users)) {
+                updateRoomUserCount(roomId, envelope.users.length);
+              }
+              break;
+            }
+            case 'userJoinedRoom': {
+              const roomId = envelope.roomId;
+              if (typeof roomId === 'string') {
+                // زيادة تقديرية +1 حتى تصل قائمة كاملة
+                const current = rooms.find((r) => r.id === roomId)?.userCount || 0;
+                updateRoomUserCount(roomId, Math.max(0, current + 1));
+              }
+              break;
+            }
+            case 'userLeftRoom': {
+              const roomId = envelope.roomId;
+              if (typeof roomId === 'string') {
+                const current = rooms.find((r) => r.id === roomId)?.userCount || 0;
+                updateRoomUserCount(roomId, Math.max(0, current - 1));
+              }
+              break;
+            }
+            default:
+              break;
+          }
+        } catch {}
+      };
+
+      s.on('message', onMessage);
+      return () => {
+        try { s.off('message', onMessage); } catch {}
+      };
+    } catch {
+      // ignore
+    }
+  }, [rooms, updateRoomUserCount]);
 
   const [showNotifications, setShowNotifications] = useState(false);
 
