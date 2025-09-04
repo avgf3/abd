@@ -104,10 +104,16 @@ export default function BotsManagement({ currentUser }: BotsManagementProps) {
   // جلب قائمة الغرف
   const fetchRooms = async () => {
     try {
-      const response = await apiRequest<Room[]>('/api/rooms');
-      setRooms(response);
+      const data = await apiRequest<any>('/api/rooms');
+      const list: Room[] = Array.isArray(data)
+        ? data
+        : Array.isArray((data as any)?.rooms)
+        ? (data as any).rooms
+        : [];
+      setRooms(list);
     } catch (error) {
       console.error('فشل في جلب الغرف:', error);
+      setRooms([]);
     }
   };
 
