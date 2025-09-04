@@ -107,15 +107,20 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return { ...state, currentUser: action.payload };
 
     case 'SET_ONLINE_USERS': {
+      // التأكد من أن payload هو array
+      const users = Array.isArray(action.payload) ? action.payload : [];
+      
       // تحديث الكاش مع قائمة المستخدمين الجديدة
-      action.payload.forEach(user => {
+      users.forEach(user => {
         if (user && user.id && user.username) {
           setCachedUser(user);
         }
       });
       // تحديث حالة الاتصال في الكاش
-      userCache.updateOnlineStatus(action.payload.map(u => u.id));
-      return { ...state, onlineUsers: action.payload };
+      if (users.length > 0) {
+        userCache.updateOnlineStatus(users.map(u => u.id));
+      }
+      return { ...state, onlineUsers: users };
     }
 
     case 'SET_ROOM_MESSAGES': {
@@ -394,6 +399,7 @@ export const useChat = () => {
 
   // Track ping interval to avoid leaks
   const pingIntervalRef = useRef<number | null>(null);
+  const onlineUsersIntervalRef = useRef<number | null>(null);
 
   // 🔥 SIMPLIFIED Socket event handling - حذف التضارب
   const setupSocketListeners = useCallback((socketInstance: Socket) => {
