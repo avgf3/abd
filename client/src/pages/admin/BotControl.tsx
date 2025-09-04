@@ -41,6 +41,7 @@ export function BotControl() {
   const [message, setMessage] = useState('');
   const [selectedRoom, setSelectedRoom] = useState('');
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [adminToken, setAdminToken] = useState<string | null>(null);
 
   // رمز سري للوصول للواجهة
   const SECRET_CODE = 'owner2024$control';
@@ -62,25 +63,40 @@ export function BotControl() {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [user, showInterface]);
 
-  const authenticate = () => {
+  const authenticate = async () => {
     if (accessCode === SECRET_CODE) {
-      setIsAuthenticated(true);
-      loadBotData();
+      try {
+        // توليد توكن وصول للوحة التحكم (تجريبي: userId الحالي إن وجد وإلا 1)
+        const ownerId = (user as any)?.id || '1';
+        const resp: any = await api.post('/api/admin/bot-setup/generate-bot-token', {
+          secretKey: 'owner-master-2024-secret',
+          userId: String(ownerId),
+        });
+        const token = resp?.token || resp?.data?.token;
+        if (!token) throw new Error('No admin token');
+        setAdminToken(token);
+        setIsAuthenticated(true);
+        await loadBotData(token);
+      } catch (e) {
+        setAlert({ type: 'error', message: 'فشل توليد رمز الوصول للوحة التحكم' });
+      }
     } else {
       setAlert({ type: 'error', message: 'رمز الوصول غير صحيح' });
     }
   };
 
-  const loadBotData = async () => {
+  const loadBotData = async (tokenOverride?: string) => {
     setLoading(true);
+    const token = tokenOverride || adminToken;
     try {
+      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
       const [statusRes, botsRes] = await Promise.all([
-        api.get('/admin/bots/status'),
-        api.get('/admin/bots')
-      ]);
+        api.get('/api/admin/bots/status', { headers } as any),
+        api.get('/api/admin/bots', { headers } as any),
+      ] as any);
 
-      setStatus(statusRes.data.data);
-      setBots(botsRes.data.data);
+      setStatus((statusRes as any).data);
+      setBots((botsRes as any).data);
     } catch (error) {
       setAlert({ type: 'error', message: 'فشل تحميل بيانات البوتات' });
     } finally {
@@ -92,7 +108,8 @@ export function BotControl() {
     if (!selectedBot || !message.trim()) return;
 
     try {
-      await api.post(`/admin/bots/${selectedBot.id}/message`, { message });
+      const headers = adminToken ? { Authorization: `Bearer ${adminToken}` } : undefined;
+      await api.post(`/api/admin/bots/${selectedBot.id}/message`, { message, ...(headers ? { headers } : {}) } as any);
       setMessage('');
       setAlert({ type: 'success', message: 'تم إرسال الرسالة بنجاح' });
     } catch (error) {
@@ -104,7 +121,8 @@ export function BotControl() {
     if (!selectedBot || !selectedRoom) return;
 
     try {
-      await api.post(`/admin/bots/${selectedBot.id}/move`, { room: selectedRoom });
+      const headers = adminToken ? { Authorization: `Bearer ${adminToken}` } : undefined;
+      await api.post(`/api/admin/bots/${selectedBot.id}/move`, { room: selectedRoom, ...(headers ? { headers } : {}) } as any);
       setAlert({ type: 'success', message: 'تم نقل البوت بنجاح' });
       loadBotData();
     } catch (error) {
@@ -114,7 +132,8 @@ export function BotControl() {
 
   const executeCommand = async (command: string) => {
     try {
-      await api.post('/admin/bots/command', { command });
+      const headers = adminToken ? { Authorization: `Bearer ${adminToken}` } : undefined;
+      await api.post('/api/admin/bots/command', { command, ...(headers ? { headers } : {}) } as any);
       setAlert({ type: 'success', message: 'تم تنفيذ الأمر بنجاح' });
       loadBotData();
     } catch (error) {

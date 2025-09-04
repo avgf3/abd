@@ -28,14 +28,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      const response = await api.get('/auth/me');
-      setUser(response.data.user);
+      const response = await api.get('/api/auth/me');
+      const user = (response as any)?.user || (response as any)?.data?.user || (response as any)?.data;
+      setUser(user || null);
     } catch (error) {
       console.error('Auth check failed:', error);
       localStorage.removeItem('authToken');
@@ -46,10 +41,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, password: string) => {
     try {
-      const response = await api.post('/auth/login', { username, password });
-      const { token, user } = response.data;
-      
-      localStorage.setItem('authToken', token);
+      const response = await api.post('/api/auth/member', { username, password, identifier: username });
+      const payload = response as any;
+      const user = payload?.user || payload?.data?.user || null;
       setUser(user);
     } catch (error) {
       console.error('Login failed:', error);
@@ -58,7 +52,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    localStorage.removeItem('authToken');
+    try {
+      // Inform server to clear cookie token (non-blocking)
+      api.post('/api/auth/logout').catch(() => {});
+    } catch {}
     setUser(null);
   };
 
