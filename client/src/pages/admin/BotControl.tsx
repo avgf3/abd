@@ -90,14 +90,45 @@ export function BotControl() {
     const token = tokenOverride || adminToken;
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+      
+      // محاولة جلب البيانات مع معالجة أفضل للأخطاء
       const [statusRes, botsRes] = await Promise.all([
-        api.get('/api/admin/bots/status', { headers } as any),
-        api.get('/api/admin/bots', { headers } as any),
-      ] as any);
+        api.get('/api/admin/bots/status', { headers } as any).catch(err => {
+          console.error('خطأ في جلب حالة البوتات:', err);
+          return { data: null };
+        }),
+        api.get('/api/admin/bots', { headers } as any).catch(err => {
+          console.error('خطأ في جلب قائمة البوتات:', err);
+          return { data: [] };
+        }),
+      ]);
 
-      setStatus((statusRes as any).data);
-      setBots((botsRes as any).data);
+      // التحقق من البيانات قبل تعيينها
+      if (statusRes && statusRes.data) {
+        // البيانات الآن تأتي مباشرة، ليس داخل data
+        setStatus(statusRes.data);
+      } else if (statusRes) {
+        setStatus(statusRes);
+      } else {
+        // بيانات افتراضية إذا فشل الطلب
+        setStatus({
+          totalBots: 0,
+          activeBots: 0,
+          ownerBots: 0,
+          roomDistribution: {},
+          serverTime: new Date()
+        });
+      }
+
+      if (botsRes && botsRes.data && Array.isArray(botsRes.data)) {
+        setBots(botsRes.data);
+      } else if (botsRes && Array.isArray(botsRes)) {
+        setBots(botsRes);
+      } else {
+        setBots([]);
+      }
     } catch (error) {
+      console.error('خطأ في تحميل بيانات البوتات:', error);
       setAlert({ type: 'error', message: 'فشل تحميل بيانات البوتات' });
     } finally {
       setLoading(false);
@@ -206,7 +237,7 @@ export function BotControl() {
   }
 
   return (
-    <div className="fixed inset-0 bg-background/95 z-50 overflow-auto">
+    <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50 overflow-auto">
       <div className="container mx-auto p-4">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold flex items-center gap-2">

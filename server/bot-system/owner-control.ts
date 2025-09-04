@@ -73,7 +73,7 @@ export class OwnerControlPanel {
         serverTime: new Date()
       };
 
-      res.json({ success: true, data: status });
+      res.json(status);
     } catch (error) {
       logger.error('خطأ في جلب حالة البوتات', error);
       res.status(500).json({ error: 'فشل جلب حالة البوتات' });
@@ -94,7 +94,7 @@ export class OwnerControlPanel {
         lastActivity: bot.lastActivity
       }));
 
-      res.json({ success: true, data: simplifiedBots });
+      res.json(simplifiedBots);
     } catch (error) {
       logger.error('خطأ في جلب قائمة البوتات', error);
       res.status(500).json({ error: 'فشل جلب قائمة البوتات' });
