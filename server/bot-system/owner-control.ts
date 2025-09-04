@@ -26,15 +26,20 @@ export class OwnerControlPanel {
     this.router.get('/status', this.getBotStatus.bind(this));
 
     // عرض قائمة البوتات
+    // دعم مسارين: الجذر "/" وكذلك "/bots" للتوافق مع العميل والاختبارات
+    this.router.get('/', this.listBots.bind(this));
     this.router.get('/bots', this.listBots.bind(this));
 
     // التحكم في بوت محدد
+    this.router.get('/:botId', this.getBotDetails.bind(this));
     this.router.get('/bots/:botId', this.getBotDetails.bind(this));
     
     // إرسال رسالة من بوت
+    this.router.post('/:botId/message', this.sendBotMessage.bind(this));
     this.router.post('/bots/:botId/message', this.sendBotMessage.bind(this));
     
     // نقل بوت لغرفة
+    this.router.post('/:botId/move', this.moveBotToRoom.bind(this));
     this.router.post('/bots/:botId/move', this.moveBotToRoom.bind(this));
     
     // تنفيذ أمر عام
@@ -201,6 +206,14 @@ export class OwnerControlPanel {
           // نقل عدد من البوتات لغرف عشوائية
           const count = command.params?.count || 10;
           await this.moveRandomBots(count);
+          break;
+        
+        // زيادة/تقليل مستوى النشاط (دعم من الواجهة)
+        case 'increase_activity':
+          this.botManager.executeCommand('INCREASE_ACTIVITY');
+          break;
+        case 'decrease_activity':
+          this.botManager.executeCommand('DECREASE_ACTIVITY');
           break;
           
         default:

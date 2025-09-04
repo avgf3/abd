@@ -398,6 +398,19 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
       return null;
     };
 
+    // مصادقة تلقائية إذا تم إرسال التوكن ضمن المصافحة (auth.token)
+    (async () => {
+      try {
+        const handshakeToken = (socket.handshake as any)?.auth?.token;
+        if (handshakeToken && typeof handshakeToken === 'string') {
+          // حاكي مسار 'auth' بإرسال الحمولة نفسها
+          socket.emit('client_ping'); // تنشيط الاتصال
+          socket.emit('message', { type: 'info', message: 'auto_auth' });
+          socket.emit('auth', { token: handshakeToken });
+        }
+      } catch {}
+    })();
+
     socket.on(
       'auth',
       async (payload: {
@@ -444,7 +457,7 @@ export function setupRealtime(httpServer: HttpServer): IOServer {
 
         try {
           // Enforce token-based authentication: get token from Authorization or cookie or payload
-          const bearerOrCookieToken = getTokenFromHeaders() || (payload as any)?.token || null;
+          const bearerOrCookieToken = (payload as any)?.token || getTokenFromHeaders() || null;
           const verified = bearerOrCookieToken ? verifyAuthToken(bearerOrCookieToken) : null;
           if (!verified?.userId) {
             socket.emit('error', { message: 'المصادقة مطلوبة', action: 'unauthorized' });

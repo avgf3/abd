@@ -153,7 +153,9 @@ export function BotControl() {
       
       const [statusRes, botsRes] = await Promise.all([
         api.get('/api/admin/bots/status', { headers } as any).catch(() => null),
-        api.get('/api/admin/bots/bots', { headers } as any).catch(() => null)
+        api.get('/api/admin/bots', { headers } as any).catch(async () => {
+          return await api.get('/api/admin/bots/bots', { headers } as any).catch(() => null);
+        })
       ]);
 
       if (statusRes) setStatus(statusRes as any);
@@ -212,7 +214,7 @@ export function BotControl() {
     setLoading(true);
     try {
       await api.post(
-        `/api/admin/bots/bots/${selectedBot.id}/message`,
+        `/api/admin/bots/${selectedBot.id}/message`,
         { content: message, room: selectedBot.currentRoom },
         { headers: { Authorization: `Bearer ${adminToken}` } } as any
       );
@@ -242,7 +244,7 @@ export function BotControl() {
     setLoading(true);
     try {
       await api.post(
-        `/api/admin/bots/bots/${selectedBot.id}/move`,
+        `/api/admin/bots/${selectedBot.id}/move`,
         { room: selectedRoom },
         { headers: { Authorization: `Bearer ${adminToken}` } } as any
       );
@@ -273,6 +275,8 @@ export function BotControl() {
         'STOP_ALL': { server: 'stop_all', successText: 'إيقاف جميع البوتات' },
         'RANDOM_MOVEMENT': { server: 'move_random', successText: 'حركة عشوائية' },
         'RESTART': { server: 'restart', successText: 'إعادة التشغيل' },
+        'INCREASE_ACTIVITY': { server: 'increase_activity', successText: 'زيادة النشاط' },
+        'DECREASE_ACTIVITY': { server: 'decrease_activity', successText: 'تقليل النشاط' },
       };
 
       const mapped = map[uiCommand];
@@ -517,6 +521,15 @@ export function BotControl() {
                         >
                           <Plus className="mr-2 h-4 w-4" />
                           زيادة النشاط
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => executeCommand('DECREASE_ACTIVITY')}
+                          disabled={loading}
+                        >
+                          <Minus className="mr-2 h-4 w-4" />
+                          تقليل النشاط
                         </Button>
                       </CardContent>
                     </Card>
